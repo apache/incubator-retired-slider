@@ -155,7 +155,7 @@
     <commons-configuration.version>1.6</commons-configuration.version>
     <commons-lang.version>2.6</commons-lang.version>
     <curator.version>2.4.1</curator.version>
-    <easymock.version>2.4.1</easymock.version>
+    <easymock.version>3.1</easymock.version>
     <groovy.version>2.1.9</groovy.version>
     <guava.version>11.0.2</guava.version>
     <gson.version>2.2.2</gson.version>
