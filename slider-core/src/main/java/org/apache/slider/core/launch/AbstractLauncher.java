@@ -30,6 +30,7 @@ import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.util.Records;
 import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.RoleKeys;
+import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.tools.CoreFileSystem;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.conf.MapOperations;
@@ -202,7 +203,7 @@ public abstract class AbstractLauncher extends Configured {
   protected void propagateUsernameInInsecureCluster() throws IOException {
     //insecure cluster: propagate user name via env variable
     String userName = UserGroupInformation.getCurrentUser().getUserName();
-    env.put("HADOOP_USER_NAME", userName);
+    env.put(SliderKeys.HADOOP_USER_NAME, userName);
   }
 
   /**
