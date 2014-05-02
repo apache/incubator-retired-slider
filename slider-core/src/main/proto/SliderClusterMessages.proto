@@ -1,0 +1,201 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * These .proto interfaces are private and stable.
+ * Please see http://wiki.apache.org/hadoop/Compatibility
+ * for what changes are allowed for a *stable* .proto interface.
+ */
+
+// This file contains protocol buffers that are used throughout HDFS -- i.e.
+// by the client, server, and data transfer protocols.
+
+option java_package = "org.apache.slider.api.proto";
+option java_outer_classname = "Messages";
+option java_generic_services = true;
+option java_generate_equals_and_hash = true;
+package org.apache.slider.api;
+
+//import "Security.proto";
+
+message RoleInstanceState {
+  required string name = 1;
+  optional string role = 2;
+  required uint32 state = 4;
+  required uint32 exitCode = 5;
+  optional string command = 6;
+  optional string diagnostics = 7;
+  repeated string output = 8;
+  repeated string environment = 9;
+  required uint32 roleId = 10;
+  required bool released = 11;
+  required int64 createTime = 12;
+  required int64 startTime = 13;
+  required string host = 14;
+  required string hostURL = 15;
+}
+
+/**
+ * stop the cluster
+ */
+message StopClusterRequestProto {
+  /**
+  message to include
+  */
+  required string message = 1;
+}
+/**
+ * stop the cluster
+ */
+message StopClusterResponseProto {
+}
+
+/**
+ * flex the cluster
+ */
+message FlexClusterRequestProto {
+  required string clusterSpec = 1;
+}
+
+
+/**
+ * stop the cluster
+ */
+message FlexClusterResponseProto {
+  required bool response = 1;
+}
+
+
+/**
+ * void request
+ */
+message GetJSONClusterStatusRequestProto {
+}
+
+/**
+ * response
+ */
+message GetJSONClusterStatusResponseProto {
+  required string clusterSpec = 1;
+}
+
+/**
+ * list the nodes in a role
+ */
+message ListNodeUUIDsByRoleRequestProto {
+  required string role = 1;
+}
+
+/**
+ * list the nodes in a role
+ */
+message ListNodeUUIDsByRoleResponseProto {
+  repeated string uuid = 1 ;
+}
+
+/**
+ * get a node
+ */
+message GetNodeRequestProto {
+  required string uuid = 1;
+}
+
+
+/**
+ * response on a node
+ */
+message GetNodeResponseProto {
+   required RoleInstanceState clusterNode = 1 ;
+}
+
+/**
+ * list the nodes for the UUDs
+ */
+message GetClusterNodesRequestProto {
+  repeated string uuid = 1 ;
+}
+
+/**
+ * list the nodes in a role
+ */
+message GetClusterNodesResponseProto {
+  repeated RoleInstanceState clusterNode = 1 ;
+}
+
+/**
+ * Echo
+ */
+message EchoRequestProto {
+  required string text = 1;
+}
+
+/**
+ * Echo reply
+ */
+message EchoResponseProto {
+  required string text = 1;
+}
+
+
+/**
+ * Kill a container
+ */
+message KillContainerRequestProto {
+  required string id = 1;
+}
+
+/**
+ * Kill reply
+ */
+message KillContainerResponseProto {
+  required bool success = 1;
+}
+
+/**
+ * AM suicide
+ */
+message AMSuicideRequestProto {
+  required string text = 1;
+  required int32 signal = 2;
+  required int32 delay = 3;
+}
+
+/**
+ * AM suicide reply. For this to be returned implies
+ * a failure of the AM to kill itself
+ */
+message AMSuicideResponseProto {
+
+}
+
+
+/**
+ * Ask for the instance definition details
+ */
+message GetInstanceDefinitionRequestProto {
+
+}
+
+/**
+ * Get the definition back as three separate JSON strings
+ */
+message GetInstanceDefinitionResponseProto {
+  required string internal = 1;
+  required string resources = 2;
+  required string application = 3;
+}

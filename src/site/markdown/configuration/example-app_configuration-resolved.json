@@ -1,0 +1,42 @@
+{
+  "schema": "http://example.org/specification/v2.0.0",
+
+  "global": {
+    "zookeeper.port": "2181",
+    "zookeeper.path": "/yarnapps_small_cluster",
+    "zookeeper.hosts": "zoo1,zoo2,zoo3",
+    "env.MALLOC_ARENA_MAX": "4",
+    "site.hbase.master.startup.retainassign": "true",
+    "site.fs.defaultFS": "hdfs://cluster:8020",
+    "site.fs.default.name": "hdfs://cluster:8020",
+    "site.hbase.master.info.port": "0",
+    "site.hbase.regionserver.info.port": "0"
+  },
+  "components": {
+
+    "worker": {
+      "zookeeper.port": "2181",
+      "zookeeper.path": "/yarnapps_small_cluster",
+      "zookeeper.hosts": "zoo1,zoo2,zoo3",
+      "env.MALLOC_ARENA_MAX": "4",
+      "site.hbase.master.startup.retainassign": "true",
+      "site.fs.defaultFS": "hdfs://cluster:8020",
+      "site.fs.default.name": "hdfs://cluster:8020",
+      "site.hbase.master.info.port": "0",
+      "site.hbase.regionserver.info.port": "0",
+      "jvm.heapsize": "512M"
+    },
+    "master": {
+      "zookeeper.port": "2181",
+      "zookeeper.path": "/yarnapps_small_cluster",
+      "zookeeper.hosts": "zoo1,zoo2,zoo3",
+      "env.MALLOC_ARENA_MAX": "4",
+      "site.hbase.master.startup.retainassign": "true",
+      "site.fs.defaultFS": "hdfs://cluster:8020",
+      "site.fs.default.name": "hdfs://cluster:8020",
+      "site.hbase.master.info.port": "0",
+      "site.hbase.regionserver.info.port": "0",
+      "jvm.heapsize": "512M"
+    }
+  }
+}

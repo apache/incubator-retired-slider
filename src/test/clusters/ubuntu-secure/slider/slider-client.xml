@@ -1,0 +1,88 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!--
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~   you may not use this file except in compliance with the License.
+  ~   You may obtain a copy of the License at
+  ~   
+  ~    http://www.apache.org/licenses/LICENSE-2.0
+  ~   
+  ~   Unless required by applicable law or agreed to in writing, software
+  ~   distributed under the License is distributed on an "AS IS" BASIS,
+  ~   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~   See the License for the specific language governing permissions and
+  ~   limitations under the License. See accompanying LICENSE file.
+  -->
+
+<!--
+  Properties set here are picked up in the client.
+  They are not passed to the AM
+-->
+<configuration>
+  <property>
+    <name>slider.client.resource.origin</name>
+    <value>ubuntu-secure/conf/slider-client.xml</value>
+    <description>This is just for diagnostics</description>
+  </property>
+
+  <property>
+    <name>yarn.resourcemanager.address</name>
+    <value>ubuntu:8032</value>
+  </property>
+  
+  <property>
+    <name>fs.defaultFS</name>
+    <value>hdfs://ubuntu:9090/</value>
+  </property>
+
+  <property>
+    <name>hadoop.security.authorization</name>
+    <value>true</value>
+  </property>
+
+  <property>
+    <name>hadoop.security.authentication</name>
+    <value>kerberos</value>
+  </property>
+
+  <property>
+    <name>yarn.resourcemanager.principal</name>
+    <value>yarn/ubuntu@COTHAM</value>
+  </property>
+
+  <property>
+    <name>slider.zookeeper.quorum</name>
+    <value>ubuntu:2181</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.kerberos.principal</name>
+    <value>hdfs/ubuntu@COTHAM</value>
+  </property>
+
+  <property>
+    <name>slider.test.hbase.tar</name>
+    <description>Path to the HBase Tar file in HDFS</description>
+    <value>hdfs://ubuntu:9090/hbase-0.98.1-bin.tar.gz</value>
+  </property>
+
+  <property>
+    <name>slider.test.hbase.appconf</name>
+    <description>Path to the directory containing the HBase application config
+    </description>
+    <value>file://${slider.test.conf.dir}/../hbase</value>
+  </property>
+
+  <property>
+    <name>zk.home</name>
+    <description>zookeeper home dir -needed for accumulo</description>
+    <value>/home/stevel/zookeeper</value>
+  </property>
+  
+  <property>
+    <name>hadoop.home</name>
+    <description>hadoop home dir -needed for accumulo</description>
+    <value>/home/stevel/hadoop</value>
+  </property>
+
+</configuration>

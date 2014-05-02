@@ -1,0 +1,139 @@
+{
+  "version": "1.0",
+  "name": "test_cluster_lifecycle",
+  "type": "hbase",
+  "state": 3,
+  "createTime": 1393512091276,
+  "updateTime": 1393512117286,
+  "originConfigurationPath": "hdfs://sandbox.hortonworks.com:8020/user/stevel/.hoya/cluster/test_cluster_lifecycle/snapshot",
+  "generatedConfigurationPath": "hdfs://sandbox.hortonworks.com:8020/user/stevel/.hoya/cluster/test_cluster_lifecycle/generated",
+  "dataPath": "hdfs://sandbox.hortonworks.com:8020/user/stevel/.hoya/cluster/test_cluster_lifecycle/database",
+  "options": {
+    "zookeeper.port": "2181",
+    "site.hbase.master.startup.retainassign": "true",
+    "hoya.cluster.application.image.path": "hdfs://sandbox.hortonworks.com:8020/hbase.tar.gz",
+    "site.fs.defaultFS": "hdfs://sandbox.hortonworks.com:8020",
+    "hoya.container.failure.threshold": "5",
+    "site.fs.default.name": "hdfs://sandbox.hortonworks.com:8020",
+    "hoya.cluster.directory.permissions": "0770",
+    "hoya.am.monitoring.enabled": "false",
+    "zookeeper.path": "/yarnapps_hoya_stevel_test_cluster_lifecycle",
+    "hoya.tmp.dir": "hdfs://sandbox.hortonworks.com:8020/user/stevel/.hoya/cluster/test_cluster_lifecycle/tmp/am",
+    "hoya.data.directory.permissions": "0770",
+    "zookeeper.hosts": "sandbox",
+    "hoya.container.failure.shortlife": "60"
+  },
+  "info": {
+    "create.hadoop.deployed.info": "(detached from release-2.3.0) @dfe46336fbc6a044bc124392ec06b85",
+    "create.application.build.info": "Hoya Core-0.13.0-SNAPSHOT Built against commit# 1a94ee4aa1 on Java 1.7.0_45 by stevel",
+    "create.hadoop.build.info": "2.3.0",
+    "create.time.millis": "1393512091276",
+    "create.time": "27 Feb 2014 14:41:31 GMT",
+    "hoya.am.restart.supported": "false",
+    "live.time": "27 Feb 2014 14:41:56 GMT",
+    "live.time.millis": "1393512116881",
+    "status.time": "27 Feb 2014 14:42:08 GMT",
+    "status.time.millis": "1393512128726",
+    "yarn.vcores": "32",
+    "yarn.memory": "2048",
+    "status.application.build.info": "Hoya Core-0.13.0-SNAPSHOT Built against commit# 1a94ee4aa1 on Java 1.7.0_45 by stevel",
+    "status.hadoop.build.info": "2.3.0",
+    "status.hadoop.deployed.info": "bigwheel-m16-2.2.0 @704f1e463ebc4fb89353011407e965"
+  },
+  "statistics": {
+    "worker": {
+      "containers.start.started": 0,
+      "containers.live": 0,
+      "containers.start.failed": 0,
+      "containers.active.requests": 0,
+      "containers.failed": 0,
+      "containers.completed": 0,
+      "containers.desired": 0,
+      "containers.requested": 0
+    },
+    "hoya": {
+      "containers.unknown.completed": 0,
+      "containers.start.started": 0,
+      "containers.live": 1,
+      "containers.start.failed": 0,
+      "containers.failed": 0,
+      "containers.completed": 0,
+      "containers.surplus": 0
+    },
+    "master": {
+      "containers.start.started": 0,
+      "containers.live": 0,
+      "containers.start.failed": 0,
+      "containers.active.requests": 0,
+      "containers.failed": 0,
+      "containers.completed": 0,
+      "containers.desired": 0,
+      "containers.requested": 0
+    }
+  },
+  "status": {
+  },
+  "instances": {
+    "hoya": [ "container_1393511571284_0002_01_000001" ]
+  },
+  "roles": {
+    "worker": {
+      "yarn.memory": "768",
+      "env.MALLOC_ARENA_MAX": "4",
+      "role.instances": "0",
+      "role.requested.instances": "0",
+      "role.name": "worker",
+      "role.failed.starting.instances": "0",
+      "role.actual.instances": "0",
+      "jvm.heapsize": "512M",
+      "yarn.vcores": "1",
+      "role.releasing.instances": "0",
+      "role.failed.instances": "0",
+      "app.infoport": "0"
+    },
+    "hoya": {
+      "yarn.memory": "256",
+      "env.MALLOC_ARENA_MAX": "4",
+      "role.instances": "1",
+      "role.requested.instances": "0",
+      "role.name": "hoya",
+      "role.failed.starting.instances": "0",
+      "role.actual.instances": "1",
+      "jvm.heapsize": "256M",
+      "yarn.vcores": "1",
+      "role.releasing.instances": "0",
+      "role.failed.instances": "0"
+    },
+    "master": {
+      "yarn.memory": "1024",
+      "env.MALLOC_ARENA_MAX": "4",
+      "role.instances": "0",
+      "role.requested.instances": "0",
+      "role.name": "master",
+      "role.failed.starting.instances": "0",
+      "role.actual.instances": "0",
+      "jvm.heapsize": "512M",
+      "yarn.vcores": "1",
+      "role.releasing.instances": "0",
+      "role.failed.instances": "0",
+      "app.infoport": "0"
+    }
+  },
+  "clientProperties": {
+    "fs.defaultFS": "hdfs://sandbox.hortonworks.com:8020",
+    "hbase.cluster.distributed": "true",
+    "hbase.master.info.port": "0",
+    "hbase.master.port": "0",
+    "hbase.master.startup.retainassign": "true",
+    "hbase.regionserver.hlog.tolerable.lowreplication": "1",
+    "hbase.regionserver.info.port": "0",
+    "hbase.regionserver.port": "0",
+    "hbase.rootdir": "hdfs://sandbox.hortonworks.com:8020/user/stevel/.hoya/cluster/test_cluster_lifecycle/database",
+    "hbase.tmp.dir": "./hbase-tmp",
+    "hbase.zookeeper.property.clientPort": "2181",
+    "hbase.zookeeper.quorum": "sandbox",
+    "hoya.template.origin": "hdfs://sandbox.hortonworks.com:8020/user/stevel/.hoya/cluster/test_cluster_lifecycle/snapshot/hbase-site.xml",
+    "hoya.unused.option": "1",
+    "zookeeper.znode.parent": "/yarnapps_hoya_stevel_test_cluster_lifecycle"
+  }
+}

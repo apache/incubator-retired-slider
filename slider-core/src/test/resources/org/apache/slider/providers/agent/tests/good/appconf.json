@@ -1,0 +1,11 @@
+{
+  "schema": "http://example.org/specification/v2.0.0",
+
+  "global": {
+  },
+  "components": {
+    "node": {
+      "agent.script":"agent/scripts/agent.py"
+    }
+  }
+}

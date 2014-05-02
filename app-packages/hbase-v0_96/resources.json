@@ -1,0 +1,19 @@
+{
+  "schema": "http://example.org/specification/v2.0.0",
+  "metadata": {
+  },
+  "global": {
+  },
+  "components": {
+    "HBASE_MASTER": {
+      "role.priority": "1",
+      "component.instances": "1"
+    },
+    "slider-appmaster": {
+    },
+    "HBASE_REGIONSERVER": {
+      "role.priority": "2",
+      "component.instances": "1"
+    }
+  }
+}

@@ -1,0 +1,117 @@
+<?xml version="1.0"?>
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~  or more contributor license agreements.  See the NOTICE file
+  ~  distributed with this work for additional information
+  ~  regarding copyright ownership.  The ASF licenses this file
+  ~  to you under the Apache License, Version 2.0 (the
+  ~  "License"); you may not use this file except in compliance
+  ~  with the License.  You may obtain a copy of the License at
+  ~
+  ~       http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~  Unless required by applicable law or agreed to in writing, software
+  ~  distributed under the License is distributed on an "AS IS" BASIS,
+  ~  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~  See the License for the specific language governing permissions and
+  ~  limitations under the License.
+  -->
+
+<!-- Slider test options -->
+  
+  <!--
+  This is an example of a slider XML test file; it propagates
+  to the dependent modules so can be a single place to keep
+  test information
+  -->
+<configuration>
+
+  <property>
+    <name>slider.test.timeout.seconds</name>
+    <description></description>
+    <value>600</value>
+  </property>
+
+  <property>
+    <name>slider.test.teardown.killall</name>
+    <description>Kill all hbase/accumulo, etc processes on test teardown</description>
+    <value>true</value>
+  </property>
+
+  <property>
+    <name>slider.test.thaw.wait.seconds</name>
+    <description>Time to wait for a thaw to work</description>
+    <value>60</value>
+  </property>
+
+  <property>
+    <name>slider.test.freeze.wait.seconds</name>
+    <description>Time to wait for a freeze to work</description>
+    <value>60</value>
+  </property>
+
+
+  <!-- Properties for the slider-hbase-provider only -not HBase-under-agent- -->
+  <property>
+    <name>slider.test.hbase.enabled</name>
+    <description>Flag to enable/disable HBase tests</description>
+    <value>true</value>
+  </property>
+
+  <property>
+    <name>slider.test.hbase.launch.wait.seconds</name>
+    <description>Time to wait for the HBase application to be live</description>
+    <value>180</value>
+  </property>
+  
+  <property>
+    <name>slider.test.hbase.home</name>
+    <value>/home/slider/Projects/hbase/hbase-assembly/target/hbase-0.98.1</value>
+    <description>HBASE Home</description>
+  </property>
+
+  <property>
+    <name>slider.test.hbase.tar</name>
+    <value>/home/slider/Projects/hbase/hbase-assembly/target/hbase-0.98.1-bin.tar.gz</value>
+    <description>HBASE archive URI</description>
+  </property>
+
+  <!-- Properties for the slider-accumulo-provider only -not HBase-under-agent- -->
+
+  <property>
+    <name>slider.test.accumulo.enabled</name>
+    <description>Flag to enable/disable Accumulo tests</description>
+    <value>true</value>
+  </property>
+  
+  <property>
+    <name>slider.test.accumulo.launch.wait.seconds</name>
+    <description>Time to wait for the accumulo application to be live</description>
+    <value>180</value>
+  </property>
+
+  <property>
+    <name>slider.test.accumulo.home</name>
+    <value>/home/slider/accumulo</value>
+    <description>Accumulo Home</description>
+  </property>
+
+  <property>
+    <name>slider.test.accumulo.tar</name>
+    <value>/home/slider/Projects/accumulo/accumulo-1.5.1-bin.tar</value>
+    <description>Accumulo archive URI</description>
+  </property>
+
+  <property>
+    <name>zk.home</name>
+    <value>/home/slider/zookeeper</value>
+    <description>Zookeeper home dir on target systems</description>
+  </property>
+
+  <property>
+    <name>hadoop.home</name>
+    <value>/home/slider/hadoop/</value>
+    <description>Hadoop home dir on target systems</description>
+  </property>
+  
+</configuration>

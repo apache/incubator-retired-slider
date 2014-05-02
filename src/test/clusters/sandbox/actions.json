@@ -1,0 +1,11 @@
+{
+  "confdir": {
+    "action":"mdkir",
+    "dest":"{{dest-conf-dir}}"
+  },
+  "site": {
+    "action":"expand",
+    "source":"hbase-site.xml.j2",
+    "dest":"{{dest-conf-dir}}/hbase-site.xml"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "schema": "http://example.org/specification/v2.0.0",
+
+  "global": {
+    "g1": "a",
+    "g2": "b"
+  },
+  "components": {
+    "simple": {
+    },
+    "master": {
+      "name": "m",
+      "g1": "overridden"
+
+    },
+    "worker": {
+      "name": "worker",
+      "g1": "overridden-by-worker",
+      "timeout": "1000"
+
+    }
+  }
+}

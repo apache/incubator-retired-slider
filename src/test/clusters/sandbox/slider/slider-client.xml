@@ -1,0 +1,110 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!--
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~   you may not use this file except in compliance with the License.
+  ~   You may obtain a copy of the License at
+  ~   
+  ~    http://www.apache.org/licenses/LICENSE-2.0
+  ~   
+  ~   Unless required by applicable law or agreed to in writing, software
+  ~   distributed under the License is distributed on an "AS IS" BASIS,
+  ~   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~   See the License for the specific language governing permissions and
+  ~   limitations under the License. See accompanying LICENSE file.
+  -->
+<!--
+  Properties set here are picked up in the client.
+  They are not passed to the AM
+-->
+<configuration>
+  <property>
+    <name>slider.client.resource.origin</name>
+    <value>configs/sandbox/hoya</value>
+    <description>This is just for diagnostics</description>
+  </property>
+
+  <property>
+    <name>yarn.resourcemanager.address</name>
+    <value>sandbox.hortonworks.com:8050</value>
+  </property>
+  
+  <property>
+    <name>fs.defaultFS</name>
+    <value>hdfs://sandbox.hortonworks.com:8020</value>
+  </property>
+
+  <property>
+    <name>slider.security.enabled</name>
+    <value>false</value>
+  </property>
+
+  <property>
+    <name>slider.zookeeper.quorum</name>
+    <value>sandbox:2181</value>
+  </property>
+
+  <property>
+    <name>yarn.application.classpath</name>
+    <value>
+      /etc/hadoop/conf,/usr/lib/hadoop/*,/usr/lib/hadoop/lib/*,/usr/lib/hadoop-hdfs/*,/usr/lib/hadoop-hdfs/lib/*,/usr/lib/hadoop-yarn/*,/usr/lib/hadoop-yarn/lib/*,/usr/lib/hadoop-mapreduce/*,/usr/lib/hadoop-mapreduce/lib/*
+    </value>
+  </property>
+  
+  <property>
+    <name>slider.test.hbase.tar</name>
+    <description>Path to the HBase Tar file in HDFS</description>
+    <value>hdfs://sandbox.hortonworks.com:8020/hbase-0.98.1-bin.tar.gz</value>
+  </property>
+
+
+  <property>
+    <name>slider.test.hbase.appconf</name>
+    <description>Path to the directory containing the HBase application config
+    </description>
+    <value>file://${slider.test.conf.dir}/../hbase</value>
+  </property>
+
+  <property>
+    <name>slider.test.accumulo.enabled</name>
+    <description>Flag to enable/disable Accumulo tests</description>
+    <value>true</value>
+  </property>
+
+
+  <property>
+    <name>slider.test.accumulo.tar</name>
+    <description>Path to the Accumulo Tar file in HDFS</description>
+    <value>hdfs://sandbox.hortonworks.com:8020/user/hoya/accumulo.tar</value>
+  </property>
+
+
+  <property>
+    <name>slider.test.am.restart.time</name>
+    <description>Time in millis to await an AM restart</description>
+    <value>60000</value>
+  </property>
+
+
+  <property>
+    <name>slider.test.accumulo.appconf</name>
+    <description>Path to the directory containing the Accumulo application
+      config
+    </description>
+    <value>file:///Users/stevel/Projects/Hortonworks/Projects/slider/test-configs/sandbox/accumulo</value>
+  </property>
+
+
+  <property>
+    <name>zk.home</name>
+    <value>/usr/lib/zookeeper</value>
+    <description>Zookeeper home dir on target systems</description>
+  </property>
+
+  <property>
+    <name>hadoop.home</name>
+    <value>/usr/lib/hadoop</value>
+    <description>Hadoop home dir on target systems</description>
+  </property>
+
+</configuration>

@@ -1,0 +1,31 @@
+{
+  "schema" : "http://example.org/specification/v2.0.0",
+  "metadata" : {
+  },
+  "global" : {
+  },
+  "components": {
+    "slider-appmaster": {
+    },
+    "NIMBUS": {
+      "role.priority": "1",
+      "component.instances": "1"
+    },
+    "STORM_REST_API": {
+      "role.priority": "2",
+      "component.instances": "1"
+    },
+    "STORM_UI_SERVER": {
+      "role.priority": "3",
+      "component.instances": "1"
+    },
+    "DRPC_SERVER": {
+      "role.priority": "4",
+      "component.instances": "1"
+    },
+    "SUPERVISOR": {
+      "role.priority": "5",
+      "component.instances": "1"
+    }
+  }
+}

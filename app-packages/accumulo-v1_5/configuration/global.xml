@@ -1,0 +1,94 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!--
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+-->
+
+<configuration>
+  <property>
+    <name>app_log_dir</name>
+    <value>/var/log/accumulo</value>
+    <description>Log Directories for Accumulo.</description>
+  </property>
+  <property>
+    <name>app_pid_dir</name>
+    <value>/var/run/accumulo</value>
+    <description>Pid Directories for Accumulo.</description>
+  </property>
+  <property>
+    <name>tserver_heapsize</name>
+    <value>128m</value>
+    <description>TServer heap size.</description>
+  </property>
+  <property>
+    <name>master_heapsize</name>
+    <value>128m</value>
+    <description>Master Heap Size</description>
+  </property>
+  <property>
+    <name>monitor_heapsize</name>
+    <value>64m</value>
+    <description>Monitor Heap Size</description>
+  </property>
+  <property>
+    <name>gc_heapsize</name>
+    <value>64m</value>
+    <description>GC Heap Size</description>
+  </property>
+  <property>
+    <name>other_heapsize</name>
+    <value>128m</value>
+    <description>Other Heap Size</description>
+  </property>
+  <property>
+    <name>accumulo_hdfs_root_dir</name>
+    <value>/apps/accumulo/data</value>
+    <description>Accumulo Relative Path to HDFS.</description>
+  </property>
+  <property>
+    <name>accumulo_conf_dir</name>
+    <value>/etc/accumulo</value>
+    <description>Config Directory for Accumulo.</description>
+  </property>
+  <property>
+    <name>app_user</name>
+    <value>yarn</value>
+    <description>Accumulo User Name.</description>
+  </property>
+  <property>
+    <name>hadoop_prefix</name>
+    <value>/usr/lib/hadoop</value>
+    <description>Hadoop directory.</description>
+  </property>
+  <property>
+    <name>hadoop_conf_dir</name>
+    <value>/etc/hadoop/conf</value>
+    <description>Hadoop configuration directory.</description>
+  </property>
+  <property>
+    <name>zookeeper_home</name>
+    <value>/usr/lib/zookeeper</value>
+    <description>Zookeeper directory.</description>
+  </property>
+  <property>
+    <name>accumulo_instance_name</name>
+    <value>accumulo-instance</value>
+    <description>Accumulo Instance Name.</description>
+  </property>
+</configuration>
