@@ -43,6 +43,8 @@ import org.apache.slider.providers.AbstractProviderService;
 import org.apache.slider.providers.ProviderCore;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
+import org.apache.slider.providers.agent.application.metadata.Metainfo;
+import org.apache.slider.providers.agent.application.metadata.MetainfoParser;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentCommandType;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
@@ -61,6 +63,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
@@ -215,6 +218,15 @@ public class AgentProviderService extends AbstractProviderService implements
                               role,
                               container.getId().toString(),
                               getClusterInfoPropertyValue(OptionKeys.APPLICATION_NAME)));
+  }
+
+  private Metainfo getApplicationMetainfo(SliderFileSystem fileSystem,
+                                      String appDef) throws IOException {
+    InputStream metainfoStream = SliderUtils.getApplicationResourceInputStream(
+        fileSystem.getFileSystem(), new Path(appDef), "metainfo.xml");
+    Metainfo metainfo = new MetainfoParser().parse(metainfoStream);
+
+    return metainfo;
   }
 
   protected void setRoleHostMapping(String role, String host) {

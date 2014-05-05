@@ -18,8 +18,11 @@
 
 package org.apache.slider.common.tools;
 
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
+import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
@@ -54,9 +57,11 @@ import org.apache.zookeeper.server.util.KerberosUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.InetSocketAddress;
@@ -1317,7 +1322,7 @@ public final class SliderUtils {
   /**
    * Add a subpath to an existing URL. This extends
    * the path, inserting a / between all entries
-   * if needed. 
+   * if needed.
    * @param base base path/URL
    * @param path subpath
    * @return base+"/"+subpath
@@ -1335,7 +1340,6 @@ public final class SliderUtils {
 
     return fullpath.toString();
   }
-
 
   /**
    * Callable for async/scheduled halt
@@ -1375,6 +1379,31 @@ public final class SliderUtils {
     public String toString() {
       return appReportToString(report, "\n");
     }
+  }
+
+  public static InputStream getApplicationResourceInputStream(FileSystem fs,
+                                                       Path appPath,
+                                                       String entry)
+      throws IOException {
+    InputStream is = null;
+    FSDataInputStream appStream = fs.open(appPath);
+    ZipArchiveInputStream zis = new ZipArchiveInputStream(appStream);
+    ZipArchiveEntry zipEntry;
+    boolean done = false;
+    while (!done && (zipEntry = zis.getNextZipEntry()) != null) {
+      if (entry.equals(zipEntry.getName())) {
+        int size = (int) zipEntry.getSize();
+        byte[] content = new byte[size];
+        int offset = 0;
+        while (offset < size) {
+          offset += zis.read(content, offset, size - offset);
+        }
+        is = new ByteArrayInputStream(content);
+        done = true;
+      }
+    }
+
+    return is;
   }
 
 }
