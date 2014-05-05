@@ -194,8 +194,6 @@ public class RegistryBinderService<Payload> extends CuratorService {
     }
     return null;
   }
-
-  
   
   /**
    * List all the instances

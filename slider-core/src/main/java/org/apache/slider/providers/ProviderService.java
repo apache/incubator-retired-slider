@@ -34,7 +34,7 @@ import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
 import org.apache.slider.server.services.curator.RegistryBinderService;
-import org.apache.slider.server.services.docstore.utility.EventCallback;
+import org.apache.slider.server.services.utility.EventCallback;
 
 import java.io.File;
 import java.io.IOException;

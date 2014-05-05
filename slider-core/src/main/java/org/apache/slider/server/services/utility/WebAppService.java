@@ -16,50 +16,54 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.services.docstore.utility;
+package org.apache.slider.server.services.utility;
 
-import org.apache.hadoop.ipc.Server;
-import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.service.AbstractService;
-
-import java.net.InetSocketAddress;
+import org.apache.hadoop.yarn.webapp.WebApp;
 
 /**
- * A YARN service that maps the start/stop lifecycle of an RPC server
- * to the YARN service lifecycle
+ * Contains a webapp reference and stops it in teardown if non-null
+ * 
+ * It does not start the application.
+ * Access to the field is not synchronized across threads; it is the
+ * responsibility of the caller.
  */
-public class RpcService extends AbstractService {
+public class WebAppService<T extends WebApp> extends AbstractService {
 
-  /** RPC server*/
-  private final Server server;
+  private T webApp;
 
-  /**
-   * Construct an instance
-   * @param server server to manger
-   */
-  public RpcService(Server server) {
-    super("RpcService");
-    this.server = server;
+  public WebAppService(String name) {
+    super(name);
   }
 
-  public Server getServer() {
-    return server;
+  public WebAppService(String name, T app) {
+    super(name);
+    webApp = app;
   }
 
-  public InetSocketAddress getConnectAddress() {
-    return NetUtils.getConnectAddress(server);
+  public T getWebApp() {
+    return webApp;
   }
+
+  public void setWebApp(T webApp) {
+    this.webApp = webApp;
+  }
+
 
   @Override
   protected void serviceStart() throws Exception {
-    super.serviceStart();
-    server.start();
+
   }
 
+  /**
+   * Stop operation stops the webapp; sets the reference to null
+   * @throws Exception
+   */
   @Override
   protected void serviceStop() throws Exception {
-    if (server != null) {
-      server.stop();
+    if (webApp != null) {
+      webApp.stop();
+      webApp = null;
     }
   }
 }

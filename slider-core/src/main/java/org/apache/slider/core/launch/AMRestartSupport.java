@@ -22,7 +22,7 @@ import org.apache.hadoop.yarn.api.protocolrecords.RegisterApplicationMasterRespo
 import org.apache.hadoop.yarn.api.protocolrecords.impl.pb.RegisterApplicationMasterResponsePBImpl;
 import org.apache.hadoop.yarn.api.records.ApplicationSubmissionContext;
 import org.apache.hadoop.yarn.api.records.Container;
-import org.apache.slider.server.services.docstore.utility.SliderServiceUtils;
+import org.apache.slider.server.services.utility.SliderServiceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

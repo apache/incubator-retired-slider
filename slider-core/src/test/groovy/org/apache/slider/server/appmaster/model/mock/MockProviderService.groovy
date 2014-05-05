@@ -38,7 +38,7 @@ import org.apache.slider.providers.ProviderService
 import org.apache.slider.server.appmaster.state.StateAccessForProviders
 import org.apache.slider.server.appmaster.web.rest.agent.*
 import org.apache.slider.server.services.curator.RegistryBinderService
-import org.apache.slider.server.services.docstore.utility.EventCallback
+import org.apache.slider.server.services.utility.EventCallback
 
 class MockProviderService implements ProviderService {
 

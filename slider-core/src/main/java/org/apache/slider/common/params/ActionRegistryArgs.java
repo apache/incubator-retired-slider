@@ -20,11 +20,21 @@ package org.apache.slider.common.params;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import org.apache.slider.common.SliderKeys;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.ErrorStrings;
 
 import java.io.File;
 
+
+/**
+ * Registry actions
+ * 
+ * --instance {app name}, if  a / is in it, refers underneath?
+ * --dest {destfile}
+ * --list : list instances of slider service
+ * --listfiles 
+ */
 @Parameters(commandNames = {SliderActions.ACTION_REGISTRY},
             commandDescription = SliderActions.DESCRIBE_ACTION_REGISTRY)
 
@@ -43,27 +53,17 @@ public class ActionRegistryArgs extends AbstractActionArgs {
   public int getMinParams() {
     return 0;
   }
-
-  //--format 
-  @Parameter(names = ARG_FORMAT,
-      description = "Format for a response: [text|xml|json|properties]")
-  public String format = FORMAT_XML;
-
-
-  @Parameter(names = {ARG_DEST},
-      description = "Output destination")
-  public File dest;
-
+  
   @Parameter(names = {ARG_LIST}, 
       description = "list services")
-  public String list;
+  public boolean list;
 
   @Parameter(names = {ARG_LISTCONF}, 
       description = "list configurations")
-  public String listConf;
+  public boolean listConf;
 
   @Parameter(names = {ARG_GETCONF},
-      description = "get files")
+      description = "get configuration")
   public String getConf;
 
 
@@ -75,6 +75,38 @@ public class ActionRegistryArgs extends AbstractActionArgs {
       description = "get files")
   public String getFiles;
 
+
+  //--format 
+  @Parameter(names = ARG_FORMAT,
+      description = "Format for a response: [text|xml|json|properties]")
+  public String format;
+
+
+  @Parameter(names = {ARG_DEST},
+      description = "Output destination")
+  public File dest;
+
+  @Parameter(names = {ARG_NAME},
+      description = "name of an instance")
+  public String name;
+
+  @Parameter(names = {ARG_SERVICETYPE},
+      description = "optional service type")
+  public String serviceType = SliderKeys.APP_TYPE;
+
+
+  @Parameter(names = {ARG_VERBOSE},
+      description = "verbose output")
+  public boolean verbose;
+
+  @Parameter(names = {ARG_INTERNAL},
+      description = "fetch internal registry entries")
+  public boolean internal;
+  
+  /**
+   * validate health of all the different operations
+   * @throws BadCommandArgumentsException
+   */
   @Override
   public void validate() throws BadCommandArgumentsException {
     super.validate();
@@ -89,12 +121,49 @@ public class ActionRegistryArgs extends AbstractActionArgs {
     }
     if (dest != null && (lists > 0 || set == 0)) {
       throw new BadCommandArgumentsException("Argument " + ARG_DEST
-                           + " is only supported on 'get' operations");
+           + " is only supported on 'get' operations");
+    }
+    if (is(format) && !is(getConf)) {
+      throw new BadCommandArgumentsException("Argument " + ARG_FORMAT
+           + " is only supported by " + ARG_GETCONF);
+
+    }
+    if (!list && !is(name)) {
+      throw new BadCommandArgumentsException("Argument " + ARG_NAME
+           +" missing");
+
     }
   }
   
-  @SuppressWarnings("VariableNotUsedInsideIf")
   private int s(String arg) {
-    return arg != null ? 1 : 0;
+    return is(arg) ? 1 : 0;
+  }
+
+  private boolean is(String arg) {
+    return arg != null;
+  }
+
+  private int s(boolean arg) {
+    return arg ? 1 : 0;
+  }
+
+
+  @Override
+  public String toString() {
+    final StringBuilder sb =
+        new StringBuilder("ActionRegistryArgs{");
+    sb.append("list=").append(list);
+    sb.append(", listConf=").append(listConf);
+    sb.append(", getConf='").append(getConf).append('\'');
+    sb.append(", listFiles='").append(listFiles).append('\'');
+    sb.append(", getFiles='").append(getFiles).append('\'');
+    sb.append(", format='").append(format).append('\'');
+    sb.append(", dest=").append(dest);
+    sb.append(", name='").append(name).append('\'');
+    sb.append(", serviceType='").append(serviceType).append('\'');
+    sb.append(", verbose=").append(verbose);
+    sb.append(", internal=").append(internal);
+    sb.append('}');
+    return sb.toString();
   }
 }

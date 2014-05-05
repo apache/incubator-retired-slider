@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.services.docstore.utility;
+package org.apache.slider.server.services.utility;
 
 
 import org.apache.hadoop.yarn.conf.YarnConfiguration;

@@ -32,9 +32,9 @@ import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
 import org.apache.slider.server.services.curator.RegistryBinderService;
-import org.apache.slider.server.services.docstore.utility.ForkedProcessService;
-import org.apache.slider.server.services.docstore.utility.Parent;
-import org.apache.slider.server.services.docstore.utility.SequenceService;
+import org.apache.slider.server.services.utility.ForkedProcessService;
+import org.apache.slider.server.services.utility.Parent;
+import org.apache.slider.server.services.utility.SequenceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

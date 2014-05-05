@@ -35,6 +35,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 
+/**
+ * This publishes configuration sets
+ */
 public class PublisherResource {
   protected static final Logger log =
       LoggerFactory.getLogger(PublisherResource.class);

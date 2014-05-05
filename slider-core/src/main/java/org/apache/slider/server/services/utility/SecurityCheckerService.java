@@ -16,24 +16,25 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.services.docstore.utility;
+package org.apache.slider.server.services.utility;
 
-import org.apache.hadoop.service.Service;
-
-import java.util.List;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.service.AbstractService;
+import org.apache.slider.common.tools.SliderUtils;
 
 /**
- * Interface that services with public methods to manipulate child services
- * should implement
+ * A security checker service, which validates that the service
+ * is running with security in its init() operation.
  */
-public interface Parent extends Service {
+public class SecurityCheckerService extends AbstractService {
 
-  void addService(Service service);
+  public SecurityCheckerService() {
+    super("Security Checker");
+  }
 
-  /**
-   * Get an unmodifiable list of services
-   * @return a list of child services at the time of invocation -
-   * added services will not be picked up.
-   */
-  List<Service> getServices();
+  @Override
+  protected void serviceInit(Configuration conf) throws Exception {
+    super.serviceInit(conf);
+    SliderUtils.initProcessSecurity(conf);
+  }
 }

@@ -55,7 +55,7 @@ import org.apache.slider.server.appmaster.web.rest.agent.RegistrationResponse;
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationStatus;
 import org.apache.slider.server.appmaster.web.rest.agent.StatusCommand;
 import org.apache.slider.server.services.curator.CuratorServiceInstance;
-import org.apache.slider.server.services.docstore.utility.EventCallback;
+import org.apache.slider.server.services.utility.EventCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

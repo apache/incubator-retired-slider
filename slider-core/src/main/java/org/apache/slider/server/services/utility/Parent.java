@@ -16,10 +16,24 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.services.docstore.utility;
+package org.apache.slider.server.services.utility;
 
-public interface EventCallback {
-  
-  public void eventCallbackEvent();
-  
+import org.apache.hadoop.service.Service;
+
+import java.util.List;
+
+/**
+ * Interface that services with public methods to manipulate child services
+ * should implement
+ */
+public interface Parent extends Service {
+
+  void addService(Service service);
+
+  /**
+   * Get an unmodifiable list of services
+   * @return a list of child services at the time of invocation -
+   * added services will not be picked up.
+   */
+  List<Service> getServices();
 }

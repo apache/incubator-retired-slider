@@ -44,7 +44,7 @@ public class PublishedConfiguration {
 
   public String description;
 
-  public int elements;
+  public int size;
   
   public long updated;
   

@@ -45,7 +45,15 @@ public class ServiceInstanceData implements Serializable {
    */
   public RegistryView externalView = new RegistryView();
 
-
+  @Override
+  public String toString() {
+    final StringBuilder sb =
+        new StringBuilder("ServiceInstanceData{");
+    sb.append("name='").append(name).append('\'');
+    sb.append(", id='").append(id).append('\'');
+    sb.append('}');
+    return sb.toString();
+  }
 }
 
 
