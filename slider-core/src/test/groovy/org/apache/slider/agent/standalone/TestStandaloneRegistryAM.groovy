@@ -30,6 +30,7 @@ import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.params.ActionRegistryArgs
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.persist.JsonSerDeser
+import org.apache.slider.core.registry.docstore.ConfigFormat
 import org.apache.slider.core.registry.docstore.PublishedConfigSet
 import org.apache.slider.core.registry.docstore.PublishedConfiguration
 import org.apache.slider.core.registry.info.CustomRegistryConstants
@@ -232,6 +233,8 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     assert 0 == client.actionRegistry(registryArgs)
 
   
+    
+    
     // listconf --internal
     registryArgs.list = false;
     registryArgs.listConf = true
@@ -243,6 +246,27 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     } catch (FileNotFoundException fnfe) {
       //expected
     }
+
+    registryArgs.list = false;
+    registryArgs.listConf = false
+    registryArgs.internal = false
+    registryArgs.format = "properties"
+    registryArgs.getConf = YARN_SITE
+    
+    describe registryArgs.toString()
+    assert 0 == client.actionRegistry(registryArgs)
+
+    File outputDir = new File("target/test_standalone_registry_am/output")
+    outputDir.mkdirs()
+
+    registryArgs.dest = outputDir
+    describe registryArgs.toString()
+    assert 0 == client.actionRegistry(registryArgs)
+    assert new File(outputDir,YARN_SITE + ".properties").exists()
+
+    registryArgs.format = "xml"
+    assert 0 == client.actionRegistry(registryArgs)
+    assert new File(outputDir,YARN_SITE + ".xml").exists()
 
 
 

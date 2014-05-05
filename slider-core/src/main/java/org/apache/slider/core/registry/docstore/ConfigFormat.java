@@ -18,14 +18,14 @@
 
 package org.apache.slider.core.registry.docstore;
 
-public enum ConfigFormats {
+public enum ConfigFormat {
 
   JSON("json"),
   PROPERTIES("properties"),
   XML("xml"),
-  YAML("yaml");
-
-  ConfigFormats(String suffix) {
+//  YAML("yaml");
+  ;
+  ConfigFormat(String suffix) {
     this.suffix = suffix;
   }
 
@@ -34,5 +34,24 @@ public enum ConfigFormats {
   public String getSuffix() {
     return suffix;
   }
-  
+
+
+  @Override
+  public String toString() {
+    return suffix;
+  }
+
+  /**
+   * Get a matching format or null
+   * @param type
+   * @return
+   */
+  public static ConfigFormat resolve(String type) {
+    for (ConfigFormat format: values()) {
+      if (format.getSuffix().equals(type)) {
+        return format;
+      }
+    }
+    return null;
+  }
 }

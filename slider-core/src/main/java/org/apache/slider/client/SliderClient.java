@@ -84,8 +84,10 @@ import org.apache.slider.core.main.RunService;
 import org.apache.slider.core.persist.ConfPersister;
 import org.apache.slider.core.persist.LockAcquireFailedException;
 import org.apache.slider.core.registry.YARNRegistryClient;
+import org.apache.slider.core.registry.docstore.ConfigFormat;
 import org.apache.slider.core.registry.docstore.PublishedConfigSet;
 import org.apache.slider.core.registry.docstore.PublishedConfiguration;
+import org.apache.slider.core.registry.docstore.PublishedConfigurationOutputter;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.core.registry.retrieve.RegistryRetriever;
 import org.apache.slider.core.registry.zk.ZKPathBuilder;
@@ -1962,6 +1964,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       // get a configuration
       PublishedConfiguration publishedConfiguration =
           actionRegistryGetConfig(registryArgs);
+      outputConfig(publishedConfiguration, registryArgs);
       
     } else {
       exitCode = EXIT_FALSE;
@@ -2040,19 +2043,32 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
   
   private void outputConfig(PublishedConfiguration published,
-      ActionRegistryArgs registryArgs) {
+      ActionRegistryArgs registryArgs) throws
+      BadCommandArgumentsException,
+      IOException {
     // decide whether or not to print
-    boolean print = registryArgs.dest == null;
     String entry = registryArgs.getConf;
     String format = registryArgs.format;
-    File destFile;
+    ConfigFormat configFormat = ConfigFormat.resolve(format);
+    if (configFormat == null) {
+      throw new BadCommandArgumentsException(
+          "Unknown/Unsupported format %s ", format);
+    }
+    PublishedConfigurationOutputter outputter =
+        PublishedConfigurationOutputter.createOutputter(configFormat,
+            published);
+    boolean print = registryArgs.dest == null;
     if (!print) {
+      File destFile;
       destFile = registryArgs.dest;
       if (destFile.isDirectory()) {
         // creating it under a directory
         destFile = new File(destFile, entry + "." + format);
       }
       log.info("Destination path: {}", destFile);
+      outputter.save(destFile);
+    } else {
+      print(outputter.asString());
     }
     
   }
