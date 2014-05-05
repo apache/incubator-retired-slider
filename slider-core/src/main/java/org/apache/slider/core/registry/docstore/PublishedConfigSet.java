@@ -58,4 +58,13 @@ public class PublishedConfigSet {
     keys.addAll(configurations.keySet());
     return keys;
   }
+
+  public PublishedConfigSet shallowCopy() {
+    PublishedConfigSet that = new PublishedConfigSet();
+    for (Map.Entry<String, PublishedConfiguration> entry : configurations
+        .entrySet()) {
+      that.put(entry.getKey(), entry.getValue().shallowCopy());
+    }
+    return that;
+  }
 }

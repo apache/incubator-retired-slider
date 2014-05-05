@@ -118,7 +118,7 @@ class TestLocalRegistry {
   @Test
   public void testNamingPolicy() throws Throwable {
 
-    String hobbitName = RegistryNaming.createRegistryName("hobbiton",
+    String hobbitName = RegistryNaming.createRegistryServiceType("hobbiton",
         "bilbo",
         SliderKeys.APP_TYPE);
     String hobbitId =
@@ -127,7 +127,7 @@ class TestLocalRegistry {
             "bilbo",
             SliderKeys.APP_TYPE,
             1);
-    String mordorName = RegistryNaming.createRegistryName("mordor",
+    String mordorName = RegistryNaming.createRegistryServiceType("mordor",
         "bilbo",
         SliderKeys.APP_TYPE);
     String mordorId =

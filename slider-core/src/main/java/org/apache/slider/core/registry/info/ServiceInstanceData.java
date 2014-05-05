@@ -30,7 +30,7 @@ import java.io.Serializable;
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 public class ServiceInstanceData implements Serializable {
 
-  public String name;
+  public String serviceType;
   public String id;
   public long registrationTimeUTC;
 
@@ -49,8 +49,8 @@ public class ServiceInstanceData implements Serializable {
   public String toString() {
     final StringBuilder sb =
         new StringBuilder("ServiceInstanceData{");
-    sb.append("name='").append(name).append('\'');
     sb.append(", id='").append(id).append('\'');
+    sb.append("serviceType='").append(serviceType).append('\'');
     sb.append('}');
     return sb.toString();
   }

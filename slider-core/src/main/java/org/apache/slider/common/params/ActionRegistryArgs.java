@@ -24,6 +24,8 @@ import org.apache.slider.common.SliderKeys;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.ErrorStrings;
 
+import static org.apache.slider.common.params.SliderActions.ACTION_REGISTRY;
+import static org.apache.slider.common.params.SliderActions.DESCRIBE_ACTION_REGISTRY;
 import java.io.File;
 
 
@@ -35,13 +37,13 @@ import java.io.File;
  * --list : list instances of slider service
  * --listfiles 
  */
-@Parameters(commandNames = {SliderActions.ACTION_REGISTRY},
-            commandDescription = SliderActions.DESCRIBE_ACTION_REGISTRY)
+@Parameters(commandNames = {ACTION_REGISTRY},
+            commandDescription = DESCRIBE_ACTION_REGISTRY)
 
 public class ActionRegistryArgs extends AbstractActionArgs {
   @Override
   public String getActionName() {
-    return SliderActions.ACTION_REGISTRY;
+    return ACTION_REGISTRY;
   }
 
 
@@ -147,23 +149,40 @@ public class ActionRegistryArgs extends AbstractActionArgs {
     return arg ? 1 : 0;
   }
 
+  private String iff(String arg, boolean val) {
+    return val ? (arg + " "): "";
+  }
+
+  private String iff (String arg, String val) {
+    if (is(val)) {
+      return arg + " " + val + " ";
+    } else {
+      return "";
+    }
+  }
 
   @Override
   public String toString() {
     final StringBuilder sb =
-        new StringBuilder("ActionRegistryArgs{");
-    sb.append("list=").append(list);
-    sb.append(", listConf=").append(listConf);
-    sb.append(", getConf='").append(getConf).append('\'');
-    sb.append(", listFiles='").append(listFiles).append('\'');
-    sb.append(", getFiles='").append(getFiles).append('\'');
-    sb.append(", format='").append(format).append('\'');
-    sb.append(", dest=").append(dest);
-    sb.append(", name='").append(name).append('\'');
-    sb.append(", serviceType='").append(serviceType).append('\'');
-    sb.append(", verbose=").append(verbose);
-    sb.append(", internal=").append(internal);
-    sb.append('}');
+        new StringBuilder(ACTION_REGISTRY);
+    sb.append(iff(ARG_LIST, list));
+    sb.append(iff(ARG_LISTCONF, listConf));
+    sb.append(iff(ARG_LISTFILES, listFiles));
+    sb.append(iff(ARG_GETCONF, listFiles));
+    sb.append(iff(ARG_GETFILES, listFiles));
+
+    sb.append(iff(ARG_NAME, name));
+    sb.append(iff(ARG_SERVICETYPE, serviceType));
+
+
+    sb.append(iff(ARG_VERBOSE, verbose));
+    sb.append(iff(ARG_INTERNAL, internal));
+
+    if (dest != null) {
+      sb.append(iff(ARG_DEST, dest.toString()));
+    }
+    sb.append(iff(ARG_FORMAT, format));
+
     return sb.toString();
   }
 }

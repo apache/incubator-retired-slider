@@ -22,6 +22,9 @@ import com.beust.jcommander.Strings;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
+import com.sun.jersey.api.client.config.ClientConfig;
+import com.sun.jersey.api.client.config.DefaultClientConfig;
+import com.sun.jersey.api.json.JSONConfiguration;
 import org.apache.slider.core.exceptions.ExceptionConverter;
 import org.apache.slider.core.registry.docstore.PublishedConfigSet;
 import org.apache.slider.core.registry.info.RegistryView;
@@ -45,7 +48,11 @@ public class RegistryRetriever {
   private static final Client jerseyClient;
   
   static {
-    jerseyClient = Client.create();
+    ClientConfig clientConfig = new DefaultClientConfig();
+    clientConfig.getFeatures().put(
+        JSONConfiguration.FEATURE_POJO_MAPPING,
+        Boolean.TRUE);
+    jerseyClient = Client.create(clientConfig);
     jerseyClient.setFollowRedirects(true);
   }
 
@@ -90,11 +97,11 @@ public class RegistryRetriever {
       throw new FileNotFoundException("No configuration URL at "
                                       + destination(external) + " view");
     }
-    WebResource webResource = jerseyClient.resource(confURL);
     try {
-      PublishedConfigSet configSet =
-          webResource.type(MediaType.APPLICATION_JSON)
-                     .get(PublishedConfigSet.class);
+      WebResource webResource = jerseyClient.resource(confURL);
+      webResource.type(MediaType.APPLICATION_JSON);
+      log.debug("GET {}", confURL);
+      PublishedConfigSet configSet = webResource.get(PublishedConfigSet.class);
       return configSet;
     } catch (UniformInterfaceException e) {
       throw ExceptionConverter.convertJerseyException(confURL, e);
@@ -105,4 +112,6 @@ public class RegistryRetriever {
   public String toString() {
     return super.toString() + " - " + instance;
   }
+  
+  
 }

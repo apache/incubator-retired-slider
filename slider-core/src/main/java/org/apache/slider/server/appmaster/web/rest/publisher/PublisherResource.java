@@ -65,8 +65,8 @@ public class PublisherResource {
     init(res, uriInfo);
 
     PublishedConfigSet publishedConfigSet = getContent();
-    log.debug("number of avaiable configurations: {}", publishedConfigSet.size());
-    return publishedConfigSet;
+    log.debug("number of available configurations: {}", publishedConfigSet.size());
+    return publishedConfigSet.shallowCopy();
   }
 
   private void logRequest(UriInfo uriInfo) {

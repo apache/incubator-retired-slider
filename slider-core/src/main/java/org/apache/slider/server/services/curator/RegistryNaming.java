@@ -22,9 +22,9 @@ import java.util.Locale;
 
 public class RegistryNaming {
 
-  public static String createRegistryName(String instanceName,
-                                          String userName,
-                                          String serviceName) {
+  public static String createRegistryServiceType(String instanceName,
+      String userName,
+      String serviceName) {
     return serviceName;
   }
 

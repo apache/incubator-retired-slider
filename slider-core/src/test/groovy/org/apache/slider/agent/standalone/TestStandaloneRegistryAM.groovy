@@ -175,8 +175,9 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     def externalConf = retriever.getConfigurations(true)
     externalConf.keys().each { String key ->
       def config = externalConf.get(key)
-      log.info "$key -- ${config.description} -- size ${config.size}"
+      log.info "$key -- ${config.description}"
     }
+    assert externalConf["yarn-site.xml"]
 
     describe "Internal configurations"
     assert !retriever.hasConfigurations(false)
@@ -186,17 +187,37 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     } catch (FileNotFoundException fnfe) {
       //expected
     }
-    
+
+
     // retrieval via API
     ActionRegistryArgs registryArgs = new ActionRegistryArgs()
-    registryArgs.name = amInstance;
+    registryArgs.name = serviceInstanceData.id;
     registryArgs.verbose = true
-    registryArgs.list = true;
-    assert client.actionRegistry(registryArgs)
 
+    // list
+    registryArgs.list = true;
+    describe registryArgs.toString()
+    assert 0 == client.actionRegistry(registryArgs)
+
+    // listconf 
     registryArgs.list = false;
     registryArgs.listConf = true
-    assert client.actionRegistry(registryArgs)
+    describe registryArgs.toString() 
+    
+    assert 0 == client.actionRegistry(registryArgs)
+
+  
+    // listconf --internal
+    registryArgs.list = false;
+    registryArgs.listConf = true
+    registryArgs.internal = true
+    describe registryArgs.toString()
+    try {
+      assert 0 == client.actionRegistry(registryArgs)
+      fail("expected a failure")
+    } catch (FileNotFoundException fnfe) {
+      //expected
+    }
 
 
 

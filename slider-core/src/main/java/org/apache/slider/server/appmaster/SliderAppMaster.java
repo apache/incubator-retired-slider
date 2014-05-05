@@ -699,7 +699,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     URL amWeb = new URL(appMasterTrackingUrl);
     String serviceName = SliderKeys.APP_TYPE;
     int id = appid.getId();
-    String appRegistryName = RegistryNaming.createRegistryName(instanceName,
+    String appServiceType = RegistryNaming.createRegistryServiceType(
+        instanceName,
         service_user_name,
         serviceName);
     String registryId =
@@ -716,6 +717,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     appState.getPublishedConfigurations().put("yarn-site.xml", pubconf);
 
     ServiceInstanceData instanceData = new ServiceInstanceData();
+    instanceData.id = registryId;
+    instanceData.serviceType = appServiceType;
 
     RegisteredEndpoint webUI =
       new RegisteredEndpoint(amWeb, "Application Master Web UI");
@@ -772,7 +775,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
 
     registry.register(
-      appRegistryName,
+      appServiceType,
       registryId,
       amWeb,
       instanceData);

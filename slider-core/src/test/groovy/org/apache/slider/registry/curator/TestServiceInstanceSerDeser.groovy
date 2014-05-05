@@ -73,7 +73,7 @@ class TestServiceInstanceSerDeser {
     builder.address(null).id("testPayload").name("").port(0).uriSpec(null)
 
     ServiceInstanceData data = new ServiceInstanceData()
-    data.name = "testPayload"
+    data.serviceType = "testPayload"
     data.externalView.documentsURL = "http://documents"
     builder.payload(data)
 

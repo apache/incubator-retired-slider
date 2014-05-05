@@ -59,8 +59,17 @@ public class PublishedConfiguration {
     return updated;
   }
 
-  @JsonIgnore
   private Map<String, String> values = new HashMap<String, String>();
+
+  /**
+   * Is the configuration empty. This means either that it has not
+   * been given any values, or it is stripped down copy set down over the
+   * wire.
+   * @return
+   */
+  public boolean isEmpty() {
+    return values.isEmpty();
+  }
 
   /**
    * Set the values from an iterable (this includes a Hadoop Configuration
@@ -68,7 +77,6 @@ public class PublishedConfiguration {
    * Any existing value set is discarded
    * @param entries entries to put
    */
-  @JsonIgnore
   public void putValues(Iterable<Map.Entry<String, String>> entries) {
     values = new HashMap<String, String>();
     for (Map.Entry<String, String> entry : entries) {
@@ -115,5 +123,20 @@ public class PublishedConfiguration {
     ObjectMapper mapper = new ObjectMapper();
     String json = mapper.writeValueAsString(values);
     return json;
+  }
+
+
+  /**
+   * This makes a copy without the nested content -so is suitable
+   * for returning as part of the list of a parent's values
+   * @return the copy
+   */
+  public PublishedConfiguration shallowCopy() {
+    PublishedConfiguration that = new PublishedConfiguration();
+    that.description = this.description;
+    that.size = this.size;
+    that.updated = this.updated;
+    that.updatedTime = this.updatedTime;
+    return that;
   }
 }
