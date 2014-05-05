@@ -26,7 +26,7 @@
     Slider is designed to deploy existing applications onto a YARN cluster without
     rewriting the application to be YARN-ready.
   </description>
-  <url>https://github.com/hortonworks/slider/tree/master/</url>
+  <url>http://incubator.apache.org/slider/</url>
   <modules>
     <module>slider-core</module>
     <module>slider-agent</module>
@@ -47,11 +47,11 @@
 
 
   <scm>
-    <url>https://github.com/hortonworks/slider</url>
-    <connection>scm:git:git://github.com/hortonworks/slider.git
+    <url>https://svn.apache.org/repos/asf/incubator/slider/</url>
+    <connection>scm:svn:https://svn.apache.org/repos/asf/incubator/slider/
     </connection>
     <developerConnection>
-      scm:git:git@github.com:hortonworks/slider.git
+      scm:svn:https://svn.apache.org/repos/asf/incubator/slider/
     </developerConnection>
   </scm>
   
@@ -119,11 +119,28 @@
     <site>
       <id>slider.website</id>
       <name>Slider Website</name>
-      <url>file:///tmp/slider/public_html/</url>
+      <url>http://incubator.apache.org/slider/</url>
     </site>
-    <downloadUrl>https://github.com/hortonworks/slider/releases</downloadUrl>
+    <downloadUrl>https://svn.apache.org/repos/asf/incubator/slider</downloadUrl>
   </distributionManagement>
   
+  <mailingLists>
+    <mailingList>
+      <name>Developers Mailing List</name>
+      <post>slider-dev@incubator.apache.org</post>
+      <subscribe>slider-dev-subscribe@incubator.apache.org</subscribe>
+      <unsubscribe>slider-dev-unsubscribe@incubator.apache.org</unsubscribe>
+      <archive>http://mail-archives.apache.org/mod_mbox/incubator-slider-dev/</archive>
+    </mailingList>    
+    <mailingList>
+      <name>Commits Mailing List</name>
+      <post>slider-commits@incubator.apache.org</post>
+      <subscribe>slider-commits-subscribe@incubator.apache.org</subscribe>
+      <unsubscribe>slider-commits-unsubscribe@incubator.apache.org</unsubscribe>
+      <archive>http://mail-archives.apache.org/mod_mbox/incubator-slider-commits/</archive>
+    </mailingList>    
+  </mailingLists>
+
   <properties>
 
     
@@ -320,6 +337,7 @@
             <exclude>**/slaves</exclude>
             <exclude>**/httpfs-signature.secret</exclude>
             <exclude>**/dfs.exclude</exclude>
+            <exclude>**/*.iml</exclude>
           </excludes>
         </configuration>
       </plugin>
