@@ -189,7 +189,7 @@ need to be changed
       <value>60000</value>
     </property>
             
-     <property>
+    <property>
       <name>slider.test.timeout.millisec</name>
       <description>Time out in milliseconds before a test is considered to have failed.
       There are some maven properties which also define limits and may need adjusting</description>
@@ -339,6 +339,7 @@ persistent HDFS cluster.
 1. Use the special property `slider.test.conf.dir` that is set to the path
 of the directory, and which can then be used to create an absolute path
 from paths relative to the configuration dir:
+
 
     <property>
       <name>slider.test.hbase.appconf</name>
