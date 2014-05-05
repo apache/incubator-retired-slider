@@ -25,8 +25,10 @@ import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.api.json.JSONConfiguration;
+import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.ExceptionConverter;
 import org.apache.slider.core.registry.docstore.PublishedConfigSet;
+import org.apache.slider.core.registry.docstore.PublishedConfiguration;
 import org.apache.slider.core.registry.info.RegistryView;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.slf4j.Logger;
@@ -98,8 +100,7 @@ public class RegistryRetriever {
                                       + destination(external) + " view");
     }
     try {
-      WebResource webResource = jerseyClient.resource(confURL);
-      webResource.type(MediaType.APPLICATION_JSON);
+      WebResource webResource = jsonResource(confURL);
       log.debug("GET {}", confURL);
       PublishedConfigSet configSet = webResource.get(PublishedConfigSet.class);
       return configSet;
@@ -108,6 +109,38 @@ public class RegistryRetriever {
     }
   }
 
+  private WebResource resource(String url) {
+    WebResource resource = jerseyClient.resource(url);
+    return resource;
+  }
+
+  private WebResource jsonResource(String url) {
+    WebResource resource = resource(url);
+    resource.type(MediaType.APPLICATION_JSON);
+    return resource;
+  }
+
+  /**
+   * Get a complete configuration, with all values
+   * @param name
+   * @param external
+   * @return
+   * @throws IOException
+   */
+  public PublishedConfiguration retrieveConfiguration(String name,
+      boolean external) throws IOException {
+    String confURL = getRegistryView(external).configurationsURL;
+    confURL = SliderUtils.appendToURL(confURL, name);
+    try {
+      WebResource webResource = jsonResource(confURL);
+      log.debug("GET {}", confURL);
+      PublishedConfiguration configSet = webResource.get(PublishedConfiguration.class);
+      return configSet;
+    } catch (UniformInterfaceException e) {
+      throw ExceptionConverter.convertJerseyException(confURL, e);
+    }
+  }
+  
   @Override
   public String toString() {
     return super.toString() + " - " + instance;

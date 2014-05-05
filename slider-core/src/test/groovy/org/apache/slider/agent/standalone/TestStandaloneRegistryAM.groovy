@@ -22,6 +22,7 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
+import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.api.ClusterNode
 import org.apache.slider.client.SliderClient
@@ -30,6 +31,7 @@ import org.apache.slider.common.params.ActionRegistryArgs
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.persist.JsonSerDeser
 import org.apache.slider.core.registry.docstore.PublishedConfigSet
+import org.apache.slider.core.registry.docstore.PublishedConfiguration
 import org.apache.slider.core.registry.info.CustomRegistryConstants
 import org.apache.slider.core.registry.info.ServiceInstanceData
 import org.apache.slider.core.registry.retrieve.RegistryRetriever
@@ -129,9 +131,17 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
 
     def externalEndpoints = serviceInstanceData.externalView.endpoints
 
-    def endpoint = externalEndpoints.get(CustomRegistryConstants.PUBLISHER_REST_API)
-    assert endpoint != null
-    def publisherURL = endpoint.asURL()
+    // hit the registry web page
+
+    def registryEndpoint = externalEndpoints.get(
+        CustomRegistryConstants.REGISTRY_REST_API)
+    assert registryEndpoint != null
+    def registryURL = registryEndpoint.asURL()
+    describe("Registry WADL @ $registryURL")
+    
+    def publisherEndpoint = externalEndpoints.get(CustomRegistryConstants.PUBLISHER_REST_API)
+    assert publisherEndpoint != null
+    def publisherURL = publisherEndpoint.asURL()
     def publisher = publisherURL.toString()
     describe("Publisher")
 
@@ -142,24 +152,31 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     def configSet = serDeser.fromJson(publishedJSON)
     assert configSet.size() >= 1
     assert configSet.contains(YARN_SITE)
-    def publishedYarnSite = configSet.get(YARN_SITE)
+    PublishedConfiguration publishedYarnSite = configSet.get(YARN_SITE)
 
+    assert publishedYarnSite.empty
     
+    //get the full URL
     def yarnSitePublisher = appendToURL(publisher, YARN_SITE)
+
+    String confJSON = GET(yarnSitePublisher)
+    log.info(confJSON)
+    JsonSerDeser< PublishedConfiguration> confSerDeser =
+        new JsonSerDeser<PublishedConfiguration>(PublishedConfiguration)
+
+    publishedYarnSite = confSerDeser.fromJson(confJSON)
+    
+    assert !publishedYarnSite.empty
+
+
+    //get the XML
     def yarnSiteXML = appendToURL(yarnSitePublisher, "xml")
 
 
     String confXML = GET(yarnSiteXML)
     log.info("Conf XML at $yarnSiteXML = \n $confXML")
 
-    String confJSON = GET(yarnSitePublisher, "json")
 
-    // hit the registry web page
-
-    def registryEndpoint = externalEndpoints.get(CustomRegistryConstants.REGISTRY_REST_API)
-    assert registryEndpoint != null
-    def registryURL = registryEndpoint.asURL()
-    describe("Registry WADL @ $registryURL")
 
     describe("Registry List")
     log.info(GET(registryURL, RestPaths.REGISTRY_SERVICE ))
@@ -177,8 +194,16 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
       def config = externalConf.get(key)
       log.info "$key -- ${config.description}"
     }
-    assert externalConf["yarn-site.xml"]
+    assert externalConf[YARN_SITE]
 
+
+    def yarnSite = retriever.retrieveConfiguration(YARN_SITE, true)
+    assert !yarnSite.empty
+    def siteXML = yarnSite.asConfiguration()
+    def rmAddr = siteXML.get(YarnConfiguration.RM_ADDRESS)
+    assert rmAddr
+    
+    
     describe "Internal configurations"
     assert !retriever.hasConfigurations(false)
     try {

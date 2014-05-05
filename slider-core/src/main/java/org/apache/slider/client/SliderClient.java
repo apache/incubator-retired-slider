@@ -1958,6 +1958,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     } else if (registryArgs.listConf) {
       // list the configurations
       actionRegistryListConfigs(registryArgs);
+    } else if (SliderUtils.isSet(registryArgs.getConf)) {
+      // get a configuration
+      PublishedConfiguration publishedConfiguration =
+          actionRegistryGetConfig(registryArgs);
+      
     } else {
       exitCode = EXIT_FALSE;
     }
@@ -1986,7 +1991,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
   /**
-   * Registry operation
+   * list configs available for an instance
    *
    * @param registryArgs registry Arguments
    * @throws YarnException YARN problems
@@ -2013,6 +2018,44 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     }
   }
 
+  /**
+   * list configs available for an instance
+   *
+   * @param registryArgs registry Arguments
+   * @throws YarnException YARN problems
+   * @throws IOException Network or other problems
+   */
+  public PublishedConfiguration actionRegistryGetConfig(ActionRegistryArgs registryArgs)
+      throws YarnException, IOException {
+    ServiceInstanceData instance = lookupInstance(registryArgs);
+
+    RegistryRetriever retriever = new RegistryRetriever(instance);
+    boolean external = !registryArgs.internal;
+    PublishedConfigSet configurations =
+        retriever.getConfigurations(external);
+
+    PublishedConfiguration published =
+        retriever.retrieveConfiguration(registryArgs.getConf, external);
+    return published;
+  }
+  
+  private void outputConfig(PublishedConfiguration published,
+      ActionRegistryArgs registryArgs) {
+    // decide whether or not to print
+    boolean print = registryArgs.dest == null;
+    String entry = registryArgs.getConf;
+    String format = registryArgs.format;
+    File destFile;
+    if (!print) {
+      destFile = registryArgs.dest;
+      if (destFile.isDirectory()) {
+        // creating it under a directory
+        destFile = new File(destFile, entry + "." + format);
+      }
+      log.info("Destination path: {}", destFile);
+    }
+    
+  }
 
   /**
    * Look up an instance
@@ -2122,5 +2165,14 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       SliderException,
       IOException {
     return maybeStartRegistry();
+  }
+
+  /**
+   * Output to standard out/stderr (implementation specific detail)
+   * @param src source
+   */
+  @SuppressWarnings("UseOfSystemOutOrSystemErr")
+  private static void print(CharSequence src) {
+    System.out.append(src);
   }
 }

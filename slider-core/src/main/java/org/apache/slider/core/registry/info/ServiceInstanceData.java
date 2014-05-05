@@ -50,7 +50,7 @@ public class ServiceInstanceData implements Serializable {
     final StringBuilder sb =
         new StringBuilder("ServiceInstanceData{");
     sb.append(", id='").append(id).append('\'');
-    sb.append("serviceType='").append(serviceType).append('\'');
+    sb.append(", serviceType='").append(serviceType).append('\'');
     sb.append('}');
     return sb.toString();
   }

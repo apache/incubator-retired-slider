@@ -21,7 +21,6 @@ package org.apache.slider.core.registry.docstore;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.slider.common.tools.ConfigHelper;
 import org.apache.slider.core.exceptions.BadConfigException;
-import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
@@ -43,9 +42,6 @@ import java.util.Properties;
 public class PublishedConfiguration {
 
   public String description;
-
-  public int size;
-  
   public long updated;
   
   public String updatedTime;
@@ -59,7 +55,7 @@ public class PublishedConfiguration {
     return updated;
   }
 
-  private Map<String, String> values = new HashMap<String, String>();
+  public Map<String, String> entries = new HashMap<String, String>();
 
   /**
    * Is the configuration empty. This means either that it has not
@@ -68,7 +64,7 @@ public class PublishedConfiguration {
    * @return
    */
   public boolean isEmpty() {
-    return values.isEmpty();
+    return entries.isEmpty();
   }
 
   /**
@@ -78,9 +74,9 @@ public class PublishedConfiguration {
    * @param entries entries to put
    */
   public void putValues(Iterable<Map.Entry<String, String>> entries) {
-    values = new HashMap<String, String>();
+    this.entries = new HashMap<String, String>();
     for (Map.Entry<String, String> entry : entries) {
-      values.put(entry.getKey(), entry.getValue());
+      this.entries.put(entry.getKey(), entry.getValue());
     }
     
   }
@@ -92,7 +88,7 @@ public class PublishedConfiguration {
   public Configuration asConfiguration() {
     Configuration conf = new Configuration(false);
     try {
-      ConfigHelper.addConfigMap(conf, values, "");
+      ConfigHelper.addConfigMap(conf, entries, "");
     } catch (BadConfigException e) {
       // triggered on a null value; switch to a runtime (and discard the stack)
       throw new RuntimeException(e.toString());
@@ -110,7 +106,7 @@ public class PublishedConfiguration {
    */
   public Properties asProperties() {
     Properties props = new Properties();
-    props.putAll(values);
+    props.putAll(entries);
     return props;
   }
 
@@ -121,7 +117,7 @@ public class PublishedConfiguration {
    */
   public String asJson() throws IOException {
     ObjectMapper mapper = new ObjectMapper();
-    String json = mapper.writeValueAsString(values);
+    String json = mapper.writeValueAsString(entries);
     return json;
   }
 
@@ -134,9 +130,18 @@ public class PublishedConfiguration {
   public PublishedConfiguration shallowCopy() {
     PublishedConfiguration that = new PublishedConfiguration();
     that.description = this.description;
-    that.size = this.size;
     that.updated = this.updated;
     that.updatedTime = this.updatedTime;
     return that;
+  }
+
+  @Override
+  public String toString() {
+    final StringBuilder sb =
+        new StringBuilder("PublishedConfiguration{");
+    sb.append("description='").append(description).append('\'');
+    sb.append("entries = ").append(entries.size());
+    sb.append('}');
+    return sb.toString();
   }
 }

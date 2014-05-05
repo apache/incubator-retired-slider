@@ -75,7 +75,7 @@ public class PublisherResource {
 
   @GET
   @Path("/{config}")
-  @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+  @Produces({MediaType.APPLICATION_JSON})
   public PublishedConfiguration getConfigurationInstance(
       @PathParam("config") String config,
       @Context UriInfo uriInfo,
