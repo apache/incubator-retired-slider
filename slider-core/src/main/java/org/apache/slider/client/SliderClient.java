@@ -84,7 +84,10 @@ import org.apache.slider.core.main.RunService;
 import org.apache.slider.core.persist.ConfPersister;
 import org.apache.slider.core.persist.LockAcquireFailedException;
 import org.apache.slider.core.registry.YARNRegistryClient;
+import org.apache.slider.core.registry.docstore.PublishedConfigSet;
+import org.apache.slider.core.registry.docstore.PublishedConfiguration;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
+import org.apache.slider.core.registry.retrieve.RegistryRetriever;
 import org.apache.slider.core.registry.zk.ZKPathBuilder;
 import org.apache.slider.providers.AbstractClientProvider;
 import org.apache.slider.providers.SliderProviderFactory;
@@ -94,7 +97,7 @@ import org.apache.slider.server.appmaster.SliderAppMaster;
 import org.apache.slider.server.appmaster.rpc.RpcBinder;
 import org.apache.slider.server.services.curator.CuratorServiceInstance;
 import org.apache.slider.server.services.curator.RegistryBinderService;
-import org.apache.slider.server.services.docstore.utility.AbstractSliderLaunchedService;
+import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,7 +108,6 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.net.InetSocketAddress;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -117,9 +119,7 @@ import java.util.Properties;
  */
 
 public class SliderClient extends AbstractSliderLaunchedService implements RunService,
-    SliderExitCodes,
-    SliderKeys,
-                                                          ErrorStrings {
+    SliderExitCodes, SliderKeys, ErrorStrings {
   private static final Logger log = LoggerFactory.getLogger(SliderClient.class);
 
   private ClientArgs serviceArgs;
@@ -1939,40 +1939,127 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
 
   /**
-   * Status operation
+   * Registry operation
    *
    * @param registryArgs registry Arguments
-   * @throws YarnException
-   * @throws IOException
+   * @throws YarnException YARN problems
+   * @throws IOException Network or other problems
    */
   @VisibleForTesting
   public int actionRegistry(ActionRegistryArgs registryArgs) throws
       YarnException,
       IOException {
-    maybeStartRegistry();
-    List<CuratorServiceInstance<ServiceInstanceData>> instances =
-        registry.listInstances(SliderKeys.APP_TYPE);
-
-    for (CuratorServiceInstance<ServiceInstanceData> instance : instances) {
-      log.info("{} at http://{}:{}/", instance.id, instance.address,
-          instance.port);
+    // as this is also a test entry point, validate
+    // the arguments
+    registryArgs.validate();
+    int exitCode = EXIT_SUCCESS;
+    if (registryArgs.list) {
+      actionRegistryList(registryArgs);
+    } else if (registryArgs.listConf) {
+      // list the configurations
+      actionRegistryListConfigs(registryArgs);
+    } else {
+      exitCode = EXIT_FALSE;
     }
-    return EXIT_SUCCESS;
+    return exitCode;
   }
 
   /**
-   * List names in the registry
-   * @return
-   * @throws IOException
-   * @throws YarnException
+   * Registry operation
+   *
+   * @param registryArgs registry Arguments
+   * @throws YarnException YARN problems
+   * @throws IOException Network or other problems
    */
-  public Collection<String> listRegistryNames() throws IOException, YarnException {
-    Collection<String> names;
-      verifyBindingsDefined();
+  private void actionRegistryList(ActionRegistryArgs registryArgs)
+      throws YarnException, IOException {
+    List<CuratorServiceInstance<ServiceInstanceData>> instances =
+        getRegistry().listInstances(registryArgs.serviceType);
 
-      return getRegistry().queryForNames();
+    for (CuratorServiceInstance<ServiceInstanceData> instance : instances) {
+      if (!registryArgs.verbose) {
+        log.info("{}", instance.id);
+      } else {
+        log.info("{} ", instance);
+      }
+    }
   }
 
+  /**
+   * Registry operation
+   *
+   * @param registryArgs registry Arguments
+   * @throws YarnException YARN problems
+   * @throws IOException Network or other problems
+   */
+  public void actionRegistryListConfigs(ActionRegistryArgs registryArgs)
+      throws YarnException, IOException {
+    ServiceInstanceData instance = lookupInstance(registryArgs);
+
+    RegistryRetriever retriever = new RegistryRetriever(instance);
+    PublishedConfigSet configurations =
+        retriever.getConfigurations(!registryArgs.internal);
+
+    for (String configName : configurations.keys()) {
+      if (!registryArgs.verbose) {
+        log.info("{}", configName);
+      } else {
+        PublishedConfiguration published =
+            configurations.get(configName);
+        log.info("{} : {}",
+            configName,
+            published.description);
+      }
+    }
+  }
+
+
+  /**
+   * Look up an instance
+   * @param id instance ID
+   * @param serviceType service type
+   * @return instance data
+   * @throws UnknownApplicationInstanceException no match
+   * @throws SliderException other failures
+   * @throws IOException IO problems or wrapped exceptions
+   */
+  private ServiceInstanceData lookupInstance(ActionRegistryArgs registryArgs) throws
+      UnknownApplicationInstanceException,
+      SliderException,
+      IOException {
+    return lookupInstance(registryArgs.name, registryArgs.serviceType);
+  }
+
+  /**
+   * Look up an instance
+   * @param id instance ID
+   * @param serviceType service type
+   * @return instance data
+   * @throws UnknownApplicationInstanceException no match
+   * @throws SliderException other failures
+   * @throws IOException IO problems or wrapped exceptions
+   */
+  private ServiceInstanceData lookupInstance(String id,
+      String serviceType) throws
+      UnknownApplicationInstanceException,
+      SliderException,
+      IOException {
+    try {
+      CuratorServiceInstance<ServiceInstanceData> csi =
+          getRegistry().queryForInstance(serviceType, id);
+      if (csi == null) {
+        throw new UnknownApplicationInstanceException(
+            "instance %s of type %s not found",
+            id, serviceType);
+      }
+      return csi.getPayload();
+    } catch (IOException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new IOException(e);
+    }
+  } 
+  
   /**
    * List instances in the registry
    * @return

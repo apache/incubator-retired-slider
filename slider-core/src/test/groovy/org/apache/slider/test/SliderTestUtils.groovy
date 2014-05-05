@@ -35,6 +35,7 @@ import org.apache.slider.api.ClusterNode
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.tools.Duration
+import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.exceptions.BadClusterStateException
 import org.apache.slider.core.exceptions.SliderException
@@ -362,19 +363,8 @@ class SliderTestUtils extends Assert {
     return fetchWebPageWithoutError(s)
   }
 
-  def static String appendToURL(String base, String path) {
-    StringBuilder fullpath = new StringBuilder(base)
-    if (!base.endsWith("/")) {
-      fullpath.append("/")
-    }
-    if (path.startsWith("/")) {
-      fullpath.append(path.substring(1))
-    } else {
-      fullpath.append(path)
-    }
-
-    def s = fullpath.toString()
-    return s
+  public static String appendToURL(String base, String path) {
+    return SliderUtils.appendToURL(base, path)
   }
 
   /**

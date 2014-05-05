@@ -49,8 +49,9 @@ import static org.apache.slider.providers.agent.AgentTestUtils.createTestClient
 class TestRegistryRestResources extends AgentTestBase {
 
   public static final String REGISTRY_URI = RestPaths.SLIDER_PATH_REGISTRY;
+  public static final String WADL = "vnd.sun.wadl+xml"
 
-  
+
   private String id(String instanceName) {
 
     RegistryNaming.createUniqueInstanceId(
@@ -120,7 +121,7 @@ class TestRegistryRestResources extends AgentTestBase {
     ClientResponse response = webResource.type(MediaType.APPLICATION_XML)
            .get(ClientResponse.class);
     assert response.status == 200
-    assert response.getType() == (new MediaType("application", "vnd.sun.wadl+xml"))
+    assert response.type == (new MediaType("application", WADL))
 
     // test the available GET URIs
     webResource = client.resource(

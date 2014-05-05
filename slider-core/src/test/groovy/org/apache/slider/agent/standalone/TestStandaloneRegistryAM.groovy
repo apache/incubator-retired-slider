@@ -26,11 +26,13 @@ import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.api.ClusterNode
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderKeys
+import org.apache.slider.common.params.ActionRegistryArgs
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.persist.JsonSerDeser
 import org.apache.slider.core.registry.docstore.PublishedConfigSet
 import org.apache.slider.core.registry.info.CustomRegistryConstants
 import org.apache.slider.core.registry.info.ServiceInstanceData
+import org.apache.slider.core.registry.retrieve.RegistryRetriever
 import org.apache.slider.server.appmaster.web.rest.RestPaths
 import org.apache.slider.server.services.curator.CuratorServiceInstance
 import org.apache.slider.server.services.curator.RegistryBinderService
@@ -163,8 +165,42 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     log.info(GET(registryURL, RestPaths.REGISTRY_SERVICE ))
 
 
+    describe "Registry Retrieval"
+    // retrieval
 
-    describe "teardown of cluster"
+    RegistryRetriever retriever = new RegistryRetriever(serviceInstanceData)
+    log.info retriever.toString()
+    
+    assert retriever.hasConfigurations(true)
+    def externalConf = retriever.getConfigurations(true)
+    externalConf.keys().each { String key ->
+      def config = externalConf.get(key)
+      log.info "$key -- ${config.description} -- size ${config.size}"
+    }
+
+    describe "Internal configurations"
+    assert !retriever.hasConfigurations(false)
+    try {
+      retriever.getConfigurations(false)
+      fail( "expected a failure")
+    } catch (FileNotFoundException fnfe) {
+      //expected
+    }
+    
+    // retrieval via API
+    ActionRegistryArgs registryArgs = new ActionRegistryArgs()
+    registryArgs.name = amInstance;
+    registryArgs.verbose = true
+    registryArgs.list = true;
+    assert client.actionRegistry(registryArgs)
+
+    registryArgs.list = false;
+    registryArgs.listConf = true
+    assert client.actionRegistry(registryArgs)
+
+
+
+    describe "freeze cluster"
     //now kill that cluster
     assert 0 == clusterActionFreeze(client, clustername)
     //list it & See if it is still there

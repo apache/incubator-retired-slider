@@ -21,6 +21,7 @@ package org.apache.slider.registry.curator
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.core.registry.info.ServiceInstanceData
+import org.apache.slider.core.registry.retrieve.RegistryRetriever
 import org.apache.slider.server.services.curator.CuratorHelper
 import org.apache.slider.server.services.curator.RegistryBinderService
 import org.apache.slider.server.services.curator.RegistryNaming
@@ -153,6 +154,9 @@ class TestLocalRegistry {
     def instances = registryBinder.listInstances(SliderKeys.APP_TYPE);
     SliderTestUtils.dumpRegistryInstances(instances)
     assert instances.size() == 2
+    
+    // now set up a registry retriever
+    RegistryRetriever retriever = new RegistryRetriever()
     
   }
 

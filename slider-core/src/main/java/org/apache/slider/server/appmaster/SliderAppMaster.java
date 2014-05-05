@@ -111,10 +111,10 @@ import org.apache.slider.server.appmaster.web.WebAppApiImpl;
 import org.apache.slider.server.services.curator.RegistryBinderService;
 import org.apache.slider.server.services.curator.RegistryConsts;
 import org.apache.slider.server.services.curator.RegistryNaming;
-import org.apache.slider.server.services.docstore.utility.AbstractSliderLaunchedService;
-import org.apache.slider.server.services.docstore.utility.EventCallback;
-import org.apache.slider.server.services.docstore.utility.RpcService;
-import org.apache.slider.server.services.docstore.utility.WebAppService;
+import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
+import org.apache.slider.server.services.utility.EventCallback;
+import org.apache.slider.server.services.utility.RpcService;
+import org.apache.slider.server.services.utility.WebAppService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

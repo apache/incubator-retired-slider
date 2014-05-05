@@ -48,6 +48,7 @@ public interface Arguments {
   String ARG_HELP = "--help";
   String ARG_ID = "--id";
   String ARG_IMAGE = "--image";
+  String ARG_INTERNAL = "--internal";
   String ARG_LIST = "--list";
   String ARG_LISTFILES = "--listfiles";
   String ARG_LISTCONF = "--listconf";
@@ -57,7 +58,7 @@ public interface Arguments {
   String ARG_MESSAGE = "--message";
   String ARG_OPTION = "--option";
   String ARG_OPTION_SHORT = "-O";
-  //  String ARG_NAME = "--name";
+  String ARG_NAME = "--name";
   String ARG_OUTPUT = "--out";
   String ARG_OUTPUT_SHORT = "-o";
   String ARG_PACKAGE = "--package";
@@ -68,8 +69,10 @@ public interface Arguments {
   String ARG_RESOURCE_MANAGER = "--rm";
   String ARG_RESOURCE_OPT = "--resopt";
   String ARG_RESOURCE_OPT_SHORT = "-ro";
+  String ARG_SERVICETYPE = "--servictype";
   String ARG_SYSPROP = "-S";
   String ARG_TEMPLATE = "--template";
+  String ARG_VERBOSE = "--verbose";
   String ARG_WAIT = "--wait";
   String ARG_ZKPATH = "--zkpath";
   String ARG_ZKPORT = "--zkport";
