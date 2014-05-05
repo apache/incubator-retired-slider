@@ -23,6 +23,7 @@ import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
+import org.apache.hadoop.fs.GlobFilter;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
@@ -347,7 +348,8 @@ public final class SliderUtils {
     if (!srcFS.isDirectory(srcDirPath)) {
       throw new FileNotFoundException("Source dir not a directory " + srcDirPath);
     }
-    FileStatus[] entries = srcFS.listStatus(srcDirPath);
+    GlobFilter dotFilter = new GlobFilter("[!.]*");
+    FileStatus[] entries = srcFS.listStatus(srcDirPath, dotFilter);
     int srcFileCount = entries.length;
     if (srcFileCount == 0) {
       return 0;
@@ -363,8 +365,10 @@ public final class SliderUtils {
       FileStatus e = entries[i];
       Path srcFile = e.getPath();
       if (srcFS.isDirectory(srcFile)) {
-        throw new IOException("Configuration dir " + srcDirPath
-                              + " contains a directory " + srcFile);
+        String msg = "Configuration dir " + srcDirPath
+                     + " contains a directory " + srcFile;
+        log.warn(msg);
+        throw new IOException(msg);
       }
       log.debug("copying src conf file {}", srcFile);
       sourcePaths[i] = srcFile;
@@ -1309,6 +1313,29 @@ public final class SliderUtils {
     }
     return builder.toString();
   }
+
+  /**
+   * Add a subpath to an existing URL. This extends
+   * the path, inserting a / between all entries
+   * if needed. 
+   * @param base base path/URL
+   * @param path subpath
+   * @return base+"/"+subpath
+   */
+  public static String appendToURL(String base, String path) {
+    StringBuilder fullpath = new StringBuilder(base);
+    if (!base.endsWith("/")) {
+      fullpath.append("/");
+    }
+    if (path.startsWith("/")) {
+      fullpath.append(path.substring(1));
+    } else {
+      fullpath.append(path);
+    }
+
+    return fullpath.toString();
+  }
+
 
   /**
    * Callable for async/scheduled halt
