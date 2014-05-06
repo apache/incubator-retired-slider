@@ -107,19 +107,14 @@ public class JsonSerDeser<T> {
    */
   public T fromResource(String resource)
     throws IOException, JsonParseException, JsonMappingException {
-    InputStream resStream = null;
-    try {
-      resStream = this.getClass().getResourceAsStream(resource);
+    try(InputStream resStream = this.getClass().getResourceAsStream(resource)) {
       if (resStream == null) {
         throw new FileNotFoundException(resource);
       }
-
       return (T) (mapper.readValue(resStream, classType));
     } catch (IOException e) {
       log.error("Exception while parsing json resource {}: {}", resource, e);
       throw e;
-    } finally {
-      IOUtils.closeStream(resStream);
     }
   }
 
