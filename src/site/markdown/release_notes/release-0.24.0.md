@@ -27,24 +27,7 @@ Download: []()
 
 ## Key changes
 
-### Added support for Slider App Package
-
-Slider AppPackages are a declarative definition of an application for application management. Slider can deploy and manage any application described in the App Package format.
-
-
-### Added support for Slider Agent
-
-Slider agent is a generic provider that can process Slider App Packages.
-
-### Added documentation on developing and using Slider App Packages
-
-### Added Service Registry and associated REST resources
-
-### Enhanced Agent Provider AM Web UI with additional application info
-
-Added links to WADL listing expose AM REST management resources as well as the exposed Registry REST resources
-
 
 ## Other changes
 
-1. Security is now enabled by setting the configuration option `hadoop.security.authorization`
+1. [SLIDER-13|https://issues.apache.org/jira/browse/SLIDER-13] switch build to be java7+ only.

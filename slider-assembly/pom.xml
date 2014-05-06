@@ -54,6 +54,8 @@
           </execution>
         </executions>
       </plugin>
+      
+      <!-- assemble the tar file -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
@@ -75,6 +77,7 @@
         </executions>
       </plugin>
 
+      <!-- pull in all dependencies -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
@@ -115,6 +118,44 @@
         </executions>
       </plugin>
 
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <inherited>false</inherited>
+        <configuration>
+          <rules>
+            <requireMavenVersion>
+              <version>${maven.version.range}</version>
+            </requireMavenVersion>
+            <requireJavaVersion>
+              <version>${project.java.src.version}</version>
+            </requireJavaVersion>
+          </rules>
+        </configuration>
+        <executions>
+          <execution>
+            <id>clean</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <phase>pre-clean</phase>
+          </execution>
+          <execution>
+            <id>default</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <phase>validate</phase>
+          </execution>
+          <execution>
+            <id>site</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <phase>pre-site</phase>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
     
     
