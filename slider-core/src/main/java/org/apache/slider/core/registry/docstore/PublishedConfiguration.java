@@ -55,7 +55,7 @@ public class PublishedConfiguration {
     return updated;
   }
 
-  public Map<String, String> entries = new HashMap<String, String>();
+  public Map<String, String> entries = new HashMap<>();
 
   /**
    * Is the configuration empty. This means either that it has not
@@ -74,7 +74,7 @@ public class PublishedConfiguration {
    * @param entries entries to put
    */
   public void putValues(Iterable<Map.Entry<String, String>> entries) {
-    this.entries = new HashMap<String, String>();
+    this.entries = new HashMap<>();
     for (Map.Entry<String, String> entry : entries) {
       this.entries.put(entry.getKey(), entry.getValue());
     }

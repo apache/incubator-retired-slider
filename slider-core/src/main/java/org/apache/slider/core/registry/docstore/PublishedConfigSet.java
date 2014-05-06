@@ -35,7 +35,7 @@ import java.util.TreeSet;
 public class PublishedConfigSet {
 
   public Map<String, PublishedConfiguration> configurations =
-      new HashMap<String, PublishedConfiguration>();
+      new HashMap<>();
 
   public void put(String name, PublishedConfiguration conf) {
     configurations.put(name, conf);
