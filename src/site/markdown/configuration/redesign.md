@@ -67,9 +67,9 @@ Contains various string and integer values
     "state": 3,
     "createTime": 1393512091276,
     "updateTime": 1393512117286,
-    "originConfigurationPath": "hdfs://sandbox.hortonworks.com:8020/user/stevel/.slider/cluster/test_cluster_lifecycle/snapshot",
-    "generatedConfigurationPath": "hdfs://sandbox.hortonworks.com:8020/user/stevel/.slider/cluster/test_cluster_lifecycle/generated",
-    "dataPath": "hdfs://sandbox.hortonworks.com:8020/user/stevel/.slider/cluster/test_cluster_lifecycle/database",
+    "originConfigurationPath": "hdfs://sandbox:8020/user/stevel/.slider/cluster/test_cluster_lifecycle/snapshot",
+    "generatedConfigurationPath": "hdfs://sandbox:8020/user/stevel/.slider/cluster/test_cluster_lifecycle/generated",
+    "dataPath": "hdfs://sandbox:8020/user/stevel/.slider/cluster/test_cluster_lifecycle/database",
 
 
 * `version`: version of the JSON file. Not currently used
@@ -292,14 +292,14 @@ and the configurations of the deployed service components
     "options": {
       "zookeeper.port": "2181",
       "site.hbase.master.startup.retainassign": "true",
-      "slider.cluster.application.image.path": "hdfs://sandbox.hortonworks.com:8020/hbase.tar.gz",
-      "site.fs.defaultFS": "hdfs://sandbox.hortonworks.com:8020",
+      "slider.cluster.application.image.path": "hdfs://sandbox:8020/hbase.tar.gz",
+      "site.fs.defaultFS": "hdfs://sandbox:8020",
       "slider.container.failure.threshold": "5",
-      "site.fs.default.name": "hdfs://sandbox.hortonworks.com:8020",
+      "site.fs.default.name": "hdfs://sandbox:8020",
       "slider.cluster.directory.permissions": "0770",
       "slider.am.monitoring.enabled": "false",
       "zookeeper.path": "/yarnapps_slider_stevel_test_cluster_lifecycle",
-      "slider.tmp.dir": "hdfs://sandbox.hortonworks.com:8020/user/stevel/.slider/cluster/test_cluster_lifecycle/tmp/am",
+      "slider.tmp.dir": "hdfs://sandbox:8020/user/stevel/.slider/cluster/test_cluster_lifecycle/tmp/am",
       "slider.data.directory.permissions": "0770",
       "zookeeper.hosts": "sandbox",
       "slider.container.failure.shortlife": "60"

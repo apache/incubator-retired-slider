@@ -151,15 +151,15 @@ and the configurations of the deployed service components
   
     "options": {
       "slider.am.monitoring.enabled": "false",
-      "slider.cluster.application.image.path": "hdfs://sandbox.hortonworks.com:8020/hbase.tar.gz",
+      "slider.cluster.application.image.path": "hdfs://sandbox:8020/hbase.tar.gz",
       "slider.container.failure.threshold": "5",
       "slider.container.failure.shortlife": "60",
       "zookeeper.port": "2181",
       "zookeeper.path": "/yarnapps_slider_stevel_test_cluster_lifecycle",
       "zookeeper.hosts": "sandbox",
       "site.hbase.master.startup.retainassign": "true",
-      "site.fs.defaultFS": "hdfs://sandbox.hortonworks.com:8020",
-      "site.fs.default.name": "hdfs://sandbox.hortonworks.com:8020",
+      "site.fs.defaultFS": "hdfs://sandbox:8020",
+      "site.fs.default.name": "hdfs://sandbox:8020",
       "env.MALLOC_ARENA_MAX": "4",
       "site.hbase.master.info.port": "0",
       "site.hbase.regionserver.info.port": "0"

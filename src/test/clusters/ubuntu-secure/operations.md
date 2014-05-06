@@ -74,7 +74,7 @@
             --role master 0\
         --zkhosts ubuntu --zkport 2121 \
         --image hdfs://ubuntu:9090/hbase.tar \
-        --appconf file:///Users/stevel/Projects/Hortonworks/Projects/slider/slider-funtest/src/test/configs/ubuntu-secure/hbase \
+        --appconf file:///home/slider/projects//Projects/slider/slider-funtest/src/test/configs/ubuntu-secure/hbase \
         --roleopt master jvm.heap 128 \
         --roleopt master env.MALLOC_ARENA_MAX 4 \
         --roleopt worker jvm.heap 128 
@@ -91,7 +91,7 @@
         --role master 0 \
         --zkhosts ubuntu --zkport 2121 \
         --image hdfs://ubuntu:9090/hbase.tar \
-        --appconf file:///Users/stevel/Projects/Hortonworks/Projects/slider/slider-funtest/src/test/configs/ubuntu-secure/hbase \
+        --appconf file:///home/slider/projects//Projects/slider/slider-funtest/src/test/configs/ubuntu-secure/hbase \
         --roleopt master jvm.heap 128 \
         --roleopt master env.MALLOC_ARENA_MAX 4 
         
@@ -123,7 +123,7 @@
     -D yarn.resourcemanager.principal=yarn/ubuntu@COTHAM \
     -D dfs.namenode.kerberos.principal=hdfs/ubuntu@COTHAM \
     --image hdfs://ubuntu:9090/hbase.tar \
-    --appconf file:///Users/stevel/Projects/Hortonworks/Projects/slider/slider-funtest/src/test/configs/ubuntu-secure/hbase \
+    --appconf file:///home/slider/projects//Projects/slider/slider-funtest/src/test/configs/ubuntu-secure/hbase \
     --roleopt master app.infoport 8080  \
     --role master 1 \
     --role worker 1 
@@ -139,7 +139,7 @@
       -D yarn.resourcemanager.principal=yarn/ubuntu@COTHAM \
       -D dfs.namenode.kerberos.principal=hdfs/ubuntu@COTHAM \
       --image hdfs://ubuntu:9090/hbase.tar \
-      --appconf file:///Users/stevel/Projects/Hortonworks/Projects/slider/slider-funtest/src/test/configs/ubuntu-secure/hbase \
+      --appconf file:///home/slider/projects//Projects/slider/slider-funtest/src/test/configs/ubuntu-secure/hbase \
       --role master 1 
 
 # one master env set up
@@ -152,7 +152,7 @@
          -D yarn.resourcemanager.principal=yarn/ubuntu@COTHAM \
          -D dfs.namenode.kerberos.principal=hdfs/ubuntu@COTHAM \
          --image hdfs://ubuntu:9090/hbase.tar \
-         --appconf file:///Users/stevel/Projects/Hortonworks/Projects/slider/slider-funtest/src/test/configs/ubuntu-secure/hbase \
+         --appconf file:///home/slider/projects//Projects/slider/slider-funtest/src/test/configs/ubuntu-secure/hbase \
          --role master 1  \
          --role worker 1  
     
@@ -167,7 +167,7 @@
       -D yarn.resourcemanager.principal=yarn/ubuntu@COTHAM \
       -D dfs.namenode.kerberos.principal=hdfs/ubuntu@COTHAM \
       --image hdfs://ubuntu:9090/hbase.tar \
-      --appconf file:///Users/stevel/Projects/Hortonworks/Projects/slider/slider-funtest/src/test/configs/ubuntu-secure/hbase \
+      --appconf file:///home/slider/projects//Projects/slider/slider-funtest/src/test/configs/ubuntu-secure/hbase \
       --role master 1 
          
                
@@ -246,7 +246,7 @@
       --zkhosts ubuntu \
       --zkport 2121 \
       --image hdfs://ubuntu:9090/hbase.tar \
-      --appconf file:///Users/stevel/Projects/Hortonworks/Projects/slider/slider-funtest/src/test/configs/ubuntu-secure/hbase \
+      --appconf file:///home/slider/projects//Projects/slider/slider-funtest/src/test/configs/ubuntu-secure/hbase \
       --roleopt master env.MALLOC_ARENA_MAX 4 \
       --roleopt worker app.infoport 0 \
   

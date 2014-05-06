@@ -233,7 +233,7 @@ Mandatory test parameters must be added to `slider-client.xml`
     <property>
       <name>slider.test.hbase.tar</name>
       <description>Path to the HBase Tar file in HDFS</description>
-      <value>hdfs://sandbox.hortonworks.com:8020/user/slider/hbase.tar.gz</value>
+      <value>hdfs://sandbox:8020/user/slider/hbase.tar.gz</value>
     </property>
     
     <property>

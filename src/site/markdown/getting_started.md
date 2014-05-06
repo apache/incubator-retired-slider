@@ -46,7 +46,7 @@ The following provides the steps required for setting up a cluster and deploying
 
 The Slider deployment has the following minimum system requirements:
 
-* Hortonworks Data Platform 2.1
+* Hadoop 2.4+
 
 * Required Services: HDFS, YARN, MapReduce2 and ZooKeeper
 

@@ -7,25 +7,25 @@
     "type": "hbase",
     "createTime": 1393512091276,
     "updateTime": 1393512117286,
-    "originConfigurationPath": "hdfs://sandbox.hortonworks.com:8020/user/slider/.slider/cluster/test_cluster_lifecycle/snapshot",
-    "generatedConfigurationPath": "hdfs://sandbox.hortonworks.com:8020/user/slider/.slider/cluster/test_cluster_lifecycle/generated",
-    "dataPath": "hdfs://sandbox.hortonworks.com:8020/user/slider/.slider/cluster/test_cluster_lifecycle/database",
-    "slider.tmp.dir": "hdfs://sandbox.hortonworks.com:8020/user/slider/.slider/cluster/test_cluster_lifecycle/tmp/am",
+    "originConfigurationPath": "hdfs://sandbox:8020/user/slider/.slider/cluster/test_cluster_lifecycle/snapshot",
+    "generatedConfigurationPath": "hdfs://sandbox:8020/user/slider/.slider/cluster/test_cluster_lifecycle/generated",
+    "dataPath": "hdfs://sandbox:8020/user/slider/.slider/cluster/test_cluster_lifecycle/database",
+    "slider.tmp.dir": "hdfs://sandbox:8020/user/slider/.slider/cluster/test_cluster_lifecycle/tmp/am",
     "slider.cluster.directory.permissions": "0770",
     "slider.data.directory.permissions": "0770"
   },
   
   "options": {
     "slider.am.monitoring.enabled": "false",
-    "slider.cluster.application.image.path": "hdfs://sandbox.hortonworks.com:8020/hbase.tar.gz",
+    "slider.cluster.application.image.path": "hdfs://sandbox:8020/hbase.tar.gz",
     "slider.container.failure.threshold": "5",
     "slider.container.failure.shortlife": "60",
     "zookeeper.port": "2181",
     "zookeeper.path": "/yarnapps_slider_slider_test_cluster_lifecycle",
     "zookeeper.hosts": "sandbox",
     "site.hbase.master.startup.retainassign": "true",
-    "site.fs.defaultFS": "hdfs://sandbox.hortonworks.com:8020",
-    "site.fs.default.name": "hdfs://sandbox.hortonworks.com:8020",
+    "site.fs.defaultFS": "hdfs://sandbox:8020",
+    "site.fs.default.name": "hdfs://sandbox:8020",
     "env.MALLOC_ARENA_MAX": "4",
     "site.hbase.master.info.port": "0",
     "site.hbase.regionserver.info.port": "0"
@@ -123,7 +123,7 @@
 
 
   "clientProperties": {
-    "fs.defaultFS": "hdfs://sandbox.hortonworks.com:8020",
+    "fs.defaultFS": "hdfs://sandbox:8020",
     "hbase.cluster.distributed": "true",
     "hbase.master.info.port": "0",
     "hbase.master.port": "0",
@@ -131,7 +131,7 @@
     "hbase.regionserver.hlog.tolerable.lowreplication": "1",
     "hbase.regionserver.info.port": "0",
     "hbase.regionserver.port": "0",
-    "hbase.rootdir": "hdfs://sandbox.hortonworks.com:8020/user/slider/.slider/cluster/test_cluster_lifecycle/database",
+    "hbase.rootdir": "hdfs://sandbox:8020/user/slider/.slider/cluster/test_cluster_lifecycle/database",
     "hbase.tmp.dir": "./hbase-tmp",
     "hbase.zookeeper.property.clientPort": "2181",
     "hbase.zookeeper.quorum": "sandbox",

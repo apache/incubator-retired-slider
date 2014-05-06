@@ -55,7 +55,7 @@
   </property>
     <property>
     <name>mapreduce.jobhistory.webapp.address</name>
-    <value>sandbox.hortonworks.com:19888</value>
+    <value>sandbox:19888</value>
   </property>
     <property>
     <name>mapreduce.reduce.input.buffer.percent</name>
@@ -87,7 +87,7 @@
   </property>
     <property>
     <name>mapreduce.jobhistory.address</name>
-    <value>sandbox.hortonworks.com:10020</value>
+    <value>sandbox:10020</value>
   </property>
     <property>
     <name>mapreduce.reduce.log.level</name>

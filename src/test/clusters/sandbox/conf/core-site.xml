@@ -19,7 +19,7 @@
   <configuration>
     <property>
     <name>fs.defaultFS</name>
-    <value>hdfs://sandbox.hortonworks.com:8020</value>
+    <value>hdfs://sandbox:8020</value>
   </property>
     <property>
     <name>hadoop.proxyuser.hcat.groups</name>

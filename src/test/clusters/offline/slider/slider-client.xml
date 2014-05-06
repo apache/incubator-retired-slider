@@ -26,7 +26,7 @@
 
   <property>
     <name>yarn.resourcemanager.address</name>
-    <value>sandbox.hortonworks.com:8050</value>
+    <value>sandbox:8050</value>
   </property>
   
   <property>

@@ -47,11 +47,11 @@
   </property>
     <property>
     <name>yarn.resourcemanager.resource-tracker.address</name>
-    <value>sandbox.hortonworks.com:8025</value>
+    <value>sandbox:8025</value>
   </property>
     <property>
     <name>yarn.resourcemanager.admin.address</name>
-    <value>sandbox.hortonworks.com:8141</value>
+    <value>sandbox:8141</value>
   </property>
     <property>
     <name>yarn.nodemanager.aux-services.mapreduce_shuffle.class</name>
@@ -79,7 +79,7 @@
   </property>
     <property>
     <name>yarn.resourcemanager.hostname</name>
-    <value>sandbox.hortonworks.com</value>
+    <value>sandbox</value>
   </property>
     <property>
     <name>yarn.acl.enable</name>
@@ -87,7 +87,7 @@
   </property>
     <property>
     <name>yarn.resourcemanager.scheduler.address</name>
-    <value>sandbox.hortonworks.com:8030</value>
+    <value>sandbox:8030</value>
   </property>
     <property>
     <name>yarn.nodemanager.remote-app-log-dir-suffix</name>
@@ -115,7 +115,7 @@
   </property>
     <property>
     <name>yarn.log.server.url</name>
-    <value>http://sandbox.hortonworks.com:19888/jobhistory/logs</value>
+    <value>http://sandbox:19888/jobhistory/logs</value>
   </property>
     <property>
     <name>yarn.nodemanager.disk-health-checker.min-healthy-disks</name>
@@ -131,7 +131,7 @@
   </property>
     <property>
     <name>yarn.resourcemanager.webapp.address</name>
-    <value>sandbox.hortonworks.com:8088</value>
+    <value>sandbox:8088</value>
   </property>
     <property>
     <name>yarn.nodemanager.resource.memory-mb</name>
@@ -147,7 +147,7 @@
   </property>
     <property>
       <name>yarn.resourcemanager.address</name>
-      <value>sandbox.hortonworks.com:8050</value>
+      <value>sandbox:8050</value>
     </property>
     <property>
     <name>yarn.nodemanager.log-aggregation.compression-type</name>
