@@ -2143,9 +2143,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     try {
       maybeStartRegistry();
       return registry.instanceIDs(SliderKeys.APP_TYPE);
-    } catch (IOException e) {
-      throw e;
-    } catch (YarnException e) {
+    } catch (YarnException | IOException e) {
       throw e;
     } catch (Exception e) {
       throw new IOException(e);
