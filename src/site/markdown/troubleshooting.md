@@ -62,7 +62,7 @@ precisely, if they keep failing.
 
 If this happens on cluster startup, it means that the application is not working
 
-     org.apache.hoya.exceptions.TriggerClusterTeardownException: Unstable Cluster: 
+     org.apache.slider.core.exceptions.TriggerClusterTeardownException: Unstable Cluster: 
      - failed with role worker failing 4 times (4 in startup); threshold is 2
      - last failure: Failure container_1386872971874_0001_01_000006 on host 192.168.1.86,
        see http://hor12n22.gq1.ygridcore.net:19888/jobhistory/logs/192.168.1.86:45454/container_1386872971874_0001_01_000006/ctx/yarn

@@ -224,33 +224,33 @@ is ignored by git), declaring where HBase, accumulo, Hadoop and zookeeper are:
     
       <property>
         <name>slider.test.hbase.tar</name>
-        <value>/home/hoya/hbase/hbase-assembly/target/hbase-0.98.0-SNAPSHOT-bin.tar.gz</value>
+        <value>/home/slider/hbase/hbase-assembly/target/hbase-0.98.0-SNAPSHOT-bin.tar.gz</value>
         <description>HBASE archive URI</description>
       </property> 
          
       <property>
         <name>slider.test.accumulo.home</name>
-        <value>/home/hoya/accumulo/assemble/target/accumulo-1.5.1-SNAPSHOT/</value>
+        <value>/home/slider/accumulo/assemble/target/accumulo-1.5.1-SNAPSHOT/</value>
         <description>Accumulo Home</description>
       </property>
     
       <property>
         <name>slider.test.accumulo.tar</name>
-        <value>/home/hoya/accumulo/assemble/target/accumulo-1.5.1-SNAPSHOT-bin.tar.gz</value>
+        <value>/home/slider/accumulo/assemble/target/accumulo-1.5.1-SNAPSHOT-bin.tar.gz</value>
         <description>Accumulo archive URI</description>
       </property>
       
       <property>
         <name>zk.home</name>
         <value>
-          /home/hoya/Apps/zookeeper</value>
+          /home/slider/Apps/zookeeper</value>
         <description>Zookeeper home dir on target systems</description>
       </property>
     
       <property>
         <name>hadoop.home</name>
         <value>
-          /home/hoya/hadoop-common/hadoop-dist/target/hadoop-2.3.0</value>
+          /home/slider/hadoop-common/hadoop-dist/target/hadoop-2.3.0</value>
         <description>Hadoop home dir on target systems</description>
       </property>
       

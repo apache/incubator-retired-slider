@@ -17,7 +17,7 @@
 
 # Specification of the "Cluster Description"
 
-* This is partially obsolete. Slider still returns the Hoya Cluster Description
+* This is partially obsolete. Slider still returns the Slider Cluster Description
 as changing it will break most of the unit tests -once these are updated
 this document will be completely obsolete and replaced with a new one.
 
@@ -47,10 +47,10 @@ Different sections have one of three roles.
 that should not be modified by users -doing so is likely to render the
 cluster undeployable.
 
-1. Storage and specification of the components deployed by Hoya.
+1. Storage and specification of the components deployed by Slider.
 These sections define options for the deployed application, the size of
 the deployed application, attributes of the deployed roles, and customizable
-aspects of the Hoya application master. 
+aspects of the Slider application master. 
 
   This information defines the *desired state* of a cluster.
    
@@ -70,7 +70,7 @@ and process cluster descriptions. There is only one JSON file to parse
 
 ## Role-by-role subsections
 
-A hoya-deployed application consists of the single Hoya application master,
+A slider-deployed application consists of the single Slider application master,
 and one or more roles -specific components in the actual application.
 
 The `/roles` section contains a listing for each role, 
@@ -118,14 +118,14 @@ property lookup to find the implementation classes.
 Flag to indicate whether or not a specification is considered valid.
 If false, the rest of the document is in an unknown state.
 
-## `/hoya-internal`: internal confiugration
+## `/slider-internal`: internal confiugration
 
 Stores internal configuration options. These parameters
 are not defined in this document.
 
 ## `/diagnostics`: diagnostics sections
 
-Persisted list of information about Hoya. 
+Persisted list of information about Slider. 
 
 Static information about the file history
  
@@ -133,7 +133,7 @@ Static information about the file history
       "create.hadoop.deployed.info" : 
        "(detached from release-2.3.0) @dfe46336fbc6a044bc124392ec06b85",
       "create.application.build.info" : 
-       "Hoya Core-0.13.0-SNAPSHOT Built against commit# 1a94ee4aa1 on Java 1.7.0_45 by stevel",
+       "Slider Core-0.13.0-SNAPSHOT Built against commit# 1a94ee4aa1 on Java 1.7.0_45 by stevel",
       "create.hadoop.build.info" : "2.3.0",
       "create.time.millis" : "1393512091276",
     },
@@ -145,17 +145,17 @@ an empty or absent `/diagnostics` section.
 
 ## Options: cluster options
 
-A persisted list of options used by Hoya and its providers to build up the AM
+A persisted list of options used by Slider and its providers to build up the AM
 and the configurations of the deployed service components
 
   
     "options": {
-      "hoya.am.monitoring.enabled": "false",
-      "hoya.cluster.application.image.path": "hdfs://sandbox.hortonworks.com:8020/hbase.tar.gz",
-      "hoya.container.failure.threshold": "5",
-      "hoya.container.failure.shortlife": "60",
+      "slider.am.monitoring.enabled": "false",
+      "slider.cluster.application.image.path": "hdfs://sandbox.hortonworks.com:8020/hbase.tar.gz",
+      "slider.container.failure.threshold": "5",
+      "slider.container.failure.shortlife": "60",
       "zookeeper.port": "2181",
-      "zookeeper.path": "/yarnapps_hoya_stevel_test_cluster_lifecycle",
+      "zookeeper.path": "/yarnapps_slider_stevel_test_cluster_lifecycle",
       "zookeeper.hosts": "sandbox",
       "site.hbase.master.startup.retainassign": "true",
       "site.fs.defaultFS": "hdfs://sandbox.hortonworks.com:8020",
@@ -165,7 +165,7 @@ and the configurations of the deployed service components
       "site.hbase.regionserver.info.port": "0"
     },
 
-Many of the properties are automatically set by Hoya when a cluster is constructed.
+Many of the properties are automatically set by Slider when a cluster is constructed.
 They may be edited afterwards.
 
 
@@ -173,10 +173,10 @@ They may be edited afterwards.
 
 All option values MUST be strings.
 
-#### `hoya.`
-All options that begin with `hoya.` are intended for use by hoya and 
-providers to configure the Hoya application master itself, and the
-application. For example, `hoya.container.failure.threshold` defines
+#### `slider.`
+All options that begin with `slider.` are intended for use by slider and 
+providers to configure the Slider application master itself, and the
+application. For example, `slider.container.failure.threshold` defines
 the number of times a container must fail before the role (and hence the cluster)
 is considered to have failed. As another example, the zookeeper bindings
 such as `zookeeper.hosts` are read by the HBase and Ambari providers, and
@@ -202,7 +202,7 @@ These are options to configure environment variables in the roles. When
 a container is started, all `env.` options have the prefix removed, and
 are then set as environment variables in the target context.
 
-1. The Hoya AM uses these values to configure itself, after following the
+1. The Slider AM uses these values to configure itself, after following the
 option/role merge process.
 1. Application providers SHOULD follow the same process.
 
@@ -231,14 +231,14 @@ fix the heap size of a component.
       },
 
 
-The role `hoya` represents the Hoya Application Master itself.
+The role `slider` represents the Slider Application Master itself.
 
       
-      "hoya": {
+      "slider": {
         "yarn.memory": "256",
         "env.MALLOC_ARENA_MAX": "4",
         "role.instances": "1",
-        "role.name": "hoya",
+        "role.name": "slider",
         "jvm.heapsize": "256M",
         "yarn.vcores": "1",
       },
@@ -258,7 +258,7 @@ map for each role.
 from the `/options` section.
 1. There is no way to "undefine" a cluster option, merely overwrite it. 
 1. The merged map is then used by the provider to create the component.
-1. The special `hoya` role is used in the CLI to define the attributes of the AM.
+1. The special `slider` role is used in the CLI to define the attributes of the AM.
 
 Options set on a role do not affect any site-wide options: they
 are specific to the invidual role being created. 
@@ -274,13 +274,13 @@ change the value of a site configuration document *in that specific role instanc
   The number of YARN "virtual cores" to request for each role instance.
   The larger the number, the more CPU allocation -and potentially the longer
   time to satisfy the request and so instantiate the node. 
-  If the value '"-1"` is used -for any role but `hoya`-the maximum value
+  If the value '"-1"` is used -for any role but `slider`-the maximum value
   available to the application is requested.
 * `yarn.memory` : number.
   The number in Megabytes of RAM to request for each role instance.
   The larger the number, the more memory allocation -and potentially the longer
   time to satisfy the request and so instantiate the node. 
-  If the value '"-1"` is used -for any role but `hoya`-the maximum value
+  If the value '"-1"` is used -for any role but `slider`-the maximum value
   available to the application is requested.
  
 * `env.` environment variables.
@@ -299,7 +299,7 @@ String environment variables to use when setting up the container
 
 These are the parts of the document that provide dynamic run-time
 information about an application. They are provided by the
-Hoya Application Master when a request for the cluster status is issued.
+Slider Application Master when a request for the cluster status is issued.
 
 ## `/info`
 
@@ -310,10 +310,10 @@ The values in this section are not normatively defined.
 
 Here are some standard values
  
-* `hoya.am.restart.supported"`  whether the AM supports service restart without killing all the containers hosting
+* `slider.am.restart.supported"`  whether the AM supports service restart without killing all the containers hosting
  the role instances:
  
-        "hoya.am.restart.supported" : "false",
+        "slider.am.restart.supported" : "false",
     
 * timestamps of the cluster going live, and when the status query was made
     
@@ -331,7 +331,7 @@ Here are some standard values
   the application was built using Hadoop 2.3.0, but is running against the version
   of Hadoop built for HDP-2.
   
-        "status.application.build.info" : "Hoya Core-0.13.0-SNAPSHOT Built against commit# 1a94ee4aa1 on Java 1.7.0_45 by stevel",
+        "status.application.build.info" : "Slider Core-0.13.0-SNAPSHOT Built against commit# 1a94ee4aa1 on Java 1.7.0_45 by stevel",
         "status.hadoop.build.info" : "2.3.0",
         "status.hadoop.deployed.info" : "bigwheel-m16-2.2.0 @704f1e463ebc4fb89353011407e965"
      
@@ -344,7 +344,7 @@ for debugging.
  Information about the live containers in a cluster
 
      "instances": {
-       "hoya": [ "container_1393511571284_0002_01_000001" ],
+       "slider": [ "container_1393511571284_0002_01_000001" ],
        "master": [ "container_1393511571284_0002_01_000003" ],
        "worker": [ 
          "container_1393511571284_0002_01_000002",
@@ -375,8 +375,8 @@ This provides more detail on the application including live and failed instances
             "command": "hbase-0.98.0/bin/hbase --config $PROPAGATED_CONFDIR regionserver start 1><LOG_DIR>/region-server.txt 2>&1 ; ",
             "diagnostics": "",
             "environment": [
-              "HADOOP_USER_NAME=\"hoya\"",
-              "HBASE_LOG_DIR=\"/tmp/hoya-hoya\"",
+              "HADOOP_USER_NAME=\"slider\"",
+              "HBASE_LOG_DIR=\"/tmp/slider-slider\"",
               "HBASE_HEAPSIZE=\"256\"",
               "MALLOC_ARENA_MAX=\"4\"",
               "PROPAGATED_CONFDIR=\"$PWD/propagatedconf\""
@@ -409,10 +409,10 @@ released.
         "role.releasing.instances": "0",
         "role.failed.instances": "1"
       },
-      "hoya": {
+      "slider": {
         "role.instances": "1",
         "role.requested.instances": "0",
-        "role.name": "hoya",
+        "role.name": "slider",
         "role.actual.instances": "1",
         "role.releasing.instances": "0",
         "role.failed.instances": "0"
@@ -494,7 +494,7 @@ string, the expectation being this is where providers can insert specific
 single attributes for client applications.
 
 These values can be converted to application-specific files on the client,
-in code -as done today in the Hoya CLI-, or via template expansion (beyond
+in code -as done today in the Slider CLI-, or via template expansion (beyond
 the scope of this document.
 
 

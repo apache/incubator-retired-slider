@@ -30,4 +30,4 @@ Download: []()
 
 ## Other changes
 
-1. [SLIDER-13|https://issues.apache.org/jira/browse/SLIDER-13] switch build to be java7+ only.
+1. [SLIDER-13](https://issues.apache.org/jira/browse/SLIDER-13) switch build to be java7+ only.

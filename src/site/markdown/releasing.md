@@ -145,7 +145,7 @@ the release number
 
     git push origin master develop 
 
-(assuming that `origin` maps to `git@github.com:hortonworks/hoya.git`;
+(assuming that `origin` maps to `git@github.com:hortonworks/slider.git`;
  you can check this with `git remote -v`
 
 

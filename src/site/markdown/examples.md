@@ -105,7 +105,7 @@ export SLIDER_CONF_DIR=~/Projects/slider/slider-core/src/test/configs/ubuntu-sec
 
 This is for demos only, otherwise you lose the clusters and their databases.
 
-    hdfs dfs -rm -r hdfs://master:9090/user/home/stevel/.hoya
+    hdfs dfs -rm -r hdfs://master:9090/user/home/stevel/.slider
 
 ## Create a Slider Cluster
  

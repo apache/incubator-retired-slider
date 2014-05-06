@@ -274,10 +274,10 @@ defined by (`options/zookeeper.hosts`, `zookeeper.port)` to which the user has w
         clientconfig["slider.provider."+ clusterspec["type"]] != null
 
 * That entry must map to a class on the classpath which can be instantiated
-and cast to `HoyaProviderFactory`.
+and cast to `SliderProviderFactory`.
 
         let classname = clientconfig["slider.provider."+ clusterspec["type"]] 
-        (Class.forName(classname).newInstance()) instanceof HoyaProviderFactory 
+        (Class.forName(classname).newInstance()) instanceof SliderProviderFactory 
 
 #### valid-for-provider(cluster-description, provider)
 

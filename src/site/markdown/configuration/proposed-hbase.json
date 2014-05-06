@@ -3,25 +3,25 @@
   "name": "test_cluster_lifecycle",
   "valid`": true,
   
-  "hoya-internal":{
+  "slider-internal":{
     "type": "hbase",
     "createTime": 1393512091276,
     "updateTime": 1393512117286,
-    "originConfigurationPath": "hdfs://sandbox.hortonworks.com:8020/user/hoya/.hoya/cluster/test_cluster_lifecycle/snapshot",
-    "generatedConfigurationPath": "hdfs://sandbox.hortonworks.com:8020/user/hoya/.hoya/cluster/test_cluster_lifecycle/generated",
-    "dataPath": "hdfs://sandbox.hortonworks.com:8020/user/hoya/.hoya/cluster/test_cluster_lifecycle/database",
-    "hoya.tmp.dir": "hdfs://sandbox.hortonworks.com:8020/user/hoya/.hoya/cluster/test_cluster_lifecycle/tmp/am",
+    "originConfigurationPath": "hdfs://sandbox.hortonworks.com:8020/user/slider/.slider/cluster/test_cluster_lifecycle/snapshot",
+    "generatedConfigurationPath": "hdfs://sandbox.hortonworks.com:8020/user/slider/.slider/cluster/test_cluster_lifecycle/generated",
+    "dataPath": "hdfs://sandbox.hortonworks.com:8020/user/slider/.slider/cluster/test_cluster_lifecycle/database",
+    "slider.tmp.dir": "hdfs://sandbox.hortonworks.com:8020/user/slider/.slider/cluster/test_cluster_lifecycle/tmp/am",
     "slider.cluster.directory.permissions": "0770",
     "slider.data.directory.permissions": "0770"
   },
   
   "options": {
-    "hoya.am.monitoring.enabled": "false",
-    "hoya.cluster.application.image.path": "hdfs://sandbox.hortonworks.com:8020/hbase.tar.gz",
-    "hoya.container.failure.threshold": "5",
-    "hoya.container.failure.shortlife": "60",
+    "slider.am.monitoring.enabled": "false",
+    "slider.cluster.application.image.path": "hdfs://sandbox.hortonworks.com:8020/hbase.tar.gz",
+    "slider.container.failure.threshold": "5",
+    "slider.container.failure.shortlife": "60",
     "zookeeper.port": "2181",
-    "zookeeper.path": "/yarnapps_hoya_hoya_test_cluster_lifecycle",
+    "zookeeper.path": "/yarnapps_slider_slider_test_cluster_lifecycle",
     "zookeeper.hosts": "sandbox",
     "site.hbase.master.startup.retainassign": "true",
     "site.fs.defaultFS": "hdfs://sandbox.hortonworks.com:8020",
@@ -33,21 +33,21 @@
   
   "diagnostics": {
     "create.hadoop.deployed.info": "(detached from release-2.3.0) @dfe46336fbc6a044bc124392ec06b85",
-    "create.application.build.info": "Hoya Core-0.13.0-SNAPSHOT Built against commit# 1a94ee4aa1 on Java 1.7.0_45 by hoya",
+    "create.application.build.info": "Slider Core-0.13.0-SNAPSHOT Built against commit# 1a94ee4aa1 on Java 1.7.0_45 by slider",
     "create.hadoop.build.info": "2.3.0",
     "create.time.millis": "1393512091276",
     "create.time": "27 Feb 2014 14:41:31 GMT"
   },
   
   "info": {
-    "hoya.am.restart.supported": "false",
+    "slider.am.restart.supported": "false",
     "live.time": "27 Feb 2014 14:41:56 GMT",
     "live.time.millis": "1393512116881",
     "status.time": "27 Feb 2014 14:42:08 GMT",
     "status.time.millis": "1393512128726",
     "yarn.vcores": "32",
     "yarn.memory": "2048",
-    "status.application.build.info": "Hoya Core-0.13.0-SNAPSHOT Built against commit# 1a94ee4aa1 on Java 1.7.0_45 by hoya",
+    "status.application.build.info": "Slider Core-0.13.0-SNAPSHOT Built against commit# 1a94ee4aa1 on Java 1.7.0_45 by slider",
     "status.hadoop.build.info": "2.3.0",
     "status.hadoop.deployed.info": "bigwheel-m16-2.2.0 @704f1e463ebc4fb89353011407e965"
   },
@@ -89,7 +89,7 @@
   },
 
   "instances": {
-    "hoya": [ "container_1393511571284_0002_01_000001" ],
+    "slider": [ "container_1393511571284_0002_01_000001" ],
     "master": [ "container_1393511571284_0002_01_000003" ],
     "worker": [ 
       "container_1393511571284_0002_01_000002",
@@ -105,10 +105,10 @@
       "jvm.heapsize": "512M",
       "yarn.vcores": "1"
     },
-    "hoya": {
+    "slider": {
       "yarn.memory": "256",
       "role.instances": "1",
-      "role.name": "hoya",
+      "role.name": "slider",
       "jvm.heapsize": "256M",
       "yarn.vcores": "1"
     },
@@ -131,11 +131,11 @@
     "hbase.regionserver.hlog.tolerable.lowreplication": "1",
     "hbase.regionserver.info.port": "0",
     "hbase.regionserver.port": "0",
-    "hbase.rootdir": "hdfs://sandbox.hortonworks.com:8020/user/hoya/.hoya/cluster/test_cluster_lifecycle/database",
+    "hbase.rootdir": "hdfs://sandbox.hortonworks.com:8020/user/slider/.slider/cluster/test_cluster_lifecycle/database",
     "hbase.tmp.dir": "./hbase-tmp",
     "hbase.zookeeper.property.clientPort": "2181",
     "hbase.zookeeper.quorum": "sandbox",
-    "zookeeper.znode.parent": "/yarnapps_hoya_hoya_test_cluster_lifecycle"
+    "zookeeper.znode.parent": "/yarnapps_slider_slider_test_cluster_lifecycle"
   },
 
 
@@ -168,8 +168,8 @@
           "command": "hbase-0.98.0/bin/hbase --config $PROPAGATED_CONFDIR regionserver start 1><LOG_DIR>/region-server.txt 2>&1 ; ",
           "diagnostics": "",
           "environment": [
-            "HADOOP_USER_NAME=\"hoya\"",
-            "HBASE_LOG_DIR=\"/tmp/hoya-hoya\"",
+            "HADOOP_USER_NAME=\"slider\"",
+            "HBASE_LOG_DIR=\"/tmp/slider-slider\"",
             "HBASE_HEAPSIZE=\"256\"",
             "MALLOC_ARENA_MAX=\"4\"",
             "PROPAGATED_CONFDIR=\"$PWD/propagatedconf\""
@@ -188,23 +188,23 @@
           "command": "hbase-0.98.0/bin/hbase --config $PROPAGATED_CONFDIR regionserver start 1><LOG_DIR>/region-server.txt 2>&1 ; ",
           "diagnostics": "",
           "environment": [
-            "HADOOP_USER_NAME=\"hoya\"",
-            "HBASE_LOG_DIR=\"/tmp/hoya-hoya\"",
+            "HADOOP_USER_NAME=\"slider\"",
+            "HBASE_LOG_DIR=\"/tmp/slider-slider\"",
             "HBASE_HEAPSIZE=\"256\"",
             "MALLOC_ARENA_MAX=\"4\"",
             "PROPAGATED_CONFDIR=\"$PWD/propagatedconf\""
           ]
         }
       },
-      "hoya": {
+      "slider": {
         "container_1394032374441_0001_01_000001": {
           "name": "container_1394032374441_0001_01_000001",
-          "role": "hoya",
+          "role": "slider",
           "roleId": 0,
           "createTime": 0,
           "startTime": 0,
           "released": false,
-          "host": "hoya-8.local",
+          "host": "slider-8.local",
           "state": 3,
           "exitCode": 0,
           "command": "",
@@ -225,8 +225,8 @@
           "command": "hbase-0.98.0/bin/hbase --config $PROPAGATED_CONFDIR master start 1><LOG_DIR>/master.txt 2>&1 ; ",
           "diagnostics": "",
           "environment": [
-            "HADOOP_USER_NAME=\"hoya\"",
-            "HBASE_LOG_DIR=\"/tmp/hoya-hoya\"",
+            "HADOOP_USER_NAME=\"slider\"",
+            "HBASE_LOG_DIR=\"/tmp/slider-slider\"",
             "HBASE_HEAPSIZE=\"256\"",
             "MALLOC_ARENA_MAX=\"4\"",
             "PROPAGATED_CONFDIR=\"$PWD/propagatedconf\""
@@ -247,10 +247,10 @@
         "role.releasing.instances": "0",
         "role.failed.instances": "1"
       },
-      "hoya": {
+      "slider": {
         "role.instances": "1",
         "role.requested.instances": "0",
-        "role.name": "hoya",
+        "role.name": "slider",
         "role.actual.instances": "1",
         "role.releasing.instances": "0",
         "role.failed.instances": "0"

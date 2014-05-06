@@ -60,7 +60,7 @@ Slider runs in secure clusters, but with restrictions
 *  Kerberos and ActiveDirectory to perform the authentication.
 *  Slider to only allow cluster operations by authenticated users -command line and direct RPC. 
 *  Any Slider Web UI and REST API for Ambari to only allow access to authenticated users.
-*  The Slider database in ~/.hoya/clusters/$name/data to be writable by HBase
+*  The Slider database in ~/.slider/clusters/$name/data to be writable by HBase
 
 
 ### Short-lived Clusters
@@ -124,7 +124,7 @@ it automatically uses Kerberos-authorized RPC channels. The client must acquire 
 token to talk the AM. 
 
 This is provided by the YARN Resource Manager when the client application
-wishes to talk with the HoyaAM -a token which is only provided after
+wishes to talk with the SliderAM -a token which is only provided after
 the caller authenticates itself as the user that has access rights
 to the cluster
 
@@ -165,7 +165,7 @@ will be printed -and the client will then fail.
 
 The realm and controller can be defined in the Java system properties
 `java.security.krb5.realm` and `java.security.krb5.kdc`. These can be fixed
-in the JVM options, as described in the [Client Configuration] (hoya-client-configuration.html)
+in the JVM options, as described in the [Client Configuration] (slider-client-configuration.html)
 documentation.
 
 They can also be set on the Slider command line itself, using the `-S` parameter.

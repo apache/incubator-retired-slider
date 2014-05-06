@@ -48,7 +48,7 @@ These are supported primarily to define options needed for some Kerberos configu
  
 Arguments of the form `-D key=value` define JVM system properties.
 
-These can define client options that are not set in `conf/hoya-client.xml` - or to override them.
+These can define client options that are not set in `conf/slider-client.xml` - or to override them.
  
 ### Cluster names
 
@@ -320,10 +320,10 @@ from authenticated callers.
         t2 > t1 
         and slider-instance-live(YARN(t2), YARN, instancename, user)
         and slider-live-instances(YARN(t2))[0].rpcPort != 0
-        and rpc-connection(slider-live-instances(YARN(t2))[0], HoyaClusterProtocol)
+        and rpc-connection(slider-live-instances(YARN(t2))[0], SliderClusterProtocol)
 
 A test for accepting cluster requests is querying the cluster status
-with `HoyaClusterProtocol.getJSONClusterStatus()`. If this returns
+with `SliderClusterProtocol.getJSONClusterStatus()`. If this returns
 a parseable cluster description, the AM considers itself live.
 
 ## Outcome: Applicaton Instance operational state
@@ -385,11 +385,11 @@ conclude that the role is somehow failing consistently -and it should fail the
 entire application.
 
 This has initially been implemented as a simple counter, with the cluster
-option: `"hoya.container.failure.threshold"` defining that threshold.
+option: `"slider.container.failure.threshold"` defining that threshold.
 
     let status = AM.getJSONClusterStatus() 
     forall r in in status.roles :
-        r["role.failed.instances"] < status.options["hoya.container.failure.threshold"]
+        r["role.failed.instances"] < status.options["slider.container.failure.threshold"]
 
 
 ### Instance startup failure
@@ -404,7 +404,7 @@ were met:
 
 1. The AM received an `onCompletedNode` event on a node that started less than 
 a specified number of seconds earlier -a number given in the cluster option
-`"hoya.container.failure.shortlife"`. 
+`"slider.container.failure.shortlife"`. 
 
 More sophisticated failure handling logic than is currently implemented may treat
 startup failures differently from ongoing failures -as they can usually be
@@ -475,13 +475,13 @@ which will change the desired steady-state of the application
         forall (name, size) in components :
             updatedSpec.roles[name]["component.instances"] == size
     data(HDFS', cluster-json-path(HDFS', instancename)) == updatedSpec
-    rpc-connection(slider-live-instances(YARN(t2))[0], HoyaClusterProtocol)
-    let flexed = rpc-connection(slider-live-instances(YARN(t2))[0], HoyaClusterProtocol).flexClusterupdatedSpec)
+    rpc-connection(slider-live-instances(YARN(t2))[0], SliderClusterProtocol)
+    let flexed = rpc-connection(slider-live-instances(YARN(t2))[0], SliderClusterProtocol).flexClusterupdatedSpec)
 
 
 #### AM actions on flex
 
-    boolean HoyaAppMaster.flexCluster(ClusterDescription updatedSpec)
+    boolean SliderAppMaster.flexCluster(ClusterDescription updatedSpec)
   
 If the  cluster is in a state where flexing is possible (i.e. it is not in teardown),
 then `AppState` is updated with the new desired role counts. The operation will
@@ -620,7 +620,7 @@ of that user:
 
 #### Postconditions
 
-If no instancename was given, all hoya applications of that user are listed,
+If no instancename was given, all slider applications of that user are listed,
 else only the one running (or one of the finished ones)
   
     if instancename == "" :
@@ -643,7 +643,7 @@ of the cluster
 
     if not slider-instance-live(YARN, instancename) : raise SliderException(EXIT_UNKNOWN_INSTANCE)
 
-    exists c in hoya-app-containers(YARN, instancename, user) where c.id == container-id 
+    exists c in slider-app-containers(YARN, instancename, user) where c.id == container-id 
     
     let status := AM.getJSONClusterStatus() 
     exists role = status.instances where container-id in status.instances[role].values
@@ -657,7 +657,7 @@ The container is not in the list of containers in the cluster
 
 And implicitly, not in the running containers of that application
 
-    not exists c in hoya-app-containers(YARN', instancename, user) where c.id == container-id 
+    not exists c in slider-app-containers(YARN', instancename, user) where c.id == container-id 
 
 At some time `t1 > t`, the status of the application (`AM'`) will be updated to reflect
 that YARN has notified the AM of the loss of the container

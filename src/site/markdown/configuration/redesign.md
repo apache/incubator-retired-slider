@@ -28,8 +28,8 @@ or `/roles/*/yarn.memory`
 
 ## History
 
-The Hoya cluster specification was implicitly defined in the file
-`org.apache.hoya.api.ClusterDescription`. It had a number of roles
+The Slider cluster specification was implicitly defined in the file
+`org.apache.slider.api.ClusterDescription`. It had a number of roles
 
 1. Persistent representaton of cluster state
 1. Internal model of desired cluster state within the Application Master.
@@ -67,9 +67,9 @@ Contains various string and integer values
     "state": 3,
     "createTime": 1393512091276,
     "updateTime": 1393512117286,
-    "originConfigurationPath": "hdfs://sandbox.hortonworks.com:8020/user/stevel/.hoya/cluster/test_cluster_lifecycle/snapshot",
-    "generatedConfigurationPath": "hdfs://sandbox.hortonworks.com:8020/user/stevel/.hoya/cluster/test_cluster_lifecycle/generated",
-    "dataPath": "hdfs://sandbox.hortonworks.com:8020/user/stevel/.hoya/cluster/test_cluster_lifecycle/database",
+    "originConfigurationPath": "hdfs://sandbox.hortonworks.com:8020/user/stevel/.slider/cluster/test_cluster_lifecycle/snapshot",
+    "generatedConfigurationPath": "hdfs://sandbox.hortonworks.com:8020/user/stevel/.slider/cluster/test_cluster_lifecycle/generated",
+    "dataPath": "hdfs://sandbox.hortonworks.com:8020/user/stevel/.slider/cluster/test_cluster_lifecycle/database",
 
 
 * `version`: version of the JSON file. Not currently used
@@ -101,7 +101,7 @@ used internally -if changed the cluster may not start.
 
 *Proposed*: 
 1. Move all state bar `name` and cluster state
-into a section `/hoya-internal`.
+into a section `/slider-internal`.
 1. The cluster state is moved from an enum to a simple
  boolean, `valid`, set to true when the cluster JSON
  has been fully constructed.
@@ -115,7 +115,7 @@ intended to be used for debugging and testing.
  
     "info" : {
       "create.hadoop.deployed.info" : "(detached from release-2.3.0) @dfe46336fbc6a044bc124392ec06b85",
-      "create.application.build.info" : "Hoya Core-0.13.0-SNAPSHOT Built against commit# 1a94ee4aa1 on Java 1.7.0_45 by stevel",
+      "create.application.build.info" : "Slider Core-0.13.0-SNAPSHOT Built against commit# 1a94ee4aa1 on Java 1.7.0_45 by stevel",
       "create.hadoop.build.info" : "2.3.0",
       "create.time.millis" : "1393512091276",
     },
@@ -128,7 +128,7 @@ intended to be used for debugging and testing.
  whether the AM supports service restart without killing all the containers hosting
  the role instances:
  
-    "hoya.am.restart.supported" : "false",
+    "slider.am.restart.supported" : "false",
     
  timestamps of the cluster going live, and when the status query was made
     
@@ -146,7 +146,7 @@ intended to be used for debugging and testing.
   the application was built using Hadoop 2.3.0, but is running against the version
   of Hadoop built for HDP-2.
   
-    "status.application.build.info" : "Hoya Core-0.13.0-SNAPSHOT Built against commit# 1a94ee4aa1 on Java 1.7.0_45 by stevel",
+    "status.application.build.info" : "Slider Core-0.13.0-SNAPSHOT Built against commit# 1a94ee4aa1 on Java 1.7.0_45 by stevel",
     "status.hadoop.build.info" : "2.3.0",
     "status.hadoop.deployed.info" : "bigwheel-m16-2.2.0 @704f1e463ebc4fb89353011407e965"
  
@@ -156,7 +156,7 @@ intended to be used for debugging and testing.
  Information about the live containers in a cluster
 
      "instances": {
-       "hoya": [ "container_1393511571284_0002_01_000001" ],
+       "slider": [ "container_1393511571284_0002_01_000001" ],
        "master": [ "container_1393511571284_0002_01_000003" ],
        "worker": [ 
          "container_1393511571284_0002_01_000002",
@@ -168,7 +168,7 @@ There's no information about location, nor is there any history about containers
 that are no longer part of the cluster (i.e. failed & released containers). 
 
 It could be possible to include a list of previous containers,
-though Hoya would need to be selective about how many to store
+though Slider would need to be selective about how many to store
 (or how much detail to retain) on those previous containers.
 
 Perhaps the list could be allowed to grow without limit, but detail
@@ -217,7 +217,7 @@ are state, not statistics*
            "containers.desired": 2,
            "containers.requested": 0
          },
-         "hoya": {
+         "slider": {
            "containers.unknown.completed": 0,
            "containers.start.completed": 3,
            "containers.live": 1,
@@ -238,7 +238,7 @@ are state, not statistics*
          }
        },
     
-The `/statistics/hoya` section is unusual in that it provides the aggregate statistics
+The `/statistics/slider` section is unusual in that it provides the aggregate statistics
 of the cluster -this is not obvious. A different name could be used -but
 again, there's a risk of clash with or confusion with a role. 
 
@@ -285,27 +285,27 @@ by providers), without any changes to the toplevel section.
 
 ## Options
 
-A list of options used by Hoya and its providers to build up the AM
+A list of options used by Slider and its providers to build up the AM
 and the configurations of the deployed service components
 
 
     "options": {
       "zookeeper.port": "2181",
       "site.hbase.master.startup.retainassign": "true",
-      "hoya.cluster.application.image.path": "hdfs://sandbox.hortonworks.com:8020/hbase.tar.gz",
+      "slider.cluster.application.image.path": "hdfs://sandbox.hortonworks.com:8020/hbase.tar.gz",
       "site.fs.defaultFS": "hdfs://sandbox.hortonworks.com:8020",
-      "hoya.container.failure.threshold": "5",
+      "slider.container.failure.threshold": "5",
       "site.fs.default.name": "hdfs://sandbox.hortonworks.com:8020",
       "slider.cluster.directory.permissions": "0770",
-      "hoya.am.monitoring.enabled": "false",
-      "zookeeper.path": "/yarnapps_hoya_stevel_test_cluster_lifecycle",
-      "hoya.tmp.dir": "hdfs://sandbox.hortonworks.com:8020/user/stevel/.hoya/cluster/test_cluster_lifecycle/tmp/am",
+      "slider.am.monitoring.enabled": "false",
+      "zookeeper.path": "/yarnapps_slider_stevel_test_cluster_lifecycle",
+      "slider.tmp.dir": "hdfs://sandbox.hortonworks.com:8020/user/stevel/.slider/cluster/test_cluster_lifecycle/tmp/am",
       "slider.data.directory.permissions": "0770",
       "zookeeper.hosts": "sandbox",
-      "hoya.container.failure.shortlife": "60"
+      "slider.container.failure.shortlife": "60"
     },
   
-Some for these options have been created by hoya itself ("hoya.tmp.dir")
+Some for these options have been created by slider itself ("slider.tmp.dir")
 for internal use -and are cluster specific. If/when the ability to use
 an existing json file as a template for a new cluster is added, having these
 options in the configuration will create problems
@@ -314,9 +314,9 @@ options in the configuration will create problems
 # Proposed Changes
 
 
-## Move Hoya internal state to `/hoya-internal`
+## Move Slider internal state to `/slider-internal`
 
-Move all hoya "private" data to an internal section,`/hoya-internal`
+Move all slider "private" data to an internal section,`/slider-internal`
 including those in the toplevel directory and in `/options`
   
 ## Allow `/options` and `roles/*/` options entries to take the value "null".
@@ -374,14 +374,14 @@ about the cluster.
         "app.infoport": "0"
       }
 
-The role `hoya` represents the Hoya Application Master itself.
+The role `slider` represents the Slider Application Master itself.
 
       
-      "hoya": {
+      "slider": {
         "yarn.memory": "256",
         "env.MALLOC_ARENA_MAX": "4",
         "role.instances": "1",
-        "role.name": "hoya",
+        "role.name": "slider",
         "jvm.heapsize": "256M",
         "yarn.vcores": "1",
       },
@@ -398,7 +398,7 @@ string, the expectation being this is where providers can insert specific
 single attributes for client applications.
 
 These values can be converted to application-specific files on the client,
-in code -as done today in the Hoya CLI-, or via template expansion (beyond
+in code -as done today in the Slider CLI-, or via template expansion (beyond
 the scope of this document.
 
 
@@ -461,7 +461,7 @@ Allow providers to publish information to the status, in their
 own section.
 
 There already is support for providers updating the cluster status
-in Hoya 12.1 and earlier, but it has flaws
+in Slider 12.1 and earlier, but it has flaws
 
 A key one is that it is done sychronously on a `getStatus()` call;
 as providers may perform a live query of their status (example, the HBase

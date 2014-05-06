@@ -135,7 +135,7 @@ If it is not present, the tests will fail
 The path to the configuration directory must be supplied in the property
 `slider.conf.dir` which can be set on the command line
 
-    mvn test -Dhoya.conf.dir=src/test/configs/sandbox/slider
+    mvn test -Dslider.conf.dir=src/test/configs/sandbox/slider
 
 It can also be set in the (optional) file `slider-funtest/build.properties`:
 
