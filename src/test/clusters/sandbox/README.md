@@ -15,7 +15,7 @@
  # README
  
 This is a set of configurations for a single-node YARN cluster built
-from the hortonworks sandbox, *with a DNS entry "sandbox" to match*
+against a sandbox VM, *with a DNS entry "sandbox" to match*
 
 
  
@@ -42,7 +42,7 @@ from the hortonworks sandbox, *with a DNS entry "sandbox" to match*
 
      </configuration>
  
- For the hoya command line
+ For the slider command line
  
     --manager sandbox:8032 --filesystem hdfs://sandbox:9090 
  

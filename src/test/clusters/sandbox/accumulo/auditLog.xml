@@ -22,7 +22,7 @@
 
     <!--  Write out Audit info to an Audit file -->
     <appender name="Audit" class="org.apache.log4j.DailyRollingFileAppender">
-        <param name="File"           value="${org.apache.accumulo.core.dir.log}/${org.apache.accumulo.core.ip.localhost.hostname}_${org.apache.hoya.container}.audit"/>
+        <param name="File"           value="${org.apache.accumulo.core.dir.log}/${org.apache.accumulo.core.ip.localhost.hostname}_${org.apache.slider.container}.audit"/>
         <param name="MaxBackupIndex" value="10"/>
         <param name="DatePattern" value="'.'yyyy-MM-dd"/>
         <layout class="org.apache.log4j.PatternLayout">

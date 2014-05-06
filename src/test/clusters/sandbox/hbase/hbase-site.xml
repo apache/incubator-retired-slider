@@ -43,7 +43,7 @@
  </property>
   <!--just here to verify propagation of properties all the way to the AM-->
   <property>
-    <name>hoya.unused.option</name>
+    <name>slider.unused.option</name>
     <value>1</value>
   </property>
 

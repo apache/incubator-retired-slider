@@ -20,7 +20,7 @@
 <configuration>
   <property>
     <name>slider.client.resource.origin</name>
-    <value>configs/sandbox/hoya</value>
+    <value>configs/sandbox/slider</value>
     <description>This is just for diagnostics</description>
   </property>
 
@@ -75,7 +75,7 @@
   <property>
     <name>slider.test.accumulo.tar</name>
     <description>Path to the Accumulo Tar file in HDFS</description>
-    <value>hdfs://sandbox.hortonworks.com:8020/user/hoya/accumulo.tar</value>
+    <value>hdfs://sandbox.hortonworks.com:8020/user/slider/accumulo.tar</value>
   </property>
 
 

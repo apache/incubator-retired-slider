@@ -12,7 +12,30 @@
   limitations under the License. See accompanying LICENSE file.
 -->
 
-# Just some operations for manual runs against steve's secure VM
+# Just some operations for manual runs against a kerberized Ubunt VM
+
+# starting services
+
+## using hadoop/sbin service launchers
+    
+    hadoop-daemon.sh --config $HADOOP_CONF_DIR --script hdfs start namenode
+    hadoop-daemon.sh --config $HADOOP_CONF_DIR --script hdfs start datanode
+    yarn-daemon.sh --config $HADOOP_CONF_DIR start resourcemanager
+    yarn-daemon.sh --config $HADOOP_CONF_DIR start nodemanager
+    
+    ~/zookeeper/bin/zkServer.sh start
+    
+    
+## stop them
+
+    hadoop-daemon.sh --config $HADOOP_CONF_DIR --script hdfs stop namenode
+    hadoop-daemon.sh --config $HADOOP_CONF_DIR --script hdfs stop datanode
+    
+    yarn-daemon.sh --config $HADOOP_CONF_DIR stop resourcemanager
+    yarn-daemon.sh --config $HADOOP_CONF_DIR stop nodemanager
+    
+
+
 
   export SLIDER_JVM_OPTS="-Djava.security.krb5.realm=COTHAM -Djava.security.krb5.kdc=ubuntu -Djava.net.preferIPv4Stack=true"
 
@@ -223,7 +246,7 @@
       --zkhosts ubuntu \
       --zkport 2121 \
       --image hdfs://ubuntu:9090/hbase.tar \
-      --appconf file:///Users/stevel/Projects/Hortonworks/Projects/hoya/hoya-funtest/src/test/configs/ubuntu-secure/hbase \
+      --appconf file:///Users/stevel/Projects/Hortonworks/Projects/slider/slider-funtest/src/test/configs/ubuntu-secure/hbase \
       --roleopt master env.MALLOC_ARENA_MAX 4 \
       --roleopt worker app.infoport 0 \
   

@@ -20,7 +20,7 @@
 <configuration>
   <property>
     <name>slider.client.resource.origin</name>
-    <value>configs/sandbox/hoya</value>
+    <value>configs/sandbox/slider</value>
     <description>This is just for diagnostics</description>
   </property>
 
@@ -35,7 +35,7 @@
   </property>
 
   <property>
-    <name>hoya.funtest.enabled</name>
+    <name>slider.funtest.enabled</name>
     <value>false</value>
   </property>
   

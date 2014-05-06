@@ -15,7 +15,7 @@
 # Just some operations for manual runs against steve's secure VM
 
 
-    export HOYA_CONF_DIR=/Users/stevel/Projects/Hortonworks/Projects/slider/slider-core/src/test/configs/sandbox/hoya
+    export SLIDER_CONF_DIR=/Users/stevel/Projects/Hortonworks/Projects/slider/slider-core/src/test/configs/sandbox/slider
 
 ## Local manual tests
 
@@ -25,8 +25,8 @@
          --component worker 4\
           --zkhosts sandbox:2181 \
           --provider hbase \
-          --image hdfs://sandbox.hortonworks.com:8020/user/hoya/hbase.tar.gz \
-          --appconf file:////Users/hoya/Hadoop/configs/master/hbase \
+          --image hdfs://sandbox.hortonworks.com:8020/user/slider/hbase.tar.gz \
+          --appconf file:////Users/slider/Hadoop/configs/master/hbase \
           --compopt master jvm.heap 128 \
           --compopt worker jvm.heap 128 
 
@@ -39,7 +39,7 @@
             --component master 0\
         --zkhosts sandbox:2181  \
         --provider hbase \
-        --image hdfs://sandbox.hortonworks.com:8020/user/hoya/hbase.tar.gz \
+        --image hdfs://sandbox.hortonworks.com:8020/user/slider/hbase.tar.gz \
         --appconf file:///Users/stevel/Projects/slider/slider-core/src/test/configs/sandbox/hbase \
         --compopt master jvm.heap 128 \
         --compopt master env.MALLOC_ARENA_MAX 4 \
@@ -50,7 +50,7 @@
     bin/slider create cl1 \
         --component master 0 \
         --zkhosts sandbox:2181  \
-        --image hdfs://sandbox.hortonworks.com:8020/user/hoya/hbase.tar.gz \
+        --image hdfs://sandbox.hortonworks.com:8020/user/slider/hbase.tar.gz \
         --appconf file:///Users/stevel/Projects/slider/slider-core/src/test/configs/sandbox/hbase \
         --compopt master jvm.heap 128 \
         --compopt master env.MALLOC_ARENA_MAX 4 
@@ -70,7 +70,7 @@
     bin/slider create cluster3 \
     --zkhosts sandbox:2181  \
     --provider hbase \
-    --image hdfs://sandbox.hortonworks.com:8020/user/hoya/hbase.tar.gz \
+    --image hdfs://sandbox.hortonworks.com:8020/user/slider/hbase.tar.gz \
     --appconf file:///Users/stevel/Projects/slider/slider-core/src/test/configs/sandbox/hbase \
     --component master 1 \
     --component worker 1 
@@ -81,7 +81,7 @@
     bin/slider create cl1 \
     --zkhosts sandbox:2181   \
     --provider hbase \
-    --image hdfs://sandbox.hortonworks.com:8020/user/hoya/hbase.tar.gz \
+    --image hdfs://sandbox.hortonworks.com:8020/user/slider/hbase.tar.gz \
     --appconf file:///Users/stevel/Projects/slider/slider-core/src/test/configs/sandbox/hbase \
     --component master 1 
 
@@ -90,7 +90,7 @@
      bin/slider create cl1 \
      --zkhosts sandbox:2181   \
      --provider hbase \
-     --image hdfs://sandbox.hortonworks.com:8020/user/hoya/hbase.tar.gz \
+     --image hdfs://sandbox.hortonworks.com:8020/user/slider/hbase.tar.gz \
      --appconf file:///Users/stevel/Projects/slider/slider-core/src/test/configs/sandbox/hbase \
      --component master 1  \
      --component worker 1  
@@ -100,7 +100,7 @@
     bin/slider build cl1 \
     --zkhosts sandbox:2181 \
     --provider hbase \
-    --image hdfs://sandbox.hortonworks.com:8020/user/hoya/hbase.tar.gz \
+    --image hdfs://sandbox.hortonworks.com:8020/user/slider/hbase.tar.gz \
     --appconf file:///Users/stevel/Projects/slider/slider-core/src/test/configs/sandbox/hbase \
     --component master 1 
          
@@ -135,7 +135,7 @@
       --component master 2\
       --zkhosts sandbox:2181 \
       --provider hbase \
-      --image hdfs://sandbox.hortonworks.com:8020/user/hoya/hbase.tar.gz  \
+      --image hdfs://sandbox.hortonworks.com:8020/user/slider/hbase.tar.gz  \
       --appconf file:///Users/stevel/Projects/slider/slider-core/src/test/configs/sandbox/hbase \
       --compopt master env.MALLOC_ARENA_MAX 4 \
       --compopt worker app.infoport 0 \
