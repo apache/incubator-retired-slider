@@ -85,87 +85,87 @@ Application can define a set of dependencies. The dependencies are parsed by Sli
 
 * **requirement**: a set of requirements that lets Slider know what properties are required by the app command scripts
 
-```
-  <metainfo>
-    <schemaVersion>2.0</schemaVersion>
-    <application>
-      <name>HBASE</name>
-      <version>0.96.0.2.1.1</version>
-      <type>YARN-APP</type>
-      <minHadoopVersion>2.1.0</minHadoopVersion>
-      <components>
-        <component>
-          <name>HBASE_MASTER</name>
-          <category>MASTER</category>
-          <minInstanceCount>1</minInstanceCount>
-          <maxInstanceCount>2</maxInstanceCount>
-          <commandScript>
-            <script>scripts/hbase_master.py</script>
-            <scriptType>PYTHON</scriptType>
-            <timeout>600</timeout>
-          </commandScript>
-          <customCommands>
-            <customCommand>
-              <name>GRACEFUL_STOP</name>
+
+      <metainfo>
+        <schemaVersion>2.0</schemaVersion>
+        <application>
+          <name>HBASE</name>
+          <version>0.96.0.2.1.1</version>
+          <type>YARN-APP</type>
+          <minHadoopVersion>2.1.0</minHadoopVersion>
+          <components>
+            <component>
+              <name>HBASE_MASTER</name>
+              <category>MASTER</category>
+              <minInstanceCount>1</minInstanceCount>
+              <maxInstanceCount>2</maxInstanceCount>
               <commandScript>
                 <script>scripts/hbase_master.py</script>
                 <scriptType>PYTHON</scriptType>
-                <timeout>1800</timeout>
+                <timeout>600</timeout>
               </commandScript>
-          </customCommand>
-        </customCommands>
-        </component>
+              <customCommands>
+                <customCommand>
+                  <name>GRACEFUL_STOP</name>
+                  <commandScript>
+                    <script>scripts/hbase_master.py</script>
+                    <scriptType>PYTHON</scriptType>
+                    <timeout>1800</timeout>
+                  </commandScript>
+              </customCommand>
+            </customCommands>
+            </component>
+    
+            <component>
+              <name>HBASE_REGIONSERVER</name>
+              <category>SLAVE</category>
+              <minInstanceCount>1</minInstanceCount>
+              ...
+            </component>
+    
+            <component>
+              <name>HBASE_CLIENT</name>
+              <category>CLIENT</category>
+              ...
+          </components>
+    
+          <osSpecifics>
+            <osSpecific>
+              <osType>any</osType>
+              <packages>
+                <package>
+                  <type>tarball</type>
+                  <name>hbase-0.96.1-tar.gz</name>
+                  <location>package/files</location>
+                </package>
+              </packages>
+            </osSpecific>
+          </osSpecifics>
+    
+          <commandScript>
+            <script>scripts/app_health_check.py</script>
+            <scriptType>PYTHON</scriptType>
+            <timeout>300</timeout>
+          </commandScript>
+    
+          <dependencies>
+            <dependency>
+              <name>ZOOKEEPER</name>
+              <scope>cluster</scope>
+              <requirement>client,zk_quorom_hosts</requirement>
+            </dependency>
+          </dependencies>
+    
+        </application>
+      </metainfo>
 
-        <component>
-          <name>HBASE_REGIONSERVER</name>
-          <category>SLAVE</category>
-          <minInstanceCount>1</minInstanceCount>
-          ...
-        </component>
-
-        <component>
-          <name>HBASE_CLIENT</name>
-          <category>CLIENT</category>
-          ...
-      </components>
-
-      <osSpecifics>
-        <osSpecific>
-          <osType>any</osType>
-          <packages>
-            <package>
-              <type>tarball</type>
-              <name>hbase-0.96.1-tar.gz</name>
-              <location>package/files</location>
-            </package>
-          </packages>
-        </osSpecific>
-      </osSpecifics>
-
-      <commandScript>
-        <script>scripts/app_health_check.py</script>
-        <scriptType>PYTHON</scriptType>
-        <timeout>300</timeout>
-      </commandScript>
-
-      <dependencies>
-        <dependency>
-          <name>ZOOKEEPER</name>
-          <scope>cluster</scope>
-          <requirement>client,zk_quorom_hosts</requirement>
-        </dependency>
-      </dependencies>
-
-    </application>
-  </metainfo>
-```
 
 
 ## Open Questions
 
 1. Applications may need some information from other applications or base services such as ZK, YARN, HDFS. Additionally, they may need a dedicated ZK node, a HDFS working folder, etc. How do we capture this requirement? There needs to be a well-known way to ask for these information e.g. fs.default.name, zk_hosts.
 
-2. Similar to the above there are common parameters such as JAVA_HOME and other environment variables. Application should be able to refer to these parameters and Slider should be able to provide them.
+2. Similar to the above there are common parameters such as `JAVA_HOME` and other environment variables. Application should be able to refer to these parameters and Slider should be able to provide them.
 
 3. Composite application definition: Composite application definition would require a spec that refers to this spec and binds multiple applications together.
 

@@ -21,7 +21,10 @@
 
 Slider is a YARN application to deploy non-YARN-enabled applications in a YARN cluster
 
-Slider consists of a YARN application master, the "Slider AM", and a client application which communicates with YARN and the Slider AM via remote procedure calls and/or REST requests. The client application offers command line access, as well as low-level API access for test purposes
+Slider consists of a YARN application master, the "Slider AM", and a client
+application which communicates with YARN and the Slider AM via remote procedure
+calls and/or REST requests. The client application offers command line access
+ as well as low-level API access for test purposes
 
 The deployed application must be a program that can be run across a pool of
 YARN-managed servers, dynamically locating its peers. It is not Slider's

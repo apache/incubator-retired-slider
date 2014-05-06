@@ -42,7 +42,7 @@ various templates used by the application
 other scripts, txt files, tarballs, etc.
 
 
-![Image](../images/app_package_sample_04.png?raw=true)
+![Image](../images/app_package_sample_04.png)
 
 The example above shows a semi-expanded view of an application "HBASE-YARN-APP" and the package structure for OOZIE command scripts.
 
@@ -76,37 +76,37 @@ Scripts are the implementation of management operations. There are five default 
 
 The script specified in the metainfo is expected to understand the command. It can choose to call other scripts based on how the application author organizes the code base. For example:
 
-```
-class OozieServer(Script):
-  def install(self, env):
-    self.install_packages(env)
-    
-  def configure(self, env):
-    import params
-    env.set_params(params)
-    oozie(is_server=True)
-    
-  def start(self, env):
-    import params
-    env.set_params(params)
-    self.configure(env)
-    oozie_service(action='start')
-    
-  def stop(self, env):
-    import params
-    env.set_params(params)
-    oozie_service(action='stop')
 
-  def status(self, env):
-    import status_params
-    env.set_params(status_params)
-    check_process_status(status_params.pid_file)
-```
+    class OozieServer(Script):
+      def install(self, env):
+        self.install_packages(env)
+        
+      def configure(self, env):
+        import params
+        env.set_params(params)
+        oozie(is_server=True)
+        
+      def start(self, env):
+        import params
+        env.set_params(params)
+        self.configure(env)
+        oozie_service(action='start')
+        
+      def stop(self, env):
+        import params
+        env.set_params(params)
+        oozie_service(action='stop')
+    
+      def status(self, env):
+        import status_params
+        env.set_params(status_params)
+        check_process_status(status_params.pid_file)
+
 
 
 The scripts are invoked in the following manner:
 
-`python SCRIPT COMMAND JSON_FILE PACKAGE_ROOT STRUCTURED_OUT_FILE`
+    python SCRIPT COMMAND JSON_FILE PACKAGE_ROOT STRUCTURED_OUT_FILE
 
 * SCRIPT is the top level script that implements the commands for the component. 
 
@@ -134,13 +134,11 @@ templates are configurable text files that are NOT regular config files. *A libr
 
 Sample template file for dfs.exclude file to list excluded/decommissioned hosts. hdfs_exclude_files in the property defined in params.py which is populated from config parameters defined in JSON_FILE.
 
-```
-{% if hdfs_exclude_file %} 
-{% for host in hdfs_exclude_file %}
-{{host}}
-{% endfor %}
-{% endif %}
-```
+    {% if hdfs_exclude_file %} 
+    {% for host in hdfs_exclude_file %}
+    {{host}}
+    {% endfor %}
+    {% endif %}
 
 
 ### files folder

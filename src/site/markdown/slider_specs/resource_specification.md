@@ -28,28 +28,27 @@ Some parameters that can be specified for a component instance include:
 
 An example resource requirement for an application that has two components "master" and "worker" is as follows. Slider will automatically add the requirements for the AppMaster for the application. This compoent is named "slider".
 
-```
-"components" : {
-    "worker" : {
-      "yarn.memory" : "768",
-      "env.MALLOC_ARENA_MAX" : "4",
-      "component.instances" : "1",
-      "component.name" : "worker",
-      "yarn.vcores" : "1"
-    },
-    "slider" : {
-      "yarn.memory" : "256",
-      "env.MALLOC_ARENA_MAX" : "4",
-      "component.instances" : "1",
-      "component.name" : "slider",
-      "yarn.vcores" : "1"
-    },
-    "master" : {
-      "yarn.memory" : "1024",
-      "env.MALLOC_ARENA_MAX" : "4",
-      "component.instances" : "1",
-      "component.name" : "master",
-      "yarn.vcores" : "1"
+    "components" : {
+      "worker" : {
+        "yarn.memory" : "768",
+        "env.MALLOC_ARENA_MAX" : "4",
+        "component.instances" : "1",
+        "component.name" : "worker",
+        "yarn.vcores" : "1"
+      },
+      "slider" : {
+        "yarn.memory" : "256",
+        "env.MALLOC_ARENA_MAX" : "4",
+        "component.instances" : "1",
+        "component.name" : "slider",
+        "yarn.vcores" : "1"
+      },
+      "master" : {
+        "yarn.memory" : "1024",
+        "env.MALLOC_ARENA_MAX" : "4",
+        "component.instances" : "1",
+        "component.name" : "master",
+        "yarn.vcores" : "1"
+      }
     }
-  }
-```
+

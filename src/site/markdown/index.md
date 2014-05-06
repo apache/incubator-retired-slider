@@ -19,13 +19,9 @@
 
 Slider is a YARN application to deploy existing distributed applications on YARN, 
 monitor them and make them larger or smaller as desired -even while 
-the cluster is running.
+the application is running.
 
-
-Slider has a plug-in *provider* architecture to support different applications,
-and currently supports Apache HBase and Apache Accumulo.
-
-Clusters can be stopped, "frozen" and restarted, "thawed" later; the distribution
+Applications can be stopped, "frozen" and restarted, "thawed" later; the distribution
 of the deployed application across the YARN cluster is persisted -enabling
 a best-effort placement close to the previous locations on a cluster thaw.
 Applications which remember the previous placement of data (such as HBase)
@@ -41,24 +37,21 @@ application itself
 
 Some of the features are:
 
-* Allows users to create on-demand Apache HBase and Apache Accumulo clusters
+* Allows users to create on-demand applications in a YARN cluster
 
-* Allow different users/applicatins to run different versions of the application.
+* Allow different users/applications to run different versions of the application.
 
-* Allow users to configure different Hbase instances differently
+* Allow users to configure different application instances differently
 
-* Stop / Suspend / Resume clusters as needed
+* Stop / Suspend / Resume application instances as needed
 
-* Expand / shrink clusters as needed
+* Expand / shrink application instances as needed
 
 The Slider tool is a Java command line application.
 
-The tool persists the information as a JSON document into the HDFS.
-It also generates the configuration files assuming the passed configuration
-directory as a base - in particular, the HDFS and ZooKeeper root directories
-for the new HBase instance has to be generated (note that the underlying
-HDFS and ZooKeeper are shared by multiple cluster instances). Once the
-cluster has been started, the cluster can be made to grow or shrink
+The tool persists the information as JSON documents in HDFS.
+
+Once the cluster has been started, the cluster can be made to grow or shrink
 using the Slider commands. The cluster can also be stopped, *frozen*
 and later resumed, *thawed*.
       
@@ -69,20 +62,19 @@ code changes and as of this writing, it has required few changes.
 ## Using 
 
 * [Getting Started](getting_started.html)
-* [Installing](installing.html)
 * [Man Page](manpage.html)
 * [Examples](examples.html)
-* [Client Configuration](hoya-client-configuration.html)
+* [Client Configuration](client-configuration.html)
 * [Client Exit Codes](exitcodes.html)
 * [Security](security.html)
 * [Logging](logging.html)
+* [How to define a new slider-packaged application](slider_specs/index.html)
+* [Application configuration model](configuration/index.html)
+
 
 ## Developing 
 
-* [Architecture](architecture.html)
+* [Architecture](architecture/index.html)
+* [Developing](developing/index.html)
 * [Application Needs](app_needs.html)
-* [Building](building.html)
-* [Releasing](releasing.html)
-* [Role history](rolehistory.html) 
-* [Specification](specification/index.html)
-* [Application configuration model](configuration/index.html)
+* [Service Registry](registry/index.html)

@@ -50,17 +50,17 @@ Slider runs in secure clusters, but with restrictions
   as the user.
 
 
-## Requirements
+## Security Requirements
 
 
 ### Needs
-*  Slider and HBase to work against secure HDFS
+*  Slider and deployed applications to work against secure HDFS
 *  Slider to work with secure YARN.
-*  Slider to start a secure HBase cluster
+*  Slider to start secure applications
 *  Kerberos and ActiveDirectory to perform the authentication.
 *  Slider to only allow cluster operations by authenticated users -command line and direct RPC. 
 *  Any Slider Web UI and REST API for Ambari to only allow access to authenticated users.
-*  The Slider database in ~/.slider/clusters/$name/data to be writable by HBase
+*  The Slider database in `~/.slider/clusters/$name/data` to be writable by HBase
 
 
 ### Short-lived Clusters
@@ -138,15 +138,15 @@ Slider can be placed into secure mode by setting the Hadoop security options:
 This can be done in `slider-client.xml`:
 
 
-  <property>
-    <name>hadoop.security.authorization</name>
-    <value>true</value>
-  </property>
-
-  <property>
-    <name>hadoop.security.authentication</name>
-    <value>kerberos</value>
-  </property>
+    <property>
+      <name>hadoop.security.authorization</name>
+      <value>true</value>
+    </property>
+    
+    <property>
+      <name>hadoop.security.authentication</name>
+      <value>kerberos</value>
+    </property>
 
 
 Or it can be done on the command line
@@ -165,7 +165,7 @@ will be printed -and the client will then fail.
 
 The realm and controller can be defined in the Java system properties
 `java.security.krb5.realm` and `java.security.krb5.kdc`. These can be fixed
-in the JVM options, as described in the [Client Configuration] (slider-client-configuration.html)
+in the JVM options, as described in the [Client Configuration] (client-configuration.html)
 documentation.
 
 They can also be set on the Slider command line itself, using the `-S` parameter.

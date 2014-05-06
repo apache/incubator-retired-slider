@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-#Application Configuration
+# Application Configuration
 
 App Configuration captures the default configuration associated with the application. *Details of configuration management is discussed in a separate spec*. The default configuration is modified based on user provided InstanceConfiguration, cluster specific details (e.g. HDFS root, local dir root), container allocated resources (port and hostname), and dependencies (e.g. ZK quorom hosts) and handed to the component instances.
 
@@ -27,47 +27,47 @@ In addition, application may have configuration parameters that do not necessari
 
 A config file is of the form:
 
-```
-<?xml version="1.0"?>
-<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
-<configuration>
-  <property>
-  ...
-  </property>
-</configuration>
-```
+
+    <?xml version="1.0"?>
+    <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+    <configuration>
+      <property>
+      ...
+      </property>
+    </configuration>
+
 
 
 Each configuration property is specified as follows:
 
-```
-<property>
-    <name>storm.zookeeper.session.timeout</name>
-    <value>20000</value>
-    <description>The session timeout for clients to ZooKeeper.</description>
-    <required>false</required>
-    <valueRestriction>0-30000</valueRestriction>
-  </property>
-  <property>
-    <name>storm.zookeeper.root</name>
-    <value>/storm</value>
-    <description>The root location at which Storm stores data in ZK.</description>
-    <required>true</required>
-  </property>
-  <property>
-    <name>jvm.heapsize</name>
-    <value>256</value>
-    <description>The default JVM heap size for any component instance.</description>
-    <required>true</required>
-  </property>
-  <property>
-    <name>nimbus.host</name>
-    <value>localhost</value>
-    <description>The host that the master server is running on.</description>
-    <required>true</required>
-    <clientVisible>true</clientVisible>
-  </property>
-  ```
+
+    <property>
+        <name>storm.zookeeper.session.timeout</name>
+        <value>20000</value>
+        <description>The session timeout for clients to ZooKeeper.</description>
+        <required>false</required>
+        <valueRestriction>0-30000</valueRestriction>
+      </property>
+      <property>
+        <name>storm.zookeeper.root</name>
+        <value>/storm</value>
+        <description>The root location at which Storm stores data in ZK.</description>
+        <required>true</required>
+      </property>
+      <property>
+        <name>jvm.heapsize</name>
+        <value>256</value>
+        <description>The default JVM heap size for any component instance.</description>
+        <required>true</required>
+      </property>
+      <property>
+        <name>nimbus.host</name>
+        <value>localhost</value>
+        <description>The host that the master server is running on.</description>
+        <required>true</required>
+        <clientVisible>true</clientVisible>
+      </property>
+      
 
 
 * name: name of the parameter

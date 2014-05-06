@@ -20,6 +20,9 @@
 
 Here is our release process.
 
+
+## IMPORTANT: THIS IS OUT OF DATE WITH THE MOVE TO THE ASF ## 
+
 ### Before you begin
 
 Check out the latest version of the develop branch,
@@ -43,7 +46,7 @@ starting to make a release*
 **Step #1:** Create a JIRA for the release, estimate 3h
 (so you don't try to skip the tests)
 
-    export SLIDER_RELEASE_JIRA=BUG-13927
+    export SLIDER_RELEASE_JIRA=SLIDER-13927
     
 **Step #2:** Check everything in. Git flow won't let you progress without this.
 

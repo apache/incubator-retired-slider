@@ -95,12 +95,12 @@ For each of these application client types there are two possible deployment mod
 
 * **Managed** - the application client is deployed via Slider mechanisms.  Clients, in this context, differ from the other application components in that they are not running, daemon processes.  However, in a managed environment there is the expectation that the appropriate binaries and application elements will be distributed to the designated client hosts, and the configuration on those hosts will be updated to allow for execution of requests to the application’s master/server components.  Therefore, client components should be defined in the application specification as elements that the management infrastructure supports (Figure 1).
 
-![Image](../images/managed_client.png?raw=true)
+![Image](../images/managed_client.png)
 Figure 1 - Managed Application Client and associated Slider Application
 
 * **Unmanaged** - the application client is run as a process outside of Slider/yarn, although it may leverage Slider provided libraries that allow for server component discovery etc (Figure 2).  These libraries would primarily be client bindings providing access to the registry leveraged by Slider (e.g. Java and python bindings to Zookeeper)
 
-![Image](../images/unmanaged_client.png?raw=true)
+![Image](../images/unmanaged_client.png)
 Figure 2 - Unmanaged Application Client and associated Slider Application
 
 ### Managed Application Client

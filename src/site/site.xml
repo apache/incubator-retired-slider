@@ -49,17 +49,12 @@
     <menu ref="reports"/>
 
     <menu name="Documents">
-      <!--item name="announcement" href="/announcement.html"/-->
       <item name="Getting Started" href="/getting_started.html"/>
-      <item name="installing" href="/installing.html"/>
-      <item name="architecture" href="/architecture.html"/>
       <item name="manpage" href="/manpage.html"/>
-      <item name="application Needs" href="/app_needs.html"/>
-      <item name="building" href="/building.html"/>
-      <!--item name="examples" href="/examples.html"/-->
-      <item name="exitcodes" href="/exitcodes.html"/>
-      <!--item name="slider_cluster_descriptions" href="/slider_cluster_descriptions.html"/-->
-      <item name="rolehistory" href="/rolehistory.html"/>
+      <item name="Troubleshooting" href="/troubleshooting.html"/>
+      <item name="Architecture" href="/architecture/index.html"/>
+      <item name="Developing" href="/developing/index.html"/>
+      <item name="Exitcodes" href="/exitcodes.html"/>
     </menu>
   </body>
 </project>

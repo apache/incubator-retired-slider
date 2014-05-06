@@ -54,7 +54,9 @@ The Slider deployment has the following minimum system requirements:
 
 ## <a name="setup"></a>Setup the Cluster
 
-After [installing your cluster](http://docs.hortonworks.com/) (using Ambari or other means) with the Services listed above, modify your YARN configuration to allow for multiple containers on a single host. In yarn-site.xml make the following modifications:
+After setting up your Hadoop cluster (using Ambari or other means) with the 
+services listed above, modify your YARN configuration to allow for multiple
+containers on a single host. In `yarn-site.xml` make the following modifications:
 
 <table>
   <tr>
@@ -82,60 +84,62 @@ The sample application packages for Storm, HBase and Accumulo are available at:
 [http://public-repo-1.hortonworks.com/slider/slider-0.22.0-all.tar.gz](http://public-repo-1.hortonworks.com/slider/slider-0.22.0-all.tar.gz)
 ## <a name="build"></a>Build Slider
 
-* From the top level directory, execute "mvn clean install -DskipTests"
+* From the top level directory, execute `mvn clean install -DskipTests`
 * Use the generated compressed tar file in slider-assembly/target directory (e.g. slider-0.22.0-all.tar.gz) for the subsequent steps
 
 ## <a name="install"></a>Install Slider
 
 Follow the following steps to expand/install Slider:
 
-* mkdir *slider-install-dir*;
+    mkdir ${slider-install-dir*;
 
-* cd *slider-install-dir*
+    cd ${slider-install-dir}
 
-* Login as the ‘yarn’ user (assuming this is a host associated with the installed cluster).  E.g., su yarn
+Login as the "yarn" user (assuming this is a host associated with the installed cluster).  E.g., `su yarn`
 *This assumes that all apps are being run as ‘yarn’ user. Any other user can be used to run the apps - ensure that file permission is granted as required.*
 
-* Expand the tar file:  tar -xvf slider-0.22.0-all.tar.gz
+Expand the tar file:  `tar -xvf slider-0.22.0-all.tar.gz`
 
-* Browse to the Slider directory: cd slider-0.22.0/bin
+Browse to the Slider directory: `cd slider-0.22.0/bin`
 
-* export PATH=$PATH:/usr/jdk64/jdk1.7.0_45/bin (or the path to the JDK bin directory)
+      export PATH=$PATH:/usr/jdk64/jdk1.7.0_45/bin 
+    
+(or the path to the JDK bin directory)
 
-* Modify Slider configuration file *slider-install-dir*/slider-0.22.0/conf/slider-client.xml to add the following properties:
+Modify Slider configuration file `${slider-install-dir}/slider-0.22.0/conf/slider-client.xml` to add the following properties:
 
-```
-		<property>
-  			<name>yarn.application.classpath</name>
-  			<value>/etc/hadoop/conf,/usr/lib/hadoop/*,/usr/lib/hadoop/lib/*,/usr/lib/hadoop-hdfs/*,/usr/lib/hadoop-hdfs/lib/*,/usr/lib/hadoop-yarn/*,/usr/lib/hadoop-yarn/lib/*,/usr/lib/hadoop-mapreduce/*,/usr/lib/hadoop-mapreduce/lib/*</value>
-		</property>
-		<property>
-  			<name>slider.zookeeper.quorum</name>
-  			<value>yourZooKeeperHost:port</value>
-		</property>
-```
+      <property>
+          <name>yarn.application.classpath</name>
+          <value>/etc/hadoop/conf,/usr/lib/hadoop/*,/usr/lib/hadoop/lib/*,/usr/lib/hadoop-hdfs/*,/usr/lib/hadoop-hdfs/lib/*,/usr/lib/hadoop-yarn/*,/usr/lib/hadoop-yarn/lib/*,/usr/lib/hadoop-mapreduce/*,/usr/lib/hadoop-mapreduce/lib/*</value>
+      </property>
+      
+      <property>
+          <name>slider.zookeeper.quorum</name>
+          <value>yourZooKeeperHost:port</value>
+      </property>
+
 
 In addition, specify the scheduler and HDFS addresses as follows:
 
-```
-		<property>
-  			<name>yarn.resourcemanager.address</name>
-  			<value>yourResourceManagerHost:8050</value>
-		</property>
-		<property>
-  			<name>yarn.resourcemanager.scheduler.address</name>
-  			<value>yourResourceManagerHost:8030</value>
-		</property>
-		<property>
-  			<name>fs.defaultFS</name>
-  			<value>hdfs://yourNameNodeHost:8020</value>
-		</property>
-```
+    <property>
+        <name>yarn.resourcemanager.address</name>
+        <value>yourResourceManagerHost:8050</value>
+    </property>
+    <property>
+        <name>yarn.resourcemanager.scheduler.address</name>
+        <value>yourResourceManagerHost:8030</value>
+    </property>
+    <property>
+        <name>fs.defaultFS</name>
+        <value>hdfs://yourNameNodeHost:8020</value>
+    </property>
 
 
-* Execute: *slider-install-dir*/slider-0.22.0/bin/slider version
+Execute:
+ 
+    ${slider-install-dir}/slider-0.22.0/bin/slider version
 
-* Ensure there are no errors and you can see "Compiled against Hadoop 2.4.0"
+Ensure there are no errors and you can see "Compiled against Hadoop 2.4.0"
 
 ## <a name="deploy"></a>Deploy Slider Resources
 
@@ -145,78 +149,76 @@ Ensure that all file folders are accessible to the user creating the application
 
 Perform the following steps to create the Slider root folder with the appropriate permissions:
 
-* su hdfs
-
-* hdfs dfs -mkdir /slider
-
-* hdfs dfs -chown yarn:hdfs /slider
-
-* hdfs dfs -mkdir /user/yarn
-
-* hdfs dfs -chown yarn:hdfs /user/yarn
+    su hdfs
+    
+    hdfs dfs -mkdir /slider
+    
+    hdfs dfs -chown yarn:hdfs /slider
+    
+    hdfs dfs -mkdir /user/yarn
+    
+    hdfs dfs -chown yarn:hdfs /user/yarn
 
 ### Load Slider Agent
 
-* su yarn
-
-* hdfs dfs -mkdir /slider/agent
-
-* hdfs dfs -mkdir /slider/agent/conf
-
-* hdfs dfs -copyFromLocal *slider-install-dir*/slider-0.22.0/agent/slider-agent-0.22.0.tar.gz /slider/agent
+    su yarn
+    
+    hdfs dfs -mkdir /slider/agent
+    
+    hdfs dfs -mkdir /slider/agent/conf
+    
+    hdfs dfs -copyFromLocal ${slider-install-dir}/slider-0.22.0/agent/slider-agent-0.22.0.tar.gz /slider/agent
 
 ### Create and deploy Slider Agent configuration
 
 Create an agent config file (agent.ini) based on the sample available at:
 
-*slider-install-dir*/slider-0.22.0/agent/conf/agent.ini
+    ${slider-install-dir}/slider-0.22.0/agent/conf/agent.ini
 
 The sample agent.ini file can be used as is (see below). Some of the parameters of interest are:
 
-* log_level = INFO or DEBUG, to control the verbosity of log
+# `log_level` = INFO or DEBUG, to control the verbosity of log
+# `app_log_dir` = the relative location of the application log file
+# `log_dir` = the relative location of the agent and command log file
 
-* app_log_dir = the relative location of the application log file
+    [server]
+    hostname=localhost
+    port=8440
+    secured_port=8441
+    check_path=/ws/v1/slider/agents/
+    register_path=/ws/v1/slider/agents/{name}/register
+    heartbeat_path=/ws/v1/slider/agents/{name}/heartbeat
 
-* log_dir = the relative location of the agent and command log file
+    [agent]
+    app_pkg_dir=app/definition
+    app_install_dir=app/install
+    app_run_dir=app/run
+    app_task_dir=app/command-log
+    app_log_dir=app/log
+    app_tmp_dir=app/tmp
+    log_dir=infra/log
+    run_dir=infra/run
+    version_file=infra/version
+    log_level=INFO
 
-		[server]
-		hostname=localhost
-		port=8440
-		secured_port=8441
-		check_path=/ws/v1/slider/agents/
-		register_path=/ws/v1/slider/agents/{name}/register
-		heartbeat_path=/ws/v1/slider/agents/{name}/heartbeat
+    [python]
 
-		[agent]
-		app_pkg_dir=app/definition
-		app_install_dir=app/install
-		app_run_dir=app/run
-		app_task_dir=app/command-log
-		app_log_dir=app/log
-		app_tmp_dir=app/tmp
-		log_dir=infra/log
-		run_dir=infra/run
-		version_file=infra/version
-		log_level=INFO
+    [command]
+    max_retries=2
+    sleep_between_retries=1
 
-		[python]
+    [security]
 
-		[command]
-		max_retries=2
-		sleep_between_retries=1
-
-		[security]
-
-		[heartbeat]
-		state_interval=6
-		log_lines_count=300
+    [heartbeat]
+    state_interval=6
+    log_lines_count=300
 
 
 Once created, deploy the agent.ini file to HDFS:
 
-* su yarn
-
-* hdfs dfs -copyFromLocal agent.ini /slider/agent/conf
+    su yarn
+    
+    hdfs dfs -copyFromLocal agent.ini /slider/agent/conf
 
 ## <a name="downsample"></a>Download Sample Application Packages
 
@@ -262,23 +264,26 @@ Download the packages and deploy one of these sample applications to YARN via Sl
 
 ### <a name="load"></a>Load Sample Application Package
 
-* hdfs dfs -copyFromLocal *sample-application-package* /slider
+    hdfs dfs -copyFromLocal *sample-application-package/slider
 
 If necessary, create HDFS folders needed by the application. For example, HBase requires the following HDFS-based setup:
 
-* su hdfs
-
-* hdfs dfs -mkdir /apps
-
-* hdfs dfs -mkdir /apps/hbase
-
-* hdfs dfs -chown yarn:hdfs /apps/hbase
+    su hdfs
+    
+    hdfs dfs -mkdir /apps
+    
+    hdfs dfs -mkdir /apps/hbase
+    
+    hdfs dfs -chown yarn:hdfs /apps/hbase
 
 ### <a name="create"></a>Create Application Specifications
 
-Configuring a Slider application consists of two parts: the *[Resource Specification](#resspec), and the *[Application Configuration](#appconfig). Below are guidelines for creating these files.
+Configuring a Slider application consists of two parts: the [Resource Specification](#resspec),
+ and the *[Application Configuration](#appconfig). Below are guidelines for creating these files.
 
-*Note: There are sample Resource Specifications (**resources.json**) and Application Configuration (**appConfig.json**) files in the *[Appendix](#appendixa)* and also in the root directory of the Sample Applications packages (e.g. /**hbase-v096/resources.json** and /**hbase-v096/appConfig.json**).*
+*Note: There are sample Resource Specifications (**resources.json**) and Application Configuration 
+(**appConfig.json**) files in the *[Appendix](#appendixa)* and also in the root directory of the
+Sample Applications packages (e.g. /**hbase-v096/resources.json** and /**hbase-v096/appConfig.json**).*
 
 #### <a name="resspec"></a>Resource Specification
 
@@ -286,7 +291,7 @@ Slider needs to know what components (and how many components) are in an applica
 
 As Slider creates each instance of a component in its own YARN container, it also needs to know what to ask YARN for in terms of **memory** and **CPU** for those containers. 
 
-All this information goes into the **Resources Specification** file ("Resource Spec") named resources.json. The Resource Spec tells Slider how many instances of each component in the application (such as an HBase RegionServer) to deploy and the parameters for YARN.
+All this information goes into the **Resources Specification** file ("Resource Spec") named `resources.json`. The Resource Spec tells Slider how many instances of each component in the application (such as an HBase RegionServer) to deploy and the parameters for YARN.
 
 Sample Resource Spec files are available in the Appendix:
 
@@ -294,7 +299,7 @@ Sample Resource Spec files are available in the Appendix:
 
 * [Appendix B: HBase Sample Resource Specification](#heading=h.l7z5mvhvxmzv)
 
-Store the Resource Spec file on your local disk (e.g. /tmp/resources.json).
+Store the Resource Spec file on your local disk (e.g. `/tmp/resources.json`).
 
 #### <a name="appconfig"></a>Application Configuration
 
@@ -310,23 +315,23 @@ Sample App Configs are available in the Appendix:
 
 Store the appConfig.json file on your local disc and a copy in HDFS:
 
-* su yarn
-
-* hdfs dfs -mkdir /slider/appconf
-
-* hdfs dfs -copyFromLocal appConf.json /slider/appconf
+    su yarn
+    
+    hdfs dfs -mkdir /slider/appconf
+    
+    hdfs dfs -copyFromLocal appConf.json /slider/appconf
 
 ### <a name="start"></a>Start the Application
 
-Once the steps above are completed, the application can be started by leveraging the **Slider Command Line Interface (CLI)**.
+Once the steps above are completed, the application can be started through the **Slider Command Line Interface (CLI)**.
 
-* Change directory to the "bin" directory under the slider installation
+Change directory to the "bin" directory under the slider installation
 
-cd *slider-install-dir*/slider-0.22.0/bin
+    cd ${slider-install-dir}/slider-0.22.0/bin
 
-* Execute the following command:
+Execute the following command:
 
-./slider create cl1 --manager yourResourceManagerHost:8050 --image hdfs://yourNameNodeHost:8020/slider/agent/slider-agent-0.22.0.tar.gz --template appConfig.json --resources resources.json
+    ./slider create cl1 --manager yourResourceManagerHost:8050 --image hdfs://yourNameNodeHost:8020/slider/agent/slider-agent-0.22.0.tar.gz --template appConfig.json --resources resources.json
 
 ### <a name="verify"></a>Verify the Application
 
@@ -344,25 +349,25 @@ Once started, applications can be frozen/stopped, thawed/restarted, and destroye
 
 #### Frozen:
 
-./slider freeze cl1 --manager yourResourceManagerHost:8050  --filesystem hdfs://yourNameNodeHost:8020
+    ./slider freeze cl1 --manager yourResourceManagerHost:8050  --filesystem hdfs://yourNameNodeHost:8020
 
 #### Thawed: 
 
-./slider thaw cl1 --manager yourResourceManagerHost:8050  --filesystem hdfs://yourNameNodeHost:8020
+    ./slider thaw cl1 --manager yourResourceManagerHost:8050  --filesystem hdfs://yourNameNodeHost:8020
 
 #### Destroyed: 
 
-./slider destroy cl1 --manager yourResourceManagerHost:8050  --filesystem hdfs://yourNameNodeHost:8020
+    ./slider destroy cl1 --manager yourResourceManagerHost:8050  --filesystem hdfs://yourNameNodeHost:8020
 
 #### Flexed:
 
-./slider flex cl1 --component worker 5 --manager yourResourceManagerHost:8050  --filesystem hdfs://yourNameNodeHost:8020
+    ./slider flex cl1 --component worker 5 --manager yourResourceManagerHost:8050  --filesystem hdfs://yourNameNodeHost:8020
 
 # <a name="appendixa"></a>Appendix A: Apache Storm Sample Application Specifications
 
 ## Storm Resource Specification Sample
 
-	{
+    {
       "schema" : "http://example.org/specification/v2.0.0",
       "metadata" : {
       },
@@ -393,36 +398,36 @@ Once started, applications can be frozen/stopped, thawed/restarted, and destroye
             "component.instances" : "1"
         }
       }
-	}
+    }
 
 
 ## Storm Application Configuration Sample
 
-	{
-    	"schema" : "http://example.org/specification/v2.0.0",
-    	"metadata" : {
-    	},
-    	"global" : {
-        	"A site property for type XYZ with name AA": "its value",
-        	"site.XYZ.AA": "Value",
-        	"site.hbase-site.hbase.regionserver.port": "0",
-        	"site.core-site.fs.defaultFS": "${NN_URI}",
-        	"Using a well known keyword": "Such as NN_HOST for name node host",
-        	"site.hdfs-site.dfs.namenode.http-address": "${NN_HOST}:50070",
-        	"a global property used by app scripts": "not affiliated with any site-xml",
-        	"site.global.app_user": "yarn",
-        	"Another example of available keywords": "Such as AGENT_LOG_ROOT",
-        	"site.global.app_log_dir": "${AGENT_LOG_ROOT}/app/log",
-        	"site.global.app_pid_dir": "${AGENT_WORK_ROOT}/app/run",
-    	}
-	}
+    {
+      "schema" : "http://example.org/specification/v2.0.0",
+      "metadata" : {
+      },
+      "global" : {
+          "A site property for type XYZ with name AA": "its value",
+          "site.XYZ.AA": "Value",
+          "site.hbase-site.hbase.regionserver.port": "0",
+          "site.core-site.fs.defaultFS": "${NN_URI}",
+          "Using a well known keyword": "Such as NN_HOST for name node host",
+          "site.hdfs-site.dfs.namenode.http-address": "${NN_HOST}:50070",
+          "a global property used by app scripts": "not affiliated with any site-xml",
+          "site.global.app_user": "yarn",
+          "Another example of available keywords": "Such as AGENT_LOG_ROOT",
+          "site.global.app_log_dir": "${AGENT_LOG_ROOT}/app/log",
+          "site.global.app_pid_dir": "${AGENT_WORK_ROOT}/app/run",
+      }
+    }
 
 
 # <a name="appendixb"></a>Appendix B:  Apache HBase Sample Application Specifications
 
 ## HBase Resource Specification Sample
 
-	{
+    {
       "schema" : "http://example.org/specification/v2.0.0",
       "metadata" : {
       },
@@ -445,12 +450,12 @@ Once started, applications can be frozen/stopped, thawed/restarted, and destroye
             "role.script" : "scripts/hbase_regionserver.py"
         }
       }
-	}
+    }
 
 
 ## HBase Application Configuration Sample
 
-	{
+    {
       "schema" : "http://example.org/specification/v2.0.0",
       "metadata" : {
       },
@@ -505,6 +510,6 @@ Once started, applications can be frozen/stopped, thawed/restarted, and destroye
         "site.hdfs-site.dfs.namenode.https-address": "${NN_HOST}:50470",
         "site.hdfs-site.dfs.namenode.http-address": "${NN_HOST}:50070"
       }
-	}
+  }
 
 
