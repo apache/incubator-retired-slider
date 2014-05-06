@@ -35,7 +35,7 @@ import org.apache.slider.test.YarnZKMiniClusterTestBase
 import static org.apache.slider.common.params.Arguments.*
 import static org.apache.slider.test.SliderTestUtils.*
 import static org.apache.slider.common.SliderXMLConfKeysForTesting.*
-import static HBaseKeys.*
+import static org.apache.slider.providers.hbase.HBaseKeys.*
 /**
  * test base for all hbase clusters
  */

@@ -94,6 +94,7 @@ public class AgentProviderService extends AbstractProviderService implements
       LoggerFactory.getLogger(AgentProviderService.class);
   private static final ProviderUtils providerUtils = new ProviderUtils(log);
   private static final String LABEL_MAKER = "___";
+  private static final String CONTAINER_ID = "container_id";
   private AgentClientProvider clientProvider;
   private Map<String, ComponentInstanceState> componentStatuses = new HashMap<String, ComponentInstanceState>();
   private Map<String, List<String>> roleHostMapping = new HashMap<String, List<String>>();
@@ -155,6 +156,7 @@ public class AgentProviderService extends AbstractProviderService implements
     String logDir = ApplicationConstants.Environment.LOG_DIRS.$();
     launcher.setEnv("AGENT_LOG_ROOT", logDir);
     log.info("AGENT_LOG_ROOT set to {}", logDir);
+    launcher.setEnv("HADOOP_USER_NAME", System.getenv(HADOOP_USER_NAME));
 
     //local resources
 
@@ -338,10 +340,11 @@ public class AgentProviderService extends AbstractProviderService implements
 
     String label = heartBeat.getHostname();
     String roleName = getRoleName(label);
+    String containerId = getContainerId(label);
     StateAccessForProviders accessor = getStateAccessor();
     String scriptPath;
-      scriptPath = accessor.getInstanceDefinitionSnapshot().
-          getAppConfOperations().getComponentOpt(roleName, AgentKeys.COMPONENT_SCRIPT, null);
+    scriptPath = accessor.getInstanceDefinitionSnapshot().
+        getAppConfOperations().getComponentOpt(roleName, AgentKeys.COMPONENT_SCRIPT, null);
     if (scriptPath == null) {
       log.error("role.script is unavailable for " + roleName + ". Commands will not be sent.");
       return response;
@@ -376,10 +379,10 @@ public class AgentProviderService extends AbstractProviderService implements
         componentStatus.commandIssued(command);
         if (command == Command.INSTALL) {
           log.info("Installing component ...");
-          addInstallCommand(roleName, response, scriptPath);
+          addInstallCommand(roleName, containerId, response, scriptPath);
         } else if (command == Command.START) {
           log.info("Starting component ...");
-          addStartCommand(roleName, response, scriptPath);
+          addStartCommand(roleName, containerId, response, scriptPath);
         }
       } catch (SliderException e) {
         componentStatus.applyCommandResult(CommandResult.FAILED, command);
@@ -394,7 +397,11 @@ public class AgentProviderService extends AbstractProviderService implements
     return label.substring(label.indexOf(LABEL_MAKER) + LABEL_MAKER.length());
   }
 
-  protected void addInstallCommand(String roleName, HeartBeatResponse response, String scriptPath)
+  private String getContainerId(String label) {
+    return label.substring(0, label.indexOf(LABEL_MAKER));
+  }
+
+  protected void addInstallCommand(String roleName, String containerId, HeartBeatResponse response, String scriptPath)
       throws SliderException {
     assert getStateAccessor().isApplicationLive();
     ConfTreeOperations appConf = getStateAccessor().getAppConfSnapshot();
@@ -414,6 +421,7 @@ public class AgentProviderService extends AbstractProviderService implements
     hostLevelParams.put(PACKAGE_LIST, "[{\"type\":\"tarball\",\"name\":\"" +
                                       appConf.getGlobalOptions().getMandatoryOption(
                                           PACKAGE_LIST) + "\"}]");
+    hostLevelParams.put(CONTAINER_ID, containerId);
     cmd.setHostLevelParams(hostLevelParams);
 
     setInstallCommandConfigurations(cmd);
@@ -447,7 +455,7 @@ public class AgentProviderService extends AbstractProviderService implements
     cmd.setConfigurations(configurations);
   }
 
-  protected void addStatusCommand(String roleName, HeartBeatResponse response, String scriptPath)
+  protected void addStatusCommand(String roleName, String containerId, HeartBeatResponse response, String scriptPath)
       throws SliderException {
     assert getStateAccessor().isApplicationLive();
     ConfTreeOperations appConf = getStateAccessor().getAppConfSnapshot();
@@ -464,6 +472,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
     Map<String, String> hostLevelParams = new TreeMap<String, String>();
     hostLevelParams.put(JAVA_HOME, appConf.getGlobalOptions().getMandatoryOption(JAVA_HOME));
+    hostLevelParams.put(CONTAINER_ID, containerId);
     cmd.setHostLevelParams(hostLevelParams);
 
     cmd.setCommandParams(setCommandParameters(scriptPath, false));
@@ -475,7 +484,7 @@ public class AgentProviderService extends AbstractProviderService implements
     response.addStatusCommand(cmd);
   }
 
-  protected void addGetConfigCommand(String roleName, HeartBeatResponse response)
+  protected void addGetConfigCommand(String roleName, String containerId, HeartBeatResponse response)
       throws SliderException {
     assert getStateAccessor().isApplicationLive();
     ConfTreeOperations internalsConf = getStateAccessor().getInternalsSnapshot();
@@ -488,11 +497,17 @@ public class AgentProviderService extends AbstractProviderService implements
     cmd.setServiceName(clusterName);
     cmd.setClusterName(clusterName);
     cmd.setRoleCommand(StatusCommand.GET_CONFIG_COMMAND);
+    Map<String, String> hostLevelParams = new TreeMap<String, String>();
+    hostLevelParams.put(CONTAINER_ID, containerId);
+    cmd.setHostLevelParams(hostLevelParams);
+
+    hostLevelParams.put(CONTAINER_ID, containerId);
 
     response.addStatusCommand(cmd);
   }
 
-  protected void addStartCommand(String roleName, HeartBeatResponse response, String scriptPath) throws
+  protected void addStartCommand(String roleName, String containerId, HeartBeatResponse response, String scriptPath)
+      throws
       SliderException {
     assert getStateAccessor().isApplicationLive();
     ConfTreeOperations appConf = getStateAccessor().getAppConfSnapshot();
@@ -510,6 +525,7 @@ public class AgentProviderService extends AbstractProviderService implements
     cmd.setRole(roleName);
     Map<String, String> hostLevelParams = new TreeMap<String, String>();
     hostLevelParams.put(JAVA_HOME, appConf.getGlobalOptions().getMandatoryOption(JAVA_HOME));
+    hostLevelParams.put(CONTAINER_ID, containerId);
     cmd.setHostLevelParams(hostLevelParams);
 
     cmd.setCommandParams(setCommandParameters(scriptPath, true));

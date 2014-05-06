@@ -496,7 +496,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     } catch (SliderException e) {
       //problem, reject it
       log.info("Error {} validating application instance definition ", e.toString());
-      log.debug("Error {} validating application instance definition ", e);
+      log.debug("Error validating application instance definition ", e);
       log.info(instanceDefinition.toString());
       throw e;
     }

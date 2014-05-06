@@ -25,7 +25,7 @@ from resource_management import *
 from resource_management.core.base import Fail
 
 
-class HbaseMaster(Script):
+class CommandLogger(Script):
   def install(self, env):
     self.install_packages(env)
 
@@ -51,10 +51,7 @@ class HbaseMaster(Script):
     self.rename_file(env)
 
   def status(self, env):
-    import params
-
-    env.set_params(params)
-    self.check_and_log(env, "Status check.")
+    Logger.info("Returning status as live.")
 
   def check_and_log(self, env, message):
     import params
@@ -89,4 +86,4 @@ class HbaseMaster(Script):
     )
 
 if __name__ == "__main__":
-  HbaseMaster().execute()
+  CommandLogger().execute()

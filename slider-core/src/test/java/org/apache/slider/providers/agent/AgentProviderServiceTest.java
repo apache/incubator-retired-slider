@@ -106,6 +106,7 @@ public class AgentProviderServiceTest {
     try {
       doNothing().when(mockAps).addInstallCommand(
           eq("HBASE_MASTER"),
+          eq("mockcontainer_1"),
           any(HeartBeatResponse.class),
           eq("scripts/hbase_master.py"));
     } catch (SliderException e) {

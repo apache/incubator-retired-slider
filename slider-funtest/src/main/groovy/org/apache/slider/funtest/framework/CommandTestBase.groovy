@@ -40,8 +40,8 @@ import org.junit.rules.Timeout
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import static org.apache.slider.common.SliderExitCodes.*
-import static FuntestProperties.*
-import static Arguments.*
+import static org.apache.slider.funtest.framework.FuntestProperties.*
+import static org.apache.slider.common.params.Arguments.*
 import static org.apache.slider.common.params.SliderActions.*
 import static org.apache.slider.common.SliderXMLConfKeysForTesting.*
 
@@ -71,6 +71,7 @@ abstract class CommandTestBase extends SliderTestUtils {
 
   public static final boolean FUNTESTS_ENABLED
   public static final boolean AGENTTESTS_ENABLED
+  public static final String AGENT_PKG
 
 
   static {
@@ -93,7 +94,9 @@ abstract class CommandTestBase extends SliderTestUtils {
         SLIDER_CONFIG.getBoolean(KEY_TEST_ACCUMULO_ENABLED, false)
 
     AGENTTESTS_ENABLED =
-        SLIDER_CONFIG.getBoolean(KEY_TEST_AGENT_ENABLED, true)
+      SLIDER_CONFIG.getBoolean(KEY_TEST_AGENT_ENABLED, true)
+    AGENT_PKG =
+      SLIDER_CONFIG.getRaw(KEY_TEST_AGENT_TAR)
  }
 
   @Rule
