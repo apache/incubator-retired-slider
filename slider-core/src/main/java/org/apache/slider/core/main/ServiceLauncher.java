@@ -290,7 +290,7 @@ public class ServiceLauncher<S extends Service>
 
 
   protected void error(String message, Throwable thrown) {
-    String text = "Exception:" + message;
+    String text = "Exception: " + message;
     System.err.println(text);
     LOG.error(text, thrown);
   }
