@@ -50,6 +50,19 @@
       /etc/hadoop/conf,/usr/lib/hadoop/*,/usr/lib/hadoop/lib/*,/usr/lib/hadoop-hdfs/*,/usr/lib/hadoop-hdfs/lib/*,/usr/lib/hadoop-yarn/*,/usr/lib/hadoop-yarn/lib/*,/usr/lib/hadoop-mapreduce/*,/usr/lib/hadoop-mapreduce/lib/*
     </value>
   </property>
+
+  <property>
+    <name>slider.test.agent.enabled</name>
+    <description>Flag to enable/disable Agent tests</description>
+    <value>true</value>
+  </property>
+
+
+  <property>
+    <name>slider.test.hbase.enabled</name>
+    <description>Flag to enable/disable HBase tests</description>
+    <value>true</value>
+  </property>
   
   <property>
     <name>slider.test.hbase.tar</name>
@@ -91,7 +104,7 @@
     <description>Path to the directory containing the Accumulo application
       config
     </description>
-    <value>file:///home/slider/projects//Projects/slider/test-configs/sandbox/accumulo</value>
+    <value>file:///home/slider/projects/Projects/slider/test-configs/sandbox/accumulo</value>
   </property>
 
 

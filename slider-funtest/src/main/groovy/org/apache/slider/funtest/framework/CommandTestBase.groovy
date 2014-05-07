@@ -56,7 +56,7 @@ abstract class CommandTestBase extends SliderTestUtils {
       SLIDER_BIN_DIR).canonicalFile
   public static final File SLIDER_SCRIPT = new File(
       SLIDER_BIN_DIRECTORY,
-      "bin/slider").canonicalFile
+      BIN_SLIDER).canonicalFile
   public static final File SLIDER_CONF_DIRECTORY = new File(SLIDER_CONF_DIR).canonicalFile
   public static final File SLIDER_CONF_XML = new File(SLIDER_CONF_DIRECTORY,
       CLIENT_CONFIG_FILENAME).canonicalFile
@@ -70,8 +70,6 @@ abstract class CommandTestBase extends SliderTestUtils {
   public static final boolean ACCUMULO_TESTS_ENABLED
 
   public static final boolean FUNTESTS_ENABLED
-  public static final boolean AGENTTESTS_ENABLED
-  public static final String AGENT_PKG
 
 
   static {
@@ -93,10 +91,6 @@ abstract class CommandTestBase extends SliderTestUtils {
     ACCUMULO_TESTS_ENABLED =
         SLIDER_CONFIG.getBoolean(KEY_TEST_ACCUMULO_ENABLED, false)
 
-    AGENTTESTS_ENABLED =
-      SLIDER_CONFIG.getBoolean(KEY_TEST_AGENT_ENABLED, true)
-    AGENT_PKG =
-      SLIDER_CONFIG.getRaw(KEY_TEST_AGENT_TAR)
  }
 
   @Rule
@@ -405,14 +399,6 @@ abstract class CommandTestBase extends SliderTestUtils {
     assert action != null
     assert clustername != null
 
-
-
-    List<String> roleList = [];
-    roles.each { String role, Integer val ->
-      log.info("Role $role := $val")
-      roleList << ARG_COMPONENT << role << Integer.toString(val)
-    }
-
     List<String> argsList = [action, clustername]
 
     argsList << ARG_ZKHOSTS <<
@@ -421,6 +407,12 @@ abstract class CommandTestBase extends SliderTestUtils {
 
     if (blockUntilRunning) {
       argsList << ARG_WAIT << Integer.toString(THAW_WAIT_TIME)
+    }
+
+    List<String> roleList = [];
+    roles.each { String role, Integer val ->
+      log.info("Role $role := $val")
+      roleList << ARG_COMPONENT << role << Integer.toString(val)
     }
 
     argsList += roleList;
@@ -509,11 +501,6 @@ abstract class CommandTestBase extends SliderTestUtils {
   public static void assumeAccumuloTestsEnabled() {
     assumeFunctionalTestsEnabled()
     assume(ACCUMULO_TESTS_ENABLED, "Accumulo tests disabled")
-  }
-
-  public void assumeAgentTestsEnabled() {
-    assumeFunctionalTestsEnabled()
-    assume(AGENTTESTS_ENABLED, "Agent tests disabled")
   }
 
 }

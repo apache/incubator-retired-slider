@@ -61,6 +61,7 @@
         <artifactId>maven-assembly-plugin</artifactId>
         <version>${maven-assembly-plugin.version}</version>
         <configuration>
+          <tarLongFileMode>gnu</tarLongFileMode>
           <descriptors>
             <descriptor>src/assembly/slider-bin.xml</descriptor>
           </descriptors>
@@ -100,6 +101,33 @@
         </executions>
       </plugin>
 
+      <!-- copy in the agent tar file -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>${maven-dependency-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>copy</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.apache.slider</groupId>
+                  <artifactId>slider-agent</artifactId>
+                  <type>tar.gz</type>
+                  <overWrite>false</overWrite>
+                  <outputDirectory>${project.build.directory}/agent</outputDirectory>
+                  <destFileName>slider-agent.tar.gz</destFileName>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -177,6 +205,18 @@
       <version>${project.version}</version>
     </dependency>
 
+    <!--
+     needed to order the build and ensure the agent tar is found
+     the test scope ensures that it isn't copied into the lib dir
+     -->
+    <dependency>
+      <groupId>org.apache.slider</groupId>
+      <artifactId>slider-agent</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+      <type>tar.gz</type>
+    </dependency>
+
     <dependency>
       <groupId>com.beust</groupId>
       <artifactId>jcommander</artifactId>
@@ -188,13 +228,7 @@
       <artifactId>hadoop-client</artifactId>
       <type>pom</type>
     </dependency>
-
-    <!--   
-       <dependency>
-         <groupId>org.apache.zookeeper</groupId>
-         <artifactId>zookeeper</artifactId>
-       </dependency>
-    -->   
+ 
   </dependencies>
 
 

@@ -501,8 +501,8 @@ public class CoreFileSystem {
    * @throws SliderException if the path does not exist
    */
   public Path createPathThatMustExist(String uri) throws
-      SliderException,
-                                                  IOException {
+      SliderException, IOException {
+    Preconditions.checkNotNull(uri);
     Path path = new Path(uri);
     verifyPathExists(path);
     return path;

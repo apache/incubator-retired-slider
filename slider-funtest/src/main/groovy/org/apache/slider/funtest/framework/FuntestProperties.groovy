@@ -60,4 +60,6 @@ public interface FuntestProperties extends SliderXMLConfKeysForTesting {
   String SCRIPT_NAME = "slider"
   static final String KEY_TEST_CONF_XML = "slider.test.conf.xml"
   static final String KEY_TEST_CONF_DIR = "slider.test.conf.dir"
+  static final String BIN_SLIDER = "bin/slider"
+  static final String AGENT_SLIDER_GZ = "agent/slider-agent.tar.gz"
 }

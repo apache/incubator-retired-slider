@@ -27,6 +27,10 @@ Here's how to set this up.
 The network on the development system must be functional, with hostname lookup
 of the local host working. Tests will fail without this.
 
+### Java 7
+
+Slider is built on Java 7 -please have a JDK for Java 7 or 8 set up
+
 ### Maven
 
 You will need a version of Maven 3.0+, set up with enough memory
@@ -39,12 +43,12 @@ You will need a version of Maven 3.0+, set up with enough memory
 
 ### Protoc
 
-You need a copy of the `protoc`  compile
+You need a copy of the `protoc`  compiler for protobuf compilation
 
 1. OS/X: `brew install protobuf`
 1. Others: consult (Building Hadoop documentation)[http://wiki.apache.org/hadoop/HowToContribute].
 
-The version of protoc installed must be the same as that used by Hadoop itself.
+The version of `protoc` installed must be the same as that used by Hadoop itself.
 This is absolutely critical to prevent JAR version problems.
 
 ## Building a compatible Hadoop version
@@ -297,8 +301,9 @@ You can create the JAR file and set up its directories with
 
 # Development Notes
 
-
+<!---
 ## Git branch model
+
 
 The git branch model uses is
 [Git Flow](http://nvie.com/posts/a-successful-git-branching-model/).
@@ -328,8 +333,9 @@ merge them back in when they are ready.
     git flow release start 0.4.0
     
     git flow release finish 0.4.0
-    
-## Attn OS/X developers
+-->
+
+## Attention OS/X developers
 
 YARN on OS/X doesn't terminate subprocesses the way it does on Linux, so
 HBase Region Servers created by the hbase shell script remain running

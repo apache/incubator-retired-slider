@@ -31,7 +31,6 @@ import org.junit.Before
 import org.junit.Test
 
 @Slf4j
-@CompileStatic
 
 class TestZKIntegration extends YarnZKMiniClusterTestBase implements KeysForTests {
 

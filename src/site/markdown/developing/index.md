@@ -23,6 +23,8 @@ Slider
 * [Building](building.html)
 * [Debugging](debugging.html)
 * [Testing](testing.html)
+* [Functional Testing](functional_tests.html)
+* [Manual Testing](manual_testing.html)
 * [Agent test setup](agent_test_setup.html)
 * [Releasing](releasing.html)
 

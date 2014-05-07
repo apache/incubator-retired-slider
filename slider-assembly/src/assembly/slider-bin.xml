@@ -58,10 +58,10 @@
     </fileSet>
 
     <fileSet>
-      <directory>${project.build.directory}/../../slider-agent/target</directory>
+      <directory>${project.build.directory}/agent</directory>
       <outputDirectory>agent</outputDirectory>
       <includes>
-        <include>*.tar.gz</include>
+        <include>slider-agent.tar.gz</include>
       </includes>
     </fileSet>
 

@@ -40,8 +40,8 @@ Get the hbase tarball, hbase-0.96.1-hadoop2-bin.tar.tar.tar.gz, and expand it at
 ## Permissions
 Ensure that the user creating the hbase cluster has necessary permission for the resource management library and the application spec. Perform necessary **chown** and **chmod**.
 
-1. /share/hbase/hbase-0.96.1-hadoop2/conf
-2. /usr/lib/python2.6/site-packages/resource_management
-3. /var/lib/ambari-agent/cache/stacks/HDP
-4. /var/log/hbase, /var/run/hbase (or appropriate log and run directories)
+1. `/share/hbase/hbase-0.96.1-hadoop2/conf`
+2. `/usr/lib/python2.6/site-packages/resource_management`
+3. `/var/lib/ambari-agent/cache/stacks/HDP`
+4. `/var/log/hbase` , `/var/run/hbase` (or appropriate log and run directories)
 5. Ensure hbase root/staging HDFS directories have appropriate permission

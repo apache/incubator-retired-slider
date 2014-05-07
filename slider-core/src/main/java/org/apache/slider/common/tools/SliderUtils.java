@@ -1275,11 +1275,10 @@ public final class SliderUtils {
   }
 
   public static Path extractImagePath(CoreFileSystem fs,  MapOperations internalOptions) throws
-      SliderException,
-                                                                                         IOException {
+      SliderException, IOException {
     Path imagePath;
     String imagePathOption =
-      internalOptions.get(OptionKeys.INTERNAL_APPLICATION_IMAGE_PATH);
+        internalOptions.get(OptionKeys.INTERNAL_APPLICATION_IMAGE_PATH);
     String appHomeOption = internalOptions.get(OptionKeys.INTERNAL_APPLICATION_HOME);
     if (!isUnset(imagePathOption)) {
       imagePath = fs.createPathThatMustExist(imagePathOption);
