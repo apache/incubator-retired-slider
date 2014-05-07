@@ -20,14 +20,17 @@ package org.apache.slider.funtest.lifecycle
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.slider.common.SliderExitCodes
+import org.apache.slider.common.params.Arguments
+import org.apache.slider.common.params.SliderActions
+import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
 import org.junit.Test
 
 @CompileStatic
 @Slf4j
 public class TestAppsThroughAgent extends AgentCommandTestBase
-//    implements FuntestProperties, Arguments, SliderExitCodes, SliderActions 
-{
+    implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   private static String COMMAND_LOGGER = "COMMAND_LOGGER"
   private static String APPLICATION_NAME = "agenttst"

@@ -28,6 +28,7 @@ The functional test suite is designed to run the executables against
 a live cluster. 
 
 For these to work you need
+
 1. A YARN Cluster -secure or insecure
 1. A `slider-client.xml` file configured to interact with the cluster
 1. Agent 
@@ -38,7 +39,8 @@ directory
 
 ## Configuration of functional tests
 
-Maven needs to be given 
+Maven needs to be given
+
 1. A path to the expanded test archive
 1. A path to a slider configuration directory for the cluster
 
@@ -109,8 +111,7 @@ need to be changed
       There are some maven properties which also define limits and may need adjusting</description>
       <value>180000</value>
     </property>
-    
-    
+
     
 Note that while the same properties need to be set in
 `slider-core/src/test/resources/slider-client.xml`, those tests take a file in the local
@@ -159,7 +160,6 @@ The HBase tests can be enabled or disabled
         
 Mandatory test parameters must be added to `slider-client.xml`
 
-  
     <property>
       <name>slider.test.hbase.tar</name>
       <description>Path to the HBase Tar file in HDFS</description>
@@ -180,7 +180,6 @@ Optional parameters:
       <value>180000</value>
     </property>  
 
-
 #### Accumulo configuration options
 
 Enable/disable the tests
@@ -191,7 +190,6 @@ Enable/disable the tests
       <value>true</value>
      </property>
          
-         
 Optional parameters
          
      <property>
@@ -200,10 +198,7 @@ Optional parameters
       <value>180000</value>
      </property>
 
-
-
 ### Configuring the YARN cluster for tests
-
 
 Here are the configuration options we use in `yarn-site.xml` for testing:
 
@@ -240,7 +235,7 @@ to keep the log files around after an application run.
       </property>
 
 
-### Testing against a secure cluster
+## Testing against a secure cluster
 
 To test against a secure cluster
 

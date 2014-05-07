@@ -33,7 +33,8 @@ import org.junit.Test
 
 @CompileStatic
 @Slf4j
-public class TestClusterBuildDestroy extends AgentCommandTestBase {
+public class TestClusterBuildDestroy extends AgentCommandTestBase
+    implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
 
   static String CLUSTER = "test_cluster_build_destroy"
