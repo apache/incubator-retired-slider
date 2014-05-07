@@ -78,6 +78,7 @@ import org.apache.slider.core.exceptions.WaitTimeoutException;
 import org.apache.slider.core.launch.AppMasterLauncher;
 import org.apache.slider.core.launch.ClasspathConstructor;
 import org.apache.slider.core.launch.CommandLineBuilder;
+import org.apache.slider.core.launch.JavaCommandLineBuilder;
 import org.apache.slider.core.launch.LaunchedApplication;
 import org.apache.slider.core.launch.RunningApplication;
 import org.apache.slider.core.main.RunService;
@@ -673,12 +674,12 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     MapOperations sliderAMResourceComponent =
       resourceOperations.getOrAddComponent(SliderKeys.COMPONENT_AM);
     AppMasterLauncher amLauncher = new AppMasterLauncher(clustername,
-                                                         SliderKeys.APP_TYPE,
-                                                         config,
+        SliderKeys.APP_TYPE,
+        config,
         sliderFileSystem,
-                                                         yarnClient,
-                                                         clusterSecure,
-                                                         sliderAMResourceComponent);
+        yarnClient,
+        clusterSecure,
+        sliderAMResourceComponent);
 
     ApplicationId appId = amLauncher.getApplicationId();
     // set the application name;
@@ -811,8 +812,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         libdir,
         getConfig(),
         usingMiniMRCluster);
-    amLauncher.setEnv("CLASSPATH",
-                      classpath.buildClasspath());
+    amLauncher.setClasspath(classpath);
     if (log.isDebugEnabled()) {
       log.debug("AM classpath={}", classpath);
       log.debug("Environment Map:\n{}",
@@ -835,8 +835,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     }
     String rmAddr = NetUtils.getHostPortString(rmSchedulerAddress);
 
-    CommandLineBuilder commandLine = new CommandLineBuilder();
-    commandLine.addJavaBinary();
+    JavaCommandLineBuilder commandLine = new JavaCommandLineBuilder();
     // insert any JVM options);
     sliderAM.addJVMOptions(instanceDefinition, commandLine);
     // enable asserts if the text option is set
@@ -879,7 +878,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     commandLine.addOutAndErrFiles(STDOUT_AM, STDERR_AM);
 
     String cmdStr = commandLine.build();
-    log.info("Completed setting up app master command {}", cmdStr);
+    log.debug("Completed setting up app master command {}", cmdStr);
 
     amLauncher.addCommandLine(commandLine);
 

@@ -32,11 +32,6 @@ import java.util.List;
 public class CommandLineBuilder {
   protected final List<String> argumentList = new ArrayList<String>(20);
 
-  public void addJavaBinary() {
-    add(
-      ApplicationConstants.Environment.JAVA_HOME.$() + "/bin/java");
-  }
-  
 
   /**
    * Add an entry to the command list
@@ -106,23 +101,4 @@ public class CommandLineBuilder {
     return argumentList;
   }
 
-  /**
-   * Set the size of the heap if a non-empty heap is passed in. 
-   * @param heap empty string or something like "128M" ,"1G" etc. The value is
-   * trimmed.
-   */
-  public void setJVMHeap(String heap) {
-    if (SliderUtils.isSet(heap)) {
-      add("-Xmx" + heap.trim());
-    }
-  }
-  
-  public void enableJavaAssertions() {
-    add("-ea");
-    add("-esa");
-  }
-  
-  public void sysprop(String property, String value) {
-    add("-D" + property + "=" + value);
-  }
 }

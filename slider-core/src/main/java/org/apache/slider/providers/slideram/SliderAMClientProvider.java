@@ -40,6 +40,7 @@ import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.AbstractLauncher;
 import org.apache.slider.core.launch.CommandLineBuilder;
+import org.apache.slider.core.launch.JavaCommandLineBuilder;
 import org.apache.slider.providers.AbstractClientProvider;
 import org.apache.slider.providers.PlacementPolicy;
 import org.apache.slider.providers.ProviderRole;
@@ -221,8 +222,9 @@ public class SliderAMClientProvider extends AbstractClientProvider implements
    * add them to the command line
    */
   public void addJVMOptions(AggregateConf aggregateConf,
-                            CommandLineBuilder cmdLine) throws
+                            JavaCommandLineBuilder cmdLine) throws
                                                         BadConfigException {
+    
     MapOperations sliderAM =
       aggregateConf.getAppConfOperations().getMandatoryComponent(
         SliderKeys.COMPONENT_AM);

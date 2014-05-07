@@ -230,6 +230,13 @@ public abstract class AbstractLauncher extends Configured {
   }
 
 
+  /**
+   * Utility method to set up the classpath
+   * @param classpath classpath to use
+   */
+  public void setClasspath(ClasspathConstructor classpath) {
+    setEnv("CLASSPATH", classpath.buildClasspath());
+  }
   public void setEnv(String var, String value) {
     env.put(var, value);
   }
