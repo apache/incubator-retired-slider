@@ -710,11 +710,28 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     log.info("service instances already running: {}", serviceInstancesRunning);
 
 
-    // now publish yarn-site.xml
-    PublishedConfiguration pubconf = new PublishedConfiguration();
-    pubconf.description = "YARN site settings";
-    pubconf.putValues(new YarnConfiguration());
-    appState.getPublishedConfigurations().put("yarn-site.xml", pubconf);
+    // now publish site.xml files
+    appState.getPublishedConfigurations().put(
+        PublishedArtifacts.COMPLETE_CONFIG,
+        new PublishedConfiguration(
+            "Complete site settings",
+            new YarnConfiguration()));
+    appState.getPublishedConfigurations().put(
+        PublishedArtifacts.YARN_SITE_CONFIG,
+        new PublishedConfiguration(
+            "YARN site settings",
+            ConfigHelper.loadFromResource("yarn-site.xml")));
+    
+    appState.getPublishedConfigurations().put(
+        PublishedArtifacts.CORE_SITE_CONFIG,
+        new PublishedConfiguration(
+            "Core site settings",
+            ConfigHelper.loadFromResource("core-site.xml")));
+    appState.getPublishedConfigurations().put(
+        PublishedArtifacts.HDFS_SITE_CONFIG,
+        new PublishedConfiguration(
+            "HDFS site settings",
+            ConfigHelper.loadFromResource("hdfs-site.xml")));
 
     ServiceInstanceData instanceData = new ServiceInstanceData();
     instanceData.id = registryId;

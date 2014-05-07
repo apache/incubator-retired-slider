@@ -46,17 +46,21 @@ public class PublishedConfiguration {
   
   public String updatedTime;
 
-  public void setUpdated(long updated) {
-    this.updated = updated;
-    this.updatedTime = new Date(updated).toString();
-  }
-
-  public long getUpdated() {
-    return updated;
-  }
-
   public Map<String, String> entries = new HashMap<>();
 
+  public PublishedConfiguration() {
+  }
+
+  public PublishedConfiguration(String description) {
+    this.description = description;
+  }
+  public PublishedConfiguration(String description,
+      Iterable<Map.Entry<String, String>> entries) {
+    this.description = description;
+    putValues(entries);
+  }
+
+  
   /**
    * Is the configuration empty. This means either that it has not
    * been given any values, or it is stripped down copy set down over the
@@ -65,6 +69,16 @@ public class PublishedConfiguration {
    */
   public boolean isEmpty() {
     return entries.isEmpty();
+  }
+
+
+  public void setUpdated(long updated) {
+    this.updated = updated;
+    this.updatedTime = new Date(updated).toString();
+  }
+
+  public long getUpdated() {
+    return updated;
   }
 
   /**
@@ -140,7 +154,7 @@ public class PublishedConfiguration {
     final StringBuilder sb =
         new StringBuilder("PublishedConfiguration{");
     sb.append("description='").append(description).append('\'');
-    sb.append("entries = ").append(entries.size());
+    sb.append(" entries = ").append(entries.size());
     sb.append('}');
     return sb.toString();
   }

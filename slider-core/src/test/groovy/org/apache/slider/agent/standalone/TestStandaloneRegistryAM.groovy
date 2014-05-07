@@ -30,12 +30,12 @@ import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.params.ActionRegistryArgs
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.persist.JsonSerDeser
-import org.apache.slider.core.registry.docstore.ConfigFormat
 import org.apache.slider.core.registry.docstore.PublishedConfigSet
 import org.apache.slider.core.registry.docstore.PublishedConfiguration
 import org.apache.slider.core.registry.info.CustomRegistryConstants
 import org.apache.slider.core.registry.info.ServiceInstanceData
 import org.apache.slider.core.registry.retrieve.RegistryRetriever
+import org.apache.slider.server.appmaster.PublishedArtifacts
 import org.apache.slider.server.appmaster.web.rest.RestPaths
 import org.apache.slider.server.services.curator.CuratorServiceInstance
 import org.apache.slider.server.services.curator.RegistryBinderService
@@ -51,7 +51,7 @@ import org.junit.Test
 class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
 
 
-  public static final String YARN_SITE = "yarn-site.xml"
+  public static final String ARTIFACT_NAME = PublishedArtifacts.COMPLETE_CONFIG
 
   @Test
   public void testRegistryAM() throws Throwable {
@@ -152,13 +152,13 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
         PublishedConfigSet)
     def configSet = serDeser.fromJson(publishedJSON)
     assert configSet.size() >= 1
-    assert configSet.contains(YARN_SITE)
-    PublishedConfiguration publishedYarnSite = configSet.get(YARN_SITE)
+    assert configSet.contains(ARTIFACT_NAME)
+    PublishedConfiguration publishedYarnSite = configSet.get(ARTIFACT_NAME)
 
     assert publishedYarnSite.empty
     
     //get the full URL
-    def yarnSitePublisher = appendToURL(publisher, YARN_SITE)
+    def yarnSitePublisher = appendToURL(publisher, ARTIFACT_NAME)
 
     String confJSON = GET(yarnSitePublisher)
     log.info(confJSON)
@@ -195,10 +195,10 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
       def config = externalConf.get(key)
       log.info "$key -- ${config.description}"
     }
-    assert externalConf[YARN_SITE]
+    assert externalConf[ARTIFACT_NAME]
 
 
-    def yarnSite = retriever.retrieveConfiguration(YARN_SITE, true)
+    def yarnSite = retriever.retrieveConfiguration(ARTIFACT_NAME, true)
     assert !yarnSite.empty
     def siteXML = yarnSite.asConfiguration()
     def rmAddr = siteXML.get(YarnConfiguration.RM_ADDRESS)
@@ -210,7 +210,7 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     try {
       retriever.getConfigurations(false)
       fail( "expected a failure")
-    } catch (FileNotFoundException fnfe) {
+    } catch (FileNotFoundException expected) {
       //expected
     }
 
@@ -243,7 +243,7 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     try {
       assert 0 == client.actionRegistry(registryArgs)
       fail("expected a failure")
-    } catch (FileNotFoundException fnfe) {
+    } catch (FileNotFoundException expected) {
       //expected
     }
 
@@ -251,7 +251,7 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     registryArgs.listConf = false
     registryArgs.internal = false
     registryArgs.format = "properties"
-    registryArgs.getConf = YARN_SITE
+    registryArgs.getConf = ARTIFACT_NAME
     
     describe registryArgs.toString()
     assert 0 == client.actionRegistry(registryArgs)
@@ -262,11 +262,11 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     registryArgs.dest = outputDir
     describe registryArgs.toString()
     assert 0 == client.actionRegistry(registryArgs)
-    assert new File(outputDir,YARN_SITE + ".properties").exists()
+    assert new File(outputDir,ARTIFACT_NAME + ".properties").exists()
 
     registryArgs.format = "xml"
     assert 0 == client.actionRegistry(registryArgs)
-    assert new File(outputDir,YARN_SITE + ".xml").exists()
+    assert new File(outputDir,ARTIFACT_NAME + ".xml").exists()
 
 
 
@@ -282,6 +282,7 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
 
     sleep(20000)
 
+    // now verify that the service is not in the registry 
     instances = client.listRegistryInstances()
     assert instances.size() == 0
 
