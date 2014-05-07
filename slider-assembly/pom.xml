@@ -55,29 +55,6 @@
         </executions>
       </plugin>
       
-      <!-- assemble the tar file -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <version>${maven-assembly-plugin.version}</version>
-        <configuration>
-          <tarLongFileMode>gnu</tarLongFileMode>
-          <descriptors>
-            <descriptor>src/assembly/slider-bin.xml</descriptor>
-          </descriptors>
-            <finalName>slider-${project.version}</finalName>
-        </configuration>
-        <executions>
-          <execution>
-            <id>make-assembly</id>
-            <phase>package</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-
       <!-- pull in all dependencies -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -184,6 +161,30 @@
           </execution>
         </executions>
       </plugin>
+
+      <!-- assemble the tar file -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>${maven-assembly-plugin.version}</version>
+        <configuration>
+          <tarLongFileMode>gnu</tarLongFileMode>
+          <descriptors>
+            <descriptor>src/assembly/slider-bin.xml</descriptor>
+          </descriptors>
+          <finalName>slider-${project.version}</finalName>
+        </configuration>
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
     </plugins>
     
     

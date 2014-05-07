@@ -24,7 +24,7 @@ Edit config file src/test/clusters/remote/slider/slider-client.xml and ensure th
 
 Ensure that the user, running the test, is present on the cluster against which you are running the tests. The user must be a member of the hadoop group.
 
-E.g. adduser **testuser** -d /home/**testuser** -g hadoop -m
+E.g. adduser **testuser** -d /home/**testuser** -G hadoop -m
 
 **HDFS Setup**
 
@@ -43,8 +43,8 @@ Set up agent package and config
 *  su **testuser**
 *  hdfs dfs -mkdir /slider/agent
 *  hdfs dfs -mkdir /slider/agent/conf
-*  hdfs dfs -copyFromLocal <share>/slider-agent-0.23.0-SNAPSHOT.tar.gz /slider/agent
-*  hdfs dfs -copyFromLocal <share>agent.ini /slider/agent/conf
+*  hdfs dfs -copyFromLocal <share>/slider-agent.tar.gz /slider/agent
+*  hdfs dfs -copyFromLocal <share>/agent.ini /slider/agent/conf
 
 Add app packages 
 
