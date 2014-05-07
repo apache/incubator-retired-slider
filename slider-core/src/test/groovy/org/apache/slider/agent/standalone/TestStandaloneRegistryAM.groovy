@@ -73,7 +73,7 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
 
     List<ClusterNode> clusterNodes = client.listClusterNodesInRole(
         SliderKeys.COMPONENT_AM)
-    assert clusterNodes.size() == 1
+    assert ((List<ClusterNode>)clusterNodes).size() == 1
 
     ClusterNode masterNode = clusterNodes[0]
     log.info("Master node = ${masterNode}");
@@ -82,13 +82,13 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     String[] uuids = client.listNodeUUIDsByRole(SliderKeys.COMPONENT_AM)
     assert uuids.length == 1;
     nodes = client.listClusterNodes(uuids);
-    assert nodes.size() == 1;
+    assert ((List<ClusterNode>)nodes).size() == 1;
     describe "AM Node UUID=${uuids[0]}"
 
     nodes = listNodesInRole(client, SliderKeys.COMPONENT_AM)
-    assert nodes.size() == 1;
+    assert ((List<ClusterNode>)nodes).size() == 1;
     nodes = listNodesInRole(client, "")
-    assert nodes.size() == 1;
+    assert ((List<ClusterNode>)nodes).size() == 1;
     ClusterNode master = nodes[0]
     assert master.role == SliderKeys.COMPONENT_AM
 

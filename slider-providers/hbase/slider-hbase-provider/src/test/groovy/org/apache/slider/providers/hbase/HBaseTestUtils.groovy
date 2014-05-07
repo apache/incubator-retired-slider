@@ -198,7 +198,7 @@ class HBaseTestUtils extends SliderTestUtils {
     Configuration clientConf = createHBaseConfiguration(sliderClient)
     while (true) {
       clustat = getHBaseClusterStatus(clientConf);
-      int workerCount = clustat.servers.size();
+      int workerCount = ((List<ServerName>)clustat.servers).size();
       if (workerCount >= regionServerCount) {
         break;
       }
