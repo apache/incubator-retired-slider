@@ -384,9 +384,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
                           getConfig(),
                           clustername);
     
-
-
-    
     AggregateConf instanceDefinition = new AggregateConf();
     ConfTreeOperations appConf = instanceDefinition.getAppConfOperations();
     ConfTreeOperations resources = instanceDefinition.getResourceOperations();
@@ -459,7 +456,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     appConf.merge(cmdLineResourceOptions);
     resources.mergeComponents(buildInfo.getResourceCompOptionMap());
 
-    builder.init(provider.getName(), instanceDefinition);
+    builder.init(providerName, instanceDefinition);
     builder.propagateFilename();
     builder.propagatePrincipals();
     builder.setImageDetails(buildInfo.getImage(), buildInfo.getAppHomeDir());
@@ -508,7 +505,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       throw new BadClusterStateException("Failed to save " + clustername
                                          + ": " + e);
     }
-
   }
   
   public FsPermission getClusterDirectoryPermissions(Configuration conf) {
