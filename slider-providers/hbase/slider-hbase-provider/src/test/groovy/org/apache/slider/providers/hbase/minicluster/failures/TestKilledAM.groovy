@@ -48,7 +48,7 @@ class TestKilledAM extends HBaseMiniClusterTestBase {
 
   @Test
   public void testKilledAM() throws Throwable {
-    skip("failing")
+//    skip("failing")
     
     String clustername = "test_killed_am"
     int regionServerCount = 1

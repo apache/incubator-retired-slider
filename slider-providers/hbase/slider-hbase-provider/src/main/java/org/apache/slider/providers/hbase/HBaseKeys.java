@@ -66,6 +66,9 @@ public interface HBaseKeys {
   String PROVIDER_HBASE = "hbase";
   String HBASE_LOG_DIR = "HBASE_LOG_DIR";
 
+  String HBASE_HEAPSIZE = "HBASE_HEAPSIZE"; 
+  String HBASE_GC_OPTS = "SERVER_GC_OPTS"; 
+
 }
 
 

@@ -151,12 +151,12 @@ public class HBaseProviderService extends AbstractProviderService implements
     String heap = appComponent.getOption(RoleKeys.JVM_HEAP, DEFAULT_JVM_HEAP);
     if (SliderUtils.isSet(heap)) {
       String adjustedHeap = SliderUtils.translateTrailingHeapUnit(heap);
-      launcher.setEnv("HBASE_HEAPSIZE", adjustedHeap);
+      launcher.setEnv(HBASE_HEAPSIZE, adjustedHeap);
     }
     
     String gcOpts = appComponent.getOption(RoleKeys.GC_OPTS, DEFAULT_GC_OPTS);
     if (SliderUtils.isSet(gcOpts)) {
-      launcher.setEnv("SERVER_GC_OPTS", gcOpts);
+      launcher.setEnv(HBASE_GC_OPTS, gcOpts);
     }
     
     //this must stay relative if it is an image

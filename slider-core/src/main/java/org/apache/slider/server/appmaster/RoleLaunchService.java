@@ -48,6 +48,7 @@ public class RoleLaunchService extends AbstractService {
    * {@value}
    */
   public static final int LAUNCHER_THREAD_SHUTDOWN_TIME = 10000;
+  public static final String ROLE_LAUNCH_SERVICE = "RoleLaunchService";
   /**
    * Map of launched threads.
    * These are retained so that at shutdown time the AM can signal
@@ -89,7 +90,8 @@ public class RoleLaunchService extends AbstractService {
    * Thread group for the launchers; gives them all a useful name
    * in stack dumps
    */
-  private final ThreadGroup launcherThreadGroup = new ThreadGroup("launcher");
+  private final ThreadGroup launcherThreadGroup = new ThreadGroup(
+      ROLE_LAUNCH_SERVICE);
 
   private Map<String, String> envVars;
 
@@ -107,7 +109,7 @@ public class RoleLaunchService extends AbstractService {
                            SliderFileSystem fs,
                            Path generatedConfDirPath,
                            Map<String, String> envVars, Path launcherTmpDirPath) {
-    super("RoleLaunchService");
+    super(ROLE_LAUNCH_SERVICE);
     containerStarter = startOperation;
     this.fs = fs;
     this.generatedConfDirPath = generatedConfDirPath;

@@ -816,7 +816,7 @@ public final class SliderUtils {
   public static Map<String, String> buildEnvMap(Map<String, String> roleOpts) {
     Map<String, String> env = new HashMap<String, String>();
     if (roleOpts != null) {
-      for (Map.Entry<String, String> entry:roleOpts.entrySet()) {
+      for (Map.Entry<String, String> entry: roleOpts.entrySet()) {
         String key = entry.getKey();
         if (key.startsWith(RoleKeys.ENV_PREFIX)) {
           String envName = key.substring(RoleKeys.ENV_PREFIX.length());
