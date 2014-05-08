@@ -162,10 +162,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   protected static final Logger LOG_YARN = log;
 
-  public static final String SERVICE_CLASSNAME =
-      "org.apache.slider.server.appmaster.SliderAppMaster";
   public static final String SERVICE_CLASSNAME_SHORT =
       "SliderAppMaster";
+  public static final String SERVICE_CLASSNAME =
+      "org.apache.slider.server.appmaster."+ SERVICE_CLASSNAME_SHORT;
 
 
   /**
@@ -289,7 +289,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * Service Constructor
    */
   public SliderAppMaster() {
-    super("AppMasterService");
+    super(SERVICE_CLASSNAME_SHORT);
   }
 
 
