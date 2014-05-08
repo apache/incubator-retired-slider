@@ -16,11 +16,17 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.services.curator;
+package org.apache.slider.core.registry.info;
 
 import java.util.Locale;
 
+/**
+ * Logic for greating names from registry entries; lets the policy be changed
+ * later
+ */
 public class RegistryNaming {
+
+  public static String SLIDER_INSTANCE_NAME_FORMAT = "%s-%s";
 
   public static String createRegistryServiceType(String instanceName,
       String userName,
@@ -33,7 +39,7 @@ public class RegistryNaming {
                                               String serviceName,
                                               int appId) {
     return String.format(Locale.ENGLISH,
-        RegistryConsts.SLIDER_INSTANCE_NAME_FORMAT, userName,
+        SLIDER_INSTANCE_NAME_FORMAT, userName,
         instanceName,
         serviceName,
         appId);

@@ -39,6 +39,7 @@ import org.apache.slider.server.appmaster.PublishedArtifacts
 import org.apache.slider.server.appmaster.web.rest.RestPaths
 import org.apache.slider.server.services.curator.CuratorServiceInstance
 import org.apache.slider.server.services.curator.RegistryBinderService
+import org.apache.slider.server.services.registry.SliderRegistryService
 import org.junit.Test
 
 /**
@@ -111,7 +112,7 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     //switch to the ZK-based registry
 
     describe "service registry names"
-    RegistryBinderService<ServiceInstanceData> registry = client.registry
+    SliderRegistryService registry = client.registry
     def names = registry.queryForNames();
     dumpRegistryNames(names)
 

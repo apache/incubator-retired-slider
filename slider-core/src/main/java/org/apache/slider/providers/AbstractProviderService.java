@@ -32,6 +32,7 @@ import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
 import org.apache.slider.server.services.curator.RegistryBinderService;
+import org.apache.slider.server.services.registry.RegistryViewForProviders;
 import org.apache.slider.server.services.utility.ForkedProcessService;
 import org.apache.slider.server.services.utility.Parent;
 import org.apache.slider.server.services.utility.SequenceService;
@@ -53,17 +54,17 @@ import java.util.Map;
  * upstream
  */
 public abstract class AbstractProviderService
-                          extends SequenceService
-                          implements
-                            ProviderCore,
+    extends SequenceService
+    implements
+    ProviderCore,
     SliderKeys,
-                            ProviderService {
+    ProviderService {
   private static final Logger log =
     LoggerFactory.getLogger(AbstractProviderService.class);
   protected  AggregateConf instanceDefinition;
   protected StateAccessForProviders stateAccessor;
   protected AgentRestOperations restOps;
-  protected RegistryBinderService<ServiceInstanceData> registry;
+  protected RegistryViewForProviders registry;
 
   public AbstractProviderService(String name) {
     super(name);
@@ -84,7 +85,7 @@ public abstract class AbstractProviderService
 
   @Override
   public void bind(StateAccessForProviders stateAccessor,
-      RegistryBinderService<ServiceInstanceData> registry) {
+      RegistryViewForProviders registry) {
     this.stateAccessor = stateAccessor;
     this.registry = registry;
   }

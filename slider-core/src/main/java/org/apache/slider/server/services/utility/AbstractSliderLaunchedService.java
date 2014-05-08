@@ -23,10 +23,9 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadConfigException;
-import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.core.registry.zk.ZookeeperUtils;
 import org.apache.slider.server.services.curator.CuratorHelper;
-import org.apache.slider.server.services.curator.RegistryBinderService;
+import org.apache.slider.server.services.registry.SliderRegistryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +51,7 @@ public abstract class AbstractSliderLaunchedService extends
    * @return the instance
    * @throws BadConfigException
    */
-  protected RegistryBinderService<ServiceInstanceData> startRegistrationService()
+  protected SliderRegistryService startRegistrationService()
       throws BadConfigException {
 
     String registryQuorum = lookupZKQuorum();
@@ -83,15 +82,15 @@ public abstract class AbstractSliderLaunchedService extends
    * @param zkPath
    * @return
    */
-  public RegistryBinderService<ServiceInstanceData> startRegistrationService(
+  public SliderRegistryService startRegistrationService(
     String zkConnection, String zkPath) {
     CuratorHelper curatorHelper =
       new CuratorHelper(getConfig(), zkConnection);
 
     //registry will start curator as well as the binder, in the correct order
-    RegistryBinderService<ServiceInstanceData> registryBinderService =
+    SliderRegistryService registryBinderService =
       curatorHelper.createRegistryBinderService(zkPath);
-    boolean started = deployChildService(registryBinderService);
+    deployChildService(registryBinderService);
     return registryBinderService;
   }
 

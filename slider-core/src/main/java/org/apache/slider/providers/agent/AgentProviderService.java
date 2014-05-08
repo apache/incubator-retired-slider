@@ -38,6 +38,7 @@ import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.CommandLineBuilder;
 import org.apache.slider.core.launch.ContainerLauncher;
+import org.apache.slider.core.registry.info.RegisteredEndpoint;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.providers.AbstractProviderService;
 import org.apache.slider.providers.ProviderCore;
@@ -56,7 +57,6 @@ import org.apache.slider.server.appmaster.web.rest.agent.Register;
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationResponse;
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationStatus;
 import org.apache.slider.server.appmaster.web.rest.agent.StatusCommand;
-import org.apache.slider.server.services.curator.CuratorServiceInstance;
 import org.apache.slider.server.services.utility.EventCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,12 +76,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.apache.slider.core.registry.info.RegistryFields.DESCRIPTION;
-import static org.apache.slider.core.registry.info.RegistryFields.ENDPOINTS;
-import static org.apache.slider.core.registry.info.RegistryFields.EXTERNAL_VIEW;
-import static org.apache.slider.core.registry.info.RegistryFields.PROTOCOL;
-import static org.apache.slider.core.registry.info.RegistryFields.VALUE;
 
 /** This class implements the server-side aspects of an agent deployment */
 public class AgentProviderService extends AbstractProviderService implements
@@ -619,18 +613,18 @@ public class AgentProviderService extends AbstractProviderService implements
 
   private void buildEndpointDetails(Map<String, URL> details) {
     try {
-      List<CuratorServiceInstance<ServiceInstanceData>> services =
-          registry.listInstances(SliderKeys.APP_TYPE);
-      assert services.size() == 1;
-      CuratorServiceInstance<ServiceInstanceData> service = services.get(0);
-      Map payload = (Map) service.getPayload();
-      Map<String, Map<String, String>> endpoints =
-          (Map) ((Map) payload.get(EXTERNAL_VIEW)).get(ENDPOINTS);
-      for (Map.Entry<String, Map<String, String>> endpoint : endpoints.entrySet()) {
-        if ("http".equals(endpoint.getValue().get(PROTOCOL))) {
-          URL url = new URL(endpoint.getValue().get(VALUE));
-          details.put(endpoint.getValue().get(DESCRIPTION),
-                      url);
+      List<ServiceInstanceData> services =
+          registry.listInstancesByType(SliderKeys.APP_TYPE);
+      assert services.size() >= 1;
+      ServiceInstanceData payload = services.get(0);
+      Map<String, RegisteredEndpoint> endpointMap =
+          payload.externalView.endpoints;
+      for (Map.Entry<String, RegisteredEndpoint> endpoint : endpointMap
+          .entrySet()) {
+        RegisteredEndpoint val = endpoint.getValue();
+        if ("http".equals(val.protocol)) {
+          URL url = new URL(val.value);
+          details.put(val.description, url);
         }
       }
     } catch (IOException e) {

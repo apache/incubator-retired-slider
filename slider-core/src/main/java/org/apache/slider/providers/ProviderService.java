@@ -34,6 +34,7 @@ import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
 import org.apache.slider.server.services.curator.RegistryBinderService;
+import org.apache.slider.server.services.registry.RegistryViewForProviders;
 import org.apache.slider.server.services.utility.EventCallback;
 
 import java.io.File;
@@ -140,7 +141,7 @@ public interface ProviderService extends ProviderCore, Service,
    * @param registry
    */
   void bind(StateAccessForProviders stateAccessor,
-      RegistryBinderService<ServiceInstanceData> registry);
+      RegistryViewForProviders registry);
 
   /**
    * Returns the agent rest operations interface.

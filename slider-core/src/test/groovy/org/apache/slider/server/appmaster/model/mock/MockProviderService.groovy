@@ -38,6 +38,8 @@ import org.apache.slider.providers.ProviderService
 import org.apache.slider.server.appmaster.state.StateAccessForProviders
 import org.apache.slider.server.appmaster.web.rest.agent.*
 import org.apache.slider.server.services.curator.RegistryBinderService
+import org.apache.slider.server.services.registry.RegistryViewForProviders
+import org.apache.slider.server.services.registry.SliderRegistryService
 import org.apache.slider.server.services.utility.EventCallback
 
 class MockProviderService implements ProviderService {
@@ -195,11 +197,11 @@ class MockProviderService implements ProviderService {
   @Override
   void bind(
       StateAccessForProviders stateAccessor,
-      RegistryBinderService<ServiceInstanceData> registry) {
+      RegistryViewForProviders registry) {
 
   }
 
-    @Override
+  @Override
     AgentRestOperations getAgentRestOperations() {
         return new AgentRestOperations() {
             @Override

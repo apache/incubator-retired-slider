@@ -27,6 +27,7 @@ import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.registry.info.ServiceInstanceData
 import org.apache.slider.server.services.curator.CuratorServiceInstance
 import org.apache.slider.server.services.curator.RegistryBinderService
+import org.apache.slider.server.services.registry.SliderRegistryService
 import org.junit.Test
 
 @CompileStatic
@@ -81,7 +82,7 @@ class TestTwoLiveClusters extends HBaseMiniClusterTestBase {
 
     // registry instances    def names = client.listRegistryNames(clustername)
     describe "service registry names"
-    RegistryBinderService<ServiceInstanceData> registry = cluster2Client.registry
+    SliderRegistryService registry = cluster2Client.registry
     def names = registry.queryForNames();
     dumpRegistryNames(names)
 

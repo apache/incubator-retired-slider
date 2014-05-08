@@ -16,16 +16,11 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster;
+package org.apache.slider.server.services.registry;
 
 /**
- * This is the name of YARN artifacts that are published
+ * These constants are unique to the slider registry service itself
  */
-public interface PublishedArtifacts {
-
-  String COMPLETE_CONFIG = "complete-config";
-  String CORE_SITE_CONFIG = "core-site";
-  String HDFS_SITE_CONFIG = "hdfs-site";
-  String YARN_SITE_CONFIG = "yarn-site";
-  String LOG4J = "log4j";
+public class RegistryServiceConstants {
+  public static final int INSTANCE_REFRESH_MS = 1000;
 }

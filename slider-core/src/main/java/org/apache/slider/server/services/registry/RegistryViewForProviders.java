@@ -16,10 +16,17 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.services.curator;
+package org.apache.slider.server.services.registry;
 
-public class RegistryConsts {
-  public static final String REGISTRY_RESOURCE_PATH = "/ws/registry";
-  public static final int INSTANCE_REFRESH_MS = 1000;
-  public static String SLIDER_INSTANCE_NAME_FORMAT = "%s-%s";
+import org.apache.slider.core.registry.info.ServiceInstanceData;
+
+import java.io.IOException;
+import java.util.List;
+
+/**
+ * This offers restricted access to the registry for providers
+ */
+public interface RegistryViewForProviders {
+  List<ServiceInstanceData> listInstancesByType(String serviceType) throws
+      IOException;
 }

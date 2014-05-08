@@ -16,13 +16,17 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.services.curator;
+package org.apache.slider.server.services.registry;
 
 import com.google.inject.Singleton;
 import org.apache.curator.x.discovery.ServiceInstance;
 import org.apache.curator.x.discovery.server.rest.DiscoveryContext;
 import org.apache.curator.x.discovery.server.rest.DiscoveryResource;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
+import org.apache.slider.server.appmaster.web.rest.RestPaths;
+import org.apache.slider.server.services.curator.CuratorServiceInstance;
+import org.apache.slider.server.services.curator.CuratorServiceInstances;
+import org.apache.slider.server.services.curator.RegistryBinderService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,16 +47,16 @@ import java.util.List;
 import java.util.Random;
 
 @Singleton
-@Path(RegistryConsts.REGISTRY_RESOURCE_PATH)
+@Path(RestPaths.SLIDER_PATH_REGISTRY)
 public class RegistryRestResources extends DiscoveryResource<ServiceInstanceData> {
   protected static final Logger log =
       LoggerFactory.getLogger(RegistryRestResources.class);
-  private final RegistryBinderService<ServiceInstanceData> registry;
+  private final SliderRegistryService registry;
   private DiscoveryContext<ServiceInstanceData> context;
   private Random randomizer = new Random();
 
   public RegistryRestResources(@Context DiscoveryContext<ServiceInstanceData> context,
-                               RegistryBinderService<ServiceInstanceData> registry) {
+      SliderRegistryService registry) {
     super(context);
     this.context = context;
     this.registry = registry;

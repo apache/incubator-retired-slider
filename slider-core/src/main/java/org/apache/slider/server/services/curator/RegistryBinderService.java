@@ -28,6 +28,7 @@ import org.apache.curator.x.discovery.ServiceType;
 import org.apache.curator.x.discovery.UriSpec;
 import org.apache.slider.core.exceptions.BadClusterStateException;
 import org.apache.slider.core.persist.JsonSerDeser;
+import org.apache.slider.server.services.registry.RegistryViewForProviders;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,11 +53,10 @@ public class RegistryBinderService<Payload> extends CuratorService {
   private final ServiceDiscovery<Payload> discovery;
 
   private final Map<String, ServiceInstance<Payload>> entries =
-    new HashMap<String, ServiceInstance<Payload>>();
+    new HashMap<>();
 
   JsonSerDeser<CuratorServiceInstance<Payload>> deser =
-    new JsonSerDeser<CuratorServiceInstance<Payload>>(
-      CuratorServiceInstance.class);
+    new JsonSerDeser<>(CuratorServiceInstance.class);
 
   /**
    * Create an instance
@@ -206,8 +206,7 @@ public class RegistryBinderService<Payload> extends CuratorService {
     try {
       List<String> instanceIDs = instanceIDs(name);
       List<CuratorServiceInstance<Payload>> instances =
-        new ArrayList<CuratorServiceInstance<Payload>>(
-          instanceIDs.size());
+        new ArrayList<>(instanceIDs.size());
       for (String instanceID : instanceIDs) {
         CuratorServiceInstance<Payload> instance =
           queryForInstance(name, instanceID);
@@ -231,6 +230,5 @@ public class RegistryBinderService<Payload> extends CuratorService {
       throw new IOException(e);
     }
   }
-  
-  
+
 }

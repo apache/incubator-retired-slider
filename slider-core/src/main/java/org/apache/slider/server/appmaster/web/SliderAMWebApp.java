@@ -32,8 +32,9 @@ import org.apache.slider.server.appmaster.web.rest.AMWebServices;
 import org.apache.slider.server.appmaster.web.rest.SliderJacksonJaxbJsonProvider;
 import org.apache.slider.server.services.curator.CuratorHelper;
 import org.apache.slider.server.services.curator.RegistryBinderService;
-import org.apache.slider.server.services.curator.RegistryDiscoveryContext;
-import org.apache.slider.server.services.curator.RegistryRestResources;
+import org.apache.slider.server.services.registry.RegistryDiscoveryContext;
+import org.apache.slider.server.services.registry.RegistryRestResources;
+import org.apache.slider.server.services.registry.SliderRegistryService;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -48,9 +49,9 @@ public class SliderAMWebApp extends WebApp {
   public static final String CONTAINER_STATS = "/stats";
   public static final String CLUSTER_SPEC = "/spec";
 
-  public final RegistryBinderService<ServiceInstanceData> registry;
+  public final SliderRegistryService registry;
 
-  public SliderAMWebApp(RegistryBinderService<ServiceInstanceData> registry) {
+  public SliderAMWebApp(SliderRegistryService registry) {
     Preconditions.checkNotNull(registry);
     this.registry = registry;
   }

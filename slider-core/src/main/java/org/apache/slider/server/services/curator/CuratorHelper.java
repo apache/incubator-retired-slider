@@ -29,6 +29,9 @@ import org.apache.curator.x.discovery.strategies.RandomStrategy;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
+import org.apache.slider.server.services.registry.RegistryServiceConstants;
+import org.apache.slider.server.services.registry.RegistryDiscoveryContext;
+import org.apache.slider.server.services.registry.SliderRegistryService;
 
 /**
  * This class creates a curator -but does not start or close it. That
@@ -98,13 +101,13 @@ public class CuratorHelper extends Configured {
    * @param discoveryBuilder builder to create the discovery from
    */
 
-  public RegistryBinderService<ServiceInstanceData> createRegistryBinderService(
-    String basePath,
-    ServiceDiscoveryBuilder<ServiceInstanceData> discoveryBuilder) {
+  public SliderRegistryService createRegistryBinderService(
+      String basePath,
+      ServiceDiscoveryBuilder<ServiceInstanceData> discoveryBuilder) {
     discoveryBuilder.basePath(basePath);
-    return new RegistryBinderService<ServiceInstanceData>(curator,
-                                                          basePath,
-                                                          discoveryBuilder.build());
+    return new SliderRegistryService(curator,
+        basePath,
+        discoveryBuilder.build());
   }
 
 
@@ -113,12 +116,12 @@ public class CuratorHelper extends Configured {
    * @param basePath base path
    * @return the binder service
    */
-  public RegistryBinderService<ServiceInstanceData> createRegistryBinderService(
+  public SliderRegistryService createRegistryBinderService(
     String basePath) {
     ServiceDiscoveryBuilder<ServiceInstanceData> discoveryBuilder =
       createDiscoveryBuilder();
     //registry will start curator as well as the binder, in the correct order
-    RegistryBinderService<ServiceInstanceData> registryBinderService =
+    SliderRegistryService registryBinderService =
       createRegistryBinderService(basePath, discoveryBuilder);
     return registryBinderService;
   }
@@ -128,7 +131,7 @@ public class CuratorHelper extends Configured {
     Preconditions.checkNotNull(discovery);
     return new RegistryDiscoveryContext(discovery,
                                         new RandomStrategy<ServiceInstanceData>(),
-                                        RegistryConsts.INSTANCE_REFRESH_MS,
+                                        RegistryServiceConstants.INSTANCE_REFRESH_MS,
                                         ServiceInstanceData.class);
 
   }

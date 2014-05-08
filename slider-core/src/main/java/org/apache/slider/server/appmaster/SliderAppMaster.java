@@ -80,6 +80,7 @@ import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.exceptions.SliderInternalStateException;
 import org.apache.slider.core.exceptions.TriggerClusterTeardownException;
+import org.apache.slider.core.main.LauncherExitCodes;
 import org.apache.slider.core.main.RunService;
 import org.apache.slider.core.main.ServiceLauncher;
 import org.apache.slider.core.persist.ConfTreeSerDeser;
@@ -108,9 +109,9 @@ import org.apache.slider.server.appmaster.web.SliderAmFilterInitializer;
 import org.apache.slider.server.appmaster.web.SliderAmIpFilter;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.WebAppApiImpl;
-import org.apache.slider.server.services.curator.RegistryBinderService;
-import org.apache.slider.server.services.curator.RegistryConsts;
-import org.apache.slider.server.services.curator.RegistryNaming;
+import org.apache.slider.server.appmaster.web.rest.RestPaths;
+import org.apache.slider.core.registry.info.RegistryNaming;
+import org.apache.slider.server.services.registry.SliderRegistryService;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
 import org.apache.slider.server.services.utility.EventCallback;
 import org.apache.slider.server.services.utility.RpcService;
@@ -131,6 +132,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -145,15 +147,15 @@ import static org.apache.slider.server.appmaster.web.rest.RestPaths.WS_CONTEXT_R
  */
 public class SliderAppMaster extends AbstractSliderLaunchedService 
   implements AMRMClientAsync.CallbackHandler,
-             NMClientAsync.CallbackHandler,
-             RunService,
+    NMClientAsync.CallbackHandler,
+    RunService,
     SliderExitCodes,
     SliderKeys,
     SliderClusterProtocol,
-             ServiceStateChangeListener,
-             RoleKeys,
-             EventCallback,
-             ContainerStartOperation {
+    ServiceStateChangeListener,
+    RoleKeys,
+    EventCallback,
+    ContainerStartOperation {
   protected static final Logger log =
     LoggerFactory.getLogger(SliderAppMaster.class);
 
@@ -262,7 +264,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   private ProviderService providerService;
 
-  private RegistryBinderService<ServiceInstanceData> registry;
+  private SliderRegistryService registry;
   
   /**
    * Record of the max no. of cores allowed in this cluster
@@ -348,7 +350,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
   /**
    * pick up the args from the service launcher
-   * @param config
+   * @param config configuration
    * @param args argument list
    */
   @Override // RunService
@@ -381,10 +383,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     //choose the action
     String action = serviceArgs.getAction();
     List<String> actionArgs = serviceArgs.getActionArgs();
-    int exitCode = EXIT_SUCCESS;
+    int exitCode;
     if (action.equals(SliderActions.ACTION_HELP)) {
       log.info(getName() + serviceArgs.usage());
-      exitCode = SliderExitCodes.EXIT_USAGE;
+      exitCode = LauncherExitCodes.EXIT_USAGE;
     } else if (action.equals(SliderActions.ACTION_CREATE)) {
       exitCode = createAndRunCluster(actionArgs.get(0));
     } else {
@@ -563,12 +565,13 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       // Start up the WebApp and track the URL for it
       webApp = new SliderAMWebApp(registry);
       WebApps.$for(SliderAMWebApp.BASE_PATH, WebAppApi.class,
-                            new WebAppApiImpl(this, appState, providerService), "ws")
+          new WebAppApiImpl(this, appState, providerService),
+          RestPaths.WS_CONTEXT)
                       .with(serviceConf)
                       .start(webApp);
       appMasterTrackingUrl = "http://" + appMasterHostname + ":" + webApp.port();
       WebAppService<SliderAMWebApp> webAppService =
-        new WebAppService<SliderAMWebApp>("slider", webApp);
+        new WebAppService<>("slider", webApp);
 
       webAppService.init(conf);
       webAppService.start();
@@ -639,7 +642,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       // build up environment variables that the AM wants set in every container
       // irrespective of provider and role.
-      envVars = new HashMap<String, String>();
+      envVars = new HashMap<>();
       if (hadoop_user_name != null) {
         envVars.put(HADOOP_USER_NAME, hadoop_user_name);
       }
@@ -732,7 +735,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         new PublishedConfiguration(
             "HDFS site settings",
             ConfigHelper.loadFromResource("hdfs-site.xml")));
-
+    
+    
     ServiceInstanceData instanceData = new ServiceInstanceData();
     instanceData.id = registryId;
     instanceData.serviceType = appServiceType;
@@ -756,7 +760,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     externalView.endpoints.put(
         CustomRegistryConstants.REGISTRY_REST_API,
       new RegisteredEndpoint(
-        new URL(amWeb, RegistryConsts.REGISTRY_RESOURCE_PATH),
+        new URL(amWeb, RestPaths.SLIDER_PATH_REGISTRY),
         "Registry Web Service" )
     );
 
@@ -791,11 +795,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     );
 
 
-    registry.register(
-      appServiceType,
-      registryId,
-      amWeb,
-      instanceData);
+    registry.registerSelf(
+        appServiceType,
+        registryId,
+        amWeb,
+        instanceData);
   }
 
   /**
@@ -931,9 +935,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     try {
       log.info("Unregistering AM status={} message={}", appStatus, appMessage);
       asyncRMClient.unregisterApplicationMaster(appStatus, appMessage, null);
-    } catch (YarnException e) {
-      log.info("Failed to unregister application: " + e, e);
-    } catch (IOException e) {
+    } catch (YarnException | IOException e) {
       log.info("Failed to unregister application: " + e, e);
     }
   }
@@ -991,8 +993,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   @Override //AMRMClientAsync
   public void onContainersAllocated(List<Container> allocatedContainers) {
     LOG_YARN.info("onContainersAllocated({})", allocatedContainers.size());
-    List<ContainerAssignment> assignments = new ArrayList<ContainerAssignment>();
-    List<AbstractRMOperation> operations = new ArrayList<AbstractRMOperation>();
+    List<ContainerAssignment> assignments = new ArrayList<>();
+    List<AbstractRMOperation> operations = new ArrayList<>();
     
     //app state makes all the decisions
     appState.onContainersAllocated(allocatedContainers, assignments, operations);
@@ -1309,7 +1311,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     RoleInstance instance =
       appState.getLiveInstanceByContainerID(containerID);
     List<AbstractRMOperation> opsList =
-      new LinkedList<AbstractRMOperation>();
+      new LinkedList<>();
     ContainerReleaseOperation release =
       new ContainerReleaseOperation(instance.getId());
     opsList.add(release);
@@ -1351,15 +1353,15 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   /**
    * Launch the provider service
    *
-   * @param cd
-   * @param confDir
+   * @param instanceDefinition definition of the service
+   * @param confDir directory of config data
    * @throws IOException
    * @throws SliderException
    */
   protected synchronized void launchProviderService(AggregateConf instanceDefinition,
                                                     File confDir)
     throws IOException, SliderException {
-    Map<String, String> env = new HashMap<String, String>();
+    Map<String, String> env = new HashMap<>();
     boolean execStarted = providerService.exec(instanceDefinition, confDir, env, this);
     if (execStarted) {
       providerService.registerServiceListener(this);
@@ -1409,8 +1411,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         AMUtils.mapProcessExitCodeToYarnExitCode(exitCode);
       boolean shouldTriggerFailure = !amCompletionFlag.get()
          && (AMUtils.isMappedExitAFailure(mappedProcessExitCode));
-                                     
-     
       
       if (shouldTriggerFailure) {
         //this wasn't expected: the process finished early
@@ -1556,7 +1556,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     //turn the args to a list
     List<String> argsList = Arrays.asList(args);
     //create a new list, as the ArrayList type doesn't push() on an insert
-    List<String> extendedArgs = new ArrayList<String>(argsList);
+    List<String> extendedArgs = new ArrayList<>(argsList);
     //insert the service name
     extendedArgs.add(0, SERVICE_CLASSNAME);
     //now have the service launcher do its work

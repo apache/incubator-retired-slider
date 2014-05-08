@@ -24,7 +24,7 @@ import org.apache.slider.core.registry.info.ServiceInstanceData
 import org.apache.slider.core.registry.retrieve.RegistryRetriever
 import org.apache.slider.server.services.curator.CuratorHelper
 import org.apache.slider.server.services.curator.RegistryBinderService
-import org.apache.slider.server.services.curator.RegistryNaming
+import org.apache.slider.core.registry.info.RegistryNaming
 import org.apache.slider.test.MicroZKCluster
 import org.apache.slider.test.SliderTestUtils
 import org.junit.After

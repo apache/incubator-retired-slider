@@ -35,7 +35,7 @@ import org.apache.slider.providers.agent.AgentTestBase
 import org.apache.slider.server.appmaster.web.rest.RestPaths
 import org.apache.slider.server.services.curator.CuratorServiceInstance
 import org.apache.slider.server.services.curator.CuratorServiceInstances
-import org.apache.slider.server.services.curator.RegistryNaming
+import org.apache.slider.core.registry.info.RegistryNaming
 import org.junit.Test
 
 import javax.ws.rs.core.MediaType

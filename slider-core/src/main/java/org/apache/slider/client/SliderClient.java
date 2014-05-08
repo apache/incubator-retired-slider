@@ -100,6 +100,7 @@ import org.apache.slider.server.appmaster.SliderAppMaster;
 import org.apache.slider.server.appmaster.rpc.RpcBinder;
 import org.apache.slider.server.services.curator.CuratorServiceInstance;
 import org.apache.slider.server.services.curator.RegistryBinderService;
+import org.apache.slider.server.services.registry.SliderRegistryService;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -143,7 +144,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   private SliderYarnClientImpl yarnClient;
   private YARNRegistryClient YARNRegistryClient;
   private AggregateConf launchedInstanceDefinition;
-  private RegistryBinderService<ServiceInstanceData> registry;
+  private SliderRegistryService registry;
 
   /**
    * Constructor
@@ -2151,7 +2152,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @throws SliderException
    * @throws IOException
    */
-  private synchronized RegistryBinderService<ServiceInstanceData> maybeStartRegistry() throws
+  private synchronized SliderRegistryService maybeStartRegistry() throws
       SliderException,
       IOException {
 
@@ -2170,7 +2171,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    */
   @VisibleForTesting
 
-  public RegistryBinderService<ServiceInstanceData> getRegistry() throws
+  public SliderRegistryService getRegistry() throws
       SliderException,
       IOException {
     return maybeStartRegistry();
