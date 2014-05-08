@@ -38,25 +38,46 @@ class AgentCommandTestBase extends CommandTestBase
   
   protected static String APP_RESOURCE = "../slider-core/src/test/app_packages/test_command_log/resources.json"
   protected static String APP_TEMPLATE = "../slider-core/src/test/app_packages/test_command_log/appConfig.json"
-  protected static final File LOCAL_SLIDER_AGENT_TARGZ 
-  
+  protected static String APP_PKG = "../slider-core/src/test/app_packages/test_command_log/cmd_log_app_pkg.tar"
+  protected static String AGENT_CONF = "../slider-agent/conf/agent.ini"
+  protected static final File LOCAL_SLIDER_AGENT_TARGZ
+  protected static final File LOCAL_APP_PKZ
+  protected static final File LOCAL_AGENT_CONF
+
   protected static Path agentTarballPath;
-  
+  protected static Path appPkgPath;
+  protected static Path agtIniPath;
+
   static {
     AGENTTESTS_ENABLED = SLIDER_CONFIG.getBoolean(KEY_TEST_AGENT_ENABLED, false)
     LOCAL_SLIDER_AGENT_TARGZ = new File(
         SLIDER_BIN_DIRECTORY,
         AGENT_SLIDER_GZ).canonicalFile
+    LOCAL_APP_PKZ = new File(APP_PKG).canonicalFile
+    LOCAL_AGENT_CONF = new File(AGENT_CONF).canonicalFile
   }
 
   @BeforeClass
   public static void setupAgent() {
     assumeAgentTestsEnabled()
-    assume(LOCAL_SLIDER_AGENT_TARGZ.exists(), "Slider agent not found at $LOCAL_SLIDER_AGENT_TARGZ")
-    agentTarballPath = new Path(clusterFS.homeDirectory, "agent.tar.gz")
 
+    // Upload the agent tarball
+    assume(LOCAL_SLIDER_AGENT_TARGZ.exists(), "Slider agent not found at $LOCAL_SLIDER_AGENT_TARGZ")
+    agentTarballPath = new Path(clusterFS.homeDirectory, "/slider/agent/slider-agent.tar.gz")
     Path localTarball = new Path(LOCAL_SLIDER_AGENT_TARGZ.toURI());
     clusterFS.copyFromLocalFile(false, true, localTarball, agentTarballPath)
+
+    // Upload the app pkg
+    assume(LOCAL_APP_PKZ.exists(), "App pkg not found at $LOCAL_APP_PKZ")
+    appPkgPath = new Path(clusterFS.homeDirectory, "/slider/cmd_log_app_pkg.tar")
+    Path localAppPkg = new Path(LOCAL_SLIDER_AGENT_TARGZ.toURI());
+    clusterFS.copyFromLocalFile(false, true, localAppPkg, appPkgPath)
+
+    // Upload the agent.ini
+    assume(LOCAL_AGENT_CONF.exists(), "Agent config not found at $LOCAL_AGENT_CONF")
+    agtIniPath = new Path(clusterFS.homeDirectory, "/slider/agent/conf/agent.ini")
+    Path localAgtIni = new Path(LOCAL_AGENT_CONF.toURI());
+    clusterFS.copyFromLocalFile(false, true, localAgtIni, agtIniPath)
   }
 
   public static void assumeAgentTestsEnabled() {

@@ -34,7 +34,6 @@ from CustomServiceOrchestrator import CustomServiceOrchestrator
 from mock.mock import MagicMock, patch
 import StringIO
 import sys
-from AgentException import AgentException
 
 
 class TestCustomServiceOrchestrator(TestCase):
@@ -209,6 +208,14 @@ class TestCustomServiceOrchestrator(TestCase):
       'commandType': 'STATUS_COMMAND'
     }
 
+    command_get_specific = {
+      'roleCommand': 'GET_CONFIG',
+      'commandType': 'STATUS_COMMAND',
+      'commandParams': {
+        'config_type': 'hbase-site'
+      }
+    }
+
     tempdir = tempfile.gettempdir()
     config = MagicMock()
     config.get.return_value = "something"
@@ -231,6 +238,11 @@ class TestCustomServiceOrchestrator(TestCase):
         'hbase.log': tempdir, 'hbase.number': '10485760'},
       'hbase-log4j': {'a': 'b'}}
 
+    expected_specific = {
+      'hbase-site': {
+        'hbase.log': tempdir, 'hbase.number': '10485760'},
+      }
+
     ret = orchestrator.runCommand(command, "out.txt", "err.txt", True, True)
     self.assertEqual(ret['exitcode'], 0)
     self.assertTrue(run_file_mock.called)
@@ -238,6 +250,9 @@ class TestCustomServiceOrchestrator(TestCase):
 
     ret = orchestrator.requestComponentStatus(command_get)
     self.assertEqual(ret['configurations'], expected)
+
+    ret = orchestrator.requestComponentStatus(command_get_specific)
+    self.assertEqual(ret['configurations'], expected_specific)
     pass
 
   @patch.object(CustomServiceOrchestrator, "runCommand")
@@ -248,7 +263,7 @@ class TestCustomServiceOrchestrator(TestCase):
       "clusterName": "",
       "componentName": "DATANODE",
       'configurations': {},
-      'roleCommand' : "STATUS"
+      'roleCommand': "STATUS"
     }
     dummy_controller = MagicMock()
 

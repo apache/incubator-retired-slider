@@ -42,7 +42,7 @@ public class TestAppsThroughAgent extends AgentCommandTestBase
   }
 
   @Test
-  public void testCreateFlexHBase() throws Throwable {
+  public void testCreateFlex() throws Throwable {
     if (!AGENTTESTS_ENABLED) {
       log.info "TESTS are not run."
       return

@@ -132,20 +132,58 @@ away
 
 ### Agent Tests
 
+Agent tests are executed through the following mvn command executed at slider/slider-funtest:
+
+```
+cd slider-funtest
+mvn test -Dslider.conf.dir=../src/test/clusters/remote/slider -Dtest=TestAppsThroughAgent -DfailIfNoTests=false
+```
+
+**Enable/Execute the tests**
+
+To enable the test ensure that *slider.test.agent.enabled* is set to *true*.
+
     <property>
       <name>slider.test.agent.enabled</name>
       <description>Flag to enable/disable Agent tests</description>
       <value>true</value>
     </property>
         
-The agent tarball needs to be pushed to HBase. This is the tar
-file created
+**Test setup**
+
+Edit config file src/test/clusters/remote/slider/slider-client.xml and ensure that the host names are accurate for the test cluster.
+
+**User setup**
+
+Ensure that the user, running the test, is present on the cluster against which you are running the tests. The user must be a member of the hadoop group.
+
+E.g. adduser **testuser** -d /home/**testuser** -G hadoop -m
+
+**HDFS Setup**
+
+Set up hdfs folders for slider and test user
+
+*  su hdfs
+*  hdfs dfs -mkdir /slider
+*  hdfs dfs -chown testuser:hdfs /slider
+*  hdfs dfs -mkdir /user/testuser
+*  hdfs dfs -chown testuser:hdfs /user/testuser
+
+Load up agent package and config
+
+*  su **testuser**
+*  hdfs dfs -mkdir /slider/agent
+*  hdfs dfs -mkdir /slider/agent/conf
+*  hdfs dfs -copyFromLocal SLIDER_INSTALL_LOC/agent/conf/agent.ini /slider/agent/conf
+
+Ensure correct host name is provided for the agent tarball.
         
     <property>
       <name>slider.test.agent.tar</name>
       <description>Path to the Agent Tar file in HDFS</description>
-      <value>hdfs://sandbox:8020/user/slider/agent.tar.gz</value>
+      <value>hdfs://NN_HOSTNAME:8020/slider/agent/slider-agent.tar.gz</value>
     </property>
+
 
 
 ### HBase Tests

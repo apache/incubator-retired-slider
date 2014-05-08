@@ -53,12 +53,12 @@
 
   <property>
     <name>slider.test.agent.enabled</name>
-    <value>false</value>
+    <value>true</value>
   </property>
   
   <property>
     <name>slider.test.agent.tar</name>
-    <value>hdfs://c6403.ambari.apache.org:8020/slider/agent/slider-agent-0.23.0-SNAPSHOT.tar.gz</value>
+    <value>hdfs://c6403.ambari.apache.org:8020/slider/agent/slider-agent.tar.gz</value>
   </property>
 
 </configuration>
