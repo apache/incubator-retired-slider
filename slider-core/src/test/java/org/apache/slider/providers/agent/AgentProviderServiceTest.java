@@ -35,6 +35,7 @@ import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.conf.ConfTreeOperations;
 import org.apache.slider.core.conf.MapOperations;
 import org.apache.slider.core.exceptions.SliderException;
+import org.apache.slider.core.launch.ContainerLauncher;
 import org.apache.slider.server.appmaster.model.mock.MockContainerId;
 import org.apache.slider.server.appmaster.model.mock.MockFileSystem;
 import org.apache.slider.server.appmaster.model.mock.MockNodeId;
@@ -127,7 +128,7 @@ public class AgentProviderServiceTest {
     replay(access, ctx, container, sliderFileSystem);
 
     try {
-      mockAps.buildContainerLaunchContext(null,
+      mockAps.buildContainerLaunchContext(createNiceMock(ContainerLauncher.class),
           instanceDefinition,
                                           container,
                                           role,

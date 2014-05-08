@@ -38,6 +38,7 @@ import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.CommandLineBuilder;
 import org.apache.slider.core.launch.ContainerLauncher;
+import org.apache.slider.core.registry.docstore.PublishedConfiguration;
 import org.apache.slider.core.registry.info.RegisteredEndpoint;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.providers.AbstractProviderService;
@@ -223,6 +224,15 @@ public class AgentProviderService extends AbstractProviderService implements
     Metainfo metainfo = new MetainfoParser().parse(metainfoStream);
 
     return metainfo;
+  }
+
+  protected void publishComponentConfiguration(String name, String description,
+                                             Iterable<Map.Entry<String, String>> entries) {
+    PublishedConfiguration pubconf = new PublishedConfiguration();
+    pubconf.description = description;
+    pubconf.putValues(entries);
+    log.info("publishing {}", pubconf);
+    getStateAccessor().getPublishedConfigurations().put(name, pubconf);
   }
 
   protected void setRoleHostMapping(String role, String host) {
