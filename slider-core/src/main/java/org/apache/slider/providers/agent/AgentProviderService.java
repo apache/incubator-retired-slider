@@ -333,7 +333,6 @@ public class AgentProviderService extends AbstractProviderService implements
 
   @Override
   public HeartBeatResponse handleHeartBeat(HeartBeat heartBeat) {
-    // dummy impl
     HeartBeatResponse response = new HeartBeatResponse();
     long id = heartBeat.getResponseId();
     response.setResponseId(id + 1L);
