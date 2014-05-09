@@ -50,4 +50,15 @@ public class Component {
   public void addCommandScript(CommandScript commandScript) {
     this.commandScript = commandScript;
   }
+
+  @Override
+  public String toString() {
+    final StringBuilder sb =
+        new StringBuilder("{");
+    sb.append(",\n\"name\": ").append(name);
+    sb.append(",\n\"category\": ").append(category);
+    sb.append(",\n\"commandScript\" :").append(commandScript);
+    sb.append('}');
+    return sb.toString();
+  }
 }

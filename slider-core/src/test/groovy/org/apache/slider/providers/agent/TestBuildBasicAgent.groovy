@@ -46,7 +46,7 @@ class TestBuildBasicAgent extends AgentTestBase {
 
   private static class TestResources {
     static File slider_core = new File(new File(".").absoluteFile, "src/test/python");
-    static String app_def = "appdef_1.tar"
+    static String app_def = "appdef_1.zip"
     static File app_def_path = new File(slider_core, app_def)
     static String agt_conf = "agent.ini"
     static File agt_conf_path = new File(slider_core, agt_conf)

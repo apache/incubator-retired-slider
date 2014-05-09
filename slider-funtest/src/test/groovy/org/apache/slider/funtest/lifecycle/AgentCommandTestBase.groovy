@@ -38,7 +38,7 @@ class AgentCommandTestBase extends CommandTestBase
   
   protected static String APP_RESOURCE = "../slider-core/src/test/app_packages/test_command_log/resources.json"
   protected static String APP_TEMPLATE = "../slider-core/src/test/app_packages/test_command_log/appConfig.json"
-  protected static String APP_PKG = "../slider-core/src/test/app_packages/test_command_log/cmd_log_app_pkg.tar"
+  protected static String APP_PKG = "../slider-core/src/test/app_packages/test_command_log/cmd_log_app_pkg.zip"
   protected static String AGENT_CONF = "../slider-agent/conf/agent.ini"
   protected static final File LOCAL_SLIDER_AGENT_TARGZ
   protected static final File LOCAL_APP_PKZ
@@ -69,8 +69,8 @@ class AgentCommandTestBase extends CommandTestBase
 
     // Upload the app pkg
     assume(LOCAL_APP_PKZ.exists(), "App pkg not found at $LOCAL_APP_PKZ")
-    appPkgPath = new Path(clusterFS.homeDirectory, "/slider/cmd_log_app_pkg.tar")
-    Path localAppPkg = new Path(LOCAL_SLIDER_AGENT_TARGZ.toURI());
+    appPkgPath = new Path(clusterFS.homeDirectory, "/slider/cmd_log_app_pkg.zip")
+    Path localAppPkg = new Path(LOCAL_APP_PKZ.toURI());
     clusterFS.copyFromLocalFile(false, true, localAppPkg, appPkgPath)
 
     // Upload the agent.ini

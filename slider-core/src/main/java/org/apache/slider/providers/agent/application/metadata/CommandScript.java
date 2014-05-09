@@ -24,6 +24,10 @@ public class CommandScript {
   String scriptType;
   long timeout;
 
+  public CommandScript() {
+
+  }
+
   public String getScript() {
     return script;
   }
@@ -48,7 +52,14 @@ public class CommandScript {
     this.timeout = timeout;
   }
 
-  public CommandScript() {
-
+  @Override
+  public String toString() {
+    final StringBuilder sb =
+        new StringBuilder("{");
+    sb.append(",\n\"script\": ").append(script);
+    sb.append(",\n\"scriptType\": ").append(scriptType);
+    sb.append(",\n\"timeout\" :").append(timeout);
+    sb.append('}');
+    return sb.toString();
   }
 }

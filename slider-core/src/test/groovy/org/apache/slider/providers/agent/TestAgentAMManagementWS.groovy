@@ -58,7 +58,7 @@ class TestAgentAMManagementWS extends AgentTestBase {
         false)
     Map<String, Integer> roles = [:]
     File slider_core = new File(new File(".").absoluteFile, "src/test/python");
-    String app_def = "appdef_1.tar"
+    String app_def = "appdef_1.zip"
     File app_def_path = new File(slider_core, app_def)
     String agt_ver = "version"
     File agt_ver_path = new File(slider_core, agt_ver)

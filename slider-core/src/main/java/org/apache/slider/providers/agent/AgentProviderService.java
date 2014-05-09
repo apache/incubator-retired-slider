@@ -45,8 +45,10 @@ import org.apache.slider.providers.AbstractProviderService;
 import org.apache.slider.providers.ProviderCore;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
+import org.apache.slider.providers.agent.application.metadata.Component;
 import org.apache.slider.providers.agent.application.metadata.Metainfo;
 import org.apache.slider.providers.agent.application.metadata.MetainfoParser;
+import org.apache.slider.providers.agent.application.metadata.Service;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentCommandType;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
@@ -94,6 +96,7 @@ public class AgentProviderService extends AbstractProviderService implements
   private Map<String, ComponentInstanceState> componentStatuses = new HashMap<String, ComponentInstanceState>();
   private Map<String, List<String>> roleHostMapping = new HashMap<String, List<String>>();
   private AtomicInteger taskId = new AtomicInteger(0);
+  private Metainfo metainfo = null;
 
   public AgentProviderService() {
     super("AgentProviderService");
@@ -138,6 +141,18 @@ public class AgentProviderService extends AbstractProviderService implements
       IOException,
       SliderException {
 
+    String appDef = instanceDefinition.getAppConfOperations().
+        getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
+
+    // No need to synchronize as there is low chance of multiple simultaneous reads
+    if (metainfo == null) {
+      metainfo = getApplicationMetainfo(fileSystem, appDef);
+      if(metainfo == null) {
+        log.error("metainfo.xml is unavailable or malformed at {}.", appDef);
+        throw new SliderException("metainfo.xml is required in app package.");
+      }
+    }
+
     this.instanceDefinition = instanceDefinition;
     log.info("Build launch context for Agent");
     log.debug(instanceDefinition.toString());
@@ -171,8 +186,6 @@ public class AgentProviderService extends AbstractProviderService implements
     }
 
     log.info("Using {} for agent.", scriptPath);
-    String appDef = instanceDefinition.getAppConfOperations().
-        getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
     LocalResource appDefRes = fileSystem.createAmResource(
         fileSystem.getFileSystem().resolvePath(new Path(appDef)),
         LocalResourceType.ARCHIVE);
@@ -217,10 +230,20 @@ public class AgentProviderService extends AbstractProviderService implements
                               getClusterInfoPropertyValue(OptionKeys.APPLICATION_NAME)));
   }
 
-  private Metainfo getApplicationMetainfo(SliderFileSystem fileSystem,
-                                      String appDef) throws IOException {
+  protected Metainfo getMetainfo() {
+    return this.metainfo;
+  }
+
+  protected Metainfo getApplicationMetainfo(SliderFileSystem fileSystem,
+                                            String appDef) throws IOException {
+    log.info("Reading metainfo at {}", appDef);
     InputStream metainfoStream = SliderUtils.getApplicationResourceInputStream(
         fileSystem.getFileSystem(), new Path(appDef), "metainfo.xml");
+    if(metainfoStream == null) {
+      log.error("metainfo.xml is unavailable at {}.", appDef);
+      throw new IOException("metainfo.xml is required in app package.");
+    }
+
     Metainfo metainfo = new MetainfoParser().parse(metainfoStream);
 
     return metainfo;
@@ -345,9 +368,12 @@ public class AgentProviderService extends AbstractProviderService implements
     String roleName = getRoleName(label);
     String containerId = getContainerId(label);
     StateAccessForProviders accessor = getStateAccessor();
-    String scriptPath;
-    scriptPath = accessor.getInstanceDefinitionSnapshot().
-        getAppConfOperations().getComponentOpt(roleName, AgentKeys.COMPONENT_SCRIPT, null);
+    String scriptPath = null;
+
+    scriptPath = getScriptPathFromMetainfo(roleName);
+
+    //scriptPath = accessor.getInstanceDefinitionSnapshot().
+    //    getAppConfOperations().getComponentOpt(roleName, AgentKeys.COMPONENT_SCRIPT, null);
     if (scriptPath == null) {
       log.error("role.script is unavailable for " + roleName + ". Commands will not be sent.");
       return response;
@@ -394,6 +420,22 @@ public class AgentProviderService extends AbstractProviderService implements
     }
 
     return response;
+  }
+
+  protected String getScriptPathFromMetainfo(String roleName) {
+    String scriptPath = null;
+    List<Service> services = getMetainfo().getServices();
+    if (services.size() != 1) {
+      log.error("Malformed app definition: Expect only one service in the metainfo.xml");
+    }
+    Service service = services.get(0);
+    for (Component component : service.getComponents()) {
+      if (component.getName().equals(roleName)) {
+        scriptPath = component.getCommandScript().getScript();
+        break;
+      }
+    }
+    return scriptPath;
   }
 
   private String getRoleName(String label) {

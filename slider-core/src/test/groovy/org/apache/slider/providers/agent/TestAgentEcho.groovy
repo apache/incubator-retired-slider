@@ -57,7 +57,7 @@ class TestAgentEcho extends AgentTestBase {
     File slider_core = new File(new File(".").absoluteFile, "src/test/python");
     String echo_py = "echo.py"
     File echo_py_path = new File(slider_core, echo_py)
-    String app_def = "appdef_1.tar"
+    String app_def = "appdef_1.zip"
     File app_def_path = new File(slider_core, app_def)
     String agt_ver = "version"
     File agt_ver_path = new File(slider_core, agt_ver)

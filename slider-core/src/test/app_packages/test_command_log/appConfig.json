@@ -4,7 +4,7 @@
     },
     "global": {
         "agent.conf": "/slider/agent/conf/agent.ini",
-        "application.def": "/slider/cmd_log_app_pkg.tar",
+        "application.def": "/slider/cmd_log_app_pkg.zip",
         "config_types": "cl-site",
         "java_home": "/usr/jdk64/jdk1.7.0_45",
         "package_list": "files/command_log_10.tar",
@@ -19,7 +19,6 @@
     },
     "components": {
         "COMMAND_LOGGER": {
-            "role.script": "scripts/cl.py"
         },
         "slider-appmaster": {
             "jvm.heapsize": "256M"

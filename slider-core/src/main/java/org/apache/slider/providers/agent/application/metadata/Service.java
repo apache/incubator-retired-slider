@@ -82,4 +82,20 @@ public class Service {
   public List<OSSpecific> getOSSpecifics() {
     return osSpecifics;
   }
+
+  @Override
+  public String toString() {
+    final StringBuilder sb =
+        new StringBuilder("{");
+    sb.append(",\n\"name\": ").append(name);
+    sb.append(",\n\"comment\": ").append(comment);
+    sb.append(",\n\"version\" :").append(version);
+    sb.append(",\n\"components\" : {");
+    for (Component component : components) {
+      sb.append("\n").append(component);
+    }
+    sb.append("\n},");
+    sb.append('}');
+    return sb.toString();
+  }
 }
