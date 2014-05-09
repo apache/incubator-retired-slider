@@ -72,9 +72,9 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
 
 
-public class AgentProviderServiceTest {
+public class TestAgentProviderService {
   protected static final Logger log =
-      LoggerFactory.getLogger(AgentProviderServiceTest.class);
+      LoggerFactory.getLogger(TestAgentProviderService.class);
 
   @Test
   public void testRegistration() throws IOException {

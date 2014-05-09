@@ -29,9 +29,9 @@ import java.net.URI;
 /**
  *
  */
-public class SliderUtilsTest {
+public class TestSliderUtils {
   protected static final Logger log =
-      LoggerFactory.getLogger(SliderUtilsTest.class);
+      LoggerFactory.getLogger(TestSliderUtils.class);
 
   @Test
   public void testGetMetaInfoStreamFromZip () throws Exception {

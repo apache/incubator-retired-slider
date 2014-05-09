@@ -23,9 +23,9 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ComponentInstanceStateTest {
+public class TestComponentInstanceState {
   protected static final Logger log =
-      LoggerFactory.getLogger(ComponentInstanceStateTest.class);
+      LoggerFactory.getLogger(TestComponentInstanceState.class);
   private State[] states = new State[]{
       State.INIT, State.INSTALLING, State.INSTALLED,
       State.STARTING, State.STARTED, State.INSTALL_FAILED};

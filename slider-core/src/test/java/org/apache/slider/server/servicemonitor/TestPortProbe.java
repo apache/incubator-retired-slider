@@ -21,7 +21,7 @@ import junit.framework.Assert;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
 
-public class PortProbeTest extends Assert {
+public class TestPortProbe extends Assert {
   /**
    * Assert that a port probe failed if the port is closed
    * @throws Throwable
