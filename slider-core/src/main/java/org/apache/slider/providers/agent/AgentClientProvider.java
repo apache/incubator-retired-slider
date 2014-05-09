@@ -86,7 +86,8 @@ public class AgentClientProvider extends AbstractClientProvider
 
     String appDef = instanceDefinition.getAppConfOperations().
         getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
-    sliderFileSystem.verifyFileExists(new Path(appDef));
+    Path appDefPath = new Path(appDef);
+    sliderFileSystem.verifyFileExists(appDefPath);
 
     String agentConf = instanceDefinition.getAppConfOperations().
         getGlobalOptions().getMandatoryOption(AgentKeys.AGENT_CONF);
@@ -149,6 +150,13 @@ public class AgentClientProvider extends AbstractClientProvider
           getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
     } catch (BadConfigException bce) {
       throw new BadConfigException("Application definition must be provided." + bce.getMessage());
+    }
+    String appDef = instanceDefinition.getAppConfOperations().
+        getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
+    log.info("Validating app definition {}", appDef);
+    String extension = appDef.substring(appDef.lastIndexOf(".") + 1, appDef.length());
+    if (!"zip".equalsIgnoreCase(extension)) {
+      throw new BadConfigException("App definition must be packaged as a .zip file. File provided is " + appDef);
     }
 
     String appHome = instanceDefinition.getAppConfOperations().

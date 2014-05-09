@@ -47,12 +47,18 @@ class TestBuildBasicAgent extends AgentTestBase {
   private static class TestResources {
     static File slider_core = new File(new File(".").absoluteFile, "src/test/python");
     static String app_def = "appdef_1.zip"
+    static String bad_app_def = "appdef_1.tar"
     static File app_def_path = new File(slider_core, app_def)
+    static File bad_app_def_path = new File(slider_core, bad_app_def)
     static String agt_conf = "agent.ini"
     static File agt_conf_path = new File(slider_core, agt_conf)
 
     static public File getAppDef() {
       return app_def_path;
+    }
+
+    static public File getBadAppDef() {
+      return bad_app_def_path;
     }
 
     static public File getAgentConf() {
@@ -311,6 +317,26 @@ class TestBuildBasicAgent extends AgentTestBase {
           false)
       failWithBuildSucceeding(badArgs1, "bad agent conf file")
     } catch (BadConfigException expected) {
+    }
+
+    try {
+      def badArgs1 = "test_bad_agent_args-6"
+      buildAgentCluster(clustername,
+          [:],
+          [
+              ARG_OPTION, CONTROLLER_URL, "http://localhost",
+              ARG_OPTION, AGENT_CONF, "file://" + TestResources.getAgentConf().absolutePath,
+              ARG_PACKAGE, ".",
+              ARG_OPTION, APP_DEF, "file://" + TestResources.getBadAppDef().absolutePath,
+              ARG_RESOURCES, TEST_FILES + "good/resources.json",
+              ARG_TEMPLATE, TEST_FILES + "good/appconf.json"
+          ],
+          true, false,
+          false)
+      failWithBuildSucceeding(badArgs1, "bad app def file")
+    } catch (BadConfigException expected) {
+      log.info("Expected failure.", expected)
+      assert expected.message.contains("App definition must be packaged as a .zip file")
     }
   }
 
