@@ -49,11 +49,11 @@ public class SliderRegistryService
 
 
   @Override
-  public List<ServiceInstanceData> listInstancesByType(String serviceType) throws
+  public List listInstancesByType(String serviceType) throws
       IOException {
     List<CuratorServiceInstance<ServiceInstanceData>> services =
         listInstances(serviceType);
-    List<ServiceInstanceData> payloads = new ArrayList<>(services.size());
+    List payloads = new ArrayList(services.size());
     for (CuratorServiceInstance<ServiceInstanceData> instance : services) {
       payloads.add(instance.payload);
     }

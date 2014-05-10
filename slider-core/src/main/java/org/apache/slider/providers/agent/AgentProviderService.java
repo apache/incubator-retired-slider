@@ -665,18 +665,17 @@ public class AgentProviderService extends AbstractProviderService implements
 
   private void buildEndpointDetails(Map<String, URL> details) {
     try {
-      List<ServiceInstanceData> services =
+      List services =
           registry.listInstancesByType(SliderKeys.APP_TYPE);
       assert services.size() >= 1;
-      ServiceInstanceData payload = services.get(0);
-      Map<String, RegisteredEndpoint> endpointMap =
-          payload.externalView.endpoints;
-      for (Map.Entry<String, RegisteredEndpoint> endpoint : endpointMap
-          .entrySet()) {
-        RegisteredEndpoint val = endpoint.getValue();
-        if ("http".equals(val.protocol)) {
-          URL url = new URL(val.value);
-          details.put(val.description, url);
+      Map payload = (Map) services.get(0);
+      Map<String,Map> endpointMap =
+          (Map<String,Map>) ((Map)payload.get("externalView")).get("endpoints");
+      for (Map.Entry<String,Map> endpoint : endpointMap.entrySet()) {
+        Map<String,String> val = endpoint.getValue();
+        if ("http".equals(val.get("protocol"))) {
+          URL url = new URL(val.get("value"));
+          details.put(val.get("description"), url);
         }
       }
     } catch (IOException e) {
