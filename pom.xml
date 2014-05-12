@@ -166,7 +166,7 @@
     -->
     <hadoop.version>2.4.0</hadoop.version>
 
-    <hbase.version>0.98.1-hadoop2</hbase.version>
+    <hbase.version>0.98.2-hadoop2</hbase.version>
     <accumulo.version>1.5.1</accumulo.version>
     
     <!--
