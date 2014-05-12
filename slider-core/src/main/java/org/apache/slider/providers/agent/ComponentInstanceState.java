@@ -29,13 +29,13 @@ public class ComponentInstanceState {
   private static int MAX_FAILURE_TOLERATED = 3;
   private static String INVALID_TRANSITION_ERROR =
       "Result {0} for command {1} is not expected for component {2} in state {3}.";
-  private State state = State.INIT;
-  private State targetState = State.STARTED;
-  private int failuresSeen = 0;
   private final String compName;
   private final String containerId;
   private final String applicationId;
-
+  private State state = State.INIT;
+  private State targetState = State.STARTED;
+  private int failuresSeen = 0;
+  private Boolean configReported = false;
 
   public ComponentInstanceState(String compName,
                                 String containerId,
@@ -43,6 +43,14 @@ public class ComponentInstanceState {
     this.compName = compName;
     this.containerId = containerId;
     this.applicationId = applicationId;
+  }
+
+  public Boolean getConfigReported() {
+    return configReported;
+  }
+
+  public void setConfigReported(Boolean configReported) {
+    this.configReported = configReported;
   }
 
   public void commandIssued(Command command) {

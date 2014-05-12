@@ -39,8 +39,6 @@ import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.CommandLineBuilder;
 import org.apache.slider.core.launch.ContainerLauncher;
 import org.apache.slider.core.registry.docstore.PublishedConfiguration;
-import org.apache.slider.core.registry.info.RegisteredEndpoint;
-import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.providers.AbstractProviderService;
 import org.apache.slider.providers.ProviderCore;
 import org.apache.slider.providers.ProviderRole;
@@ -53,6 +51,7 @@ import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentCommandType;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
 import org.apache.slider.server.appmaster.web.rest.agent.CommandReport;
+import org.apache.slider.server.appmaster.web.rest.agent.ComponentStatus;
 import org.apache.slider.server.appmaster.web.rest.agent.ExecutionCommand;
 import org.apache.slider.server.appmaster.web.rest.agent.HeartBeat;
 import org.apache.slider.server.appmaster.web.rest.agent.HeartBeatResponse;
@@ -92,6 +91,7 @@ public class AgentProviderService extends AbstractProviderService implements
   private static final ProviderUtils providerUtils = new ProviderUtils(log);
   private static final String LABEL_MAKER = "___";
   private static final String CONTAINER_ID = "container_id";
+  private static final String GLOBAL_CONFIG_TAG = "global";
   private AgentClientProvider clientProvider;
   private Map<String, ComponentInstanceState> componentStatuses = new HashMap<String, ComponentInstanceState>();
   private Map<String, List<String>> roleHostMapping = new HashMap<String, List<String>>();
@@ -147,7 +147,7 @@ public class AgentProviderService extends AbstractProviderService implements
     // No need to synchronize as there is low chance of multiple simultaneous reads
     if (metainfo == null) {
       metainfo = getApplicationMetainfo(fileSystem, appDef);
-      if(metainfo == null) {
+      if (metainfo == null) {
         log.error("metainfo.xml is unavailable or malformed at {}.", appDef);
         throw new SliderException("metainfo.xml is required in app package.");
       }
@@ -239,7 +239,7 @@ public class AgentProviderService extends AbstractProviderService implements
     log.info("Reading metainfo at {}", appDef);
     InputStream metainfoStream = SliderUtils.getApplicationResourceInputStream(
         fileSystem.getFileSystem(), new Path(appDef), "metainfo.xml");
-    if(metainfoStream == null) {
+    if (metainfoStream == null) {
       log.error("metainfo.xml is unavailable at {}.", appDef);
       throw new IOException("metainfo.xml is required in app package.");
     }
@@ -250,7 +250,7 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   protected void publishComponentConfiguration(String name, String description,
-                                             Iterable<Map.Entry<String, String>> entries) {
+                                               Iterable<Map.Entry<String, String>> entries) {
     PublishedConfiguration pubconf = new PublishedConfiguration();
     pubconf.description = description;
     pubconf.putValues(entries);
@@ -368,12 +368,8 @@ public class AgentProviderService extends AbstractProviderService implements
     String roleName = getRoleName(label);
     String containerId = getContainerId(label);
     StateAccessForProviders accessor = getStateAccessor();
-    String scriptPath = null;
+    String scriptPath = getScriptPathFromMetainfo(roleName);
 
-    scriptPath = getScriptPathFromMetainfo(roleName);
-
-    //scriptPath = accessor.getInstanceDefinitionSnapshot().
-    //    getAppConfOperations().getComponentOpt(roleName, AgentKeys.COMPONENT_SCRIPT, null);
     if (scriptPath == null) {
       log.error("role.script is unavailable for " + roleName + ". Commands will not be sent.");
       return response;
@@ -382,7 +378,9 @@ public class AgentProviderService extends AbstractProviderService implements
     if (!componentStatuses.containsKey(label)) {
       return response;
     }
+
     ComponentInstanceState componentStatus = componentStatuses.get(label);
+    processReturnedStatus(heartBeat, componentStatus);
 
     List<CommandReport> reports = heartBeat.getReports();
     if (reports != null && !reports.isEmpty()) {
@@ -403,8 +401,8 @@ public class AgentProviderService extends AbstractProviderService implements
     }
 
     Command command = componentStatus.getNextCommand();
-    if (Command.NOP != command) {
-      try {
+    try {
+      if (Command.NOP != command) {
         componentStatus.commandIssued(command);
         if (command == Command.INSTALL) {
           log.info("Installing component ...");
@@ -413,13 +411,40 @@ public class AgentProviderService extends AbstractProviderService implements
           log.info("Starting component ...");
           addStartCommand(roleName, containerId, response, scriptPath);
         }
-      } catch (SliderException e) {
-        componentStatus.applyCommandResult(CommandResult.FAILED, command);
-        log.warn("Component instance failed operation.", e);
       }
+      // if there is no outstanding command then retrieve config
+      Boolean isMaster = isMaster(roleName);
+      if (isMaster && componentStatus.getState() == State.STARTED
+          && command == Command.NOP) {
+        if (!componentStatus.getConfigReported()) {
+          addGetConfigCommand(roleName, containerId, response);
+        }
+      }
+    } catch (SliderException e) {
+      componentStatus.applyCommandResult(CommandResult.FAILED, command);
+      log.warn("Component instance failed operation.", e);
     }
 
     return response;
+  }
+
+  protected void processReturnedStatus(HeartBeat heartBeat, ComponentInstanceState componentStatus) {
+    List<ComponentStatus> statuses = heartBeat.getComponentStatus();
+    if (statuses != null && statuses.size() > 0) {
+      log.info("Processing {} status reports.", statuses.size());
+      for (ComponentStatus status : statuses) {
+        log.info("Status report: " + status.toString());
+        if (status.getConfigs() != null) {
+          for (String key : status.getConfigs().keySet()) {
+            if (!key.equals(GLOBAL_CONFIG_TAG)) {
+              Map<String, String> configs = status.getConfigs().get(key);
+              publishComponentConfiguration(key, key, configs.entrySet());
+            }
+          }
+          componentStatus.setConfigReported(true);
+        }
+      }
+    }
   }
 
   protected String getScriptPathFromMetainfo(String roleName) {
@@ -436,6 +461,26 @@ public class AgentProviderService extends AbstractProviderService implements
       }
     }
     return scriptPath;
+  }
+
+  protected Boolean isMaster(String roleName) throws SliderException {
+    String scriptPath = null;
+    List<Service> services = getMetainfo().getServices();
+    if (services.size() != 1) {
+      log.error("Malformed app definition: Expect only one service in the metainfo.xml");
+    } else {
+      Service service = services.get(0);
+      for (Component component : service.getComponents()) {
+        if (component.getName().equals(roleName)) {
+          if (component.getCategory().equals("MASTER")) {
+            return true;
+          } else {
+            return false;
+          }
+        }
+      }
+    }
+    throw new SliderException(String.format("Rolename %s not found in metainfo.xml", roleName));
   }
 
   private String getRoleName(String label) {
@@ -610,7 +655,7 @@ public class AgentProviderService extends AbstractProviderService implements
     // for now, reading this from appConf.  In the future, modify this method to
     // process metainfo.xml
     List<String> configList = new ArrayList<String>();
-    configList.add("global");
+    configList.add(GLOBAL_CONFIG_TAG);
 
     String configTypes = appConf.get("config_types");
     String[] configs = configTypes.split(",");
@@ -625,7 +670,7 @@ public class AgentProviderService extends AbstractProviderService implements
                                      Map<String, Map<String, String>> configurations,
                                      Map<String, String> tokens) {
     Map<String, String> config = new HashMap<String, String>();
-    if (configName.equals("global")) {
+    if (configName.equals(GLOBAL_CONFIG_TAG)) {
       addDefaultGlobalConfig(config);
     }
     // add role hosts to tokens
@@ -669,10 +714,10 @@ public class AgentProviderService extends AbstractProviderService implements
           registry.listInstancesByType(SliderKeys.APP_TYPE);
       assert services.size() >= 1;
       Map payload = (Map) services.get(0);
-      Map<String,Map> endpointMap =
-          (Map<String,Map>) ((Map)payload.get("externalView")).get("endpoints");
-      for (Map.Entry<String,Map> endpoint : endpointMap.entrySet()) {
-        Map<String,String> val = endpoint.getValue();
+      Map<String, Map> endpointMap =
+          (Map<String, Map>) ((Map) payload.get("externalView")).get("endpoints");
+      for (Map.Entry<String, Map> endpoint : endpointMap.entrySet()) {
+        Map<String, String> val = endpoint.getValue();
         if ("http".equals(val.get("protocol"))) {
           URL url = new URL(val.get("value"));
           details.put(val.get("description"), url);

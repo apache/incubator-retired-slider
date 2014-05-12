@@ -17,6 +17,7 @@
 package org.apache.slider.server.appmaster.web.rest.agent;
 
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 
 import java.util.Map;
@@ -32,7 +33,17 @@ public class ComponentStatus {
   String status;
   String serviceName;
   String clusterName;
+  String roleCommand;
+  @JsonProperty("configurations")
   private Map<String, Map<String, String>> configurations;
+
+  public String getRoleCommand() {
+    return roleCommand;
+  }
+
+  public void setRoleCommand(String roleCommand) {
+    this.roleCommand = roleCommand;
+  }
 
   public String getComponentName() {
     return this.componentName;
@@ -75,13 +86,13 @@ public class ComponentStatus {
   }
 
   /** @return the config tags that match this command, or <code>null</code> if none are present */
-  public Map<String, Map<String, String>> getConfiguration() {
+  public Map<String, Map<String, String>> getConfigs() {
     return configurations;
   }
 
-  /** @param configurations the config tags that match this status */
-  public void setConfiguration(Map<String, Map<String, String>> configurations) {
-    this.configurations = configurations;
+  /** @param configs the config tags that match this status */
+  public void setConfigs(Map<String, Map<String, String>> configs) {
+    this.configurations = configs;
   }
 
   @Override
@@ -92,6 +103,7 @@ public class ComponentStatus {
            ", status='" + status + '\'' +
            ", serviceName='" + serviceName + '\'' +
            ", clusterName='" + clusterName + '\'' +
+           ", roleCommand='" + roleCommand + '\'' +
            '}';
   }
 }

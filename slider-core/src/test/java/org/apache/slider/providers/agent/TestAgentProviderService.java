@@ -44,6 +44,7 @@ import org.apache.slider.server.appmaster.model.mock.MockContainerId;
 import org.apache.slider.server.appmaster.model.mock.MockFileSystem;
 import org.apache.slider.server.appmaster.model.mock.MockNodeId;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
+import org.apache.slider.server.appmaster.web.rest.agent.ComponentStatus;
 import org.apache.slider.server.appmaster.web.rest.agent.HeartBeat;
 import org.apache.slider.server.appmaster.web.rest.agent.HeartBeatResponse;
 import org.apache.slider.server.appmaster.web.rest.agent.Register;
@@ -57,6 +58,8 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,8 +68,11 @@ import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.verify;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyCollection;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
@@ -116,6 +122,7 @@ public class TestAgentProviderService {
     doReturn(new Metainfo()).when(mockAps).getApplicationMetainfo(any(SliderFileSystem.class), anyString());
 
     try {
+      doReturn(true).when(mockAps).isMaster(anyString());
       doNothing().when(mockAps).addInstallCommand(
           eq("HBASE_MASTER"),
           eq("mockcontainer_1"),
@@ -180,6 +187,31 @@ public class TestAgentProviderService {
     TestCase.assertEquals("FIRST_HOST", tokens.get("${FIRST_ROLE_HOST}"));
     TestCase.assertEquals("SECOND_HOST,THIRD_HOST", tokens.get("${SECOND_ROLE_HOST}"));
     aps.close();
+  }
+
+  @Test
+  public void testProcessConfig() throws Exception {
+    AgentProviderService aps = new AgentProviderService();
+    HeartBeat hb = new HeartBeat();
+    ComponentStatus status = new ComponentStatus();
+    status.setClusterName("test");
+    status.setComponentName("HBASE_MASTER");
+    status.setRoleCommand("GET_CONFIG");
+    Map<String, String> hbaseSite = new HashMap<String, String>();
+    hbaseSite.put("a", "b");
+    hbaseSite.put("c", "d");
+    Map<String, Map<String, String>> configs = new HashMap<String,Map<String, String>>();
+    configs.put("hbase-site", hbaseSite);
+    configs.put("global", hbaseSite);
+    status.setConfigs(configs);
+    hb.setComponentStatus(new ArrayList<ComponentStatus>(Arrays.asList(status)));
+
+    ComponentInstanceState componentStatus = new ComponentInstanceState("HBASE_MASTER", "aid", "cid");
+    AgentProviderService mockAps = Mockito.spy(aps);
+    doNothing().when(mockAps).publishComponentConfiguration(anyString(), anyString(), anyCollection());
+    mockAps.processReturnedStatus(hb, componentStatus);
+    assert componentStatus.getConfigReported() == true;
+    Mockito.verify(mockAps, Mockito.times(1)).publishComponentConfiguration(anyString(), anyString(), anyCollection());
   }
 
   @Test

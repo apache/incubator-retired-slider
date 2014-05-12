@@ -48,9 +48,8 @@ public abstract class AgentMiniClusterTestBase
     agentConf.createNewFile()
     agentDef = new File(destDir, "agentdef")
     agentDef.createNewFile()
-    imagePath = new File(destDir, "imagePath.tar.gz")
-    imagePath.createNewFile()
-    
+    File slider_dir = new File(new File(".").absoluteFile, "src/test/python");
+    imagePath = new File(slider_dir, "appdef_1.zip")
   }
   @Override
   public String getTestConfigurationPath() {
@@ -89,7 +88,7 @@ public abstract class AgentMiniClusterTestBase
    */
   @Override
   List<String> getImageCommands() {
-    [Arguments.ARG_IMAGE, imagePath.toURI().toString()]
+    [Arguments.ARG_IMAGE, agentDef.toURI().toString()]
   }
 
 /**
@@ -113,8 +112,8 @@ public abstract class AgentMiniClusterTestBase
         deleteExistingData,
         blockUntilRunning,
         [
-            (AgentKeys.APP_DEF): agentConf.toURI().toString(),
-            (AgentKeys.AGENT_CONF): agentDef.toURI().toString()
+            (AgentKeys.APP_DEF): imagePath.toURI().toString(),
+            (AgentKeys.AGENT_CONF): agentConf.toURI().toString()
         ])
   }
 

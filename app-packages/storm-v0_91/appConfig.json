@@ -4,7 +4,7 @@
   },
   "global": {
     "agent.conf": "/slider/agent/conf/agent.ini",
-    "application.def": "/slider/storm_v091.tar",
+    "application.def": "/slider/storm_v091.zip",
     "config_types": "storm-site",
     "java_home": "/usr/jdk64/jdk1.7.0_45",
     "package_list": "files/apache-storm-0.9.1.2.1.1.0-237.tar.gz",
@@ -107,23 +107,18 @@
       "jvm.heapsize": "256M"
     },
     "NIMBUS": {
-      "role.script": "scripts/nimbus.py"
     },
     "STORM_REST_API": {
-      "wait.heartbeat": "3",
-      "role.script": "scripts/rest_api.py"
+      "wait.heartbeat": "3"
     },
     "STORM_UI_SERVER": {
-      "wait.heartbeat": "3",
-      "role.script": "scripts/ui_server.py"
+      "wait.heartbeat": "3"
     },
     "DRPC_SERVER": {
-      "wait.heartbeat": "7",
-      "role.script": "scripts/drpc_server.py"
+      "wait.heartbeat": "7"
     },
     "SUPERVISOR": {
-      "wait.heartbeat": "10",
-      "role.script": "scripts/supervisor.py"
+      "wait.heartbeat": "10"
     }
   }
 }

@@ -134,6 +134,26 @@ class CustomServiceOrchestrator():
       raise AgentException(message)
     return path
 
+  def getConfig(self, command):
+    if 'commandParams' in command and 'config_type' in command['commandParams']:
+      config_type = command['commandParams']['config_type']
+      logger.info("Requesting applied config for type {0}".format(config_type))
+      if config_type in self.applied_configs:
+        return {
+          'configurations': {config_type: self.applied_configs[config_type]}
+        }
+      else:
+        return {
+          'configurations': {}
+        }
+      pass
+    else:
+      logger.info("Requesting all applied config.")
+      return {
+        'configurations': self.applied_configs
+      }
+    pass
+
   def requestComponentStatus(self, command):
     """
      Component status is determined by exit code, returned by runCommand().
@@ -145,24 +165,7 @@ class CustomServiceOrchestrator():
       override_output_files = False
 
     if command['roleCommand'] == "GET_CONFIG":
-      if 'commandParams' in command and 'config_type' in command['commandParams']:
-        config_type = command['commandParams']['config_type']
-        logger.info("Requesting applied config for type {0}".format(config_type))
-        if config_type in self.applied_configs:
-          return {
-            'configurations': {config_type: self.applied_configs[config_type]}
-          }
-        else:
-          return {
-            'configurations': {}
-          }
-        pass
-      else:
-        logger.info("Requesting all applied config.")
-        return {
-          'configurations': self.applied_configs
-        }
-      pass
+      return self.getConfig(command)
 
     else:
       res = self.runCommand(command, self.status_commands_stdout,

@@ -74,7 +74,7 @@ irrespective of what the path leading to it is.
 
 ## IDE-based remote debugging of the Application Master
 
-For situtations in which the logging does not yield enough information to debug an issue,
+For situations in which the logging does not yield enough information to debug an issue,
 the user has the option of specifying JVM command line options for the
 Application Master that enable attaching to the running process with a debugger
 (e.g. the remote debugging facilities in Eclipse or Intellij IDEA). 

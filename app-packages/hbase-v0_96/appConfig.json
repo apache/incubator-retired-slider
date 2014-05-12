@@ -4,7 +4,7 @@
   },
   "global": {
     "agent.conf": "/slider/agent/conf/agent.ini",
-    "application.def": "/slider/hbase_v096.tar",
+    "application.def": "/slider/hbase_v096.zip",
     "config_types": "core-site,hdfs-site,hbase-site",
     "java_home": "/usr/jdk64/jdk1.7.0_45",
     "package_list": "files/hbase-0.96.1-hadoop2-bin.tar.gz",
@@ -54,15 +54,13 @@
   },
   "components": {
     "HBASE_MASTER": {
-      "wait.heartbeat": "5",
-      "role.script": "scripts/hbase_master.py"
+      "wait.heartbeat": "5"
     },
     "slider-appmaster": {
       "jvm.heapsize": "256M"
     },
     "HBASE_REGIONSERVER": {
-      "wait.heartbeat": "3",
-      "role.script": "scripts/hbase_regionserver.py"
+      "wait.heartbeat": "3"
     }
   }
 }
