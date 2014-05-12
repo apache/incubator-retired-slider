@@ -350,7 +350,7 @@ which release requests have been made must match that of the desired number.
 If the internal state of the Slider AM is defined as `AppState`
 
     forall r in clusterspec.roles :
-        r["component.instances"] ==
+        r["yarn.component.instances"] ==
           AppState.Roles[r].live + AppState.Roles[r].requested - AppState.Roles[r].released
 
 The `AppState` represents Slider's view of the external YARN system state, based on its
@@ -360,7 +360,7 @@ It is indirectly observable from the cluster state which an AM can be queried fo
 
 
     forall r in AM.getJSONClusterStatus().roles :
-        r["component.instances"] ==
+        r["yarn.component.instances"] ==
           r["role.actual.instances"] + r["role.requested.instances"] - r["role.releasing.instances"]
 
 Slider does not consider it an error if the number of actual instances remains below
@@ -473,7 +473,7 @@ which will change the desired steady-state of the application
     
     let updatedSpec = originalspec where:
         forall (name, size) in components :
-            updatedSpec.roles[name]["component.instances"] == size
+            updatedSpec.roles[name]["yarn.component.instances"] == size
     data(HDFS', cluster-json-path(HDFS', instancename)) == updatedSpec
     rpc-connection(slider-live-instances(YARN(t2))[0], SliderClusterProtocol)
     let flexed = rpc-connection(slider-live-instances(YARN(t2))[0], SliderClusterProtocol).flexClusterupdatedSpec)
@@ -496,7 +496,7 @@ and be `True` iff the desired steady state of the cluster has been changed.
 #### Postconditions
 
     forall role in AppState.Roles.keys:
-        AppState'.Roles'[role].desiredCount = updatedSpec[roles]["component.instances"]
+        AppState'.Roles'[role].desiredCount = updatedSpec[roles]["yarn.component.instances"]
     result = AppState' != AppState
 
 

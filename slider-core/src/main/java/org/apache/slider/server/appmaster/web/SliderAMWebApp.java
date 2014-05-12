@@ -31,7 +31,6 @@ import org.apache.slider.server.appmaster.web.rest.AMWadlGeneratorConfig;
 import org.apache.slider.server.appmaster.web.rest.AMWebServices;
 import org.apache.slider.server.appmaster.web.rest.SliderJacksonJaxbJsonProvider;
 import org.apache.slider.server.services.curator.CuratorHelper;
-import org.apache.slider.server.services.curator.RegistryBinderService;
 import org.apache.slider.server.services.registry.RegistryDiscoveryContext;
 import org.apache.slider.server.services.registry.RegistryRestResources;
 import org.apache.slider.server.services.registry.SliderRegistryService;

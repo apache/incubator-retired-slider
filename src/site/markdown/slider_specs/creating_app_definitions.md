@@ -122,19 +122,15 @@ Sample:
       },
       "components" : {
           "HBASE_MASTER" : {
-              "wait.heartbeat" : "5",
-              "role.priority" : "1",
-              "component.instances" : "1",
-              "role.script" : "scripts/hbase_master.py"
+              "yarn.role.priority" : "1",
+              "yarn.component.instances" : "1"
           },
           "slider-appmaster" : {
               "jvm.heapsize" : "256M"
           },
           "HBASE_REGIONSERVER" : {
-              "wait.heartbeat" : "3",
-              "role.priority" : "2",
-              "component.instances" : "1",
-              "role.script" : "scripts/hbase_regionserver.py"
+              "yarn.role.priority" : "2",
+              "yarn.component.instances" : "1"
           }
       }
     }

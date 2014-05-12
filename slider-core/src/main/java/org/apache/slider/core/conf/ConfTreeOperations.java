@@ -64,15 +64,27 @@ public class ConfTreeOperations {
    * @throws BadConfigException
    */
   public void validate() throws BadConfigException {
+    validate(null);
+  }
+
+  /**
+   * Validate the configuration
+   * @param validator a provided properties validator
+   * @throws BadConfigException
+   */
+  public void validate(InputPropertiesValidator validator) throws BadConfigException {
     String version = confTree.schema;
     if (version == null) {
       throw new BadConfigException("'version' undefined");
     }
     if (!PersistKeys.SCHEMA.equals(version)) {
       throw new BadConfigException(
-        "version %s incompatible with supported version %s",
-        version,
-        PersistKeys.SCHEMA);
+          "version %s incompatible with supported version %s",
+          version,
+          PersistKeys.SCHEMA);
+    }
+    if (validator != null) {
+      validator.validate(this);
     }
   }
 
@@ -335,10 +347,21 @@ public class ConfTreeOperations {
    * @throws BadConfigException if the file is invalid
    */
   public void mergeFile(File file) throws IOException, BadConfigException {
+    mergeFile(file, null);
+  }
+
+  /**
+   * Load from a file and merge it in
+   * @param file file
+   * @param validator properties validator
+   * @throws IOException any IO problem
+   * @throws BadConfigException if the file is invalid
+   */
+  public void mergeFile(File file, InputPropertiesValidator validator) throws IOException, BadConfigException {
     ConfTreeSerDeser confTreeSerDeser = new ConfTreeSerDeser();
     ConfTree tree = confTreeSerDeser.fromFile(file);
     ConfTreeOperations ops = new ConfTreeOperations(tree);
-    ops.validate();
+    ops.validate(validator);
     merge(ops.confTree);
   }
 

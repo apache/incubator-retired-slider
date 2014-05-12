@@ -31,23 +31,20 @@ An example resource requirement for an application that has two components "mast
     "components" : {
       "worker" : {
         "yarn.memory" : "768",
-        "env.MALLOC_ARENA_MAX" : "4",
-        "component.instances" : "1",
-        "component.name" : "worker",
+        "yarn.component.instances" : "1",
+        "yarn.component.name" : "worker",
         "yarn.vcores" : "1"
       },
       "slider" : {
         "yarn.memory" : "256",
-        "env.MALLOC_ARENA_MAX" : "4",
-        "component.instances" : "1",
-        "component.name" : "slider",
+        "yarn.component.instances" : "1",
+        "yarn.component.name" : "slider",
         "yarn.vcores" : "1"
       },
       "master" : {
         "yarn.memory" : "1024",
-        "env.MALLOC_ARENA_MAX" : "4",
-        "component.instances" : "1",
-        "component.name" : "master",
+        "yarn.component.instances" : "1",
+        "yarn.component.name" : "master",
         "yarn.vcores" : "1"
       }
     }

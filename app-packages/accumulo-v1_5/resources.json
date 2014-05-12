@@ -6,26 +6,26 @@
   },
   "components": {
     "ACCUMULO_MASTER": {
-      "role.priority": "1",
-      "component.instances": "1"
+      "yarn.role.priority": "1",
+      "yarn.component.instances": "1"
     },
     "slider-appmaster": {
     },
     "ACCUMULO_TSERVER": {
-      "role.priority": "2",
-      "component.instances": "1"
+      "yarn.role.priority": "2",
+      "yarn.component.instances": "1"
     },
     "ACCUMULO_MONITOR": {
-      "role.priority": "3",
-      "component.instances": "1"
+      "yarn.role.priority": "3",
+      "yarn.component.instances": "1"
     },
     "ACCUMULO_GC": {
-      "role.priority": "4",
-      "component.instances": "1"
+      "yarn.role.priority": "4",
+      "yarn.component.instances": "1"
     },
     "ACCUMULO_TRACER": {
-      "role.priority": "5",
-      "component.instances": "1"
+      "yarn.role.priority": "5",
+      "yarn.component.instances": "1"
     }
   }
 }

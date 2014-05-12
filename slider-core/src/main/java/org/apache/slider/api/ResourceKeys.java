@@ -28,7 +28,7 @@ public interface ResourceKeys {
    * #of instances of a component
    *
   */
-  String COMPONENT_INSTANCES = "component.instances";
+  String COMPONENT_INSTANCES = "yarn.component.instances";
 
   /**
    *  Amount of memory to ask YARN for in MB.
@@ -63,10 +63,10 @@ public interface ResourceKeys {
    * 2. this must be >= 1
    * 3. this must not match any other role priority in the cluster.
    */
-  String COMPONENT_PRIORITY = "role.priority";
+  String COMPONENT_PRIORITY = "yarn.role.priority";
   
   /**
    * placement policy
    */
-  String COMPONENT_PLACEMENT_POLICY = "component.placement.policy";
+  String COMPONENT_PLACEMENT_POLICY = "yarn.component.placement.policy";
 }

@@ -18,6 +18,7 @@
 
 package org.apache.slider.core.conf
 
+import org.apache.slider.core.exceptions.BadConfigException
 import org.apache.slider.core.persist.JsonSerDeser
 import org.junit.Assert
 import org.junit.Test
@@ -52,5 +53,32 @@ class TestConfTreeLoadExamples extends Assert {
     ops.resolve()
     ops.validate()
 
+  }
+
+  @Test
+  public void testLoadResourceWithValidator() throws Throwable {
+    def confTree = confTreeJsonSerDeser.fromResource(resource)
+    ConfTreeOperations ops = new ConfTreeOperations(confTree)
+    ops.resolve()
+    if (resource.endsWith("resources.json")) {
+      // these should pass since they are configured conrrectly with "yarn."
+      // properties
+      ops.validate(new ResourcesInputPropertiesValidator())
+    } else if (resource.startsWith("app_configuration")) {
+      ops.validate(new TemplateInputPropertiesValidator())
+    }
+    else {
+      // these have properties with other prefixes so they should generate
+      // BadConfigExceptions
+      try {
+        ops.validate(new ResourcesInputPropertiesValidator())
+        if ( !resource.endsWith(ExampleConfResources.empty)) {
+          fail (resource + " should have generated validation exception")
+        }
+      } catch (BadConfigException e) {
+         // ignore
+      }
+
+    }
   }
 }

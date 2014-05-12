@@ -6,8 +6,8 @@
     },
     "components": {
         "COMMAND_LOGGER": {
-            "role.priority": "1",
-            "component.instances": "1"
+            "yarn.role.priority": "1",
+            "yarn.component.instances": "1"
         },
         "slider-appmaster": {
         }

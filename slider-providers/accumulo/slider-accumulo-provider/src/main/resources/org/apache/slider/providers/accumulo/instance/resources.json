@@ -12,19 +12,19 @@
 
   "components": {
     "master": {
-      "component.instances": "1"
+      "yarn.component.instances": "1"
     },
       "tserver": {
-        "component.instances": "2"
+        "yarn.component.instances": "2"
       },
       "monitor": {
-        "component.instances": "0"
+        "yarn.component.instances": "0"
       },
       "tracer": {
-        "component.instances": "0"
+        "yarn.component.instances": "0"
       },
       "gc": {
-        "component.instances": "0"
+        "yarn.component.instances": "0"
       }
   }
 }

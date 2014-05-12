@@ -6,14 +6,14 @@
   },
   "components": {
     "HBASE_MASTER": {
-      "role.priority": "1",
-      "component.instances": "1"
+      "yarn.role.priority": "1",
+      "yarn.component.instances": "1"
     },
     "slider-appmaster": {
     },
     "HBASE_REGIONSERVER": {
-      "role.priority": "2",
-      "component.instances": "1"
+      "yarn.role.priority": "2",
+      "yarn.omponent.instances": "1"
     }
   }
 }

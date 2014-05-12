@@ -44,7 +44,7 @@ public abstract class AgentMiniClusterTestBase
   public static void createSubConfFiles() {
     File destDir = new File("target/agent_minicluster_testbase")
     destDir.mkdirs()
-    agentConf = new File(destDir, "agentconf")
+    agentConf = new File(destDir, "agentconf.zip")
     agentConf.createNewFile()
     agentDef = new File(destDir, "agentdef")
     agentDef.createNewFile()

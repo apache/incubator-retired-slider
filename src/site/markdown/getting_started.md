@@ -377,25 +377,24 @@ Once started, applications can be frozen/stopped, thawed/restarted, and destroye
         "slider-appmaster" : {
         },
         "NIMBUS" : {
-            "role.priority" : "1",
-            "component.instances" : "1"
+            "yarn.role.priority" : "1",
+            "yarn.component.instances" : "1"
         },
         "STORM_REST_API" : {
-            "wait.heartbeat" : "3",
-            "role.priority" : "2",
-            "component.instances" : "1"
+            "yarn.role.priority" : "2",
+            "yarn.component.instances" : "1"
         },
         "STORM_UI_SERVER" : {
-            "role.priority" : "3",
-            "component.instances" : "1"
+            "yarn.role.priority" : "3",
+            "yarn.component.instances" : "1"
         },
         "DRPC_SERVER" : {
-            "role.priority" : "4",
-            "component.instances" : "1"
+            "yarn.role.priority" : "4",
+            "yarn.component.instances" : "1"
         },
         "SUPERVISOR" : {
-            "role.priority" : "5",
-            "component.instances" : "1"
+            "yarn.role.priority" : "5",
+            "yarn.component.instances" : "1"
         }
       }
     }
@@ -435,19 +434,14 @@ Once started, applications can be frozen/stopped, thawed/restarted, and destroye
       },
       "components" : {
         "HBASE_MASTER" : {
-            "wait.heartbeat" : "5",
-            "role.priority" : "1",
-            "component.instances" : "1",
-            "role.script" : "scripts/hbase_master.py"
+            "yarn.role.priority" : "1",
+            "yarn.component.instances" : "1"
         },
         "slider-appmaster" : {
-            "jvm.heapsize" : "256M"
         },
         "HBASE_REGIONSERVER" : {
-            "wait.heartbeat" : "3",
-            "role.priority" : "2",
-            "component.instances" : "1",
-            "role.script" : "scripts/hbase_regionserver.py"
+            "yarn.role.priority" : "2",
+            "yarn.component.instances" : "1"
         }
       }
     }

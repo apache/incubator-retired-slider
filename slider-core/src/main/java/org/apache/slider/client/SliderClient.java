@@ -67,6 +67,8 @@ import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.conf.ConfTreeOperations;
 import org.apache.slider.core.conf.MapOperations;
+import org.apache.slider.core.conf.ResourcesInputPropertiesValidator;
+import org.apache.slider.core.conf.TemplateInputPropertiesValidator;
 import org.apache.slider.core.exceptions.BadClusterStateException;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.BadConfigException;
@@ -396,7 +398,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     //load in any specified on the command line
     if (buildInfo.resources != null) {
       try {
-        resources.mergeFile(buildInfo.resources);
+        resources.mergeFile(buildInfo.resources,
+                            new ResourcesInputPropertiesValidator());
 
       } catch (IOException e) {
         throw new BadConfigException(e,
@@ -408,7 +411,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     }
     if (buildInfo.template != null) {
       try {
-        appConf.mergeFile(buildInfo.template);
+        appConf.mergeFile(buildInfo.template,
+                          new TemplateInputPropertiesValidator());
       } catch (IOException e) {
         throw new BadConfigException(e,
                                      "incorrect argument to %s: \"%s\" : %s ",
@@ -1097,7 +1101,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   /**
    * Build an exit code for an application Id and its report.
    * If the report parameter is null, the app is killed
-   * @param appId app
    * @param report report
    * @return the exit code
    */
@@ -2071,8 +2074,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
   /**
    * Look up an instance
-   * @param id instance ID
-   * @param serviceType service type
    * @return instance data
    * @throws UnknownApplicationInstanceException no match
    * @throws SliderException other failures

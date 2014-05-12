@@ -6,8 +6,8 @@
   "components": {
     "node": {
       "yarn.memory": "256",
-      "component.instances": "5",
-      "role.priority":"1"
+      "yarn.component.instances": "5",
+      "yarn.role.priority":"1"
     }
   }
 }
