@@ -26,6 +26,8 @@ import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.LocalResourceType;
 import org.apache.slider.api.ClusterDescription;
+import org.apache.slider.api.ClusterDescriptionKeys;
+import org.apache.slider.api.ClusterNode;
 import org.apache.slider.api.OptionKeys;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.common.SliderKeys;
@@ -70,6 +72,7 @@ import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -94,7 +97,6 @@ public class AgentProviderService extends AbstractProviderService implements
   private static final String GLOBAL_CONFIG_TAG = "global";
   private AgentClientProvider clientProvider;
   private Map<String, ComponentInstanceState> componentStatuses = new HashMap<String, ComponentInstanceState>();
-  private Map<String, List<String>> roleHostMapping = new HashMap<String, List<String>>();
   private AtomicInteger taskId = new AtomicInteger(0);
   private Metainfo metainfo = null;
 
@@ -208,7 +210,6 @@ public class AgentProviderService extends AbstractProviderService implements
     }
 
     String label = getContainerLabel(container, role);
-    setRoleHostMapping(role, container.getNodeId().getHost());
     CommandLineBuilder operation = new CommandLineBuilder();
 
     operation.add(AgentKeys.PYTHON_EXE);
@@ -258,17 +259,10 @@ public class AgentProviderService extends AbstractProviderService implements
     getStateAccessor().getPublishedConfigurations().put(name, pubconf);
   }
 
-  protected void setRoleHostMapping(String role, String host) {
-    List<String> hosts = roleHostMapping.get(role);
-    if (hosts == null) {
-      hosts = new ArrayList<String>();
-    }
-    hosts.add(host);
-    roleHostMapping.put(role, hosts);
-  }
-
-  private List<String> getHostsForRole(String role) {
-    return roleHostMapping.get(role);
+  protected Map<String, Map<String, ClusterNode>> getRoleClusterNodeMapping() {
+    return (Map<String, Map<String, ClusterNode>>)
+        stateAccessor.getClusterStatus().status.get(
+        ClusterDescriptionKeys.KEY_CLUSTER_LIVE);
   }
 
   private String getContainerLabel(Container container, String role) {
@@ -680,11 +674,21 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   protected void addRoleRelatedTokens(Map<String, String> tokens) {
-    for (Map.Entry<String, List<String>> entry : roleHostMapping.entrySet()) {
+    for (Map.Entry<String, Map<String, ClusterNode>> entry : getRoleClusterNodeMapping().entrySet()) {
       String tokenName = entry.getKey().toUpperCase(Locale.ENGLISH) + "_HOST";
-      String hosts = StringUtils.join(",", entry.getValue());
+      String hosts = StringUtils.join(",", getHostsList(entry.getValue().values(), true));
       tokens.put("${" + tokenName + "}", hosts);
     }
+  }
+
+  private Iterable<String> getHostsList(Collection<ClusterNode> values,
+                                        boolean hostOnly) {
+    List<String> hosts = new ArrayList<>();
+    for (ClusterNode cn : values) {
+      hosts.add(hostOnly ? cn.host : cn.host + "/" + cn.name);
+    }
+
+    return hosts;
   }
 
   private void addDefaultGlobalConfig(Map<String, String> config) {
@@ -702,8 +706,10 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   private void buildRoleHostDetails(Map<String, URL> details) {
-    for (Map.Entry<String, List<String>> entry : roleHostMapping.entrySet()) {
-      details.put(entry.getKey() + " Host(s): " + entry.getValue(),
+    for (Map.Entry<String, Map<String, ClusterNode>> entry :
+        getRoleClusterNodeMapping().entrySet()) {
+      details.put(entry.getKey() + " Host(s)/Container(s): " +
+                  getHostsList(entry.getValue().values(), false),
                   null);
     }
   }

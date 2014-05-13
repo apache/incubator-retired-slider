@@ -22,11 +22,15 @@ import junit.framework.TestCase;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FilterFileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.Container;
+import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.LocalResourceType;
 import org.apache.slider.api.ClusterDescription;
+import org.apache.slider.api.ClusterDescriptionKeys;
+import org.apache.slider.api.ClusterNode;
 import org.apache.slider.api.OptionKeys;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.common.tools.SliderFileSystem;
@@ -43,6 +47,7 @@ import org.apache.slider.providers.agent.application.metadata.Service;
 import org.apache.slider.server.appmaster.model.mock.MockContainerId;
 import org.apache.slider.server.appmaster.model.mock.MockFileSystem;
 import org.apache.slider.server.appmaster.model.mock.MockNodeId;
+import org.apache.slider.server.appmaster.state.AppState;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.ComponentStatus;
 import org.apache.slider.server.appmaster.web.rest.agent.HeartBeat;
@@ -178,14 +183,39 @@ public class TestAgentProviderService {
   @Test
   public void testRoleHostMapping() throws Exception {
     AgentProviderService aps = new AgentProviderService();
-    aps.setRoleHostMapping("FIRST_ROLE", "FIRST_HOST");
-    aps.setRoleHostMapping("SECOND_ROLE", "SECOND_HOST");
-    aps.setRoleHostMapping("SECOND_ROLE", "THIRD_HOST");
+    StateAccessForProviders appState = new AppState(null) {
+      @Override
+      public ClusterDescription getClusterStatus() {
+        ClusterDescription cd = new ClusterDescription();
+        cd.status = new HashMap<String,Object>();
+        Map<String, Map<String,ClusterNode>> roleMap = new HashMap<>();
+        ClusterNode cn1 = new ClusterNode(new MyContainerId(1));
+        cn1.host = "FIRST_HOST";
+        Map<String, ClusterNode> map1 = new HashMap<>();
+        map1.put("FIRST_CONTAINER", cn1);
+        ClusterNode cn2 = new ClusterNode(new MyContainerId(2));
+        cn2.host = "SECOND_HOST";
+        Map<String, ClusterNode> map2 = new HashMap<>();
+        map2.put("SECOND_CONTAINER", cn2);
+        ClusterNode cn3 = new ClusterNode(new MyContainerId(3));
+        cn3.host = "THIRD_HOST";
+        map2.put("THIRD_CONTAINER", cn3);
+
+        roleMap.put("FIRST_ROLE", map1);
+        roleMap.put("SECOND_ROLE", map2);
+
+        cd.status.put(ClusterDescriptionKeys.KEY_CLUSTER_LIVE, roleMap);
+
+        return cd;
+      }
+    };
+
+    aps.setStateAccessor(appState);
     Map<String, String> tokens = new HashMap<String, String>();
     aps.addRoleRelatedTokens(tokens);
     TestCase.assertEquals(2, tokens.size());
     TestCase.assertEquals("FIRST_HOST", tokens.get("${FIRST_ROLE_HOST}"));
-    TestCase.assertEquals("SECOND_HOST,THIRD_HOST", tokens.get("${SECOND_ROLE_HOST}"));
+    TestCase.assertEquals("THIRD_HOST,SECOND_HOST", tokens.get("${SECOND_ROLE_HOST}"));
     aps.close();
   }
 
@@ -211,7 +241,10 @@ public class TestAgentProviderService {
     doNothing().when(mockAps).publishComponentConfiguration(anyString(), anyString(), anyCollection());
     mockAps.processReturnedStatus(hb, componentStatus);
     assert componentStatus.getConfigReported() == true;
-    Mockito.verify(mockAps, Mockito.times(1)).publishComponentConfiguration(anyString(), anyString(), anyCollection());
+    Mockito.verify(mockAps, Mockito.times(1)).publishComponentConfiguration(
+        anyString(),
+        anyString(),
+        anyCollection());
   }
 
   @Test
@@ -301,5 +334,45 @@ public class TestAgentProviderService {
     metainfo_1 = new ByteArrayInputStream(metainfo_1_str_bad.getBytes());
     metainfo = new MetainfoParser().parse(metainfo_1);
     assert metainfo == null;
+  }
+
+  private static class MyContainerId extends ContainerId {
+    int id;
+
+    private MyContainerId(int id) {
+      this.id = id;
+    }
+
+    @Override
+    public ApplicationAttemptId getApplicationAttemptId() {
+      return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    protected void setApplicationAttemptId(ApplicationAttemptId applicationAttemptId) {
+      //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public int getId() {
+      return id;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    protected void setId(int i) {
+      //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    protected void build() {
+      //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public String toString() {
+      return "MyContainerId{" +
+             "id=" + id +
+             '}';
+    }
   }
 }
