@@ -27,10 +27,12 @@ public class Service {
   String comment;
   String version;
   List<Component> components;
+  List<ExportGroup> exportGroups;
   List<OSSpecific> osSpecifics;
   ConfigurationDependencies configDependencies;
 
   public Service() {
+    exportGroups = new ArrayList<ExportGroup>();
     components = new ArrayList<Component>();
     osSpecifics = new ArrayList<OSSpecific>();
   }
@@ -73,6 +75,14 @@ public class Service {
 
   public List<Component> getComponents() {
     return components;
+  }
+
+  public void addExportGroup(ExportGroup exportGroup) {
+    exportGroups.add(exportGroup);
+  }
+
+  public List<ExportGroup> getExportGroups() {
+    return exportGroups;
   }
 
   public void addOSSpecific(OSSpecific osSpecific) {

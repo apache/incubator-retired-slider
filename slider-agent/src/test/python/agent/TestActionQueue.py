@@ -53,6 +53,7 @@ class TestActionQueue(TestCase):
   datanode_install_command = {
     'commandType': 'EXECUTION_COMMAND',
     'role': u'HBASE_MASTER',
+    "componentName": "HBASE_MASTER",
     'roleCommand': u'INSTALL',
     'commandId': '1-1',
     'taskId': 3,
@@ -71,6 +72,7 @@ class TestActionQueue(TestCase):
     'roleCommand': u'INSTALL',
     'commandId': '1-1',
     'taskId': 7,
+    "componentName": "HBASE_MASTER",
     'clusterName': u'cc',
     'serviceName': u'HDFS',
   }

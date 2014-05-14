@@ -27,6 +27,21 @@
       <version>0.96.0.2.1.1</version>
       <type>YARN-APP</type>
       <minHadoopVersion>2.1.0</minHadoopVersion>
+      <exportGroups>
+        <exportGroup>
+          <name>QuickLinks</name>
+          <exports>
+            <export>
+              <name>JMX_Endpoint</name>
+              <value>http://${HBASE_MASTER_HOST}:${site.hbase-site.hbase.master.info.port}/jmx</value>
+            </export>
+            <export>
+              <name>Master_Status</name>
+              <value>http://${HBASE_MASTER_HOST}:${site.hbase-site.hbase.master.info.port}/master-status</value>
+            </export>
+          </exports>
+        </exportGroup>
+      </exportGroups>
       <components>
         <component>
           <name>HBASE_MASTER</name>

@@ -23,6 +23,7 @@ import os
 import json
 import pprint
 import sys
+import socket
 from AgentConfig import AgentConfig
 from AgentException import AgentException
 from PythonExecutor import PythonExecutor
@@ -217,7 +218,9 @@ class CustomServiceOrchestrator():
   """
 
   def finalize_command(self, command, store_config):
-
+    component = command['componentName']
+    allocated_port_format = "${{{0}.ALLOCATED_PORT}}"
+    port_allocation_req = allocated_port_format.format(component)
     if 'configurations' in command:
       for key in command['configurations']:
         if len(command['configurations'][key]) > 0:
@@ -227,6 +230,10 @@ class CustomServiceOrchestrator():
                                     self.config.getWorkRootPath())
               value = value.replace("${AGENT_LOG_ROOT}",
                                     self.config.getLogPath())
+              if port_allocation_req in value:
+                port = self.allocate_port()
+                value = value.replace(port_allocation_req, str(port))
+                logger.info("Allocated port " + str(port) + " for " + port_allocation_req)
               command['configurations'][key][k] = value
               pass
             pass
@@ -239,5 +246,23 @@ class CustomServiceOrchestrator():
       self.applied_configs = command['configurations']
 
   pass
+
+  def allocate_port(self):
+    MAX_ATTEMPT = 5
+    iter = 0
+    port = -1
+    while iter < MAX_ATTEMPT:
+      iter = iter + 1
+      try:
+        sock = socket.socket()
+        sock.bind(('', 0))
+        port = sock.getsockname()[1]
+      except Exception, err:
+        logger.info("Encountered error while trying to opening socket - " + str(err))
+      finally:
+        sock.close()
+      pass
+    logger.info("Allocated dynamic port: " + str(port))
+    return port
 
 

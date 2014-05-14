@@ -46,7 +46,7 @@
     "site.hbase-site.hbase.client.scanner.caching": "100",
     "site.hbase-site.hbase.zookeeper.useMulti": "true",
     "site.hbase-site.hbase.regionserver.info.port": "0",
-    "site.hbase-site.hbase.master.info.port": "60010",
+    "site.hbase-site.hbase.master.info.port": "${HBASE_MASTER.ALLOCATED_PORT}",
     "site.hbase-site.hbase.regionserver.port": "0",
     "site.core-site.fs.defaultFS": "${NN_URI}",
     "site.hdfs-site.dfs.namenode.https-address": "${NN_HOST}:50470",

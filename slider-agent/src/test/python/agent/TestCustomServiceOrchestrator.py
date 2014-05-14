@@ -53,6 +53,7 @@ class TestCustomServiceOrchestrator(TestCase):
     hostname_mock.return_value = "test.hst"
     command = {
       'commandType': 'EXECUTION_COMMAND',
+      'componentName': 'NAMENODE',
       'role': u'DATANODE',
       'roleCommand': u'INSTALL',
       'commandId': '1-1',
@@ -180,6 +181,7 @@ class TestCustomServiceOrchestrator(TestCase):
     isfile_mock.return_value = True
     command = {
       'role': 'REGION_SERVER',
+      'componentName': 'REGION_SERVER',
       'hostLevelParams': {
         'stack_name': 'HDP',
         'stack_version': '2.0.7',
@@ -289,7 +291,51 @@ class TestCustomServiceOrchestrator(TestCase):
     status = orchestrator.requestComponentStatus(status_command)
     self.assertEqual(CustomServiceOrchestrator.DEAD_STATUS, status['exitcode'])
 
-  def test_finalize_command(self):
+  @patch.object(CustomServiceOrchestrator, "allocate_port")
+  def test_finalize_command(self, mock_allocate_port):
+    dummy_controller = MagicMock()
+    tempdir = tempfile.gettempdir()
+    tempWorkDir = tempdir + "W"
+    config = MagicMock()
+    config.get.return_value = "something"
+    config.getResolvedPath.return_value = tempdir
+    config.getWorkRootPath.return_value = tempWorkDir
+    config.getLogPath.return_value = tempdir
+    mock_allocate_port.return_value = "10023"
+
+    orchestrator = CustomServiceOrchestrator(config, dummy_controller)
+    command = {}
+    command['componentName'] = "HBASE_MASTER"
+    command['configurations'] = {}
+    command['configurations']['hbase-site'] = {}
+    command['configurations']['hbase-site']['a'] = 'b'
+    command['configurations']['hbase-site']['work_root'] = "${AGENT_WORK_ROOT}"
+    command['configurations']['hbase-site']['log_root'] = "${AGENT_LOG_ROOT}/log"
+    command['configurations']['hbase-site']['blog_root'] = "/b/${AGENT_LOG_ROOT}/log"
+    command['configurations']['oozie-site'] = {}
+    command['configurations']['oozie-site']['log_root'] = "${AGENT_LOG_ROOT}"
+    command['configurations']['oozie-site']['a_port'] = "${HBASE_MASTER.ALLOCATED_PORT}"
+
+    orchestrator.finalize_command(command, False)
+    self.assertEqual(command['configurations']['hbase-site']['work_root'], tempWorkDir)
+    self.assertEqual(command['configurations']['oozie-site']['log_root'], tempdir)
+    self.assertEqual(command['configurations']['oozie-site']['a_port'], "10023")
+    self.assertEqual(orchestrator.applied_configs, {})
+
+    command['configurations']['hbase-site']['work_root'] = "${AGENT_WORK_ROOT}"
+    command['configurations']['hbase-site']['log_root'] = "${AGENT_LOG_ROOT}/log"
+    command['configurations']['hbase-site']['blog_root'] = "/b/${AGENT_LOG_ROOT}/log"
+    command['configurations']['oozie-site']['log_root'] = "${AGENT_LOG_ROOT}"
+    command['configurations']['oozie-site']['b_port'] = "${HBASE_REGIONSERVER.ALLOCATED_PORT}"
+
+    orchestrator.finalize_command(command, True)
+    self.assertEqual(command['configurations']['hbase-site']['log_root'], tempdir + "/log")
+    self.assertEqual(command['configurations']['hbase-site']['blog_root'], "/b/" + tempdir + "/log")
+    self.assertEqual(command['configurations']['oozie-site']['b_port'], "${HBASE_REGIONSERVER.ALLOCATED_PORT}")
+    self.assertEqual(orchestrator.applied_configs, command['configurations'])
+
+
+  def test_port_allocation(self):
     dummy_controller = MagicMock()
     tempdir = tempfile.gettempdir()
     tempWorkDir = tempdir + "W"
@@ -300,30 +346,9 @@ class TestCustomServiceOrchestrator(TestCase):
     config.getLogPath.return_value = tempdir
 
     orchestrator = CustomServiceOrchestrator(config, dummy_controller)
-    command = {}
-    command['configurations'] = {}
-    command['configurations']['hbase-site'] = {}
-    command['configurations']['hbase-site']['a'] = 'b'
-    command['configurations']['hbase-site']['work_root'] = "${AGENT_WORK_ROOT}"
-    command['configurations']['hbase-site']['log_root'] = "${AGENT_LOG_ROOT}/log"
-    command['configurations']['hbase-site']['blog_root'] = "/b/${AGENT_LOG_ROOT}/log"
-    command['configurations']['oozie-site'] = {}
-    command['configurations']['oozie-site']['log_root'] = "${AGENT_LOG_ROOT}"
-
-    orchestrator.finalize_command(command, False)
-    self.assertEqual(command['configurations']['hbase-site']['work_root'], tempWorkDir)
-    self.assertEqual(command['configurations']['oozie-site']['log_root'], tempdir)
-    self.assertEqual(orchestrator.applied_configs, {})
-
-    command['configurations']['hbase-site']['work_root'] = "${AGENT_WORK_ROOT}"
-    command['configurations']['hbase-site']['log_root'] = "${AGENT_LOG_ROOT}/log"
-    command['configurations']['hbase-site']['blog_root'] = "/b/${AGENT_LOG_ROOT}/log"
-    command['configurations']['oozie-site']['log_root'] = "${AGENT_LOG_ROOT}"
-
-    orchestrator.finalize_command(command, True)
-    self.assertEqual(command['configurations']['hbase-site']['log_root'], tempdir + "/log")
-    self.assertEqual(command['configurations']['hbase-site']['blog_root'], "/b/" + tempdir + "/log")
-    self.assertEqual(orchestrator.applied_configs, command['configurations'])
+    port = orchestrator.allocate_port()
+    self.assertFalse(port == -1)
+    self.assertTrue(port > 0)
 
   def tearDown(self):
     # enable stdout
