@@ -111,6 +111,10 @@ class TestPublisherRestResources extends AgentTestBase {
     assert entries.get("prop1").equals("val1")
     assert entries.get("prop2").equals("val2")
 
+    webResource = client.resource(publisher_url + "/dummy-site/prop1");
+    Map<String,String> val = webResource.type(MediaType.APPLICATION_JSON).get(Map.class);
+    assert "val1".equals(val.get("prop1"))
+
     // some negative tests...
     webResource = client.resource(appendToURL(publisher_url,
         "/foobar-site"));
@@ -118,6 +122,11 @@ class TestPublisherRestResources extends AgentTestBase {
     ClientResponse response = webResource.type(MediaType.APPLICATION_JSON)
                          .get(ClientResponse.class);
     assert response.getStatus() == 404
+
+    webResource = client.resource(publisher_url + "/dummy-site/missing.prop");
+    response = webResource.type(MediaType.TEXT_PLAIN).get(ClientResponse.class);
+    assert response.getStatus() == 404
+
  }
 
 }

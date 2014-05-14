@@ -36,6 +36,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
 import static  org.apache.slider.server.appmaster.web.rest.RestPaths.*;
 
 /**
@@ -136,9 +139,30 @@ public class PublisherResource {
     PublishedConfiguration publishedConfig =
         getConfigurationInstance(config, uriInfo, res);
     PublishedConfigurationOutputter outputter =
-        publishedConfig.creatOutputter(format);
+        publishedConfig.createOutputter(format);
     return outputter.asString();
   }
 
+  @GET
+  @Path("/{config}/{propertyName}")
+  @Produces({MediaType.APPLICATION_JSON})
+  public Map<String,String> getConfigurationProperty(
+      @PathParam("propertyName") String propertyName,
+      @PathParam("config") String config,
+      @Context UriInfo uriInfo,
+      @Context HttpServletResponse res) {
+    PublishedConfiguration publishedConfig =
+        getConfigurationInstance(config, uriInfo, res);
+    String propVal = publishedConfig.entries.get(propertyName);
+    if (propVal == null) {
+      log.info("Configuration property {} not found in configuration {}",
+               propertyName, config);
+      throw new NotFoundException("Property not found: " + propertyName);
+    }
+    Map<String,String> rtnVal = new HashMap<>();
+    rtnVal.put(propertyName, propVal);
 
+    return rtnVal;
+  }
+  
 }

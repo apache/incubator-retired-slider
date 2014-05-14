@@ -159,7 +159,7 @@ public class PublishedConfiguration {
     return sb.toString();
   }
   
-  public PublishedConfigurationOutputter creatOutputter(ConfigFormat format) {
+  public PublishedConfigurationOutputter createOutputter(ConfigFormat format) {
     return PublishedConfigurationOutputter.createOutputter(format, this);
   }
 }
