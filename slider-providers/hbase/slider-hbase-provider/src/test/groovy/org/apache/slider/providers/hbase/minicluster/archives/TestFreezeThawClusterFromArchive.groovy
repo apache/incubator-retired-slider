@@ -57,7 +57,7 @@ class TestFreezeThawClusterFromArchive extends HBaseMiniClusterTestBase {
     killAllRegionServers();
 
     //now let's start the cluster up again
-    ServiceLauncher launcher2 = thawCluster(clustername, [], true);
+    ServiceLauncher<SliderClient> launcher2 = thawCluster(clustername, [], true);
     SliderClient newCluster = launcher2.service
     basicHBaseClusterStartupSequence(newCluster)
 

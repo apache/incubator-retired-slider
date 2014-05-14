@@ -45,19 +45,19 @@ class TestHBaseMaster extends HBaseMiniClusterTestBase {
   @Test
   public void testHBaseMaster() throws Throwable {
     String clustername = "test_hbase_master"
-    createMiniCluster(clustername, getConfiguration(), 1, true)
+    createMiniCluster(clustername, configuration, 1, true)
     //make sure that ZK is up and running at the binding string
     ZKIntegration zki = createZKIntegrationInstance(ZKBinding, clustername, false, false, 5000)
     //now launch the cluster with 1 region server
     int regionServerCount = 1
-    ServiceLauncher launcher = createHBaseCluster(clustername, regionServerCount,
+    ServiceLauncher<SliderClient> launcher = createHBaseCluster(clustername, regionServerCount,
       [
           Arguments.ARG_COMP_OPT, HBaseKeys.ROLE_MASTER, RoleKeys.JVM_HEAP, "256M",
           Arguments.ARG_DEFINE, SliderXmlConfKeys.KEY_YARN_QUEUE + "=default"
       ],
       true,
       true) 
-    SliderClient sliderClient = (SliderClient) launcher.service
+    SliderClient sliderClient = launcher.service
     addToTeardown(sliderClient);
     ClusterDescription status = sliderClient.getClusterDescription(clustername)
     
@@ -75,38 +75,4 @@ class TestHBaseMaster extends HBaseMiniClusterTestBase {
                      hbaseClusterStartupToLiveTime)
   }
 
-  @Test
-  public void testHBaseMasterWithBadHeap() throws Throwable {
-    String clustername = "test_hbase_master_with_bad_heap"
-    createMiniCluster(clustername, getConfiguration(), 1, true)
-
-    describe "verify that bad Java heap options are picked up"
-    //now launch the cluster with 1 region server
-    int regionServerCount = 1
-    try {
-      ServiceLauncher launcher = createHBaseCluster(clustername, regionServerCount,
-        [Arguments.ARG_COMP_OPT, HBaseKeys.ROLE_WORKER, RoleKeys.JVM_HEAP, "invalid"], true, true) 
-      SliderClient sliderClient = (SliderClient) launcher.service
-      addToTeardown(sliderClient);
-
-      AggregateConf launchedInstance = sliderClient.launchedInstanceDefinition
-      AggregateConf liveInstance = sliderClient.launchedInstanceDefinition
-      
-      
-
-      basicHBaseClusterStartupSequence(sliderClient)
-      def report = waitForClusterLive(sliderClient)
-
-      ClusterStatus clustat = getHBaseClusterStatus(sliderClient);
-      // verify that region server cannot start
-      if (clustat.servers.size()) {
-        dumpClusterDescription("original",launchedInstance )
-        dumpClusterDescription("live", sliderClient.liveInstanceDefinition)
-        dumpClusterStatus(sliderClient,"JVM heap option not picked up")
-      }
-      assert 0 == clustat.servers.size()
-    } catch (ServiceLaunchException e) {
-      assertExceptionDetails(e, SliderExitCodes.EXIT_DEPLOYMENT_FAILED)
-    }
-  }
 }

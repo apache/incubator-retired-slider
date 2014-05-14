@@ -16,27 +16,26 @@
  *  limitations under the License.
  */
 
-package org.apache.slider.providers.hbase.minicluster.freezethaw
+package org.apache.slider.agent.freezethaw
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
-import org.apache.slider.common.tools.SliderUtils
-import org.apache.slider.client.SliderClient
-import org.apache.slider.providers.hbase.minicluster.HBaseMiniClusterTestBase
 import org.apache.hadoop.yarn.conf.YarnConfiguration
+import org.apache.slider.agent.AgentMiniClusterTestBase
+import org.apache.slider.client.SliderClient
+import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.core.main.ServiceLauncher
 import org.junit.Test
 
 /**
- * create masterless AMs and work with them. This is faster than
- * bringing up full clusters
+ * freeze and thaw an AM
  */
 @CompileStatic
 @Slf4j
 
-class TestFreezeThawMasterlessAM extends HBaseMiniClusterTestBase {
+class TestFreezeThawMasterlessAM extends AgentMiniClusterTestBase {
 
   File getConfDirFile() {
     return new File("target/TestFreezeThawMasterlessAM/conf")
@@ -50,18 +49,18 @@ class TestFreezeThawMasterlessAM extends HBaseMiniClusterTestBase {
   @Test
   public void testFreezeThawMasterlessAM() throws Throwable {
     String clustername = "test_freeze_thaw_masterless_am"
-    YarnConfiguration conf = getConfiguration()
-    createMiniCluster(clustername, conf, 1, 1, 1, true, true)
+    YarnConfiguration conf = configuration
+    createMiniCluster(clustername, conf, 1, 1, 1, true, false)
     
     describe "create a masterless AM, freeze it, thaw it"
     //copy the confdir somewhere
-    Path resConfPath = new Path(getResourceConfDirURI())
+    Path resConfPath = new Path(resourceConfDirURI)
     Path tempConfPath = new Path(confDir)
     SliderUtils.copyDirectory(conf, resConfPath, tempConfPath, null)
 
 
-    ServiceLauncher launcher = createMasterlessAM(clustername, 0, true, true)
-    SliderClient sliderClient = (SliderClient) launcher.service
+    ServiceLauncher<SliderClient> launcher = createMasterlessAM(clustername, 0, true, true)
+    SliderClient sliderClient = launcher.service
     addToTeardown(sliderClient);
 
     assert 0 == clusterActionFreeze(sliderClient, clustername)
@@ -74,7 +73,7 @@ class TestFreezeThawMasterlessAM extends HBaseMiniClusterTestBase {
     
     //now start the cluster
     ServiceLauncher launcher2 = thawCluster(clustername, [], true);
-    SliderClient newCluster = launcher.getService() as SliderClient
+    SliderClient newCluster = launcher2.service
     newCluster.getClusterDescription(clustername);
     
     //freeze

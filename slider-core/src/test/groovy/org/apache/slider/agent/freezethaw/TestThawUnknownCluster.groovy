@@ -16,15 +16,14 @@
  *  limitations under the License.
  */
 
-package org.apache.slider.providers.hbase.minicluster.freezethaw
+package org.apache.slider.agent.freezethaw
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.slider.client.SliderClient
 import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
-import org.apache.slider.common.params.SliderActions
-import org.apache.slider.providers.hbase.minicluster.HBaseMiniClusterTestBase
-import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.core.main.ServiceLauncher
+import org.apache.slider.test.YarnZKMiniClusterTestBase
 import org.junit.Test
 
 /**
@@ -34,28 +33,21 @@ import org.junit.Test
 @CompileStatic
 @Slf4j
 
-class TestFreezeUnknownCluster extends HBaseMiniClusterTestBase {
+class TestThawUnknownCluster extends YarnZKMiniClusterTestBase {
 
   @Test
-  public void testFreezeUnknownCluster() throws Throwable {
-    String clustername = "test_start_unknown_cluster"
-    YarnConfiguration conf = getConfiguration()
-    createMiniCluster(clustername, conf, 1, true)
+  public void testThawUnknownCluster() throws Throwable {
+    String clustername = "test_thaw_unknown_cluster"
+    createMiniCluster(clustername, configuration, 1, true)
 
-    describe "try to freeze a cluster that isn't defined"
+    describe "try to start a cluster that isn't defined"
 
-    //we are secretly picking up the RM details from the configuration file
     try {
-      ServiceLauncher command = execSliderCommand(conf,
-                                                [
-                                                    SliderActions.ACTION_FREEZE,
-                                                    "no-such-cluster"
-                                                ]);
-      fail("Expected an error, got an exit code of ${command.serviceExitCode}")
+      ServiceLauncher<SliderClient> launcher = thawCluster(clustername, [], true);
+      fail("expected a failure, got ${launcher.serviceExitCode}")
     } catch (UnknownApplicationInstanceException e) {
-      //expected
+      assert e.toString().contains(clustername)
     }
   }
-
 
 }

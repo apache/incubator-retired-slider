@@ -50,7 +50,7 @@ class TestFreezeReconfigureThawLiveRegionService
     String clustername = "test_freeze_reconfigure_thaw_live_regionservice"
     int regionServerCount = 4
     int nodemanagers = 3
-    YarnConfiguration conf = getConfiguration()
+    YarnConfiguration conf = configuration
     //one vcore per node
     conf.setInt("yarn.nodemanager.resource.cpu-vcores", 1)
     createMiniCluster(clustername, conf, nodemanagers, true)
@@ -58,13 +58,13 @@ class TestFreezeReconfigureThawLiveRegionService
         "Create a $regionServerCount node cluster, freeze it, patch the configuration files," +
         " thaw it and verify that it came back with the new settings")
 
-    ServiceLauncher launcher = createHBaseCluster(
+    ServiceLauncher<SliderClient> launcher = createHBaseCluster(
         clustername,
         regionServerCount,
         [],
         true,
         true)
-    SliderClient sliderClient = (SliderClient) launcher.service
+    SliderClient sliderClient = launcher.service
     addToTeardown(sliderClient);
     ClusterDescription status = sliderClient.getClusterDescription(clustername)
     log.info("${status.toJsonString()}")
@@ -93,7 +93,7 @@ class TestFreezeReconfigureThawLiveRegionService
         sliderFileSystem,
         clusterDir)
 
-    def snapshotPath = instanceDefinition.getInternalOperations().get(
+    def snapshotPath = instanceDefinition.internalOperations.get(
         OptionKeys.INTERNAL_SNAPSHOT_CONF_PATH)
     assert snapshotPath != null
 
@@ -110,8 +110,8 @@ class TestFreezeReconfigureThawLiveRegionService
     ConfigHelper.saveConfig(dfs, hbaseSiteXML, originalConf);
 
     //now let's start the cluster up again
-    ServiceLauncher launcher2 = thawCluster(clustername, [], true);
-    SliderClient thawed = launcher2.service as SliderClient
+    ServiceLauncher<SliderClient> launcher2 = thawCluster(clustername, [], true);
+    SliderClient thawed = launcher2.service
     clustat = basicHBaseClusterStartupSequence(thawed)
 
     //get the options

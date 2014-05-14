@@ -16,43 +16,43 @@
  *  limitations under the License.
  */
 
-package org.apache.slider.providers.hbase.minicluster.masterless
+package org.apache.slider.agent.standalone
 
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.slider.agent.AgentMiniClusterTestBase
+import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderExitCodes
+import org.apache.slider.common.params.ActionEchoArgs
+import org.apache.slider.common.params.Arguments
+import org.apache.slider.common.params.SliderActions
+import org.apache.slider.common.tools.SliderFileSystem
 import org.apache.slider.core.exceptions.ErrorStrings
 import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
-import org.apache.slider.common.tools.SliderFileSystem
-import org.apache.slider.common.params.Arguments
-import org.apache.slider.common.params.ActionEchoArgs
-import org.apache.slider.common.params.CommonArgs
-import org.apache.slider.client.SliderClient
-import org.apache.slider.providers.hbase.minicluster.HBaseMiniClusterTestBase
 import org.apache.slider.core.main.ServiceLauncher
 import org.junit.Test
 
 /**
- * create masterless AMs and work with them. This is faster than
- * bringing up full clusters
+ * destroy a masterless AM
  */
-//@CompileStatic
+@CompileStatic
 @Slf4j
 
-class TestDestroyMasterlessAM extends HBaseMiniClusterTestBase {
+class TestDestroyMasterlessAM extends AgentMiniClusterTestBase {
 
   @Test
   public void testDestroyMasterlessAM() throws Throwable {
     String clustername = "test_destroy_masterless_am"
-    createMiniCluster(clustername, getConfiguration(), 1, true)
+    createMiniCluster(clustername, configuration, 1, false)
 
     describe "create a masterless AM, stop it, try to create" +
              "a second cluster with the same name, destroy it, try a third time"
 
-    ServiceLauncher launcher1 = launchClientAgainstMiniMR(
-        getConfiguration(),
+    ServiceLauncher<SliderClient> launcher1 = launchClientAgainstMiniMR(
+        configuration,
         [
-            CommonArgs.ACTION_DESTROY,
+            SliderActions.ACTION_DESTROY,
             "no-cluster-of-this-name",
             Arguments.ARG_FILESYSTEM, fsDefaultName,
         ])
@@ -60,16 +60,16 @@ class TestDestroyMasterlessAM extends HBaseMiniClusterTestBase {
 
 
 
-    ServiceLauncher launcher = createMasterlessAM(clustername, 0, true, true)
-    SliderClient sliderClient = (SliderClient) launcher.service
+    ServiceLauncher<SliderClient> launcher = createMasterlessAM(clustername, 0, true, true)
+    SliderClient sliderClient = launcher.service
     addToTeardown(sliderClient);
 
     SliderFileSystem sliderFileSystem = createSliderFileSystem()
-    def hdfs = sliderFileSystem.fileSystem
+    def fs = sliderFileSystem.fileSystem
     def instanceDir = sliderFileSystem.buildClusterDirPath(clustername)
 
     assertPathExists(
-        hdfs,
+        fs,
         "cluster path not found",
         instanceDir)
 
@@ -104,19 +104,16 @@ class TestDestroyMasterlessAM extends HBaseMiniClusterTestBase {
 
     describe "thaw expected to fail"
     //expect thaw to now fail
-    try {
-      launcher = launch(SliderClient,
-                        configuration,
-                        [
-                            CommonArgs.ACTION_THAW,
-                            clustername,
-                            Arguments.ARG_FILESYSTEM, fsDefaultName,
-                            Arguments.ARG_MANAGER, RMAddr,
-                        ])
-      fail("expected an exception")
-    } catch (UnknownApplicationInstanceException e) {
-      //expected
-    }
+    def ex = launchExpectingException(SliderClient,
+        configuration,
+        "",
+        [
+            SliderActions.ACTION_THAW,
+            clustername,
+            Arguments.ARG_FILESYSTEM, fsDefaultName,
+            Arguments.ARG_MANAGER, RMAddr,
+        ])
+    assert ex instanceof UnknownApplicationInstanceException
 
     describe "thaw completed, checking dir is still absent"
     sliderFileSystem.verifyDirectoryNonexistent(instanceDir)

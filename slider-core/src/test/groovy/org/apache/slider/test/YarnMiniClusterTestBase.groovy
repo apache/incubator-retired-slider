@@ -331,10 +331,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
   }
 
 
-  public void killServiceLaunchers(int value) {
-    killAM(value)
-  }
-
+  
   public YarnConfiguration getTestConfiguration() {
     YarnConfiguration conf = getConfiguration()
 

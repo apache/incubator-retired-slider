@@ -153,11 +153,11 @@ public class CoreFileSystem {
    */
   public void createClusterDirectories(InstancePaths instancePaths) throws
       IOException, SliderException {
-    Path clusterDirectory = instancePaths.instanceDir;
+    Path instanceDir = instancePaths.instanceDir;
 
-    verifyDirectoryNonexistent(clusterDirectory);
+    verifyDirectoryNonexistent(instanceDir);
     FsPermission clusterPerms = getInstanceDirectoryPermissions();
-    createWithPermissions(clusterDirectory, clusterPerms);
+    createWithPermissions(instanceDir, clusterPerms);
     createWithPermissions(instancePaths.snapshotConfPath, clusterPerms);
     createWithPermissions(instancePaths.generatedConfPath, clusterPerms);
     createWithPermissions(instancePaths.historyPath, clusterPerms);

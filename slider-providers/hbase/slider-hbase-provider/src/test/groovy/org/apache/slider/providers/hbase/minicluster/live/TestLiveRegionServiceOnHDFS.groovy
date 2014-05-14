@@ -39,14 +39,14 @@ class TestLiveRegionServiceOnHDFS extends HBaseMiniClusterTestBase {
   public void testLiveRegionServiceOnHDFS() throws Throwable {
     String clustername = "test_live_region_service_on_hdfs"
     int regionServerCount = 1
-    createMiniCluster(clustername, getConfiguration(), 1, 1, 1, true, true)
+    createMiniCluster(clustername, configuration, 1, 1, 1, true, true)
     describe(" Create a single region service cluster");
 
     //make sure that ZK is up and running at the binding string
     ZKIntegration zki = createZKIntegrationInstance(ZKBinding, clustername, false, false, 5000)
     //now launch the cluster
-    ServiceLauncher launcher = createHBaseCluster(clustername, regionServerCount, [], true, true)
-    SliderClient sliderClient = (SliderClient) launcher.service
+    ServiceLauncher<SliderClient> launcher = createHBaseCluster(clustername, regionServerCount, [], true, true)
+    SliderClient sliderClient = launcher.service
     addToTeardown(sliderClient);
     ClusterDescription status = sliderClient.getClusterDescription(clustername)
     log.info("${status.toJsonString()}")

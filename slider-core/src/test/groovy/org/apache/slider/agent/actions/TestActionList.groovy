@@ -16,37 +16,50 @@
  *  limitations under the License.
  */
 
-package org.apache.slider.providers.hbase.actions
+package org.apache.slider.agent.actions
 
 import groovy.util.logging.Slf4j
-import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
-import org.apache.slider.common.params.Arguments
-import org.apache.slider.common.params.SliderActions
-import org.apache.slider.client.SliderClient
-import org.apache.slider.providers.hbase.minicluster.HBaseMiniClusterTestBase
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.conf.YarnConfiguration
+import org.apache.slider.agent.AgentMiniClusterTestBase
+import org.apache.slider.client.SliderClient
+import org.apache.slider.common.params.Arguments
+import org.apache.slider.common.params.SliderActions
+import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
 import org.apache.slider.core.main.ServiceLauncher
 import org.junit.Before
 import org.junit.Test
 
 /**
- * Test of RM creation. This is so the later test's prereq's can be met
+ * Test List operations
  */
 @Slf4j
 
-class TestActionList extends HBaseMiniClusterTestBase {
+class TestActionList extends AgentMiniClusterTestBase {
 
   @Before
   public void setup() {
     super.setup()
-    createMiniCluster("testActionList", getConfiguration(), 1, false)
+    createMiniCluster("testActionList", configuration, 1, false)
+  }
+
+  /**
+   * This is a test suite to run the tests against a single cluster instance
+   * for faster test runs
+   * @throws Throwable
+   */
+
+  @Test
+  public void testSuite() throws Throwable {
+    testListThisUserNoClusters()
+    testListAllUsersNoClusters()
+    testListLiveCluster()
+    testListMissingCluster()
   }
   
-  @Test
   public void testListThisUserNoClusters() throws Throwable {
     log.info("RM address = ${RMAddr}")
-    ServiceLauncher launcher = launchClientAgainstMiniMR(
+    ServiceLauncher<SliderClient> launcher = launchClientAgainstMiniMR(
         //config includes RM binding info
         new YarnConfiguration(miniCluster.config),
         //varargs list of command line params
@@ -56,13 +69,11 @@ class TestActionList extends HBaseMiniClusterTestBase {
         ]
     )
     assert launcher.serviceExitCode == 0
-    SliderClient sliderClient = (SliderClient) launcher.service
   }
   
-  @Test
   public void testListAllUsersNoClusters() throws Throwable {
     log.info("RM address = ${RMAddr}")
-    ServiceLauncher launcher = launchClientAgainstMiniMR(
+    ServiceLauncher<SliderClient> launcher = launchClientAgainstMiniMR(
         //config includes RM binding info
         new YarnConfiguration(miniCluster.config),
         //varargs list of command line params
@@ -74,12 +85,14 @@ class TestActionList extends HBaseMiniClusterTestBase {
     assert launcher.serviceExitCode == 0
   }
 
-  @Test
   public void testListLiveCluster() throws Throwable {
     //launch the cluster
     String clustername = "test_list_live_cluster"
-    ServiceLauncher launcher = createMasterlessAM(clustername, 0, true, false)
-    ApplicationReport report = waitForClusterLive((SliderClient) launcher.service)
+    ServiceLauncher<SliderClient> launcher = createMasterlessAM(clustername, 0, true, false)
+    addToTeardown(launcher)
+    //do the low level operations to get a better view of what is going on 
+    SliderClient sliderClient = launcher.service
+    waitForClusterLive(sliderClient)
 
     //now list
     launcher = launchClientAgainstMiniMR(
@@ -93,8 +106,7 @@ class TestActionList extends HBaseMiniClusterTestBase {
     assert launcher.serviceExitCode == 0
     //now look for the explicit sevice
     
-    //do the low level operations to get a better view of what is going on 
-    SliderClient sliderClient = launcher.service
+
     def serviceRegistryClient = sliderClient.YARNRegistryClient
     ApplicationReport instance = serviceRegistryClient.findInstance(clustername)
     assert instance != null
@@ -112,15 +124,10 @@ class TestActionList extends HBaseMiniClusterTestBase {
 
   }
 
-
-
-  @Test
   public void testListMissingCluster() throws Throwable {
-    describe("create exec the status command against an unknown cluster")
-    //launch fake master
-    //launch the cluster
-    //exec the status command
-    ServiceLauncher launcher
+    describe("exec the status command against an unknown cluster")
+
+    ServiceLauncher<SliderClient> launcher
     try {
       launcher = launchClientAgainstMiniMR(
           //config includes RM binding info

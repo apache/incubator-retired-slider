@@ -37,16 +37,21 @@ class TestLiveClusterFromArchive extends HBaseMiniClusterTestBase {
 
   @Test
   public void testLiveClusterFromArchive() throws Throwable {
-    String clustername = getTestClusterName()
+    String clustername = testClusterName
     int regionServerCount = 1
-    createMiniCluster(clustername, getConfiguration(), regionServerCount + 1, 1, 1, true,
-                      startHDFS())
+    createMiniCluster(clustername,
+        configuration,
+        regionServerCount + 1,
+        1,
+        1,
+        true,
+        startHDFS())
 
     //now launch the cluster
     setupImageToDeploy()
-    ServiceLauncher launcher = createHBaseCluster(clustername, regionServerCount, [], true, true)
+    ServiceLauncher<SliderClient> launcher = createHBaseCluster(clustername, regionServerCount, [], true, true)
 
-    SliderClient sliderClient = (SliderClient) launcher.service
+    SliderClient sliderClient = launcher.service
     ClusterStatus clustat = basicHBaseClusterStartupSequence(sliderClient)
 
     //get the hbase status

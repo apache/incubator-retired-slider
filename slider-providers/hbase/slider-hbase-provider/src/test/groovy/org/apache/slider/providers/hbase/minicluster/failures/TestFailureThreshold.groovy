@@ -68,7 +68,8 @@ class TestFailureThreshold extends HBaseMiniClusterTestBase {
         regionServerCount,
         [
             Arguments.ARG_OPTION, OptionKeys.INTERNAL_CONTAINER_FAILURE_THRESHOLD,
-            Integer.toString(threshold)],
+            Integer.toString(threshold)
+        ],
         true,
         true)
     SliderClient client = launcher.service

@@ -16,34 +16,36 @@
  *  limitations under the License.
  */
 
-package org.apache.slider.providers.hbase.actions
+package org.apache.slider.agent.actions
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.slider.core.main.LauncherExitCodes
-import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
-import org.apache.slider.common.params.Arguments
-import org.apache.slider.common.params.SliderActions
-import org.apache.slider.client.SliderClient
-import org.apache.slider.providers.hbase.minicluster.HBaseMiniClusterTestBase
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.conf.YarnConfiguration
+import org.apache.slider.agent.AgentMiniClusterTestBase
+import org.apache.slider.client.SliderClient
+import org.apache.slider.common.params.Arguments
+import org.apache.slider.common.params.SliderActions
+import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
+import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.core.main.ServiceLauncher
+import org.apache.slider.test.SliderTestUtils
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
 /**
- * Test of RM creation. This is so the later test's prereq's can be met
+ * existence tests
  */
 @CompileStatic
 @Slf4j
 
-class TestActionExists extends HBaseMiniClusterTestBase {
+class TestActionExists extends AgentMiniClusterTestBase {
 
   @Before
   public void setup() {
     super.setup()
-    createMiniCluster("TestActionExists", getConfiguration(), 1, false)
+    createMiniCluster("TestActionExists", configuration, 1, false)
   }
   
   @Test
@@ -60,7 +62,7 @@ class TestActionExists extends HBaseMiniClusterTestBase {
           Arguments.ARG_MANAGER, RMAddr
           ],
       )
-      fail("expected an exception, got a status code "+ launcher.serviceExitCode)
+      Assert.fail("expected an exception, got a status code "+ launcher.serviceExitCode)
     } catch (UnknownApplicationInstanceException e) {
       
     }
@@ -86,7 +88,7 @@ class TestActionExists extends HBaseMiniClusterTestBase {
           Arguments.ARG_MANAGER, RMAddr
           ],
       )
-    assertSucceeded(launcher)
+    SliderTestUtils.assertSucceeded(launcher)
 
     //and when cluster is running
     launcher = launchClientAgainstMiniMR(
@@ -101,7 +103,7 @@ class TestActionExists extends HBaseMiniClusterTestBase {
           ],
       )
 
-    assertSucceeded(launcher)
+    SliderTestUtils.assertSucceeded(launcher)
     
     // assert that the cluster exists
 

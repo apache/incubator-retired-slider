@@ -37,8 +37,7 @@ class TestClusterFlex2DownTo1 extends HBaseMiniClusterTestBase {
         "test_cluster_flex_2_down_to_1",
         1, 1,
         2,
-        1
-        ,
+        1,
         false)
   }
 

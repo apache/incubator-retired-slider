@@ -16,11 +16,14 @@
  *  limitations under the License.
  */
 
-package org.apache.slider.providers.hbase.actions
+package org.apache.slider.agent.actions
 
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.api.ClusterDescription
+import org.apache.slider.common.params.SliderActions
 import org.apache.slider.core.exceptions.BadClusterStateException
 import org.apache.slider.core.exceptions.ErrorStrings
 import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
@@ -28,19 +31,19 @@ import org.apache.slider.common.params.Arguments
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.params.ActionStatusArgs
 import org.apache.slider.common.params.ClientArgs
-import org.apache.slider.providers.hbase.minicluster.HBaseMiniClusterTestBase
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.conf.YarnConfiguration
+import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.core.main.ServiceLauncher
 import org.junit.Before
 import org.junit.Test
 
 /**
- * Test of RM creation. This is so the later test's prereq's can be met
+ * status operations
  */
-//@CompileStatic
+@CompileStatic
 @Slf4j
-class TestActionStatus extends HBaseMiniClusterTestBase {
+class TestActionStatus extends AgentMiniClusterTestBase {
 
   @Before
   public void setup() {
@@ -48,19 +51,26 @@ class TestActionStatus extends HBaseMiniClusterTestBase {
     createMiniCluster("test_action_status", configuration, 1, false)
   }
 
+  /**
+   * This is a test suite to run the tests against a single cluster instance
+   * for faster test runs
+   * @throws Throwable
+   */
+
   @Test
+  public void testSuite() throws Throwable {
+    testStatusLiveCluster()
+    testStatusMissingCluster()
+  }
+
   public void testStatusMissingCluster() throws Throwable {
     describe("create exec the status command against an unknown cluster")
-    //launch fake master
-    //launch the cluster
-    //exec the status command
+
     try {
-      ServiceLauncher launcher = launchClientAgainstMiniMR(
-          //config includes RM binding info
+      ServiceLauncher<SliderClient> launcher = launchClientAgainstMiniMR(
           new YarnConfiguration(miniCluster.config),
-          //varargs list of command line params
           [
-              ClientArgs.ACTION_STATUS,
+              SliderActions.ACTION_STATUS,
               "test_status_missing_cluster",
               Arguments.ARG_MANAGER, RMAddr
           ]
@@ -72,25 +82,22 @@ class TestActionStatus extends HBaseMiniClusterTestBase {
 
   }
   
-  @Test
   public void testStatusLiveCluster() throws Throwable {
     describe("create a live cluster then exec the status command")
-    //launch fake master
     String clustername = "test_status_live_cluster"
     
     //launch the cluster
-    ServiceLauncher launcher = createMasterlessAM(clustername, 0, true, false)
+    ServiceLauncher<SliderClient> launcher = createMasterlessAM(clustername, 0, true, false)
 
-    ApplicationReport report = waitForClusterLive(launcher.service)
+    SliderClient sliderClient = launcher.service
+    ApplicationReport report = waitForClusterLive(sliderClient)
 
-    //do the low level operations to get a better view of what is going on 
-    SliderClient sliderClient = (SliderClient) launcher.service
 
     //now look for the explicit sevice
 
     ActionStatusArgs statusArgs = new ActionStatusArgs()
     int status = sliderClient.actionStatus(clustername, statusArgs)
-    assert status == SliderExitCodes.EXIT_SUCCESS
+    assert 0 == status
 
     //now exec the status command
     ServiceLauncher statusLauncher = launchClientAgainstMiniMR(
@@ -98,7 +105,7 @@ class TestActionStatus extends HBaseMiniClusterTestBase {
         new YarnConfiguration(miniCluster.config),
         //varargs list of command line params
         [
-            ClientArgs.ACTION_STATUS,
+            SliderActions.ACTION_STATUS,
             clustername,
             Arguments.ARG_MANAGER, RMAddr,
         ]
@@ -121,7 +128,7 @@ class TestActionStatus extends HBaseMiniClusterTestBase {
         new YarnConfiguration(miniCluster.config),
         //varargs list of command line params
         [
-            ClientArgs.ACTION_STATUS,
+            SliderActions.ACTION_STATUS,
             clustername,
             Arguments.ARG_MANAGER, RMAddr,
             Arguments.ARG_OUTPUT, path
@@ -140,7 +147,8 @@ class TestActionStatus extends HBaseMiniClusterTestBase {
       status = sliderClient.actionStatus(clustername, new ActionStatusArgs())
       fail("expected an exception, but got the status $status")
     } catch (BadClusterStateException e) {
-      assert e.toString().contains(ErrorStrings.E_APPLICATION_NOT_RUNNING)
+      assertExceptionDetails(e, SliderExitCodes.EXIT_BAD_STATE,
+          ErrorStrings.E_APPLICATION_NOT_RUNNING)
     }
   }
 

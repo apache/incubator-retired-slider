@@ -39,11 +39,11 @@ class TestBuildThawClusterM1W1 extends HBaseMiniClusterTestBase {
   @Test
   public void test_build_thaw_cluster_m1_w1() throws Throwable {
     String clustername = "test_build_thaw_cluster_m1_w1"
-    createMiniCluster(clustername, getConfiguration(), 1, true)
+    createMiniCluster(clustername, configuration, 1, true)
 
     describe "verify that a built cluster can be thawed"
 
-    ServiceLauncher launcher = createOrBuildCluster(
+    ServiceLauncher<SliderClient> launcher = createOrBuildCluster(
         SliderActions.ACTION_BUILD,
         clustername,
         [
@@ -56,17 +56,17 @@ class TestBuildThawClusterM1W1 extends HBaseMiniClusterTestBase {
         true,
         false,
         [:])
-    SliderClient sliderClient = (SliderClient) launcher.service
+    SliderClient sliderClient = launcher.service
     addToTeardown(sliderClient);
     def serviceRegistryClient = sliderClient.YARNRegistryClient
     ApplicationReport report = serviceRegistryClient.findInstance(clustername)
     assert report == null;
 
     //thaw time
-    ServiceLauncher l2 = thawCluster(clustername, [], true)
-    SliderClient client2 = (SliderClient) l2.service
-    addToTeardown(client2);
-    waitForClusterLive(l2.service as SliderClient)
+    ServiceLauncher<SliderClient> l2 = thawCluster(clustername, [], true)
+    SliderClient thawed = l2.service
+    addToTeardown(thawed);
+    waitForClusterLive(thawed)
   }
 
 }

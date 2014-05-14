@@ -16,13 +16,15 @@
  *  limitations under the License.
  */
 
-package org.apache.slider.providers.hbase.minicluster.masterless
+package org.apache.slider.agent.freezethaw
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.slider.core.exceptions.SliderException
+import org.apache.hadoop.yarn.conf.YarnConfiguration
+import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.client.SliderClient
-import org.apache.slider.providers.hbase.minicluster.HBaseMiniClusterTestBase
+import org.apache.slider.common.params.SliderActions
+import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
 import org.apache.slider.core.main.ServiceLauncher
 import org.junit.Test
 
@@ -33,31 +35,26 @@ import org.junit.Test
 @CompileStatic
 @Slf4j
 
-class TestCreateDuplicateLiveCluster extends HBaseMiniClusterTestBase {
+class TestFreezeUnknownCluster extends AgentMiniClusterTestBase {
 
-    @Test
-    public void testCreateClusterRunning() throws Throwable {
-      String clustername = "test_create_duplicate_live_cluster"
-      createMiniCluster(clustername, getConfiguration(), 1, true)
+  @Test
+  public void testFreezeUnknownCluster() throws Throwable {
+    String clustername = "test_start_unknown_cluster"
+    YarnConfiguration conf = configuration
+    createMiniCluster(clustername, conf, 1, true)
 
-      describe "create a masterless AM, while it is running, try to create" +
-               "a second cluster with the same name"
+    describe "try to freeze a cluster that isn't defined"
 
-      //launch fake master
-      ServiceLauncher launcher
-      launcher = createMasterlessAM(clustername, 0, true, true)
-      SliderClient sliderClient = (SliderClient) launcher.service
-      addToTeardown(sliderClient);
-
-      //now try to create instance #2, and expect an in-use failure
     try {
-      createMasterlessAM(clustername, 0, false, true)
-      fail("expected a failure")
-    } catch (SliderException e) {
-      assertFailureClusterInUse(e);
+      ServiceLauncher<SliderClient>  command = execSliderCommand(conf,
+                                                [
+                                                    SliderActions.ACTION_FREEZE,
+                                                    "no-such-cluster"
+                                                ]);
+      fail("Expected an error, got an exit code of ${command.serviceExitCode}")
+    } catch (UnknownApplicationInstanceException e) {
+      //expected
     }
-
-
   }
 
 

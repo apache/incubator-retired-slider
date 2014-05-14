@@ -31,7 +31,6 @@ import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.registry.info.ServiceInstanceData
 import org.apache.slider.server.services.curator.CuratorServiceInstance
-import org.apache.slider.server.services.curator.RegistryBinderService
 import org.apache.slider.server.services.registry.SliderRegistryService
 import org.junit.Test
 
@@ -47,8 +46,8 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     //launch fake master
     String clustername = "test_standalone_agent_am"
     createMiniCluster(clustername, configuration, 1, true)
-    ServiceLauncher<SliderClient> launcher
-    launcher = createMasterlessAM(clustername, 0, true, false)
+    ServiceLauncher<SliderClient> launcher =
+        createMasterlessAM(clustername, 0, true, false)
     SliderClient client = launcher.service
     addToTeardown(client);
 
@@ -138,8 +137,6 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     ApplicationReport instance2 = serviceRegistryClient.findInstance(
         clustername)
     assert i2AppID == instance2.applicationId
-
-
 
     describe("attempting to create instance #3")
     //now try to create instance #3, and expect an in-use failure

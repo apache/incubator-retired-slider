@@ -16,37 +16,34 @@
  *  limitations under the License.
  */
 
-package org.apache.slider.providers.hbase.minicluster.freezethaw
+package org.apache.slider.agent.standalone
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
-import org.apache.slider.test.YarnZKMiniClusterTestBase
-import org.apache.slider.core.main.ServiceLauncher
+import org.apache.slider.agent.AgentMiniClusterTestBase
+import org.apache.slider.core.main.LauncherExitCodes
+import org.apache.slider.core.main.ServiceLaunchException
 import org.junit.Test
 
-/**
- * create masterless AMs and work with them. This is faster than
- * bringing up full clusters
- */
 @CompileStatic
 @Slf4j
 
-class TestThawUnknownCluster extends YarnZKMiniClusterTestBase {
+class TestStandaloneBadClusterName extends AgentMiniClusterTestBase {
 
   @Test
-  public void testThawUnknownCluster() throws Throwable {
-    String clustername = "test_thaw_unknown_cluster"
-    createMiniCluster(clustername, getConfiguration(), 1, true)
+  public void testStandaloneBadClusterName() throws Throwable {
+    String clustername = "TestStandaloneBadClusterName"
+    createMiniCluster(clustername, configuration, 1, true)
 
-    describe "try to start a cluster that isn't defined"
+    describe "verify that bad cluster names are picked up"
 
     try {
-      ServiceLauncher launcher = thawCluster(clustername, [], true);
-      fail("expected a failure, got ${launcher.serviceExitCode}")
-    } catch (UnknownApplicationInstanceException e) {
-      assert e.toString().contains(clustername)
+      addToTeardown(createMasterlessAM(clustername, 0, true, false).service);
+      fail("expected a failure")
+    } catch (ServiceLaunchException e) {
+      assertExceptionDetails(e, LauncherExitCodes.EXIT_COMMAND_ARGUMENT_ERROR)
     }
+    
   }
 
 }

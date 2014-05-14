@@ -230,9 +230,9 @@ public class InstanceBuilder {
    * @param appconfdir
    */
   public void persist(Path appconfdir) throws
-                                       IOException,
+      IOException,
       SliderException,
-                                       LockAcquireFailedException {
+      LockAcquireFailedException {
     coreFS.createClusterDirectories(instancePaths);
     ConfPersister persister =
       new ConfPersister(coreFS, getInstanceDir());

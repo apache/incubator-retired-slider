@@ -43,15 +43,15 @@ class TestFreezeThawLiveRegionService extends HBaseMiniClusterTestBase {
   public void testFreezeThawLiveRegionService() throws Throwable {
     String clustername = "test_freeze_thaw_live_regionservice"
     int regionServerCount = 2
-    createMiniCluster(clustername, getConfiguration(), 1, true)
+    createMiniCluster(clustername, configuration, 1, true)
     describe("Create a cluster, freeze it, thaw it and verify that it came back ")
     //use a smaller AM HEAP to include it in the test cycle
     ServiceLauncher launcher = createHBaseCluster(clustername, regionServerCount,
-          [
-              Arguments.ARG_COMP_OPT, SliderKeys.COMPONENT_AM, RoleKeys.JVM_HEAP, "96M",
-          ],
-                                                  true, true)
-    SliderClient sliderClient = (SliderClient) launcher.service
+        [
+            Arguments.ARG_COMP_OPT, SliderKeys.COMPONENT_AM, RoleKeys.JVM_HEAP, "96M",
+        ],
+        true, true)
+    SliderClient sliderClient = launcher.service
     addToTeardown(sliderClient);
     ClusterDescription status = sliderClient.getClusterDescription(clustername)
     log.info("${status.toJsonString()}")
@@ -66,8 +66,8 @@ class TestFreezeThawLiveRegionService extends HBaseMiniClusterTestBase {
 
     //verify you can't start a new cluster with that name
     try {
-      ServiceLauncher launcher3 = createHBaseCluster(clustername, regionServerCount, [], false, false)
-      SliderClient cluster3 = launcher3.service as SliderClient
+      ServiceLauncher<SliderClient> launcher3 = createHBaseCluster(clustername, regionServerCount, [], false, false)
+      SliderClient cluster3 = launcher3.service
       fail("expected a failure, got ${cluster3}")
     } catch (SliderException e) {
       assert e.exitCode == SliderExitCodes.EXIT_APPLICATION_IN_USE;

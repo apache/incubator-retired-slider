@@ -26,7 +26,6 @@ import org.apache.slider.providers.hbase.minicluster.HBaseMiniClusterTestBase
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.registry.info.ServiceInstanceData
 import org.apache.slider.server.services.curator.CuratorServiceInstance
-import org.apache.slider.server.services.curator.RegistryBinderService
 import org.apache.slider.server.services.registry.SliderRegistryService
 import org.junit.Test
 

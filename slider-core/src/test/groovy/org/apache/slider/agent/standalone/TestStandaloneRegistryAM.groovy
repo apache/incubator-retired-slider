@@ -38,7 +38,6 @@ import org.apache.slider.core.registry.retrieve.RegistryRetriever
 import org.apache.slider.server.appmaster.PublishedArtifacts
 import org.apache.slider.server.appmaster.web.rest.RestPaths
 import org.apache.slider.server.services.curator.CuratorServiceInstance
-import org.apache.slider.server.services.curator.RegistryBinderService
 import org.apache.slider.server.services.registry.SliderRegistryService
 import org.junit.Test
 

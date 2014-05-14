@@ -42,12 +42,12 @@ class TestKilledHBaseMaster extends HBaseMiniClusterTestBase {
   public void testKilledHBaseMaster() throws Throwable {
     String clustername = "test_killed_hbase_master"
     int regionServerCount = 1
-    createMiniCluster(clustername, getConfiguration(), 1, 1, 1, true, true)
+    createMiniCluster(clustername, configuration, 1, 1, 1, true, true)
     describe("Kill the hbase master and expect a restart");
 
     //now launch the cluster
-    ServiceLauncher launcher = createHBaseCluster(clustername, regionServerCount, [], true, true)
-    SliderClient sliderClient = (SliderClient) launcher.service
+    ServiceLauncher<SliderClient> launcher = createHBaseCluster(clustername, regionServerCount, [], true, true)
+    SliderClient sliderClient = launcher.service
     addToTeardown(sliderClient);
     ClusterDescription status = sliderClient.getClusterDescription(clustername)
 

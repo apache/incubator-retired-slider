@@ -28,6 +28,8 @@ import org.apache.slider.providers.agent.AgentKeys
 import org.apache.slider.test.YarnZKMiniClusterTestBase
 import org.junit.BeforeClass
 
+import javax.swing.ListModel
+
 /**
  * test base for agent clusters
  */
@@ -35,10 +37,10 @@ import org.junit.BeforeClass
 @Slf4j
 public abstract class AgentMiniClusterTestBase
     extends YarnZKMiniClusterTestBase {
-  private static File agentConf
-  private static File agentDef
-  private static File imagePath
-
+  protected static File agentConf
+  protected static File agentDef
+  protected static File imagePath
+  protected static Map<String, String> agentDefOptions 
 
   @BeforeClass
   public static void createSubConfFiles() {
@@ -50,7 +52,12 @@ public abstract class AgentMiniClusterTestBase
     agentDef.createNewFile()
     File slider_dir = new File(new File(".").absoluteFile, "src/test/python");
     imagePath = new File(slider_dir, "appdef_1.zip")
+    agentDefOptions = [
+        (AgentKeys.APP_DEF)   : imagePath.toURI().toString(),
+        (AgentKeys.AGENT_CONF): agentConf.toURI().toString()
+    ]
   }
+
   @Override
   public String getTestConfigurationPath() {
     return "src/main/resources/" + AgentKeys.CONF_RESOURCE;
@@ -104,17 +111,37 @@ public abstract class AgentMiniClusterTestBase
       int size,
       boolean deleteExistingData,
       boolean blockUntilRunning) {
+    List<String> args = [];
+    return createMasterlessAMWithArgs(
+        clustername,
+        args,
+        deleteExistingData,
+        blockUntilRunning)
+  }
+
+/**
+ * Create an AM without a master
+ * @param clustername AM name
+ * @param extraArgs extra arguments
+ * @param size # of nodes
+ * @param deleteExistingData should any existing cluster data be deleted
+ * @param blockUntilRunning block until the AM is running
+ * @return launcher which will have executed the command.
+ */
+  public ServiceLauncher<SliderClient> createMasterlessAMWithArgs(
+      String clustername,
+      List<String> extraArgs,
+      boolean deleteExistingData,
+      boolean blockUntilRunning) {
+    if (hdfsCluster) {
+      fail("Agent tests do not (currently) work with mini HDFS cluster")
+    }
     return createCluster(clustername,
         [:],
-        [
-
-        ],
+        extraArgs,
         deleteExistingData,
         blockUntilRunning,
-        [
-            (AgentKeys.APP_DEF): imagePath.toURI().toString(),
-            (AgentKeys.AGENT_CONF): agentConf.toURI().toString()
-        ])
+        agentDefOptions)
   }
 
 }

@@ -84,9 +84,6 @@ class TestSliderConfDirToMasterlessAM extends HBaseMiniClusterTestBase {
       SliderUtils.deleteDirectoryTree(localConf)
     }
 
-
-
   }
-
 
 }

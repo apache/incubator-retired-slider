@@ -16,70 +16,57 @@
  *  limitations under the License.
  */
 
-package org.apache.slider.providers.hbase.minicluster.masterless
+package org.apache.slider.agent.standalone
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.slider.providers.hbase.HBaseKeys
-import org.apache.slider.client.SliderClient
-import org.apache.slider.providers.hbase.minicluster.HBaseMiniClusterTestBase
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
+import org.apache.slider.agent.AgentMiniClusterTestBase
+import org.apache.slider.client.SliderClient
+import org.apache.slider.common.SliderXmlConfKeys
+import org.apache.slider.common.params.Arguments
 import org.apache.slider.core.main.ServiceLauncher
 import org.junit.Test
 
-import static org.apache.slider.providers.hbase.HBaseKeys.PROVIDER_HBASE
-import static org.apache.slider.common.params.Arguments.*
-
 /**
- * create masterless AMs and work with them. This is faster than
- * bringing up full clusters
+ * kill a masterless AM and verify it shuts down. This test
+ * also sets the retry count to 1 to stop recreation attempts
  */
 @CompileStatic
 @Slf4j
 
-class TestKillMasterlessAM extends HBaseMiniClusterTestBase {
+class TestKillMasterlessAM extends AgentMiniClusterTestBase {
 
 
   @Test
   public void testKillMasterlessAM() throws Throwable {
     String clustername = "test_kill_masterless_am"
-    createMiniCluster(clustername, getConfiguration(), 1, true)
+    createMiniCluster(clustername, configuration, 1, true)
 
     describe "kill a masterless AM and verify that it shuts down"
-
-    Map<String, Integer> roles = [
-        (HBaseKeys.ROLE_MASTER): 0,
-        (HBaseKeys.ROLE_WORKER): 0,
-    ]
-    ServiceLauncher launcher = createCluster(clustername,
-        roles,
-        [
-/*
-            ARG_COMP_OPT, SliderKeys.COMPONENT_AM,
-            RoleKeys.JVM_OPTS, "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005",
-*/
-            ARG_PROVIDER, PROVIDER_HBASE
-        ],
-        true,
-        true,
-        [:])
-    SliderClient sliderClient = (SliderClient) launcher.service
+    ServiceLauncher<SliderClient> launcher =
+        createMasterlessAMWithArgs(clustername,
+          [
+              Arguments.ARG_OPTION, SliderXmlConfKeys.KEY_AM_RESTART_LIMIT, "1"
+          ],
+          true,
+          false)
+    SliderClient sliderClient = launcher.service
     addToTeardown(sliderClient);
-    describe("listing services")
+    ApplicationReport report = waitForClusterLive(sliderClient)
+
+    describe("listing Java processes")
     lsJavaProcesses();
-    describe("killing services")
-    killServiceLaunchers(SIGTERM);
+    describe("killing AM")
+    killAM(SIGTERM);
     waitWhileClusterLive(sliderClient);
     //give yarn some time to notice
-    sleep(2000)
+    sleep(10000)
     describe("final listing")
     lsJavaProcesses();
-    ApplicationReport report = sliderClient.applicationReport
-    assert report.yarnApplicationState == YarnApplicationState.FAILED;
-
-
-
+    report = sliderClient.applicationReport
+    assert YarnApplicationState.FAILED == report.yarnApplicationState;
     clusterActionFreeze(sliderClient, clustername)
   }
 

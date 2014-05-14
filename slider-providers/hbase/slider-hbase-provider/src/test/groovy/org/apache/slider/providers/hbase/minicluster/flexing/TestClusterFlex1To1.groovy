@@ -38,8 +38,7 @@ class TestClusterFlex1To1 extends HBaseMiniClusterTestBase {
         1,
         1,
         1,
-        1
-        ,
+        1,
         true)
   }
 

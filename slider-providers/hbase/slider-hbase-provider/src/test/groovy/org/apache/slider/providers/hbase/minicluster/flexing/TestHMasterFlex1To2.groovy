@@ -37,8 +37,7 @@ class TestHMasterFlex1To2 extends HBaseMiniClusterTestBase {
         1,
         2,
         1,
-        1
-        ,
+        1,
         true)
   }
 

@@ -232,7 +232,7 @@ public class ConfPersister {
 
 
   private void maybeExecLockHeldAction(LockHeldAction action) throws
-                                                              IOException,
+      IOException,
       SliderException {
     if (action != null) {
       action.execute();
@@ -247,9 +247,9 @@ public class ConfPersister {
    * @throws LockAcquireFailedException the lock could not be acquired
    */
   public void save(AggregateConf conf, LockHeldAction action) throws
-                                        IOException,
+      IOException,
       SliderException,
-                                        LockAcquireFailedException {
+      LockAcquireFailedException {
     acquireWritelock();
     try {
       saveConf(conf);
@@ -268,10 +268,10 @@ public class ConfPersister {
    * @throws LockAcquireFailedException the lock could not be acquired
    */
   public void load(AggregateConf conf) throws
-                                       FileNotFoundException,
-                                        IOException,
+      FileNotFoundException,
+      IOException,
       SliderException,
-                                        LockAcquireFailedException {
+      LockAcquireFailedException {
     boolean owner = acquireReadLock();
     try {
       loadConf(conf);

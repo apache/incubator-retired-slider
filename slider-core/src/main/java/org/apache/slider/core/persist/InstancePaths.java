@@ -44,7 +44,7 @@ public class InstancePaths {
     historyPath = new Path(instanceDir, SliderKeys.HISTORY_DIR_NAME);
     dataPath = new Path(instanceDir, SliderKeys.DATA_DIR_NAME);
     tmpPath = new Path(instanceDir, SliderKeys.TMP_DIR_PREFIX);
-    tmpPathAM = new Path(tmpPath, "appmaster");
+    tmpPathAM = new Path(tmpPath, SliderKeys.AM_DIR_PREFIX);
   }
 
   @Override

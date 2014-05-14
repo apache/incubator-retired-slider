@@ -43,13 +43,13 @@ class Test2Master2RS extends HBaseMiniClusterTestBase {
 
     String clustername = "test2master2rs"
     int regionServerCount = 2
-    createMiniCluster(clustername, getConfiguration(), 1, 1, 1, true, false)
+    createMiniCluster(clustername, configuration, 1, 1, 1, true, false)
 
     describe(" Create a two master, two region service cluster");
     //now launch the cluster
     int masterCount = 2
 
-    ServiceLauncher launcher = createHBaseCluster(
+    ServiceLauncher<SliderClient> launcher = createHBaseCluster(
         clustername,
         masterCount,
         regionServerCount,
@@ -57,7 +57,7 @@ class Test2Master2RS extends HBaseMiniClusterTestBase {
         true,
         true)
     
-    SliderClient sliderClient = (SliderClient) launcher.service
+    SliderClient sliderClient = launcher.service
     addToTeardown(sliderClient);
     ClusterDescription status = sliderClient.getClusterDescription(clustername)
     log.info("${status.toJsonString()}")

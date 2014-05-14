@@ -16,7 +16,7 @@
  *  limitations under the License.
  */
 
-package org.apache.slider.providers.hbase.actions
+package org.apache.slider.agent.actions
 
 import groovy.util.logging.Slf4j
 import org.apache.slider.common.params.SliderActions
@@ -33,11 +33,6 @@ import org.junit.Test
 
 class TestActionVersion extends YarnMiniClusterTestBase {
 
-  @Before
-  public void setup() {
-    super.setup()
-  }
-  
   @Test
   public void testVersion() throws Throwable {
     

@@ -51,12 +51,12 @@ class TestFailedRegionService extends HBaseMiniClusterTestBase {
     String clustername = testName
     String action = toKill ? "kill" : "stop"
     int regionServerCount = 2
-    createMiniCluster(clustername, getConfiguration(), 1, 1, 1, true, true)
+    createMiniCluster(clustername, configuration, 1, 1, 1, true, true)
     describe("Create a single region service cluster then " + action + " the RS");
 
     //now launch the cluster
-    ServiceLauncher launcher = createHBaseCluster(clustername, regionServerCount, [], true, true)
-    SliderClient sliderClient = (SliderClient) launcher.service
+    ServiceLauncher<SliderClient> launcher = createHBaseCluster(clustername, regionServerCount, [], true, true)
+    SliderClient sliderClient = launcher.service
     addToTeardown(sliderClient);
     ClusterDescription status = sliderClient.getClusterDescription(clustername)
 
@@ -90,7 +90,7 @@ class TestFailedRegionService extends HBaseMiniClusterTestBase {
     
     hbaseStat = waitForHBaseRegionServerCount(sliderClient, clustername, regionServerCount, hbaseClusterStartupToLiveTime)
 
-    status = sliderClient.getClusterDescription()
+    status = sliderClient.clusterDescription
     assert status.roles[HBaseKeys.ROLE_WORKER][RoleKeys.ROLE_FAILED_INSTANCES] == "2"
 
     log.info("Updated cluster status : ${hbaseStatusToString(hbaseStat)}");
@@ -107,7 +107,7 @@ class TestFailedRegionService extends HBaseMiniClusterTestBase {
         sliderClient,
         regionServerCount,
         hbaseClusterStartupToLiveTime)
-    status = sliderClient.getClusterDescription()
+    status = sliderClient.clusterDescription
     assert status.roles[HBaseKeys.ROLE_WORKER][RoleKeys.ROLE_FAILED_INSTANCES] == "3"
   }
 

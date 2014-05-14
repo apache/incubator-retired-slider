@@ -64,7 +64,7 @@ public abstract class HBaseMiniClusterTestBase extends YarnZKMiniClusterTestBase
   @Override
   void setup() {
     super.setup()
-    def testConf = getTestConfiguration()
+    def testConf = testConfiguration
     assumeBoolOption(testConf, KEY_TEST_HBASE_ENABLED, true)
     assumeArchiveDefined();
     assumeApplicationHome();
@@ -280,7 +280,7 @@ public abstract class HBaseMiniClusterTestBase extends YarnZKMiniClusterTestBase
       int workers,
       int flexTarget,
       boolean testHBaseAfter) {
-    createMiniCluster(clustername, getConfiguration(),
+    createMiniCluster(clustername, configuration,
                       1,
                       true);
     //now launch the cluster

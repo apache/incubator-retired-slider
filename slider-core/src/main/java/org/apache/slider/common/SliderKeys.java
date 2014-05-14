@@ -137,6 +137,7 @@ public interface SliderKeys extends SliderXmlConfKeys {
 
   String TMP_LOGDIR_PREFIX = "/tmp/slider-";
   String TMP_DIR_PREFIX = "tmp";
+  String AM_DIR_PREFIX = "appmaster";
   
   String SLIDER_JAR = "slider.jar";
   String JCOMMANDER_JAR = "jcommander.jar";
