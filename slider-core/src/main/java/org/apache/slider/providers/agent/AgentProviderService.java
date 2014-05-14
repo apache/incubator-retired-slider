@@ -23,10 +23,11 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.records.Container;
-import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.LocalResourceType;
 import org.apache.slider.api.ClusterDescription;
+import org.apache.slider.api.ClusterDescriptionKeys;
+import org.apache.slider.api.ClusterNode;
 import org.apache.slider.api.OptionKeys;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.common.SliderKeys;
@@ -50,7 +51,6 @@ import org.apache.slider.providers.agent.application.metadata.ExportGroup;
 import org.apache.slider.providers.agent.application.metadata.Metainfo;
 import org.apache.slider.providers.agent.application.metadata.MetainfoParser;
 import org.apache.slider.providers.agent.application.metadata.Service;
-import org.apache.slider.server.appmaster.state.RoleInstance;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentCommandType;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
@@ -74,6 +74,7 @@ import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -260,22 +261,11 @@ public class AgentProviderService extends AbstractProviderService implements
     getStateAccessor().getPublishedConfigurations().put(name, pubconf);
   }
 
-  protected Map<String, Map<String, String>> getRoleClusterNodeMapping() {
-    StateAccessForProviders accessor = getStateAccessor();
-    assert accessor.isApplicationLive();
-    Map<ContainerId, RoleInstance> liveNodes = accessor.getLiveNodes();
-    Map<String, Map<String, String>> retVal = new HashMap<>();
-    for (ContainerId cid : liveNodes.keySet()) {
-      RoleInstance ri = liveNodes.get(cid);
-      Map<String, String> containerMap = retVal.get(ri.role);
-      if (containerMap == null) {
-        containerMap = new HashMap<>();
-        retVal.put(ri.role, containerMap);
-      }
-      containerMap.put(cid.toString(), ri.host);
-    }
-
-    return retVal;
+  protected Map<String, Map<String, ClusterNode>> getRoleClusterNodeMapping() {
+    stateAccessor.refreshClusterStatus();
+    return (Map<String, Map<String, ClusterNode>>)
+        stateAccessor.getClusterStatus().status.get(
+            ClusterDescriptionKeys.KEY_CLUSTER_LIVE);
   }
 
   private String getContainerLabel(Container container, String role) {
@@ -459,8 +449,8 @@ public class AgentProviderService extends AbstractProviderService implements
 
             // publish export groups if any
             Map<String, String> replaceTokens = new HashMap<>();
-            for (Map.Entry<String, Map<String, String>> entry : getRoleClusterNodeMapping().entrySet()) {
-              String hostName = getHostsList(entry.getValue(), true).iterator().next();
+            for (Map.Entry<String, Map<String, ClusterNode>> entry : getRoleClusterNodeMapping().entrySet()) {
+              String hostName = getHostsList(entry.getValue().values(), true).iterator().next();
               replaceTokens.put(String.format(hostKeyFormat, entry.getKey().toUpperCase(Locale.ENGLISH)), hostName);
             }
 
@@ -730,17 +720,18 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   protected void addRoleRelatedTokens(Map<String, String> tokens) {
-    for (Map.Entry<String, Map<String, String>> entry : getRoleClusterNodeMapping().entrySet()) {
+    for (Map.Entry<String, Map<String, ClusterNode>> entry : getRoleClusterNodeMapping().entrySet()) {
       String tokenName = entry.getKey().toUpperCase(Locale.ENGLISH) + "_HOST";
-      String hosts = StringUtils.join(",", getHostsList(entry.getValue(), true));
+      String hosts = StringUtils.join(",", getHostsList(entry.getValue().values(), true));
       tokens.put("${" + tokenName + "}", hosts);
     }
   }
 
-  private Iterable<String> getHostsList(Map<String, String> values, boolean hostOnly) {
+  private Iterable<String> getHostsList(Collection<ClusterNode> values,
+                                        boolean hostOnly) {
     List<String> hosts = new ArrayList<>();
-    for (Map.Entry<String, String> entry : values.entrySet()) {
-      hosts.add(hostOnly ? entry.getValue() : entry.getValue() + "/" + entry.getKey());
+    for (ClusterNode cn : values) {
+      hosts.add(hostOnly ? cn.host : cn.host + "/" + cn.name);
     }
 
     return hosts;
@@ -761,10 +752,10 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   private void buildRoleHostDetails(Map<String, URL> details) {
-    for (Map.Entry<String, Map<String, String>> entry :
+    for (Map.Entry<String, Map<String, ClusterNode>> entry :
         getRoleClusterNodeMapping().entrySet()) {
       details.put(entry.getKey() + " Host(s)/Container(s): " +
-                  getHostsList(entry.getValue(), false),
+                  getHostsList(entry.getValue().values(), false),
                   null);
     }
   }

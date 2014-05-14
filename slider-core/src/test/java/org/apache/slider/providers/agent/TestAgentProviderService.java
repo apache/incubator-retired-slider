@@ -33,6 +33,8 @@ import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.api.records.Token;
 import org.apache.slider.api.ClusterDescription;
+import org.apache.slider.api.ClusterDescriptionKeys;
+import org.apache.slider.api.ClusterNode;
 import org.apache.slider.api.OptionKeys;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.common.tools.SliderFileSystem;
@@ -253,47 +255,47 @@ public class TestAgentProviderService {
     AgentProviderService aps = new AgentProviderService();
     StateAccessForProviders appState = new AppState(null) {
       @Override
-      public Map<ContainerId, RoleInstance> getLiveNodes() {
-        Map<ContainerId, RoleInstance> retVal = new HashMap<>();
-        ContainerId cid = new MyContainerId(1);
-        Container container = new MyContainer();
-        container.setId(cid);
-        RoleInstance ri = new RoleInstance(container);
-        ri.host = "FIRST_HOST";
-        ri.role = "FIRST_ROLE";
-        retVal.put(cid, ri);
+      public ClusterDescription getClusterStatus() {
+        ClusterDescription cd = new ClusterDescription();
+        cd.status = new HashMap<String,Object>();
+        Map<String, Map<String,ClusterNode>> roleMap = new HashMap<>();
+        ClusterNode cn1 = new ClusterNode(new MyContainerId(1));
+        cn1.host = "FIRST_HOST";
+        Map<String, ClusterNode> map1 = new HashMap<>();
+        map1.put("FIRST_CONTAINER", cn1);
+        ClusterNode cn2 = new ClusterNode(new MyContainerId(2));
+        cn2.host = "SECOND_HOST";
+        Map<String, ClusterNode> map2 = new HashMap<>();
+        map2.put("SECOND_CONTAINER", cn2);
+        ClusterNode cn3 = new ClusterNode(new MyContainerId(3));
+        cn3.host = "THIRD_HOST";
+        map2.put("THIRD_CONTAINER", cn3);
 
-        cid = new MyContainerId(2);
-        container = new MyContainer();
-        container.setId(cid);
-        ri = new RoleInstance(container);
-        ri.host = "SECOND_HOST";
-        ri.role = "SECOND_ROLE";
-        retVal.put(cid, ri);
+        roleMap.put("FIRST_ROLE", map1);
+        roleMap.put("SECOND_ROLE", map2);
 
-        cid = new MyContainerId(3);
-        container = new MyContainer();
-        container.setId(cid);
-        ri = new RoleInstance(container);
-        ri.host = "THIRD_HOST";
-        ri.role = "SECOND_ROLE";
-        retVal.put(cid, ri);
+        cd.status.put(ClusterDescriptionKeys.KEY_CLUSTER_LIVE, roleMap);
 
-        return retVal;
+        return cd;
       }
 
       @Override
       public boolean isApplicationLive() {
         return true;
       }
+
+      @Override
+      public void refreshClusterStatus() {
+        // do nothing
+      }
     };
 
     aps.setStateAccessor(appState);
-    Map<String, String> tokens = new HashMap<>();
+    Map<String, String> tokens = new HashMap<String, String>();
     aps.addRoleRelatedTokens(tokens);
     TestCase.assertEquals(2, tokens.size());
     TestCase.assertEquals("FIRST_HOST", tokens.get("${FIRST_ROLE_HOST}"));
-    TestCase.assertEquals("SECOND_HOST,THIRD_HOST", tokens.get("${SECOND_ROLE_HOST}"));
+    TestCase.assertEquals("THIRD_HOST,SECOND_HOST", tokens.get("${SECOND_ROLE_HOST}"));
     aps.close();
   }
 
@@ -317,9 +319,11 @@ public class TestAgentProviderService {
     status.setConfigs(configs);
     hb.setComponentStatus(new ArrayList<>(Arrays.asList(status)));
 
-    Map<String, Map<String, String>> roleClusterNodeMap = new HashMap<>();
-    Map<String, String> container = new HashMap<>();
-    container.put("cid1", "HOST1");
+    Map<String, Map<String, ClusterNode>> roleClusterNodeMap = new HashMap<>();
+    Map<String, ClusterNode> container = new HashMap<>();
+    ClusterNode cn1 = new ClusterNode(new MyContainerId(1));
+    cn1.host = "HOST1";
+    container.put("cid1", cn1);
     roleClusterNodeMap.put("HBASE_MASTER", container);
 
     ComponentInstanceState componentStatus = new ComponentInstanceState("HBASE_MASTER", "aid", "cid");
