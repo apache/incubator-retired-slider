@@ -79,7 +79,7 @@ public class PublisherResource {
   }
 
   @GET
-  @Path("/{config}")
+  @Path("/" + CONFIG)
   @Produces({MediaType.APPLICATION_JSON})
   public PublishedConfiguration getConfigurationInstance(
       @PathParam("config") String config,
@@ -96,7 +96,7 @@ public class PublisherResource {
   }
   
   @GET
-  @Path("/{config}.json")
+  @Path("/" + CONFIG+ ".json")
   @Produces({MediaType.APPLICATION_JSON})
   public String getConfigurationContentJson(
       @PathParam("config") String config,
@@ -107,7 +107,7 @@ public class PublisherResource {
   }
 
   @GET
-  @Path("/{config}.xml")
+  @Path("/" + CONFIG + ".xml")
   @Produces({MediaType.APPLICATION_XML})
   public String getConfigurationContentXML(
       @PathParam("config") String config,
@@ -118,7 +118,7 @@ public class PublisherResource {
   }
   
   @GET
-  @Path("/{config}.properties")
+  @Path("/" + CONFIG + ".properties")
   @Produces({MediaType.APPLICATION_XML})
   public String getConfigurationContentProperties(
       @PathParam("config") String config,
