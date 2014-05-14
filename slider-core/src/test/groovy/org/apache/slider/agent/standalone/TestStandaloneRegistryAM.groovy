@@ -172,11 +172,22 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
 
 
     //get the XML
-    def yarnSiteXML = appendToURL(yarnSitePublisher, "xml")
+    def yarnSiteXML = yarnSitePublisher + ".xml"
 
 
     String confXML = GET(yarnSiteXML)
     log.info("Conf XML at $yarnSiteXML = \n $confXML")
+
+    String properties = GET(yarnSitePublisher + ".properties")
+    Properties parsedProps = new Properties()
+    parsedProps.load(new StringReader(properties))
+    assert parsedProps.size() > 0
+    def rmAddrFromDownloadedProperties = parsedProps.get(YarnConfiguration.RM_ADDRESS)
+    def rmHostnameFromDownloadedProperties = parsedProps.get(YarnConfiguration.RM_HOSTNAME)
+    assert rmAddrFromDownloadedProperties
+    assert rmHostnameFromDownloadedProperties
+
+    String json = GET(yarnSitePublisher + ".json")
 
 
 
@@ -202,10 +213,14 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     def yarnSite = retriever.retrieveConfiguration(ARTIFACT_NAME, true)
     assert !yarnSite.empty
     def siteXML = yarnSite.asConfiguration()
-    def rmAddr = siteXML.get(YarnConfiguration.RM_ADDRESS)
-    assert rmAddr
-    
-    
+    def rmHostnameViaClientSideXML = parsedProps.get(
+        YarnConfiguration.RM_HOSTNAME)
+    assert rmHostnameViaClientSideXML == rmHostnameFromDownloadedProperties
+    def rmAddrViaClientSideXML = siteXML.get(YarnConfiguration.RM_ADDRESS)
+
+  /* TODO SLIDER-52 PublishedConfiguration XML conf values are not resolved until client-side
+   assert rmAddrViaClientSideXML == rmAddrFromDownloadedProperties
+  */  
     describe "Internal configurations"
     assert !retriever.hasConfigurations(false)
     try {
@@ -233,9 +248,6 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     
     assert 0 == client.actionRegistry(registryArgs)
 
-  
-    
-    
     // listconf --internal
     registryArgs.list = false;
     registryArgs.listConf = true

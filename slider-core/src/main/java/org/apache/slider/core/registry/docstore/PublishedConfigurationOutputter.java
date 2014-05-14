@@ -21,14 +21,20 @@ package org.apache.slider.core.registry.docstore;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.slider.common.tools.ConfigHelper;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.StringWriter;
 import java.util.Properties;
 
+/**
+ * Output a published configuration
+ */
 public abstract class PublishedConfigurationOutputter {
 
   protected final PublishedConfiguration owner;
@@ -37,14 +43,41 @@ public abstract class PublishedConfigurationOutputter {
     this.owner = owner;
   }
 
+  /**
+   * Save the config to a destination file, in the format of this outputter
+   * @param dest destination file
+   * @throws IOException
+   */
   public void save(File dest) throws IOException {
-    
+    try(FileOutputStream out = new FileOutputStream(dest)) {
+      save(out);
+      out.close();
+    }
   }
 
-  public String asString() throws IOException {
-    return "";
+  /**
+   * Save the content. The default saves the asString() value
+   * to the output stream
+   * @param out output stream
+   * @throws IOException
+   */
+  public void save(OutputStream out) throws IOException {
+    IOUtils.write(asString(), out, Charsets.UTF_8);
   }
+  /**
+   * Convert to a string
+   * @return
+   * @throws IOException
+   */
+  public abstract String asString() throws IOException;
 
+  /**
+   * Create an outputter for the chosen format
+   * @param format format enumeration
+   * @param owner owning config
+   * @return the outputter
+   */
+  
   public static PublishedConfigurationOutputter createOutputter(ConfigFormat format,
       PublishedConfiguration owner) {
     Preconditions.checkNotNull(owner);
@@ -71,13 +104,8 @@ public abstract class PublishedConfigurationOutputter {
     }
 
     @Override
-    public void save(File dest) throws IOException {
-      FileOutputStream out = new FileOutputStream(dest);
-      try {
-        configuration.writeXml(out);
-      } finally {
-        out.close();
-      }
+    public void save(OutputStream out) throws IOException {
+      configuration.writeXml(out);
     }
 
     @Override
@@ -100,19 +128,15 @@ public abstract class PublishedConfigurationOutputter {
     }
 
     @Override
-    public void save(File dest) throws IOException {
-      FileOutputStream out = new FileOutputStream(dest);
-      try {
-        properties.store(out, "");
-      } finally {
-        out.close();
-      }
-
+    public void save(OutputStream out) throws IOException {
+      properties.store(out, "");
     }
 
-    @Override
+    
     public String asString() throws IOException {
-      return properties.toString();
+      StringWriter sw = new StringWriter();
+      properties.store(sw, "");
+      return sw.toString();
     }
   }
     

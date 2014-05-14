@@ -122,10 +122,10 @@ public class RegistryRetriever {
 
   /**
    * Get a complete configuration, with all values
-   * @param name
-   * @param external
-   * @return
-   * @throws IOException
+   * @param name name of the configuration
+   * @param external flag to indicate that it is an external configuration
+   * @return the retrieved config
+   * @throws IOException IO problems
    */
   public PublishedConfiguration retrieveConfiguration(String name,
       boolean external) throws IOException {

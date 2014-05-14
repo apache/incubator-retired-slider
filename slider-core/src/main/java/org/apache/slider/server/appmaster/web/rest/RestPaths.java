@@ -44,4 +44,13 @@ public class RestPaths {
 
   public static final String REGISTRY_SERVICE = "v1/service";
   public static final String REGISTRY_ANYSERVICE = "v1/anyservice";
+
+  /**
+   * The regular expressions used to define valid configuration names/url path
+   * fragments: {@value}
+   */
+  public static final String PUBLISHED_CONFIGURATION_REGEXP
+      ="[a-z0-9][a-z0-9_\\+-]*";
+  
+  
 }

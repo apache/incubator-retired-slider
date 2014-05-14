@@ -19,8 +19,10 @@
 package org.apache.slider.server.appmaster.web.rest.publisher;
 
 import org.apache.hadoop.yarn.webapp.NotFoundException;
+import org.apache.slider.core.registry.docstore.ConfigFormat;
 import org.apache.slider.core.registry.docstore.PublishedConfigSet;
 import org.apache.slider.core.registry.docstore.PublishedConfiguration;
+import org.apache.slider.core.registry.docstore.PublishedConfigurationOutputter;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +36,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
+import static  org.apache.slider.server.appmaster.web.rest.RestPaths.*;
 
 /**
  * This publishes configuration sets
@@ -42,7 +45,9 @@ public class PublisherResource {
   protected static final Logger log =
       LoggerFactory.getLogger(PublisherResource.class);
   private final WebAppApi slider;
-
+  private static final String CONFIG =
+      "{config: " + PUBLISHED_CONFIGURATION_REGEXP + "}";
+  
   public PublisherResource(WebAppApi slider) {
     this.slider = slider;
   }
@@ -90,36 +95,50 @@ public class PublisherResource {
     return publishedConfig;
   }
   
-  
   @GET
-  @Path("/{config}/json")
+  @Path("/{config}.json")
   @Produces({MediaType.APPLICATION_JSON})
   public String getConfigurationContentJson(
       @PathParam("config") String config,
       @Context UriInfo uriInfo,
       @Context HttpServletResponse res) throws IOException {
-    
-    // delegate (including init)
-    PublishedConfiguration publishedConfig =
-        getConfigurationInstance(config, uriInfo, res);
-    return publishedConfig.asJson();
+    return getStringRepresentation(config, uriInfo, res,
+        ConfigFormat.JSON);
   }
 
-  
   @GET
-  @Path("/{config}/xml")
+  @Path("/{config}.xml")
   @Produces({MediaType.APPLICATION_XML})
   public String getConfigurationContentXML(
       @PathParam("config") String config,
       @Context UriInfo uriInfo,
       @Context HttpServletResponse res) throws IOException {
-    
+    return getStringRepresentation(config, uriInfo, res,
+        ConfigFormat.XML);
+  }
+  
+  @GET
+  @Path("/{config}.properties")
+  @Produces({MediaType.APPLICATION_XML})
+  public String getConfigurationContentProperties(
+      @PathParam("config") String config,
+      @Context UriInfo uriInfo,
+      @Context HttpServletResponse res) throws IOException {
+
+    return getStringRepresentation(config, uriInfo, res,
+        ConfigFormat.PROPERTIES);
+  }
+
+  public String getStringRepresentation(String config,
+      UriInfo uriInfo,
+      HttpServletResponse res, ConfigFormat format) throws IOException {
     // delegate (including init)
     PublishedConfiguration publishedConfig =
         getConfigurationInstance(config, uriInfo, res);
-    return publishedConfig.asConfigurationXML();
+    PublishedConfigurationOutputter outputter =
+        publishedConfig.creatOutputter(format);
+    return outputter.asString();
   }
 
-  
-  
+
 }

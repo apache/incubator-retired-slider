@@ -158,4 +158,8 @@ public class PublishedConfiguration {
     sb.append('}');
     return sb.toString();
   }
+  
+  public PublishedConfigurationOutputter creatOutputter(ConfigFormat format) {
+    return PublishedConfigurationOutputter.createOutputter(format, this);
+  }
 }

@@ -29,6 +29,7 @@ class TestConfigSetNaming {
   def assertValid(String name) {
     PublishedConfigSet.validateName(name)
   }
+  
   def assertInvalid(String name) {
     try {
       PublishedConfigSet.validateName(name)
@@ -44,8 +45,8 @@ class TestConfigSetNaming {
   }
   
   @Test
-  public void testUpperCase() throws Throwable {
-    assertValid("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+  public void testUpperCaseInvalid() throws Throwable {
+    assertInvalid("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
   }
   
   @Test
@@ -55,7 +56,7 @@ class TestConfigSetNaming {
   
   @Test
   public void testChars() throws Throwable {
-    assertValid("-_")
+    assertValid("a-_+")
   }
 
   @Test
@@ -70,7 +71,11 @@ class TestConfigSetNaming {
         "'",
         "\u0000",
         "\u0f00",
-        ""
+        "key.value",
+        "-",
+        "+",
+        "_",
+        "?",
     ].each {String s -> assertInvalid(s)}
   }
 }

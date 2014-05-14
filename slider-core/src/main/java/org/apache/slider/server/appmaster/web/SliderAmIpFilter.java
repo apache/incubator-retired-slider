@@ -18,11 +18,11 @@
 
 package org.apache.slider.server.appmaster.web;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.yarn.server.webproxy.WebAppProxyServlet;
 import org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpPrincipal;
 import org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpServletRequestWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -40,7 +40,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class SliderAmIpFilter implements Filter {
-  private static final Log LOG = LogFactory.getLog(SliderAmIpFilter.class);
+  protected static final Logger log =
+      LoggerFactory.getLogger(SliderAmIpFilter.class);
   
   public static final String PROXY_HOST = "PROXY_HOST";
   public static final String PROXY_URI_BASE = "PROXY_URI_BASE";
@@ -68,8 +69,8 @@ public class SliderAmIpFilter implements Filter {
         try {
           proxyAddresses = new HashSet<String>();
           for(InetAddress add : InetAddress.getAllByName(proxyHost)) {
-            if (LOG.isDebugEnabled()) {
-              LOG.debug("proxy address is: " + add.getHostAddress());
+            if (log.isDebugEnabled()) {
+              log.debug("proxy address is: " + add.getHostAddress());
             }
             proxyAddresses.add(add.getHostAddress());
           }
@@ -96,13 +97,14 @@ public class SliderAmIpFilter implements Filter {
     
     HttpServletRequest httpReq = (HttpServletRequest)req;
     HttpServletResponse httpResp = (HttpServletResponse)resp;
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Remote address for request is: " + httpReq.getRemoteAddr());
+    if (log.isDebugEnabled()) {
+      log.debug("Remote address for request is: " + httpReq.getRemoteAddr());
     }
-    if(!httpReq.getRequestURI().startsWith(wsContextRoot) &&
+    String requestURI = httpReq.getRequestURI();
+    if(!requestURI.startsWith(wsContextRoot) &&
        !getProxyAddresses().contains(httpReq.getRemoteAddr())) {
-      String redirectUrl = httpResp.encodeRedirectURL(proxyUriBase + 
-          httpReq.getRequestURI());
+      String redirectUrl = httpResp.encodeRedirectURL(proxyUriBase +
+                                                      requestURI);
       httpResp.sendRedirect(redirectUrl);
       return;
     }
@@ -117,15 +119,20 @@ public class SliderAmIpFilter implements Filter {
         }
       }
     }
-    if(user == null) {
-      LOG.warn("Could not find "+WebAppProxyServlet.PROXY_USER_COOKIE_NAME
-          +" cookie, so user will not be set");
-      chain.doFilter(req, resp);
-    } else {
-      final AmIpPrincipal principal = new AmIpPrincipal(user);
-      ServletRequest requestWrapper = new AmIpServletRequestWrapper(httpReq,
-          principal);
-      chain.doFilter(requestWrapper, resp);
+    try {
+      if (user == null) {
+        log.warn("Could not find " + WebAppProxyServlet.PROXY_USER_COOKIE_NAME
+                 + " cookie, so user will not be set");
+        chain.doFilter(req, resp);
+      } else {
+        final AmIpPrincipal principal = new AmIpPrincipal(user);
+        ServletRequest requestWrapper = new AmIpServletRequestWrapper(httpReq,
+            principal);
+        chain.doFilter(requestWrapper, resp);
+      }
+    } catch (IOException | ServletException e) {
+      log.warn("When fetching {}: {}", requestURI, e);
+      throw e;
     }
   }
 }
