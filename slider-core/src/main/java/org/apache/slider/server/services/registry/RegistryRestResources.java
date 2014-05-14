@@ -49,8 +49,8 @@ import java.util.Random;
 @Singleton
 @Path(RestPaths.SLIDER_PATH_REGISTRY)
 public class RegistryRestResources extends DiscoveryResource<ServiceInstanceData> {
-  public static final String SERVICE_NAME = "v1/service/{name}";
-  public static final String SERVICE_NAME_ID = "v1/service/{name}/{id}";
+  public static final String SERVICE_NAME = RestPaths.REGISTRY_SERVICE +"/{name}";
+  public static final String SERVICE_NAME_ID = SERVICE_NAME + "/{id}";
   protected static final Logger log =
       LoggerFactory.getLogger(RegistryRestResources.class);
   private final SliderRegistryService registry;
