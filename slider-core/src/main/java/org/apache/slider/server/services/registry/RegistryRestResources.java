@@ -26,7 +26,6 @@ import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.server.appmaster.web.rest.RestPaths;
 import org.apache.slider.server.services.curator.CuratorServiceInstance;
 import org.apache.slider.server.services.curator.CuratorServiceInstances;
-import org.apache.slider.server.services.curator.RegistryBinderService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +41,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.net.URI;
 import java.net.URL;
 import java.util.List;
 import java.util.Random;
@@ -49,6 +49,8 @@ import java.util.Random;
 @Singleton
 @Path(RestPaths.SLIDER_PATH_REGISTRY)
 public class RegistryRestResources extends DiscoveryResource<ServiceInstanceData> {
+  public static final String SERVICE_NAME = "v1/service/{name}";
+  public static final String SERVICE_NAME_ID = "v1/service/{name}/{id}";
   protected static final Logger log =
       LoggerFactory.getLogger(RegistryRestResources.class);
   private final SliderRegistryService registry;
@@ -65,7 +67,7 @@ public class RegistryRestResources extends DiscoveryResource<ServiceInstanceData
   @GET
   public Response getWadl (@Context HttpServletRequest request) {
     try {
-      java.net.URI location = new URL(request.getScheme(),
+      URI location = new URL(request.getScheme(),
                                       request.getServerName(),
                                       request.getServerPort(),
                                       "/application.wadl").toURI();
@@ -79,13 +81,13 @@ public class RegistryRestResources extends DiscoveryResource<ServiceInstanceData
 
   @Override
   @javax.ws.rs.GET
-  @javax.ws.rs.Path("v1/service/{name}")
-  @javax.ws.rs.Produces({"application/json"})
+  @javax.ws.rs.Path(SERVICE_NAME)
+  @javax.ws.rs.Produces({MediaType.APPLICATION_JSON})
   public Response getAll(@PathParam("name") String name) {
     try {
       List<CuratorServiceInstance<ServiceInstanceData>>
           instances = registry.listInstances(name);
-      return Response.ok(new CuratorServiceInstances<ServiceInstanceData>(instances)).build();
+      return Response.ok(new CuratorServiceInstances<>(instances)).build();
     } catch (Exception e) {
       log.error("Error during generation of response", e);
       return Response.serverError().build();
@@ -94,7 +96,7 @@ public class RegistryRestResources extends DiscoveryResource<ServiceInstanceData
 
   @Override
   @GET
-  @Path("v1/service/{name}/{id}")
+  @Path(SERVICE_NAME_ID)
   @Produces(MediaType.APPLICATION_JSON)
   public Response get(@PathParam("name") String name,
                       @PathParam("id") String id) {
@@ -122,7 +124,7 @@ public class RegistryRestResources extends DiscoveryResource<ServiceInstanceData
     try {
       List<CuratorServiceInstance<ServiceInstanceData>>
           instances = registry.listInstances(name);
-      if (instances == null || instances.size() == 0) {
+      if (instances == null || instances.isEmpty()) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
 
@@ -141,7 +143,7 @@ public class RegistryRestResources extends DiscoveryResource<ServiceInstanceData
 
   @Override
   @PUT
-  @Path("v1/service/{name}/{id}")
+  @Path(SERVICE_NAME_ID)
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   public Response putService(ServiceInstance<ServiceInstanceData> instance,
@@ -152,7 +154,7 @@ public class RegistryRestResources extends DiscoveryResource<ServiceInstanceData
 
   @Override
   @DELETE
-  @Path("v1/service/{name}/{id}")
+  @Path(SERVICE_NAME_ID)
   public Response removeService(@PathParam("name") String name,
                                 @PathParam("id") String id) {
     throw new UnsupportedOperationException("removeService not supported");
