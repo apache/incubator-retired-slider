@@ -119,7 +119,7 @@
     <site>
       <id>slider.website</id>
       <name>Slider Website</name>
-      <url>http://incubator.apache.org/slider/</url>
+      <url>http://slider.incubator.apache.org/</url>
     </site>
     <downloadUrl>https://svn.apache.org/repos/asf/incubator/slider</downloadUrl>
   </distributionManagement>
@@ -127,16 +127,16 @@
   <mailingLists>
     <mailingList>
       <name>Developers Mailing List</name>
-      <post>slider-dev@incubator.apache.org</post>
-      <subscribe>slider-dev-subscribe@incubator.apache.org</subscribe>
-      <unsubscribe>slider-dev-unsubscribe@incubator.apache.org</unsubscribe>
+      <post>dev@slider.incubator.apache.org</post>
+      <subscribe>dev-subscribe@slider.incubator.apache.org</subscribe>
+      <unsubscribe>dev-unsubscribe@slider.incubator.apache.org</unsubscribe>
       <archive>http://mail-archives.apache.org/mod_mbox/incubator-slider-dev/</archive>
     </mailingList>    
     <mailingList>
       <name>Commits Mailing List</name>
-      <post>slider-commits@incubator.apache.org</post>
-      <subscribe>slider-commits-subscribe@incubator.apache.org</subscribe>
-      <unsubscribe>slider-commits-unsubscribe@incubator.apache.org</unsubscribe>
+      <post>commits@slider.incubator.apache.org</post>
+      <subscribe>commits-subscribe@slider.incubator.apache.org</subscribe>
+      <unsubscribe>commits-unsubscribe@slider.incubator.apache.org</unsubscribe>
       <archive>http://mail-archives.apache.org/mod_mbox/incubator-slider-commits/</archive>
     </mailingList>    
   </mailingLists>
