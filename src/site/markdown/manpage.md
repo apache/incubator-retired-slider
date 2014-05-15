@@ -363,14 +363,19 @@ The `--internal` flag indicates the configurations to be listed and retrieved
 are from the "internal" list of configuration data provided for use within a
 deployed application. 
 
+There are two common exit codes, the exact values being documented
+in [Exit Codes](exitcodes.md)
+
+1. If there is no matching service then the operation fails with the
+`EXIT_UNKNOWN_INSTANCE` code (70).
+2. If there are no configurations in a listing, or the named configuration
+is not found, the command returns the exit code `EXIT_NOT_FOUND` (77)
+
 Operations:
 
 #### `registry --list  [--servicetype <servicetype>] [--name <name>] [--verbose]`
 
 List all services of the service type and optionally the name. 
- 
-If there were no matches then the operation fails with the `EXIT_UNKNOWN_INSTANCE` code
-
  
  
  

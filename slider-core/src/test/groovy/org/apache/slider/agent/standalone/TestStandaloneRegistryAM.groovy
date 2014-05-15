@@ -26,9 +26,10 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.api.ClusterNode
 import org.apache.slider.client.SliderClient
+import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.params.ActionRegistryArgs
-import org.apache.slider.core.exceptions.BadCommandArgumentsException
+import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.persist.JsonSerDeser
@@ -294,7 +295,7 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     registryArgs.listConf = true
     registryArgs.internal = true
     describe registryArgs.toString()
-    assert 0 != client.actionRegistry(registryArgs)
+    assert SliderExitCodes.EXIT_NOT_FOUND == client.actionRegistry(registryArgs)
 
     registryArgs.list = false;
     registryArgs.listConf = false
@@ -327,8 +328,9 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     try {
       client.actionRegistry(registryArgs)
       fail("attempt to retrieve the file $unknownFilename succeeded")
-    } catch (BadCommandArgumentsException expected) {
-      assert expected.toString().contains(unknownFilename)
+    } catch (SliderException expected) {
+      assertExceptionDetails(expected, SliderExitCodes.EXIT_NOT_FOUND,
+          unknownFilename)
     }
 
 

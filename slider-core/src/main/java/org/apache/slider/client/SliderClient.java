@@ -1960,7 +1960,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       try {
         actionRegistryListConfigs(registryArgs);
       } catch (FileNotFoundException e) {
-        return EXIT_FALSE;
+        return EXIT_NOT_FOUND;
       }
     } else if (SliderUtils.isSet(registryArgs.getConf)) {
       // get a configuration
@@ -1970,10 +1970,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         outputConfig(publishedConfiguration, registryArgs);
       } catch (FileNotFoundException e) {
         //there's no configuration here, so raise an error
-        throw new BadCommandArgumentsException(e, "Unknown configuration \"%s\"",
+        throw new SliderException(EXIT_NOT_FOUND,  e,
+            "Unknown configuration \"%s\"",
             registryArgs.getConf);
       }
-
     } else {
       // it's an unknown command
       throw new BadCommandArgumentsException(

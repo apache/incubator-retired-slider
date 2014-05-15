@@ -90,4 +90,8 @@ public interface SliderExitCodes extends LauncherExitCodes {
    */
   int EXIT_INSTANCE_EXISTS = 75;
 
+  /**
+   * The resource was not found
+   */
+  int EXIT_NOT_FOUND = 77;
 }

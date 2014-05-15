@@ -145,7 +145,12 @@ no. 72.
      * when an attempt is made to create a new instance
      */
     int EXIT_INSTANCE_EXISTS = 75;
-
+    
+    /**
+     * The resource was not found
+     */
+    int EXIT_NOT_FOUND = 77;
+    
 ## Other exit codes
 
 YARN itself can fail containers, here are some of the causes we've seen
