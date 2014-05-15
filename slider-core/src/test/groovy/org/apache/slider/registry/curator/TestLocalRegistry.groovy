@@ -122,7 +122,7 @@ class TestLocalRegistry {
         "bilbo",
         SliderKeys.APP_TYPE);
     String hobbitId =
-        RegistryNaming.createUniqueInstanceId(
+        RegistryNaming.createRegistryName(
             "hobbiton",
             "bilbo",
             SliderKeys.APP_TYPE,
@@ -131,7 +131,7 @@ class TestLocalRegistry {
         "bilbo",
         SliderKeys.APP_TYPE);
     String mordorId =
-        RegistryNaming.createUniqueInstanceId(
+        RegistryNaming.createRegistryName(
             "mordor",
             "bilbo",
             SliderKeys.APP_TYPE,

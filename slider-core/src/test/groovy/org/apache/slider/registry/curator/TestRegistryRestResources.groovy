@@ -54,7 +54,7 @@ class TestRegistryRestResources extends AgentTestBase {
 
   private String id(String instanceName) {
 
-    RegistryNaming.createUniqueInstanceId(
+    RegistryNaming.createRegistryName(
         instanceName,
         UserGroupInformation.getCurrentUser().getUserName(),
         SliderKeys.APP_TYPE,

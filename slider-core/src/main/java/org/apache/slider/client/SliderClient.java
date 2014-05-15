@@ -1953,31 +1953,25 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // as this is also a test entry point, validate
     // the arguments
     registryArgs.validate();
-    if (registryArgs.list) {
-      actionRegistryList(registryArgs);
-    } else if (registryArgs.listConf) {
-      // list the configurations
-      try {
+    try {
+      if (registryArgs.list) {
+        actionRegistryList(registryArgs);
+      } else if (registryArgs.listConf) {
+        // list the configurations
         actionRegistryListConfigs(registryArgs);
-      } catch (FileNotFoundException e) {
-        return EXIT_NOT_FOUND;
-      }
-    } else if (SliderUtils.isSet(registryArgs.getConf)) {
-      // get a configuration
-      try {
+      } else if (SliderUtils.isSet(registryArgs.getConf)) {
+        // get a configuration
         PublishedConfiguration publishedConfiguration =
             actionRegistryGetConfig(registryArgs);
         outputConfig(publishedConfiguration, registryArgs);
-      } catch (FileNotFoundException e) {
-        //there's no configuration here, so raise an error
-        throw new SliderException(EXIT_NOT_FOUND,  e,
-            "Unknown configuration \"%s\"",
-            registryArgs.getConf);
+      } else {
+        // it's an unknown command
+        throw new BadCommandArgumentsException(
+            "Bad command arguments for " + ACTION_REGISTRY + " " +
+            registryArgs);
       }
-    } else {
-      // it's an unknown command
-      throw new BadCommandArgumentsException(
-          "Bad command arguments for "+ ACTION_REGISTRY +" " + registryArgs);
+    } catch (FileNotFoundException e) {
+      return EXIT_NOT_FOUND;
     }
     return EXIT_SUCCESS;
   }
@@ -1995,13 +1989,19 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       ActionRegistryArgs registryArgs)
       throws YarnException, IOException {
     SliderRegistryService registryService = getRegistry();
+    String serviceType = registryArgs.serviceType;
+    String name = registryArgs.name;
     List<CuratorServiceInstance<ServiceInstanceData>> instances =
-        registryService.findInstances(registryArgs.serviceType, registryArgs.name
-        );
-    List<ServiceInstanceData> sids = new ArrayList<>(instances.size());
+        registryService.findInstances(serviceType, name);
+    int size = instances.size();
+    if (size == 0) {
+      throw new FileNotFoundException("No entries for servicetype "
+                                      + serviceType
+                                      + " name " + name);
+    }
+    List<ServiceInstanceData> sids = new ArrayList<>(size);
     for (CuratorServiceInstance<ServiceInstanceData> instance : instances) {
       ServiceInstanceData payload = instance.payload;
-      
       logInstance(payload, registryArgs.verbose);
       sids.add(payload);
     }

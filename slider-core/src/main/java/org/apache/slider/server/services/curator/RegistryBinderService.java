@@ -27,18 +27,14 @@ import org.apache.curator.x.discovery.ServiceInstance;
 import org.apache.curator.x.discovery.ServiceInstanceBuilder;
 import org.apache.curator.x.discovery.ServiceType;
 import org.apache.curator.x.discovery.UriSpec;
-import org.apache.hadoop.yarn.exceptions.YarnException;
-import org.apache.slider.common.params.ActionRegistryArgs;
-import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadClusterStateException;
 import org.apache.slider.core.exceptions.UnknownApplicationInstanceException;
 import org.apache.slider.core.persist.JsonSerDeser;
-import org.apache.slider.core.registry.info.ServiceInstanceData;
-import org.apache.slider.server.services.registry.SliderRegistryService;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -191,15 +187,17 @@ public class RegistryBinderService<Payload> extends CuratorService {
    */
   public CuratorServiceInstance<Payload> queryForInstance(String servicetype, String id) throws
                                                                          Exception {
-
+    CuratorServiceInstance<Payload> instance = null;
     String path = pathForInstance(servicetype, id);
     try {
       byte[] bytes = getCurator().getData().forPath(path);
-      return deser.fromBytes(bytes);
+      if (bytes!=null &&  bytes.length>0) {
+        instance = deser.fromBytes(bytes);
+      }
     } catch (KeeperException.NoNodeException ignore) {
       // ignore
     }
-    return null;
+    return instance;
   }
   
   /**
@@ -217,7 +215,9 @@ public class RegistryBinderService<Payload> extends CuratorService {
       for (String instanceID : instanceIDs) {
         CuratorServiceInstance<Payload> instance =
           queryForInstance(servicetype, instanceID);
-        instances.add(instance);
+        if (instance != null) {
+          instances.add(instance);
+        }
       }
       return instances;
     } catch (IOException e) {
@@ -231,7 +231,7 @@ public class RegistryBinderService<Payload> extends CuratorService {
    * Find an instance with a given ID
    * @param instances instances
    * @param name ID to look for
-   * @return
+   * @return the discovered instance or null
    */
   public CuratorServiceInstance<Payload> findByID(List<CuratorServiceInstance<Payload>> instances, String name) {
     Preconditions.checkNotNull(name);
@@ -249,26 +249,24 @@ public class RegistryBinderService<Payload> extends CuratorService {
    * @param serviceType service type
    * @param name an optional name
    * @return the (non-empty) list of instances that match the criteria
-   * @throws UnknownApplicationInstanceException if there were no matches
-   * @throws IOException
+   * @throws FileNotFoundException if there were no matches
+   * @throws IOException any network problem
    */
   public List<CuratorServiceInstance<Payload>> findInstances(String serviceType,
       String name)
-      throws UnknownApplicationInstanceException, IOException {
+      throws FileNotFoundException, IOException {
     List<CuratorServiceInstance<Payload>> instances =
         listInstances(serviceType);
     if (instances.isEmpty()) {
-      throw new UnknownApplicationInstanceException(
-          "No registry entries for service type %s",
-          serviceType);
+      throw new FileNotFoundException(
+          "No registry entries for service type " + serviceType);
     }
     if (StringUtils.isNotEmpty(name)) {
       CuratorServiceInstance<Payload> foundInstance = findByID(instances, name);
       if (foundInstance == null) {
-        throw new UnknownApplicationInstanceException(
-            "No registry entries for service name %s of service type %s",
-            name,
-            serviceType);
+        throw new FileNotFoundException(
+            "No registry entries for service name " + name
+            + " and service type " + serviceType);
       }
       instances.clear();
       instances.add(foundInstance);

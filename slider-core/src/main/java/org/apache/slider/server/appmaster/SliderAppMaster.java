@@ -132,7 +132,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -707,7 +706,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         service_user_name,
         serviceName);
     String registryId =
-      RegistryNaming.createUniqueInstanceId(instanceName, service_user_name, serviceName, id);
+      RegistryNaming.createRegistryName(instanceName, service_user_name,
+          serviceName, id);
 
     List<String> serviceInstancesRunning = registry.instanceIDs(serviceName);
     log.info("service instances already running: {}", serviceInstancesRunning);

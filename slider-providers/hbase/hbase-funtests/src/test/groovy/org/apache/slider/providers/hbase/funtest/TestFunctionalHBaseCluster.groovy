@@ -26,12 +26,14 @@ import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.RoleKeys
+import org.apache.slider.core.registry.info.RegistryNaming
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.common.tools.ConfigHelper
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.client.SliderClient
 import org.apache.slider.providers.hbase.HBaseConfigFileOptions
 import org.apache.slider.providers.hbase.HBaseTestUtils
+import org.apache.slider.server.appmaster.PublishedArtifacts
 import org.apache.zookeeper.*
 import org.junit.After
 import org.junit.Before
@@ -165,11 +167,39 @@ public class TestFunctionalHBaseCluster extends HBaseCommandTestBase
     
     //grab some registry bits
     registry([ARG_LIST])
-    registry([ARG_LIST, ARG_SERVICETYPE, SliderKeys.APP_TYPE ])
-    registry([ARG_LIST, ARG_SERVICETYPE, ""])
-    registry([ARG_LIST, ARG_SERVICETYPE, ""])
+    registry([ARG_LIST, ARG_SERVICETYPE, SliderKeys.APP_TYPE , ARG_VERBOSE])
     
+    //unknown service type
+    registry(EXIT_NOT_FOUND,
+        [ARG_LIST, ARG_SERVICETYPE, "org.apache.something"])
+    registry(EXIT_NOT_FOUND,
+         [ARG_LIST, ARG_SERVICETYPE, ""])
+
+    registry(EXIT_NOT_FOUND,
+        [ARG_LIST, ARG_NAME, "cluster-with-no-name"])
+
+    // how to work out the current service name?
+    def name = RegistryNaming.createRegistryName(clustername,
+        System.getProperty("user.name"),
+        SliderKeys.APP_TYPE,
+        1)
+    registry([ARG_LIST, ARG_VERBOSE, ARG_NAME, name])
     
+    registry([ARG_LISTCONF, ARG_NAME, name])
+    registry(EXIT_NOT_FOUND, [ARG_LISTCONF, ARG_NAME, name, ARG_INTERNAL])
+    registry(EXIT_NOT_FOUND, [ARG_LISTCONF, ARG_NAME, "unknown"])
+    registry([ARG_GETCONF, PublishedArtifacts.COMPLETE_CONFIG,
+              ARG_NAME, name])
+    registry([ARG_GETCONF, "no-such-config",
+              ARG_NAME, name])
+
+    registry([ARG_GETCONF, "illegal config name!",
+              ARG_NAME, name])
+
+    registry(EXIT_NOT_FOUND,[ARG_GETCONF, PublishedArtifacts.COMPLETE_CONFIG,
+              ARG_NAME, name, ARG_INTERNAL])
+
+
   }
 
 }

@@ -257,7 +257,7 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     registryArgs.name = "unknown"
     try {
       client.actionRegistryList(registryArgs)
-    } catch (UnknownApplicationInstanceException ignored) {
+    } catch (FileNotFoundException expected) {
       // expected 
     }
 
@@ -267,10 +267,16 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     registryArgs.serviceType = "org.apache.hadoop"
     try {
       client.actionRegistryList(registryArgs)
-    } catch (UnknownApplicationInstanceException ignored) {
+    } catch (FileNotFoundException expected) {
       // expected 
     }
 
+    registryArgs.serviceType = ""
+    try {
+      client.actionRegistryList(registryArgs)
+    } catch (FileNotFoundException expected) {
+      // expected 
+    }
     //set the name
     registryArgs.name = serviceInstanceData.id;
     registryArgs.serviceType = SliderKeys.APP_TYPE
@@ -325,14 +331,7 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
 
     def unknownFilename = "undefined-file"
     registryArgs.getConf = unknownFilename
-    try {
-      client.actionRegistry(registryArgs)
-      fail("attempt to retrieve the file $unknownFilename succeeded")
-    } catch (SliderException expected) {
-      assertExceptionDetails(expected, SliderExitCodes.EXIT_NOT_FOUND,
-          unknownFilename)
-    }
-
+    assert SliderExitCodes.EXIT_NOT_FOUND == client.actionRegistry(registryArgs)
 
     describe "freeze cluster"
     //now kill that cluster

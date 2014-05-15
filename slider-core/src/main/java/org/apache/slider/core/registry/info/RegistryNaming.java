@@ -26,7 +26,7 @@ import java.util.Locale;
  */
 public class RegistryNaming {
 
-  public static String SLIDER_INSTANCE_NAME_FORMAT = "%s-%s";
+  public static String SLIDER_INSTANCE_NAME_FORMAT = "%2$s";
 
   public static String createRegistryServiceType(String instanceName,
       String userName,
@@ -34,12 +34,13 @@ public class RegistryNaming {
     return serviceName;
   }
 
-  public static String createUniqueInstanceId(String instanceName,
-                                              String userName,
-                                              String serviceName,
-                                              int appId) {
+  public static String createRegistryName(String instanceName,
+      String userName,
+      String serviceName,
+      int appId) {
     return String.format(Locale.ENGLISH,
-        SLIDER_INSTANCE_NAME_FORMAT, userName,
+        SLIDER_INSTANCE_NAME_FORMAT,
+        userName,
         instanceName,
         serviceName,
         appId);
