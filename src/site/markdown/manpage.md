@@ -345,7 +345,10 @@ Example
 
 ### `registry (--list | --listconf | --getconf <conf>) [--name <name>] [--servicetype <servicetype>] [--verbose]`
 
-List registered application instances visible to the user.
+List registered application instances visible to the user. This is slightly
+different from the `slider list` command in that it does not make use of the
+YARN application list. Instead it communicates with Zookeeper -and works
+with any applications which has registered itself with the "service registry"
 
 The `--name <name>` option names the registry entry to work with. For slider applications,
 this is the application instance

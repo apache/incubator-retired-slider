@@ -28,6 +28,7 @@ import org.apache.slider.api.ClusterNode
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.params.ActionRegistryArgs
+import org.apache.slider.core.exceptions.BadCommandArgumentsException
 import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.persist.JsonSerDeser
@@ -325,8 +326,15 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     assert new File(outputDir, yarn_site_config + ".xml").exists()
 
     describe registryArgs.toString()
-    registryArgs.getConf = "undefined-file"
-    client.actionRegistry(registryArgs)
+
+    def unknownFilename = "undefined-file"
+    registryArgs.getConf = unknownFilename
+    try {
+      client.actionRegistry(registryArgs)
+      fail("attempt to retrieve the file $unknownFilename succeeded")
+    } catch (BadCommandArgumentsException expected) {
+      assert expected.toString().contains(unknownFilename)
+    }
 
 
     describe "freeze cluster"

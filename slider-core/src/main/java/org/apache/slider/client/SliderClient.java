@@ -1963,7 +1963,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
             actionRegistryGetConfig(registryArgs);
         outputConfig(publishedConfiguration, registryArgs);
       } catch (FileNotFoundException e) {
-// TODO
+        //there's no configuration here, so raise an error
+        throw new BadCommandArgumentsException(e, "Unknown configuration \"%s\"",
+            registryArgs.getConf);
       }
 
     } else {
