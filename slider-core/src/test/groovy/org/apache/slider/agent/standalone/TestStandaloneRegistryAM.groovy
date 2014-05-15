@@ -294,12 +294,7 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     registryArgs.listConf = true
     registryArgs.internal = true
     describe registryArgs.toString()
-    try {
-      client.actionRegistry(registryArgs)
-      fail("expected a failure")
-    } catch (FileNotFoundException expected) {
-      //expected
-    }
+    assert 0 != client.actionRegistry(registryArgs)
 
     registryArgs.list = false;
     registryArgs.listConf = false

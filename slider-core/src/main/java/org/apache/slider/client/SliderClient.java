@@ -246,7 +246,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         exitCode = actionList(clusterName);
         break;
       case ACTION_REGISTRY:
-        actionRegistry(
+        exitCode = actionRegistry(
             serviceArgs.getActionRegistryArgs());
         break;
       case ACTION_STATUS:
@@ -1941,11 +1941,13 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * Registry operation
    *
    * @param registryArgs registry Arguments
+   * @return 0 for success, -1 for some issues that aren't errors, just failures
+   * to retrieve information (e.g. no configurations for that entry)
    * @throws YarnException YARN problems
    * @throws IOException Network or other problems
    */
   @VisibleForTesting
-  public void actionRegistry(ActionRegistryArgs registryArgs) throws
+  public int actionRegistry(ActionRegistryArgs registryArgs) throws
       YarnException,
       IOException {
     // as this is also a test entry point, validate
@@ -1955,7 +1957,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       actionRegistryList(registryArgs);
     } else if (registryArgs.listConf) {
       // list the configurations
-      actionRegistryListConfigs(registryArgs);
+      try {
+        actionRegistryListConfigs(registryArgs);
+      } catch (FileNotFoundException e) {
+        return EXIT_FALSE;
+      }
     } else if (SliderUtils.isSet(registryArgs.getConf)) {
       // get a configuration
       try {
@@ -1969,10 +1975,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       }
 
     } else {
-      // its an unknown command
+      // it's an unknown command
       throw new BadCommandArgumentsException(
           "Bad command arguments for "+ ACTION_REGISTRY +" " + registryArgs);
     }
+    return EXIT_SUCCESS;
   }
 
   /**
