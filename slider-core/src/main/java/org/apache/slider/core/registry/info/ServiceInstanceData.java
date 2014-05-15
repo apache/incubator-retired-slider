@@ -22,6 +22,8 @@ import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Service instance data to serialize with JSON
@@ -54,6 +56,35 @@ public class ServiceInstanceData implements Serializable {
     sb.append('}');
     return sb.toString();
   }
+
+  /**
+   * get the internal or external registry
+   * @param external flag to indicate the external endpoints
+   * @return a view -which may be null
+   */
+  public RegistryView getRegistryView(boolean external) {
+    return external ? externalView : internalView;
+  }
+
+  /**
+   * List the internal or external endpoints. This returns
+   * an empty list if there are none registered
+   * @param external flag to indicate the external endpoints
+   * @return a map of published endpoints
+   */
+  public Map<String, RegisteredEndpoint> listEndpoints(boolean external) {
+    RegistryView view = getRegistryView(external);
+    if (view == null) {
+      return new HashMap<>(0);
+    }
+    Map<String, RegisteredEndpoint> endpoints = view.endpoints;
+    if (endpoints != null) {
+      return endpoints;
+    } else {
+      return new HashMap<>(0);
+    }
+  }
+  
 }
 
 

@@ -23,6 +23,7 @@ import org.apache.hadoop.hbase.IntegrationTestIngest
 import org.apache.hadoop.hbase.IntegrationTestingUtility
 import org.apache.hadoop.util.ToolRunner
 import org.apache.slider.api.ClusterDescription
+import org.apache.slider.client.SliderClient
 import org.apache.slider.providers.hbase.HBaseConfigFileOptions;
 
 /* Runs IntegrationTestIngest on cluster
@@ -38,8 +39,9 @@ class TestHBaseIntegration extends TestFunctionalHBaseCluster {
   }
 
   @Override
-  void clusterLoadOperations(
+  void clusterOperations(
       String clustername,
+      SliderClient sliderClient,
       Configuration clientConf,
       int numWorkers,
       Map<String, Integer> roleMap,

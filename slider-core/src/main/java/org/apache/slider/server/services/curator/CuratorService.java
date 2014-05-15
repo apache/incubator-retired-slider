@@ -78,12 +78,14 @@ public class CuratorService extends AbstractService {
     }
   }
 
-  public String pathForName(String name) {
-    return ZKPaths.makePath(getBasePath(), name);
+  public String pathForServicetype(String servicetype) {
+    return ZKPaths.makePath(getBasePath(), servicetype);
   }
 
-  protected String pathForInstance(String name, String id) {
-    return ZKPaths.makePath(pathForName(name), id);
+  protected String pathForInstance(String servicetype, String id) {
+    Preconditions.checkNotNull(servicetype);
+    Preconditions.checkNotNull(id);
+    return ZKPaths.makePath(pathForServicetype(servicetype), id);
   }
 
   public String getBasePath() {

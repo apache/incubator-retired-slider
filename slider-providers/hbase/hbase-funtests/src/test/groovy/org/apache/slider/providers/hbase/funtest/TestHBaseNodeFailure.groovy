@@ -43,13 +43,13 @@ class TestHBaseNodeFailure extends TestFunctionalHBaseCluster {
   }
 
   @Override
-  void clusterLoadOperations(
+  void clusterOperations(
       String clustername,
+      SliderClient sliderClient,
       Configuration clientConf,
       int numWorkers,
       Map<String, Integer> roleMap,
       ClusterDescription cd) {
-    SliderClient sliderClient = bondToCluster(SLIDER_CONFIG, clusterName)
 
 
     killInstanceOfRole(sliderClient, HBaseKeys.ROLE_WORKER)

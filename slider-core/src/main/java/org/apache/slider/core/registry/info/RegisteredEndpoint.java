@@ -159,8 +159,30 @@ public class RegisteredEndpoint {
     }
   }
 
-  
-  
+  @Override
+  public String toString() {
+    final StringBuilder sb =
+        new StringBuilder();
+    if (TYPE_URL.equals(type)) {
+      sb.append(value);
+    } else {
+      sb.append("protocol='").append(protocol).append('\'');
+      sb.append(" value='").append(value).append('\'');
+      sb.append(" type='").append(type).append('\'');
+    }
+    sb.append(" -- \"").append(description).append('"');
+    return sb.toString();
+  }
+
+  public boolean isHttpProtocol() {
+    return PROTOCOL_HTTP.equals(protocol) || PROTOCOL_HTTPS.equals(protocol);
+  }
+
+  /**
+   * Verify that an endpoint is of the desired type
+   * @param desiredType desired type
+   * @throws SliderException if it is not
+   */
   public void verifyEndpointType(String desiredType) throws SliderException {
     if (!type.equals(desiredType)) {
       throw new SliderException(-1, "Body of endpoint is of type %s and not %s",

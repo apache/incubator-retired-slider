@@ -150,7 +150,7 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @param commands
    * @return the shell
    */
-  public static SliderShell slider(List<String> commands) {
+  public static SliderShell slider(Collection<String> commands) {
     SliderShell shell = new SliderShell(commands)
     shell.execute()
     return shell
@@ -162,7 +162,7 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @param commands commands
    * @return
    */
-  public static SliderShell slider(int exitCode, List<String> commands) {
+  public static SliderShell slider(int exitCode, Collection<String> commands) {
     return SliderShell.run(commands, exitCode)
   }
 
@@ -197,7 +197,7 @@ abstract class CommandTestBase extends SliderTestUtils {
         ACTION_EXISTS, name
     ]
     if (live) {
-      args << Arguments.ARG_LIVE
+      args << ARG_LIVE
     }
     slider(args)
   }
@@ -217,6 +217,14 @@ abstract class CommandTestBase extends SliderTestUtils {
         ACTION_FREEZE, name
     ])
   }
+  
+  static SliderShell freeze(String name, Collection<String> args) {
+    slider([ACTION_FREEZE, name] + args)
+  }
+
+  static SliderShell freezeForce(String name) {
+    freeze(name, [ARG_FORCE])
+  }
 
   static SliderShell getConf(String name) {
     slider([
@@ -230,7 +238,7 @@ abstract class CommandTestBase extends SliderTestUtils {
              ACTION_GETCONF, name
          ])
   }
-
+  
   static SliderShell killContainer(String name, String containerID) {
     slider(0,
          [
@@ -238,12 +246,6 @@ abstract class CommandTestBase extends SliderTestUtils {
              name,
              containerID
          ])
-  }
-  
-  static SliderShell freezeForce(String name) {
-    slider([
-        ACTION_FREEZE, ARG_FORCE, name
-    ])
   }
 
   static SliderShell list(String name) {
@@ -290,6 +292,21 @@ abstract class CommandTestBase extends SliderTestUtils {
          [
              ACTION_THAW, name
          ])
+  }
+
+  static SliderShell thaw(String name, Collection<String> args) {
+    slider([ACTION_THAW, name] + args)
+  }
+  
+  static SliderShell registry(int result, Collection<String> commands) {
+    slider(result,
+         [ ACTION_REGISTRY ] + commands
+    )
+  }
+  static SliderShell registry(Collection<String> commands) {
+    slider(0,
+         [ ACTION_REGISTRY ] + commands
+    )
   }
 
   /**

@@ -46,7 +46,7 @@ class SliderShell extends Shell {
    * Build the command
    * @param commands
    */
-  SliderShell(List<String> commands) {
+  SliderShell(Collection<String> commands) {
     super(BASH)
     assert confDir != null;
     assert script != null;
@@ -63,7 +63,7 @@ class SliderShell extends Shell {
     List<String> commandLine = [
         confDirCmd,
     ]
-    if (!slider_classpath_extra.isEmpty()) {
+    if (!slider_classpath_extra.empty) {
       commandLine << env(FuntestProperties.ENV_SLIDER_CLASSPATH_EXTRA,
           SliderUtils.join(slider_classpath_extra, ":", false))
     }
@@ -98,7 +98,7 @@ class SliderShell extends Shell {
    * @param commands
    * @return the shell
    */
-  public static SliderShell run(List<String> commands, int exitCode) {
+  public static SliderShell run(Collection<String> commands, int exitCode) {
     SliderShell shell = new SliderShell(commands)
     shell.execute(exitCode);
     return shell

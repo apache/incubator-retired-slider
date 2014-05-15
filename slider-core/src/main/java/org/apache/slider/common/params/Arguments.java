@@ -69,7 +69,7 @@ public interface Arguments {
   String ARG_RESOURCE_MANAGER = "--rm";
   String ARG_RESOURCE_OPT = "--resopt";
   String ARG_RESOURCE_OPT_SHORT = "-ro";
-  String ARG_SERVICETYPE = "--servictype";
+  String ARG_SERVICETYPE = "--servicetype";
   String ARG_SYSPROP = "-S";
   String ARG_TEMPLATE = "--template";
   String ARG_VERBOSE = "--verbose";

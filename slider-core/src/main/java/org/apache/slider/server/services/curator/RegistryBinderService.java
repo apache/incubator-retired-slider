@@ -20,15 +20,21 @@ package org.apache.slider.server.services.curator;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import org.apache.commons.lang.StringUtils;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.x.discovery.ServiceDiscovery;
 import org.apache.curator.x.discovery.ServiceInstance;
 import org.apache.curator.x.discovery.ServiceInstanceBuilder;
 import org.apache.curator.x.discovery.ServiceType;
 import org.apache.curator.x.discovery.UriSpec;
+import org.apache.hadoop.yarn.exceptions.YarnException;
+import org.apache.slider.common.params.ActionRegistryArgs;
+import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadClusterStateException;
+import org.apache.slider.core.exceptions.UnknownApplicationInstanceException;
 import org.apache.slider.core.persist.JsonSerDeser;
-import org.apache.slider.server.services.registry.RegistryViewForProviders;
+import org.apache.slider.core.registry.info.ServiceInstanceData;
+import org.apache.slider.server.services.registry.SliderRegistryService;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -162,12 +168,12 @@ public class RegistryBinderService<Payload> extends CuratorService {
   }
 
 
-  public List<String> instanceIDs(String servicename) throws Exception {
+  public List<String> instanceIDs(String servicetype) throws Exception {
+    Preconditions.checkNotNull(servicetype);
     List<String> instanceIds;
-
     try {
       instanceIds =
-        getCurator().getChildren().forPath(pathForName(servicename));
+        getCurator().getChildren().forPath(pathForServicetype(servicetype));
     } catch (KeeperException.NoNodeException e) {
       instanceIds = Lists.newArrayList();
     }
@@ -178,14 +184,15 @@ public class RegistryBinderService<Payload> extends CuratorService {
   /**
    * Return a service instance POJO
    *
-   * @param name name of the service
+   * @param servicetype name of the service
    * @param id ID of the instance
    * @return the instance or <code>null</code> if not found
    * @throws Exception errors
    */
-  public CuratorServiceInstance<Payload> queryForInstance(String name, String id) throws
+  public CuratorServiceInstance<Payload> queryForInstance(String servicetype, String id) throws
                                                                          Exception {
-    String path = pathForInstance(name, id);
+
+    String path = pathForInstance(servicetype, id);
     try {
       byte[] bytes = getCurator().getData().forPath(path);
       return deser.fromBytes(bytes);
@@ -197,19 +204,19 @@ public class RegistryBinderService<Payload> extends CuratorService {
   
   /**
    * List all the instances
-   * @param name name of the service
+   * @param servicetype name of the service
    * @return a list of instances and their payloads
    * @throws IOException any problem
    */
-  public List<CuratorServiceInstance<Payload>> listInstances(String name) throws
+  public List<CuratorServiceInstance<Payload>> listInstances(String servicetype) throws
     IOException {
     try {
-      List<String> instanceIDs = instanceIDs(name);
+      List<String> instanceIDs = instanceIDs(servicetype);
       List<CuratorServiceInstance<Payload>> instances =
         new ArrayList<>(instanceIDs.size());
       for (String instanceID : instanceIDs) {
         CuratorServiceInstance<Payload> instance =
-          queryForInstance(name, instanceID);
+          queryForInstance(servicetype, instanceID);
         instances.add(instance);
       }
       return instances;
@@ -220,6 +227,54 @@ public class RegistryBinderService<Payload> extends CuratorService {
     }
   }
 
+  /**
+   * Find an instance with a given ID
+   * @param instances instances
+   * @param name ID to look for
+   * @return
+   */
+  public CuratorServiceInstance<Payload> findByID(List<CuratorServiceInstance<Payload>> instances, String name) {
+    Preconditions.checkNotNull(name);
+    for (CuratorServiceInstance<Payload> instance : instances) {
+      if (instance.id.equals(name)) {
+        return instance;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * List registry entries. If a name was given, then the single match is returned
+   * -otherwise all entries matching the service type
+   * @param serviceType service type
+   * @param name an optional name
+   * @return the (non-empty) list of instances that match the criteria
+   * @throws UnknownApplicationInstanceException if there were no matches
+   * @throws IOException
+   */
+  public List<CuratorServiceInstance<Payload>> findInstances(String serviceType,
+      String name)
+      throws UnknownApplicationInstanceException, IOException {
+    List<CuratorServiceInstance<Payload>> instances =
+        listInstances(serviceType);
+    if (instances.isEmpty()) {
+      throw new UnknownApplicationInstanceException(
+          "No registry entries for service type %s",
+          serviceType);
+    }
+    if (StringUtils.isNotEmpty(name)) {
+      CuratorServiceInstance<Payload> foundInstance = findByID(instances, name);
+      if (foundInstance == null) {
+        throw new UnknownApplicationInstanceException(
+            "No registry entries for service name %s of service type %s",
+            name,
+            serviceType);
+      }
+      instances.clear();
+      instances.add(foundInstance);
+    }
+    return instances;
+  }
 
   public Collection<String> queryForNames() throws IOException {
     try {

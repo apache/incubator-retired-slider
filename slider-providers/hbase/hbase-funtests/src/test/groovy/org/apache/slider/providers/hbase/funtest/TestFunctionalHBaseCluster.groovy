@@ -22,6 +22,7 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
 import org.apache.slider.common.SliderExitCodes
+import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.RoleKeys
@@ -84,8 +85,7 @@ public class TestFunctionalHBaseCluster extends HBaseCommandTestBase
 
     describe description
 
-    int numWorkers = SLIDER_CONFIG.getInt(KEY_SLIDER_TEST_NUM_WORKERS,
-        DEFAULT_SLIDER_NUM_WORKERS);
+    int numWorkers = desiredWorkerCount;
 
     def clusterpath = buildClusterPath(clusterName)
     assert !clusterFS.exists(clusterpath)
@@ -107,7 +107,7 @@ public class TestFunctionalHBaseCluster extends HBaseCommandTestBase
 
     //get a slider client against the cluster
     SliderClient sliderClient = bondToCluster(SLIDER_CONFIG, clusterName)
-    ClusterDescription cd2 = sliderClient.getClusterDescription()
+    ClusterDescription cd2 = sliderClient.clusterDescription
     assert clusterName == cd2.name
 
     log.info("Connected via Client {} with {} workers", sliderClient.toString(),
@@ -121,7 +121,22 @@ public class TestFunctionalHBaseCluster extends HBaseCommandTestBase
     HBaseTestUtils.waitForHBaseRegionServerCount(sliderClient, clusterName,
                                   numWorkers, HBASE_LAUNCH_WAIT_TIME)
 
-    clusterLoadOperations(clusterName, clientConf, numWorkers, roleMap, cd2)
+    clusterOperations(
+        clusterName,
+        sliderClient,
+        clientConf,
+        numWorkers,
+        roleMap,
+        cd2)
+  }
+
+  /**
+   * Override to change policy of the deired no of workers
+   * @return
+   */
+  def int getDesiredWorkerCount() {
+    return SLIDER_CONFIG.getInt(KEY_SLIDER_TEST_NUM_WORKERS,
+        DEFAULT_SLIDER_NUM_WORKERS)
   }
 
 
@@ -130,18 +145,31 @@ public class TestFunctionalHBaseCluster extends HBaseCommandTestBase
   }
 
   /**
-   * Override point for any cluster load operations
-   * @param clientConf
-   * @param numWorkers
+   * Override point for any cluster operations
+   * @param clustername name of cluster
+   * @param sliderClient bonded low level client
+   * @param clientConf config
+   * @param numWorkers no. of workers created
+   * @param roleMap role map
+   * @param cd current cluster
    */
-  public void clusterLoadOperations(
+  public void clusterOperations(
       String clustername,
+      SliderClient sliderClient,
       Configuration clientConf,
       int numWorkers,
       Map<String, Integer> roleMap,
       ClusterDescription cd) {
 
     log.info("Client Configuration = " + ConfigHelper.dumpConfigToString(clientConf))
+    
+    //grab some registry bits
+    registry([ARG_LIST])
+    registry([ARG_LIST, ARG_SERVICETYPE, SliderKeys.APP_TYPE ])
+    registry([ARG_LIST, ARG_SERVICETYPE, ""])
+    registry([ARG_LIST, ARG_SERVICETYPE, ""])
+    
+    
   }
 
 }

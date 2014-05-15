@@ -28,6 +28,7 @@ import org.apache.slider.api.ClusterNode
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.params.ActionRegistryArgs
+import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.persist.JsonSerDeser
 import org.apache.slider.core.registry.docstore.PublishedConfigSet
@@ -96,23 +97,23 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
 
 
     String username = client.username
-    def serviceRegistryClient = client.YARNRegistryClient
+    def yarnRegistryClient = client.YARNRegistryClient
     describe("list of all applications")
     logApplications(apps)
     describe("apps of user $username")
-    List<ApplicationReport> userInstances = serviceRegistryClient.listInstances()
+    List<ApplicationReport> userInstances = yarnRegistryClient.listInstances()
     logApplications(userInstances)
     assert userInstances.size() == 1
     describe("named app $clustername")
-    ApplicationReport instance = serviceRegistryClient.findInstance(clustername)
+    ApplicationReport instance = yarnRegistryClient.findInstance(clustername)
     logReport(instance)
     assert instance != null
 
     //switch to the ZK-based registry
 
     describe "service registry names"
-    SliderRegistryService registry = client.registry
-    def names = registry.queryForNames();
+    SliderRegistryService registryService = client.registry
+    def names = registryService.queryForNames();
     dumpRegistryNames(names)
 
     List<String> instanceIds = client.listRegistryInstanceIDs()
@@ -121,8 +122,8 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     dumpRegistryInstanceIDs(instanceIds)
     assert instanceIds.size() == 1
 
-    List<CuratorServiceInstance<ServiceInstanceData>> instances = client.listRegistryInstances(
-    )
+    List<CuratorServiceInstance<ServiceInstanceData>> instances =
+        client.listRegistryInstances()
     dumpRegistryInstances(instances)
 
     assert instances.size() == 1
@@ -147,8 +148,8 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     describe("Publisher")
 
     def publishedJSON = GET(publisherURL)
-    log.info(publishedJSON)
-    JsonSerDeser< PublishedConfigSet> serDeser= new JsonSerDeser<PublishedConfigSet>(
+//    log.info(publishedJSON)
+    JsonSerDeser< PublishedConfigSet> serDeser= new JsonSerDeser<>(
         PublishedConfigSet)
     def configSet = serDeser.fromJson(publishedJSON)
     assert configSet.size() >= 1
@@ -161,7 +162,7 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     def yarnSitePublisher = appendToURL(publisher, ARTIFACT_NAME)
 
     String confJSON = GET(yarnSitePublisher)
-    log.info(confJSON)
+//    log.info(confJSON)
     JsonSerDeser< PublishedConfiguration> confSerDeser =
         new JsonSerDeser<PublishedConfiguration>(PublishedConfiguration)
 
@@ -194,22 +195,25 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     log.info(GET(registryURL, RestPaths.REGISTRY_SERVICE ))
 
 
-    describe "Registry Retrieval"
+    describe "Registry Retrieval Class"
     // retrieval
 
     RegistryRetriever retriever = new RegistryRetriever(serviceInstanceData)
     log.info retriever.toString()
     
     assert retriever.hasConfigurations(true)
-    def externalConf = retriever.getConfigurations(true)
-    externalConf.keys().each { String key ->
-      def config = externalConf.get(key)
+    PublishedConfigSet externalConfSet = retriever.getConfigurations(true)
+    externalConfSet.keys().each { String key ->
+      def config = externalConfSet.get(key)
       log.info "$key -- ${config.description}"
     }
-    assert externalConf[ARTIFACT_NAME]
+    assert externalConfSet[ARTIFACT_NAME]
 
 
-    def yarnSite = retriever.retrieveConfiguration(ARTIFACT_NAME, true)
+    def yarnSite = retriever.retrieveConfiguration(
+        externalConfSet,
+        ARTIFACT_NAME,
+        true)
     assert !yarnSite.empty
     def siteXML = yarnSite.asConfiguration()
     def rmHostnameViaClientSideXML = parsedProps.get(
@@ -220,32 +224,69 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
   /* TODO SLIDER-52 PublishedConfiguration XML conf values are not resolved until client-side
    assert rmAddrViaClientSideXML == rmAddrFromDownloadedProperties
   */  
+    describe "fetch missing artifact"
+    try {
+      retriever.retrieveConfiguration(externalConfSet, "no-such-artifact", true)
+      fail("expected a failure")
+    } catch (FileNotFoundException expected) {
+      // expected
+    }
     describe "Internal configurations"
     assert !retriever.hasConfigurations(false)
     try {
       retriever.getConfigurations(false)
-      fail( "expected a failure")
+      fail("expected a failure")
     } catch (FileNotFoundException expected) {
-      //expected
+      // expected
     }
 
 
     // retrieval via API
     ActionRegistryArgs registryArgs = new ActionRegistryArgs()
-    registryArgs.name = serviceInstanceData.id;
     registryArgs.verbose = true
 
-    // list
+    // list all
     registryArgs.list = true;
     describe registryArgs.toString()
-    assert 0 == client.actionRegistry(registryArgs)
+    client.actionRegistry(registryArgs)
+
+    // list a named instance and expect a  failure
+    registryArgs.list = true;
+    registryArgs.name = "unknown"
+    try {
+      client.actionRegistryList(registryArgs)
+    } catch (UnknownApplicationInstanceException ignored) {
+      // expected 
+    }
+
+    // list all instances of an alternate type and expect failure
+    registryArgs.list = true;
+    registryArgs.name = null
+    registryArgs.serviceType = "org.apache.hadoop"
+    try {
+      client.actionRegistryList(registryArgs)
+    } catch (UnknownApplicationInstanceException ignored) {
+      // expected 
+    }
+
+    //set the name
+    registryArgs.name = serviceInstanceData.id;
+    registryArgs.serviceType = SliderKeys.APP_TYPE
+    
+
+    //now expect list to work
+    describe registryArgs.toString()
+
+    def listedInstance = client.actionRegistryList(registryArgs)
+    assert listedInstance[0].id == serviceInstanceData.id
+    
 
     // listconf 
     registryArgs.list = false;
     registryArgs.listConf = true
     describe registryArgs.toString() 
     
-    assert 0 == client.actionRegistry(registryArgs)
+    client.actionRegistry(registryArgs)
 
     // listconf --internal
     registryArgs.list = false;
@@ -253,7 +294,7 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     registryArgs.internal = true
     describe registryArgs.toString()
     try {
-      assert 0 == client.actionRegistry(registryArgs)
+      client.actionRegistry(registryArgs)
       fail("expected a failure")
     } catch (FileNotFoundException expected) {
       //expected
@@ -263,30 +304,36 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     registryArgs.listConf = false
     registryArgs.internal = false
     registryArgs.format = "properties"
-    registryArgs.getConf = ARTIFACT_NAME
+
+    def yarn_site_config = PublishedArtifacts.YARN_SITE_CONFIG
+    registryArgs.getConf = yarn_site_config
+    
     
     describe registryArgs.toString()
-    assert 0 == client.actionRegistry(registryArgs)
+    client.actionRegistry(registryArgs)
 
     File outputDir = new File("target/test_standalone_registry_am/output")
     outputDir.mkdirs()
 
     registryArgs.dest = outputDir
     describe registryArgs.toString()
-    assert 0 == client.actionRegistry(registryArgs)
-    assert new File(outputDir,ARTIFACT_NAME + ".properties").exists()
+    client.actionRegistry(registryArgs)
+    assert new File(outputDir, yarn_site_config + ".properties").exists()
 
     registryArgs.format = "xml"
-    assert 0 == client.actionRegistry(registryArgs)
-    assert new File(outputDir,ARTIFACT_NAME + ".xml").exists()
+    client.actionRegistry(registryArgs)
+    assert new File(outputDir, yarn_site_config + ".xml").exists()
 
+    describe registryArgs.toString()
+    registryArgs.getConf = "undefined-file"
+    client.actionRegistry(registryArgs)
 
 
     describe "freeze cluster"
     //now kill that cluster
     assert 0 == clusterActionFreeze(client, clustername)
     //list it & See if it is still there
-    ApplicationReport oldInstance = serviceRegistryClient.findInstance(
+    ApplicationReport oldInstance = yarnRegistryClient.findInstance(
         clustername)
     assert oldInstance != null
     assert oldInstance.yarnApplicationState >= YarnApplicationState.FINISHED

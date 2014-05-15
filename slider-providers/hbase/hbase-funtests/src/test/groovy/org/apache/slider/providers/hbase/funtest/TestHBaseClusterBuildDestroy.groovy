@@ -35,7 +35,7 @@ import org.junit.Test
 
 @CompileStatic
 @Slf4j
-public class TestClusterBuildDestroy extends HBaseCommandTestBase
+public class TestHBaseClusterBuildDestroy extends HBaseCommandTestBase
     implements FuntestProperties, Arguments {
 
 

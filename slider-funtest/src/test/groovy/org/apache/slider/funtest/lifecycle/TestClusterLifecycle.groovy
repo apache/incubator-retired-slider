@@ -114,16 +114,15 @@ public class TestClusterLifecycle extends AgentCommandTestBase
 
       //get a slider client against the cluster
       SliderClient sliderClient = bondToCluster(SLIDER_CONFIG, CLUSTER)
-      ClusterDescription cd2 = sliderClient.getClusterDescription()
+      ClusterDescription cd2 = sliderClient.clusterDescription
       assert CLUSTER == cd2.name
 
       log.info("Connected via Client {}", sliderClient.toString())
 
       //freeze
-      slider(0, [
-          SliderActions.ACTION_FREEZE, CLUSTER,
+      freeze(CLUSTER, [
           ARG_WAIT, Integer.toString(FREEZE_WAIT_TIME),
-          ARG_MESSAGE, "freeze-in-testHBaseCreateCluster"
+          ARG_MESSAGE, "freeze-in-test cluster lifecycle"
       ])
 
       //cluster exists if you don't want it to be live
@@ -134,18 +133,17 @@ public class TestClusterLifecycle extends AgentCommandTestBase
 
       // thaw then freeze the cluster
 
-      slider(0,
+      thaw(CLUSTER,
            [
-               SliderActions.ACTION_THAW, CLUSTER,
                ARG_WAIT, Integer.toString(THAW_WAIT_TIME),
            ])
       exists(0, CLUSTER)
-      slider(0, [
-          SliderActions.ACTION_FREEZE, CLUSTER,
-          ARG_FORCE,
-          ARG_WAIT, Integer.toString(FREEZE_WAIT_TIME),
-          ARG_MESSAGE, "forced-freeze-in-test"
-      ])
+      freeze(CLUSTER,
+          [
+              ARG_FORCE,
+              ARG_WAIT, Integer.toString(FREEZE_WAIT_TIME),
+              ARG_MESSAGE, "forced-freeze-in-test"
+          ])
 
       //cluster is no longer live
       exists(0, CLUSTER, false)
@@ -156,14 +154,11 @@ public class TestClusterLifecycle extends AgentCommandTestBase
       // thaw with a restart count set to enable restart
 
       describe "the kill/restart phase may fail if yarn.resourcemanager.am.max-attempts is too low"
-      slider(0,
+      thaw(CLUSTER,
            [
-               SliderActions.ACTION_THAW, CLUSTER,
                ARG_WAIT, Integer.toString(THAW_WAIT_TIME),
                ARG_DEFINE, SliderXmlConfKeys.KEY_AM_RESTART_LIMIT + "=3"
            ])
-
-
 
       ClusterDescription status = killAmAndWaitForRestart(sliderClient, CLUSTER)
 

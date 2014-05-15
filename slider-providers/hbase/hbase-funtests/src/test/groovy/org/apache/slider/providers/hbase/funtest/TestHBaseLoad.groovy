@@ -21,6 +21,7 @@ package org.apache.slider.providers.hbase.funtest
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hbase.util.LoadTestTool
 import org.apache.slider.api.ClusterDescription
+import org.apache.slider.client.SliderClient
 import org.apache.slider.providers.hbase.HBaseConfigFileOptions
 
 class TestHBaseLoad extends TestFunctionalHBaseCluster {
@@ -31,8 +32,9 @@ class TestHBaseLoad extends TestFunctionalHBaseCluster {
   }
 
   @Override
-  void clusterLoadOperations(
+  void clusterOperations(
       String clustername,
+      SliderClient sliderClient,
       Configuration clientConf,
       int numWorkers,
       Map<String, Integer> roleMap,

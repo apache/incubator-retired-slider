@@ -80,7 +80,7 @@ public class ActionRegistryArgs extends AbstractActionArgs {
 
   //--format 
   @Parameter(names = ARG_FORMAT,
-      description = "Format for a response: [text|xml|json|properties]")
+      description = "Format for a response: [xml|json|properties]")
   public String format;
 
 
@@ -95,7 +95,6 @@ public class ActionRegistryArgs extends AbstractActionArgs {
   @Parameter(names = {ARG_SERVICETYPE},
       description = "optional service type")
   public String serviceType = SliderKeys.APP_TYPE;
-
 
   @Parameter(names = {ARG_VERBOSE},
       description = "verbose output")
@@ -149,11 +148,11 @@ public class ActionRegistryArgs extends AbstractActionArgs {
     return arg ? 1 : 0;
   }
 
-  private String iff(String arg, boolean val) {
+  private String ifdef(String arg, boolean val) {
     return val ? (arg + " "): "";
   }
 
-  private String iff (String arg, String val) {
+  private String ifdef(String arg, String val) {
     if (is(val)) {
       return arg + " " + val + " ";
     } else {
@@ -165,23 +164,24 @@ public class ActionRegistryArgs extends AbstractActionArgs {
   public String toString() {
     final StringBuilder sb =
         new StringBuilder(ACTION_REGISTRY);
-    sb.append(iff(ARG_LIST, list));
-    sb.append(iff(ARG_LISTCONF, listConf));
-    sb.append(iff(ARG_LISTFILES, listFiles));
-    sb.append(iff(ARG_GETCONF, listFiles));
-    sb.append(iff(ARG_GETFILES, listFiles));
+    sb.append(' ');
+    sb.append(ifdef(ARG_LIST, list));
+    sb.append(ifdef(ARG_LISTCONF, listConf));
+    sb.append(ifdef(ARG_LISTFILES, listFiles));
+    sb.append(ifdef(ARG_GETCONF, getConf));
+    sb.append(ifdef(ARG_GETFILES, getFiles));
 
-    sb.append(iff(ARG_NAME, name));
-    sb.append(iff(ARG_SERVICETYPE, serviceType));
+    sb.append(ifdef(ARG_NAME, name));
+    sb.append(ifdef(ARG_SERVICETYPE, serviceType));
 
 
-    sb.append(iff(ARG_VERBOSE, verbose));
-    sb.append(iff(ARG_INTERNAL, internal));
+    sb.append(ifdef(ARG_VERBOSE, verbose));
+    sb.append(ifdef(ARG_INTERNAL, internal));
 
     if (dest != null) {
-      sb.append(iff(ARG_DEST, dest.toString()));
+      sb.append(ifdef(ARG_DEST, dest.toString()));
     }
-    sb.append(iff(ARG_FORMAT, format));
+    sb.append(ifdef(ARG_FORMAT, format));
 
     return sb.toString();
   }

@@ -343,6 +343,53 @@ Example
     slider list
     slider list instance1
 
+### `registry (--list | --listconf | --getconf <conf>) [--name <name>] [--servicetype <servicetype>] [--verbose]`
+
+List registered application instances visible to the user.
+
+The `--name <name>` option names the registry entry to work with. For slider applications,
+this is the application instance
+
+
+The `--servicetype <servicetype>` option allows a different service type to be chosen.
+The default is `"org.apache.slider`
+
+The `--verbose` flag triggers more verbose output on the operations
+
+The `--internal` flag indicates the configurations to be listed and retrieved
+are from the "internal" list of configuration data provided for use within a
+deployed application. 
+
+Operations:
+
+#### `registry --list  [--servicetype <servicetype>] [--name <name>] [--verbose]`
+
+List all services of the service type and optionally the name. 
+ 
+If there were no matches then the operation fails with the `EXIT_UNKNOWN_INSTANCE` code
+
+ 
+ 
+ 
+#### `registry --listconf [--name <name>]  [--internal] [--servicetype <servicetype>]`
+
+List the configurations exported by of a named application
+
+
+
+#### `registry --getconf <configuration> [--format (xml|json|properties)] [--dest <path>] [--internal] ` get the configuration
+ 
+Get a named configuration
+
+  `--dest <path>` : the filename or directory to save a configuration to.
+  `--format (xml|json|properties)` defines the output format
+  
+ 
+ 
+ 
+
+
+
 ### `status <name> [--out <filename>]`
 
 Get the status of the named application instance in JSON format. A filename can be used to 

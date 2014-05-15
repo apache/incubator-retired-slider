@@ -55,7 +55,6 @@ import org.apache.slider.common.params.ActionThawArgs;
 import org.apache.slider.common.params.Arguments;
 import org.apache.slider.common.params.ClientArgs;
 import org.apache.slider.common.params.LaunchArgsAccessor;
-import org.apache.slider.common.params.SliderActions;
 import org.apache.slider.common.tools.ConfigHelper;
 import org.apache.slider.common.tools.Duration;
 import org.apache.slider.common.tools.SliderFileSystem;
@@ -91,6 +90,7 @@ import org.apache.slider.core.registry.docstore.ConfigFormat;
 import org.apache.slider.core.registry.docstore.PublishedConfigSet;
 import org.apache.slider.core.registry.docstore.PublishedConfiguration;
 import org.apache.slider.core.registry.docstore.PublishedConfigurationOutputter;
+import org.apache.slider.core.registry.info.RegisteredEndpoint;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.core.registry.retrieve.RegistryRetriever;
 import org.apache.slider.core.registry.zk.ZKPathBuilder;
@@ -101,9 +101,10 @@ import org.apache.slider.providers.slideram.SliderAMClientProvider;
 import org.apache.slider.server.appmaster.SliderAppMaster;
 import org.apache.slider.server.appmaster.rpc.RpcBinder;
 import org.apache.slider.server.services.curator.CuratorServiceInstance;
-import org.apache.slider.server.services.curator.RegistryBinderService;
 import org.apache.slider.server.services.registry.SliderRegistryService;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
+
+import static org.apache.slider.common.params.SliderActions.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -114,6 +115,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -201,50 +203,62 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     int exitCode = EXIT_SUCCESS;
     String clusterName = serviceArgs.getClusterName();
     // actions
-    if (SliderActions.ACTION_BUILD.equals(action)) {
-      exitCode = actionBuild(clusterName, serviceArgs.getActionBuildArgs());
-    } else if (SliderActions.ACTION_CREATE.equals(action)) {
-      exitCode = actionCreate(clusterName, serviceArgs.getActionCreateArgs());
-    } else if (SliderActions.ACTION_FREEZE.equals(action)) {
-      exitCode = actionFreeze(clusterName,
-                              serviceArgs.getActionFreezeArgs());
-    } else if (SliderActions.ACTION_THAW.equals(action)) {
-      exitCode = actionThaw(clusterName, serviceArgs.getActionThawArgs());
-    } else if (SliderActions.ACTION_DESTROY.equals(action)) {
-      exitCode = actionDestroy(clusterName);
-    } else if (SliderActions.ACTION_EXISTS.equals(action)) {
-      exitCode = actionExists(clusterName,
-                              serviceArgs.getActionExistsArgs().live);
-    } else if (SliderActions.ACTION_FLEX.equals(action)) {
-      exitCode = actionFlex(clusterName, serviceArgs.getActionFlexArgs());
-    } else if (SliderActions.ACTION_GETCONF.equals(action)) {
-      exitCode = actionGetConf(clusterName, serviceArgs.getActionGetConfArgs());
-    } else if (SliderActions.ACTION_HELP.equals(action) ||
-               SliderActions.ACTION_USAGE.equals(action)) {
-      log.info(serviceArgs.usage());
-
-    } else if (SliderActions.ACTION_KILL_CONTAINER.equals(action)) {
-      exitCode = actionKillContainer(clusterName,
-                                     serviceArgs.getActionKillContainerArgs());
-
-    } else if (SliderActions.ACTION_AM_SUICIDE.equals(action)) {
-      exitCode = actionAmSuicide(clusterName,
-                                 serviceArgs.getActionAMSuicideArgs());
-
-    } else if (SliderActions.ACTION_LIST.equals(action)) {
-      exitCode = actionList(clusterName);
-    } else if (SliderActions.ACTION_REGISTRY.equals(action)) {     
-      exitCode = actionRegistry(
-          serviceArgs.getActionRegistryArgs());
-    } else if (SliderActions.ACTION_STATUS.equals(action)) {     
-      exitCode = actionStatus(clusterName,
-                              serviceArgs.getActionStatusArgs());
-    } else if (SliderActions.ACTION_VERSION.equals(action)) {
-      
-      exitCode = actionVersion();
-    } else {
-      throw new SliderException(EXIT_UNIMPLEMENTED,
-                              "Unimplemented: " + action);
+    switch (action) {
+      case ACTION_BUILD:
+        exitCode = actionBuild(clusterName, serviceArgs.getActionBuildArgs());
+        break;
+      case ACTION_CREATE:
+        exitCode = actionCreate(clusterName, serviceArgs.getActionCreateArgs());
+        break;
+      case ACTION_FREEZE:
+        exitCode = actionFreeze(clusterName, serviceArgs.getActionFreezeArgs());
+        break;
+      case ACTION_THAW:
+        exitCode = actionThaw(clusterName, serviceArgs.getActionThawArgs());
+        break;
+      case ACTION_DESTROY:
+        exitCode = actionDestroy(clusterName);
+        break;
+      case ACTION_EXISTS:
+        exitCode = actionExists(clusterName,
+            serviceArgs.getActionExistsArgs().live);
+        break;
+      case ACTION_FLEX:
+        exitCode = actionFlex(clusterName, serviceArgs.getActionFlexArgs());
+        break;
+      case ACTION_GETCONF:
+        exitCode =
+            actionGetConf(clusterName, serviceArgs.getActionGetConfArgs());
+        break;
+      case ACTION_HELP:
+      case ACTION_USAGE:
+        log.info(serviceArgs.usage());
+        break;
+      case ACTION_KILL_CONTAINER:
+        exitCode = actionKillContainer(clusterName,
+            serviceArgs.getActionKillContainerArgs());
+        break;
+      case ACTION_AM_SUICIDE:
+        exitCode = actionAmSuicide(clusterName,
+            serviceArgs.getActionAMSuicideArgs());
+        break;
+      case ACTION_LIST:
+        exitCode = actionList(clusterName);
+        break;
+      case ACTION_REGISTRY:
+        actionRegistry(
+            serviceArgs.getActionRegistryArgs());
+        break;
+      case ACTION_STATUS:
+        exitCode = actionStatus(clusterName,
+            serviceArgs.getActionStatusArgs());
+        break;
+      case ACTION_VERSION:
+        exitCode = actionVersion();
+        break;
+      default:
+        throw new SliderException(EXIT_UNIMPLEMENTED,
+            "Unimplemented: " + action);
     }
 
     return exitCode;
@@ -567,7 +581,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
   /**
    * Load the instance definition. It is not resolved at this point
-   * @param name
+   * @param name cluster name
    * @param clusterDirectory cluster dir
    * @return the loaded configuration
    * @throws IOException
@@ -590,7 +604,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
     /**
    * Load the instance definition. 
-   * @param name
+   * @param name cluster name
    * @param resolved flag to indicate the cluster should be resolved
    * @return the loaded configuration
    * @throws IOException
@@ -823,7 +837,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     // rm address
 
-    InetSocketAddress rmSchedulerAddress = null;
+    InetSocketAddress rmSchedulerAddress;
     try {
       rmSchedulerAddress = SliderUtils.getRmSchedulerAddress(config);
     } catch (IllegalArgumentException e) {
@@ -845,7 +859,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     commandLine.add(SliderAppMaster.SERVICE_CLASSNAME);
 
     // create action and the cluster name
-    commandLine.add(SliderActions.ACTION_CREATE, clustername);
+    commandLine.add(ACTION_CREATE, clustername);
 
     // debug
     if (debugAM) {
@@ -957,22 +971,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       }
     }
     return exitCode;
-  }
-
-
-  /**
-   * Propagate any critical principals from the current site config down to the HBase one.
-   * @param clusterSpec cluster spec
-   * @param config config to read from
-   */
-  private void propagatePrincipals(ClusterDescription clusterSpec,
-                                   Configuration config) {
-    String dfsPrincipal = config.get(DFSConfigKeys.DFS_NAMENODE_USER_NAME_KEY);
-    if (dfsPrincipal != null) {
-      String siteDfsPrincipal = OptionKeys.SITE_XML_PREFIX +
-                                DFSConfigKeys.DFS_NAMENODE_USER_NAME_KEY;
-      clusterSpec.setOptionifUnset(siteDfsPrincipal, dfsPrincipal);
-    }
   }
 
 
@@ -1249,7 +1247,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     verifyBindingsDefined();
     SliderUtils.validateClusterName(name);
     log.debug("actionFlex({})", name);
-    Map<String, Integer> roleInstances = new HashMap<String, Integer>();
+    Map<String, Integer> roleInstances = new HashMap<>();
     Map<String, String> roleMap = args.getComponentMap();
     for (Map.Entry<String, String> roleEntry : roleMap.entrySet()) {
       String key = roleEntry.getKey();
@@ -1544,10 +1542,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
           return EXIT_FALSE;
         }
       }
-    } catch (YarnException e) {
-      log.warn("Exception while waiting for the cluster {} to shut down: {}",
-               clustername, e);
-    } catch (IOException e) {
+    } catch (YarnException | IOException e) {
       log.warn("Exception while waiting for the cluster {} to shut down: {}",
                clustername, e);
     }
@@ -1611,15 +1606,18 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     }
     try {
       String description = "Slider Application Instance " + clustername;
-      if (format.equals(Arguments.FORMAT_XML)) {
-        Configuration siteConf = getSiteConf(status, clustername);
-        siteConf.writeXml(writer);
-      } else if (format.equals(Arguments.FORMAT_PROPERTIES)) {
-        Properties props = new Properties();
-        props.putAll(status.clientProperties);
-        props.store(writer, description);
-      } else {
-        throw new BadCommandArgumentsException("Unknown format: " + format);
+      switch (format) {
+        case Arguments.FORMAT_XML:
+          Configuration siteConf = getSiteConf(status, clustername);
+          siteConf.writeXml(writer);
+          break;
+        case Arguments.FORMAT_PROPERTIES:
+          Properties props = new Properties();
+          props.putAll(status.clientProperties);
+          props.store(writer, description);
+          break;
+        default:
+          throw new BadCommandArgumentsException("Unknown format: " + format);
       }
     } finally {
       // data is written.
@@ -1778,7 +1776,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   /**
    * List all nodes in a role. This is a double round trip: once to list
    * the nodes in a role, another to get their details
-   * @param role
+   * @param role component/role to look for
    * @return an array of ContainerNode instances
    * @throws IOException
    * @throws YarnException
@@ -1792,7 +1790,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
   /**
    * Get the details on a list of uuids
-   * @param uuids
+   * @param uuids uuids to ask for 
    * @return a possibly empty list of node details
    * @throws IOException
    * @throws YarnException
@@ -1804,7 +1802,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     if (uuids.length == 0) {
       // short cut on an empty list
-      return new LinkedList<ClusterNode>();
+      return new LinkedList<>();
     }
     return createClusterOperations().listClusterNodes(uuids);
   }
@@ -1947,13 +1945,12 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @throws IOException Network or other problems
    */
   @VisibleForTesting
-  public int actionRegistry(ActionRegistryArgs registryArgs) throws
+  public void actionRegistry(ActionRegistryArgs registryArgs) throws
       YarnException,
       IOException {
     // as this is also a test entry point, validate
     // the arguments
     registryArgs.validate();
-    int exitCode = EXIT_SUCCESS;
     if (registryArgs.list) {
       actionRegistryList(registryArgs);
     } else if (registryArgs.listConf) {
@@ -1961,34 +1958,64 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       actionRegistryListConfigs(registryArgs);
     } else if (SliderUtils.isSet(registryArgs.getConf)) {
       // get a configuration
-      PublishedConfiguration publishedConfiguration =
-          actionRegistryGetConfig(registryArgs);
-      outputConfig(publishedConfiguration, registryArgs);
-      
+      try {
+        PublishedConfiguration publishedConfiguration =
+            actionRegistryGetConfig(registryArgs);
+        outputConfig(publishedConfiguration, registryArgs);
+      } catch (FileNotFoundException e) {
+// TODO
+      }
+
     } else {
-      exitCode = EXIT_FALSE;
+      // its an unknown command
+      throw new BadCommandArgumentsException(
+          "Bad command arguments for "+ ACTION_REGISTRY +" " + registryArgs);
     }
-    return exitCode;
   }
 
   /**
    * Registry operation
    *
    * @param registryArgs registry Arguments
+   * @return the instances (for tests)
    * @throws YarnException YARN problems
    * @throws IOException Network or other problems
    */
-  private void actionRegistryList(ActionRegistryArgs registryArgs)
+  @VisibleForTesting
+  public List<ServiceInstanceData> actionRegistryList(
+      ActionRegistryArgs registryArgs)
       throws YarnException, IOException {
+    SliderRegistryService registryService = getRegistry();
     List<CuratorServiceInstance<ServiceInstanceData>> instances =
-        getRegistry().listInstances(registryArgs.serviceType);
-
+        registryService.findInstances(registryArgs.serviceType, registryArgs.name
+        );
+    List<ServiceInstanceData> sids = new ArrayList<>(instances.size());
     for (CuratorServiceInstance<ServiceInstanceData> instance : instances) {
-      if (!registryArgs.verbose) {
-        log.info("{}", instance.id);
-      } else {
-        log.info("{} ", instance);
-      }
+      ServiceInstanceData payload = instance.payload;
+      
+      logInstance(payload, registryArgs.verbose);
+      sids.add(payload);
+    }
+    return sids;
+  }
+
+  private void logInstance(ServiceInstanceData instance,
+      boolean verbose) {
+    if (!verbose) {
+      log.info("{}", instance.id);
+    } else {
+      log.info("{}: ", instance.id);
+      logEndpoints(instance);
+    }
+  }
+  
+  private void logEndpoints(ServiceInstanceData instance) {
+      Map<String, RegisteredEndpoint> endpoints =
+          instance.listEndpoints(true);
+      for (Map.Entry<String, RegisteredEndpoint> entry : endpoints.entrySet()) {
+        String name = entry.getKey();
+        RegisteredEndpoint endpoint = entry.getValue();
+        log.info("  {}", endpoint);
     }
   }
 
@@ -2026,7 +2053,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @param registryArgs registry Arguments
    * @throws YarnException YARN problems
    * @throws IOException Network or other problems
+   * @throws FileNotFoundException if the config is not found
    */
+  @VisibleForTesting
   public PublishedConfiguration actionRegistryGetConfig(ActionRegistryArgs registryArgs)
       throws YarnException, IOException {
     ServiceInstanceData instance = lookupInstance(registryArgs);
@@ -2036,8 +2065,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     PublishedConfigSet configurations =
         retriever.getConfigurations(external);
 
-    PublishedConfiguration published =
-        retriever.retrieveConfiguration(registryArgs.getConf, external);
+    PublishedConfiguration published = retriever.retrieveConfiguration(configurations,
+            registryArgs.getConf,
+            external);
     return published;
   }
   
@@ -2130,7 +2160,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
   /**
    * List instances in the registry
-   * @return
+   * @return the instance IDs
    * @throws IOException
    * @throws YarnException
    */

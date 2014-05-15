@@ -122,20 +122,25 @@ public class RegistryRetriever {
 
   /**
    * Get a complete configuration, with all values
+   * @param configSet
    * @param name name of the configuration
    * @param external flag to indicate that it is an external configuration
    * @return the retrieved config
    * @throws IOException IO problems
    */
-  public PublishedConfiguration retrieveConfiguration(String name,
+  public PublishedConfiguration retrieveConfiguration(PublishedConfigSet configSet,
+      String name,
       boolean external) throws IOException {
+    if (!configSet.contains(name)) {
+      throw new FileNotFoundException("Unknown configuration " + name);
+    }
     String confURL = getRegistryView(external).configurationsURL;
     confURL = SliderUtils.appendToURL(confURL, name);
     try {
       WebResource webResource = jsonResource(confURL);
-      log.debug("GET {}", confURL);
-      PublishedConfiguration configSet = webResource.get(PublishedConfiguration.class);
-      return configSet;
+      PublishedConfiguration publishedConf =
+          webResource.get(PublishedConfiguration.class);
+      return publishedConf;
     } catch (UniformInterfaceException e) {
       throw ExceptionConverter.convertJerseyException(confURL, e);
     }
