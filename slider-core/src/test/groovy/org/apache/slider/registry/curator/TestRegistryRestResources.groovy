@@ -116,18 +116,17 @@ class TestRegistryRestResources extends AgentTestBase {
     //WS get
     Client client = createTestClient();
 
-    // test the exposed WADL link
     WebResource webResource = client.resource(registry_url);
-    ClientResponse response = webResource.type(MediaType.APPLICATION_XML)
-           .get(ClientResponse.class);
-    assert response.status == 200
-    assert response.type == (new MediaType("application", WADL))
+    List<String> serviceList = webResource.type(MediaType.APPLICATION_JSON)
+           .get(List.class);
+    log.info("service list: {}", serviceList)
+    assert serviceList.contains(SliderKeys.APP_TYPE)
 
     // test the available GET URIs
     webResource = client.resource(
         appendToURL(registry_url, RestPaths.REGISTRY_SERVICE));
-    
-    response = webResource.type(MediaType.APPLICATION_JSON)
+
+    ClientResponse response = webResource.type(MediaType.APPLICATION_JSON)
                           .get(ClientResponse.class);
     def responseStr = response.getEntity(String.class)
     log.info("response is " + responseStr)

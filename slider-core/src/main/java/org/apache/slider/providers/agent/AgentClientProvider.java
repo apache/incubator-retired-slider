@@ -34,11 +34,14 @@ import org.apache.slider.core.launch.AbstractLauncher;
 import org.apache.slider.providers.AbstractClientProvider;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
+import org.apache.slider.providers.agent.application.metadata.Metainfo;
+import org.apache.slider.providers.agent.application.metadata.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -193,5 +196,24 @@ public class AgentClientProvider extends AbstractClientProvider
       Path tempPath, boolean miniClusterTestRun) throws
       IOException,
       SliderException {
+  }
+
+  @Override
+  public Set<String> getApplicationTags(SliderFileSystem fileSystem,
+                                        String appDef) throws SliderException {
+    Set<String> tags;
+    try {
+      Metainfo metainfo = AgentUtils.getApplicationMetainfo(fileSystem, appDef);
+      Service service = metainfo.getServices().get(0);
+      tags = new HashSet<>();
+      tags.add("Name: " + service.getName());
+      tags.add("Version: " + service.getVersion());
+      tags.add("Description: " + service.getComment());
+    } catch (IOException e) {
+      log.error("error retrieving metainfo from {}", appDef, e);
+      throw new SliderException("error retrieving metainfo", e);
+    }
+
+    return tags;
   }
 }

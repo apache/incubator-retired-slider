@@ -242,17 +242,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
   protected Metainfo getApplicationMetainfo(SliderFileSystem fileSystem,
                                             String appDef) throws IOException {
-    log.info("Reading metainfo at {}", appDef);
-    InputStream metainfoStream = SliderUtils.getApplicationResourceInputStream(
-        fileSystem.getFileSystem(), new Path(appDef), "metainfo.xml");
-    if (metainfoStream == null) {
-      log.error("metainfo.xml is unavailable at {}.", appDef);
-      throw new IOException("metainfo.xml is required in app package.");
-    }
-
-    Metainfo metainfo = new MetainfoParser().parse(metainfoStream);
-
-    return metainfo;
+    return AgentUtils.getApplicationMetainfo(fileSystem, appDef);
   }
 
   protected void publishComponentConfiguration(String name, String description,

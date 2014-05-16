@@ -79,6 +79,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeSet;
@@ -525,9 +526,14 @@ public final class SliderUtils {
   public static String appReportToString(ApplicationReport r, String separator) {
     StringBuilder builder = new StringBuilder(512);
     builder.append("application ").append(
-      r.getName()).append("/").append(r.getApplicationType());
-    builder.append(separator).append(
-      "state: ").append(r.getYarnApplicationState());
+      r.getName()).append("/").append(r.getApplicationType()).append(separator);
+    Set<String> tags = r.getApplicationTags();
+    if (!tags.isEmpty()) {
+      for (String tag : tags) {
+        builder.append(tag).append(separator);
+      }
+    }
+    builder.append("state: ").append(r.getYarnApplicationState());
     builder.append(separator).append("URL: ").append(r.getTrackingUrl());
     builder.append(separator).append("Started ").append(new Date(r.getStartTime()).toGMTString());
     long finishTime = r.getFinishTime();

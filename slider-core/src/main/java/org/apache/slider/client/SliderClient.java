@@ -121,6 +121,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * Client service for Slider
@@ -688,13 +689,18 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     }
     MapOperations sliderAMResourceComponent =
       resourceOperations.getOrAddComponent(SliderKeys.COMPONENT_AM);
+
+    // add the tags if available
+    Set<String> applicationTags = provider.getApplicationTags(sliderFileSystem,
+      appOperations.getGlobalOptions().get(AgentKeys.APP_DEF));
     AppMasterLauncher amLauncher = new AppMasterLauncher(clustername,
         SliderKeys.APP_TYPE,
         config,
         sliderFileSystem,
         yarnClient,
         clusterSecure,
-        sliderAMResourceComponent);
+        sliderAMResourceComponent,
+        applicationTags);
 
     ApplicationId appId = amLauncher.getApplicationId();
     // set the application name;

@@ -32,7 +32,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static org.apache.slider.api.ResourceKeys.COMPONENT_INSTANCES;
 import static org.apache.slider.api.ResourceKeys.DEF_YARN_CORES;
@@ -205,6 +207,15 @@ public abstract class AbstractClientProvider extends Configured {
       SliderException,
                                                                       IOException {
     validateInstanceDefinition(instanceDefinition);
+  }
+
+  /**
+   * Return a set of application specific string tags.
+   * @return the set of tags.
+   */
+  public Set<String> getApplicationTags (SliderFileSystem fileSystem,
+                                         String appDef) throws SliderException {
+    return Collections.emptySet();
   }
 
 }

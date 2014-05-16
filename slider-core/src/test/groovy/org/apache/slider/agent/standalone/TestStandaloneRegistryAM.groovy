@@ -194,7 +194,7 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
 
 
     describe("Registry List")
-    log.info(GET(registryURL, RestPaths.REGISTRY_SERVICE ))
+    log.info(GET(registryURL))
 
 
     describe "Registry Retrieval Class"

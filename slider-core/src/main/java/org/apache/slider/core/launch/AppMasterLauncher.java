@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Set;
 
 public class AppMasterLauncher extends AbstractLauncher {
 
@@ -73,7 +74,8 @@ public class AppMasterLauncher extends AbstractLauncher {
                            CoreFileSystem fs,
                            SliderYarnClientImpl yarnClient,
                            boolean secureCluster,
-                           Map<String, String> options
+                           Map<String, String> options,
+                           Set<String> applicationTags
                           ) throws IOException, YarnException {
     super(conf, fs);
     this.yarnClient = yarnClient;
@@ -88,6 +90,9 @@ public class AppMasterLauncher extends AbstractLauncher {
     submissionContext.setApplicationName(name);
     // app type used in service enum;
     submissionContext.setApplicationType(type);
+    if (!applicationTags.isEmpty()) {
+      submissionContext.setApplicationTags(applicationTags);
+    }
     extractResourceRequirements(resource, options);
 
   }
