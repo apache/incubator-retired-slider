@@ -1971,6 +1971,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
             registryArgs);
       }
     } catch (FileNotFoundException e) {
+      log.info("{}", e.toString());
+      log.debug("{}", e);
       return EXIT_NOT_FOUND;
     }
     return EXIT_SUCCESS;
@@ -2079,7 +2081,14 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
             external);
     return published;
   }
-  
+
+  /**
+   * write out the config
+   * @param published
+   * @param registryArgs
+   * @throws BadCommandArgumentsException
+   * @throws IOException
+   */
   private void outputConfig(PublishedConfiguration published,
       ActionRegistryArgs registryArgs) throws
       BadCommandArgumentsException,
@@ -2136,16 +2145,14 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    */
   private ServiceInstanceData lookupInstance(String id,
       String serviceType) throws
-      UnknownApplicationInstanceException,
-      SliderException,
       IOException {
     try {
       CuratorServiceInstance<ServiceInstanceData> csi =
           getRegistry().queryForInstance(serviceType, id);
       if (csi == null) {
-        throw new UnknownApplicationInstanceException(
-            "instance %s of type %s not found",
-            id, serviceType);
+        throw new FileNotFoundException(
+            String.format("instance %s of type %s not found",
+            id, serviceType));
       }
       return csi.getPayload();
     } catch (IOException e) {

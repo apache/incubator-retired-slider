@@ -387,7 +387,7 @@ List the configurations exported by of a named application
 
 #### `registry --getconf <configuration> [--format (xml|json|properties)] [--dest <path>] [--internal] ` get the configuration
  
-Get a named configuration
+Get a named configuration in a chosen format. Default: XML
 
   `--dest <path>` : the filename or directory to save a configuration to.
   `--format (xml|json|properties)` defines the output format

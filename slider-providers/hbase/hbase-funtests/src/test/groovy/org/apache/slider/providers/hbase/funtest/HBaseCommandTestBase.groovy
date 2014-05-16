@@ -18,16 +18,20 @@
 
 package org.apache.slider.providers.hbase.funtest
 
+import org.apache.slider.api.ResourceKeys
+import org.apache.slider.common.params.Arguments
 import org.apache.slider.funtest.categories.FunctionalTests
 import org.apache.slider.funtest.framework.CommandTestBase
 import org.apache.slider.funtest.framework.SliderShell
-import org.apache.slider.common.params.Arguments
 import org.apache.slider.providers.hbase.HBaseClientProvider
 import org.apache.slider.providers.hbase.HBaseKeys
 import org.junit.Before
 import org.junit.BeforeClass
 
 import static org.apache.slider.common.SliderXMLConfKeysForTesting.*
+import static org.apache.slider.common.params.Arguments.ARG_RES_COMP_OPT
+import static org.apache.slider.providers.hbase.HBaseKeys.ROLE_MASTER
+import static org.apache.slider.providers.hbase.HBaseKeys.ROLE_WORKER
 
 /**
  * Anything specific to HBase tests
@@ -41,9 +45,9 @@ abstract class HBaseCommandTestBase extends CommandTestBase {
   static {
     HBASE_TESTS_ENABLED =
         SLIDER_CONFIG.getBoolean(KEY_TEST_HBASE_ENABLED, true)
-    HBASE_LAUNCH_WAIT_TIME = SLIDER_CONFIG.getInt(
-        KEY_TEST_HBASE_LAUNCH_TIME,
-        DEFAULT_HBASE_LAUNCH_TIME_SECONDS)
+    HBASE_LAUNCH_WAIT_TIME = getTimeOptionMillis(SLIDER_CONFIG,
+            KEY_TEST_HBASE_LAUNCH_TIME,
+            1000 * DEFAULT_HBASE_LAUNCH_TIME_SECONDS)
   }
 
   @BeforeClass
@@ -92,6 +96,11 @@ abstract class HBaseCommandTestBase extends CommandTestBase {
     SLIDER_CONFIG.getTrimmed(KEY_TEST_HBASE_APPCONF)
 
     argsList << Arguments.ARG_PROVIDER << HBaseKeys.PROVIDER_HBASE
+    // add the RAM requirements
+    argsList << ARG_RES_COMP_OPT << ROLE_MASTER <<
+      ResourceKeys.YARN_MEMORY << YARN_RAM_REQUEST
+    argsList << ARG_RES_COMP_OPT << ROLE_WORKER << 
+      ResourceKeys.YARN_MEMORY << YARN_RAM_REQUEST
 
     SliderShell shell = createSliderApplication(
         name,

@@ -146,7 +146,10 @@ class SliderShell extends Shell {
     assert shell != null
     if (shell.ret != errorCode) {
       shell.dump()
-      throw new SliderException(shell.ret,"Expected exit code %d - actual=%d", errorCode, shell.ret)
+      throw new SliderException(shell.ret,
+          "Expected exit code of command %s : %d - actual=%d",
+          shell.command,
+          errorCode, shell.ret)
     }
     return errorCode
   }

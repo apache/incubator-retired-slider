@@ -23,6 +23,7 @@ import com.beust.jcommander.Parameters;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.ErrorStrings;
+import org.apache.slider.core.registry.docstore.ConfigFormat;
 
 import static org.apache.slider.common.params.SliderActions.ACTION_REGISTRY;
 import static org.apache.slider.common.params.SliderActions.DESCRIBE_ACTION_REGISTRY;
@@ -41,6 +42,14 @@ import java.io.File;
             commandDescription = DESCRIBE_ACTION_REGISTRY)
 
 public class ActionRegistryArgs extends AbstractActionArgs {
+
+  public ActionRegistryArgs() {
+  }
+
+  public ActionRegistryArgs(String name) {
+    this.name = name;
+  }
+
   @Override
   public String getActionName() {
     return ACTION_REGISTRY;
@@ -81,7 +90,7 @@ public class ActionRegistryArgs extends AbstractActionArgs {
   //--format 
   @Parameter(names = ARG_FORMAT,
       description = "Format for a response: [xml|json|properties]")
-  public String format;
+  public String format = ConfigFormat.XML.toString() ;
 
 
   @Parameter(names = {ARG_DEST},
@@ -123,11 +132,6 @@ public class ActionRegistryArgs extends AbstractActionArgs {
     if (dest != null && (lists > 0 || set == 0)) {
       throw new BadCommandArgumentsException("Argument " + ARG_DEST
            + " is only supported on 'get' operations");
-    }
-    if (is(format) && !is(getConf)) {
-      throw new BadCommandArgumentsException("Argument " + ARG_FORMAT
-           + " is only supported by " + ARG_GETCONF);
-
     }
     if (!list && !is(name)) {
       throw new BadCommandArgumentsException("Argument " + ARG_NAME

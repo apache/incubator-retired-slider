@@ -21,20 +21,25 @@ package org.apache.slider.providers.hbase.funtest
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.yarn.conf.YarnConfiguration
+import org.apache.slider.api.ClusterDescription
+import org.apache.slider.api.RoleKeys
+import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.SliderXmlConfKeys
-import org.apache.slider.api.ClusterDescription
-import org.apache.slider.api.RoleKeys
+import org.apache.slider.common.params.Arguments
+import org.apache.slider.common.tools.ConfigHelper
 import org.apache.slider.core.registry.info.RegistryNaming
 import org.apache.slider.funtest.framework.FuntestProperties
-import org.apache.slider.common.tools.ConfigHelper
-import org.apache.slider.common.params.Arguments
-import org.apache.slider.client.SliderClient
 import org.apache.slider.providers.hbase.HBaseConfigFileOptions
 import org.apache.slider.providers.hbase.HBaseTestUtils
 import org.apache.slider.server.appmaster.PublishedArtifacts
-import org.apache.zookeeper.*
+import org.apache.zookeeper.KeeperException
+import org.apache.zookeeper.WatchedEvent
+import org.apache.zookeeper.Watcher
+import org.apache.zookeeper.ZKUtil
+import org.apache.zookeeper.ZooKeeper
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -120,8 +125,10 @@ public class TestFunctionalHBaseCluster extends HBaseCommandTestBase
 
     Configuration clientConf = HBaseTestUtils.createHBaseConfiguration(sliderClient)
     HBaseTestUtils.assertHBaseMasterFound(clientConf)
-    HBaseTestUtils.waitForHBaseRegionServerCount(sliderClient, clusterName,
-                                  numWorkers, HBASE_LAUNCH_WAIT_TIME)
+    HBaseTestUtils.waitForHBaseRegionServerCount(sliderClient,
+        clusterName,
+        numWorkers,
+        HBASE_LAUNCH_WAIT_TIME)
 
     clusterOperations(
         clusterName,
@@ -172,8 +179,6 @@ public class TestFunctionalHBaseCluster extends HBaseCommandTestBase
     //unknown service type
     registry(EXIT_NOT_FOUND,
         [ARG_LIST, ARG_SERVICETYPE, "org.apache.something"])
-    registry(EXIT_NOT_FOUND,
-         [ARG_LIST, ARG_SERVICETYPE, ""])
 
     registry(EXIT_NOT_FOUND,
         [ARG_LIST, ARG_NAME, "cluster-with-no-name"])
@@ -190,16 +195,29 @@ public class TestFunctionalHBaseCluster extends HBaseCommandTestBase
     registry(EXIT_NOT_FOUND, [ARG_LISTCONF, ARG_NAME, "unknown"])
     registry([ARG_GETCONF, PublishedArtifacts.COMPLETE_CONFIG,
               ARG_NAME, name])
-    registry([ARG_GETCONF, "no-such-config",
+    registry(EXIT_NOT_FOUND, [ARG_GETCONF, "no-such-config",
               ARG_NAME, name])
 
-    registry([ARG_GETCONF, "illegal config name!",
+    registry(EXIT_NOT_FOUND, [ARG_GETCONF, "illegal/config/name!",
               ARG_NAME, name])
 
     registry(EXIT_NOT_FOUND,[ARG_GETCONF, PublishedArtifacts.COMPLETE_CONFIG,
               ARG_NAME, name, ARG_INTERNAL])
 
 
+    def yarn_site_config = PublishedArtifacts.YARN_SITE_CONFIG
+    registry([ARG_GETCONF, yarn_site_config,
+              ARG_NAME, name])
+
+    File getConfDir = new File("target/$clusterName/getconf")
+    getConfDir.mkdirs();
+    registry([ARG_GETCONF, yarn_site_config,
+              ARG_NAME, name,
+              ARG_DEST, getConfDir.absolutePath])
+    File retrieved = new File(getConfDir, yarn_site_config +".xml")
+    def confFromFile = ConfigHelper.loadConfFromFile(retrieved)
+    assert confFromFile.get(YarnConfiguration.RM_ADDRESS)
+    
   }
 
 }

@@ -20,14 +20,14 @@ package org.apache.slider.providers.hbase.funtest
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.slider.common.SliderExitCodes
-import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.StatusKeys
-import org.apache.slider.funtest.framework.FuntestProperties
+import org.apache.slider.client.SliderClient
+import org.apache.slider.common.SliderExitCodes
+import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
-import org.apache.slider.client.SliderClient
+import org.apache.slider.funtest.framework.FuntestProperties
 import org.junit.After
 import org.junit.Before
 import org.junit.Test

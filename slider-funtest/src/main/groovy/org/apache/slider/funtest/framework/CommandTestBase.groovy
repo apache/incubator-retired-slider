@@ -49,7 +49,7 @@ import static org.apache.slider.common.SliderXMLConfKeysForTesting.*
 abstract class CommandTestBase extends SliderTestUtils {
   private static final Logger log =
       LoggerFactory.getLogger(CommandTestBase.class);
-  
+
   public static final String SLIDER_CONF_DIR = sysprop(SLIDER_CONF_DIR_PROP)
   public static final String SLIDER_BIN_DIR = sysprop(SLIDER_BIN_DIR_PROP)
   public static final File SLIDER_BIN_DIRECTORY = new File(
@@ -57,7 +57,8 @@ abstract class CommandTestBase extends SliderTestUtils {
   public static final File SLIDER_SCRIPT = new File(
       SLIDER_BIN_DIRECTORY,
       BIN_SLIDER).canonicalFile
-  public static final File SLIDER_CONF_DIRECTORY = new File(SLIDER_CONF_DIR).canonicalFile
+  public static final File SLIDER_CONF_DIRECTORY = new File(
+      SLIDER_CONF_DIR).canonicalFile
   public static final File SLIDER_CONF_XML = new File(SLIDER_CONF_DIRECTORY,
       CLIENT_CONFIG_FILENAME).canonicalFile
 
@@ -65,16 +66,17 @@ abstract class CommandTestBase extends SliderTestUtils {
   public static final int THAW_WAIT_TIME
   public static final int FREEZE_WAIT_TIME
 
-  public static final int ACCUMULO_LAUNCH_WAIT_TIME
   public static final int SLIDER_TEST_TIMEOUT
-  public static final boolean ACCUMULO_TESTS_ENABLED
 
   public static final boolean FUNTESTS_ENABLED
 
+  public static final String YARN_RAM_REQUEST
+  
+
 
   static {
-    SLIDER_CONFIG = new ConfLoader().loadSliderConf(SLIDER_CONF_XML); 
-    THAW_WAIT_TIME = getTimeOptionMillis(SLIDER_CONFIG, 
+    SLIDER_CONFIG = new ConfLoader().loadSliderConf(SLIDER_CONF_XML);
+    THAW_WAIT_TIME = getTimeOptionMillis(SLIDER_CONFIG,
         KEY_TEST_THAW_WAIT_TIME,
         1000 * DEFAULT_THAW_WAIT_TIME_SECONDS)
     FREEZE_WAIT_TIME = getTimeOptionMillis(SLIDER_CONFIG,
@@ -83,15 +85,14 @@ abstract class CommandTestBase extends SliderTestUtils {
     SLIDER_TEST_TIMEOUT = getTimeOptionMillis(SLIDER_CONFIG,
         KEY_TEST_TIMEOUT,
         1000 * DEFAULT_TEST_TIMEOUT_SECONDS)
-    ACCUMULO_LAUNCH_WAIT_TIME = getTimeOptionMillis(SLIDER_CONFIG,
-        KEY_ACCUMULO_LAUNCH_TIME,
-        1000 * DEFAULT_ACCUMULO_LAUNCH_TIME_SECONDS)
     FUNTESTS_ENABLED =
         SLIDER_CONFIG.getBoolean(KEY_SLIDER_FUNTESTS_ENABLED, true)
-    ACCUMULO_TESTS_ENABLED =
-        SLIDER_CONFIG.getBoolean(KEY_TEST_ACCUMULO_ENABLED, false)
 
- }
+    YARN_RAM_REQUEST = SLIDER_CONFIG.get(
+        KEY_TEST_YARN_RAM_REQUEST,
+        DEFAULT_YARN_RAM_REQUEST)
+    
+  }
 
   @Rule
   public final Timeout testTimeout = new Timeout(SLIDER_TEST_TIMEOUT);
@@ -110,9 +111,9 @@ abstract class CommandTestBase extends SliderTestUtils {
     SliderShell.script = SLIDER_SCRIPT
     log.info("Test using ${HadoopFS.getDefaultUri(SLIDER_CONFIG)} " +
              "and YARN RM @ ${SLIDER_CONFIG.get(YarnConfiguration.RM_ADDRESS)}")
-    
+
     // now patch the settings with the path of the conf direcotry
-    
+
   }
 
   /**
@@ -143,7 +144,7 @@ abstract class CommandTestBase extends SliderTestUtils {
     }
     return property
   }
-  
+
   /**
    * Exec any slider command
    * @param conf
@@ -217,7 +218,7 @@ abstract class CommandTestBase extends SliderTestUtils {
         ACTION_FREEZE, name
     ])
   }
-  
+
   static SliderShell freeze(String name, Collection<String> args) {
     slider([ACTION_FREEZE, name] + args)
   }
@@ -234,18 +235,18 @@ abstract class CommandTestBase extends SliderTestUtils {
 
   static SliderShell getConf(int result, String name) {
     slider(result,
-         [
-             ACTION_GETCONF, name
-         ])
+        [
+            ACTION_GETCONF, name
+        ])
   }
-  
+
   static SliderShell killContainer(String name, String containerID) {
     slider(0,
-         [
-             ACTION_KILL_CONTAINER,
-             name,
-             containerID
-         ])
+        [
+            ACTION_KILL_CONTAINER,
+            name,
+            containerID
+        ])
   }
 
   static SliderShell list(String name) {
@@ -276,9 +277,9 @@ abstract class CommandTestBase extends SliderTestUtils {
 
   static SliderShell status(int result, String name) {
     slider(result,
-         [
-             ACTION_STATUS, name
-         ])
+        [
+            ACTION_STATUS, name
+        ])
   }
 
   static SliderShell thaw(String name) {
@@ -289,23 +290,24 @@ abstract class CommandTestBase extends SliderTestUtils {
 
   static SliderShell thaw(int result, String name) {
     slider(result,
-         [
-             ACTION_THAW, name
-         ])
+        [
+            ACTION_THAW, name
+        ])
   }
 
   static SliderShell thaw(String name, Collection<String> args) {
     slider([ACTION_THAW, name] + args)
   }
-  
+
   static SliderShell registry(int result, Collection<String> commands) {
     slider(result,
-         [ ACTION_REGISTRY ] + commands
+        [ACTION_REGISTRY] + commands
     )
   }
+
   static SliderShell registry(Collection<String> commands) {
     slider(0,
-         [ ACTION_REGISTRY ] + commands
+        [ACTION_REGISTRY] + commands
     )
   }
 
@@ -325,7 +327,7 @@ abstract class CommandTestBase extends SliderTestUtils {
 
   /**
    * If the functional tests are enabled, set up the cluster
-   * 
+   *
    * @param cluster
    */
   static void setupCluster(String cluster) {
@@ -419,8 +421,8 @@ abstract class CommandTestBase extends SliderTestUtils {
     List<String> argsList = [action, clustername]
 
     argsList << ARG_ZKHOSTS <<
-      SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.REGISTRY_ZK_QUORUM)
-    
+    SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.REGISTRY_ZK_QUORUM)
+
 
     if (blockUntilRunning) {
       argsList << ARG_WAIT << Integer.toString(THAW_WAIT_TIME)
@@ -470,13 +472,15 @@ abstract class CommandTestBase extends SliderTestUtils {
   }
 
   public Path buildClusterPath(String clustername) {
-    return new Path(clusterFS.homeDirectory, "${SliderKeys.SLIDER_BASE_DIRECTORY}/cluster/${clustername}")
+    return new Path(
+        clusterFS.homeDirectory,
+        "${SliderKeys.SLIDER_BASE_DIRECTORY}/cluster/${clustername}")
   }
 
 
   public ClusterDescription killAmAndWaitForRestart(
       SliderClient sliderClient, String cluster) {
-    
+
     assert cluster
     slider(0, [
         ACTION_AM_SUICIDE, cluster,
@@ -487,8 +491,8 @@ abstract class CommandTestBase extends SliderTestUtils {
 
 
 
-    def sleeptime = SLIDER_CONFIG.getInt( KEY_AM_RESTART_SLEEP_TIME,
-                                        DEFAULT_AM_RESTART_SLEEP_TIME)
+    def sleeptime = SLIDER_CONFIG.getInt(KEY_AM_RESTART_SLEEP_TIME,
+        DEFAULT_AM_RESTART_SLEEP_TIME)
     sleep(sleeptime)
     ClusterDescription status
 
@@ -513,11 +517,6 @@ abstract class CommandTestBase extends SliderTestUtils {
    */
   public static void assumeFunctionalTestsEnabled() {
     assume(FUNTESTS_ENABLED, "Functional tests disabled")
-  }
-
-  public static void assumeAccumuloTestsEnabled() {
-    assumeFunctionalTestsEnabled()
-    assume(ACCUMULO_TESTS_ENABLED, "Accumulo tests disabled")
   }
 
 }

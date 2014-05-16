@@ -24,7 +24,7 @@
 
 # Functional Tests
 
-The functional test suite is designed to run the executables against
+The functional test suite is designed to test slider against
 a live cluster. 
 
 For these to work you need
@@ -110,6 +110,12 @@ need to be changed
       <description>Time out in milliseconds before a test is considered to have failed.
       There are some maven properties which also define limits and may need adjusting</description>
       <value>180000</value>
+    </property>
+
+     <property>
+      <name>slider.test.yarn.ram</name>
+      <description>Size in MB to ask for containers</description>
+      <value>192</value>
     </property>
 
     
@@ -215,7 +221,7 @@ Optional parameters:
      <property>
       <name>slider.test.hbase.launch.wait.seconds</name>
       <description>Time to wait in seconds for HBase to start</description>
-      <value>180000</value>
+      <value>1800</value>
     </property>  
 
 #### Accumulo configuration options
@@ -233,7 +239,7 @@ Optional parameters
      <property>
       <name>slider.test.accumulo.launch.wait.seconds</name>
       <description>Time to wait in seconds for Accumulo to start</description>
-      <value>180000</value>
+      <value>1800</value>
      </property>
 
 ### Configuring the YARN cluster for tests
@@ -360,9 +366,9 @@ The functional tests all
         mvn install -DskipTests
 1. Start the YARN cluster/set up proxies to connect to it, etc.
 
-1. In the `slider-funtest` dir, run the test
+1. In the `slider-funtest` dir, run the tests
 
-        mvn test -Dtest=TestHBaseCreateCluster
+        mvn test 
         
 A common mistake during development is to rebuild the `slider-core` JARs
 then the `slider-funtest` tests without rebuilding the `slider-assembly`.
@@ -382,6 +388,10 @@ testing, you must build/install all the slider packages from the root assembly.
 1. Output from failed AM and containers aren't collected
 
 ## Troubleshooting the functional tests
+
+1. If application instances fail to come up as there are still outstanding
+requests, it means that YARN didn't have the RAM/cores to spare for the number
+of containers. Edit the `slider.test.yarn.ram` to make it smaller.
 
 1. If you are testing in a local VM and stops responding, it'll have been
 swapped out to RAM. Rebooting can help, but for a long term fix go through

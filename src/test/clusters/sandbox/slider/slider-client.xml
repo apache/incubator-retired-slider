@@ -31,7 +31,7 @@
   
   <property>
     <name>fs.defaultFS</name>
-    <value>hdfs://sandbox:8020</value>
+    <value>hdfs://sandbox.hortonworks.com:8020</value>
   </property>
 
   <property>
@@ -67,7 +67,7 @@
   <property>
     <name>slider.test.hbase.tar</name>
     <description>Path to the HBase Tar file in HDFS</description>
-    <value>hdfs://sandbox:8020/hbase-0.98.1-bin.tar.gz</value>
+    <value>${fs.defaultFS}/hbase-0.98.1-bin.tar.gz</value>
   </property>
 
 
@@ -88,7 +88,7 @@
   <property>
     <name>slider.test.accumulo.tar</name>
     <description>Path to the Accumulo Tar file in HDFS</description>
-    <value>hdfs://sandbox:8020/user/slider/accumulo.tar</value>
+    <value>${fs.defaultFS}/user/slider/accumulo.tar</value>
   </property>
 
 

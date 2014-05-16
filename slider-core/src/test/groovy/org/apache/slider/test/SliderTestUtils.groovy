@@ -32,6 +32,7 @@ import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.ClusterNode
+import org.apache.slider.api.RoleKeys
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.tools.Duration
@@ -259,7 +260,15 @@ class SliderTestUtils extends Assert {
           if (instanceCount != desiredCount) {
             roleCountFound = false;
           }
-          details.append("[$role]: desired: $desiredCount; actual: $instanceCount  ")
+          details.append("[$role]: desired: $desiredCount;" +
+                         " actual: $instanceCount ")
+
+          // call out requested count, as this is a cause of problems on
+          // overloaded functional test clusters
+          def requested = status.roles[role][RoleKeys.ROLE_REQUESTED_INSTANCES]
+          if (requested != "0") {
+            details.append("requested: $requested ")
+          }
         }
         if (roleCountFound) {
           //successful
@@ -277,8 +286,9 @@ class SliderTestUtils extends Assert {
         duration.finish();
         describe("$operation: role count not met after $duration: $details")
         log.info(prettyPrint(status.toJsonString()))
-        fail(
-            "$operation: role counts not met after $duration: $details in \n$status ")
+        fail("$operation: role counts not met after $duration: "  +
+             details.toString() +
+             " in \n$status ")
       }
       log.debug("Waiting: " + details)
       Thread.sleep(1000)

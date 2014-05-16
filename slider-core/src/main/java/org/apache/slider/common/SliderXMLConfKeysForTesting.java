@@ -64,4 +64,11 @@ public interface SliderXMLConfKeysForTesting {
 
   String KEY_TEST_TEARDOWN_KILLALL = "slider.test.teardown.killall";
   boolean DEFAULT_TEARDOWN_KILLALL = true;
+
+
+  /**
+   * Key for amount of RAM to request
+   */
+  String KEY_TEST_YARN_RAM_REQUEST = "slider.test.yarn.ram";
+  String DEFAULT_YARN_RAM_REQUEST = "192";
 }

@@ -21,6 +21,9 @@ package org.apache.slider.providers.accumulo.funtest
 import static SliderXMLConfKeysForTesting.KEY_TEST_ACCUMULO_APPCONF
 import static SliderXMLConfKeysForTesting.KEY_TEST_ACCUMULO_TAR
 import static org.apache.slider.api.ResourceKeys.YARN_MEMORY
+import static org.apache.slider.common.SliderXMLConfKeysForTesting.DEFAULT_ACCUMULO_LAUNCH_TIME_SECONDS
+import static org.apache.slider.common.SliderXMLConfKeysForTesting.KEY_ACCUMULO_LAUNCH_TIME
+import static org.apache.slider.common.SliderXMLConfKeysForTesting.KEY_TEST_ACCUMULO_ENABLED
 import static org.apache.slider.providers.accumulo.AccumuloKeys.*
 import static org.apache.slider.common.params.Arguments.ARG_PROVIDER
 import static org.apache.slider.common.params.Arguments.ARG_RES_COMP_OPT
@@ -46,6 +49,23 @@ import org.junit.Before
  */
 abstract class AccumuloCommandTestBase extends CommandTestBase {
 
+  public static final int ACCUMULO_LAUNCH_WAIT_TIME
+  public static final boolean ACCUMULO_TESTS_ENABLED
+
+  static {
+    ACCUMULO_LAUNCH_WAIT_TIME = getTimeOptionMillis(SLIDER_CONFIG,
+        KEY_ACCUMULO_LAUNCH_TIME,
+        1000 * DEFAULT_ACCUMULO_LAUNCH_TIME_SECONDS)
+    ACCUMULO_TESTS_ENABLED =
+        SLIDER_CONFIG.getBoolean(KEY_TEST_ACCUMULO_ENABLED, false)
+  }
+
+
+  public static void assumeAccumuloTestsEnabled() {
+    assumeFunctionalTestsEnabled()
+    assume(ACCUMULO_TESTS_ENABLED, "Accumulo tests disabled")
+  }
+  
   @Before
   public void verifyPreconditions() {
 

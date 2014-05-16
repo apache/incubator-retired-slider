@@ -306,26 +306,31 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     registryArgs.list = false;
     registryArgs.listConf = false
     registryArgs.internal = false
-    registryArgs.format = "properties"
 
     def yarn_site_config = PublishedArtifacts.YARN_SITE_CONFIG
     registryArgs.getConf = yarn_site_config
-    
-    
+
+    //properties format
+    registryArgs.format = "properties"
     describe registryArgs.toString()
+
     client.actionRegistry(registryArgs)
+
 
     File outputDir = new File("target/test_standalone_registry_am/output")
     outputDir.mkdirs()
 
+    // create a new registry args with the defaults back in
+    registryArgs = new ActionRegistryArgs(serviceInstanceData.id)
+    registryArgs.getConf = yarn_site_config
     registryArgs.dest = outputDir
     describe registryArgs.toString()
     client.actionRegistry(registryArgs)
-    assert new File(outputDir, yarn_site_config + ".properties").exists()
-
-    registryArgs.format = "xml"
-    client.actionRegistry(registryArgs)
     assert new File(outputDir, yarn_site_config + ".xml").exists()
+
+    registryArgs.format = "properties"
+    client.actionRegistry(registryArgs)
+    assert new File(outputDir, yarn_site_config + ".properties").exists()
 
     describe registryArgs.toString()
 
