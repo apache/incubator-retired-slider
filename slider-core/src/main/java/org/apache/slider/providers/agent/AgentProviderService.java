@@ -41,6 +41,8 @@ import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.CommandLineBuilder;
 import org.apache.slider.core.launch.ContainerLauncher;
 import org.apache.slider.core.registry.docstore.PublishedConfiguration;
+import org.apache.slider.core.registry.info.RegisteredEndpoint;
+import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.providers.AbstractProviderService;
 import org.apache.slider.providers.ProviderCore;
 import org.apache.slider.providers.ProviderRole;
@@ -70,6 +72,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
@@ -98,7 +101,7 @@ public class AgentProviderService extends AbstractProviderService implements
   private static final String CONTAINER_ID = "container_id";
   private static final String GLOBAL_CONFIG_TAG = "global";
   private AgentClientProvider clientProvider;
-  private Map<String, ComponentInstanceState> componentStatuses = new HashMap<String, ComponentInstanceState>();
+  private Map<String, ComponentInstanceState> componentStatuses = new HashMap<>();
   private AtomicInteger taskId = new AtomicInteger(0);
   private Metainfo metainfo = null;
 
@@ -307,7 +310,7 @@ public class AgentProviderService extends AbstractProviderService implements
    * @return the provider status - map of entries to add to the info section
    */
   public Map<String, String> buildProviderStatus() {
-    Map<String, String> stats = new HashMap<String, String>();
+    Map<String, String> stats = new HashMap<>();
     return stats;
   }
 
@@ -430,7 +433,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
   protected void processReturnedStatus(HeartBeat heartBeat, ComponentInstanceState componentStatus) {
     List<ComponentStatus> statuses = heartBeat.getComponentStatus();
-    if (statuses != null && statuses.size() > 0) {
+    if (statuses != null && !statuses.isEmpty()) {
       log.info("Processing {} status reports.", statuses.size());
       for (ComponentStatus status : statuses) {
         log.info("Status report: " + status.toString());
@@ -442,7 +445,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
           Service service = getMetainfo().getServices().get(0);
           List<ExportGroup> exportGroups = service.getExportGroups();
-          if (exportGroups != null && exportGroups.size() > 0) {
+          if (exportGroups != null && !exportGroups.isEmpty()) {
 
             String configKeyFormat = "${site.%s.%s}";
             String hostKeyFormat = "${%s_HOST}";
@@ -464,7 +467,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
             for (ExportGroup exportGroup : exportGroups) {
               List<Export> exports = exportGroup.getExports();
-              if (exports != null && exports.size() > 0) {
+              if (exports != null && !exports.isEmpty()) {
                 String exportGroupName = exportGroup.getName();
                 Map<String, String> map = new HashMap<>();
                 for (Export export : exports) {
@@ -546,7 +549,7 @@ public class AgentProviderService extends AbstractProviderService implements
     cmd.setServiceName(clusterName);
     cmd.setComponentName(roleName);
     cmd.setRole(roleName);
-    Map<String, String> hostLevelParams = new TreeMap<String, String>();
+    Map<String, String> hostLevelParams = new TreeMap<>();
     hostLevelParams.put(JAVA_HOME, appConf.getGlobalOptions().getMandatoryOption(JAVA_HOME));
     hostLevelParams.put(PACKAGE_LIST, "[{\"type\":\"tarball\",\"name\":\"" +
                                       appConf.getGlobalOptions().getMandatoryOption(
@@ -568,7 +571,7 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   private Map<String, String> setCommandParameters(String scriptPath, boolean recordConfig) {
-    Map<String, String> cmdParams = new TreeMap<String, String>();
+    Map<String, String> cmdParams = new TreeMap<>();
     cmdParams.put("service_package_folder",
                   "${AGENT_WORK_ROOT}/work/app/definition/package");
     cmdParams.put("script", scriptPath);
@@ -600,7 +603,7 @@ public class AgentProviderService extends AbstractProviderService implements
     cmd.setClusterName(clusterName);
     cmd.setRoleCommand(StatusCommand.STATUS_COMMAND);
 
-    Map<String, String> hostLevelParams = new TreeMap<String, String>();
+    Map<String, String> hostLevelParams = new TreeMap<>();
     hostLevelParams.put(JAVA_HOME, appConf.getGlobalOptions().getMandatoryOption(JAVA_HOME));
     hostLevelParams.put(CONTAINER_ID, containerId);
     cmd.setHostLevelParams(hostLevelParams);
@@ -627,7 +630,7 @@ public class AgentProviderService extends AbstractProviderService implements
     cmd.setServiceName(clusterName);
     cmd.setClusterName(clusterName);
     cmd.setRoleCommand(StatusCommand.GET_CONFIG_COMMAND);
-    Map<String, String> hostLevelParams = new TreeMap<String, String>();
+    Map<String, String> hostLevelParams = new TreeMap<>();
     hostLevelParams.put(CONTAINER_ID, containerId);
     cmd.setHostLevelParams(hostLevelParams);
 
@@ -653,7 +656,7 @@ public class AgentProviderService extends AbstractProviderService implements
     cmd.setServiceName(clusterName);
     cmd.setComponentName(roleName);
     cmd.setRole(roleName);
-    Map<String, String> hostLevelParams = new TreeMap<String, String>();
+    Map<String, String> hostLevelParams = new TreeMap<>();
     hostLevelParams.put(JAVA_HOME, appConf.getGlobalOptions().getMandatoryOption(JAVA_HOME));
     hostLevelParams.put(CONTAINER_ID, containerId);
     cmd.setHostLevelParams(hostLevelParams);
@@ -668,7 +671,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
   private Map<String, Map<String, String>> buildCommandConfigurations(ConfTreeOperations appConf) {
 
-    Map<String, Map<String, String>> configurations = new TreeMap<String, Map<String, String>>();
+    Map<String, Map<String, String>> configurations = new TreeMap<>();
     Map<String, String> tokens = getStandardTokenMap(appConf);
 
     List<String> configs = getApplicationConfigurationTypes(appConf);
@@ -683,7 +686,7 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   private Map<String, String> getStandardTokenMap(ConfTreeOperations appConf) {
-    Map<String, String> tokens = new HashMap<String, String>();
+    Map<String, String> tokens = new HashMap<>();
     String nnuri = appConf.get("site.fs.defaultFS");
     tokens.put("${NN_URI}", nnuri);
     tokens.put("${NN_HOST}", URI.create(nnuri).getHost());
@@ -694,7 +697,7 @@ public class AgentProviderService extends AbstractProviderService implements
   private List<String> getApplicationConfigurationTypes(ConfTreeOperations appConf) {
     // for now, reading this from appConf.  In the future, modify this method to
     // process metainfo.xml
-    List<String> configList = new ArrayList<String>();
+    List<String> configList = new ArrayList<>();
     configList.add(GLOBAL_CONFIG_TAG);
 
     String configTypes = appConf.get("config_types");
@@ -703,13 +706,13 @@ public class AgentProviderService extends AbstractProviderService implements
     configList.addAll(Arrays.asList(configs));
 
     // remove duplicates.  mostly worried about 'global' being listed
-    return new ArrayList<String>(new HashSet<String>(configList));
+    return new ArrayList<>(new HashSet<>(configList));
   }
 
   private void addNamedConfiguration(String configName, Map<String, String> sourceConfig,
                                      Map<String, Map<String, String>> configurations,
                                      Map<String, String> tokens) {
-    Map<String, String> config = new HashMap<String, String>();
+    Map<String, String> config = new HashMap<>();
     if (configName.equals(GLOBAL_CONFIG_TAG)) {
       addDefaultGlobalConfig(config);
     }
@@ -745,8 +748,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
   @Override
   public Map<String, URL> buildMonitorDetails(ClusterDescription clusterDesc) {
-    Map<String, URL> details = new LinkedHashMap<String, URL>();
-    buildEndpointDetails(details);
+    Map<String, URL> details = super.buildMonitorDetails(clusterDesc);
     buildRoleHostDetails(details);
     return details;
   }
@@ -760,23 +762,4 @@ public class AgentProviderService extends AbstractProviderService implements
     }
   }
 
-  private void buildEndpointDetails(Map<String, URL> details) {
-    try {
-      List services =
-          registry.listInstancesByType(SliderKeys.APP_TYPE);
-      assert services.size() >= 1;
-      Map payload = (Map) services.get(0);
-      Map<String, Map> endpointMap =
-          (Map<String, Map>) ((Map) payload.get("externalView")).get("endpoints");
-      for (Map.Entry<String, Map> endpoint : endpointMap.entrySet()) {
-        Map<String, String> val = endpoint.getValue();
-        if ("http".equals(val.get("protocol"))) {
-          URL url = new URL(val.get("value"));
-          details.put(val.get("description"), url);
-        }
-      }
-    } catch (IOException e) {
-      log.error("Error creating list of slider URIs", e);
-    }
-  }
 }

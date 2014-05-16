@@ -57,7 +57,6 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 /**
  * This class implements the server-side aspects
@@ -69,10 +68,8 @@ public class HBaseProviderService extends AbstractProviderService implements
     SliderKeys,
     AgentRestOperations{
 
-  public static final String ERROR_UNKNOWN_ROLE = "Unknown role ";
   protected static final Logger log =
     LoggerFactory.getLogger(HBaseProviderService.class);
-  protected static final String NAME = "hbase";
   private static final ProviderUtils providerUtils = new ProviderUtils(log);
   private HBaseClientProvider clientProvider;
   private Configuration siteConf;
@@ -171,16 +168,19 @@ public class HBaseProviderService extends AbstractProviderService implements
     String roleCommand;
     String logfile;
     //now look at the role
-    if (ROLE_WORKER.equals(role)) {
-      //role is region server
-      roleCommand = REGION_SERVER;
-      logfile = "/region-server.txt";
-    } else if (ROLE_MASTER.equals(role)) {
-      roleCommand = MASTER;
-      
-      logfile ="/master.txt";
-    } else {
-      throw new SliderInternalStateException("Cannot start role %s", role);
+    switch (role) {
+      case ROLE_WORKER:
+        //role is region server
+        roleCommand = REGION_SERVER;
+        logfile = "/region-server.txt";
+        break;
+      case ROLE_MASTER:
+        roleCommand = MASTER;
+
+        logfile = "/master.txt";
+        break;
+      default:
+        throw new SliderInternalStateException("Cannot start role %s", role);
     }
 
     cli.add(roleCommand);
@@ -260,21 +260,20 @@ public class HBaseProviderService extends AbstractProviderService implements
    * @return the provider status - map of entries to add to the info section
    */
   public Map<String, String> buildProviderStatus() {
-    Map<String, String> stats = new HashMap<String, String>();
+    Map<String, String> stats = new HashMap<>();
 
     return stats;
   }
   
-  /* non-javadoc
-   * @see org.apache.slider.providers.ProviderService#buildMonitorDetails()
-   */
-  @Override
-  public TreeMap<String,URL> buildMonitorDetails(ClusterDescription clusterDesc) {
-    TreeMap<String,URL> map = new TreeMap<String,URL>();
-    
-    map.put("Active HBase Master (RPC): " + getInfoAvoidingNull(clusterDesc, StatusKeys.INFO_MASTER_ADDRESS), null);
 
-    return map;
+  @Override
+  public Map<String,URL> buildMonitorDetails(ClusterDescription clusterDesc) {
+    Map<String, URL> details = super.buildMonitorDetails(clusterDesc);
+
+    details.put("Active HBase Master (RPC): " 
+                + getInfoAvoidingNull(clusterDesc, StatusKeys.INFO_MASTER_ADDRESS), null);
+
+    return details;
   }
 
   @Override

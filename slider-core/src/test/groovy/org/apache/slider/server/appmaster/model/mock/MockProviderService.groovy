@@ -24,7 +24,6 @@ import org.apache.hadoop.service.LifecycleEvent
 import org.apache.hadoop.service.Service.STATE
 import org.apache.hadoop.service.ServiceStateChangeListener
 import org.apache.hadoop.yarn.api.records.Container
-import org.apache.hadoop.yarn.api.records.ContainerLaunchContext
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.common.tools.SliderFileSystem
 import org.apache.slider.core.conf.AggregateConf
@@ -32,14 +31,16 @@ import org.apache.slider.core.conf.MapOperations
 import org.apache.slider.core.exceptions.BadCommandArgumentsException
 import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.launch.ContainerLauncher
-import org.apache.slider.core.registry.info.ServiceInstanceData
 import org.apache.slider.providers.ProviderRole
 import org.apache.slider.providers.ProviderService
 import org.apache.slider.server.appmaster.state.StateAccessForProviders
-import org.apache.slider.server.appmaster.web.rest.agent.*
-import org.apache.slider.server.services.curator.RegistryBinderService
+import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations
+import org.apache.slider.server.appmaster.web.rest.agent.HeartBeat
+import org.apache.slider.server.appmaster.web.rest.agent.HeartBeatResponse
+import org.apache.slider.server.appmaster.web.rest.agent.Register
+import org.apache.slider.server.appmaster.web.rest.agent.RegistrationResponse
+import org.apache.slider.server.appmaster.web.rest.agent.RegistrationStatus
 import org.apache.slider.server.services.registry.RegistryViewForProviders
-import org.apache.slider.server.services.registry.SliderRegistryService
 import org.apache.slider.server.services.utility.EventCallback
 
 class MockProviderService implements ProviderService {
@@ -137,11 +138,6 @@ class MockProviderService implements ProviderService {
     return 0;
   }
 
-  @Override
-  public void buildContainerLaunchContext(ContainerLaunchContext ctx, SliderFileSystem sliderFileSystem, Path generatedConfPath, String role,
-      ClusterDescription clusterSpec, Map<String,String> roleOptions) throws IOException, SliderException {
-  }
-
 
   @Override
   public boolean exec(
@@ -220,4 +216,8 @@ class MockProviderService implements ProviderService {
         }
     }
 
+  @Override
+  void buildEndpointDetails(Map<String, URL> details) {
+
+  }
 }

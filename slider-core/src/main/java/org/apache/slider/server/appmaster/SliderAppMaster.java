@@ -760,7 +760,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     externalView.endpoints.put(
         CustomRegistryConstants.REGISTRY_REST_API,
       new RegisteredEndpoint(
-        new URL(amWeb, RestPaths.SLIDER_PATH_REGISTRY),
+        new URL(amWeb, RestPaths.SLIDER_PATH_REGISTRY + "/"+
+                       RestPaths.REGISTRY_SERVICE),
         "Registry Web Service" )
     );
 

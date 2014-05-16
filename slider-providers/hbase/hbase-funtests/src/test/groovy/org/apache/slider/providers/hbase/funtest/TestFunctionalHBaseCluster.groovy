@@ -60,7 +60,7 @@ public class TestFunctionalHBaseCluster extends HBaseCommandTestBase
   }
 
   public String getClusterZNode() {
-    return "/yarnapps_slider_yarn_" + getClusterName();
+    return "/yarnapps_slider_yarn_" + clusterName;
   }
 
   @Before
@@ -75,9 +75,9 @@ public class TestFunctionalHBaseCluster extends HBaseCommandTestBase
       }
     }, false)
     try {
-      ZKUtil.deleteRecursive(monitor, getClusterZNode())
+      ZKUtil.deleteRecursive(monitor, clusterZNode)
     } catch (KeeperException.NoNodeException ignored) {
-      log.info(getClusterZNode() + " not there")
+      log.info(clusterZNode + " not there")
     }
     setupCluster(clusterName)
   }

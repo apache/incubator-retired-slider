@@ -164,6 +164,12 @@ public class RegistryBinderService<Payload> extends CuratorService {
   }
 
 
+  /**
+   * List all instance IDs of a service type
+   * @param servicetype service type
+   * @return list of matches
+   * @throws Exception
+   */
   public List<String> instanceIDs(String servicetype) throws Exception {
     Preconditions.checkNotNull(servicetype);
     List<String> instanceIds;
@@ -176,6 +182,22 @@ public class RegistryBinderService<Payload> extends CuratorService {
     return instanceIds;
   }
 
+  /**
+   * List all service types registered
+   * @return
+   * @throws Exception
+   */
+  public List<String> serviceTypes() throws Exception {
+    List<String> types;
+    try {
+      types =
+        getCurator().getChildren().forPath(getBasePath());
+    } catch (KeeperException.NoNodeException e) {
+      types = Lists.newArrayList();
+    }
+    return types;
+  }
+
 
   /**
    * Return a service instance POJO
@@ -185,8 +207,8 @@ public class RegistryBinderService<Payload> extends CuratorService {
    * @return the instance or <code>null</code> if not found
    * @throws Exception errors
    */
-  public CuratorServiceInstance<Payload> queryForInstance(String servicetype, String id) throws
-                                                                         Exception {
+  public CuratorServiceInstance<Payload> queryForInstance(String servicetype, String id)
+      throws Exception {
     CuratorServiceInstance<Payload> instance = null;
     String path = pathForInstance(servicetype, id);
     try {

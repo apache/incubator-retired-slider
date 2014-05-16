@@ -64,7 +64,7 @@ public class RegistryRestResources extends DiscoveryResource<ServiceInstanceData
     this.registry = registry;
   }
 
-  @GET
+//  @GET
   public Response getWadl (@Context HttpServletRequest request) {
     try {
       URI location = new URL(request.getScheme(),
@@ -76,10 +76,23 @@ public class RegistryRestResources extends DiscoveryResource<ServiceInstanceData
       log.error("Error during redirect to WADL", e);
       throw new WebApplicationException(Response.serverError().build());
     }
-
   }
 
-  @Override
+  @javax.ws.rs.GET
+  @javax.ws.rs.Produces({MediaType.APPLICATION_JSON})
+  public Response getAtRoot() {
+    try {
+      List<String>
+          instances = registry.serviceTypes();
+      return Response.ok(instances).build();
+    } catch (Exception e) {
+      log.error("Error during generation of response", e);
+      return Response.serverError().build();
+    }
+  }
+
+
+    @Override
   @javax.ws.rs.GET
   @javax.ws.rs.Path(SERVICE_NAME)
   @javax.ws.rs.Produces({MediaType.APPLICATION_JSON})
@@ -109,9 +122,10 @@ public class RegistryRestResources extends DiscoveryResource<ServiceInstanceData
       Response.ResponseBuilder builder = Response.ok(instance);
       return builder.build();
     } catch (Exception e) {
-      log.error(String.format("Trying to get instance (%s) from service (%s)",
-                              id,
-                              name), e);
+      log.error("Trying to get instance {} from service {}: {})",
+          id,
+          name,
+          e);
       return Response.serverError().build();
     }
   }

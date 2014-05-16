@@ -148,4 +148,10 @@ public interface ProviderService extends ProviderCore, Service,
    * @return  the interface if available, null otherwise.
    */
   AgentRestOperations getAgentRestOperations();
+
+  /**
+   * Build up the endpoint details for this service
+   * @param details
+   */
+  void buildEndpointDetails(Map<String, URL> details);
 }

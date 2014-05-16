@@ -62,7 +62,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 
 /**
@@ -124,10 +123,8 @@ public class AccumuloProviderService extends AbstractProviderService implements
       Path generatedConfPath,
       MapOperations resourceComponent,
       MapOperations appComponent,
-      Path containerTmpDirPath) throws
-                                                                            IOException,
-      SliderException {
-    
+      Path containerTmpDirPath) throws IOException, SliderException {
+
     this.fileSystem = fileSystem;
     this.instanceDefinition = instanceDefinition;
     
@@ -172,14 +169,19 @@ public class AccumuloProviderService extends AbstractProviderService implements
     String heap = "-Xmx" + appComponent.getOption(RoleKeys.JVM_HEAP, DEFAULT_JVM_HEAP);
     String opt = "ACCUMULO_OTHER_OPTS";
     if (SliderUtils.isSet(heap)) {
-      if (AccumuloKeys.ROLE_MASTER.equals(role)) {
-        opt = "ACCUMULO_MASTER_OPTS";
-      } else if (AccumuloKeys.ROLE_TABLET.equals(role)) {
-        opt = "ACCUMULO_TSERVER_OPTS";
-      } else if (AccumuloKeys.ROLE_MONITOR.equals(role)) {
-        opt = "ACCUMULO_MONITOR_OPTS";
-      } else if (AccumuloKeys.ROLE_GARBAGE_COLLECTOR.equals(role)) {
-        opt = "ACCUMULO_GC_OPTS";
+      switch (role) {
+        case AccumuloKeys.ROLE_MASTER:
+          opt = "ACCUMULO_MASTER_OPTS";
+          break;
+        case AccumuloKeys.ROLE_TABLET:
+          opt = "ACCUMULO_TSERVER_OPTS";
+          break;
+        case AccumuloKeys.ROLE_MONITOR:
+          opt = "ACCUMULO_MONITOR_OPTS";
+          break;
+        case AccumuloKeys.ROLE_GARBAGE_COLLECTOR:
+          opt = "ACCUMULO_GC_OPTS";
+          break;
       }
       launcher.setEnv(opt, heap);
     }
@@ -236,7 +238,7 @@ public class AccumuloProviderService extends AbstractProviderService implements
 
 
     String accumuloScript = AccumuloClientProvider.buildScriptBinPath(instance);
-    List<String> launchSequence = new ArrayList<String>(8);
+    List<String> launchSequence = new ArrayList<>(8);
     launchSequence.add(0, accumuloScript);
     Collections.addAll(launchSequence, commands);
     return launchSequence;
@@ -290,7 +292,7 @@ public class AccumuloProviderService extends AbstractProviderService implements
     } catch (KeeperException e) {
       throw new BadClusterStateException("Failed to connect to Zookeeper at %s after %d seconds",
                                          zkQuorum, timeout);
-    } catch (InterruptedException e) {
+    } catch (InterruptedException ignored) {
       throw new BadClusterStateException(
         "Interrupted while trying to connect to Zookeeper at %s",
         zkQuorum);
@@ -380,7 +382,7 @@ public class AccumuloProviderService extends AbstractProviderService implements
   @Override
   public Map<String, String> buildProviderStatus() {
     
-    Map<String,String> status = new HashMap<String, String>();
+    Map<String,String> status = new HashMap<>();
     
     
     return status;
@@ -391,25 +393,29 @@ public class AccumuloProviderService extends AbstractProviderService implements
    * @see org.apache.slider.providers.ProviderService#buildMonitorDetails()
    */
   @Override
-  public TreeMap<String,URL> buildMonitorDetails(ClusterDescription clusterDesc) {
-    TreeMap<String,URL> map = new TreeMap<String,URL>();
-    
-    map.put("Active Accumulo Master (RPC): " + getInfoAvoidingNull(clusterDesc, AccumuloKeys.MASTER_ADDRESS), null);
+  public Map<String,URL> buildMonitorDetails(ClusterDescription clusterDesc) {
+    Map<String, URL> details = super.buildMonitorDetails(clusterDesc);
+
+
+    details.put("Active Accumulo Master (RPC): " +
+                   getInfoAvoidingNull(clusterDesc,
+                       AccumuloKeys.MASTER_ADDRESS), null);
     
     String monitorKey = "Active Accumulo Monitor: ";
     String monitorAddr = getInfoAvoidingNull(clusterDesc, AccumuloKeys.MONITOR_ADDRESS);
     if (!StringUtils.isBlank(monitorAddr)) {
       try {
         HostAndPort hostPort = HostAndPort.fromString(monitorAddr);
-        map.put(monitorKey, new URL("http", hostPort.getHostText(), hostPort.getPort(), ""));
+        details.put(monitorKey,
+            new URL("http", hostPort.getHostText(), hostPort.getPort(), ""));
       } catch (Exception e) {
         log.debug("Caught exception parsing Accumulo monitor URL", e);
-        map.put(monitorKey + "N/A", null);
+        details.put(monitorKey + "N/A", null);
       }
     } else {
-      map.put(monitorKey + "N/A", null);
+      details.put(monitorKey + "N/A", null);
     }
 
-    return map;
+    return details;
   }
 }

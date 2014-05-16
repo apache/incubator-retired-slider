@@ -19,6 +19,7 @@
 package org.apache.slider.core.registry.info;
 
 import org.apache.slider.core.exceptions.SliderException;
+import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 
@@ -174,6 +175,7 @@ public class RegisteredEndpoint {
     return sb.toString();
   }
 
+  @JsonIgnore
   public boolean isHttpProtocol() {
     return PROTOCOL_HTTP.equals(protocol) || PROTOCOL_HTTPS.equals(protocol);
   }

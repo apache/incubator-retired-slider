@@ -28,9 +28,16 @@ import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.main.ExitCodeProvider;
+import org.apache.slider.core.registry.info.RegisteredEndpoint;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
+import org.apache.slider.providers.agent.AgentProviderService;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
+import org.apache.slider.server.appmaster.web.rest.agent.HeartBeat;
+import org.apache.slider.server.appmaster.web.rest.agent.HeartBeatResponse;
+import org.apache.slider.server.appmaster.web.rest.agent.Register;
+import org.apache.slider.server.appmaster.web.rest.agent.RegistrationResponse;
+import org.apache.slider.server.appmaster.web.rest.agent.RegistrationStatus;
 import org.apache.slider.server.services.curator.RegistryBinderService;
 import org.apache.slider.server.services.registry.RegistryViewForProviders;
 import org.apache.slider.server.services.utility.ForkedProcessService;
@@ -41,10 +48,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -256,7 +265,6 @@ public abstract class AbstractProviderService
     return process;
   }
 
-
   /*
    * Build the provider status, can be empty
    * @return the provider status - map of entries to add to the info section
@@ -266,17 +274,46 @@ public abstract class AbstractProviderService
     return new HashMap<String, String>();
   }
 
-  /* non-javadoc
-   * @see org.apache.slider.providers.ProviderService#buildMonitorDetails(org.apache.slider.api.ClusterDescription)
+  /*
+  Build the monitor details. The base implementation includes all the external URL endpoints
+  in the external view
    */
   @Override
   public Map<String,URL> buildMonitorDetails(ClusterDescription clusterDesc) {
-    return Collections.emptyMap();
+    Map<String, URL> details = new LinkedHashMap<>();
+
+    // add in all the 
+    buildEndpointDetails(details);
+
+    return details;
   }
   
   protected String getInfoAvoidingNull(ClusterDescription clusterDesc, String key) {
     String value = clusterDesc.getInfo(key);
 
     return null == value ? "N/A" : value;
+  }
+
+  @Override
+  public void buildEndpointDetails(Map<String, URL> details) {
+      ServiceInstanceData self = registry.getSelfRegistration();
+    buildEndpointDetails(details, self);
+  }
+
+  public static void buildEndpointDetails(Map<String, URL> details,
+      ServiceInstanceData self) {
+    Map<String, RegisteredEndpoint> endpoints =
+        self.getRegistryView(true).endpoints;
+    for (Map.Entry<String, RegisteredEndpoint> endpoint : endpoints.entrySet()) {
+      RegisteredEndpoint val = endpoint.getValue();
+      if (val.type.equals(RegisteredEndpoint.TYPE_URL)) {
+        try {
+          URL url = new URL(val.value);
+          details.put(val.description, url);
+        } catch (MalformedURLException e) {
+          log.warn("Failed to create URL from {} : {} ",val.value, e);
+        }
+      }
+    }
   }
 }

@@ -99,7 +99,6 @@ public class IndexBlock extends HtmlBlock {
     if (null == details) {
       return;
     }
-    
     // Loop over each entry, placing the text in the UL, adding an anchor when the URL is non-null
     for (Entry<String,URL> entry : details.entrySet()) {
       if (null != entry.getValue()) {

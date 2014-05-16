@@ -16,19 +16,30 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.services.registry;
+package org.apache.slider.providers.hbase.funtest
 
-import org.apache.slider.core.registry.info.ServiceInstanceData;
+import org.apache.hadoop.conf.Configuration
+import org.apache.slider.api.ClusterDescription
+import org.apache.slider.client.SliderClient
 
-import java.io.IOException;
-import java.util.List;
+class DemoHBaseCluster extends TestFunctionalHBaseCluster {
 
-/**
- * This offers restricted access to the registry for providers
- */
-public interface RegistryViewForProviders {
-  List<ServiceInstanceData> listInstancesByType(String serviceType) throws
-      IOException;
 
-  ServiceInstanceData getSelfRegistration();
+  @Override
+  void clusterOperations(
+      String clustername,
+      SliderClient sliderClient,
+      Configuration clientConf,
+      int numWorkers,
+      Map<String, Integer> roleMap,
+      ClusterDescription cd) {
+    
+  }
+
+  @Override
+  void teardownCluster() {
+    // dont tear it down
+    sleep(5 * 60 * 1000)
+    
+  }
 }

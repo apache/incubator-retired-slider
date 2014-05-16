@@ -20,7 +20,6 @@ package org.apache.slider.server.services.registry;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.x.discovery.ServiceDiscovery;
-import org.apache.curator.x.discovery.ServiceInstance;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.server.services.curator.CuratorServiceInstance;
 import org.apache.slider.server.services.curator.RegistryBinderService;
@@ -49,17 +48,18 @@ public class SliderRegistryService
 
 
   @Override
-  public List listInstancesByType(String serviceType) throws
+  public List<ServiceInstanceData> listInstancesByType(String serviceType) throws
       IOException {
     List<CuratorServiceInstance<ServiceInstanceData>> services =
         listInstances(serviceType);
-    List payloads = new ArrayList(services.size());
+    List<ServiceInstanceData> payloads = new ArrayList<>(services.size());
     for (CuratorServiceInstance<ServiceInstanceData> instance : services) {
       payloads.add(instance.payload);
     }
     return payloads;
   }
 
+  @Override
   public ServiceInstanceData getSelfRegistration() {
     return selfRegistration;
   }
