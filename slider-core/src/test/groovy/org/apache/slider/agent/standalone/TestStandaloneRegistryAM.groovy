@@ -29,8 +29,6 @@ import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.params.ActionRegistryArgs
-import org.apache.slider.core.exceptions.SliderException
-import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.persist.JsonSerDeser
 import org.apache.slider.core.registry.docstore.PublishedConfigSet
@@ -39,7 +37,6 @@ import org.apache.slider.core.registry.info.CustomRegistryConstants
 import org.apache.slider.core.registry.info.ServiceInstanceData
 import org.apache.slider.core.registry.retrieve.RegistryRetriever
 import org.apache.slider.server.appmaster.PublishedArtifacts
-import org.apache.slider.server.appmaster.web.rest.RestPaths
 import org.apache.slider.server.services.curator.CuratorServiceInstance
 import org.apache.slider.server.services.registry.SliderRegistryService
 import org.junit.Test
@@ -212,6 +209,7 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     assert externalConfSet[ARTIFACT_NAME]
 
 
+    describe "verify SLIDER-52 processing"
     def yarnSite = retriever.retrieveConfiguration(
         externalConfSet,
         ARTIFACT_NAME,
@@ -223,9 +221,11 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     assert rmHostnameViaClientSideXML == rmHostnameFromDownloadedProperties
     def rmAddrViaClientSideXML = siteXML.get(YarnConfiguration.RM_ADDRESS)
 
-  /* TODO SLIDER-52 PublishedConfiguration XML conf values are not resolved until client-side
-   assert rmAddrViaClientSideXML == rmAddrFromDownloadedProperties
-  */  
+  //TODO SLIDER-52 PublishedConfiguration XML conf values are not resolved until client-side
+    
+    log.info("RM from downloaded props = $rmAddrFromDownloadedProperties")
+    assert rmAddrViaClientSideXML == rmAddrFromDownloadedProperties
+    
     describe "fetch missing artifact"
     try {
       retriever.retrieveConfiguration(externalConfSet, "no-such-artifact", true)

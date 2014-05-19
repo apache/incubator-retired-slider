@@ -1978,7 +1978,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       }
     } catch (FileNotFoundException e) {
       log.info("{}", e.toString());
-      log.debug("{}", e);
+      log.debug("{}",e, e);
       return EXIT_NOT_FOUND;
     }
     return EXIT_SUCCESS;

@@ -18,6 +18,7 @@
 
 package org.apache.slider.common.tools;
 
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -508,5 +509,26 @@ public class ConfigHelper {
   public static Map<String, String> buildMapFromConfiguration(Configuration conf) {
     Map<String, String> map = new HashMap<String, String>();
     return SliderUtils.mergeEntries(map, conf);
+  }
+
+  /**
+   * This goes through the keyset of one configuration and retrieves each value
+   * from a value source -a different or the same configuration. This triggers
+   * the property resolution process of the value, resolving any variables against
+   * in-config or inherited configurations
+   * @param keysource source of keys
+   * @param valuesource the source of values
+   * @return a new configuration where <code>foreach key in keysource, get(key)==valuesource.get(key)</code>
+   */
+  public static Configuration resolveConfiguration(Iterable<Map.Entry<String, String>> keysource,
+      Configuration valuesource) {
+    Configuration result = new Configuration(false);
+    for (Map.Entry<String, String> entry : keysource) {
+      String key = entry.getKey();
+      String value = valuesource.get(key);
+      Preconditions.checkState(value!=null, "no reference for \"%s\" in values", key);
+      result.set(key, value);
+    }
+    return result;
   }
 }

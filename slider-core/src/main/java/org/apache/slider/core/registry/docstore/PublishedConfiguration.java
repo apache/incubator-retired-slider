@@ -51,13 +51,37 @@ public class PublishedConfiguration {
   public PublishedConfiguration() {
   }
 
+  /**
+   * build an empty published configuration 
+   * @param description configuration description
+   */
   public PublishedConfiguration(String description) {
     this.description = description;
   }
+
+  /**
+   * Build a configuration from the entries
+   * @param description configuration description
+   * @param entries entries to put
+   */
   public PublishedConfiguration(String description,
       Iterable<Map.Entry<String, String>> entries) {
     this.description = description;
     putValues(entries);
+  }
+
+  /**
+   * Build a published configuration, using the keys from keysource,
+   * but resolving the values from the value source, via Configuration.get()
+   * @param description configuration description
+   * @param keysource source of keys
+   * @param valuesource source of values
+   */
+  public PublishedConfiguration(String description,
+      Iterable<Map.Entry<String, String>> keysource,
+      Configuration valuesource) {
+    this.description = description;
+    putValues(ConfigHelper.resolveConfiguration(keysource, valuesource));
   }
 
   
@@ -158,7 +182,12 @@ public class PublishedConfiguration {
     sb.append('}');
     return sb.toString();
   }
-  
+
+  /**
+   * Create an outputter for a given format
+   * @param format format to use
+   * @return an instance of output
+   */
   public PublishedConfigurationOutputter createOutputter(ConfigFormat format) {
     return PublishedConfigurationOutputter.createOutputter(format, this);
   }

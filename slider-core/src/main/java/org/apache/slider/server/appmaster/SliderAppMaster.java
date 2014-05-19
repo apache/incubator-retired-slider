@@ -23,6 +23,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
+import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.ipc.ProtocolSignature;
 import org.apache.hadoop.security.Credentials;
@@ -714,27 +715,31 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
 
     // now publish site.xml files
+    YarnConfiguration defaultYarnConfig = new YarnConfiguration();
     appState.getPublishedConfigurations().put(
         PublishedArtifacts.COMPLETE_CONFIG,
         new PublishedConfiguration(
-            "Complete site settings",
-            new YarnConfiguration()));
+            "Complete slider application settings",
+            getConfig(), getConfig()));
     appState.getPublishedConfigurations().put(
         PublishedArtifacts.YARN_SITE_CONFIG,
         new PublishedConfiguration(
             "YARN site settings",
-            ConfigHelper.loadFromResource("yarn-site.xml")));
+            ConfigHelper.loadFromResource("yarn-site.xml"),
+            defaultYarnConfig));
     
     appState.getPublishedConfigurations().put(
         PublishedArtifacts.CORE_SITE_CONFIG,
         new PublishedConfiguration(
             "Core site settings",
-            ConfigHelper.loadFromResource("core-site.xml")));
+            ConfigHelper.loadFromResource("core-site.xml"),
+            defaultYarnConfig));
     appState.getPublishedConfigurations().put(
         PublishedArtifacts.HDFS_SITE_CONFIG,
         new PublishedConfiguration(
             "HDFS site settings",
-            ConfigHelper.loadFromResource("hdfs-site.xml")));
+            ConfigHelper.loadFromResource("hdfs-site.xml"),
+            new HdfsConfiguration(true)));
     
     
     ServiceInstanceData instanceData = new ServiceInstanceData();
