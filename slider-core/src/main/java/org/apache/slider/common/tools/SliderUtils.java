@@ -123,6 +123,7 @@ public final class SliderUtils {
    * @param num
    * @param msg the message to be shown in exception
    */
+  @SuppressWarnings("ResultOfMethodCallIgnored")
   private static void validateNumber(String num, String msg)  throws BadConfigException {
     try {
       Integer.parseInt(num);
@@ -188,7 +189,7 @@ public final class SliderUtils {
 
   /**
    * Find a containing JAR
-   * @param my_class class to find
+   * @param clazz class to find
    * @return the file
    * @throws IOException any IO problem, including the class not having a
    * classloader
@@ -222,8 +223,8 @@ public final class SliderUtils {
       throw new IOException("Unable to find resources for class " + my_class);
     }
 
-    for (Enumeration itr = urlEnumeration; itr.hasMoreElements(); ) {
-      URL url = (URL) itr.nextElement();
+    for (; urlEnumeration.hasMoreElements(); ) {
+      URL url = urlEnumeration.nextElement();
       if ("jar".equals(url.getProtocol())) {
         String toReturn = url.getPath();
         if (toReturn.startsWith("file:")) {
@@ -429,7 +430,7 @@ public final class SliderUtils {
    * @return a stringified list
    */
   public static List<String> collectionToStringList(Collection c) {
-    List<String> l = new ArrayList<String>(c.size());
+    List<String> l = new ArrayList<>(c.size());
     for (Object o : c) {
       l.add(o.toString());
     }
@@ -526,7 +527,7 @@ public final class SliderUtils {
   public static String appReportToString(ApplicationReport r, String separator) {
     StringBuilder builder = new StringBuilder(512);
     builder.append("application ").append(
-      r.getName()).append("/").append(r.getApplicationType()).append(separator);
+        r.getName()).append("/").append(r.getApplicationType()).append(separator);
     Set<String> tags = r.getApplicationTags();
     if (!tags.isEmpty()) {
       for (String tag : tags) {
@@ -710,7 +711,7 @@ public final class SliderUtils {
 
   /**
    * probe to see if the address
-   * @param address
+   * @param address network address
    * @return true if the scheduler address is set to
    * something other than 0.0.0.0
    */
@@ -820,7 +821,7 @@ public final class SliderUtils {
    * @return a possibly empty map of environment variables.
    */
   public static Map<String, String> buildEnvMap(Map<String, String> roleOpts) {
-    Map<String, String> env = new HashMap<String, String>();
+    Map<String, String> env = new HashMap<>();
     if (roleOpts != null) {
       for (Map.Entry<String, String> entry: roleOpts.entrySet()) {
         String key = entry.getKey();
@@ -847,7 +848,7 @@ public final class SliderUtils {
       Map<String, String> optionMap = entry.getValue();
       Map<String, String> existingMap = clusterRoleMap.get(key);
       if (existingMap == null) {
-        existingMap = new HashMap<String, String>();
+        existingMap = new HashMap<>();
       }
       log.debug("Overwriting role options with command line values {}",
                 stringifyMap(optionMap));
@@ -1011,8 +1012,7 @@ public final class SliderUtils {
   }
 
     public static Map<String, Map<String, String>> deepClone(Map<String, Map<String, String>> src) {
-    Map<String, Map<String, String>> dest =
-      new HashMap<String, Map<String, String>>();
+    Map<String, Map<String, String>> dest = new HashMap<>();
     for (Map.Entry<String, Map<String, String>> entry : src.entrySet()) {
       dest.put(entry.getKey(), stringMapClone(entry.getValue()));
     }
@@ -1020,7 +1020,7 @@ public final class SliderUtils {
   }
 
   public static Map<String, String> stringMapClone(Map<String, String> src) {
-    Map<String, String> dest =  new HashMap<String, String>();
+    Map<String, String> dest =  new HashMap<>();
     return mergeEntries(dest, src.entrySet());
   }
 
@@ -1249,7 +1249,7 @@ public final class SliderUtils {
 
   /**
    * Add the cluster build information; this will include Hadoop details too
-   * @param cd cluster
+   * @param info cluster info
    * @param prefix prefix for the build info
    */
   public static void addBuildInfo(Map<String, String> info, String prefix) {

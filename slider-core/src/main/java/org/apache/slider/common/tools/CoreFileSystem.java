@@ -113,9 +113,7 @@ public class CoreFileSystem {
    * @return the path for persistent data
    */
   public Path buildClusterDirPath(String clustername) {
-    if (clustername == null) {
-      throw new NullPointerException();
-    }
+    Preconditions.checkNotNull(clustername);
     Path path = getBaseApplicationPath();
     return new Path(path, SliderKeys.CLUSTER_DIRECTORY + "/" + clustername);
   }
@@ -147,8 +145,7 @@ public class CoreFileSystem {
    * to ensure that it is there.
    *
    * @param instancePaths instance paths
-   * @return the path to the cluster directory
-   * @throws java.io.IOException                      trouble
+   * @throws IOException trouble
    * @throws SliderException slider-specific exceptions
    */
   public void createClusterDirectories(InstancePaths instancePaths) throws
@@ -238,7 +235,6 @@ public class CoreFileSystem {
    * Verify that the given directory is not present
    *
    * @param clusterDirectory actual directory to look for
-   * @return the path to the cluster directory
    * @throws IOException    trouble with FS
    * @throws SliderException If the directory exists
    */
@@ -269,7 +265,7 @@ public class CoreFileSystem {
     verifyPathExists(dirPath);
     Path tempFile = new Path(dirPath, "tmp-file-for-checks");
     try {
-      FSDataOutputStream out = null;
+      FSDataOutputStream out ;
       out = fileSystem.create(tempFile, true);
       IOUtils.closeStream(out);
       fileSystem.delete(tempFile, false);
@@ -411,7 +407,7 @@ public class CoreFileSystem {
     //copied to the destination
     FileStatus[] fileset = fileSystem.listStatus(srcDir);
     Map<String, LocalResource> localResources =
-            new HashMap<String, LocalResource>(fileset.length);
+            new HashMap<>(fileset.length);
     for (FileStatus entry : fileset) {
 
       LocalResource resource = createAmResource(entry.getPath(),

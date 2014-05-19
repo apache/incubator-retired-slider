@@ -77,10 +77,11 @@ public class ConfigHelper {
   /**
    * Take a configuration and return a sorted set
    * @param conf config
-   * @return
+   * @return the sorted keyset
+
    */
   public static TreeSet<String> sortedConfigKeys(Iterable<Map.Entry<String, String>> conf) {
-    TreeSet<String> sorted = new TreeSet<String>();
+    TreeSet<String> sorted = new TreeSet<>();
     for (Map.Entry<String, String> entry : conf) {
       sorted.add(entry.getKey());
     }
@@ -183,28 +184,19 @@ public class ConfigHelper {
                                                 IOException {
     int len = (int) fs.getLength(path);
     byte[] data = new byte[len];
-    FSDataInputStream in = fs.open(path);
-    try {
+    try(FSDataInputStream in = fs.open(path)) {
       in.readFully(0, data);
-    } catch (IOException e) {
-      in.close();
     }
-    ByteArrayInputStream in2;
 
     //this is here to track down a parse issue
     //related to configurations
     String s = new String(data, 0, len);
     log.debug("XML resource {} is \"{}\"", path, s);
-    in2 = new ByteArrayInputStream(data);
-    try {
+    try (ByteArrayInputStream in = new ByteArrayInputStream(data)) {
       Document document = parseConfigXML(in);
       return document;
-    } catch (ParserConfigurationException e) {
+    } catch (ParserConfigurationException | SAXException e) {
       throw new IOException(e);
-    } catch (SAXException e) {
-      throw new IOException(e);
-    } finally {
-      in2.close();
     }
 
   }
@@ -222,11 +214,8 @@ public class ConfigHelper {
                                                                    IOException {
     int len = (int) fs.getLength(path);
     byte[] data = new byte[len];
-    FSDataInputStream in = fs.open(path);
-    try {
+    try (FSDataInputStream in = fs.open(path)) {
       in.readFully(0, data);
-    } catch (IOException e) {
-      in.close();
     }
     ByteArrayInputStream in2;
 
@@ -302,11 +291,26 @@ public class ConfigHelper {
    */
   public static Configuration loadConfFromFile(File file) throws
                                                           IOException {
+    return loadConfFromFile(file, false);
+  }
+
+  /**
+   *
+   * Load a Hadoop configuration from a local file.
+   * @param file file to load
+   * @param loadDefaults flag to indicate if the defaults should be loaded yet
+   * @return a configuration which hasn't actually had the load triggered
+   * yet.
+   * @throws FileNotFoundException file is not there
+   * @throws IOException any other IO problem
+   */
+  public static Configuration loadConfFromFile(File file,
+      boolean loadDefaults) throws IOException {
     if (!file.exists()) {
       throw new FileNotFoundException("File not found :"
                                           + file.getAbsoluteFile());
     }
-    Configuration conf = new Configuration(false);
+    Configuration conf = new Configuration(loadDefaults);
     try {
       conf.addResource(file.toURI().toURL());
     } catch (MalformedURLException e) {
@@ -357,7 +361,7 @@ public class ConfigHelper {
                                                         Path templatePath,
                                                         String fallbackResource) throws
                                                                                  IOException {
-    Configuration conf = null;
+    Configuration conf;
     String origin;
     if (fs.exists(templatePath)) {
       log.debug("Loading template configuration {}", templatePath);
@@ -375,8 +379,8 @@ public class ConfigHelper {
     }
     //force a get
     conf.get(SliderXmlConfKeys.KEY_TEMPLATE_ORIGIN);
-    conf.set(SliderXmlConfKeys.KEY_TEMPLATE_ORIGIN, origin);
     //now set the origin
+    conf.set(SliderXmlConfKeys.KEY_TEMPLATE_ORIGIN, origin);
     return conf;
   }
 
@@ -507,7 +511,7 @@ public class ConfigHelper {
    * @return hash map
    */
   public static Map<String, String> buildMapFromConfiguration(Configuration conf) {
-    Map<String, String> map = new HashMap<String, String>();
+    Map<String, String> map = new HashMap<>();
     return SliderUtils.mergeEntries(map, conf);
   }
 
@@ -526,7 +530,8 @@ public class ConfigHelper {
     for (Map.Entry<String, String> entry : keysource) {
       String key = entry.getKey();
       String value = valuesource.get(key);
-      Preconditions.checkState(value!=null, "no reference for \"%s\" in values", key);
+      Preconditions.checkState(value != null,
+          "no reference for \"%s\" in values", key);
       result.set(key, value);
     }
     return result;
