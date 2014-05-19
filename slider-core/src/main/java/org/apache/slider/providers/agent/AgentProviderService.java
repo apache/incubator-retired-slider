@@ -737,18 +737,18 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   @Override
-  public Map<String, URL> buildMonitorDetails(ClusterDescription clusterDesc) {
-    Map<String, URL> details = super.buildMonitorDetails(clusterDesc);
+  public Map<String, String> buildMonitorDetails(ClusterDescription clusterDesc) {
+    Map<String, String> details = super.buildMonitorDetails(clusterDesc);
     buildRoleHostDetails(details);
     return details;
   }
 
-  private void buildRoleHostDetails(Map<String, URL> details) {
+  private void buildRoleHostDetails(Map<String, String> details) {
     for (Map.Entry<String, Map<String, ClusterNode>> entry :
         getRoleClusterNodeMapping().entrySet()) {
       details.put(entry.getKey() + " Host(s)/Container(s): " +
                   getHostsList(entry.getValue().values(), false),
-                  null);
+                  "");
     }
   }
 

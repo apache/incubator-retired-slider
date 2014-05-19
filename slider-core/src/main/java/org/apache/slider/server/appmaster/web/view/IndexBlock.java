@@ -23,6 +23,7 @@ import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.DIV;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.UL;
 import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
 import org.apache.slider.api.StatusKeys;
+import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.providers.ProviderService;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.WebAppApi;
@@ -95,14 +96,14 @@ public class IndexBlock extends HtmlBlock {
   }
 
   protected void addProviderServiceOptions(ProviderService providerService, UL<DIV<Hamlet>> ul) {
-    Map<String,URL> details = providerService.buildMonitorDetails(appState.getClusterStatus());
+    Map<String, String> details = providerService.buildMonitorDetails(appState.getClusterStatus());
     if (null == details) {
       return;
     }
-    // Loop over each entry, placing the text in the UL, adding an anchor when the URL is non-null
-    for (Entry<String,URL> entry : details.entrySet()) {
-      if (null != entry.getValue()) {
-        String url = entry.getValue().toString();
+    // Loop over each entry, placing the text in the UL, adding an anchor when the URL is non-null/empty
+    for (Entry<String, String> entry : details.entrySet()) {
+      String url = entry.getValue();
+      if (SliderUtils.isSet(url) ) {
         ul.li()._(entry.getKey()).a(url, url)._();
       } else {
         ul.li(entry.getKey());

@@ -279,8 +279,8 @@ public abstract class AbstractProviderService
   in the external view
    */
   @Override
-  public Map<String,URL> buildMonitorDetails(ClusterDescription clusterDesc) {
-    Map<String, URL> details = new LinkedHashMap<>();
+  public Map<String, String> buildMonitorDetails(ClusterDescription clusterDesc) {
+    Map<String, String> details = new LinkedHashMap<>();
 
     // add in all the 
     buildEndpointDetails(details);
@@ -295,24 +295,19 @@ public abstract class AbstractProviderService
   }
 
   @Override
-  public void buildEndpointDetails(Map<String, URL> details) {
+  public void buildEndpointDetails(Map<String, String> details) {
       ServiceInstanceData self = registry.getSelfRegistration();
     buildEndpointDetails(details, self);
   }
 
-  public static void buildEndpointDetails(Map<String, URL> details,
+  public static void buildEndpointDetails(Map<String, String> details,
       ServiceInstanceData self) {
     Map<String, RegisteredEndpoint> endpoints =
         self.getRegistryView(true).endpoints;
     for (Map.Entry<String, RegisteredEndpoint> endpoint : endpoints.entrySet()) {
       RegisteredEndpoint val = endpoint.getValue();
       if (val.type.equals(RegisteredEndpoint.TYPE_URL)) {
-        try {
-          URL url = new URL(val.value);
-          details.put(val.description, url);
-        } catch (MalformedURLException e) {
-          log.warn("Failed to create URL from {} : {} ",val.value, e);
-        }
+          details.put(val.description, val.value);
       }
     }
   }

@@ -393,8 +393,8 @@ public class AccumuloProviderService extends AbstractProviderService implements
    * @see org.apache.slider.providers.ProviderService#buildMonitorDetails()
    */
   @Override
-  public Map<String,URL> buildMonitorDetails(ClusterDescription clusterDesc) {
-    Map<String, URL> details = super.buildMonitorDetails(clusterDesc);
+  public Map<String, String> buildMonitorDetails(ClusterDescription clusterDesc) {
+    Map<String, String> details = super.buildMonitorDetails(clusterDesc);
 
 
     details.put("Active Accumulo Master (RPC): " +
@@ -404,14 +404,9 @@ public class AccumuloProviderService extends AbstractProviderService implements
     String monitorKey = "Active Accumulo Monitor: ";
     String monitorAddr = getInfoAvoidingNull(clusterDesc, AccumuloKeys.MONITOR_ADDRESS);
     if (!StringUtils.isBlank(monitorAddr)) {
-      try {
         HostAndPort hostPort = HostAndPort.fromString(monitorAddr);
         details.put(monitorKey,
-            new URL("http", hostPort.getHostText(), hostPort.getPort(), ""));
-      } catch (Exception e) {
-        log.debug("Caught exception parsing Accumulo monitor URL", e);
-        details.put(monitorKey + "N/A", null);
-      }
+            String.format("http://%s:%d", hostPort.getHostText(), hostPort.getPort()));
     } else {
       details.put(monitorKey + "N/A", null);
     }

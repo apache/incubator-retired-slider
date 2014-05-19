@@ -267,11 +267,11 @@ public class HBaseProviderService extends AbstractProviderService implements
   
 
   @Override
-  public Map<String,URL> buildMonitorDetails(ClusterDescription clusterDesc) {
-    Map<String, URL> details = super.buildMonitorDetails(clusterDesc);
+  public Map<String, String> buildMonitorDetails(ClusterDescription clusterDesc) {
+    Map<String, String> details = super.buildMonitorDetails(clusterDesc);
 
     details.put("Active HBase Master (RPC): " 
-                + getInfoAvoidingNull(clusterDesc, StatusKeys.INFO_MASTER_ADDRESS), null);
+                + getInfoAvoidingNull(clusterDesc, StatusKeys.INFO_MASTER_ADDRESS),"");
 
     return details;
   }
