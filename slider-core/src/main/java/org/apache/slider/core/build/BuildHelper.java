@@ -33,7 +33,7 @@ public class BuildHelper {
    * @param dest map to insert this too
    * @param prefix prefix for the build info
    */
-  public static void addBuildMetadata(Map dest, String prefix) {
+  public static void addBuildMetadata(Map<String, Object> dest, String prefix) {
 
     Properties props = SliderVersionInfo.loadVersionProperties();
     dest.put(prefix + "." + SliderVersionInfo.APP_BUILD_INFO,
