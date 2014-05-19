@@ -69,10 +69,10 @@ public class SliderYarnClientImpl extends YarnClientImpl {
    */
   public List<ApplicationReport> listInstances(String user)
     throws YarnException, IOException {
-    Set<String> types = new HashSet<String>(1);
+    Set<String> types = new HashSet<>(1);
     types.add(SliderKeys.APP_TYPE);
     List<ApplicationReport> allApps = getApplications(types);
-    List<ApplicationReport> results = new ArrayList<ApplicationReport>();
+    List<ApplicationReport> results = new ArrayList<>();
     for (ApplicationReport report : allApps) {
       if (user == null || user.equals(report.getUser())) {
         results.add(report);
@@ -96,7 +96,7 @@ public class SliderYarnClientImpl extends YarnClientImpl {
                                                                   YarnException {
     List<ApplicationReport> instances = listInstances(user);
     List<ApplicationReport> results =
-      new ArrayList<ApplicationReport>(instances.size());
+      new ArrayList<>(instances.size());
     for (ApplicationReport report : instances) {
       if (report.getName().equals(appname)) {
         results.add(report);
@@ -239,7 +239,7 @@ public class SliderYarnClientImpl extends YarnClientImpl {
                                                                       IOException {
     List<ApplicationReport> instances = listInstances(user);
     List<ApplicationReport> results =
-      new ArrayList<ApplicationReport>(instances.size());
+      new ArrayList<>(instances.size());
     for (ApplicationReport app : instances) {
       if (app.getName().equals(appname)
           && isApplicationLive(app)) {

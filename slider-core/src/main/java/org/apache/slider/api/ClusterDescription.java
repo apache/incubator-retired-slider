@@ -165,40 +165,40 @@ public class ClusterDescription implements Cloneable {
    * the Slider AM and the application that it deploys
    */
   public Map<String, String> options =
-    new HashMap<String, String>();
+    new HashMap<>();
 
   /**
    * cluster information
    * This is only valid when querying the cluster status.
    */
   public Map<String, String> info =
-    new HashMap<String, String>();
+    new HashMap<>();
 
   /**
    * Statistics. This is only relevant when querying the cluster status
    */
   public Map<String, Map<String, Integer>> statistics =
-    new HashMap<String, Map<String, Integer>>();
+    new HashMap<>();
 
   /**
    * Instances: role->count
    */
   public Map<String, List<String>> instances =
-    new HashMap<String, List<String>>();
+    new HashMap<>();
 
   /**
    * Role options, 
    * role -> option -> value
    */
   public Map<String, Map<String, String>> roles =
-    new HashMap<String, Map<String, String>>();
+    new HashMap<>();
 
 
   /**
    * List of key-value pairs to add to a client config to set up the client
    */
   public Map<String, String> clientProperties =
-    new HashMap<String, String>();
+    new HashMap<>();
 
   /**
    * Status information
@@ -569,7 +569,7 @@ public class ClusterDescription implements Cloneable {
    */
   @JsonIgnore
   public Set<String> getRoleNames() {
-    return new HashSet<String>(roles.keySet());
+    return new HashSet<>(roles.keySet());
   }
 
   /**

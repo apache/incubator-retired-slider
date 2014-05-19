@@ -70,7 +70,7 @@ public class ConfPersister {
     LoggerFactory.getLogger(ConfPersister.class);
 
 
-  private final ConfTreeSerDeser confTreeSerDeser =new ConfTreeSerDeser();
+  private final ConfTreeSerDeser confTreeSerDeser = new ConfTreeSerDeser();
 
   private final CoreFileSystem coreFS;
   private final FileSystem fileSystem;

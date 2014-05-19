@@ -40,7 +40,7 @@ public class ClasspathConstructor {
 
   //  public static final String CLASS_PATH_SEPARATOR = ApplicationConstants.CLASS_PATH_SEPARATOR;
   public static final String CLASS_PATH_SEPARATOR = File.pathSeparator;
-  private final List<String> pathElements = new ArrayList<String>();
+  private final List<String> pathElements = new ArrayList<>();
 
   public ClasspathConstructor() {
   }
@@ -54,8 +54,8 @@ public class ClasspathConstructor {
     String[] cp = config.getTrimmedStrings(
       YarnConfiguration.YARN_APPLICATION_CLASSPATH,
       YarnConfiguration.DEFAULT_YARN_CROSS_PLATFORM_APPLICATION_CLASSPATH);
-    return cp!= null ? Arrays.asList(cp) : new ArrayList<String>(0);
-    
+    return cp != null ? Arrays.asList(cp) : new ArrayList<String>(0);
+
   }
 
 

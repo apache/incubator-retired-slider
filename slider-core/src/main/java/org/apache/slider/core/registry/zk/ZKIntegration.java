@@ -198,7 +198,7 @@ public class ZKIntegration implements Watcher {
                            CreateMode createMode) throws KeeperException, InterruptedException {
     //initial create of full path
     assert acl != null;
-    assert acl.size() > 0;
+    assert !acl.isEmpty();
     assert parent != null;
     String path = parent;
     if (entry != null) {
@@ -226,7 +226,7 @@ public class ZKIntegration implements Watcher {
                      CreateMode createMode) throws KeeperException, InterruptedException {
     String history = "/";
     for (String entry : paths) {
-      createPath(history, ((String) entry), acl, createMode);
+      createPath(history, entry, acl, createMode);
       history = history + entry + "/";
     }
   }
@@ -236,7 +236,7 @@ public class ZKIntegration implements Watcher {
  * @return an unordered list of clusters under a user
  */
   public List<String> getClusters() throws KeeperException, InterruptedException {
-    return zookeeper.getChildren(userPath, (Watcher) null);
+    return zookeeper.getChildren(userPath, null);
   }
 
   /**

@@ -57,15 +57,15 @@ public abstract class AbstractLauncher extends Configured {
   /**
    * Env vars; set up at final launch stage
    */
-  protected final Map<String, String> envVars = new HashMap<String, String>();
+  protected final Map<String, String> envVars = new HashMap<>();
   protected final MapOperations env = new MapOperations("env", envVars);
   protected final ContainerLaunchContext containerLaunchContext =
     Records.newRecord(ContainerLaunchContext.class);
-  protected final List<String> commands = new ArrayList<String>(20);
+  protected final List<String> commands = new ArrayList<>(20);
   protected final Map<String, LocalResource> localResources =
-    new HashMap<String, LocalResource>();
+    new HashMap<>();
   private final Map<String, ByteBuffer> serviceData =
-    new HashMap<String, ByteBuffer>();
+    new HashMap<>();
   // security
   Credentials credentials = new Credentials();
 
@@ -266,7 +266,7 @@ public abstract class AbstractLauncher extends Configured {
 
   public String[] dumpEnvToString() {
 
-    List<String> nodeEnv = new ArrayList<String>();
+    List<String> nodeEnv = new ArrayList<>();
 
     for (Map.Entry<String, String> entry : env.entrySet()) {
       String envElt = String.format("%s=\"%s\"",

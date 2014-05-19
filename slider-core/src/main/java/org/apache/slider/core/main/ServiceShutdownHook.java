@@ -39,7 +39,7 @@ public class ServiceShutdownHook implements Runnable {
   private Runnable hook;
 
   public ServiceShutdownHook(Service service) {
-    serviceRef = new WeakReference<Service>(service);
+    serviceRef = new WeakReference<>(service);
   }
 
   public void register(int priority) {

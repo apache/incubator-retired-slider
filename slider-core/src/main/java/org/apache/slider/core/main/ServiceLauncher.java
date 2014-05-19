@@ -30,6 +30,7 @@ import org.apache.hadoop.yarn.YarnUncaughtExceptionHandler;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -86,7 +87,7 @@ public class ServiceLauncher<S extends Service>
 
   private volatile S service;
   private int serviceExitCode;
-  private final List<IrqHandler> interruptHandlers = new ArrayList<IrqHandler>(1);
+  private final List<IrqHandler> interruptHandlers = new ArrayList<>(1);
   private Configuration configuration;
   private String serviceClassName;
   private static AtomicBoolean signalAlreadyReceived = new AtomicBoolean(false);
@@ -217,14 +218,16 @@ public class ServiceLauncher<S extends Service>
                                                         ClassNotFoundException,
                                                         InstantiationException,
                                                         IllegalAccessException,
-                                                        ExitUtil.ExitException {
+                                                        ExitUtil.ExitException,
+      NoSuchMethodException,
+      InvocationTargetException {
     configuration = conf;
 
     //Instantiate the class -this requires the service to have a public
     // zero-argument constructor
     Class<?> serviceClass =
       this.getClass().getClassLoader().loadClass(serviceClassName);
-    Object instance = serviceClass.newInstance();
+    Object instance = serviceClass.getConstructor().newInstance();
     if (!(instance instanceof Service)) {
       //not a service
       throw new ExitUtil.ExitException(EXIT_BAD_CONFIGURATION,
@@ -341,7 +344,7 @@ public class ServiceLauncher<S extends Service>
   /**
    * Parse the command line, building a configuration from it, then
    * launch the service and wait for it to finish. finally, exit
-   * passing the status code to the {@link #exit(int)} method.
+   * passing the status code to the #exit(int) method.
    * @param args arguments to the service. arg[0] is 
    * assumed to be the service classname and is automatically
    */
@@ -371,7 +374,7 @@ public class ServiceLauncher<S extends Service>
     if (argCount <= 1 ) {
       return new String[0];
     }
-    List<String> argsList = new ArrayList<String>(argCount);
+    List<String> argsList = new ArrayList<>(argCount);
     ListIterator<String> arguments = args.listIterator();
     //skip that first entry
     arguments.next();

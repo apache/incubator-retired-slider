@@ -608,13 +608,14 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @param name cluster name
    * @param resolved flag to indicate the cluster should be resolved
    * @return the loaded configuration
-   * @throws IOException
-   * @throws SliderException
+   * @throws IOException IO problems
+   * @throws SliderException slider explicit issues
    * @throws UnknownApplicationInstanceException if the file is not found
    */
-  public AggregateConf loadInstanceDefinition(String name, boolean resolved) throws
-                                                                      IOException,
-      SliderException {
+    public AggregateConf loadInstanceDefinition(String name,
+        boolean resolved) throws
+        IOException,
+        SliderException {
 
     Path clusterDirectory = sliderFileSystem.buildClusterDirPath(name);
     AggregateConf instanceDefinition = loadInstanceDefinitionUnresolved(
@@ -692,7 +693,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     // add the tags if available
     Set<String> applicationTags = provider.getApplicationTags(sliderFileSystem,
-      appOperations.getGlobalOptions().get(AgentKeys.APP_DEF));
+        appOperations.getGlobalOptions().get(AgentKeys.APP_DEF));
     AppMasterLauncher amLauncher = new AppMasterLauncher(clustername,
         SliderKeys.APP_TYPE,
         config,

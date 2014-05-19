@@ -30,12 +30,12 @@ import java.util.List;
  * Special support for JVM command buildup.
  */
 public class CommandLineBuilder {
-  protected final List<String> argumentList = new ArrayList<String>(20);
+  protected final List<String> argumentList = new ArrayList<>(20);
 
 
   /**
    * Add an entry to the command list
-   * @param arg argument -this will be converted to a string
+   * @param args arguments -these will be converted strings
    */
   public void add(Object... args) {
     for (Object arg : args) {
