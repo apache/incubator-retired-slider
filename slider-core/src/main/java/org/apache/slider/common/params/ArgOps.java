@@ -42,13 +42,9 @@ public class ArgOps {
 
   /**
    * create a 3-tuple
-   * @param msg
-   * @param min
-   * @param max
-   * @return
    */
   public static List<Object> triple(String msg, int min, int max) {
-    List<Object> l = new ArrayList<Object>(3);
+    List<Object> l = new ArrayList<>(3);
     l.add(msg);
     l.add(min);
     l.add(max);
@@ -57,9 +53,6 @@ public class ArgOps {
 
   /**
    * Create a tuple
-   * @param msg
-   * @param min
-   * @return
    */
   public static List<Object> tuple(String msg, int min) {
     return triple(msg, min, min);
@@ -106,7 +99,7 @@ public class ArgOps {
   public static Map<String, String> convertTupleListToMap(String description,
                                                           List<String> list) throws
                                                                              BadCommandArgumentsException {
-    Map<String, String> results = new HashMap<String, String>();
+    Map<String, String> results = new HashMap<>();
     if (list != null && !list.isEmpty()) {
       int size = list.size();
       if (size % 2 != 0) {
@@ -133,16 +126,14 @@ public class ArgOps {
    * ['worker','heapsize','5G','master','heapsize','2M'] into a map
    * ['worker':'2',"master":'1'];
    * Duplicate entries also trigger errors
-   * @param description
-   * @param list
-   * @return
+
    * @throws BadCommandArgumentsException odd #of arguments received
    */
   public static Map<String, Map<String, String>> convertTripleListToMaps(String description,
                                                                          List<String> list) throws
                                                                                             BadCommandArgumentsException {
     Map<String, Map<String, String>> results =
-      new HashMap<String, Map<String, String>>();
+      new HashMap<>();
     if (list != null && !list.isEmpty()) {
       int size = list.size();
       if (size % 3 != 0) {
@@ -157,7 +148,7 @@ public class ArgOps {
         Map<String, String> roleMap = results.get(role);
         if (roleMap == null) {
           //demand create new role map
-          roleMap = new HashMap<String, String>();
+          roleMap = new HashMap<>();
           results.put(role, roleMap);
         }
         if (roleMap.get(key) != null) {

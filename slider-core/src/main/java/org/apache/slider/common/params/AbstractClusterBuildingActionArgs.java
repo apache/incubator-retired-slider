@@ -35,7 +35,8 @@ import java.util.Map;
  * Abstract Action to build things; shares args across build and
  * list
  */
-public abstract class AbstractClusterBuildingActionArgs extends AbstractActionArgs {
+public abstract class AbstractClusterBuildingActionArgs extends
+    AbstractActionArgs {
 
   /**
    * Declare the image configuration directory to use when creating or
@@ -44,16 +45,16 @@ public abstract class AbstractClusterBuildingActionArgs extends AbstractActionAr
    * be specified.
    */
   @Parameter(names = ARG_CONFDIR,
-             description = "Path to cluster configuration directory in HDFS",
-             converter = PathArgumentConverter.class)
+      description = "Path to cluster configuration directory in HDFS",
+      converter = PathArgumentConverter.class)
   public Path confdir;
 
   @Parameter(names = ARG_ZKPATH,
-             description = "Zookeeper path for the application")
+      description = "Zookeeper path for the application")
   public String appZKPath;
 
   @Parameter(names = ARG_ZKHOSTS,
-             description = "comma separated list of the Zookeeper hosts")
+      description = "comma separated list of the Zookeeper hosts")
   public String zkhosts;
 
   /**
@@ -61,47 +62,48 @@ public abstract class AbstractClusterBuildingActionArgs extends AbstractActionAr
    the full path to a .tar or .tar.gz path containing an HBase image.
    */
   @Parameter(names = ARG_IMAGE,
-             description = "The full path to a .tar or .tar.gz path containing the application",
-             converter = PathArgumentConverter.class)
+      description = "The full path to a .tar or .tar.gz path containing the application",
+      converter = PathArgumentConverter.class)
   public Path image;
 
   @Parameter(names = ARG_APP_HOME,
-             description = "Home directory of a pre-installed application")
+      description = "Home directory of a pre-installed application")
   public String appHomeDir;
 
   @Parameter(names = ARG_PROVIDER,
-             description = "Provider of the specific cluster application")
+      description = "Provider of the specific cluster application")
   public String provider = SliderProviderFactory.DEFAULT_CLUSTER_TYPE;
 
-/*
-
+  /*
+  
+    @Parameter(names = {ARG_PACKAGE},
+               description = "URI to a slider package",
+               converter = URIArgumentConverter.class  )
+    public URI packageURI; 
+  */
   @Parameter(names = {ARG_PACKAGE},
-             description = "URI to a slider package",
-             converter = URIArgumentConverter.class  )
-  public URI packageURI; 
-*/
-  @Parameter(names = {ARG_PACKAGE},
-           description = "URI to a slider package")
+      description = "URI to a slider package")
   public String packageURI;
 
   @Parameter(names = {ARG_RESOURCES},
-             description = "File defining the resources of this instance")
+      description = "File defining the resources of this instance")
   public File resources;
 
   @Parameter(names = {ARG_TEMPLATE},
-             description = "Template application configuration")
+      description = "Template application configuration")
   public File template;
 
   @ParametersDelegate
   public ComponentArgsDelegate componentDelegate = new ComponentArgsDelegate();
 
-  
+
   @ParametersDelegate
-  public AppAndResouceOptionArgsDelegate optionsDelegate = new AppAndResouceOptionArgsDelegate();
+  public AppAndResouceOptionArgsDelegate optionsDelegate =
+      new AppAndResouceOptionArgsDelegate();
 
 
   public Map<String, String> getOptionsMap() throws
-                                             BadCommandArgumentsException {
+      BadCommandArgumentsException {
     return optionsDelegate.getOptionsMap();
   }
 
@@ -111,13 +113,13 @@ public abstract class AbstractClusterBuildingActionArgs extends AbstractActionAr
    * @throws BadCommandArgumentsException parse problem
    */
   public Map<String, Map<String, String>> getCompOptionMap() throws
-                                                             BadCommandArgumentsException {
+      BadCommandArgumentsException {
     return optionsDelegate.getCompOptionMap();
   }
 
 
   public Map<String, String> getResourceOptionsMap() throws
-                                             BadCommandArgumentsException {
+      BadCommandArgumentsException {
     return optionsDelegate.getResourceOptionsMap();
   }
 
@@ -127,7 +129,7 @@ public abstract class AbstractClusterBuildingActionArgs extends AbstractActionAr
    * @throws BadCommandArgumentsException parse problem
    */
   public Map<String, Map<String, String>> getResourceCompOptionMap() throws
-                                                             BadCommandArgumentsException {
+      BadCommandArgumentsException {
     return optionsDelegate.getResourceCompOptionMap();
   }
 
@@ -141,7 +143,8 @@ public abstract class AbstractClusterBuildingActionArgs extends AbstractActionAr
    * @return role mapping
    * @throws BadCommandArgumentsException parse problem
    */
-  public Map<String, String> getComponentMap() throws BadCommandArgumentsException {
+  public Map<String, String> getComponentMap() throws
+      BadCommandArgumentsException {
     return componentDelegate.getComponentMap();
   }
 
@@ -168,17 +171,19 @@ public abstract class AbstractClusterBuildingActionArgs extends AbstractActionAr
   public String getProvider() {
     return provider;
   }
-  
-  public ConfTree buildAppOptionsConfTree() throws BadCommandArgumentsException {
+
+  public ConfTree buildAppOptionsConfTree() throws
+      BadCommandArgumentsException {
     return buildConfTree(getOptionsMap());
   }
 
-  public ConfTree buildResourceOptionsConfTree() throws BadCommandArgumentsException {
+  public ConfTree buildResourceOptionsConfTree() throws
+      BadCommandArgumentsException {
     return buildConfTree(getResourceOptionsMap());
   }
 
   protected ConfTree buildConfTree(Map<String, String> optionsMap) throws
-                                                                   BadCommandArgumentsException {
+      BadCommandArgumentsException {
     ConfTree confTree = new ConfTree();
     ConfTreeOperations ops = new ConfTreeOperations(confTree);
     confTree.global.putAll(optionsMap);

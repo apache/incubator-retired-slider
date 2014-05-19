@@ -63,11 +63,11 @@ public abstract class CommonArgs extends ArgOps implements SliderActions,
 
    */
 
-  public Map<String, String> definitionMap = new HashMap<String, String>();
+  public Map<String, String> definitionMap = new HashMap<>();
   /**
    * System properties
    */
-  public Map<String, String> syspropsMap = new HashMap<String, String>();
+  public Map<String, String> syspropsMap = new HashMap<>();
 
 
   /**
