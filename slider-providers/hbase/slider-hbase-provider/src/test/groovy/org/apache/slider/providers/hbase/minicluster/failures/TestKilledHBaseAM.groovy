@@ -44,13 +44,13 @@ import org.junit.Test
  */
 @CompileStatic
 @Slf4j
-class TestKilledAM extends HBaseMiniClusterTestBase {
+class TestKilledHBaseAM extends HBaseMiniClusterTestBase {
 
   @Test
-  public void testKilledAM() throws Throwable {
-//    skip("failing")
+  public void testKilledHBaseAM() throws Throwable {
+    skip("SLIDER-66: AM Restart Failing -YARN issues")
     
-    String clustername = "test_killed_am"
+    String clustername = "test_killed_hbase_am"
     int regionServerCount = 1
 
 
