@@ -39,6 +39,7 @@ import org.apache.slider.server.services.utility.EventCallback;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
 
@@ -154,4 +155,13 @@ public interface ProviderService extends ProviderCore, Service,
    * @param details
    */
   void buildEndpointDetails(Map<String, String> details);
+
+  /**
+   * Prior to going live -register the initial service registry data
+   * @param amWebAPI
+   * @param registryInstanceData
+   */
+  void applyInitialRegistryDefinitions(URL amWebAPI,
+      ServiceInstanceData registryInstanceData) throws MalformedURLException,
+      IOException;
 }

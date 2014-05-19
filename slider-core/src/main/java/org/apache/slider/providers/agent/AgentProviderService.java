@@ -41,6 +41,7 @@ import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.CommandLineBuilder;
 import org.apache.slider.core.launch.ContainerLauncher;
 import org.apache.slider.core.registry.docstore.PublishedConfiguration;
+import org.apache.slider.core.registry.info.CustomRegistryConstants;
 import org.apache.slider.core.registry.info.RegisteredEndpoint;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.providers.AbstractProviderService;
@@ -51,7 +52,6 @@ import org.apache.slider.providers.agent.application.metadata.Component;
 import org.apache.slider.providers.agent.application.metadata.Export;
 import org.apache.slider.providers.agent.application.metadata.ExportGroup;
 import org.apache.slider.providers.agent.application.metadata.Metainfo;
-import org.apache.slider.providers.agent.application.metadata.MetainfoParser;
 import org.apache.slider.providers.agent.application.metadata.Service;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentCommandType;
@@ -71,21 +71,22 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_AGENTS;
 
 /** This class implements the server-side aspects of an agent deployment */
 public class AgentProviderService extends AbstractProviderService implements
@@ -752,4 +753,20 @@ public class AgentProviderService extends AbstractProviderService implements
     }
   }
 
+  @Override
+  public void applyInitialRegistryDefinitions(URL amWebAPI,
+      ServiceInstanceData instanceData) throws IOException {
+    super.applyInitialRegistryDefinitions(amWebAPI, instanceData);
+
+    try {
+      instanceData.internalView.endpoints.put(
+          CustomRegistryConstants.AGENT_REST_API,
+          new RegisteredEndpoint(
+              new URL(amWebAPI, SLIDER_PATH_AGENTS),
+              "Agent REST API") );
+    } catch (URISyntaxException e) {
+      throw new IOException(e);
+    }
+
+  }
 }

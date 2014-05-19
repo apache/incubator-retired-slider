@@ -31,6 +31,7 @@ import org.apache.slider.core.conf.MapOperations
 import org.apache.slider.core.exceptions.BadCommandArgumentsException
 import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.launch.ContainerLauncher
+import org.apache.slider.core.registry.info.ServiceInstanceData
 import org.apache.slider.providers.ProviderRole
 import org.apache.slider.providers.ProviderService
 import org.apache.slider.server.appmaster.state.StateAccessForProviders
@@ -217,7 +218,15 @@ class MockProviderService implements ProviderService {
     }
 
   @Override
-  void buildEndpointDetails(Map<String, URL> details) {
+  void buildEndpointDetails(Map<String, String> details) {
+
+  }
+
+  @Override
+  void applyInitialRegistryDefinitions(
+      URL amWebAPI,
+      ServiceInstanceData registryInstanceData)
+  throws MalformedURLException, IOException {
 
   }
 }

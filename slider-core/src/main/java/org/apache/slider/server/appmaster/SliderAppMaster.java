@@ -23,7 +23,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
-import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.ipc.ProtocolSignature;
 import org.apache.hadoop.security.Credentials;
@@ -85,16 +84,15 @@ import org.apache.slider.core.main.LauncherExitCodes;
 import org.apache.slider.core.main.RunService;
 import org.apache.slider.core.main.ServiceLauncher;
 import org.apache.slider.core.persist.ConfTreeSerDeser;
-import org.apache.slider.core.registry.docstore.PublishedConfiguration;
-import org.apache.slider.core.registry.info.CommonRegistryConstants;
 import org.apache.slider.core.registry.info.CustomRegistryConstants;
 import org.apache.slider.core.registry.info.RegisteredEndpoint;
-import org.apache.slider.core.registry.info.RegistryView;
+import org.apache.slider.core.registry.info.RegistryNaming;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderService;
 import org.apache.slider.providers.SliderProviderFactory;
 import org.apache.slider.providers.slideram.SliderAMClientProvider;
+import org.apache.slider.providers.slideram.SliderAMProviderService;
 import org.apache.slider.server.appmaster.rpc.RpcBinder;
 import org.apache.slider.server.appmaster.rpc.SliderAMPolicyProvider;
 import org.apache.slider.server.appmaster.rpc.SliderClusterProtocolPBImpl;
@@ -111,7 +109,6 @@ import org.apache.slider.server.appmaster.web.SliderAmIpFilter;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.WebAppApiImpl;
 import org.apache.slider.server.appmaster.web.rest.RestPaths;
-import org.apache.slider.core.registry.info.RegistryNaming;
 import org.apache.slider.server.services.registry.SliderRegistryService;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
 import org.apache.slider.server.services.utility.EventCallback;
@@ -137,9 +134,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_AGENTS;
-import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_MANAGEMENT;
-import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_PUBLISHER;
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.WS_CONTEXT_ROOT;
 
 /**
@@ -286,6 +280,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   
   private SliderAMWebApp webApp;
   private InetSocketAddress rpcServiceAddress;
+  private ProviderService sliderAMProvider;
 
   /**
    * Service Constructor
@@ -461,6 +456,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     providerService = factory.createServerProvider();
     // init the provider BUT DO NOT START IT YET
     initAndAddService(providerService);
+    // create a slider AM provider
+    sliderAMProvider = new SliderAMProviderService();
+    initAndAddService(sliderAMProvider);
     
     InetSocketAddress address = SliderUtils.getRmSchedulerAddress(conf);
     log.info("RM is at {}", address);
@@ -553,13 +551,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       
       //registry
-
-
       registry = startRegistrationService();
 
       //build the role map
       List<ProviderRole> providerRoles =
-        new ArrayList<ProviderRole>(providerService.getRoles());
+        new ArrayList<>(providerService.getRoles());
       providerRoles.addAll(SliderAMClientProvider.ROLES);
 
       // Start up the WebApp and track the URL for it
@@ -670,9 +666,15 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     //Give the provider restricted access to the state, registry
     providerService.bind(appState, registry);
+    sliderAMProvider.bind(appState, registry);
+
+    // now do the registration
     registerServiceInstance(clustername, appid);
 
+    sliderAMProvider.start();
 
+
+    
     // launch the provider; this is expected to trigger a callback that
     // starts the node review process
     launchProviderService(instanceDefinition, confDir);
@@ -699,7 +701,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private void registerServiceInstance(String instanceName,
       ApplicationId appid) throws Exception {
     // the registry is running, so register services
-    URL amWeb = new URL(appMasterTrackingUrl);
+    URL amWebAPI = new URL(appMasterTrackingUrl);
     String serviceName = SliderKeys.APP_TYPE;
     int id = appid.getId();
     String appServiceType = RegistryNaming.createRegistryServiceType(
@@ -713,98 +715,34 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     List<String> serviceInstancesRunning = registry.instanceIDs(serviceName);
     log.info("service instances already running: {}", serviceInstancesRunning);
 
-
-    // now publish site.xml files
-    YarnConfiguration defaultYarnConfig = new YarnConfiguration();
-    appState.getPublishedConfigurations().put(
-        PublishedArtifacts.COMPLETE_CONFIG,
-        new PublishedConfiguration(
-            "Complete slider application settings",
-            getConfig(), getConfig()));
-    appState.getPublishedConfigurations().put(
-        PublishedArtifacts.YARN_SITE_CONFIG,
-        new PublishedConfiguration(
-            "YARN site settings",
-            ConfigHelper.loadFromResource("yarn-site.xml"),
-            defaultYarnConfig));
-    
-    appState.getPublishedConfigurations().put(
-        PublishedArtifacts.CORE_SITE_CONFIG,
-        new PublishedConfiguration(
-            "Core site settings",
-            ConfigHelper.loadFromResource("core-site.xml"),
-            defaultYarnConfig));
-    appState.getPublishedConfigurations().put(
-        PublishedArtifacts.HDFS_SITE_CONFIG,
-        new PublishedConfiguration(
-            "HDFS site settings",
-            ConfigHelper.loadFromResource("hdfs-site.xml"),
-            new HdfsConfiguration(true)));
-    
     
     ServiceInstanceData instanceData = new ServiceInstanceData();
     instanceData.id = registryId;
     instanceData.serviceType = appServiceType;
 
-    RegisteredEndpoint webUI =
-      new RegisteredEndpoint(amWeb, "Application Master Web UI");
-
-
-    // public REST services
-
-    RegistryView externalView = instanceData.externalView;
-    externalView.endpoints.put(CommonRegistryConstants.WEB_UI, webUI);
-
-    externalView.endpoints.put(
-        CustomRegistryConstants.MANAGEMENT_REST_API,
-      new RegisteredEndpoint(
-        new URL(amWeb, SLIDER_PATH_MANAGEMENT),
-        "Management REST API" )
-    );
-
-    externalView.endpoints.put(
-        CustomRegistryConstants.REGISTRY_REST_API,
-      new RegisteredEndpoint(
-        new URL(amWeb, RestPaths.SLIDER_PATH_REGISTRY + "/"+
-                       RestPaths.REGISTRY_SERVICE),
-        "Registry Web Service" )
-    );
-
-    URL publisherURL = new URL(amWeb, SLIDER_PATH_PUBLISHER);
-    externalView.endpoints.put(
-        CustomRegistryConstants.PUBLISHER_REST_API,
-      new RegisteredEndpoint(
-          publisherURL,
-        "Publisher Service" )
-    );
 
     // IPC services
-    externalView.endpoints.put(
+    instanceData.externalView.endpoints.put(
         CustomRegistryConstants.AM_IPC_PROTOCOL,
         new RegisteredEndpoint(rpcServiceAddress,
             RegisteredEndpoint.PROTOCOL_HADOOP_PROTOBUF,
             "Slider AM RPC") );
 
-    /**
-     * Set the configurations URL.
-     */
-    externalView.configurationsURL = publisherURL.toExternalForm();
-    
 
     // internal services
+   
+    sliderAMProvider.applyInitialRegistryDefinitions(amWebAPI, instanceData);
 
-    instanceData.internalView.endpoints.put(
-        CustomRegistryConstants.AGENT_REST_API,
-      new RegisteredEndpoint(
-        new URL(amWeb, SLIDER_PATH_AGENTS),
-        "Agent REST API" )
-    );
+    // provider service dynamic definitions.
+    providerService.applyInitialRegistryDefinitions(amWebAPI, instanceData);
 
+
+    // push the registration info to ZK
 
     registry.registerSelf(
         appServiceType,
         registryId,
-        amWeb,
+        amWebAPI,
         instanceData);
   }
 

@@ -30,5 +30,9 @@ public interface RegistryViewForProviders {
   List<ServiceInstanceData> listInstancesByType(String serviceType) throws
       IOException;
 
+  /**
+   * Get the registration of slider itself
+   * @return the registration of slider
+   */
   ServiceInstanceData getSelfRegistration();
 }

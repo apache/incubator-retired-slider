@@ -30,15 +30,8 @@ import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.main.ExitCodeProvider;
 import org.apache.slider.core.registry.info.RegisteredEndpoint;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
-import org.apache.slider.providers.agent.AgentProviderService;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
-import org.apache.slider.server.appmaster.web.rest.agent.HeartBeat;
-import org.apache.slider.server.appmaster.web.rest.agent.HeartBeatResponse;
-import org.apache.slider.server.appmaster.web.rest.agent.Register;
-import org.apache.slider.server.appmaster.web.rest.agent.RegistrationResponse;
-import org.apache.slider.server.appmaster.web.rest.agent.RegistrationStatus;
-import org.apache.slider.server.services.curator.RegistryBinderService;
 import org.apache.slider.server.services.registry.RegistryViewForProviders;
 import org.apache.slider.server.services.utility.ForkedProcessService;
 import org.apache.slider.server.services.utility.Parent;
@@ -51,7 +44,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -271,7 +263,7 @@ public abstract class AbstractProviderService
    */
   @Override
   public Map<String, String> buildProviderStatus() {
-    return new HashMap<String, String>();
+    return new HashMap<>();
   }
 
   /*
@@ -310,5 +302,12 @@ public abstract class AbstractProviderService
           details.put(val.description, val.value);
       }
     }
+  }
+  @Override
+  public void applyInitialRegistryDefinitions(URL amWebAPI,
+      ServiceInstanceData registryInstanceData) throws MalformedURLException,
+      IOException {
+
+      //no-op
   }
 }
