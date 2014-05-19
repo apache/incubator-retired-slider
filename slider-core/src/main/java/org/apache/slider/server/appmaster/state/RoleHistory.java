@@ -60,7 +60,7 @@ public class RoleHistory {
     LoggerFactory.getLogger(RoleHistory.class);
   private final List<ProviderRole> providerRoles;
   private final Map<String, ProviderRole> providerRoleMap =
-    new HashMap<String, ProviderRole>();
+    new HashMap<>();
   private long startTime;
   /**
    * Time when saved
@@ -109,7 +109,7 @@ public class RoleHistory {
 
     resetAvailableNodeLists();
     outstandingRequests = new OutstandingRequestTracker();
-    Map<Integer, RoleStatus> roleStats = new HashMap<Integer, RoleStatus>();
+    Map<Integer, RoleStatus> roleStats = new HashMap<>();
 
 
     for (ProviderRole providerRole : providerRoles) {
@@ -141,7 +141,7 @@ public class RoleHistory {
    */
   public void addNewProviderRole(ProviderRole providerRole)
     throws BadConfigException {
-    Map<Integer, RoleStatus> roleStats = new HashMap<Integer, RoleStatus>();
+    Map<Integer, RoleStatus> roleStats = new HashMap<>();
 
 
     for (ProviderRole role : providerRoles) {
@@ -155,7 +155,7 @@ public class RoleHistory {
    * Clear the lists of available nodes
    */
   private synchronized void resetAvailableNodeLists() {
-    availableNodes = new HashMap<Integer, LinkedList<NodeInstance>>(roleSize);
+    availableNodes = new HashMap<>(roleSize);
   }
 
   /**
@@ -431,8 +431,8 @@ public class RoleHistory {
    */
   private LinkedList<NodeInstance> getOrCreateNodesForRoleId(int id) {
     LinkedList<NodeInstance> instances = availableNodes.get(id);
-    if (instances==null) {
-      instances = new LinkedList<NodeInstance>();
+    if (instances == null) {
+      instances = new LinkedList<>();
       availableNodes.put(id, instances);
     }
     return instances;
@@ -544,8 +544,8 @@ public class RoleHistory {
   }
 
   /**
-   * Get the node instance of a an address if defined
-   * @param addr address
+   * Get the node instance of a host if defined
+   * @param hostname hostname to look up
    * @return a node instance or null
    */
   public synchronized NodeInstance getExistingNodeInstance(String hostname) {
@@ -565,7 +565,7 @@ public class RoleHistory {
     List<Container> requested =
       new ArrayList<Container>(allocatedContainers.size());
     List<Container> unrequested =
-      new ArrayList<Container>(allocatedContainers.size());
+      new ArrayList<>(allocatedContainers.size());
     outstandingRequests.partitionRequests(this, allocatedContainers, requested, unrequested);
     
     //give the unrequested ones lower priority
@@ -742,7 +742,7 @@ public class RoleHistory {
    */
   @VisibleForTesting
   public List<NodeInstance> cloneAvailableList(int role) {
-    return new LinkedList<NodeInstance>(getOrCreateNodesForRoleId(role));
+    return new LinkedList<>(getOrCreateNodesForRoleId(role));
   }
 
   /**

@@ -246,7 +246,7 @@ public final class RoleStatus implements Cloneable {
    * @return a map for use in statistics reports
    */
   public Map<String, Integer> buildStatistics() {
-    Map<String, Integer> stats = new HashMap<String, Integer>();
+    Map<String, Integer> stats = new HashMap<>();
     stats.put(StatusKeys.STATISTICS_CONTAINERS_ACTIVE_REQUESTS, getRequested());
     stats.put(StatusKeys.STATISTICS_CONTAINERS_COMPLETED, getCompleted());
     stats.put(StatusKeys.STATISTICS_CONTAINERS_DESIRED, getDesired());

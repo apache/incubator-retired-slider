@@ -57,7 +57,7 @@ public final class OutstandingRequest {
   public final String hostname;
 
   /**
-   * requested time -only valid after {@link #buildContainerRequest(Resource, long)}
+   * requested time -only valid after buildContainerRequest(Resource, long)}
    */
   public long requestedTime;
 

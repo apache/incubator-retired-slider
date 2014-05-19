@@ -18,6 +18,7 @@
 
 package org.apache.slider.server.appmaster.state;
 
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.NodeId;
@@ -88,13 +89,11 @@ public final class RoleInstance implements Cloneable {
   public Object providerInfo;
 
   public RoleInstance(Container container) {
+    Preconditions.checkNotNull(container, "Null container");
+    Preconditions.checkState(container.getId() != null, 
+      "Null container ID");
+
     this.container = container;
-    if (container == null) {
-      throw new NullPointerException("Null container");
-    }
-    if (container.getId() == null) {
-      throw new NullPointerException("Null container ID");
-    }
     id = container.getId().toString();
     if (container.getNodeId() != null) {
       host = container.getNodeId().getHost();

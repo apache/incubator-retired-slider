@@ -73,7 +73,7 @@ public class NodeMap extends HashMap<String, NodeInstance> {
    * in that role
    */
   public List<NodeInstance> listActiveNodes(int role) {
-    List<NodeInstance> nodes = new ArrayList<NodeInstance>();
+    List<NodeInstance> nodes = new ArrayList<>();
     for (NodeInstance instance : values()) {
       if (instance.getActiveRoleInstances(role) > 0) {
         nodes.add(instance);
@@ -113,9 +113,9 @@ public class NodeMap extends HashMap<String, NodeInstance> {
    * @return a possibly empty list of nodes.
    */
   public List<NodeInstance> findNodesForRelease(int role, int count) {
-    List<NodeInstance> targets = new ArrayList<NodeInstance>(count);
+    List<NodeInstance> targets = new ArrayList<>(count);
     List<NodeInstance> active = listActiveNodes(role);
-    List<NodeInstance> multiple = new ArrayList<NodeInstance>();
+    List<NodeInstance> multiple = new ArrayList<>();
     int nodesRemaining = count;
     log.debug("searching for {} nodes with candidate set size {}",
               nodesRemaining, active.size());

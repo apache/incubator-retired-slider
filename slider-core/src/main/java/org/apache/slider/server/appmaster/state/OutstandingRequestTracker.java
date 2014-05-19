@@ -43,7 +43,7 @@ public class OutstandingRequestTracker {
     LoggerFactory.getLogger(OutstandingRequestTracker.class);
 
   private Map<OutstandingRequest, OutstandingRequest> requests =
-    new HashMap<OutstandingRequest, OutstandingRequest>();
+    new HashMap<>();
 
   /**
    * Create a new request for the specific role. If a
@@ -161,7 +161,7 @@ public class OutstandingRequestTracker {
    * @return possibly empty list of hostnames
    */
   public synchronized List<NodeInstance> cancelOutstandingRequests(int role) {
-    List<NodeInstance> hosts = new ArrayList<NodeInstance>();
+    List<NodeInstance> hosts = new ArrayList<>();
     Iterator<Map.Entry<OutstandingRequest,OutstandingRequest>> iterator =
       requests.entrySet().iterator();
     while (iterator.hasNext()) {
@@ -178,6 +178,6 @@ public class OutstandingRequestTracker {
   }
   
   public synchronized List<OutstandingRequest> listOutstandingRequests() {
-    return new ArrayList<OutstandingRequest>(requests.values());
+    return new ArrayList<>(requests.values());
   }
 }
