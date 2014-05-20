@@ -25,7 +25,7 @@ public class ProbeFailedException extends Exception {
   public final ProbeStatus status;
 
   public ProbeFailedException(String text, ProbeStatus status) {
-    super((text == null ? "" : (text + ": ")) + status, status.getThrown());
+    super((text == null ? "Probe Failed" : (text + ": ")) + status, status.getThrown());
     this.status = status;
   }
 

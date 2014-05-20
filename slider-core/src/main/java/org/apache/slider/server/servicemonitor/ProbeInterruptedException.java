@@ -22,4 +22,8 @@ package org.apache.slider.server.servicemonitor;
  *
  */
 public class ProbeInterruptedException extends Exception {
+
+  public ProbeInterruptedException() {
+    super("Probe Interrupted");
+  }
 }

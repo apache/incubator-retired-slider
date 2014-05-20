@@ -50,7 +50,7 @@ public final class MonitorUtils {
    * @return a list view with no empty strings
    */
   public static List<String> prepareArgs(String[] args) {
-    List<String> argsList = new ArrayList<String>(args.length);
+    List<String> argsList = new ArrayList<>(args.length);
     StringBuilder argsStr = new StringBuilder("Arguments: [");
     for (String arg : args) {
       argsStr.append('"').append(arg).append("\" ");
@@ -61,49 +61,6 @@ public final class MonitorUtils {
     argsStr.append(']');
     log.debug(argsStr.toString());
     return argsList;
-  }
-
-  /**
-   * convert the system properties to a buffer for printing
-   * @return a multi-line list of key-value pairs
-   */
-  public static String dumpSystemProperties() {
-    TreeSet<String> keys = new TreeSet<String>();
-    for (Map.Entry<Object, Object> entry : System.getProperties().entrySet()) {
-      keys.add(entry.getKey().toString());
-    }
-    StringBuilder builder = new StringBuilder();
-    for (String key : keys) {
-      builder
-        .append("  ")
-        .append(key)
-        .append('=')
-        .append(System.getProperty(key))
-        .append('\n');
-    }
-    return builder.toString();
-  }
-
-  /**
-   * Dump the system environment
-   * @return the environment
-   */
-  public static String dumpEnv() {
-    Map<String, String> env = System.getenv();
-    TreeSet<String> keys = new TreeSet<String>();
-    for (Map.Entry<String, String> entry : env.entrySet()) {
-      keys.add(entry.getKey());
-    }
-    StringBuilder builder = new StringBuilder();
-    for (String key : keys) {
-      builder
-        .append("  ")
-        .append(key)
-        .append('=')
-        .append(env.get(key))
-        .append('\n');
-    }
-    return builder.toString();
   }
 
   /**
