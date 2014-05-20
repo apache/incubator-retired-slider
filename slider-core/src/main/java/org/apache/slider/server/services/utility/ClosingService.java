@@ -26,13 +26,13 @@ import java.io.Closeable;
 /**
  * Service that closes the closeable supplied during shutdown, if not null.
  */
-public class ClosingService extends AbstractService {
+public class ClosingService<C extends Closeable> extends AbstractService {
 
-  private Closeable closeable;
+  private volatile C closeable;
 
 
   public ClosingService(String name,
-                        Closeable closeable) {
+                        C closeable) {
     super(name);
     this.closeable = closeable;
   }
@@ -42,7 +42,7 @@ public class ClosingService extends AbstractService {
     return closeable;
   }
 
-  public void setCloseable(Closeable closeable) {
+  public void setCloseable(C closeable) {
     this.closeable = closeable;
   }
 
@@ -55,6 +55,5 @@ public class ClosingService extends AbstractService {
   protected void serviceStop() throws Exception {
     IOUtils.closeStream(closeable);
     closeable = null;
-
   }
 }
