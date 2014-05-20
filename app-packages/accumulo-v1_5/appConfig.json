@@ -45,22 +45,17 @@
   },
   "components": {
     "ACCUMULO_MASTER": {
-      "wait.heartbeat": "3"
     },
     "slider-appmaster": {
       "jvm.heapsize": "256M"
     },
     "ACCUMULO_TSERVER": {
-      "wait.heartbeat": "6"
     },
     "ACCUMULO_MONITOR": {
-      "wait.heartbeat": "8"
     },
     "ACCUMULO_GC": {
-      "wait.heartbeat": "6"
     },
     "ACCUMULO_TRACER": {
-      "wait.heartbeat": "8"
     }
   }
 }

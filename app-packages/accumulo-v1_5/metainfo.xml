@@ -21,13 +21,27 @@
     <service>
       <name>ACCUMULO</name>
       <comment>
-        The Apache Accumulo sorted, distributed key/value store is a robust,
-        scalable, high performance data storage system that features cell-based
-        access control and customizable server-side processing.  It is based on
-        Google's BigTable design and is built on top of Apache Hadoop,
-        Zookeeper, and Thrift.
+        The Apache Accumulo is a robust, scalable, high performance data storage system.
       </comment>
       <version>1.5.1</version>
+      <commandOrders>
+        <commandOrder>
+          <command>ACCUMULO_TSERVER-START</command>
+          <requires>ACCUMULO_MASTER-STARTED</requires>
+        </commandOrder>
+        <commandOrder>
+          <command>ACCUMULO_MONITOR-START</command>
+          <requires>ACCUMULO_TSERVER-STARTED</requires>
+        </commandOrder>
+        <commandOrder>
+          <command>ACCUMULO_GC-START</command>
+          <requires>ACCUMULO_TSERVER-STARTED</requires>
+        </commandOrder>
+        <commandOrder>
+          <command>ACCUMULO_TRACER-START</command>
+          <requires>ACCUMULO_TSERVER-STARTED</requires>
+        </commandOrder>
+      </commandOrders>
       <components>
         <component>
           <name>ACCUMULO_MASTER</name>

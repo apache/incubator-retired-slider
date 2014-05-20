@@ -21,7 +21,7 @@ All application artifacts, app definition, app configuration, scripts are packag
 
 ## Overall Structure
 
-App package is a tarball containing all application artifacts. App package contains the following items:
+App package is a zip package containing all application artifacts. App package contains the following items:
 
 * **app definition file**
 application structure, content, definition, supported platforms, version, etc.
@@ -42,7 +42,7 @@ various templates used by the application
 other scripts, txt files, tarballs, etc.
 
 
-![Image](../images/app_package_sample_04.png)
+![Image](../../resources/images/app_package_sample_04.png)
 
 The example above shows a semi-expanded view of an application "HBASE-YARN-APP" and the package structure for OOZIE command scripts.
 

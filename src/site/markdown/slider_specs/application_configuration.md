@@ -23,7 +23,7 @@ App Configuration is a folder containing all configuration needed by the applica
 
 In addition, application may have configuration parameters that do not necessarily go into a config files. Such configurations may be used during template expansion (parameters in env.sh files), as environment variables (e.g. JAVA_HOME), customize user names (for runas). These configurations can be provided as user inputs or are automatically inferred from the environment. Such configurations are stored in a file named "app_config.xml".
 
-![Image](../images/app_config_folders_01.png?raw=true)
+![Image](../../resources/images/app_config_folders_01.png?raw=true)
 
 A config file is of the form:
 

@@ -21,7 +21,7 @@ Slider AppPackages are a declarative definition of an application for applicatio
 
 An application instance consists of several active component such as one or more masters and several slaves. There may be a number of accompanying processes in addition to the basic master/slave processes - lets refer to all processes as app component instances. When run in the context of Yarn, the application specific processes are activated within individual Yarn Container. If you pry into an Yarn container (created through Slider) it will be apparent as to what is the role of Slider-Agent and the actual application components. The following image provides an high-level view. Within a container there are at least two processes - and instance of a slider agent and an instance of an application component. The application can itself spawn more procsses if needed.
 
-![Image](../images/slider-container.png?raw=true)
+![Image](../../resources/images/slider-container.png?raw=true)
 
 Figure 1 - High-level view of a container
 
@@ -36,7 +36,7 @@ Shows three processes, the Slider-Agent process, the bash script to start HBase 
 ## Using an AppPackage
 The following command creates an HBase application using the AppPackage for HBase.
 
-	  ./slider create cl1 --zkhosts zk1,zk2 --image hdfs://NN:8020/slider/agent/slider-agent-0.21.tar --option agent.conf hdfs://NN:8020/slider/agent/conf/agent.ini  --template /work/appConf.json --resources /work/resources.json  --option application.def hdfs://NN:8020/slider/hbase_v096.tar
+	  ./slider create cl1 --zkhosts zk1,zk2 --image hdfs://NN:8020/slider/agent/slider-agent-0.21.tar --option agent.conf hdfs://NN:8020/slider/agent/conf/agent.ini  --template /work/appConf.json --resources /work/resources.json  --option application.def hdfs://NN:8020/slider/hbase_v096.zip
 	
 Lets analyze various parameters from the perspective of app creation:
   
@@ -56,13 +56,59 @@ In the enlistment there are three example AppPackages
 * `app-packages/accumulo-v1_5`
 * `app-packages/storm-v0_91`
 
-The application tarball, containing the binaries/artifacts of the application itself is a component within the AppPackage. They are:
+The application zip file, containing the binaries/artifacts of the application itself is a component within the AppPackage. They are:
 
 * For hbase - `app-packages/hbase-v0_96/package/files/hbase-0.96.1-hadoop2-bin.tar.gz.REPLACE`
 * For accumulo - `app-packages/accumulo-v1_5/package/files/accumulo-1.5.1-bin.tar.gz.REPLACE`
 * For storm - `app-packages/storm-v0_91/package/files/apache-storm-0.9.1.2.1.1.0-237.tar.gz.placeholder`
 
-They are placehoder files, mostly because the files themselves are too large as well as users are free to use their own version of the package. To create a Slider AppPackage - replace the file with an actual application tarball and then ensure that the metainfo.xml has the correct file name. After that create a tarball using standard tar commands and ensure that the package has the metainfo.xml file at the root folder.
+**They are placehoder files**, mostly because the files themselves are too large as well as users are free to use their own version of the package. To create a Slider AppPackage - replace the file with an actual application tarball and then ensure that the metainfo.xml has the correct file name. After that create a zip file using standard zip commands and ensure that the package has the metainfo.xml file at the root folder.
+
+Sample **resources.json** and **appConfig.json** files are also included in the enlistment.
+
+For example:
+
+* cd slider/app-packages/hbase-v0_96
+* zip -r hbase_v096.zip .
+* Looking at the content through unzip -l "$@" hbase_v096.zip
+
+```
+Archive:  hbase_v096.zip
+  Length     Date   Time    Name
+ --------    ----   ----    ----
+     3163  05-16-14 16:32   appConfig.json
+        0  05-02-14 07:51   configuration/
+     5077  05-02-14 07:51   configuration/global.xml
+     5248  05-02-14 07:51   configuration/hbase-log4j.xml
+     2250  05-02-14 07:51   configuration/hbase-policy.xml
+    14705  05-02-14 07:51   configuration/hbase-site.xml
+     3332  05-16-14 16:33   metainfo.xml
+        0  05-02-14 07:51   package/
+        0  05-19-14 20:36   package/files/
+ 83154798  05-19-14 20:36   package/files/hbase-0.96.1-hadoop2-bin.tar.gz
+        0  05-02-14 07:51   package/scripts/
+      787  05-02-14 07:51   package/scripts/__init__.py
+     1378  05-02-14 07:51   package/scripts/functions.py
+     3599  05-02-14 07:51   package/scripts/hbase.py
+     1205  05-02-14 07:51   package/scripts/hbase_client.py
+     1640  05-02-14 07:51   package/scripts/hbase_master.py
+     1764  05-02-14 07:51   package/scripts/hbase_regionserver.py
+     1482  05-02-14 07:51   package/scripts/hbase_service.py
+     4924  05-02-14 07:51   package/scripts/params.py
+      973  05-02-14 07:51   package/scripts/status_params.py
+        0  05-02-14 07:51   package/templates/
+     2723  05-02-14 07:51   package/templates/hadoop-metrics2-hbase.properties-GANGLIA-MASTER.j2
+     2723  05-02-14 07:51   package/templates/hadoop-metrics2-hbase.properties-GANGLIA-RS.j2
+     3878  05-02-14 07:51   package/templates/hbase-env.sh.j2
+      909  05-02-14 07:51   package/templates/hbase_client_jaas.conf.j2
+      989  05-02-14 07:51   package/templates/hbase_master_jaas.conf.j2
+     1001  05-02-14 07:51   package/templates/hbase_regionserver_jaas.conf.j2
+      837  05-02-14 07:51   package/templates/regionservers.j2
+      357  05-12-14 12:04   resources.json
+ --------                   -------
+ 83219742                   29 files
+```
+
 
 ### appConf.json
 An appConf.json contains the application configuration. The sample below shows configuration for HBase.
