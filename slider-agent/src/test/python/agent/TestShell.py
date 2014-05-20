@@ -24,7 +24,6 @@ import unittest
 import tempfile
 from mock.mock import patch, MagicMock, call
 from agent import shell
-from shell import shellRunner
 from sys import platform as _platform
 import subprocess, time
 
@@ -37,18 +36,6 @@ class TestShell(unittest.TestCase):
     shell.changeUid()
     self.assertTrue(os_setUIDMock.called)
 
-
-  @patch("pwd.getpwnam")
-  def test_shellRunner_run(self, getpwnamMock):
-    sh = shellRunner()
-    result = sh.run(['echo'])
-    self.assertEquals(result['exitCode'], 0)
-    self.assertEquals(result['error'], '')
-
-    getpwnamMock.return_value = [os.getuid(), os.getuid(), os.getuid()]
-    result = sh.run(['echo'], 'non_exist_user_name')
-    self.assertEquals(result['exitCode'], 0)
-    self.assertEquals(result['error'], '')
 
   def test_kill_process_with_children(self):
     if _platform == "linux" or _platform == "linux2": # Test is Linux-specific

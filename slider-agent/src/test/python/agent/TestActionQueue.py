@@ -21,8 +21,8 @@ limitations under the License.
 from Queue import Queue
 from unittest import TestCase
 import unittest
-from agent.ActionQueue import ActionQueue
-from agent.AgentConfig import AgentConfig
+from ActionQueue import ActionQueue
+from AgentConfig import AgentConfig
 import os
 import errno
 import time
@@ -34,9 +34,9 @@ import sys
 import logging
 from threading import Thread
 from mock.mock import patch, MagicMock, call
-from agent.CustomServiceOrchestrator import CustomServiceOrchestrator
-from agent.PythonExecutor import PythonExecutor
-from agent.CommandStatusDict import CommandStatusDict
+from CustomServiceOrchestrator import CustomServiceOrchestrator
+from PythonExecutor import PythonExecutor
+from CommandStatusDict import CommandStatusDict
 
 
 class TestActionQueue(TestCase):
@@ -341,7 +341,7 @@ class TestActionQueue(TestCase):
                 'role': u'HBASE_MASTER',
                 'actionId': '1-1',
                 'taskId': 3,
-                'exitCode': 777}
+                'exitcode': 777}
     self.assertEqual(report['reports'][0], expected)
     # Continue command execution
     unfreeze_flag.set()
@@ -362,7 +362,8 @@ class TestActionQueue(TestCase):
                 'actionId': '1-1',
                 'taskId': 3,
                 'structuredOut': '',
-                'exitCode': 0}
+                'exitcode': 0,
+                'allocatedPorts': {}}
     self.assertEqual(len(report['reports']), 1)
     self.assertEqual(report['reports'][0], expected)
     self.assertTrue(os.path.isfile(configname))
@@ -400,7 +401,7 @@ class TestActionQueue(TestCase):
                 'actionId': '1-1',
                 'taskId': 3,
                 'structuredOut': '',
-                'exitCode': 13}
+                'exitcode': 13}
     self.assertEqual(len(report['reports']), 1)
     self.assertEqual(report['reports'][0], expected)
 

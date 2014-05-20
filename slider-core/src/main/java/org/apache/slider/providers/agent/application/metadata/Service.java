@@ -29,12 +29,14 @@ public class Service {
   List<Component> components;
   List<ExportGroup> exportGroups;
   List<OSSpecific> osSpecifics;
+  List<CommandOrder> commandOrders;
   ConfigurationDependencies configDependencies;
 
   public Service() {
-    exportGroups = new ArrayList<ExportGroup>();
-    components = new ArrayList<Component>();
-    osSpecifics = new ArrayList<OSSpecific>();
+    exportGroups = new ArrayList<>();
+    components = new ArrayList<>();
+    osSpecifics = new ArrayList<>();
+    commandOrders = new ArrayList<>();
   }
 
   public String getName() {
@@ -91,6 +93,14 @@ public class Service {
 
   public List<OSSpecific> getOSSpecifics() {
     return osSpecifics;
+  }
+
+  public void addCommandOrder(CommandOrder commandOrder) {
+    commandOrders.add(commandOrder);
+  }
+
+  public List<CommandOrder> getCommandOrder() {
+    return commandOrders;
   }
 
   @Override

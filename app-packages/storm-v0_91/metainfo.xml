@@ -23,6 +23,26 @@
       <name>STORM</name>
       <comment>Apache Hadoop Stream processing framework</comment>
       <version>0.9.1.2.1</version>
+
+      <commandOrders>
+        <commandOrder>
+          <command>SUPERVISOR-START</command>
+          <requires>NIMBUS-STARTED</requires>
+        </commandOrder>
+        <commandOrder>
+          <command>DRPC_SERVER-START</command>
+          <requires>NIMBUS-STARTED</requires>
+        </commandOrder>
+        <commandOrder>
+          <command>STORM_REST_API-START</command>
+          <requires>NIMBUS-STARTED,DRPC_SERVER-STARTED,STORM_UI_SERVER-STARTED</requires>
+        </commandOrder>
+        <commandOrder>
+          <command>STORM_UI_SERVER-START</command>
+          <requires>NIMBUS-STARTED</requires>
+        </commandOrder>
+      </commandOrders>
+
       <components>
 
         <component>

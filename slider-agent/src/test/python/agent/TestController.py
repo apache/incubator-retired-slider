@@ -25,9 +25,9 @@ import unittest, threading
 from agent import Controller, ActionQueue
 from agent import hostname
 import sys
-from agent.Controller import AGENT_AUTO_RESTART_EXIT_CODE
-from agent.Controller import State
-from agent.AgentConfig import AgentConfig
+from Controller import AGENT_AUTO_RESTART_EXIT_CODE
+from Controller import State
+from AgentConfig import AgentConfig
 from mock.mock import patch, MagicMock, call, Mock
 import logging
 from threading import Event

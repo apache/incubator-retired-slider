@@ -19,7 +19,7 @@
     "site.storm-site.supervisor.heartbeat.frequency.secs": "5",
     "site.storm-site.topology.executor.send.buffer.size": "1024",
     "site.storm-site.drpc.childopts": "-Xmx768m",
-    "site.storm-site.nimbus.thrift.port": "6627",
+    "site.storm-site.nimbus.thrift.port": "${NIMBUS.ALLOCATED_PORT}",
     "site.storm-site.storm.zookeeper.retry.intervalceiling.millis": "30000",
     "site.storm-site.storm.local.dir": "${AGENT_WORK_ROOT}/app/tmp/storm",
     "site.storm-site.topology.receiver.buffer.size": "8",
@@ -45,7 +45,7 @@
     "site.storm-site.nimbus.monitor.freq.secs": "10",
     "site.storm-site.storm.cluster.mode": "distributed",
     "site.storm-site.dev.zookeeper.path": "${AGENT_WORK_ROOT}/app/tmp/dev-storm-zookeeper",
-    "site.storm-site.drpc.invocations.port": "3773",
+    "site.storm-site.drpc.invocations.port": "${DRPC_SERVER.ALLOCATED_PORT}",
     "site.storm-site.storm.zookeeper.root": "/storm",
     "site.storm-site.logviewer.childopts": "-Xmx128m",
     "site.storm-site.transactional.zookeeper.port": "null",
@@ -61,7 +61,7 @@
     "site.storm-site.storm.messaging.transport": "backtype.storm.messaging.netty.Context",
     "site.storm-site.logviewer.appender.name": "A1",
     "site.storm-site.nimbus.host": "${NIMBUS_HOST}",
-    "site.storm-site.ui.port": "8744",
+    "site.storm-site.ui.port": "${STORM_UI_SERVER.ALLOCATED_PORT}",
     "site.storm-site.supervisor.slots.ports": "[6700, 6701]",
     "site.storm-site.nimbus.file.copy.expiration.secs": "600",
     "site.storm-site.supervisor.monitor.frequency.secs": "3",
@@ -109,16 +109,12 @@
     "NIMBUS": {
     },
     "STORM_REST_API": {
-      "wait.heartbeat": "3"
     },
     "STORM_UI_SERVER": {
-      "wait.heartbeat": "3"
     },
     "DRPC_SERVER": {
-      "wait.heartbeat": "7"
     },
     "SUPERVISOR": {
-      "wait.heartbeat": "10"
     }
   }
 }

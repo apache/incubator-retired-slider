@@ -42,6 +42,12 @@
           </exports>
         </exportGroup>
       </exportGroups>
+      <commandOrders>
+        <commandOrder>
+          <command>HBASE_REGIONSERVER-START</command>
+          <requires>HBASE_MASTER-STARTED</requires>
+        </commandOrder>
+      </commandOrders>
       <components>
         <component>
           <name>HBASE_MASTER</name>

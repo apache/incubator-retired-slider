@@ -54,13 +54,11 @@
   },
   "components": {
     "HBASE_MASTER": {
-      "wait.heartbeat": "5"
     },
     "slider-appmaster": {
       "jvm.heapsize": "256M"
     },
     "HBASE_REGIONSERVER": {
-      "wait.heartbeat": "3"
     }
   }
 }

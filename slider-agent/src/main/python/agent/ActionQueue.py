@@ -26,10 +26,10 @@ import pprint
 import os
 import time
 
-from shell import shellRunner
 from AgentConfig import AgentConfig
 from CommandStatusDict import CommandStatusDict
 from CustomServiceOrchestrator import CustomServiceOrchestrator
+import Constants
 
 
 logger = logging.getLogger()
@@ -57,7 +57,6 @@ class ActionQueue(threading.Thread):
     self.status_update_callback)
     self.config = config
     self.controller = controller
-    self.sh = shellRunner()
     self._stop = threading.Event()
     self.tmpdir = config.getResolvedPath(AgentConfig.APP_TASK_DIR)
     self.customServiceOrchestrator = CustomServiceOrchestrator(config,
@@ -145,13 +144,13 @@ class ActionQueue(threading.Thread):
                                                               store_config)
     # dumping results
     status = self.COMPLETED_STATUS
-    if commandresult['exitcode'] != 0:
+    if commandresult[Constants.EXIT_CODE] != 0:
       status = self.FAILED_STATUS
     roleResult = self.commandStatuses.generate_report_template(command)
     roleResult.update({
       'stdout': commandresult['stdout'],
       'stderr': commandresult['stderr'],
-      'exitCode': commandresult['exitcode'],
+      Constants.EXIT_CODE: commandresult[Constants.EXIT_CODE],
       'status': status,
     })
     if roleResult['stdout'] == '':
@@ -165,8 +164,10 @@ class ActionQueue(threading.Thread):
       roleResult['structuredOut'] = ''
       # let server know that configuration tags were applied
     if status == self.COMPLETED_STATUS:
-      if command.has_key('configurationTags'):
+      if 'configurationTags' in command:
         roleResult['configurationTags'] = command['configurationTags']
+      if Constants.ALLOCATED_PORTS in commandresult:
+        roleResult['allocatedPorts'] = commandresult[Constants.ALLOCATED_PORTS]
     self.commandStatuses.put_command_status(command, roleResult)
 
   # Store action result to agent response queue
@@ -197,8 +198,8 @@ class ActionQueue(threading.Thread):
 
       if 'configurations' in component_status:
         result['configurations'] = component_status['configurations']
-      if 'exitcode' in component_status:
-        result['status'] = component_status['exitcode']
+      if Constants.EXIT_CODE in component_status:
+        result['status'] = component_status[Constants.EXIT_CODE]
         logger.debug("Got live status for component " + component + \
                      " of service " + str(service) + \
                      " of cluster " + str(cluster))

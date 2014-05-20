@@ -28,6 +28,7 @@ from AgentConfig import AgentConfig
 from AgentException import AgentException
 from PythonExecutor import PythonExecutor
 import hostname
+import Constants
 
 
 logger = logging.getLogger()
@@ -66,6 +67,7 @@ class CustomServiceOrchestrator():
 
   def runCommand(self, command, tmpoutfile, tmperrfile,
                  override_output_files=True, store_config=False):
+    allocated_port = {}
     try:
       script_type = command['commandParams']['script_type']
       script = command['commandParams']['script']
@@ -82,8 +84,7 @@ class CustomServiceOrchestrator():
       # We don't support anything else yet
         message = "Unknown script type {0}".format(script_type)
         raise AgentException(message)
-        # Execute command using proper interpreter
-      json_path = self.dump_command_to_json(command, store_config)
+      json_path = self.dump_command_to_json(command, allocated_port, store_config)
       py_file_list = [script_tuple]
       # filter None values
       filtered_py_file_list = [i for i in py_file_list if i]
@@ -104,7 +105,7 @@ class CustomServiceOrchestrator():
                                             environment_vars)
         # Next run_file() invocations should always append to current output
         override_output_files = False
-        if ret['exitcode'] != 0:
+        if ret[Constants.EXIT_CODE] != 0:
           break
 
       if not ret: # Something went wrong
@@ -119,9 +120,11 @@ class CustomServiceOrchestrator():
         'stdout': message,
         'stderr': message,
         'structuredOut': '{}',
-        'exitcode': 1,
+        Constants.EXIT_CODE: 1,
       }
 
+    if Constants.EXIT_CODE in ret and ret[Constants.EXIT_CODE] == 0:
+      ret[Constants.ALLOCATED_PORTS] = allocated_port
     return ret
 
 
@@ -172,15 +175,15 @@ class CustomServiceOrchestrator():
       res = self.runCommand(command, self.status_commands_stdout,
                             self.status_commands_stderr,
                             override_output_files=override_output_files)
-      if res['exitcode'] == 0:
-        res['exitcode'] = CustomServiceOrchestrator.LIVE_STATUS
+      if res[Constants.EXIT_CODE] == 0:
+        res[Constants.EXIT_CODE] = CustomServiceOrchestrator.LIVE_STATUS
       else:
-        res['exitcode'] = CustomServiceOrchestrator.DEAD_STATUS
+        res[Constants.EXIT_CODE] = CustomServiceOrchestrator.DEAD_STATUS
 
       return res
     pass
 
-  def dump_command_to_json(self, command, store_config=False):
+  def dump_command_to_json(self, command, allocated_ports, store_config=False):
     """
     Converts command to json file and returns file path
     """
@@ -203,7 +206,7 @@ class CustomServiceOrchestrator():
     if os.path.isfile(file_path):
       os.unlink(file_path)
 
-    self.finalize_command(command, store_config)
+    self.finalize_command(command, store_config, allocated_ports)
 
     with os.fdopen(os.open(file_path, os.O_WRONLY | os.O_CREAT,
                            0600), 'w') as f:
@@ -217,7 +220,7 @@ class CustomServiceOrchestrator():
   ${AGENT_LOG_ROOT} -> AgentConfig.getLogPath()
   """
 
-  def finalize_command(self, command, store_config):
+  def finalize_command(self, command, store_config, allocated_ports):
     component = command['componentName']
     allocated_port_format = "${{{0}.ALLOCATED_PORT}}"
     port_allocation_req = allocated_port_format.format(component)
@@ -234,6 +237,7 @@ class CustomServiceOrchestrator():
                 port = self.allocate_port()
                 value = value.replace(port_allocation_req, str(port))
                 logger.info("Allocated port " + str(port) + " for " + port_allocation_req)
+                allocated_ports[k] = value
               command['configurations'][key][k] = value
               pass
             pass

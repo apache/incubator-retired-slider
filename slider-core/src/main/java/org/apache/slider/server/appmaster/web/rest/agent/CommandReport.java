@@ -29,18 +29,18 @@ import java.util.Map;
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 public class CommandReport {
 
+  int exitCode;
   private String role;
   private String actionId;
   private String stdout;
   private String stderr;
   private String structuredOut;
   private String status;
-  int exitCode;
   private String clusterName;
   private String serviceName;
   private long taskId;
   private String roleCommand;
-
+  private Map<String, String> allocatedPorts;
   private Map<String, Map<String, String>> configurationTags;
 
   @JsonProperty("taskId")
@@ -54,13 +54,13 @@ public class CommandReport {
   }
 
   @JsonProperty("clusterName")
-  public void setClusterName(String clusterName) {
-    this.clusterName = clusterName;
+  public String getClusterName() {
+    return this.clusterName;
   }
 
   @JsonProperty("clusterName")
-  public String getClusterName() {
-    return this.clusterName;
+  public void setClusterName(String clusterName) {
+    this.clusterName = clusterName;
   }
 
   @JsonProperty("actionId")
@@ -108,7 +108,6 @@ public class CommandReport {
     return this.structuredOut;
   }
 
-
   @JsonProperty("structuredOut")
   public void setStructuredOut(String structuredOut) {
     this.structuredOut = structuredOut;
@@ -154,21 +153,28 @@ public class CommandReport {
     this.serviceName = serviceName;
   }
 
-  /**
-   * @param tags the config tags that match this command
-   */
+  /** @return the config tags that match this command, or <code>null</code> if none are present */
   @JsonProperty("configurationTags")
-  public void setConfigurationTags(Map<String, Map<String,String>> tags) {
+  public Map<String, Map<String, String>> getConfigurationTags() {
+    return configurationTags;
+  }
+
+  /** @param tags the config tags that match this command */
+  @JsonProperty("configurationTags")
+  public void setConfigurationTags(Map<String, Map<String, String>> tags) {
     configurationTags = tags;
   }
 
-  /**
-   * @return the config tags that match this command, or <code>null</code>
-   * if none are present
-   */
-  @JsonProperty("configurationTags")
-  public Map<String, Map<String,String>> getConfigurationTags() {
-    return configurationTags;
+  /** @return the config tags that match this command, or <code>null</code> if none are present */
+  @JsonProperty("allocatedPorts")
+  public Map<String, String> getAllocatedPorts() {
+    return allocatedPorts;
+  }
+
+  /** @param ports allocated ports */
+  @JsonProperty("allocatedPorts")
+  public void setAllocatedPorts(Map<String, String> ports) {
+    allocatedPorts = ports;
   }
 
   @Override

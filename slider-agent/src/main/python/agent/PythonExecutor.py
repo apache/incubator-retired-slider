@@ -28,6 +28,7 @@ from threading import Thread
 from Grep import Grep
 import shell
 import sys
+import Constants
 
 
 logger = logging.getLogger()
@@ -137,7 +138,7 @@ class PythonExecutor:
 
     grep = self.grep
     result = {
-      "exitcode": retcode,
+      Constants.EXIT_CODE: retcode,
       "stdout": grep.tail(stdout,
                           log_lines_count) if log_lines_count else stdout,
       "stderr": grep.tail(stderr,

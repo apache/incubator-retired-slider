@@ -18,6 +18,7 @@
 
 package org.apache.slider.providers.agent;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.util.StringUtils;
@@ -84,6 +85,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_AGENTS;
@@ -101,10 +103,13 @@ public class AgentProviderService extends AbstractProviderService implements
   private static final String LABEL_MAKER = "___";
   private static final String CONTAINER_ID = "container_id";
   private static final String GLOBAL_CONFIG_TAG = "global";
+  private final Object syncLock = new Object();
+  private final Map<String, String> allocatedPorts = new ConcurrentHashMap<>();
   private AgentClientProvider clientProvider;
   private Map<String, ComponentInstanceState> componentStatuses = new HashMap<>();
   private AtomicInteger taskId = new AtomicInteger(0);
   private Metainfo metainfo = null;
+  private ComponentCommandOrder commandOrder = null;
 
   public AgentProviderService() {
     super("AgentProviderService");
@@ -152,12 +157,17 @@ public class AgentProviderService extends AbstractProviderService implements
     String appDef = instanceDefinition.getAppConfOperations().
         getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
 
-    // No need to synchronize as there is low chance of multiple simultaneous reads
     if (metainfo == null) {
-      metainfo = getApplicationMetainfo(fileSystem, appDef);
-      if (metainfo == null) {
-        log.error("metainfo.xml is unavailable or malformed at {}.", appDef);
-        throw new SliderException("metainfo.xml is required in app package.");
+      synchronized (syncLock) {
+        if (metainfo == null) {
+          metainfo = getApplicationMetainfo(fileSystem, appDef);
+          if (metainfo == null || metainfo.getServices() == null || metainfo.getServices().size() == 0) {
+            log.error("metainfo.xml is unavailable or malformed at {}.", appDef);
+            throw new SliderException("metainfo.xml is required in app package.");
+          }
+
+          commandOrder = new ComponentCommandOrder(metainfo.getServices().get(0).getCommandOrder());
+        }
       }
     }
 
@@ -312,7 +322,6 @@ public class AgentProviderService extends AbstractProviderService implements
 
   @Override
   public RegistrationResponse handleRegistration(Register registration) {
-    // dummy impl
     RegistrationResponse response = new RegistrationResponse();
     String label = registration.getHostname();
     if (componentStatuses.containsKey(label)) {
@@ -380,6 +389,13 @@ public class AgentProviderService extends AbstractProviderService implements
     List<CommandReport> reports = heartBeat.getReports();
     if (reports != null && !reports.isEmpty()) {
       CommandReport report = reports.get(0);
+      Map<String, String> ports = report.getAllocatedPorts();
+      if (ports != null && !ports.isEmpty()) {
+        for (Map.Entry<String, String> port : ports.entrySet()) {
+          log.info("Recording allocated port for {} as {}", port.getKey(), port.getValue());
+          this.allocatedPorts.put(port.getKey(), port.getValue());
+        }
+      }
       CommandResult result = getCommandResult(report.getStatus());
       Command command = getCommand(report.getRoleCommand());
       componentStatus.applyCommandResult(result, command);
@@ -398,13 +414,20 @@ public class AgentProviderService extends AbstractProviderService implements
     Command command = componentStatus.getNextCommand();
     try {
       if (Command.NOP != command) {
-        componentStatus.commandIssued(command);
         if (command == Command.INSTALL) {
-          log.info("Installing component ...");
+          log.info("Installing {} on {}.", roleName, containerId);
           addInstallCommand(roleName, containerId, response, scriptPath);
+          componentStatus.commandIssued(command);
         } else if (command == Command.START) {
-          log.info("Starting component ...");
-          addStartCommand(roleName, containerId, response, scriptPath);
+          // check against dependencies
+          boolean canExecute = commandOrder.canExecute(roleName, command, componentStatuses.values());
+          if (canExecute) {
+            log.info("Starting {} on {}.", roleName, containerId);
+            addStartCommand(roleName, containerId, response, scriptPath);
+            componentStatus.commandIssued(command);
+          } else {
+            log.info("Start of {} on {} delayed as dependencies have not started.", roleName, containerId);
+          }
         }
       }
       // if there is no outstanding command then retrieve config
@@ -579,6 +602,7 @@ public class AgentProviderService extends AbstractProviderService implements
     cmd.setConfigurations(configurations);
   }
 
+  @VisibleForTesting
   protected void addStatusCommand(String roleName, String containerId, HeartBeatResponse response, String scriptPath)
       throws SliderException {
     assert getStateAccessor().isApplicationLive();
@@ -608,6 +632,7 @@ public class AgentProviderService extends AbstractProviderService implements
     response.addStatusCommand(cmd);
   }
 
+  @VisibleForTesting
   protected void addGetConfigCommand(String roleName, String containerId, HeartBeatResponse response)
       throws SliderException {
     assert getStateAccessor().isApplicationLive();
@@ -630,6 +655,7 @@ public class AgentProviderService extends AbstractProviderService implements
     response.addStatusCommand(cmd);
   }
 
+  @VisibleForTesting
   protected void addStartCommand(String roleName, String containerId, HeartBeatResponse response, String scriptPath)
       throws
       SliderException {
@@ -658,6 +684,10 @@ public class AgentProviderService extends AbstractProviderService implements
 
     cmd.setConfigurations(configurations);
     response.addExecutionCommand(cmd);
+  }
+
+  protected Map<String, String> getAllocatedPorts() {
+    return this.allocatedPorts;
   }
 
   private Map<String, Map<String, String>> buildCommandConfigurations(ConfTreeOperations appConf) {
@@ -710,6 +740,15 @@ public class AgentProviderService extends AbstractProviderService implements
     // add role hosts to tokens
     addRoleRelatedTokens(tokens);
     providerUtils.propagateSiteOptions(sourceConfig, config, configName, tokens);
+
+    //apply any port updates
+    if (!this.getAllocatedPorts().isEmpty()) {
+      for (String key : config.keySet()) {
+        if (this.getAllocatedPorts().keySet().contains(key)) {
+          config.put(key, getAllocatedPorts().get(key));
+        }
+      }
+    }
     configurations.put(configName, config);
   }
 

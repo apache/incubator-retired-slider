@@ -20,9 +20,9 @@ limitations under the License.
 
 from unittest import TestCase
 import unittest
-from agent.Heartbeat import Heartbeat
-from agent.ActionQueue import ActionQueue
-from agent.AgentConfig import AgentConfig
+from Heartbeat import Heartbeat
+from ActionQueue import ActionQueue
+from AgentConfig import AgentConfig
 import socket
 import os
 import time
@@ -85,7 +85,7 @@ class TestHeartbeat(TestCase):
                    'role': u'DATANODE',
                    'actionId': '1-1',
                    'taskId': 3,
-                   'exitCode': 777},
+                   'exitcode': 777},
 
                   {'status': 'COMPLETED',
                    'stderr': 'stderr',
@@ -96,7 +96,7 @@ class TestHeartbeat(TestCase):
                    'role': 'role',
                    'actionId': 17,
                    'taskId': 'taskId',
-                   'exitCode': 0},
+                   'exitcode': 0},
 
                   {'status': 'FAILED',
                    'stderr': 'stderr',
@@ -107,7 +107,7 @@ class TestHeartbeat(TestCase):
                    'role': u'DATANODE',
                    'actionId': '1-1',
                    'taskId': 3,
-                   'exitCode': 13},
+                   'exitcode': 13},
 
                   {'status': 'COMPLETED',
                    'stderr': 'stderr',
@@ -119,7 +119,7 @@ class TestHeartbeat(TestCase):
                    'role': u'DATANODE',
                    'actionId': '1-1',
                    'taskId': 3,
-                   'exitCode': 0}
+                   'exitcode': 0}
 
       ],
       'componentStatus': [
@@ -141,17 +141,17 @@ class TestHeartbeat(TestCase):
        'serviceName': u'HDFS', 'role': u'DATANODE', 'actionId': '1-1',
        'stderr': 'Read from /tmp/errors-3.txt',
        'stdout': 'Read from /tmp/output-3.txt', 'clusterName': u'cc',
-       'taskId': 3, 'exitCode': 777},
+       'taskId': 3, 'exitcode': 777},
       {'status': 'COMPLETED', 'roleCommand': 'UPGRADE',
        'serviceName': 'serviceName', 'role': 'role', 'actionId': 17,
        'stderr': 'stderr', 'stdout': 'out', 'clusterName': 'clusterName',
-       'taskId': 'taskId', 'exitCode': 0},
+       'taskId': 'taskId', 'exitcode': 0},
       {'status': 'FAILED', 'roleCommand': u'INSTALL', 'serviceName': u'HDFS',
        'role': u'DATANODE', 'actionId': '1-1', 'stderr': 'stderr',
-       'stdout': 'out', 'clusterName': u'cc', 'taskId': 3, 'exitCode': 13},
+       'stdout': 'out', 'clusterName': u'cc', 'taskId': 3, 'exitcode': 13},
       {'status': 'COMPLETED', 'stdout': 'out',
        'configurationTags': {'global': {'tag': 'v1'}}, 'taskId': 3,
-       'exitCode': 0, 'roleCommand': u'INSTALL', 'clusterName': u'cc',
+       'exitcode': 0, 'roleCommand': u'INSTALL', 'clusterName': u'cc',
        'serviceName': u'HDFS', 'role': u'DATANODE', 'actionId': '1-1',
        'stderr': 'stderr'}],  'componentStatus': [
       {'status': 'HEALTHY', 'componentName': 'DATANODE'},

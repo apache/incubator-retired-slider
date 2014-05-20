@@ -22,6 +22,7 @@ import json
 import logging
 import threading
 from Grep import Grep
+import Constants
 
 logger = logging.getLogger()
 
@@ -117,7 +118,7 @@ class CommandStatusDict():
       'stdout': grep.filterMarkup(output),
       'stderr': tmperr,
       'structuredOut': tmpstructuredout,
-      'exitCode': 777,
+      Constants.EXIT_CODE: 777,
       'status': ActionQueue.IN_PROGRESS_STATUS,
     })
     return inprogress

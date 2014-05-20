@@ -85,27 +85,3 @@ def changeUid():
     os.setuid(threadLocal.uid)
   except Exception:
     logger.warn("can not switch user for running command.")
-
-class shellRunner:
-  # Run any command
-  def run(self, script, user=None):
-    try:
-      if user!=None:
-        user = pwd.getpwnam(user)[2]
-      else:
-        user = os.getuid()
-      threadLocal.uid = user
-    except Exception:
-      logger.warn("can not switch user for RUN_COMMAND.")
-    code = 0
-    cmd = " "
-    cmd = cmd.join(script)
-    p = subprocess.Popen(cmd, preexec_fn=changeUid, stdout=subprocess.PIPE, 
-                         stderr=subprocess.PIPE, shell=True, close_fds=True)
-    out, err = p.communicate()
-    code = p.wait()
-    logger.debug("Exitcode for %s is %d" % (cmd,code))
-    return {'exitCode': code, 'output': out, 'error': err}
-
-  def getServerTracker(self):
-    return serverTracker

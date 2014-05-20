@@ -75,15 +75,21 @@ An application definition also includes the package used to install the applicat
 
 * **location**: location of the package (can be a relative folder within the parent AppPackage)
 
-Application can define a set of dependencies. The dependencies are parsed by Slider to provide additional configuration parameters to the command scripts. For example, an application may need to ZooKeeper quorum hosts to communicate with ZooKeeper. In this case, ZooKeeper is a "base" service available in the cluster.
+Application can define a an order of activation which dictates if some component activation must follow the successful activation of other components.
 
-* **dependency**: an application can specify more than one dependency
+* **command**: specifies the component and the command in the form component-command *currently, START is the only valid command*
 
-* **name**: a well-known name of the base service (or another application) on which the dependency is defined
+* **requires**: specifies component and their state that the command depends on, provided in the form component-state *currently, STARTED is the only valid state*
 
-* **scope**: is the dependent service/application expected on the same cluster or it needs to be on the same hosts where components are instantiated
+Applications can also advertise a set of properties (typically urls) that can only be bound when the application components are active. One such item can be the jmx endpoint. The properties to be advertised are organized as export groups (exportGroup) and each group can export one or more properties organized as a property bag. These values are visible through the registry service.
 
-* **requirement**: a set of requirements that lets Slider know what properties are required by the app command scripts
+* **name**: specifies the name of the export group
+
+Each exportGroup contains one or more exports.
+
+* **name**: the name of the export
+
+* **value**: the template that will be populated by Slider and then exported
 
 
       <metainfo>
@@ -141,20 +147,35 @@ Application can define a set of dependencies. The dependencies are parsed by Sli
               </packages>
             </osSpecific>
           </osSpecifics>
+          
+          <commandOrders>
+            <commandOrder>
+              <command>HBASE_REGIONSERVER-START</command>
+              <requires>HBASE_MASTER-STARTED</requires>
+            </commandOrder>
+          </commandOrders>
+          
+          <exportGroups>
+            <exportGroup>
+              <name>QuickLinks</name>
+                <exports>
+                  <export>
+                    <name>JMX_Endpoint</name>
+                    <value>http://${HBASE_MASTER_HOST}:${site.hbase-site.hbase.master.info.port}/jmx</value>
+                  </export>
+                  <export>
+                    <name>Master_Status</name>
+                    <value>http://${HBASE_MASTER_HOST}:${site.hbase-site.hbase.master.info.port}/master-status</value>
+                  </export>
+               </exports>
+            </exportGroup>
+          </exportGroups>
     
           <commandScript>
             <script>scripts/app_health_check.py</script>
             <scriptType>PYTHON</scriptType>
             <timeout>300</timeout>
           </commandScript>
-    
-          <dependencies>
-            <dependency>
-              <name>ZOOKEEPER</name>
-              <scope>cluster</scope>
-              <requirement>client,zk_quorom_hosts</requirement>
-            </dependency>
-          </dependencies>
     
         </application>
       </metainfo>

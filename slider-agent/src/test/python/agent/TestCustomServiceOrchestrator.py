@@ -79,7 +79,7 @@ class TestCustomServiceOrchestrator(TestCase):
     orchestrator = CustomServiceOrchestrator(config, dummy_controller)
     isfile_mock.return_value = True
     # Test dumping EXECUTION_COMMAND
-    json_file = orchestrator.dump_command_to_json(command)
+    json_file = orchestrator.dump_command_to_json(command, {})
     self.assertTrue(os.path.exists(json_file))
     self.assertTrue(os.path.getsize(json_file) > 0)
     self.assertEqual(oct(os.stat(json_file).st_mode & 0777), '0600')
@@ -87,7 +87,7 @@ class TestCustomServiceOrchestrator(TestCase):
     os.unlink(json_file)
     # Test dumping STATUS_COMMAND
     command['commandType'] = 'STATUS_COMMAND'
-    json_file = orchestrator.dump_command_to_json(command)
+    json_file = orchestrator.dump_command_to_json(command, {})
     self.assertTrue(os.path.exists(json_file))
     self.assertTrue(os.path.getsize(json_file) > 0)
     self.assertEqual(oct(os.stat(json_file).st_mode & 0777), '0600')
@@ -135,7 +135,7 @@ class TestCustomServiceOrchestrator(TestCase):
     run_file_mock.return_value = {
       'stdout': 'sss',
       'stderr': 'eee',
-      'exitcode': 0,
+      'exitcode': 0
     }
     ret = orchestrator.runCommand(command, "out.txt", "err.txt")
     self.assertEqual(ret['exitcode'], 0)
@@ -155,6 +155,16 @@ class TestCustomServiceOrchestrator(TestCase):
     self.assertEquals(run_file_mock.call_args_list[0][0][6], True)
 
     run_file_mock.reset_mock()
+    # Case when we force another command
+    run_file_mock.return_value = {
+      'stdout': 'sss',
+      'stderr': 'eee',
+      'exitcode': 1
+    }
+    ret = orchestrator.runCommand(command, "out.txt", "err.txt")
+    self.assertFalse('allocated_ports' in ret)
+
+    run_file_mock.reset_mock()
 
     # unknown script type case
     command['commandParams']['script_type'] = "PUPPET"
@@ -166,6 +176,58 @@ class TestCustomServiceOrchestrator(TestCase):
     #By default returns empty dictionary
     self.assertEqual(ret['structuredOut'], '{}')
     pass
+
+
+  @patch.object(CustomServiceOrchestrator, "allocate_port")
+  @patch.object(CustomServiceOrchestrator, "resolve_script_path")
+  @patch.object(PythonExecutor, "run_file")
+  def test_runCommand_get_port(self,
+                               run_file_mock,
+                               resolve_script_path_mock,
+                               allocate_port_mock):
+    command = {
+      'role': 'HBASE_REGIONSERVER',
+      'hostLevelParams': {
+        'stack_name': 'HDP',
+        'stack_version': '2.0.7',
+        'jdk_location': 'some_location'
+      },
+      'commandParams': {
+        'script_type': 'PYTHON',
+        'script': 'scripts/hbase_regionserver.py',
+        'command_timeout': '600',
+        'service_package_folder': 'HBASE'
+      },
+      'taskId': '3',
+      'roleCommand': 'INSTALL',
+      'commandType': 'EXECUTE',
+      'componentName': 'HBASE_REGIONSERVER',
+      'configurations': {'a': {'a.port': '${HBASE_REGIONSERVER.ALLOCATED_PORT}'}}
+    }
+
+    tempdir = tempfile.gettempdir()
+    config = MagicMock()
+    config.get.return_value = "something"
+    config.getResolvedPath.return_value = tempdir
+    config.getWorkRootPath.return_value = tempdir
+    config.getLogPath.return_value = tempdir
+
+    allocate_port_mock.return_value = 10233
+
+    resolve_script_path_mock.return_value = "/basedir/scriptpath"
+    dummy_controller = MagicMock()
+    orchestrator = CustomServiceOrchestrator(config, dummy_controller)
+    # normal run case
+    run_file_mock.return_value = {
+      'stdout': 'sss',
+      'stderr': 'eee',
+      'exitcode': 0
+    }
+    ret = orchestrator.runCommand(command, "out.txt", "err.txt")
+    self.assertEqual(ret['exitcode'], 0)
+    self.assertEqual(ret['allocated_ports'], {'a.port': '10233'})
+    self.assertTrue(run_file_mock.called)
+    self.assertEqual(run_file_mock.call_count, 1)
 
 
   @patch("hostname.public_hostname")
@@ -243,7 +305,7 @@ class TestCustomServiceOrchestrator(TestCase):
     expected_specific = {
       'hbase-site': {
         'hbase.log': tempdir, 'hbase.number': '10485760'},
-      }
+    }
 
     ret = orchestrator.runCommand(command, "out.txt", "err.txt", True, True)
     self.assertEqual(ret['exitcode'], 0)
@@ -316,11 +378,15 @@ class TestCustomServiceOrchestrator(TestCase):
     command['configurations']['oozie-site']['log_root'] = "${AGENT_LOG_ROOT}"
     command['configurations']['oozie-site']['a_port'] = "${HBASE_MASTER.ALLOCATED_PORT}"
 
-    orchestrator.finalize_command(command, False)
+    allocated_ports = {}
+    orchestrator.finalize_command(command, False, allocated_ports)
     self.assertEqual(command['configurations']['hbase-site']['work_root'], tempWorkDir)
     self.assertEqual(command['configurations']['oozie-site']['log_root'], tempdir)
     self.assertEqual(command['configurations']['oozie-site']['a_port'], "10023")
     self.assertEqual(orchestrator.applied_configs, {})
+    self.assertEqual(len(allocated_ports), 1)
+    self.assertTrue('a_port' in allocated_ports)
+    self.assertEqual(allocated_ports['a_port'], '10023')
 
     command['configurations']['hbase-site']['work_root'] = "${AGENT_WORK_ROOT}"
     command['configurations']['hbase-site']['log_root'] = "${AGENT_LOG_ROOT}/log"
@@ -328,7 +394,7 @@ class TestCustomServiceOrchestrator(TestCase):
     command['configurations']['oozie-site']['log_root'] = "${AGENT_LOG_ROOT}"
     command['configurations']['oozie-site']['b_port'] = "${HBASE_REGIONSERVER.ALLOCATED_PORT}"
 
-    orchestrator.finalize_command(command, True)
+    orchestrator.finalize_command(command, True, {})
     self.assertEqual(command['configurations']['hbase-site']['log_root'], tempdir + "/log")
     self.assertEqual(command['configurations']['hbase-site']['blog_root'], "/b/" + tempdir + "/log")
     self.assertEqual(command['configurations']['oozie-site']['b_port'], "${HBASE_REGIONSERVER.ALLOCATED_PORT}")
