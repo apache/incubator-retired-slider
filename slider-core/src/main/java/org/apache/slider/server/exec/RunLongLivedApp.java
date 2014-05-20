@@ -60,7 +60,7 @@ public class RunLongLivedApp implements Runnable {
   private Thread logThread;
   private ProcessStreamReader processStreamReader;
   //list of recent lines, recorded for extraction into reports
-  private final List<String> recentLines = new LinkedList<String>();
+  private final List<String> recentLines = new LinkedList<>();
   private final int recentLineLimit = RECENT_LINE_LOG_LIMIT;
 
   private ApplicationEventHandler applicationEventHandler;
@@ -281,7 +281,7 @@ public class RunLongLivedApp implements Runnable {
    * or the process is not actually running
    */
   public synchronized List<String> getRecentOutput() {
-    return new ArrayList<String>(recentLines);
+    return new ArrayList<>(recentLines);
   }
 
 
