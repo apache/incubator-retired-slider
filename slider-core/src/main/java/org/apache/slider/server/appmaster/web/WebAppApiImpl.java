@@ -114,13 +114,15 @@ public class WebAppApiImpl implements WebAppApi {
    * @param statusById
    * @return A Map of RoleStatus by the role name
    */
-  private TreeMap<String,RoleStatus> getRoleStatusesByName(Map<Integer,ProviderRole> rolesById, Map<Integer,RoleStatus> statusById) {
-    TreeMap<String,RoleStatus> statusByName = new TreeMap<String,RoleStatus>();
-    for (Entry<Integer,ProviderRole> role : rolesById.entrySet()) {
+  private TreeMap<String, RoleStatus> getRoleStatusesByName(Map<Integer, ProviderRole> rolesById,
+      Map<Integer, RoleStatus> statusById) {
+    TreeMap<String, RoleStatus> statusByName = new TreeMap<>();
+    for (Entry<Integer, ProviderRole> role : rolesById.entrySet()) {
       final RoleStatus status = statusById.get(role.getKey());
 
       if (null == status) {
-        log.error("Found ID ({}) which has no known ProviderRole", role.getKey());
+        log.error("Found ID ({}) which has no known ProviderRole",
+            role.getKey());
       } else {
         statusByName.put(role.getValue().name, status);
       }

@@ -60,7 +60,7 @@ public class RoleLaunchService extends AbstractService {
    * the AM that it has finished
    */
   private final Map<RoleLauncher, Thread> launchThreads =
-    new HashMap<RoleLauncher, Thread>();
+    new HashMap<>();
 
   /**
    * Callback to whatever has the task of actually running the container
