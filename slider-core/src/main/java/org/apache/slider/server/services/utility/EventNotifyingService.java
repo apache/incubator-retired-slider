@@ -52,7 +52,7 @@ public class EventNotifyingService extends AbstractService implements Runnable {
     if (delay > 0) {
       try {
         Thread.sleep(delay);
-      } catch (InterruptedException e) {
+      } catch (InterruptedException ignored) {
 
       }
     }

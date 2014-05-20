@@ -44,7 +44,7 @@ public class SequenceService extends AbstractService implements Parent,
   /**
    * list of services
    */
-  private final List<Service> serviceList = new ArrayList<Service>();
+  private final List<Service> serviceList = new ArrayList<>();
 
   /**
    * The current service.
@@ -63,7 +63,7 @@ public class SequenceService extends AbstractService implements Parent,
    * @param name service name
    * @param offspring initial sequence
    */
-   public SequenceService(String name, Service...offspring) {
+   public SequenceService(String name, Service... offspring) {
     super(name);
      for (Service service : offspring) {
        addService(service);
