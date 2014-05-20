@@ -19,6 +19,7 @@
 package org.apache.slider.core.registry.docstore;
 
 import org.apache.slider.server.appmaster.web.rest.RestPaths;
+import org.apache.slider.server.services.utility.PatternValidator;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 
@@ -27,7 +28,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.regex.Pattern;
 
 /**
  * Represents a set of configurations for an application, component, etc.
@@ -37,14 +37,14 @@ import java.util.regex.Pattern;
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 public class PublishedConfigSet {
 
-  public static final String VALID_NAME_PATTERN = RestPaths.PUBLISHED_CONFIGURATION_REGEXP;
-  public static final String E_INVALID_NAME =
-      "Invalid configuration name -it must match the pattern " +
-      VALID_NAME_PATTERN;
-  private static final Pattern validNames = Pattern.compile(VALID_NAME_PATTERN);
+  private static final PatternValidator validator = new PatternValidator(
+      RestPaths.PUBLISHED_CONFIGURATION_REGEXP);
   
   public Map<String, PublishedConfiguration> configurations =
       new HashMap<>();
+
+  public PublishedConfigSet() {
+  }
 
   /**
    * Put a name -it will be converted to lower case before insertion.
@@ -62,14 +62,13 @@ public class PublishedConfigSet {
 
   /**
    * Validate the name -restricting it to the set defined in 
-   * {@link #VALID_NAME_PATTERN}
+   * {@link RestPaths#PUBLISHED_CONFIGURATION_REGEXP}
    * @param name name to validate
    * @throws IllegalArgumentException if not a valid name
    */
   public static void validateName(String name) {
-    if (!validNames.matcher(name).matches()) {
-      throw new IllegalArgumentException(E_INVALID_NAME);
-    }
+    validator.validate(name);
+    
   }
 
   public PublishedConfiguration get(String name) {
@@ -92,8 +91,8 @@ public class PublishedConfigSet {
 
   public PublishedConfigSet shallowCopy() {
     PublishedConfigSet that = new PublishedConfigSet();
-    for (Map.Entry<String, PublishedConfiguration> entry : configurations
-        .entrySet()) {
+    for (Map.Entry<String, PublishedConfiguration> entry :
+        configurations.entrySet()) {
       that.put(entry.getKey(), entry.getValue().shallowCopy());
     }
     return that;

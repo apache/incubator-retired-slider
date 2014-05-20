@@ -18,6 +18,7 @@
 
 package org.apache.slider.server.services.registry;
 
+import com.google.common.base.Preconditions;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.x.discovery.ServiceDiscovery;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
@@ -37,7 +38,7 @@ import java.util.List;
 public class SliderRegistryService
     extends RegistryBinderService<ServiceInstanceData>
     implements RegistryViewForProviders {
-  
+
   private ServiceInstanceData selfRegistration;
 
   public SliderRegistryService(CuratorFramework curator,
@@ -71,20 +72,29 @@ public class SliderRegistryService
   /**
    * register an instance -only valid once the service is started.
    * This sets the selfRegistration field
-   * @param id ID -must be unique
-   * @param name name
-   * @param url URL
-   * @param payload payload (may be null)
-   * @return the instance
+   * @param serviceType service type
+   * @param instanceName ID -must be unique
+   * @param url URL to register
+   * @param instanceData instance data
    * @throws IOException on registration problems
    */
-  public void registerSelf(String name,
-      String id,
+  public void registerSelf(String serviceType,
+      String instanceName,
       URL url,
       ServiceInstanceData instanceData) throws IOException {
+    registerServiceInstance(serviceType, instanceName, url, instanceData);
+    setSelfRegistration(instanceData);
+  }
+
+  @Override
+  public void registerServiceInstance(
+      String serviceType,
+      String instanceName,
+      URL url,
+      ServiceInstanceData instanceData) throws IOException {
+    Preconditions.checkNotNull(instanceData);
     try {
-      register(name, id, url, instanceData);
-      setSelfRegistration(instanceData);
+      register(serviceType, instanceName, url, instanceData);
     } catch (IOException e) {
       throw e;
     } catch (Exception e) {

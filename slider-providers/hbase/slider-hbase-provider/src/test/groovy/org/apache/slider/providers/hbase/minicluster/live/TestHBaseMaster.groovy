@@ -20,19 +20,20 @@ package org.apache.slider.providers.hbase.minicluster.live
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.hadoop.hbase.ClusterStatus
-import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.RoleKeys
-import org.apache.slider.core.conf.AggregateConf
+import org.apache.slider.core.registry.docstore.PublishedConfigSet
+import org.apache.slider.core.registry.info.ServiceInstanceData
+import org.apache.slider.core.registry.retrieve.RegistryRetriever
 import org.apache.slider.providers.hbase.HBaseKeys
 import org.apache.slider.core.registry.zk.ZKIntegration
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.client.SliderClient
 import org.apache.slider.providers.hbase.minicluster.HBaseMiniClusterTestBase
-import org.apache.slider.core.main.ServiceLaunchException
 import org.apache.slider.core.main.ServiceLauncher
+import org.apache.slider.server.services.curator.CuratorServiceInstance
+import org.apache.slider.server.services.registry.SliderRegistryService
 import org.junit.Test
 
 /**
@@ -41,6 +42,7 @@ import org.junit.Test
 @CompileStatic
 @Slf4j
 class TestHBaseMaster extends HBaseMiniClusterTestBase {
+  public static final String HBASE_SITE = HBaseKeys.HBASE_SITE_PUBLISHED_CONFIG;
 
   @Test
   public void testHBaseMaster() throws Throwable {
@@ -57,22 +59,49 @@ class TestHBaseMaster extends HBaseMiniClusterTestBase {
       ],
       true,
       true) 
-    SliderClient sliderClient = launcher.service
-    addToTeardown(sliderClient);
-    ClusterDescription status = sliderClient.getClusterDescription(clustername)
+    SliderClient client = launcher.service
+    addToTeardown(client);
+    ClusterDescription status = client.getClusterDescription(clustername)
     
     //dumpFullHBaseConf(sliderClient, clustername)
 
-    basicHBaseClusterStartupSequence(sliderClient)
+    basicHBaseClusterStartupSequence(client)
     
     //verify the #of region servers is as expected
-    dumpClusterStatus(sliderClient, "post-hbase-boot status")
+    dumpClusterStatus(client, "post-hbase-boot status")
 
     //get the hbase status
-    waitForHBaseRegionServerCount(sliderClient, clustername, 1, hbaseClusterStartupToLiveTime)
-    waitForWorkerInstanceCount(sliderClient, 1, hbaseClusterStartupToLiveTime)
-    waitForRoleCount(sliderClient, HBaseKeys.ROLE_MASTER, 1,
+    waitForHBaseRegionServerCount(client, clustername, 1, hbaseClusterStartupToLiveTime)
+    waitForWorkerInstanceCount(client, 1, hbaseClusterStartupToLiveTime)
+    waitForRoleCount(client, HBaseKeys.ROLE_MASTER, 1,
                      hbaseClusterStartupToLiveTime)
+    
+    // look up the registry entries for HBase 
+    describe "service registry names"
+    SliderRegistryService registryService = client.registry
+    def names = registryService.getServiceTypes();
+    dumpRegistryNames(names)
+
+    List<CuratorServiceInstance<ServiceInstanceData>> instances =
+        client.listRegistryInstances();
+    def hbaseService = registryService.findByID(
+        instances,
+        HBaseKeys.HBASE_SERVICE_TYPE)
+    assert hbaseService
+    RegistryRetriever retriever = new RegistryRetriever(hbaseService.payload)
+    log.info retriever.toString()
+    assert retriever.hasConfigurations(true)
+    PublishedConfigSet externalConfSet = retriever.getConfigurations(true)
+    dumpConfigurationSet(externalConfSet)
+    assert externalConfSet[HBASE_SITE]
+
+
+    def yarnSite = retriever.retrieveConfiguration(
+        externalConfSet,
+        HBASE_SITE,
+        true)
+    assert !yarnSite.empty
+    def siteXML = yarnSite.asConfiguration()
   }
 
 }

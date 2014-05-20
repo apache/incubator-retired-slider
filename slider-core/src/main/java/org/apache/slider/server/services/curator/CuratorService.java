@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 import java.io.Closeable;
 
 public class CuratorService extends AbstractService {
-  protected static final Logger log =
+  private static final Logger log =
     LoggerFactory.getLogger(CuratorService.class);
   protected final String basePath;
 

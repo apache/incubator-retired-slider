@@ -28,7 +28,6 @@ import org.apache.curator.x.discovery.ServiceInstanceBuilder;
 import org.apache.curator.x.discovery.ServiceType;
 import org.apache.curator.x.discovery.UriSpec;
 import org.apache.slider.core.exceptions.BadClusterStateException;
-import org.apache.slider.core.exceptions.UnknownApplicationInstanceException;
 import org.apache.slider.core.persist.JsonSerDeser;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
@@ -49,7 +48,7 @@ import java.util.Map;
  * @param <Payload> the payload of the operation
  */
 public class RegistryBinderService<Payload> extends CuratorService {
-  protected static final Logger log =
+  private static final Logger log =
     LoggerFactory.getLogger(RegistryBinderService.class);
 
   private final ServiceDiscovery<Payload> discovery;
@@ -57,12 +56,13 @@ public class RegistryBinderService<Payload> extends CuratorService {
   private final Map<String, ServiceInstance<Payload>> entries =
     new HashMap<>();
 
-  JsonSerDeser<CuratorServiceInstance<Payload>> deser =
+  private JsonSerDeser<CuratorServiceInstance<Payload>> deser =
     new JsonSerDeser<>(CuratorServiceInstance.class);
 
   /**
    * Create an instance
-   * @param curator. Again, does not need to be started
+   * @param curator  Does not need to be started
+   * @param basePath base directory
    * @param discovery discovery instance -not yet started
    */
   public RegistryBinderService(CuratorFramework curator,
@@ -106,7 +106,6 @@ public class RegistryBinderService<Payload> extends CuratorService {
                                            Payload payload) throws Exception {
     Preconditions.checkNotNull(id, "null `id` arg");
     Preconditions.checkNotNull(name, "null `name` arg");
-    Preconditions.checkNotNull(url, "null `url` arg");
     Preconditions.checkState(isInState(STATE.STARTED), "Not started: " + this);
 
     if (lookup(id) != null) {
@@ -114,19 +113,24 @@ public class RegistryBinderService<Payload> extends CuratorService {
         "existing entry for service id %s name %s %s",
         id, name, url);
     }
-    int port = url.getPort();
-    if (port == 0) {
-      throw new IOException("Port undefined in " + url);
+
+    ServiceInstanceBuilder<Payload> instanceBuilder = builder()
+        .name(name)
+        .id(id)
+        .payload(payload)
+        .serviceType(ServiceType.DYNAMIC);
+    if (url != null) {
+      UriSpec uriSpec = new UriSpec(url.toString());
+
+      int port = url.getPort();
+      if (port == 0) {
+        throw new IOException("Port undefined in " + url);
+      }
+      instanceBuilder
+          .uriSpec(uriSpec)
+          .port(port);
     }
-    UriSpec uriSpec = new UriSpec(url.toString());
-    ServiceInstance<Payload> instance = builder()
-      .name(name)
-      .id(id)
-      .payload(payload)
-      .port(port)
-      .serviceType(ServiceType.DYNAMIC)
-      .uriSpec(uriSpec)
-      .build();
+    ServiceInstance<Payload> instance = instanceBuilder.build();
     log.info("registering {}", instance.toString());
     discovery.registerService(instance);
     log.info("registration completed {}", instance.toString());
@@ -184,7 +188,7 @@ public class RegistryBinderService<Payload> extends CuratorService {
 
   /**
    * List all service types registered
-   * @return
+   * @return a list of service types
    * @throws Exception
    */
   public List<String> serviceTypes() throws Exception {
@@ -296,7 +300,12 @@ public class RegistryBinderService<Payload> extends CuratorService {
     return instances;
   }
 
-  public Collection<String> queryForNames() throws IOException {
+  /**
+   * Enum all service types in the registry
+   * @return a possibly empty collection of service types
+   * @throws IOException networking
+   */
+  public Collection<String> getServiceTypes() throws IOException {
     try {
       return getDiscovery().queryForNames();
     } catch (IOException e) {

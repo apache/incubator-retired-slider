@@ -50,7 +50,10 @@ public class RestPaths {
    * fragments: {@value}
    */
   public static final String PUBLISHED_CONFIGURATION_REGEXP
-      ="[a-z0-9][a-z0-9_\\+-]*";
-  
-  
+      = "[a-z0-9][a-z0-9_\\+-]*";
+
+  public static final String PUBLISHED_CONFIGURATION_SET_REGEXP
+      = "[a-z0-9][a-z0-9_.\\+-]*";
+
+  public static final String SLIDER_CONFIGSET = "slider";
 }

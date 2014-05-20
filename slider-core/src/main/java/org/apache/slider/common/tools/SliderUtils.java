@@ -1342,10 +1342,24 @@ public final class SliderUtils {
     } else {
       fullpath.append(path);
     }
-
     return fullpath.toString();
   }
 
+  /**
+   * Append a list of paths, inserting "/" signs as appropriate
+   * @param base
+   * @param paths
+   * @return
+   */
+  public static String appendToURL(String base, String...paths) {
+    String result = base;
+    for (String path : paths) {
+      result = appendToURL(result, path);
+    }
+    return result;
+  }
+  
+  
   /**
    * Callable for async/scheduled halt
    */

@@ -34,6 +34,9 @@ import org.apache.slider.core.launch.ContainerLauncher;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.exceptions.SliderInternalStateException;
+import org.apache.slider.core.registry.docstore.PublishedConfigSet;
+import org.apache.slider.core.registry.docstore.PublishedConfiguration;
+import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.providers.AbstractProviderService;
 import org.apache.slider.providers.ProviderCore;
 import org.apache.slider.providers.ProviderRole;
@@ -58,6 +61,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_PUBLISHER;
+
 /**
  * This class implements the server-side aspects
  * of an HBase Cluster
@@ -73,7 +78,6 @@ public class HBaseProviderService extends AbstractProviderService implements
   private static final ProviderUtils providerUtils = new ProviderUtils(log);
   private HBaseClientProvider clientProvider;
   private Configuration siteConf;
-  private SliderFileSystem sliderFileSystem = null;
 
   public HBaseProviderService() {
     super("HBaseProviderService");
@@ -101,7 +105,7 @@ public class HBaseProviderService extends AbstractProviderService implements
   /**
    * Validate the cluster specification. This can be invoked on both
    * server and client
-   * @param instanceDefinition
+   * @param instanceDefinition the instance definition to validate
    */
   @Override // Client and Server
   public void validateInstanceDefinition(AggregateConf instanceDefinition) throws
@@ -114,20 +118,18 @@ public class HBaseProviderService extends AbstractProviderService implements
       AggregateConf instanceDefinition,
       Container container,
       String role,
-      SliderFileSystem sliderFileSystem,
+      SliderFileSystem coreFS,
       Path generatedConfPath,
       MapOperations resourceComponent,
       MapOperations appComponent,
       Path containerTmpDirPath) throws IOException, SliderException {
 
-    this.sliderFileSystem = sliderFileSystem;
-    this.instanceDefinition = instanceDefinition;
     // Set the environment
     launcher.putEnv(SliderUtils.buildEnvMap(appComponent));
 
     launcher.setEnv(HBASE_LOG_DIR, providerUtils.getLogdir());
 
-    launcher.setEnv("PROPAGATED_CONFDIR",
+    launcher.setEnv(PROPAGATED_CONFDIR,
         ProviderUtils.convertToAppRelativePath(
             SliderKeys.PROPAGATED_CONF_DIR_NAME) );
 
@@ -135,13 +137,14 @@ public class HBaseProviderService extends AbstractProviderService implements
     //local resources
 
     //add the configuration resources
-    launcher.addLocalResources(sliderFileSystem.submitDirectory(
+    launcher.addLocalResources(coreFS.submitDirectory(
         generatedConfPath,
         SliderKeys.PROPAGATED_CONF_DIR_NAME));
     //Add binaries
     //now add the image if it was set
-    String imageURI = instanceDefinition.getInternalOperations().get(OptionKeys.INTERNAL_APPLICATION_IMAGE_PATH);
-    sliderFileSystem.maybeAddImagePath(launcher.getLocalResources(), imageURI);
+    String imageURI = instanceDefinition.getInternalOperations()
+                  .get(OptionKeys.INTERNAL_APPLICATION_IMAGE_PATH);
+    coreFS.maybeAddImagePath(launcher.getLocalResources(), imageURI);
 
     CommandLineBuilder cli = new CommandLineBuilder();
 
@@ -189,6 +192,44 @@ public class HBaseProviderService extends AbstractProviderService implements
     cli.addOutAndErrFiles(logfile, null);
     launcher.addCommand(cli.build());
 
+  }
+
+  @Override
+  public void applyInitialRegistryDefinitions(URL web,
+      ServiceInstanceData instanceData) throws
+      IOException {
+    super.applyInitialRegistryDefinitions(web, instanceData);
+  }
+
+  @Override
+  protected void serviceStart() throws Exception {
+    registerHBaseServiceEntry();
+
+
+    super.serviceStart();
+  }
+
+  private void registerHBaseServiceEntry() throws IOException {
+
+    // not a URL, but needed
+    URL hbaseURL = new URL("http://localhost:0");
+    ServiceInstanceData instanceData = new ServiceInstanceData();
+    PublishedConfiguration publishedSite =
+        new PublishedConfiguration("HBase site",
+            siteConf);
+    PublishedConfigSet configSet =
+        amState.getOrCreatePublishedConfigSet(HBASE_SERVICE_TYPE);
+    instanceData.externalView.configurationsURL = SliderUtils.appendToURL(
+        amWebAPI.toExternalForm(), SLIDER_PATH_PUBLISHER, HBASE_SERVICE_TYPE);
+    configSet.put(HBASE_SITE_PUBLISHED_CONFIG,
+        publishedSite);
+    String name = amState.getApplicationName()+".hbase";
+    log.info("registering {}/{}", name, HBASE_SERVICE_TYPE);
+    registry.registerServiceInstance(HBASE_SERVICE_TYPE,
+        name,
+        null,
+        instanceData
+    );
   }
 
   /**
@@ -292,4 +333,6 @@ public class HBaseProviderService extends AbstractProviderService implements
     response.setResponseId(id + 1L);
     return response;
   }
+
+
 }

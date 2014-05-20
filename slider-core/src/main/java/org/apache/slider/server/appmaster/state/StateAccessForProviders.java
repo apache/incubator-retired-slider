@@ -35,13 +35,40 @@ import java.util.Map;
  * The methods to offer state access to the providers
  */
 public interface StateAccessForProviders {
+
   Map<Integer, RoleStatus> getRoleStatusMap();
+
+  /**
+   * Get the name of the application
+   * @return the name
+   */
+  String getApplicationName();
 
   /**
    * Get the published configurations
    * @return the configuration set
    */
-  PublishedConfigSet getPublishedConfigurations();
+  PublishedConfigSet getPublishedSliderConfigurations();
+
+  /**
+   * Get a named published config set
+   * @param name name to look up
+   * @return the instance or null
+   */
+  PublishedConfigSet getPublishedConfigSet(String name);
+
+  /**
+   * Get a named published config set, creating it if need be.
+   * @param name name to look up
+   * @return the instance -possibly a new one
+   */
+  PublishedConfigSet getOrCreatePublishedConfigSet(String name);
+
+  /**
+   * List the config sets -this takes a clone of the current set
+   * @return a list of config sets
+   */
+  List<String> listConfigSets();
 
   Map<ContainerId, RoleInstance> getFailedNodes();
 
@@ -163,4 +190,6 @@ public interface StateAccessForProviders {
    * @param providerStatus status from the provider for the cluster info section
    */
   void refreshClusterStatus();
+  
+
 }

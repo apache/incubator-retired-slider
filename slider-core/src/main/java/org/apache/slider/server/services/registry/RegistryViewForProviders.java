@@ -21,6 +21,7 @@ package org.apache.slider.server.services.registry;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 
 /**
@@ -35,4 +36,18 @@ public interface RegistryViewForProviders {
    * @return the registration of slider
    */
   ServiceInstanceData getSelfRegistration();
+
+  /**
+   * Register the service, raising IOExceptions when anything fails
+   * @param serviceType service type
+   * @param instanceName ID -must be unique
+   * @param url URL to register
+   * @param instanceData instance data
+   * @throws IOException on registration problems
+   */
+  void registerServiceInstance(
+      String serviceType,
+      String instanceName,
+      URL url,
+      ServiceInstanceData instanceData) throws IOException;
 }

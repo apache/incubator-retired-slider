@@ -82,7 +82,7 @@ class TestTwoLiveClusters extends HBaseMiniClusterTestBase {
     // registry instances    def names = client.listRegistryNames(clustername)
     describe "service registry names"
     SliderRegistryService registry = cluster2Client.registry
-    def names = registry.queryForNames();
+    def names = registry.getServiceTypes();
     dumpRegistryNames(names)
 
     List<String> instanceIds = sliderClient.listRegistryInstanceIDs()

@@ -23,6 +23,8 @@ import org.apache.slider.core.registry.docstore.ConfigFormat;
 import org.apache.slider.core.registry.docstore.PublishedConfigSet;
 import org.apache.slider.core.registry.docstore.PublishedConfiguration;
 import org.apache.slider.core.registry.docstore.PublishedConfigurationOutputter;
+import org.apache.slider.core.registry.docstore.UriMap;
+import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,11 +50,15 @@ public class PublisherResource {
   protected static final Logger log =
       LoggerFactory.getLogger(PublisherResource.class);
   private final WebAppApi slider;
+  public static final String SET_NAME = 
+      "{setname: " + PUBLISHED_CONFIGURATION_SET_REGEXP + "}";
   private static final String CONFIG =
-      "{config: " + PUBLISHED_CONFIGURATION_REGEXP + "}";
-  
+      SET_NAME + "/{config: " + PUBLISHED_CONFIGURATION_REGEXP + "}";
+  private final StateAccessForProviders appState;
+
   public PublisherResource(WebAppApi slider) {
     this.slider = slider;
+    appState = slider.getAppState();
   }
 
   private void init(HttpServletResponse res, UriInfo uriInfo) {
@@ -60,20 +66,51 @@ public class PublisherResource {
     log.debug(uriInfo.getRequestUri().toString());
   }
 
-  private PublishedConfigSet getContent() {
-    return slider.getAppState().getPublishedConfigurations();
+  /**
+   * Get a named config set 
+   * @param setname name of the config set
+   * @return the config set
+   * @throws NotFoundException if there was no matching set
+   */
+  private PublishedConfigSet getConfigSet(String setname) {
+    PublishedConfigSet configSet =
+        appState.getPublishedConfigSet(setname);
+    if (configSet == null) {
+      throw new NotFoundException("Not found: " + setname);
+    }
+    return configSet;
   }
 
   @GET
   @Path("/")
   @Produces({MediaType.APPLICATION_JSON})
+  public UriMap enumConfigSets(
+      @Context UriInfo uriInfo,
+      @Context HttpServletResponse res) {
+    init(res, uriInfo);
+    String baseURL = uriInfo.getRequestUri().toString();
+    if (!baseURL.endsWith("/")) {
+      baseURL += "/";
+    }
+    UriMap uriMap = new UriMap();
+    for (String name : appState.listConfigSets()) {
+      uriMap.put(name, baseURL + name);
+    }
+    return uriMap;
+  }
+
+  @GET
+  @Path("/"+ SET_NAME)
+  @Produces({MediaType.APPLICATION_JSON})
   public PublishedConfigSet getPublishedConfiguration(
+      @PathParam("setname") String setname,
       @Context UriInfo uriInfo,
       @Context HttpServletResponse res) {
     init(res, uriInfo);
 
-    PublishedConfigSet publishedConfigSet = getContent();
-    log.debug("number of available configurations: {}", publishedConfigSet.size());
+    logRequest(uriInfo);
+    PublishedConfigSet publishedConfigSet = getConfigSet(setname);
+    log.debug("Number of configurations: {}", publishedConfigSet.size());
     return publishedConfigSet.shallowCopy();
   }
 
@@ -85,27 +122,43 @@ public class PublisherResource {
   @Path("/" + CONFIG)
   @Produces({MediaType.APPLICATION_JSON})
   public PublishedConfiguration getConfigurationInstance(
+      @PathParam("setname") String setname,
       @PathParam("config") String config,
       @Context UriInfo uriInfo,
       @Context HttpServletResponse res) {
     init(res, uriInfo);
 
-    PublishedConfiguration publishedConfig = getContent().get(config);
+    PublishedConfiguration publishedConfig =
+        getPublishedConfiguration(setname, config);
     if (publishedConfig == null) {
       log.info("Configuration {} not found", config);
       throw new NotFoundException("Not found: " + uriInfo.getAbsolutePath());
     }
     return publishedConfig;
   }
-  
+
+  /**
+   * Get a configuration
+   * @param setname name of the config set
+   * @param config config
+   * @return null if there was a config, but not a set
+   * @throws NotFoundException if there was no matching set
+   */
+  public PublishedConfiguration getPublishedConfiguration(String setname,
+      String config) {
+    return getConfigSet(setname).get(config);
+  }
+
   @GET
   @Path("/" + CONFIG+ ".json")
   @Produces({MediaType.APPLICATION_JSON})
   public String getConfigurationContentJson(
+      @PathParam("setname") String setname,
+
       @PathParam("config") String config,
       @Context UriInfo uriInfo,
       @Context HttpServletResponse res) throws IOException {
-    return getStringRepresentation(config, uriInfo, res,
+    return getStringRepresentation(setname, config, uriInfo, res,
         ConfigFormat.JSON);
   }
 
@@ -113,10 +166,11 @@ public class PublisherResource {
   @Path("/" + CONFIG + ".xml")
   @Produces({MediaType.APPLICATION_XML})
   public String getConfigurationContentXML(
+      @PathParam("setname") String setname,
       @PathParam("config") String config,
       @Context UriInfo uriInfo,
       @Context HttpServletResponse res) throws IOException {
-    return getStringRepresentation(config, uriInfo, res,
+    return getStringRepresentation(setname, config, uriInfo, res,
         ConfigFormat.XML);
   }
   
@@ -124,39 +178,43 @@ public class PublisherResource {
   @Path("/" + CONFIG + ".properties")
   @Produces({MediaType.APPLICATION_XML})
   public String getConfigurationContentProperties(
+      @PathParam("setname") String setname,
+
       @PathParam("config") String config,
       @Context UriInfo uriInfo,
       @Context HttpServletResponse res) throws IOException {
 
-    return getStringRepresentation(config, uriInfo, res,
+    return getStringRepresentation(setname, config, uriInfo, res,
         ConfigFormat.PROPERTIES);
   }
 
-  public String getStringRepresentation(String config,
+  public String getStringRepresentation(String setname,
+      String config,
       UriInfo uriInfo,
       HttpServletResponse res, ConfigFormat format) throws IOException {
     // delegate (including init)
     PublishedConfiguration publishedConfig =
-        getConfigurationInstance(config, uriInfo, res);
+        getConfigurationInstance(setname, config, uriInfo, res);
     PublishedConfigurationOutputter outputter =
         publishedConfig.createOutputter(format);
     return outputter.asString();
   }
 
   @GET
-  @Path("/{config}/{propertyName}")
+  @Path("/" + CONFIG +"/{propertyName}")
   @Produces({MediaType.APPLICATION_JSON})
   public Map<String,String> getConfigurationProperty(
-      @PathParam("propertyName") String propertyName,
+      @PathParam("setname") String setname,
       @PathParam("config") String config,
+      @PathParam("propertyName") String propertyName,
       @Context UriInfo uriInfo,
       @Context HttpServletResponse res) {
     PublishedConfiguration publishedConfig =
-        getConfigurationInstance(config, uriInfo, res);
+        getConfigurationInstance(setname, config, uriInfo, res);
     String propVal = publishedConfig.entries.get(propertyName);
     if (propVal == null) {
-      log.info("Configuration property {} not found in configuration {}",
-               propertyName, config);
+      log.debug("Configuration property {} not found in configuration {}",
+          propertyName, config);
       throw new NotFoundException("Property not found: " + propertyName);
     }
     Map<String,String> rtnVal = new HashMap<>();

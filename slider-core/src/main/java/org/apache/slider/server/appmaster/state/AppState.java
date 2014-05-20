@@ -88,7 +88,7 @@ import static org.apache.slider.api.RoleKeys.ROLE_REQUESTED_INSTANCES;
  * is not synchronized and intended to be used during
  * initialization.
  */
-public class AppState implements StateAccessForProviders {
+public class AppState {
   protected static final Logger log =
     LoggerFactory.getLogger(AppState.class);
   
@@ -141,10 +141,6 @@ public class AppState implements StateAccessForProviders {
    feed in to the CD
    */
   private ClusterDescription clusterSpec = new ClusterDescription();
-
-  private final PublishedConfigSet
-      publishedConfigurations = new PublishedConfigSet();
-
 
   private final Map<Integer, RoleStatus> roleStatusMap =
     new ConcurrentHashMap<>();
@@ -308,7 +304,7 @@ public class AppState implements StateAccessForProviders {
     return completionOfUnknownContainerEvent;
   }
 
-  @Override
+
   public Map<Integer, RoleStatus> getRoleStatusMap() {
     return roleStatusMap;
   }
@@ -326,18 +322,11 @@ public class AppState implements StateAccessForProviders {
   }
 
 
-  @Override
-  public PublishedConfigSet getPublishedConfigurations() {
-    return publishedConfigurations;
-  }  
-  
-
-  @Override
   public Map<ContainerId, RoleInstance> getFailedNodes() {
     return failedNodes;
   }
 
-  @Override
+
   public Map<ContainerId, RoleInstance> getLiveNodes() {
     return liveNodes;
   }
@@ -350,7 +339,7 @@ public class AppState implements StateAccessForProviders {
     return clusterSpec;
   }
 
-  @Override
+
   public ClusterDescription getClusterStatus() {
     return clusterStatus;
   }
@@ -409,33 +398,33 @@ public class AppState implements StateAccessForProviders {
     containerMaxMemory = maxMemory;
   }
 
-  @Override
+
   public ConfTreeOperations getResourcesSnapshot() {
     return resourcesSnapshot;
   }
 
-  @Override
+
   public ConfTreeOperations getAppConfSnapshot() {
     return appConfSnapshot;
   }
 
-  @Override
+
   public ConfTreeOperations getInternalsSnapshot() {
     return internalsSnapshot;
   }
 
-  @Override
+
   public boolean isApplicationLive() {
     return applicationLive;
   }
 
 
-  @Override
+
   public long getSnapshotTime() {
     return snapshotTime;
   }
 
-  @Override
+
   public AggregateConf getInstanceDefinitionSnapshot() {
     return instanceDefinitionSnapshot;
   }
@@ -607,6 +596,7 @@ public class AppState implements StateAccessForProviders {
     instanceDefinitionSnapshot = new AggregateConf(resourcesSnapshot.confTree,
                                                    appConfSnapshot.confTree,
                                                    internalsSnapshot.confTree);
+    instanceDefinitionSnapshot.setName(instanceDefinition.getName());
 
     clusterSpec =
       ClusterDescriptionOperations.buildFromInstanceDefinition(
@@ -751,7 +741,7 @@ public class AppState implements StateAccessForProviders {
     return appMasterNode;
   }
 
-  @Override
+
   public RoleStatus lookupRoleStatus(int key) {
     RoleStatus rs = getRoleStatusMap().get(key);
     if (rs == null) {
@@ -760,13 +750,13 @@ public class AppState implements StateAccessForProviders {
     return rs;
   }
 
-  @Override
+
   public RoleStatus lookupRoleStatus(Container c) throws YarnRuntimeException {
     return lookupRoleStatus(ContainerPriority.extractRole(c));
   }
 
 
-  @Override
+
   public RoleStatus lookupRoleStatus(String name) throws YarnRuntimeException {
     ProviderRole providerRole = roles.get(name);
     if (providerRole == null) {
@@ -775,23 +765,23 @@ public class AppState implements StateAccessForProviders {
     return lookupRoleStatus(providerRole.id);
   }
 
-  @Override
+
   public synchronized List<RoleInstance> cloneActiveContainerList() {
     Collection<RoleInstance> values = activeContainers.values();
     return new ArrayList<>(values);
   }
   
-  @Override
+
   public int getNumActiveContainers() {
     return activeContainers.size();
   }
   
-  @Override
+
   public RoleInstance getActiveContainer(ContainerId id) {
     return activeContainers.get(id);
   }
 
-  @Override
+
   public synchronized List<RoleInstance> cloneLiveContainerInfoList() {
     List<RoleInstance> allRoleInstances;
     Collection<RoleInstance> values = getLiveNodes().values();
@@ -800,7 +790,7 @@ public class AppState implements StateAccessForProviders {
   }
 
 
-  @Override
+
   public synchronized RoleInstance getLiveInstanceByContainerID(String containerId)
     throws NoSuchNodeException {
     Collection<RoleInstance> nodes = getLiveNodes().values();
@@ -813,7 +803,7 @@ public class AppState implements StateAccessForProviders {
     throw new NoSuchNodeException(containerId);
   }
 
-  @Override
+
   public synchronized List<RoleInstance> getLiveInstancesByContainerIDs(
     Collection<String> containerIDs) {
     //first, a hashmap of those containerIDs is built up
@@ -1152,7 +1142,7 @@ public class AppState implements StateAccessForProviders {
     public RoleInstance roleInstance;
     public boolean containerFailed;
 
-    @Override
+  
     public String toString() {
       final StringBuilder sb =
         new StringBuilder("NodeCompletionResult{");
@@ -1311,7 +1301,7 @@ public class AppState implements StateAccessForProviders {
     return percentage;
   }
 
-  @Override
+
   public void refreshClusterStatus() {
     refreshClusterStatus(null);
   }

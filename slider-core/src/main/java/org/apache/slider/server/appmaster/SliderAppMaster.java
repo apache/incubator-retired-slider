@@ -100,6 +100,7 @@ import org.apache.slider.server.appmaster.state.AbstractRMOperation;
 import org.apache.slider.server.appmaster.state.AppState;
 import org.apache.slider.server.appmaster.state.ContainerAssignment;
 import org.apache.slider.server.appmaster.state.ContainerReleaseOperation;
+import org.apache.slider.server.appmaster.state.ProviderAppState;
 import org.apache.slider.server.appmaster.state.RMOperationHandler;
 import org.apache.slider.server.appmaster.state.RoleInstance;
 import org.apache.slider.server.appmaster.state.RoleStatus;
@@ -222,6 +223,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * live on, etc.
    */
   private final AppState appState = new AppState(new ProtobufRecordFactory());
+
+  private final ProviderAppState stateForProviders =
+      new ProviderAppState("undefined", appState);
 
 
   /**
@@ -379,13 +383,16 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     String action = serviceArgs.getAction();
     List<String> actionArgs = serviceArgs.getActionArgs();
     int exitCode;
-    if (action.equals(SliderActions.ACTION_HELP)) {
-      log.info(getName() + serviceArgs.usage());
-      exitCode = LauncherExitCodes.EXIT_USAGE;
-    } else if (action.equals(SliderActions.ACTION_CREATE)) {
-      exitCode = createAndRunCluster(actionArgs.get(0));
-    } else {
-      throw new SliderException("Unimplemented: " + action);
+    switch (action) {
+      case SliderActions.ACTION_HELP:
+        log.info(getName() + serviceArgs.usage());
+        exitCode = LauncherExitCodes.EXIT_USAGE;
+        break;
+      case SliderActions.ACTION_CREATE:
+        exitCode = createAndRunCluster(actionArgs.get(0));
+        break;
+      default:
+        throw new SliderException("Unimplemented: " + action);
     }
     log.info("Exiting AM; final exit code = {}", exitCode);
     return exitCode;
@@ -425,10 +432,13 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     AggregateConf instanceDefinition =
       InstanceIO.loadInstanceDefinitionUnresolved(fs, clusterDirPath);
+    instanceDefinition.setName(clustername);
 
     log.info("Deploying cluster {}:", instanceDefinition);
 
-    //REVISIT: why is this done?
+    stateForProviders.setApplicationName(clustername);
+    
+    // triggers resolution and snapshotting in agent
     appState.updateInstanceDefinition(instanceDefinition);
     File confDir = getLocalConfDir();
     if (!confDir.exists() || !confDir.isDirectory()) {
@@ -561,7 +571,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       // Start up the WebApp and track the URL for it
       webApp = new SliderAMWebApp(registry);
       WebApps.$for(SliderAMWebApp.BASE_PATH, WebAppApi.class,
-          new WebAppApiImpl(this, appState, providerService),
+          new WebAppApiImpl(this, stateForProviders, providerService),
           RestPaths.WS_CONTEXT)
                       .with(serviceConf)
                       .start(webApp);
@@ -665,8 +675,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
 
     //Give the provider restricted access to the state, registry
-    providerService.bind(appState, registry);
-    sliderAMProvider.bind(appState, registry);
+    providerService.bind(stateForProviders, registry);
+    sliderAMProvider.bind(stateForProviders, registry);
 
     // now do the registration
     registerServiceInstance(clustername, appid);

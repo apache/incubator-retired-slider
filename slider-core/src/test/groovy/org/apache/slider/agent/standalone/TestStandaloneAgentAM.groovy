@@ -97,7 +97,7 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
 
     describe "service registry names"
     SliderRegistryService registry = client.registry
-    def names = registry.queryForNames();
+    def names = registry.getServiceTypes();
     dumpRegistryNames(names)
     describe "service registry instance IDs"
 

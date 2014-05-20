@@ -126,7 +126,6 @@ public class AccumuloProviderService extends AbstractProviderService implements
       Path containerTmpDirPath) throws IOException, SliderException {
 
     this.fileSystem = fileSystem;
-    this.instanceDefinition = instanceDefinition;
     
     // Set the environment
     launcher.putEnv(SliderUtils.buildEnvMap(appComponent));

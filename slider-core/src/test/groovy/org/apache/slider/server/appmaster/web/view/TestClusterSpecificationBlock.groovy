@@ -31,6 +31,7 @@ import org.apache.slider.server.appmaster.model.mock.MockRecordFactory
 import org.apache.slider.server.appmaster.model.mock.MockSliderClusterProtocol
 import org.apache.slider.server.appmaster.state.AbstractRecordFactory
 import org.apache.slider.server.appmaster.state.AppState
+import org.apache.slider.server.appmaster.state.ProviderAppState
 import org.apache.slider.server.appmaster.web.WebAppApi
 import org.apache.slider.server.appmaster.web.WebAppApiImpl
 import org.junit.Before
@@ -46,9 +47,12 @@ public class TestClusterSpecificationBlock {
   public void setup() {
     SliderClusterProtocol clusterProto = new MockSliderClusterProtocol();
     AppState appState = new MyAppState(new MockRecordFactory());
+    ProviderAppState providerAppState = new ProviderAppState(
+        "undefined",
+        appState)
     ProviderService providerService = new MockProviderService();
 
-    WebAppApiImpl inst = new WebAppApiImpl(clusterProto, appState, providerService);
+    WebAppApiImpl inst = new WebAppApiImpl(clusterProto, providerAppState, providerService);
 
     Injector injector = Guice.createInjector(new AbstractModule() {
           @Override

@@ -62,10 +62,11 @@ public abstract class AbstractProviderService
     ProviderService {
   private static final Logger log =
     LoggerFactory.getLogger(AbstractProviderService.class);
-  protected  AggregateConf instanceDefinition;
-  protected StateAccessForProviders stateAccessor;
+  protected StateAccessForProviders amState;
   protected AgentRestOperations restOps;
   protected RegistryViewForProviders registry;
+  protected ServiceInstanceData registryInstanceData;
+  protected URL amWebAPI;
 
   public AbstractProviderService(String name) {
     super(name);
@@ -76,18 +77,18 @@ public abstract class AbstractProviderService
     return getConfig();
   }
 
-  public StateAccessForProviders getStateAccessor() {
-    return stateAccessor;
+  public StateAccessForProviders getAmState() {
+    return amState;
   }
 
-  public void setStateAccessor(StateAccessForProviders stateAccessor) {
-    this.stateAccessor = stateAccessor;
+  public void setAmState(StateAccessForProviders amState) {
+    this.amState = amState;
   }
 
   @Override
   public void bind(StateAccessForProviders stateAccessor,
       RegistryViewForProviders registry) {
-    this.stateAccessor = stateAccessor;
+    this.amState = stateAccessor;
     this.registry = registry;
   }
 
@@ -308,6 +309,7 @@ public abstract class AbstractProviderService
       ServiceInstanceData registryInstanceData) throws MalformedURLException,
       IOException {
 
-      //no-op
+      this.amWebAPI = amWebAPI;
+    this.registryInstanceData = registryInstanceData;
   }
 }

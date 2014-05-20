@@ -34,11 +34,11 @@ import org.junit.Test
 
 @CompileStatic
 @Slf4j
-public class TestClusterLifecycle extends AgentCommandTestBase
+public class TestAgentClusterLifecycle extends AgentCommandTestBase
     implements FuntestProperties, Arguments, SliderExitCodes {
 
 
-  static String CLUSTER = "test_cluster_lifecycle"
+  static String CLUSTER = "test_agent_cluster_lifecycle"
 
 
   @Before
@@ -52,7 +52,7 @@ public class TestClusterLifecycle extends AgentCommandTestBase
   }
 
   @Test
-  public void testClusterLifecycle() throws Throwable {
+  public void testAgentClusterLifecycle() throws Throwable {
 
     describe "Walk a 0-role cluster through its lifecycle"
 

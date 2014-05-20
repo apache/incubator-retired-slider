@@ -33,10 +33,12 @@ import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.persist.JsonSerDeser
 import org.apache.slider.core.registry.docstore.PublishedConfigSet
 import org.apache.slider.core.registry.docstore.PublishedConfiguration
+import org.apache.slider.core.registry.docstore.UriMap
 import org.apache.slider.core.registry.info.CustomRegistryConstants
 import org.apache.slider.core.registry.info.ServiceInstanceData
 import org.apache.slider.core.registry.retrieve.RegistryRetriever
 import org.apache.slider.server.appmaster.PublishedArtifacts
+import org.apache.slider.server.appmaster.web.rest.RestPaths
 import org.apache.slider.server.services.curator.CuratorServiceInstance
 import org.apache.slider.server.services.registry.SliderRegistryService
 import org.junit.Test
@@ -112,8 +114,8 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
 
     describe "service registry names"
     SliderRegistryService registryService = client.registry
-    def names = registryService.queryForNames();
-    dumpRegistryNames(names)
+    def serviceTypes = registryService.serviceTypes;
+    dumpRegistryNames(serviceTypes)
 
     List<String> instanceIds = client.listRegistryInstanceIDs()
 
@@ -146,8 +148,14 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     def publisher = publisherURL.toString()
     describe("Publisher")
 
-    def publishedJSON = GET(publisherURL)
-//    log.info(publishedJSON)
+    JsonSerDeser<UriMap> uriMapDeser = new JsonSerDeser<>(UriMap)
+    def setlisting = GET(publisherURL)
+
+    log.info(setlisting)
+
+    UriMap uris = uriMapDeser.fromJson(setlisting)
+    assert uris.uris[RestPaths.SLIDER_CONFIGSET]
+    def publishedJSON = GET(publisherURL, RestPaths.SLIDER_CONFIGSET)
     JsonSerDeser< PublishedConfigSet> serDeser= new JsonSerDeser<>(
         PublishedConfigSet)
     def configSet = serDeser.fromJson(publishedJSON)
@@ -158,7 +166,9 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     assert publishedYarnSite.empty
     
     //get the full URL
-    def yarnSitePublisher = appendToURL(publisher, ARTIFACT_NAME)
+    def yarnSitePublisher = appendToURL(publisher,
+        RestPaths.SLIDER_CONFIGSET,
+        ARTIFACT_NAME)
 
     String confJSON = GET(yarnSitePublisher)
 //    log.info(confJSON)
@@ -202,10 +212,7 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     
     assert retriever.hasConfigurations(true)
     PublishedConfigSet externalConfSet = retriever.getConfigurations(true)
-    externalConfSet.keys().each { String key ->
-      def config = externalConfSet.get(key)
-      log.info "$key -- ${config.description}"
-    }
+    dumpConfigurationSet(externalConfSet)
     assert externalConfSet[ARTIFACT_NAME]
 
 
@@ -221,8 +228,6 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     assert rmHostnameViaClientSideXML == rmHostnameFromDownloadedProperties
     def rmAddrViaClientSideXML = siteXML.get(YarnConfiguration.RM_ADDRESS)
 
-  //TODO SLIDER-52 PublishedConfiguration XML conf values are not resolved until client-side
-    
     log.info("RM from downloaded props = $rmAddrFromDownloadedProperties")
     assert rmAddrViaClientSideXML == rmAddrFromDownloadedProperties
     
@@ -355,6 +360,4 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     assert instances.size() == 0
 
   }
-
-
 }

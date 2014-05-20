@@ -72,7 +72,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -171,7 +170,6 @@ public class AgentProviderService extends AbstractProviderService implements
       }
     }
 
-    this.instanceDefinition = instanceDefinition;
     log.info("Build launch context for Agent");
     log.debug(instanceDefinition.toString());
 
@@ -262,13 +260,13 @@ public class AgentProviderService extends AbstractProviderService implements
     pubconf.description = description;
     pubconf.putValues(entries);
     log.info("publishing {}", pubconf);
-    getStateAccessor().getPublishedConfigurations().put(name, pubconf);
+    getAmState().getPublishedSliderConfigurations().put(name, pubconf);
   }
 
   protected Map<String, Map<String, ClusterNode>> getRoleClusterNodeMapping() {
-    stateAccessor.refreshClusterStatus();
+    amState.refreshClusterStatus();
     return (Map<String, Map<String, ClusterNode>>)
-        stateAccessor.getClusterStatus().status.get(
+        amState.getClusterStatus().status.get(
             ClusterDescriptionKeys.KEY_CLUSTER_LIVE);
   }
 
@@ -277,7 +275,7 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   protected String getClusterInfoPropertyValue(String name) {
-    StateAccessForProviders accessor = getStateAccessor();
+    StateAccessForProviders accessor = getAmState();
     assert accessor.isApplicationLive();
     ClusterDescription description = accessor.getClusterStatus();
     return description.getInfo(name);
@@ -367,7 +365,7 @@ public class AgentProviderService extends AbstractProviderService implements
     String label = heartBeat.getHostname();
     String roleName = getRoleName(label);
     String containerId = getContainerId(label);
-    StateAccessForProviders accessor = getStateAccessor();
+    StateAccessForProviders accessor = getAmState();
     String scriptPath = getScriptPathFromMetainfo(roleName);
 
     if (scriptPath == null) {
@@ -550,10 +548,10 @@ public class AgentProviderService extends AbstractProviderService implements
 
   protected void addInstallCommand(String roleName, String containerId, HeartBeatResponse response, String scriptPath)
       throws SliderException {
-    assert getStateAccessor().isApplicationLive();
-    ConfTreeOperations appConf = getStateAccessor().getAppConfSnapshot();
-    ConfTreeOperations resourcesConf = getStateAccessor().getResourcesSnapshot();
-    ConfTreeOperations internalsConf = getStateAccessor().getInternalsSnapshot();
+    assert getAmState().isApplicationLive();
+    ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
+    ConfTreeOperations resourcesConf = getAmState().getResourcesSnapshot();
+    ConfTreeOperations internalsConf = getAmState().getInternalsSnapshot();
 
     ExecutionCommand cmd = new ExecutionCommand(AgentCommandType.EXECUTION_COMMAND);
     prepareExecutionCommand(cmd);
@@ -597,7 +595,7 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   private void setInstallCommandConfigurations(ExecutionCommand cmd) {
-    ConfTreeOperations appConf = getStateAccessor().getAppConfSnapshot();
+    ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
     Map<String, Map<String, String>> configurations = buildCommandConfigurations(appConf);
     cmd.setConfigurations(configurations);
   }
@@ -605,9 +603,9 @@ public class AgentProviderService extends AbstractProviderService implements
   @VisibleForTesting
   protected void addStatusCommand(String roleName, String containerId, HeartBeatResponse response, String scriptPath)
       throws SliderException {
-    assert getStateAccessor().isApplicationLive();
-    ConfTreeOperations appConf = getStateAccessor().getAppConfSnapshot();
-    ConfTreeOperations internalsConf = getStateAccessor().getInternalsSnapshot();
+    assert getAmState().isApplicationLive();
+    ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
+    ConfTreeOperations internalsConf = getAmState().getInternalsSnapshot();
 
     StatusCommand cmd = new StatusCommand();
     String clusterName = internalsConf.get(OptionKeys.APPLICATION_NAME);
@@ -635,8 +633,8 @@ public class AgentProviderService extends AbstractProviderService implements
   @VisibleForTesting
   protected void addGetConfigCommand(String roleName, String containerId, HeartBeatResponse response)
       throws SliderException {
-    assert getStateAccessor().isApplicationLive();
-    ConfTreeOperations internalsConf = getStateAccessor().getInternalsSnapshot();
+    assert getAmState().isApplicationLive();
+    ConfTreeOperations internalsConf = getAmState().getInternalsSnapshot();
 
     StatusCommand cmd = new StatusCommand();
     String clusterName = internalsConf.get(OptionKeys.APPLICATION_NAME);
@@ -659,9 +657,9 @@ public class AgentProviderService extends AbstractProviderService implements
   protected void addStartCommand(String roleName, String containerId, HeartBeatResponse response, String scriptPath)
       throws
       SliderException {
-    assert getStateAccessor().isApplicationLive();
-    ConfTreeOperations appConf = getStateAccessor().getAppConfSnapshot();
-    ConfTreeOperations internalsConf = getStateAccessor().getInternalsSnapshot();
+    assert getAmState().isApplicationLive();
+    ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
+    ConfTreeOperations internalsConf = getAmState().getInternalsSnapshot();
 
     ExecutionCommand cmd = new ExecutionCommand(AgentCommandType.EXECUTION_COMMAND);
     prepareExecutionCommand(cmd);

@@ -43,6 +43,7 @@ import org.apache.slider.server.appmaster.model.mock.MockProviderService;
 import org.apache.slider.server.appmaster.model.mock.MockRecordFactory;
 import org.apache.slider.server.appmaster.model.mock.MockSliderClusterProtocol;
 import org.apache.slider.server.appmaster.state.AppState;
+import org.apache.slider.server.appmaster.state.ProviderAppState;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.WebAppApiImpl;
 import org.apache.slider.server.appmaster.web.rest.AMWebServices;
@@ -138,7 +139,10 @@ public class TestAMAgentWebServices extends JerseyTest {
         } catch (Exception e) {
           log.error("Failed to set up app {}", e);
         }
-        slider = new WebAppApiImpl(new MockSliderClusterProtocol(), appState,
+        ProviderAppState providerAppState = new ProviderAppState("undefined",
+            appState);
+
+        slider = new WebAppApiImpl(new MockSliderClusterProtocol(), providerAppState,
                                    new MockProviderService());
 
         bind(SliderJacksonJaxbJsonProvider.class);

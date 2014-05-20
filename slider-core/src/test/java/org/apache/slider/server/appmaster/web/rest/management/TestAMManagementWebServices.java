@@ -43,6 +43,7 @@ import org.apache.slider.server.appmaster.model.mock.MockProviderService;
 import org.apache.slider.server.appmaster.model.mock.MockRecordFactory;
 import org.apache.slider.server.appmaster.model.mock.MockSliderClusterProtocol;
 import org.apache.slider.server.appmaster.state.AppState;
+import org.apache.slider.server.appmaster.state.ProviderAppState;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.WebAppApiImpl;
 import org.apache.slider.server.appmaster.web.rest.AMWebServices;
@@ -51,6 +52,8 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.Path;
 import javax.ws.rs.core.MediaType;
@@ -64,7 +67,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 public class TestAMManagementWebServices extends JerseyTest {
-
+  protected static final Logger log =
+      LoggerFactory.getLogger(TestAMManagementWebServices.class);
   public static final int RM_MAX_RAM = 4096;
   public static final int RM_MAX_CORES = 64;
   public static final String EXAMPLES =
@@ -169,16 +173,13 @@ public class TestAMManagementWebServices extends JerseyTest {
               fs,
               historyPath,
               null, null);
-        } catch (IOException e) {
-          e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        } catch (URISyntaxException e) {
-          e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        } catch (BadClusterStateException e) {
-          e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        } catch (BadConfigException e) {
-          e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        } catch (IOException | BadClusterStateException | URISyntaxException | BadConfigException e) {
+          log.error("{}", e, e);
         }
-        slider = new WebAppApiImpl(new MockSliderClusterProtocol(), appState,
+        ProviderAppState providerAppState = new ProviderAppState("undefined",
+            appState);
+
+        slider = new WebAppApiImpl(new MockSliderClusterProtocol(), providerAppState,
                                    new MockProviderService());
 
         bind(SliderJacksonJaxbJsonProvider.class);

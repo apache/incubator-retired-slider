@@ -18,9 +18,6 @@
 
 package org.apache.slider.providers.agent;
 
-import org.apache.slider.server.appmaster.web.rest.agent.CommandReport;
-import org.junit.Assert;
-import org.junit.Test;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FilterFileSystem;
 import org.apache.hadoop.fs.Path;
@@ -56,14 +53,16 @@ import org.apache.slider.providers.agent.application.metadata.Service;
 import org.apache.slider.server.appmaster.model.mock.MockContainerId;
 import org.apache.slider.server.appmaster.model.mock.MockFileSystem;
 import org.apache.slider.server.appmaster.model.mock.MockNodeId;
-import org.apache.slider.server.appmaster.state.AppState;
+import org.apache.slider.server.appmaster.state.ProviderAppState;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
+import org.apache.slider.server.appmaster.web.rest.agent.CommandReport;
 import org.apache.slider.server.appmaster.web.rest.agent.ComponentStatus;
 import org.apache.slider.server.appmaster.web.rest.agent.HeartBeat;
 import org.apache.slider.server.appmaster.web.rest.agent.HeartBeatResponse;
 import org.apache.slider.server.appmaster.web.rest.agent.Register;
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationResponse;
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationStatus;
+import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -204,7 +203,7 @@ public class TestAgentProviderService {
     StateAccessForProviders access = createNiceMock(StateAccessForProviders.class);
 
     AgentProviderService mockAps = Mockito.spy(aps);
-    doReturn(access).when(mockAps).getStateAccessor();
+    doReturn(access).when(mockAps).getAmState();
     doReturn("scripts/hbase_master.py").when(mockAps).getScriptPathFromMetainfo(anyString());
     Metainfo metainfo = new Metainfo();
     metainfo.addService(new Service());
@@ -244,10 +243,8 @@ public class TestAgentProviderService {
                                           resourceComponent,
                                           appComponent,
                                           containerTmpDirPath);
-    } catch (SliderException he) {
-      log.warn(he.getMessage());
-    } catch (IOException ioe) {
-      log.warn(ioe.getMessage());
+    } catch (SliderException | IOException he) {
+      log.warn("{}", he, he);
     }
 
     Register reg = new Register();
@@ -267,7 +264,7 @@ public class TestAgentProviderService {
   @Test
   public void testRoleHostMapping() throws Exception {
     AgentProviderService aps = new AgentProviderService();
-    StateAccessForProviders appState = new AppState(null) {
+    StateAccessForProviders appState = new ProviderAppState("undefined", null) {
       @Override
       public ClusterDescription getClusterStatus() {
         ClusterDescription cd = new ClusterDescription();
@@ -304,8 +301,8 @@ public class TestAgentProviderService {
       }
     };
 
-    aps.setStateAccessor(appState);
-    Map<String, String> tokens = new HashMap<String, String>();
+    aps.setAmState(appState);
+    Map<String, String> tokens = new HashMap<>();
     aps.addRoleRelatedTokens(tokens);
     Assert.assertEquals(2, tokens.size());
     Assert.assertEquals("FIRST_HOST", tokens.get("${FIRST_ROLE_HOST}"));
@@ -486,7 +483,7 @@ public class TestAgentProviderService {
     StateAccessForProviders access = createNiceMock(StateAccessForProviders.class);
 
     AgentProviderService mockAps = Mockito.spy(aps);
-    doReturn(access).when(mockAps).getStateAccessor();
+    doReturn(access).when(mockAps).getAmState();
     doReturn(metainfo).when(mockAps).getApplicationMetainfo(any(SliderFileSystem.class), anyString());
 
     try {
@@ -662,10 +659,8 @@ public class TestAgentProviderService {
                                                                 anyString(),
                                                                 any(HeartBeatResponse.class),
                                                                 anyString());
-    } catch (SliderException he) {
+    } catch (SliderException | IOException he) {
       log.warn(he.getMessage());
-    } catch (IOException ioe) {
-      log.warn(ioe.getMessage());
     }
   }
 
@@ -677,7 +672,7 @@ public class TestAgentProviderService {
 
     StateAccessForProviders access = createNiceMock(StateAccessForProviders.class);
     AgentProviderService mockAps = Mockito.spy(aps);
-    doReturn(access).when(mockAps).getStateAccessor();
+    doReturn(access).when(mockAps).getAmState();
 
     AggregateConf aggConf = new AggregateConf();
     ConfTreeOperations treeOps = aggConf.getAppConfOperations();

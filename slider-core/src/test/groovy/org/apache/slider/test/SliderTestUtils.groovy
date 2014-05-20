@@ -44,6 +44,7 @@ import org.apache.slider.core.exceptions.WaitTimeoutException
 import org.apache.slider.core.main.ServiceLaunchException
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.persist.JsonSerDeser
+import org.apache.slider.core.registry.docstore.PublishedConfigSet
 import org.apache.slider.core.registry.info.ServiceInstanceData
 import org.apache.slider.server.services.curator.CuratorServiceInstance
 import org.junit.Assert
@@ -375,6 +376,10 @@ class SliderTestUtils extends Assert {
 
   public static String appendToURL(String base, String path) {
     return SliderUtils.appendToURL(base, path)
+  }
+
+  public static String appendToURL(String base, String... paths) {
+    return SliderUtils.appendToURL(base, paths)
   }
 
   /**
@@ -717,5 +722,12 @@ class SliderTestUtils extends Assert {
       time = defValMillis
     }
     return time;
+  }
+
+  def dumpConfigurationSet(PublishedConfigSet confSet) {
+    confSet.keys().each { String key ->
+      def config = confSet.get(key)
+      log.info "$key -- ${config.description}"
+    }
   }
 }

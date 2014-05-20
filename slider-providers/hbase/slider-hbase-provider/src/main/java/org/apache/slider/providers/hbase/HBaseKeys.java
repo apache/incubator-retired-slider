@@ -67,8 +67,11 @@ public interface HBaseKeys {
   String HBASE_LOG_DIR = "HBASE_LOG_DIR";
 
   String HBASE_HEAPSIZE = "HBASE_HEAPSIZE"; 
-  String HBASE_GC_OPTS = "SERVER_GC_OPTS"; 
+  String HBASE_GC_OPTS = "SERVER_GC_OPTS";
 
+  String PROPAGATED_CONFDIR = "PROPAGATED_CONFDIR";
+  String HBASE_SERVICE_TYPE = "org.apache.hbase";
+  String HBASE_SITE_PUBLISHED_CONFIG = "hbase-site";
 }
 
 

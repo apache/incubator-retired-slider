@@ -26,6 +26,7 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.tools.ConfigHelper;
 import org.apache.slider.common.tools.SliderFileSystem;
+import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.MapOperations;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
@@ -42,7 +43,6 @@ import org.apache.slider.providers.ProviderCore;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.agent.AgentKeys;
 import org.apache.slider.server.appmaster.PublishedArtifacts;
-import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.RestPaths;
 import org.apache.slider.server.services.utility.EventCallback;
 
@@ -54,7 +54,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_AGENTS;
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_MANAGEMENT;
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_PUBLISHER;
 
@@ -117,34 +116,31 @@ public class SliderAMProviderService extends AbstractProviderService implements
 
     // now publish site.xml files
     YarnConfiguration defaultYarnConfig = new YarnConfiguration();
-    stateAccessor.getPublishedConfigurations().put(
+    amState.getPublishedSliderConfigurations().put(
         PublishedArtifacts.COMPLETE_CONFIG,
         new PublishedConfiguration(
             "Complete slider application settings",
             getConfig(), getConfig())
     );
-    stateAccessor.getPublishedConfigurations().put(
+    amState.getPublishedSliderConfigurations().put(
         PublishedArtifacts.YARN_SITE_CONFIG,
         new PublishedConfiguration(
             "YARN site settings",
             ConfigHelper.loadFromResource("yarn-site.xml"),
-            defaultYarnConfig)
-    );
+            defaultYarnConfig) );
 
-    stateAccessor.getPublishedConfigurations().put(
+    amState.getPublishedSliderConfigurations().put(
         PublishedArtifacts.CORE_SITE_CONFIG,
         new PublishedConfiguration(
             "Core site settings",
             ConfigHelper.loadFromResource("core-site.xml"),
-            defaultYarnConfig)
-    );
-    stateAccessor.getPublishedConfigurations().put(
+            defaultYarnConfig) );
+    amState.getPublishedSliderConfigurations().put(
         PublishedArtifacts.HDFS_SITE_CONFIG,
         new PublishedConfiguration(
             "HDFS site settings",
             ConfigHelper.loadFromResource("hdfs-site.xml"),
-            new HdfsConfiguration(true))
-    );
+            new HdfsConfiguration(true)) );
 
 
     try {
@@ -158,34 +154,30 @@ public class SliderAMProviderService extends AbstractProviderService implements
           CustomRegistryConstants.MANAGEMENT_REST_API,
           new RegisteredEndpoint(
               new URL(amWebAPI, SLIDER_PATH_MANAGEMENT),
-              "Management REST API")
-      );
+              "Management REST API") );
 
       externalView.endpoints.put(
           CustomRegistryConstants.REGISTRY_REST_API,
           new RegisteredEndpoint(
               new URL(amWebAPI, RestPaths.SLIDER_PATH_REGISTRY + "/" +
                                 RestPaths.REGISTRY_SERVICE),
-              "Registry Web Service"
-          )
-      );
+              "Registry Web Service" ) );
 
       URL publisherURL = new URL(amWebAPI, SLIDER_PATH_PUBLISHER);
       externalView.endpoints.put(
           CustomRegistryConstants.PUBLISHER_REST_API,
           new RegisteredEndpoint(
               publisherURL,
-              "Publisher Service")
-      );
+              "Publisher Service") );
       
     /*
      * Set the configurations URL.
      */
-      externalView.configurationsURL = publisherURL.toExternalForm();
+      externalView.configurationsURL = SliderUtils.appendToURL(
+          publisherURL.toExternalForm(), RestPaths.SLIDER_CONFIGSET);
 
     } catch (URISyntaxException e) {
       throw new IOException(e);
     }
-
   }
 }
