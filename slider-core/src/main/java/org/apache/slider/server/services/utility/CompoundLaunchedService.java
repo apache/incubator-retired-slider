@@ -19,9 +19,9 @@
 package org.apache.slider.server.services.utility;
 
 import com.google.common.base.Preconditions;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.Service;
-import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.main.LauncherExitCodes;
 import org.apache.slider.core.main.RunService;
@@ -52,11 +52,11 @@ public class CompoundLaunchedService extends CompoundService
    * @return
    */
   protected static boolean isUnset(String s) {
-    return SliderUtils.isUnset(s);
+    return StringUtils.isEmpty(s);
   }
 
   protected static boolean isSet(String s) {
-    return SliderUtils.isSet(s);
+    return StringUtils.isNotEmpty(s);
   }
 
   protected String[] getArgv() {
