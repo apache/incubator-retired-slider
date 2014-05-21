@@ -36,6 +36,40 @@ size of managed applications consistent with the specified configuration, even
 in the face of failures of servers in the cluster -as well as parts of the
 application itself
 
+## Open-Source Development
+
+Slider is an open source project developed under the auspices of the [Apache Software Foundation](http://apache.org).
+
+We welcome and encourage everyone using Slider to get involved!
+
+### Mailing Lists
+
+We have a single mailing list for developers and users of Slider: dev@slider.incubator.apache.org
+
+1. You can subscribe to this by emailing dev-subscribe@slider.incubator.apache.org from the
+email account to which you wish to subscribe from -and follow the instructions returned.
+1. You can unsubscribe later by emailing dev-unsubscribe@slider.incubator.apache.org
+
+There is a mailing list of every commit to the source code repository, commits@slider.incubator.apache.org.
+This is generally only of interest to active developers.
+
+
+### Bug reports
+
+Bug reports and other issues can be filed on the [Apache Jira](https://issues.apache.org/jira/) server.
+Please use the SLIDER project for filing the issues.
+
+### Source code access
+
+Read-only:
+
+*  [https://git.apache.org/repos/asf/incubator-slider.git](https://git.apache.org/repos/asf/incubator-slider.git)
+*  [https://github.com/apache/incubator-slider.git](https://github.com/apache/incubator-slider.git)
+
+Read-write (for committers):
+
+*  [https://git-wip-us.apache.org/repos/asf/incubator-slider.git](https://git-wip-us.apache.org/repos/asf/incubator-slider.git)
+  
 
 # License
 
