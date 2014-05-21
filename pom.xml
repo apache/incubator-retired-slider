@@ -347,6 +347,7 @@
             <exclude>**/httpfs-signature.secret</exclude>
             <exclude>**/dfs.exclude</exclude>
             <exclude>**/*.iml</exclude>
+            <exclude>DISCLAIMER</exclude>
           </excludes>
         </configuration>
       </plugin>
