@@ -63,7 +63,6 @@ public abstract class AbstractClientProvider extends Configured {
 
   /**
    * Validate the instance definition.
-   * @param clusterSpec
    */
   public void validateInstanceDefinition(AggregateConf instanceDefinition) throws
       SliderException {

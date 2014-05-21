@@ -70,6 +70,10 @@ public interface HBaseKeys {
   String HBASE_GC_OPTS = "SERVER_GC_OPTS";
 
   String PROPAGATED_CONFDIR = "PROPAGATED_CONFDIR";
+
+  /**
+   * Service type used in registry
+   */
   String HBASE_SERVICE_TYPE = "org.apache.hbase";
   String HBASE_SITE_PUBLISHED_CONFIG = "hbase-site";
 }

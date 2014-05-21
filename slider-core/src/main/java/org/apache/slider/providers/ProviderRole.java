@@ -49,10 +49,7 @@ public final class ProviderRole {
     }
 
     ProviderRole that = (ProviderRole) o;
-    if (!name.equals(that.name)) {
-      return false;
-    }
-    return true;
+    return name.equals(that.name);
   }
 
   @Override

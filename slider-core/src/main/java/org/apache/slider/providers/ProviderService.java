@@ -33,7 +33,6 @@ import org.apache.slider.core.main.ExitCodeProvider;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
-import org.apache.slider.server.services.curator.RegistryBinderService;
 import org.apache.slider.server.services.registry.RegistryViewForProviders;
 import org.apache.slider.server.services.utility.EventCallback;
 

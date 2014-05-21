@@ -26,7 +26,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Service instance data to serialize with JSON
+ * Service instance data to serialize with JSON.
+ * 
+ * The equality and hash codes are derived from the
+ * service type and ID, which aren't final so that JSON marshalling
+ * works. Do not change these fields if an instance is stored
+ * in a map
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
@@ -47,11 +52,53 @@ public class ServiceInstanceData implements Serializable {
    */
   public RegistryView externalView = new RegistryView();
 
+  public ServiceInstanceData() {
+  }
+
+  public ServiceInstanceData(String id, String serviceType) {
+    this.serviceType = serviceType;
+    this.id = id;
+  }
+
+  /**
+   * Instances are equal if they look after the same service type
+   * and name
+   * @param o other
+   * @return true if id and type match
+   */
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    ServiceInstanceData that = (ServiceInstanceData) o;
+
+    if (!id.equals(that.id)) {
+      return false;
+    }
+    if (!serviceType.equals(that.serviceType)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = serviceType.hashCode();
+    result = 31 * result + id.hashCode();
+    return result;
+  }
+
   @Override
   public String toString() {
     final StringBuilder sb =
         new StringBuilder("ServiceInstanceData{");
-    sb.append(", id='").append(id).append('\'');
+    sb.append("id='").append(id).append('\'');
     sb.append(", serviceType='").append(serviceType).append('\'');
     sb.append('}');
     return sb.toString();

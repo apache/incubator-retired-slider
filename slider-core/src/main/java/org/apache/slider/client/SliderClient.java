@@ -2187,7 +2187,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @throws IOException
    * @throws YarnException
    */
-  public List<String> listRegistryInstanceIDs() throws
+  public List<String> listRegistedSliderInstances() throws
       IOException,
       YarnException {
     try {
