@@ -107,7 +107,7 @@ public class HBaseClientProvider extends AbstractClientProvider implements
 
     MapOperations worker = appconf.getMandatoryComponent(HBaseKeys.ROLE_WORKER);
     
-    Map<String, String> sitexml = new HashMap<String, String>();
+    Map<String, String> sitexml = new HashMap<>();
 
     //map all cluster-wide site. options
     providerUtils.propagateSiteOptions(globalAppOptions, sitexml);

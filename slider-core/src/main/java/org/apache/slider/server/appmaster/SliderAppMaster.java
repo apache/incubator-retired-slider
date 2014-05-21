@@ -725,10 +725,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     List<String> serviceInstancesRunning = registry.instanceIDs(serviceName);
     log.info("service instances already running: {}", serviceInstancesRunning);
 
-    
-    ServiceInstanceData instanceData = new ServiceInstanceData();
-    instanceData.id = registryId;
-    instanceData.serviceType = appServiceType;
+
+    ServiceInstanceData instanceData = new ServiceInstanceData(registryId,
+        appServiceType);
 
 
     // IPC services
@@ -750,10 +749,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // push the registration info to ZK
 
     registry.registerSelf(
-        appServiceType,
-        registryId,
-        amWebAPI,
-        instanceData);
+        instanceData, amWebAPI
+    );
   }
 
   /**

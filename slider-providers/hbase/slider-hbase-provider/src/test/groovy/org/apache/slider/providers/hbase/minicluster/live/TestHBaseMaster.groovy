@@ -84,11 +84,15 @@ class TestHBaseMaster extends HBaseMiniClusterTestBase {
 
     List<CuratorServiceInstance<ServiceInstanceData>> instances =
         client.listRegistryInstances();
-    def hbaseService = registryService.findByID(
-        instances,
-        HBaseKeys.HBASE_SERVICE_TYPE)
+
+    def hbaseInstances = registryService.findInstances( HBaseKeys.HBASE_SERVICE_TYPE, null)
+    assert hbaseInstances.size() == 1
+    def hbaseService = hbaseInstances[0]
     assert hbaseService
-    RegistryRetriever retriever = new RegistryRetriever(hbaseService.payload)
+    def hbaseServiceData = hbaseService.payload
+    log.info "HBase service 0 == $hbaseServiceData"
+
+    RegistryRetriever retriever = new RegistryRetriever(hbaseServiceData)
     log.info retriever.toString()
     assert retriever.hasConfigurations(true)
     PublishedConfigSet externalConfSet = retriever.getConfigurations(true)
