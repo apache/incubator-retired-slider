@@ -23,6 +23,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
+import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
@@ -156,6 +157,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    */
   public SliderClient() {
     super("Slider Client");
+    new HdfsConfiguration();
+    new YarnConfiguration();
   }
 
   @Override

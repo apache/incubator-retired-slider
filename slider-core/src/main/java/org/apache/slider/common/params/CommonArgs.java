@@ -73,7 +73,7 @@ public abstract class CommonArgs extends ArgOps implements SliderActions,
   /**
    * fields
    */
-  public JCommander commander;
+  public final JCommander commander;
   private final String[] args;
 
   private AbstractActionArgs coreAction;

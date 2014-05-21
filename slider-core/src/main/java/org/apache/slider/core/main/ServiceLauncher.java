@@ -83,7 +83,7 @@ public class ServiceLauncher<S extends Service>
    * Name of the "--conf" argument. 
    */
   public static final String ARG_CONF = "--conf";
-  static int SHUTDOWN_TIME_ON_INTERRUPT = 30 * 1000;
+  static final int SHUTDOWN_TIME_ON_INTERRUPT = 30 * 1000;
 
   private volatile S service;
   private int serviceExitCode;
