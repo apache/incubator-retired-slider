@@ -695,14 +695,17 @@ class SliderTestUtils extends Assert {
 
   public static void dumpRegistryInstanceIDs(List<String> instanceIds) {
     describe "service registry instance IDs"
-    log.info("number of instanceIds: ${instanceIds.size()}")
-    instanceIds.each { String it -> log.info(it) }
+    dumpCollection(instanceIds)
   }
 
-  public static void dumpRegistryNames(Collection<String> names) {
-    describe "service registry names"
-    log.info("number of names: ${names.size()}")
-    names.each { String it -> log.info(it) }
+  public static void dumpRegistryServiceTypes(Collection<String> entries) {
+    describe "service registry types"
+    dumpCollection(entries)
+  }
+
+  def static void dumpCollection(Collection<String> entries) {
+    log.info("number of entries: ${entries.size()}")
+    entries.each { String it -> log.info(it) }
   }
 
   /**

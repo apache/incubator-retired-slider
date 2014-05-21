@@ -229,7 +229,7 @@ public class ProviderUtils implements RoleKeys {
                                    String configName,
                                    Map<String,String> tokenMap) {
     String prefix = OptionKeys.SITE_XML_PREFIX +
-                    (configName.length() > 0 ? configName + "." : "");
+                    (!configName.isEmpty() ? configName + "." : "");
     for (Map.Entry<String, String> entry : options.entrySet()) {
       String key = entry.getKey();
       if (key.startsWith(prefix)) {
@@ -294,7 +294,7 @@ public class ProviderUtils implements RoleKeys {
                                                                  FileNotFoundException {
     String path;
     File scriptFile;
-    if (imagePath!=null) {
+    if (imagePath != null) {
       File tarball = new File(SliderKeys.LOCAL_TARBALL_INSTALL_SUBDIR);
       scriptFile = findBinScriptInExpandedArchive(tarball, bindir, script);
       // now work back from the script to build the relative path
@@ -418,7 +418,7 @@ public class ProviderUtils implements RoleKeys {
     }
 
     log.debug("Found {} entries in {}", ls.length, base);
-    List<File> directories = new LinkedList<File>();
+    List<File> directories = new LinkedList<>();
     StringBuilder dirs = new StringBuilder();
     for (File file : ls) {
       log.debug("{}", false);

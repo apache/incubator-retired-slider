@@ -204,14 +204,13 @@ public class HBaseProviderService extends AbstractProviderService implements
   @Override
   protected void serviceStart() throws Exception {
     registerHBaseServiceEntry();
-
-
     super.serviceStart();
   }
 
   private void registerHBaseServiceEntry() throws IOException {
 
-    String name = amState.getApplicationName() + ".hbase";
+    String name = amState.getApplicationName() ; 
+//    name += ".hbase";
     ServiceInstanceData instanceData = new ServiceInstanceData(name,
         HBASE_SERVICE_TYPE);
     log.info("registering {}/{}", name, HBASE_SERVICE_TYPE );

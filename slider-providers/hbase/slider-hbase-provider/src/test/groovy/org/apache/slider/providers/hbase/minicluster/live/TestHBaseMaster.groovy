@@ -80,7 +80,7 @@ class TestHBaseMaster extends HBaseMiniClusterTestBase {
     describe "service registry names"
     SliderRegistryService registryService = client.registry
     def names = registryService.getServiceTypes();
-    dumpRegistryNames(names)
+    dumpRegistryServiceTypes(names)
 
     List<CuratorServiceInstance<ServiceInstanceData>> instances =
         client.listRegistryInstances();
@@ -91,6 +91,15 @@ class TestHBaseMaster extends HBaseMiniClusterTestBase {
     assert hbaseService
     def hbaseServiceData = hbaseService.payload
     log.info "HBase service 0 == $hbaseServiceData"
+    assert hbaseServiceData.id 
+    assert hbaseServiceData.serviceType == HBaseKeys.HBASE_SERVICE_TYPE
+
+    hbaseInstances = registryService.findInstances(
+        HBaseKeys.HBASE_SERVICE_TYPE,
+        clustername)
+    assert hbaseInstances.size() == 1
+    def hbaseServiceData2 = hbaseInstances[0].payload
+    assert hbaseServiceData == hbaseServiceData2
 
     RegistryRetriever retriever = new RegistryRetriever(hbaseServiceData)
     log.info retriever.toString()

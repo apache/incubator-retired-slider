@@ -22,6 +22,7 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.client.SliderClient
+import org.apache.slider.providers.hbase.HBaseKeys
 import org.apache.slider.providers.hbase.minicluster.HBaseMiniClusterTestBase
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.registry.info.ServiceInstanceData
@@ -41,8 +42,10 @@ class TestTwoLiveClusters extends HBaseMiniClusterTestBase {
    */
   @Test
   public void testTwoLiveClusters() throws Throwable {
-    createMiniCluster("TestTwoLiveClusters", configuration, 1, true)
-    String clustername1 = "testtwoliveclusters-a"
+    def name = "test_two_live_clusters"
+    createMiniCluster(name, configuration, 1, true)
+
+    String clustername1 = name + "-1"
     //now launch the cluster
     int regionServerCount = 1
     ServiceLauncher<SliderClient> launcher = createHBaseCluster(clustername1, regionServerCount, [], true, true) 
@@ -59,7 +62,7 @@ class TestTwoLiveClusters extends HBaseMiniClusterTestBase {
     waitForHBaseRegionServerCount(sliderClient, clustername1, 1, hbaseClusterStartupToLiveTime)
 
     //now here comes cluster #2
-    String clustername2 = "testtwoliveclusters-b"
+    String clustername2 = name + "-2"
 
 
     String zkpath = "/$clustername2"
@@ -83,20 +86,29 @@ class TestTwoLiveClusters extends HBaseMiniClusterTestBase {
     describe "service registry names"
     SliderRegistryService registry = cluster2Client.registry
     def names = registry.getServiceTypes();
-    dumpRegistryNames(names)
+    dumpRegistryServiceTypes(names)
 
-    List<String> instanceIds = sliderClient.listRegistryInstanceIDs()
+    List<String> instanceIds = sliderClient.listRegistedSliderInstances()
 
 
     dumpRegistryInstanceIDs(instanceIds)
-    assert names.size() == 1
+    assert names.size() == 2
     assert instanceIds.size() == 2
 
 
-    List<CuratorServiceInstance<ServiceInstanceData>> instances = sliderClient.listRegistryInstances(
-    )
+    List<CuratorServiceInstance<ServiceInstanceData>> instances =
+        sliderClient.listRegistryInstances()
     dumpRegistryInstances(instances)
     assert instances.size() == 2
+
+    def hbaseInstances = registry.findInstances(
+        HBaseKeys.HBASE_SERVICE_TYPE, null)
+    assert hbaseInstances.size() == 2
+    def hbase1ServiceData = registry.findInstance(
+        HBaseKeys.HBASE_SERVICE_TYPE, clustername1).payload
+    def hbase2ServiceData = registry.findInstance(
+        HBaseKeys.HBASE_SERVICE_TYPE, clustername2).payload
+    assert !(hbase1ServiceData == hbase2ServiceData)
 
     clusterActionFreeze(cluster2Client, clustername2,"freeze cluster 2")
     clusterActionFreeze(sliderClient, clustername1,"Freeze cluster 1")

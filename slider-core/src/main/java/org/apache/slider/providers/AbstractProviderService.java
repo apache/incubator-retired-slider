@@ -87,9 +87,9 @@ public abstract class AbstractProviderService
 
   @Override
   public void bind(StateAccessForProviders stateAccessor,
-      RegistryViewForProviders registry) {
+      RegistryViewForProviders reg) {
     this.amState = stateAccessor;
-    this.registry = registry;
+    this.registry = reg;
   }
 
   @Override

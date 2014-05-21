@@ -209,7 +209,7 @@ public class HBaseClientProvider extends AbstractClientProvider implements
     }
   }
 
-  private static Set<String> knownRoleNames = new HashSet<String>();
+  private static Set<String> knownRoleNames = new HashSet<>();
   static {
     List<ProviderRole> roles = HBaseRoles.getRoles();
     knownRoleNames.add(SliderKeys.COMPONENT_AM);
@@ -256,7 +256,7 @@ public class HBaseClientProvider extends AbstractClientProvider implements
 
     // add any and all dependency files
     Map<String, LocalResource> providerResources =
-        new HashMap<String, LocalResource>();
+        new HashMap<>();
 
     ProviderUtils.addProviderJar(providerResources,
         this,
