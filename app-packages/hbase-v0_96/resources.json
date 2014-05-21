@@ -13,7 +13,7 @@
     },
     "HBASE_REGIONSERVER": {
       "yarn.role.priority": "2",
-      "yarn.omponent.instances": "1"
+      "yarn.component.instances": "1"
     }
   }
 }

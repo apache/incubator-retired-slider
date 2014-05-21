@@ -54,6 +54,9 @@ client_jaas_config_file = default('hbase_client_jaas_config_file', format("{conf
 master_jaas_config_file = default('hbase_master_jaas_config_file', format("{conf_dir}/hbase_master_jaas.conf"))
 regionserver_jaas_config_file = default('hbase_regionserver_jaas_config_file', format("{conf_dir}/hbase_regionserver_jaas.conf"))
 
+ganglia_server_host = default('/configurations/global/ganglia_server_host', '')
+ganglia_server_port = default('/configurations/global/ganglia_server_port', '8663')
+
 if security_enabled:
   
   _use_hostname_in_principal = default('instance_name', True)

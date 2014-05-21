@@ -80,7 +80,11 @@ def hbase(name=None # 'master' or 'regionserver' or 'client'
       group = params.user_group
     )
   
-  hbase_TemplateConfig( 'hbase-env.sh')     
+  hbase_TemplateConfig( 'hbase-env.sh')
+
+  hbase_TemplateConfig( params.metric_prop_file_name,
+                        tag = 'GANGLIA-MASTER' if name == 'master' else 'GANGLIA-RS'
+  )
        
   if params.security_enabled:
     hbase_TemplateConfig( format("hbase_{name}_jaas.conf"))
