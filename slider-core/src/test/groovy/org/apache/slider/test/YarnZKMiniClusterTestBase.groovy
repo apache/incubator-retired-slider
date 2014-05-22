@@ -24,8 +24,8 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.io.IOUtils
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.common.SliderXmlConfKeys
-import org.apache.slider.core.registry.zk.BlockingZKWatcher
-import org.apache.slider.core.registry.zk.ZKIntegration
+import org.apache.slider.core.zk.BlockingZKWatcher
+import org.apache.slider.core.zk.ZKIntegration
 
 import java.util.concurrent.atomic.AtomicBoolean
 

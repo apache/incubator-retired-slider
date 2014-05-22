@@ -44,7 +44,7 @@ import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.common.tools.SliderUtils;
-import org.apache.slider.core.registry.zk.BlockingZKWatcher;
+import org.apache.slider.core.zk.BlockingZKWatcher;
 import org.apache.slider.common.tools.ConfigHelper;
 import org.apache.slider.server.services.utility.EventCallback;
 import org.apache.slider.server.services.utility.EventNotifyingService;
@@ -56,7 +56,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;

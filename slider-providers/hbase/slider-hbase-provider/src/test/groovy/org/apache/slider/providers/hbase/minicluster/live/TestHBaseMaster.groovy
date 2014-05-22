@@ -27,7 +27,7 @@ import org.apache.slider.core.registry.docstore.PublishedConfigSet
 import org.apache.slider.core.registry.info.ServiceInstanceData
 import org.apache.slider.core.registry.retrieve.RegistryRetriever
 import org.apache.slider.providers.hbase.HBaseKeys
-import org.apache.slider.core.registry.zk.ZKIntegration
+import org.apache.slider.core.zk.ZKIntegration
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.client.SliderClient
 import org.apache.slider.providers.hbase.minicluster.HBaseMiniClusterTestBase

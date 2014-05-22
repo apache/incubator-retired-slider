@@ -21,7 +21,13 @@
     <service>
       <name>ACCUMULO</name>
       <comment>
-        The Apache Accumulo is a robust, scalable, high performance data storage system.
+        The Apache Accumulo sorted, distributed key/value store is a robust,
+        scalable, high performance data storage system that features cell-based
+        access control and customizable server-side processing. It is based on
+        Google's BigTable design and is built on top of Apache Hadoop,
+        Zookeeper, and Thrift.
+        Requirements:
+        1. Ensure parent dir for path (accumulo-site/instance.dfs.dir) is accessible to the App owner.
       </comment>
       <version>1.5.1</version>
       <exportGroups>
@@ -29,7 +35,7 @@
           <name>QuickLinks</name>
           <exports>
             <export>
-              <name>Monitor</name>
+              <name>org.apache.slider.monitor</name>
               <value>http://${ACCUMULO_MONITOR_HOST}:${site.accumulo-site.monitor.port.client}</value>
             </export>
           </exports>

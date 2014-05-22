@@ -23,38 +23,82 @@ Instance configuration is a JSON formatted doc in the following form:
 
 
     {
-        "configurations": {
-            "app-global-config": {
-            },
-            "config-type-1": {
-            },
-            "config-type-2": {
-            },
-        }
+      "schema": "http://example.org/specification/v2.0.0",
+      "metadata": {
+      },
+      "global": {            
+      },
     }
 
-
-
-The configuration overrides are organized in a two level structure where name-value pairs are grouped on the basis of config types they belong to. App instantiator can provide arbitrary custom name-value pairs within a config type defined in the AppPackage or can create a completely new config type that does not exist in the AppAPackage. The interpretation of the configuration is entirely up to the command implementations present in the AppPackage. Slider will simply merge the configs with the InstanceConfiguration being higher priority than that default configuration and hand it off to the app commands.
-
-A sample config for hbase may be as follows:
-
+An appConfig.json contains the application configuration. The sample below shows configuration for HBase.
 
 
     {
-        "configurations": {
-            "hbase-log4j": {
-                "log4j.logger.org.apache.zookeeper": "INFO",
-                "log4j.logger.org.apache.hadoop.hbase": "DEBUG"
-            },
-            "hbase-site": {
-                "hbase.hstore.flush.retries.number": "120",
-                "hbase.regionserver.info.port": "",
-                "hbase.master.info.port": "60010"
-            }
+      "schema" : "http://example.org/specification/v2.0.0",
+      "metadata" : {
+      },
+      "global" : {
+          "config_types": "core-site,hdfs-site,hbase-site",
+          
+          "java_home": "/usr/jdk64/jdk1.7.0_45",
+          "package_list": "files/hbase-0.96.1-hadoop2-bin.tar",
+          
+          "site.global.app_user": "yarn",
+          "site.global.app_log_dir": "${AGENT_LOG_ROOT}/app/log",
+          "site.global.app_pid_dir": "${AGENT_WORK_ROOT}/app/run",
+          "site.global.security_enabled": "false",
+  
+          "site.hbase-site.hbase.hstore.flush.retries.number": "120",
+          "site.hbase-site.hbase.client.keyvalue.maxsize": "10485760",
+          "site.hbase-site.hbase.hstore.compactionThreshold": "3",
+          "site.hbase-site.hbase.rootdir": "${NN_URI}/apps/hbase/data",
+          "site.hbase-site.hbase.tmp.dir": "${AGENT_WORK_ROOT}/work/app/tmp",
+          "site.hbase-site.hbase.master.info.port": "${HBASE_MASTER.ALLOCATED_PORT}",
+          "site.hbase-site.hbase.regionserver.port": "0",
+  
+          "site.core-site.fs.defaultFS": "${NN_URI}",
+          "site.hdfs-site.dfs.namenode.https-address": "${NN_HOST}:50470",
+          "site.hdfs-site.dfs.namenode.http-address": "${NN_HOST}:50070"
+      }
     }
-    
+
+appConf.json allows you to pass in arbitrary set of configuration that Slider will forward to the application component instances.
+
+**Variable naming convention**
+In order to understand how the naming convention work, lets look at how the config is passed on to component commands. Slider agent recevies a structured bag of commands as input for all commands, INSTALL, CONFIGURE, START, etc. The command includes a section "configuration" which has config properties arranged into named property bags.
+
+* Variables of the form `site.xx.yy` translates to variables by the name `yy` within the group `xx` and are typically converted to site config files by the name `xx` containing variable `yy`. For example, `"site.hbase-site.hbase.regionserver.port":""` will be sent to the Slider-Agent as `"hbase-site" : { "hbase.regionserver.port": ""}` and app definition scripts can access all variables under `hbase-site` as a single property bag.
+* Similarly, `site.core-site.fs.defaultFS` allows you to pass in the default fs. *This specific variable is automatically made available by Slider but its shown here as an example.*
+* Variables of the form `site.global.zz` are sent in the same manner as other site variables except these variables are not expected to get translated to a site xml file. Usually, variables needed for template or other filter conditions (such as security_enabled = true/false) can be sent in as "global variable". 
+
+**slider variables**
+
+* Any config not of the form `site.xx.yy` are consumed by Slider itself. Some of the manadatory configuration are:
+  * `agent.conf`: location of the agent config file (typically, "/slider/agent/conf/agent.ini")
+  * `application.def`: location of the application definition package (typically, "/slider/hbase_v096.zip")
+  * `config_types`: list of config types sent to the containers (e.g. "core-site,hdfs-site,hbase-site")
+  * `java_home`: java home path (e.g. "/usr/jdk64/jdk1.7.0_45")
+  * `package_list`: location of the package relative to the root where AppPackage is installed (e.g. "files/hbase-0.96.1-hadoop2-bin.tar.gz"
+
+**dynamically allocated ports**
+
+Apps can ask port to be dynamically assigned by Slider or they can leave it as "0". If there is a need for advertising any listening endpoint then the ports can be marked such.
+
+For example, HBase master info port needs to be advertised so that jmx endpoint can be accessed. This is indicated by using a special value, of the form, ${COMPONENT_NAME.ALLOCATED_PORT}. E.g. "site.hbase-site.hbase.master.info.port": "${HBASE_MASTER.ALLOCATED_PORT}"
+
+[Application Definition](application_definition.md) describes how to advertise arbitrary set of properties that are dynamically finalized when application is activated.
+
+**configuraing an app for ganglia metrics**
+
+There is no set guideline for doing so. How an application emits metrics and how the metrics are emitted to the right place is completely defined by the application. In the following example, we hso how HBase app is configured to emit metrics to a ganglia server.
+
+Ganglia server lifecycle is not controlled by the app instance. So the app instance only needs to know where to emit the metrics. This is achieved by three global variables
+
+* "site.global.ganglia_server_host": "gangliaserver.my.org"
+* "site.global.ganglia_server_port": "8663"
+* "site.global.ganglia_server_id": "HBaseApplicationCluster3"
+
+All three variable values are user provided. It is also expected that a gmond server is available on host gangliaserver.my.org listening for metrics at port 8663 and is named "HBaseApplicationCluster3". Its the reponsibility of the ganglia server admin to ensure that the server is unique and is only receving metrics from the application instance.
 
 
-The above config overwrites few parameters in hbase-site and hbase-log4j files. Several config properties such as `hbase.zookeeper.quorum` for hbase may not be known to the user at the time of app instantiation. These configurations will be provided by the Slider infrastructure in a well-known form so that the app implementation can read and set them while instantiating component instances..
 

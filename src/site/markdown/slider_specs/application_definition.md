@@ -17,7 +17,7 @@
 
 # Application Definition
 
-App definition is a declarative definition of a YARN application describing its content. The AppDefinition is used in conjunction with the [AppPackage](application_package.md).
+App definition is a declarative definition of a YARN application describing its content. The AppDefinition is used in conjunction with the [AppPackage](application_package.md). Application definition is an XML file and is packaged as metainfo.xml.
 
 ## Structure
 
@@ -179,14 +179,4 @@ Each exportGroup contains one or more exports.
     
         </application>
       </metainfo>
-
-
-
-## Open Questions
-
-1. Applications may need some information from other applications or base services such as ZK, YARN, HDFS. Additionally, they may need a dedicated ZK node, a HDFS working folder, etc. How do we capture this requirement? There needs to be a well-known way to ask for these information e.g. fs.default.name, zk_hosts.
-
-2. Similar to the above there are common parameters such as `JAVA_HOME` and other environment variables. Application should be able to refer to these parameters and Slider should be able to provide them.
-
-3. Composite application definition: Composite application definition would require a spec that refers to this spec and binds multiple applications together.
 

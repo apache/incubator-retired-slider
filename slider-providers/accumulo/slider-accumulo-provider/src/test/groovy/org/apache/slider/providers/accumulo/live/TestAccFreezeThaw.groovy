@@ -25,7 +25,7 @@ import org.apache.slider.providers.accumulo.AccumuloConfigFileOptions
 import org.apache.slider.providers.accumulo.AccumuloKeys
 import org.apache.slider.client.SliderClient
 import org.apache.slider.providers.accumulo.AccumuloTestBase
-import org.apache.slider.core.registry.zk.ZKIntegration
+import org.apache.slider.core.zk.ZKIntegration
 import org.junit.Test
 
 @CompileStatic
