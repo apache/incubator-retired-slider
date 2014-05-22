@@ -21,8 +21,8 @@ package org.apache.slider.test
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.hbase.zookeeper.MiniZooKeeperCluster
 import org.apache.slider.common.tools.SliderUtils
+import org.apache.slider.core.zk.MiniZooKeeperCluster
 
 @Slf4j
 @CompileStatic
@@ -30,7 +30,6 @@ class MicroZKCluster implements Closeable {
 
   public static final String HOSTS = "127.0.0.1"
   MiniZooKeeperCluster zkCluster
-  File baseDir
   String zkBindingString
   Configuration conf
   int port
@@ -44,23 +43,20 @@ class MicroZKCluster implements Closeable {
   }
 
   void createCluster() {
-    zkCluster = new MiniZooKeeperCluster(conf)
-    baseDir = File.createTempFile("zookeeper", ".dir")
-    baseDir.delete()
-    baseDir.mkdirs()
-    port = zkCluster.startup(baseDir)
-    zkBindingString = HOSTS + ":" + port
+    zkCluster = new MiniZooKeeperCluster(1)
+    zkCluster.init(conf)
+    zkCluster.start()
+    zkBindingString = zkCluster.zkQuorum
     log.info("Created $this")
   }
 
   @Override
   void close() throws IOException {
-    zkCluster?.shutdown();
-    baseDir?.deleteDir()
+    zkCluster?.stop()
   }
 
   @Override
   String toString() {
-    return "Micro ZK cluster as $zkBindingString data=$baseDir"
+    return "Micro ZK cluster as $zkBindingString"
   }
 }
