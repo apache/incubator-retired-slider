@@ -32,9 +32,7 @@ public class ZookeeperUtils {
     String zkPort = Integer.toString(port);
     //parse the hosts
     String[] hostlist = zkHosts.split(",", 0);
-    String quorum = SliderUtils.join(hostlist, ":" + zkPort + ",");
-    //this quorum has a trailing comma
-    quorum = quorum.substring(0, quorum.length() - 1);
+    String quorum = SliderUtils.join(hostlist, ":" + zkPort + ",", false);
     return quorum;
   }
 

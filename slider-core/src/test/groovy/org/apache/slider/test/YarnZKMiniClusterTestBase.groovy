@@ -21,6 +21,7 @@ package org.apache.slider.test
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.io.IOUtils
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.core.registry.zk.BlockingZKWatcher
@@ -41,7 +42,7 @@ public abstract class YarnZKMiniClusterTestBase extends YarnMiniClusterTestBase 
   
   public void stopMiniCluster() {
     super.stopMiniCluster()
-    microZKCluster?.close()
+    IOUtils.closeStream(microZKCluster);
   }
 
   public ZKIntegration createZKIntegrationInstance(String zkQuorum,
