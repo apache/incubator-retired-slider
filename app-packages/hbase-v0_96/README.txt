@@ -5,10 +5,10 @@ Replace the placeholder tarball for Accumulo.
   rm package/files/hbase-0.96.1-hadoop2-bin.tar.gz.REPLACE
 
 Create a zip package at the root of the package (<slider enlistment>/app-packages/hbase-v0_96/) 
-  zip -r hbase-v096.zip .
+  zip -r hbase_v096.zip .
 
 Verify the content using  
-  unzip -l "$@" hbase-v096.zip
+  unzip -l "$@" hbase_v096.zip
 
 While appConfig.json and resources.json are not required for the package they work
 well as the default configuration for Slider apps. So its advisable that when you

@@ -21,8 +21,10 @@
     <service>
       <name>HBASE</name>
       <comment>
-        Apache HBase is the Hadoop database, a distributed, scalable, big data
-        store.
+        Apache HBase is the Hadoop database, a distributed, scalable, big data store.
+        Requirements:
+        1. Ensure parent dir for path (hbase-site/hbase.rootdir) is accessible to the App owner.
+        2. Ensure ZK root (hbase-site/zookeeper.znode.parent) is unique for the App instance.
       </comment>
       <version>0.96.0.2.1.1</version>
       <type>YARN-APP</type>
