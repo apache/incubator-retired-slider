@@ -41,11 +41,13 @@ Specifications
 
 The entry points to leverage Slider are:
 
-- [Specifications for AppPackage](application_package.html)
-- [Application Needs](application_needs.html)
-- [Specifications for Application Definition](application_definition.html)
-- [Specifications for Configuration](application_configuration.html)
-- [Specification of Resources](resource_specification.html)
-- [Specifications InstanceConfiguration](application_instance_configuration.html)
+- [Application Needs](application_needs.html) What it takes to be deployable by Slider. 
+- [Slider AppPackage](creating_app_definitions.html) Overview of how to create an Slider AppPackage.
+- [Specifications for AppPackage](application_package.html) Describes the structure of an AppPackage
+- [Specifications for Application Definition](application_definition.html) How to write metainfo.xml?
+- [Specifications for Configuration](application_configuration.html) How to create a template config file for an app?
+- [Specification of Resources](resource_specification.html) How to write a resource spec for an app?
+- [Specifications InstanceConfiguration](application_instance_configuration.html) How to write a template config for an app?
 - [Guidelines for Clients and Client Applications](canonical_scenarios.html)
 - [Documentation for "General Developer Guidelines"](app_developer_guideline.html)
+		
