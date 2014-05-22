@@ -107,7 +107,7 @@ public class AgentProviderService extends AbstractProviderService implements
   private AgentClientProvider clientProvider;
   private Map<String, ComponentInstanceState> componentStatuses = new HashMap<>();
   private AtomicInteger taskId = new AtomicInteger(0);
-  private Metainfo metainfo = null;
+  private volatile Metainfo metainfo = null;
   private ComponentCommandOrder commandOrder = null;
 
   public AgentProviderService() {
@@ -742,7 +742,7 @@ public class AgentProviderService extends AbstractProviderService implements
     //apply any port updates
     if (!this.getAllocatedPorts().isEmpty()) {
       for (String key : config.keySet()) {
-        if (this.getAllocatedPorts().keySet().contains(key)) {
+        if (this.getAllocatedPorts().containsKey(key)) {
           config.put(key, getAllocatedPorts().get(key));
         }
       }

@@ -35,7 +35,9 @@ public abstract class AbstractInputPropertiesValidator implements InputPropertie
   protected void validateComponentProperties(ConfTreeOperations props)
       throws BadConfigException {
     for (String compName : props.getComponentNames()) {
-      for (String key : props.getComponent(compName).keySet()) {
+      MapOperations mo = props.getComponent(compName);
+      if (mo == null) continue;
+      for (String key : mo.keySet()) {
         validatePropertyNamePrefix(key);
       }
     }
