@@ -32,12 +32,16 @@
           <name>QuickLinks</name>
           <exports>
             <export>
-              <name>JMX_Endpoint</name>
+              <name>org.apache.slider.jmx</name>
               <value>http://${HBASE_MASTER_HOST}:${site.hbase-site.hbase.master.info.port}/jmx</value>
             </export>
             <export>
-              <name>Master_Status</name>
+              <name>org.apache.slider.monitor</name>
               <value>http://${HBASE_MASTER_HOST}:${site.hbase-site.hbase.master.info.port}/master-status</value>
+            </export>
+            <export>
+              <name>org.apache.slider.metrics</name>
+              <value>http://${site.global.ganglia_server_host}/cgi-bin/rrd.py?c=${site.global.ganglia_server_id}</value>
             </export>
           </exports>
         </exportGroup>

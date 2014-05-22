@@ -29,7 +29,7 @@
           <name>QuickLinks</name>
           <exports>
             <export>
-              <name>Monitor</name>
+              <name>org.apache.slider.monitor</name>
               <value>http://${ACCUMULO_MONITOR_HOST}:${site.accumulo-site.monitor.port.client}</value>
             </export>
           </exports>
