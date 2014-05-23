@@ -39,16 +39,11 @@ import org.apache.slider.core.conf.MapOperations;
 import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.AbstractLauncher;
-import org.apache.slider.core.launch.CommandLineBuilder;
 import org.apache.slider.core.launch.JavaCommandLineBuilder;
 import org.apache.slider.providers.AbstractClientProvider;
 import org.apache.slider.providers.PlacementPolicy;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.jaxrs.JacksonJaxbJsonProvider;
-import org.codehaus.jackson.node.JsonNodeFactory;
-import org.codehaus.jackson.xc.JaxbAnnotationIntrospector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -171,11 +166,6 @@ public class SliderAMClientProvider extends AbstractClientProvider implements
       ServiceInstance.class,
       ServiceNames.class,
 
-      JacksonJaxbJsonProvider.class,
-      JsonFactory.class,
-      JsonNodeFactory.class,
-      JaxbAnnotationIntrospector.class,
-      
     };
     String[] jars =
       {
@@ -186,12 +176,6 @@ public class SliderAMClientProvider extends AbstractClientProvider implements
         "curator-client.jar",
         "curator-x-discovery.jar",
         "curator-x-discovery-service.jar",
-        
-        "jackson-jaxrs",
-        "jackson-core-asl",
-        "jackson-mapper-asl",
-        "jackson-xc",
-        
       };
     ProviderUtils.addDependencyJars(providerResources, fileSystem, tempPath,
                                     libdir, jars,
