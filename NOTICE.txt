@@ -1,22 +1,5 @@
 Apache Slider
-Copyright 2011-2014 The Apache Software Foundation
+Copyright 2007-2014 The Apache Software Foundation
 
 This product includes software developed at The Apache Software
 Foundation (http://www.apache.org/).
-
-Component slider-agent/src/test/python are under the following copyright:
-
-Copyright (c) 2003-2012, Michael Foord
-All rights reserved.
-
- 
-Resource management library derived from Kokki, which is under following copyright:
- 
-Copyright (c) 2009 Samuel Stauffer <samuel@descolada.com>
-All rights reserved.
-
-Jinja2, the templating library used by resource management library:
-
-Copyright (c) 2009 by the Jinja Team, see AUTHORS for more details.
-Some rights reserved.
-
