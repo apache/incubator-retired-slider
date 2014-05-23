@@ -405,26 +405,30 @@ public class TestAgentProviderService {
   public void testMetainfoParsing() throws Exception {
     InputStream metainfo_1 = new ByteArrayInputStream(metainfo_1_str.getBytes());
     Metainfo metainfo = new MetainfoParser().parse(metainfo_1);
-    assert metainfo.getServices().size() == 1;
+    Assert.assertEquals(metainfo.getServices().size(), 1);
     Service service = metainfo.getServices().get(0);
     log.info("Service: " + service.toString());
-    assert service.getName().equals("HBASE");
-    assert service.getComponents().size() == 2;
+    Assert.assertEquals(service.getName(), "HBASE");
+    Assert.assertEquals(service.getComponents().size(), 2);
     List<Component> components = service.getComponents();
     int found = 0;
     for (Component component : components) {
       if (component.getName().equals("HBASE_MASTER")) {
-        assert component.getCommandScript().getScript().equals("scripts/hbase_master.py");
-        assert component.getCategory().equals("MASTER");
+        Assert.assertEquals(component.getMinInstanceCount(), "1");
+        Assert.assertEquals(component.getMaxInstanceCount(), "2");
+        Assert.assertEquals(component.getCommandScript().getScript(), "scripts/hbase_master.py");
+        Assert.assertEquals(component.getCategory(), "MASTER");
         found++;
       }
       if (component.getName().equals("HBASE_REGIONSERVER")) {
-        assert component.getCommandScript().getScript().equals("scripts/hbase_regionserver.py");
-        assert component.getCategory().equals("SLAVE");
+        Assert.assertEquals(component.getMinInstanceCount(), "1");
+        Assert.assertNull(component.getMaxInstanceCount());
+        Assert.assertEquals(component.getCommandScript().getScript(), "scripts/hbase_regionserver.py");
+        Assert.assertEquals(component.getCategory(), "SLAVE");
         found++;
       }
     }
-    assert found == 2;
+    Assert.assertEquals(found, 2);
 
     assert service.getExportGroups().size() == 1;
     List<ExportGroup> egs = service.getExportGroups();
@@ -436,19 +440,19 @@ public class TestAgentProviderService {
     for (Export export : eg.getExports()) {
       if (export.getName().equals("JMX_Endpoint")) {
         found++;
-        assert export.getValue().equals(
+        Assert.assertEquals(export.getValue(),
             "http://${HBASE_MASTER_HOST}:${site.hbase-site.hbase.master.info.port}/jmx");
       }
       if (export.getName().equals("Master_Status")) {
         found++;
-        assert export.getValue().equals(
+        Assert.assertEquals(export.getValue(),
             "http://${HBASE_MASTER_HOST}:${site.hbase-site.hbase.master.info.port}/master-status");
       }
     }
-    assert found == 2;
+    Assert.assertEquals(found, 2);
 
     List<CommandOrder> cmdOrders = service.getCommandOrder();
-    assert cmdOrders.size() == 2;
+    Assert.assertEquals(cmdOrders.size(), 2);
     found = 0;
     for (CommandOrder co : service.getCommandOrder()) {
       if (co.getCommand().equals("HBASE_REGIONSERVER-START")) {
@@ -456,17 +460,17 @@ public class TestAgentProviderService {
         found++;
       }
       if (co.getCommand().equals("A-START")) {
-        assert co.getRequires().equals("B-STARTED");
+        Assert.assertEquals(co.getRequires(), "B-STARTED");
         found++;
       }
     }
-    assert found == 2;
+    Assert.assertEquals(found, 2);
 
     AgentProviderService aps = new AgentProviderService();
     AgentProviderService mockAps = Mockito.spy(aps);
     doReturn(metainfo).when(mockAps).getMetainfo();
     String scriptPath = mockAps.getScriptPathFromMetainfo("HBASE_MASTER");
-    assert scriptPath.equals("scripts/hbase_master.py");
+    Assert.assertEquals(scriptPath, "scripts/hbase_master.py");
 
     String metainfo_1_str_bad = "<metainfo>\n"
                                 + "  <schemaVersion>2.0</schemaVersion>\n"
@@ -479,7 +483,7 @@ public class TestAgentProviderService {
 
     metainfo_1 = new ByteArrayInputStream(metainfo_1_str_bad.getBytes());
     metainfo = new MetainfoParser().parse(metainfo_1);
-    assert metainfo == null;
+    Assert.assertNull(metainfo);
   }
 
   @Test
