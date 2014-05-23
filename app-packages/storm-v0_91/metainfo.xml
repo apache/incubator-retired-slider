@@ -46,6 +46,10 @@
 
       <commandOrders>
         <commandOrder>
+          <command>NIMBUS-START</command>
+          <requires>SUPERVISOR-INSTALLED,STORM_UI_SERVER-INSTALLED,DRPC_SERVER-INSTALLED,STORM_REST_API-INSTALLED</requires>
+        </commandOrder>
+        <commandOrder>
           <command>SUPERVISOR-START</command>
           <requires>NIMBUS-STARTED</requires>
         </commandOrder>
