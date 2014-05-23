@@ -125,6 +125,13 @@ class CustomServiceOrchestrator():
 
     if Constants.EXIT_CODE in ret and ret[Constants.EXIT_CODE] == 0:
       ret[Constants.ALLOCATED_PORTS] = allocated_port
+
+    # Irrespective of the outcome report the folder paths
+    if command_name == 'INSTALL':
+      ret[Constants.FOLDERS] = {
+        Constants.AGENT_LOG_ROOT : self.config.getLogPath(),
+        Constants.AGENT_WORK_ROOT : self.config.getWorkRootPath()
+      }
     return ret
 
 

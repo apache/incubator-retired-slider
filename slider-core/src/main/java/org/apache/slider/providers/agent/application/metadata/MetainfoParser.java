@@ -55,6 +55,7 @@ public class MetainfoParser {
     digester.addObjectCreate("*/component", Component.class);
     digester.addBeanPropertySetter("*/component/name");
     digester.addBeanPropertySetter("*/component/category");
+    digester.addBeanPropertySetter("*/component/publishConfig");
     digester.addSetNext("*/component", "addComponent");
 
     digester.addObjectCreate("*/commandScript", CommandScript.class);

@@ -24,3 +24,6 @@ Constants used by Slider Agent
 
 EXIT_CODE = "exitcode"
 ALLOCATED_PORTS = "allocated_ports"
+FOLDERS = "folders"
+AGENT_WORK_ROOT = "AGENT_WORK_ROOT"
+AGENT_LOG_ROOT = "AGENT_LOG_ROOT"

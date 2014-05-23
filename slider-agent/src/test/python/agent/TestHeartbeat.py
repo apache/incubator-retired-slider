@@ -64,7 +64,7 @@ class TestHeartbeat(TestCase):
     self.assertEquals(result['nodeStatus']['cause'], "NONE")
     self.assertEquals(result['nodeStatus']['status'], "HEALTHY")
     # result may or may NOT have an agentEnv structure in it
-    self.assertEquals((len(result) is 4) or (len(result) is 5), True)
+    self.assertEquals((len(result) is 5) or (len(result) is 6), True)
     self.assertEquals(not heartbeat.reports, True,
                       "Heartbeat should not contain task in progress")
 
@@ -132,10 +132,11 @@ class TestHeartbeat(TestCase):
     hb = heartbeat.build({}, 10)
     hb['hostname'] = 'hostname'
     hb['timestamp'] = 'timestamp'
+    hb['fqdn'] = 'fqdn'
     expected = {'nodeStatus':
                   {'status': 'HEALTHY',
                    'cause': 'NONE'},
-                'timestamp': 'timestamp', 'hostname': 'hostname',
+                'timestamp': 'timestamp', 'hostname': 'hostname', 'fqdn': 'fqdn',
                 'responseId': 10, 'reports': [
       {'status': 'IN_PROGRESS', 'roleCommand': u'INSTALL',
        'serviceName': u'HDFS', 'role': u'DATANODE', 'actionId': '1-1',

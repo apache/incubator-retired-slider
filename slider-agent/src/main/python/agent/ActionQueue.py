@@ -168,6 +168,8 @@ class ActionQueue(threading.Thread):
         roleResult['configurationTags'] = command['configurationTags']
       if Constants.ALLOCATED_PORTS in commandresult:
         roleResult['allocatedPorts'] = commandresult[Constants.ALLOCATED_PORTS]
+      if Constants.FOLDERS in commandresult:
+        roleResult['folders'] = commandresult[Constants.FOLDERS]
     self.commandStatuses.put_command_status(command, roleResult)
 
   # Store action result to agent response queue
