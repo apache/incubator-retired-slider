@@ -18,7 +18,7 @@
     "site.global.user_group": "hadoop",
     "site.global.security_enabled": "false",
     "site.global.ganglia_server_host": "${NN_HOST}",
-    "site.global.ganglia_server_port": "8663",
+    "site.global.ganglia_server_port": "8667",
     "site.global.ganglia_server_id": "Application1",
     "site.hbase-site.hbase.hstore.flush.retries.number": "120",
     "site.hbase-site.hbase.client.keyvalue.maxsize": "10485760",

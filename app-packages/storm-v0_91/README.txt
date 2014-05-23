@@ -1,14 +1,14 @@
 How to create a Slider package?
 
-Replace the placeholder tarball for HBase.
-  cp ~/Downloads/hbase-0.96.1-hadoop2-bin.tar.gz package/files/
-  rm package/files/hbase-0.96.1-hadoop2-bin.tar.gz.REPLACE
+Replace the placeholder tarball for Storm.
+  cp ~/Downloads/apache-storm-0.9.1.2.1.1.0-237.tar.gz package/files/
+  rm package/files/apache-storm-0.9.1.2.1.1.0-237.tar.gz.REPLACE
 
-Create a zip package at the root of the package (<slider enlistment>/app-packages/hbase-v0_96/) 
-  zip -r hbase_v096.zip .
+Create a zip package at the root of the package (<slider enlistment>/app-packages/storm-v0_91/) 
+  zip -r storm_v091.zip .
 
 Verify the content using  
-  unzip -l "$@" hbase_v096.zip
+  unzip -l "$@" storm_v091.zip
 
 While appConfig.json and resources.json are not required for the package they work
 well as the default configuration for Slider apps. So its advisable that when you

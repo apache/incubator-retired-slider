@@ -168,6 +168,44 @@ public class TestAgentProviderService {
                                                + "  </services>\n"
                                                + "</metainfo>";
 
+
+  private static final String metainfo_2_str = "<metainfo>\n"
+                                               + "  <schemaVersion>2.0</schemaVersion>\n"
+                                               + "  <services>\n"
+                                               + "    <service>\n"
+                                               + "      <name>HBASE</name>\n"
+                                               + "      <comment>\n"
+                                               + "        Apache HBase\n"
+                                               + "      </comment>\n"
+                                               + "      <version>0.96.0.2.1.1</version>\n"
+                                               + "      <type>YARN-APP</type>\n"
+                                               + "      <minHadoopVersion>2.1.0</minHadoopVersion>\n"
+                                               + "      <components>\n"
+                                               + "        <component>\n"
+                                               + "          <name>HBASE_MASTER</name>\n"
+                                               + "          <category>MASTER</category>\n"
+                                               + "          <publishConfig>true</publishConfig>\n"
+                                               + "          <minInstanceCount>1</minInstanceCount>\n"
+                                               + "          <maxInstanceCount>2</maxInstanceCount>\n"
+                                               + "          <commandScript>\n"
+                                               + "            <script>scripts/hbase_master.py</script>\n"
+                                               + "            <scriptType>PYTHON</scriptType>\n"
+                                               + "            <timeout>600</timeout>\n"
+                                               + "          </commandScript>\n"
+                                               + "        </component>\n"
+                                               + "        <component>\n"
+                                               + "          <name>HBASE_REGIONSERVER</name>\n"
+                                               + "          <category>SLAVE</category>\n"
+                                               + "          <minInstanceCount>1</minInstanceCount>\n"
+                                               + "          <commandScript>\n"
+                                               + "            <script>scripts/hbase_regionserver.py</script>\n"
+                                               + "            <scriptType>PYTHON</scriptType>\n"
+                                               + "          </commandScript>\n"
+                                               + "        </component>\n"
+                                               + "      </components>\n"
+                                               + "    </service>\n"
+                                               + "  </services>\n"
+                                               + "</metainfo>";
   @Test
   public void testRegistration() throws IOException {
 
@@ -445,6 +483,35 @@ public class TestAgentProviderService {
   }
 
   @Test
+  public void testMetaInfoRelatedOperations() throws Exception {
+    InputStream metainfo_1 = new ByteArrayInputStream(metainfo_1_str.getBytes());
+    Metainfo metainfo = new MetainfoParser().parse(metainfo_1);
+    InputStream metainfo_2 = new ByteArrayInputStream(metainfo_2_str.getBytes());
+    Metainfo metainfo2 = new MetainfoParser().parse(metainfo_2);
+    String role_hm = "HBASE_MASTER";
+    String role_hrs = "HBASE_REGIONSERVER";
+
+    AgentProviderService aps = new AgentProviderService();
+    AgentProviderService mockAps = Mockito.spy(aps);
+    doReturn(metainfo).when(mockAps).getMetainfo();
+
+    AgentProviderService mockAps2 = Mockito.spy(aps);
+    doReturn(metainfo2).when(mockAps2).getMetainfo();
+
+    Assert.assertTrue(mockAps.isMaster(role_hm));
+    Assert.assertFalse(mockAps.isMaster(role_hrs));
+    Assert.assertFalse(mockAps.canPublishConfig(role_hm));
+    Assert.assertFalse(mockAps.canPublishConfig(role_hrs));
+    Assert.assertFalse(mockAps.canAnyMasterPublishConfig());
+
+    Assert.assertTrue(mockAps2.isMaster(role_hm));
+    Assert.assertFalse(mockAps2.isMaster(role_hrs));
+    Assert.assertTrue(mockAps2.canPublishConfig(role_hm));
+    Assert.assertFalse(mockAps2.canPublishConfig(role_hrs));
+    Assert.assertTrue(mockAps2.canAnyMasterPublishConfig());
+  }
+
+  @Test
   public void testOrchastratedAppStart() throws IOException {
     // App has two components HBASE_MASTER and HBASE_REGIONSERVER
     // Start of HBASE_RS depends on the start of HBASE_MASTER
@@ -502,6 +569,11 @@ public class TestAgentProviderService {
           anyString(),
           anyString(),
           any(HeartBeatResponse.class));
+      doNothing().when(mockAps).publishComponentConfiguration(
+          anyString(),
+          anyString(),
+          anyCollection());
+
     } catch (SliderException e) {
     }
 
@@ -584,6 +656,7 @@ public class TestAgentProviderService {
       cr.setRole("HBASE_REGIONSERVER");
       cr.setRoleCommand("INSTALL");
       cr.setStatus("COMPLETED");
+      cr.setFolders(new HashMap<String, String>() {{put("a", "b");}});
       hb.setReports(Arrays.asList(cr));
       hbr = mockAps.handleHeartBeat(hb);
       Assert.assertEquals(3, hbr.getResponseId());
@@ -662,6 +735,11 @@ public class TestAgentProviderService {
     } catch (SliderException | IOException he) {
       log.warn(he.getMessage());
     }
+
+    Mockito.verify(mockAps, Mockito.times(1)).publishComponentConfiguration(
+        anyString(),
+        anyString(),
+        anyCollection());
   }
 
 

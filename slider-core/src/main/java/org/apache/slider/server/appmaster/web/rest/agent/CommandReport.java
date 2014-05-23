@@ -40,6 +40,7 @@ public class CommandReport {
   private String serviceName;
   private long taskId;
   private String roleCommand;
+  private Map<String, String> folders;
   private Map<String, String> allocatedPorts;
   private Map<String, Map<String, String>> configurationTags;
 
@@ -165,7 +166,7 @@ public class CommandReport {
     configurationTags = tags;
   }
 
-  /** @return the config tags that match this command, or <code>null</code> if none are present */
+  /** @return the allocated ports, or <code>null</code> if none are present */
   @JsonProperty("allocatedPorts")
   public Map<String, String> getAllocatedPorts() {
     return allocatedPorts;
@@ -174,7 +175,19 @@ public class CommandReport {
   /** @param ports allocated ports */
   @JsonProperty("allocatedPorts")
   public void setAllocatedPorts(Map<String, String> ports) {
-    allocatedPorts = ports;
+    this.allocatedPorts = ports;
+  }
+
+  /** @return the folders, or <code>null</code> if none are present */
+  @JsonProperty("folders")
+  public Map<String, String> getFolders() {
+    return folders;
+  }
+
+  /** @param folders allocated ports */
+  @JsonProperty("folders")
+  public void setFolders(Map<String, String> folders) {
+    this.folders = folders;
   }
 
   @Override

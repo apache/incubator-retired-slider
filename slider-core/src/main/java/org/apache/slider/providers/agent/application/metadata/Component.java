@@ -22,9 +22,11 @@ package org.apache.slider.providers.agent.application.metadata;
 public class Component {
   String name;
   String category;
+  String publishConfig;
   CommandScript commandScript;
 
   public Component() {
+    publishConfig = Boolean.FALSE.toString();
   }
 
   public String getName() {
@@ -41,6 +43,14 @@ public class Component {
 
   public void setCategory(String category) {
     this.category = category;
+  }
+
+  public String getPublishConfig() {
+    return publishConfig;
+  }
+
+  public void setPublishConfig(String publishConfig) {
+    this.publishConfig = publishConfig;
   }
 
   public CommandScript getCommandScript() {

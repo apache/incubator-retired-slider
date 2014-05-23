@@ -22,6 +22,7 @@ import json
 import logging
 import time
 from pprint import pformat
+import hostname
 
 from ActionQueue import ActionQueue
 import AgentConfig
@@ -46,7 +47,8 @@ class Heartbeat:
     heartbeat = {'responseId': int(id),
                  'timestamp': timestamp,
                  'hostname': self.config.getLabel(),
-                 'nodeStatus': nodeStatus
+                 'nodeStatus': nodeStatus,
+                 'fqdn': hostname.public_hostname()
     }
 
     commandsInProgress = False

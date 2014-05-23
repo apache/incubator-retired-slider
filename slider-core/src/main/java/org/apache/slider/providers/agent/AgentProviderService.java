@@ -78,8 +78,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -102,6 +104,8 @@ public class AgentProviderService extends AbstractProviderService implements
   private static final String LABEL_MAKER = "___";
   private static final String CONTAINER_ID = "container_id";
   private static final String GLOBAL_CONFIG_TAG = "global";
+  private static final String LOG_FOLDERS_TAG = "LogFolders";
+  private static final int MAX_LOG_ENTRIES = 20;
   private final Object syncLock = new Object();
   private final Map<String, String> allocatedPorts = new ConcurrentHashMap<>();
   private AgentClientProvider clientProvider;
@@ -109,6 +113,13 @@ public class AgentProviderService extends AbstractProviderService implements
   private AtomicInteger taskId = new AtomicInteger(0);
   private volatile Metainfo metainfo = null;
   private ComponentCommandOrder commandOrder = null;
+  private Map<String, String> workFolders =
+      Collections.synchronizedMap(new LinkedHashMap<String, String>(MAX_LOG_ENTRIES, 0.75f, false) {
+        protected boolean removeEldestEntry(Map.Entry eldest) {
+          return size() > MAX_LOG_ENTRIES;
+        }
+      });
+  private Boolean canAnyMasterPublish = null;
 
   public AgentProviderService() {
     super("AgentProviderService");
@@ -364,6 +375,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
     String label = heartBeat.getHostname();
     String roleName = getRoleName(label);
+
     String containerId = getContainerId(label);
     StateAccessForProviders accessor = getAmState();
     String scriptPath = getScriptPathFromMetainfo(roleName);
@@ -379,8 +391,10 @@ public class AgentProviderService extends AbstractProviderService implements
 
     Boolean isMaster = isMaster(roleName);
     ComponentInstanceState componentStatus = componentStatuses.get(label);
-    // TODO: Currently only process configurations from Master
-    if (isMaster) {
+    // If no Master can explicitly publish then publish if its a master
+    // Otherwise, wait till the master that can publish is ready
+    if (isMaster &&
+        (canAnyMasterPublishConfig() == false || canPublishConfig(roleName))) {
       processReturnedStatus(heartBeat, componentStatus);
     }
 
@@ -398,6 +412,10 @@ public class AgentProviderService extends AbstractProviderService implements
       Command command = getCommand(report.getRoleCommand());
       componentStatus.applyCommandResult(result, command);
       log.info("Component operation. Status: {}", result);
+
+      if (command == Command.INSTALL && report.getFolders() != null && report.getFolders().size() > 0) {
+        processFolderPaths(report.getFolders(), containerId, heartBeat.getFqdn());
+      }
     }
 
     int waitForCount = accessor.getInstanceDefinitionSnapshot().
@@ -441,6 +459,14 @@ public class AgentProviderService extends AbstractProviderService implements
     }
 
     return response;
+  }
+
+  private void processFolderPaths(Map<String, String> folders, String containerId, String hostFqdn) {
+    for(String key : folders.keySet()) {
+      workFolders.put(String.format("%s-%s-%s", hostFqdn, containerId, key), folders.get(key));
+    }
+
+    publishComponentConfiguration(LOG_FOLDERS_TAG, LOG_FOLDERS_TAG, (new HashMap<>(this.workFolders)).entrySet());
   }
 
   protected void processReturnedStatus(HeartBeat heartBeat, ComponentInstanceState componentStatus) {
@@ -519,7 +545,7 @@ public class AgentProviderService extends AbstractProviderService implements
     return scriptPath;
   }
 
-  protected Boolean isMaster(String roleName) {
+  protected boolean isMaster(String roleName) {
     List<Service> services = getMetainfo().getServices();
     if (services.size() != 1) {
       log.error("Malformed app definition: Expect only one service in the metainfo.xml");
@@ -536,6 +562,43 @@ public class AgentProviderService extends AbstractProviderService implements
       }
     }
     return false;
+  }
+
+  protected boolean canPublishConfig(String roleName) {
+    List<Service> services = getMetainfo().getServices();
+    if (services.size() != 1) {
+      log.error("Malformed app definition: Expect only one service in the metainfo.xml");
+    } else {
+      Service service = services.get(0);
+      for (Component component : service.getComponents()) {
+        if (component.getName().equals(roleName)) {
+          return Boolean.TRUE.toString().equals(component.getPublishConfig());
+        }
+      }
+    }
+    return false;
+  }
+
+  protected boolean canAnyMasterPublishConfig() {
+    if (canAnyMasterPublish == null) {
+      List<Service> services = getMetainfo().getServices();
+      if (services.size() != 1) {
+        log.error("Malformed app definition: Expect only one service in the metainfo.xml");
+      } else {
+        Service service = services.get(0);
+        for (Component component : service.getComponents()) {
+          if (Boolean.TRUE.toString().equals(component.getPublishConfig()) &&
+              component.getCategory().equals("MASTER")) {
+            canAnyMasterPublish = true;
+          }
+        }
+      }
+    }
+
+    if (canAnyMasterPublish == null) {
+      canAnyMasterPublish = false;
+    }
+    return canAnyMasterPublish;
   }
 
   private String getRoleName(String label) {

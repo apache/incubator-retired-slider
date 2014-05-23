@@ -73,6 +73,7 @@
         <component>
           <name>ACCUMULO_MONITOR</name>
           <category>MASTER</category>
+          <publishConfig>true</publishConfig>
           <commandScript>
             <script>scripts/accumulo_monitor.py</script>
             <scriptType>PYTHON</scriptType>
