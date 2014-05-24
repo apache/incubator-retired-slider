@@ -18,12 +18,11 @@
 
 package org.apache.slider.funtest.framework
 
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 
 public class ConfLoader {
 
-  YarnConfiguration loadSliderConf(File confFile) {
+  public static YarnConfiguration loadSliderConf(File confFile) {
     URI confURI = confFile.toURI();
     YarnConfiguration conf = new YarnConfiguration()
     def confXmlUrl = confURI.toURL()
