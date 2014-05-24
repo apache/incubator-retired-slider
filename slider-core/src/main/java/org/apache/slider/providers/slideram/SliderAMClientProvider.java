@@ -212,8 +212,7 @@ public class SliderAMClientProvider extends AbstractClientProvider implements
     MapOperations sliderAM =
       aggregateConf.getAppConfOperations().getMandatoryComponent(
         SliderKeys.COMPONENT_AM);
-    cmdLine.sysprop("java.net.preferIPv4Stack", "true");
-    cmdLine.sysprop("java.awt.headless", "true");
+    cmdLine.forceIPv4().headless();
     String heap = sliderAM.getOption(RoleKeys.JVM_HEAP,
                                    DEFAULT_JVM_HEAP);
     cmdLine.setJVMHeap(heap);
