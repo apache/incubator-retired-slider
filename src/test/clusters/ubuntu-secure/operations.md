@@ -37,7 +37,7 @@
     yarn-daemon.sh --config $HADOOP_CONF_DIR stop resourcemanager
     yarn-daemon.sh --config $HADOOP_CONF_DIR stop nodemanager
     
-
+    ~/zookeeper/bin/zkServer.sh stop
 
 
   export SLIDER_JVM_OPTS="-Djava.security.krb5.realm=COTHAM -Djava.security.krb5.kdc=ubuntu -Djava.net.preferIPv4Stack=true"
