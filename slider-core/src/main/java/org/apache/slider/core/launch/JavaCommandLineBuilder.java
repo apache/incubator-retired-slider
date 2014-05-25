@@ -65,4 +65,14 @@ public class JavaCommandLineBuilder extends CommandLineBuilder {
   public void sysprop(String property, String value) {
     add("-D" + property + "=" + value);
   }
+  
+  public JavaCommandLineBuilder forceIPv4() {
+    sysprop("java.net.preferIPv4Stack", "true");
+    return this;
+  }
+  
+  public JavaCommandLineBuilder headless() {
+    sysprop("java.awt.headless", "true");
+    return this;
+  }
 }

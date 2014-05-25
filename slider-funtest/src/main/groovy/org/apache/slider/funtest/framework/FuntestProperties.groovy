@@ -1,9 +1,3 @@
-package org.apache.slider.funtest.framework
-
-import groovy.transform.CompileStatic
-import org.apache.slider.common.SliderXMLConfKeysForTesting
-import org.apache.slider.common.SliderKeys
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -21,6 +15,11 @@ import org.apache.slider.common.SliderKeys
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.slider.funtest.framework
+
+import groovy.transform.CompileStatic
+import org.apache.slider.common.SliderXMLConfKeysForTesting
+import org.apache.slider.common.SliderKeys
 
 /**
  * Properties unique to the functional tests

@@ -152,7 +152,7 @@
     <groovy.version>2.2.2</groovy.version>
     
     <!-- 
-    options
+    test options
     -->
 
     <test.forkedProcessTimeoutInSeconds>18000</test.forkedProcessTimeoutInSeconds>
@@ -218,6 +218,8 @@
     <maven.cobertura.version>2.5.2</maven.cobertura.version>
     <maven-compiler-plugin.version>3.1</maven-compiler-plugin.version>
     <maven-dependency-plugin.version>2.8</maven-dependency-plugin.version>
+    <maven-deploy-plugin.version>2.7</maven-deploy-plugin.version>
+    <maven-doxia-module-markdown.version>1.4</maven-doxia-module-markdown.version>
     <maven-enforcer-plugin.version>1.0</maven-enforcer-plugin.version>
     <maven-jar-plugin.version>2.3.1</maven-jar-plugin.version>
     <maven.javadoc.version>2.8</maven.javadoc.version>
@@ -235,14 +237,12 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <build.dependency.fail.on.warning>true</build.dependency.fail.on.warning>
     <build.redirect.test.output.to.file>false</build.redirect.test.output.to.file>
-    <maven-doxia-module-markdown.version>1.4</maven-doxia-module-markdown.version>
     
     <!-- github options-->
     <github.global.server>github</github.global.server>
     <github.site.plugin.version>0.8</github.site.plugin.version>
     <maven-site-plugin.skipDeploy>true</maven-site-plugin.skipDeploy>
     <github.downloads.plugin.version>0.6</github.downloads.plugin.version>
-    <maven-deploy-plugin.version>2.7</maven-deploy-plugin.version>
   </properties>
 
 

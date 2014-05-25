@@ -87,7 +87,7 @@ abstract class AbstractTestBuildSetup extends SliderTestUtils implements Funtest
    * @return
    */
   public Configuration loadSliderConf() {
-    Configuration conf = (new ConfLoader()).loadSliderConf(confXML)
+    Configuration conf = ConfLoader.loadSliderConf(confXML)
     return conf
   }
 
