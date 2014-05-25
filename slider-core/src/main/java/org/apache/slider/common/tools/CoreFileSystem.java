@@ -542,4 +542,10 @@ public class CoreFileSystem {
                                                                 clusterSpecPath);
     }
   }
+  
+  public Path fileToPath(File file) {
+    return new Path(file.getAbsoluteFile().toURI());
+
+  }
+  
 }
