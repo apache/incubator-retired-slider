@@ -22,6 +22,9 @@ import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.service.Service
 import org.apache.slider.core.main.ServiceLauncherBaseTest
+import org.apache.slider.server.services.workflow.WorkflowEventCallback
+import org.apache.slider.server.services.workflow.WorkflowEventNotifyingService
+import org.apache.slider.server.services.workflow.WorkflowSequenceService
 import org.junit.Test
 
 @Slf4j
@@ -30,7 +33,7 @@ class TestSequenceService extends ServiceLauncherBaseTest {
 
   @Test
   public void testSingleSequence() throws Throwable {
-    SequenceService ss = startService([new MockService()])
+    WorkflowSequenceService ss = startService([new MockService()])
     ss.stop();
   }
 
@@ -38,7 +41,7 @@ class TestSequenceService extends ServiceLauncherBaseTest {
   public void testSequence() throws Throwable {
     MockService one = new MockService("one", false, 100)
     MockService two = new MockService("two", false, 100)
-    SequenceService ss = startService([one, two])
+    WorkflowSequenceService ss = startService([one, two])
     assert ss.waitForServiceToStop(1000);
     assert one.isInState(Service.STATE.STOPPED)
     assert two.isInState(Service.STATE.STOPPED)
@@ -48,7 +51,7 @@ class TestSequenceService extends ServiceLauncherBaseTest {
   @Test
   public void testNotificationInSequence() throws Throwable {
     boolean notified = false;
-    EventCallback ecb = new EventCallback() {
+    WorkflowEventCallback ecb = new WorkflowEventCallback() {
       @Override
       void eventCallbackEvent() {
         log.info("EventCallback")
@@ -56,9 +59,9 @@ class TestSequenceService extends ServiceLauncherBaseTest {
       }
     }
     MockService one = new MockService("one", false, 100)
-    EventNotifyingService ens = new EventNotifyingService(ecb, 100);
+    WorkflowEventNotifyingService ens = new WorkflowEventNotifyingService(ecb, 100);
     MockService two = new MockService("two", false, 100)
-    SequenceService ss = startService([one, ens, two])
+    WorkflowSequenceService ss = startService([one, ens, two])
     assert ss.waitForServiceToStop(1000);
     assert one.isInState(Service.STATE.STOPPED)
     assert ens.isInState(Service.STATE.STOPPED)
@@ -70,7 +73,7 @@ class TestSequenceService extends ServiceLauncherBaseTest {
   public void testFailingSequence() throws Throwable {
     MockService one = new MockService("one", true, 100)
     MockService two = new MockService("two", false, 100)
-    SequenceService ss = startService([one, two])
+    WorkflowSequenceService ss = startService([one, two])
     assert ss.waitForServiceToStop(1000);
     assert one.isInState(Service.STATE.STOPPED)
     assert two.isInState(Service.STATE.NOTINITED)
@@ -85,7 +88,7 @@ class TestSequenceService extends ServiceLauncherBaseTest {
     MockService one = new MockService("one", false, 100)
     MockService two = new MockService("two", true, 0)
     MockService three = new MockService("3", false, 0)
-    SequenceService ss = startService([one, two, three])
+    WorkflowSequenceService ss = startService([one, two, three])
     assert ss.waitForServiceToStop(1000);
     assert one.isInState(Service.STATE.STOPPED)
     assert two.isInState(Service.STATE.STOPPED)
@@ -102,8 +105,8 @@ class TestSequenceService extends ServiceLauncherBaseTest {
   public void testSequenceInSequence() throws Throwable {
     MockService one = new MockService("one", false, 100)
     MockService two = new MockService("two", false, 100)
-    SequenceService ss = buildService([one, two])
-    SequenceService outer = startService([ss])
+    WorkflowSequenceService ss = buildService([one, two])
+    WorkflowSequenceService outer = startService([ss])
     
     assert outer.waitForServiceToStop(1000);
     assert one.isInState(Service.STATE.STOPPED)
@@ -115,7 +118,7 @@ class TestSequenceService extends ServiceLauncherBaseTest {
   public void testVarargsCtor() throws Throwable {
     MockService one = new MockService("one", false, 100)
     MockService two = new MockService("two", false, 100)
-    SequenceService ss = new SequenceService("test", one, two);
+    WorkflowSequenceService ss = new WorkflowSequenceService("test", one, two);
     ss.init(new Configuration())
     ss.start();
     assert ss.waitForServiceToStop(1000);
@@ -124,15 +127,15 @@ class TestSequenceService extends ServiceLauncherBaseTest {
 
 
   }
-  public SequenceService startService(List<Service> services) {
-    SequenceService ss = buildService(services)
+  public WorkflowSequenceService startService(List<Service> services) {
+    WorkflowSequenceService ss = buildService(services)
     //expect service to start and stay started
     ss.start();
     return ss
   }
 
-  public SequenceService buildService(List<Service> services) {
-    SequenceService ss = new SequenceService("test")
+  public WorkflowSequenceService buildService(List<Service> services) {
+    WorkflowSequenceService ss = new WorkflowSequenceService("test")
     services.each { ss.addService(it) }
     ss.init(new Configuration())
     return ss

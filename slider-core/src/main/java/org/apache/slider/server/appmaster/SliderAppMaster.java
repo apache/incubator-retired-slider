@@ -112,7 +112,7 @@ import org.apache.slider.server.appmaster.web.WebAppApiImpl;
 import org.apache.slider.server.appmaster.web.rest.RestPaths;
 import org.apache.slider.server.services.registry.SliderRegistryService;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
-import org.apache.slider.server.services.utility.EventCallback;
+import org.apache.slider.server.services.workflow.WorkflowEventCallback;
 import org.apache.slider.server.services.utility.RpcService;
 import org.apache.slider.server.services.utility.WebAppService;
 import org.slf4j.Logger;
@@ -149,7 +149,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     SliderClusterProtocol,
     ServiceStateChangeListener,
     RoleKeys,
-    EventCallback,
+    WorkflowEventCallback,
     ContainerStartOperation {
   protected static final Logger log =
     LoggerFactory.getLogger(SliderAppMaster.class);

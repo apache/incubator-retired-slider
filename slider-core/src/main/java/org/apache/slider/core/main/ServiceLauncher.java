@@ -18,8 +18,7 @@
 
 package org.apache.slider.core.main;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.service.Service;
@@ -27,6 +26,8 @@ import org.apache.hadoop.util.ExitUtil;
 import org.apache.hadoop.util.ShutdownHookManager;
 import org.apache.hadoop.util.VersionInfo;
 import org.apache.hadoop.yarn.YarnUncaughtExceptionHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -65,16 +66,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @SuppressWarnings("UseOfSystemOutOrSystemErr")
 public class ServiceLauncher<S extends Service>
   implements LauncherExitCodes, IrqHandler.Interrupted {
-  private static final Log LOG = LogFactory.getLog(ServiceLauncher.class);
+  private static final Logger LOG = LoggerFactory.getLogger(
+      ServiceLauncher.class);
+
   protected static final int PRIORITY = 30;
 
   public static final String NAME = "ServiceLauncher";
-  /**
-   * name of class for entry point strings: {@value}
-   */
-  public static final String ENTRY_POINT =
-    "org.apache.hadoop.yarn.service.launcher." + NAME;
-
 
   public static final String USAGE_MESSAGE =
     "Usage: " + NAME + " classname [--conf <conf file>] <service arguments> | ";
@@ -87,7 +84,7 @@ public class ServiceLauncher<S extends Service>
 
   private volatile S service;
   private int serviceExitCode;
-  private final List<IrqHandler> interruptHandlers = new ArrayList<>(1);
+  private final List<IrqHandler> interruptHandlers = new ArrayList<IrqHandler>(1);
   private Configuration configuration;
   private String serviceClassName;
   private static AtomicBoolean signalAlreadyReceived = new AtomicBoolean(false);
@@ -153,16 +150,12 @@ public class ServiceLauncher<S extends Service>
    * @throws IllegalAccessException not allowed at the class
    * @throws InstantiationException not allowed to instantiate it
    * @throws InterruptedException thread interrupted
-   * @throws IOException any IO exception
+   * @throws Throwable any other failure
    */
   public int launchService(Configuration conf,
                            String[] processedArgs,
                            boolean addShutdownHook)
-    throws Throwable,
-           ClassNotFoundException,
-           InstantiationException,
-           IllegalAccessException,
-           ExitUtil.ExitException {
+    throws Throwable {
 
     instantiateService(conf);
 
@@ -179,7 +172,8 @@ public class ServiceLauncher<S extends Service>
       //if its a runService, pass in the conf and arguments before init)
       runService = (RunService) service;
       configuration = runService.bindArgs(configuration, processedArgs);
-      assert configuration != null : "null configuration returned by bindArgs()";
+      Preconditions.checkNotNull(configuration,
+          "null configuration returned by bindArgs()");
     }
 
     //some class constructors init; here this is picked up on.
@@ -191,7 +185,7 @@ public class ServiceLauncher<S extends Service>
     if (runService != null) {
       //assume that runnable services are meant to run from here
       exitCode = runService.runService();
-      LOG.debug("Service exited with exit code " + exitCode);
+      LOG.debug("Service exited with exit code {}", exitCode);
 
     } else {
       //run the service until it stops or an interrupt happens on a different thread.
@@ -212,26 +206,27 @@ public class ServiceLauncher<S extends Service>
    * @throws ClassNotFoundException no such class
    * @throws InstantiationException no empty constructor,
    * problems with dependencies
-   * @throws IllegalAccessException no access rights
+   * @throws ClassNotFoundException classname not on the classpath
+   * @throws IllegalAccessException not allowed at the class
+   * @throws InstantiationException not allowed to instantiate it
+   * @throws InterruptedException thread interrupted
+   * @throws Throwable any other failure
    */
-  public Service instantiateService(Configuration conf) throws
-                                                        ClassNotFoundException,
-                                                        InstantiationException,
-                                                        IllegalAccessException,
-                                                        ExitUtil.ExitException,
-      NoSuchMethodException,
-      InvocationTargetException {
+  public Service instantiateService(Configuration conf)
+      throws ClassNotFoundException, InstantiationException, IllegalAccessException,
+      ExitUtil.ExitException, NoSuchMethodException, InvocationTargetException {
+    Preconditions.checkNotNull(conf, "null configuration");
     configuration = conf;
 
     //Instantiate the class -this requires the service to have a public
     // zero-argument constructor
     Class<?> serviceClass =
-      this.getClass().getClassLoader().loadClass(serviceClassName);
+        this.getClass().getClassLoader().loadClass(serviceClassName);
     Object instance = serviceClass.getConstructor().newInstance();
     if (!(instance instanceof Service)) {
       //not a service
       throw new ExitUtil.ExitException(EXIT_BAD_CONFIGURATION,
-                                       "Not a Service class: " + serviceClassName);
+          "Not a Service class: " + serviceClassName);
     }
 
     service = (S) instance;
@@ -241,20 +236,18 @@ public class ServiceLauncher<S extends Service>
   /**
    * Register this class as the handler for the control-C interrupt.
    * Can be overridden for testing.
-   * @throws IOException on a failure to add the handler
    */
-  protected void registerInterruptHandler() throws IOException {
+  protected void registerInterruptHandler() {
     try {
       interruptHandlers.add(new IrqHandler(IrqHandler.CONTROL_C, this));
       interruptHandlers.add(new IrqHandler(IrqHandler.SIGTERM, this));
     } catch (IOException e) {
-      error("Signal handler setup failed : " + e, e);
+      error("Signal handler setup failed : {}" + e, e);
     }
   }
 
   /**
-   * The service has been interrupted. 
-   * Trigger something resembling an elegant shutdown;
+   * The service has been interrupted -try to shut down the service.
    * Give the service time to do this before the exit operation is called 
    * @param interruptData the interrupted data.
    */
@@ -287,14 +280,24 @@ public class ServiceLauncher<S extends Service>
     exit(EXIT_INTERRUPTED, message);
   }
 
+  /**
+   * Print a warning: currently this goes to stderr
+   * @param text
+   */
   protected void warn(String text) {
     System.err.println(text);
   }
 
 
+  /**
+   * Report an error. The message is printed to stderr; the exception
+   * is logged via the current logger.
+   * @param message message for the user
+   * @param thrown the exception thrown
+   */
   protected void error(String message, Throwable thrown) {
     String text = "Exception: " + message;
-    System.err.println(text);
+    warn(text);
     LOG.error(text, thrown);
   }
   
@@ -432,7 +435,7 @@ public class ServiceLauncher<S extends Service>
           if (failureState == Service.STATE.STOPPED) {
             //the failure occurred during shutdown, not important enough to bother
             //the user as it may just scare them
-            LOG.debug("Failure during shutdown: " + failure, failure);
+            LOG.debug("Failure during shutdown:{} ", failure, failure);
           } else {
             //throw it for the catch handlers to deal with
             throw failure;
@@ -441,8 +444,8 @@ public class ServiceLauncher<S extends Service>
       }
       exitException = new ExitUtil.ExitException(exitCode,
                                      "In " + serviceClassName);
-      //either the service succeeded, or an error raised during shutdown, 
-      //which we don't worry that much about
+      // either the service succeeded, or an error raised during shutdown, 
+      // which we don't worry that much about
     } catch (ExitUtil.ExitException ee) {
       exitException = ee;
     } catch (Throwable thrown) {
@@ -451,17 +454,17 @@ public class ServiceLauncher<S extends Service>
       if (message == null) {
         message = thrown.toString();
       }
-      LOG.error(message) ;
       if (thrown instanceof ExitCodeProvider) {
         exitCode = ((ExitCodeProvider) thrown).getExitCode();
         if (LOG.isDebugEnabled()) {
-          LOG.debug("While running " + getServiceName() + ": " + message, thrown);
+          LOG.debug("While running {}: {}", getServiceName(), message, thrown);
         }
+        LOG.error(message);
       } else {
-        //not any of the service launcher exceptions -assume something worse
+        // not any of the service launcher exceptions -assume something worse
         error(message, thrown);
         exitCode = EXIT_EXCEPTION_THROWN;
-        }
+      }
       exitException = new ExitUtil.ExitException(exitCode, message);
       exitException.initCause(thrown);
     }

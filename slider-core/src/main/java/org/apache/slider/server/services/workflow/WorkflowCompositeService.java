@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.services.utility;
+package org.apache.slider.server.services.workflow;
 
 import org.apache.hadoop.service.CompositeService;
 import org.apache.hadoop.service.Service;
@@ -27,36 +27,49 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 /**
- * An extended composite service which not only makes the 
- * addService method public, it auto-registers
- * itself as a listener for state change events.
- * 
- * When all child services has stopped, this service stops itself.
+ * An extended composite service which stops itself if any child service
+ * fails, or when all its children have successfully stopped without failure.
+ *
+ * Lifecycle
+ * <ol>
+ *   <li>If any child exits with a failure: this service stops, propagating
+ *   the exception.</li>
+ *   <li>When all child services has stopped, this service stops itself</li>
+ * </ol>
+ *
  */
-public class CompoundService extends CompositeService implements Parent,
-                                                                 ServiceStateChangeListener {
+public class WorkflowCompositeService extends CompositeService
+    implements ServiceParent, ServiceStateChangeListener {
 
   private static final Logger log =
-    LoggerFactory.getLogger(CompoundService.class);
+    LoggerFactory.getLogger(WorkflowCompositeService.class);
 
-  public CompoundService(String name) {
+  public WorkflowCompositeService(String name) {
     super(name);
   }
 
 
-  public CompoundService() {
-    super("CompoundService");
+  public WorkflowCompositeService() {
+    this("WorkflowCompositeService");
   }
 
   /**
    * Varargs constructor
    * @param children children
    */
-  public CompoundService(Service ... children) {
-    this();
+  public WorkflowCompositeService(String name, Service... children) {
+    this(name);
     for (Service child : children) {
       addService(child);
     }
+  }
+
+  /**
+   * Varargs constructor
+   * @param children children
+   */
+  public WorkflowCompositeService(Service... children) {
+    this("WorkflowCompositeService", children);
   }
 
   /**
@@ -66,7 +79,7 @@ public class CompoundService extends CompositeService implements Parent,
    * in Hadoop 2.2; you will trigger a ConcurrentModificationException.
    */
   @Override
-  public void addService(Service service) {
+  public synchronized void addService(Service service) {
     service.registerServiceListener(this);
     super.addService(service);
   }
@@ -87,7 +100,10 @@ public class CompoundService extends CompositeService implements Parent,
       if (failureCause != null) {
         log.info("Child service " + child + " failed", failureCause);
         //failure. Convert to an exception
-        Exception e = SliderServiceUtils.convertToException(failureCause);
+        Exception e = (failureCause instanceof Exception) ?
+                      (Exception) failureCause
+                                                          : new Exception(
+                                                              failureCause);
         //flip ourselves into the failed state
         noteFailure(e);
         stop();

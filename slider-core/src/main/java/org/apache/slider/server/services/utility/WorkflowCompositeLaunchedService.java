@@ -25,24 +25,25 @@ import org.apache.hadoop.service.Service;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.main.LauncherExitCodes;
 import org.apache.slider.core.main.RunService;
+import org.apache.slider.server.services.workflow.WorkflowCompositeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CompoundLaunchedService extends CompoundService
+public class WorkflowCompositeLaunchedService extends WorkflowCompositeService
     implements RunService {
   private static final Logger log = LoggerFactory.getLogger(
-      CompoundLaunchedService.class);
+      WorkflowCompositeLaunchedService.class);
   private String[] argv;
   
-  public CompoundLaunchedService(String name) {
+  public WorkflowCompositeLaunchedService(String name) {
     super(name);
   }
 
-  public CompoundLaunchedService() {
+  public WorkflowCompositeLaunchedService() {
     super("CompoundLaunchedService");
   }
 
-  public CompoundLaunchedService(Service... children) {
+  public WorkflowCompositeLaunchedService(Service... children) {
     super(children);
   }
 

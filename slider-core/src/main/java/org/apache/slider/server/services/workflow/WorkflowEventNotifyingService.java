@@ -16,11 +16,14 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.services.utility;
+package org.apache.slider.server.services.workflow;
 
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.service.AbstractService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.Executor;
 
 /**
  * A service that calls the supplied callback when it is started -after the 
@@ -28,23 +31,30 @@ import org.slf4j.LoggerFactory;
  * Because it calls in on a different thread, it can be used for callbacks
  * that don't 
  */
-public class EventNotifyingService extends AbstractService implements Runnable {
+public class WorkflowEventNotifyingService extends AbstractService implements Runnable {
   protected static final Logger log =
-    LoggerFactory.getLogger(EventNotifyingService.class);
-  private final EventCallback callback;
+    LoggerFactory.getLogger(WorkflowEventNotifyingService.class);
+  private final WorkflowEventCallback callback;
   private final int delay;
+  private Executor executor;
 
-  public EventNotifyingService(EventCallback callback, int delay) {
-    super("EventNotifyingService");
-    assert callback != null;
+
+  public WorkflowEventNotifyingService(String name,
+      WorkflowEventCallback callback, int delay) {
+    super(name);
+    Preconditions.checkNotNull(callback, "Null callback argument");
     this.callback = callback;
     this.delay = delay;
+  }
+
+  public WorkflowEventNotifyingService(WorkflowEventCallback callback, int delay) {
+    this("WorkflowEventNotifyingService", callback, delay);
   }
 
   @Override
   protected void serviceStart() throws Exception {
     log.debug("Notifying {} after a delay of {} millis", callback, delay);
-    new Thread(this, "event").start();
+    new Thread(this, getName()).start();
   }
 
   @Override

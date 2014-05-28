@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.services.utility;
+package org.apache.slider.server.services.workflow;
 
 import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.service.Service;
@@ -35,16 +35,17 @@ import java.util.List;
  * only work with one service
  */
 
-public class SequenceService extends AbstractService implements Parent,
+public class WorkflowSequenceService extends AbstractService implements
+    ServiceParent,
                                                      ServiceStateChangeListener {
 
   private static final Logger log =
-    LoggerFactory.getLogger(SequenceService.class);
+    LoggerFactory.getLogger(WorkflowSequenceService.class);
 
   /**
    * list of services
    */
-  private final List<Service> serviceList = new ArrayList<>();
+  private final List<Service> serviceList = new ArrayList<Service>();
 
   /**
    * The current service.
@@ -58,17 +59,27 @@ public class SequenceService extends AbstractService implements Parent,
    */
   private volatile Service previousService;
 
+  public WorkflowSequenceService(String name) {
+    super(name);
+  }
+
+  public WorkflowSequenceService() {
+    this("WorkflowSequenceService");
+  }
+
   /**
    * Create a service sequence with the given list of services
    * @param name service name
    * @param offspring initial sequence
    */
-   public SequenceService(String name, Service... offspring) {
+  public WorkflowSequenceService(String name, Service... offspring) {
     super(name);
-     for (Service service : offspring) {
-       addService(service);
-     }
+    for (Service service : offspring) {
+      addService(service);
+    }
   }
+  
+ 
 
   /**
    * Get the current service -which may be null
@@ -185,7 +196,10 @@ public class SequenceService extends AbstractService implements Parent,
       //did the service fail? if so: propagate
       Throwable failureCause = service.getFailureCause();
       if (failureCause != null) {
-        Exception e = SliderServiceUtils.convertToException(failureCause);
+        Exception e = (failureCause instanceof Exception) ?
+                      (Exception) failureCause
+                                                          : new Exception(
+                                                              failureCause);
         noteFailure(e);
         stop();
       }
@@ -213,7 +227,7 @@ public class SequenceService extends AbstractService implements Parent,
 
   /**
    * Add the passed {@link Service} to the list of services managed by this
-   * {@link SequenceService}
+   * {@link WorkflowSequenceService}
    * @param service the {@link Service} to be added
    */
   @Override //Parent

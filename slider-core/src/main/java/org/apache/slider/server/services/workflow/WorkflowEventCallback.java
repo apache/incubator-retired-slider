@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.services.utility;
+package org.apache.slider.server.services.workflow;
 
-public interface EventCallback {
+public interface WorkflowEventCallback {
   
   public void eventCallbackEvent();
   

@@ -20,7 +20,7 @@ package org.apache.slider.core.main;
 
 
 /*
- * YARN Codes, 
+ * Common Exit codes
  * Exit codes from 32 up  are relative to a base value that
  * we put a fair way up from the the base numbers, so that 
  * applications can have their own set of failures

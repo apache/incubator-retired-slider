@@ -33,9 +33,9 @@ import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
 import org.apache.slider.server.services.registry.RegistryViewForProviders;
-import org.apache.slider.server.services.utility.ForkedProcessService;
-import org.apache.slider.server.services.utility.Parent;
-import org.apache.slider.server.services.utility.SequenceService;
+import org.apache.slider.server.services.workflow.ForkedProcessService;
+import org.apache.slider.server.services.workflow.ServiceParent;
+import org.apache.slider.server.services.workflow.WorkflowSequenceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +55,7 @@ import java.util.Map;
  * upstream
  */
 public abstract class AbstractProviderService
-    extends SequenceService
+    extends WorkflowSequenceService
     implements
     ProviderCore,
     SliderKeys,
@@ -189,8 +189,8 @@ public abstract class AbstractProviderService
       return (ForkedProcessService) latest;
     } else {
       //its a composite object, so look inside it for a process
-      if (latest instanceof Parent) {
-        return getFPSFromParentService((Parent) latest);
+      if (latest instanceof ServiceParent) {
+        return getFPSFromParentService((ServiceParent) latest);
       } else {
         //no match
         return null;
@@ -201,11 +201,11 @@ public abstract class AbstractProviderService
 
   /**
    * Given a parent service, find the one that is a forked process
-   * @param parent parent
+   * @param serviceParent parent
    * @return the forked process service or null if there is none
    */
-  protected ForkedProcessService getFPSFromParentService(Parent parent) {
-    List<Service> services = parent.getServices();
+  protected ForkedProcessService getFPSFromParentService(ServiceParent serviceParent) {
+    List<Service> services = serviceParent.getServices();
     for (Service s : services) {
       if (s instanceof ForkedProcessService) {
         return (ForkedProcessService) s;
