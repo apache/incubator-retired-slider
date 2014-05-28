@@ -41,8 +41,11 @@ rest_api_conf_file = format("{conf_dir}/config.yaml")
 rest_lib_dir = format("{app_root}/contrib/storm-rest")
 storm_bin = format("{app_root}/bin/storm")
 
-ganglia_installed = False
-  
+ganglia_installed = config['configurations']['global']['ganglia_enabled']
+if ganglia_installed:
+  ganglia_report_interval = 60
+  ganglia_server = config['configurations']['global']['ganglia_server_host']
+
 _authentication = config['configurations']['core-site']['hadoop.security.authentication']
 security_enabled = ( not is_empty(_authentication) and _authentication == 'kerberos')
 
@@ -50,5 +53,5 @@ if security_enabled:
   _hostname_lowercase = config['hostname'].lower()
   _kerberos_domain = config['configurations']['global']['kerberos_domain']
   _storm_principal_name = config['configurations']['global']['storm_principal_name']
-  storm_jaas_principal = _storm_principal_name.replace('_HOST',_hostname_lowercase)
+  storm_jaas_principal = _storm_principal_name.replace('_HOST', _hostname_lowercase)
   storm_keytab_path = config['configurations']['global']['storm_keytab']
