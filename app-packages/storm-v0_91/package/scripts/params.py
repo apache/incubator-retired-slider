@@ -45,6 +45,7 @@ ganglia_installed = config['configurations']['global']['ganglia_enabled']
 if ganglia_installed:
   ganglia_report_interval = 60
   ganglia_server = config['configurations']['global']['ganglia_server_host']
+  ganglia_port = config['configurations']['global']['ganglia_server_port']
 
 _authentication = config['configurations']['core-site']['hadoop.security.authentication']
 security_enabled = ( not is_empty(_authentication) and _authentication == 'kerberos')

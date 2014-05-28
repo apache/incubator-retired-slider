@@ -15,6 +15,7 @@
     "site.global.ganglia_server_host": "${NN_HOST}",
     "site.global.ganglia_server_id": "Application2",
     "site.global.ganglia_enabled":"true",
+    "site.global.ganglia_server_port": "8668",
     "site.global.rest_api_port": "${STORM_REST_API.ALLOCATED_PORT}",
     "site.global.rest_api_admin_port": "${STORM_REST_API.ALLOCATED_PORT}",
     "site.storm-site.topology.tuple.serializer": "backtype.storm.serialization.types.ListDelegateSerializer",
