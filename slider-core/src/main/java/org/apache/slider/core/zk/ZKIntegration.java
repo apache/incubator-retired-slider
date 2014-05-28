@@ -16,7 +16,7 @@
  *  limitations under the License.
  */
 
-package org.apache.slider.core.registry.zk;
+package org.apache.slider.core.zk;
 
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -49,7 +49,7 @@ public class ZKIntegration implements Watcher {
   public static String SVC_SLIDER = "/" + ZK_SERVICES + "/" + ZK_SLIDER;
   public static String SVC_SLIDER_USERS = SVC_SLIDER + "/" + ZK_USERS;
 
-  public static List<String> ZK_USERS_PATH_LIST = new ArrayList<>();
+  public static final List<String> ZK_USERS_PATH_LIST = new ArrayList<>();
   static {
     ZK_USERS_PATH_LIST.add(ZK_SERVICES);
     ZK_USERS_PATH_LIST.add(ZK_SLIDER);

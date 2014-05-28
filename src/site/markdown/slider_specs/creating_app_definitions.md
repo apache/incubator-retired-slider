@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-# Define and use Slider AppPackage
+# Slider AppPackage
 
 Slider AppPackages are a declarative definition of an application for application management. AppPackage is not a packaging scheme for application binaries and artifacts. Tarball, zip files, rpms etc. are available for that purpose. Instead AppPackage includes the application binaries along with other artifacts necessary for application management.
 
@@ -31,18 +31,16 @@ For example:
     yarn      9085  -- bash /hadoop/yarn/local/usercache/yarn/appcache/application_1397675825552_0011/ ... internal_start regionserver
     yarn      9114 -- /usr/jdk64/jdk1.7.0_45/bin/java -Dproc_regionserver -XX:OnOutOfMemoryError=...
 
-Shows three processes, the Slider-Agent process, the bash script to start HBase Region Server and the HBase Region server itself. Three of these together constitute the container.	
+The above list shows three processes, the Slider-Agent process, the bash script to start HBase Region Server and the HBase Region server itself. *Three of these together constitute the container*.	
 
 ## Using an AppPackage
 The following command creates an HBase application using the AppPackage for HBase.
 
-	  ./slider create cl1 --zkhosts zk1,zk2 --image hdfs://NN:8020/slider/agent/slider-agent-0.21.tar --option agent.conf hdfs://NN:8020/slider/agent/conf/agent.ini  --template /work/appConf.json --resources /work/resources.json  --option application.def hdfs://NN:8020/slider/hbase_v096.zip
+	  ./slider create cl1 --image hdfs://NN:8020/slider/agent/slider-agent.tar.gz --template /work/appConf.json --resources /work/resources.json
 	
 Lets analyze various parameters from the perspective of app creation:
   
 * `--image`: its the slider agent tarball
-* `--option agent.conf`: the configuration file for the agent instance
-* `--option app.def`: app def (AppPackage)
 * `--template`: app configuration
 * `--resources`: yarn resource requests
 * … other parameters are described in accompanying docs. 
@@ -50,21 +48,19 @@ Lets analyze various parameters from the perspective of app creation:
 ### AppPackage
 The structure of an AppPackage is described at [AppPackage](application_package.md).
 
-In the enlistment there are three example AppPackages
+In the enlistment, there are three example AppPackages:
 
 * `app-packages/hbase-v0_96`
 * `app-packages/accumulo-v1_5`
 * `app-packages/storm-v0_91`
 
-The application zip file, containing the binaries/artifacts of the application itself is a component within the AppPackage. They are:
+The above folders, with minor edits, can be packaged as *zip* files to get the corresponding AppPackages. The application tarball file, containing the binaries/artifacts of the application itself is a component within the AppPackage. They are:
 
 * For hbase - `app-packages/hbase-v0_96/package/files/hbase-0.96.1-hadoop2-bin.tar.gz.REPLACE`
 * For accumulo - `app-packages/accumulo-v1_5/package/files/accumulo-1.5.1-bin.tar.gz.REPLACE`
 * For storm - `app-packages/storm-v0_91/package/files/apache-storm-0.9.1.2.1.1.0-237.tar.gz.placeholder`
 
 **They are placehoder files**, mostly because the files themselves are too large as well as users are free to use their own version of the package. To create a Slider AppPackage - replace the file with an actual application tarball and then ensure that the metainfo.xml has the correct file name. After that create a zip file using standard zip commands and ensure that the package has the metainfo.xml file at the root folder.
-
-Sample **resources.json** and **appConfig.json** files are also included in the enlistment.
 
 For example:
 
@@ -109,79 +105,18 @@ Archive:  hbase_v096.zip
  83219742                   29 files
 ```
 
-
-### appConf.json
-An appConf.json contains the application configuration. The sample below shows configuration for HBase.
+Sample **resources.json** and **appConfig.json** files are also included in the enlistment. These are samples and are typically tested on one node test installations.
 
 
-    {
-      "schema" : "http://example.org/specification/v2.0.0",
-      "metadata" : {
-      },
-      "global" : {
-          "config_types": "core-site,hdfs-site,hbase-site",
-          
-          "java_home": "/usr/jdk64/jdk1.7.0_45",
-          "package_list": "files/hbase-0.96.1-hadoop2-bin.tar",
-          
-          "site.global.app_user": "yarn",
-          "site.global.app_log_dir": "${AGENT_LOG_ROOT}/app/log",
-          "site.global.app_pid_dir": "${AGENT_WORK_ROOT}/app/run",
-          "site.global.security_enabled": "false",
-  
-          "site.hbase-site.hbase.hstore.flush.retries.number": "120",
-          "site.hbase-site.hbase.client.keyvalue.maxsize": "10485760",
-          "site.hbase-site.hbase.hstore.compactionThreshold": "3",
-          "site.hbase-site.hbase.rootdir": "${NN_URI}/apps/hbase/data",
-          "site.hbase-site.hbase.tmp.dir": "${AGENT_WORK_ROOT}/work/app/tmp",
-          "site.hbase-site.hbase.regionserver.port": "0",
-  
-          "site.core-site.fs.defaultFS": "${NN_URI}",
-          "site.hdfs-site.dfs.namenode.https-address": "${NN_HOST}:50470",
-          "site.hdfs-site.dfs.namenode.http-address": "${NN_HOST}:50070"
-      }
-    }
+### --template appConfig.json
+An appConfig.json contains the application configuration. See [Specifications InstanceConfiguration](application_instance_configuration.md) for details on how to create a template config file. The enlistment includes sample config files for HBase, Accumulo, and Storm.
 
-appConf.jso allows you to pass in arbitrary set of configuration that Slider will forward to the application component instances.
-
-* Variables of the form `site.xx.yy` translates to variables by the name `yy` within the group `xx` and are typically converted to site config files by the name `xx` containing variable `yy`. For example, `"site.hbase-site.hbase.regionserver.port":""` will be sent to the Slider-Agent as `"hbase-site" : { "hbase.regionserver.port": ""}` and app def scripts can access all variables under `hbase-site` as a single property bag.
-* Similarly, `site.core-site.fs.defaultFS` allows you to pass in the default fs. *This specific variable is automatically made available by Slider but its shown here as an example.*
-* Variables of the form `site.global.zz` are sent in the same manner as other site variables except these variables are not expected to get translated to a site xml file. Usually, variables needed for template or other filter conditions (such as security_enabled = true/false) can be sent in as "global variable". 
 
 ### --resources resources.json
-The resources.json file encodes the Yarn resource count requirement for the application instance.
+Resource specification is an input to Slider to specify the Yarn resource needs for each component type that belong to the application. [Specification of Resources](resource_specification.html) describes how to write a resource config json file. The enlistment includes sample config files for HBase, Accumulo, and Storm.
 
-The components section lists the two application component for an HBase application.
 
-* `wait.heartbeat`: a crude mechanism to control the order of component activation. A heartbeat is ~10 seconds.
-* `role.priority`: each component must be assigned unique priority
-* `component.instances`: number of instances for this component type
-* `role.script`: the script path for the role *a temporary work-around as this will eventually be gleaned from metadata.xml*
-            
-Sample:
-
-    {
-      "schema" : "http://example.org/specification/v2.0.0",
-      "metadata" : {
-      },
-      "global" : {
-      },
-      "components" : {
-          "HBASE_MASTER" : {
-              "yarn.role.priority" : "1",
-              "yarn.component.instances" : "1"
-          },
-          "slider-appmaster" : {
-              "jvm.heapsize" : "256M"
-          },
-          "HBASE_REGIONSERVER" : {
-              "yarn.role.priority" : "2",
-              "yarn.component.instances" : "1"
-          }
-      }
-    }
-
-## Creating AppPackage
+## Scripting for AppPackage
 Refer to [App Command Scripts](writing_app_command_scripts) for details on how to write scripts for a AppPackage. These scripts are in the package/script folder within the AppPackage. *Use the checked in samples for HBase/Storm/Accumulo as reference for script development.*
 
 

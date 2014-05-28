@@ -35,7 +35,8 @@ ganglia:
   reportInterval: {{ganglia_report_interval}}
 
   # the hostname of the gmond server where storm cluster metrics will be sent
-  host: "{{ganglia_server}}"
+  host: {{ganglia_server}}
+  port: {{ganglia_port}}
 
   # address mode
   # default is MULTICAST

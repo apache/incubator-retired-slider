@@ -14,20 +14,20 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 -->
-  
-# Slider Release 0.24.0
 
-May 2014
+How to create a Slider package?
 
-This release is built against the Apache Hadoop 2.4.0, HBase-0.98.1
-and Accumulo 1.5.1 artifacts. 
+Replace the placeholder tarball for Storm.
+  cp ~/Downloads/apache-storm-0.9.1.2.1.1.0-237.tar.gz package/files/
+  rm package/files/apache-storm-0.9.1.2.1.1.0-237.tar.gz.REPLACE
 
-Download: []()
+Create a zip package at the root of the package (<slider enlistment>/app-packages/storm-v0_91/) 
+  zip -r storm_v091.zip .
 
+Verify the content using  
+  unzip -l "$@" storm_v091.zip
 
-## Key changes
-
-
-## Other changes
-
-1. [SLIDER-13](https://issues.apache.org/jira/browse/SLIDER-13) switch build to be java7+ only.
+While appConfig.json and resources.json are not required for the package they work
+well as the default configuration for Slider apps. So its advisable that when you
+create an application package for Slider, include sample/default resources.json and
+appConfig.json for a minimal Yarn cluster.

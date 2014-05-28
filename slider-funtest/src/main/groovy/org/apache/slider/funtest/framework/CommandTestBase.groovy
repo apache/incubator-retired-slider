@@ -75,7 +75,7 @@ abstract class CommandTestBase extends SliderTestUtils {
 
 
   static {
-    SLIDER_CONFIG = new ConfLoader().loadSliderConf(SLIDER_CONF_XML);
+    SLIDER_CONFIG = ConfLoader.loadSliderConf(SLIDER_CONF_XML);
     THAW_WAIT_TIME = getTimeOptionMillis(SLIDER_CONFIG,
         KEY_TEST_THAW_WAIT_TIME,
         1000 * DEFAULT_THAW_WAIT_TIME_SECONDS)
@@ -172,7 +172,7 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @return
    */
   public static Configuration loadSliderConf() {
-    Configuration conf = (new ConfLoader()).loadSliderConf(SLIDER_CONF_XML)
+    Configuration conf = ConfLoader.loadSliderConf(SLIDER_CONF_XML)
     return conf
   }
 

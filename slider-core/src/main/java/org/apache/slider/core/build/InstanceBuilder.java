@@ -40,8 +40,8 @@ import org.apache.slider.core.persist.ConfPersister;
 import org.apache.slider.core.persist.InstancePaths;
 import org.apache.slider.core.persist.LockAcquireFailedException;
 import org.apache.slider.core.persist.LockHeldAction;
-import org.apache.slider.core.registry.zk.ZKPathBuilder;
-import org.apache.slider.core.registry.zk.ZookeeperUtils;
+import org.apache.slider.core.zk.ZKPathBuilder;
+import org.apache.slider.core.zk.ZookeeperUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

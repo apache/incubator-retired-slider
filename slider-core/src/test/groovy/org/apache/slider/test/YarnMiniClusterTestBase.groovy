@@ -55,7 +55,6 @@ import org.junit.rules.Timeout
 
 import static org.apache.slider.common.SliderXMLConfKeysForTesting.*
 import static org.apache.slider.test.KeysForTests.*
-import static org.apache.slider.test.SliderTestUtils.log
 
 /**
  * Base class for mini cluster tests -creates a field for the
@@ -88,7 +87,6 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     SLIDER_CONFIG.setBoolean(YarnConfiguration.NM_PMEM_CHECK_ENABLED, false)
     SLIDER_CONFIG.setBoolean(YarnConfiguration.NM_VMEM_CHECK_ENABLED, false)
     SLIDER_CONFIG.setInt(YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_MB, 1)
-    
   }
 
 
@@ -194,8 +192,8 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
   }
 
   public void stopMiniCluster() {
-    Log l = LogFactory.getLog(this.getClass())
-    ServiceOperations.stopQuietly(l, miniCluster)
+    Log commonslog = LogFactory.getLog(this.class)
+    ServiceOperations.stopQuietly(commonslog, miniCluster)
     hdfsCluster?.shutdown();
   }
 

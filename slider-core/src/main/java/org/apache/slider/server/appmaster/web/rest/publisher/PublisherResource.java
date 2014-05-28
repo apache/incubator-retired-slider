@@ -150,7 +150,7 @@ public class PublisherResource {
   }
 
   @GET
-  @Path("/" + CONFIG+ ".json")
+  @Path("/" + CONFIG + ".json")
   @Produces({MediaType.APPLICATION_JSON})
   public String getConfigurationContentJson(
       @PathParam("setname") String setname,

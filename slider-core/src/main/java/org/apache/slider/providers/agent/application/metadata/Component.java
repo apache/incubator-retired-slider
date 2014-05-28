@@ -22,9 +22,13 @@ package org.apache.slider.providers.agent.application.metadata;
 public class Component {
   String name;
   String category;
+  String publishConfig;
+  String minInstanceCount;
+  String maxInstanceCount;
   CommandScript commandScript;
 
   public Component() {
+    publishConfig = Boolean.FALSE.toString();
   }
 
   public String getName() {
@@ -41,6 +45,30 @@ public class Component {
 
   public void setCategory(String category) {
     this.category = category;
+  }
+
+  public String getPublishConfig() {
+    return publishConfig;
+  }
+
+  public void setPublishConfig(String publishConfig) {
+    this.publishConfig = publishConfig;
+  }
+
+  public String getMinInstanceCount() {
+    return minInstanceCount;
+  }
+
+  public void setMinInstanceCount(String minInstanceCount) {
+    this.minInstanceCount = minInstanceCount;
+  }
+
+  public String getMaxInstanceCount() {
+    return maxInstanceCount;
+  }
+
+  public void setMaxInstanceCount(String maxInstanceCount) {
+    this.maxInstanceCount = maxInstanceCount;
   }
 
   public CommandScript getCommandScript() {

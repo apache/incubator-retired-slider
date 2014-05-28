@@ -87,10 +87,6 @@ public abstract class SliderProviderFactory extends Configured {
       SliderProviderFactory providerFactory = providerClass.newInstance();
       providerFactory.setConf(conf);
       return providerFactory;
-    } catch (InstantiationException e) {
-      ex = e;
-    } catch (IllegalAccessException e) {
-      ex = e;
     } catch (Exception e) {
       ex = e;
     }

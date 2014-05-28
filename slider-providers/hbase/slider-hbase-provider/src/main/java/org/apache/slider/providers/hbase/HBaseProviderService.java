@@ -204,32 +204,25 @@ public class HBaseProviderService extends AbstractProviderService implements
   @Override
   protected void serviceStart() throws Exception {
     registerHBaseServiceEntry();
-
-
     super.serviceStart();
   }
 
   private void registerHBaseServiceEntry() throws IOException {
 
-    // not a URL, but needed
-    URL hbaseURL = new URL("http://localhost:0");
-    ServiceInstanceData instanceData = new ServiceInstanceData();
+    String name = amState.getApplicationName() ; 
+//    name += ".hbase";
+    ServiceInstanceData instanceData = new ServiceInstanceData(name,
+        HBASE_SERVICE_TYPE);
+    log.info("registering {}/{}", name, HBASE_SERVICE_TYPE );
     PublishedConfiguration publishedSite =
-        new PublishedConfiguration("HBase site",
-            siteConf);
+        new PublishedConfiguration("HBase site", siteConf);
     PublishedConfigSet configSet =
         amState.getOrCreatePublishedConfigSet(HBASE_SERVICE_TYPE);
     instanceData.externalView.configurationsURL = SliderUtils.appendToURL(
         amWebAPI.toExternalForm(), SLIDER_PATH_PUBLISHER, HBASE_SERVICE_TYPE);
-    configSet.put(HBASE_SITE_PUBLISHED_CONFIG,
-        publishedSite);
-    String name = amState.getApplicationName()+".hbase";
-    log.info("registering {}/{}", name, HBASE_SERVICE_TYPE);
-    registry.registerServiceInstance(HBASE_SERVICE_TYPE,
-        name,
-        null,
-        instanceData
-    );
+    configSet.put(HBASE_SITE_PUBLISHED_CONFIG, publishedSite);
+
+    registry.registerServiceInstance(instanceData, null);
   }
 
   /**

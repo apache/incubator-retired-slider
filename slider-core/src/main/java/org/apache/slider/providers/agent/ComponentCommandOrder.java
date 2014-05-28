@@ -93,7 +93,7 @@ public class ComponentCommandOrder {
 
     Command cmd = Command.valueOf(cmdStr);
 
-    if(cmd != Command.START) {
+    if (cmd != Command.START) {
       throw new IllegalArgumentException("Dependency order can only be specified for START.");
     }
     return new ComponentCommand(compStr, cmd);
@@ -113,8 +113,8 @@ public class ComponentCommandOrder {
     String stateStr = compStStr.substring(splitIndex + 1);
 
     State state = State.valueOf(stateStr);
-    if(state != State.STARTED) {
-      throw new IllegalArgumentException("Dependency order can only be specified against STARTED.");
+    if (state != State.STARTED && state != State.INSTALLED) {
+      throw new IllegalArgumentException("Dependency order can only be specified against STARTED/INSTALLED.");
     }
     return new ComponentState(compStr, state);
   }
@@ -129,9 +129,18 @@ public class ComponentCommandOrder {
                     component, command, currState.getCompName(), currState.getState());
           if (currState.getCompName().equals(stateToMatch.componentName)) {
             if (currState.getState() != stateToMatch.state) {
-              log.info("Cannot schedule {} {} as dependency {} is {}",
-                       component, command, currState.getCompName(), currState.getState());
-              canExecute = false;
+              if (stateToMatch.state == State.STARTED) {
+                log.info("Cannot schedule {} {} as dependency {} is {}",
+                         component, command, currState.getCompName(), currState.getState());
+                canExecute = false;
+              } else {
+                //state is INSTALLED
+                if (currState.getState() != State.STARTING && currState.getState() != State.STARTED) {
+                  log.info("Cannot schedule {} {} as dependency {} is {}",
+                           component, command, currState.getCompName(), currState.getState());
+                  canExecute = false;
+                }
+              }
             }
           }
           if (!canExecute) {

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.slider.core.registry.zk;
+package org.apache.slider.core.zk;
 
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;

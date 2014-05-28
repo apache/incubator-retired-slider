@@ -23,6 +23,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
+import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
@@ -93,7 +94,7 @@ import org.apache.slider.core.registry.docstore.PublishedConfigurationOutputter;
 import org.apache.slider.core.registry.info.RegisteredEndpoint;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.core.registry.retrieve.RegistryRetriever;
-import org.apache.slider.core.registry.zk.ZKPathBuilder;
+import org.apache.slider.core.zk.ZKPathBuilder;
 import org.apache.slider.providers.AbstractClientProvider;
 import org.apache.slider.providers.SliderProviderFactory;
 import org.apache.slider.providers.agent.AgentKeys;
@@ -156,6 +157,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    */
   public SliderClient() {
     super("Slider Client");
+    new HdfsConfiguration();
+    new YarnConfiguration();
   }
 
   @Override
@@ -2187,7 +2190,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @throws IOException
    * @throws YarnException
    */
-  public List<String> listRegistryInstanceIDs() throws
+  public List<String> listRegistedSliderInstances() throws
       IOException,
       YarnException {
     try {

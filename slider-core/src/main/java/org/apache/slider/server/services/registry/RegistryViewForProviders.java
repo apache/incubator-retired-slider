@@ -39,15 +39,10 @@ public interface RegistryViewForProviders {
 
   /**
    * Register the service, raising IOExceptions when anything fails
-   * @param serviceType service type
-   * @param instanceName ID -must be unique
-   * @param url URL to register
    * @param instanceData instance data
+   * @param url URL to register
    * @throws IOException on registration problems
    */
   void registerServiceInstance(
-      String serviceType,
-      String instanceName,
-      URL url,
-      ServiceInstanceData instanceData) throws IOException;
+      ServiceInstanceData instanceData, URL url) throws IOException;
 }

@@ -36,6 +36,7 @@ import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.ExitUtil;
 import org.apache.hadoop.util.VersionInfo;
+import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.LocalResource;
@@ -1357,6 +1358,27 @@ public final class SliderUtils {
       result = appendToURL(result, path);
     }
     return result;
+  }
+
+
+  /**
+   * Truncate the given string to a maximum length provided
+   * with a pad (...) added to the end if expected size if more than 10.
+   * @param toTruncate
+   * @param maxSize
+   * @return
+   */
+  public static String truncate(String toTruncate, int maxSize) {
+    if(toTruncate == null || maxSize < 1
+       || toTruncate.length() <= maxSize) {
+      return toTruncate;
+    }
+
+    String pad = "...";
+    if(maxSize < 10) {
+      pad = "";
+    }
+    return toTruncate.substring(0, maxSize - pad.length()).concat(pad);
   }
   
   

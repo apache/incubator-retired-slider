@@ -208,7 +208,7 @@ public class AgentClientProvider extends AbstractClientProvider
       tags = new HashSet<>();
       tags.add("Name: " + service.getName());
       tags.add("Version: " + service.getVersion());
-      tags.add("Description: " + service.getComment());
+      tags.add("Description: " + SliderUtils.truncate(service.getComment(), 80));
     } catch (IOException e) {
       log.error("error retrieving metainfo from {}", appDef, e);
       throw new SliderException("error retrieving metainfo", e);

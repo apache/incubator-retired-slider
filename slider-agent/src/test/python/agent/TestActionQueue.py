@@ -363,7 +363,8 @@ class TestActionQueue(TestCase):
                 'taskId': 3,
                 'structuredOut': '',
                 'exitcode': 0,
-                'allocatedPorts': {}}
+                'allocatedPorts': {},
+                'folders': {'AGENT_LOG_ROOT': tempdir, 'AGENT_WORK_ROOT': tempdir}}
     self.assertEqual(len(report['reports']), 1)
     self.assertEqual(report['reports'][0], expected)
     self.assertTrue(os.path.isfile(configname))

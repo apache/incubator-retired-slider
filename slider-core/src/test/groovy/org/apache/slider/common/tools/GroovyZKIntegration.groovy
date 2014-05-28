@@ -18,7 +18,7 @@
 
 package org.apache.slider.common.tools
 
-import org.apache.slider.core.registry.zk.ZKCallback
+import org.apache.slider.core.zk.ZKCallback
 import org.apache.zookeeper.WatchedEvent
 
 class GroovyZKIntegration {

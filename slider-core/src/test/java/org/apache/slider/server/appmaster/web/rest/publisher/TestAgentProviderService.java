@@ -39,8 +39,8 @@ public class TestAgentProviderService extends AgentProviderService{
 
   @Override
   public void bind(StateAccessForProviders stateAccessor,
-                   RegistryViewForProviders registry) {
-    super.bind(stateAccessor, registry);
+                   RegistryViewForProviders reg) {
+    super.bind(stateAccessor, reg);
     Map<String,String> dummyProps = new HashMap<>();
     dummyProps.put("prop1", "val1");
     dummyProps.put("prop2", "val2");

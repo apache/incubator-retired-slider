@@ -108,12 +108,6 @@ public class RegistryBinderService<Payload> extends CuratorService {
     Preconditions.checkNotNull(name, "null `name` arg");
     Preconditions.checkState(isInState(STATE.STARTED), "Not started: " + this);
 
-    if (lookup(id) != null) {
-      throw new BadClusterStateException(
-        "existing entry for service id %s name %s %s",
-        id, name, url);
-    }
-
     ServiceInstanceBuilder<Payload> instanceBuilder = builder()
         .name(name)
         .id(id)
@@ -138,16 +132,6 @@ public class RegistryBinderService<Payload> extends CuratorService {
       entries.put(id, instance);
     }
     return instance;
-  }
-
-  /**
-   * Get the registered instance by its ID
-   * @param id ID
-   * @return instance or null
-   */
-  public synchronized ServiceInstance<Payload> lookup(String id) {
-    Preconditions.checkNotNull(id, "null `id` arg");
-    return entries.get(id);
   }
 
   /**
@@ -269,6 +253,19 @@ public class RegistryBinderService<Payload> extends CuratorService {
     return null;
   }
 
+  /**
+   * Find a single instance -return that value or raise an exception
+   * @param serviceType service type
+   * @param name the name (required(
+   * @return the instance that matches the criteria
+   * @throws FileNotFoundException if there were no matches
+   * @throws IOException any network problem
+   */
+  public CuratorServiceInstance<Payload> findInstance(String serviceType,
+      String name) throws IOException {
+    Preconditions.checkArgument(StringUtils.isNotEmpty(name), "name");
+    return findInstances(serviceType, name).get(0);
+  }
   /**
    * List registry entries. If a name was given, then the single match is returned
    * -otherwise all entries matching the service type

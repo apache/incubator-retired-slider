@@ -20,6 +20,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.junit.Test;
+import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +45,20 @@ public class TestSliderUtils {
         sliderFileSystem.getFileSystem(),
         new Path("target/test-classes/org/apache/slider/common/tools/test.zip"),
         "metainfo.xml");
-    assert stream != null;
-    assert stream.available() > 0;
+    Assert.assertTrue(stream != null);
+    Assert.assertTrue(stream.available() > 0);
+  }
+
+  @Test
+  public void testTruncate () {
+    Assert.assertEquals(SliderUtils.truncate(null, 5), null);
+    Assert.assertEquals(SliderUtils.truncate("323", -1), "323");
+    Assert.assertEquals(SliderUtils.truncate("3232", 5), "3232");
+    Assert.assertEquals(SliderUtils.truncate("1234567890", 0), "1234567890");
+    Assert.assertEquals(SliderUtils.truncate("123456789012345", 15), "123456789012345");
+    Assert.assertEquals(SliderUtils.truncate("123456789012345", 14), "12345678901...");
+    Assert.assertEquals(SliderUtils.truncate("1234567890", 1), "1");
+    Assert.assertEquals(SliderUtils.truncate("1234567890", 10), "1234567890");
+    Assert.assertEquals(SliderUtils.truncate("", 10), "");
   }
 }
