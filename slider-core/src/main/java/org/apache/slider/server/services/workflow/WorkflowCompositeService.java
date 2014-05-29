@@ -103,9 +103,7 @@ public class WorkflowCompositeService extends CompositeService
         log.info("Child service " + child + " failed", failureCause);
         //failure. Convert to an exception
         Exception e = (failureCause instanceof Exception) ?
-                      (Exception) failureCause
-                                                          : new Exception(
-                                                              failureCause);
+            (Exception) failureCause : new Exception(failureCause);
         //flip ourselves into the failed state
         noteFailure(e);
         stop();

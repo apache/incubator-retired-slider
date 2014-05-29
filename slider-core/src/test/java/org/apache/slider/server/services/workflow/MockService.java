@@ -20,19 +20,18 @@ package org.apache.slider.server.services.workflow;
 
 import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.service.ServiceStateException;
-import org.apache.slider.core.main.ExitCodeProvider;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MockService extends AbstractService {
-  boolean fail = false;
-  int exitCode;
-  int lifespan = -1;
-  ExecutorService executorService = Executors.newSingleThreadExecutor();
+  private final boolean fail;
+  private final int lifespan;
+  private final ExecutorService executorService =
+      Executors.newSingleThreadExecutor();
 
   MockService() {
-    super("mock");
+    this("mock", false, -1);
   }
 
   MockService(String name, boolean fail, int lifespan) {

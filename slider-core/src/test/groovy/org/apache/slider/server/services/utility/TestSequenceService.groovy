@@ -33,18 +33,18 @@ class TestSequenceService extends ServiceLauncherBaseTest {
 
   @Test
   public void testSingleSequence() throws Throwable {
-    WorkflowSequenceService ss = startService([new MockService()])
+    WorkflowSequenceService ss = startService([new MockService()]);
     ss.stop();
   }
 
   @Test
   public void testSequence() throws Throwable {
-    MockService one = new MockService("one", false, 100)
-    MockService two = new MockService("two", false, 100)
-    WorkflowSequenceService ss = startService([one, two])
+    MockService one = new MockService("one", false, 100);
+    MockService two = new MockService("two", false, 100);
+    WorkflowSequenceService ss = startService([one, two]);
     assert ss.waitForServiceToStop(1000);
-    assert one.isInState(Service.STATE.STOPPED)
-    assert two.isInState(Service.STATE.STOPPED)
+    assert one.isInState(Service.STATE.STOPPED);
+    assert two.isInState(Service.STATE.STOPPED);
     assert ss.previousService == two
   }
 
@@ -116,14 +116,14 @@ class TestSequenceService extends ServiceLauncherBaseTest {
 
   @Test
   public void testVarargsCtor() throws Throwable {
-    MockService one = new MockService("one", false, 100)
-    MockService two = new MockService("two", false, 100)
+    MockService one = new MockService("one", false, 100);
+    MockService two = new MockService("two", false, 100);
     WorkflowSequenceService ss = new WorkflowSequenceService("test", one, two);
-    ss.init(new Configuration())
+    ss.init(new Configuration());
     ss.start();
     assert ss.waitForServiceToStop(1000);
-    assert one.isInState(Service.STATE.STOPPED)
-    assert two.isInState(Service.STATE.STOPPED)
+    assert one.isInState(Service.STATE.STOPPED);
+    assert two.isInState(Service.STATE.STOPPED);
 
 
   }
@@ -135,10 +135,10 @@ class TestSequenceService extends ServiceLauncherBaseTest {
   }
 
   public WorkflowSequenceService buildService(List<Service> services) {
-    WorkflowSequenceService ss = new WorkflowSequenceService("test")
+    WorkflowSequenceService ss = new WorkflowSequenceService("test");
     services.each { ss.addService(it) }
-    ss.init(new Configuration())
-    return ss
+    ss.init(new Configuration());
+    return ss;
   }
 
 
