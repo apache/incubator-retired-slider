@@ -1,37 +1,37 @@
 {
     "Component": {
         "ACCUMULO_MASTER": {
-            "masterGoalState": {
+            "MasterGoalState": {
                 "metric": "/stats/masterGoalState",
                 "pointInTime": true,
                 "temporal": false
             },
-            "masterState": {
+            "MasterState": {
                 "metric": "/stats/masterState",
                 "pointInTime": true,
                 "temporal": false
             },
-            "deadTabletServers": {
+            "DeadTabletServers": {
                 "metric": "/stats/deadTabletServers",
                 "pointInTime": true,
                 "temporal": false
             },
-            "totals_ingestrate": {
+            "TotalIngestRate": {
                 "metric": "/stats/totals/ingestrate",
                 "pointInTime": true,
                 "temporal": false
             },
-            "totals_queryrate": {
+            "TotalQueryRate": {
                 "metric": "/stats/totals/queryrate",
                 "pointInTime": true,
                 "temporal": false
             },
-            "totals_diskrate": {
+            "TotalDiskRate": {
                 "metric": "/stats/totals/diskrate",
                 "pointInTime": true,
                 "temporal": false
             },
-            "badTabletServers": {
+            "BadTabletServers": {
                 "metric": "/stats/badTabletServers",
                 "pointInTime": true,
                 "temporal": false

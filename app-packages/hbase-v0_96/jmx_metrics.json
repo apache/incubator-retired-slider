@@ -1,7 +1,7 @@
 {
     "Component": {
         "HBASE_MASTER": {
-            "metricAverageLoad": {
+            "MetricAverageLoad": {
                 "metric": "Hadoop:service=HBase,name=Master,sub=Server.averageLoad",
                 "pointInTime": true,
                 "temporal": false
@@ -46,7 +46,7 @@
                 "pointInTime": true,
                 "temporal": false
             },
-            "cluster_requests": {
+            "ClusterRequests": {
                 "metric": "Hadoop:service=HBase,name=Master,sub=Server.clusterRequests",
                 "pointInTime": true,
                 "temporal": false
