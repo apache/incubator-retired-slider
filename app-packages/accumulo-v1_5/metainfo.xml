@@ -38,10 +38,18 @@
               <name>org.apache.slider.monitor</name>
               <value>http://${ACCUMULO_MONITOR_HOST}:${site.accumulo-site.monitor.port.client}</value>
             </export>
+            <export>
+              <name>org.apache.slider.jmx</name>
+              <value>http://${ACCUMULO_MONITOR_HOST}:${site.accumulo-site.monitor.port.client}/xml</value>
+            </export>
           </exports>
         </exportGroup>
       </exportGroups>
       <commandOrders>
+        <commandOrder>
+          <command>ACCUMULO_MASTER-START</command>
+          <requires>ACCUMULO_MONITOR-INSTALLED</requires>
+        </commandOrder>
         <commandOrder>
           <command>ACCUMULO_TSERVER-START</command>
           <requires>ACCUMULO_MASTER-STARTED</requires>

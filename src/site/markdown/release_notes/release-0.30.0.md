@@ -15,7 +15,7 @@
    limitations under the License.
 -->
   
-# Slider Release 0.24.0
+# Slider Release 0.30.0
 
 May 2014
 
@@ -26,7 +26,10 @@ Download: []()
 
 
 ## Key changes
-
+1. Slider application registry that allow registration and discovery of application configuration and URLs (such as jmx endpoints and management UI) for client consumption.
+2. Move to a .zip packaging for Slider application packages.
+3. Richer metainfo support to provide start ordering and arbitrary template that can be published.
+4. Updated application definition packages for HBase, Accumulo, and Storm. 
 
 ## Other changes
 
