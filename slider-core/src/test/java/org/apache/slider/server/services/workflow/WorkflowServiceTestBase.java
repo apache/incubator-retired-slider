@@ -20,6 +20,7 @@ package org.apache.slider.server.services.workflow;
 
 import org.apache.hadoop.service.Service;
 import org.junit.Assert;
+import org.junit.Before;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +28,11 @@ public abstract class WorkflowServiceTestBase extends Assert {
   private static final Logger
       log = LoggerFactory.getLogger(WorkflowServiceTestBase.class);
 
+  @Before
+  public void nameThread() {
+    Thread.currentThread().setName("JUnit");
+  }
+  
   public void assertInState(Service service, Service.STATE expected) {
     Service.STATE actual = service.getServiceState();
     if (actual != expected) {
