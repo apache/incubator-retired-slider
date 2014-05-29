@@ -78,8 +78,6 @@ public class WorkflowSequenceService extends AbstractService implements
       addService(service);
     }
   }
-  
- 
 
   /**
    * Get the current service -which may be null
@@ -113,7 +111,6 @@ public class WorkflowSequenceService extends AbstractService implements
       current.stop();
     }
   }
-
 
   /**
    * Start the next service in the list.
@@ -176,6 +173,8 @@ public class WorkflowSequenceService extends AbstractService implements
    */
   @Override
   public void stateChanged(Service service) {
+    // only react to the state change when it is the current service
+    // and it has entered the STOPPED state
     if (service == currentService && service.isInState(STATE.STOPPED)) {
       onServiceCompleted(service);
     }
@@ -197,9 +196,7 @@ public class WorkflowSequenceService extends AbstractService implements
       Throwable failureCause = service.getFailureCause();
       if (failureCause != null) {
         Exception e = (failureCause instanceof Exception) ?
-                      (Exception) failureCause
-                                                          : new Exception(
-                                                              failureCause);
+                      (Exception) failureCause : new Exception(failureCause);
         noteFailure(e);
         stop();
       }
