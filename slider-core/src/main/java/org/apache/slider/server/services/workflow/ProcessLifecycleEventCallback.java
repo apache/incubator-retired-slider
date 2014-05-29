@@ -1,5 +1,5 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
+ *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
  *  distributed with this work for additional information
  *  regarding copyright ownership.  The ASF licenses this file
@@ -16,14 +16,14 @@
  *  limitations under the License.
  */
 
-package org.apache.slider.server.exec;
+package org.apache.slider.server.services.workflow;
 
 /**
  * Callback when a long-lived application exits
  */
-public interface ApplicationEventHandler {
+public interface ProcessLifecycleEventCallback {
 
-  void onApplicationStarted(RunLongLivedApp application);
+  void onProcessStarted(LongLivedProcess application);
 
-  void onApplicationExited(RunLongLivedApp application, int exitCode);
+  void onProcessExited(LongLivedProcess application, int exitCode);
 }

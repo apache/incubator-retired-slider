@@ -25,8 +25,6 @@ import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.main.ExitCodeProvider;
 import org.apache.slider.core.main.ServiceLaunchException;
-import org.apache.slider.server.exec.ApplicationEventHandler;
-import org.apache.slider.server.exec.RunLongLivedApp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * and converts a non-zero exit code into a failure exception
  */
 public class ForkedProcessService extends AbstractService implements
-                                                          ApplicationEventHandler,
+    ProcessLifecycleEventCallback,
                                                           ExitCodeProvider,
                                                           Runnable {
 
@@ -57,7 +55,7 @@ public class ForkedProcessService extends AbstractService implements
   private final AtomicBoolean processTerminated = new AtomicBoolean(false);
   ;
   private boolean processStarted = false;
-  private RunLongLivedApp process;
+  private LongLivedProcess process;
   private Map<String, String> environment;
   private List<String> commands;
   private String commandLine;
@@ -121,14 +119,14 @@ public class ForkedProcessService extends AbstractService implements
     this.commands = commands;
     this.commandLine = SliderUtils.join(commands, " ", false);
     this.environment = environment;
-    process = new RunLongLivedApp(log, commands);
-    process.setApplicationEventHandler(this);
+    process = new LongLivedProcess(getName(), log, commands);
+    process.setLifecycleCallback(this);
     //set the env variable mapping
     process.putEnvMap(environment);
   }
 
   @Override // ApplicationEventHandler
-  public synchronized void onApplicationStarted(RunLongLivedApp application) {
+  public synchronized void onProcessStarted(LongLivedProcess application) {
     log.info("Process has started");
     processStarted = true;
     if (executionTimeout > 0) {
@@ -138,8 +136,8 @@ public class ForkedProcessService extends AbstractService implements
   }
 
   @Override // ApplicationEventHandler
-  public void onApplicationExited(RunLongLivedApp application,
-                                  int exitC) {
+  public void onProcessExited(LongLivedProcess application,
+      int exitC) {
     synchronized (this) {
       completed(exitC);
       //note whether or not the service had already stopped

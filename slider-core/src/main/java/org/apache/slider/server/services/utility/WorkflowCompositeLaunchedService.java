@@ -22,7 +22,6 @@ import com.google.common.base.Preconditions;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.Service;
-import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.main.LauncherExitCodes;
 import org.apache.slider.core.main.RunService;
 import org.apache.slider.server.services.workflow.WorkflowCompositeService;
@@ -40,11 +39,11 @@ public class WorkflowCompositeLaunchedService extends WorkflowCompositeService
   }
 
   public WorkflowCompositeLaunchedService() {
-    super("CompoundLaunchedService");
+    super("WorkflowCompositeLaunchedService");
   }
 
-  public WorkflowCompositeLaunchedService(Service... children) {
-    super(children);
+  public WorkflowCompositeLaunchedService(String name, Service... children) {
+    super(name, children);
   }
 
   /**
@@ -95,7 +94,7 @@ public class WorkflowCompositeLaunchedService extends WorkflowCompositeService
   }
 
   @Override
-  public void addService(Service service) {
+  public synchronized void addService(Service service) {
     Preconditions.checkNotNull(service, "null service");
     super.addService(service);
   }
@@ -115,21 +114,4 @@ public class WorkflowCompositeLaunchedService extends WorkflowCompositeService
     return false;
   }
 
-  protected void requireArgumentSet(String argname, String argfield)
-      throws BadCommandArgumentsException {
-    if (isUnset(argfield)) {
-      throw new BadCommandArgumentsException("Required argument "
-                                             + argname
-                                             + " missing");
-    }
-  }
-
-  protected void requireArgumentSet(String argname, Object argfield) throws
-                                               BadCommandArgumentsException {
-    if (argfield == null) {
-      throw new BadCommandArgumentsException("Required argument "
-                                             + argname
-                                             + " missing");
-    }
-  }
 }

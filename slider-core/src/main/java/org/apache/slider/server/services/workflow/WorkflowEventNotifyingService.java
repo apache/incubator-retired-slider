@@ -23,20 +23,20 @@ import org.apache.hadoop.service.AbstractService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * A service that calls the supplied callback when it is started -after the 
  * given delay, then stops itself.
- * Because it calls in on a different thread, it can be used for callbacks
- * that don't 
+ * The notifications come in on a different thread
  */
 public class WorkflowEventNotifyingService extends AbstractService implements Runnable {
   protected static final Logger log =
     LoggerFactory.getLogger(WorkflowEventNotifyingService.class);
   private final WorkflowEventCallback callback;
   private final int delay;
-  private Executor executor;
+  private ExecutorService executor;
 
 
   public WorkflowEventNotifyingService(String name,
@@ -54,16 +54,26 @@ public class WorkflowEventNotifyingService extends AbstractService implements Ru
   @Override
   protected void serviceStart() throws Exception {
     log.debug("Notifying {} after a delay of {} millis", callback, delay);
-    new Thread(this, getName()).start();
+    executor = Executors.newSingleThreadExecutor(
+        new ServiceThreadFactory(getName(), true));
+    executor.execute(this);
   }
 
   @Override
+  protected void serviceStop() throws Exception {
+    super.serviceStop();
+    if (executor != null) {
+      executor.shutdownNow();
+    }
+  }
+
+  @Override // Runnable
   public void run() {
     if (delay > 0) {
       try {
         Thread.sleep(delay);
-      } catch (InterruptedException ignored) {
-
+      } catch (InterruptedException interrupted) {
+        return;
       }
     }
     log.debug("Notifying {}", callback);

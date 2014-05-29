@@ -16,20 +16,20 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.services.utility
+package org.apache.slider.server.services.workflow;
 
-import org.apache.hadoop.service.AbstractService
-import org.apache.hadoop.service.ServiceStateException
-import org.apache.slider.core.main.ExitCodeProvider
+import org.apache.hadoop.service.AbstractService;
+import org.apache.hadoop.service.ServiceStateException;
+import org.apache.slider.core.main.ExitCodeProvider;
 
-/**
- * Little mock service to simulate delays
- */
-class MockService extends AbstractService implements ExitCodeProvider {
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+public class MockService extends AbstractService {
   boolean fail = false;
   int exitCode;
   int lifespan = -1;
+  ExecutorService executorService = Executors.newSingleThreadExecutor();
 
   MockService() {
     super("mock");
@@ -45,10 +45,17 @@ class MockService extends AbstractService implements ExitCodeProvider {
   protected void serviceStart() throws Exception {
     //act on the lifespan here
     if (lifespan > 0) {
-      Thread.start {
-        Thread.sleep(lifespan);
-        finish();
-      }
+      executorService.submit(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            Thread.sleep(lifespan);
+          } catch (InterruptedException ignored) {
+
+          }
+          finish();
+        }
+      });
     } else {
       if (lifespan == 0) {
         finish();
@@ -60,8 +67,9 @@ class MockService extends AbstractService implements ExitCodeProvider {
 
   void finish() {
     if (fail) {
-      ServiceStateException e = new ServiceStateException(getName() + " failed");
-      
+      ServiceStateException e =
+          new ServiceStateException(getName() + " failed");
+
       noteFailure(e);
       stop();
       throw e;

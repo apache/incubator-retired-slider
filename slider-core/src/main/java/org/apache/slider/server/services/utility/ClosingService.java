@@ -37,7 +37,6 @@ public class ClosingService<C extends Closeable> extends AbstractService {
     this.closeable = closeable;
   }
 
-
   public Closeable getCloseable() {
     return closeable;
   }

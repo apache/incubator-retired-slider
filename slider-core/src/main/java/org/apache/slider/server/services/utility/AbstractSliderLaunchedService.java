@@ -22,6 +22,7 @@ package org.apache.slider.server.services.utility;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.common.tools.SliderUtils;
+import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.core.zk.ZookeeperUtils;
 import org.apache.slider.server.services.curator.CuratorHelper;
@@ -65,7 +66,8 @@ public abstract class AbstractSliderLaunchedService extends
    * @throws BadConfigException if it is not there or invalid
    */
   public String lookupZKQuorum() throws BadConfigException {
-    String registryQuorum = getConfig().get(SliderXmlConfKeys.REGISTRY_ZK_QUORUM);
+    String registryQuorum = getConfig().get(
+        SliderXmlConfKeys.REGISTRY_ZK_QUORUM);
     if (SliderUtils.isUnset(registryQuorum)) {
       throw new BadConfigException(
           "No Zookeeper quorum provided in the"
@@ -92,6 +94,15 @@ public abstract class AbstractSliderLaunchedService extends
       curatorHelper.createRegistryBinderService(zkPath);
     deployChildService(registryBinderService);
     return registryBinderService;
+  }
+
+  protected void requireArgumentSet(String argname, String argfield)
+      throws BadCommandArgumentsException {
+    if (isUnset(argfield)) {
+      throw new BadCommandArgumentsException("Required argument "
+                                             + argname
+                                             + " missing");
+    }
   }
 
 

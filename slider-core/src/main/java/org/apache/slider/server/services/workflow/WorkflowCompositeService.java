@@ -63,13 +63,15 @@ public class WorkflowCompositeService extends CompositeService
       addService(child);
     }
   }
-
   /**
    * Varargs constructor
    * @param children children
    */
-  public WorkflowCompositeService(Service... children) {
-    this("WorkflowCompositeService", children);
+  public WorkflowCompositeService(String name, List<Service> children) {
+    this(name);
+    for (Service child : children) {
+      addService(child);
+    }
   }
 
   /**

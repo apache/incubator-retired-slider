@@ -46,40 +46,40 @@ class TestCompoundService extends ServiceLauncherBaseTest {
   }
 
   public boolean waitForParentToStop(WorkflowCompositeService parent) {
-    boolean stop = parent.waitForServiceToStop(1000)
+    boolean stop = parent.waitForServiceToStop(1000);
     if (!stop) {
-      log.error("Service failed to stop $parent")
+      log.error("Service failed to stop $parent");
       logState(parent)
     }
-    return stop
+    return stop;
   }
 
 
   @Test
   public void testSingleCompoundFailing() throws Throwable {
-    WorkflowCompositeService parent = startService([new MockService("1",true,100)])
+    WorkflowCompositeService parent = startService([new MockService("1",true,100)]);
     assert parent.waitForServiceToStop(1000);
     assert parent.getFailureCause() != null;
   }
   
   @Test
   public void testCompound() throws Throwable {
-    MockService one = new MockService("one", false, 100)
-    MockService two = new MockService("two", false, 100)
-    WorkflowCompositeService parent = startService([one, two])
+    MockService one = new MockService("one", false, 100);
+    MockService two = new MockService("two", false, 100);
+    WorkflowCompositeService parent = startService([one, two]);
     assert waitForParentToStop(parent);
-    assert one.isInState(Service.STATE.STOPPED)
-    assert two.isInState(Service.STATE.STOPPED)
+    assert one.isInState(Service.STATE.STOPPED);
+    assert two.isInState(Service.STATE.STOPPED);
   }
 
   @Test
   public void testCompoundOneLongLived() throws Throwable {
     MockService one = new MockService("one", false, 500)
     MockService two = new MockService("two", false, 100)
-    WorkflowCompositeService parent = startService([one, two])
+    WorkflowCompositeService parent = startService([one, two]);
     assert waitForParentToStop(parent);
-    assert one.isInState(Service.STATE.STOPPED)
-    assert two.isInState(Service.STATE.STOPPED)
+    assert one.isInState(Service.STATE.STOPPED);
+    assert two.isInState(Service.STATE.STOPPED);
   }
 
   
@@ -89,19 +89,19 @@ class TestCompoundService extends ServiceLauncherBaseTest {
     WorkflowEventCallback ecb = new WorkflowEventCallback() {
       @Override
       void eventCallbackEvent() {
-        log.info("EventCallback")
+        log.info("EventCallback");
         notified = true;
       }
     }
-    MockService one = new MockService("one", false, 100)
+    MockService one = new MockService("one", false, 100);
     WorkflowEventNotifyingService ens = new WorkflowEventNotifyingService(ecb, 100);
-    MockService two = new MockService("two", false, 100)
-    WorkflowCompositeService parent = startService([one, ens, two])
+    MockService two = new MockService("two", false, 100);
+    WorkflowCompositeService parent = startService([one, ens, two]);
     assert waitForParentToStop(parent);
-    assert one.isInState(Service.STATE.STOPPED)
-    assert ens.isInState(Service.STATE.STOPPED)
-    assert two.isInState(Service.STATE.STOPPED)
-    assert notified
+    assert one.isInState(Service.STATE.STOPPED);
+    assert ens.isInState(Service.STATE.STOPPED);
+    assert two.isInState(Service.STATE.STOPPED);
+    assert notified;
   }
 
   @Test
@@ -110,9 +110,6 @@ class TestCompoundService extends ServiceLauncherBaseTest {
     MockService two = new MockService("two", false, 100)
     WorkflowCompositeService parent = startService([one, two])
     assert waitForParentToStop(parent);
-
-
-
     assert one.isInState(Service.STATE.STOPPED)
     assert one.failureCause != null
     assert two.isInState(Service.STATE.STOPPED)
