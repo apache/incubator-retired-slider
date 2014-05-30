@@ -69,6 +69,14 @@
       <item name="Exitcodes" href="/exitcodes.html"/>
     </menu>
 
+    <menu name="ASF">
+      <item name="How Apache Works" href="http://www.apache.org/foundation/how-it-works.html"/>
+      <item name="Developer Documentation" href="http://www.apache.org/dev/"/>
+      <item name="Foundation" href="http://www.apache.org/foundation/"/>
+      <item name="Sponsor Apache" href="http://www.apache.org/foundation/sponsorship.html"/>
+      <item name="Thanks" href="http://www.apache.org/foundation/thanks.html"/>
+    </menu>
+
     <footer>
       <div class="row-fluid">Apache Slider, Slider, Apache, and the Apache Incubator logo are trademarks of The Apache Software Foundation.</div>
     </footer>
