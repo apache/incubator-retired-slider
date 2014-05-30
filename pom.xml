@@ -63,24 +63,33 @@
   
   <developers>
     <developer>
-      <id>steveloughran</id>
+      <id>stevel</id>
       <name>Steve Loughran</name>
+      <roles>
+        <role>PPMC Chair</role>
+      </roles>
       <timezone>0</timezone>
       <organization>Hortonworks</organization>
       <organizationUrl>http://www.hortonworks.com</organizationUrl>
     </developer>
 
     <developer>
-      <id>billierinaldi</id>
+      <id>billie</id>
       <name>Billie Rinaldi</name>
+      <roles>
+        <role>PPMC Member</role>
+      </roles>
       <timezone>-5</timezone>
       <organization>Hortonworks</organization>
       <organizationUrl>http://www.hortonworks.com</organizationUrl>
     </developer>
 
     <developer>
-      <id>ddraj</id>
+      <id>ddas</id>
       <name>Devaraj Das</name>
+      <roles>
+        <role>PPMC Member</role>
+      </roles>
       <timezone>-8</timezone>
       <organization>Hortonworks</organization>
       <organizationUrl>http://www.hortonworks.com</organizationUrl>
@@ -89,22 +98,31 @@
     <developer>
       <id>tedyu</id>
       <name>Ted Yu</name>
+      <roles>
+        <role>PPMC Member</role>
+      </roles>
       <timezone>-8</timezone>
       <organization>Hortonworks</organization>
       <organizationUrl>http://www.hortonworks.com</organizationUrl>
     </developer>
 
     <developer>
-      <id>joshelser</id>
+      <id>elserj</id>
       <name>Josh Elser</name>
+      <roles>
+        <role>PPMC Member</role>
+      </roles>
       <timezone>-5</timezone>
       <organization>Hortonworks</organization>
       <organizationUrl>http://www.hortonworks.com</organizationUrl>
     </developer>
 
     <developer>
-      <id>sumitmohanty</id>
+      <id>smohanty</id>
       <name>Sumit Mohanty</name>
+      <roles>
+        <role>PPMC Member</role>
+      </roles>
       <timezone>-8</timezone>
       <organization>Hortonworks</organization>
       <organizationUrl>http://www.hortonworks.com</organizationUrl>
@@ -113,10 +131,69 @@
     <developer>
       <id>jmaron</id>
       <name>Jon Maron</name>
+      <roles>
+        <role>PPMC Member</role>
+      </roles>
       <timezone>-5</timezone>
       <organization>Hortonworks</organization>
       <organizationUrl>http://www.hortonworks.com</organizationUrl>
     </developer>
+
+    <developer>
+      <id>vinodkv</id>
+      <name>Vinod Kumar Vavilapalli</name>
+      <roles>
+        <role>Mentor</role>
+      </roles>
+      <timezone>-8</timezone>
+      <organization>Hortonworks</organization>
+      <organizationUrl>http://www.hortonworks.com</organizationUrl>
+    </developer>
+
+    <developer>
+      <id>jbonofre</id>
+      <name>Jean-Baptiste Onofré</name>
+      <roles>
+        <role>Mentor</role>
+      </roles>
+      <timezone></timezone>
+      <organization>Talend</organization>
+      <organizationUrl>http://www.talend.com</organizationUrl>
+    </developer>
+
+    <developer>
+      <id>mahadev</id>
+      <name>Mahadev Konar</name>
+      <roles>
+        <role>Mentor</role>
+      </roles>
+      <timezone>-8</timezone>
+      <organization>Hortonworks</organization>
+      <organizationUrl>http://www.hortonworks.com</organizationUrl>
+    </developer>
+
+    <developer>
+      <id>acmurthy</id>
+      <name>Arun Murthy</name>
+      <roles>
+        <role>Mentor</role>
+      </roles>
+      <timezone>-8</timezone>
+      <organization>Hortonworks</organization>
+      <organizationUrl>http://www.hortonworks.com</organizationUrl>
+    </developer>
+
+    <developer>
+      <id>ddas</id>
+      <name>Devaraj Das</name>
+      <roles>
+        <role>Mentor</role>
+      </roles>
+      <timezone>-8</timezone>
+      <organization>Hortonworks</organization>
+      <organizationUrl>http://www.hortonworks.com</organizationUrl>
+    </developer>
+
 
   </developers>
 
