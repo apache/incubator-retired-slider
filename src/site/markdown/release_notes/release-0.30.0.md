@@ -15,7 +15,7 @@
    limitations under the License.
 -->
   
-# Slider Release 0.30.0
+# Apache Slider Release 0.30.0 (incubating)
 
 May 2014
 

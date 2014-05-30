@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-#App Package
+# Apache Slider App Package
 
 All application artifacts, app definition, app configuration, scripts are packaged into a structured single package that can be handed off to any YARN application deployment tool including Slider
 

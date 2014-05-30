@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-# Guidelines for Clients and Client Applications
+# Apache Slider Guidelines for Clients and Client Applications
 
 This document will define the canonical scenarios for the deployment and management of Slider hosted applications.  It will define the types of applications supported, the sequence of events for deploying the application types, and the management facilities exposed for the deployed applications.
 

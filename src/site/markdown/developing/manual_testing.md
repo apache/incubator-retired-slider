@@ -15,7 +15,7 @@
    limitations under the License.
 -->
   
-# Manual Testing
+# Manually Testing Apache Slider
 
 Manual testing invloves using Slider package and an AppPackage to perform basic
  cluster functionalities such as create/destroy, flex up/down, and freeze/thaw.

@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-# YARN Application Registration and Binding: the Problem
+# Apache Slider YARN Application Registration and Binding: the Problem
 
 ## March 2014
 

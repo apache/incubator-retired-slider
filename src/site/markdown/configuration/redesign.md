@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-# Cluster Specification
+# Apache Slider Cluster Specification
 
 ### Notation: 
 

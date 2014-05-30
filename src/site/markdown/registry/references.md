@@ -15,7 +15,7 @@
    limitations under the License.
 -->
   
-# References
+# Service Registry References
 
 Service registration and discovery is a problem in distributed computing that has been explored for over thirty years, with 
 [Birrell81]'s *Grapevine* system the first known implementation -though of 

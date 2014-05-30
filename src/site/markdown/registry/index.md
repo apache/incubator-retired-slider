@@ -15,7 +15,7 @@
    limitations under the License.
 -->
   
-# Service Registry
+# Apache Slider Service Registry
 
 The service registry is a core part of the Slider Architecture -it is how
 dynamically generated configurations are published for clients to pick up.
@@ -40,7 +40,7 @@ be the duty of the management tools to do the registration.
 ## Contents
 
 1. [YARN Application Registration and Binding: the Problem](the_YARN_application_registration_and_binding_problem.html)
-1. [A YARN Service Registry](src/site/markdown/registry/a_YARN_service_registry.html)
+1. [A YARN Service Registry](a_YARN_service_registry.html)
 1. [April 2014 Initial Registry Design](initial_registry_design.html)
 1. [Service Registry End-to-End Scenarios](service_registry_end_to_end_scenario.html)
 1. [P2P Service Registries](p2p_service_registries.html)

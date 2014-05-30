@@ -14,7 +14,8 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 -->
-# Specification of an application instance, revision 2.0
+
+# Apache Slider: Specification of an application instance, revision 2.0
 
 The specification of an applicaton, comprises
 1. The persistent description of an application's configuration

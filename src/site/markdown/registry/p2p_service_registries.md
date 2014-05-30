@@ -15,7 +15,7 @@
    limitations under the License.
 -->
   
-# P2P Service Registries
+# P2P Service Registries for Apache Slider
 
 Alongside the centralized service registries, there's much prior work on P2P discovery systems, especially for mobile and consumer devices.
 

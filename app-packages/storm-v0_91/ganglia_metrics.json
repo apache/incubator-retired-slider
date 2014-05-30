@@ -1,6 +1,6 @@
 {
     "Component": {
-        "NIMBUS_SERVER": {
+        "NIMBUS": {
             "totalslots": {
                 "metric": "Total Slots",
                 "pointInTime": false,

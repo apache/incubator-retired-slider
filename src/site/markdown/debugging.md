@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-# Debugging Slider
+# Debugging Apache Slider
 There are a number of options available to you for debugging Slider applications.  They include:
 
 * Using Slider logging

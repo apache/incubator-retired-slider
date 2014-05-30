@@ -16,7 +16,7 @@
 -->
 
 
-# Release Process
+# Apache Slider Release Process
 
 Here is our release process.
 

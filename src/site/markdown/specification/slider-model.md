@@ -15,7 +15,7 @@
    limitations under the License.
 -->
   
-# Formal Slider Model
+# Formal Apache Slider Model
 
 This is the model of Slider and YARN for the rest of the specification.
 

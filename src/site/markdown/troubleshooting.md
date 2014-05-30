@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-# Troubleshooting
+# Apache Slider Troubleshooting
 
 Slider can be tricky to start using, because it combines the need to set
 up a YARN application, with the need to have an HBase configuration

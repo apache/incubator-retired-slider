@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-# Examples
+# Apache Slider Examples
 
  
 ## Setup

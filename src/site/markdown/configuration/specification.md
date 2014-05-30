@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-# Specification of the "Cluster Description"
+# Apache Slider Specification of the "Cluster Description"
 
 * This is partially obsolete. Slider still returns the Slider Cluster Description
 as changing it will break most of the unit tests -once these are updated

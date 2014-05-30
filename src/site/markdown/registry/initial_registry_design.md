@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-# April 2014 Initial Registry Design
+# April 2014 Initial Registry Design for Apache Slider
 
 This is the plan for the initial registry design.
 

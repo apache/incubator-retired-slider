@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-# Client Configuration
+# Apache Slider Client Configuration
 
 This document covers how the client application is itself configured.
 

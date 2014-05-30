@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-# PROJECT SLIDER
+# Apache Slider
 
 ##Introduction
 
@@ -49,5 +49,5 @@ The entry points to leverage Slider are:
 - [Specification of Resources](resource_specification.html) How to write a resource spec for an app?
 - [Specifications InstanceConfiguration](application_instance_configuration.html) How to write a template config for an app?
 - [Guidelines for Clients and Client Applications](canonical_scenarios.html)
-- [Documentation for "General Developer Guidelines"](app_developer_guideline.html)
+- [Documentation for "General Developer Guidelines"](../developing/index.html)
 		

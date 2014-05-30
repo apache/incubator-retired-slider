@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-# Architecture
+# Apache Slider Architecture
 
 ## Summary
 
@@ -117,7 +117,7 @@ The final operation, `stopCluster()`, stops the application instance.
 
 ### Security and Identity
 
-Slider's security model is described in detail in [an accompanying document](security.html)
+Slider's security model is described in detail in [an accompanying document](../security.html)
 
 A Slider application instance is expected to access data belonging to the user creating the instance. 
 

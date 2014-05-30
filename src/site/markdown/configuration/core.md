@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-# Core Configuration Specification
+# Apache Slider Core Configuration Specification
 
 
 ## Terminology

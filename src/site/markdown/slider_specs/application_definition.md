@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-# Application Definition
+# Apache Slider Application Definition
 
 App definition is a declarative definition of a YARN application describing its content. The AppDefinition is used in conjunction with the [AppPackage](application_package.md). Application definition is an XML file and is packaged as metainfo.xml.
 

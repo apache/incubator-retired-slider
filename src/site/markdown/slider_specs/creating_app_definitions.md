@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-# Slider AppPackage
+# Apache Slider AppPackage
 
 Slider AppPackages are a declarative definition of an application for application management. AppPackage is not a packaging scheme for application binaries and artifacts. Tarball, zip files, rpms etc. are available for that purpose. Instead AppPackage includes the application binaries along with other artifacts necessary for application management.
 

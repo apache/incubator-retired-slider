@@ -17,15 +17,15 @@ from setuptools import setup
 
 setup(
     name = "slider-agent",
-    version = "0.13.0-SNAPSHOT",
+    version = "0.31.0-SNAPSHOT",
     packages = ['agent'],
     # metadata for upload to PyPI
     author = "Apache Software Foundation",
-    author_email = "slider-dev@incubator.apache.org",
+    author_email = "dev@slider.incubator.apache.org",
     description = "Slider agent",
     license = "Apache License v2.0",
     keywords = "hadoop, slider",
-    url = "http://incubator.apache.org/slider",
+    url = "http://slider.incubator.apache.org/",
     long_description = "This package implements Slider for deploying and managing Apps on Yarn.",
     platforms=["any"],
     entry_points = {

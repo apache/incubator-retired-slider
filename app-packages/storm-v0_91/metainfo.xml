@@ -40,6 +40,10 @@
               <name>org.apache.slider.metrics</name>
               <value>http://${site.global.ganglia_server_host}/cgi-bin/rrd.py?c=${site.global.ganglia_server_id}</value>
             </export>
+            <export>
+              <name>org.apache.slider.ganglia</name>
+              <value>http://${site.global.ganglia_server_host}/ganglia?c=${site.global.ganglia_server_id}</value>
+            </export>
           </exports>
         </exportGroup>
       </exportGroups>

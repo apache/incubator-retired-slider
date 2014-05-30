@@ -1,6 +1,6 @@
 {
     "Component": {
-        "NIMBUS_SERVER": {
+        "NIMBUS": {
             "FreeSlots": {
                 "metric": "$['slots.free']",
                 "pointInTime": true,

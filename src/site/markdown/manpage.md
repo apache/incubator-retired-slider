@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-# slider: YARN-hosted applications
+# Apache Slider: YARN-hosted applications
 
 ## NAME
 
