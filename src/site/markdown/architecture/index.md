@@ -15,10 +15,10 @@
    limitations under the License.
 -->
   
-# Architecture
+# Apache Slider Architecture
 
 * [Overview](architecture.html)
-* [Application Needs](application_needs.html)
+* [Application Needs](../slider_specs/application_needs.html)
 * [Specification](../specification/index.html)
 * [Service Registry](../registry/index.html)
 * [Role history](rolehistory.html) 

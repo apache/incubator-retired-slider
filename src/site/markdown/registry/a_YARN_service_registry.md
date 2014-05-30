@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-# A YARN Service Registry
+# A YARN Service Registry for Apache Slider
 
 ## April 2014
 

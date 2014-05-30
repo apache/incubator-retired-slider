@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-#Resource Specification
+# Apache Slider Resource Specification
 Resource specification is an input to Slider to specify the Yarn resource needs for each component type that belong to the application.
 
 An example resource requirement for an application that has two components "master" and "worker" is as follows. Slider will automatically add the requirements for the AppMaster for the application. This compoent is named "slider-appmaster".

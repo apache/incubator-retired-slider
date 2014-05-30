@@ -15,7 +15,7 @@
    limitations under the License.
 -->
   
-# Developing Slider
+# Developing Apache Slider
 
 Slider is an open source project -anyone is free to contributed, and we
 strongly encourage people to do so. 
@@ -24,7 +24,7 @@ Here are documents covering how to go about building, testing and releasing
 Slider
 
 * [Building](building.html)
-* [Debugging](debugging.html)
+* [Debugging](../debugging.html)
 * [Testing](testing.html)
 * [Functional Testing](functional_tests.html)
 * [Manual Testing](manual_testing.html)

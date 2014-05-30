@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-# Role History: how Slider brings back nodes in the same location
+# Apache Slider Role History: how Slider brings back nodes in the same location
 
 ### Last updated  2013-12-06
 

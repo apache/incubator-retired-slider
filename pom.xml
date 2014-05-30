@@ -26,7 +26,13 @@
     Slider is designed to deploy existing applications onto a YARN cluster without
     rewriting the application to be YARN-ready.
   </description>
-  <url>http://incubator.apache.org/slider/</url>
+  <inceptionYear>2014</inceptionYear>
+  <url>http://slider.incubator.apache.org/</url>
+  <organization>
+    <name>The Apache Software Foundation</name>
+    <url>http://www.apache.org/</url>
+  </organization>
+
   <modules>
     <module>slider-core</module>
     <module>slider-agent</module>
@@ -47,11 +53,11 @@
 
 
   <scm>
-    <url>https://svn.apache.org/repos/asf/incubator/slider/</url>
-    <connection>scm:svn:https://svn.apache.org/repos/asf/incubator/slider/
+    <url>http://git-wip-us.apache.org/repos/asf/incubator-slider.git</url>
+    <connection>scm:git:http://git-wip-us.apache.org/repos/asf/incubator-slider.git
     </connection>
     <developerConnection>
-      scm:svn:https://svn.apache.org/repos/asf/incubator/slider/
+      scm:git:http://git-wip-us.apache.org/repos/asf/incubator-slider.git
     </developerConnection>
   </scm>
   
@@ -121,7 +127,7 @@
       <name>Slider Website</name>
       <url>http://slider.incubator.apache.org/</url>
     </site>
-    <downloadUrl>https://svn.apache.org/repos/asf/incubator/slider</downloadUrl>
+    <downloadUrl>http://git-wip-us.apache.org/repos/asf/incubator-slider.git</downloadUrl>
   </distributionManagement>
   
   <mailingLists>

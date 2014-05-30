@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-# Project Slider: Getting Started
+# Apache Slider: Getting Started
 
 
 ## Introduction
@@ -79,13 +79,13 @@ There are other options detailed in the Troubleshooting file available <a href="
 
 ## <a name="download"></a>Download Slider Packages
 
-The sample application packages for Storm, HBase and Accumulo are available at:
+Slider releases are available at
+[https://www.apache.org/dyn/closer.cgi/incubator/slider](https://www.apache.org/dyn/closer.cgi/incubator/slider).
 
-[http://public-repo-1.hortonworks.com/slider/slider-0.22.0-all.tar.gz](http://public-repo-1.hortonworks.com/slider/slider-0.22.0-all.tar.gz)
 ## <a name="build"></a>Build Slider
 
 * From the top level directory, execute `mvn clean install -DskipTests`
-* Use the generated compressed tar file in slider-assembly/target directory (e.g. slider-0.22.0-all.tar.gz) for the subsequent steps
+* Use the generated compressed tar file in slider-assembly/target directory (e.g. slider-0.30.0-all.tar.gz) for the subsequent steps
 
 ## <a name="install"></a>Install Slider
 
@@ -98,15 +98,15 @@ Follow the following steps to expand/install Slider:
 Login as the "yarn" user (assuming this is a host associated with the installed cluster).  E.g., `su yarn`
 *This assumes that all apps are being run as ‘yarn’ user. Any other user can be used to run the apps - ensure that file permission is granted as required.*
 
-Expand the tar file:  `tar -xvf slider-0.22.0-all.tar.gz`
+Expand the tar file:  `tar -xvf slider-0.30.0-all.tar.gz`
 
-Browse to the Slider directory: `cd slider-0.22.0/bin`
+Browse to the Slider directory: `cd slider-0.30.0/bin`
 
       export PATH=$PATH:/usr/jdk64/jdk1.7.0_45/bin 
     
 (or the path to the JDK bin directory)
 
-Modify Slider configuration file `${slider-install-dir}/slider-0.22.0/conf/slider-client.xml` to add the following properties:
+Modify Slider configuration file `${slider-install-dir}/slider-0.30.0/conf/slider-client.xml` to add the following properties:
 
       <property>
           <name>yarn.application.classpath</name>
@@ -137,7 +137,7 @@ In addition, specify the scheduler and HDFS addresses as follows:
 
 Execute:
  
-    ${slider-install-dir}/slider-0.22.0/bin/slider version
+    ${slider-install-dir}/slider-0.30.0/bin/slider version
 
 Ensure there are no errors and you can see "Compiled against Hadoop 2.4.0"
 
@@ -167,13 +167,13 @@ Perform the following steps to create the Slider root folder with the appropriat
     
     hdfs dfs -mkdir /slider/agent/conf
     
-    hdfs dfs -copyFromLocal ${slider-install-dir}/slider-0.22.0/agent/slider-agent-0.22.0.tar.gz /slider/agent
+    hdfs dfs -copyFromLocal ${slider-install-dir}/slider-0.30.0/agent/slider-agent-0.30.0.tar.gz /slider/agent
 
 ### Create and deploy Slider Agent configuration
 
 Create an agent config file (agent.ini) based on the sample available at:
 
-    ${slider-install-dir}/slider-0.22.0/agent/conf/agent.ini
+    ${slider-install-dir}/slider-0.30.0/agent/conf/agent.ini
 
 The sample agent.ini file can be used as is (see below). Some of the parameters of interest are:
 
@@ -327,11 +327,11 @@ Once the steps above are completed, the application can be started through the *
 
 Change directory to the "bin" directory under the slider installation
 
-    cd ${slider-install-dir}/slider-0.22.0/bin
+    cd ${slider-install-dir}/slider-0.30.0/bin
 
 Execute the following command:
 
-    ./slider create cl1 --manager yourResourceManagerHost:8050 --image hdfs://yourNameNodeHost:8020/slider/agent/slider-agent-0.22.0.tar.gz --template appConfig.json --resources resources.json
+    ./slider create cl1 --manager yourResourceManagerHost:8050 --image hdfs://yourNameNodeHost:8020/slider/agent/slider-agent-0.30.0.tar.gz --template appConfig.json --resources resources.json
 
 ### <a name="verify"></a>Verify the Application
 

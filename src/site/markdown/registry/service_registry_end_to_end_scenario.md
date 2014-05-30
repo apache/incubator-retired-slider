@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-# Service Registry End-to-End Scenarios
+# Apache Slider: Service Registry End-to-End Scenarios
 
 ## AM startup
 

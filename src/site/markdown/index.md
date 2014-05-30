@@ -16,11 +16,11 @@
 -->
   
 
-# Slider: Dynamic YARN Applications
+# Apache Slider: Dynamic YARN Applications
 
 
 
-Slider is a YARN application to deploy existing distributed applications on YARN, 
+Apache Slider is a YARN application to deploy existing distributed applications on YARN, 
 monitor them and make them larger or smaller as desired -even while 
 the application is running.
 
@@ -30,7 +30,7 @@ a best-effort placement close to the previous locations on a cluster thaw.
 Applications which remember the previous placement of data (such as HBase)
 can exhibit fast start-up times from this feature.
 
-YARN itself monitors the health of 'YARN containers" hosting parts of 
+YARN itself monitors the health of "YARN containers" hosting parts of 
 the deployed application -it notifies the Slider manager application of container
 failure. Slider then asks YARN for a new container, into which Slider deploys
 a replacement for the failed component. As a result, Slider can keep the
@@ -70,7 +70,6 @@ code changes and as of this writing, it has required few changes.
 * [Client Configuration](client-configuration.html)
 * [Client Exit Codes](exitcodes.html)
 * [Security](security.html)
-* [Logging](logging.html)
 * [How to define a new slider-packaged application](slider_specs/index.html)
 * [Application configuration model](configuration/index.html)
 
@@ -79,5 +78,17 @@ code changes and as of this writing, it has required few changes.
 
 * [Architecture](architecture/index.html)
 * [Developing](developing/index.html)
-* [Application Needs](app_needs.html)
+* [Application Needs](slider_specs/application_needs.md)
 * [Service Registry](registry/index.html)
+
+## Disclaimer
+
+Apache Slider (incubating) is an effort undergoing incubation at The
+Apache Software Foundation (ASF), sponsored by the name of Apache TLP
+sponsor. Incubation is required of all newly accepted projects until a
+further review indicates that the infrastructure, communications, and
+decision making process have stabilized in a manner consistent with
+other successful ASF projects. While incubation status is not
+necessarily a reflection of the completeness or stability of the code,
+it does indicate that the project has yet to be fully endorsed by the
+ASF.

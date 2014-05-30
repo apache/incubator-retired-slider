@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-# Application Configuration
+# Apache Slider Application Configuration
 
 App Configuration captures the default configuration associated with the application. *Details of configuration management is discussed in a separate spec*. The default configuration is modified based on user provided InstanceConfiguration, cluster specific details (e.g. HDFS root, local dir root), container allocated resources (port and hostname), and dependencies (e.g. ZK quorom hosts) and handed to the component instances.
 

@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-#App Instance Configuration
+# Apache Slider App Instance Configuration
 
 App Instance Configuration is the configuration override provided by the application owner when creating an application instance using Slider. This configuration values override the default configuration available in the App Package.
 

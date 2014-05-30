@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-# Slider's needs of an application
+# Apache Slider's needs of an application
 
 Slider installs and runs applications in a YARN cluster -applications that
 do not need to be written for YARN. 

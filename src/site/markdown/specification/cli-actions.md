@@ -15,7 +15,7 @@
    limitations under the License.
 -->
   
-# CLI Actions
+# Apache Slider CLI Actions
 
  
 ## Important

@@ -15,7 +15,7 @@
    limitations under the License.
 -->
   
-# Registry
+# Apache Slider: Service Registry
 
 The service registry model is designed to support dynamically
 deployed Slider applications, *and* statically deployed versions

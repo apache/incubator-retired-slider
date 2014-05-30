@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-# Building Slider
+# Building Apache Slider
 
 
 Here's how to set this up.

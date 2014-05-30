@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-# Security
+# Apache Slider Security
 
 This document discusses the design, implementation and use of Slider
 to deploy secure applications on a secure Hadoop cluster.

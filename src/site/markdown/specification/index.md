@@ -15,7 +15,7 @@
    limitations under the License.
 -->
   
-# Specification of Slider behaviour
+# Specification of Apache Slider behaviour
 
 This is a a "more rigorous" definition of the behavior of Slider in terms
 of its state and its command-line operations -by defining a 'formal' model

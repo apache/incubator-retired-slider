@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-# Developing App Command Scripts
+# Apache Slider: Developing App Command Scripts
 
 App command implementations follow a standard structure so that they can be invoked in an uniform manner. For any command, the python scripts are invoked as:
 
