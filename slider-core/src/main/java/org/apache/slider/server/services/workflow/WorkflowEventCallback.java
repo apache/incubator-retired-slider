@@ -16,14 +16,14 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.services.utility;
+package org.apache.slider.server.services.workflow;
 
-public class SliderServiceUtils {
-
-  public static Exception convertToException(Throwable failureCause) {
-    return (failureCause instanceof Exception) ?
-                      (Exception)failureCause
-                      : new Exception(failureCause);
-  }
-
+/**
+ * This is the callback triggered by the {@link WorkflowEventNotifyingService}
+ * when it generates a notification
+ */
+public interface WorkflowEventCallback {
+  
+  public void eventCallbackEvent(Object parameter);
+  
 }

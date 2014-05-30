@@ -22,28 +22,24 @@ import com.google.common.base.Preconditions;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.Service;
-import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.main.LauncherExitCodes;
 import org.apache.slider.core.main.RunService;
+import org.apache.slider.server.services.workflow.WorkflowCompositeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CompoundLaunchedService extends CompoundService
+public class LaunchedWorkflowCompositeService extends WorkflowCompositeService
     implements RunService {
   private static final Logger log = LoggerFactory.getLogger(
-      CompoundLaunchedService.class);
+      LaunchedWorkflowCompositeService.class);
   private String[] argv;
   
-  public CompoundLaunchedService(String name) {
+  public LaunchedWorkflowCompositeService(String name) {
     super(name);
   }
 
-  public CompoundLaunchedService() {
-    super("CompoundLaunchedService");
-  }
-
-  public CompoundLaunchedService(Service... children) {
-    super(children);
+  public LaunchedWorkflowCompositeService(String name, Service... children) {
+    super(name, children);
   }
 
   /**
@@ -94,7 +90,7 @@ public class CompoundLaunchedService extends CompoundService
   }
 
   @Override
-  public void addService(Service service) {
+  public synchronized void addService(Service service) {
     Preconditions.checkNotNull(service, "null service");
     super.addService(service);
   }
@@ -114,21 +110,4 @@ public class CompoundLaunchedService extends CompoundService
     return false;
   }
 
-  protected void requireArgumentSet(String argname, String argfield)
-      throws BadCommandArgumentsException {
-    if (isUnset(argfield)) {
-      throw new BadCommandArgumentsException("Required argument "
-                                             + argname
-                                             + " missing");
-    }
-  }
-
-  protected void requireArgumentSet(String argname, Object argfield) throws
-                                               BadCommandArgumentsException {
-    if (argfield == null) {
-      throw new BadCommandArgumentsException("Required argument "
-                                             + argname
-                                             + " missing");
-    }
-  }
 }

@@ -22,6 +22,9 @@ import org.apache.slider.server.appmaster.web.rest.RestPaths;
 
 import java.util.regex.Pattern;
 
+/**
+ * Utility class to validate strings against a predefined pattern.
+ */
 public class PatternValidator {
 
   public static final String E_INVALID_NAME =
@@ -41,9 +44,18 @@ public class PatternValidator {
    * @throws IllegalArgumentException if not a valid name
    */
   public void validate(String name) {
-    if (!valid.matcher(name).matches()) {
+    if (!matches(name)) {
       throw new IllegalArgumentException(
           String.format(E_INVALID_NAME, name, pattern));
     }
+  }
+
+  /**
+   * Query to see if the pattern matches
+   * @param name name to validate
+   * @return true if the string matches the pattern
+   */
+  public boolean matches(String name) {
+    return valid.matcher(name).matches();
   }
 }

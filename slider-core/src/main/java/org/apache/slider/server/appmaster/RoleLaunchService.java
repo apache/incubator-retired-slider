@@ -18,8 +18,8 @@
 
 package org.apache.slider.server.appmaster;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.core.conf.AggregateConf;
@@ -29,6 +29,8 @@ import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderService;
 import org.apache.slider.server.appmaster.state.RoleInstance;
 import org.apache.slider.server.appmaster.state.RoleStatus;
+import org.apache.slider.server.services.workflow.ServiceThreadFactory;
+import org.apache.slider.server.services.workflow.WorkflowExecutorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,11 +38,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
 
 /**
  * A service for launching containers
  */
-public class RoleLaunchService extends AbstractService {
+public class RoleLaunchService extends WorkflowExecutorService {
   protected static final Logger log =
     LoggerFactory.getLogger(RoleLaunchService.class);
   /**
@@ -101,14 +104,15 @@ public class RoleLaunchService extends AbstractService {
    * @param provider the provider
    * @param fs filesystem
    * @param generatedConfDirPath path in the FS for the generated dir
-   * @param envVars
-   * @param launcherTmpDirPath
+   * @param envVars environment variables
+   * @param launcherTmpDirPath path for a temporary data in the launch process
    */
   public RoleLaunchService(ContainerStartOperation startOperation,
                            ProviderService provider,
                            SliderFileSystem fs,
                            Path generatedConfDirPath,
-                           Map<String, String> envVars, Path launcherTmpDirPath) {
+                           Map<String, String> envVars,
+      Path launcherTmpDirPath) {
     super(ROLE_LAUNCH_SERVICE);
     containerStarter = startOperation;
     this.fs = fs;
@@ -116,6 +120,14 @@ public class RoleLaunchService extends AbstractService {
     this.launcherTmpDirPath = launcherTmpDirPath;
     this.provider = provider;
     this.envVars = envVars;
+  }
+
+
+  @Override
+  public void init(Configuration conf) {
+    super.init(conf);
+    setExecutor(Executors.newCachedThreadPool(
+        new ServiceThreadFactory(ROLE_LAUNCH_SERVICE, true)));
   }
 
   @Override
@@ -138,16 +150,13 @@ public class RoleLaunchService extends AbstractService {
     assert provider.isSupportedRole(roleName) : "unsupported role";
     RoleLaunchService.RoleLauncher launcher =
       new RoleLaunchService.RoleLauncher(container,
-                                         role.getProviderRole(),
-                                         clusterSpec,
-                                         clusterSpec.getResourceOperations()
-                                                    .getOrAddComponent(roleName),
-                                         clusterSpec.getAppConfOperations()
-                                                    .getOrAddComponent(roleName) );
+         role.getProviderRole(),
+         clusterSpec,
+         clusterSpec.getResourceOperations() .getOrAddComponent( roleName),
+         clusterSpec.getAppConfOperations().getOrAddComponent(roleName));
     launchThread(launcher,
-                 String.format("%s-%s", roleName,
-                               container.getId().toString())
-                );
+                 String.format("%s-%s", roleName, container.getId().toString())
+    );
   }
 
 
@@ -190,7 +199,7 @@ public class RoleLaunchService extends AbstractService {
     //first: take a snapshot of the thread list
     List<Thread> liveThreads;
     synchronized (launchThreads) {
-      liveThreads = new ArrayList<Thread>(launchThreads.values());
+      liveThreads = new ArrayList<>(launchThreads.values());
     }
     int size = liveThreads.size();
     if (size > 0) {

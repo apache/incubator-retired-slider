@@ -30,22 +30,42 @@ public class ServiceLaunchException extends YarnException
   implements ExitCodeProvider, LauncherExitCodes {
 
   private final int exitCode;
-  
+
+  /**
+   * Create an exception with the specific exit code
+   * @param exitCode exit code
+   * @param cause cause of the exception
+   */
   public ServiceLaunchException(int exitCode, Throwable cause) {
     super(cause);
     this.exitCode = exitCode;
   }
 
+  /**
+   * Create an exception with the specific exit code and text
+   * @param exitCode exit code
+   * @param message message to use in exception
+   */
   public ServiceLaunchException(int exitCode, String message) {
     super(message);
     this.exitCode = exitCode;
   }
 
+  /**
+   * Create an exception with the specific exit code, text and cause
+   * @param exitCode exit code
+   * @param message message to use in exception
+   * @param cause cause of the exception
+   */
   public ServiceLaunchException(int exitCode, String message, Throwable cause) {
     super(message, cause);
     this.exitCode = exitCode;
   }
 
+  /**
+   * Get the exit code
+   * @return the exit code
+   */
   @Override
   public int getExitCode() {
     return exitCode;

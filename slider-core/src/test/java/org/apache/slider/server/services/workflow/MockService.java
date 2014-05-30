@@ -16,28 +16,27 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.services.utility
+package org.apache.slider.server.services.workflow;
 
-import org.apache.hadoop.service.AbstractService
-import org.apache.hadoop.service.ServiceStateException
-import org.apache.slider.core.main.ExitCodeProvider
+import org.apache.hadoop.service.AbstractService;
+import org.apache.hadoop.service.ServiceStateException;
 
-/**
- * Little mock service to simulate delays
- */
-class MockService extends AbstractService implements ExitCodeProvider {
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-  boolean fail = false;
-  int exitCode;
-  int lifespan = -1;
+public class MockService extends AbstractService {
+  private final boolean fail;
+  private final int lifespan;
+  private final ExecutorService executorService =
+      Executors.newSingleThreadExecutor();
 
   MockService() {
-    super("mock")
+    this("mock", false, -1);
   }
 
   MockService(String name, boolean fail, int lifespan) {
-    super(name)
-    this.fail = fail
+    super(name);
+    this.fail = fail;
     this.lifespan = lifespan;
   }
 
@@ -45,10 +44,17 @@ class MockService extends AbstractService implements ExitCodeProvider {
   protected void serviceStart() throws Exception {
     //act on the lifespan here
     if (lifespan > 0) {
-      Thread.start {
-        Thread.sleep(lifespan)
-        finish()
-      }
+      executorService.submit(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            Thread.sleep(lifespan);
+          } catch (InterruptedException ignored) {
+
+          }
+          finish();
+        }
+      });
     } else {
       if (lifespan == 0) {
         finish();
@@ -60,10 +66,12 @@ class MockService extends AbstractService implements ExitCodeProvider {
 
   void finish() {
     if (fail) {
-      ServiceStateException e = new ServiceStateException("$name failed")
+      ServiceStateException e =
+          new ServiceStateException(getName() + " failed");
+
       noteFailure(e);
       stop();
-      throw e
+      throw e;
     } else {
       stop();
     }

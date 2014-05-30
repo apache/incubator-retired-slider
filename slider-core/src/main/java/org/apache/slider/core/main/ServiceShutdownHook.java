@@ -18,10 +18,10 @@
 
 package org.apache.slider.core.main;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.service.Service;
 import org.apache.hadoop.util.ShutdownHookManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.ref.WeakReference;
 
@@ -33,13 +33,14 @@ import java.lang.ref.WeakReference;
  * been stopped and deferenced elsewhere.
  */
 public class ServiceShutdownHook implements Runnable {
-  private static final Log LOG = LogFactory.getLog(ServiceShutdownHook.class);
+  private static final Logger LOG = LoggerFactory.getLogger(
+      ServiceShutdownHook.class);
 
-  private WeakReference<Service> serviceRef;
+  private final WeakReference<Service> serviceRef;
   private Runnable hook;
 
   public ServiceShutdownHook(Service service) {
-    serviceRef = new WeakReference<>(service);
+    serviceRef = new WeakReference<Service>(service);
   }
 
   public void register(int priority) {
@@ -48,20 +49,24 @@ public class ServiceShutdownHook implements Runnable {
     ShutdownHookManager.get().addShutdownHook(hook, priority);
   }
 
-  public void unregister() {
+  public synchronized void unregister() {
     if (hook != null) {
       try {
         ShutdownHookManager.get().removeShutdownHook(hook);
       } catch (IllegalStateException e) {
-        LOG.info("Failed to unregister shutdown hook",e);
+        LOG.info("Failed to unregister shutdown hook: {}", e, e);
       }
       hook = null;
     }
   }
 
-//  @Override
+  @Override
   public void run() {
-    Service service = serviceRef.get();
+    Service service;
+    synchronized (this) {
+      service = serviceRef.get();
+      serviceRef.clear();
+    }
     if (service == null) {
       return;
     }
@@ -69,7 +74,7 @@ public class ServiceShutdownHook implements Runnable {
       // Stop the  Service
       service.stop();
     } catch (Throwable t) {
-      LOG.info("Error stopping " + service.getName(), t);
+      LOG.info("Error stopping {}: {}", service.getName(), t);
     }
   }
 }

@@ -30,7 +30,7 @@ import org.apache.hadoop.yarn.webapp.WebApp;
  */
 public class WebAppService<T extends WebApp> extends AbstractService {
 
-  private T webApp;
+  private volatile T webApp;
 
   public WebAppService(String name) {
     super(name);

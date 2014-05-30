@@ -112,7 +112,7 @@ import org.apache.slider.server.appmaster.web.WebAppApiImpl;
 import org.apache.slider.server.appmaster.web.rest.RestPaths;
 import org.apache.slider.server.services.registry.SliderRegistryService;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
-import org.apache.slider.server.services.utility.EventCallback;
+import org.apache.slider.server.services.workflow.WorkflowEventCallback;
 import org.apache.slider.server.services.utility.RpcService;
 import org.apache.slider.server.services.utility.WebAppService;
 import org.slf4j.Logger;
@@ -149,7 +149,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     SliderClusterProtocol,
     ServiceStateChangeListener,
     RoleKeys,
-    EventCallback,
+    WorkflowEventCallback,
     ContainerStartOperation {
   protected static final Logger log =
     LoggerFactory.getLogger(SliderAppMaster.class);
@@ -1321,7 +1321,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       // didn't start, so don't register
       providerService.start();
       // and send the started event ourselves
-      eventCallbackEvent();
+      eventCallbackEvent(null);
     }
   }
 
@@ -1331,7 +1331,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   /* =================================================================== */
 
   @Override // EventCallback
-  public void eventCallbackEvent() {
+  public void eventCallbackEvent(Object parameter) {
     // signalled that the child process is up.
     appState.noteAMLive();
     // now ask for the cluster nodes
@@ -1382,6 +1382,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
           exitCode,
           mappedProcessExitCode);
       }
+    } else {
+      super.stateChanged(service);
     }
   }
 

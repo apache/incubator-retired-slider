@@ -16,24 +16,42 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.services.utility;
+package org.apache.slider.server.services.workflow;
 
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.service.Service;
 
-import java.util.List;
-
 /**
- * Interface that services with public methods to manipulate child services
- * should implement
+ * A runnable which terminates its owner. 
  */
-public interface Parent extends Service {
+public class ServiceTerminatingRunnable implements Runnable {
 
-  void addService(Service service);
+  private final Service owner;
+  private final Runnable action;
+  private Exception exception;
 
-  /**
-   * Get an unmodifiable list of services
-   * @return a list of child services at the time of invocation -
-   * added services will not be picked up.
-   */
-  List<Service> getServices();
+  public ServiceTerminatingRunnable(Service owner, Runnable action) {
+    Preconditions.checkNotNull(owner, "null owner");
+    Preconditions.checkNotNull(action, "null action");
+    this.owner = owner;
+    this.action = action;
+  }
+
+  public Service getOwner() {
+    return owner;
+  }
+
+  public Exception getException() {
+    return exception;
+  }
+
+  @Override
+  public void run() {
+    try {
+      action.run();
+    } catch (Exception e) {
+      exception = e;
+    }
+    owner.stop();
+  }
 }

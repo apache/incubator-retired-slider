@@ -16,10 +16,29 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.services.utility;
+package org.apache.slider.server.services.workflow;
 
-public interface EventCallback {
-  
-  public void eventCallbackEvent();
-  
+import org.apache.hadoop.service.Service;
+
+import java.util.List;
+
+/**
+ * Interface for accessing services that contain one or more child
+ * services. 
+ */
+public interface ServiceParent extends Service {
+
+  /**
+   * Add a child service. It must be in a consistent state with the
+   * service to which it is being added.
+   * @param service the service to add.
+   */
+  void addService(Service service);
+
+  /**
+   * Get an unmodifiable list of services
+   * @return a list of child services at the time of invocation -
+   * added services will not be picked up.
+   */
+  List<Service> getServices();
 }

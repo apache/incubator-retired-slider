@@ -42,7 +42,7 @@ import org.apache.slider.server.appmaster.web.rest.agent.Register
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationResponse
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationStatus
 import org.apache.slider.server.services.registry.RegistryViewForProviders
-import org.apache.slider.server.services.utility.EventCallback
+import org.apache.slider.server.services.workflow.WorkflowEventCallback
 
 class MockProviderService implements ProviderService {
 
@@ -145,7 +145,7 @@ class MockProviderService implements ProviderService {
       AggregateConf instanceDefinition,
       File confDir,
       Map<String, String> env,
-      EventCallback execInProgress) throws IOException, SliderException {
+      WorkflowEventCallback execInProgress) throws IOException, SliderException {
     return false;
   }
 

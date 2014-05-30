@@ -36,7 +36,6 @@ import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.ExitUtil;
 import org.apache.hadoop.util.VersionInfo;
-import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.LocalResource;
@@ -54,6 +53,7 @@ import org.apache.slider.core.exceptions.ErrorStrings;
 import org.apache.slider.core.exceptions.MissingArgException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.ClasspathConstructor;
+import org.apache.slider.server.services.utility.PatternValidator;
 import org.apache.zookeeper.server.util.KerberosUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,6 +103,7 @@ public final class SliderUtils {
       "java.security.krb5.realm";
   public static final String JAVA_SECURITY_KRB5_KDC = "java.security.krb5.kdc";
 
+  
   private SliderUtils() {
   }
 
@@ -301,12 +302,18 @@ public final class SliderUtils {
     return file;
   }
 
+  private static final PatternValidator clusternamePattern
+      = new PatternValidator("[a-z][a-z0-9_-]*");
+      
   /**
    * Normalize a cluster name then verify that it is valid
    * @param name proposed cluster name
    * @return true iff it is valid
    */
   public static boolean isClusternameValid(String name) {
+    return name != null && clusternamePattern.matches(name);
+  }
+  public static boolean oldIsClusternameValid(String name) {
     if (name == null || name.isEmpty()) {
       return false;
     }

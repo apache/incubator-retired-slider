@@ -16,25 +16,43 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.services.utility;
+package org.apache.slider.server.services.workflow;
 
-import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.service.AbstractService;
-import org.apache.slider.common.tools.SliderUtils;
+
+import java.io.Closeable;
 
 /**
- * A security checker service, which validates that the service
- * is running with security in its init() operation.
+ * Service that closes the closeable supplied during shutdown, if not null.
  */
-public class SecurityCheckerService extends AbstractService {
+public class ClosingService<C extends Closeable> extends AbstractService {
 
-  public SecurityCheckerService() {
-    super("Security Checker");
+  private volatile C closeable;
+
+
+  public ClosingService(String name,
+                        C closeable) {
+    super(name);
+    this.closeable = closeable;
   }
 
+  public Closeable getCloseable() {
+    return closeable;
+  }
+
+  public void setCloseable(C closeable) {
+    this.closeable = closeable;
+  }
+
+  /**
+   * Stop routine will close the closeable -if not null - and set the
+   * reference to null afterwards
+   * @throws Exception
+   */
   @Override
-  protected void serviceInit(Configuration conf) throws Exception {
-    super.serviceInit(conf);
-    SliderUtils.initProcessSecurity(conf);
+  protected void serviceStop() throws Exception {
+    IOUtils.closeStream(closeable);
+    closeable = null;
   }
 }

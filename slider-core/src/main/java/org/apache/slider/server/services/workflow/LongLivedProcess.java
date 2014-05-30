@@ -1,5 +1,5 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
+ *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
  *  distributed with this work for additional information
  *  regarding copyright ownership.  The ASF licenses this file
@@ -16,11 +16,10 @@
  *  limitations under the License.
  */
 
-package org.apache.slider.server.exec;
+package org.apache.slider.server.services.workflow;
 
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.io.IOUtils;
-import org.apache.slider.core.exceptions.SliderException;
-import org.apache.slider.core.exceptions.SliderInternalStateException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,76 +32,92 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
- * Execute an application.
+ * Execute a long-lived process.
  *
- * Hadoop's Shell class isn't used because it assumes it is executing
- * a short lived application: 
+ * Hadoop's {@link org.apache.hadoop.util.Shell} class assumes it is executing
+ * a short lived application; this class allows for the process to run for the
+ * life of the Java process that forked it.
  */
-public class RunLongLivedApp implements Runnable {
+public class LongLivedProcess implements Runnable {
   public static final int STREAM_READER_SLEEP_TIME = 200;
   public static final int RECENT_LINE_LOG_LIMIT = 64;
-  /**
-   * Class log
-   */
-  static final Logger LOG = LoggerFactory.getLogger(RunLongLivedApp.class);
-  /**
-   * Log supplied in the constructor for the spawned process
-   */
-  final Logger processLog;
-  private final ProcessBuilder builder;
+  public static final int LINE_LENGTH = 256;
+  private final ProcessBuilder processBuilder;
   private Process process;
   private Exception exception;
   private Integer exitCode = null;
-  volatile boolean done;
-  private Thread execThread;
-  private Thread logThread;
+  private final String name;
+  private final ExecutorService processExecutor;
+  private final ExecutorService logExecutor;
+  
   private ProcessStreamReader processStreamReader;
   //list of recent lines, recorded for extraction into reports
-  private final List<String> recentLines = new LinkedList<>();
+  private final List<String> recentLines = new LinkedList<String>();
   private final int recentLineLimit = RECENT_LINE_LOG_LIMIT;
+  private LongLivedProcessLifecycleEvent lifecycleCallback;
 
-  private ApplicationEventHandler applicationEventHandler;
+  
+  /**
+   * Log supplied in the constructor for the spawned process -accessible
+   * to inner classes
+   */
+  final Logger processLog;
+  /**
+   * Class log -accessible to inner classes
+   */
+  static final Logger LOG = LoggerFactory.getLogger(LongLivedProcess.class);
 
-  public RunLongLivedApp(Logger processLog, String... commands) {
+  /**
+   * Volatile flag to indicate that the process is done
+   */
+  volatile boolean finished;
+
+  public LongLivedProcess(String name,
+      Logger processLog,
+      List<String> commands) {
+    Preconditions.checkNotNull(processLog, "null processLog argument");
+    Preconditions.checkNotNull(commands, "null commands argument");
+
+    this.name = name;
     this.processLog = processLog;
-    builder = new ProcessBuilder(commands);
-    initBuilder();
-  }
-
-  public RunLongLivedApp(Logger processLog, List<String> commands) {
-    this.processLog = processLog;
-    builder = new ProcessBuilder(commands);
+    ServiceThreadFactory factory = new ServiceThreadFactory(name, true);
+    processExecutor = Executors.newSingleThreadExecutor(factory);
+    logExecutor=    Executors.newSingleThreadExecutor(factory);
+    processBuilder = new ProcessBuilder(commands);
     initBuilder();
   }
 
   private void initBuilder() {
-    builder.redirectErrorStream(false);
+    processBuilder.redirectErrorStream(false);
   }
 
-  public ProcessBuilder getBuilder() {
-    return builder;
+  public ProcessBuilder getProcessBuilder() {
+    return processBuilder;
   }
 
   /**
    * Set an optional application exit callback
-   * @param applicationEventHandler callback to notify on application exit
+   * @param lifecycleCallback callback to notify on application exit
    */
-  public void setApplicationEventHandler(ApplicationEventHandler applicationEventHandler) {
-    this.applicationEventHandler = applicationEventHandler;
+  public void setLifecycleCallback(LongLivedProcessLifecycleEvent lifecycleCallback) {
+    Preconditions.checkNotNull(lifecycleCallback, "null lifecycleCallback");
+    this.lifecycleCallback = lifecycleCallback;
   }
 
   /**
    * Add an entry to the environment
-   * @param key key -must not be null
+   * @param envVar envVar -must not be null
    * @param val value 
    */
-  public void putEnv(String key, String val) {
-    if (val == null) {
-      throw new RuntimeException("Null value for key " + key);
-    }
-    builder.environment().put(key, val);
+  public void putEnv(String envVar, String val) {
+    Preconditions.checkNotNull(envVar, "null envVar");
+    Preconditions.checkNotNull(val, "null 'val'");
+    processBuilder.environment().put(envVar, val);
   }
 
   /**
@@ -121,11 +136,11 @@ public class RunLongLivedApp implements Runnable {
 
   /**
    * Get the process environment
-   * @param key
-   * @return
+   * @param variable environment variable
+   * @return the value or null if there is no match
    */
-  public String getEnv(String key) {
-    return builder.environment().get(key);
+  public String getEnv(String variable) {
+    return processBuilder.environment().get(variable);
   }
 
   /**
@@ -145,7 +160,7 @@ public class RunLongLivedApp implements Runnable {
   }
 
   public List<String> getCommands() {
-    return builder.command();
+    return processBuilder.command();
   }
 
   public String getCommand() {
@@ -157,7 +172,7 @@ public class RunLongLivedApp implements Runnable {
    * @return true iff the process has been started and is not yet finished
    */
   public boolean isRunning() {
-    return process != null && !done;
+    return process != null && !finished;
   }
 
   /**
@@ -185,15 +200,19 @@ public class RunLongLivedApp implements Runnable {
    */
   protected String describeBuilder() {
     StringBuilder buffer = new StringBuilder();
-    for (String arg : builder.command()) {
+    for (String arg : processBuilder.command()) {
       buffer.append('"').append(arg).append("\" ");
     }
     return buffer.toString();
   }
 
+  /**
+   * Dump the environment to a string builder
+   * @param buffer the buffer to append to
+   */
   private void dumpEnv(StringBuilder buffer) {
     buffer.append("\nEnvironment\n-----------");
-    Map<String, String> env = builder.environment();
+    Map<String, String> env = processBuilder.environment();
     Set<String> keys = env.keySet();
     List<String> sortedKeys = new ArrayList<String>(keys);
     Collections.sort(sortedKeys);
@@ -207,14 +226,14 @@ public class RunLongLivedApp implements Runnable {
    * @return the process
    * @throws IOException
    */
-  private Process spawnChildProcess() throws IOException, SliderException {
+  private Process spawnChildProcess() throws IOException {
     if (process != null) {
-      throw new SliderInternalStateException("Process already started");
+      throw new IOException("Process already started");
     }
     if (LOG.isDebugEnabled()) {
       LOG.debug("Spawning process:\n " + describeBuilder());
     }
-    process = builder.start();
+    process = processBuilder.start();
     return process;
   }
 
@@ -223,27 +242,27 @@ public class RunLongLivedApp implements Runnable {
    */
   @Override // Runnable
   public void run() {
-    LOG.debug("Application callback thread running");
+    LOG.debug("Lifecycle callback thread running");
     //notify the callback that the process has started
-    if (applicationEventHandler != null) {
-      applicationEventHandler.onApplicationStarted(this);
+    if (lifecycleCallback != null) {
+      lifecycleCallback.onProcessStarted(this);
     }
     try {
       exitCode = process.waitFor();
     } catch (InterruptedException e) {
-      LOG.debug("Process wait interrupted -exiting thread");
+      LOG.debug("Process wait interrupted -exiting thread", e);
     } finally {
       //here the process has finished
-      LOG.info("process has finished");
+      LOG.debug("process {} has finished", name);
       //tell the logger it has to finish too
-      done = true;
+      finished = true;
 
       //now call the callback if it is set
-      if (applicationEventHandler != null) {
-        applicationEventHandler.onApplicationExited(this, exitCode);
+      if (lifecycleCallback != null) {
+        lifecycleCallback.onProcessExited(this, exitCode);
       }
       try {
-        logThread.join();
+        logExecutor.awaitTermination(60, TimeUnit.MINUTES);
       } catch (InterruptedException ignored) {
         //ignored
       }
@@ -251,28 +270,16 @@ public class RunLongLivedApp implements Runnable {
   }
 
   /**
-   * Create a thread to wait for this command to complete.
-   * THE THREAD IS NOT STARTED.
-   * @return the thread
-   * @throws IOException Execution problems
-   */
-  private Thread spawnIntoThread() throws IOException, SliderException {
-    spawnChildProcess();
-    return new Thread(this, getCommand());
-  }
-
-  /**
    * Spawn the application
    * @throws IOException IO problems
-   * @throws SliderException internal state of this class is wrong
    */
-  public void spawnApplication() throws IOException, SliderException {
-    execThread = spawnIntoThread();
-    execThread.start();
+  public void spawnApplication() throws IOException {
+
+    spawnChildProcess();
+    processExecutor.submit(this);
     processStreamReader =
       new ProcessStreamReader(processLog, STREAM_READER_SLEEP_TIME);
-    logThread = new Thread(processStreamReader, "IO");
-    logThread.start();
+    logExecutor.submit(processStreamReader);
   }
 
   /**
@@ -281,7 +288,7 @@ public class RunLongLivedApp implements Runnable {
    * or the process is not actually running
    */
   public synchronized List<String> getRecentOutput() {
-    return new ArrayList<>(recentLines);
+    return new ArrayList<String>(recentLines);
   }
 
 
@@ -324,6 +331,12 @@ public class RunLongLivedApp implements Runnable {
       this.sleepTime = sleepTime;
     }
 
+    /**
+     * Return a character if there is one, -1 if nothing is ready yet
+     * @param reader reader
+     * @return the value from the reader, or -1 if it is not ready
+     * @throws IOException IO problems
+     */
     private int readCharNonBlocking(BufferedReader reader) throws IOException {
       if (reader.ready()) {
         return reader.read();
@@ -341,6 +354,7 @@ public class RunLongLivedApp implements Runnable {
      * @return true if the line can be printed
      * @throws IOException IO trouble
      */
+    @SuppressWarnings("NestedAssignment")
     private boolean readAnyLine(BufferedReader reader,
                                 StringBuilder line,
                                 int limit)
@@ -369,23 +383,23 @@ public class RunLongLivedApp implements Runnable {
     public void run() {
       BufferedReader errReader = null;
       BufferedReader outReader = null;
-      StringBuilder outLine = new StringBuilder(256);
-      StringBuilder errorLine = new StringBuilder(256);
+      StringBuilder outLine = new StringBuilder(LINE_LENGTH);
+      StringBuilder errorLine = new StringBuilder(LINE_LENGTH);
       try {
-        errReader = new BufferedReader(new InputStreamReader(process
-                                                               .getErrorStream()));
-        outReader = new BufferedReader(new InputStreamReader(process
-                                                               .getInputStream()));
-        while (!done) {
+        errReader = new BufferedReader(
+            new InputStreamReader(process.getErrorStream()));
+        outReader = new BufferedReader(
+            new InputStreamReader(process.getInputStream()));
+        while (!finished) {
           boolean processed = false;
-          if (readAnyLine(errReader, errorLine, 256)) {
+          if (readAnyLine(errReader, errorLine, LINE_LENGTH)) {
             String line = errorLine.toString();
             recordRecentLine(line, true);
             streamLog.warn(line);
             errorLine.setLength(0);
             processed = true;
           }
-          if (readAnyLine(outReader, outLine, 256)) {
+          if (readAnyLine(outReader, outLine, LINE_LENGTH)) {
             String line = outLine.toString();
             recordRecentLine(line, false);
             streamLog.info(line);
@@ -402,7 +416,7 @@ public class RunLongLivedApp implements Runnable {
             }
           }
         }
-        //get here, done time
+        // finished: cleanup
 
         //print the current error line then stream through the rest
         streamLog.error(errorLine.toString());
@@ -428,7 +442,7 @@ public class RunLongLivedApp implements Runnable {
         }
 
       } catch (Exception ignored) {
-        LOG.warn("encountered ", ignored);
+        LOG.warn("encountered {}", ignored, ignored);
         //process connection has been torn down
       } finally {
         IOUtils.closeStream(errReader);
