@@ -19,65 +19,94 @@
 package org.apache.slider.server.services.workflow;
 
 import com.google.common.base.Preconditions;
-import org.apache.hadoop.service.AbstractService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * A service that calls the supplied callback when it is started -after the 
  * given delay, then stops itself.
- * The notifications come in on a different thread
+ * The notifications come in on a callback thread -a thread that is only
+ * started in this service's <code>start()</code> operation.
  */
-public class WorkflowEventNotifyingService extends AbstractService implements Runnable {
-  protected static final Logger log =
+public class WorkflowEventNotifyingService extends WorkflowExecutorService
+    implements Runnable {
+  protected static final Logger LOG =
     LoggerFactory.getLogger(WorkflowEventNotifyingService.class);
   private final WorkflowEventCallback callback;
   private final int delay;
-  private ExecutorService executor;
+  private final ServiceTerminatingRunnable command;
+  private final Object parameter;
 
 
+  /**
+   * Create an instance of the service
+   * @param name service name
+   * @param callback callback to invoke
+   * @param parameter optional parameter for the callback
+   * @param delay delay -or 0 for no delay
+   */
   public WorkflowEventNotifyingService(String name,
-      WorkflowEventCallback callback, int delay) {
+      WorkflowEventCallback callback,
+      Object parameter,
+      int delay) {
     super(name);
     Preconditions.checkNotNull(callback, "Null callback argument");
     this.callback = callback;
     this.delay = delay;
+    this.parameter = parameter;
+    command = new ServiceTerminatingRunnable(this, this);
   }
 
-  public WorkflowEventNotifyingService(WorkflowEventCallback callback, int delay) {
-    this("WorkflowEventNotifyingService", callback, delay);
+  /**
+   * Create an instance of the service
+   * @param callback callback to invoke
+   * @param parameter optional parameter for the callback
+   * @param delay delay -or 0 for no delay
+   */
+  public WorkflowEventNotifyingService(WorkflowEventCallback callback,
+      Object parameter,
+      int delay) {
+    this("WorkflowEventNotifyingService", callback, parameter, delay);
   }
 
   @Override
   protected void serviceStart() throws Exception {
-    log.debug("Notifying {} after a delay of {} millis", callback, delay);
-    executor = Executors.newSingleThreadExecutor(
-        new ServiceThreadFactory(getName(), true));
-    executor.execute(this);
+    LOG.debug("Notifying {} after a delay of {} millis", callback, delay);
+    setExecutor(ServiceThreadFactory.newSingleThreadExecutor(getName(), true));
+    execute(command);
   }
 
+  /**
+   * Stop the service.
+   * If there is any exception noted from any executed notification,
+   * note the exception in this class
+   * @throws Exception exception.
+   */
   @Override
   protected void serviceStop() throws Exception {
     super.serviceStop();
-    if (executor != null) {
-      executor.shutdownNow();
+    // propagate any failure
+    if (command != null && command.getException() != null) {
+      noteFailure(command.getException());
     }
   }
 
+  /**
+   * Perform the work in a different thread. Relies on
+   * the {@link ServiceTerminatingRunnable} to trigger
+   * the service halt on this thread.
+   */
   @Override // Runnable
   public void run() {
     if (delay > 0) {
       try {
         Thread.sleep(delay);
-      } catch (InterruptedException interrupted) {
-        return;
+      } catch (InterruptedException e) {
+        LOG.debug("Interrupted: {} in runnable", e, e);
       }
     }
-    log.debug("Notifying {}", callback);
-    callback.eventCallbackEvent();
-    stop();
+    LOG.debug("Notifying {}", callback);
+    callback.eventCallbackEvent(parameter);
   }
+
 }

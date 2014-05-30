@@ -39,13 +39,14 @@ import java.util.concurrent.TimeUnit;
 /**
  * Execute a long-lived process.
  *
- * Hadoop's Shell class assumes it is executing
+ * Hadoop's {@link org.apache.hadoop.util.Shell} class assumes it is executing
  * a short lived application; this class allows for the process to run for the
  * life of the Java process that forked it.
  */
 public class LongLivedProcess implements Runnable {
   public static final int STREAM_READER_SLEEP_TIME = 200;
   public static final int RECENT_LINE_LOG_LIMIT = 64;
+  public static final int LINE_LENGTH = 256;
   private final ProcessBuilder processBuilder;
   private Process process;
   private Exception exception;
@@ -58,7 +59,7 @@ public class LongLivedProcess implements Runnable {
   //list of recent lines, recorded for extraction into reports
   private final List<String> recentLines = new LinkedList<String>();
   private final int recentLineLimit = RECENT_LINE_LOG_LIMIT;
-  private ProcessLifecycleEventCallback lifecycleCallback;
+  private LongLivedProcessLifecycleEvent lifecycleCallback;
 
   
   /**
@@ -103,7 +104,7 @@ public class LongLivedProcess implements Runnable {
    * Set an optional application exit callback
    * @param lifecycleCallback callback to notify on application exit
    */
-  public void setLifecycleCallback(ProcessLifecycleEventCallback lifecycleCallback) {
+  public void setLifecycleCallback(LongLivedProcessLifecycleEvent lifecycleCallback) {
     Preconditions.checkNotNull(lifecycleCallback, "null lifecycleCallback");
     this.lifecycleCallback = lifecycleCallback;
   }
@@ -330,6 +331,12 @@ public class LongLivedProcess implements Runnable {
       this.sleepTime = sleepTime;
     }
 
+    /**
+     * Return a character if there is one, -1 if nothing is ready yet
+     * @param reader reader
+     * @return the value from the reader, or -1 if it is not ready
+     * @throws IOException IO problems
+     */
     private int readCharNonBlocking(BufferedReader reader) throws IOException {
       if (reader.ready()) {
         return reader.read();
@@ -376,8 +383,8 @@ public class LongLivedProcess implements Runnable {
     public void run() {
       BufferedReader errReader = null;
       BufferedReader outReader = null;
-      StringBuilder outLine = new StringBuilder(256);
-      StringBuilder errorLine = new StringBuilder(256);
+      StringBuilder outLine = new StringBuilder(LINE_LENGTH);
+      StringBuilder errorLine = new StringBuilder(LINE_LENGTH);
       try {
         errReader = new BufferedReader(
             new InputStreamReader(process.getErrorStream()));
@@ -385,14 +392,14 @@ public class LongLivedProcess implements Runnable {
             new InputStreamReader(process.getInputStream()));
         while (!finished) {
           boolean processed = false;
-          if (readAnyLine(errReader, errorLine, 256)) {
+          if (readAnyLine(errReader, errorLine, LINE_LENGTH)) {
             String line = errorLine.toString();
             recordRecentLine(line, true);
             streamLog.warn(line);
             errorLine.setLength(0);
             processed = true;
           }
-          if (readAnyLine(outReader, outLine, 256)) {
+          if (readAnyLine(outReader, outLine, LINE_LENGTH)) {
             String line = outLine.toString();
             recordRecentLine(line, false);
             streamLog.info(line);

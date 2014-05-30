@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.services.utility;
+package org.apache.slider.server.services.workflow;
 
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.service.AbstractService;

@@ -20,6 +20,8 @@ package org.apache.slider.server.services.workflow;
 
 import com.google.common.base.Preconditions;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -27,16 +29,34 @@ import java.util.concurrent.atomic.AtomicInteger;
  * A thread factory that creates threads (possibly daemon threads)
  * using the name and naming policy supplied.
  * The thread counter starts at 1, increments atomically, 
- * and is supplied as the second argument in the format string
+ * and is supplied as the second argument in the format string.
+ * 
+ * A static method, {@link #newSingleThreadExecutor(String, boolean)},
+ * exists to simplify the construction of an executor with a single well-named
+ * threads. 
+ * 
+ * Example
+ * <pre>
+ *  ExecutorService exec = ServiceThreadFactory.newSingleThreadExecutor("live", true)
+ * </pre>
  */
 public class ServiceThreadFactory implements ThreadFactory {
 
   private static AtomicInteger counter = new AtomicInteger(1);
+  /**
+   * Default format for thread names: {@value}
+   */
   public static final String DEFAULT_NAMING_FORMAT = "%s-%03d";
   private final String name;
   private final boolean daemons;
   private final String namingFormat;
 
+  /**
+   * Create an instance
+   * @param name base thread name
+   * @param daemons flag to indicate the threads should be marked as daemons
+   * @param namingFormat format string to generate thread names from
+   */
   public ServiceThreadFactory(String name,
       boolean daemons,
       String namingFormat) {
@@ -47,6 +67,12 @@ public class ServiceThreadFactory implements ThreadFactory {
     this.namingFormat = namingFormat;
   }
 
+  /**
+   *
+   * Create an instance with the default naming format
+   * @param name base thread name
+   * @param daemons flag to indicate the threads should be marked as daemons
+   */
   public ServiceThreadFactory(String name,
       boolean daemons) {
     this(name, daemons, DEFAULT_NAMING_FORMAT);
@@ -60,4 +86,15 @@ public class ServiceThreadFactory implements ThreadFactory {
     return new Thread(r, threadName);
   }
 
+  /**
+   * Create a single thread executor using this naming policy
+   * @param name base thread name
+   * @param daemons flag to indicate the threads should be marked as daemons
+   * @return an executor
+   */
+  public static ExecutorService newSingleThreadExecutor(String name,
+      boolean daemons) {
+    return Executors.newSingleThreadExecutor(
+        new ServiceThreadFactory(name, daemons));
+  }
 }

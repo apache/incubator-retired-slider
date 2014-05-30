@@ -28,21 +28,17 @@ import org.apache.slider.server.services.workflow.WorkflowCompositeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class WorkflowCompositeLaunchedService extends WorkflowCompositeService
+public class LaunchedWorkflowCompositeService extends WorkflowCompositeService
     implements RunService {
   private static final Logger log = LoggerFactory.getLogger(
-      WorkflowCompositeLaunchedService.class);
+      LaunchedWorkflowCompositeService.class);
   private String[] argv;
   
-  public WorkflowCompositeLaunchedService(String name) {
+  public LaunchedWorkflowCompositeService(String name) {
     super(name);
   }
 
-  public WorkflowCompositeLaunchedService() {
-    super("WorkflowCompositeLaunchedService");
-  }
-
-  public WorkflowCompositeLaunchedService(String name, Service... children) {
+  public LaunchedWorkflowCompositeService(String name, Service... children) {
     super(name, children);
   }
 

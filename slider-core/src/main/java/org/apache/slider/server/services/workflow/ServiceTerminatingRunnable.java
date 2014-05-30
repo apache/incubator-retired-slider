@@ -18,12 +18,40 @@
 
 package org.apache.slider.server.services.workflow;
 
+import com.google.common.base.Preconditions;
+import org.apache.hadoop.service.Service;
+
 /**
- * This is the callback triggered by the {@link WorkflowEventNotifyingService}
- * when it generates a notification
+ * A runnable which terminates its owner. 
  */
-public interface WorkflowEventCallback {
-  
-  public void eventCallbackEvent(Object parameter);
-  
+public class ServiceTerminatingRunnable implements Runnable {
+
+  private final Service owner;
+  private final Runnable action;
+  private Exception exception;
+
+  public ServiceTerminatingRunnable(Service owner, Runnable action) {
+    Preconditions.checkNotNull(owner, "null owner");
+    Preconditions.checkNotNull(action, "null action");
+    this.owner = owner;
+    this.action = action;
+  }
+
+  public Service getOwner() {
+    return owner;
+  }
+
+  public Exception getException() {
+    return exception;
+  }
+
+  @Override
+  public void run() {
+    try {
+      action.run();
+    } catch (Exception e) {
+      exception = e;
+    }
+    owner.stop();
+  }
 }

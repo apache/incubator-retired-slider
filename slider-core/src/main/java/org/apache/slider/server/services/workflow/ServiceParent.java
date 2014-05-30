@@ -28,6 +28,11 @@ import java.util.List;
  */
 public interface ServiceParent extends Service {
 
+  /**
+   * Add a child service. It must be in a consistent state with the
+   * service to which it is being added.
+   * @param service the service to add.
+   */
   void addService(Service service);
 
   /**

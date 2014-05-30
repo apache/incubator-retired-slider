@@ -37,7 +37,7 @@ import static org.apache.slider.common.SliderXmlConfKeys.REGISTRY_PATH;
  * Base service for the standard slider client/server services
  */
 public abstract class AbstractSliderLaunchedService extends
-    WorkflowCompositeLaunchedService {
+    LaunchedWorkflowCompositeService {
   private static final Logger log =
     LoggerFactory.getLogger(AbstractSliderLaunchedService.class);
 

@@ -18,6 +18,7 @@
 
 package org.apache.slider.server.services.workflow;
 
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.service.CompositeService;
 import org.apache.hadoop.service.Service;
 import org.apache.hadoop.service.ServiceStateChangeListener;
@@ -41,20 +42,28 @@ import java.util.List;
 public class WorkflowCompositeService extends CompositeService
     implements ServiceParent, ServiceStateChangeListener {
 
-  private static final Logger log =
+  private static final Logger LOG =
     LoggerFactory.getLogger(WorkflowCompositeService.class);
 
+  /**
+   * Construct an instance
+   * @param name name of this service instance
+   */
   public WorkflowCompositeService(String name) {
     super(name);
   }
 
 
+  /**
+   * Construct an instance with the default name.
+   */
   public WorkflowCompositeService() {
     this("WorkflowCompositeService");
   }
 
   /**
    * Varargs constructor
+   * @param name name of this service instance
    * @param children children
    */
   public WorkflowCompositeService(String name, Service... children) {
@@ -63,9 +72,11 @@ public class WorkflowCompositeService extends CompositeService
       addService(child);
     }
   }
+
   /**
-   * Varargs constructor
-   * @param children children
+   * Construct with a list of children
+   * @param name name of this service instance
+   * @param children children to add
    */
   public WorkflowCompositeService(String name, List<Service> children) {
     this(name);
@@ -82,6 +93,7 @@ public class WorkflowCompositeService extends CompositeService
    */
   @Override
   public synchronized void addService(Service service) {
+    Preconditions.checkNotNull(service, "null service argument");
     service.registerServiceListener(this);
     super.addService(service);
   }
@@ -100,7 +112,7 @@ public class WorkflowCompositeService extends CompositeService
       //did the child fail? if so: propagate
       Throwable failureCause = child.getFailureCause();
       if (failureCause != null) {
-        log.info("Child service " + child + " failed", failureCause);
+        LOG.info("Child service " + child + " failed", failureCause);
         //failure. Convert to an exception
         Exception e = (failureCause instanceof Exception) ?
             (Exception) failureCause : new Exception(failureCause);
@@ -108,15 +120,23 @@ public class WorkflowCompositeService extends CompositeService
         noteFailure(e);
         stop();
       } else {
-        log.info("Child service completed {}", child);
+        LOG.info("Child service completed {}", child);
         if (areAllChildrenStopped()) {
-          log.info("All children are halted: stopping");
+          LOG.info("All children are halted: stopping");
           stop();
         }
       }
     }
   }
 
+  /**
+   * Probe to query if all children are stopped -simply
+   * by taking a snapshot of the child service list and enumerating
+   * their state. 
+   * The state of the children may change during this operation -that will
+   * not get picked up.
+   * @return true if all the children are stopped.
+   */
   private boolean areAllChildrenStopped() {
     List<Service> children = getServices();
     boolean stopped = true;

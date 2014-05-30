@@ -62,22 +62,12 @@ public class TestWorkflowCompositeService extends WorkflowServiceTestBase {
   }
 
   @Test
-  public void testOneLongLivedChild() throws Throwable {
-    MockService one = new MockService("one", false, 500);
-    MockService two = new MockService("two", false, 100);
-    ServiceParent parent = startService(one, two);
-    waitForParentToStop(parent);
-    assertStopped(one);
-    assertStopped(two);
-  }
-
-  @Test
   public void testNotificationChild() throws Throwable {
 
-    EventCallbackHandler ecb = new EventCallbackHandler();
     MockService one = new MockService("one", false, 100);
+    EventCallbackHandler ecb = new EventCallbackHandler();
     WorkflowEventNotifyingService ens =
-        new WorkflowEventNotifyingService(ecb, 100);
+        new WorkflowEventNotifyingService(ecb, "hello", 100);
     MockService two = new MockService("two", false, 100);
     ServiceParent parent = startService(one, ens, two);
     waitForParentToStop(parent);
@@ -85,6 +75,7 @@ public class TestWorkflowCompositeService extends WorkflowServiceTestBase {
     assertStopped(ens);
     assertStopped(two);
     assertTrue(ecb.notified);
+    assertEquals("hello", ecb.result);
   }
 
 

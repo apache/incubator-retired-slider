@@ -18,6 +18,7 @@
 
 package org.apache.slider.server.services.workflow;
 
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.service.Service;
 import org.apache.hadoop.service.ServiceStateChangeListener;
@@ -31,15 +32,34 @@ import java.util.List;
 
 /**
  * This resembles the YARN CompositeService, except that it
- * starts one service after another: it's init & start operations
- * only work with one service
+ * starts one service after another
+ * 
+ * Workflow
+ * <ol>
+ *   <li>When the <code>WorkflowSequenceService</code> instance is
+ *   initialized, it only initializes itself.</li>
+ *   
+ *   <li>When the <code>WorkflowSequenceService</code> instance is
+ *   started, it initializes then starts the first of its children.
+ *   If there are no children, it immediately stops.</li>
+ *   
+ *   <li>When the active child stops, it did not fail, and the parent has not
+ *   stopped -then the next service is initialized and started. If there is no
+ *   remaining child the parent service stops.</li>
+ *   
+ *   <li>If the active child did fail, the parent service notes the exception
+ *   and stops -effectively propagating up the failure.
+ *   </li>
+ * </ol>
+ * 
+ * New service instances MAY be added to a running instance -but no guarantees
+ * can be made as to whether or not they will be run.
  */
 
 public class WorkflowSequenceService extends AbstractService implements
-    ServiceParent,
-                                                     ServiceStateChangeListener {
+    ServiceParent, ServiceStateChangeListener {
 
-  private static final Logger log =
+  private static final Logger LOG =
     LoggerFactory.getLogger(WorkflowSequenceService.class);
 
   /**
@@ -48,21 +68,29 @@ public class WorkflowSequenceService extends AbstractService implements
   private final List<Service> serviceList = new ArrayList<Service>();
 
   /**
-   * The current service.
+   * The currently active service.
    * Volatile -may change & so should be read into a 
    * local variable before working with
    */
-  private volatile Service currentService;
-  /*
+  private volatile Service activeService;
+
+  /**
   the previous service -the last one that finished. 
-  Null if one did not finish yet
+  null if one did not finish yet
    */
   private volatile Service previousService;
 
+  /**
+   * Construct an instance
+   * @param name service name
+   */
   public WorkflowSequenceService(String name) {
     super(name);
   }
 
+  /**
+   * Construct an instance with the default name
+   */
   public WorkflowSequenceService() {
     this("WorkflowSequenceService");
   }
@@ -70,11 +98,21 @@ public class WorkflowSequenceService extends AbstractService implements
   /**
    * Create a service sequence with the given list of services
    * @param name service name
-   * @param offspring initial sequence
+   * @param children initial sequence
    */
-  public WorkflowSequenceService(String name, Service... offspring) {
+  public WorkflowSequenceService(String name, Service... children) {
     super(name);
-    for (Service service : offspring) {
+    for (Service service : children) {
+      addService(service);
+    }
+  }  /**
+   * Create a service sequence with the given list of services
+   * @param name service name
+   * @param children initial sequence
+   */
+  public WorkflowSequenceService(String name, List<Service> children) {
+    super(name);
+    for (Service service : children) {
       addService(service);
     }
   }
@@ -83,10 +121,14 @@ public class WorkflowSequenceService extends AbstractService implements
    * Get the current service -which may be null
    * @return service running
    */
-  public Service getCurrentService() {
-    return currentService;
+  public Service getActiveService() {
+    return activeService;
   }
 
+  /**
+   * Get the previously active service
+   * @return the service last run, or null if there is none.
+   */
   public Service getPreviousService() {
     return previousService;
   }
@@ -97,16 +139,19 @@ public class WorkflowSequenceService extends AbstractService implements
    */
   @Override
   protected void serviceStart() throws Exception {
-    startNextService();
+    if (!startNextService()) {
+        //nothing to start -so stop
+        stop();
+    }
   }
 
   @Override
   protected void serviceStop() throws Exception {
     //stop current service.
     //this triggers a callback that is caught and ignored
-    Service current = currentService;
+    Service current = activeService;
     previousService = current;
-    currentService = null;
+    activeService = null;
     if (current != null) {
       current.stop();
     }
@@ -124,7 +169,7 @@ public class WorkflowSequenceService extends AbstractService implements
   public synchronized boolean startNextService() {
     if (isInState(STATE.STOPPED)) {
       //downgrade to a failed
-      log.debug("Not starting next service -{} is stopped", this);
+      LOG.debug("Not starting next service -{} is stopped", this);
       return false;
     }
     if (!isInState(STATE.STARTED)) {
@@ -136,10 +181,10 @@ public class WorkflowSequenceService extends AbstractService implements
       //nothing left to run
       return false;
     }
-    if (currentService != null && currentService.getFailureCause() != null) {
+    if (activeService != null && activeService.getFailureCause() != null) {
       //did the last service fail? Is this caused by some premature callback?
-      log.debug("Not starting next service due to a failure of {}",
-                currentService);
+      LOG.debug("Not starting next service due to a failure of {}",
+          activeService);
       return false;
     }
     //bear in mind that init & start can fail, which
@@ -148,7 +193,7 @@ public class WorkflowSequenceService extends AbstractService implements
     //the start-next-service logic is skipped.
     //now, what does that mean w.r.t exit states?
 
-    currentService = null;
+    activeService = null;
     Service head = serviceList.remove(0);
 
     try {
@@ -161,7 +206,7 @@ public class WorkflowSequenceService extends AbstractService implements
     }
     //at this point the service must have explicitly started & not failed,
     //else an exception would have been raised
-    currentService = head;
+    activeService = head;
     return true;
   }
 
@@ -175,7 +220,7 @@ public class WorkflowSequenceService extends AbstractService implements
   public void stateChanged(Service service) {
     // only react to the state change when it is the current service
     // and it has entered the STOPPED state
-    if (service == currentService && service.isInState(STATE.STOPPED)) {
+    if (service == activeService && service.isInState(STATE.STOPPED)) {
       onServiceCompleted(service);
     }
   }
@@ -185,8 +230,8 @@ public class WorkflowSequenceService extends AbstractService implements
    * @param service service that has completed
    */
   protected synchronized void onServiceCompleted(Service service) {
-    log.info("Running service stopped: {}", service);
-    previousService = currentService;
+    LOG.info("Running service stopped: {}", service);
+    previousService = activeService;
     
 
     //start the next service if we are not stopped ourselves
@@ -218,7 +263,7 @@ public class WorkflowSequenceService extends AbstractService implements
     } else {
       //not started, so just note that the current service
       //has gone away
-      currentService = null;
+      activeService = null;
     }
   }
 
@@ -227,9 +272,10 @@ public class WorkflowSequenceService extends AbstractService implements
    * {@link WorkflowSequenceService}
    * @param service the {@link Service} to be added
    */
-  @Override //Parent
+  @Override
   public synchronized void addService(Service service) {
-    log.debug("Adding service {} ", service.getName());
+    Preconditions.checkNotNull(service, "null service argument");
+    LOG.debug("Adding service {} ", service.getName());
     synchronized (serviceList) {
       serviceList.add(service);
     }
@@ -247,7 +293,7 @@ public class WorkflowSequenceService extends AbstractService implements
 
   @Override // Object
   public synchronized String toString() {
-    return super.toString() + "; current service " + currentService
+    return super.toString() + "; current service " + activeService
            + "; queued service count=" + serviceList.size();
   }
 

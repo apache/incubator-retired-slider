@@ -332,7 +332,8 @@ public class AccumuloProviderService extends AbstractProviderService implements
     //callback to AM to trigger cluster review is set up to happen after
     //the init/verify action has succeeded
     WorkflowEventNotifyingService notifier = new WorkflowEventNotifyingService(execInProgress,
-           internalOperations.getGlobalOptions().getOptionInt(
+        null,
+        internalOperations.getGlobalOptions().getOptionInt(
              OptionKeys.INTERNAL_CONTAINER_STARTUP_DELAY,
              OptionKeys.DEFAULT_CONTAINER_STARTUP_DELAY));
     // register the service for lifecycle management; 

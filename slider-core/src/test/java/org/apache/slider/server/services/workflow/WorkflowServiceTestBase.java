@@ -21,6 +21,8 @@ package org.apache.slider.server.services.workflow;
 import org.apache.hadoop.service.Service;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,12 +30,20 @@ public abstract class WorkflowServiceTestBase extends Assert {
   private static final Logger
       log = LoggerFactory.getLogger(WorkflowServiceTestBase.class);
 
+
+  /**
+   * Set the timeout for every test
+   */
+  @Rule
+  public Timeout testTimeout = new Timeout(15000);
+
   @Before
   public void nameThread() {
     Thread.currentThread().setName("JUnit");
   }
+
   
-  public void assertInState(Service service, Service.STATE expected) {
+  protected void assertInState(Service service, Service.STATE expected) {
     Service.STATE actual = service.getServiceState();
     if (actual != expected) {
       fail("Service " + service.getName() + " in state " + actual
@@ -41,18 +51,18 @@ public abstract class WorkflowServiceTestBase extends Assert {
     }
   }
 
-  public void assertStopped(Service service) {
+  protected void assertStopped(Service service) {
     assertInState(service, Service.STATE.STOPPED);
   }
 
-  void logState(ServiceParent p) {
+  protected void logState(ServiceParent p) {
     logService(p);
     for (Service s : p.getServices()) {
       logService(s);
     }
   }
 
-  public void logService(Service s) {
+  protected void logService(Service s) {
     log.info(s.toString());
     Throwable failureCause = s.getFailureCause();
     if (failureCause != null) {
@@ -61,30 +71,48 @@ public abstract class WorkflowServiceTestBase extends Assert {
     }
   }
 
-  public void waitForParentToStop(ServiceParent parent) {
-    boolean stop = parent.waitForServiceToStop(1000);
+  /**
+   * Wait a second for the service parent to stop
+   * @param parent the service to wait for
+   */
+  protected void waitForParentToStop(ServiceParent parent) {
+    waitForParentToStop(parent, 1000);
+  }
+
+  /**
+   * Wait for the service parent to stop
+   * @param parent the service to wait for
+   * @param timeout time in milliseconds
+   */
+  protected void waitForParentToStop(ServiceParent parent, int timeout) {
+    boolean stop = parent.waitForServiceToStop(timeout);
     if (!stop) {
       logState(parent);
-      fail("Service failed to stop :" + parent);
+      fail("Service failed to stop : after " + timeout +" millis " + parent);
     }
   }
 
-  public abstract ServiceParent buildService(Service... services);
+  protected abstract ServiceParent buildService(Service... services);
 
-  public ServiceParent startService(Service... services) {
+  protected ServiceParent startService(Service... services) {
     ServiceParent parent = buildService(services);
     //expect service to start and stay started
     parent.start();
     return parent;
   }
 
+  /**
+   * Class to log when an event callback happens
+   */
   public static class EventCallbackHandler implements WorkflowEventCallback {
     public volatile boolean notified = false;
+    public Object result;
 
     @Override
-    public void eventCallbackEvent() {
+    public void eventCallbackEvent(Object parameter) {
       log.info("EventCallback");
       notified = true;
+      result = parameter;
     }
   }
 }

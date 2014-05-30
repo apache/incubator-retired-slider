@@ -181,7 +181,7 @@ public abstract class AbstractProviderService
    * @return the forkes service
    */
   protected ForkedProcessService latestProcess() {
-    Service current = getCurrentService();
+    Service current = getActiveService();
     Service prev = getPreviousService();
 
     Service latest = current != null ? current : prev;

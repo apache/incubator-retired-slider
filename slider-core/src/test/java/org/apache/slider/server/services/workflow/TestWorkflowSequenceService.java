@@ -28,22 +28,27 @@ public class TestWorkflowSequenceService extends WorkflowServiceTestBase {
   private static final Logger
       log = LoggerFactory.getLogger(TestWorkflowSequenceService.class);
 
-
   @Test
   public void testSingleSequence() throws Throwable {
-    ServiceParent ss = startService(new MockService());
-    ss.stop();
+    ServiceParent parent = startService(new MockService());
+    parent.stop();
+  }
+
+  @Test
+  public void testEmptySequence() throws Throwable {
+    ServiceParent parent = startService();
+    waitForParentToStop(parent);
   }
 
   @Test
   public void testSequence() throws Throwable {
     MockService one = new MockService("one", false, 100);
     MockService two = new MockService("two", false, 100);
-    ServiceParent ss = startService(one, two);;
-    assert ss.waitForServiceToStop(1000);
-    assert one.isInState(Service.STATE.STOPPED);
-    assert two.isInState(Service.STATE.STOPPED);
-    assert ((WorkflowSequenceService)ss).getPreviousService().equals(two);
+    ServiceParent parent = startService(one, two);
+    waitForParentToStop(parent);
+    assertStopped(one);
+    assertStopped(two);
+    assert ((WorkflowSequenceService)parent).getPreviousService().equals(two);
   }
 
   @Test
@@ -51,14 +56,15 @@ public class TestWorkflowSequenceService extends WorkflowServiceTestBase {
     EventCallbackHandler ecb = new EventCallbackHandler();
     MockService one = new MockService("one", false, 100);
     WorkflowEventNotifyingService ens =
-        new WorkflowEventNotifyingService(ecb, 100);
+        new WorkflowEventNotifyingService(ecb, 3, 100);
     MockService two = new MockService("two", false, 100);
-    ServiceParent ss = startService(one, ens, two);
-    assert ss.waitForServiceToStop(1000);
+    ServiceParent parent = startService(one, ens, two);
+    waitForParentToStop(parent);
     assertStopped(one);
     assertStopped(ens);
     assertStopped(two);
     assertTrue(ecb.notified);
+    assertEquals(3, ecb.result);
   }
 
   @Test
@@ -112,6 +118,25 @@ public class TestWorkflowSequenceService extends WorkflowServiceTestBase {
     waitForParentToStop(parent);
     assertStopped(one);
     assertStopped(two);
+  }
+
+
+  @Test
+  public void testAddChild() throws Throwable {
+    MockService one = new MockService("one", false, 5000);
+    MockService two = new MockService("two", false, 100);
+    ServiceParent parent = startService(one, two);
+    EventCallbackHandler ecb = new EventCallbackHandler();
+    WorkflowEventNotifyingService ens =
+        new WorkflowEventNotifyingService(ecb, "hello", 100);
+    parent.addService(ens);
+    waitForParentToStop(parent, 10000);
+    assertStopped(one);
+    assertStopped(two);
+    assertStopped(ens);
+    assertStopped(two);
+    assertTrue(ecb.notified);
+    assertEquals("hello", ecb.result);
   }
 
   public WorkflowSequenceService buildService(Service... services) {
