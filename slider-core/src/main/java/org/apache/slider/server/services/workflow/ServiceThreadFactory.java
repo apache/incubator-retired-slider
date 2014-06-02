@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * The thread counter starts at 1, increments atomically, 
  * and is supplied as the second argument in the format string.
  * 
- * A static method, {@link #newSingleThreadExecutor(String, boolean)},
+ * A static method, {@link #singleThreadExecutor(String, boolean)},
  * exists to simplify the construction of an executor with a single well-named
  * threads. 
  * 
@@ -92,7 +92,7 @@ public class ServiceThreadFactory implements ThreadFactory {
    * @param daemons flag to indicate the threads should be marked as daemons
    * @return an executor
    */
-  public static ExecutorService newSingleThreadExecutor(String name,
+  public static ExecutorService singleThreadExecutor(String name,
       boolean daemons) {
     return Executors.newSingleThreadExecutor(
         new ServiceThreadFactory(name, daemons));

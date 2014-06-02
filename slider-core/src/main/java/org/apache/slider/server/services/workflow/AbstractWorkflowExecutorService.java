@@ -20,7 +20,9 @@ package org.apache.slider.server.services.workflow;
 
 import org.apache.hadoop.service.AbstractService;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 /**
  * A service that hosts an executor -in shutdown it is stopped.
@@ -56,6 +58,15 @@ public abstract class AbstractWorkflowExecutorService extends AbstractService {
     executor.execute(runnable);
   }
 
+  /**
+   * Submit a callable
+   * @param callable callable
+   * @param <V> type of the final get
+   * @return a future to wait on
+   */
+  public <V> Future<V> submit(Callable<V> callable) {
+    return executor.submit(callable);
+  }
   /**
    * Stop the service: halt the executor. 
    * @throws Exception exception.

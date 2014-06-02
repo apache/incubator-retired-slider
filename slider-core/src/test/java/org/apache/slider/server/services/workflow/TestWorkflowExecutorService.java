@@ -54,7 +54,7 @@ public class TestWorkflowExecutorService extends WorkflowServiceTestBase {
   private static class ExecutorSvc extends AbstractWorkflowExecutorService {
     private ExecutorSvc() {
       super("ExecutorService",
-          ServiceThreadFactory.newSingleThreadExecutor("test", true));
+          ServiceThreadFactory.singleThreadExecutor("test", true));
     }
 
   }

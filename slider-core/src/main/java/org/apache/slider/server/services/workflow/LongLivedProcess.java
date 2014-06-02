@@ -42,14 +42,32 @@ import java.util.concurrent.TimeUnit;
  * Hadoop's {@link org.apache.hadoop.util.Shell} class assumes it is executing
  * a short lived application; this class allows for the process to run for the
  * life of the Java process that forked it.
+ * 
+ * Key Features
+ * <ol>
+ *   <li>Output is streamed to the output logger provided</li>.
+ *   <li>The most recent lines of output are saved to a linked list</li>.
+ *   <li>A callback, {@link LongLivedProcessLifecycleEvent}, is raised on</li>
+ * </ol>
+ * 
  */
 public class LongLivedProcess implements Runnable {
-  public static final int STREAM_READER_SLEEP_TIME = 200;
+  /**
+   * Limit on number of lines to retain in the "recent" line list:{@value}
+   */
   public static final int RECENT_LINE_LOG_LIMIT = 64;
-  public static final int LINE_LENGTH = 256;
+
+  /**
+   * Const defining the time in millis between polling for new text
+   */
+  private static final int STREAM_READER_SLEEP_TIME = 200;
+  
+  /**
+   * limit on the length of a stream before it triggers an automatic newline
+   */
+  private static final int LINE_LENGTH = 256;
   private final ProcessBuilder processBuilder;
   private Process process;
-  private Exception exception;
   private Integer exitCode = null;
   private final String name;
   private final ExecutorService processExecutor;
@@ -58,7 +76,7 @@ public class LongLivedProcess implements Runnable {
   private ProcessStreamReader processStreamReader;
   //list of recent lines, recorded for extraction into reports
   private final List<String> recentLines = new LinkedList<String>();
-  private final int recentLineLimit = RECENT_LINE_LOG_LIMIT;
+  private int recentLineLimit = RECENT_LINE_LOG_LIMIT;
   private LongLivedProcessLifecycleEvent lifecycleCallback;
 
   
@@ -89,15 +107,15 @@ public class LongLivedProcess implements Runnable {
     processExecutor = Executors.newSingleThreadExecutor(factory);
     logExecutor=    Executors.newSingleThreadExecutor(factory);
     processBuilder = new ProcessBuilder(commands);
-    initBuilder();
-  }
-
-  private void initBuilder() {
     processBuilder.redirectErrorStream(false);
   }
 
-  public ProcessBuilder getProcessBuilder() {
-    return processBuilder;
+  /**
+   * Set the limit on recent lines to retain
+   * @param recentLineLimit size of rolling list of recent lines.
+   */
+  public void setRecentLineLimit(int recentLineLimit) {
+    this.recentLineLimit = recentLineLimit;
   }
 
   /**
@@ -151,13 +169,19 @@ public class LongLivedProcess implements Runnable {
   }
 
   /**
-   * Get any exception raised by the process
-   * @return an exception or null
+   * Get the process builder -this can be manipulated
+   * up to the start() operation. As there is no synchronization
+   * around it, it must only be used in the same thread setting up the commmand.
+   * @return the process builder
    */
-  public Exception getException() {
-    return exception;
+  public ProcessBuilder getProcessBuilder() {
+    return processBuilder;
   }
 
+  /**
+   * Get the command list
+   * @return the comands
+   */
   public List<String> getCommands() {
     return processBuilder.command();
   }
@@ -181,6 +205,22 @@ public class LongLivedProcess implements Runnable {
   public Integer getExitCode() {
     return exitCode;
   }
+  
+    /**
+   * Get the exit code sign corrected: null until the process has finished
+   * @return the exit code or null
+   */
+  public Integer getExitCodeSignCorrected() {
+    Integer result;
+    if (exitCode != null) {
+      result = (exitCode << 24) >> 24;
+    } else {
+      result = null;
+    }
+    return result;
+  }
+  
+  
 
   /**
    * Stop the process if it is running.
@@ -256,16 +296,18 @@ public class LongLivedProcess implements Runnable {
       //tell the logger it has to finish too
       finished = true;
 
-      //now call the callback if it is set
-      if (lifecycleCallback != null) {
-        lifecycleCallback.onProcessExited(this, exitCode);
-      }
       // shut down the threads
       logExecutor.shutdown();
       try {
         logExecutor.awaitTermination(60, TimeUnit.SECONDS);
       } catch (InterruptedException ignored) {
         //ignored
+      }
+
+      //now call the callback if it is set
+      if (lifecycleCallback != null) {
+        lifecycleCallback.onProcessExited(this, exitCode,
+            getExitCodeSignCorrected());
       }
     }
   }

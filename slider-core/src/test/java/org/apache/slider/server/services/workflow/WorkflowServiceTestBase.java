@@ -28,6 +28,8 @@ import org.junit.rules.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 public abstract class WorkflowServiceTestBase extends Assert {
   private static final Logger
       log = LoggerFactory.getLogger(WorkflowServiceTestBase.class);
@@ -40,7 +42,7 @@ public abstract class WorkflowServiceTestBase extends Assert {
 
   @Rule
   public TestName name = new TestName();
-  
+
   @Before
   public void nameThread() {
     Thread.currentThread().setName("JUnit");
@@ -101,6 +103,25 @@ public abstract class WorkflowServiceTestBase extends Assert {
       log.info("EventCallback");
       notified = true;
       result = parameter;
+    }
+  }
+
+  public void assertStringInOutput(String text, List<String> output) {
+    assertTrue("Empty output list", !output.isEmpty());
+    boolean found = false;
+    StringBuilder builder = new StringBuilder();
+    for (String s : output) {
+      builder.append(s).append('\n');
+      if (s.contains(text)) {
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) {
+      String message =
+          "Text \"" + text + "\" not found in " + output.size() + " lines\n";
+      fail(message + builder.toString());
     }
   }
 }

@@ -18,7 +18,6 @@
 
 package org.apache.slider.server.services.workflow;
 
-import com.google.common.base.Preconditions;
 import org.apache.hadoop.service.AbstractService;
 
 import java.io.Closeable;
@@ -26,6 +25,9 @@ import java.io.IOException;
 
 /**
  * Service that closes the closeable supplied during shutdown, if not null.
+ * 
+ * As the Service interface itself extends Closeable, this service
+ * can be used to shut down other services if desired.
  */
 public class ClosingService<C extends Closeable> extends AbstractService {
 

@@ -55,6 +55,7 @@ public class ProcessCommandFactory {
     commands.add(text);
     return commands;
   }
+
   /**
    * print env variables
    * @return commands
@@ -62,6 +63,17 @@ public class ProcessCommandFactory {
   public List<String> env() {
     List<String> commands = new ArrayList<String>(1);
     commands.add("env");
+    return commands;
+  }
+
+  /**
+   * execute a command that returns with an error code that will
+   * be converted into a number
+   * @return commands
+   */
+  public List<String> exitFalse() {
+    List<String> commands = new ArrayList<String>(2);
+    commands.add("false");
     return commands;
   }
 

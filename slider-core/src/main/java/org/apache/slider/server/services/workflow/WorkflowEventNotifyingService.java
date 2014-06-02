@@ -73,7 +73,7 @@ public class WorkflowEventNotifyingService extends
   @Override
   protected void serviceStart() throws Exception {
     LOG.debug("Notifying {} after a delay of {} millis", callback, delay);
-    setExecutor(ServiceThreadFactory.newSingleThreadExecutor(getName(), true));
+    setExecutor(ServiceThreadFactory.singleThreadExecutor(getName(), true));
     execute(command);
   }
 

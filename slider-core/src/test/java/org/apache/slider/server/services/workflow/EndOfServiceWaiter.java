@@ -18,40 +18,39 @@
 
 package org.apache.slider.server.services.workflow;
 
-import com.google.common.base.Preconditions;
 import org.apache.hadoop.service.Service;
+import org.apache.hadoop.service.ServiceStateChangeListener;
+import org.junit.Assert;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * A runnable which terminates its owner. 
+ * Wait for a service to stop
  */
-public class ServiceTerminatingRunnable implements Runnable {
+public class EndOfServiceWaiter implements ServiceStateChangeListener {
 
-  private final Service owner;
-  private final Runnable action;
-  private Exception exception;
+  private final AtomicBoolean finished = new AtomicBoolean(false);
 
-  public ServiceTerminatingRunnable(Service owner, Runnable action) {
-    Preconditions.checkArgument(owner != null, "null owner");
-    Preconditions.checkArgument(action != null, "null action");
-    this.owner = owner;
-    this.action = action;
+  public EndOfServiceWaiter(Service svc) {
+    svc.registerServiceListener(this);
   }
 
-  public Service getOwner() {
-    return owner;
-  }
-
-  public Exception getException() {
-    return exception;
+  public synchronized void waitForServiceToStop(long timeout) throws
+      InterruptedException {
+    if (!finished.get()) {
+      wait(timeout);
+    }
+    Assert.assertTrue("Service did not finish in time period",
+        finished.get());
   }
 
   @Override
-  public void run() {
-    try {
-      action.run();
-    } catch (Exception e) {
-      exception = e;
+  public synchronized void stateChanged(Service service) {
+    if (service.isInState(Service.STATE.STOPPED)) {
+      finished.set(true);
+      notify();
     }
-    owner.stop();
   }
+
+
 }

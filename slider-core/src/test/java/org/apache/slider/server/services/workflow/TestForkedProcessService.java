@@ -18,6 +18,8 @@
 
 package org.apache.slider.server.services.workflow;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.service.ServiceOperations;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,27 +27,28 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Test the long lived process by executing a command that works and a command
  * that fails
  */
-public class TestLongLivedProcess extends WorkflowServiceTestBase implements
-    LongLivedProcessLifecycleEvent {
+public class TestForkedProcessService extends WorkflowServiceTestBase {
   private static final Logger
-      log = LoggerFactory.getLogger(TestLongLivedProcess.class);
+      log = LoggerFactory.getLogger(TestForkedProcessService.class);
 
   private static final Logger
       processLog =
       LoggerFactory.getLogger("org.apache.hadoop.services.workflow.Process");
 
 
-  private LongLivedProcess process;
+  private ForkedProcessService process;
   private File testDir = new File("target");
   private ProcessCommandFactory commandFactory;
-  private volatile boolean started, stopped;
-  private volatile int exitCode;
+  private Map<String, String> env = new HashMap<String, String>();
 
   @Before
   public void setupProcesses() {
@@ -54,24 +57,16 @@ public class TestLongLivedProcess extends WorkflowServiceTestBase implements
 
   @After
   public void stopProcesses() {
-    if (process != null) {
-      process.stop();
-    }
+    ServiceOperations.stop(process);
   }
 
   @Test
   public void testLs() throws Throwable {
 
     initProcess(commandFactory.ls(testDir));
-    process.start();
-    //in-thread wait
-    process.run();
-
-    //here stopped
-    assertTrue("process start callback not received", started);
-    assertTrue("process stop callback not received", stopped);
-    assertFalse(process.isRunning());
-    assertEquals(0, process.getExitCode().intValue());
+    exec();
+    assertFalse(process.isProcessRunning());
+    assertEquals(0, process.getExitCode());
 
     assertStringInOutput("test-classes", getFinalOutput());
   }
@@ -80,17 +75,11 @@ public class TestLongLivedProcess extends WorkflowServiceTestBase implements
   public void testExitCodes() throws Throwable {
 
     initProcess(commandFactory.exitFalse());
-    process.start();
-    //in-thread wait
-    process.run();
-
-    //here stopped
-
-    assertFalse(process.isRunning());
+    exec();
+    assertFalse(process.isProcessRunning());
     int exitCode = process.getExitCode();
     assertTrue(exitCode != 0);
     int corrected = process.getExitCodeSignCorrected();
-
     assertEquals(1, corrected);
   }
 
@@ -99,14 +88,11 @@ public class TestLongLivedProcess extends WorkflowServiceTestBase implements
 
     String echoText = "hello, world";
     initProcess(commandFactory.echo(echoText));
-    process.start();
-    //in-thread wait
-    process.run();
+    exec();
 
-    //here stopped
-    assertTrue("process stop callback not received", stopped);
-    assertEquals(0, process.getExitCode().intValue());
+    assertEquals(0, process.getExitCode());
     assertStringInOutput(echoText, getFinalOutput());
+
   }
 
   @Test
@@ -114,15 +100,11 @@ public class TestLongLivedProcess extends WorkflowServiceTestBase implements
 
     String var = "TEST_RUN";
     String val = "TEST-RUN-ENV-VALUE";
+    env.put(var, val);
     initProcess(commandFactory.env());
-    process.setEnv(var, val);
-    process.start();
-    //in-thread wait
-    process.run();
+    exec();
 
-    //here stopped
-    assertTrue("process stop callback not received", stopped);
-    assertEquals(0, process.getExitCode().intValue());
+    assertEquals(0, process.getExitCode());
     assertStringInOutput(val, getFinalOutput());
   }
 
@@ -135,29 +117,20 @@ public class TestLongLivedProcess extends WorkflowServiceTestBase implements
     return process.getRecentOutput();
   }
 
-  private LongLivedProcess initProcess(List<String> commands) {
-    process = new LongLivedProcess(name.getMethodName(), log, commands);
-    process.setLifecycleCallback(this);
+  private ForkedProcessService initProcess(List<String> commands) throws
+      IOException {
+    process = new ForkedProcessService(name.getMethodName(), env,
+        commands);
+    process.init(new Configuration());
+
     return process;
   }
 
-  /**
-   * Handler for callback events on the process
-   */
-
-  @Override
-  public void onProcessStarted(LongLivedProcess process) {
-    started = true;
+  public void exec() throws InterruptedException {
+    assertNotNull(process);
+    EndOfServiceWaiter waiter = new EndOfServiceWaiter(process);
+    process.start();
+    waiter.waitForServiceToStop(5000);
   }
 
-  /**
-   * Handler for callback events on the process
-   */
-  @Override
-  public void onProcessExited(LongLivedProcess process,
-      int exitCode,
-      int signCorrectedCode) {
-    this.exitCode = exitCode;
-    stopped = true;
-  }
 }
