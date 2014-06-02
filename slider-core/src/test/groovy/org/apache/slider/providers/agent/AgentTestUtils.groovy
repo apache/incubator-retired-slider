@@ -23,8 +23,6 @@ import com.sun.jersey.api.client.config.ClientConfig
 import com.sun.jersey.api.client.config.DefaultClientConfig
 import com.sun.jersey.api.json.JSONConfiguration
 import org.apache.slider.server.appmaster.web.rest.agent.Register
-import org.codehaus.jettison.json.JSONException
-import org.codehaus.jettison.json.JSONObject
 
 class AgentTestUtils {
 
@@ -36,20 +34,11 @@ class AgentTestUtils {
     return Client.create(clientConfig);
   }
 
-
-  public static Register createDummyJSONRegister() throws JSONException {
+  public static Register createDummyJSONRegister() {
     Register register = new Register();
     register.setResponseId(-1);
     register.setTimestamp(System.currentTimeMillis());
     register.setHostname("dummyHost");
     return register;
-  }
-
-  public static JSONObject createDummyHeartBeat() throws JSONException {
-    JSONObject json = new JSONObject();
-    json.put("responseId", -1);
-    json.put("timestamp", System.currentTimeMillis());
-    json.put("hostname", "dummyHost");
-    return json;
   }
 }

@@ -161,7 +161,6 @@
     <dependency>
       <groupId>org.apache.slider</groupId>
       <artifactId>slider-core</artifactId>
-      <version>${project.version}</version>
         <exclusions>
           <exclusion>
             <groupId>org.apache.hadoop</groupId>
@@ -173,14 +172,12 @@
     <dependency>
       <groupId>org.apache.slider</groupId>
       <artifactId>slider-core</artifactId>
-      <version>${project.version}</version>
       <type>test-jar</type>
     </dependency>
 
     <dependency>
       <groupId>org.apache.slider</groupId>
       <artifactId>slider-assembly</artifactId>
-      <version>${project.version}</version>
       <classifier>all</classifier>
       <type>tar.gz</type>
       <scope>test</scope>
@@ -188,13 +185,7 @@
 
     <dependency>
       <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-common</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-common</artifactId>
-      <type>test-jar</type>
+      <artifactId>hadoop-client</artifactId>
     </dependency>
 
     <dependency>
@@ -253,10 +244,24 @@
     <dependency>
       <groupId>org.apache.slider</groupId>
       <artifactId>slider-agent</artifactId>
-      <version>${project.version}</version>
       <scope>test</scope>
       <type>tar.gz</type>
     </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+    </dependency>
+
+      <dependency>
+        <groupId>org.codehaus.groovy</groupId>
+        <artifactId>groovy-all</artifactId>
+      </dependency>
 
 
   </dependencies>

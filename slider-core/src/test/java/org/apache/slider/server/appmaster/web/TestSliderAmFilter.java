@@ -21,7 +21,6 @@ package org.apache.slider.server.appmaster.web;
 import org.apache.hadoop.yarn.server.webproxy.WebAppProxyServlet;
 import org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter;
 import org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpServletRequestWrapper;
-import org.glassfish.grizzly.servlet.HttpServletResponseImpl;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -31,8 +30,11 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import javax.servlet.ServletResponseWrapper;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -126,7 +128,9 @@ public class TestSliderAmFilter {
     SliderAmIpFilter testFilter = new SliderAmIpFilter();
     testFilter.init(config);
 
-    HttpServletResponseForTest response = new HttpServletResponseForTest();
+    HttpServletResponse mockResponse = Mockito.mock(HttpServletResponse.class);
+    HttpServletResponseForTest response =
+        new HttpServletResponseForTest(mockResponse);
     // Test request should implements HttpServletRequest
 
     ServletRequest failRequest = Mockito.mock(ServletRequest.class);
@@ -170,8 +174,12 @@ public class TestSliderAmFilter {
 
   }
 
-  private class HttpServletResponseForTest extends HttpServletResponseImpl {
+  private class HttpServletResponseForTest extends HttpServletResponseWrapper {
     String redirectLocation = "";
+
+    public HttpServletResponseForTest(HttpServletResponse response) {
+      super(response);
+    }
 
     public String getRedirect() {
       return redirectLocation;
