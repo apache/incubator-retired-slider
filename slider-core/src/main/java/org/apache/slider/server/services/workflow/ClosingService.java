@@ -31,25 +31,42 @@ import java.io.IOException;
  */
 public class ClosingService<C extends Closeable> extends AbstractService {
 
-  private volatile C closeable;
+  private C closeable;
 
 
+  /**
+   * Construct an instance of the service
+   * @param name service name
+   * @param closeable closeable to close (may be null)
+   */
   public ClosingService(String name,
       C closeable) {
     super(name);
     this.closeable = closeable;
   }
 
+  /**
+   * Construct an instance of the service, using the default name
+   * @param closeable closeable to close (may be null)
+   */
   public ClosingService(C closeable) {
     this("ClosingService", closeable);
   }
 
 
-  public C getCloseable() {
+  /**
+   * Get the closeable
+   * @return the closeable
+   */
+  public synchronized C getCloseable() {
     return closeable;
   }
 
-  public void setCloseable(C closeable) {
+  /**
+   * Set or update the closeable.
+   * @param closeable
+   */
+  public synchronized void setCloseable(C closeable) {
     this.closeable = closeable;
   }
 
@@ -61,13 +78,14 @@ public class ClosingService<C extends Closeable> extends AbstractService {
    */
   @Override
   protected void serviceStop() {
-    if (closeable != null) {
+    C target = getCloseable();
+    if (target != null) {
       try {
-        closeable.close();
+        target.close();
       } catch (IOException ioe) {
         noteFailure(ioe);
       }
-      closeable = null;
+      setCloseable(null);
     }
   }
 }

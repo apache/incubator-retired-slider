@@ -30,6 +30,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+/**
+ * Test base for workflow service tests.
+ */
 public abstract class WorkflowServiceTestBase extends Assert {
   private static final Logger
       log = LoggerFactory.getLogger(WorkflowServiceTestBase.class);
@@ -77,7 +80,6 @@ public abstract class WorkflowServiceTestBase extends Assert {
     }
   }
 
-
   /**
    * Init and start a service
    * @param svc the service
@@ -106,6 +108,12 @@ public abstract class WorkflowServiceTestBase extends Assert {
     }
   }
 
+  /**
+   * Assert that a string is in an output list. Fails fast if the output
+   * list is empty
+   * @param text text to scan for
+   * @param output list of output lines.
+   */
   public void assertStringInOutput(String text, List<String> output) {
     assertTrue("Empty output list", !output.isEmpty());
     boolean found = false;

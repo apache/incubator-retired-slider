@@ -113,7 +113,7 @@ import org.apache.slider.server.appmaster.web.rest.RestPaths;
 import org.apache.slider.server.services.registry.SliderRegistryService;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
 import org.apache.slider.server.services.workflow.WorkflowEventCallback;
-import org.apache.slider.server.services.utility.RpcService;
+import org.apache.slider.server.services.workflow.WorkflowRpcService;
 import org.apache.slider.server.services.utility.WebAppService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -191,7 +191,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   private ByteBuffer allTokens;
 
-  private RpcService rpcService;
+  private WorkflowRpcService rpcService;
 
   /**
    * Secret manager
@@ -911,7 +911,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
                                                     .newReflectiveBlockingService(
                                                       protobufRelay);
 
-    rpcService = new RpcService(RpcBinder.createProtobufServer(
+    rpcService = new WorkflowRpcService("SliderRPC", RpcBinder.createProtobufServer(
       new InetSocketAddress("0.0.0.0", 0),
       getConfig(),
       secretManager,

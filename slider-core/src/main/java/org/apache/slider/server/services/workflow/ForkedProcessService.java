@@ -35,7 +35,35 @@ import java.util.concurrent.atomic.AtomicInteger;
  * This service is notified when the subprocess terminates, and stops itself 
  * and converts a non-zero exit code into a failure exception.
  * 
+ * <p>
+ * Key Features:
+ * <ol>
+ *   <li>The property {@link #executionTimeout} can be set to set a limit
+ *   on the duration of a process</li>
+ *   <li>Output is streamed to the output logger provided</li>.
+ *   <li>The most recent lines of output are saved to a linked list</li>.
+ *   <li>A synchronous callback, {@link LongLivedProcessLifecycleEvent}, is raised on the start
+ *   and finish of a process.</li>
+ * </ol>
+ *
+ * Usage:
+ * <p></p>
+ * The service can be built in the constructor, {@link #ForkedProcessService(String, Map, List)},
+ * or have its simple constructor used to instantiate the service, then the 
+ * {@link #build(Map, List)} command used to define the environment variables
+ * and list of commands to execute. One of these two options MUST be exercised
+ * before calling the services's {@link #start()} method.
+ * <p></p>
+ * The forked process is executed in the service's {@link #serviceStart()} method;
+ * if still running when the service is stopped, {@link #serviceStop()} will
+ * attempt to stop it.
+ * <p></p>
  * 
+ * The service delegates process execution to {@link LongLivedProcess},
+ * receiving callbacks via the {@link LongLivedProcessLifecycleEvent}.
+ * When the service receives a callback notifying that the process has completed,
+ * it calls its {@link #stop()} method. If the error code was non-zero, 
+ * the service is logged as having failed.
  */
 public class ForkedProcessService extends AbstractWorkflowExecutorService implements
     LongLivedProcessLifecycleEvent, Runnable {

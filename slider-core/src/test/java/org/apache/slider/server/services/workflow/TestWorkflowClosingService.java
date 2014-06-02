@@ -24,7 +24,7 @@ import org.junit.Test;
 import java.io.Closeable;
 import java.io.IOException;
 
-public class TestCloseableService extends WorkflowServiceTestBase {
+public class TestWorkflowClosingService extends WorkflowServiceTestBase {
 
   @Test
   public void testSimpleClose() throws Throwable {

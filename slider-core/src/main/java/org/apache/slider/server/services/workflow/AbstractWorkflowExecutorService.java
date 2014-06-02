@@ -25,27 +25,47 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 /**
- * A service that hosts an executor -in shutdown it is stopped.
+ * A service that hosts an executor -when the service is stopped,
+ * {@link ExecutorService#shutdownNow()} is invoked.
  */
 public abstract class AbstractWorkflowExecutorService extends AbstractService {
 
   private ExecutorService executor;
-  
+
+  /**
+   * Construct an instance with the given name -but
+   * no executor
+   * @param name service name
+   */
   public AbstractWorkflowExecutorService(String name) {
     this(name, null);
   }
 
+  /**
+   * Construct an instance with the given name and executor
+   * @param name service name
+   * @param executor exectuor
+   */
   protected AbstractWorkflowExecutorService(String name,
       ExecutorService executor) {
     super(name);
     this.executor = executor;
   }
 
-  public ExecutorService getExecutor() {
+  /**
+   * Get the executor
+   * @return the executor
+   */
+  public synchronized ExecutorService getExecutor() {
     return executor;
   }
 
-  protected void setExecutor(ExecutorService executor) {
+  /**
+   * Set the executor. This is protected as it
+   * is intended to be restricted to subclasses
+   * @param executor executor
+   */
+  protected synchronized void setExecutor(ExecutorService executor) {
     this.executor = executor;
   }
 
@@ -55,7 +75,7 @@ public abstract class AbstractWorkflowExecutorService extends AbstractService {
    * @param runnable runnable to execute
    */
   public void execute(Runnable runnable) {
-    executor.execute(runnable);
+    getExecutor().execute(runnable);
   }
 
   /**
@@ -65,7 +85,7 @@ public abstract class AbstractWorkflowExecutorService extends AbstractService {
    * @return a future to wait on
    */
   public <V> Future<V> submit(Callable<V> callable) {
-    return executor.submit(callable);
+    return getExecutor().submit(callable);
   }
   /**
    * Stop the service: halt the executor. 
@@ -82,7 +102,7 @@ public abstract class AbstractWorkflowExecutorService extends AbstractService {
    * This uses {@link ExecutorService#shutdownNow()}
    * and so does not block until they have completed.
    */
-  protected void stopExecutor() {
+  protected synchronized void stopExecutor() {
     if (executor != null) {
       executor.shutdownNow();
     }

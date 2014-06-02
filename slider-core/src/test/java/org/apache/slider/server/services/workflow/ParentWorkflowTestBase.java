@@ -20,6 +20,10 @@ package org.apache.slider.server.services.workflow;
 
 import org.apache.hadoop.service.Service;
 
+/**
+ * Extends {@link WorkflowServiceTestBase} with parent-specific operations
+ * and logic to build up and run the parent service
+ */
 public abstract class ParentWorkflowTestBase extends WorkflowServiceTestBase {
 
   /**

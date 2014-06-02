@@ -33,7 +33,7 @@ public interface LongLivedProcessLifecycleEvent {
    * Callback when a process has finished
    * @param process the process invoking the callback
    * @param exitCode exit code from the process
-   * @param signCorrectedCode
+   * @param signCorrectedCode the code- as sign corrected
    */
   void onProcessExited(LongLivedProcess process,
       int exitCode,

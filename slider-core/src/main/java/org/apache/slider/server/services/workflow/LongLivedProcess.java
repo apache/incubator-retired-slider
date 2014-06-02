@@ -88,16 +88,17 @@ public class LongLivedProcess implements Runnable {
    * Log supplied in the constructor for the spawned process -accessible
    * to inner classes
    */
-  final Logger processLog;
+  private final Logger processLog;
+  
   /**
    * Class log -accessible to inner classes
    */
-  static final Logger LOG = LoggerFactory.getLogger(LongLivedProcess.class);
+  private static final Logger LOG = LoggerFactory.getLogger(LongLivedProcess.class);
 
   /**
    * Volatile flag to indicate that the process is done
    */
-  volatile boolean finished;
+  private volatile boolean finished;
 
   public LongLivedProcess(String name,
       Logger processLog,
