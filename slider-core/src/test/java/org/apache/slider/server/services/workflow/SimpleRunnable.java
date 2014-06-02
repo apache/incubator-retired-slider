@@ -19,13 +19,28 @@
 package org.apache.slider.server.services.workflow;
 
 /**
- * This is the callback triggered by the {@link WorkflowEventNotifyingService}
- * when it generates a notification
+ * Test runnable that can be made to exit, or throw an exception
+ * during its run
  */
-public interface WorkflowEventCallback {
-  
-  public void eventCallbackEvent(Object caller,
-      Object parameter,
-      Exception exception);
-  
+class SimpleRunnable implements Runnable {
+  boolean throwException = false;
+
+
+  SimpleRunnable() {
+  }
+
+  SimpleRunnable(boolean throwException) {
+    this.throwException = throwException;
+  }
+
+  @Override
+  public synchronized void run() {
+    try {
+      if (throwException) {
+        throw new RuntimeException("SimpleRunnable");
+      }
+    } finally {
+      this.notify();
+    }
+  }
 }

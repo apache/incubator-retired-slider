@@ -16,8 +16,9 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.services.utility;
+package org.apache.slider.server.services.workflow;
 
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.ipc.Server;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.service.AbstractService;
@@ -26,26 +27,36 @@ import java.net.InetSocketAddress;
 
 /**
  * A YARN service that maps the start/stop lifecycle of an RPC server
- * to the YARN service lifecycle
+ * to the YARN service lifecycle. 
  */
-public class RpcService extends AbstractService {
+public class WorkflowRpcService extends AbstractService {
 
   /** RPC server*/
   private final Server server;
 
   /**
    * Construct an instance
-   * @param server server to manger
+   * @param name service name
+   * @param server service to stop
    */
-  public RpcService(Server server) {
-    super("RpcService");
+  public WorkflowRpcService(String name, Server server) {
+    super(name);
+    Preconditions.checkArgument(server != null, "Null server");
     this.server = server;
   }
 
+  /**
+   * Get the server
+   * @return the server
+   */
   public Server getServer() {
     return server;
   }
 
+  /**
+   * Get the socket address of this server
+   * @return the address this server is listening on
+   */
   public InetSocketAddress getConnectAddress() {
     return NetUtils.getConnectAddress(server);
   }

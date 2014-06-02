@@ -18,14 +18,39 @@
 
 package org.apache.slider.server.services.workflow;
 
+import org.apache.hadoop.service.Service;
+import org.apache.hadoop.service.ServiceStateChangeListener;
+import org.junit.Assert;
+
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
- * This is the callback triggered by the {@link WorkflowEventNotifyingService}
- * when it generates a notification
+ * Wait for a service to stop
  */
-public interface WorkflowEventCallback {
-  
-  public void eventCallbackEvent(Object caller,
-      Object parameter,
-      Exception exception);
-  
+public class EndOfServiceWaiter implements ServiceStateChangeListener {
+
+  private final AtomicBoolean finished = new AtomicBoolean(false);
+
+  public EndOfServiceWaiter(Service svc) {
+    svc.registerServiceListener(this);
+  }
+
+  public synchronized void waitForServiceToStop(long timeout) throws
+      InterruptedException {
+    if (!finished.get()) {
+      wait(timeout);
+    }
+    Assert.assertTrue("Service did not finish in time period",
+        finished.get());
+  }
+
+  @Override
+  public synchronized void stateChanged(Service service) {
+    if (service.isInState(Service.STATE.STOPPED)) {
+      finished.set(true);
+      notify();
+    }
+  }
+
+
 }

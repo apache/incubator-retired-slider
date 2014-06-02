@@ -18,18 +18,24 @@
 
 package org.apache.slider.server.services.workflow;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.Service;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
+import org.junit.rules.TestName;
 import org.junit.rules.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
+/**
+ * Test base for workflow service tests.
+ */
 public abstract class WorkflowServiceTestBase extends Assert {
   private static final Logger
       log = LoggerFactory.getLogger(WorkflowServiceTestBase.class);
-
 
   /**
    * Set the timeout for every test
@@ -37,12 +43,15 @@ public abstract class WorkflowServiceTestBase extends Assert {
   @Rule
   public Timeout testTimeout = new Timeout(15000);
 
+  @Rule
+  public TestName name = new TestName();
+
   @Before
   public void nameThread() {
     Thread.currentThread().setName("JUnit");
   }
 
-  
+
   protected void assertInState(Service service, Service.STATE expected) {
     Service.STATE actual = service.getServiceState();
     if (actual != expected) {
@@ -72,33 +81,14 @@ public abstract class WorkflowServiceTestBase extends Assert {
   }
 
   /**
-   * Wait a second for the service parent to stop
-   * @param parent the service to wait for
+   * Init and start a service
+   * @param svc the service
+   * @return the service
    */
-  protected void waitForParentToStop(ServiceParent parent) {
-    waitForParentToStop(parent, 1000);
-  }
-
-  /**
-   * Wait for the service parent to stop
-   * @param parent the service to wait for
-   * @param timeout time in milliseconds
-   */
-  protected void waitForParentToStop(ServiceParent parent, int timeout) {
-    boolean stop = parent.waitForServiceToStop(timeout);
-    if (!stop) {
-      logState(parent);
-      fail("Service failed to stop : after " + timeout +" millis " + parent);
-    }
-  }
-
-  protected abstract ServiceParent buildService(Service... services);
-
-  protected ServiceParent startService(Service... services) {
-    ServiceParent parent = buildService(services);
-    //expect service to start and stay started
-    parent.start();
-    return parent;
+  protected <S extends Service> S run(S svc) {
+    svc.init(new Configuration());
+    svc.start();
+    return svc;
   }
 
   /**
@@ -109,10 +99,37 @@ public abstract class WorkflowServiceTestBase extends Assert {
     public Object result;
 
     @Override
-    public void eventCallbackEvent(Object parameter) {
+    public void eventCallbackEvent(Object caller,
+        Object parameter,
+        Exception exception) {
       log.info("EventCallback");
       notified = true;
       result = parameter;
+    }
+  }
+
+  /**
+   * Assert that a string is in an output list. Fails fast if the output
+   * list is empty
+   * @param text text to scan for
+   * @param output list of output lines.
+   */
+  public void assertStringInOutput(String text, List<String> output) {
+    assertTrue("Empty output list", !output.isEmpty());
+    boolean found = false;
+    StringBuilder builder = new StringBuilder();
+    for (String s : output) {
+      builder.append(s).append('\n');
+      if (s.contains(text)) {
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) {
+      String message =
+          "Text \"" + text + "\" not found in " + output.size() + " lines\n";
+      fail(message + builder.toString());
     }
   }
 }

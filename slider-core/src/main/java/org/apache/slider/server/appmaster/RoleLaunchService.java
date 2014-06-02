@@ -30,8 +30,8 @@ import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderService;
 import org.apache.slider.server.appmaster.state.RoleInstance;
 import org.apache.slider.server.appmaster.state.RoleStatus;
+import org.apache.slider.server.services.workflow.AbstractWorkflowExecutorService;
 import org.apache.slider.server.services.workflow.ServiceThreadFactory;
-import org.apache.slider.server.services.workflow.WorkflowExecutorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +41,7 @@ import java.util.concurrent.Executors;
 /**
  * A service for launching containers
  */
-public class RoleLaunchService extends WorkflowExecutorService {
+public class RoleLaunchService extends AbstractWorkflowExecutorService {
   protected static final Logger log =
     LoggerFactory.getLogger(RoleLaunchService.class);
 

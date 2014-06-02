@@ -30,17 +30,31 @@ public class ServiceTerminatingRunnable implements Runnable {
   private final Runnable action;
   private Exception exception;
 
+  /**
+   * Create an instance
+   * @param owner owning service
+   * @param action action to execute before terminating the service
+   */
   public ServiceTerminatingRunnable(Service owner, Runnable action) {
-    Preconditions.checkNotNull(owner, "null owner");
-    Preconditions.checkNotNull(action, "null action");
+    Preconditions.checkArgument(owner != null, "null owner");
+    Preconditions.checkArgument(action != null, "null action");
     this.owner = owner;
     this.action = action;
   }
 
+  /**
+   * Get the owning service
+   * @return the service to receive notification when
+   * the runnable completes.
+   */
   public Service getOwner() {
     return owner;
   }
 
+  /**
+   * Any exception raised by inner <code>action's</code> run.
+   * @return an exception or null.
+   */
   public Exception getException() {
     return exception;
   }

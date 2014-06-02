@@ -93,7 +93,7 @@ public class WorkflowCompositeService extends CompositeService
    */
   @Override
   public synchronized void addService(Service service) {
-    Preconditions.checkNotNull(service, "null service argument");
+    Preconditions.checkArgument(service != null, "null service argument");
     service.registerServiceListener(this);
     super.addService(service);
   }

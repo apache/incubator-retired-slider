@@ -264,9 +264,8 @@ public class AccumuloProviderService extends AbstractProviderService implements
   public boolean exec(AggregateConf instanceDefinition,
                       File confDir,
                       Map<String, String> env,
-                      WorkflowEventCallback execInProgress) throws
-                                                 IOException,
-      SliderException {
+                      WorkflowEventCallback execInProgress)
+      throws IOException, SliderException {
 
 
     //now pull in these files and do a bit of last-minute validation
@@ -331,7 +330,8 @@ public class AccumuloProviderService extends AbstractProviderService implements
     
     //callback to AM to trigger cluster review is set up to happen after
     //the init/verify action has succeeded
-    WorkflowEventNotifyingService notifier = new WorkflowEventNotifyingService(execInProgress,
+    WorkflowEventNotifyingService notifier = new WorkflowEventNotifyingService(
+        execInProgress,
         null,
         internalOperations.getGlobalOptions().getOptionInt(
              OptionKeys.INTERNAL_CONTAINER_STARTUP_DELAY,

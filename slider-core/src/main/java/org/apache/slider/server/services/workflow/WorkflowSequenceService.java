@@ -274,7 +274,7 @@ public class WorkflowSequenceService extends AbstractService implements
    */
   @Override
   public synchronized void addService(Service service) {
-    Preconditions.checkNotNull(service, "null service argument");
+    Preconditions.checkArgument(service != null, "null service argument");
     LOG.debug("Adding service {} ", service.getName());
     synchronized (serviceList) {
       serviceList.add(service);

@@ -28,7 +28,8 @@ import org.slf4j.LoggerFactory;
  * The notifications come in on a callback thread -a thread that is only
  * started in this service's <code>start()</code> operation.
  */
-public class WorkflowEventNotifyingService extends WorkflowExecutorService
+public class WorkflowEventNotifyingService extends
+    AbstractWorkflowExecutorService
     implements Runnable {
   protected static final Logger LOG =
     LoggerFactory.getLogger(WorkflowEventNotifyingService.class);
@@ -72,7 +73,7 @@ public class WorkflowEventNotifyingService extends WorkflowExecutorService
   @Override
   protected void serviceStart() throws Exception {
     LOG.debug("Notifying {} after a delay of {} millis", callback, delay);
-    setExecutor(ServiceThreadFactory.newSingleThreadExecutor(getName(), true));
+    setExecutor(ServiceThreadFactory.singleThreadExecutor(getName(), true));
     execute(command);
   }
 
@@ -106,7 +107,7 @@ public class WorkflowEventNotifyingService extends WorkflowExecutorService
       }
     }
     LOG.debug("Notifying {}", callback);
-    callback.eventCallbackEvent(parameter);
+    callback.eventCallbackEvent(this, parameter, null);
   }
 
 }

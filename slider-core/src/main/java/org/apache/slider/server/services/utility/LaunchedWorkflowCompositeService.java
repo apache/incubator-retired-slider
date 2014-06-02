@@ -91,7 +91,7 @@ public class LaunchedWorkflowCompositeService extends WorkflowCompositeService
 
   @Override
   public synchronized void addService(Service service) {
-    Preconditions.checkNotNull(service, "null service");
+    Preconditions.checkArgument(service != null, "null service argument");
     super.addService(service);
   }
 
