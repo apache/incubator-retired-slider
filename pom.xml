@@ -261,22 +261,24 @@
     <commons-digester.version>1.8</commons-digester.version>
     <commons-configuration.version>1.6</commons-configuration.version>
     <commons-lang.version>2.6</commons-lang.version>
+    <commons-compress.version>1.4.1</commons-compress.version>
+    <commons-logging.version>1.1.3</commons-logging.version>
+    <commons-io.version>2.4</commons-io.version>
     <curator.version>2.4.1</curator.version>
     <easymock.version>3.1</easymock.version>
     <guava.version>11.0.2</guava.version>
     <gson.version>2.2.2</gson.version>
     <guice.version>3.0</guice.version>
-    <httpclient.version>4.2.5</httpclient.version>
+    <httpclient.version>3.1</httpclient.version>
 
-
-<!--    <jackson.version>1.8.8</jackson.version>-->
     <jackson.version>1.9.13</jackson.version>
     <jcommander.version>1.30</jcommander.version>
     <jersey.version>1.9</jersey.version>
+    <servlet-api.version>2.5</servlet-api.version>
+    <jsr311-api.version>1.1.1</jsr311-api.version>
     <junit.version>4.11</junit.version>
     <log4j.version>1.2.17</log4j.version>
     <mockito.version>1.8.5</mockito.version>
-    <powermock.version>1.5</powermock.version>
 
     <!-- ProtocolBuffer version, used to verify the protoc version and -->
     <!-- define the protobuf JAR version                               -->
@@ -482,6 +484,54 @@
 
   <dependencyManagement>
     <dependencies>
+
+      <dependency>
+        <groupId>org.apache.slider</groupId>
+        <artifactId>slider-core</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.slider</groupId>
+        <artifactId>slider-core</artifactId>
+        <version>${project.version}</version>
+        <type>test-jar</type>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.slider</groupId>
+        <artifactId>slider-agent</artifactId>
+        <version>${project.version}</version>
+        <type>tar.gz</type>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.slider</groupId>
+        <artifactId>slider-funtest</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.slider</groupId>
+        <artifactId>slider-assembly</artifactId>
+        <classifier>all</classifier>
+        <version>${project.version}</version>
+        <type>tar.gz</type>
+      </dependency>
+
+       <dependency>
+        <groupId>org.apache.slider</groupId>
+        <artifactId>slider-hbase-provider</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.slider</groupId>
+        <artifactId>slider-hbase-provider</artifactId>
+        <version>${project.version}</version>
+        <type>test-jar</type>
+      </dependency>
+
       <dependency>
         <groupId>org.codehaus.groovy</groupId>
         <artifactId>groovy-all</artifactId>
@@ -500,9 +550,15 @@
         </exclusions>
       </dependency>
 
+      <!-- hadoop-client includes the following jars, so they do not need to be
+        included separately:
+        hadoop-common, hadoop-hdfs, hadoop-mapreduce-client-app,
+        hadoop-yarn-api, hadoop-mapreduce-client-core,
+        hadoop-mapreduce-client-jobclient, and hadoop-annotations
+      -->
       <dependency>
         <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-common</artifactId>
+        <artifactId>hadoop-client</artifactId>
         <version>${hadoop.version}</version>
         <exclusions>
           <exclusion>
@@ -510,28 +566,8 @@
             <artifactId>jackson-core-asl</artifactId>
           </exclusion>
           <exclusion>
-            <groupId>net.java.dev.jets3t</groupId>
-            <artifactId>jets3t</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>commons-codec</groupId>
-            <artifactId>commons-codec</artifactId>
-          </exclusion>
-          <exclusion>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>commons-net</groupId>
-            <artifactId>commons-net</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>tomcat</groupId>
-            <artifactId>jasper-runtime</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>net.java.dev.jets3t</groupId>
-            <artifactId>jets3t</artifactId>
           </exclusion>
           <exclusion>
             <groupId>org.apache.httpcomponents</groupId>
@@ -544,54 +580,14 @@
         </exclusions>
       </dependency>
 
-      <dependency>
-        <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-client</artifactId>
-        <version>${hadoop.version}</version>
-      </dependency>
-      
-
-      <dependency>
-        <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-client</artifactId>
-        <version>${hadoop.version}</version>
-        <type>pom</type>
-      </dependency>
-      
+      <!-- hadoop-minicluster includes the following test-jars, so they do not
+        need to be included separately:
+        hadoop-common, hadoop-hdfs, hadoop-yarn-server-tests,
+        hadoop-mapreduce-client-jobclient
+      -->
       <dependency>
         <groupId>org.apache.hadoop</groupId>
         <artifactId>hadoop-minicluster</artifactId>
-        <version>${hadoop.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>com.sun.jersey.jersey-test-framework</groupId>
-            <artifactId>jersey-test-framework-grizzly2</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-
-      <dependency>
-        <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-hdfs</artifactId>
-        <version>${hadoop.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>tomcat</groupId>
-            <artifactId>jasper-runtime</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-
-      <dependency>
-        <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-common</artifactId>
-        <version>${hadoop.version}</version>
-        <type>test-jar</type>
-      </dependency>
-
-      <dependency>
-        <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-yarn-server-common</artifactId>
         <version>${hadoop.version}</version>
         <exclusions>
           <exclusion>
@@ -615,30 +611,14 @@
 
       <dependency>
         <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-yarn-common</artifactId>
-        <version>${hadoop.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>org.apache.hadoop</groupId>
         <artifactId>hadoop-yarn-server-web-proxy</artifactId>
         <version>${hadoop.version}</version>
       </dependency>
 
       <dependency>
-        <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-mapreduce-client</artifactId>
-        <version>${hadoop.version}</version>
-        <type>pom</type>
-        <exclusions>
-        </exclusions>
-      </dependency>
-      
-      <dependency>
         <groupId>org.apache.avro</groupId>
         <artifactId>avro</artifactId>
         <version>${avro.version}</version>
-
         <exclusions>
           <exclusion>
             <groupId>org.mortbay.jetty</groupId>
@@ -678,15 +658,12 @@
           </exclusion>
         </exclusions>
       </dependency>
+
       <dependency>
         <groupId>commons-configuration</groupId>
         <artifactId>commons-configuration</artifactId>
         <version>${commons-configuration.version}</version>
         <exclusions>
-          <exclusion>
-            <groupId>commons-logging</groupId>
-            <artifactId>commons-logging</artifactId>
-          </exclusion>
           <exclusion>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
@@ -697,19 +674,17 @@
           </exclusion>
         </exclusions>
       </dependency>
+
       <dependency>
         <groupId>commons-lang</groupId>
         <artifactId>commons-lang</artifactId>
         <version>${commons-lang.version}</version>
-        <exclusions>
-        </exclusions>
       </dependency>
+
       <dependency>
-        <groupId>org.apache.httpcomponents</groupId>
-        <artifactId>httpclient</artifactId>
+        <groupId>commons-httpclient</groupId>
+        <artifactId>commons-httpclient</artifactId>
         <version>${httpclient.version}</version>
-        <exclusions>
-        </exclusions>
       </dependency>
       
       <!-- ======================================================== -->
@@ -1045,32 +1020,6 @@
       <!-- Accumulo -->
       <!-- ======================================================== -->
 
-      <!--
-          <dependency>
-            <groupId>org.apache.accumulo</groupId>
-            <artifactId>accumulo</artifactId>
-            <version>${accumulo.version}</version>
-            <exclusions>
-              <exclusion>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-              </exclusion>
-            </exclusions>
-          </dependency>
-      -->
-
-      <dependency>
-        <groupId>org.apache.accumulo</groupId>
-        <artifactId>accumulo-server</artifactId>
-        <version>${accumulo.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>commons-codec</groupId>
-            <artifactId>commons-codec</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-
       <dependency>
         <groupId>org.apache.accumulo</groupId>
         <artifactId>accumulo-core</artifactId>
@@ -1117,12 +1066,6 @@
 
       <dependency>
         <groupId>org.apache.accumulo</groupId>
-        <artifactId>accumulo-start</artifactId>
-        <version>${accumulo.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>org.apache.accumulo</groupId>
         <artifactId>accumulo-trace</artifactId>
         <version>${accumulo.version}</version>
       </dependency>
@@ -1140,15 +1083,27 @@
 
 
       <dependency>
-        <groupId>commons-codec</groupId>
-        <artifactId>commons-codec</artifactId>
-        <version>${commons-codec.version}</version>
-      </dependency>
-
-      <dependency>
         <groupId>commons-digester</groupId>
         <artifactId>commons-digester</artifactId>
         <version>${commons-digester.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-compress</artifactId>
+        <version>${commons-compress.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>${commons-io.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>commons-logging</groupId>
+        <artifactId>commons-logging</artifactId>
+        <version>${commons-logging.version}</version>
       </dependency>
 
       <dependency>
@@ -1217,18 +1172,6 @@
         <version>${slf4j.version}</version>
       </dependency>
 
-      <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-log4j12</artifactId>
-        <version>${slf4j.version}</version>
-      </dependency>
-<!--
-      <dependency>
-        <groupId>org.antlr</groupId>
-        <artifactId>stringtemplate</artifactId>
-        <version>${stringtemplate.version}</version>
-      </dependency>
-      -->
       <!-- Used for unit testing -->
       <dependency>
         <groupId>junit</groupId>
@@ -1241,51 +1184,30 @@
         <artifactId>protobuf-java</artifactId>
         <version>${protobuf.version}</version>
       </dependency>
-      <!--
-          <dependency>
-            <groupId>net.sourceforge.htmlunit</groupId>
-            <artifactId>htmlunit</artifactId>
-            <version>2.12</version>
-            
-            <exclusions>
-              <exclusion>
-                <groupId>xalan</groupId>
-                <artifactId>xalan</artifactId>
-              </exclusion>
-              <exclusion>
-                <groupId>xerces</groupId>
-                <artifactId>xercesImpl</artifactId>
-              </exclusion>
-            </exclusions>
-          </dependency>
-      
-          <dependency>
-            <groupId>xerces</groupId>
-            <artifactId>xercesImpl</artifactId>
-            <version>2.11.0</version>
-            
-          </dependency>
-      
-          <dependency>
-            <groupId>xalan</groupId>
-            <artifactId>xalan</artifactId>
-            <version>2.7.1</version>
-            
-          </dependency>
-          -->
-
 
       <!-- ======================================================== -->
       <!-- Jersey and webapp support -->
       <!-- ======================================================== -->
 
       <dependency>
+        <groupId>javax.servlet</groupId>
+        <artifactId>servlet-api</artifactId>
+        <version>${servlet-api.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>javax.ws.rs</groupId>
+        <artifactId>jsr311-api</artifactId>
+        <version>${jsr311-api.version}</version>
+      </dependency>
+
+      <dependency>
         <groupId>com.sun.jersey</groupId>
-        <artifactId>jersey-core</artifactId>
+        <artifactId>jersey-client</artifactId>
         <version>${jersey.version}</version>
       </dependency>
+
       <dependency>
-        
         <groupId>com.sun.jersey</groupId>
         <artifactId>jersey-json</artifactId>
         <version>${jersey.version}</version>
@@ -1296,8 +1218,8 @@
           </exclusion>
         </exclusions>
       </dependency>
+
       <dependency>
-        
         <groupId>com.sun.jersey</groupId>
         <artifactId>jersey-server</artifactId>
         <version>${jersey.version}</version>
@@ -1355,27 +1277,6 @@
         <artifactId>easymock</artifactId>
         <version>${easymock.version}</version>
       </dependency>
-      <dependency>
-        <groupId>org.powermock</groupId>
-        <artifactId>powermock-core</artifactId>
-        <version>${powermock.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.powermock</groupId>
-        <artifactId>powermock-reflect</artifactId>
-        <version>${powermock.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.powermock</groupId>
-        <artifactId>powermock-api-easymock</artifactId>
-        <version>${powermock.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.powermock</groupId>
-        <artifactId>powermock-module-junit4</artifactId>
-        <version>${powermock.version}</version>
-      </dependency>
-
 
     </dependencies>
   </dependencyManagement>

@@ -28,8 +28,6 @@ import org.apache.slider.providers.agent.AgentKeys
 import org.apache.slider.test.YarnZKMiniClusterTestBase
 import org.junit.BeforeClass
 
-import javax.swing.ListModel
-
 /**
  * test base for agent clusters
  */

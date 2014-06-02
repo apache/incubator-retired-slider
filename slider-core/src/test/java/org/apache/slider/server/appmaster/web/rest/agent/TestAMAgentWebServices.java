@@ -48,8 +48,6 @@ import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.WebAppApiImpl;
 import org.apache.slider.server.appmaster.web.rest.AMWebServices;
 import org.apache.slider.server.appmaster.web.rest.SliderJacksonJaxbJsonProvider;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -173,7 +171,7 @@ public class TestAMAgentWebServices extends JerseyTest {
   }
 
   @Test
-  public void testRegistration() throws JSONException, Exception {
+  public void testRegistration() throws Exception {
     RegistrationResponse response;
     Client client = createTestClient();
     WebResource webResource = client.resource(AGENT_URL + "test/register");
@@ -189,7 +187,7 @@ public class TestAMAgentWebServices extends JerseyTest {
   }
 
   @Test
-  public void testHeartbeat() throws JSONException, Exception {
+  public void testHeartbeat() throws Exception {
     HeartBeatResponse response;
     Client client = createTestClient();
     WebResource webResource = client.resource(AGENT_URL + "test/heartbeat");
@@ -199,7 +197,7 @@ public class TestAMAgentWebServices extends JerseyTest {
   }
 
   @Test
-  public void testHeadURL() throws JSONException, Exception {
+  public void testHeadURL() throws Exception {
     Client client = createTestClient();
     WebResource webResource = client.resource(AGENT_URL);
     ClientResponse response = webResource.type(MediaType.APPLICATION_JSON)
@@ -213,7 +211,7 @@ public class TestAMAgentWebServices extends JerseyTest {
     Thread.sleep(60 * 1000);
   }
   
-  private Register createDummyJSONRegister() throws JSONException {
+  private Register createDummyJSONRegister() {
     Register register = new Register();
     register.setResponseId(-1);
     register.setTimestamp(System.currentTimeMillis());
@@ -221,11 +219,11 @@ public class TestAMAgentWebServices extends JerseyTest {
     return register;
   }
 
-  private JSONObject createDummyHeartBeat() throws JSONException {
-    JSONObject json = new JSONObject();
-    json.put("responseId", -1);
-    json.put("timestamp", System.currentTimeMillis());
-    json.put("hostname", "dummyHost");
+  private HeartBeat createDummyHeartBeat() {
+    HeartBeat json = new HeartBeat();
+    json.setResponseId(-1);
+    json.setTimestamp(System.currentTimeMillis());
+    json.setHostname("dummyHost");
     return json;
   }
 

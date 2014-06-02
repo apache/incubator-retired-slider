@@ -32,8 +32,6 @@ import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.yarn.server.MiniYARNCluster
-import org.apache.hadoop.yarn.server.resourcemanager.scheduler.ResourceScheduler
-import org.apache.hadoop.yarn.server.resourcemanager.scheduler.fifo.FifoScheduler
 import org.apache.slider.api.ClusterNode
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderExitCodes
@@ -78,6 +76,9 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
    * RAM for the YARN containers: {@value}
    */
   public static final String YRAM = "256"
+
+  public static final String FIFO_SCHEDULER = "org.apache.hadoop.yarn.server" +
+    ".resourcemanager.scheduler.fifo.FifoScheduler";
 
 
   public static final YarnConfiguration SLIDER_CONFIG = SliderUtils.createConfiguration();
@@ -214,8 +215,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
                                    int numLogDirs,
                                    boolean startHDFS) {
     conf.setInt(YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_MB, 64);
-    conf.setClass(YarnConfiguration.RM_SCHEDULER,
-        FifoScheduler.class, ResourceScheduler.class);
+    conf.set(YarnConfiguration.RM_SCHEDULER, FIFO_SCHEDULER);
     SliderUtils.patchConfiguration(conf)
     miniCluster = new MiniYARNCluster(name, noOfNodeManagers, numLocalDirs, numLogDirs)
     miniCluster.init(conf)

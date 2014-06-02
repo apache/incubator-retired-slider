@@ -25,6 +25,7 @@ import com.google.inject.servlet.GuiceServletContextListener;
 import com.google.inject.servlet.ServletModule;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
+import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 import com.sun.jersey.test.framework.JerseyTest;
 import com.sun.jersey.test.framework.WebAppDescriptor;
@@ -48,8 +49,8 @@ import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.WebAppApiImpl;
 import org.apache.slider.server.appmaster.web.rest.AMWebServices;
 import org.apache.slider.server.appmaster.web.rest.SliderJacksonJaxbJsonProvider;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
+import org.apache.slider.server.appmaster.web.rest.management.resources.AggregateConfResource;
+import org.apache.slider.server.appmaster.web.rest.management.resources.ConfTreeResource;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -61,6 +62,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -198,28 +200,30 @@ public class TestAMManagementWebServices extends JerseyTest {
         "org.apache.hadoop.yarn.appmaster.web")
               .contextListenerClass(GuiceServletConfig.class)
               .filterClass(com.google.inject.servlet.GuiceFilter.class)
-              .contextPath("slideram").servletPath("/").build());
+              .contextPath("slideram").servletPath("/")
+              .clientConfig(
+                  new DefaultClientConfig(SliderJacksonJaxbJsonProvider.class))
+              .build());
   }
 
   @Test
-  public void testAppResource() throws JSONException, Exception {
+  public void testAppResource() throws Exception {
     WebResource r = resource();
     ClientResponse response = r.path("ws").path("v1").path("slider").path("mgmt").path("app")
         .accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
     assertEquals(200, response.getStatus());
     assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getType());
-    JSONObject json = response.getEntity(JSONObject.class);
-    assertEquals("incorrect number of elements", 4, json.length());
+    AggregateConfResource json = response.getEntity(AggregateConfResource.class);
     assertEquals("wrong href",
                  "http://localhost:9998/slideram/ws/v1/slider/mgmt/app",
-                 json.getString("href"));
-    assertNotNull("no resources", json.getJSONObject("resources"));
-    assertNotNull("no internal", json.getJSONObject("internal"));
-    assertNotNull("no appConf", json.getJSONObject("appConf"));
+                 json.getHref());
+    assertNotNull("no resources", json.getResources());
+    assertNotNull("no internal", json.getInternal());
+    assertNotNull("no appConf", json.getAppConf());
   }
 
   @Test
-  public void testAppInternal() throws JSONException, Exception {
+  public void testAppInternal() throws Exception {
     WebResource r = resource();
     ClientResponse
         response =
@@ -228,18 +232,17 @@ public class TestAMManagementWebServices extends JerseyTest {
             .accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
     assertEquals(200, response.getStatus());
     assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getType());
-    JSONObject json = response.getEntity(JSONObject.class);
-    assertEquals("incorrect number of elements", 4, json.length());
+    ConfTreeResource json = response.getEntity(ConfTreeResource.class);
     assertEquals("wrong href",
                  "http://localhost:9998/slideram/ws/v1/slider/mgmt/app/configurations/internal",
-                 json.getString("href"));
+                 json.getHref());
     assertEquals("wrong description",
-                 "Internal configuration DO NOT EDIT",
-                 json.getJSONObject("metadata").getString("description"));
+        "Internal configuration DO NOT EDIT",
+        json.getMetadata().get("description"));
   }
 
   @Test
-  public void testAppResources() throws JSONException, Exception {
+  public void testAppResources() throws Exception {
     WebResource r = resource();
     ClientResponse
         response =
@@ -249,19 +252,18 @@ public class TestAMManagementWebServices extends JerseyTest {
 
     assertEquals(200, response.getStatus());
     assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getType());
-    JSONObject json = response.getEntity(JSONObject.class);
-    assertEquals("incorrect number of elements", 4, json.length());
+    ConfTreeResource json = response.getEntity(ConfTreeResource.class);
     assertEquals("wrong href",
                  "http://localhost:9998/slideram/ws/v1/slider/mgmt/app/configurations/resources",
-                 json.getString("href"));
-    json = json.getJSONObject("components");
-    assertNotNull("no components", json);
-    assertEquals("incorrect number of components", 2, json.length());
-    assertNotNull("wrong component", json.getJSONObject("worker"));
+                 json.getHref());
+    Map<String,Map<String, String>> components = json.getComponents();
+    assertNotNull("no components", components);
+    assertEquals("incorrect number of components", 2, components.size());
+    assertNotNull("wrong component", components.get("worker"));
   }
 
   @Test
-  public void testAppAppConf() throws JSONException, Exception {
+  public void testAppAppConf() throws Exception {
     WebResource r = resource();
     ClientResponse
         response =
@@ -270,14 +272,13 @@ public class TestAMManagementWebServices extends JerseyTest {
             .accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
     assertEquals(200, response.getStatus());
     assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getType());
-    JSONObject json = response.getEntity(JSONObject.class);
-    assertEquals("incorrect number of elements", 4, json.length());
+    ConfTreeResource json = response.getEntity(ConfTreeResource.class);
     assertEquals("wrong href",
                  "http://localhost:9998/slideram/ws/v1/slider/mgmt/app/configurations/appConf",
-                 json.getString("href"));
-    json = json.getJSONObject("components");
-    assertNotNull("no components", json);
-    assertEquals("incorrect number of components", 2, json.length());
-    assertNotNull("wrong component", json.getJSONObject("worker"));
+                 json.getHref());
+    Map<String,Map<String, String>> components = json.getComponents();
+    assertNotNull("no components", components);
+    assertEquals("incorrect number of components", 2, components.size());
+    assertNotNull("wrong component", components.get("worker"));
   }
 }

@@ -19,7 +19,6 @@ package org.apache.slider.server.appmaster.web;
 import com.google.common.base.Preconditions;
 import com.sun.jersey.api.container.filter.GZIPContentEncodingFilter;
 import com.sun.jersey.api.core.ResourceConfig;
-import com.sun.jersey.core.util.FeaturesAndProperties;
 import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 import com.sun.jersey.spi.container.servlet.ServletContainer;
 import org.apache.curator.x.discovery.ServiceDiscovery;
@@ -100,7 +99,7 @@ public class SliderAMWebApp extends WebApp {
     Map<String, String> params = new HashMap<>();
     params.put(ResourceConfig.FEATURE_IMPLICIT_VIEWABLES, "true");
     params.put(ServletContainer.FEATURE_FILTER_FORWARD_ON_404, "true");
-    params.put(FeaturesAndProperties.FEATURE_XMLROOTELEMENT_PROCESSING, "true");
+    params.put(ResourceConfig.FEATURE_XMLROOTELEMENT_PROCESSING, "true");
     params.put(ResourceConfig.PROPERTY_CONTAINER_REQUEST_FILTERS, GZIPContentEncodingFilter.class.getName());
     params.put(ResourceConfig.PROPERTY_CONTAINER_RESPONSE_FILTERS, GZIPContentEncodingFilter.class.getName());
     //params.put("com.sun.jersey.spi.container.ContainerRequestFilters", "com.sun.jersey.api.container.filter.LoggingFilter");

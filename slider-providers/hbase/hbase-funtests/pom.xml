@@ -134,13 +134,11 @@
     <dependency>
       <groupId>org.apache.slider</groupId>
       <artifactId>slider-hbase-provider</artifactId>
-      <version>${project.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.apache.slider</groupId>
       <artifactId>slider-hbase-provider</artifactId>
-      <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
@@ -148,7 +146,6 @@
     <dependency>
       <groupId>org.apache.slider</groupId>
       <artifactId>slider-core</artifactId>
-      <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
@@ -162,7 +159,6 @@
     <dependency>
       <groupId>org.apache.slider</groupId>
       <artifactId>slider-assembly</artifactId>
-      <version>${project.version}</version>
       <classifier>all</classifier>
       <type>tar.gz</type>
       <scope>test</scope>
@@ -171,20 +167,12 @@
     <dependency>
       <groupId>org.apache.slider</groupId>
       <artifactId>slider-funtest</artifactId>
-      <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-common</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-common</artifactId>
-      <type>test-jar</type>
-     <scope>test</scope>
+      <artifactId>hadoop-client</artifactId>
     </dependency>
 
     <dependency>
@@ -239,6 +227,24 @@
       <groupId>org.apache.hbase</groupId>
       <artifactId>hbase-server</artifactId>
       <classifier>tests</classifier>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.zookeeper</groupId>
+      <artifactId>zookeeper</artifactId>
+      <scope>test</scope>
     </dependency>
 
     
