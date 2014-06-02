@@ -303,7 +303,7 @@ public final class SliderUtils {
   }
 
   private static final PatternValidator clusternamePattern
-      = new PatternValidator("[a-zA-Z][a-zA-Z0-9_-]*");
+      = new PatternValidator("[a-z][a-z0-9_-]*");
       
   /**
    * Normalize a cluster name then verify that it is valid
