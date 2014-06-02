@@ -80,8 +80,8 @@ public class LongLivedProcess implements Runnable {
   public LongLivedProcess(String name,
       Logger processLog,
       List<String> commands) {
-    Preconditions.checkNotNull(processLog, "null processLog argument");
-    Preconditions.checkNotNull(commands, "null commands argument");
+    Preconditions.checkArgument(processLog != null, "processLog");
+    Preconditions.checkArgument(commands != null, "commands");
 
     this.name = name;
     this.processLog = processLog;
@@ -105,7 +105,7 @@ public class LongLivedProcess implements Runnable {
    * @param lifecycleCallback callback to notify on application exit
    */
   public void setLifecycleCallback(LongLivedProcessLifecycleEvent lifecycleCallback) {
-    Preconditions.checkNotNull(lifecycleCallback, "null lifecycleCallback");
+    Preconditions.checkArgument(lifecycleCallback != null, "lifecycleCallback");
     this.lifecycleCallback = lifecycleCallback;
   }
 
@@ -115,8 +115,8 @@ public class LongLivedProcess implements Runnable {
    * @param val value 
    */
   public void putEnv(String envVar, String val) {
-    Preconditions.checkNotNull(envVar, "null envVar");
-    Preconditions.checkNotNull(val, "null 'val'");
+    Preconditions.checkArgument(envVar != null, "envVar");
+    Preconditions.checkArgument(val != null, "val");
     processBuilder.environment().put(envVar, val);
   }
 

@@ -18,40 +18,29 @@
 
 package org.apache.slider.server.services.workflow;
 
-import com.google.common.base.Preconditions;
-import org.apache.hadoop.service.Service;
-
 /**
- * A runnable which terminates its owner. 
+ * Test runnable that can be made to exit, or throw an exception
+ * during its run
  */
-public class ServiceTerminatingRunnable implements Runnable {
+class SimpleRunnable implements Runnable {
+  boolean throwException = false;
 
-  private final Service owner;
-  private final Runnable action;
-  private Exception exception;
 
-  public ServiceTerminatingRunnable(Service owner, Runnable action) {
-    Preconditions.checkArgument(owner!=null, "null owner");
-    Preconditions.checkArgument(action!=null, "null action");
-    this.owner = owner;
-    this.action = action;
+  SimpleRunnable() {
   }
 
-  public Service getOwner() {
-    return owner;
-  }
-
-  public Exception getException() {
-    return exception;
+  SimpleRunnable(boolean throwException) {
+    this.throwException = throwException;
   }
 
   @Override
-  public void run() {
+  public synchronized void run() {
     try {
-      action.run();
-    } catch (Exception e) {
-      exception = e;
+      if (throwException) {
+        throw new RuntimeException("SimpleRunnable");
+      }
+    } finally {
+      this.notify();
     }
-    owner.stop();
   }
 }

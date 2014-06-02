@@ -18,6 +18,7 @@
 
 package org.apache.slider.server.services.workflow;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.Service;
 import org.junit.Assert;
 import org.junit.Before;
@@ -42,7 +43,7 @@ public abstract class WorkflowServiceTestBase extends Assert {
     Thread.currentThread().setName("JUnit");
   }
 
-  
+
   protected void assertInState(Service service, Service.STATE expected) {
     Service.STATE actual = service.getServiceState();
     if (actual != expected) {
@@ -71,34 +72,16 @@ public abstract class WorkflowServiceTestBase extends Assert {
     }
   }
 
-  /**
-   * Wait a second for the service parent to stop
-   * @param parent the service to wait for
-   */
-  protected void waitForParentToStop(ServiceParent parent) {
-    waitForParentToStop(parent, 1000);
-  }
 
   /**
-   * Wait for the service parent to stop
-   * @param parent the service to wait for
-   * @param timeout time in milliseconds
+   * Init and start a service
+   * @param svc the service
+   * @return the service
    */
-  protected void waitForParentToStop(ServiceParent parent, int timeout) {
-    boolean stop = parent.waitForServiceToStop(timeout);
-    if (!stop) {
-      logState(parent);
-      fail("Service failed to stop : after " + timeout +" millis " + parent);
-    }
-  }
-
-  protected abstract ServiceParent buildService(Service... services);
-
-  protected ServiceParent startService(Service... services) {
-    ServiceParent parent = buildService(services);
-    //expect service to start and stay started
-    parent.start();
-    return parent;
+  protected <S extends Service> S run(S svc) {
+    svc.init(new Configuration());
+    svc.start();
+    return svc;
   }
 
   /**
@@ -109,7 +92,9 @@ public abstract class WorkflowServiceTestBase extends Assert {
     public Object result;
 
     @Override
-    public void eventCallbackEvent(Object parameter) {
+    public void eventCallbackEvent(Object caller,
+        Object parameter,
+        Exception exception) {
       log.info("EventCallback");
       notified = true;
       result = parameter;

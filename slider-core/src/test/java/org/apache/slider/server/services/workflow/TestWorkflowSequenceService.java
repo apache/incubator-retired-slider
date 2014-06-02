@@ -24,7 +24,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class TestWorkflowSequenceService extends WorkflowServiceTestBase {
+public class TestWorkflowSequenceService extends ParentWorkflowTestBase {
   private static final Logger
       log = LoggerFactory.getLogger(TestWorkflowSequenceService.class);
 
@@ -48,7 +48,7 @@ public class TestWorkflowSequenceService extends WorkflowServiceTestBase {
     waitForParentToStop(parent);
     assertStopped(one);
     assertStopped(two);
-    assert ((WorkflowSequenceService)parent).getPreviousService().equals(two);
+    assert ((WorkflowSequenceService) parent).getPreviousService().equals(two);
   }
 
   @Test

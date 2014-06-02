@@ -84,7 +84,7 @@ package org.apache.slider.server.services.workflow;
  
  
  <h2>
- Other workflow services
+ Other Workflow Services
  </h2>
  
  <ul>
@@ -93,13 +93,15 @@ package org.apache.slider.server.services.workflow;
  <li>{@link org.apache.slider.server.services.workflow.ForkedProcessService}:
  Executes a process when started, and binds to the life of that process. When the
  process terminates, so does the service -and vice versa.</li>
- <li>{@link }: </li>
+ <li>{@link org.apache.slider.server.services.workflow.ClosingService}: Closes
+ an instance of <code>Closeable</code> when the service is stopped. This
+ is purely a housekeeping class.</></li>
  <li>{@link }: </li>
  </ul>
 
-Lower level classes 
+Lower-level classes 
  <ul>
- <li>{@link org.apache.slider.server.services.workflow.WorkflowExecutorService }:
+ <li>{@link org.apache.slider.server.services.workflow.AbstractWorkflowExecutorService }:
  This is a base class for YARN services that use an {@link java.util.concurrent.ExecutorService}.
  for managing asynchronous operations: it stops the executor when the service is
  stopped.

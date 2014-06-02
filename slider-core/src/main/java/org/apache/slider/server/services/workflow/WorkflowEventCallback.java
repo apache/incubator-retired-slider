@@ -24,6 +24,8 @@ package org.apache.slider.server.services.workflow;
  */
 public interface WorkflowEventCallback {
   
-  public void eventCallbackEvent(Object parameter);
+  public void eventCallbackEvent(Object caller,
+      Object parameter,
+      Exception exception);
   
 }

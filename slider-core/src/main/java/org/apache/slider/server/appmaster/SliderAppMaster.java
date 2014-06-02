@@ -1321,7 +1321,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       // didn't start, so don't register
       providerService.start();
       // and send the started event ourselves
-      eventCallbackEvent(null);
+      eventCallbackEvent(this, null, null);
     }
   }
 
@@ -1331,7 +1331,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   /* =================================================================== */
 
   @Override // EventCallback
-  public void eventCallbackEvent(Object parameter) {
+  public void eventCallbackEvent(Object caller,
+      Object parameter,
+      Exception exception) {
     // signalled that the child process is up.
     appState.noteAMLive();
     // now ask for the cluster nodes

@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * This service is notified when the subprocess terminates, and stops itself 
  * and converts a non-zero exit code into a failure exception
  */
-public class ForkedProcessService extends WorkflowExecutorService implements
+public class ForkedProcessService extends AbstractWorkflowExecutorService implements
     LongLivedProcessLifecycleEvent, Runnable {
 
   /**
@@ -115,7 +115,7 @@ public class ForkedProcessService extends WorkflowExecutorService implements
 
   @Override // ApplicationEventHandler
   public synchronized void onProcessStarted(LongLivedProcess process) {
-    LOG.info("Process has started");
+    LOG.debug("Process has started");
     processStarted = true;
     if (executionTimeout > 0) {
       setExecutor(ServiceThreadFactory.newSingleThreadExecutor(getName(), true));
@@ -128,7 +128,7 @@ public class ForkedProcessService extends WorkflowExecutorService implements
     synchronized (this) {
       completed(code);
       //note whether or not the service had already stopped
-      LOG.info("Process has exited with exit code {}", code);
+      LOG.debug("Process has exited with exit code {}", code);
       if (code != 0) {
         reportFailure(code, getName() + " failed with code " + code);
       }

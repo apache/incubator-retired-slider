@@ -19,18 +19,12 @@
 package org.apache.slider.server.services.workflow;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.service.Service;
 import org.junit.Test;
 
 import java.io.Closeable;
 import java.io.IOException;
 
 public class TestCloseableService extends WorkflowServiceTestBase {
-
-  @Override
-  protected ServiceParent buildService(Service... services) {
-    throw new AssertionError("Unimplemented");
-  }
 
   @Test
   public void testSimpleClose() throws Throwable {

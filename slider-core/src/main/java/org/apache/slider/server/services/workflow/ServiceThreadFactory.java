@@ -60,8 +60,8 @@ public class ServiceThreadFactory implements ThreadFactory {
   public ServiceThreadFactory(String name,
       boolean daemons,
       String namingFormat) {
-    Preconditions.checkNotNull(name, "null name");
-    Preconditions.checkNotNull(namingFormat, "null naming format");
+    Preconditions.checkArgument(name != null, "null name");
+    Preconditions.checkArgument(namingFormat != null, "null naming format");
     this.name = name;
     this.daemons = daemons;
     this.namingFormat = namingFormat;
@@ -80,7 +80,7 @@ public class ServiceThreadFactory implements ThreadFactory {
 
   @Override
   public Thread newThread(Runnable r) {
-    Preconditions.checkNotNull(r, "null runnable");
+    Preconditions.checkArgument(r != null, "null runnable");
     String threadName =
         String.format(namingFormat, name, counter.getAndIncrement());
     return new Thread(r, threadName);

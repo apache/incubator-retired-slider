@@ -25,12 +25,18 @@ import java.util.concurrent.ExecutorService;
 /**
  * A service that hosts an executor -in shutdown it is stopped.
  */
-public class WorkflowExecutorService extends AbstractService {
+public abstract class AbstractWorkflowExecutorService extends AbstractService {
 
   private ExecutorService executor;
   
-  public WorkflowExecutorService(String name) {
+  public AbstractWorkflowExecutorService(String name) {
+    this(name, null);
+  }
+
+  protected AbstractWorkflowExecutorService(String name,
+      ExecutorService executor) {
     super(name);
+    this.executor = executor;
   }
 
   public ExecutorService getExecutor() {
@@ -46,7 +52,7 @@ public class WorkflowExecutorService extends AbstractService {
    * must have been created already)
    * @param runnable runnable to execute
    */
-  protected void execute(Runnable runnable) {
+  public void execute(Runnable runnable) {
     executor.execute(runnable);
   }
 
