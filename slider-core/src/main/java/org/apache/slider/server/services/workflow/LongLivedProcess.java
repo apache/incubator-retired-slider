@@ -105,7 +105,6 @@ public class LongLivedProcess implements Runnable {
    * @param lifecycleCallback callback to notify on application exit
    */
   public void setLifecycleCallback(LongLivedProcessLifecycleEvent lifecycleCallback) {
-    Preconditions.checkArgument(lifecycleCallback != null, "lifecycleCallback");
     this.lifecycleCallback = lifecycleCallback;
   }
 
@@ -114,7 +113,7 @@ public class LongLivedProcess implements Runnable {
    * @param envVar envVar -must not be null
    * @param val value 
    */
-  public void putEnv(String envVar, String val) {
+  public void setEnv(String envVar, String val) {
     Preconditions.checkArgument(envVar != null, "envVar");
     Preconditions.checkArgument(val != null, "val");
     processBuilder.environment().put(envVar, val);
@@ -130,7 +129,7 @@ public class LongLivedProcess implements Runnable {
     for (Map.Entry<String, String> entry : map.entrySet()) {
       String val = entry.getValue();
       String key = entry.getKey();
-      putEnv(key, val);
+      setEnv(key, val);
     }
   }
 
@@ -210,7 +209,7 @@ public class LongLivedProcess implements Runnable {
    * Dump the environment to a string builder
    * @param buffer the buffer to append to
    */
-  private void dumpEnv(StringBuilder buffer) {
+  public void dumpEnv(StringBuilder buffer) {
     buffer.append("\nEnvironment\n-----------");
     Map<String, String> env = processBuilder.environment();
     Set<String> keys = env.keySet();
@@ -261,8 +260,10 @@ public class LongLivedProcess implements Runnable {
       if (lifecycleCallback != null) {
         lifecycleCallback.onProcessExited(this, exitCode);
       }
+      // shut down the threads
+      logExecutor.shutdown();
       try {
-        logExecutor.awaitTermination(60, TimeUnit.MINUTES);
+        logExecutor.awaitTermination(60, TimeUnit.SECONDS);
       } catch (InterruptedException ignored) {
         //ignored
       }
@@ -273,7 +274,7 @@ public class LongLivedProcess implements Runnable {
    * Spawn the application
    * @throws IOException IO problems
    */
-  public void spawnApplication() throws IOException {
+  public void start() throws IOException {
 
     spawnChildProcess();
     processExecutor.submit(this);
@@ -406,7 +407,7 @@ public class LongLivedProcess implements Runnable {
             outLine.setLength(0);
             processed |= true;
           }
-          if (!processed) {
+          if (!processed && !finished) {
             //nothing processed: wait a bit for data.
             try {
               Thread.sleep(sleepTime);

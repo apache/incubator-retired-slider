@@ -71,7 +71,7 @@ public class ForkedProcessService extends AbstractWorkflowExecutorService implem
       throw new ServiceStateException("Process not yet configured");
     }
     //now spawn the process -expect updates via callbacks
-    process.spawnApplication();
+    process.start();
   }
 
   @Override //AbstractService
