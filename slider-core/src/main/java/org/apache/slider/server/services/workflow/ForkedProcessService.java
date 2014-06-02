@@ -33,7 +33,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Service wrapper for an external program that is launched and can/will terminate.
  * This service is notified when the subprocess terminates, and stops itself 
- * and converts a non-zero exit code into a failure exception
+ * and converts a non-zero exit code into a failure exception.
+ * 
+ * 
  */
 public class ForkedProcessService extends AbstractWorkflowExecutorService implements
     LongLivedProcessLifecycleEvent, Runnable {

@@ -39,15 +39,19 @@ import java.util.concurrent.TimeUnit;
 /**
  * Execute a long-lived process.
  *
+ * <p>
  * Hadoop's {@link org.apache.hadoop.util.Shell} class assumes it is executing
  * a short lived application; this class allows for the process to run for the
  * life of the Java process that forked it.
- * 
- * Key Features
+ * It is designed to be embedded inside a YARN service, though this is not
+ * the sole way that it can be used
+ * <p>
+ * Key Features:
  * <ol>
  *   <li>Output is streamed to the output logger provided</li>.
  *   <li>The most recent lines of output are saved to a linked list</li>.
- *   <li>A callback, {@link LongLivedProcessLifecycleEvent}, is raised on</li>
+ *   <li>A synchronous callback, {@link LongLivedProcessLifecycleEvent}, is raised on the start
+ *   and finish of a process.</li>
  * </ol>
  * 
  */

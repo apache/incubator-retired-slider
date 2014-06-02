@@ -45,7 +45,6 @@ public class TestLongLivedProcess extends WorkflowServiceTestBase implements
   private File testDir = new File("target");
   private ProcessCommandFactory commandFactory;
   private volatile boolean started, stopped;
-  private volatile int exitCode;
 
   @Before
   public void setupProcesses() {
@@ -129,7 +128,6 @@ public class TestLongLivedProcess extends WorkflowServiceTestBase implements
   /**
    * Get the final output. includes a quick sleep for the tail output
    * @return the last output
-   * @throws InterruptedException
    */
   private List<String> getFinalOutput() {
     return process.getRecentOutput();
@@ -157,7 +155,6 @@ public class TestLongLivedProcess extends WorkflowServiceTestBase implements
   public void onProcessExited(LongLivedProcess process,
       int exitCode,
       int signCorrectedCode) {
-    this.exitCode = exitCode;
     stopped = true;
   }
 }

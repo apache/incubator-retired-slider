@@ -69,6 +69,8 @@ public class TestForkedProcessService extends WorkflowServiceTestBase {
     assertEquals(0, process.getExitCode());
 
     assertStringInOutput("test-classes", getFinalOutput());
+    // assert that the service did not fail
+    assertNull(process.getFailureCause());
   }
 
   @Test
@@ -81,6 +83,9 @@ public class TestForkedProcessService extends WorkflowServiceTestBase {
     assertTrue(exitCode != 0);
     int corrected = process.getExitCodeSignCorrected();
     assertEquals(1, corrected);
+    // assert that the exit code was uprated to a service failure
+    assertNotNull(process.getFailureCause());
+
   }
 
   @Test
@@ -111,7 +116,6 @@ public class TestForkedProcessService extends WorkflowServiceTestBase {
   /**
    * Get the final output. includes a quick sleep for the tail output
    * @return the last output
-   * @throws InterruptedException
    */
   private List<String> getFinalOutput() {
     return process.getRecentOutput();
