@@ -18,10 +18,11 @@
 
 package org.apache.slider.server.services.workflow;
 
-import org.apache.hadoop.io.IOUtils;
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.service.AbstractService;
 
 import java.io.Closeable;
+import java.io.IOException;
 
 /**
  * Service that closes the closeable supplied during shutdown, if not null.
@@ -32,12 +33,17 @@ public class ClosingService<C extends Closeable> extends AbstractService {
 
 
   public ClosingService(String name,
-                        C closeable) {
+      C closeable) {
     super(name);
     this.closeable = closeable;
   }
 
-  public Closeable getCloseable() {
+  public ClosingService(C closeable) {
+    this("ClosingService", closeable);
+  }
+
+
+  public C getCloseable() {
     return closeable;
   }
 
@@ -48,11 +54,18 @@ public class ClosingService<C extends Closeable> extends AbstractService {
   /**
    * Stop routine will close the closeable -if not null - and set the
    * reference to null afterwards
-   * @throws Exception
+   * This operation does raise any exception on the close, though it does
+   * record it
    */
   @Override
-  protected void serviceStop() throws Exception {
-    IOUtils.closeStream(closeable);
-    closeable = null;
+  protected void serviceStop() {
+    if (closeable != null) {
+      try {
+        closeable.close();
+      } catch (IOException ioe) {
+        noteFailure(ioe);
+      }
+      closeable = null;
+    }
   }
 }
