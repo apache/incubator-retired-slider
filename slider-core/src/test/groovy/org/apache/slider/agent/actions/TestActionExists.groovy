@@ -71,7 +71,7 @@ class TestActionExists extends AgentMiniClusterTestBase {
   @Test
   public void testExistsLiveCluster() throws Throwable {
     //launch the cluster
-    String clustername = "testExistsLiveCluster"
+    String clustername = createClusterName()
     ServiceLauncher launcher = createMasterlessAM(clustername, 0, true, false)
     SliderClient sliderClient = launcher.service
     addToTeardown(launcher)
@@ -88,7 +88,7 @@ class TestActionExists extends AgentMiniClusterTestBase {
           Arguments.ARG_MANAGER, RMAddr
           ],
       )
-    SliderTestUtils.assertSucceeded(launcher)
+    assertSucceeded(launcher)
 
     //and when cluster is running
     launcher = launchClientAgainstMiniMR(

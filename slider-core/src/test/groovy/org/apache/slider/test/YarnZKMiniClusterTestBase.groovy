@@ -29,7 +29,9 @@ import org.apache.slider.core.zk.ZKIntegration
 
 import java.util.concurrent.atomic.AtomicBoolean
 
-import static org.apache.slider.test.KeysForTests.USERNAME
+import static org.apache.slider.common.SliderKeys.*;
+import static org.apache.slider.common.SliderXMLConfKeysForTesting.*;
+import static org.apache.slider.test.KeysForTests.*;
 
 /**
  * Base class for mini cluster tests that use Zookeeper
