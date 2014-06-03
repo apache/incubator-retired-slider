@@ -49,7 +49,6 @@ import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.zk.BlockingZKWatcher;
 import org.apache.slider.common.tools.ConfigHelper;
-import org.apache.slider.server.services.utility.WorkflowEventNotifyingService;
 import org.apache.slider.server.services.workflow.ForkedProcessService;
 import org.apache.slider.server.services.workflow.WorkflowCallbackService;
 import org.apache.zookeeper.KeeperException;
