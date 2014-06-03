@@ -62,7 +62,7 @@ class TestActionExists extends AgentMiniClusterTestBase {
           Arguments.ARG_MANAGER, RMAddr
           ],
       )
-      Assert.fail("expected an exception, got a status code "+ launcher.serviceExitCode)
+      fail("expected an exception, got a status code "+ launcher.serviceExitCode)
     } catch (UnknownApplicationInstanceException e) {
       
     }
@@ -71,11 +71,11 @@ class TestActionExists extends AgentMiniClusterTestBase {
   @Test
   public void testExistsLiveCluster() throws Throwable {
     //launch the cluster
-    String clustername = "test_exists_live_cluster"
-    ServiceLauncher launcher = createMasterlessAM(clustername, 0, true, false)
+    String clustername = createClusterName()
+    ServiceLauncher<SliderClient> launcher = createMasterlessAM(clustername, 0, true, false)
     SliderClient sliderClient = launcher.service
     addToTeardown(launcher)
-    ApplicationReport report = waitForClusterLive((SliderClient) launcher.service)
+    ApplicationReport report = waitForClusterLive(sliderClient)
 
     // exists holds when cluster is running
     launcher = launchClientAgainstMiniMR(
@@ -88,7 +88,7 @@ class TestActionExists extends AgentMiniClusterTestBase {
           Arguments.ARG_MANAGER, RMAddr
           ],
       )
-    SliderTestUtils.assertSucceeded(launcher)
+    assertSucceeded(launcher)
 
     //and when cluster is running
     launcher = launchClientAgainstMiniMR(
@@ -103,7 +103,7 @@ class TestActionExists extends AgentMiniClusterTestBase {
           ],
       )
 
-    SliderTestUtils.assertSucceeded(launcher)
+    assertSucceeded(launcher)
     
     // assert that the cluster exists
 

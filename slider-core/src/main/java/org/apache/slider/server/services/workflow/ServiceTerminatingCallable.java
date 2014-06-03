@@ -21,27 +21,31 @@ package org.apache.slider.server.services.workflow;
 import com.google.common.base.Preconditions;
 import org.apache.hadoop.service.Service;
 
+import java.util.concurrent.Callable;
+
 /**
- * A runnable which terminates its after running; it also catches any
- * exception raised and can serve it back. 
+ * A runnable which terminates its owner; it also catches any
+ * exception raised and can serve it back.  
+ * 
  */
-public class ServiceTerminatingRunnable implements Runnable {
+public class ServiceTerminatingCallable<V> implements Callable<V> {
 
   private final Service owner;
-  private final Runnable action;
   private Exception exception;
-
   /**
-   * Create an instance
-   * @param owner owning service
-   * @param action action to execute before terminating the service
+   * This is the callback
    */
-  public ServiceTerminatingRunnable(Service owner, Runnable action) {
+  private final Callable<V> callable;
+
+
+  public ServiceTerminatingCallable(Service owner,
+      Callable<V> callable) {
     Preconditions.checkArgument(owner != null, "null owner");
-    Preconditions.checkArgument(action != null, "null action");
+    Preconditions.checkArgument(callable != null, "null callable");
     this.owner = owner;
-    this.action = action;
+    this.callable = callable;
   }
+
 
   /**
    * Get the owning service
@@ -60,13 +64,22 @@ public class ServiceTerminatingRunnable implements Runnable {
     return exception;
   }
 
+  /**
+   * Delegates the call to the callable supplied in the constructor,
+   * then calls the stop() operation on its owner. Any exception
+   * is caught, noted and rethrown
+   * @return the outcome of the delegated call operation
+   * @throws Exception if one was raised.
+   */
   @Override
-  public void run() {
+  public V call() throws Exception {
     try {
-      action.run();
+      return callable.call();
     } catch (Exception e) {
       exception = e;
+      throw e;
+    } finally {
+      owner.stop();
     }
-    owner.stop();
   }
 }

@@ -48,12 +48,15 @@ import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.main.ServiceLauncherBaseTest
 import org.apache.slider.server.appmaster.SliderAppMaster
 import org.junit.After
+import org.junit.Before
 import org.junit.Rule
+import org.junit.rules.TestName
 import org.junit.rules.Timeout
 
-import static org.apache.slider.common.SliderXMLConfKeysForTesting.*
 import static org.apache.slider.test.KeysForTests.*
 
+import static org.apache.slider.common.SliderKeys.*;
+import static org.apache.slider.common.SliderXMLConfKeysForTesting.*;
 /**
  * Base class for mini cluster tests -creates a field for the
  * mini yarn cluster
@@ -109,18 +112,13 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
   protected boolean switchToImageDeploy = false
   protected boolean imageIsRemote = false
   protected URI remoteImageURI
+  private int clusterCount =1;
 
   protected List<SliderClient> clustersToTeardown = [];
 
   /**
    * This is set in a system property
    */
-/*
-  @Rule
-  public Timeout testTimeout = new Timeout(1000* 
-      Integer.getInteger(KEY_TEST_TIMEOUT, DEFAULT_TEST_TIMEOUT))
-
-*/
 
   @Rule
   public Timeout testTimeout = new Timeout(
@@ -128,6 +126,29 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
           KEY_TEST_TIMEOUT,
           DEFAULT_TEST_TIMEOUT_SECONDS * 1000)
   )
+
+
+  @Rule
+  public TestName methodName = new TestName();
+
+  @Before
+  public void nameThread() {
+    Thread.currentThread().setName("JUnit");
+  }
+
+  /**
+   * Create the cluster name from the method name and an auto-incrementing
+   * counter.
+   * @return a cluster name
+   */
+  protected String createClusterName() {
+    def base = methodName.getMethodName().toLowerCase(Locale.ENGLISH)
+    if (clusterCount++>1) {
+      base += "-$clusterCount"
+    }
+    return base
+  }
+
 
   @Override
   void setup() {

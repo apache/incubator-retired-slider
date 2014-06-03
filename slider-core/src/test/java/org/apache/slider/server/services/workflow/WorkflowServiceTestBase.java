@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.concurrent.Callable;
 
 /**
  * Test base for workflow service tests.
@@ -105,6 +106,25 @@ public abstract class WorkflowServiceTestBase extends Assert {
       log.info("EventCallback");
       notified = true;
       result = parameter;
+    }
+  }
+
+  /**
+   * Handler for callable events
+   */
+  public static class CallableHandler implements Callable<String> {
+    public volatile boolean notified = false;
+    public final String result;
+
+    public CallableHandler(String result) {
+      this.result = result;
+    }
+
+    @Override
+    public String call() throws Exception {
+      log.info("CallableHandler::call");
+      notified = true;
+      return result;
     }
   }
 

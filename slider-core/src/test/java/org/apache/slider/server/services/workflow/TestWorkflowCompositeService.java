@@ -42,7 +42,6 @@ public class TestWorkflowCompositeService extends ParentWorkflowTestBase {
     waitForParentToStop(parent);
   }
 
-
   @Test
   public void testSingleChildFailing() throws Throwable {
     ServiceParent parent =
@@ -76,6 +75,25 @@ public class TestWorkflowCompositeService extends ParentWorkflowTestBase {
     assertStopped(two);
     assertTrue(ecb.notified);
     assertEquals("hello", ecb.result);
+  }
+
+  @Test
+  public void testCallableChild() throws Throwable {
+
+    MockService one = new MockService("one", false, 100);
+    CallableHandler handler = new CallableHandler("hello");
+    WorkflowCallbackService<String> ens =
+        new WorkflowCallbackService<String>("handler", handler, 100);
+    MockService two = new MockService("two", false, 100);
+    ServiceParent parent = startService(one, ens, two);
+    waitForParentToStop(parent);
+    assertStopped(one);
+    assertStopped(ens);
+    assertStopped(two);
+    assertTrue(handler.notified);
+    String s = ens.getScheduledFuture().get();
+
+    assertEquals("hello", s);
   }
 
 
