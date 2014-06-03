@@ -73,13 +73,13 @@ public class ServiceLauncher<S extends Service>
 
   public static final String NAME = "ServiceLauncher";
 
-  public static final String USAGE_MESSAGE =
-    "Usage: " + NAME + " classname [--conf <conf file>] <service arguments> | ";
-
   /**
    * Name of the "--conf" argument. 
    */
   public static final String ARG_CONF = "--conf";
+
+  public static final String USAGE_MESSAGE =
+    "Usage: " + NAME + " classname ["+ARG_CONF + "<conf file>] <service arguments> | ";
   static final int SHUTDOWN_TIME_ON_INTERRUPT = 30 * 1000;
 
   private volatile S service;
@@ -153,15 +153,13 @@ public class ServiceLauncher<S extends Service>
    * @throws Throwable any other failure
    */
   public int launchService(Configuration conf,
-                           String[] processedArgs,
-                           boolean addShutdownHook)
+      String[] processedArgs,
+      boolean addShutdownHook)
     throws Throwable {
 
     instantiateService(conf);
 
-    //Register the interrupt handlers
-    registerInterruptHandler();
-    //and the shutdown hook
+    // and the shutdown hook if requested
     if (addShutdownHook) {
       ServiceShutdownHook shutdownHook = new ServiceShutdownHook(service);
       ShutdownHookManager.get().addShutdownHook(shutdownHook, PRIORITY);
@@ -215,7 +213,7 @@ public class ServiceLauncher<S extends Service>
   public Service instantiateService(Configuration conf)
       throws ClassNotFoundException, InstantiationException, IllegalAccessException,
       ExitUtil.ExitException, NoSuchMethodException, InvocationTargetException {
-    Preconditions.checkNotNull(conf, "null configuration");
+    Preconditions.checkArgument(conf != null, "null conf");
     configuration = conf;
 
     //Instantiate the class -this requires the service to have a public
@@ -353,6 +351,7 @@ public class ServiceLauncher<S extends Service>
    */
   public void launchServiceAndExit(List<String> args) {
 
+    registerInterruptHandler();
     //Currently the config just the default
     Configuration conf = new Configuration();
     String[] processedArgs = extractConfigurationArgs(conf, args);
