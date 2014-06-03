@@ -135,7 +135,7 @@ class TestActionList extends AgentMiniClusterTestBase {
           //varargs list of command line params
           [
               SliderActions.ACTION_LIST,
-              "teststatusmissingcluster"
+              createClusterName()
           ]
       )
       fail("expected an exception, got a status code " + launcher.serviceExitCode)
