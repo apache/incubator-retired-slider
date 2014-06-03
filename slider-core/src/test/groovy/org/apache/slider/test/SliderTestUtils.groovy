@@ -481,8 +481,8 @@ class SliderTestUtils extends Assert {
     ServiceLauncher<SliderClient> serviceLauncher =
         new ServiceLauncher<SliderClient>(SliderClient.name);
     serviceLauncher.launchService(conf,
-                                  toArray(args),
-                                  false);
+        toArray(args),
+        false, true);
     return serviceLauncher
   }
 
@@ -493,8 +493,8 @@ class SliderTestUtils extends Assert {
     ServiceLauncher serviceLauncher =
         new ServiceLauncher(serviceClass.name);
     serviceLauncher.launchService(conf,
-                                  toArray(args),
-                                  false);
+        toArray(args),
+        false, true);
     return serviceLauncher;
   }
 

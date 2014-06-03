@@ -57,7 +57,7 @@ public class TestWorkflowSequenceService extends ParentWorkflowTestBase {
     MockService one = new MockService("one", false, 100);
     CallableHandler handler = new CallableHandler("hello");
     WorkflowCallbackService<String> ens =
-        new WorkflowCallbackService<String>("handler", handler, 100);
+        new WorkflowCallbackService<String>("handler", handler, 100, true);
     MockService two = new MockService("two", false, 100);
     ServiceParent parent = startService(one, ens, two);
     waitForParentToStop(parent);
@@ -131,7 +131,7 @@ public class TestWorkflowSequenceService extends ParentWorkflowTestBase {
     ServiceParent parent = startService(one, two);
     CallableHandler handler = new CallableHandler("hello");
     WorkflowCallbackService<String> ens =
-        new WorkflowCallbackService<String>("handler", handler, 100);
+        new WorkflowCallbackService<String>("handler", handler, 100, true);
     parent.addService(ens);
     waitForParentToStop(parent, 10000);
     assertStopped(one);

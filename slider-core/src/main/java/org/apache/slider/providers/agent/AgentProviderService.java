@@ -46,6 +46,7 @@ import org.apache.slider.core.registry.info.CustomRegistryConstants;
 import org.apache.slider.core.registry.info.RegisteredEndpoint;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.providers.AbstractProviderService;
+import org.apache.slider.providers.ProviderCompleted;
 import org.apache.slider.providers.ProviderCore;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
@@ -66,7 +67,6 @@ import org.apache.slider.server.appmaster.web.rest.agent.Register;
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationResponse;
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationStatus;
 import org.apache.slider.server.appmaster.web.rest.agent.StatusCommand;
-import org.apache.slider.server.services.workflow.WorkflowEventCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -307,7 +307,7 @@ public class AgentProviderService extends AbstractProviderService implements
   public boolean exec(AggregateConf instanceDefinition,
                       File confDir,
                       Map<String, String> env,
-                      WorkflowEventCallback execInProgress) throws
+                      ProviderCompleted execInProgress) throws
       IOException,
       SliderException {
 

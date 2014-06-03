@@ -169,7 +169,7 @@ public abstract class AbstractProviderService
       }
     }
     ForkedProcessService lastProc = latestProcess();
-    if (lastProc == null) {
+    if (lastProc == null || !lastProc.isProcessTerminated()) {
       return 0;
     } else {
       return lastProc.getExitCode();

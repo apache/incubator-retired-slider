@@ -21,7 +21,7 @@ package org.apache.slider.server.services.workflow;
 import org.junit.Test;
 
 
-public class TestServiceTerminatingRunnable extends WorkflowServiceTestBase {
+public class TestWorkflowServiceTerminatingRunnable extends WorkflowServiceTestBase {
 
   @Test
   public void testNoservice() throws Throwable {

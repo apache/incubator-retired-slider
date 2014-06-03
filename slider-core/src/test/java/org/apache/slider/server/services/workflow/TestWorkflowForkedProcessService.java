@@ -36,9 +36,9 @@ import java.util.Map;
  * Test the long lived process by executing a command that works and a command
  * that fails
  */
-public class TestForkedProcessService extends WorkflowServiceTestBase {
+public class TestWorkflowForkedProcessService extends WorkflowServiceTestBase {
   private static final Logger
-      log = LoggerFactory.getLogger(TestForkedProcessService.class);
+      log = LoggerFactory.getLogger(TestWorkflowForkedProcessService.class);
 
   private static final Logger
       processLog =

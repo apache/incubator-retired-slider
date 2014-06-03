@@ -250,6 +250,7 @@ public class ForkedProcessService extends AbstractWorkflowExecutorService implem
   public int getExitCode() {
     return process.getExitCode();
   }
+  
   public int getExitCodeSignCorrected() {
     return process.getExitCodeSignCorrected();
   }

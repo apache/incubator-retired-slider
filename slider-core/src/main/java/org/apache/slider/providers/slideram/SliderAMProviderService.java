@@ -39,12 +39,12 @@ import org.apache.slider.core.registry.info.RegisteredEndpoint;
 import org.apache.slider.core.registry.info.RegistryView;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.providers.AbstractProviderService;
+import org.apache.slider.providers.ProviderCompleted;
 import org.apache.slider.providers.ProviderCore;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.agent.AgentKeys;
 import org.apache.slider.server.appmaster.PublishedArtifacts;
 import org.apache.slider.server.appmaster.web.rest.RestPaths;
-import org.apache.slider.server.services.workflow.WorkflowEventCallback;
 
 import java.io.File;
 import java.io.IOException;
@@ -94,7 +94,7 @@ public class SliderAMProviderService extends AbstractProviderService implements
   public boolean exec(AggregateConf instanceDefinition,
       File confDir,
       Map<String, String> env,
-      WorkflowEventCallback execInProgress) throws IOException, SliderException {
+      ProviderCompleted execInProgress) throws IOException, SliderException {
     return false;
   }
 

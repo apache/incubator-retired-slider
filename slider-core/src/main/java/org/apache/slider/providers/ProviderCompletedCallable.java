@@ -16,16 +16,23 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.services.workflow;
+package org.apache.slider.providers;
 
-/**
- * This is the callback triggered by the {@link WorkflowEventNotifyingService}
- * when it generates a notification
- */
-public interface WorkflowEventCallback {
-  
-  public void eventCallbackEvent(Object caller,
-      Object parameter,
-      Exception exception);
-  
+import java.util.concurrent.Callable;
+
+public class ProviderCompletedCallable implements Callable<Object> {
+
+  private final ProviderCompleted callback;
+  private final Object parameter;
+
+  public ProviderCompletedCallable(ProviderCompleted callback, Object parameter) {
+    this.callback = callback;
+    this.parameter = parameter;
+  }
+
+  @Override
+  public Object call() throws Exception {
+    callback.eventCallbackEvent(parameter);
+    return parameter;
+  }
 }

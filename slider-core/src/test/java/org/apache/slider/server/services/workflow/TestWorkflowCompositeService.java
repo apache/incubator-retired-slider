@@ -66,7 +66,7 @@ public class TestWorkflowCompositeService extends ParentWorkflowTestBase {
     MockService one = new MockService("one", false, 100);
     CallableHandler handler = new CallableHandler("hello");
     WorkflowCallbackService<String> ens =
-        new WorkflowCallbackService<String>("handler", handler, 100);
+        new WorkflowCallbackService<String>("handler", handler, 100, true);
     MockService two = new MockService("two", false, 100);
     ServiceParent parent = startService(one, ens, two);
     waitForParentToStop(parent);
