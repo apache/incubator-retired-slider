@@ -42,7 +42,6 @@ public class TestWorkflowCompositeService extends ParentWorkflowTestBase {
     waitForParentToStop(parent);
   }
 
-
   @Test
   public void testSingleChildFailing() throws Throwable {
     ServiceParent parent =
