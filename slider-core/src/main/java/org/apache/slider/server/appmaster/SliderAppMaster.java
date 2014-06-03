@@ -88,6 +88,7 @@ import org.apache.slider.core.registry.info.CustomRegistryConstants;
 import org.apache.slider.core.registry.info.RegisteredEndpoint;
 import org.apache.slider.core.registry.info.RegistryNaming;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
+import org.apache.slider.providers.ProviderCompleted;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderService;
 import org.apache.slider.providers.SliderProviderFactory;
@@ -112,7 +113,6 @@ import org.apache.slider.server.appmaster.web.WebAppApiImpl;
 import org.apache.slider.server.appmaster.web.rest.RestPaths;
 import org.apache.slider.server.services.registry.SliderRegistryService;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
-import org.apache.slider.server.services.workflow.WorkflowEventCallback;
 import org.apache.slider.server.services.workflow.WorkflowRpcService;
 import org.apache.slider.server.services.utility.WebAppService;
 import org.slf4j.Logger;
@@ -149,7 +149,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     SliderClusterProtocol,
     ServiceStateChangeListener,
     RoleKeys,
-    WorkflowEventCallback,
+    ProviderCompleted,
     ContainerStartOperation {
   protected static final Logger log =
     LoggerFactory.getLogger(SliderAppMaster.class);
@@ -1321,7 +1321,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       // didn't start, so don't register
       providerService.start();
       // and send the started event ourselves
-      eventCallbackEvent(this, null, null);
+      eventCallbackEvent(null);
     }
   }
 
@@ -1330,10 +1330,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   /* EventCallback  from the child or ourselves directly */
   /* =================================================================== */
 
-  @Override // EventCallback
-  public void eventCallbackEvent(Object caller,
-      Object parameter,
-      Exception exception) {
+  @Override // ProviderCompleted
+  public void eventCallbackEvent(Object parameter) {
     // signalled that the child process is up.
     appState.noteAMLive();
     // now ask for the cluster nodes
@@ -1357,7 +1355,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   @Override //ServiceStateChangeListener
   public void stateChanged(Service service) {
-    if (service == providerService) {
+    if (service == providerService && service.isInState(STATE.STOPPED)) {
       //its the current master process in play
       int exitCode = providerService.getExitCode();
       int mappedProcessExitCode =

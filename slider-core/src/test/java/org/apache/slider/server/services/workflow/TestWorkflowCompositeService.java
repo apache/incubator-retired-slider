@@ -61,29 +61,12 @@ public class TestWorkflowCompositeService extends ParentWorkflowTestBase {
   }
 
   @Test
-  public void testNotificationChild() throws Throwable {
-
-    MockService one = new MockService("one", false, 100);
-    EventCallbackHandler ecb = new EventCallbackHandler();
-    WorkflowEventNotifyingService ens =
-        new WorkflowEventNotifyingService(ecb, "hello", 100);
-    MockService two = new MockService("two", false, 100);
-    ServiceParent parent = startService(one, ens, two);
-    waitForParentToStop(parent);
-    assertStopped(one);
-    assertStopped(ens);
-    assertStopped(two);
-    assertTrue(ecb.notified);
-    assertEquals("hello", ecb.result);
-  }
-
-  @Test
   public void testCallableChild() throws Throwable {
 
     MockService one = new MockService("one", false, 100);
     CallableHandler handler = new CallableHandler("hello");
     WorkflowCallbackService<String> ens =
-        new WorkflowCallbackService<String>("handler", handler, 100);
+        new WorkflowCallbackService<String>("handler", handler, 100, true);
     MockService two = new MockService("two", false, 100);
     ServiceParent parent = startService(one, ens, two);
     waitForParentToStop(parent);
@@ -92,10 +75,8 @@ public class TestWorkflowCompositeService extends ParentWorkflowTestBase {
     assertStopped(two);
     assertTrue(handler.notified);
     String s = ens.getScheduledFuture().get();
-
     assertEquals("hello", s);
   }
-
 
   @Test
   public void testNestedComposite() throws Throwable {
@@ -120,7 +101,6 @@ public class TestWorkflowCompositeService extends ParentWorkflowTestBase {
     assertNotNull(parent.getFailureCause());
     assertEquals(one.getFailureCause(), parent.getFailureCause());
   }
-
 
   @Override
   public ServiceParent buildService(Service... services) {

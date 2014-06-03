@@ -52,20 +52,23 @@ public class TestWorkflowSequenceService extends ParentWorkflowTestBase {
   }
 
   @Test
-  public void testNotificationInSequence() throws Throwable {
-    EventCallbackHandler ecb = new EventCallbackHandler();
+  public void testCallableChild() throws Throwable {
+
     MockService one = new MockService("one", false, 100);
-    WorkflowEventNotifyingService ens =
-        new WorkflowEventNotifyingService(ecb, 3, 100);
+    CallableHandler handler = new CallableHandler("hello");
+    WorkflowCallbackService<String> ens =
+        new WorkflowCallbackService<String>("handler", handler, 100, true);
     MockService two = new MockService("two", false, 100);
     ServiceParent parent = startService(one, ens, two);
     waitForParentToStop(parent);
     assertStopped(one);
     assertStopped(ens);
     assertStopped(two);
-    assertTrue(ecb.notified);
-    assertEquals(3, ecb.result);
+    assertTrue(handler.notified);
+    String s = ens.getScheduledFuture().get();
+    assertEquals("hello", s);
   }
+
 
   @Test
   public void testFailingSequence() throws Throwable {
@@ -126,17 +129,16 @@ public class TestWorkflowSequenceService extends ParentWorkflowTestBase {
     MockService one = new MockService("one", false, 5000);
     MockService two = new MockService("two", false, 100);
     ServiceParent parent = startService(one, two);
-    EventCallbackHandler ecb = new EventCallbackHandler();
-    WorkflowEventNotifyingService ens =
-        new WorkflowEventNotifyingService(ecb, "hello", 100);
+    CallableHandler handler = new CallableHandler("hello");
+    WorkflowCallbackService<String> ens =
+        new WorkflowCallbackService<String>("handler", handler, 100, true);
     parent.addService(ens);
     waitForParentToStop(parent, 10000);
     assertStopped(one);
     assertStopped(two);
     assertStopped(ens);
     assertStopped(two);
-    assertTrue(ecb.notified);
-    assertEquals("hello", ecb.result);
+    assertEquals("hello", ens.getScheduledFuture().get());
   }
 
   public WorkflowSequenceService buildService(Service... services) {

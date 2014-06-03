@@ -65,7 +65,7 @@ class TestAccCorrectInstanceName extends AccumuloTestBase {
 
     waitWhileClusterLive(sliderClient);
     assert sliderClient.applicationReport.yarnApplicationState == YarnApplicationState.RUNNING
-    waitForRoleCount(sliderClient, roles, ACCUMULO_CLUSTER_STARTUP_TO_LIVE_TIME)
+    waitForRoleCount(sliderClient, roles, accumulo_cluster_startup_to_live_time)
     describe("Cluster status")
     ClusterDescription status
     status = sliderClient.getClusterDescription(clustername)

@@ -93,23 +93,6 @@ public abstract class WorkflowServiceTestBase extends Assert {
   }
 
   /**
-   * Class to log when an event callback happens
-   */
-  public static class EventCallbackHandler implements WorkflowEventCallback {
-    public volatile boolean notified = false;
-    public Object result;
-
-    @Override
-    public void eventCallbackEvent(Object caller,
-        Object parameter,
-        Exception exception) {
-      log.info("EventCallback");
-      notified = true;
-      result = parameter;
-    }
-  }
-
-  /**
    * Handler for callable events
    */
   public static class CallableHandler implements Callable<String> {

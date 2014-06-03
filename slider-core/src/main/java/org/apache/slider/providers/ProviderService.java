@@ -34,7 +34,6 @@ import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
 import org.apache.slider.server.services.registry.RegistryViewForProviders;
-import org.apache.slider.server.services.workflow.WorkflowEventCallback;
 
 import java.io.File;
 import java.io.IOException;
@@ -81,7 +80,7 @@ public interface ProviderService extends ProviderCore, Service,
   boolean exec(AggregateConf instanceDefinition,
                File confDir,
                Map<String, String> env,
-               WorkflowEventCallback execInProgress) throws IOException,
+               ProviderCompleted execInProgress) throws IOException,
       SliderException;
 
   /**

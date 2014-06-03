@@ -30,7 +30,8 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * A service that calls the supplied callback when it is started -after the 
- * given delay, then stops itself.
+ * given delay. It can be configured to stop itself after the callback has
+ * completed, marking any exception raised as the exception of this service.
  * The notifications come in on a callback thread -a thread that is only
  * started in this service's <code>start()</code> operation.
  */
@@ -53,15 +54,19 @@ public class WorkflowCallbackService<V> extends
    * @param name service name
    * @param callback callback to invoke
    * @param delay delay -or 0 for no delay
+   * @param terminate terminate this service after the callback?
    */
   public WorkflowCallbackService(String name,
       Callable<V> callback,
-      int delay) {
+      int delay,
+      boolean terminate) {
     super(name);
     Preconditions.checkNotNull(callback, "Null callback argument");
     this.callback = callback;
     this.delay = delay;
-    command = new ServiceTerminatingCallable<V>(this, callback);
+    command = new ServiceTerminatingCallable<V>(
+        terminate ? this : null,
+        callback);
   }
 
   public ScheduledFuture<V> getScheduledFuture() {
@@ -89,9 +94,18 @@ public class WorkflowCallbackService<V> extends
   protected void serviceStop() throws Exception {
     super.serviceStop();
     // propagate any failure
-    if (command.getException() != null) {
-      throw command.getException();
+    if (getCallbackException() != null) {
+      throw getCallbackException();
     }
+  }
+
+  /**
+   * Get the exception raised by a callback. Will always be null if the 
+   * callback has not been executed; will only be non-null after any success.
+   * @return a callback
+   */
+  public Exception getCallbackException() {
+    return command.getException();
   }
 
 }

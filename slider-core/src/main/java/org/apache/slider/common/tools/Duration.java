@@ -18,44 +18,93 @@
 
 package org.apache.slider.common.tools;
 
+import java.io.Closeable;
+
 /**
- * A duration in milliseconds
+ * A duration in milliseconds. This class can be used
+ * to count time, and to be polled to see if a time limit has
+ * passed.
  */
-public class Duration {
+public class Duration implements Closeable {
   public long start, finish;
   public final long limit;
 
+  /**
+   * Create a duration instance with a limit of 0
+   */
   public Duration() {
     this(0);
   }
 
+  /**
+   * Create a duration with a limit specified in millis
+   * @param limit duration in milliseconds
+   */
   public Duration(long limit) {
     this.limit = limit;
   }
 
+  /**
+   * Start
+   * @return self
+   */
   public Duration start() {
-    start = System.currentTimeMillis();
+    start = now();
     return this;
   }
 
+  /**
+   * The close operation relays to {@link #finish()}.
+   * Implementing it allows Duration instances to be automatically
+   * finish()'d in Java7 try blocks for when used in measuring durations.
+   */
+  @Override
+  public final void close() {
+    finish();
+  }
+
   public void finish() {
-    finish = System.currentTimeMillis();
+    finish = now();
+  }
+
+  protected long now() {
+    return System.currentTimeMillis();
   }
 
   public long getInterval() {
     return finish - start;
   }
 
+  /**
+   * return true if the limit has been exceeded
+   * @return true if a limit was set and the current time
+   * exceeds it.
+   */
   public boolean getLimitExceeded() {
-    return limit >= 0 && ((System.currentTimeMillis() - start) > limit);
+    return limit >= 0 && ((now() - start) > limit);
   }
 
   @Override
   public String toString() {
-    return "Duration " +
-           ((finish >= start)
-            ? (" of " + getInterval() + " millis")
-            : "undefined");
+    StringBuilder builder = new StringBuilder();
+    builder.append("Duration");
+     if (finish >= start) {
+       builder.append(" finished at ").append(getInterval()).append(" millis;");
+     } else {
+       if (start > 0) {
+         builder.append(" started but not yet finished;");
+       } else {
+         builder.append(" unstarted;");
+       }
+     }
+    if (limit > 0) {
+      builder.append(" limit: ").append(limit).append(" millis");
+      if (getLimitExceeded()) {
+        builder.append(" -  exceeded");
+      }
+    }
+    
+    return  builder.toString();
   }
 
 

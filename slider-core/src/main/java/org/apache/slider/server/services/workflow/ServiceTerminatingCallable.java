@@ -38,9 +38,14 @@ public class ServiceTerminatingCallable<V> implements Callable<V> {
   private final Callable<V> callable;
 
 
+  /**
+   * Create an instance. If the owner is null, the owning service
+   * is not terminated.
+   * @param owner owning service -can be null
+   * @param callable callback.
+   */
   public ServiceTerminatingCallable(Service owner,
       Callable<V> callable) {
-    Preconditions.checkArgument(owner != null, "null owner");
     Preconditions.checkArgument(callable != null, "null callable");
     this.owner = owner;
     this.callable = callable;
@@ -79,7 +84,9 @@ public class ServiceTerminatingCallable<V> implements Callable<V> {
       exception = e;
       throw e;
     } finally {
-      owner.stop();
+      if (owner != null) {
+        owner.stop();
+      }
     }
   }
 }
