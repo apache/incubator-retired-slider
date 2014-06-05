@@ -17,7 +17,7 @@ from setuptools import setup
 
 setup(
     name = "slider-agent",
-    version = "0.31.0-SNAPSHOT",
+    version = "0.31.0-incubating-SNAPSHOT",
     packages = ['agent'],
     # metadata for upload to PyPI
     author = "Apache Software Foundation",
