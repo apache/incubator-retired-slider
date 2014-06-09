@@ -52,7 +52,7 @@ class PythonExecutor:
     pass
 
   def run_file(self, script, script_params, tmpoutfile, tmperrfile, timeout,
-               tmpstructedoutfile, override_output_files=True,
+               tmpstructedoutfile, logger_level, override_output_files=True,
                environment_vars=None):
     """
     Executes the specified python file in a separate subprocess.
@@ -69,7 +69,16 @@ class PythonExecutor:
     else: # Append to files
       tmpout = open(tmpoutfile, 'a')
       tmperr = open(tmperrfile, 'a')
-    script_params += [tmpstructedoutfile]
+
+    # need to remove this file for the following case:
+    # status call 1 does not write to file; call 2 writes to file;
+    # call 3 does not write to file, so contents are still call 2's result
+    try:
+      os.unlink(tmpstructedoutfile)
+    except OSError:
+      pass # no error
+
+    script_params += [tmpstructedoutfile, logger_level]
     pythonCommand = self.python_command(script, script_params)
     logger.info("Running command " + pprint.pformat(pythonCommand))
     process = self.launch_python_subprocess(pythonCommand, tmpout, tmperr,
@@ -100,7 +109,7 @@ class PythonExecutor:
         }
         logger.warn(structured_out)
       else:
-        structured_out = '{}'
+        structured_out = {}
 
     if self.python_process_has_been_killed:
       error = str(error) + "\n Python script has been killed due to timeout"

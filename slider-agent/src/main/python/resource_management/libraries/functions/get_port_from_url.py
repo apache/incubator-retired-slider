@@ -20,15 +20,21 @@ Slider Agent
 
 """
 
-__all__ = ["get_unique_id_and_date"]
-import datetime
-from resource_management.core import shell
+from resource_management import *
+from resource_management.libraries.functions.is_empty import *
+from resource_management.core.exceptions import Fail
+import re
 
-def get_unique_id_and_date():
-    out = shell.checked_call("hostid")[1].split('\n')[-1] # bugfix: take the lastline (stdin is not tty part cut)
-    id = out.strip()
-
-    now = datetime.datetime.now()
-    date = now.strftime("%M%d%y")
-
-    return "id{id}_date{date}".format(id=id, date=date)
+def get_port_from_url(address):
+  """
+  Return port from URL. If address is UnknownConfiguration,
+  UnknownConfiguration will be returned. If no port was found, Fail will be
+  raised.
+  """
+  if not is_empty(address):
+    port = re.findall(":([\d]{1,5})(?=/|$)", address)
+    if port:
+      return port[0]
+    raise Fail("No port in URL:{0}".format(address))
+  else:
+    return address

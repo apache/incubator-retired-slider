@@ -57,7 +57,7 @@ class TestPythonExecutor(TestCase):
     executor.runShellKillPgrp = runShellKillPgrp_method
     subproc_mock.returncode = None
     thread = Thread(target =  executor.run_file, args = ("fake_puppetFile",
-      ["arg1", "arg2"], tmpoutfile, tmperrfile, PYTHON_TIMEOUT_SECONDS, tmpstrucout))
+      ["arg1", "arg2"], tmpoutfile, tmperrfile, PYTHON_TIMEOUT_SECONDS, tmpstrucout,"INFO"))
     thread.start()
     time.sleep(0.1)
     subproc_mock.finished_event.wait()
@@ -87,7 +87,7 @@ class TestPythonExecutor(TestCase):
     subproc_mock.returncode = 0
     thread = Thread(target =  executor.run_file, args = ("fake_puppetFile", ["arg1", "arg2"],
                                                       tmpoutfile, tmperrfile,
-                                                      PYTHON_TIMEOUT_SECONDS, tmpstrucout))
+                                                      PYTHON_TIMEOUT_SECONDS, tmpstrucout, "INFO"))
     thread.start()
     time.sleep(0.1)
     subproc_mock.should_finish_event.set()
@@ -103,7 +103,7 @@ class TestPythonExecutor(TestCase):
     executor = PythonExecutor("/tmp", AgentConfig("", ""))
     environment_vars = [("PYTHONPATH", "a:b")]
     os_env_copy_mock.return_value = actual_vars
-    executor.run_file("script.pynot", ["a","b"], "", "", 10, "", True, environment_vars)
+    executor.run_file("script.pynot", ["a","b"], "", "", 10, "", "INFO", True, environment_vars)
     self.assertEquals(2, len(os_env_copy_mock.return_value))
 
   def test_execution_results(self):
@@ -124,9 +124,9 @@ class TestPythonExecutor(TestCase):
     executor.runShellKillPgrp = runShellKillPgrp_method
     subproc_mock.returncode = 0
     subproc_mock.should_finish_event.set()
-    result = executor.run_file("file", ["arg1", "arg2"], tmpoutfile, tmperrfile, PYTHON_TIMEOUT_SECONDS, tmpstroutfile)
+    result = executor.run_file("file", ["arg1", "arg2"], tmpoutfile, tmperrfile, PYTHON_TIMEOUT_SECONDS, tmpstroutfile, "INFO")
     self.assertEquals(result, {'exitcode': 0, 'stderr': 'Dummy err', 'stdout': 'Dummy output',
-                               'structuredOut': {'msg': 'Unable to read structured output from ' + tmpstroutfile}})
+                               'structuredOut': {}})
 
 
   def test_is_successfull(self):
