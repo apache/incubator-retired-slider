@@ -50,6 +50,16 @@ else:
 log_dir = config['configurations']['global']['app_log_dir']
 daemon_script = format("{accumulo_root}/bin/accumulo")
 
+# accumulo monitor certificate properties
+monitor_security_enabled = config['configurations']['global']['monitor_protocol'] == "https"
+keystore_path = format("{accumulo_root}/conf/keystore.jks")
+truststore_path = format("{accumulo_root}/conf/cacerts.jks")
+cert_path = format("{accumulo_root}/conf/server.cer")
+keystore_property = "monitor.ssl.keyStore"
+keystore_password_property = "monitor.ssl.keyStorePassword"
+truststore_property = "monitor.ssl.trustStore"
+truststore_password_property = "monitor.ssl.trustStorePassword"
+
 # accumulo initialization parameters
 accumulo_instance_name = config['configurations']['global']['accumulo_instance_name']
 accumulo_root_password = config['configurations']['global']['accumulo_root_password']

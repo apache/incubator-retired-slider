@@ -36,11 +36,11 @@
           <exports>
             <export>
               <name>org.apache.slider.monitor</name>
-              <value>http://${ACCUMULO_MONITOR_HOST}:${site.accumulo-site.monitor.port.client}</value>
+              <value>${site.global.monitor_protocol}://${ACCUMULO_MONITOR_HOST}:${site.accumulo-site.monitor.port.client}</value>
             </export>
             <export>
               <name>org.apache.slider.jmx</name>
-              <value>http://${ACCUMULO_MONITOR_HOST}:${site.accumulo-site.monitor.port.client}/xml</value>
+              <value>${site.global.monitor_protocol}://${ACCUMULO_MONITOR_HOST}:${site.accumulo-site.monitor.port.client}/xml</value>
             </export>
           </exports>
         </exportGroup>

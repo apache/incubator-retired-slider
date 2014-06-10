@@ -20,8 +20,8 @@ limitations under the License.
 
 from resource_management import *
 
-def setup_conf_dir(name=None # 'master' or 'tserver' or 'monitor' or 'gc' or 'tracer' or 'client'
-              ):
+def setup_conf_dir(name=None, # 'master' or 'tserver' or 'monitor' or 'gc' or 'tracer' or 'client'
+              extra_params=None):
   import params
 
   # create the conf directory
@@ -46,10 +46,18 @@ def setup_conf_dir(name=None # 'master' or 'tserver' or 'monitor' or 'gc' or 'tr
       recursive = True
     )
 
+    configs = {}
+    if extra_params == None:
+      configs = params.config['configurations']['accumulo-site']
+    else:
+      configs.update(params.config['configurations']['accumulo-site'])
+      for k in extra_params:
+        configs[k] = extra_params[k]
+
     # create a site file for server processes
     XmlConfig( "accumulo-site.xml",
             conf_dir = params.conf_dir,
-            configurations = params.config['configurations']['accumulo-site'],
+            configurations = configs,
             owner = params.accumulo_user,
             group = params.user_group,
             mode=0600
