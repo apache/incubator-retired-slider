@@ -56,4 +56,6 @@ public class RestPaths {
       = "[a-z0-9][a-z0-9_.\\+-]*";
 
   public static final String SLIDER_CONFIGSET = "slider";
+
+  public static final String SLIDER_CLASSPATH = "classpath";
 }

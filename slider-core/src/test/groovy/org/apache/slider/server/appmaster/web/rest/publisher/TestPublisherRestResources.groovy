@@ -130,6 +130,18 @@ class TestPublisherRestResources extends AgentTestBase {
     response = webResource.type(MediaType.TEXT_PLAIN).get(ClientResponse.class);
     assert 404 == response.status
 
+    String classpathUri = publisher_url +"/"+ RestPaths.SLIDER_CLASSPATH
+    webResource = client.resource(classpathUri)
+    Set uris = webResource.type(MediaType.APPLICATION_JSON)
+            .get(Set.class)
+    assert uris.size() > 0
+    log.info("Classpath URIs: {}", uris)
+    // check for some expected classpath elements
+    assert uris.any {it =~ /curator-x-discovery/}
+    assert uris.any {it =~ /hadoop-yarn-api/}
+    assert uris.any {it =~ /hadoop-hdfs/}
+    // and a negative test...
+    assert !uris.any {it =~ /foo-bar/}
   }
 
 }
