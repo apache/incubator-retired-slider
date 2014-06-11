@@ -88,6 +88,7 @@ class CustomServiceOrchestrator():
       py_file_list = [script_tuple]
       # filter None values
       filtered_py_file_list = [i for i in py_file_list if i]
+      logger_level = logging.getLevelName(logger.level)
 
       # Executing hooks and script
       ret = None
@@ -101,6 +102,7 @@ class CustomServiceOrchestrator():
         ret = self.python_executor.run_file(py_file, script_params,
                                             tmpoutfile, tmperrfile, timeout,
                                             tmpstrucoutfile,
+                                            logger_level,
                                             override_output_files,
                                             environment_vars)
         # Next run_file() invocations should always append to current output

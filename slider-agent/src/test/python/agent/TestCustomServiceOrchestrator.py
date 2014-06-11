@@ -152,7 +152,7 @@ class TestCustomServiceOrchestrator(TestCase):
     }
     ret = orchestrator.runCommand(command, "out.txt", "err.txt")
     ## Check that override_output_files was true only during first call
-    self.assertEquals(run_file_mock.call_args_list[0][0][6], True)
+    self.assertEquals(run_file_mock.call_args_list[0][0][7], True)
 
     run_file_mock.reset_mock()
     # Case when we force another command

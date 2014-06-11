@@ -304,6 +304,7 @@ class TestActionQueue(TestCase):
     def side_effect(py_file, script_params,
                     tmpoutfile, tmperrfile, timeout,
                     tmpstrucoutfile,
+                    loglevel,
                     override_output_files,
                     environment_vars):
       unfreeze_flag.wait()
