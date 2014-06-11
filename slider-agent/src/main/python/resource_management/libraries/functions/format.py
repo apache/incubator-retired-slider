@@ -22,12 +22,12 @@ Slider Agent
 
 __all__ = ["format"]
 import sys
-import pipes
 from string import Formatter
 from resource_management.core.exceptions import Fail
 from resource_management.core.utils import checked_unite
 from resource_management.core.environment import Environment
 from resource_management.core.logger import Logger
+from resource_management.core.shell import quote_bash_args
 
 
 class ConfigurationFormatter(Formatter):
@@ -66,7 +66,7 @@ class ConfigurationFormatter(Formatter):
   
   def _convert_field(self, value, conversion, is_protected):
     if conversion == 'e':
-      return pipes.quote(str(value))
+      return quote_bash_args(str(value))
     elif conversion == 'h':
       return "[PROTECTED]" if is_protected else value
     elif conversion == 'p':

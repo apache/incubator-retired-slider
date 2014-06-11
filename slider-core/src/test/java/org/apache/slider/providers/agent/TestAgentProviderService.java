@@ -761,6 +761,7 @@ public class TestAgentProviderService {
     treeOps.getGlobalOptions().put(AgentKeys.JAVA_HOME, "java_home");
     treeOps.set(OptionKeys.APPLICATION_NAME, "HBASE");
     treeOps.set("site.fs.defaultFS", "hdfs://HOST1:8020/");
+    treeOps.set("internal.data.dir.path", "hdfs://HOST1:8020/database");
     treeOps.set(OptionKeys.ZOOKEEPER_HOSTS, "HOST1");
     treeOps.set("config_types", "hbase-site");
     treeOps.getGlobalOptions().put("site.hbase-site.a.port", "${HBASE_MASTER.ALLOCATED_PORT}");

@@ -462,7 +462,7 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   private void processFolderPaths(Map<String, String> folders, String containerId, String hostFqdn) {
-    for(String key : folders.keySet()) {
+    for (String key : folders.keySet()) {
       workFolders.put(String.format("%s-%s-%s", hostFqdn, containerId, key), folders.get(key));
     }
 
@@ -657,7 +657,7 @@ public class AgentProviderService extends AbstractProviderService implements
     return cmdParams;
   }
 
-  private void setInstallCommandConfigurations(ExecutionCommand cmd) {
+  private void setInstallCommandConfigurations(ExecutionCommand cmd) throws SliderException {
     ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
     Map<String, Map<String, String>> configurations = buildCommandConfigurations(appConf);
     cmd.setConfigurations(configurations);
@@ -751,7 +751,8 @@ public class AgentProviderService extends AbstractProviderService implements
     return this.allocatedPorts;
   }
 
-  private Map<String, Map<String, String>> buildCommandConfigurations(ConfTreeOperations appConf) {
+  private Map<String, Map<String, String>> buildCommandConfigurations(ConfTreeOperations appConf)
+      throws SliderException {
 
     Map<String, Map<String, String>> configurations = new TreeMap<>();
     Map<String, String> tokens = getStandardTokenMap(appConf);
@@ -767,12 +768,16 @@ public class AgentProviderService extends AbstractProviderService implements
     return configurations;
   }
 
-  private Map<String, String> getStandardTokenMap(ConfTreeOperations appConf) {
+  private Map<String, String> getStandardTokenMap(ConfTreeOperations appConf) throws SliderException {
     Map<String, String> tokens = new HashMap<>();
     String nnuri = appConf.get("site.fs.defaultFS");
     tokens.put("${NN_URI}", nnuri);
     tokens.put("${NN_HOST}", URI.create(nnuri).getHost());
     tokens.put("${ZK_HOST}", appConf.get(OptionKeys.ZOOKEEPER_HOSTS));
+    tokens.put("${DEFAULT_DATA_DIR}", getAmState()
+        .getInternalsSnapshot()
+        .getGlobalOptions()
+        .getMandatoryOption(OptionKeys.INTERNAL_DATA_DIR_PATH));
     return tokens;
   }
 
@@ -855,7 +860,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
   @Override
   public void applyInitialRegistryDefinitions(URL amWebAPI,
-      ServiceInstanceData instanceData) throws IOException {
+                                              ServiceInstanceData instanceData) throws IOException {
     super.applyInitialRegistryDefinitions(amWebAPI, instanceData);
 
     try {
@@ -863,7 +868,7 @@ public class AgentProviderService extends AbstractProviderService implements
           CustomRegistryConstants.AGENT_REST_API,
           new RegisteredEndpoint(
               new URL(amWebAPI, SLIDER_PATH_AGENTS),
-              "Agent REST API") );
+              "Agent REST API"));
     } catch (URISyntaxException e) {
       throw new IOException(e);
     }
