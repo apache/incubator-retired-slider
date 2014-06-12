@@ -198,7 +198,6 @@ public class ConfigHelper {
     } catch (ParserConfigurationException | SAXException e) {
       throw new IOException(e);
     }
-
   }
   
   /**

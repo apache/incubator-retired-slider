@@ -162,7 +162,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public static final String SERVICE_CLASSNAME_SHORT =
       "SliderAppMaster";
   public static final String SERVICE_CLASSNAME =
-      "org.apache.slider.server.appmaster."+ SERVICE_CLASSNAME_SHORT;
+      "org.apache.slider.server.appmaster." + SERVICE_CLASSNAME_SHORT;
 
 
   /**
@@ -179,12 +179,12 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
   /** Handle to communicate with the Resource Manager*/
   private AMRMClientAsync asyncRMClient;
-  
+
   private RMOperationHandler rmOperationHandler;
 
   /** Handle to communicate with the Node Manager*/
   public NMClientAsync nmClientAsync;
-  
+
   YarnConfiguration conf;
   /**
    * token blob
@@ -510,7 +510,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       }
     }
     allTokens = ByteBuffer.wrap(dob.getData(), 0, dob.getLength());
-    
+
     // set up secret manager
     secretManager = new ClientToAMTokenSecretManager(appAttemptID, null);
 
@@ -1480,7 +1480,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public AggregateConf getInstanceDefinition() {
     return appState.getInstanceDefinition();
   }
-  
+
   /**
    * This is the status, the live model
    */
