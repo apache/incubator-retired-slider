@@ -249,7 +249,7 @@
     -->
     <hadoop.version>2.4.0</hadoop.version>
 
-    <hbase.version>0.98.2-hadoop2</hbase.version>
+    <hbase.version>0.98.3-hadoop2</hbase.version>
     <accumulo.version>1.5.1</accumulo.version>
     
     <!--
@@ -1325,7 +1325,7 @@
       <id>local</id>
       <properties>
         <hadoop.version>2.4.1-SNAPSHOT</hadoop.version>
-        <hbase.version>0.98.2-SNAPSHOT</hbase.version>
+        <hbase.version>0.98.3-SNAPSHOT</hbase.version>
         <accumulo.version>1.6.0-SNAPSHOT</accumulo.version>
       </properties>
     </profile>
