@@ -30,7 +30,6 @@ import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.common.tools.SliderUtils
-import org.apache.slider.common.params.Arguments
 import org.apache.slider.client.SliderClient
 import org.apache.slider.test.SliderTestUtils
 import org.junit.Before
@@ -164,7 +163,7 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @return
    */
   public static SliderShell slider(int exitCode, Collection<String> commands) {
-    return SliderShell.run(commands, exitCode)
+    return SliderShell.run(exitCode, commands)
   }
 
   /**

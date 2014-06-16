@@ -18,14 +18,15 @@
 
 package org.apache.slider.funtest.framework
 
-import groovy.util.logging.Slf4j
 import org.apache.bigtop.itest.shell.Shell
 import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.common.tools.SliderUtils
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
-@Slf4j
 
 class SliderShell extends Shell {
+  private static final Logger log = LoggerFactory.getLogger(SliderShell.class);
 
 
   public static final String BASH = '/bin/bash -s'
@@ -86,10 +87,14 @@ class SliderShell extends Shell {
    int signCorrectReturnCode() {
      ret = signCorrect(ret)
    }
-  
-  int execute(int expectedExitCode) {
+
+  /**
+   * Execute expecting a specific exit code
+   * @param expectedExitCode the expected exit code
+   */
+  void execute(int expectedExitCode) {
     execute()
-    return assertExitCode(expectedExitCode)
+    assertExitCode(expectedExitCode)
   }
   
   /**
@@ -98,14 +103,19 @@ class SliderShell extends Shell {
    * @param commands
    * @return the shell
    */
-  public static SliderShell run(Collection<String> commands, int exitCode) {
+  public static SliderShell run(int exitCode, Collection<String> commands) {
     SliderShell shell = new SliderShell(commands)
     shell.execute(exitCode);
     return shell
   }
 
-  public static int signCorrect(int u) {
-    return (u << 24) >> 24;
+  /**
+   * Sign-correct a process exit code
+   * @param exitCode the incoming exit code
+   * @return the sign-corrected version
+   */
+  public static int signCorrect(int exitCode) {
+    return (exitCode << 24) >> 24;
   }
   
   @Override
@@ -113,9 +123,13 @@ class SliderShell extends Shell {
     return ret + " =>" + command
   }
 
-  public void dump() {
+  /**
+   * Dump the command, return code and outputs to the log.
+   * stdout is logged at info; stderr at error.
+   */
+  public void dumpOutput() {
     log.error(toString())
-    log.error("return code = $ret")
+    log.error("return code = ${signCorrectReturnCode()}")
     if (out.size() != 0) {
       log.info("\n<stdout>\n${out.join('\n')}\n</stdout>");
     }
@@ -123,34 +137,20 @@ class SliderShell extends Shell {
       log.error("\n<stderr>\n${err.join('\n')}\n</stderr>");
     }
   }
-  /**
-   * Assert a shell exited with a given error code
-   * if not the output is printed and an assertion is raised
-   * @param shell shell
-   * @param errorCode expected error code
-   */
-  public int assertExitCode(int errorCode) {
-    return assertExitCode(this, errorCode)
-  }
   
   /**
-   * Assert a shell exited with a given error code
+   * Assert the shell exited with a given error code
    * if not the output is printed and an assertion is raised
-   * @param shell shell
    * @param errorCode expected error code
-   * @throws SliderException if the exit code is wrong (the value in the exception
-   * is the exit code received)
    */
-  public static int assertExitCode(SliderShell shell, int errorCode) throws
-      SliderException {
-    assert shell != null
-    if (shell.ret != errorCode) {
-      shell.dump()
-      throw new SliderException(shell.ret,
-          "Expected exit code of command %s : %d - actual=%d",
-          shell.command,
-          errorCode, shell.ret)
+  public void assertExitCode(int errorCode) {
+    if (this.ret != errorCode) {
+      dumpOutput()
+      throw new SliderException(ret,
+          "Expected exit code of command ${command} : ${errorCode} - actual=${ret}")
+      
     }
-    return errorCode
   }
-}
+  
+
+  }
