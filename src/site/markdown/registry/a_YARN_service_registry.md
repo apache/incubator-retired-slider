@@ -224,4 +224,3 @@ This isn't a registry service directly, though LDAP queries do make enumeration 
 
 If service information were to be published via LDAP, then it should allow IT-managed LDAP services to both host this information, and publish configuration data. This would be relevant for classic Hadoop applications if we were to move the Configuration class to support back-end configuration sources beyond XML files on the classpath.
 
-# Proposal
