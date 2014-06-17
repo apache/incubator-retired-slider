@@ -267,4 +267,22 @@ public class ForkedProcessService extends AbstractWorkflowExecutorService implem
            : new LinkedList<String>();
   }
 
+  /**
+   * Get the recent output from the process, or [] if not defined
+   * @param duration the duration, in ms, which we wait for recent output to become non-empty
+   * @return a possibly empty list
+   */
+  public List<String> getRecentOutput(int duration) {
+    if (process == null) return new LinkedList<String>();
+    long start = System.currentTimeMillis();
+    while (process.isRecentOutputEmpty() && System.currentTimeMillis() - start <= duration) {
+      try {
+        Thread.sleep(20);
+      } catch (InterruptedException ie) {
+        Thread.currentThread().interrupt();
+        break;
+      }
+    }
+    return process.getRecentOutput();
+  }
 }
