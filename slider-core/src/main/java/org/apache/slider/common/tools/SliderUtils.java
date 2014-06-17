@@ -20,6 +20,7 @@ package org.apache.slider.common.tools;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
+import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -1430,8 +1431,8 @@ public final class SliderUtils {
   }
 
   public static InputStream getApplicationResourceInputStream(FileSystem fs,
-                                                       Path appPath,
-                                                       String entry)
+                                                              Path appPath,
+                                                              String entry)
       throws IOException {
     InputStream is = null;
     FSDataInputStream appStream = fs.open(appPath);
@@ -1441,12 +1442,26 @@ public final class SliderUtils {
     while (!done && (zipEntry = zis.getNextZipEntry()) != null) {
       if (entry.equals(zipEntry.getName())) {
         int size = (int) zipEntry.getSize();
-        byte[] content = new byte[size];
-        int offset = 0;
-        while (offset < size) {
-          offset += zis.read(content, offset, size - offset);
+        if (size != -1) {
+          log.info("Reading {} of size {}", zipEntry.getName(), zipEntry.getSize());
+          byte[] content = new byte[size];
+          int offset = 0;
+          while (offset < size) {
+            offset += zis.read(content, offset, size - offset);
+          }
+          is = new ByteArrayInputStream(content);
+        } else {
+          log.info("Size unknown. Reading {}", zipEntry.getName());
+          ByteArrayOutputStream baos = new ByteArrayOutputStream();
+          while (true) {
+            int byteRead = zis.read();
+            if (byteRead == -1) {
+              break;
+            }
+            baos.write(byteRead);
+          }
+          is = new ByteArrayInputStream(baos.toByteArray());
         }
-        is = new ByteArrayInputStream(content);
         done = true;
       }
     }

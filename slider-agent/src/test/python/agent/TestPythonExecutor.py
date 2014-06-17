@@ -145,7 +145,7 @@ class TestPythonExecutor(TestCase):
     executor = PythonExecutor("/tmp", AgentConfig("", ""))
     command = executor.python_command("script", ["script_param1"])
     self.assertEqual(4, len(command))
-    self.assertTrue("python" in command[0])
+    self.assertTrue("python" in command[0].lower(), "Looking for python in %s" % (command[0].lower()))
     self.assertEquals("-S", command[1])
     self.assertEquals("script", command[2])
     self.assertEquals("script_param1", command[3])
