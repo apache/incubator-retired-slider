@@ -339,6 +339,12 @@ public class LongLivedProcess implements Runnable {
     return new ArrayList<String>(recentLines);
   }
 
+  /*
+   * @return whether lines of recent output are empty
+   */
+  public synchronized boolean isRecentOutputEmpty() {
+    return recentLines.isEmpty();
+  }
 
   /**
    * add the recent line to the list of recent lines; deleting

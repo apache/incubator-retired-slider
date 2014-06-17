@@ -118,7 +118,7 @@ public class TestWorkflowForkedProcessService extends WorkflowServiceTestBase {
    * @return the last output
    */
   private List<String> getFinalOutput() {
-    return process.getRecentOutput();
+    return process.getRecentOutput(2000);
   }
 
   private ForkedProcessService initProcess(List<String> commands) throws
