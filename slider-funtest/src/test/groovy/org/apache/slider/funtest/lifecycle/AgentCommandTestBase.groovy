@@ -26,8 +26,13 @@ import org.apache.slider.common.params.SliderActions
 import org.apache.slider.funtest.framework.CommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
+import org.apache.tools.zip.ZipEntry
+import org.apache.tools.zip.ZipOutputStream
+import org.junit.Assert
 import org.junit.Before
 import org.junit.BeforeClass
+import org.junit.rules.TemporaryFolder
+import org.junit.Rule
 
 
 @Slf4j
@@ -38,10 +43,9 @@ class AgentCommandTestBase extends CommandTestBase
   
   protected static String APP_RESOURCE = "../slider-core/src/test/app_packages/test_command_log/resources.json"
   protected static String APP_TEMPLATE = "../slider-core/src/test/app_packages/test_command_log/appConfig.json"
-  protected static String APP_PKG = "../slider-core/src/test/app_packages/test_command_log/cmd_log_app_pkg.zip"
+  protected static String APP_PKG_DIR = "../slider-core/src/test/app_packages/test_command_log/"
   protected static String AGENT_CONF = "../slider-agent/conf/agent.ini"
   protected static final File LOCAL_SLIDER_AGENT_TARGZ
-  protected static final File LOCAL_APP_PKZ
   protected static final File LOCAL_AGENT_CONF
 
   protected static Path agentTarballPath;
@@ -53,9 +57,11 @@ class AgentCommandTestBase extends CommandTestBase
     LOCAL_SLIDER_AGENT_TARGZ = new File(
         SLIDER_BIN_DIRECTORY,
         AGENT_SLIDER_GZ).canonicalFile
-    LOCAL_APP_PKZ = new File(APP_PKG).canonicalFile
     LOCAL_AGENT_CONF = new File(AGENT_CONF).canonicalFile
   }
+
+  @Rule
+  public TemporaryFolder folder = new TemporaryFolder();
 
   @BeforeClass
   public static void setupAgent() {
@@ -67,17 +73,31 @@ class AgentCommandTestBase extends CommandTestBase
     Path localTarball = new Path(LOCAL_SLIDER_AGENT_TARGZ.toURI());
     clusterFS.copyFromLocalFile(false, true, localTarball, agentTarballPath)
 
-    // Upload the app pkg
-    assume(LOCAL_APP_PKZ.exists(), "App pkg not found at $LOCAL_APP_PKZ")
-    appPkgPath = new Path(clusterFS.homeDirectory, "/slider/cmd_log_app_pkg.zip")
-    Path localAppPkg = new Path(LOCAL_APP_PKZ.toURI());
-    clusterFS.copyFromLocalFile(false, true, localAppPkg, appPkgPath)
-
     // Upload the agent.ini
     assume(LOCAL_AGENT_CONF.exists(), "Agent config not found at $LOCAL_AGENT_CONF")
     agtIniPath = new Path(clusterFS.homeDirectory, "/slider/agent/conf/agent.ini")
     Path localAgtIni = new Path(LOCAL_AGENT_CONF.toURI());
     clusterFS.copyFromLocalFile(false, true, localAgtIni, agtIniPath)
+  }
+
+
+  @Before
+  public void specificSetupForTest() {
+    appPkgPath = new Path(clusterFS.homeDirectory, "/slider/cmd_log_app_pkg.zip")
+    if (!clusterFS.exists(appPkgPath)) {
+      clusterFS.delete(appPkgPath, false)
+    }
+
+    def pkgPath = folder.newFolder("testpkg")
+    File zipFileName = new File(pkgPath, "cmd_log_app_pkg.zip").canonicalFile
+    assume(new File(APP_PKG_DIR).exists(), "App pkg dir not found at $APP_PKG_DIR")
+
+    zipDir(zipFileName.canonicalPath, APP_PKG_DIR)
+
+    // Verify and upload the app pkg
+    assume(zipFileName.exists(), "App pkg not found at $zipFileName")
+    Path localAppPkg = new Path(zipFileName.toURI());
+    clusterFS.copyFromLocalFile(false, true, localAppPkg, appPkgPath)
   }
 
   public static void assumeAgentTestsEnabled() {
@@ -130,5 +150,30 @@ class AgentCommandTestBase extends CommandTestBase
     }
 
     return exists
+  }
+
+  public static void addDir(File dirObj, ZipOutputStream zipFile, String prefix) {
+    dirObj.eachFile() { file ->
+      if (file.directory) {
+        addDir(file, zipFile, prefix + file.name + File.separator)
+      } else {
+        log.info("Adding to zip - " + prefix + file.getName())
+        zipFile.putNextEntry(new ZipEntry(prefix + file.getName()))
+        file.eachByte(1024) { buffer, len -> zipFile.write(buffer, 0, len) }
+        zipFile.closeEntry()
+      }
+    }
+  }
+
+  public static void zipDir(String zipFile, String dir) {
+    File dirObj = new File(dir);
+    ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFile));
+    log.info("Creating : " + zipFile);
+    try {
+      addDir(dirObj, out, "");
+    }
+    finally {
+      out.close();
+    }
   }
 }
