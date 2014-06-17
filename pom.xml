@@ -1331,10 +1331,25 @@
     </profile>
 
     <profile>
-      <!-- hadoop 2.4 builds of everything -->
+      <!-- hadoop branch-2 builds  -->
+      <id>hadoop-2.4.1</id>
+      <properties>
+        <hadoop.version>2.4.1</hadoop.version>
+      </properties>
+    </profile>
+    <profile>
+      <!-- hadoop branch-2 builds  -->
       <id>branch-2</id>
       <properties>
-        <hadoop.version>2.4.0</hadoop.version>
+        <hadoop.version>2.5.0-SNAPSHOT</hadoop.version>
+      </properties>
+    </profile>
+    
+    <profile>
+      <!-- hadoop branch-2 builds  -->
+      <id>hadoop-trunk</id>
+      <properties>
+        <hadoop.version>3.0.0-SNAPSHOT</hadoop.version>
       </properties>
     </profile>
     
