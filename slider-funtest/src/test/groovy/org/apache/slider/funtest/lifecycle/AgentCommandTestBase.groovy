@@ -29,10 +29,13 @@ import org.apache.slider.funtest.framework.SliderShell
 import org.apache.tools.zip.ZipEntry
 import org.apache.tools.zip.ZipOutputStream
 import org.junit.Assert
+import org.junit.Assume
 import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.rules.TemporaryFolder
 import org.junit.Rule
+
+import org.apache.hadoop.security.AccessControlException
 
 
 @Slf4j
@@ -67,23 +70,29 @@ class AgentCommandTestBase extends CommandTestBase
   public static void setupAgent() {
     assumeAgentTestsEnabled()
 
-    // Upload the agent tarball
-    assume(LOCAL_SLIDER_AGENT_TARGZ.exists(), "Slider agent not found at $LOCAL_SLIDER_AGENT_TARGZ")
-    agentTarballPath = new Path(clusterFS.homeDirectory, "/slider/agent/slider-agent.tar.gz")
-    Path localTarball = new Path(LOCAL_SLIDER_AGENT_TARGZ.toURI());
-    clusterFS.copyFromLocalFile(false, true, localTarball, agentTarballPath)
+    try {
+      // Upload the agent tarball
+      assume(LOCAL_SLIDER_AGENT_TARGZ.exists(), "Slider agent not found at $LOCAL_SLIDER_AGENT_TARGZ")
+      agentTarballPath = new Path(clusterFS.homeDirectory, "slider-agent.tar.gz")
+      Path localTarball = new Path(LOCAL_SLIDER_AGENT_TARGZ.toURI());
+      clusterFS.copyFromLocalFile(false, true, localTarball, agentTarballPath)
 
-    // Upload the agent.ini
-    assume(LOCAL_AGENT_CONF.exists(), "Agent config not found at $LOCAL_AGENT_CONF")
-    agtIniPath = new Path(clusterFS.homeDirectory, "/slider/agent/conf/agent.ini")
-    Path localAgtIni = new Path(LOCAL_AGENT_CONF.toURI());
-    clusterFS.copyFromLocalFile(false, true, localAgtIni, agtIniPath)
+      // Upload the agent.ini
+      assume(LOCAL_AGENT_CONF.exists(), "Agent config not found at $LOCAL_AGENT_CONF")
+      agtIniPath = new Path(clusterFS.homeDirectory, "agent.ini")
+      Path localAgtIni = new Path(LOCAL_AGENT_CONF.toURI());
+      clusterFS.copyFromLocalFile(false, true, localAgtIni, agtIniPath)
+    } catch (AccessControlException ace) {
+      log.info "No write access to test user home directory. " +
+               "Ensure home directory exists and has correct permissions." + ace.getMessage()
+      Assume.assumeTrue("Ensure home directory exists and has correct permissions for test user.", false)
+    }
   }
 
 
   @Before
-  public void specificSetupForTest() {
-    appPkgPath = new Path(clusterFS.homeDirectory, "/slider/cmd_log_app_pkg.zip")
+  public void setupApplicationPackage() {
+    appPkgPath = new Path(clusterFS.homeDirectory, "cmd_log_app_pkg.zip")
     if (!clusterFS.exists(appPkgPath)) {
       clusterFS.delete(appPkgPath, false)
     }
