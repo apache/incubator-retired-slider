@@ -300,7 +300,7 @@ public abstract class AbstractProviderService
     for (Map.Entry<String, RegisteredEndpoint> endpoint : endpoints.entrySet()) {
       RegisteredEndpoint val = endpoint.getValue();
       if (val.type.equals(RegisteredEndpoint.TYPE_URL)) {
-          details.put(val.description, val.value);
+          details.put(val.description, val.address);
       }
     }
   }

@@ -39,6 +39,8 @@ public class ServiceInstanceData implements Serializable {
 
   public String serviceType;
   public String id;
+  public String description;
+  public String yarnApplicationId;
   public long registrationTimeUTC;
 
   /**
