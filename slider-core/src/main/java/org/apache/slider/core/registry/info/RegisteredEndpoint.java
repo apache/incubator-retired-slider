@@ -19,7 +19,6 @@
 package org.apache.slider.core.registry.info;
 
 import org.apache.slider.core.exceptions.SliderException;
-import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 
