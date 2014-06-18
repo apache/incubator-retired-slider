@@ -38,11 +38,7 @@ public class TestAppsThroughAgent extends AgentCommandTestBase
 
   @After
   public void destroyCluster() {
-    if (DISABLE_CLEAN_UP == null || !DISABLE_CLEAN_UP.equals("true")) {
-      cleanup()
-    } else {
-      log.info "Disabling cleanup for debugging purposes."
-    }
+    cleanup()
   }
 
   @Test
@@ -64,21 +60,7 @@ public class TestAppsThroughAgent extends AgentCommandTestBase
 
       logShell(shell)
 
-      int attemptCount = 0
-      while (attemptCount < 10) {
-        shell = slider(EXIT_SUCCESS, [
-            ACTION_LIST,
-            APPLICATION_NAME])
-
-        if (isAppRunning("RUNNING", shell)) {
-          break
-        }
-
-        attemptCount++
-        assert attemptCount != 10, 'Application did not start, aborting test.'
-
-        sleep(1000 * 5)
-      }
+      ensureApplicationIsUp(APPLICATION_NAME)
 
       //flex
       slider(EXIT_SUCCESS,

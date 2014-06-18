@@ -51,11 +51,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   @After
   public void destroyCluster() {
-    if (DISABLE_CLEAN_UP == null || !DISABLE_CLEAN_UP.equals("true")) {
-      teardown(CLUSTER)
-    } else {
-      log.info "Disabling cleanup for debugging purposes."
-    }
+    teardown(CLUSTER)
   }
 
   @Test
@@ -76,6 +72,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
         ])
 
     logShell(shell)
+
+    ensureApplicationIsUp(CLUSTER)
 
     //at this point the cluster should exist.
     assertPathExists(clusterFS, "Cluster parent directory does not exist", clusterpath.parent)

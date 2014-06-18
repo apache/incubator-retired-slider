@@ -161,6 +161,25 @@ class AgentCommandTestBase extends CommandTestBase
     return exists
   }
 
+  protected static void ensureApplicationIsUp(String clusterName, int maxAttemptCount = 15) {
+    SliderShell shell
+    int attemptCount = 0
+    while (attemptCount < maxAttemptCount) {
+      shell = slider(EXIT_SUCCESS, [
+          ACTION_LIST,
+          clusterName])
+
+      if (isAppRunning("RUNNING", shell)) {
+        break
+      }
+
+      attemptCount++
+      assert attemptCount != maxAttemptCount, 'Application did not start, aborting test.'
+
+      sleep(1000 * 3)
+    }
+  }
+
   public static void addDir(File dirObj, ZipOutputStream zipFile, String prefix) {
     dirObj.eachFile() { file ->
       if (file.directory) {
