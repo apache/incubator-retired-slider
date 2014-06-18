@@ -25,6 +25,7 @@ import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
+import org.junit.After
 import org.junit.Test
 
 @CompileStatic
@@ -35,10 +36,13 @@ public class TestAppsThroughAgent extends AgentCommandTestBase
   private static String COMMAND_LOGGER = "COMMAND_LOGGER"
   private static String APPLICATION_NAME = "agenttst"
 
-  @Test
-  public void testUsage() throws Throwable {
-    SliderShell shell = slider(EXIT_SUCCESS, [ACTION_USAGE])
-    assertSuccess(shell)
+  @After
+  public void destroyCluster() {
+    if (DISABLE_CLEAN_UP == null || !DISABLE_CLEAN_UP.equals("true")) {
+      cleanup()
+    } else {
+      log.info "Disabling cleanup for debugging purposes."
+    }
   }
 
   @Test
@@ -52,11 +56,11 @@ public class TestAppsThroughAgent extends AgentCommandTestBase
     try {
       SliderShell shell = slider(EXIT_SUCCESS,
           [
-          ACTION_CREATE, APPLICATION_NAME,
-          ARG_IMAGE, agentTarballPath.toString(),
-          ARG_TEMPLATE, APP_TEMPLATE,
-          ARG_RESOURCES, APP_RESOURCE
-      ])
+              ACTION_CREATE, APPLICATION_NAME,
+              ARG_IMAGE, agentTarballPath.toString(),
+              ARG_TEMPLATE, APP_TEMPLATE,
+              ARG_RESOURCES, APP_RESOURCE
+          ])
 
       logShell(shell)
 
@@ -79,26 +83,26 @@ public class TestAppsThroughAgent extends AgentCommandTestBase
       //flex
       slider(EXIT_SUCCESS,
           [
-          ACTION_FLEX,
-          APPLICATION_NAME,
-          ARG_COMPONENT,
-          COMMAND_LOGGER,
-          "2"])
+              ACTION_FLEX,
+              APPLICATION_NAME,
+              ARG_COMPONENT,
+              COMMAND_LOGGER,
+              "2"])
 
       // sleep till the new instance starts
       sleep(1000 * 10)
 
       shell = slider(EXIT_SUCCESS,
           [
-          ACTION_STATUS,
-          APPLICATION_NAME])
+              ACTION_STATUS,
+              APPLICATION_NAME])
 
       assertComponentCount(COMMAND_LOGGER, 2, shell)
 
       shell = slider(EXIT_SUCCESS,
           [
-          ACTION_LIST,
-          APPLICATION_NAME])
+              ACTION_LIST,
+              APPLICATION_NAME])
 
       assert isAppRunning("RUNNING", shell), 'App is not running.'
 
@@ -111,19 +115,12 @@ public class TestAppsThroughAgent extends AgentCommandTestBase
 
   public void cleanup() throws Throwable {
     log.info "Cleaning app instance, if exists, by name " + APPLICATION_NAME
-    SliderShell shell = slider([
-        ACTION_FREEZE,
-        APPLICATION_NAME])
-
-    if (shell.ret != 0 && shell.ret != EXIT_UNKNOWN_INSTANCE) {
-      logShell(shell)
-      assert fail("Old cluster either should not exist or should get frozen.")
-    }
+    teardown(APPLICATION_NAME)
 
     // sleep till the instance is frozen
-    sleep(1000 * 5)
+    sleep(1000 * 3)
 
-    shell = slider([
+    SliderShell shell = slider([
         ACTION_DESTROY,
         APPLICATION_NAME])
 

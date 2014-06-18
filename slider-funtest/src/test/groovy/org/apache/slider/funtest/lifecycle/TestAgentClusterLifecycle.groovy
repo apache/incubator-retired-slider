@@ -28,6 +28,7 @@ import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
 import org.apache.slider.funtest.framework.FuntestProperties
+import org.apache.slider.funtest.framework.SliderShell
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -35,10 +36,12 @@ import org.junit.Test
 @CompileStatic
 @Slf4j
 public class TestAgentClusterLifecycle extends AgentCommandTestBase
-    implements FuntestProperties, Arguments, SliderExitCodes {
+implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
 
   static String CLUSTER = "test_agent_cluster_lifecycle"
+
+  static String APP_RESOURCE2 = "../slider-core/src/test/app_packages/test_command_log/resources_no_role.json"
 
 
   @Before
@@ -48,7 +51,11 @@ public class TestAgentClusterLifecycle extends AgentCommandTestBase
 
   @After
   public void destroyCluster() {
-    teardown(CLUSTER)
+    if (DISABLE_CLEAN_UP == null || !DISABLE_CLEAN_UP.equals("true")) {
+      teardown(CLUSTER)
+    } else {
+      log.info "Disabling cleanup for debugging purposes."
+    }
   }
 
   @Test
@@ -60,26 +67,25 @@ public class TestAgentClusterLifecycle extends AgentCommandTestBase
     def clusterpath = buildClusterPath(CLUSTER)
     assert !clusterFS.exists(clusterpath)
 
-/*
+    SliderShell shell = slider(EXIT_SUCCESS,
+        [
+            ACTION_CREATE, CLUSTER,
+            ARG_IMAGE, agentTarballPath.toString(),
+            ARG_TEMPLATE, APP_TEMPLATE,
+            ARG_RESOURCES, APP_RESOURCE2
+        ])
 
-    Map<String, Integer> roleMap = createHBaseCluster(CLUSTER,
-                                         0,
-                                         0,
-                                         [],
-                                         [:])
-    
-*/
+    logShell(shell)
 
     //at this point the cluster should exist.
-    assertPathExists(clusterFS,"Cluster parent directory does not exist", clusterpath.parent)
-    
-    assertPathExists(clusterFS,"Cluster directory does not exist", clusterpath)
+    assertPathExists(clusterFS, "Cluster parent directory does not exist", clusterpath.parent)
+
+    assertPathExists(clusterFS, "Cluster directory does not exist", clusterpath)
 
     // assert it exists on the command line
     exists(0, CLUSTER)
 
     //destroy will fail in use
-
     destroy(EXIT_APPLICATION_IN_USE, CLUSTER)
 
     //thaw will fail as cluster is in use
@@ -98,10 +104,10 @@ public class TestAgentClusterLifecycle extends AgentCommandTestBase
     File jsonStatus = File.createTempFile("tempfile", ".json")
     try {
       slider(0,
-           [
-               SliderActions.ACTION_STATUS, CLUSTER,
-               ARG_OUTPUT, jsonStatus.canonicalPath
-           ])
+          [
+              SliderActions.ACTION_STATUS, CLUSTER,
+              ARG_OUTPUT, jsonStatus.canonicalPath
+          ])
 
       assert jsonStatus.exists()
       ClusterDescription cd = ClusterDescription.fromFile(jsonStatus)
@@ -122,22 +128,23 @@ public class TestAgentClusterLifecycle extends AgentCommandTestBase
       //freeze
       freeze(CLUSTER, [
           ARG_WAIT, Integer.toString(FREEZE_WAIT_TIME),
-          ARG_MESSAGE, "freeze-in-test cluster lifecycle"
+          ARG_MESSAGE, "freeze-in-test-cluster-lifecycle"
       ])
+      describe " >>> Cluster is now frozen."
 
       //cluster exists if you don't want it to be live
       exists(0, CLUSTER, false)
-      // condition returns false if it is required to be live
+      //condition returns false if it is required to be live
       exists(EXIT_FALSE, CLUSTER, true)
 
-
-      // thaw then freeze the cluster
-
+      //thaw then freeze the cluster
       thaw(CLUSTER,
-           [
-               ARG_WAIT, Integer.toString(THAW_WAIT_TIME),
-           ])
+          [
+              ARG_WAIT, Integer.toString(THAW_WAIT_TIME),
+          ])
       exists(0, CLUSTER)
+      describe " >>> Cluster is now thawed."
+
       freeze(CLUSTER,
           [
               ARG_FORCE,
@@ -145,22 +152,27 @@ public class TestAgentClusterLifecycle extends AgentCommandTestBase
               ARG_MESSAGE, "forced-freeze-in-test"
           ])
 
+      describe " >>> Cluster is now frozen - 2nd time."
+
       //cluster is no longer live
       exists(0, CLUSTER, false)
-      
-      // condition returns false if it is required to be live
+
+      //condition returns false if it is required to be live
       exists(EXIT_FALSE, CLUSTER, true)
 
-      // thaw with a restart count set to enable restart
-
+      //thaw with a restart count set to enable restart
       describe "the kill/restart phase may fail if yarn.resourcemanager.am.max-attempts is too low"
       thaw(CLUSTER,
-           [
-               ARG_WAIT, Integer.toString(THAW_WAIT_TIME),
-               ARG_DEFINE, SliderXmlConfKeys.KEY_AM_RESTART_LIMIT + "=3"
-           ])
+          [
+              ARG_WAIT, Integer.toString(THAW_WAIT_TIME),
+              ARG_DEFINE, SliderXmlConfKeys.KEY_AM_RESTART_LIMIT + "=3"
+          ])
+
+      describe " >>> Cluster is now thawed - 2nd time."
 
       ClusterDescription status = killAmAndWaitForRestart(sliderClient, CLUSTER)
+
+      describe " >>> Kill AM and wait for restart."
 
       def restarted = status.getInfo(
           StatusKeys.INFO_CONTAINERS_AM_RESTART)
@@ -176,9 +188,5 @@ public class TestAgentClusterLifecycle extends AgentCommandTestBase
     } finally {
       jsonStatus.delete()
     }
-
-
   }
-
-
 }

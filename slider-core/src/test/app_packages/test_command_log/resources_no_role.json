@@ -1,0 +1,15 @@
+{
+    "schema": "http://example.org/specification/v2.0.0",
+    "metadata": {
+    },
+    "global": {
+    },
+    "components": {
+        "COMMAND_LOGGER": {
+            "yarn.role.priority": "1",
+            "yarn.component.instances": "0"
+        },
+        "slider-appmaster": {
+        }
+    }
+}
