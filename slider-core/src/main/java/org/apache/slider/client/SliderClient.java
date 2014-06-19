@@ -2429,18 +2429,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
   /**
-   * Get a node from the AM
-   * @param uuid uuid of node
-   * @return deserialized node
-   * @throws IOException IO problems
-   * @throws NoSuchNodeException if the node isn't found
-   */
-  @VisibleForTesting
-  public ClusterNode getNode(String uuid) throws IOException, YarnException {
-    return createClusterOperations().getNode(uuid);
-  }
-  
-  /**
    * Get the instance definition from the far end
    */
   @VisibleForTesting
