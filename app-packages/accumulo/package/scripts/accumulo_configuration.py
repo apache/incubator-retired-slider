@@ -67,6 +67,7 @@ def setup_conf_dir(name=None, # 'master' or 'tserver' or 'monitor' or 'gc' or 't
     client_configurations = {}
     client_configurations['instance.zookeeper.host'] = params.config['configurations']['accumulo-site']['instance.zookeeper.host']
     client_configurations['instance.dfs.dir'] = params.config['configurations']['accumulo-site']['instance.dfs.dir']
+    client_configurations['instance.volumes'] = params.config['configurations']['accumulo-site']['instance.volumes']
     client_configurations['general.classpaths'] = params.config['configurations']['accumulo-site']['general.classpaths']
     XmlConfig( "accumulo-site.xml",
             conf_dir = params.conf_dir,

@@ -51,18 +51,24 @@ The structure of an AppPackage is described at [AppPackage](application_package.
 In the enlistment, there are three example AppPackages:
 
 * `app-packages/hbase-v0_96`
-* `app-packages/accumulo-v1_5`
+* `app-packages/accumulo`
 * `app-packages/storm-v0_91`
 
 The above folders, with minor edits, can be packaged as *zip* files to get the corresponding AppPackages. The application tarball file, containing the binaries/artifacts of the application itself is a component within the AppPackage. They are:
 
 * For hbase - `app-packages/hbase-v0_96/package/files/hbase-0.96.1-hadoop2-bin.tar.gz.REPLACE`
-* For accumulo - `app-packages/accumulo-v1_5/package/files/accumulo-1.5.1-bin.tar.gz.REPLACE`
+* For accumulo - `app-packages/accumulo/package/files/` (no file present)
 * For storm - `app-packages/storm-v0_91/package/files/apache-storm-0.9.1.2.1.1.0-237.tar.gz.placeholder`
 
 **They are placehoder files**, mostly because the files themselves are too large as well as users are free to use their own version of the package. To create a Slider AppPackage - replace the file with an actual application tarball and then ensure that the metainfo.xml has the correct file name. After that create a zip file using standard zip commands and ensure that the package has the metainfo.xml file at the root folder.
 
-For example:
+For Accumulo, this is automated in maven by running
+
+    mvn clean package -DskipTests -Paccumulo-app-package
+
+Additional configuration parameters are described in `app-packages/accumulo/README.txt`.
+
+For other app packages, follow this example:
 
 * cd slider/app-packages/hbase-v0_96
 * zip -r hbase_v096.zip .

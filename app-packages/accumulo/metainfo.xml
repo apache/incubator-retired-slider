@@ -27,9 +27,9 @@
         Google's BigTable design and is built on top of Apache Hadoop,
         Zookeeper, and Thrift.
         Requirements:
-        1. Ensure parent dir for path (accumulo-site/instance.dfs.dir) is accessible to the App owner.
+        1. Ensure parent dir for path (accumulo-site/instance.volumes) is accessible to the App owner.
       </comment>
-      <version>1.5.1</version>
+      <version>${accumulo.version}</version>
       <exportGroups>
         <exportGroup>
           <name>QuickLinks</name>
@@ -134,7 +134,7 @@
           <packages>
             <package>
               <type>tarball</type>
-              <name>files/accumulo-1.5.1-bin.tar.gz</name>
+              <name>files/accumulo-${accumulo.version}-bin.tar.gz</name>
             </package>
           </packages>
         </osSpecific>

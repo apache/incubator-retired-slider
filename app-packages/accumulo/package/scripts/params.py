@@ -63,7 +63,11 @@ truststore_password_property = "monitor.ssl.trustStorePassword"
 # accumulo initialization parameters
 accumulo_instance_name = config['configurations']['global']['accumulo_instance_name']
 accumulo_root_password = config['configurations']['global']['accumulo_root_password']
-accumulo_hdfs_root_dir = config['configurations']['accumulo-site']['instance.dfs.dir']
+accumulo_hdfs_root_dir = None
+if ('instance.dfs.dir' in config['configurations']['accumulo-site']):
+  accumulo_hdfs_root_dir = config['configurations']['accumulo-site']['instance.dfs.dir']
+else:
+  accumulo_hdfs_root_dir = config['configurations']['accumulo-site']['instance.volumes'].split(",")[0]
 
 #log4j.properties
 if (('accumulo-log4j' in config['configurations']) and ('content' in config['configurations']['accumulo-log4j'])):

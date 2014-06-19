@@ -177,37 +177,37 @@ Clone accumulo from apache;
     git clone http://git-wip-us.apache.org/repos/asf/accumulo.git
 
 
-Check out branch 1.5.1-SNAPSHOT
+Check out branch 1.6.1-SNAPSHOT
 
-
+    git checkout 1.6.1-SNAPSHOT
 
 In the accumulo project directory, build it
 
     mvn clean install -Passemble -DskipTests -Dmaven.javadoc.skip=true \
-     -Dhadoop.profile=2 
-     
-The default Hadoop version for accumulo-1.5.1 is hadoop 2.4.0; to build
+     -Dhadoop.profile=2
+
+The default Hadoop version for accumulo-1.6.1 is hadoop 2.4.0; to build
 against a different version use the command
-     
+
     mvn clean install -Passemble -DskipTests -Dmaven.javadoc.skip=true \
      -Dhadoop.profile=2  -Dhadoop.version=$HADOOP_VERSION
 
-This creates an accumulo tar.gz file in `assemble/target/`. Unzip then untar
-this, to create a .tar file and an expanded directory
+This creates an accumulo tar.gz file in `assemble/target/`. Extract this
+to create an expanded directory
 
-    accumulo/assemble/target/accumulo-1.5.1-SNAPSHOT-bin.tar
-    
+    accumulo/assemble/target/accumulo-1.6.1-SNAPSHOT-bin.tar.gz
+
  This can be done with the command sequence
-    
-    export ACCUMULO_VERSION=1.5.1-SNAPSHOT
-    
+
+    export ACCUMULO_VERSION=1.6.1-SNAPSHOT
+
     pushd assemble/target/
-    gunzip -f accumulo-$ACCUMULO_VERSION-bin.tar.gz 
-    tar -xvf accumulo-$ACCUMULO_VERSION-bin.tar 
+    gunzip -f accumulo-$ACCUMULO_VERSION-bin.tar.gz
+    tar -xvf accumulo-$ACCUMULO_VERSION-bin.tar.gz
     popd
-    
+
 Note that the final location of the accumulo files is needed for the configuration,
-it may be directly under target/ or it may be in a subdirectory, with 
+it may be directly under target/ or it may be in a subdirectory, with
 a path such as `target/accumulo-$ACCUMULO_VERSION-dev/accumulo-$ACCUMULO_VERSION/`
 
 
@@ -234,13 +234,13 @@ is ignored by git), declaring where HBase, accumulo, Hadoop and zookeeper are:
          
       <property>
         <name>slider.test.accumulo.home</name>
-        <value>/home/slider/accumulo/assemble/target/accumulo-1.5.1-SNAPSHOT/</value>
+        <value>/home/slider/accumulo/assemble/target/accumulo-1.6.1-SNAPSHOT/</value>
         <description>Accumulo Home</description>
       </property>
     
       <property>
         <name>slider.test.accumulo.tar</name>
-        <value>/home/slider/accumulo/assemble/target/accumulo-1.5.1-SNAPSHOT-bin.tar.gz</value>
+        <value>/home/slider/accumulo/assemble/target/accumulo-1.6.1-SNAPSHOT-bin.tar.gz</value>
         <description>Accumulo archive URI</description>
       </property>
       
