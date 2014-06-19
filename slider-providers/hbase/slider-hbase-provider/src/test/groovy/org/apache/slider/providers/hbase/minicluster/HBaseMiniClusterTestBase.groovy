@@ -108,21 +108,6 @@ public abstract class HBaseMiniClusterTestBase extends YarnZKMiniClusterTestBase
   public void stopAllRegionServers() {
     killJavaProcesses(HREGION, SIGTERM);
   }
-
-
-  public static void assertHBaseMasterNotStopped(SliderClient sliderClient,
-                                          String clustername) {
-    String[] nodes = sliderClient.listNodeUUIDsByRole(ROLE_MASTER);
-    int masterNodeCount = nodes.length;
-    assert masterNodeCount > 0;
-    ClusterNode node = sliderClient.getNode(nodes[0]);
-    if (node.state >= ClusterDescription.STATE_STOPPED) {
-      //stopped, not what is wanted
-      log.error("HBase master has stopped");
-      log.error(node.toString());
-      fail("HBase master has stopped " + node.diagnostics);
-    }
-  }
   
   /**
    * Create an (unshared) HConnection talking to the hbase service that

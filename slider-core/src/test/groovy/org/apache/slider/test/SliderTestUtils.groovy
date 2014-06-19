@@ -297,21 +297,6 @@ class SliderTestUtils extends Assert {
     return status
   }
 
-  /**
-   * Wait for the hbase master to be live (or past it in the lifecycle)
-   * @param clustername cluster
-   * @param spintime time to wait
-   * @return true if the cluster came out of the sleep time live 
-   * @throws IOException
-   * @throws SliderException
-   */
-  public static boolean spinForClusterStartup(SliderClient client, long spintime,
-      String role)
-      throws WaitTimeoutException, IOException, SliderException {
-    int state = client.waitForRoleInstanceLive(role, spintime);
-    return state == ClusterDescription.STATE_LIVE;
-  }
-
   public static ClusterDescription dumpClusterStatus(SliderClient client, String text) {
     ClusterDescription status = client.clusterDescription;
     dumpClusterDescription(text, status)
