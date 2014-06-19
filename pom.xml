@@ -37,6 +37,7 @@
     <module>slider-core</module>
     <module>slider-agent</module>
     <module>app-packages/accumulo</module>
+    <module>app-packages/hbase</module>
     <module>slider-assembly</module>
     <module>slider-funtest</module>
     <module>slider-providers/hbase/slider-hbase-provider</module>
