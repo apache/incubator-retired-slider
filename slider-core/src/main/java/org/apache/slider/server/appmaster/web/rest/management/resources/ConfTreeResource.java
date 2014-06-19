@@ -42,8 +42,7 @@ public class ConfTreeResource {
       metadata = confTree.metadata;
       global = confTree.global;
       components = confTree.components;
-      uriBuilder = uriBuilder.clone();
-      this.href = uriBuilder.build(null).toASCIIString();
+      this.href = uriBuilder.build().toASCIIString();
     } else {
       this.href = null;
       this.metadata = null;

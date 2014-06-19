@@ -28,6 +28,7 @@ import org.apache.slider.core.registry.docstore.PublishedExportsSet;
 import org.apache.slider.core.registry.docstore.UriMap;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.WebAppApi;
+import org.apache.slider.server.appmaster.web.rest.AbstractSliderResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,21 +54,26 @@ import static  org.apache.slider.server.appmaster.web.rest.RestPaths.*;
 /**
  * This publishes configuration sets
  */
-public class PublisherResource {
+public class PublisherResource extends AbstractSliderResource {
   protected static final Logger log =
       LoggerFactory.getLogger(PublisherResource.class);
-  private final WebAppApi slider;
   public static final String EXPORTS_NAME = "exports";
   public static final String EXPORTS_RESOURCES_PATH = "/" + EXPORTS_NAME;
   public static final String EXPORT_RESOURCE_PATH = EXPORTS_RESOURCES_PATH + "/{exportname}" ;
   public static final String SET_NAME =
       "{setname: " + PUBLISHED_CONFIGURATION_SET_REGEXP + "}";
-  private static final String CONFIG =
-      SET_NAME + "/{config: " + PUBLISHED_CONFIGURATION_REGEXP + "}";
+  public static final String SETNAME = "setname";
+  public static final String CLASSPATH = "/classpath";
+  public static final String CONFIG = "config";
+  
+  public static final String SETNAME_PATTERN = 
+      "{"+ SETNAME+": " + PUBLISHED_CONFIGURATION_SET_REGEXP + "}";
+  private static final String CONFIG_PATTERN =
+      SETNAME_PATTERN + "/{"+ CONFIG +": " + PUBLISHED_CONFIGURATION_REGEXP + "}";
   private final StateAccessForProviders appState;
 
   public PublisherResource(WebAppApi slider) {
-    this.slider = slider;
+    super(slider);
     appState = slider.getAppState();
   }
 
@@ -112,7 +118,7 @@ public class PublisherResource {
   }
 
   @GET
-  @Path("/classpath")
+  @Path(CLASSPATH)
   @Produces({MediaType.APPLICATION_JSON})
   public Set<URL> getAMClassPath() {
     URL[] urls = ((URLClassLoader) getClass().getClassLoader()).getURLs();
@@ -140,10 +146,10 @@ public class PublisherResource {
   }
 
   @GET
-  @Path("/"+ SET_NAME)
+  @Path("/"+ SETNAME_PATTERN)
   @Produces({MediaType.APPLICATION_JSON})
   public PublishedConfigSet getPublishedConfiguration(
-      @PathParam("setname") String setname,
+      @PathParam(SETNAME) String setname,
       @Context UriInfo uriInfo,
       @Context HttpServletResponse res) {
     init(res, uriInfo);
@@ -159,11 +165,11 @@ public class PublisherResource {
   }
 
   @GET
-  @Path("/" + CONFIG)
+  @Path("/" + CONFIG_PATTERN)
   @Produces({MediaType.APPLICATION_JSON})
   public PublishedConfiguration getConfigurationInstance(
-      @PathParam("setname") String setname,
-      @PathParam("config") String config,
+      @PathParam(SETNAME) String setname,
+      @PathParam(CONFIG) String config,
       @Context UriInfo uriInfo,
       @Context HttpServletResponse res) {
     init(res, uriInfo);
@@ -190,12 +196,12 @@ public class PublisherResource {
   }
 
   @GET
-  @Path("/" + CONFIG + ".json")
+  @Path("/" + CONFIG_PATTERN + ".json")
   @Produces({MediaType.APPLICATION_JSON})
   public String getConfigurationContentJson(
-      @PathParam("setname") String setname,
+      @PathParam(SETNAME) String setname,
 
-      @PathParam("config") String config,
+      @PathParam(CONFIG) String config,
       @Context UriInfo uriInfo,
       @Context HttpServletResponse res) throws IOException {
     return getStringRepresentation(setname, config, uriInfo, res,
@@ -203,11 +209,11 @@ public class PublisherResource {
   }
 
   @GET
-  @Path("/" + CONFIG + ".xml")
+  @Path("/" + CONFIG_PATTERN + ".xml")
   @Produces({MediaType.APPLICATION_XML})
   public String getConfigurationContentXML(
-      @PathParam("setname") String setname,
-      @PathParam("config") String config,
+      @PathParam(SETNAME) String setname,
+      @PathParam(CONFIG) String config,
       @Context UriInfo uriInfo,
       @Context HttpServletResponse res) throws IOException {
     return getStringRepresentation(setname, config, uriInfo, res,
@@ -215,12 +221,12 @@ public class PublisherResource {
   }
   
   @GET
-  @Path("/" + CONFIG + ".properties")
+  @Path("/" + CONFIG_PATTERN + ".properties")
   @Produces({MediaType.APPLICATION_XML})
   public String getConfigurationContentProperties(
-      @PathParam("setname") String setname,
+      @PathParam(SETNAME) String setname,
 
-      @PathParam("config") String config,
+      @PathParam(CONFIG) String config,
       @Context UriInfo uriInfo,
       @Context HttpServletResponse res) throws IOException {
 
@@ -241,11 +247,11 @@ public class PublisherResource {
   }
 
   @GET
-  @Path("/" + CONFIG +"/{propertyName}")
+  @Path("/" + CONFIG_PATTERN +"/{propertyName}")
   @Produces({MediaType.APPLICATION_JSON})
   public Map<String,String> getConfigurationProperty(
-      @PathParam("setname") String setname,
-      @PathParam("config") String config,
+      @PathParam(SETNAME) String setname,
+      @PathParam(CONFIG) String config,
       @PathParam("propertyName") String propertyName,
       @Context UriInfo uriInfo,
       @Context HttpServletResponse res) {

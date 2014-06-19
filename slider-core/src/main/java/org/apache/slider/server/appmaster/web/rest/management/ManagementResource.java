@@ -18,6 +18,7 @@ package org.apache.slider.server.appmaster.web.rest.management;
 
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.server.appmaster.web.WebAppApi;
+import org.apache.slider.server.appmaster.web.rest.AbstractSliderResource;
 import org.apache.slider.server.appmaster.web.rest.RestPaths;
 import org.apache.slider.server.appmaster.web.rest.management.resources.AggregateConfResource;
 import org.apache.slider.server.appmaster.web.rest.management.resources.ConfTreeResource;
@@ -36,18 +37,18 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.net.URI;
 import java.net.URL;
 
 /**
  *
  */
-public class ManagementResource {
+public class ManagementResource extends AbstractSliderResource {
   protected static final Logger log =
       LoggerFactory.getLogger(ManagementResource.class);
-  private final WebAppApi slider;
 
   public ManagementResource(WebAppApi slider) {
-    this.slider = slider;
+    super(slider);
   }
 
   private void init(HttpServletResponse res) {
@@ -57,7 +58,7 @@ public class ManagementResource {
   @GET
   public Response getWadl (@Context HttpServletRequest request) {
     try {
-      java.net.URI location = new URL(request.getScheme(),
+      URI location = new URL(request.getScheme(),
                                       request.getServerName(),
                                       request.getServerPort(),
                                       "/application.wadl").toURI();
@@ -87,9 +88,9 @@ public class ManagementResource {
     init(res);
     AggregateConfResource aggregateConf =
         ResourceFactory.createAggregateConfResource(getAggregateConf(),
-                                                    uriInfo.getBaseUriBuilder()
-                                                    .path(RestPaths.SLIDER_CONTEXT_ROOT).path(
-                                                    "mgmt/app"));
+      uriInfo.getBaseUriBuilder()
+      .path(RestPaths.SLIDER_CONTEXT_ROOT)
+      .path(RestPaths.MANAGEMENT + "/app"));
     return aggregateConf.getConfTree(config);
   }
 
