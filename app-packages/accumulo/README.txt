@@ -32,11 +32,7 @@ resources.json and appConfig.json for a minimal Yarn cluster.
 
 The version of Accumulo used for the app package can be adjusted by adding a
 flag such as
-  -Daccumulo.version=1.6.1
-
-If an Accumulo version older than 1.6.0 is desired, it must be installed in the
-local maven repo, e.g.
-  mvn install:install-file -Dfile=~/Downloads/accumulo-1.5.1-bin.tar.gz -DgroupId=org.apache.accumulo -DartifactId=accumulo -Dversion=1.5.1 -Dclassifier=bin -Dpackaging=tar.gz
+  -Daccumulo.version=1.5.1
 
 **Note that the LICENSE.txt and NOTICE.txt that are bundled with the app
 package are designed for Accumulo 1.6.0 only and may need to be modified to be
