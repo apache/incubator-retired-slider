@@ -22,9 +22,9 @@ import com.sun.jersey.api.wadl.config.WadlGeneratorDescription;
 import java.util.List;
 
 /**
- *
+ * App master's WADL generation support
  */
-public class AMWadlGeneratorConfig extends WadlGeneratorConfig{
+public class AMWadlGeneratorConfig extends WadlGeneratorConfig {
 
   public static final String CLASSNAME = "org.apache.slider.server.appmaster.web.rest.AMWadlGeneratorConfig";
   @Override

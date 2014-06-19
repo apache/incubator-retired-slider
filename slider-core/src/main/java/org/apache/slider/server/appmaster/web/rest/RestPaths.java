@@ -26,7 +26,8 @@ public class RestPaths {
   public static final String WS_CONTEXT = "ws";
   public static final String WS_CONTEXT_ROOT = "/" + WS_CONTEXT;
   public static final String SLIDER_CONTEXT_ROOT = WS_CONTEXT_ROOT +"/v1/slider";
-  public static final String SLIDER_SUBPATH_MANAGEMENT = "/mgmt";
+  public static final String MANAGEMENT = "mgmt";
+  public static final String SLIDER_SUBPATH_MANAGEMENT = "/" + MANAGEMENT;
   public static final String SLIDER_SUBPATH_AGENTS = "/agents";
   public static final String SLIDER_SUBPATH_PUBLISHER = "/publisher";
 
