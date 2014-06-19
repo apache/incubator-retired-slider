@@ -101,8 +101,8 @@
           </forkedProcessTimeoutInSeconds>
           <threadCount>1</threadCount>
           <argLine>${test.argLine}</argLine>
-          <failIfNoTests>${test.failIfNoTests}</failIfNoTests>
-          
+          <failIfNoTests>${test.funtests.failIfNoTests}</failIfNoTests>
+
           <trimStackTrace>false</trimStackTrace>
           <redirectTestOutputToFile>${build.redirect.test.output.to.file}</redirectTestOutputToFile>
           <systemPropertyVariables>
