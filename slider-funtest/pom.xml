@@ -27,9 +27,6 @@
     <artifactId>slider</artifactId>
     <version>0.31.0-incubating-SNAPSHOT</version>
   </parent>
-  <properties>
-    <slider.disable.cleanup>false</slider.disable.cleanup>
-  </properties>
 
   <build>
 
@@ -115,7 +112,6 @@
             <java.security.krb5.kdc>${slider.test.java.security.krb5.kdc}</java.security.krb5.kdc>
             <!-- this property must be supplied-->
             <slider.conf.dir>${slider.conf.dir}</slider.conf.dir>
-            <slider.disable.cleanup>${slider.disable.cleanup}</slider.disable.cleanup>
             <slider.bin.dir>../slider-assembly/target/slider-${project.version}-all/slider-${project.version}</slider.bin.dir>
           </systemPropertyVariables>
           <includes>

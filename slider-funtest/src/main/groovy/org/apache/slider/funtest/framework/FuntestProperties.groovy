@@ -37,11 +37,6 @@ public interface FuntestProperties extends SliderXMLConfKeysForTesting {
    */
   String SLIDER_BIN_DIR_PROP = "slider.bin.dir"
 
-  /**
-   * Maven Property to disable test cleanup
-   */
-  String DISABLE_CLEAN_UP_PROP = "slider.disable.cleanup"
-
   String KEY_SLIDER_TEST_NUM_WORKERS = "slider.test.cluster.size"
   int DEFAULT_SLIDER_NUM_WORKERS = 1
 

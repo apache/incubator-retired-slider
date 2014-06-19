@@ -51,7 +51,6 @@ abstract class CommandTestBase extends SliderTestUtils {
 
   public static final String SLIDER_CONF_DIR = sysprop(SLIDER_CONF_DIR_PROP)
   public static final String SLIDER_BIN_DIR = sysprop(SLIDER_BIN_DIR_PROP)
-  public static final String DISABLE_CLEAN_UP = sysprop(DISABLE_CLEAN_UP_PROP)
   public static final File SLIDER_BIN_DIRECTORY = new File(
       SLIDER_BIN_DIR).canonicalFile
   public static final File SLIDER_SCRIPT = new File(
