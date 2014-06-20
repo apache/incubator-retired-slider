@@ -127,12 +127,13 @@ public class HBaseProviderService extends AbstractProviderService implements
     // Set the environment
     launcher.putEnv(SliderUtils.buildEnvMap(appComponent));
 
-    launcher.setEnv(HBASE_LOG_DIR, providerUtils.getLogdir());
+    String logDir = providerUtils.getLogdir();
+    int idx = logDir.indexOf(",");
+    launcher.setEnv(HBASE_LOG_DIR, idx > 0 ? logDir.substring(0, idx) : logDir);
 
     launcher.setEnv(PROPAGATED_CONFDIR,
         ProviderUtils.convertToAppRelativePath(
             SliderKeys.PROPAGATED_CONF_DIR_NAME) );
-
 
     //local resources
 
