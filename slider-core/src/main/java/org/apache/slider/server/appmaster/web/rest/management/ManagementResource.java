@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
+import javax.ws.rs.*;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -46,6 +47,8 @@ import java.net.URL;
 public class ManagementResource extends AbstractSliderResource {
   protected static final Logger log =
       LoggerFactory.getLogger(ManagementResource.class);
+  public static final String CONFIG = "config";
+  public static final String APP_UNDER_MANAGEMENT = "/app";
 
   public ManagementResource(WebAppApi slider) {
     super(slider);
@@ -80,9 +83,9 @@ public class ManagementResource extends AbstractSliderResource {
   }
 
   @GET
-  @Path("/app/configurations/{config}")
+  @Path(APP_UNDER_MANAGEMENT+"/configurations/{config}")
   @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
-  public ConfTreeResource getConfTreeResource(@PathParam("config") String config,
+  public ConfTreeResource getConfTreeResource(@PathParam(CONFIG) String config,
                                               @Context UriInfo uriInfo,
                                               @Context HttpServletResponse res) {
     init(res);
@@ -90,11 +93,45 @@ public class ManagementResource extends AbstractSliderResource {
         ResourceFactory.createAggregateConfResource(getAggregateConf(),
       uriInfo.getBaseUriBuilder()
       .path(RestPaths.SLIDER_CONTEXT_ROOT)
-      .path(RestPaths.MANAGEMENT + "/app"));
+      .path(RestPaths.MANAGEMENT + APP_UNDER_MANAGEMENT));
     return aggregateConf.getConfTree(config);
   }
 
   protected AggregateConf getAggregateConf() {
     return slider.getAppState().getInstanceDefinitionSnapshot();
   }
+  
+  @POST
+  @Path("actions/flex") 
+    public void actionFlex() { 
+  }
+  
+  @POST
+  @Path("actions/stop") 
+    public void actionStop() { 
+  }
+  
+    
+  @POST
+  @Path("actions/test/suicide") 
+    public void actionSuicide() { 
+  }
+    
+  @POST
+  @Path("actions/test/kill-container") 
+    public void actionKillContainer() { 
+  }
+
+
+  @GET
+  @Path("containers"+"/components" +"/{name}")
+  public void actionListContainers() {
+  }
+  
+  @GET
+  @Path("containers"+"/components" +"/{name}")
+  public void actionListContainersbyComponent() {
+  }
+
+
 }
