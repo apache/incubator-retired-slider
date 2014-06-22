@@ -18,21 +18,24 @@
 
 package org.apache.slider.providers.agent;
 
-import org.apache.slider.providers.ProviderRole;
-
-import java.util.ArrayList;
-import java.util.List;
-
-public class AgentRoles {
+/** The states a component instance can be. */
+public enum ContainerState {
+  INIT,           // Container is not net activated
+  HEALTHY,     // Agent is heartbeating
+  UNHEALTHY,      // Container is unhealthy - no heartbeat for some interval
+  HEARTBEAT_LOST;  // Container is lost - request a new instance
 
   /**
-   * List of roles Agent provider does not have any roles by default. All roles are read from the application
-   * specification.
+   * Indicates whether or not it is a valid state to produce a command.
+   *
+   * @return true if command can be issued for this state.
    */
-  protected static final List<ProviderRole> ROLES =
-      new ArrayList<ProviderRole>();
-
-  public static List<ProviderRole> getRoles() {
-    return ROLES;
+  public boolean canIssueCommands() {
+    switch (this) {
+      case HEALTHY:
+        return true;
+      default:
+        return false;
+    }
   }
 }

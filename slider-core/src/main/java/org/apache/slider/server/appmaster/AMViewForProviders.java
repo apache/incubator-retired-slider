@@ -16,23 +16,12 @@
  * limitations under the License.
  */
 
-package org.apache.slider.providers.agent;
+package org.apache.slider.server.appmaster;
 
-import org.apache.slider.providers.ProviderRole;
+import org.apache.slider.core.exceptions.SliderException;
 
-import java.util.ArrayList;
-import java.util.List;
-
-public class AgentRoles {
-
-  /**
-   * List of roles Agent provider does not have any roles by default. All roles are read from the application
-   * specification.
-   */
-  protected static final List<ProviderRole> ROLES =
-      new ArrayList<ProviderRole>();
-
-  public static List<ProviderRole> getRoles() {
-    return ROLES;
-  }
+/** Operations available to a provider from AppMaster */
+public interface AMViewForProviders {
+  /** Provider can ask AppMaster to release a specific container */
+  void refreshContainer(String containerId, boolean newHostIfPossible) throws SliderException;
 }

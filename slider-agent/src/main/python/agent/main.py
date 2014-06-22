@@ -176,6 +176,7 @@ def main():
   parser.add_option("-l", "--label", dest="label", help="label of the agent", default=None)
   parser.add_option("--host", dest="host", help="AppMaster host", default=None)
   parser.add_option("--port", dest="port", help="AppMaster port", default=None)
+  parser.add_option("--debug", dest="debug", help="Agent debug hint", default="")
   (options, args) = parser.parse_args()
 
   if not 'AGENT_WORK_ROOT' in os.environ:
@@ -199,6 +200,9 @@ def main():
 
   if options.port:
       agentConfig.set(AgentConfig.SERVER_SECTION, "port", options.port)
+
+  if options.debug:
+    agentConfig.set(AgentConfig.AGENT_SECTION, AgentConfig.APP_DBG_CMD, options.debug)
 
   logFile = os.path.join(agentConfig.getResolvedPath(AgentConfig.LOG_DIR), logFileName)
   perform_prestart_checks(agentConfig)
