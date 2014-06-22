@@ -20,6 +20,7 @@ package org.apache.slider.funtest.lifecycle
 
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.security.AccessControlException
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
@@ -28,22 +29,17 @@ import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
 import org.apache.tools.zip.ZipEntry
 import org.apache.tools.zip.ZipOutputStream
-import org.junit.Assert
-import org.junit.Assume
 import org.junit.Before
 import org.junit.BeforeClass
-import org.junit.rules.TemporaryFolder
 import org.junit.Rule
-
-import org.apache.hadoop.security.AccessControlException
-
+import org.junit.rules.TemporaryFolder
 
 @Slf4j
 class AgentCommandTestBase extends CommandTestBase
-    implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
+implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   public static final boolean AGENTTESTS_ENABLED
-  
+
   protected static String APP_RESOURCE = "../slider-core/src/test/app_packages/test_command_log/resources.json"
   protected static String APP_TEMPLATE = "../slider-core/src/test/app_packages/test_command_log/appConfig.json"
   protected static String APP_PKG_DIR = "../slider-core/src/test/app_packages/test_command_log/"
@@ -85,7 +81,7 @@ class AgentCommandTestBase extends CommandTestBase
     } catch (AccessControlException ace) {
       log.info "No write access to test user home directory. " +
                "Ensure home directory exists and has correct permissions." + ace.getMessage()
-      Assume.assumeTrue("Ensure home directory exists and has correct permissions for test user.", false)
+      fail("Ensure home directory exists and has correct permissions for test user.")
     }
   }
 
@@ -135,11 +131,11 @@ class AgentCommandTestBase extends CommandTestBase
     assert instanceCount == count, 'Instance count for component did not match expected. Parsed: ' + entry
   }
 
-  public static String findLineEntry(SliderShell shell, String[] locators) {
+  public static String findLineEntry(SliderShell shell, String[] locaters) {
     int index = 0;
     for (String str in shell.out) {
-      if (str.contains("\"" + locators[index] + "\"")) {
-        if (locators.size() == index + 1) {
+      if (str.contains("\"" + locaters[index] + "\"")) {
+        if (locaters.size() == index + 1) {
           return str;
         } else {
           index++;
@@ -150,8 +146,29 @@ class AgentCommandTestBase extends CommandTestBase
     return null;
   }
 
-  public static boolean isAppRunning(String text, SliderShell shell) {
+  public static String findLineEntryValue(SliderShell shell, String[] locaters) {
+    String line = findLineEntry(shell, locaters);
+
+    if (line != null) {
+      log.info("Parsing {} for value.", line)
+      int dividerIndex = line.indexOf(":");
+      if (dividerIndex > 0) {
+        String value = line.substring(dividerIndex + 1).trim()
+        if (value.endsWith(",")) {
+          value = value.subSequence(0, value.length() - 1)
+        }
+        return value;
+      }
+    }
+    return null;
+  }
+
+  public static boolean isApplicationInState(String text, String applicationName) {
     boolean exists = false
+    SliderShell shell = slider(EXIT_SUCCESS,
+        [
+            ACTION_LIST,
+            applicationName])
     for (String str in shell.out) {
       if (str.contains(text)) {
         exists = true
@@ -161,23 +178,14 @@ class AgentCommandTestBase extends CommandTestBase
     return exists
   }
 
-  protected static void ensureApplicationIsUp(String clusterName, int maxAttemptCount = 15) {
-    SliderShell shell
-    int attemptCount = 0
-    while (attemptCount < maxAttemptCount) {
-      shell = slider(EXIT_SUCCESS, [
-          ACTION_LIST,
-          clusterName])
+  protected void ensureApplicationIsUp(String clusterName) {
+    repeatUntilTrue(this.&isApplicationUp, 15, 1000 * 3, ['arg1': clusterName],
+        true, 'Application did not start, aborting test.')
+  }
 
-      if (isAppRunning("RUNNING", shell)) {
-        break
-      }
-
-      attemptCount++
-      assert attemptCount != maxAttemptCount, 'Application did not start, aborting test.'
-
-      sleep(1000 * 3)
-    }
+  boolean isApplicationUp(Map<String, String> args) {
+    String applicationName = args['arg1'];
+    return isApplicationInState("RUNNING", applicationName);
   }
 
   public static void addDir(File dirObj, ZipOutputStream zipFile, String prefix) {
@@ -202,6 +210,40 @@ class AgentCommandTestBase extends CommandTestBase
     }
     finally {
       out.close();
+    }
+  }
+
+  protected void repeatUntilTrue(Closure c, int maxAttempts, int sleepDur, Map args,
+                                 boolean failIfUnsuccessful = false, String message = "") {
+    int attemptCount = 0
+    while (attemptCount < maxAttempts) {
+      if (c(args)) {
+        break
+      };
+      attemptCount++;
+
+      if (failIfUnsuccessful) {
+        assert attemptCount != maxAttempts, message
+      }
+
+      sleep(sleepDur)
+    }
+  }
+
+  protected void cleanup(String applicationName) throws Throwable {
+    log.info "Cleaning app instance, if exists, by name " + applicationName
+    teardown(applicationName)
+
+    // sleep till the instance is frozen
+    sleep(1000 * 3)
+
+    SliderShell shell = slider([
+        ACTION_DESTROY,
+        applicationName])
+
+    if (shell.ret != 0 && shell.ret != EXIT_UNKNOWN_INSTANCE) {
+      logShell(shell)
+      assert fail("Old cluster either should not exist or should get destroyed.")
     }
   }
 }

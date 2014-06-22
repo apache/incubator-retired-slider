@@ -1476,6 +1476,26 @@ public class AppState {
     return operations;
   }
 
+  /**
+   * Releases a container based on container id
+   * @param containerId
+   * @return
+   * @throws SliderInternalStateException
+   */
+  public List<AbstractRMOperation> releaseContainer(String containerId)
+      throws SliderInternalStateException {
+    List<AbstractRMOperation> operations = new ArrayList<>();
+    List<RoleInstance> activeRoleInstances = cloneActiveContainerList();
+    for (RoleInstance role : activeRoleInstances) {
+      if (role.container.getId().toString().equals(containerId)) {
+        containerReleaseSubmitted(role.container);
+        operations.add(new ContainerReleaseOperation(role.getId()));
+      }
+    }
+
+    return operations;
+  }
+
 
   /**
    * Find a container running on a specific host -looking

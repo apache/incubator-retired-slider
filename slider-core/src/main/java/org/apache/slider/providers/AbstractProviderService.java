@@ -30,6 +30,7 @@ import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.main.ExitCodeProvider;
 import org.apache.slider.core.registry.info.RegisteredEndpoint;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
+import org.apache.slider.server.appmaster.AMViewForProviders;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
 import org.apache.slider.server.services.registry.RegistryViewForProviders;
@@ -66,6 +67,7 @@ public abstract class AbstractProviderService
   protected AgentRestOperations restOps;
   protected RegistryViewForProviders registry;
   protected ServiceInstanceData registryInstanceData;
+  protected AMViewForProviders amView;
   protected URL amWebAPI;
 
   public AbstractProviderService(String name) {
@@ -81,15 +83,20 @@ public abstract class AbstractProviderService
     return amState;
   }
 
+  public AMViewForProviders getAppMaster() {
+    return amView;
+  }
+
   public void setAmState(StateAccessForProviders amState) {
     this.amState = amState;
   }
 
   @Override
   public void bind(StateAccessForProviders stateAccessor,
-      RegistryViewForProviders reg) {
+      RegistryViewForProviders reg, AMViewForProviders amView) {
     this.amState = stateAccessor;
     this.registry = reg;
+    this.amView = amView;
   }
 
   @Override
@@ -129,16 +136,16 @@ public abstract class AbstractProviderService
 
   /**
    * No-op implementation of this method.
-   * 
+   *
    * {@inheritDoc}
    */
   @Override
   public void validateApplicationConfiguration(AggregateConf instance,
                                                File confDir,
                                                boolean secure) throws
-                                                               IOException,
+      IOException,
       SliderException {
-    
+
   }
 
   /**

@@ -51,7 +51,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   @After
   public void destroyCluster() {
-    teardown(CLUSTER)
+    cleanup(CLUSTER)
   }
 
   @Test

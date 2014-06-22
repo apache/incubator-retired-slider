@@ -150,7 +150,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     ServiceStateChangeListener,
     RoleKeys,
     ProviderCompleted,
-    ContainerStartOperation {
+    ContainerStartOperation,
+    AMViewForProviders {
   protected static final Logger log =
     LoggerFactory.getLogger(SliderAppMaster.class);
 
@@ -675,8 +676,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
 
     //Give the provider restricted access to the state, registry
-    providerService.bind(stateForProviders, registry);
-    sliderAMProvider.bind(stateForProviders, registry);
+    providerService.bind(stateForProviders, registry, this);
+    sliderAMProvider.bind(stateForProviders, registry, null);
 
     // now do the registration
     registerServiceInstance(clustername, appid);
@@ -1345,6 +1346,30 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
   }
 
+
+  /* =================================================================== */
+  /* ProviderAMOperations */
+  /* =================================================================== */
+
+  /**
+   * Refreshes the container by releasing it and having it reallocated
+   *
+   * @param containerId       id of the container to release
+   * @param newHostIfPossible allocate the replacement container on a new host
+   *
+   * @throws SliderException
+   */
+  public void refreshContainer(String containerId, boolean newHostIfPossible)
+      throws SliderException {
+    log.info(
+        "Refreshing container {} per provider request.",
+        containerId);
+    rmOperationHandler.execute(appState.releaseContainer(containerId));
+
+    // ask for more containers if needed
+    reviewRequestAndReleaseNodes();
+  }
+
   /* =================================================================== */
   /* ServiceStateChangeListener */
   /* =================================================================== */
@@ -1515,5 +1540,4 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     //now have the service launcher do its work
     ServiceLauncher.serviceMain(extendedArgs);
   }
-
 }
