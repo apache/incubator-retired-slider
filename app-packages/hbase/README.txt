@@ -17,10 +17,16 @@
 
 How to create a Slider package for HBase?
 
-  mvn clean package -DskipTests -Phbase-app-package
+Copy the tarball for HBase:
+  cp ~/Downloads/hbase-0.98.3-hadoop2-bin.tar.gz package/files/
 
+If, HBase tarball is publised in maven repository, you can use:
+  mvn clean package -DskipTests -Phbase-app-package
 App package can be found in
   app-packages/HBase/target/apache-slider-hbase-${hbase.version}-app-package-${slider.version}.zip
+
+Create a zip package at the root of the package (<slider enlistment>/app-packages/hbase/)
+  zip -r hbase-v098.zip .
 
 Verify the content using
   zip -Tv apache-slider-hbase-*.zip
