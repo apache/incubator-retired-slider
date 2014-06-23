@@ -269,15 +269,28 @@ public class ForkedProcessService extends AbstractWorkflowExecutorService implem
 
   /**
    * Get the recent output from the process, or [] if not defined
-   * @param duration the duration, in ms, which we wait for recent output to become non-empty
+   *
+   * @param finalOutput flag to indicate "wait for the final output of the process"
+   * @param duration the duration, in ms, 
+   * ro wait for recent output to become non-empty
    * @return a possibly empty list
    */
-  public List<String> getRecentOutput(int duration) {
-    if (process == null) return new LinkedList<String>();
+  public List<String> getRecentOutput(boolean finalOutput, int duration) {
+    if (process == null) {
+      return new LinkedList<String>();
+    }
     long start = System.currentTimeMillis();
-    while (process.isRecentOutputEmpty() && System.currentTimeMillis() - start <= duration) {
+    while (System.currentTimeMillis() - start <= duration) {
+      if (finalOutput && process.isFinalOutputProcessed()) {
+        //end of stream, break
+        break;
+      }
+      if (!process.isRecentOutputEmpty()) {
+        // there is some output
+        break;
+      }
       try {
-        Thread.sleep(20);
+        Thread.sleep(100);
       } catch (InterruptedException ie) {
         Thread.currentThread().interrupt();
         break;
@@ -285,4 +298,6 @@ public class ForkedProcessService extends AbstractWorkflowExecutorService implem
     }
     return process.getRecentOutput();
   }
+  
+  
 }

@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Execute a long-lived process.
@@ -82,6 +83,7 @@ public class LongLivedProcess implements Runnable {
   private final List<String> recentLines = new LinkedList<String>();
   private int recentLineLimit = RECENT_LINE_LOG_LIMIT;
   private LongLivedProcessLifecycleEvent lifecycleCallback;
+  private final AtomicBoolean finalOutputProcessed = new AtomicBoolean(false);
 
   
   /**
@@ -347,6 +349,14 @@ public class LongLivedProcess implements Runnable {
   }
 
   /**
+   * Query to see if the final output has been processed
+   * @return
+   */
+  public boolean isFinalOutputProcessed() {
+    return finalOutputProcessed.get();
+  }
+
+  /**
    * add the recent line to the list of recent lines; deleting
    * an earlier on if the limit is reached.
    *
@@ -499,6 +509,9 @@ public class LongLivedProcess implements Runnable {
         LOG.warn("encountered {}", ignored, ignored);
         //process connection has been torn down
       } finally {
+        //mark output as done
+        finalOutputProcessed.set(true);
+        // close streams
         IOUtils.closeStream(errReader);
         IOUtils.closeStream(outReader);
       }
