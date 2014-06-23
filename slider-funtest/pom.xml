@@ -265,5 +265,39 @@
 
   </dependencies>
 
+  <profiles>
+    <profile>
+      <id>tests-on-from-CLI</id>
+      <activation>
+        <property>
+          <name>slider.conf.dir</name>
+        </property>
+      </activation>
+      <properties>
+        <maven.test.skip>false</maven.test.skip>
+      </properties>
+    </profile>
+    <profile>
+      <id>tests-on-from-build.properties</id>
+      <activation>
+        <file>
+          <exists>../build.properties</exists>
+        </file>
+      </activation>
+      <properties>
+        <maven.test.skip>false</maven.test.skip>
+      </properties>
+    </profile>
+    <profile>
+      <id>tests-off</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <properties>
+        <maven.test.skip>true</maven.test.skip>
+      </properties>
+    </profile>
+
+  </profiles>
 
 </project>
