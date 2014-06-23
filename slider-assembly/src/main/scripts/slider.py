@@ -89,11 +89,10 @@ def main():
   slider_classpath_extra = os.environ.get(SLIDER_CLASSPATH_EXTRA, "")
   p = os.pathsep    # path separator
   d = os.sep        # dir separator
-  slider_classpath = '"' + \
-                     libdir + d + "*" + p \
+  slider_classpath = libdir + d + "*" + p \
                      + confdir + p \
-                     + slider_classpath_extra \
-                     + '"'
+                     + slider_classpath_extra 
+                     
 
   print "slider_home = \"%s\"" % slider_home
   print "slider_jvm_opts = \"%s\"" % slider_jvm_opts
@@ -111,7 +110,7 @@ def main():
   return subprocess.call(commandline,
                          stdin=None,
                          stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE,
+                         stderr=subprocess.STDOUT,
                          shell=False)
 
 
