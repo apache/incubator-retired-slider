@@ -60,6 +60,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_PUBLISHER;
 
@@ -127,9 +128,16 @@ public class HBaseProviderService extends AbstractProviderService implements
     // Set the environment
     launcher.putEnv(SliderUtils.buildEnvMap(appComponent));
 
-    String logDir = providerUtils.getLogdir();
-    int idx = logDir.indexOf(",");
-    launcher.setEnv(HBASE_LOG_DIR, idx > 0 ? logDir.substring(0, idx) : logDir);
+    String logDirs = providerUtils.getLogdir();
+    String logDir;
+    int idx = logDirs.indexOf(",");
+    if (idx > 0) {
+      // randomly choose a log dir candidate
+      String[] segments = logDirs.split(",");
+      Random rand = new Random();
+      logDir = segments[rand.nextInt(segments.length)];
+    } else logDir = logDirs;
+    launcher.setEnv(HBASE_LOG_DIR, logDir);
 
     launcher.setEnv(PROPAGATED_CONFDIR,
         ProviderUtils.convertToAppRelativePath(
