@@ -70,45 +70,51 @@ Additional configuration parameters are described in `app-packages/accumulo/READ
 
 For other app packages, follow this example:
 
-* cd slider/app-packages/hbase-v0_96
-* zip -r hbase_v096.zip .
-* Looking at the content through unzip -l "$@" hbase_v096.zip
+* cd slider/app-packages/hbase
+* zip -r hbase-v098.zip .
+* Looking at the content through unzip -l "$@" hbase-v098.zip
 
 ```
-Archive:  hbase_v096.zip
-  Length     Date   Time    Name
- --------    ----   ----    ----
-     3163  05-16-14 16:32   appConfig.json
-        0  05-02-14 07:51   configuration/
-     5077  05-02-14 07:51   configuration/global.xml
-     5248  05-02-14 07:51   configuration/hbase-log4j.xml
-     2250  05-02-14 07:51   configuration/hbase-policy.xml
-    14705  05-02-14 07:51   configuration/hbase-site.xml
-     3332  05-16-14 16:33   metainfo.xml
-        0  05-02-14 07:51   package/
-        0  05-19-14 20:36   package/files/
- 83154798  05-19-14 20:36   package/files/hbase-0.96.1-hadoop2-bin.tar.gz
-        0  05-02-14 07:51   package/scripts/
-      787  05-02-14 07:51   package/scripts/__init__.py
-     1378  05-02-14 07:51   package/scripts/functions.py
-     3599  05-02-14 07:51   package/scripts/hbase.py
-     1205  05-02-14 07:51   package/scripts/hbase_client.py
-     1640  05-02-14 07:51   package/scripts/hbase_master.py
-     1764  05-02-14 07:51   package/scripts/hbase_regionserver.py
-     1482  05-02-14 07:51   package/scripts/hbase_service.py
-     4924  05-02-14 07:51   package/scripts/params.py
-      973  05-02-14 07:51   package/scripts/status_params.py
-        0  05-02-14 07:51   package/templates/
-     2723  05-02-14 07:51   package/templates/hadoop-metrics2-hbase.properties-GANGLIA-MASTER.j2
-     2723  05-02-14 07:51   package/templates/hadoop-metrics2-hbase.properties-GANGLIA-RS.j2
-     3878  05-02-14 07:51   package/templates/hbase-env.sh.j2
-      909  05-02-14 07:51   package/templates/hbase_client_jaas.conf.j2
-      989  05-02-14 07:51   package/templates/hbase_master_jaas.conf.j2
-     1001  05-02-14 07:51   package/templates/hbase_regionserver_jaas.conf.j2
-      837  05-02-14 07:51   package/templates/regionservers.j2
-      357  05-12-14 12:04   resources.json
- --------                   -------
- 83219742                   29 files
+Archive:  hbase-v098.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+     3158  06-19-2014 22:08   appConfig.json
+        0  06-19-2014 22:15   configuration/
+     5077  06-19-2014 22:15   configuration/global.xml
+     5248  06-19-2014 22:15   configuration/hbase-log4j.xml
+     2250  06-19-2014 22:15   configuration/hbase-policy.xml
+    14705  06-19-2014 22:15   configuration/hbase-site.xml
+     2142  06-19-2014 22:17   jmx_metrics.json
+     3991  06-19-2014 22:45   metainfo.xml
+        0  06-19-2014 22:33   package/
+        0  06-19-2014 22:31   package/files/
+ 83278591  06-19-2014 22:31   package/files/hbase-0.98.3-hadoop2-bin.tar.gz
+        0  06-19-2014 22:29   package/scripts/
+      787  06-19-2014 22:27   package/scripts/__init__.py
+     1378  06-19-2014 22:27   package/scripts/functions.py
+     3738  06-19-2014 22:27   package/scripts/hbase.py
+     1205  06-19-2014 22:27   package/scripts/hbase_client.py
+     1640  06-19-2014 22:27   package/scripts/hbase_master.py
+     1764  06-19-2014 22:27   package/scripts/hbase_regionserver.py
+     1482  06-19-2014 22:27   package/scripts/hbase_service.py
+     5089  06-19-2014 22:27   package/scripts/params.py
+      973  06-19-2014 22:27   package/scripts/status_params.py
+        0  06-19-2014 22:34   package/templates/
+     2799  06-19-2014 22:34   package/templates/hadoop-metrics2-hbase.properties-GANGLIA-MASTER.j2
+     2799  06-19-2014 22:34   package/templates/hadoop-metrics2-hbase.properties-GANGLIA-RS.j2
+     3878  06-19-2014 22:34   package/templates/hbase-env.sh.j2
+      909  06-19-2014 22:34   package/templates/hbase_client_jaas.conf.j2
+      989  06-19-2014 22:34   package/templates/hbase_master_jaas.conf.j2
+     1001  06-19-2014 22:34   package/templates/hbase_regionserver_jaas.conf.j2
+      837  06-19-2014 22:34   package/templates/regionservers.j2
+     3486  06-19-2014 22:39   pom.xml
+     1921  06-19-2014 21:53   README.txt
+      358  06-19-2014 22:36   resources.json
+        0  06-19-2014 22:40   src/
+        0  06-19-2014 23:02   src/assembly/
+     2400  06-19-2014 22:45   src/assembly/hbase.xml
+---------                     -------
+ 83354595                     35 files
 ```
 
 Sample **resources.json** and **appConfig.json** files are also included in the enlistment. These are samples and are typically tested on one node test installations.
