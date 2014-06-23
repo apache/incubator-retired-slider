@@ -34,6 +34,7 @@ import org.apache.slider.core.launch.ContainerLauncher
 import org.apache.slider.core.registry.info.ServiceInstanceData
 import org.apache.slider.providers.ProviderRole
 import org.apache.slider.providers.ProviderService
+import org.apache.slider.server.appmaster.AMViewForProviders
 import org.apache.slider.server.appmaster.state.StateAccessForProviders
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations
 import org.apache.slider.server.appmaster.web.rest.agent.HeartBeat
@@ -194,7 +195,8 @@ class MockProviderService implements ProviderService {
   @Override
   void bind(
       StateAccessForProviders stateAccessor,
-      RegistryViewForProviders registry) {
+      RegistryViewForProviders registry,
+      AMViewForProviders amView) {
 
   }
 

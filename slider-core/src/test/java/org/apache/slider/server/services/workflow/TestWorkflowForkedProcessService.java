@@ -43,6 +43,7 @@ public class TestWorkflowForkedProcessService extends WorkflowServiceTestBase {
   private static final Logger
       processLog =
       LoggerFactory.getLogger("org.apache.hadoop.services.workflow.Process");
+  public static final int RECENT_OUTPUT_SLEEP_DURATION = 4000;
 
 
   private ForkedProcessService process;
@@ -118,7 +119,7 @@ public class TestWorkflowForkedProcessService extends WorkflowServiceTestBase {
    * @return the last output
    */
   private List<String> getFinalOutput() {
-    return process.getRecentOutput(2000);
+    return process.getRecentOutput(true, RECENT_OUTPUT_SLEEP_DURATION);
   }
 
   private ForkedProcessService initProcess(List<String> commands) throws

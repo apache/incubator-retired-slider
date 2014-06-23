@@ -30,11 +30,14 @@ import org.junit.Test
 
 @CompileStatic
 @Slf4j
-public class TestAppsThroughAgent extends AgentCommandTestBase
+public class TestAgentFailures extends AgentCommandTestBase
 implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   private static String COMMAND_LOGGER = "COMMAND_LOGGER"
-  private static String APPLICATION_NAME = "happy-path-with-flex"
+  private static String APPLICATION_NAME = "one-container-fail-register"
+  private static String APP_TEMPLATE2 =
+    "../slider-core/src/test/app_packages/test_command_log/appConfig_fast_no_reg.json"
+
 
   @After
   public void destroyCluster() {
@@ -42,7 +45,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
   }
 
   @Test
-  public void testCreateFlex() throws Throwable {
+  public void testAgentFailRegistrationOnce() throws Throwable {
     if (!AGENTTESTS_ENABLED) {
       log.info "TESTS are not run."
       return
@@ -53,7 +56,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
         [
             ACTION_CREATE, APPLICATION_NAME,
             ARG_IMAGE, agentTarballPath.toString(),
-            ARG_TEMPLATE, APP_TEMPLATE,
+            ARG_TEMPLATE, APP_TEMPLATE2,
             ARG_RESOURCES, APP_RESOURCE
         ])
 
@@ -61,26 +64,40 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     ensureApplicationIsUp(APPLICATION_NAME)
 
-    //flex
-    slider(EXIT_SUCCESS,
-        [
-            ACTION_FLEX,
-            APPLICATION_NAME,
-            ARG_COMPONENT,
-            COMMAND_LOGGER,
-            "2"])
+    repeatUntilTrue(this.&hasContainerCountExceeded, 15, 1000 * 10, ['arg1': '2']);
 
-    // sleep till the new instance starts
-    sleep(1000 * 10)
+    sleep(1000 * 20)
 
     shell = slider(EXIT_SUCCESS,
         [
             ACTION_STATUS,
             APPLICATION_NAME])
 
-    assertComponentCount(COMMAND_LOGGER, 2, shell)
+    assertComponentCount(COMMAND_LOGGER, 1, shell)
+    String requested = findLineEntryValue(shell, ["statistics", COMMAND_LOGGER, "containers.requested"] as String[])
+    assert requested != null && requested.isInteger() && requested.toInteger() >= 2,
+        'At least 2 containers must be requested'
+
+    assert isApplicationInState("RUNNING", APPLICATION_NAME), 'App is not running.'
 
     assertSuccess(shell)
-    assert isApplicationInState("RUNNING", APPLICATION_NAME), 'App is not running.'
+  }
+
+
+  boolean hasContainerCountExceeded(Map<String, String> args) {
+    int expectedCount = args['arg1'].toInteger();
+    SliderShell shell = slider(EXIT_SUCCESS,
+        [
+            ACTION_STATUS,
+            APPLICATION_NAME])
+
+    //logShell(shell)
+    String requested = findLineEntryValue(
+        shell, ["statistics", COMMAND_LOGGER, "containers.requested"] as String[])
+    if (requested != null && requested.isInteger() && requested.toInteger() >= expectedCount) {
+      return true
+    }
+
+    return false
   }
 }

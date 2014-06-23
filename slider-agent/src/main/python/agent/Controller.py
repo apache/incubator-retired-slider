@@ -36,6 +36,7 @@ from ActionQueue import ActionQueue
 from NetUtil import NetUtil
 import ssl
 import ProcessHelper
+import Constants
 
 
 logger = logging.getLogger()
@@ -84,9 +85,28 @@ class Controller(threading.Thread):
     logger.info("Server connection disconnected.")
     pass
 
+  def processDebugCommandForRegister(self):
+    self.processDebugCommand(Constants.DO_NOT_REGISTER)
+    pass
+
+  def processDebugCommandForHeartbeat(self):
+    self.processDebugCommand(Constants.DO_NOT_HEARTBEAT)
+    pass
+
+  def processDebugCommand(self, command):
+    if self.config.isDebugEnabled() and self.config.debugCommand() == command:
+      ## Test support - sleep for 10 minutes
+      logger.info("Received debug command: "
+                  + self.config.debugCommand() + " Sleeping for 10 minutes")
+      time.sleep(60*10)
+      pass
+    pass
+
   def registerWithServer(self):
     id = -1
     ret = {}
+
+    self.processDebugCommandForRegister()
 
     while not self.isRegistered:
       try:
@@ -170,7 +190,8 @@ class Controller(threading.Thread):
     retry = False
     certVerifFailed = False
 
-    id = 0
+    self.processDebugCommandForHeartbeat()
+
     while not self.DEBUG_STOP_HEARTBEATING:
 
       if self.shouldStopAgent():

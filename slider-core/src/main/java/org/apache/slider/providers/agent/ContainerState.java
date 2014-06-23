@@ -15,11 +15,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-Client {
-com.sun.security.auth.module.Krb5LoginModule required
-useKeyTab=true
-storeKey=true
-useTicketCache=false
-keyTab="{{regionserver_keytab_path}}"
-principal="{{regionserver_jaas_princ}}";
-};
+
+package org.apache.slider.providers.agent;
+
+/** The states a component instance can be. */
+public enum ContainerState {
+  INIT,           // Container is not net activated
+  HEALTHY,     // Agent is heartbeating
+  UNHEALTHY,      // Container is unhealthy - no heartbeat for some interval
+  HEARTBEAT_LOST;  // Container is lost - request a new instance
+
+  /**
+   * Indicates whether or not it is a valid state to produce a command.
+   *
+   * @return true if command can be issued for this state.
+   */
+  public boolean canIssueCommands() {
+    switch (this) {
+      case HEALTHY:
+        return true;
+      default:
+        return false;
+    }
+  }
+}

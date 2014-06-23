@@ -1,0 +1,29 @@
+{
+    "schema": "http://example.org/specification/v2.0.0",
+    "metadata": {
+    },
+    "global": {
+        "heartbeat.monitor.interval": "20000",
+        "agent.instance.debug.data": "ANY:DO_NOT_REGISTER:NONE",
+        "agent.conf": "agent.ini",
+        "application.def": "cmd_log_app_pkg.zip",
+        "config_types": "cl-site",
+        "java_home": "/usr/jdk64/jdk1.7.0_45",
+        "package_list": "files/command_log_10.tar",
+        "site.global.app_user": "yarn",
+        "site.global.application_id": "CommandLogger",
+        "site.global.app_log_dir": "${AGENT_LOG_ROOT}/app/log",
+        "site.global.app_pid_dir": "${AGENT_WORK_ROOT}/app/run",
+        "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/hbase-0.96.1-hadoop2",
+        "site.global.app_install_dir": "${AGENT_WORK_ROOT}/app/install",
+        "site.cl-site.logfile.location": "${AGENT_LOG_ROOT}/app/log/operations.log",
+        "site.cl-site.datetime.format": "%A, %d. %B %Y %I:%M%p"
+    },
+    "components": {
+        "COMMAND_LOGGER": {
+        },
+        "slider-appmaster": {
+            "jvm.heapsize": "256M"
+        }
+    }
+}

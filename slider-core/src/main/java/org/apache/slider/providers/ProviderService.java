@@ -31,6 +31,7 @@ import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.ContainerLauncher;
 import org.apache.slider.core.main.ExitCodeProvider;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
+import org.apache.slider.server.appmaster.AMViewForProviders;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
 import org.apache.slider.server.services.registry.RegistryViewForProviders;
@@ -138,9 +139,11 @@ public interface ProviderService extends ProviderCore, Service,
    * bind operation -invoked before the service is started
    * @param stateAccessor interface offering read access to the state
    * @param registry
+   * @param amView
    */
   void bind(StateAccessForProviders stateAccessor,
-      RegistryViewForProviders registry);
+            RegistryViewForProviders registry,
+            AMViewForProviders amView);
 
   /**
    * Returns the agent rest operations interface.

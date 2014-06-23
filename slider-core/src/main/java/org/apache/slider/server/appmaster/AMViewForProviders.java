@@ -15,11 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-Client {
-com.sun.security.auth.module.Krb5LoginModule required
-useKeyTab=true
-storeKey=true
-useTicketCache=false
-keyTab="{{master_keytab_path}}"
-principal="{{master_jaas_princ}}";
-};
+
+package org.apache.slider.server.appmaster;
+
+import org.apache.slider.core.exceptions.SliderException;
+
+/** Operations available to a provider from AppMaster */
+public interface AMViewForProviders {
+  /** Provider can ask AppMaster to release a specific container */
+  void refreshContainer(String containerId, boolean newHostIfPossible) throws SliderException;
+}

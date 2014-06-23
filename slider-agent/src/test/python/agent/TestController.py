@@ -557,6 +557,36 @@ class TestController(unittest.TestCase):
     #Conroller thread and the agent stop if the repeatRegistration flag is False
     self.assertFalse(self.controller.repeatRegistration)
 
+  @patch("time.sleep")
+  def test_debugSetupForRegister(self, sleepMock):
+    original_value = self.controller.config
+    self.controller.config = AgentConfig("", "")
+    self.controller.config.set(AgentConfig.AGENT_SECTION, AgentConfig.DEBUG_MODE_ENABLED, "true")
+    self.controller.processDebugCommandForRegister()
+    self.controller.processDebugCommandForHeartbeat()
+    assert not sleepMock.called, 'sleep should not have been called'
+
+    self.controller.config.set(AgentConfig.AGENT_SECTION, AgentConfig.APP_DBG_CMD, "DO_NOT_RERISTER")
+    self.controller.config.set(AgentConfig.AGENT_SECTION, AgentConfig.APP_DBG_CMD, "DO_NOT_HEARTBEET")
+    self.controller.processDebugCommandForRegister()
+    self.controller.processDebugCommandForHeartbeat()
+    assert not sleepMock.called, 'sleep should not have been called'
+
+    self.controller.config.set(AgentConfig.AGENT_SECTION, AgentConfig.APP_DBG_CMD, "DO_NOT_REGISTER")
+    self.controller.processDebugCommandForRegister()
+    assert sleepMock.called, 'sleep should have been called'
+
+    self.controller.processDebugCommandForHeartbeat()
+    assert sleepMock.call_count == 1, 'sleep should have been called once'
+
+    self.controller.config.set(AgentConfig.AGENT_SECTION, AgentConfig.APP_DBG_CMD, "DO_NOT_HEARTBEAT")
+    self.controller.processDebugCommandForHeartbeat()
+    assert sleepMock.call_count == 2, 'sleep should have been called twice'
+
+    self.controller.config = original_value
+    pass
+
+
 if __name__ == "__main__":
   logging.basicConfig(format='%(asctime)s %(message)s',level=logging.DEBUG)
   unittest.main()

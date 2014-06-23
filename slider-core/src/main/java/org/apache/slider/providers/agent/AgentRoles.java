@@ -18,7 +18,6 @@
 
 package org.apache.slider.providers.agent;
 
-import org.apache.slider.common.SliderKeys;
 import org.apache.slider.providers.ProviderRole;
 
 import java.util.ArrayList;
@@ -27,22 +26,11 @@ import java.util.List;
 public class AgentRoles {
 
   /**
-   * List of roles
+   * List of roles Agent provider does not have any roles by default. All roles are read from the application
+   * specification.
    */
   protected static final List<ProviderRole> ROLES =
-    new ArrayList<ProviderRole>();
-
-  public static final int KEY_NODE =
-                                 SliderKeys.ROLE_AM_PRIORITY_INDEX + 1;
-    /**
-     * Initialize role list
-     */
-/*
-    static {
-      ROLES.add(new ProviderRole(AgentKeys.ROLE_NODE, KEY_NODE));
-  }
-*/
-
+      new ArrayList<ProviderRole>();
 
   public static List<ProviderRole> getRoles() {
     return ROLES;
