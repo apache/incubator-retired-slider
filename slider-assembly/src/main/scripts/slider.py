@@ -97,21 +97,27 @@ def main():
   print "slider_home = \"%s\"" % slider_home
   print "slider_jvm_opts = \"%s\"" % slider_jvm_opts
   print "slider_classpath = \"%s\"" % slider_classpath
-  
-  
-  commandline = ["java",]
+
+  #java = "/usr/bin/java"
+  java = "java"
+  commandline = [java,
+                 "-classpath",
+                 slider_classpath,
+                 SLIDER_CLASSNAME]
   # commandline.append(slider_jvm_opts)
-  commandline.append("-classpath")
-  commandline.append(slider_classpath)
-  commandline.append(SLIDER_CLASSNAME)
   commandline.extend(args)
   print "ready to exec : %s" % commandline
   # docs warn of using PIPE on stderr 
-  return subprocess.call(commandline,
-                         stdin=None,
+  exe = subprocess.Popen(commandline,
+                         stdin=subprocess.PIPE,
                          stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT,
+                         stderr=subprocess.PIPE,
                          shell=False)
+  exe.wait()
+  out, err = exe.communicate()
+  print "stdout : ", out.decode()
+  print "stderr : ", err.decode()
+  return exe.returncode
 
 
 
@@ -122,7 +128,9 @@ if __name__ == '__main__':
   try:
     rv = main()
     if rv != 0:
-      print "exit code = %d" % rv
+      print "Failed with exit code = %d" % rv
+    else:
+      print "Success"
   except Exception as e:
     print "Exception: %s " % e.message
     rv = -1
