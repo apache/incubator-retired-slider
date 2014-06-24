@@ -17,10 +17,17 @@
 
 How to create a Slider package for HBase?
 
+The version of HBase used for the app package can be adjusted by adding a
+flag such as
+  -Dhbase.version=0.98.3
+
 Copy the tarball for HBase:
   cp ~/Downloads/hbase-0.98.3-hadoop2-bin.tar.gz package/files/
 
-If, HBase tarball is publised in maven repository, you can use:
+Use the following command to install HBase tarball locally:
+  mvn install:install-file -Dfile=<path-to-tarball> -DgroupId=org.apache.hbase -DartifactId=hbase -Dversion=0.98.3-hadoop2 -Dclassifier=bin -Dpackaging=tar.gz
+
+After HBase tarball is publised locally in maven repository, you can use the following command:
   mvn clean package -DskipTests -Phbase-app-package
 App package can be found in
   app-packages/HBase/target/apache-slider-hbase-${hbase.version}-app-package-${slider.version}.zip
@@ -35,10 +42,6 @@ While appConfig.json and resources.json are not required for the package they
 work well as the default configuration for Slider apps. So it is advisable that
 when you create an application package for Slider, include sample/default
 resources.json and appConfig.json for a minimal Yarn cluster.
-
-The version of HBase used for the app package can be adjusted by adding a
-flag such as
-  -Dhbase.version=0.98.3
 
 If an HBase version older than 0.98.3 is desired, it must be installed in the
 local maven repo.
