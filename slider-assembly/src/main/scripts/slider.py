@@ -30,14 +30,12 @@ SLIDER_CLASSPATH_EXTRA = "SLIDER_CLASSPATH_EXTRA"
 SLIDER_CLASSNAME = "org.apache.slider.Slider"
 DEFAULT_JVM__OPTS = "-Djava.net.preferIPv4Stack=true -Djava.awt.headless=true -Xmx256m -Djava.confdir=%s"
 
-"""Launches slider
+"""
+Launches slider
 
 
 """
 
-
-
-print os.environ['HOME']
 
 
 def scriptDir():
@@ -107,6 +105,8 @@ def main():
   confdir = dirMustExist(confDir(slider_home))
   default_jvm_opts = DEFAULT_JVM__OPTS % confdir
   slider_jvm_opts = os.environ.get(SLIDER_JVM_OPTS, default_jvm_opts)
+  # split the JVM opts by space
+  jvm_opts_split = slider_jvm_opts.split()
   slider_classpath_extra = os.environ.get(SLIDER_CLASSPATH_EXTRA, "")
   p = os.pathsep    # path separator
   d = os.sep        # dir separator
@@ -120,12 +120,11 @@ def main():
   print "slider_classpath = \"%s\"" % slider_classpath
 
   #java = "/usr/bin/java"
-  java = "java"
-  commandline = [java,
-                 "-classpath",
-                 slider_classpath,
-                 SLIDER_CLASSNAME]
-  # commandline.append(slider_jvm_opts)
+  commandline = ["java", ]
+  commandline.append("-classpath")
+  commandline.append(slider_classpath)
+  commandline.extend(jvm_opts_split)
+  commandline.append(SLIDER_CLASSNAME)
   commandline.extend(args)
   print "ready to exec : %s" % commandline
   # docs warn of using PIPE on stderr 
