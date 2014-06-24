@@ -67,6 +67,26 @@ def dirMustExist(dir):
     raise Exception("Directory does not exist: %s " % dir)
   return dir
 
+def read(pipe, line):
+  """
+  read a char, append to the listing if there is a char that is not \n
+  :param pipe: pipe to read from 
+  :param line: line being built up
+  :return: (the potentially updated line, flag indicating newline reached)
+  """
+
+  c = pipe.read(1)
+  if c != "":
+    o = c.decode('utf-8')
+    if o != '\n':
+      line += o
+      return line, False
+    else:
+      return line, True
+  else:
+    return line, False
+    
+
 
 def usage():
   print "Usage: slider <action> <arguments>"
@@ -80,6 +100,7 @@ def main():
   """
   if len(sys.argv)==1 :
     return usage()
+  print "stdout encoding: "+ sys.stdout.encoding
   args = sys.argv[1:]
   slider_home = sliderDir()
   libdir = dirMustExist(libDir(slider_home))
@@ -109,30 +130,41 @@ def main():
   print "ready to exec : %s" % commandline
   # docs warn of using PIPE on stderr 
   exe = subprocess.Popen(commandline,
-                         stdin=subprocess.PIPE,
+                         stdin=None,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
                          shell=False)
-  exe.wait()
+  stdout = exe.stdout
+  stderr = exe.stderr
+  outline = ""
+  errline = ""
+  while exe.poll() is None:
+    # process is running; grab output and echo every line
+    outline, done = read(stdout, outline)
+    if done:
+      print outline
+      outline = ""
+    errline, done = read(stderr, errline)
+    if done:
+      print errline
+      errline = ""
+
+  # get tail
   out, err = exe.communicate()
-  print "stdout : ", out.decode()
-  print "stderr : ", err.decode()
+  print outline + out.decode()
+  print errline + err.decode()
   return exe.returncode
 
 
 
-
-
 if __name__ == '__main__':
-  print "slider python script"
+  """
+  Entry point
+  """
   try:
-    rv = main()
-    if rv != 0:
-      print "Failed with exit code = %d" % rv
-    else:
-      print "Success"
+    returncode = main()
   except Exception as e:
     print "Exception: %s " % e.message
-    rv = -1
+    returncode = -1
   
-  sys.exit(rv)
+  sys.exit(returncode)
