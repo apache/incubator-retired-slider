@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+# this is the shell script to start Slider deploying an application
+# Usage: slider <action> <commands>
+
+# The env variable SLIDER_JVM_OPTS can be used to override
+# the default JVM opts
+
+function usage
+{
+  echo "Usage: slider <action> <arguments>"
+  echo ""
+}
+
+# Slider works out its own location 
+this="${BASH_SOURCE-$0}"
+bindir=$(cd -P -- "$(dirname -- "$this")" && pwd -P)
+script="$(basename -- "$this")"
+
+# lib directory is one up; it is expected to contain 
+# slider.jar and any other dependencies that are not in the
+# standard Hadoop classpath
+
+slider_home="${bindir}/.."
+slider_home=`cd -P "${slider_home}" && pwd -P`
+
+libdir="${slider_home}/lib"
+libdir=`cd -P "${libdir}" && pwd -P`
+
+
+confdir="${slider_home}/conf"
+
+# normalize the conf dir so it can be passed down
+confdir=`cd -P "${confdir}" && pwd -P`
+confdir=${SLIDER_CONF_DIR:-$confdir}
+
+
+slider_jvm_opts="-Djava.net.preferIPv4Stack=true -Djava.awt.headless=true -Xmx256m -Djava.confdir=${confdir}"
+slider_jvm_opts=${SLIDER_JVM_OPTS:-$slider_jvm_opts}
+
+# allow for an extra classpath
+slider_classpath_extra=${SLIDER_CLASSPATH_EXTRA:-""}
+
+slider_classpath="${libdir}/*:${confdir}:${slider_classpath_extra}"
+
+launcher=org.apache.slider.Slider
+
+
+echo "slider_home = \"${slider_home}\""
+echo "slider_jvm_opts = \"${slider_jvm_opts}\""
+echo "classpath = \"${slider_classpath}\""
+export CLASSPATH="${slider_classpath}"
+echo ""
+
+echo "command is java ${slider_jvm_opts} --classpath \"${slider_classpath}\" ${launcher} $@"
+echo ""
+echo ""
+exec java ${slider_jvm_opts}  ${launcher} $@
