@@ -44,6 +44,9 @@ class FileUploader {
    * @return
    */
   public boolean copyIfOutOfDate(File src, Path destPath, boolean force) {
+    if (!src.exists()) {
+      throw new FileNotFoundException("Source file $src not found")
+    }
     def srcLen = src.length()
     def fs = getFileSystem(destPath)
     boolean toCopy = force

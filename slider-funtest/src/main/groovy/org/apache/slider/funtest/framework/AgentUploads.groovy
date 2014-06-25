@@ -48,8 +48,6 @@ class AgentUploads implements FuntestProperties {
    */
   def uploadAgentFiles(File tarballDir, boolean force) {
     def localAgentTar = new File(tarballDir, AGENT_SLIDER_GZ_IN_SLIDER_TAR)
-    assert localAgentTar.exists()
-
     def agentTarballPath = new Path(
         homeDir,
         AGENT_TAR_FILENAME)
