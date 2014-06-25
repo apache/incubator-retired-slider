@@ -43,10 +43,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   @Test
   public void testCreateFlex() throws Throwable {
-    if (!AGENTTESTS_ENABLED) {
-      log.info "TESTS are not run."
-      return
-    }
+    assumeAgentTestsEnabled()
 
     cleanup(APPLICATION_NAME)
     SliderShell shell = slider(EXIT_SUCCESS,
