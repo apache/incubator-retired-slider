@@ -20,22 +20,51 @@ package org.apache.slider.funtest.framework
 
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.FileUtil
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.fs.permission.FsPermission
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.hadoop.fs.FileSystem as HadoopFS
 
 @Slf4j
-class AgentUploads {
+class AgentUploads implements FuntestProperties {
   final Configuration conf
+  private final FileUploader uploader
+  private final HadoopFS clusterFS
+  private final Path homeDir
+  
 
 
   AgentUploads(Configuration conf) {
     this.conf = conf
+    uploader = new FileUploader(conf, UserGroupInformation.currentUser)
+    clusterFS = uploader.fileSystem
+    homeDir = clusterFS.homeDirectory
   }
 
-  def execUploadSequence() {
-    UserGroupInformation.loginUserFromKeytabAndReturnUGI("yarn")
+  /**
+   * Upload agent-related files
+   * @param tarballDir
+   * @param force
+   * @return
+   */
+  def uploadAgentFiles(File tarballDir, boolean force) {
+    def localAgentTar = new File(tarballDir, AGENT_SLIDER_GZ_IN_SLIDER_TAR)
+    assert localAgentTar.exists()
+
+    def agentTarballPath = new Path(
+        homeDir,
+        AGENT_TAR_FILENAME)
+
+    // Upload the agent tarball
+    uploader.copyIfOutOfDate(localAgentTar, agentTarballPath, force)
+
+    File localAgentIni = new File(tarballDir, AGENT_INI_IN_SLIDER_TAR)
+    // Upload the agent.ini
+    def agentIniPath = new Path(homeDir, AGENT_INI)
+    uploader.copyIfOutOfDate(localAgentIni, agentIniPath, force)
+    
+    return [agentTarballPath, agentIniPath]
+
+
   }
- 
+
 }

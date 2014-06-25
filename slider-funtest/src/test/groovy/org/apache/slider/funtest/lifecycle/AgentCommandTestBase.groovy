@@ -20,10 +20,10 @@ package org.apache.slider.funtest.lifecycle
 
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.security.AccessControlException
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
+import org.apache.slider.funtest.framework.AgentUploads
 import org.apache.slider.funtest.framework.CommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
@@ -53,37 +53,29 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   static {
     AGENTTESTS_ENABLED = SLIDER_CONFIG.getBoolean(KEY_TEST_AGENT_ENABLED, false)
-    LOCAL_SLIDER_AGENT_TARGZ = new File(
-        SLIDER_BIN_DIRECTORY,
-        AGENT_SLIDER_GZ).canonicalFile
     LOCAL_AGENT_CONF = new File(AGENT_CONF).canonicalFile
   }
 
   @Rule
   public TemporaryFolder folder = new TemporaryFolder();
 
+  public static void assumeAgentTestsEnabled() {
+    assumeFunctionalTestsEnabled()
+    assume(AGENTTESTS_ENABLED, "Agent tests disabled")
+  }
+
   @BeforeClass
   public static void setupAgent() {
     assumeAgentTestsEnabled()
 
-    try {
-      // Upload the agent tarball
-      assume(LOCAL_SLIDER_AGENT_TARGZ.exists(), "Slider agent not found at $LOCAL_SLIDER_AGENT_TARGZ")
-      agentTarballPath = new Path(clusterFS.homeDirectory, "slider-agent.tar.gz")
-      Path localTarball = new Path(LOCAL_SLIDER_AGENT_TARGZ.toURI());
-      clusterFS.copyFromLocalFile(false, true, localTarball, agentTarballPath)
-
-      // Upload the agent.ini
-      assume(LOCAL_AGENT_CONF.exists(), "Agent config not found at $LOCAL_AGENT_CONF")
-      agtIniPath = new Path(clusterFS.homeDirectory, "agent.ini")
-      Path localAgtIni = new Path(LOCAL_AGENT_CONF.toURI());
-      clusterFS.copyFromLocalFile(false, true, localAgtIni, agtIniPath)
-    } catch (AccessControlException ace) {
-      log.info "No write access to test user home directory. " +
-               "Ensure home directory exists and has correct permissions." + ace.getMessage()
-      fail("Ensure home directory exists and has correct permissions for test user.")
-    }
   }
+  
+  @Before
+  public void uploadAgentTarball() {
+    def agentUploads = new AgentUploads(SLIDER_CONFIG)
+    (agentTarballPath, agtIniPath) = 
+        agentUploads.uploadAgentFiles(SLIDER_TAR_DIRECTORY, false)
+  } 
 
 
   @Before
@@ -103,11 +95,6 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     assume(zipFileName.exists(), "App pkg not found at $zipFileName")
     Path localAppPkg = new Path(zipFileName.toURI());
     clusterFS.copyFromLocalFile(false, true, localAppPkg, appPkgPath)
-  }
-
-  public static void assumeAgentTestsEnabled() {
-    assumeFunctionalTestsEnabled()
-    assume(AGENTTESTS_ENABLED, "Agent tests disabled")
   }
 
   public static void logShell(SliderShell shell) {

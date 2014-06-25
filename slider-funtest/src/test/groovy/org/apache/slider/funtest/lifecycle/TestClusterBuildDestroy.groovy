@@ -42,7 +42,7 @@ public class TestClusterBuildDestroy extends AgentCommandTestBase
 
   @BeforeClass
   public static void prepareCluster() {
-    assumeFunctionalTestsEnabled();
+    
     setupCluster(CLUSTER)
   }
 

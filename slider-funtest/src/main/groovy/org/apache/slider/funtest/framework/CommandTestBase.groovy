@@ -50,17 +50,16 @@ abstract class CommandTestBase extends SliderTestUtils {
       LoggerFactory.getLogger(CommandTestBase.class);
 
   public static final String SLIDER_CONF_DIR = sysprop(SLIDER_CONF_DIR_PROP)
-  public static final String SLIDER_BIN_DIR = sysprop(SLIDER_BIN_DIR_PROP)
-  public static final File SLIDER_BIN_DIRECTORY = new File(
-      SLIDER_BIN_DIR).canonicalFile
+  public static final String SLIDER_TAR_DIR = sysprop(SLIDER_BIN_DIR_PROP)
+  public static final File SLIDER_TAR_DIRECTORY = new File(
+      SLIDER_TAR_DIR).canonicalFile
   public static final File SLIDER_SCRIPT = new File(
-      SLIDER_BIN_DIRECTORY,
+      SLIDER_TAR_DIRECTORY,
       BIN_SLIDER).canonicalFile
   public static final File SLIDER_CONF_DIRECTORY = new File(
       SLIDER_CONF_DIR).canonicalFile
   public static final File SLIDER_CONF_XML = new File(SLIDER_CONF_DIRECTORY,
       CLIENT_CONFIG_FILENAME).canonicalFile
-
   public static final YarnConfiguration SLIDER_CONFIG
   public static final int THAW_WAIT_TIME
   public static final int FREEZE_WAIT_TIME

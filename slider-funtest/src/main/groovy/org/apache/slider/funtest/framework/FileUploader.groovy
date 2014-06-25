@@ -23,8 +23,9 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileUtil
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.fs.permission.FsPermission
+import org.apache.hadoop.security.AccessControlException
 import org.apache.hadoop.security.UserGroupInformation
-
+import org.apache.hadoop.fs.FileSystem as HadoopFS
 @Slf4j
 class FileUploader {
   final Configuration conf
@@ -38,39 +39,59 @@ class FileUploader {
   /**
    * Copy if the file is considered out of date
    * @param src
-   * @param dest
+   * @param destPath
    * @param force
    * @return
    */
-  public boolean copyIfOutOfDate(File src, Path dest, boolean force) {
+  public boolean copyIfOutOfDate(File src, Path destPath, boolean force) {
     def srcLen = src.length()
-    def fs = getFileSystem(user, dest.toUri())
+    def fs = getFileSystem(destPath)
     boolean toCopy = force
     if (!toCopy) {
       try {
-        def status = fs.getFileStatus(dest)
+        def status = fs.getFileStatus(destPath)
         toCopy = status.len != srcLen
       } catch (FileNotFoundException fnfe) {
         toCopy = true;
       }
     }
     if (toCopy) {
-      log.info("Copying $src to $dest")
-      fs.mkdirs(dest, FsPermission.dirDefault)
-      return FileUtil.copy(src, fs, dest, false, conf)
+      log.info("Copying $src to $destPath")
+      try {
+        fs.delete(destPath, true)
+        fs.mkdirs(destPath.getParent(), FsPermission.dirDefault)
+        return FileUtil.copy(src, fs, destPath, false, conf)
+      } catch (AccessControlException ace) {
+        log.error("No write access to test user home directory. " +
+                  "Ensure home directory exists and has correct permissions." +
+                  ace, ace)
+        throw ace
+      }
     } else {
-      log.debug("Skipping copy as the destination $dest considered up to date")
+      log.debug("Skipping copy as the destination $destPath considered up to date")
       return false;
     }
+  }
 
+  public HadoopFS getFileSystem(Path dest) {
+    getFileSystem(user, dest)
+  }
+  
+  public HadoopFS getFileSystem() {
+    getFileSystem(user, HadoopFS.getDefaultUri(conf))
   }
 
 
-  public static def getFileSystem(
+  public def getFileSystem(
+      UserGroupInformation user, final Path path) {
+    return getFileSystem(user, path.toUri())
+    
+  }
+  public def getFileSystem(
       UserGroupInformation user, final URI uri) {
+    
     SudoClosure.sudo(user) {
-      org.apache.hadoop.fs.FileSystem.get(uri, conf);
+      HadoopFS.get(uri, conf);
     }
-
   }
 }
