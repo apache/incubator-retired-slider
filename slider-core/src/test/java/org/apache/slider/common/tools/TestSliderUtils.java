@@ -19,23 +19,30 @@ package org.apache.slider.common.tools;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.junit.Test;
+import org.apache.slider.tools.TestUtility;
 import org.junit.Assert;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
-import java.net.URI;
 
-/**
- *
- */
+/** Test slider util methods. */
 public class TestSliderUtils {
   protected static final Logger log =
       LoggerFactory.getLogger(TestSliderUtils.class);
+  @Rule
+  public TemporaryFolder folder = new TemporaryFolder();
 
   @Test
-  public void testGetMetaInfoStreamFromZip () throws Exception {
+  public void testGetMetaInfoStreamFromZip() throws Exception {
+    String zipFileName = TestUtility.createAppPackage(
+        folder,
+        "testpkg",
+        "test.zip",
+        "target/test-classes/org/apache/slider/common/tools/test");
     Configuration configuration = new Configuration();
     FileSystem fs = FileSystem.getLocal(configuration);
     log.info("fs working dir is {}", fs.getWorkingDirectory().toString());
@@ -43,14 +50,14 @@ public class TestSliderUtils {
 
     InputStream stream = SliderUtils.getApplicationResourceInputStream(
         sliderFileSystem.getFileSystem(),
-        new Path("target/test-classes/org/apache/slider/common/tools/test.zip"),
+        new Path(zipFileName),
         "metainfo.xml");
     Assert.assertTrue(stream != null);
     Assert.assertTrue(stream.available() > 0);
   }
 
   @Test
-  public void testTruncate () {
+  public void testTruncate() {
     Assert.assertEquals(SliderUtils.truncate(null, 5), null);
     Assert.assertEquals(SliderUtils.truncate("323", -1), "323");
     Assert.assertEquals(SliderUtils.truncate("3232", 5), "3232");

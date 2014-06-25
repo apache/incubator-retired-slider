@@ -34,10 +34,10 @@ public class MetainfoParser {
     digester.addObjectCreate("metainfo", Metainfo.class);
     digester.addBeanPropertySetter("metainfo/schemaVersion");
 
-    digester.addObjectCreate("*/service", Service.class);
-    digester.addBeanPropertySetter("*/service/name");
-    digester.addBeanPropertySetter("*/service/comment");
-    digester.addBeanPropertySetter("*/service/version");
+    digester.addObjectCreate("*/application", Application.class);
+    digester.addBeanPropertySetter("*/application/name");
+    digester.addBeanPropertySetter("*/application/comment");
+    digester.addBeanPropertySetter("*/application/version");
 
     digester.addObjectCreate("*/commandOrder", CommandOrder.class);
     digester.addBeanPropertySetter("*/commandOrder/command");
@@ -79,7 +79,7 @@ public class MetainfoParser {
     digester.addBeanPropertySetter("*/config-type", "configType");
     digester.addSetNext("*/configuration-dependencies", "setConfigDependencies");
 
-    digester.addSetNext("*/service", "addService");
+    digester.addSetRoot("*/application", "setApplication");
 
     try {
       return (Metainfo) digester.parse(metainfoStream);

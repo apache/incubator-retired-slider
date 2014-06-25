@@ -50,11 +50,11 @@ import org.apache.slider.providers.ProviderCompleted;
 import org.apache.slider.providers.ProviderCore;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
+import org.apache.slider.providers.agent.application.metadata.Application;
 import org.apache.slider.providers.agent.application.metadata.Component;
 import org.apache.slider.providers.agent.application.metadata.Export;
 import org.apache.slider.providers.agent.application.metadata.ExportGroup;
 import org.apache.slider.providers.agent.application.metadata.Metainfo;
-import org.apache.slider.providers.agent.application.metadata.Service;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentCommandType;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
@@ -184,12 +184,12 @@ public class AgentProviderService extends AbstractProviderService implements
           initializeAgentDebugCommands(instanceDefinition);
 
           metainfo = getApplicationMetainfo(fileSystem, appDef);
-          if (metainfo == null || metainfo.getServices() == null || metainfo.getServices().size() == 0) {
+          if (metainfo == null || metainfo.getApplication() == null) {
             log.error("metainfo.xml is unavailable or malformed at {}.", appDef);
             throw new SliderException("metainfo.xml is required in app package.");
           }
 
-          commandOrder = new ComponentCommandOrder(metainfo.getServices().get(0).getCommandOrder());
+          commandOrder = new ComponentCommandOrder(metainfo.getApplication().getCommandOrder());
           monitor = new HeartbeatMonitor(this, getHeartbeatMonitorInterval());
           monitor.start();
         }
@@ -574,8 +574,8 @@ public class AgentProviderService extends AbstractProviderService implements
             publishComponentConfiguration(key, key, configs.entrySet());
           }
 
-          Service service = getMetainfo().getServices().get(0);
-          List<ExportGroup> exportGroups = service.getExportGroups();
+          Application application = getMetainfo().getApplication();
+          List<ExportGroup> exportGroups = application.getExportGroups();
           if (exportGroups != null && !exportGroups.isEmpty()) {
 
             String configKeyFormat = "${site.%s.%s}";
@@ -624,17 +624,18 @@ public class AgentProviderService extends AbstractProviderService implements
 
   /**
    * Extract script path from the application metainfo
+   *
    * @param roleName
+   *
    * @return
    */
   protected String getScriptPathFromMetainfo(String roleName) {
     String scriptPath = null;
-    List<Service> services = getMetainfo().getServices();
-    if (services.size() != 1) {
-      log.error("Malformed app definition: Expect only one service in the metainfo.xml");
+    Application application = getMetainfo().getApplication();
+    if (application == null) {
+      log.error("Malformed app definition: Expect application as the top level element for metainfo.xml");
     }
-    Service service = services.get(0);
-    for (Component component : service.getComponents()) {
+    for (Component component : application.getComponents()) {
       if (component.getName().equals(roleName)) {
         scriptPath = component.getCommandScript().getScript();
         break;
@@ -645,16 +646,17 @@ public class AgentProviderService extends AbstractProviderService implements
 
   /**
    * Is the role of type MASTER
+   *
    * @param roleName
+   *
    * @return
    */
   protected boolean isMaster(String roleName) {
-    List<Service> services = getMetainfo().getServices();
-    if (services.size() != 1) {
-      log.error("Malformed app definition: Expect only one service in the metainfo.xml");
+    Application application = getMetainfo().getApplication();
+    if (application == null) {
+      log.error("Malformed app definition: Expect application as the top level element for metainfo.xml");
     } else {
-      Service service = services.get(0);
-      for (Component component : service.getComponents()) {
+      for (Component component : application.getComponents()) {
         if (component.getName().equals(roleName)) {
           if (component.getCategory().equals("MASTER")) {
             return true;
@@ -669,16 +671,17 @@ public class AgentProviderService extends AbstractProviderService implements
 
   /**
    * Can the role publish configuration
+   *
    * @param roleName
+   *
    * @return
    */
   protected boolean canPublishConfig(String roleName) {
-    List<Service> services = getMetainfo().getServices();
-    if (services.size() != 1) {
-      log.error("Malformed app definition: Expect only one service in the metainfo.xml");
+    Application application = getMetainfo().getApplication();
+    if (application == null) {
+      log.error("Malformed app definition: Expect application as the top level element for metainfo.xml");
     } else {
-      Service service = services.get(0);
-      for (Component component : service.getComponents()) {
+      for (Component component : application.getComponents()) {
         if (component.getName().equals(roleName)) {
           return Boolean.TRUE.toString().equals(component.getPublishConfig());
         }
@@ -693,12 +696,11 @@ public class AgentProviderService extends AbstractProviderService implements
    */
   protected boolean canAnyMasterPublishConfig() {
     if (canAnyMasterPublish == null) {
-      List<Service> services = getMetainfo().getServices();
-      if (services.size() != 1) {
-        log.error("Malformed app definition: Expect only one service in the metainfo.xml");
+      Application application = getMetainfo().getApplication();
+      if (application == null) {
+        log.error("Malformed app definition: Expect application as root element in the metainfo.xml");
       } else {
-        Service service = services.get(0);
-        for (Component component : service.getComponents()) {
+        for (Component component : application.getComponents()) {
           if (Boolean.TRUE.toString().equals(component.getPublishConfig()) &&
               component.getCategory().equals("MASTER")) {
             canAnyMasterPublish = true;

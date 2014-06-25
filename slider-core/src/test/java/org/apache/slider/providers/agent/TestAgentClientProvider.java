@@ -18,32 +18,60 @@ package org.apache.slider.providers.agent;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.slider.common.tools.SliderFileSystem;
-import org.apache.slider.common.tools.SliderUtils;
+import org.apache.slider.core.conf.AggregateConf;
+import org.apache.slider.core.exceptions.BadConfigException;
+import org.apache.slider.tools.TestUtility;
+import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.InputStream;
 import java.util.Set;
 
 /**
  *
  */
 public class TestAgentClientProvider {
+  protected static final Logger log =
+      LoggerFactory.getLogger(TestAgentClientProvider.class);
+  @Rule
+  public TemporaryFolder folder = new TemporaryFolder();
+
   @Test
-  public void testGetApplicationTags () throws Exception {
+  public void testGetApplicationTags() throws Exception {
     Configuration configuration = new Configuration();
     FileSystem fs = FileSystem.getLocal(configuration);
     SliderFileSystem sliderFileSystem = new SliderFileSystem(fs, configuration);
 
     AgentClientProvider provider = new AgentClientProvider(null);
-    Set<String> tags = provider.getApplicationTags(sliderFileSystem,
-      "target/test-classes/org/apache/slider/common/tools/test.zip");
+    String zipFileName = TestUtility.createAppPackage(
+        folder,
+        "testpkg",
+        "test.zip",
+        "target/test-classes/org/apache/slider/common/tools/test");
+    Set<String> tags = provider.getApplicationTags(sliderFileSystem, zipFileName);
     assert tags != null;
     assert !tags.isEmpty();
     assert tags.contains("Name: STORM");
     assert tags.contains("Description: Apache Hadoop Stream processing framework");
     assert tags.contains("Version: 0.9.1.2.1");
 
+  }
+
+  @Test
+  public void testValidateInstanceDefinition() throws Exception {
+    AgentClientProvider provider = new AgentClientProvider(null);
+    AggregateConf instanceDefinition = new AggregateConf();
+
+    try {
+      provider.validateInstanceDefinition(instanceDefinition);
+      Assert.assertFalse("Should fail with BadConfigException", true);
+    } catch (BadConfigException e) {
+      log.info(e.toString());
+      Assert.assertTrue(e.getMessage().contains("Application definition must be provided"));
+    }
   }
 }
