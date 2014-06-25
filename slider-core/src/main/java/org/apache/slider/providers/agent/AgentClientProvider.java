@@ -202,17 +202,24 @@ public class AgentClientProvider extends AbstractClientProvider
   public Set<String> getApplicationTags(SliderFileSystem fileSystem,
                                         String appDef) throws SliderException {
     Set<String> tags;
+    Metainfo metainfo;
     try {
-      Metainfo metainfo = AgentUtils.getApplicationMetainfo(fileSystem, appDef);
-      Application application = metainfo.getApplication();
-      tags = new HashSet<>();
-      tags.add("Name: " + application.getName());
-      tags.add("Version: " + application.getVersion());
-      tags.add("Description: " + SliderUtils.truncate(application.getComment(), 80));
+      metainfo = AgentUtils.getApplicationMetainfo(fileSystem, appDef);
     } catch (IOException e) {
-      log.error("error retrieving metainfo from {}", appDef, e);
-      throw new SliderException("error retrieving metainfo", e);
+      log.error("Error retrieving metainfo from {}", appDef, e);
+      throw new SliderException("Error retrieving metainfo", e);
     }
+
+    if(metainfo == null) {
+      log.error("Error retrieving metainfo from {}", appDef);
+      throw new SliderException("Error parsing metainfo file, possibly bad structure.");
+    }
+
+    Application application = metainfo.getApplication();
+    tags = new HashSet<>();
+    tags.add("Name: " + application.getName());
+    tags.add("Version: " + application.getVersion());
+    tags.add("Description: " + SliderUtils.truncate(application.getComment(), 80));
 
     return tags;
   }

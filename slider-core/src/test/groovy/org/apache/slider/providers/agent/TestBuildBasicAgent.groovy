@@ -46,29 +46,28 @@ class TestBuildBasicAgent extends AgentTestBase {
 
   private static class TestResources {
     static File slider_core = new File(new File(".").absoluteFile, "src/test/python");
-    static String app_def = "appdef_1.zip"
     static String bad_app_def = "appdef_1.tar"
-    static File app_def_path = new File(slider_core, app_def)
     static File bad_app_def_path = new File(slider_core, bad_app_def)
     static String agt_conf = "agent.ini"
     static File agt_conf_path = new File(slider_core, agt_conf)
 
-    static public File getAppDef() {
-      return app_def_path;
+    public static File getAppDef() {
+      return new File(app_def_pkg_path);
     }
 
-    static public File getBadAppDef() {
+    public static File getBadAppDef() {
       return bad_app_def_path;
     }
 
-    static public File getAgentConf() {
+    public static File getAgentConf() {
       return agt_conf_path;
     }
 
-    static public File getAgentImg() {
-      return app_def_path;
+    public static File getAgentImg() {
+      return new File(app_def_pkg_path);
     }
   }
+
 
   @Test
   public void testBuildMultipleRoles() throws Throwable {
@@ -265,7 +264,7 @@ class TestBuildBasicAgent extends AgentTestBase {
           false)
       failWithBuildSucceeding(badArgs1, "missing package home or image path")
     } catch (BadConfigException expected) {
-     
+
     }
 
     try {
