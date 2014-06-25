@@ -121,7 +121,7 @@ public class SliderAmIpFilter implements Filter {
     }
     try {
       if (user == null) {
-        log.warn("Could not find " + WebAppProxyServlet.PROXY_USER_COOKIE_NAME
+        log.debug("Could not find " + WebAppProxyServlet.PROXY_USER_COOKIE_NAME
                  + " cookie, so user will not be set");
         chain.doFilter(req, resp);
       } else {
