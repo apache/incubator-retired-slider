@@ -29,6 +29,7 @@ import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.server.avro.RoleHistoryHeader;
 import org.apache.slider.server.avro.RoleHistoryWriter;
+import org.mortbay.log.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -468,11 +469,16 @@ public class RoleHistory {
     NodeInstance nodeInstance = null;
     
     List<NodeInstance> targets = getNodesForRoleId(roleKey);
+    int cnt = targets == null ? 0 : targets.size();
+    Log.info("There're " + cnt + " nodes to consider for " + role.getName());
     while (targets != null && !targets.isEmpty() && nodeInstance == null) {
       NodeInstance head = targets.remove(0);
       if (head.getActiveRoleInstances(roleKey) == 0) {
         nodeInstance = head;
       }
+    }
+    if (nodeInstance == null) {
+      Log.debug("No node selected for " + role.getName());
     }
     return nodeInstance;
   }
