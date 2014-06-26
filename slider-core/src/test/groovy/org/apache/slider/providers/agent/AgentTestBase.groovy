@@ -47,7 +47,7 @@ public abstract class AgentTestBase extends YarnZKMiniClusterTestBase {
   @Rule
   public TemporaryFolder folder = new TemporaryFolder();
 
-  public static String app_def_pkg_path;
+  public String app_def_pkg_path;
 
   @Before
   public void setupAppPkg() {
