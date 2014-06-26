@@ -42,8 +42,7 @@ public class HBaseRoles {
    */
   static {
     ROLES.add(new ProviderRole(HBaseKeys.ROLE_WORKER, KEY_WORKER));
-    // Master doesn't need data locality
-    ROLES.add(new ProviderRole(HBaseKeys.ROLE_MASTER, KEY_MASTER,PlacementPolicy.NO_DATA_LOCALITY));
+    ROLES.add(new ProviderRole(HBaseKeys.ROLE_MASTER, KEY_MASTER));
   }
 
 
