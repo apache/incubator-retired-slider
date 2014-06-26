@@ -17,38 +17,36 @@
 -->
 <metainfo>
   <schemaVersion>2.0</schemaVersion>
-  <services>
-    <service>
-      <name>TEST_COMMAND_LOG</name>
-      <comment>
-        When started it creates a new log file and stores all commands in the
-        log file. When stopped it renames the file.
-      </comment>
-      <version>0.1.0</version>
-      <components>
-        <component>
-          <name>COMMAND_LOGGER</name>
-          <category>MASTER</category>
-          <commandScript>
-            <script>scripts/cl.py</script>
-            <scriptType>PYTHON</scriptType>
-            <timeout>600</timeout>
-          </commandScript>
-        </component>
-      </components>
+  <application>
+    <name>TEST_COMMAND_LOG</name>
+    <comment>
+      When started it creates a new log file and stores all commands in the
+      log file. When stopped it renames the file.
+    </comment>
+    <version>0.1.0</version>
+    <components>
+      <component>
+        <name>COMMAND_LOGGER</name>
+        <category>MASTER</category>
+        <commandScript>
+          <script>scripts/cl.py</script>
+          <scriptType>PYTHON</scriptType>
+          <timeout>600</timeout>
+        </commandScript>
+      </component>
+    </components>
 
-      <osSpecifics>
-        <osSpecific>
-          <osType>any</osType>
-          <packages>
-            <package>
-              <type>tarball</type>
-              <name>files/command_log.tar.gz</name>
-            </package>
-          </packages>
-        </osSpecific>
-      </osSpecifics>
+    <osSpecifics>
+      <osSpecific>
+        <osType>any</osType>
+        <packages>
+          <package>
+            <type>tarball</type>
+            <name>files/command_log.tar.gz</name>
+          </package>
+        </packages>
+      </osSpecific>
+    </osSpecifics>
 
-    </service>
-  </services>
+  </application>
 </metainfo>

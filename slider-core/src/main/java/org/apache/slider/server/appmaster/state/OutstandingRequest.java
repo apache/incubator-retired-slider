@@ -108,7 +108,7 @@ public final class OutstandingRequest {
     if (node != null) {
       hosts = new String[1];
       hosts[0] = node.hostname;
-      relaxLocality = false;
+      relaxLocality = true;
       locationSpecified = true;
       // tell the node it is in play
       node.getOrCreate(roleId);
