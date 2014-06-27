@@ -43,7 +43,7 @@ public final class ContainerPriority {
   public static int buildPriority(int role,
                                   boolean locationSpecified) {
     int location = locationSpecified ? LOCATION : 0;
-    return role | LOCATION;
+    return role | location;
   }
 
 

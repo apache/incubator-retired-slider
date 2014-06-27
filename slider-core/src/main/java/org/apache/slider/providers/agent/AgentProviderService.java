@@ -634,6 +634,7 @@ public class AgentProviderService extends AbstractProviderService implements
     Application application = getMetainfo().getApplication();
     if (application == null) {
       log.error("Malformed app definition: Expect application as the top level element for metainfo.xml");
+      return scriptPath;
     }
     for (Component component : application.getComponents()) {
       if (component.getName().equals(roleName)) {
