@@ -406,6 +406,7 @@ public class RoleHistory {
       for (int i = 0; i < roleSize; i++) {
         NodeEntry nodeEntry = ni.get(i);
         if (nodeEntry != null && nodeEntry.isAvailable()) {
+          log.debug("Adding {} for role {}", ni, i);
           getOrCreateNodesForRoleId(i).add(ni);
         }
       }
@@ -470,7 +471,7 @@ public class RoleHistory {
     
     List<NodeInstance> targets = getNodesForRoleId(roleKey);
     int cnt = targets == null ? 0 : targets.size();
-    Log.info("There're " + cnt + " nodes to consider for " + role.getName());
+    log.info("There're {} nodes to consider for {}", cnt, role.getName());
     while (targets != null && !targets.isEmpty() && nodeInstance == null) {
       NodeInstance head = targets.remove(0);
       if (head.getActiveRoleInstances(roleKey) == 0) {
@@ -478,7 +479,7 @@ public class RoleHistory {
       }
     }
     if (nodeInstance == null) {
-      Log.debug("No node selected for " + role.getName());
+      log.debug("No node selected for {}", role.getName());
     }
     return nodeInstance;
   }
@@ -597,6 +598,7 @@ public class RoleHistory {
         hosts = outstandingRequests.cancelOutstandingRequests(role);
       if (!hosts.isEmpty()) {
         //add the list
+        log.debug("Adding {} hosts for role {}", hosts.size(), role);
         getOrCreateNodesForRoleId(role).addAll(hosts);
         sortAvailableNodeList(role);
       }
