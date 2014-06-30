@@ -60,10 +60,10 @@ def confDir(sliderdir):
   localconf = os.path.join(sliderdir, CONF)
   return os.environ.get(SLIDER_CONF_DIR,localconf) 
 
-def dirMustExist(dir):
-  if not os.path.exists(dir):
-    raise Exception("Directory does not exist: %s " % dir)
-  return dir
+def dirMustExist(dirname):
+  if not os.path.exists(dirname):
+    raise Exception("Directory does not exist: %s " % dirname)
+  return dirname
 
 def read(pipe, line):
   """
@@ -83,51 +83,15 @@ def read(pipe, line):
       return line, True
   else:
     return line, False
-    
 
 
-def usage():
-  print "Usage: slider <action> <arguments>"
-  return 1
-
-
-def main():
+def runProcess(commandline):
   """
-  Slider main method
-  :return: exit code of the process
+  Run a process
+  :param commandline: command line 
+  :return:the return code
   """
-  if len(sys.argv)==1 :
-    return usage()
-  print "stdout encoding: "+ sys.stdout.encoding
-  args = sys.argv[1:]
-  slider_home = sliderDir()
-  libdir = dirMustExist(libDir(slider_home))
-  confdir = dirMustExist(confDir(slider_home))
-  default_jvm_opts = DEFAULT_JVM__OPTS % confdir
-  slider_jvm_opts = os.environ.get(SLIDER_JVM_OPTS, default_jvm_opts)
-  # split the JVM opts by space
-  jvm_opts_split = slider_jvm_opts.split()
-  slider_classpath_extra = os.environ.get(SLIDER_CLASSPATH_EXTRA, "")
-  p = os.pathsep    # path separator
-  d = os.sep        # dir separator
-  slider_classpath = libdir + d + "*" + p \
-                     + confdir + p \
-                     + slider_classpath_extra 
-                     
-
-  print "slider_home = \"%s\"" % slider_home
-  print "slider_jvm_opts = \"%s\"" % slider_jvm_opts
-  print "slider_classpath = \"%s\"" % slider_classpath
-
-  #java = "/usr/bin/java"
-  commandline = ["java", ]
-  commandline.append("-classpath")
-  commandline.append(slider_classpath)
-  commandline.extend(jvm_opts_split)
-  commandline.append(SLIDER_CLASSNAME)
-  commandline.extend(args)
   print "ready to exec : %s" % commandline
-  # docs warn of using PIPE on stderr 
   exe = subprocess.Popen(commandline,
                          stdin=None,
                          stdout=subprocess.PIPE,
@@ -155,6 +119,63 @@ def main():
   return exe.returncode
 
 
+def java(classname, args, classpath, jvm_opts_list):
+  """
+  Execute a java process, hooking up stdout and stderr
+  and printing them a line at a time as they come in
+  :param classname: classname
+  :param args:  arguments to the java program
+  :param classpath: classpath
+  :param jvm_opts_list: list of JVM options
+  :return: the exit code.
+  """
+  # split the JVM opts by space
+  # java = "/usr/bin/java"
+  commandline = ["java"]
+  commandline.extend(jvm_opts_list)
+  commandline.append("-classpath")
+  commandline.append(classpath)
+  commandline.append(classname)
+  commandline.extend(args)
+  return runProcess(commandline)
+
+
+def usage():
+  print "Usage: slider <action> <arguments>"
+  return 1
+
+
+def main():
+  """
+  Slider main method
+  :return: exit code of the process
+  """
+  if len(sys.argv)==1 :
+    return usage()
+  # print "stdout encoding: "+ sys.stdout.encoding
+  args = sys.argv[1:]
+  slider_home = sliderDir()
+  libdir = dirMustExist(libDir(slider_home))
+  confdir = dirMustExist(confDir(slider_home))
+  default_jvm_opts = DEFAULT_JVM__OPTS % confdir
+  slider_jvm_opts = os.environ.get(SLIDER_JVM_OPTS, default_jvm_opts)
+  jvm_opts_split = slider_jvm_opts.split()
+  slider_classpath_extra = os.environ.get(SLIDER_CLASSPATH_EXTRA, "")
+  p = os.pathsep    # path separator
+  d = os.sep        # dir separator
+  slider_classpath = libdir + d + "*" + p \
+                     + confdir + p \
+                     + slider_classpath_extra 
+                     
+
+  print "slider_home = \"%s\"" % slider_home
+  print "slider_jvm_opts = \"%s\"" % slider_jvm_opts
+  print "slider_classpath = \"%s\"" % slider_classpath
+
+  return java(SLIDER_CLASSNAME,
+              args,
+              slider_classpath,
+              jvm_opts_split)
 
 if __name__ == '__main__':
   """
