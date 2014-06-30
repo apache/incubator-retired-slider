@@ -38,11 +38,11 @@ import org.apache.hadoop.yarn.util.Records;
 public final class ContainerPriority {
 
   // bit that represents whether location is specified
-  static final int LOCATION = 1 << 30;
+  static final int NOLOCATION = 1 << 30;
   
   public static int buildPriority(int role,
                                   boolean locationSpecified) {
-    int location = locationSpecified ? LOCATION : 0;
+    int location = locationSpecified ? 0 : NOLOCATION;
     return role | location;
   }
 
@@ -57,7 +57,7 @@ public final class ContainerPriority {
   
   
   public static int extractRole(int priority) {
-    return priority >= LOCATION ? priority^LOCATION : priority;
+    return priority >= NOLOCATION ? priority^NOLOCATION : priority;
   }
 
   /**
