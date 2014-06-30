@@ -27,11 +27,9 @@ import org.apache.hadoop.fs.FileSystem as HadoopFS
 @Slf4j
 class AgentUploads implements FuntestProperties {
   final Configuration conf
-  private final FileUploader uploader
-  private final HadoopFS clusterFS
-  private final Path homeDir
-  
-
+  public final FileUploader uploader
+  public final HadoopFS clusterFS
+  public final Path homeDir
 
   AgentUploads(Configuration conf) {
     this.conf = conf
@@ -52,6 +50,8 @@ class AgentUploads implements FuntestProperties {
         homeDir,
         AGENT_TAR_FILENAME)
 
+    //create the home dir or fail
+    uploader.mkHomeDir()
     // Upload the agent tarball
     uploader.copyIfOutOfDate(localAgentTar, agentTarballPath, force)
 
@@ -59,10 +59,7 @@ class AgentUploads implements FuntestProperties {
     // Upload the agent.ini
     def agentIniPath = new Path(homeDir, AGENT_INI)
     uploader.copyIfOutOfDate(localAgentIni, agentIniPath, force)
-    
     return [agentTarballPath, agentIniPath]
-
-
   }
 
 }
