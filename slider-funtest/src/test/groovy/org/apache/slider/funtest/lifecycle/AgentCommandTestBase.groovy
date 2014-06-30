@@ -80,6 +80,9 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   @Before
   public void setupApplicationPackage() {
+    AgentUploads agentUploads = new AgentUploads(SLIDER_CONFIG)
+    agentUploads.uploader.mkHomeDir()
+
     appPkgPath = new Path(clusterFS.homeDirectory, "cmd_log_app_pkg.zip")
     if (!clusterFS.exists(appPkgPath)) {
       clusterFS.delete(appPkgPath, false)
@@ -87,14 +90,17 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     def pkgPath = folder.newFolder("testpkg")
     File zipFileName = new File(pkgPath, "cmd_log_app_pkg.zip").canonicalFile
-    assume(new File(APP_PKG_DIR).exists(), "App pkg dir not found at $APP_PKG_DIR")
+
+    def localZipDirectory = new File(APP_PKG_DIR)
+    assume(localZipDirectory.exists(), "App pkg dir not found at $APP_PKG_DIR")
 
     zipDir(zipFileName.canonicalPath, APP_PKG_DIR)
 
     // Verify and upload the app pkg
     assume(zipFileName.exists(), "App pkg not found at $zipFileName")
     Path localAppPkg = new Path(zipFileName.toURI());
-    clusterFS.copyFromLocalFile(false, true, localAppPkg, appPkgPath)
+    agentUploads.uploader.copyIfOutOfDate(zipFileName, appPkgPath, false)
+    
   }
 
   public static void logShell(SliderShell shell) {

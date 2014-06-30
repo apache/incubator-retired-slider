@@ -20,12 +20,14 @@ package org.apache.slider.funtest.framework
 
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.FileUtil
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.fs.permission.FsPermission
 import org.apache.hadoop.security.AccessControlException
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.hadoop.fs.FileSystem as HadoopFS
+
+@SuppressWarnings("GroovyOctalInteger")
 @Slf4j
 class FileUploader {
   final Configuration conf
@@ -60,18 +62,20 @@ class FileUploader {
     }
     if (toCopy) {
       log.info("Copying $src to $destPath")
+      def dir = destPath.getParent()
       try {
         fs.delete(destPath, true)
-        fs.mkdirs(destPath.getParent(), FsPermission.dirDefault)
+        fs.mkdirs(dir, FsPermission.dirDefault)
         return FileUtil.copy(src, fs, destPath, false, conf)
       } catch (AccessControlException ace) {
-        log.error("No write access to test user home directory. " +
+        log.error("No write access to destination directory $dir" +
                   "Ensure home directory exists and has correct permissions." +
                   ace, ace)
         throw ace
       }
     } else {
-      log.debug("Skipping copy as the destination $destPath considered up to date")
+      log.debug(
+          "Skipping copy as the destination $destPath considered up to date")
       return false;
     }
   }
@@ -79,7 +83,7 @@ class FileUploader {
   public HadoopFS getFileSystem(Path dest) {
     getFileSystem(user, dest)
   }
-  
+
   public HadoopFS getFileSystem() {
     getFileSystem(user, HadoopFS.getDefaultUri(conf))
   }
@@ -88,13 +92,46 @@ class FileUploader {
   public def getFileSystem(
       UserGroupInformation user, final Path path) {
     return getFileSystem(user, path.toUri())
-    
+
   }
+
   public def getFileSystem(
       UserGroupInformation user, final URI uri) {
-    
+
     SudoClosure.sudo(user) {
       HadoopFS.get(uri, conf);
     }
+  }
+
+  public def getFileSystemAsUserHdfs() {
+    def hdfs = UserGroupInformation.createRemoteUser("hdfs")
+    getFileSystem(hdfs, HadoopFS.getDefaultUri(conf))
+  }
+
+  /**
+   * Create the home dir. If it can't be created as the user,
+   * try to become the user 'hdfs' and try there, setting the
+   * user and group after.
+   * @return the home dir
+   */
+  public def mkHomeDir() {
+    def fs = fileSystem
+    def home = fs.homeDirectory
+    if (!fs.exists(home)) {
+      try {
+        fs.mkdirs(home)
+      } catch (AccessControlException ace) {
+        log.info("Failed to mkdir $home as $user -impersonating 'hdfs")
+        if (UserGroupInformation.securityEnabled) {
+          // in a secure cluster, we cannot impersonate HDFS, so rethrow
+          throw ace;
+        }
+        //now create as hdfs
+        def FsAsUserHDFS = fileSystemAsUserHdfs
+        FsAsUserHDFS.mkdirs(home, new FsPermission((short) 00755))
+        FsAsUserHDFS.setOwner(home, user.userName, user.primaryGroupName)
+      }
+    }
+    return home
   }
 }
