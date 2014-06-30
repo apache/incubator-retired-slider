@@ -20,9 +20,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
+ * Application type defined in the metainfo
  */
-public class Service {
+public class Application {
   String name;
   String comment;
   String version;
@@ -32,7 +32,7 @@ public class Service {
   List<CommandOrder> commandOrders;
   ConfigurationDependencies configDependencies;
 
-  public Service() {
+  public Application() {
     exportGroups = new ArrayList<>();
     components = new ArrayList<>();
     osSpecifics = new ArrayList<>();

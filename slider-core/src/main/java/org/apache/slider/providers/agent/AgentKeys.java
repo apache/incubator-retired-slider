@@ -86,7 +86,6 @@ public interface AgentKeys {
 
   String JAVA_HOME = "java_home";
   String PACKAGE_LIST = "package_list";
-  String COMPONENT_SCRIPT = "role.script";
   String WAIT_HEARTBEAT = "wait.heartbeat";
   String PYTHON_EXE = "python";
   String HEARTBEAT_MONITOR_INTERVAL = "heartbeat.monitor.interval";

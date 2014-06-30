@@ -41,7 +41,7 @@ class TestMockRMOperations extends BaseMockAppStateTest implements MockRoles {
 
   @Test
   public void testPriorityOnly() throws Throwable {
-    assert 5 == buildPriority(5, false)
+    assert 5 == extractRole(buildPriority(5, false))
   }
 
   @Test

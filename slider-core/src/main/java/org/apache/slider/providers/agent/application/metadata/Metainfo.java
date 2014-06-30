@@ -16,19 +16,14 @@
  */
 package org.apache.slider.providers.agent.application.metadata;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 /**
- *
+ * Application metainfo uber class
  */
 public class Metainfo {
   String schemaVersion;
-  List<Service> services;
+  Application application;
 
   public Metainfo() {
-    services = new ArrayList<Service>();
   }
 
   public String getSchemaVersion() {
@@ -39,11 +34,11 @@ public class Metainfo {
     this.schemaVersion = schemaVersion;
   }
 
-  public void addService(Service service) {
-    services.add(service);
+  public Application getApplication() {
+    return application;
   }
 
-  public List<Service> getServices() {
-    return Collections.unmodifiableList(services);
+  public void setApplication(Application application) {
+    this.application = application;
   }
 }

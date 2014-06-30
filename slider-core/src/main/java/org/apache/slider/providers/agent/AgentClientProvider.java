@@ -34,8 +34,8 @@ import org.apache.slider.core.launch.AbstractLauncher;
 import org.apache.slider.providers.AbstractClientProvider;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
+import org.apache.slider.providers.agent.application.metadata.Application;
 import org.apache.slider.providers.agent.application.metadata.Metainfo;
-import org.apache.slider.providers.agent.application.metadata.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -152,7 +152,7 @@ public class AgentClientProvider extends AbstractClientProvider
       instanceDefinition.getAppConfOperations().
           getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
     } catch (BadConfigException bce) {
-      throw new BadConfigException("Application definition must be provided." + bce.getMessage());
+      throw new BadConfigException("Application definition must be provided. " + bce.getMessage());
     }
     String appDef = instanceDefinition.getAppConfOperations().
         getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
@@ -171,7 +171,7 @@ public class AgentClientProvider extends AbstractClientProvider
       throw new BadConfigException("Either agent package path " +
                                    AgentKeys.PACKAGE_PATH + " or image root " +
                                    OptionKeys.INTERNAL_APPLICATION_IMAGE_PATH
-                                   + " must be provided");
+                                   + " must be provided.");
     }
 
     try {
@@ -202,17 +202,24 @@ public class AgentClientProvider extends AbstractClientProvider
   public Set<String> getApplicationTags(SliderFileSystem fileSystem,
                                         String appDef) throws SliderException {
     Set<String> tags;
+    Metainfo metainfo;
     try {
-      Metainfo metainfo = AgentUtils.getApplicationMetainfo(fileSystem, appDef);
-      Service service = metainfo.getServices().get(0);
-      tags = new HashSet<>();
-      tags.add("Name: " + service.getName());
-      tags.add("Version: " + service.getVersion());
-      tags.add("Description: " + SliderUtils.truncate(service.getComment(), 80));
+      metainfo = AgentUtils.getApplicationMetainfo(fileSystem, appDef);
     } catch (IOException e) {
-      log.error("error retrieving metainfo from {}", appDef, e);
-      throw new SliderException("error retrieving metainfo", e);
+      log.error("Error retrieving metainfo from {}", appDef, e);
+      throw new SliderException("Error retrieving metainfo", e);
     }
+
+    if(metainfo == null) {
+      log.error("Error retrieving metainfo from {}", appDef);
+      throw new SliderException("Error parsing metainfo file, possibly bad structure.");
+    }
+
+    Application application = metainfo.getApplication();
+    tags = new HashSet<>();
+    tags.add("Name: " + application.getName());
+    tags.add("Version: " + application.getVersion());
+    tags.add("Description: " + SliderUtils.truncate(application.getComment(), 80));
 
     return tags;
   }

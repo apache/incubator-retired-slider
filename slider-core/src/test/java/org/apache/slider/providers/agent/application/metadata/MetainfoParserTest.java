@@ -16,6 +16,7 @@
  */
 package org.apache.slider.providers.agent.application.metadata;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,16 +40,16 @@ public class MetainfoParserTest {
         METAINFO_XML);
     MetainfoParser parser = new MetainfoParser();
     Metainfo metainfo = parser.parse(resStream);
-    assert metainfo != null;
-    assert metainfo.services.size() == 1;
-    Service service = metainfo.getServices().get(0);
-    assert "STORM".equals(service.getName());
-    assert 5 == service.getComponents().size();
-    OSPackage pkg = service.getOSSpecifics().get(0).getPackages().get(0);
+    Assert.assertNotNull(metainfo);
+    Assert.assertNotNull(metainfo.getApplication());
+    Application application = metainfo.getApplication();
+    assert "STORM".equals(application.getName());
+    assert 5 == application.getComponents().size();
+    OSPackage pkg = application.getOSSpecifics().get(0).getPackages().get(0);
     assert "tarball".equals(pkg.getType());
     assert "files/apache-storm-0.9.1.2.1.1.0-237.tar.gz".equals(pkg.getName());
     boolean found = false;
-    for (Component comp : service.getComponents()) {
+    for (Component comp : application.getComponents()) {
       if (comp != null && comp.getName().equals("NIMBUS")) {
         found = true;
       }
