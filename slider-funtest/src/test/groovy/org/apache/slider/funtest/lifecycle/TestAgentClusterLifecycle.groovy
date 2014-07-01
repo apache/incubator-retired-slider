@@ -36,7 +36,7 @@ import org.junit.Test
 @CompileStatic
 @Slf4j
 public class TestAgentClusterLifecycle extends AgentCommandTestBase
-implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
+  implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
 
   static String CLUSTER = "test_agent_cluster_lifecycle"
@@ -47,6 +47,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
   @Before
   public void prepareCluster() {
     setupCluster(CLUSTER)
+    describe("Create a 0-role cluster, so testing AM start/stop")
   }
 
   @After
