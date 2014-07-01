@@ -24,7 +24,7 @@
     <relativePath>../../../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>command-logger-app-package</artifactId>
+  <artifactId>apache-slider-command-logger</artifactId>
   <packaging>pom</packaging>
   <name>Slider Command Logger App Package</name>
   <description>Slider Command Logger App Package</description>
@@ -92,6 +92,21 @@
           </execution>
         </executions>
       </plugin>
+
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <version>${apache-rat-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>check-licenses</id>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
     </plugins>
   </build>
 
