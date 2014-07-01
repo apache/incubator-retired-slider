@@ -1146,7 +1146,7 @@ public final class SliderUtils {
       // and nothing else
       classpath.appendAll(classpath.javaVMClasspath());
     } else {
-      classpath.addLibDir("./" + libdir);
+      classpath.addLibDir(libdir);
       if (sliderConfDir != null) {
         classpath.addClassDirectory(sliderConfDir);
       }

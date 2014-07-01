@@ -38,7 +38,7 @@ public class JavaCommandLineBuilder extends CommandLineBuilder {
    * @return the path to the Java binary
    */
   protected String getJavaBinary() {
-    return ApplicationConstants.Environment.JAVA_HOME.$() + "/bin/java";
+    return ApplicationConstants.Environment.JAVA_HOME.$$() + "/bin/java";
   }
 
   /**

@@ -41,12 +41,7 @@
     <name>slider.funtest.enabled</name>
     <value>false</value>
   </property>
-  
-  <property>
-    <name>slider.security.enabled</name>
-    <value>false</value>
-  </property>
-  
+
   <property>
     <name>yarn.application.classpath</name>
     <value>

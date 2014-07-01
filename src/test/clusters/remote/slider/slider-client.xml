@@ -50,11 +50,6 @@
   </property>
 
   <property>
-    <name>slider.security.enabled</name>
-    <value>false</value>
-  </property>
-
-  <property>
     <name>slider.test.agent.enabled</name>
     <value>true</value>
   </property>

@@ -19,6 +19,7 @@
 package org.apache.slider.client;
 
 import com.google.common.annotations.VisibleForTesting;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.ApplicationClientProtocol;
 import org.apache.hadoop.yarn.api.protocolrecords.KillApplicationRequest;
@@ -74,7 +75,7 @@ public class SliderYarnClientImpl extends YarnClientImpl {
     List<ApplicationReport> allApps = getApplications(types);
     List<ApplicationReport> results = new ArrayList<>();
     for (ApplicationReport report : allApps) {
-      if (user == null || user.equals(report.getUser())) {
+      if (StringUtils.isEmpty(user) || user.equals(report.getUser())) {
         results.add(report);
       }
     }

@@ -18,6 +18,7 @@
 
 package org.apache.slider.funtest.framework
 
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem as HadoopFS
@@ -29,6 +30,7 @@ import org.apache.hadoop.security.UserGroupInformation
 
 @SuppressWarnings("GroovyOctalInteger")
 @Slf4j
+@CompileStatic
 class FileUploader {
   final Configuration conf
   final UserGroupInformation user
@@ -69,8 +71,8 @@ class FileUploader {
         return FileUtil.copy(src, fs, destPath, false, conf)
       } catch (AccessControlException ace) {
         log.error("No write access to destination directory $dir" +
-                  "Ensure home directory exists and has correct permissions." +
-                  ace, ace)
+                  "Ensure home directory exists and has correct permissions. $ace",
+                  ace)
         throw ace
       }
     } else {
@@ -103,9 +105,10 @@ class FileUploader {
     }
   }
 
-  public def getFileSystemAsUserHdfs() {
-    def hdfs = UserGroupInformation.createRemoteUser("hdfs")
-    getFileSystem(hdfs, HadoopFS.getDefaultUri(conf))
+  public def getFileSystemAsUserName(String username) {
+
+    def user = UserGroupInformation.createRemoteUser(username)
+    getFileSystem(user, HadoopFS.getDefaultUri(conf))
   }
 
   /**
@@ -127,11 +130,22 @@ class FileUploader {
           throw ace;
         }
         //now create as hdfs
-        def FsAsUserHDFS = fileSystemAsUserHdfs
-        FsAsUserHDFS.mkdirs(home, new FsPermission((short) 00755))
-        FsAsUserHDFS.setOwner(home, user.userName, user.primaryGroupName)
+        try {
+          attemptToCreateHomeDir("hdfs", home)
+        } catch (AccessControlException ace2) {
+
+          log.info("Failed to mkdir $home as $user -impersonating 'hadoop'")
+          attemptToCreateHomeDir("hadoop", home)
+
+        }
       }
     }
     return home
+  }
+
+  public void attemptToCreateHomeDir(String username, Path home) {
+    def privilegedFS = getFileSystemAsUserName(username)
+    privilegedFS.mkdirs(home, new FsPermission((short) 00755))
+    privilegedFS.setOwner(home, user.userName, user.primaryGroupName)
   }
 }
