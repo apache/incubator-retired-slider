@@ -34,6 +34,8 @@
   </organization>
 
   <modules>
+    <module>app-packages/command-logger/application-pkg</module>
+    <module>app-packages/command-logger/slider-pkg</module>
     <module>slider-core</module>
     <module>slider-agent</module>
     <module>app-packages/accumulo</module>

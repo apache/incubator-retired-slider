@@ -39,13 +39,15 @@ class AgentCommandTestBase extends CommandTestBase
 implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   public static final boolean AGENTTESTS_ENABLED
+  private static String TEST_APP_PKG_PROP = "test.app.pkg"
+
 
   protected static String APP_RESOURCE = "../slider-core/src/test/app_packages/test_command_log/resources.json"
   protected static String APP_TEMPLATE = "../slider-core/src/test/app_packages/test_command_log/appConfig.json"
-  protected static String APP_PKG_DIR = "../slider-core/src/test/app_packages/test_command_log/"
   protected static String AGENT_CONF = "../slider-agent/conf/agent.ini"
-  protected static final File LOCAL_SLIDER_AGENT_TARGZ
   protected static final File LOCAL_AGENT_CONF
+  public static final String TEST_APP_PKG = sysprop(TEST_APP_PKG_PROP)
+
 
   protected static Path agentTarballPath;
   protected static Path appPkgPath;
@@ -83,24 +85,13 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     AgentUploads agentUploads = new AgentUploads(SLIDER_CONFIG)
     agentUploads.uploader.mkHomeDir()
 
-    appPkgPath = new Path(clusterFS.homeDirectory, "cmd_log_app_pkg.zip")
+    appPkgPath = new Path(clusterFS.homeDirectory, "apache-slider-command-logger.zip")
     if (!clusterFS.exists(appPkgPath)) {
       clusterFS.delete(appPkgPath, false)
     }
 
-    def pkgPath = folder.newFolder("testpkg")
-    File zipFileName = new File(pkgPath, "cmd_log_app_pkg.zip").canonicalFile
-
-    def localZipDirectory = new File(APP_PKG_DIR)
-    assume(localZipDirectory.exists(), "App pkg dir not found at $APP_PKG_DIR")
-
-    zipDir(zipFileName.canonicalPath, APP_PKG_DIR)
-
-    // Verify and upload the app pkg
-    assume(zipFileName.exists(), "App pkg not found at $zipFileName")
-    Path localAppPkg = new Path(zipFileName.toURI());
+    File zipFileName = new File(TEST_APP_PKG).canonicalFile
     agentUploads.uploader.copyIfOutOfDate(zipFileName, appPkgPath, false)
-    
   }
 
   public static void logShell(SliderShell shell) {
