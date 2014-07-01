@@ -21,25 +21,31 @@
   They are not passed to the AM
 -->
 <configuration>
+  
+  <property>
+    <name>hostname</name>
+    <value>c6401</value>
+  </property>
+  
   <property>
     <name>slider.client.resource.origin</name>
-    <value>configs/c6401/slider</value>
+    <value>configs/${hostname}/slider</value>
     <description>This is just for diagnostics</description>
   </property>
 
   <property>
     <name>yarn.resourcemanager.address</name>
-    <value>c6401:8050</value>
+    <value>${hostname}:8050</value>
   </property>
   
   <property>
     <name>fs.defaultFS</name>
-    <value>hdfs://c6401.ambari.apache.org:8020</value>
+    <value>hdfs://${hostname}.ambari.apache.org:8020</value>
   </property>
 
   <property>
     <name>slider.zookeeper.quorum</name>
-    <value>c6401:2181</value>
+    <value>${hostname}:2181</value>
   </property>
 
   <property>

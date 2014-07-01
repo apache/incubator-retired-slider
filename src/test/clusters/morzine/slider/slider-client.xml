@@ -17,28 +17,45 @@
    limitations under the License.
 -->
 <!--
-  Morzine is runing Hadoop on Windows
+  Properties set here are picked up in the client.
+  They are not passed to the AM
 -->
+<configuration>
+
+  <property>
+    <name>hostname</name>
+    <value>morzine</value>
+  </property>
+
+  <property>
+    <name>slider.client.resource.origin</name>
+    <value>configs/${hostname}/slider</value>
+    <description>This is just for diagnostics</description>
+  </property>
 
   <property>
     <name>yarn.resourcemanager.address</name>
-    <value>morzine:8050</value>
+    <value>${hostname}:8032</value>
   </property>
-  
+
   <property>
     <name>fs.defaultFS</name>
-    <value>hdfs://morzine:8020</value>
+    <value>hdfs://${hostname}:8020</value>
   </property>
 
   <property>
     <name>slider.zookeeper.quorum</name>
-    <value>morzine:2181</value>
+    <value>${hostname}:2181</value>
   </property>
 
+  <!-- 
+  This is a windows path as picked up from
+   http://morzine:8088/conf
+  -->
   <property>
     <name>yarn.application.classpath</name>
     <value>
-      /etc/hadoop/conf,/usr/lib/hadoop/*,/usr/lib/hadoop/lib/*,/usr/lib/hadoop-hdfs/*,/usr/lib/hadoop-hdfs/lib/*,/usr/lib/hadoop-yarn/*,/usr/lib/hadoop-yarn/lib/*,/usr/lib/hadoop-mapreduce/*,/usr/lib/hadoop-mapreduce/lib/*
+      %HADOOP_CONF_DIR%,%HADOOP_COMMON_HOME%/share/hadoop/common/*,%HADOOP_COMMON_HOME%/share/hadoop/common/lib/*,%HADOOP_HDFS_HOME%/share/hadoop/hdfs/*,%HADOOP_HDFS_HOME%/share/hadoop/hdfs/lib/*,%HADOOP_MAPRED_HOME%/share/hadoop/mapreduce/*,%HADOOP_MAPRED_HOME%/share/hadoop/mapreduce/lib/*,%HADOOP_YARN_HOME%/share/hadoop/yarn/*,%HADOOP_YARN_HOME%/share/hadoop/yarn/lib/*
     </value>
   </property>
 
