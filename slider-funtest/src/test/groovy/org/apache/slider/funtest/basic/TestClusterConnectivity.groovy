@@ -36,7 +36,7 @@ class TestClusterConnectivity extends CommandTestBase {
 
     def fs = clusterFS
     def status = fs.listStatus(new Path("/"))
-    status.each {it -> log.info(it.path.toString())}
+    status.each {it -> log.info("${it.path} = ${it}")}
     
   }
 
