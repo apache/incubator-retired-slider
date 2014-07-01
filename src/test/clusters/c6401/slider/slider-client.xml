@@ -38,11 +38,6 @@
   </property>
 
   <property>
-    <name>slider.security.enabled</name>
-    <value>false</value>
-  </property>
-
-  <property>
     <name>slider.zookeeper.quorum</name>
     <value>c6401:2181</value>
   </property>
