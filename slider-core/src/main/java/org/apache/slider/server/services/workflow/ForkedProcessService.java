@@ -281,12 +281,15 @@ public class ForkedProcessService extends AbstractWorkflowExecutorService implem
     }
     long start = System.currentTimeMillis();
     while (System.currentTimeMillis() - start <= duration) {
-      if (finalOutput && process.isFinalOutputProcessed()) {
-        //end of stream, break
-        break;
-      }
-      if (!process.isRecentOutputEmpty()) {
+      boolean finished;
+      if (finalOutput) {
+        // final flag means block until all data is done
+        finished = process.isFinalOutputProcessed();
+      } else {
         // there is some output
+        finished = !process.isRecentOutputEmpty();
+      }
+      if (finished) {
         break;
       }
       try {
@@ -298,6 +301,5 @@ public class ForkedProcessService extends AbstractWorkflowExecutorService implem
     }
     return process.getRecentOutput();
   }
-  
   
 }
