@@ -894,7 +894,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     if (clusterSecure) {
       // if the cluster is secure, make sure that
       // the relevant security settings go over
-      addConfOptionToCLI(commandLine, config, KEY_SECURITY_ENABLED);
+/*
+      addConfOptionToCLI(commandLine, config, KEY_SECURITY);
+*/
       addConfOptionToCLI(commandLine,
           config,
           DFSConfigKeys.DFS_NAMENODE_USER_NAME_KEY);

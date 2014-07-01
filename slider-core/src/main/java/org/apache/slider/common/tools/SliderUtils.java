@@ -904,7 +904,8 @@ public final class SliderUtils {
    * @return true if the slider client/service should be in secure mode
    */
   public static boolean isHadoopClusterSecure(Configuration conf) {
-    return conf.getBoolean(SliderXmlConfKeys.KEY_SECURITY_ENABLED, false);
+    return SecurityUtil.getAuthenticationMethod(conf) !=
+           UserGroupInformation.AuthenticationMethod.SIMPLE;
   }
 
   /**
@@ -953,22 +954,22 @@ public final class SliderUtils {
         conf.get(CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHENTICATION));
     log.debug("hadoop.security.authorization={}",
         conf.get(CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION));
-    SecurityUtil.setAuthenticationMethod(
-        UserGroupInformation.AuthenticationMethod.KERBEROS, conf);
+/*    SecurityUtil.setAuthenticationMethod(
+        UserGroupInformation.AuthenticationMethod.KERBEROS, conf);*/
     UserGroupInformation.setConfiguration(conf);
     UserGroupInformation authUser = UserGroupInformation.getCurrentUser();
     log.debug("Authenticating as " + authUser.toString());
     log.debug("Login user is {}", UserGroupInformation.getLoginUser());
     if (!UserGroupInformation.isSecurityEnabled()) {
       throw new BadConfigException("Although secure mode is enabled," +
-                                   "the application has already set up its user as an insecure entity %s",
-                                   authUser);
+               "the application has already set up its user as an insecure entity %s",
+               authUser);
     }
     if (authUser.getAuthenticationMethod() ==
         UserGroupInformation.AuthenticationMethod.SIMPLE) {
       throw new BadConfigException("Auth User is not Kerberized %s" +
-                   " -security has already been set up with the wrong authentication method",
-                                   authUser);
+       " -security has already been set up with the wrong authentication method",
+                       authUser);
 
     }
 

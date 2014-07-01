@@ -93,8 +93,8 @@ public interface SliderXmlConfKeys {
    * Flag which is set to indicate that security should be enabled
    * when talking to this cluster.
    */
-  String KEY_SECURITY_ENABLED =
-      CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION;
+  String KEY_SECURITY =
+      CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHENTICATION;
 
   /**
    * queue name
