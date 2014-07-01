@@ -1144,7 +1144,7 @@ public final class SliderUtils {
     if (usingMiniMRCluster) {
       // for mini cluster we pass down the java CP properties
       // and nothing else
-      classpath.appendAll(classpath.javaVMClasspath());
+      classpath.appendAll(classpath.localJVMClasspath());
     } else {
       classpath.addLibDir(libdir);
       if (sliderConfDir != null) {
