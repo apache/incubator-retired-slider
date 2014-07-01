@@ -30,7 +30,7 @@ Use the following command to install HBase tarball locally:
 After HBase tarball is publised locally in maven repository, you can use the following command:
   mvn clean package -DskipTests -Phbase-app-package
 App package can be found in
-  app-packages/HBase/target/apache-slider-hbase-${hbase.version}-app-package-${slider.version}.zip
+  app-packages/hbase/target/apache-slider-hbase-${hbase.version}-app-package-${slider.version}.zip
 
 Create a zip package at the root of the package (<slider enlistment>/app-packages/hbase/)
   zip -r hbase-v098.zip .
