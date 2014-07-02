@@ -300,6 +300,7 @@
             <exclude>**/httpfs-signature.secret</exclude>
             <exclude>**/dfs.exclude</exclude>
             <exclude>**/*.iml</exclude>
+            <exclude>**/rat.txt</exclude>
             <exclude>DISCLAIMER</exclude>
           </excludes>
         </configuration>
