@@ -279,27 +279,7 @@ public class ForkedProcessService extends AbstractWorkflowExecutorService implem
     if (process == null) {
       return new LinkedList<String>();
     }
-    long start = System.currentTimeMillis();
-    while (System.currentTimeMillis() - start <= duration) {
-      boolean finished;
-      if (finalOutput) {
-        // final flag means block until all data is done
-        finished = process.isFinalOutputProcessed();
-      } else {
-        // there is some output
-        finished = !process.isRecentOutputEmpty();
-      }
-      if (finished) {
-        break;
-      }
-      try {
-        Thread.sleep(100);
-      } catch (InterruptedException ie) {
-        Thread.currentThread().interrupt();
-        break;
-      }
-    }
-    return process.getRecentOutput();
+    return process.getRecentOutput(finalOutput, duration);
   }
   
 }

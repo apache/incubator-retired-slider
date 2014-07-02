@@ -126,12 +126,13 @@ public class TestLongLivedProcess extends WorkflowServiceTestBase implements
   }
 
   /**
-   * Get the final output. includes a quick sleep for the tail output
+   * Get the final output. 
    * @return the last output
    */
   private List<String> getFinalOutput() {
-    return process.getRecentOutput();
+    return process.getRecentOutput(true, 4000);
   }
+
 
   private LongLivedProcess initProcess(List<String> commands) {
     process = new LongLivedProcess(name.getMethodName(), log, commands);
