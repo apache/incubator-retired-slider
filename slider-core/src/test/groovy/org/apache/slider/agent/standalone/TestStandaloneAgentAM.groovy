@@ -101,7 +101,7 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     dumpRegistryServiceTypes(names)
     describe "service registry instance IDs"
 
-    def instanceIds = client.listRegistedSliderInstances()
+    def instanceIds = client.listRegisteredSliderInstances()
 
     log.info("number of instanceIds: ${instanceIds.size()}")
     instanceIds.each { String it -> log.info(it) }
