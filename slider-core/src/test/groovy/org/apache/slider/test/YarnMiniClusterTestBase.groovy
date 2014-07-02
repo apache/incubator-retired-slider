@@ -130,9 +130,9 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
           DEFAULT_TEST_TIMEOUT_SECONDS * 1000)
   )
   @BeforeClass
-  public void checkWindowsSupport() {
+  public static void checkWindowsSupport() {
     if (Shell.WINDOWS) {
-      Assert.assertNotNull("winutils.exe not found", Shell.WINUTILS)
+      assertNotNull("winutils.exe not found", Shell.WINUTILS)
     }
   } 
 
