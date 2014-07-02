@@ -28,6 +28,7 @@ import org.apache.hadoop.fs.FileUtil
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.hdfs.MiniDFSCluster
 import org.apache.hadoop.service.ServiceOperations
+import org.apache.hadoop.util.Shell
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
@@ -48,7 +49,9 @@ import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.main.ServiceLauncherBaseTest
 import org.apache.slider.server.appmaster.SliderAppMaster
 import org.junit.After
+import org.junit.Assert
 import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.rules.TestName
 import org.junit.rules.Timeout
@@ -126,6 +129,12 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
           KEY_TEST_TIMEOUT,
           DEFAULT_TEST_TIMEOUT_SECONDS * 1000)
   )
+  @BeforeClass
+  public void checkWindowsSupport() {
+    if (Shell.WINDOWS) {
+      Assert.assertNotNull("winutils.exe not found", Shell.WINUTILS)
+    }
+  } 
 
 
   @Rule
