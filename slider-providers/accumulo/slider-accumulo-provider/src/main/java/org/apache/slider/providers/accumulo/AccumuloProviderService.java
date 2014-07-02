@@ -410,9 +410,13 @@ public class AccumuloProviderService extends AbstractProviderService implements
     String monitorKey = "Active Accumulo Monitor: ";
     String monitorAddr = getInfoAvoidingNull(clusterDesc, AccumuloKeys.MONITOR_ADDRESS);
     if (!StringUtils.isBlank(monitorAddr)) {
+      try {
         HostAndPort hostPort = HostAndPort.fromString(monitorAddr);
         details.put(monitorKey,
             String.format("http://%s:%d", hostPort.getHostText(), hostPort.getPort()));
+      } catch (Exception e) {
+        details.put(monitorKey + "N/A", null);
+      }
     } else {
       details.put(monitorKey + "N/A", null);
     }
