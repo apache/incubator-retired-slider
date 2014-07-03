@@ -26,17 +26,32 @@ import org.apache.slider.client.SliderYarnClientImpl
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.core.zk.ZookeeperUtils
 import org.apache.slider.funtest.framework.CommandTestBase
+import org.junit.BeforeClass
 import org.junit.Test
 
 @Slf4j
+/**
+ * Test basic connectivity with the target cluster, including 
+ * HDFS, YARN and ZK
+ */
 class TestClusterConnectivity extends CommandTestBase {
 
+
+  public static final int CONNECT_TIMEOUT = 2000
+
+  @BeforeClass
+  public static void setup() {
+    assumeFunctionalTestsEnabled()
+  }
+  
   @Test
   public void testFileSystemUp() throws Throwable {
 
     def fs = clusterFS
     def status = fs.listStatus(new Path("/"))
-    status.each {it -> log.info("${it.path} = ${it}")}
+    status.each {
+      log.info("${it.path} = ${it}")
+    }
     
   }
 
@@ -45,7 +60,9 @@ class TestClusterConnectivity extends CommandTestBase {
     def quorum = SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.REGISTRY_ZK_QUORUM)
     assert quorum
     def tuples = ZookeeperUtils.splitToHostsAndPortsStrictly(quorum);
-    tuples.each {it -> telnet(it.getHostText(), it.getPort())}
+    tuples.each {
+      telnet(it.hostText, it.port)
+    }
     
   }
 
@@ -79,18 +96,14 @@ class TestClusterConnectivity extends CommandTestBase {
     assert host != ""
     assert port != 0
     try {
-      def socket = new Socket(host, port);
+      def socket = new Socket();
+      def addr = new InetSocketAddress(host, port)
+      socket.connect(addr, CONNECT_TIMEOUT)
+      socket.close()
     } catch (IOException e) {
       throw NetUtils.wrapException(host, port, "localhost", 0, e)
     }
-/*
 
-    socket.withStreams { input, output ->
-      output << "echo testing ...\n"
-      def buffer = input.newReader().readLine()
-      println "response = ${buffer}"
-*/
-    
   }
   
 }
