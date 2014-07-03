@@ -60,7 +60,7 @@ class TestClusterConnectivity extends CommandTestBase {
     testRMTelnet()
     SliderYarnClientImpl yarnClient = new SliderYarnClientImpl()
     try {
-      SLIDER_CONFIG.setInt("﻿ipc.client.connect.retry.interval",100)
+      SLIDER_CONFIG.setInt("ipc.client.connect.retry.interval",100)
       SLIDER_CONFIG.setInt(
           YarnConfiguration.RESOURCEMANAGER_CONNECT_MAX_WAIT_MS,5000)
       SLIDER_CONFIG.setInt(
