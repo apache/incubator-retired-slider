@@ -153,4 +153,6 @@ public interface SliderXmlConfKeys {
 
   String IPC_CLIENT_FALLBACK_TO_SIMPLE_AUTH =
       "ipc.client.fallback-to-simple-auth-allowed";
+  String HADOOP_HTTP_FILTER_INITIALIZERS =
+      "hadoop.http.filter.initializers";
 }

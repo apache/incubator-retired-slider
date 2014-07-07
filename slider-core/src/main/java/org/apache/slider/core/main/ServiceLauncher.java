@@ -65,7 +65,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @SuppressWarnings("UseOfSystemOutOrSystemErr")
 public class ServiceLauncher<S extends Service>
-  implements LauncherExitCodes, IrqHandler.Interrupted {
+  implements LauncherExitCodes, IrqHandler.Interrupted,
+    Thread.UncaughtExceptionHandler {
   private static final Logger LOG = LoggerFactory.getLogger(
       ServiceLauncher.class);
 
@@ -144,8 +145,8 @@ public class ServiceLauncher<S extends Service>
    * @param conf configuration
    * @param processedArgs arguments after the configuration parameters
    * have been stripped out.
-   * @param addShutdownHook should a shutdown hook be added to terminate
-   * this service on shutdown. Tests should set this to false.
+   * @param addProcessHooks should process failure handlers be added to
+   * terminate this service on shutdown. Tests should set this to false.
    * @throws ClassNotFoundException classname not on the classpath
    * @throws IllegalAccessException not allowed at the class
    * @throws InstantiationException not allowed to instantiate it
@@ -154,13 +155,13 @@ public class ServiceLauncher<S extends Service>
    */
   public int launchService(Configuration conf,
       String[] processedArgs,
-      boolean addShutdownHook)
+      boolean addProcessHooks)
     throws Throwable {
 
     instantiateService(conf);
 
-    // and the shutdown hook if requested
-    if (addShutdownHook) {
+    // add any process shutdown hooks
+    if (addProcessHooks) {
       ServiceShutdownHook shutdownHook = new ServiceShutdownHook(service);
       ShutdownHookManager.get().addShutdownHook(shutdownHook, PRIORITY);
     }
@@ -279,13 +280,59 @@ public class ServiceLauncher<S extends Service>
   }
 
   /**
+   * Uncaught exception handler.
+   * If an error is raised: shutdown
+   * The state of the system is unknown at this point -attempting
+   * a clean shutdown is dangerous. Instead: exit
+   * @param thread thread that failed
+   * @param exception exception
+   */
+  @Override
+  public void uncaughtException(Thread thread, Throwable exception) {
+    if (ShutdownHookManager.get().isShutdownInProgress()) {
+      LOG.error("Thread {} threw an error during shutdown: {}.",
+          thread.toString(),
+          exception,
+          exception);
+    } else if (exception instanceof Error) {
+      try {
+        LOG.error("Thread {} threw an error: {}. Shutting down",
+            thread.toString(),
+            exception,
+            exception);
+      } catch (Throwable err) {
+        // We don't want to not exit because of an issue with logging
+      }
+      if (exception instanceof OutOfMemoryError) {
+        // After catching an OOM java says it is undefined behavior, so don't
+        // even try to clean up or we can get stuck on shutdown.
+        try {
+          System.err.println("Halting due to Out Of Memory Error...");
+        } catch (Throwable err) {
+          // Again we don't want to exit because of logging issues.
+        }
+        ExitUtil.halt(EXIT_EXCEPTION_THROWN);
+      } else {
+        // error other than OutOfMemory
+        exit(convertToExitException(exception));
+      }
+    } else {
+      // simple exception in a thread. There's a policy decision here:
+      // terminate the service vs. keep going after a thread has failed
+      LOG.error("Thread {} threw an exception: {}",
+          thread.toString(),
+          exception,
+          exception);
+    }
+  }
+
+  /**
    * Print a warning: currently this goes to stderr
    * @param text
    */
   protected void warn(String text) {
     System.err.println(text);
   }
-
 
   /**
    * Report an error. The message is printed to stderr; the exception
@@ -448,25 +495,39 @@ public class ServiceLauncher<S extends Service>
     } catch (ExitUtil.ExitException ee) {
       exitException = ee;
     } catch (Throwable thrown) {
-      int exitCode;
-      String message = thrown.getMessage();
-      if (message == null) {
-        message = thrown.toString();
-      }
-      if (thrown instanceof ExitCodeProvider) {
-        exitCode = ((ExitCodeProvider) thrown).getExitCode();
-        if (LOG.isDebugEnabled()) {
-          LOG.debug("While running {}: {}", getServiceName(), message, thrown);
-        }
-        LOG.error(message);
-      } else {
-        // not any of the service launcher exceptions -assume something worse
-        error(message, thrown);
-        exitCode = EXIT_EXCEPTION_THROWN;
-      }
-      exitException = new ExitUtil.ExitException(exitCode, message);
-      exitException.initCause(thrown);
+      exitException = convertToExitException(thrown);
     }
+    return exitException;
+  }
+
+  /**
+   * Convert the exception to one that can be handed off to ExitUtils;
+   * if it is of the write type it is passed throw as is. If not, a 
+   * new exception with the exit code {@link #EXIT_EXCEPTION_THROWN}
+   * is created, with the argument <code>thrown</code> as the inner cause
+   * @param thrown the exception thrown
+   * @return an exception to terminate the process with
+   */
+  protected ExitUtil.ExitException convertToExitException(Throwable thrown) {
+    ExitUtil.ExitException exitException;
+    int exitCode;
+    String message = thrown.getMessage();
+    if (message == null) {
+      message = thrown.toString();
+    }
+    if (thrown instanceof ExitCodeProvider) {
+      exitCode = ((ExitCodeProvider) thrown).getExitCode();
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("While running {}: {}", getServiceName(), message, thrown);
+      }
+      LOG.error(message);
+    } else {
+      // not any of the service launcher exceptions -assume something worse
+      error(message, thrown);
+      exitCode = EXIT_EXCEPTION_THROWN;
+    }
+    exitException = new ExitUtil.ExitException(exitCode, message);
+    exitException.initCause(thrown);
     return exitException;
   }
 

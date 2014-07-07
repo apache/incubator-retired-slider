@@ -49,6 +49,7 @@ public class SliderAmIpFilter implements Filter {
   private static final long updateInterval = 5 * 60 * 1000;
   public static final String WS_CONTEXT_ROOT = "slider.rest.context.root";
 
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private String proxyHost;
   private Set<String> proxyAddresses = null;
   private long lastUpdate;

@@ -38,6 +38,9 @@ Download the tarball for HBase:
 Use the following command to install HBase tarball locally:
   mvn install:install-file -Dfile=<path-to-tarball> -DgroupId=org.apache.hbase -DartifactId=hbase -Dversion=0.98.3-hadoop2 -Dclassifier=bin -Dpackaging=tar.gz
 
+You may need to copy the hbase tarball to the following location if the above step doesn't publish the tarball:
+~/.m2/repository/org/apache/hbase/hbase/0.98.3-hadoop2/
+
 After HBase tarball is published locally in maven repository, you can use the following command:
   mvn clean package -DskipTests -Phbase-app-package
 

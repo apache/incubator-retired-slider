@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.slider.funtest.lifecycle
+package org.apache.slider.funtest.framework
 
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.Path
@@ -39,23 +39,26 @@ class AgentCommandTestBase extends CommandTestBase
 implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   public static final boolean AGENTTESTS_ENABLED
-  private static String TEST_APP_PKG_PROP = "test.app.pkg"
+  private static String TEST_APP_PKG_DIR_PROP = "test.app.pkg.dir"
+  private static String TEST_APP_PKG_FILE_PROP = "test.app.pkg.file"
+  private static String TEST_APP_RESOURCE = "test.app.resource"
+  private static String TEST_APP_TEMPLATE = "test.app.template"
 
 
-  protected static String APP_RESOURCE = "../slider-core/src/test/app_packages/test_command_log/resources.json"
-  protected static String APP_TEMPLATE = "../slider-core/src/test/app_packages/test_command_log/appConfig.json"
-  protected static String AGENT_CONF = "../slider-agent/conf/agent.ini"
-  protected static final File LOCAL_AGENT_CONF
-  public static final String TEST_APP_PKG = sysprop(TEST_APP_PKG_PROP)
+  protected String APP_RESOURCE = sysprop(TEST_APP_RESOURCE)
+  protected String APP_TEMPLATE = sysprop(TEST_APP_TEMPLATE)
+  public static final String TEST_APP_PKG_DIR = sysprop(TEST_APP_PKG_DIR_PROP)
+  public static final String TEST_APP_PKG_FILE = sysprop(TEST_APP_PKG_FILE_PROP)
 
 
   protected static Path agentTarballPath;
   protected static Path appPkgPath;
   protected static Path agtIniPath;
 
+  protected static boolean setup_failed
+
   static {
     AGENTTESTS_ENABLED = SLIDER_CONFIG.getBoolean(KEY_TEST_AGENT_ENABLED, false)
-    LOCAL_AGENT_CONF = new File(AGENT_CONF).canonicalFile
   }
 
   @Rule
@@ -71,27 +74,35 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     assumeAgentTestsEnabled()
 
   }
-  
+
   @Before
   public void uploadAgentTarball() {
     def agentUploads = new AgentUploads(SLIDER_CONFIG)
-    (agentTarballPath, agtIniPath) = 
+    (agentTarballPath, agtIniPath) =
         agentUploads.uploadAgentFiles(SLIDER_TAR_DIRECTORY, false)
-  } 
+  }
 
 
   @Before
   public void setupApplicationPackage() {
-    AgentUploads agentUploads = new AgentUploads(SLIDER_CONFIG)
-    agentUploads.uploader.mkHomeDir()
+    try {
+      AgentUploads agentUploads = new AgentUploads(SLIDER_CONFIG)
+      agentUploads.uploader.mkHomeDir()
 
-    appPkgPath = new Path(clusterFS.homeDirectory, "apache-slider-command-logger.zip")
-    if (!clusterFS.exists(appPkgPath)) {
-      clusterFS.delete(appPkgPath, false)
+      appPkgPath = new Path(clusterFS.homeDirectory, TEST_APP_PKG_FILE)
+      if (clusterFS.exists(appPkgPath)) {
+        clusterFS.delete(appPkgPath, false)
+        log.info "Existing app pkg deleted from $appPkgPath"
+      }
+
+      File zipFileName = new File(TEST_APP_PKG_DIR, TEST_APP_PKG_FILE).canonicalFile
+      agentUploads.uploader.copyIfOutOfDate(zipFileName, appPkgPath, false)
+      assume(clusterFS.exists(appPkgPath), "App pkg not uploaded to $appPkgPath")
+      log.info "App pkg uploaded at $appPkgPath"
+    } catch (Exception e) {
+      setup_failed = true
+      fail("Setup failed "+e)
     }
-
-    File zipFileName = new File(TEST_APP_PKG).canonicalFile
-    agentUploads.uploader.copyIfOutOfDate(zipFileName, appPkgPath, false)
   }
 
   public static void logShell(SliderShell shell) {
@@ -185,18 +196,6 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     }
   }
 
-  public static void zipDir(String zipFile, String dir) {
-    File dirObj = new File(dir);
-    ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFile));
-    log.info("Creating : " + zipFile);
-    try {
-      addDir(dirObj, out, "");
-    }
-    finally {
-      out.close();
-    }
-  }
-
   protected void repeatUntilTrue(Closure c, int maxAttempts, int sleepDur, Map args,
                                  boolean failIfUnsuccessful = false, String message = "") {
     int attemptCount = 0
@@ -215,6 +214,11 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
   }
 
   protected void cleanup(String applicationName) throws Throwable {
+    if (setup_failed) {
+      // cleanup probably won't work if setup failed
+      return
+    }
+
     log.info "Cleaning app instance, if exists, by name " + applicationName
     teardown(applicationName)
 

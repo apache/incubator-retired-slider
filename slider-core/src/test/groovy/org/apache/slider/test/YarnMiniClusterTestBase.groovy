@@ -183,7 +183,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
         hbaseLaunchWaitTime)
 
     accumuloTestsEnabled =
-        testConf.getBoolean(KEY_TEST_ACCUMULO_ENABLED, hbaseTestsEnabled)
+        testConf.getBoolean(KEY_TEST_ACCUMULO_ENABLED, accumuloTestsEnabled)
     accumuloLaunchWaitTime = getTimeOptionMillis(testConf,
         KEY_ACCUMULO_LAUNCH_TIME,
         accumuloLaunchWaitTime)
