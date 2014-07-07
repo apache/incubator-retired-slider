@@ -5,6 +5,7 @@
   "global": {
     "agent.conf": "/slider/agent/conf/agent.ini",
     "application.def": "/slider/${app.package.name}.zip",
+    "create.default.zookeeper.node": "true",
     "config_types": "core-site,hdfs-site,hbase-site",
     "java_home": "/usr/jdk64/jdk1.7.0_45",
     "package_list": "files/hbase-${hbase.version}-bin.tar.gz",

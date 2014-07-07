@@ -94,6 +94,8 @@ import org.apache.slider.core.registry.docstore.PublishedConfigurationOutputter;
 import org.apache.slider.core.registry.info.RegisteredEndpoint;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.core.registry.retrieve.RegistryRetriever;
+import org.apache.slider.core.zk.BlockingZKWatcher;
+import org.apache.slider.core.zk.ZKIntegration;
 import org.apache.slider.core.zk.ZKPathBuilder;
 import org.apache.slider.providers.AbstractClientProvider;
 import org.apache.slider.providers.SliderProviderFactory;
@@ -106,6 +108,10 @@ import org.apache.slider.server.services.registry.SliderRegistryService;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
 
 import static org.apache.slider.common.params.SliderActions.*;
+
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.ZooDefs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -268,6 +274,84 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     return exitCode;
   }
 
+  /**
+   * Delete the zookeeper node associated with the calling user and the cluster
+   **/
+  protected boolean deleteZookeeperNode(String clusterName) throws YarnException, IOException {
+    String user = getUsername();
+    String zkPath = ZKIntegration.mkClusterPath(user, clusterName);
+    try {
+      Configuration config = getConfig();
+      if (!SliderUtils.isHadoopClusterSecure(config)) {
+        ZKIntegration client = getZkClient(clusterName, user);
+        if (client != null) {
+          if (client.exists(zkPath)) {
+            log.info("Deleting zookeeper path {}", zkPath);
+          }
+          client.deleteRecursive(zkPath);
+          return true;
+        }
+      } else {
+        log.warn("Default zookeeper node is not available for secure cluster");
+      }
+    } catch (InterruptedException e) {
+      log.warn("Unable to recursively delete zk node {}", zkPath, e);
+    } catch (KeeperException e) {
+      log.warn("Unable to recursively delete zk node {}", zkPath, e);
+    } catch (BadConfigException e) {
+      log.warn("Unable to recursively delete zk node {}", zkPath, e);
+    }
+
+    return false;
+  }
+
+  /**
+   * Create the zookeeper node associated with the calling user and the cluster
+   */
+  protected String createZookeeperNode(String clusterName, Boolean nameOnly) throws YarnException, IOException {
+    String user = getUsername();
+    String zkPath = ZKIntegration.mkClusterPath(user, clusterName);
+    if(nameOnly) {
+      return zkPath;
+    }
+    Configuration config = getConfig();
+    if (!SliderUtils.isHadoopClusterSecure(config)) {
+      ZKIntegration client = getZkClient(clusterName, user);
+      if (client != null) {
+        try {
+          client.createPath(zkPath, "", ZooDefs.Ids.OPEN_ACL_UNSAFE,
+                            CreateMode.PERSISTENT);
+          return zkPath;
+        } catch (InterruptedException e) {
+          log.warn("Unable to create zk node {}", zkPath, e);
+        } catch (KeeperException e) {
+          log.warn("Unable to create zk node {}", zkPath, e);
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Gets a zookeeper client, returns null if it cannot connect to zookeeper
+   **/
+  protected ZKIntegration getZkClient(String clusterName, String user) throws YarnException {
+    String registryQuorum = lookupZKQuorum();
+    ZKIntegration client = null;
+    try {
+      BlockingZKWatcher watcher = new BlockingZKWatcher();
+      client = ZKIntegration.newInstance(registryQuorum, user, clusterName, true, false, watcher);
+      client.init();
+      watcher.waitForZKConnection(2 * 1000);
+    } catch (InterruptedException e) {
+      client = null;
+      log.warn("Unable to connect to zookeeper quorum {}", registryQuorum, e);
+    } catch (IOException e) {
+      log.warn("Unable to connect to zookeeper quorum {}", registryQuorum, e);
+    }
+    return client;
+  }
 
   /**
    * Destroy a cluster. There's two race conditions here
@@ -295,6 +379,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       sliderFileSystem.getFileSystem().delete(clusterDirectory, true);
     if (!deleted) {
       log.warn("Filesystem returned false from delete() operation");
+    }
+
+    if(!deleteZookeeperNode(clustername)) {
+      log.warn("Unable to perform node cleanup in Zookeeper.");
     }
 
     List<ApplicationReport> instances = findAllLiveInstances(clustername);
@@ -382,7 +470,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    */
   
   public void buildInstanceDefinition(String clustername,
-                                         AbstractClusterBuildingActionArgs buildInfo)
+                                      AbstractClusterBuildingActionArgs buildInfo)
         throws YarnException, IOException {
     // verify that a live cluster isn't there
     SliderUtils.validateClusterName(clustername);
@@ -498,11 +586,25 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         registryQuorum,
         quorum);
     String zookeeperRoot = buildInfo.getAppZKPath();
-    
+
     if (isSet(zookeeperRoot)) {
       zkPaths.setAppPath(zookeeperRoot);
-      
+    } else {
+      String createDefaultZkNode = appConf.getGlobalOptions().getOption(AgentKeys.CREATE_DEF_ZK_NODE, "false");
+      if (createDefaultZkNode.equals("true")) {
+        String defaultZKPath = createZookeeperNode(clustername, false);
+        log.info("ZK node created for application instance: {}.", defaultZKPath);
+        if (defaultZKPath != null) {
+          zkPaths.setAppPath(defaultZKPath);
+        }
+      } else {
+        // create AppPath if default is being used
+        String defaultZKPath = createZookeeperNode(clustername, true);
+        log.info("ZK node assigned to application instance: {}.", defaultZKPath);
+        zkPaths.setAppPath(defaultZKPath);
+      }
     }
+
     builder.addZKBinding(zkPaths);
 
     //then propagate any package URI
@@ -646,8 +748,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    */
   public LaunchedApplication launchApplication(String clustername,
                                                Path clusterDirectory,
-                               AggregateConf instanceDefinition,
-                               boolean debugAM)
+                                               AggregateConf instanceDefinition,
+                                               boolean debugAM)
     throws YarnException, IOException {
 
 

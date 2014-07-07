@@ -23,6 +23,7 @@ import org.apache.zookeeper.Watcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.ConnectException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class BlockingZKWatcher implements Watcher {
@@ -49,7 +50,8 @@ public class BlockingZKWatcher implements Watcher {
    * @param timeout timeout in millis
    */
 
-  public void waitForZKConnection(int timeout) throws InterruptedException {
+  public void waitForZKConnection(int timeout)
+      throws InterruptedException, ConnectException {
     synchronized (connectedFlag) {
       if (!connectedFlag.get()) {
         log.info("waiting for ZK event");
@@ -57,7 +59,9 @@ public class BlockingZKWatcher implements Watcher {
         connectedFlag.wait(timeout);
       }
     }
-    assert connectedFlag.get();
+    if (!connectedFlag.get()) {
+      throw new ConnectException("Unable to connect to ZK quorum");
+    }
   }
 
 }
