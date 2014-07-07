@@ -179,14 +179,18 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private YarnRPC yarnRPC;
 
   /** Handle to communicate with the Resource Manager*/
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private AMRMClientAsync asyncRMClient;
+
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
 
   private RMOperationHandler rmOperationHandler;
 
   /** Handle to communicate with the Node Manager*/
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   public NMClientAsync nmClientAsync;
 
-  YarnConfiguration conf;
+//  YarnConfiguration conf;
   /**
    * token blob
    */
@@ -197,13 +201,15 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   /**
    * Secret manager
    */
-  ClientToAMTokenSecretManager secretManager;
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
+  private ClientToAMTokenSecretManager secretManager;
   
   /** Hostname of the container*/
   private String appMasterHostname = "";
   /* Port on which the app master listens for status updates from clients*/
   private int appMasterRpcPort = 0;
   /** Tracking url to which app master publishes info for clients to monitor*/
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private String appMasterTrackingUrl = "";
 
   /** Application Attempt Id ( combination of attemptId and fail count )*/
@@ -235,6 +241,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private final ReentrantLock AMExecutionStateLock = new ReentrantLock();
   private final Condition isAMCompleted = AMExecutionStateLock.newCondition();
 
+  /**
+   * Exit code for the AM to return
+   */
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private int amExitCode =  0;
   
   /**
@@ -247,22 +257,30 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   /**
    * Flag to set if the process exit code was set before shutdown started
    */
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private boolean spawnedProcessExitedBeforeShutdownTriggered;
 
 
   /** Arguments passed in : raw*/
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private SliderAMArgs serviceArgs;
 
   /**
    * ID of the AM container
    */
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private ContainerId appMasterContainerID;
 
   /**
    * ProviderService of this cluster
    */
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private ProviderService providerService;
 
+  /**
+   * The registry service
+   */
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private SliderRegistryService registry;
   
   /**
@@ -277,13 +295,16 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private int containerMaxMemory;
   private String amCompletionReason;
 
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private RoleLaunchService launchService;
   
   //username -null if it is not known/not to be set
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private String hadoop_user_name;
   private String service_user_name;
   
   private SliderAMWebApp webApp;
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private InetSocketAddress rpcServiceAddress;
   private ProviderService sliderAMProvider;
 
@@ -327,7 +348,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
                SliderUtils.getKerberosRealm());
       UserGroupInformation.setConfiguration(conf);
       UserGroupInformation ugi = UserGroupInformation.getCurrentUser();
-      log.debug("Authenticating as " + ugi.toString());
+      log.debug("Authenticating as {}", ugi);
       SliderUtils.verifyPrincipalSet(conf,
           DFSConfigKeys.DFS_NAMENODE_USER_NAME_KEY);
       // always enforce protocol to be token-based.
@@ -356,11 +377,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   @Override // RunService
   public Configuration bindArgs(Configuration config, String... args) throws
                                                                       Exception {
-    config = super.bindArgs(config, args);
+    YarnConfiguration yarnConfiguration = new YarnConfiguration(
+        super.bindArgs(config, args));
     serviceArgs = new SliderAMArgs(args);
     serviceArgs.parse();
     //yarn-ify
-    YarnConfiguration yarnConfiguration = new YarnConfiguration(config);
     return SliderUtils.patchConfiguration(yarnConfiguration);
   }
 
@@ -450,11 +471,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     Configuration serviceConf = getConfig();
     // Try to get the proper filtering of static resources through the yarn proxy working
-    serviceConf.set("hadoop.http.filter.initializers",
+    serviceConf.set(HADOOP_HTTP_FILTER_INITIALIZERS,
                     SliderAmFilterInitializer.NAME);
     serviceConf.set(SliderAmIpFilter.WS_CONTEXT_ROOT, WS_CONTEXT_ROOT);
     
-    conf = new YarnConfiguration(serviceConf);
     //get our provider
     MapOperations globalInternalOptions =
       instanceDefinition.getInternalOperations().getGlobalOptions();
@@ -471,9 +491,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     sliderAMProvider = new SliderAMProviderService();
     initAndAddService(sliderAMProvider);
     
-    InetSocketAddress address = SliderUtils.getRmSchedulerAddress(conf);
+    InetSocketAddress address = SliderUtils.getRmSchedulerAddress(serviceConf);
     log.info("RM is at {}", address);
-    yarnRPC = YarnRPC.create(conf);
+    yarnRPC = YarnRPC.create(serviceConf);
 
     /*
      * Extract the container ID. This is then
@@ -580,7 +600,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       WebAppService<SliderAMWebApp> webAppService =
         new WebAppService<>("slider", webApp);
 
-      webAppService.init(conf);
+      webAppService.init(serviceConf);
       webAppService.start();
       addService(webAppService);
 
@@ -613,7 +633,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         applicationACLs = response.getApplicationACLs();
 
         //tell the server what the ACLs are 
-        rpcService.getServer().refreshServiceAcl(conf, new SliderAMPolicyProvider());
+        rpcService.getServer().refreshServiceAcl(serviceConf,
+            new SliderAMPolicyProvider());
       }
 
       // extract container list
@@ -979,7 +1000,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       // non complete containers should not be here
       assert (status.getState() == ContainerState.COMPLETE);
-      AppState.NodeCompletionResult result = appState.onCompletedNode(conf, status);
+      AppState.NodeCompletionResult result = appState.onCompletedNode(
+          getConfig(), status);
       if (result.containerFailed) {
         RoleInstance ri = result.roleInstance;
         log.error("Role instance {} failed ", ri);

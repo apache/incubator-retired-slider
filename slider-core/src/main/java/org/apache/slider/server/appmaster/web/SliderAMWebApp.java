@@ -50,7 +50,7 @@ public class SliderAMWebApp extends WebApp {
   public final SliderRegistryService registry;
 
   public SliderAMWebApp(SliderRegistryService registry) {
-    Preconditions.checkNotNull(registry);
+    Preconditions.checkArgument(registry != null, "registry null");
     this.registry = registry;
   }
 

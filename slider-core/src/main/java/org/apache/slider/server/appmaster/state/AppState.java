@@ -1171,7 +1171,7 @@ public class AppState {
    * @param status the node that has just completed
    * @return NodeCompletionResult
    */
-  public synchronized NodeCompletionResult onCompletedNode(YarnConfiguration amConf,
+  public synchronized NodeCompletionResult onCompletedNode(Configuration amConf,
       ContainerStatus status) {
     ContainerId containerId = status.getContainerId();
     NodeCompletionResult result = new NodeCompletionResult();
