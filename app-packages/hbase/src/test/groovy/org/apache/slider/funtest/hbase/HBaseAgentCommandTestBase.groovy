@@ -34,7 +34,7 @@ abstract class HBaseAgentCommandTestBase extends AgentCommandTestBase {
 
   static {
     HBASE_LAUNCH_WAIT_TIME = getTimeOptionMillis(SLIDER_CONFIG,
-      KEY_HBASE_LAUNCH_TIME,
+      KEY_TEST_HBASE_LAUNCH_TIME,
       1000 * DEFAULT_HBASE_LAUNCH_TIME_SECONDS)
   }
 
