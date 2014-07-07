@@ -23,7 +23,7 @@ import org.junit.After
 import org.junit.Before
 
 @Slf4j
-abstract class AccumuloAgentCommandTestBase extends AgentCommandTestBase {
+abstract class HBaseAgentCommandTestBase extends AgentCommandTestBase {
   protected static final int HBASE_LAUNCH_WAIT_TIME
   protected static final int HBASE_GO_LIVE_TIME = 60000
 
