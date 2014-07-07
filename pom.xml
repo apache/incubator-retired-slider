@@ -635,6 +635,12 @@
 
       <dependency>
         <groupId>org.apache.hbase</groupId>
+        <artifactId>hbase-protocol</artifactId>
+        <version>${hbase.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.hbase</groupId>
         <artifactId>hbase-it</artifactId>
         <version>${hbase.version}</version>
         <classifier>tests</classifier>
