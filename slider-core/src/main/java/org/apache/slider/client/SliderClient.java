@@ -280,6 +280,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   protected boolean deleteZookeeperNode(String clusterName) throws YarnException, IOException {
     String user = getUsername();
     String zkPath = ZKIntegration.mkClusterPath(user, clusterName);
+    Exception e = null;
     try {
       Configuration config = getConfig();
       if (!SliderUtils.isHadoopClusterSecure(config)) {
@@ -294,12 +295,16 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       } else {
         log.warn("Default zookeeper node is not available for secure cluster");
       }
-    } catch (InterruptedException e) {
-      log.warn("Unable to recursively delete zk node {}", zkPath, e);
-    } catch (KeeperException e) {
-      log.warn("Unable to recursively delete zk node {}", zkPath, e);
-    } catch (BadConfigException e) {
-      log.warn("Unable to recursively delete zk node {}", zkPath, e);
+    } catch (InterruptedException ignored) {
+      e = ignored;
+    } catch (KeeperException ignored) {
+      e = ignored;
+    } catch (BadConfigException ignored) {
+      e = ignored;
+    }
+    if (e != null) {
+      log.warn("Unable to recursively delete zk node {}", zkPath);
+      log.debug("Reason: ", e);
     }
 
     return false;
