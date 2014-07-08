@@ -3,7 +3,6 @@
   "metadata": {
   },
   "global": {
-    "agent.conf": "/slider/agent/conf/agent.ini",
     "application.def": "/slider/storm_v091.zip",
     "config_types": "storm-site",
     "java_home": "/usr/jdk64/jdk1.7.0_45",

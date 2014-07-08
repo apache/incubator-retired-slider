@@ -28,10 +28,6 @@ public interface AgentKeys {
   /**
    * {@value}
    */
-  String CONF_FILE = "agent.conf";
-  /**
-   * {@value}
-   */
   String REGION_SERVER = "regionserver";
   /**
    * What is the command for hbase to print a version: {@value}

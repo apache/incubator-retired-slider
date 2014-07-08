@@ -3,7 +3,6 @@
   "metadata": {
   },
   "global": {
-    "agent.conf": "agent.ini",
     "application.def": "${app.package.name}.zip",
     "create.default.zookeeper.node": "true",
     "config_types": "core-site,hdfs-site,hbase-site",

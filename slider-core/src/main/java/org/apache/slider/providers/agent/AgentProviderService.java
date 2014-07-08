@@ -234,11 +234,13 @@ public class AgentProviderService extends AbstractProviderService implements
     launcher.addLocalResource(AgentKeys.APP_DEFINITION_DIR, appDefRes);
 
     String agentConf = instanceDefinition.getAppConfOperations().
-        getGlobalOptions().getMandatoryOption(AgentKeys.AGENT_CONF);
-    LocalResource agentConfRes = fileSystem.createAmResource(
-        fileSystem.getFileSystem().resolvePath(new Path(agentConf)),
-        LocalResourceType.FILE);
-    launcher.addLocalResource(AgentKeys.AGENT_CONFIG_FILE, agentConfRes);
+        getGlobalOptions().getOption(AgentKeys.AGENT_CONF, "");
+    if (org.apache.commons.lang.StringUtils.isNotEmpty(agentConf)) {
+      LocalResource agentConfRes = fileSystem.createAmResource(fileSystem
+          .getFileSystem().resolvePath(new Path(agentConf)),
+          LocalResourceType.FILE);
+      launcher.addLocalResource(AgentKeys.AGENT_CONFIG_FILE, agentConfRes);
+    }
 
     String agentVer = instanceDefinition.getAppConfOperations().
         getGlobalOptions().getOption(AgentKeys.AGENT_VERSION, null);
