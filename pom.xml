@@ -302,6 +302,7 @@
             <exclude>**/*.iml</exclude>
             <exclude>**/rat.txt</exclude>
             <exclude>DISCLAIMER</exclude>
+            <exclude>app-packages/hbase/target/**</exclude>
           </excludes>
         </configuration>
       </plugin>
