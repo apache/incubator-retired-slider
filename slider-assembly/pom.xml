@@ -37,7 +37,7 @@
     <rpm.groupname>hadoop</rpm.groupname>
     <src.confdir>src/conf-hdp</src.confdir>
     <src.libdir>${project.build.directory}/lib</src.libdir>
-   <src.agent.ini.dir>${project.build.directory}/../../slider-agent/conf</src.agent.ini.dir>
+    <src.agent.ini.dir>${project.build.directory}/../../slider-agent/conf</src.agent.ini.dir>
   </properties>
 
   <build>
@@ -325,10 +325,10 @@
                   <sources>
                     <source>
                       <location>${src.agent.ini.dir}</location>
-<includes>
-<include>*.ini
-</include>
-</includes>
+                      <includes>
+                         <include>*.ini
+                        </include>
+                      </includes>
                     </source>
                   </sources>
                 </mapping>
