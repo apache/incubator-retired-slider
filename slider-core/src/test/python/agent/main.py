@@ -36,6 +36,8 @@ def main():
   parser.add_option('--label', dest='label', help='label')
   parser.add_option('--host', dest='host', help='port')
   parser.add_option('--port', dest='port', help='host')
+  parser.add_option('--secured_port', dest='secured_port', help='host')
+
   (options, args) = parser.parse_args()
 
   if options.log_folder:

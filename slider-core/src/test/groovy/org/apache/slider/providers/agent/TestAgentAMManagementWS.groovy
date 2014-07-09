@@ -24,11 +24,17 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.slider.api.StatusKeys
 import org.apache.slider.client.SliderClient
+import org.apache.slider.common.SliderKeys
+import org.apache.slider.core.conf.MapOperations
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.server.appmaster.web.SliderAMWebApp
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationResponse
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationStatus
+import org.apache.slider.server.services.security.CertificateManager
+import org.apache.slider.server.services.security.SecurityUtils
 import org.junit.Test
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 import javax.ws.rs.core.MediaType
 
@@ -42,8 +48,42 @@ import static org.apache.slider.test.SliderTestUtils.log
 @Slf4j
 class TestAgentAMManagementWS extends AgentTestBase {
 
-  public static final String MANAGEMENT_URI = SliderAMWebApp.BASE_PATH +"/ws/v1/slider/mgmt/";
   public static final String AGENT_URI = "ws/v1/slider/agents/";
+    final static Logger logger = LoggerFactory.getLogger(TestAgentAMManagementWS.class)
+    static {
+        //for localhost testing only
+        javax.net.ssl.HttpsURLConnection.setDefaultHostnameVerifier(
+                new javax.net.ssl.HostnameVerifier(){
+                    public boolean verify(String hostname,
+                                          javax.net.ssl.SSLSession sslSession) {
+                        logger.info("verifying hostname ${hostname}")
+                        InetAddress[] addresses =
+                            InetAddress.getAllByName(hostname);
+                        if (hostname.equals("localhost")) {
+                            return true;
+                        }
+                        for (InetAddress address : addresses) {
+                            if (address.getHostName().equals(hostname) ||
+                                address.isAnyLocalAddress() ||
+                                address.isLoopbackAddress()) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+                });
+
+        MapOperations compOperations = new MapOperations();
+        compOperations.put(SliderKeys.KEYSTORE_LOCATION, "/tmp/work/security/keystore.p12");
+        SecurityUtils.initializeSecurityParameters(compOperations);
+        CertificateManager certificateManager = new CertificateManager();
+        certificateManager.initRootCert(compOperations);
+        String keystoreFile = SecurityUtils.getSecurityDir() + File.separator + SliderKeys.KEYSTORE_FILE_NAME;
+        String password = SecurityUtils.getKeystorePass();
+        System.setProperty("javax.net.ssl.trustStore", keystoreFile);
+        System.setProperty("javax.net.ssl.trustStorePassword", password);
+        System.setProperty("javax.net.ssl.trustStoreType", "PKCS12");
+    }
 
   @Test
   public void testAgentAMManagementWS() throws Throwable {
@@ -84,7 +124,7 @@ class TestAgentAMManagementWS extends AgentTestBase {
 
     
     def status = dumpClusterStatus(sliderClient, "agent AM")
-    def liveURL = status.getInfo(StatusKeys.INFO_AM_WEB_URL) 
+    def liveURL = status.getInfo(StatusKeys.INFO_AM_AGENT_URL)
     if (liveURL) {
       agent_url = liveURL + AGENT_URI
     }
@@ -94,7 +134,7 @@ class TestAgentAMManagementWS extends AgentTestBase {
     log.info("conf   is ${liveURL}conf")
 
 
-    def sleeptime = 60
+    def sleeptime = 10
     log.info "sleeping for $sleeptime seconds"
     Thread.sleep(sleeptime * 1000)
     

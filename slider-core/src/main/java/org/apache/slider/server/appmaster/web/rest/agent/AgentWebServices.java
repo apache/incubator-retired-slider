@@ -14,36 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.slider.server.appmaster.web.rest;
+package org.apache.slider.server.appmaster.web.rest.agent;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import org.apache.slider.server.appmaster.web.WebAppApi;
-import org.apache.slider.server.appmaster.web.rest.agent.AgentResource;
-import org.apache.slider.server.appmaster.web.rest.management.ManagementResource;
-import org.apache.slider.server.appmaster.web.rest.publisher.PublisherResource;
+import org.apache.slider.server.appmaster.web.rest.RestPaths;
 
 import javax.ws.rs.Path;
+import javax.ws.rs.core.Context;
 
-/** The available REST services exposed by a slider AM. */
-@Singleton
-@Path(RestPaths.SLIDER_CONTEXT_ROOT)
-public class AMWebServices {
+/** The available agent REST services exposed by a slider AM. */
+@Path(RestPaths.SLIDER_AGENT_CONTEXT_ROOT)
+public class AgentWebServices {
   /** AM/WebApp info object */
+  @Context
   private WebAppApi slider;
 
-  @Inject
-  public AMWebServices(WebAppApi slider) {
-    this.slider = slider;
+  public AgentWebServices() {
   }
 
-  @Path(RestPaths.SLIDER_SUBPATH_MANAGEMENT)
-  public ManagementResource getManagementResource() {
-    return new ManagementResource(slider);
+  @Path(RestPaths.SLIDER_SUBPATH_AGENTS)
+  public AgentResource getAgentResource () {
+    return new AgentResource(slider);
   }
 
-  @Path(RestPaths.SLIDER_SUBPATH_PUBLISHER)
-  public PublisherResource getPublisherResource() {
-    return new PublisherResource(slider);
-  }
 }

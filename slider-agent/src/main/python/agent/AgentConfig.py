@@ -60,6 +60,9 @@ max_retries=2
 sleep_between_retries=1
 
 [security]
+keysdir=security/keys
+server_crt=ca.crt
+passphrase_env_var_name=SLIDER_PASSPHRASE
 
 [heartbeat]
 state_interval=6

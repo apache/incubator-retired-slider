@@ -110,9 +110,13 @@ public class SliderAMProviderService extends AbstractProviderService implements
   }
 
   @Override
-  public void applyInitialRegistryDefinitions(URL amWebAPI,
-      ServiceInstanceData instanceData) throws IOException {
-    super.applyInitialRegistryDefinitions(amWebAPI, instanceData);
+  public void applyInitialRegistryDefinitions(URL unsecureWebAPI,
+                                              URL secureWebAPI,
+                                              ServiceInstanceData instanceData) throws IOException {
+    super.applyInitialRegistryDefinitions(unsecureWebAPI,
+                                          secureWebAPI,
+                                          instanceData
+    );
 
     // now publish site.xml files
     YarnConfiguration defaultYarnConfig = new YarnConfiguration();
@@ -146,24 +150,24 @@ public class SliderAMProviderService extends AbstractProviderService implements
     try {
       RegistryView externalView = instanceData.externalView;
       RegisteredEndpoint webUI =
-          new RegisteredEndpoint(amWebAPI, "Application Master Web UI");
+          new RegisteredEndpoint(unsecureWebAPI, "Application Master Web UI");
 
       externalView.endpoints.put(CommonRegistryConstants.WEB_UI, webUI);
 
       externalView.endpoints.put(
           CustomRegistryConstants.MANAGEMENT_REST_API,
           new RegisteredEndpoint(
-              new URL(amWebAPI, SLIDER_PATH_MANAGEMENT),
+              new URL(unsecureWebAPI, SLIDER_PATH_MANAGEMENT),
               "Management REST API") );
 
       externalView.endpoints.put(
           CustomRegistryConstants.REGISTRY_REST_API,
           new RegisteredEndpoint(
-              new URL(amWebAPI, RestPaths.SLIDER_PATH_REGISTRY + "/" +
+              new URL(unsecureWebAPI, RestPaths.SLIDER_PATH_REGISTRY + "/" +
                                 RestPaths.REGISTRY_SERVICE),
               "Registry Web Service" ) );
 
-      URL publisherURL = new URL(amWebAPI, SLIDER_PATH_PUBLISHER);
+      URL publisherURL = new URL(unsecureWebAPI, SLIDER_PATH_PUBLISHER);
       externalView.endpoints.put(
           CustomRegistryConstants.PUBLISHER_REST_API,
           new RegisteredEndpoint(

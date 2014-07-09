@@ -159,10 +159,12 @@ public interface ProviderService extends ProviderCore, Service,
 
   /**
    * Prior to going live -register the initial service registry data
-   * @param amWebAPI
+   * @param unsecureWebAPI
+   * @param secureWebAPI
    * @param registryInstanceData
    */
-  void applyInitialRegistryDefinitions(URL amWebAPI,
-      ServiceInstanceData registryInstanceData) throws MalformedURLException,
+  void applyInitialRegistryDefinitions(URL unsecureWebAPI,
+                                       URL secureWebAPI,
+                                       ServiceInstanceData registryInstanceData) throws MalformedURLException,
       IOException;
 }

@@ -25,7 +25,7 @@ import unittest
 class TestNetUtil(unittest.TestCase):
 
   @patch("urlparse.urlparse")
-  @patch("httplib.HTTPConnection")
+  @patch("httplib.HTTPSConnection")
   def test_checkURL(self, httpsConMock, parseMock):
 
     NetUtil.logger = MagicMock()

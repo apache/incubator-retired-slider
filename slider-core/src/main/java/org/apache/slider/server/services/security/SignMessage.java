@@ -1,4 +1,4 @@
-/*
+/**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,25 +16,39 @@
  * limitations under the License.
  */
 
-package org.apache.slider.core.registry.info;
+package org.apache.slider.server.services.security;
+
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
 
 /**
- * These are constants unique to the Slider AM
+ *
+ * Sign certificate request data model.
+ *
  */
-public class CustomRegistryConstants {
+@XmlRootElement
+@XmlAccessorType(XmlAccessType.FIELD)
+@XmlType(name = "", propOrder = {})
+public class SignMessage {
 
-  public static final String MANAGEMENT_REST_API =
-      "org.apache.slider.management";
-  public static final String REGISTRY_REST_API =
-      "org.apache.slider.registry";
-  
-  public static final String PUBLISHER_REST_API =
-      "org.apache.slider.publisher";
-  
-  public static final String AGENT_REST_API =
-      "org.apache.slider.agents";
-
-  public static final String AM_IPC_PROTOCOL =
-      "org.apache.slider.appmaster";
-
+  @XmlElement
+  private String csr;
+  @XmlElement
+  private String passphrase;
+  public String getCsr() {
+    return csr;
+  }
+  public void setCsr(String csr) {
+    this.csr = csr;
+  }
+  public String getPassphrase() {
+    return passphrase;
+  }
+  public void setPassphrase(String passphrase) {
+    this.passphrase = passphrase;
+  }
 }
+

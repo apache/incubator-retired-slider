@@ -37,6 +37,7 @@ from NetUtil import NetUtil
 import ssl
 import ProcessHelper
 import Constants
+import security
 
 
 logger = logging.getLogger()
@@ -57,10 +58,10 @@ class Controller(threading.Thread):
     self.credential = None
     self.config = config
     self.hostname = config.getLabel()
-    server_url = 'http://' + config.get(AgentConfig.SERVER_SECTION,
+    server_url = 'https://' + config.get(AgentConfig.SERVER_SECTION,
                                         'hostname') + \
                  ':' + config.get(AgentConfig.SERVER_SECTION,
-                                  'port')
+                                  'secured_port')
     self.registerUrl = server_url + '/ws/v1/slider/agents/' + self.hostname + '/register'
     self.heartbeatUrl = server_url + '/ws/v1/slider/agents/' + self.hostname + '/heartbeat'
     self.netutil = NetUtil()
@@ -111,7 +112,8 @@ class Controller(threading.Thread):
     while not self.isRegistered:
       try:
         data = json.dumps(self.register.build(id))
-        logger.info("Registering with the server " + pprint.pformat(data))
+        logger.info("Registering with the server at " + self.registerUrl +
+                    " with data " + pprint.pformat(data))
         response = self.sendRequest(self.registerUrl, data)
         ret = json.loads(response)
         exitstatus = 0
@@ -395,11 +397,25 @@ class Controller(threading.Thread):
     pass
 
   def sendRequest(self, url, data):
-    req = urllib2.Request(url, data, {'Content-Type': 'application/json'})
-    f = urllib2.urlopen(req)
-    response = f.read()
-    f.close()
-    return response
+    response = None
+    try:
+        if self.cachedconnect is None: # Lazy initialization
+            self.cachedconnect = security.CachedHTTPSConnection(self.config)
+        req = urllib2.Request(url, data, {'Content-Type': 'application/json'})
+        response = self.cachedconnect.request(req)
+        return response
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        logger.error("Exception raised", exc_info=(exc_type, exc_value, exc_traceback))
+        if response is None:
+            err_msg = 'Request failed! Data: ' + str(data)
+            logger.warn(err_msg)
+            return {'exitstatus': 1, 'log': err_msg}
+        else:
+            err_msg = ('Response parsing failed! Request data: ' + str(data)
+                       + '; Response: ' + str(response))
+            logger.warn(err_msg)
+            return {'exitstatus': 1, 'log': err_msg}
 
 
 def main(argv=None):

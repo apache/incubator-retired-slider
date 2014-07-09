@@ -67,4 +67,7 @@ public interface StatusKeys {
   String INFO_AM_RPC_PORT = "info.am.rpc.port";
   String INFO_AM_WEB_PORT = "info.am.web.port";
   String INFO_AM_WEB_URL = "info.am.web.url";
+  String INFO_AM_AGENT_PORT = "info.am.agent.port";
+  String INFO_AM_AGENT_URL = "info.am.agent.url";
+  String INFO_AM_SECURED_AGENT_PORT = "info.am.agent.secured.port";
 }
