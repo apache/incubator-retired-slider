@@ -473,7 +473,7 @@ public final class SliderUtils {
     }
     return trailing? 
            b.toString()
-           : (b.substring(0, b.length() - 1));
+           : (b.substring(0, b.length() - separator.length()));
   }
 
   /**

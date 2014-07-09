@@ -262,7 +262,9 @@ class TestController(unittest.TestCase):
     data = "data"
     requestMock.return_value = conMock
 
-    self.assertEqual("response", self.controller.sendRequest(url, data))
+    expected = {'exitstatus': 1, 'log': 'Request failed! Data: ' + data}
+
+    self.assertEqual(expected, self.controller.sendRequest(url, data))
     requestMock.called_once_with(url, data,
       {'Content-Type': 'application/json'})
 

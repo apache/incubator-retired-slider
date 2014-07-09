@@ -61,7 +61,7 @@ public class TestContainerStatsBlock {
         "undefined",
         appState)
 
-    WebAppApiImpl inst = new WebAppApiImpl(clusterProto, providerAppState, providerService);
+    WebAppApiImpl inst = new WebAppApiImpl(clusterProto, providerAppState, providerService, null);
 
     Injector injector = Guice.createInjector(new AbstractModule() {
           @Override

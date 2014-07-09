@@ -255,7 +255,8 @@ public class TestAgentProviderService {
     expect(access.isApplicationLive()).andReturn(true).anyTimes();
     ClusterDescription desc = new ClusterDescription();
     desc.setInfo(StatusKeys.INFO_AM_HOSTNAME, "host1");
-    desc.setInfo(StatusKeys.INFO_AM_WEB_PORT, "8088");
+    desc.setInfo(StatusKeys.INFO_AM_AGENT_PORT, "8088");
+    desc.setInfo(StatusKeys.INFO_AM_SECURED_AGENT_PORT, "8089");
     desc.setInfo(OptionKeys.APPLICATION_NAME, "HBASE");
     expect(access.getClusterStatus()).andReturn(desc).anyTimes();
 
@@ -578,7 +579,8 @@ public class TestAgentProviderService {
     expect(access.isApplicationLive()).andReturn(true).anyTimes();
     ClusterDescription desc = new ClusterDescription();
     desc.setInfo(StatusKeys.INFO_AM_HOSTNAME, "host1");
-    desc.setInfo(StatusKeys.INFO_AM_WEB_PORT, "8088");
+    desc.setInfo(StatusKeys.INFO_AM_AGENT_PORT, "8088");
+    desc.setInfo(StatusKeys.INFO_AM_SECURED_AGENT_PORT, "8089");
     desc.setInfo(OptionKeys.APPLICATION_NAME, "HBASE");
     expect(access.getClusterStatus()).andReturn(desc).anyTimes();
 

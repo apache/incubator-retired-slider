@@ -209,6 +209,8 @@ public class AgentProviderService extends AbstractProviderService implements
     launcher.setEnv("AGENT_LOG_ROOT", logDir);
     log.info("AGENT_LOG_ROOT set to {}", logDir);
     launcher.setEnv(HADOOP_USER_NAME, System.getenv(HADOOP_USER_NAME));
+    // for 2-Way SSL
+    launcher.setEnv(SLIDER_PASSPHRASE, SliderKeys.PASSPHRASE);
 
     //local resources
 
@@ -261,7 +263,9 @@ public class AgentProviderService extends AbstractProviderService implements
     operation.add(ARG_HOST);
     operation.add(getClusterInfoPropertyValue(StatusKeys.INFO_AM_HOSTNAME));
     operation.add(ARG_PORT);
-    operation.add(getClusterInfoPropertyValue(StatusKeys.INFO_AM_WEB_PORT));
+    operation.add(getClusterInfoPropertyValue(StatusKeys.INFO_AM_AGENT_PORT));
+    operation.add(ARG_SECURED_PORT);
+    operation.add(getClusterInfoPropertyValue(StatusKeys.INFO_AM_SECURED_AGENT_PORT));
 
     String debugCmd = agentLaunchParameter.getNextLaunchParameter(role);
     if (debugCmd != null && debugCmd.length() != 0) {
@@ -986,15 +990,19 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   @Override
-  public void applyInitialRegistryDefinitions(URL amWebAPI,
+  public void applyInitialRegistryDefinitions(URL unsecureWebAPI,
+                                              URL secureWebAPI,
                                               ServiceInstanceData instanceData) throws IOException {
-    super.applyInitialRegistryDefinitions(amWebAPI, instanceData);
+    super.applyInitialRegistryDefinitions(unsecureWebAPI,
+                                          secureWebAPI,
+                                          instanceData
+    );
 
     try {
       instanceData.internalView.endpoints.put(
           CustomRegistryConstants.AGENT_REST_API,
           new RegisteredEndpoint(
-              new URL(amWebAPI, SLIDER_PATH_AGENTS),
+              new URL(secureWebAPI, SLIDER_PATH_AGENTS),
               "Agent REST API"));
     } catch (URISyntaxException e) {
       throw new IOException(e);

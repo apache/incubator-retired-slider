@@ -303,6 +303,7 @@
             <exclude>**/dfs.exclude</exclude>
             <exclude>**/*.iml</exclude>
             <exclude>**/rat.txt</exclude>
+            <exclude>**/get-hbase-site.sh</exclude>
             <exclude>DISCLAIMER</exclude>
             <exclude>app-packages/hbase/target/**</exclude>
           </excludes>
@@ -1140,9 +1141,9 @@
       </dependency>
 
 
-  <!-- ======================================================== -->
-  <!-- Mocking -->
-  <!-- ======================================================== -->
+      <!-- ======================================================== -->
+      <!-- Mocking -->
+      <!-- ======================================================== -->
 
       <dependency>
         <groupId>org.mockito</groupId>
@@ -1154,6 +1155,16 @@
         <groupId>org.easymock</groupId>
         <artifactId>easymock</artifactId>
         <version>${easymock.version}</version>
+      </dependency>
+
+      <!-- ======================================================== -->
+      <!-- Jetty -->
+      <!-- ======================================================== -->
+
+      <dependency>
+	      <groupId>org.mortbay.jetty</groupId>
+	      <artifactId>jetty-sslengine</artifactId>
+        <version>6.1.26</version>
       </dependency>
 
     </dependencies>

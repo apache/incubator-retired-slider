@@ -312,11 +312,12 @@ public abstract class AbstractProviderService
     }
   }
   @Override
-  public void applyInitialRegistryDefinitions(URL amWebAPI,
-      ServiceInstanceData registryInstanceData) throws MalformedURLException,
+  public void applyInitialRegistryDefinitions(URL unsecureWebAPI,
+                                              URL secureWebAPI,
+                                              ServiceInstanceData registryInstanceData) throws MalformedURLException,
       IOException {
 
-      this.amWebAPI = amWebAPI;
+      this.amWebAPI = unsecureWebAPI;
     this.registryInstanceData = registryInstanceData;
   }
 }
