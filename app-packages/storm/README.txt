@@ -15,7 +15,11 @@
    limitations under the License.
 -->
 
-How to create a Slider package?
+How to create a Slider app package for Storm?
+
+To create the app package you will need the Storm tarball copied to a specific location.
+Various configurations provided in this sample are customized for apache-storm-0.9.1.2.1.1.0-237.tar.gz.
+So if you use a different version you may need to edit a few config values.
 
 Replace the placeholder tarball for Storm.
   cp ~/Downloads/apache-storm-0.9.1.2.1.1.0-237.tar.gz package/files/
