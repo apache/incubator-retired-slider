@@ -45,6 +45,7 @@
     <module>slider-providers/hbase/hbase-funtests</module>
     <module>slider-providers/accumulo/slider-accumulo-provider</module>
     <module>slider-providers/accumulo/accumulo-funtests</module>
+    <module>slider-install</module>
   </modules>
 
   <licenses>
@@ -179,6 +180,7 @@
     <maven.project.version>2.4</maven.project.version>
     <maven.properties.version>1.0-alpha-2</maven.properties.version>
     <maven-project-info-reports-plugin.version>2.7</maven-project-info-reports-plugin.version>
+    <maven-rpm-plugin.version>2.1-alpha-4</maven-rpm-plugin.version>
     <maven-site-plugin.version>3.3</maven-site-plugin.version>
     <maven-source-plugin.version>2.2.1</maven-source-plugin.version>
     <maven-surefire-plugin.version>2.16</maven-surefire-plugin.version>
