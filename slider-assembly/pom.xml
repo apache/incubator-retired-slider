@@ -189,117 +189,7 @@
         </executions>
       </plugin>
 
-      <!-- RPM -->
-
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>rpm-maven-plugin</artifactId>
-        <version>${maven-rpm-plugin.version}</version>
-        <executions>
-          <execution>
-            <id>generate-rpm</id>
-            <goals>
-              <goal>rpm</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <license>http://www.apache.org/licenses/LICENSE-2.0</license>
-          <name>slider</name>
-<!---->          <distribution></distribution>
-          <group>Applications/Engineering</group>
-          <!--<icon>src/main/resources/icon.gif</icon>-->
-          <!--<packager>ASF</packager>-->
-          <prefix>${rpm.basedir}</prefix>
-          <!--
-                    <changelogFile>src/changelog</changelogFile>
-          -->
-          <!--          <defineStatements>
-                      <defineStatement>_unpackaged_files_terminate_build 0</defineStatement>
-                    </defineStatements>-->
-          <provides>
-            <provide>apache-slider</provide>
-          </provides>
-          <mappings>
-            <mapping>
-              <directory>${rpm.basedir}</directory>
-              <!-- RW.R..R.. -->
-              <filemode>644</filemode>
-              
-              <username>${rpm.username}</username>
-              <groupname>${rpm.groupname}</groupname>
-              <sources>
-                <source>
-                  <location>target/classes</location>
-                </source>
-              </sources>
-            </mapping>
-            
-            <!-- binaries -->
-            <mapping>
-              <directory>${rpm.bindir}</directory>
-              <!-- RWXR.XR.X -->
-              <filemode>0755</filemode>
-              <username>${rpm.username}</username>
-              <groupname>${rpm.groupname}</groupname>
-              <sources>
-                <source>
-                  <location>src/main/scripts</location>
-                </source>
-              </sources>
-            </mapping>
-            
-            <!-- library -->
-            <mapping>
-              <directory>${rpm.libdir}</directory>
-              <!-- RW.R..R.. -->
-              <filemode>644</filemode>
-
-              <username>${rpm.username}</username>
-              <groupname>${rpm.groupname}</groupname>
-              <sources>
-                <source>
-                  <location>${src.libdir}</location>
-                </source>
-              </sources>
-            </mapping>
-                  
-          <!-- configuration -->
-            <mapping>
-              <directory>${rpm.confdir}</directory>
-              <configuration>true</configuration>
-              <filemode>0755</filemode>
-              <username>${rpm.username}</username>
-              <groupname>${rpm.groupname}</groupname>
-              <sources>
-                <source>
-                  <location>${src.confdir}</location>
-                </source>
-              </sources>
-            </mapping>
-
-          </mappings>
-<!--
-Scripts. 
--->
-          <preinstallScriptlet>
-            <script>echo "installing slider"</script>
-          </preinstallScriptlet>
-<!--
-          <postinstallScriptlet>
-            <scriptFile>src/main/scripts/postinstall</scriptFile>
-            <fileEncoding>utf-8</fileEncoding>
-          </postinstallScriptlet>
--->
-<!--
-          <preremoveScriptlet>
-            <scriptFile>src/main/scripts/preremove</scriptFile>
-            <fileEncoding>utf-8</fileEncoding>
-          </preremoveScriptlet>
--->
-        </configuration>
-      </plugin>
-
+ 
     </plugins>
     
     
@@ -312,6 +202,129 @@ Scripts.
 
     </plugins>
   </reporting>
+
+  <profiles>
+    <profile>
+      <id>rpm</id>
+      <build>
+        <plugins>
+          <!-- RPM -->
+
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>rpm-maven-plugin</artifactId>
+            <version>${maven-rpm-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>generate-rpm</id>
+                <goals>
+                  <goal>rpm</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <license>http://www.apache.org/licenses/LICENSE-2.0</license>
+              <name>slider</name>
+              <!---->
+              <distribution></distribution>
+              <group>Applications/Engineering</group>
+              <!--<icon>src/main/resources/icon.gif</icon>-->
+              <!--<packager>ASF</packager>-->
+              <prefix>${rpm.basedir}</prefix>
+              <!--
+                        <changelogFile>src/changelog</changelogFile>
+              -->
+              <!--          <defineStatements>
+                          <defineStatement>_unpackaged_files_terminate_build 0</defineStatement>
+                        </defineStatements>-->
+              <provides>
+                <provide>apache-slider</provide>
+              </provides>
+              <mappings>
+                <mapping>
+                  <directory>${rpm.basedir}</directory>
+                  <!-- RW.R..R.. -->
+                  <filemode>644</filemode>
+
+                  <username>${rpm.username}</username>
+                  <groupname>${rpm.groupname}</groupname>
+                  <sources>
+                    <source>
+                      <location>target/classes</location>
+                    </source>
+                  </sources>
+                </mapping>
+
+                <!-- binaries -->
+                <mapping>
+                  <directory>${rpm.bindir}</directory>
+                  <!-- RWXR.XR.X -->
+                  <filemode>0755</filemode>
+                  <username>${rpm.username}</username>
+                  <groupname>${rpm.groupname}</groupname>
+                  <sources>
+                    <source>
+                      <location>src/main/scripts</location>
+                    </source>
+                  </sources>
+                </mapping>
+
+                <!-- library -->
+                <mapping>
+                  <directory>${rpm.libdir}</directory>
+                  <!-- RW.R..R.. -->
+                  <filemode>644</filemode>
+
+                  <username>${rpm.username}</username>
+                  <groupname>${rpm.groupname}</groupname>
+                  <sources>
+                    <source>
+                      <location>${src.libdir}</location>
+                    </source>
+                  </sources>
+                </mapping>
+
+                <!-- configuration -->
+                <mapping>
+                  <directory>${rpm.confdir}</directory>
+                  <configuration>true</configuration>
+                  <filemode>0755</filemode>
+                  <username>${rpm.username}</username>
+                  <groupname>${rpm.groupname}</groupname>
+                  <sources>
+                    <source>
+                      <location>${src.confdir}</location>
+                    </source>
+                  </sources>
+                </mapping>
+
+              </mappings>
+              <!--
+              Scripts. 
+              -->
+              <preinstallScriptlet>
+                <script>echo "installing slider"</script>
+              </preinstallScriptlet>
+              <!--
+                        <postinstallScriptlet>
+                          <scriptFile>src/main/scripts/postinstall</scriptFile>
+                          <fileEncoding>utf-8</fileEncoding>
+                        </postinstallScriptlet>
+              -->
+              <!--
+                        <preremoveScriptlet>
+                          <scriptFile>src/main/scripts/preremove</scriptFile>
+                          <fileEncoding>utf-8</fileEncoding>
+                        </preremoveScriptlet>
+              -->
+            </configuration>
+          </plugin>
+
+        </plugins>
+      </build>
+    </profile>
+
+  </profiles>
 
   <dependencies>
 
