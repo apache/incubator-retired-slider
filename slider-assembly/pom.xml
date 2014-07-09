@@ -19,11 +19,7 @@
   <artifactId>slider-assembly</artifactId>
   <name>Slider Assembly</name>
   <packaging>pom</packaging>
-  <description>
-    
-    This is the module that does the packaging and shell entry
-    points for Slider
-  </description>
+  <description>Apache Slider is a tool for dynamically deploying distributed applications to an Apache YARN cluster</description>
   <parent>
     <groupId>org.apache.slider</groupId>
     <artifactId>slider</artifactId>
@@ -32,14 +28,16 @@
 
 
   <properties>
-    <rpm.basedir>/usr/local/slider</rpm.basedir>
+    <rpm.basedir>/usr/lib/slider</rpm.basedir>
     <rpm.confdir>${rpm.basedir}/conf</rpm.confdir>
     <rpm.bindir>${rpm.basedir}/bin</rpm.bindir>
     <rpm.libdir>${rpm.basedir}/lib</rpm.libdir>
+    <rpm.agentdir>${rpm.basedir}/agent</rpm.agentdir>
     <rpm.username>mapred</rpm.username>
-    <rpm.groupname>mapred</rpm.groupname>
+    <rpm.groupname>hadoop</rpm.groupname>
     <src.confdir>src/conf-hdp</src.confdir>
     <src.libdir>${project.build.directory}/lib</src.libdir>
+   <src.agent.ini.dir>${project.build.directory}/../../slider-agent/conf</src.agent.ini.dir>
   </properties>
 
   <build>
@@ -225,6 +223,10 @@
             <configuration>
               <license>http://www.apache.org/licenses/LICENSE-2.0</license>
               <name>slider</name>
+              <version>${project.version}</version>
+<!--
+              <release>${project.version}</release>
+-->
               <!---->
               <distribution></distribution>
               <group>Applications/Engineering</group>
@@ -296,13 +298,50 @@
                   </sources>
                 </mapping>
 
+                <!-- agent -->
+                <mapping>
+                  <directory>${rpm.agentdir}</directory>
+                  <configuration>true</configuration>
+                  <filemode>0755</filemode>
+                  <username>${rpm.username}</username>
+                  <groupname>${rpm.groupname}</groupname>
+                  <sources>
+                    <source>
+                      <location>${project.build.directory}/agent</location>
+      <includes>
+        <include>slider-agent.tar.gz</include>
+      </includes>
+                    </source>
+                  </sources>
+                </mapping>
+
+                <!-- agent.ini -->
+                <mapping>
+                  <directory>${rpm.agentdir}/conf</directory>
+                  <configuration>true</configuration>
+                  <filemode>0755</filemode>
+                  <username>${rpm.username}</username>
+                  <groupname>${rpm.groupname}</groupname>
+                  <sources>
+                    <source>
+                      <location>${src.agent.ini.dir}</location>
+<includes>
+<include>*.ini
+</include>
+</includes>
+                    </source>
+                  </sources>
+                </mapping>
               </mappings>
               <!--
-              Scripts. 
+              Scripts. Very dangerous in RPMs unless you know exactly what you are doing.
+              It's very easy to break the uninstall process, in particular.
               -->
+<!--
               <preinstallScriptlet>
                 <script>echo "installing slider"</script>
               </preinstallScriptlet>
+-->
               <!--
                         <postinstallScriptlet>
                           <scriptFile>src/main/scripts/postinstall</scriptFile>
