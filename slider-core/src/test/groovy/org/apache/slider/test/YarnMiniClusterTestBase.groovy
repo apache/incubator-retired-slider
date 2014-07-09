@@ -129,6 +129,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
           KEY_TEST_TIMEOUT,
           DEFAULT_TEST_TIMEOUT_SECONDS * 1000)
   )
+  
   @BeforeClass
   public static void checkWindowsSupport() {
     if (Shell.WINDOWS) {

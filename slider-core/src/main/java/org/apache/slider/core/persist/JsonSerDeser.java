@@ -197,7 +197,7 @@ public class JsonSerDeser<T> {
 
   /**
    * Convert an object to a JSON string
-   * @param o object to convert
+   * @param instance instance to convert
    * @return a JSON string description
    * @throws JsonParseException parse problems
    * @throws JsonMappingException O/J mapping problems
