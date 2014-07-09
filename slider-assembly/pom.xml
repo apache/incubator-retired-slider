@@ -33,12 +33,12 @@
 
   <properties>
     <rpm.basedir>/usr/local/slider</rpm.basedir>
-    <rpm.confdir>${basedir}/conf</rpm.confdir>
-    <rpm.bindir>${basedir}/bin</rpm.bindir>
-    <rpm.libdir>${basedir}/lib</rpm.libdir>
+    <rpm.confdir>${rpm.basedir}/conf</rpm.confdir>
+    <rpm.bindir>${rpm.basedir}/bin</rpm.bindir>
+    <rpm.libdir>${rpm.basedir}/lib</rpm.libdir>
     <rpm.username>mapred</rpm.username>
     <rpm.groupname>mapred</rpm.groupname>
-    <src.confdir>src/conf/hdp</src.confdir>
+    <src.confdir>src/conf-hdp</src.confdir>
     <src.libdir>${project.build.directory}/lib</src.libdir>
   </properties>
 
@@ -249,9 +249,7 @@
                   <username>${rpm.username}</username>
                   <groupname>${rpm.groupname}</groupname>
                   <sources>
-                    <source>
-                      <location>target/classes</location>
-                    </source>
+
                   </sources>
                 </mapping>
 
