@@ -235,8 +235,40 @@ class TestBuildBasicAgent extends AgentTestBase {
   }
 
   @Test
+  public void testAgentArgs() throws Throwable {
+    def clustername = "test_good_agent_args"
+    createMiniCluster(
+        clustername,
+        configuration,
+        1,
+        1,
+        1,
+        true,
+        false)
+
+    try {
+      def badArgs1 = "test_good_agent_args-1"
+      buildAgentCluster(clustername,
+          [:],
+          [
+              ARG_OPTION, CONTROLLER_URL, "http://localhost",
+              ARG_PACKAGE, ".",
+              ARG_OPTION, APP_DEF, "file://" + getAppDef().absolutePath,
+              ARG_RESOURCES, TEST_FILES + "good/resources.json",
+              ARG_TEMPLATE, TEST_FILES + "good/appconf.json"
+          ],
+          true, false,
+          false)
+    } catch (BadConfigException exception) {
+      log.error(
+          "Build operation should not have failed with exception : \n$exception")
+      fail("Build operation should not fail")
+    }
+  }
+  
+  @Test
   public void testBadAgentArgs() throws Throwable {
-    def clustername = "test_bad_template_args"
+    def clustername = "test_bad_agent_args"
     createMiniCluster(
         clustername,
         configuration,
@@ -248,7 +280,7 @@ class TestBuildBasicAgent extends AgentTestBase {
 
     try {
       def badArgs1 = "test_bad_agent_args-1"
-      buildAgentCluster(clustername,
+      buildAgentCluster(badArgs1,
           [:],
           [
               ARG_OPTION, CONTROLLER_URL, "http://localhost",
@@ -261,16 +293,17 @@ class TestBuildBasicAgent extends AgentTestBase {
           false)
       failWithBuildSucceeding(badArgs1, "missing package home or image path")
     } catch (BadConfigException expected) {
-
+      log.info("Expected failure.", expected)
+      assert expected.message.contains("Either agent package path agent.package.root or image root internal.application.image.path must be provided")
     }
 
     try {
       def badArgs1 = "test_bad_agent_args-2"
-      buildAgentCluster(clustername,
+      buildAgentCluster(badArgs1,
           [:],
           [
               ARG_OPTION, CONTROLLER_URL, "http://localhost",
-              ARG_IMAGE, "file://" + getAgentImg().absolutePath + ".badfile",
+              ARG_IMAGE, "file://" + getAgentImg().absolutePath,
               ARG_OPTION, APP_DEF, "file://" + getAppDef().absolutePath,
               ARG_OPTION, AGENT_CONF, "file://" + getAgentConf().absolutePath,
               ARG_RESOURCES, TEST_FILES + "good/resources.json",
@@ -278,46 +311,34 @@ class TestBuildBasicAgent extends AgentTestBase {
           ],
           true, false,
           false)
-      failWithBuildSucceeding(badArgs1, "bad image path")
+      failWithBuildSucceeding(badArgs1, "both app image path and home dir was provided")
     } catch (BadConfigException expected) {
+      log.info("Expected failure.", expected)
+      assert expected.message.contains("Both application image path and home dir have been provided")
     }
 
     try {
       def badArgs1 = "test_bad_agent_args-3"
-      buildAgentCluster(clustername,
+      buildAgentCluster(badArgs1,
           [:],
           [
               ARG_OPTION, CONTROLLER_URL, "http://localhost",
               ARG_OPTION, AGENT_CONF, "file://" + getAgentConf().absolutePath,
-              ARG_RESOURCES, TEST_FILES + "good/resources.json",
-              ARG_TEMPLATE, TEST_FILES + "good/appconf.json"
-          ],
-          true, false,
-          false)
-      failWithBuildSucceeding(badArgs1, "bad app def file")
-    } catch (BadConfigException expected) {
-    }
-
-    try {
-      def badArgs1 = "test_bad_agent_args-5"
-      buildAgentCluster(clustername,
-          [:],
-          [
-              ARG_OPTION, CONTROLLER_URL, "http://localhost",
               ARG_PACKAGE, ".",
-              ARG_OPTION, APP_DEF, "file://" + getAppDef().absolutePath,
               ARG_RESOURCES, TEST_FILES + "good/resources.json",
               ARG_TEMPLATE, TEST_FILES + "good/appconf.json"
           ],
           true, false,
           false)
-      failWithBuildSucceeding(badArgs1, "bad agent conf file")
+      failWithBuildSucceeding(badArgs1, "missing app def file")
     } catch (BadConfigException expected) {
+      log.info("Expected failure.", expected)
+      assert expected.message.contains("Application definition must be provided. Missing option application.def")
     }
 
     try {
       def badArgs1 = "test_bad_agent_args-6"
-      buildAgentCluster(clustername,
+      buildAgentCluster(badArgs1,
           [:],
           [
               ARG_OPTION, CONTROLLER_URL, "http://localhost",
