@@ -107,7 +107,7 @@
             <java.security.krb5.realm>${slider.test.java.security.krb5.realm}</java.security.krb5.realm>
             <java.security.krb5.kdc>${slider.test.java.security.krb5.kdc}</java.security.krb5.kdc>
             <!-- this property must be supplied-->
-            <slider.conf.dir>${slider.conf.dir}</slider.conf.dir>
+            <slider.conf.dir>../../../src/test/clusters/offline/slider</slider.conf.dir>
             <slider.bin.dir>../../../slider-assembly/target/slider-${project.version}-all/slider-${project.version}</slider.bin.dir>
           </systemPropertyVariables>
           <includes>
