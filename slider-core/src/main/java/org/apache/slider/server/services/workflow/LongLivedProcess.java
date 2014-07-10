@@ -98,9 +98,9 @@ public class LongLivedProcess implements Runnable {
   private static final Logger LOG = LoggerFactory.getLogger(LongLivedProcess.class);
 
   /**
-   * Volatile flag to indicate that the process is done
+   *  flag to indicate that the process is done
    */
-  private volatile boolean finished;
+  private final AtomicBoolean finished = new AtomicBoolean(false);
 
   public LongLivedProcess(String name,
       Logger processLog,
@@ -202,7 +202,7 @@ public class LongLivedProcess implements Runnable {
    * @return true iff the process has been started and is not yet finished
    */
   public boolean isRunning() {
-    return process != null && !finished;
+    return process != null && !finished.get();
   }
 
   /**
@@ -301,7 +301,7 @@ public class LongLivedProcess implements Runnable {
       //here the process has finished
       LOG.debug("process {} has finished", name);
       //tell the logger it has to finish too
-      finished = true;
+      finished.set(true);
 
       // shut down the threads
       logExecutor.shutdown();
@@ -397,9 +397,10 @@ public class LongLivedProcess implements Runnable {
    * something that is only called once per line of IO?
    * @param line line to record
    * @param isErrorStream is the line from the error stream
+   * @param logger logger to log to
    */
   private synchronized void recordRecentLine(String line,
-                                             boolean isErrorStream) {
+      boolean isErrorStream, Logger logger) {
     if (line == null) {
       return;
     }
@@ -407,6 +408,11 @@ public class LongLivedProcess implements Runnable {
     recentLines.add(entry);
     if (recentLines.size() > recentLineLimit) {
       recentLines.remove(0);
+    }
+    if (isErrorStream) {
+      logger.warn(line);
+    } else {
+      logger.info(line);
     }
   }
 
@@ -485,23 +491,19 @@ public class LongLivedProcess implements Runnable {
             new InputStreamReader(process.getErrorStream()));
         outReader = new BufferedReader(
             new InputStreamReader(process.getInputStream()));
-        while (!finished) {
+        while (!finished.get()) {
           boolean processed = false;
           if (readAnyLine(errReader, errorLine, LINE_LENGTH)) {
-            String line = errorLine.toString();
-            recordRecentLine(line, true);
-            streamLog.warn(line);
+            recordRecentLine(errorLine.toString(), true, streamLog);
             errorLine.setLength(0);
             processed = true;
           }
           if (readAnyLine(outReader, outLine, LINE_LENGTH)) {
-            String line = outLine.toString();
-            recordRecentLine(line, false);
-            streamLog.info(line);
+            recordRecentLine(outLine.toString(), false, streamLog);
             outLine.setLength(0);
             processed |= true;
           }
-          if (!processed && !finished) {
+          if (!processed && !finished.get()) {
             //nothing processed: wait a bit for data.
             try {
               Thread.sleep(sleepTime);
@@ -514,37 +516,43 @@ public class LongLivedProcess implements Runnable {
         // finished: cleanup
 
         //print the current error line then stream through the rest
-        streamLog.error(errorLine.toString());
-        String line = errReader.readLine();
-        while (line != null) {
-          streamLog.error(line);
-          if (Thread.interrupted()) {
-            break;
-          }
-          line = errReader.readLine();
-          recordRecentLine(line, true);
-        }
+        recordFinalOutput(errReader, errorLine, true, streamLog);
         //now do the info line
-        streamLog.info(outLine.toString());
-        line = outReader.readLine();
-        while (line != null) {
-          streamLog.info(line);
-          if (Thread.interrupted()) {
-            break;
-          }
-          line = outReader.readLine();
-          recordRecentLine(line, false);
-        }
+        recordFinalOutput(outReader, outLine, false, streamLog);
 
       } catch (Exception ignored) {
         LOG.warn("encountered {}", ignored, ignored);
         //process connection has been torn down
       } finally {
-        //mark output as done
-        finalOutputProcessed.set(true);
         // close streams
         IOUtils.closeStream(errReader);
         IOUtils.closeStream(outReader);
+        //mark output as done
+        finalOutputProcessed.set(true);
+      }
+    }
+
+    /**
+     * Record the final output of a process stream
+     * @param reader reader of output
+     * @param lineBuilder string builder into which line is built
+     * @param isErrorStream flag to indicate whether or not this is the
+     * is the line from the error stream
+     * @param logger logger to log to
+     * @throws IOException
+     */
+    protected void recordFinalOutput(BufferedReader reader,
+        StringBuilder lineBuilder, boolean isErrorStream, Logger logger) throws
+        IOException {
+      String line = lineBuilder.toString();
+      recordRecentLine(line, isErrorStream, logger);
+      line = reader.readLine();
+      while (line != null) {
+        recordRecentLine(line, isErrorStream, logger);
+        line = reader.readLine();
+        if (Thread.interrupted()) {
+          break;
+        }
       }
     }
   }
