@@ -224,16 +224,18 @@ public class InstanceBuilder {
 
   /**
    * Persist this
+   * @param appconfdir conf dir
+   * @param overwrite if true, we don't need to create cluster dir
    * @throws IOException
    * @throws SliderException
    * @throws LockAcquireFailedException
    * @param appconfdir dir to persist the conf to
    */
-  public void persist(Path appconfdir) throws
+  public void persist(Path appconfdir, boolean overwrite) throws
       IOException,
       SliderException,
       LockAcquireFailedException {
-    coreFS.createClusterDirectories(instancePaths);
+    if (!overwrite) coreFS.createClusterDirectories(instancePaths);
     ConfPersister persister =
       new ConfPersister(coreFS, getInstanceDir());
     ConfDirSnapshotAction action = null;

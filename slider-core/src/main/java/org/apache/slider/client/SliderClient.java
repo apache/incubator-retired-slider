@@ -217,6 +217,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       case ACTION_BUILD:
         exitCode = actionBuild(clusterName, serviceArgs.getActionBuildArgs());
         break;
+      case ACTION_UPDATE:
+        exitCode = actionUpdate(clusterName, serviceArgs.getActionUpdateArgs());
+        break;
       case ACTION_CREATE:
         exitCode = actionCreate(clusterName, serviceArgs.getActionCreateArgs());
         break;
@@ -460,22 +463,36 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
                                                YarnException,
                                                IOException {
 
-    buildInstanceDefinition(clustername, buildInfo);
+    buildInstanceDefinition(clustername, buildInfo, false);
     return EXIT_SUCCESS; 
   }
 
+  /**
+   * Update the cluster specification
+   *
+   * @param clustername cluster name
+   * @param buildInfo the arguments needed to update the cluster
+   * @throws YarnException Yarn problems
+   * @throws IOException other problems
+   */
+  public int actionUpdate(String clustername, AbstractClusterBuildingActionArgs buildInfo) throws
+      YarnException, IOException {
+    buildInstanceDefinition(clustername, buildInfo, true);
+    return EXIT_SUCCESS; 
+  }
 
   /**
    * Build up the AggregateConfiguration for an application instance then
    * persists it
    * @param clustername name of the cluster
    * @param buildInfo the arguments needed to build the cluster
+   * @param overwrite true if existing cluster directory can be overwritten
    * @throws YarnException
    * @throws IOException
    */
   
   public void buildInstanceDefinition(String clustername,
-                                      AbstractClusterBuildingActionArgs buildInfo)
+      AbstractClusterBuildingActionArgs buildInfo, boolean overwrite)
         throws YarnException, IOException {
     // verify that a live cluster isn't there
     SliderUtils.validateClusterName(clustername);
@@ -629,7 +646,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       throw e;
     }
     try {
-      builder.persist(appconfdir);
+      builder.persist(appconfdir, overwrite);
     } catch (LockAcquireFailedException e) {
       log.warn("Failed to get a Lock on {} : {}", builder, e);
       throw new BadClusterStateException("Failed to save " + clustername

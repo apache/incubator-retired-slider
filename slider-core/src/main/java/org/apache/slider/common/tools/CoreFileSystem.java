@@ -242,6 +242,7 @@ public class CoreFileSystem {
           IOException,
       SliderException {
     if (fileSystem.exists(clusterDirectory)) {
+      
       log.error("Dir {} exists: {}",
                 clusterDirectory,
                 listFSDir(clusterDirectory));
