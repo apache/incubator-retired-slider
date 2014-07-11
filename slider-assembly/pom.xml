@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.apache.slider</groupId>
     <artifactId>slider</artifactId>
-    <version>0.31.0-incubating-SNAPSHOT</version>
+    <version>0.40</version>
   </parent>
 
 
