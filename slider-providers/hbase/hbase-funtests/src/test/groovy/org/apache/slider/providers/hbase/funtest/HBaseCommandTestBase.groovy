@@ -52,6 +52,7 @@ abstract class HBaseCommandTestBase extends CommandTestBase {
 
   @BeforeClass
   public static void extendClasspath() {
+    assumeFunctionalTestsEnabled()
     addExtraJar(HBaseClientProvider)
   }
 
