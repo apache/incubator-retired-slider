@@ -38,8 +38,14 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 import static  org.apache.slider.server.appmaster.web.rest.RestPaths.*;
 
@@ -97,6 +103,14 @@ public class PublisherResource {
       uriMap.put(name, baseURL + name);
     }
     return uriMap;
+  }
+
+  @GET
+  @Path("/classpath")
+  @Produces({MediaType.APPLICATION_JSON})
+  public Set<URL> getAMClassPath() {
+    URL[] urls = ((URLClassLoader) getClass().getClassLoader()).getURLs();
+    return new LinkedHashSet<>(Arrays.asList(urls));
   }
 
   @GET

@@ -38,6 +38,7 @@ import org.apache.slider.core.registry.docstore.PublishedConfigSet;
 import org.apache.slider.core.registry.docstore.PublishedConfiguration;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.providers.AbstractProviderService;
+import org.apache.slider.providers.ProviderCompleted;
 import org.apache.slider.providers.ProviderCore;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
@@ -50,7 +51,6 @@ import org.apache.slider.server.appmaster.web.rest.agent.HeartBeatResponse;
 import org.apache.slider.server.appmaster.web.rest.agent.Register;
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationResponse;
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationStatus;
-import org.apache.slider.server.services.utility.EventCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,6 +60,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_PUBLISHER;
 
@@ -127,12 +128,20 @@ public class HBaseProviderService extends AbstractProviderService implements
     // Set the environment
     launcher.putEnv(SliderUtils.buildEnvMap(appComponent));
 
-    launcher.setEnv(HBASE_LOG_DIR, providerUtils.getLogdir());
+    String logDirs = providerUtils.getLogdir();
+    String logDir;
+    int idx = logDirs.indexOf(",");
+    if (idx > 0) {
+      // randomly choose a log dir candidate
+      String[] segments = logDirs.split(",");
+      Random rand = new Random();
+      logDir = segments[rand.nextInt(segments.length)];
+    } else logDir = logDirs;
+    launcher.setEnv(HBASE_LOG_DIR, logDir);
 
     launcher.setEnv(PROPAGATED_CONFDIR,
         ProviderUtils.convertToAppRelativePath(
             SliderKeys.PROPAGATED_CONF_DIR_NAME) );
-
 
     //local resources
 
@@ -196,9 +205,10 @@ public class HBaseProviderService extends AbstractProviderService implements
 
   @Override
   public void applyInitialRegistryDefinitions(URL web,
-      ServiceInstanceData instanceData) throws
+                                              URL secureWebAPI,
+                                              ServiceInstanceData instanceData) throws
       IOException {
-    super.applyInitialRegistryDefinitions(web, instanceData);
+    super.applyInitialRegistryDefinitions(web, secureWebAPI, instanceData);
   }
 
   @Override
@@ -240,7 +250,7 @@ public class HBaseProviderService extends AbstractProviderService implements
   public boolean exec(AggregateConf instanceDefinition,
                       File confDir,
                       Map<String, String> env,
-                      EventCallback execInProgress) throws
+                      ProviderCompleted execInProgress) throws
                                                  IOException,
       SliderException {
 

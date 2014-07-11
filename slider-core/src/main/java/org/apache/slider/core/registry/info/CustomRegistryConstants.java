@@ -32,7 +32,7 @@ public class CustomRegistryConstants {
       "org.apache.slider.publisher";
   
   public static final String AGENT_REST_API =
-      "org.apache.slider.publisher";
+      "org.apache.slider.agents";
 
   public static final String AM_IPC_PROTOCOL =
       "org.apache.slider.appmaster";

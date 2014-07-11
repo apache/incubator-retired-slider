@@ -140,7 +140,7 @@ class CertificateManager():
     self.keysdir = self.config.get('security', 'keysdir')
     self.server_crt=self.config.get('security', 'server_crt')
     self.server_url = 'https://' + self.config.get('server', 'hostname') + ':' \
-       + self.config.get('server', 'url_port')
+       + self.config.get('server', 'port')
     
   def getAgentKeyName(self):
     keysdir = self.config.get('security', 'keysdir')
@@ -187,7 +187,7 @@ class CertificateManager():
       logger.info("Agent certificate exists, ok")
             
   def loadSrvrCrt(self):
-    get_ca_url = self.server_url + '/cert/ca/'
+    get_ca_url = self.server_url + '/ws/v1/slider/agents/cert/ca/'
     logger.info("Downloading server cert from " + get_ca_url)
     stream = urllib2.urlopen(get_ca_url)
     response = stream.read()
@@ -196,7 +196,8 @@ class CertificateManager():
     srvr_crt_f.write(response)
       
   def reqSignCrt(self):
-    sign_crt_req_url = self.server_url + '/certs/' + hostname.hostname()
+    sign_crt_req_url = self.server_url + '/ws/v1/slider/agents/certs/' + \
+                       hostname.hostname()
     agent_crt_req_f = open(self.getAgentCrtReqName())
     agent_crt_req_content = agent_crt_req_f.read()
     passphrase_env_var = self.config.get('security', 'passphrase_env_var_name')

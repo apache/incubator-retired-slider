@@ -20,6 +20,7 @@ package org.apache.slider.common.tools;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
+import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -36,7 +37,6 @@ import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.ExitUtil;
 import org.apache.hadoop.util.VersionInfo;
-import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.LocalResource;
@@ -54,6 +54,7 @@ import org.apache.slider.core.exceptions.ErrorStrings;
 import org.apache.slider.core.exceptions.MissingArgException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.ClasspathConstructor;
+import org.apache.slider.server.services.utility.PatternValidator;
 import org.apache.zookeeper.server.util.KerberosUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,6 +104,7 @@ public final class SliderUtils {
       "java.security.krb5.realm";
   public static final String JAVA_SECURITY_KRB5_KDC = "java.security.krb5.kdc";
 
+  
   private SliderUtils() {
   }
 
@@ -301,12 +303,18 @@ public final class SliderUtils {
     return file;
   }
 
+  private static final PatternValidator clusternamePattern
+      = new PatternValidator("[a-z][a-z0-9_-]*");
+      
   /**
    * Normalize a cluster name then verify that it is valid
    * @param name proposed cluster name
    * @return true iff it is valid
    */
   public static boolean isClusternameValid(String name) {
+    return name != null && clusternamePattern.matches(name);
+  }
+  public static boolean oldIsClusternameValid(String name) {
     if (name == null || name.isEmpty()) {
       return false;
     }
@@ -465,7 +473,7 @@ public final class SliderUtils {
     }
     return trailing? 
            b.toString()
-           : (b.substring(0, b.length() - 1));
+           : (b.substring(0, b.length() - separator.length()));
   }
 
   /**
@@ -896,7 +904,8 @@ public final class SliderUtils {
    * @return true if the slider client/service should be in secure mode
    */
   public static boolean isHadoopClusterSecure(Configuration conf) {
-    return conf.getBoolean(SliderXmlConfKeys.KEY_SECURITY_ENABLED, false);
+    return SecurityUtil.getAuthenticationMethod(conf) !=
+           UserGroupInformation.AuthenticationMethod.SIMPLE;
   }
 
   /**
@@ -945,22 +954,22 @@ public final class SliderUtils {
         conf.get(CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHENTICATION));
     log.debug("hadoop.security.authorization={}",
         conf.get(CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION));
-    SecurityUtil.setAuthenticationMethod(
-        UserGroupInformation.AuthenticationMethod.KERBEROS, conf);
+/*    SecurityUtil.setAuthenticationMethod(
+        UserGroupInformation.AuthenticationMethod.KERBEROS, conf);*/
     UserGroupInformation.setConfiguration(conf);
     UserGroupInformation authUser = UserGroupInformation.getCurrentUser();
     log.debug("Authenticating as " + authUser.toString());
     log.debug("Login user is {}", UserGroupInformation.getLoginUser());
     if (!UserGroupInformation.isSecurityEnabled()) {
       throw new BadConfigException("Although secure mode is enabled," +
-                                   "the application has already set up its user as an insecure entity %s",
-                                   authUser);
+               "the application has already set up its user as an insecure entity %s",
+               authUser);
     }
     if (authUser.getAuthenticationMethod() ==
         UserGroupInformation.AuthenticationMethod.SIMPLE) {
       throw new BadConfigException("Auth User is not Kerberized %s" +
-                   " -security has already been set up with the wrong authentication method",
-                                   authUser);
+       " -security has already been set up with the wrong authentication method",
+                       authUser);
 
     }
 
@@ -1135,9 +1144,9 @@ public final class SliderUtils {
     if (usingMiniMRCluster) {
       // for mini cluster we pass down the java CP properties
       // and nothing else
-      classpath.appendAll(classpath.javaVMClasspath());
+      classpath.appendAll(classpath.localJVMClasspath());
     } else {
-      classpath.addLibDir("./" + libdir);
+      classpath.addLibDir(libdir);
       if (sliderConfDir != null) {
         classpath.addClassDirectory(sliderConfDir);
       }
@@ -1423,8 +1432,8 @@ public final class SliderUtils {
   }
 
   public static InputStream getApplicationResourceInputStream(FileSystem fs,
-                                                       Path appPath,
-                                                       String entry)
+                                                              Path appPath,
+                                                              String entry)
       throws IOException {
     InputStream is = null;
     FSDataInputStream appStream = fs.open(appPath);
@@ -1434,12 +1443,26 @@ public final class SliderUtils {
     while (!done && (zipEntry = zis.getNextZipEntry()) != null) {
       if (entry.equals(zipEntry.getName())) {
         int size = (int) zipEntry.getSize();
-        byte[] content = new byte[size];
-        int offset = 0;
-        while (offset < size) {
-          offset += zis.read(content, offset, size - offset);
+        if (size != -1) {
+          log.info("Reading {} of size {}", zipEntry.getName(), zipEntry.getSize());
+          byte[] content = new byte[size];
+          int offset = 0;
+          while (offset < size) {
+            offset += zis.read(content, offset, size - offset);
+          }
+          is = new ByteArrayInputStream(content);
+        } else {
+          log.info("Size unknown. Reading {}", zipEntry.getName());
+          ByteArrayOutputStream baos = new ByteArrayOutputStream();
+          while (true) {
+            int byteRead = zis.read();
+            if (byteRead == -1) {
+              break;
+            }
+            baos.write(byteRead);
+          }
+          is = new ByteArrayInputStream(baos.toByteArray());
         }
-        is = new ByteArrayInputStream(content);
         done = true;
       }
     }

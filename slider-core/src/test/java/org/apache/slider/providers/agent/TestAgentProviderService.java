@@ -43,13 +43,13 @@ import org.apache.slider.core.conf.ConfTreeOperations;
 import org.apache.slider.core.conf.MapOperations;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.ContainerLauncher;
+import org.apache.slider.providers.agent.application.metadata.Application;
 import org.apache.slider.providers.agent.application.metadata.CommandOrder;
 import org.apache.slider.providers.agent.application.metadata.Component;
 import org.apache.slider.providers.agent.application.metadata.Export;
 import org.apache.slider.providers.agent.application.metadata.ExportGroup;
 import org.apache.slider.providers.agent.application.metadata.Metainfo;
 import org.apache.slider.providers.agent.application.metadata.MetainfoParser;
-import org.apache.slider.providers.agent.application.metadata.Service;
 import org.apache.slider.server.appmaster.model.mock.MockContainerId;
 import org.apache.slider.server.appmaster.model.mock.MockFileSystem;
 import org.apache.slider.server.appmaster.model.mock.MockNodeId;
@@ -97,8 +97,7 @@ public class TestAgentProviderService {
       LoggerFactory.getLogger(TestAgentProviderService.class);
   private static final String metainfo_1_str = "<metainfo>\n"
                                                + "  <schemaVersion>2.0</schemaVersion>\n"
-                                               + "  <services>\n"
-                                               + "    <service>\n"
+                                               + "  <application>\n"
                                                + "      <name>HBASE</name>\n"
                                                + "      <comment>\n"
                                                + "        Apache HBase\n"
@@ -164,15 +163,11 @@ public class TestAgentProviderService {
                                                + "          </packages>\n"
                                                + "        </osSpecific>\n"
                                                + "      </osSpecifics>\n"
-                                               + "    </service>\n"
-                                               + "  </services>\n"
+                                               + "  </application>\n"
                                                + "</metainfo>";
-
-
   private static final String metainfo_2_str = "<metainfo>\n"
                                                + "  <schemaVersion>2.0</schemaVersion>\n"
-                                               + "  <services>\n"
-                                               + "    <service>\n"
+                                               + "  <application>\n"
                                                + "      <name>HBASE</name>\n"
                                                + "      <comment>\n"
                                                + "        Apache HBase\n"
@@ -203,9 +198,9 @@ public class TestAgentProviderService {
                                                + "          </commandScript>\n"
                                                + "        </component>\n"
                                                + "      </components>\n"
-                                               + "    </service>\n"
-                                               + "  </services>\n"
+                                               + "  </application>\n"
                                                + "</metainfo>";
+
   @Test
   public void testRegistration() throws IOException {
 
@@ -244,7 +239,7 @@ public class TestAgentProviderService {
     doReturn(access).when(mockAps).getAmState();
     doReturn("scripts/hbase_master.py").when(mockAps).getScriptPathFromMetainfo(anyString());
     Metainfo metainfo = new Metainfo();
-    metainfo.addService(new Service());
+    metainfo.setApplication(new Application());
     doReturn(metainfo).when(mockAps).getApplicationMetainfo(any(SliderFileSystem.class), anyString());
 
     try {
@@ -260,9 +255,9 @@ public class TestAgentProviderService {
     expect(access.isApplicationLive()).andReturn(true).anyTimes();
     ClusterDescription desc = new ClusterDescription();
     desc.setInfo(StatusKeys.INFO_AM_HOSTNAME, "host1");
-    desc.setInfo(StatusKeys.INFO_AM_WEB_PORT, "8088");
+    desc.setInfo(StatusKeys.INFO_AM_AGENT_PORT, "8088");
+    desc.setInfo(StatusKeys.INFO_AM_SECURED_AGENT_PORT, "8089");
     desc.setInfo(OptionKeys.APPLICATION_NAME, "HBASE");
-    desc.getOrAddRole("HBASE_MASTER").put(AgentKeys.COMPONENT_SCRIPT, "scripts/hbase_master.py");
     expect(access.getClusterStatus()).andReturn(desc).anyTimes();
 
     AggregateConf aggConf = new AggregateConf();
@@ -352,7 +347,7 @@ public class TestAgentProviderService {
   public void testProcessConfig() throws Exception {
     InputStream metainfo_1 = new ByteArrayInputStream(metainfo_1_str.getBytes());
     Metainfo metainfo = new MetainfoParser().parse(metainfo_1);
-    assert metainfo.getServices().size() == 1;
+    Assert.assertNotNull(metainfo.getApplication());
     AgentProviderService aps = new AgentProviderService();
     HeartBeat hb = new HeartBeat();
     ComponentStatus status = new ComponentStatus();
@@ -405,12 +400,12 @@ public class TestAgentProviderService {
   public void testMetainfoParsing() throws Exception {
     InputStream metainfo_1 = new ByteArrayInputStream(metainfo_1_str.getBytes());
     Metainfo metainfo = new MetainfoParser().parse(metainfo_1);
-    Assert.assertEquals(metainfo.getServices().size(), 1);
-    Service service = metainfo.getServices().get(0);
-    log.info("Service: " + service.toString());
-    Assert.assertEquals(service.getName(), "HBASE");
-    Assert.assertEquals(service.getComponents().size(), 2);
-    List<Component> components = service.getComponents();
+    Assert.assertNotNull(metainfo.getApplication());
+    Application application = metainfo.getApplication();
+    log.info("Service: " + application.toString());
+    Assert.assertEquals(application.getName(), "HBASE");
+    Assert.assertEquals(application.getComponents().size(), 2);
+    List<Component> components = application.getComponents();
     int found = 0;
     for (Component component : components) {
       if (component.getName().equals("HBASE_MASTER")) {
@@ -430,8 +425,8 @@ public class TestAgentProviderService {
     }
     Assert.assertEquals(found, 2);
 
-    assert service.getExportGroups().size() == 1;
-    List<ExportGroup> egs = service.getExportGroups();
+    assert application.getExportGroups().size() == 1;
+    List<ExportGroup> egs = application.getExportGroups();
     ExportGroup eg = egs.get(0);
     assert eg.getName().equals("QuickLinks");
     assert eg.getExports().size() == 2;
@@ -441,20 +436,20 @@ public class TestAgentProviderService {
       if (export.getName().equals("JMX_Endpoint")) {
         found++;
         Assert.assertEquals(export.getValue(),
-            "http://${HBASE_MASTER_HOST}:${site.hbase-site.hbase.master.info.port}/jmx");
+                            "http://${HBASE_MASTER_HOST}:${site.hbase-site.hbase.master.info.port}/jmx");
       }
       if (export.getName().equals("Master_Status")) {
         found++;
         Assert.assertEquals(export.getValue(),
-            "http://${HBASE_MASTER_HOST}:${site.hbase-site.hbase.master.info.port}/master-status");
+                            "http://${HBASE_MASTER_HOST}:${site.hbase-site.hbase.master.info.port}/master-status");
       }
     }
     Assert.assertEquals(found, 2);
 
-    List<CommandOrder> cmdOrders = service.getCommandOrder();
+    List<CommandOrder> cmdOrders = application.getCommandOrder();
     Assert.assertEquals(cmdOrders.size(), 2);
     found = 0;
-    for (CommandOrder co : service.getCommandOrder()) {
+    for (CommandOrder co : application.getCommandOrder()) {
       if (co.getCommand().equals("HBASE_REGIONSERVER-START")) {
         Assert.assertTrue(co.getRequires().equals("HBASE_MASTER-STARTED"));
         found++;
@@ -584,7 +579,8 @@ public class TestAgentProviderService {
     expect(access.isApplicationLive()).andReturn(true).anyTimes();
     ClusterDescription desc = new ClusterDescription();
     desc.setInfo(StatusKeys.INFO_AM_HOSTNAME, "host1");
-    desc.setInfo(StatusKeys.INFO_AM_WEB_PORT, "8088");
+    desc.setInfo(StatusKeys.INFO_AM_AGENT_PORT, "8088");
+    desc.setInfo(StatusKeys.INFO_AM_SECURED_AGENT_PORT, "8089");
     desc.setInfo(OptionKeys.APPLICATION_NAME, "HBASE");
     expect(access.getClusterStatus()).andReturn(desc).anyTimes();
 
@@ -660,14 +656,16 @@ public class TestAgentProviderService {
       cr.setRole("HBASE_REGIONSERVER");
       cr.setRoleCommand("INSTALL");
       cr.setStatus("COMPLETED");
-      cr.setFolders(new HashMap<String, String>() {{put("a", "b");}});
+      cr.setFolders(new HashMap<String, String>() {{
+        put("a", "b");
+      }});
       hb.setReports(Arrays.asList(cr));
       hbr = mockAps.handleHeartBeat(hb);
       Assert.assertEquals(3, hbr.getResponseId());
       Mockito.verify(mockAps, Mockito.times(0)).addStartCommand(anyString(),
-                                                                  anyString(),
-                                                                  any(HeartBeatResponse.class),
-                                                                  anyString());
+                                                                anyString(),
+                                                                any(HeartBeatResponse.class),
+                                                                anyString());
       // RS still does not start
       hb = new HeartBeat();
       hb.setResponseId(3);
@@ -723,8 +721,8 @@ public class TestAgentProviderService {
       hb.setReports(Arrays.asList(cr));
       mockAps.handleHeartBeat(hb);
       Mockito.verify(mockAps, Mockito.times(1)).addGetConfigCommand(anyString(),
-                                                                anyString(),
-                                                                any(HeartBeatResponse.class));
+                                                                    anyString(),
+                                                                    any(HeartBeatResponse.class));
 
       // RS starts now
       hb = new HeartBeat();
@@ -746,7 +744,6 @@ public class TestAgentProviderService {
         anyCollection());
   }
 
-
   @Test
   public void testAddStartCommand() throws Exception {
     AgentProviderService aps = new AgentProviderService();
@@ -761,6 +758,7 @@ public class TestAgentProviderService {
     treeOps.getGlobalOptions().put(AgentKeys.JAVA_HOME, "java_home");
     treeOps.set(OptionKeys.APPLICATION_NAME, "HBASE");
     treeOps.set("site.fs.defaultFS", "hdfs://HOST1:8020/");
+    treeOps.set("internal.data.dir.path", "hdfs://HOST1:8020/database");
     treeOps.set(OptionKeys.ZOOKEEPER_HOSTS, "HOST1");
     treeOps.set("config_types", "hbase-site");
     treeOps.getGlobalOptions().put("site.hbase-site.a.port", "${HBASE_MASTER.ALLOCATED_PORT}");

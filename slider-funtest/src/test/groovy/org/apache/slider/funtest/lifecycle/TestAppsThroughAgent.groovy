@@ -23,115 +23,62 @@ import groovy.util.logging.Slf4j
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
+import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
+import org.junit.After
 import org.junit.Test
 
 @CompileStatic
 @Slf4j
 public class TestAppsThroughAgent extends AgentCommandTestBase
-    implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
+implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   private static String COMMAND_LOGGER = "COMMAND_LOGGER"
-  private static String APPLICATION_NAME = "agenttst"
+  private static String APPLICATION_NAME = "happy-path-with-flex"
 
-  @Test
-  public void testUsage() throws Throwable {
-    SliderShell shell = slider(EXIT_SUCCESS, [ACTION_USAGE])
-    assertSuccess(shell)
+  @After
+  public void destroyCluster() {
+    cleanup(APPLICATION_NAME)
   }
 
   @Test
   public void testCreateFlex() throws Throwable {
-    if (!AGENTTESTS_ENABLED) {
-      log.info "TESTS are not run."
-      return
-    }
+    assumeAgentTestsEnabled()
 
-    cleanup()
-    try {
-      SliderShell shell = slider(EXIT_SUCCESS,
-          [
-          ACTION_CREATE, APPLICATION_NAME,
-          ARG_IMAGE, agentTarballPath.toString(),
-          ARG_TEMPLATE, APP_TEMPLATE,
-          ARG_RESOURCES, APP_RESOURCE
-      ])
+    cleanup(APPLICATION_NAME)
+    SliderShell shell = slider(EXIT_SUCCESS,
+        [
+            ACTION_CREATE, APPLICATION_NAME,
+            ARG_IMAGE, agentTarballPath.toString(),
+            ARG_TEMPLATE, APP_TEMPLATE,
+            ARG_RESOURCES, APP_RESOURCE
+        ])
 
-      logShell(shell)
+    logShell(shell)
 
-      int attemptCount = 0
-      while (attemptCount < 10) {
-        shell = slider(EXIT_SUCCESS, [
-            ACTION_LIST,
+    ensureApplicationIsUp(APPLICATION_NAME)
+
+    //flex
+    slider(EXIT_SUCCESS,
+        [
+            ACTION_FLEX,
+            APPLICATION_NAME,
+            ARG_COMPONENT,
+            COMMAND_LOGGER,
+            "2"])
+
+    // sleep till the new instance starts
+    sleep(1000 * 10)
+
+    shell = slider(EXIT_SUCCESS,
+        [
+            ACTION_STATUS,
             APPLICATION_NAME])
 
-        if (isAppRunning("RUNNING", shell)) {
-          break
-        }
+    assertComponentCount(COMMAND_LOGGER, 2, shell)
 
-        attemptCount++
-        assert attemptCount != 10, 'Application did not start, aborting test.'
-
-        sleep(1000 * 5)
-      }
-
-      //flex
-      slider(EXIT_SUCCESS,
-          [
-          ACTION_FLEX,
-          APPLICATION_NAME,
-          ARG_COMPONENT,
-          COMMAND_LOGGER,
-          "2"])
-
-      // sleep till the new instance starts
-      sleep(1000 * 10)
-
-      shell = slider(EXIT_SUCCESS,
-          [
-          ACTION_STATUS,
-          APPLICATION_NAME])
-
-      assertComponentCount(COMMAND_LOGGER, 2, shell)
-
-      shell = slider(EXIT_SUCCESS,
-          [
-          ACTION_LIST,
-          APPLICATION_NAME])
-
-      assert isAppRunning("RUNNING", shell), 'App is not running.'
-
-      assertSuccess(shell)
-    } finally {
-      cleanup()
-    }
+    assertSuccess(shell)
+    assert isApplicationInState("RUNNING", APPLICATION_NAME), 'App is not running.'
   }
-
-
-  public void cleanup() throws Throwable {
-    log.info "Cleaning app instance, if exists, by name " + APPLICATION_NAME
-    SliderShell shell = slider([
-        ACTION_FREEZE,
-        APPLICATION_NAME])
-
-    if (shell.ret != 0 && shell.ret != EXIT_UNKNOWN_INSTANCE) {
-      logShell(shell)
-      assert fail("Old cluster either should not exist or should get frozen.")
-    }
-
-    // sleep till the instance is frozen
-    sleep(1000 * 5)
-
-    shell = slider([
-        ACTION_DESTROY,
-        APPLICATION_NAME])
-
-    if (shell.ret != 0 && shell.ret != EXIT_UNKNOWN_INSTANCE) {
-      logShell(shell)
-      assert fail("Old cluster either should not exist or should get destroyed.")
-    }
-  }
-
-
 }

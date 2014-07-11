@@ -21,25 +21,28 @@ import logging
 import sys
 import datetime
 import time
-import argparse
+from optparse import OptionParser
 import os
 
 
 def main():
   print "Executing echo"
-  print 'Argument List: {}'.format(str(sys.argv))
+  print 'Argument List: {0}'.format(str(sys.argv))
 
-  parser = argparse.ArgumentParser()
-  parser.add_argument('--log', dest='log_folder', help='log destination')
-  parser.add_argument('--config', dest='conf_folder', help='conf folder')
-  parser.add_argument('--command', dest='command', help='command to execute')
-  parser.add_argument('--label', dest='label', help='label')
-  parser.add_argument('--host', dest='host', help='port')
-  parser.add_argument('--port', dest='port', help='host')
-  args = parser.parse_args()
-  if args.log_folder:
+  parser = OptionParser()
+  parser.add_option("--log", dest="log_folder", help="log destination")
+  parser.add_option("--config", dest="conf_folder", help="conf folder")
+  parser.add_option('--command', dest='command', help='command to execute')
+  parser.add_option('--label', dest='label', help='label')
+  parser.add_option('--host', dest='host', help='port')
+  parser.add_option('--port', dest='port', help='host')
+  parser.add_option('--secured_port', dest='secured_port', help='host')
+
+  (options, args) = parser.parse_args()
+
+  if options.log_folder:
     log_file_name = "echo" + str(datetime.datetime.now()) + ".log"
-    log_file_path = os.path.join(args.log_folder, log_file_name)
+    log_file_path = os.path.join(options.log_folder, log_file_name)
     logging.basicConfig(filename=log_file_path, level=logging.DEBUG)
     print log_file_path
   logging.debug('Starting echo script ...')

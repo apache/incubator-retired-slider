@@ -45,9 +45,15 @@ public class ZookeeperUtils {
   public static List<String> splitToPairs(String hostPortQuorumList) {
     // split an address hot
     String[] strings = StringUtils.getStrings(hostPortQuorumList);
-    List<String> tuples = new ArrayList<>(strings.length);
-    for (String s : strings) {
-      tuples.add(s.trim());
+    int len = 0;
+    if (strings != null) {
+      len = strings.length;
+    }
+    List<String> tuples = new ArrayList<>(len);
+    if (strings != null) {
+      for (String s : strings) {
+        tuples.add(s.trim());
+      }
     }
     return tuples;
   }
@@ -60,9 +66,15 @@ public class ZookeeperUtils {
   public static List<HostAndPort> splitToHostsAndPorts(String hostPortQuorumList) {
     // split an address hot
     String[] strings = StringUtils.getStrings(hostPortQuorumList);
-    List<HostAndPort> list = new ArrayList<>(strings.length);
-    for (String s : strings) {
-      list.add(HostAndPort.fromString(s.trim()));
+    int len = 0;
+    if (strings != null) {
+      len = strings.length;
+    }
+    List<HostAndPort> list = new ArrayList<>(len);
+    if (strings != null) {
+      for (String s : strings) {
+        list.add(HostAndPort.fromString(s.trim()));
+      }
     }
     return list;
   }

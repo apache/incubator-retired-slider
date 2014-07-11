@@ -31,10 +31,10 @@ import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.ContainerLauncher;
 import org.apache.slider.core.main.ExitCodeProvider;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
+import org.apache.slider.server.appmaster.AMViewForProviders;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
 import org.apache.slider.server.services.registry.RegistryViewForProviders;
-import org.apache.slider.server.services.utility.EventCallback;
 
 import java.io.File;
 import java.io.IOException;
@@ -81,7 +81,7 @@ public interface ProviderService extends ProviderCore, Service,
   boolean exec(AggregateConf instanceDefinition,
                File confDir,
                Map<String, String> env,
-               EventCallback execInProgress) throws IOException,
+               ProviderCompleted execInProgress) throws IOException,
       SliderException;
 
   /**
@@ -139,9 +139,11 @@ public interface ProviderService extends ProviderCore, Service,
    * bind operation -invoked before the service is started
    * @param stateAccessor interface offering read access to the state
    * @param registry
+   * @param amView
    */
   void bind(StateAccessForProviders stateAccessor,
-      RegistryViewForProviders registry);
+            RegistryViewForProviders registry,
+            AMViewForProviders amView);
 
   /**
    * Returns the agent rest operations interface.
@@ -157,10 +159,12 @@ public interface ProviderService extends ProviderCore, Service,
 
   /**
    * Prior to going live -register the initial service registry data
-   * @param amWebAPI
+   * @param unsecureWebAPI
+   * @param secureWebAPI
    * @param registryInstanceData
    */
-  void applyInitialRegistryDefinitions(URL amWebAPI,
-      ServiceInstanceData registryInstanceData) throws MalformedURLException,
+  void applyInitialRegistryDefinitions(URL unsecureWebAPI,
+                                       URL secureWebAPI,
+                                       ServiceInstanceData registryInstanceData) throws MalformedURLException,
       IOException;
 }

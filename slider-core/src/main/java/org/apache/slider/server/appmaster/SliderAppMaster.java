@@ -88,6 +88,7 @@ import org.apache.slider.core.registry.info.CustomRegistryConstants;
 import org.apache.slider.core.registry.info.RegisteredEndpoint;
 import org.apache.slider.core.registry.info.RegistryNaming;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
+import org.apache.slider.providers.ProviderCompleted;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderService;
 import org.apache.slider.providers.SliderProviderFactory;
@@ -104,6 +105,8 @@ import org.apache.slider.server.appmaster.state.ProviderAppState;
 import org.apache.slider.server.appmaster.state.RMOperationHandler;
 import org.apache.slider.server.appmaster.state.RoleInstance;
 import org.apache.slider.server.appmaster.state.RoleStatus;
+import org.apache.slider.server.appmaster.web.AgentService;
+import org.apache.slider.server.appmaster.web.rest.agent.AgentWebApp;
 import org.apache.slider.server.appmaster.web.SliderAMWebApp;
 import org.apache.slider.server.appmaster.web.SliderAmFilterInitializer;
 import org.apache.slider.server.appmaster.web.SliderAmIpFilter;
@@ -111,10 +114,10 @@ import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.WebAppApiImpl;
 import org.apache.slider.server.appmaster.web.rest.RestPaths;
 import org.apache.slider.server.services.registry.SliderRegistryService;
+import org.apache.slider.server.services.security.CertificateManager;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
-import org.apache.slider.server.services.utility.EventCallback;
-import org.apache.slider.server.services.utility.RpcService;
 import org.apache.slider.server.services.utility.WebAppService;
+import org.apache.slider.server.services.workflow.WorkflowRpcService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -123,6 +126,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -135,6 +139,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static org.apache.slider.server.appmaster.web.rest.RestPaths.WS_AGENT_CONTEXT_ROOT;
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.WS_CONTEXT_ROOT;
 
 /**
@@ -149,8 +154,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     SliderClusterProtocol,
     ServiceStateChangeListener,
     RoleKeys,
-    EventCallback,
-    ContainerStartOperation {
+    ProviderCompleted,
+    ContainerStartOperation,
+    AMViewForProviders {
   protected static final Logger log =
     LoggerFactory.getLogger(SliderAppMaster.class);
 
@@ -162,7 +168,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public static final String SERVICE_CLASSNAME_SHORT =
       "SliderAppMaster";
   public static final String SERVICE_CLASSNAME =
-      "org.apache.slider.server.appmaster."+ SERVICE_CLASSNAME_SHORT;
+      "org.apache.slider.server.appmaster." + SERVICE_CLASSNAME_SHORT;
 
 
   /**
@@ -178,31 +184,37 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private YarnRPC yarnRPC;
 
   /** Handle to communicate with the Resource Manager*/
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private AMRMClientAsync asyncRMClient;
-  
+
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
+
   private RMOperationHandler rmOperationHandler;
 
   /** Handle to communicate with the Node Manager*/
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   public NMClientAsync nmClientAsync;
-  
-  YarnConfiguration conf;
+
+//  YarnConfiguration conf;
   /**
    * token blob
    */
   private ByteBuffer allTokens;
 
-  private RpcService rpcService;
+  private WorkflowRpcService rpcService;
 
   /**
    * Secret manager
    */
-  ClientToAMTokenSecretManager secretManager;
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
+  private ClientToAMTokenSecretManager secretManager;
   
   /** Hostname of the container*/
   private String appMasterHostname = "";
   /* Port on which the app master listens for status updates from clients*/
   private int appMasterRpcPort = 0;
   /** Tracking url to which app master publishes info for clients to monitor*/
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private String appMasterTrackingUrl = "";
 
   /** Application Attempt Id ( combination of attemptId and fail count )*/
@@ -234,6 +246,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private final ReentrantLock AMExecutionStateLock = new ReentrantLock();
   private final Condition isAMCompleted = AMExecutionStateLock.newCondition();
 
+  /**
+   * Exit code for the AM to return
+   */
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private int amExitCode =  0;
   
   /**
@@ -246,22 +262,30 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   /**
    * Flag to set if the process exit code was set before shutdown started
    */
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private boolean spawnedProcessExitedBeforeShutdownTriggered;
 
 
   /** Arguments passed in : raw*/
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private SliderAMArgs serviceArgs;
 
   /**
    * ID of the AM container
    */
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private ContainerId appMasterContainerID;
 
   /**
    * ProviderService of this cluster
    */
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private ProviderService providerService;
 
+  /**
+   * The registry service
+   */
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private SliderRegistryService registry;
   
   /**
@@ -276,15 +300,20 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private int containerMaxMemory;
   private String amCompletionReason;
 
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private RoleLaunchService launchService;
   
   //username -null if it is not known/not to be set
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private String hadoop_user_name;
   private String service_user_name;
   
   private SliderAMWebApp webApp;
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private InetSocketAddress rpcServiceAddress;
   private ProviderService sliderAMProvider;
+  private String agentAccessUrl;
+  private CertificateManager certificateManager;
 
   /**
    * Service Constructor
@@ -326,7 +355,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
                SliderUtils.getKerberosRealm());
       UserGroupInformation.setConfiguration(conf);
       UserGroupInformation ugi = UserGroupInformation.getCurrentUser();
-      log.debug("Authenticating as " + ugi.toString());
+      log.debug("Authenticating as {}", ugi);
       SliderUtils.verifyPrincipalSet(conf,
           DFSConfigKeys.DFS_NAMENODE_USER_NAME_KEY);
       // always enforce protocol to be token-based.
@@ -355,11 +384,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   @Override // RunService
   public Configuration bindArgs(Configuration config, String... args) throws
                                                                       Exception {
-    config = super.bindArgs(config, args);
+    YarnConfiguration yarnConfiguration = new YarnConfiguration(
+        super.bindArgs(config, args));
     serviceArgs = new SliderAMArgs(args);
     serviceArgs.parse();
     //yarn-ify
-    YarnConfiguration yarnConfiguration = new YarnConfiguration(config);
     return SliderUtils.patchConfiguration(yarnConfiguration);
   }
 
@@ -449,11 +478,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     Configuration serviceConf = getConfig();
     // Try to get the proper filtering of static resources through the yarn proxy working
-    serviceConf.set("hadoop.http.filter.initializers",
+    serviceConf.set(HADOOP_HTTP_FILTER_INITIALIZERS,
                     SliderAmFilterInitializer.NAME);
-    serviceConf.set(SliderAmIpFilter.WS_CONTEXT_ROOT, WS_CONTEXT_ROOT);
+    serviceConf.set(SliderAmIpFilter.WS_CONTEXT_ROOT, WS_CONTEXT_ROOT + "|" + WS_AGENT_CONTEXT_ROOT);
     
-    conf = new YarnConfiguration(serviceConf);
     //get our provider
     MapOperations globalInternalOptions =
       instanceDefinition.getInternalOperations().getGlobalOptions();
@@ -470,9 +498,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     sliderAMProvider = new SliderAMProviderService();
     initAndAddService(sliderAMProvider);
     
-    InetSocketAddress address = SliderUtils.getRmSchedulerAddress(conf);
+    InetSocketAddress address = SliderUtils.getRmSchedulerAddress(serviceConf);
     log.info("RM is at {}", address);
-    yarnRPC = YarnRPC.create(conf);
+    yarnRPC = YarnRPC.create(serviceConf);
 
     /*
      * Extract the container ID. This is then
@@ -510,7 +538,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       }
     }
     allTokens = ByteBuffer.wrap(dob.getData(), 0, dob.getLength());
-    
+
     // set up secret manager
     secretManager = new ClientToAMTokenSecretManager(appAttemptID, null);
 
@@ -569,22 +597,32 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       providerRoles.addAll(SliderAMClientProvider.ROLES);
 
       // Start up the WebApp and track the URL for it
+      certificateManager = new CertificateManager();
+      certificateManager.initRootCert(
+          instanceDefinition.getAppConfOperations()
+              .getComponent(SliderKeys.COMPONENT_AM));
+
+      startAgentWebApp(appInformation, serviceConf);
+
       webApp = new SliderAMWebApp(registry);
       WebApps.$for(SliderAMWebApp.BASE_PATH, WebAppApi.class,
-          new WebAppApiImpl(this, stateForProviders, providerService),
-          RestPaths.WS_CONTEXT)
+                   new WebAppApiImpl(this,
+                                     stateForProviders,
+                                     providerService,
+                                     certificateManager),
+                   RestPaths.WS_CONTEXT)
                       .with(serviceConf)
                       .start(webApp);
       appMasterTrackingUrl = "http://" + appMasterHostname + ":" + webApp.port();
       WebAppService<SliderAMWebApp> webAppService =
         new WebAppService<>("slider", webApp);
 
-      webAppService.init(conf);
+      webAppService.init(serviceConf);
       webAppService.start();
       addService(webAppService);
 
       appInformation.put(StatusKeys.INFO_AM_WEB_URL, appMasterTrackingUrl + "/");
-      appInformation.set(StatusKeys.INFO_AM_WEB_PORT, webApp.port());      
+      appInformation.set(StatusKeys.INFO_AM_WEB_PORT, webApp.port());
 
       // Register self with ResourceManager
       // This will start heartbeating to the RM
@@ -612,7 +650,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         applicationACLs = response.getApplicationACLs();
 
         //tell the server what the ACLs are 
-        rpcService.getServer().refreshServiceAcl(conf, new SliderAMPolicyProvider());
+        rpcService.getServer().refreshServiceAcl(serviceConf,
+            new SliderAMPolicyProvider());
       }
 
       // extract container list
@@ -675,8 +714,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
 
     //Give the provider restricted access to the state, registry
-    providerService.bind(stateForProviders, registry);
-    sliderAMProvider.bind(stateForProviders, registry);
+    providerService.bind(stateForProviders, registry, this);
+    sliderAMProvider.bind(stateForProviders, registry, null);
 
     // now do the registration
     registerServiceInstance(clustername, appid);
@@ -701,6 +740,32 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     return amExitCode;
   }
 
+  private void startAgentWebApp(MapOperations appInformation,
+                                Configuration serviceConf) {
+    LOG_YARN.info("AM classpath:" + ((URLClassLoader) AgentWebApp.class.getClassLoader() ).getURLs());
+    // Start up the agent web app and track the URL for it
+    AgentWebApp agentWebApp = AgentWebApp.$for(AgentWebApp.BASE_PATH,
+                     new WebAppApiImpl(this,
+                                       stateForProviders,
+                                       providerService,
+                                       certificateManager),
+                     RestPaths.AGENT_WS_CONTEXT)
+        .withComponentConfig(getInstanceDefinition().getAppConfOperations()
+                                 .getComponent(SliderKeys.COMPONENT_AM))
+        .start();
+    agentAccessUrl = "https://" + appMasterHostname + ":" + agentWebApp.getSecuredPort();
+    AgentService agentService =
+      new AgentService("slider-agent", agentWebApp);
+
+    agentService.init(serviceConf);
+    agentService.start();
+    addService(agentService);
+
+    appInformation.put(StatusKeys.INFO_AM_AGENT_URL, agentAccessUrl + "/");
+    appInformation.set(StatusKeys.INFO_AM_AGENT_PORT, agentWebApp.getPort());
+    appInformation.set(StatusKeys.INFO_AM_SECURED_AGENT_PORT,
+                       agentWebApp.getSecuredPort());
+  }
 
   /**
    * This registers the service instance and its external values
@@ -711,7 +776,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private void registerServiceInstance(String instanceName,
       ApplicationId appid) throws Exception {
     // the registry is running, so register services
-    URL amWebAPI = new URL(appMasterTrackingUrl);
+    URL unsecureWebAPI = new URL(appMasterTrackingUrl);
+    URL secureWebAPI = new URL(agentAccessUrl);
     String serviceName = SliderKeys.APP_TYPE;
     int id = appid.getId();
     String appServiceType = RegistryNaming.createRegistryServiceType(
@@ -740,16 +806,22 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     // internal services
    
-    sliderAMProvider.applyInitialRegistryDefinitions(amWebAPI, instanceData);
+    sliderAMProvider.applyInitialRegistryDefinitions(unsecureWebAPI,
+                                                     secureWebAPI,
+                                                     instanceData
+    );
 
     // provider service dynamic definitions.
-    providerService.applyInitialRegistryDefinitions(amWebAPI, instanceData);
+    providerService.applyInitialRegistryDefinitions(unsecureWebAPI,
+                                                    secureWebAPI,
+                                                    instanceData
+    );
 
 
     // push the registration info to ZK
 
     registry.registerSelf(
-        instanceData, amWebAPI
+        instanceData, unsecureWebAPI
     );
   }
 
@@ -911,7 +983,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
                                                     .newReflectiveBlockingService(
                                                       protobufRelay);
 
-    rpcService = new RpcService(RpcBinder.createProtobufServer(
+    rpcService = new WorkflowRpcService("SliderRPC", RpcBinder.createProtobufServer(
       new InetSocketAddress("0.0.0.0", 0),
       getConfig(),
       secretManager,
@@ -978,7 +1050,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       // non complete containers should not be here
       assert (status.getState() == ContainerState.COMPLETE);
-      AppState.NodeCompletionResult result = appState.onCompletedNode(conf, status);
+      AppState.NodeCompletionResult result = appState.onCompletedNode(
+          getConfig(), status);
       if (result.containerFailed) {
         RoleInstance ri = result.roleInstance;
         log.error("Role instance {} failed ", ri);
@@ -1321,7 +1394,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       // didn't start, so don't register
       providerService.start();
       // and send the started event ourselves
-      eventCallbackEvent();
+      eventCallbackEvent(null);
     }
   }
 
@@ -1330,8 +1403,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   /* EventCallback  from the child or ourselves directly */
   /* =================================================================== */
 
-  @Override // EventCallback
-  public void eventCallbackEvent() {
+  @Override // ProviderCompleted
+  public void eventCallbackEvent(Object parameter) {
     // signalled that the child process is up.
     appState.noteAMLive();
     // now ask for the cluster nodes
@@ -1345,6 +1418,30 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
   }
 
+
+  /* =================================================================== */
+  /* ProviderAMOperations */
+  /* =================================================================== */
+
+  /**
+   * Refreshes the container by releasing it and having it reallocated
+   *
+   * @param containerId       id of the container to release
+   * @param newHostIfPossible allocate the replacement container on a new host
+   *
+   * @throws SliderException
+   */
+  public void refreshContainer(String containerId, boolean newHostIfPossible)
+      throws SliderException {
+    log.info(
+        "Refreshing container {} per provider request.",
+        containerId);
+    rmOperationHandler.execute(appState.releaseContainer(containerId));
+
+    // ask for more containers if needed
+    reviewRequestAndReleaseNodes();
+  }
+
   /* =================================================================== */
   /* ServiceStateChangeListener */
   /* =================================================================== */
@@ -1355,7 +1452,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   @Override //ServiceStateChangeListener
   public void stateChanged(Service service) {
-    if (service == providerService) {
+    if (service == providerService && service.isInState(STATE.STOPPED)) {
       //its the current master process in play
       int exitCode = providerService.getExitCode();
       int mappedProcessExitCode =
@@ -1382,6 +1479,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
           exitCode,
           mappedProcessExitCode);
       }
+    } else {
+      super.stateChanged(service);
     }
   }
 
@@ -1478,7 +1577,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public AggregateConf getInstanceDefinition() {
     return appState.getInstanceDefinition();
   }
-  
+
   /**
    * This is the status, the live model
    */
@@ -1513,5 +1612,4 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     //now have the service launcher do its work
     ServiceLauncher.serviceMain(extendedArgs);
   }
-
 }

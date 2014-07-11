@@ -32,7 +32,6 @@ function usage
 this="${BASH_SOURCE-$0}"
 bindir=$(cd -P -- "$(dirname -- "$this")" && pwd -P)
 script="$(basename -- "$this")"
-this="$bin/$script"
 
 # lib directory is one up; it is expected to contain 
 # slider.jar and any other dependencies that are not in the

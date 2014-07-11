@@ -58,8 +58,7 @@ class TestPublisherRestResources extends AgentTestBase {
         false)
     Map<String, Integer> roles = [:]
     File slider_core = new File(new File(".").absoluteFile, "src/test/python");
-    String app_def = "appdef_1.zip"
-    File app_def_path = new File(slider_core, app_def)
+    File app_def_path = new File(app_def_pkg_path)
     String agt_ver = "version"
     File agt_ver_path = new File(slider_core, agt_ver)
     String agt_conf = "agent.ini"
@@ -130,6 +129,18 @@ class TestPublisherRestResources extends AgentTestBase {
     response = webResource.type(MediaType.TEXT_PLAIN).get(ClientResponse.class);
     assert 404 == response.status
 
+    String classpathUri = publisher_url +"/"+ RestPaths.SLIDER_CLASSPATH
+    webResource = client.resource(classpathUri)
+    Set uris = webResource.type(MediaType.APPLICATION_JSON)
+            .get(Set.class)
+    assert uris.size() > 0
+    log.info("Classpath URIs: {}", uris)
+    // check for some expected classpath elements
+    assert uris.any {it =~ /curator-x-discovery/}
+    assert uris.any {it =~ /hadoop-yarn-api/}
+    assert uris.any {it =~ /hadoop-hdfs/}
+    // and a negative test...
+    assert !uris.any {it =~ /foo-bar/}
   }
 
 }

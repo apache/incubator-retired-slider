@@ -40,7 +40,7 @@ class TestActionList extends AgentMiniClusterTestBase {
   @Before
   public void setup() {
     super.setup()
-    createMiniCluster("testActionList", configuration, 1, false)
+    createMiniCluster("test_action_list", configuration, 1, false)
   }
 
   /**
@@ -87,7 +87,7 @@ class TestActionList extends AgentMiniClusterTestBase {
 
   public void testListLiveCluster() throws Throwable {
     //launch the cluster
-    String clustername = "test_list_live_cluster"
+    String clustername = createClusterName()
     ServiceLauncher<SliderClient> launcher = createMasterlessAM(clustername, 0, true, false)
     addToTeardown(launcher)
     //do the low level operations to get a better view of what is going on 
@@ -135,7 +135,7 @@ class TestActionList extends AgentMiniClusterTestBase {
           //varargs list of command line params
           [
               SliderActions.ACTION_LIST,
-              "testStatusMissingCluster"
+              createClusterName()
           ]
       )
       fail("expected an exception, got a status code " + launcher.serviceExitCode)

@@ -18,7 +18,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <artifactId>accumulo-funtests</artifactId>
-  <version>0.30</version>
   <name>Slider Accumulo Provider Functional Tests</name>
   <packaging>jar</packaging>
   <description>
@@ -28,7 +27,7 @@
   <parent>
     <groupId>org.apache.slider</groupId>
     <artifactId>slider</artifactId>
-    <version>0.30</version>
+    <version>0.40</version>
     <relativePath>../../../</relativePath>
   </parent>
 
@@ -97,7 +96,7 @@
           </forkedProcessTimeoutInSeconds>
           <threadCount>1</threadCount>
           <argLine>${test.argLine}</argLine>
-          <failIfNoTests>${test.failIfNoTests}</failIfNoTests>
+          <failIfNoTests>${test.funtests.failIfNoTests}</failIfNoTests>
 
           <trimStackTrace>false</trimStackTrace>
           <redirectTestOutputToFile>${build.redirect.test.output.to.file}</redirectTestOutputToFile>
@@ -184,14 +183,7 @@
     
     <dependency>
       <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-common</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-common</artifactId>
-      <type>test-jar</type>
-     <scope>test</scope>
+      <artifactId>hadoop-client</artifactId>
     </dependency>
 
     <dependency>
@@ -209,12 +201,6 @@
     <dependency>
       <groupId>org.apache.accumulo</groupId>
       <artifactId>accumulo-minicluster</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.accumulo</groupId>
-      <artifactId>accumulo-start</artifactId>
       <scope>test</scope>
     </dependency>
 

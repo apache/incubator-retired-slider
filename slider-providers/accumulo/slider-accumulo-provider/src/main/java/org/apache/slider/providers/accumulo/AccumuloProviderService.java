@@ -23,6 +23,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.service.Service;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.slider.common.SliderKeys;
@@ -39,6 +40,8 @@ import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.providers.AbstractProviderService;
+import org.apache.slider.providers.ProviderCompleted;
+import org.apache.slider.providers.ProviderCompletedCallable;
 import org.apache.slider.providers.ProviderCore;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
@@ -46,9 +49,8 @@ import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.zk.BlockingZKWatcher;
 import org.apache.slider.common.tools.ConfigHelper;
-import org.apache.slider.server.services.utility.EventCallback;
-import org.apache.slider.server.services.utility.EventNotifyingService;
-import org.apache.slider.server.services.utility.ForkedProcessService;
+import org.apache.slider.server.services.workflow.ForkedProcessService;
+import org.apache.slider.server.services.workflow.WorkflowCallbackService;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
@@ -264,9 +266,8 @@ public class AccumuloProviderService extends AbstractProviderService implements
   public boolean exec(AggregateConf instanceDefinition,
                       File confDir,
                       Map<String, String> env,
-                      EventCallback execInProgress) throws
-                                                 IOException,
-      SliderException {
+                      ProviderCompleted execInProgress)
+      throws IOException, SliderException {
 
 
     //now pull in these files and do a bit of last-minute validation
@@ -331,10 +332,17 @@ public class AccumuloProviderService extends AbstractProviderService implements
     
     //callback to AM to trigger cluster review is set up to happen after
     //the init/verify action has succeeded
-    EventNotifyingService notifier = new EventNotifyingService(execInProgress,
-           internalOperations.getGlobalOptions().getOptionInt(
-             OptionKeys.INTERNAL_CONTAINER_STARTUP_DELAY,
-             OptionKeys.DEFAULT_CONTAINER_STARTUP_DELAY));
+    int delay = internalOperations.getGlobalOptions().getOptionInt(
+        OptionKeys.INTERNAL_CONTAINER_STARTUP_DELAY,
+        OptionKeys.DEFAULT_CONTAINER_STARTUP_DELAY);
+    ProviderCompletedCallable completedCallable =
+        new ProviderCompletedCallable(execInProgress, null);
+    Service notifier = new WorkflowCallbackService<>(
+        "accumulo notifier",
+        completedCallable,
+        delay,
+        true);
+    
     // register the service for lifecycle management; 
     // this service is started after the accumulo process completes
     addService(notifier);
@@ -402,9 +410,13 @@ public class AccumuloProviderService extends AbstractProviderService implements
     String monitorKey = "Active Accumulo Monitor: ";
     String monitorAddr = getInfoAvoidingNull(clusterDesc, AccumuloKeys.MONITOR_ADDRESS);
     if (!StringUtils.isBlank(monitorAddr)) {
+      try {
         HostAndPort hostPort = HostAndPort.fromString(monitorAddr);
         details.put(monitorKey,
             String.format("http://%s:%d", hostPort.getHostText(), hostPort.getPort()));
+      } catch (Exception e) {
+        details.put(monitorKey + "N/A", null);
+      }
     } else {
       details.put(monitorKey + "N/A", null);
     }

@@ -93,8 +93,8 @@ public interface SliderXmlConfKeys {
    * Flag which is set to indicate that security should be enabled
    * when talking to this cluster.
    */
-  String KEY_SECURITY_ENABLED =
-      CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION;
+  String KEY_SECURITY =
+      CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHENTICATION;
 
   /**
    * queue name
@@ -153,4 +153,6 @@ public interface SliderXmlConfKeys {
 
   String IPC_CLIENT_FALLBACK_TO_SIMPLE_AUTH =
       "ipc.client.fallback-to-simple-auth-allowed";
+  String HADOOP_HTTP_FILTER_INITIALIZERS =
+      "hadoop.http.filter.initializers";
 }

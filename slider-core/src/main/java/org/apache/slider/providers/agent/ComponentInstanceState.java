@@ -37,6 +37,8 @@ public class ComponentInstanceState {
   private State targetState = State.STARTED;
   private int failuresSeen = 0;
   private Boolean configReported = false;
+  private long lastHeartbeat = 0;
+  private ContainerState containerState;
 
   public ComponentInstanceState(String compName,
                                 String containerId,
@@ -44,6 +46,8 @@ public class ComponentInstanceState {
     this.compName = compName;
     this.containerId = containerId;
     this.applicationId = applicationId;
+    this.containerState = ContainerState.INIT;
+    this.lastHeartbeat = System.currentTimeMillis();
   }
 
   public String getCompName() {
@@ -56,6 +60,26 @@ public class ComponentInstanceState {
 
   public void setConfigReported(Boolean configReported) {
     this.configReported = configReported;
+  }
+
+  public ContainerState getContainerState() {
+    return containerState;
+  }
+
+  public void setContainerState(ContainerState containerState) {
+    this.containerState = containerState;
+  }
+
+  public long getLastHeartbeat() {
+    return lastHeartbeat;
+  }
+
+  public void setLastHeartbeat(long lastHeartbeat) {
+    this.lastHeartbeat = lastHeartbeat;
+    if(this.containerState == ContainerState.UNHEALTHY ||
+       this.containerState == ContainerState.INIT) {
+      this.containerState = ContainerState.HEALTHY;
+    }
   }
 
   public void commandIssued(Command command) {

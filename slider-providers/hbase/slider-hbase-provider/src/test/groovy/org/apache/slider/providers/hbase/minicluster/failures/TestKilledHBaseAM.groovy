@@ -27,8 +27,6 @@ import org.apache.hadoop.hbase.client.HConnection
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
-import org.apache.hadoop.yarn.server.resourcemanager.scheduler.ResourceScheduler
-import org.apache.hadoop.yarn.server.resourcemanager.scheduler.fifo.FifoScheduler
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.api.ClusterDescription
@@ -38,6 +36,7 @@ import org.apache.slider.client.SliderClient
 import org.apache.slider.common.params.ActionAMSuicideArgs
 import org.apache.slider.providers.hbase.minicluster.HBaseMiniClusterTestBase
 import org.junit.Test
+import static org.apache.slider.test.SliderTestUtils.log
 
 /**
  * test create a live region service
@@ -58,8 +57,7 @@ class TestKilledHBaseAM extends HBaseMiniClusterTestBase {
     // patch the configuration for AM restart
     conf.setInt(SliderXmlConfKeys.KEY_AM_RESTART_LIMIT, 3)
 
-    conf.setClass(YarnConfiguration.RM_SCHEDULER,
-        FifoScheduler, ResourceScheduler);
+    conf.set(YarnConfiguration.RM_SCHEDULER, FIFO_SCHEDULER);
     createMiniCluster(clustername, conf, 1, 1, 1, true, false)
     describe(" Kill the AM, expect cluster to die");
 

@@ -26,6 +26,7 @@ import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
+import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -42,7 +43,7 @@ public class TestClusterBuildDestroy extends AgentCommandTestBase
 
   @BeforeClass
   public static void prepareCluster() {
-    assumeFunctionalTestsEnabled();
+    
     setupCluster(CLUSTER)
   }
 
@@ -60,8 +61,11 @@ public class TestClusterBuildDestroy extends AgentCommandTestBase
         [
             ACTION_BUILD,
             CLUSTER,
+            ARG_IMAGE, agentTarballPath.toString(),
             ARG_ZKHOSTS,
             SLIDER_CONFIG.get(SliderXmlConfKeys.REGISTRY_ZK_QUORUM, DEFAULT_SLIDER_ZK_HOSTS),
+            ARG_TEMPLATE, APP_TEMPLATE,
+            ARG_RESOURCES, APP_RESOURCE
         ])
 
 

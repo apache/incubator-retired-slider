@@ -42,7 +42,7 @@ public class CuratorService extends AbstractService {
                         CuratorFramework curator,
                         String basePath) {
     super(name);
-    this.curator = Preconditions.checkNotNull(curator, "null client");
+    this.curator = Preconditions.checkNotNull(curator, "null curator");
     this.basePath = basePath;
   }
 

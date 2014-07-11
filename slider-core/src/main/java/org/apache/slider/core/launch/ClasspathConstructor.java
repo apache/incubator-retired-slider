@@ -24,7 +24,6 @@ import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.slider.common.tools.SliderUtils;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -38,8 +37,8 @@ import java.util.List;
  */
 public class ClasspathConstructor {
 
-  //  public static final String CLASS_PATH_SEPARATOR = ApplicationConstants.CLASS_PATH_SEPARATOR;
-  public static final String CLASS_PATH_SEPARATOR = File.pathSeparator;
+    public static final String CLASS_PATH_SEPARATOR = ApplicationConstants.CLASS_PATH_SEPARATOR;
+//  public static final String CLASS_PATH_SEPARATOR = File.pathSeparator;
   private final List<String> pathElements = new ArrayList<>();
 
   public ClasspathConstructor() {
@@ -123,12 +122,12 @@ public class ClasspathConstructor {
 
 
   public void addRemoteClasspathEnvVar() {
-    append(ApplicationConstants.Environment.CLASSPATH.$());
+    append(ApplicationConstants.Environment.CLASSPATH.$$());
   }
 
 
   public void insertRemoteClasspathEnvVar() {
-    append(ApplicationConstants.Environment.CLASSPATH.$());
+    append(ApplicationConstants.Environment.CLASSPATH.$$());
   }
 
 
@@ -152,12 +151,22 @@ public class ClasspathConstructor {
     return dir;
   }
 
+  /**
+   * Split a classpath. This uses the local path separator so MUST NOT
+   * be used to work with remote classpaths
+   * @param localpath local path
+   * @return a splite
+   */
   public Collection<String> splitClasspath(String localpath) {
     String separator = System.getProperty("path.separator");
     return StringUtils.getStringCollection(localpath, separator);
   }
 
-  public Collection<String> javaVMClasspath() {
+  /**
+   * Get the local JVM classpath split up
+   * @return the list of entries on the JVM classpath env var
+   */
+  public Collection<String> localJVMClasspath() {
     return splitClasspath(System.getProperty("java.class.path"));
   }
 

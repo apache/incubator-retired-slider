@@ -19,12 +19,11 @@
   <parent>
     <groupId>org.apache.slider</groupId>
     <artifactId>slider</artifactId>
-    <version>0.30</version>
+    <version>0.40</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>slider-agent</artifactId>
   <packaging>pom</packaging>
-  <version>0.30</version>
   <name>Slider Agent</name>
   <description>Slider Agent</description>
   <properties>
@@ -44,6 +43,7 @@
         <configuration>
           <tarLongFileMode>gnu</tarLongFileMode>
           <descriptor>src/packages/tarball/all.xml</descriptor>
+          <appendAssemblyId>false</appendAssemblyId>
         </configuration>
         <executions>
           <execution>
@@ -67,7 +67,7 @@
         <executions>
           <execution>
             <configuration>
-              <executable>python2.6</executable>
+              <executable>${project.basedir}/src/test/python/python-wrap</executable>
               <workingDirectory>src/test/python</workingDirectory>
               <arguments>
                 <argument>unitTests.py</argument>

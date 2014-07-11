@@ -17,41 +17,39 @@
 -->
 <metainfo>
   <schemaVersion>2.0</schemaVersion>
-  <services>
-    <service>
-      <name>ECHO</name>
-      <comment>
-        Echo
-      </comment>
-      <version>0.1</version>
-      <type>YARN-APP</type>
-      <minHadoopVersion>2.1.0</minHadoopVersion>
-      <components>
-        <component>
-          <name>echo</name>
-          <category>MASTER</category>
-          <minInstanceCount>1</minInstanceCount>
-          <maxInstanceCount>2</maxInstanceCount>
-          <commandScript>
-            <script>echo.py</script>
-            <scriptType>PYTHON</scriptType>
-            <timeout>600</timeout>
-          </commandScript>
-        </component>
-      </components>
-      <osSpecifics>
-        <osSpecific>
-          <osType>any</osType>
-          <packages>
-            <package>
-              <type>tarball</type>
-              <name>files/echo.tar.gz</name>
-            </package>
-          </packages>
-        </osSpecific>
-      </osSpecifics>
+  <application>
+    <name>ECHO</name>
+    <comment>
+      Echo
+    </comment>
+    <version>0.1</version>
+    <type>YARN-APP</type>
+    <minHadoopVersion>2.1.0</minHadoopVersion>
+    <components>
+      <component>
+        <name>echo</name>
+        <category>MASTER</category>
+        <minInstanceCount>1</minInstanceCount>
+        <maxInstanceCount>2</maxInstanceCount>
+        <commandScript>
+          <script>echo.py</script>
+          <scriptType>PYTHON</scriptType>
+          <timeout>600</timeout>
+        </commandScript>
+      </component>
+    </components>
+    <osSpecifics>
+      <osSpecific>
+        <osType>any</osType>
+        <packages>
+          <package>
+            <type>tarball</type>
+            <name>files/echo.tar.gz</name>
+          </package>
+        </packages>
+      </osSpecific>
+    </osSpecifics>
 
-    </service>
-  </services>
+  </application>
 </metainfo>
 

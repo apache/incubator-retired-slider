@@ -30,7 +30,6 @@ import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.common.tools.SliderUtils
-import org.apache.slider.common.params.Arguments
 import org.apache.slider.client.SliderClient
 import org.apache.slider.test.SliderTestUtils
 import org.junit.Before
@@ -51,17 +50,16 @@ abstract class CommandTestBase extends SliderTestUtils {
       LoggerFactory.getLogger(CommandTestBase.class);
 
   public static final String SLIDER_CONF_DIR = sysprop(SLIDER_CONF_DIR_PROP)
-  public static final String SLIDER_BIN_DIR = sysprop(SLIDER_BIN_DIR_PROP)
-  public static final File SLIDER_BIN_DIRECTORY = new File(
-      SLIDER_BIN_DIR).canonicalFile
+  public static final String SLIDER_TAR_DIR = sysprop(SLIDER_BIN_DIR_PROP)
+  public static final File SLIDER_TAR_DIRECTORY = new File(
+      SLIDER_TAR_DIR).canonicalFile
   public static final File SLIDER_SCRIPT = new File(
-      SLIDER_BIN_DIRECTORY,
+      SLIDER_TAR_DIRECTORY,
       BIN_SLIDER).canonicalFile
   public static final File SLIDER_CONF_DIRECTORY = new File(
       SLIDER_CONF_DIR).canonicalFile
   public static final File SLIDER_CONF_XML = new File(SLIDER_CONF_DIRECTORY,
       CLIENT_CONFIG_FILENAME).canonicalFile
-
   public static final YarnConfiguration SLIDER_CONFIG
   public static final int THAW_WAIT_TIME
   public static final int FREEZE_WAIT_TIME
@@ -105,14 +103,12 @@ abstract class CommandTestBase extends SliderTestUtils {
       log.debug("Security enabled")
       SliderUtils.forceLogin()
     } else {
-      log.info "Security off, making cluster dirs broadly accessible"
+      log.info "Security is off"
     }
     SliderShell.confDir = SLIDER_CONF_DIRECTORY
     SliderShell.script = SLIDER_SCRIPT
     log.info("Test using ${HadoopFS.getDefaultUri(SLIDER_CONFIG)} " +
              "and YARN RM @ ${SLIDER_CONFIG.get(YarnConfiguration.RM_ADDRESS)}")
-
-    // now patch the settings with the path of the conf direcotry
 
   }
 
@@ -164,7 +160,7 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @return
    */
   public static SliderShell slider(int exitCode, Collection<String> commands) {
-    return SliderShell.run(commands, exitCode)
+    return SliderShell.run(exitCode, commands)
   }
 
   /**

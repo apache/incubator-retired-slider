@@ -19,7 +19,6 @@
 package org.apache.slider.core.registry.info;
 
 import org.apache.slider.core.exceptions.SliderException;
-import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 
@@ -48,7 +47,12 @@ public class RegisteredEndpoint {
   /**
    * "hostname:port" pair: {@value}
    */
-  public static final String TYPE_ADDRESS = "address";
+  public static final String TYPE_INETADDRESS = "inetaddress";
+  
+  /**
+   * simple path string: {@value}
+   */
+  public static final String TYPE_PATH = "path";
 
   // standard protocols
 
@@ -86,19 +90,31 @@ public class RegisteredEndpoint {
    */
   public static final String PROTOCOL_HADOOP_PROTOBUF = "org.apache.hadoop.ipc.Protobuf";
 
-  public String value;
+  /**
+   * The address -format is driven by the type entry
+   */
+  public String address;
+
+  /**
+   * Protocol
+   */
   public String protocol = "";
+
   public String type = "";
+
+  /**
+   * Human readable type
+   */
   public String description = "";
   
   public RegisteredEndpoint() {
   }
 
-  public RegisteredEndpoint(String value,
+  public RegisteredEndpoint(String address,
                             String protocol,
                             String type,
                             String description) {
-    this.value = value;
+    this.address = address;
     this.protocol = protocol;
     this.type = type;
     this.description = description;
@@ -113,7 +129,7 @@ public class RegisteredEndpoint {
   public RegisteredEndpoint(URI uri,
                             String description) {
     
-    this.value = uri.toString();
+    this.address = uri.toString();
     this.protocol = uri.getScheme();
     this.type = TYPE_URL;
     this.description = description;
@@ -128,9 +144,9 @@ public class RegisteredEndpoint {
     String protocol,
       String description) {
     
-    this.value = address.toString();
+    this.address = address.toString();
     this.protocol = protocol;
-    this.type = TYPE_ADDRESS;
+    this.type = TYPE_INETADDRESS;
     this.description = description;
   }
 
@@ -153,10 +169,10 @@ public class RegisteredEndpoint {
   public URL asURL() throws SliderException {
     verifyEndpointType(TYPE_URL);
     try {
-      return new URL(value);
+      return new URL(address);
     } catch (MalformedURLException e) {
       throw new SliderException(-1, e,
-          "could not create a URL from %s : %s", value, e.toString());
+          "could not create a URL from %s : %s", address, e.toString());
     }
   }
 
@@ -165,20 +181,16 @@ public class RegisteredEndpoint {
     final StringBuilder sb =
         new StringBuilder();
     if (TYPE_URL.equals(type)) {
-      sb.append(value);
+      sb.append(address);
     } else {
       sb.append("protocol='").append(protocol).append('\'');
-      sb.append(" value='").append(value).append('\'');
+      sb.append(" address='").append(address).append('\'');
       sb.append(" type='").append(type).append('\'');
     }
     sb.append(" -- \"").append(description).append('"');
     return sb.toString();
   }
 
-  @JsonIgnore
-  public boolean isHttpProtocol() {
-    return PROTOCOL_HTTP.equals(protocol) || PROTOCOL_HTTPS.equals(protocol);
-  }
 
   /**
    * Verify that an endpoint is of the desired type

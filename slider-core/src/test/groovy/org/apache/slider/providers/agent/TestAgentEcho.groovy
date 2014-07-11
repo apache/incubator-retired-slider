@@ -36,10 +36,9 @@ import static org.apache.slider.providers.agent.AgentKeys.*
 @Slf4j
 class TestAgentEcho extends AgentTestBase {
 
-
   @Override
   void checkTestAssumptions(YarnConfiguration conf) {
-    
+
   }
 
   @Test
@@ -57,8 +56,7 @@ class TestAgentEcho extends AgentTestBase {
     File slider_core = new File(new File(".").absoluteFile, "src/test/python");
     String echo_py = "echo.py"
     File echo_py_path = new File(slider_core, echo_py)
-    String app_def = "appdef_1.zip"
-    File app_def_path = new File(slider_core, app_def)
+    File app_def_path = new File(app_def_pkg_path)
     String agt_ver = "version"
     File agt_ver_path = new File(slider_core, agt_ver)
     String agt_conf = "agent.ini"

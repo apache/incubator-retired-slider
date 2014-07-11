@@ -56,7 +56,7 @@ class TestAccFreezeThaw extends AccumuloTestBase {
     addToTeardown(sliderClient);
 
     
-    waitForRoleCount(sliderClient, roles, ACCUMULO_CLUSTER_STARTUP_TO_LIVE_TIME)
+    waitForRoleCount(sliderClient, roles, accumulo_cluster_startup_to_live_time)
     //now give the cluster a bit of time to actually start work
 
     log.info("Sleeping for a while")
@@ -93,7 +93,7 @@ class TestAccFreezeThaw extends AccumuloTestBase {
     ServiceLauncher launcher2 = thawCluster(clustername, [], true);
     SliderClient sliderClient2 = (SliderClient) launcher2.service
     addToTeardown(sliderClient2)
-    waitForRoleCount(sliderClient, roles, ACCUMULO_CLUSTER_STARTUP_TO_LIVE_TIME, "thawing")
+    waitForRoleCount(sliderClient, roles, accumulo_cluster_startup_to_live_time, "thawing")
 
 
     sleepForAccumuloClusterLive();

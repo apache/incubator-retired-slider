@@ -250,13 +250,34 @@ public class ZKIntegration implements Watcher {
                                      KeeperException {
     try {
       zookeeper.delete(path, -1);
+      log.debug("Deleting {}", path);
       return true;
     } catch (KeeperException.NoNodeException ignored) {
       return false;
     }
   }
 
-/**
+  /**
+   * Recursively delete a node, does not throw exception if any node does not exist.
+   * @param path
+   * @return true if delete was successful
+   */
+  public boolean deleteRecursive(String path) throws KeeperException, InterruptedException {
+
+    try {
+      List<String> children = zookeeper.getChildren(path, false);
+      for (String child : children) {
+        deleteRecursive(path + "/" + child);
+      }
+      delete(path);
+    } catch (KeeperException.NoNodeException ignored) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
  * Build the path to a cluster; exists once the cluster has come up.
  * Even before that, a ZK watcher could wait for it.
  * @param username user

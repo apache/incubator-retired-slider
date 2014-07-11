@@ -44,6 +44,7 @@ import org.apache.slider.providers.AbstractClientProvider;
 import org.apache.slider.providers.PlacementPolicy;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
+import org.mortbay.jetty.security.SslSelectChannelConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -160,7 +161,8 @@ public class SliderAMClientProvider extends AbstractClientProvider implements
     Class<?>[] classes = {
       JCommander.class,
       GsonBuilder.class,
-      
+      SslSelectChannelConnector.class,
+
       CuratorFramework.class,
       CuratorZookeeperClient.class,
       ServiceInstance.class,
@@ -171,7 +173,8 @@ public class SliderAMClientProvider extends AbstractClientProvider implements
       {
         JCOMMANDER_JAR,
         GSON_JAR,
-        
+        "jetty-sslengine.jar",
+
         "curator-framework.jar",
         "curator-client.jar",
         "curator-x-discovery.jar",

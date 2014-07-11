@@ -30,12 +30,13 @@ import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.main.ExitCodeProvider;
 import org.apache.slider.core.registry.info.RegisteredEndpoint;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
+import org.apache.slider.server.appmaster.AMViewForProviders;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
 import org.apache.slider.server.services.registry.RegistryViewForProviders;
-import org.apache.slider.server.services.utility.ForkedProcessService;
-import org.apache.slider.server.services.utility.Parent;
-import org.apache.slider.server.services.utility.SequenceService;
+import org.apache.slider.server.services.workflow.ForkedProcessService;
+import org.apache.slider.server.services.workflow.ServiceParent;
+import org.apache.slider.server.services.workflow.WorkflowSequenceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +56,7 @@ import java.util.Map;
  * upstream
  */
 public abstract class AbstractProviderService
-    extends SequenceService
+    extends WorkflowSequenceService
     implements
     ProviderCore,
     SliderKeys,
@@ -66,6 +67,7 @@ public abstract class AbstractProviderService
   protected AgentRestOperations restOps;
   protected RegistryViewForProviders registry;
   protected ServiceInstanceData registryInstanceData;
+  protected AMViewForProviders amView;
   protected URL amWebAPI;
 
   public AbstractProviderService(String name) {
@@ -81,15 +83,20 @@ public abstract class AbstractProviderService
     return amState;
   }
 
+  public AMViewForProviders getAppMaster() {
+    return amView;
+  }
+
   public void setAmState(StateAccessForProviders amState) {
     this.amState = amState;
   }
 
   @Override
   public void bind(StateAccessForProviders stateAccessor,
-      RegistryViewForProviders reg) {
+      RegistryViewForProviders reg, AMViewForProviders amView) {
     this.amState = stateAccessor;
     this.registry = reg;
+    this.amView = amView;
   }
 
   @Override
@@ -129,16 +136,16 @@ public abstract class AbstractProviderService
 
   /**
    * No-op implementation of this method.
-   * 
+   *
    * {@inheritDoc}
    */
   @Override
   public void validateApplicationConfiguration(AggregateConf instance,
                                                File confDir,
                                                boolean secure) throws
-                                                               IOException,
+      IOException,
       SliderException {
-    
+
   }
 
   /**
@@ -169,7 +176,7 @@ public abstract class AbstractProviderService
       }
     }
     ForkedProcessService lastProc = latestProcess();
-    if (lastProc == null) {
+    if (lastProc == null || !lastProc.isProcessTerminated()) {
       return 0;
     } else {
       return lastProc.getExitCode();
@@ -181,7 +188,7 @@ public abstract class AbstractProviderService
    * @return the forkes service
    */
   protected ForkedProcessService latestProcess() {
-    Service current = getCurrentService();
+    Service current = getActiveService();
     Service prev = getPreviousService();
 
     Service latest = current != null ? current : prev;
@@ -189,8 +196,8 @@ public abstract class AbstractProviderService
       return (ForkedProcessService) latest;
     } else {
       //its a composite object, so look inside it for a process
-      if (latest instanceof Parent) {
-        return getFPSFromParentService((Parent) latest);
+      if (latest instanceof ServiceParent) {
+        return getFPSFromParentService((ServiceParent) latest);
       } else {
         //no match
         return null;
@@ -201,11 +208,11 @@ public abstract class AbstractProviderService
 
   /**
    * Given a parent service, find the one that is a forked process
-   * @param parent parent
+   * @param serviceParent parent
    * @return the forked process service or null if there is none
    */
-  protected ForkedProcessService getFPSFromParentService(Parent parent) {
-    List<Service> services = parent.getServices();
+  protected ForkedProcessService getFPSFromParentService(ServiceParent serviceParent) {
+    List<Service> services = serviceParent.getServices();
     for (Service s : services) {
       if (s instanceof ForkedProcessService) {
         return (ForkedProcessService) s;
@@ -300,16 +307,17 @@ public abstract class AbstractProviderService
     for (Map.Entry<String, RegisteredEndpoint> endpoint : endpoints.entrySet()) {
       RegisteredEndpoint val = endpoint.getValue();
       if (val.type.equals(RegisteredEndpoint.TYPE_URL)) {
-          details.put(val.description, val.value);
+          details.put(val.description, val.address);
       }
     }
   }
   @Override
-  public void applyInitialRegistryDefinitions(URL amWebAPI,
-      ServiceInstanceData registryInstanceData) throws MalformedURLException,
+  public void applyInitialRegistryDefinitions(URL unsecureWebAPI,
+                                              URL secureWebAPI,
+                                              ServiceInstanceData registryInstanceData) throws MalformedURLException,
       IOException {
 
-      this.amWebAPI = amWebAPI;
+      this.amWebAPI = unsecureWebAPI;
     this.registryInstanceData = registryInstanceData;
   }
 }

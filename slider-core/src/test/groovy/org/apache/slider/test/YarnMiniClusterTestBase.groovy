@@ -28,12 +28,11 @@ import org.apache.hadoop.fs.FileUtil
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.hdfs.MiniDFSCluster
 import org.apache.hadoop.service.ServiceOperations
+import org.apache.hadoop.util.Shell
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.yarn.server.MiniYARNCluster
-import org.apache.hadoop.yarn.server.resourcemanager.scheduler.ResourceScheduler
-import org.apache.hadoop.yarn.server.resourcemanager.scheduler.fifo.FifoScheduler
 import org.apache.slider.api.ClusterNode
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderExitCodes
@@ -50,12 +49,17 @@ import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.main.ServiceLauncherBaseTest
 import org.apache.slider.server.appmaster.SliderAppMaster
 import org.junit.After
+import org.junit.Assert
+import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.Rule
+import org.junit.rules.TestName
 import org.junit.rules.Timeout
 
-import static org.apache.slider.common.SliderXMLConfKeysForTesting.*
 import static org.apache.slider.test.KeysForTests.*
 
+import static org.apache.slider.common.SliderKeys.*;
+import static org.apache.slider.common.SliderXMLConfKeysForTesting.*;
 /**
  * Base class for mini cluster tests -creates a field for the
  * mini yarn cluster
@@ -78,6 +82,9 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
    * RAM for the YARN containers: {@value}
    */
   public static final String YRAM = "256"
+
+  public static final String FIFO_SCHEDULER = "org.apache.hadoop.yarn.server" +
+    ".resourcemanager.scheduler.fifo.FifoScheduler";
 
 
   public static final YarnConfiguration SLIDER_CONFIG = SliderUtils.createConfiguration();
@@ -108,18 +115,13 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
   protected boolean switchToImageDeploy = false
   protected boolean imageIsRemote = false
   protected URI remoteImageURI
+  private int clusterCount =1;
 
   protected List<SliderClient> clustersToTeardown = [];
 
   /**
    * This is set in a system property
    */
-/*
-  @Rule
-  public Timeout testTimeout = new Timeout(1000* 
-      Integer.getInteger(KEY_TEST_TIMEOUT, DEFAULT_TEST_TIMEOUT))
-
-*/
 
   @Rule
   public Timeout testTimeout = new Timeout(
@@ -127,6 +129,35 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
           KEY_TEST_TIMEOUT,
           DEFAULT_TEST_TIMEOUT_SECONDS * 1000)
   )
+  @BeforeClass
+  public static void checkWindowsSupport() {
+    if (Shell.WINDOWS) {
+      assertNotNull("winutils.exe not found", Shell.WINUTILS)
+    }
+  } 
+
+
+  @Rule
+  public TestName methodName = new TestName();
+
+  @Before
+  public void nameThread() {
+    Thread.currentThread().setName("JUnit");
+  }
+
+  /**
+   * Create the cluster name from the method name and an auto-incrementing
+   * counter.
+   * @return a cluster name
+   */
+  protected String createClusterName() {
+    def base = methodName.getMethodName().toLowerCase(Locale.ENGLISH)
+    if (clusterCount++>1) {
+      base += "-$clusterCount"
+    }
+    return base
+  }
+
 
   @Override
   void setup() {
@@ -152,7 +183,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
         hbaseLaunchWaitTime)
 
     accumuloTestsEnabled =
-        testConf.getBoolean(KEY_TEST_ACCUMULO_ENABLED, hbaseTestsEnabled)
+        testConf.getBoolean(KEY_TEST_ACCUMULO_ENABLED, accumuloTestsEnabled)
     accumuloLaunchWaitTime = getTimeOptionMillis(testConf,
         KEY_ACCUMULO_LAUNCH_TIME,
         accumuloLaunchWaitTime)
@@ -214,8 +245,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
                                    int numLogDirs,
                                    boolean startHDFS) {
     conf.setInt(YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_MB, 64);
-    conf.setClass(YarnConfiguration.RM_SCHEDULER,
-        FifoScheduler.class, ResourceScheduler.class);
+    conf.set(YarnConfiguration.RM_SCHEDULER, FIFO_SCHEDULER);
     SliderUtils.patchConfiguration(conf)
     miniCluster = new MiniYARNCluster(name, noOfNodeManagers, numLocalDirs, numLogDirs)
     miniCluster.init(conf)

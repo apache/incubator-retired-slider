@@ -24,15 +24,18 @@ package org.apache.slider.server.appmaster.web.rest;
 public class RestPaths {
 
   public static final String WS_CONTEXT = "ws";
+  public static final String AGENT_WS_CONTEXT = "ws";
   public static final String WS_CONTEXT_ROOT = "/" + WS_CONTEXT;
+  public static final String WS_AGENT_CONTEXT_ROOT = "/" + AGENT_WS_CONTEXT;
   public static final String SLIDER_CONTEXT_ROOT = WS_CONTEXT_ROOT +"/v1/slider";
+  public static final String SLIDER_AGENT_CONTEXT_ROOT = WS_AGENT_CONTEXT_ROOT +"/v1/slider";
   public static final String SLIDER_SUBPATH_MANAGEMENT = "/mgmt";
   public static final String SLIDER_SUBPATH_AGENTS = "/agents";
   public static final String SLIDER_SUBPATH_PUBLISHER = "/publisher";
 
   public static final String SLIDER_PATH_MANAGEMENT = SLIDER_CONTEXT_ROOT
                                       + SLIDER_SUBPATH_MANAGEMENT;
-  public static final String SLIDER_PATH_AGENTS = SLIDER_CONTEXT_ROOT
+  public static final String SLIDER_PATH_AGENTS = SLIDER_AGENT_CONTEXT_ROOT
                                       + SLIDER_SUBPATH_AGENTS;
   
   public static final String SLIDER_PATH_PUBLISHER = SLIDER_CONTEXT_ROOT
@@ -56,4 +59,6 @@ public class RestPaths {
       = "[a-z0-9][a-z0-9_.\\+-]*";
 
   public static final String SLIDER_CONFIGSET = "slider";
+
+  public static final String SLIDER_CLASSPATH = "classpath";
 }

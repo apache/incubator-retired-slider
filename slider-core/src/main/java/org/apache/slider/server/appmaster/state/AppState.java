@@ -1171,7 +1171,7 @@ public class AppState {
    * @param status the node that has just completed
    * @return NodeCompletionResult
    */
-  public synchronized NodeCompletionResult onCompletedNode(YarnConfiguration amConf,
+  public synchronized NodeCompletionResult onCompletedNode(Configuration amConf,
       ContainerStatus status) {
     ContainerId containerId = status.getContainerId();
     NodeCompletionResult result = new NodeCompletionResult();
@@ -1471,6 +1471,26 @@ public class AppState {
 
       }
    
+    }
+
+    return operations;
+  }
+
+  /**
+   * Releases a container based on container id
+   * @param containerId
+   * @return
+   * @throws SliderInternalStateException
+   */
+  public List<AbstractRMOperation> releaseContainer(String containerId)
+      throws SliderInternalStateException {
+    List<AbstractRMOperation> operations = new ArrayList<>();
+    List<RoleInstance> activeRoleInstances = cloneActiveContainerList();
+    for (RoleInstance role : activeRoleInstances) {
+      if (role.container.getId().toString().equals(containerId)) {
+        containerReleaseSubmitted(role.container);
+        operations.add(new ContainerReleaseOperation(role.getId()));
+      }
     }
 
     return operations;

@@ -88,7 +88,7 @@ class TestTwoLiveClusters extends HBaseMiniClusterTestBase {
     def names = registry.getServiceTypes();
     dumpRegistryServiceTypes(names)
 
-    List<String> instanceIds = sliderClient.listRegistedSliderInstances()
+    List<String> instanceIds = sliderClient.listRegisteredSliderInstances()
 
 
     dumpRegistryInstanceIDs(instanceIds)

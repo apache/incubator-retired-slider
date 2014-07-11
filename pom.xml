@@ -19,23 +19,33 @@
   <groupId>org.apache.slider</groupId>
   <artifactId>slider</artifactId>
   <name>Slider</name>
-  <version>0.30</version>
+  <version>0.40</version>
   <packaging>pom</packaging>
 
   <description>
     Slider is designed to deploy existing applications onto a YARN cluster without
     rewriting the application to be YARN-ready.
   </description>
-  <url>http://incubator.apache.org/slider/</url>
+  <inceptionYear>2014</inceptionYear>
+  <url>http://slider.incubator.apache.org/</url>
+  <organization>
+    <name>The Apache Software Foundation</name>
+    <url>http://www.apache.org/</url>
+  </organization>
+
   <modules>
+    <module>app-packages/command-logger/application-pkg</module>
+    <module>app-packages/command-logger/slider-pkg</module>
     <module>slider-core</module>
     <module>slider-agent</module>
+    <module>app-packages/accumulo</module>
     <module>slider-assembly</module>
     <module>slider-funtest</module>
     <module>slider-providers/hbase/slider-hbase-provider</module>
     <module>slider-providers/hbase/hbase-funtests</module>
     <module>slider-providers/accumulo/slider-accumulo-provider</module>
     <module>slider-providers/accumulo/accumulo-funtests</module>
+    <module>slider-install</module>
   </modules>
 
   <licenses>
@@ -47,73 +57,14 @@
 
 
   <scm>
-    <url>https://svn.apache.org/repos/asf/incubator/slider/</url>
-    <connection>scm:svn:https://svn.apache.org/repos/asf/incubator/slider/
+    <url>http://git-wip-us.apache.org/repos/asf/incubator-slider.git</url>
+    <connection>scm:git:http://git-wip-us.apache.org/repos/asf/incubator-slider.git
     </connection>
     <developerConnection>
-      scm:svn:https://svn.apache.org/repos/asf/incubator/slider/
+      scm:git:http://git-wip-us.apache.org/repos/asf/incubator-slider.git
     </developerConnection>
   </scm>
   
-  <developers>
-    <developer>
-      <id>steveloughran</id>
-      <name>Steve Loughran</name>
-      <timezone>0</timezone>
-      <organization>Hortonworks</organization>
-      <organizationUrl>http://www.hortonworks.com</organizationUrl>
-    </developer>
-
-    <developer>
-      <id>billierinaldi</id>
-      <name>Billie Rinaldi</name>
-      <timezone>-5</timezone>
-      <organization>Hortonworks</organization>
-      <organizationUrl>http://www.hortonworks.com</organizationUrl>
-    </developer>
-
-    <developer>
-      <id>ddraj</id>
-      <name>Devaraj Das</name>
-      <timezone>-8</timezone>
-      <organization>Hortonworks</organization>
-      <organizationUrl>http://www.hortonworks.com</organizationUrl>
-    </developer>
-
-    <developer>
-      <id>tyu</id>
-      <name>Ted Yu</name>
-      <timezone>-8</timezone>
-      <organization>Hortonworks</organization>
-      <organizationUrl>http://www.hortonworks.com</organizationUrl>
-    </developer>
-
-    <developer>
-      <id>joshelser</id>
-      <name>Josh Elser</name>
-      <timezone>-5</timezone>
-      <organization>Hortonworks</organization>
-      <organizationUrl>http://www.hortonworks.com</organizationUrl>
-    </developer>
-
-    <developer>
-      <id>sumitmohanty</id>
-      <name>Sumit Mohanty</name>
-      <timezone>-8</timezone>
-      <organization>Hortonworks</organization>
-      <organizationUrl>http://www.hortonworks.com</organizationUrl>
-    </developer>
-
-    <developer>
-      <id>jmaron</id>
-      <name>Jon Maron</name>
-      <timezone>-5</timezone>
-      <organization>Hortonworks</organization>
-      <organizationUrl>http://www.hortonworks.com</organizationUrl>
-    </developer>
-
-  </developers>
-
 
   <distributionManagement>
     <site>
@@ -121,7 +72,7 @@
       <name>Slider Website</name>
       <url>http://slider.incubator.apache.org/</url>
     </site>
-    <downloadUrl>https://svn.apache.org/repos/asf/incubator/slider</downloadUrl>
+    <downloadUrl>http://git-wip-us.apache.org/repos/asf/incubator-slider.git</downloadUrl>
   </distributionManagement>
   
   <mailingLists>
@@ -159,6 +110,7 @@
     <test.argLine>-Xmx1024m -XX:+HeapDumpOnOutOfMemoryError</test.argLine>
     <test.reuseForks>false</test.reuseForks>
     <test.failIfNoTests>true</test.failIfNoTests>
+    <test.funtests.failIfNoTests>false</test.funtests.failIfNoTests>
     <test.forkMode>always</test.forkMode>
     
     <!--
@@ -166,8 +118,8 @@
     -->
     <hadoop.version>2.4.0</hadoop.version>
 
-    <hbase.version>0.98.2-hadoop2</hbase.version>
-    <accumulo.version>1.5.1</accumulo.version>
+    <hbase.version>0.98.3-hadoop2</hbase.version>
+    <accumulo.version>1.6.0</accumulo.version>
     
     <!--
      artifact versions
@@ -178,22 +130,24 @@
     <commons-digester.version>1.8</commons-digester.version>
     <commons-configuration.version>1.6</commons-configuration.version>
     <commons-lang.version>2.6</commons-lang.version>
+    <commons-compress.version>1.4.1</commons-compress.version>
+    <commons-logging.version>1.1.3</commons-logging.version>
+    <commons-io.version>2.4</commons-io.version>
     <curator.version>2.4.1</curator.version>
     <easymock.version>3.1</easymock.version>
     <guava.version>11.0.2</guava.version>
     <gson.version>2.2.2</gson.version>
     <guice.version>3.0</guice.version>
-    <httpclient.version>4.2.5</httpclient.version>
+    <httpclient.version>3.1</httpclient.version>
 
-
-<!--    <jackson.version>1.8.8</jackson.version>-->
     <jackson.version>1.9.13</jackson.version>
     <jcommander.version>1.30</jcommander.version>
     <jersey.version>1.9</jersey.version>
+    <servlet-api.version>2.5</servlet-api.version>
+    <jsr311-api.version>1.1.1</jsr311-api.version>
     <junit.version>4.11</junit.version>
     <log4j.version>1.2.17</log4j.version>
     <mockito.version>1.8.5</mockito.version>
-    <powermock.version>1.5</powermock.version>
 
     <!-- ProtocolBuffer version, used to verify the protoc version and -->
     <!-- define the protobuf JAR version                               -->
@@ -226,6 +180,7 @@
     <maven.project.version>2.4</maven.project.version>
     <maven.properties.version>1.0-alpha-2</maven.properties.version>
     <maven-project-info-reports-plugin.version>2.7</maven-project-info-reports-plugin.version>
+    <maven-rpm-plugin.version>2.1-alpha-4</maven-rpm-plugin.version>
     <maven-site-plugin.version>3.3</maven-site-plugin.version>
     <maven-source-plugin.version>2.2.1</maven-source-plugin.version>
     <maven-surefire-plugin.version>2.16</maven-surefire-plugin.version>
@@ -347,7 +302,10 @@
             <exclude>**/httpfs-signature.secret</exclude>
             <exclude>**/dfs.exclude</exclude>
             <exclude>**/*.iml</exclude>
+            <exclude>**/rat.txt</exclude>
+            <exclude>**/get-hbase-site.sh</exclude>
             <exclude>DISCLAIMER</exclude>
+            <exclude>app-packages/hbase/target/**</exclude>
           </excludes>
         </configuration>
       </plugin>
@@ -399,6 +357,54 @@
 
   <dependencyManagement>
     <dependencies>
+
+      <dependency>
+        <groupId>org.apache.slider</groupId>
+        <artifactId>slider-core</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.slider</groupId>
+        <artifactId>slider-core</artifactId>
+        <version>${project.version}</version>
+        <type>test-jar</type>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.slider</groupId>
+        <artifactId>slider-agent</artifactId>
+        <version>${project.version}</version>
+        <type>tar.gz</type>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.slider</groupId>
+        <artifactId>slider-funtest</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.slider</groupId>
+        <artifactId>slider-assembly</artifactId>
+        <classifier>all</classifier>
+        <version>${project.version}</version>
+        <type>tar.gz</type>
+      </dependency>
+
+       <dependency>
+        <groupId>org.apache.slider</groupId>
+        <artifactId>slider-hbase-provider</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.slider</groupId>
+        <artifactId>slider-hbase-provider</artifactId>
+        <version>${project.version}</version>
+        <type>test-jar</type>
+      </dependency>
+
       <dependency>
         <groupId>org.codehaus.groovy</groupId>
         <artifactId>groovy-all</artifactId>
@@ -417,9 +423,15 @@
         </exclusions>
       </dependency>
 
+      <!-- hadoop-client includes the following jars, so they do not need to be
+        included separately:
+        hadoop-common, hadoop-hdfs, hadoop-mapreduce-client-app,
+        hadoop-yarn-api, hadoop-mapreduce-client-core,
+        hadoop-mapreduce-client-jobclient, and hadoop-annotations
+      -->
       <dependency>
         <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-common</artifactId>
+        <artifactId>hadoop-client</artifactId>
         <version>${hadoop.version}</version>
         <exclusions>
           <exclusion>
@@ -427,28 +439,8 @@
             <artifactId>jackson-core-asl</artifactId>
           </exclusion>
           <exclusion>
-            <groupId>net.java.dev.jets3t</groupId>
-            <artifactId>jets3t</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>commons-codec</groupId>
-            <artifactId>commons-codec</artifactId>
-          </exclusion>
-          <exclusion>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>commons-net</groupId>
-            <artifactId>commons-net</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>tomcat</groupId>
-            <artifactId>jasper-runtime</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>net.java.dev.jets3t</groupId>
-            <artifactId>jets3t</artifactId>
           </exclusion>
           <exclusion>
             <groupId>org.apache.httpcomponents</groupId>
@@ -461,54 +453,14 @@
         </exclusions>
       </dependency>
 
-      <dependency>
-        <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-client</artifactId>
-        <version>${hadoop.version}</version>
-      </dependency>
-      
-
-      <dependency>
-        <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-client</artifactId>
-        <version>${hadoop.version}</version>
-        <type>pom</type>
-      </dependency>
-      
+      <!-- hadoop-minicluster includes the following test-jars, so they do not
+        need to be included separately:
+        hadoop-common, hadoop-hdfs, hadoop-yarn-server-tests,
+        hadoop-mapreduce-client-jobclient
+      -->
       <dependency>
         <groupId>org.apache.hadoop</groupId>
         <artifactId>hadoop-minicluster</artifactId>
-        <version>${hadoop.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>com.sun.jersey.jersey-test-framework</groupId>
-            <artifactId>jersey-test-framework-grizzly2</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-
-      <dependency>
-        <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-hdfs</artifactId>
-        <version>${hadoop.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>tomcat</groupId>
-            <artifactId>jasper-runtime</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-
-      <dependency>
-        <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-common</artifactId>
-        <version>${hadoop.version}</version>
-        <type>test-jar</type>
-      </dependency>
-
-      <dependency>
-        <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-yarn-server-common</artifactId>
         <version>${hadoop.version}</version>
         <exclusions>
           <exclusion>
@@ -532,30 +484,14 @@
 
       <dependency>
         <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-yarn-common</artifactId>
-        <version>${hadoop.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>org.apache.hadoop</groupId>
         <artifactId>hadoop-yarn-server-web-proxy</artifactId>
         <version>${hadoop.version}</version>
       </dependency>
 
       <dependency>
-        <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-mapreduce-client</artifactId>
-        <version>${hadoop.version}</version>
-        <type>pom</type>
-        <exclusions>
-        </exclusions>
-      </dependency>
-      
-      <dependency>
         <groupId>org.apache.avro</groupId>
         <artifactId>avro</artifactId>
         <version>${avro.version}</version>
-
         <exclusions>
           <exclusion>
             <groupId>org.mortbay.jetty</groupId>
@@ -595,15 +531,12 @@
           </exclusion>
         </exclusions>
       </dependency>
+
       <dependency>
         <groupId>commons-configuration</groupId>
         <artifactId>commons-configuration</artifactId>
         <version>${commons-configuration.version}</version>
         <exclusions>
-          <exclusion>
-            <groupId>commons-logging</groupId>
-            <artifactId>commons-logging</artifactId>
-          </exclusion>
           <exclusion>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
@@ -614,19 +547,17 @@
           </exclusion>
         </exclusions>
       </dependency>
+
       <dependency>
         <groupId>commons-lang</groupId>
         <artifactId>commons-lang</artifactId>
         <version>${commons-lang.version}</version>
-        <exclusions>
-        </exclusions>
       </dependency>
+
       <dependency>
-        <groupId>org.apache.httpcomponents</groupId>
-        <artifactId>httpclient</artifactId>
+        <groupId>commons-httpclient</groupId>
+        <artifactId>commons-httpclient</artifactId>
         <version>${httpclient.version}</version>
-        <exclusions>
-        </exclusions>
       </dependency>
       
       <!-- ======================================================== -->
@@ -704,6 +635,12 @@
             <artifactId>hadoop-mapreduce-client-core</artifactId>
           </exclusion>
         </exclusions>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.hbase</groupId>
+        <artifactId>hbase-protocol</artifactId>
+        <version>${hbase.version}</version>
       </dependency>
 
       <dependency>
@@ -962,32 +899,6 @@
       <!-- Accumulo -->
       <!-- ======================================================== -->
 
-      <!--
-          <dependency>
-            <groupId>org.apache.accumulo</groupId>
-            <artifactId>accumulo</artifactId>
-            <version>${accumulo.version}</version>
-            <exclusions>
-              <exclusion>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-              </exclusion>
-            </exclusions>
-          </dependency>
-      -->
-
-      <dependency>
-        <groupId>org.apache.accumulo</groupId>
-        <artifactId>accumulo-server</artifactId>
-        <version>${accumulo.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>commons-codec</groupId>
-            <artifactId>commons-codec</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-
       <dependency>
         <groupId>org.apache.accumulo</groupId>
         <artifactId>accumulo-core</artifactId>
@@ -1034,12 +945,6 @@
 
       <dependency>
         <groupId>org.apache.accumulo</groupId>
-        <artifactId>accumulo-start</artifactId>
-        <version>${accumulo.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>org.apache.accumulo</groupId>
         <artifactId>accumulo-trace</artifactId>
         <version>${accumulo.version}</version>
       </dependency>
@@ -1057,15 +962,27 @@
 
 
       <dependency>
-        <groupId>commons-codec</groupId>
-        <artifactId>commons-codec</artifactId>
-        <version>${commons-codec.version}</version>
-      </dependency>
-
-      <dependency>
         <groupId>commons-digester</groupId>
         <artifactId>commons-digester</artifactId>
         <version>${commons-digester.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-compress</artifactId>
+        <version>${commons-compress.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>${commons-io.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>commons-logging</groupId>
+        <artifactId>commons-logging</artifactId>
+        <version>${commons-logging.version}</version>
       </dependency>
 
       <dependency>
@@ -1134,18 +1051,6 @@
         <version>${slf4j.version}</version>
       </dependency>
 
-      <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-log4j12</artifactId>
-        <version>${slf4j.version}</version>
-      </dependency>
-<!--
-      <dependency>
-        <groupId>org.antlr</groupId>
-        <artifactId>stringtemplate</artifactId>
-        <version>${stringtemplate.version}</version>
-      </dependency>
-      -->
       <!-- Used for unit testing -->
       <dependency>
         <groupId>junit</groupId>
@@ -1158,51 +1063,30 @@
         <artifactId>protobuf-java</artifactId>
         <version>${protobuf.version}</version>
       </dependency>
-      <!--
-          <dependency>
-            <groupId>net.sourceforge.htmlunit</groupId>
-            <artifactId>htmlunit</artifactId>
-            <version>2.12</version>
-            
-            <exclusions>
-              <exclusion>
-                <groupId>xalan</groupId>
-                <artifactId>xalan</artifactId>
-              </exclusion>
-              <exclusion>
-                <groupId>xerces</groupId>
-                <artifactId>xercesImpl</artifactId>
-              </exclusion>
-            </exclusions>
-          </dependency>
-      
-          <dependency>
-            <groupId>xerces</groupId>
-            <artifactId>xercesImpl</artifactId>
-            <version>2.11.0</version>
-            
-          </dependency>
-      
-          <dependency>
-            <groupId>xalan</groupId>
-            <artifactId>xalan</artifactId>
-            <version>2.7.1</version>
-            
-          </dependency>
-          -->
-
 
       <!-- ======================================================== -->
       <!-- Jersey and webapp support -->
       <!-- ======================================================== -->
 
       <dependency>
+        <groupId>javax.servlet</groupId>
+        <artifactId>servlet-api</artifactId>
+        <version>${servlet-api.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>javax.ws.rs</groupId>
+        <artifactId>jsr311-api</artifactId>
+        <version>${jsr311-api.version}</version>
+      </dependency>
+
+      <dependency>
         <groupId>com.sun.jersey</groupId>
-        <artifactId>jersey-core</artifactId>
+        <artifactId>jersey-client</artifactId>
         <version>${jersey.version}</version>
       </dependency>
+
       <dependency>
-        
         <groupId>com.sun.jersey</groupId>
         <artifactId>jersey-json</artifactId>
         <version>${jersey.version}</version>
@@ -1213,8 +1097,8 @@
           </exclusion>
         </exclusions>
       </dependency>
+
       <dependency>
-        
         <groupId>com.sun.jersey</groupId>
         <artifactId>jersey-server</artifactId>
         <version>${jersey.version}</version>
@@ -1257,9 +1141,9 @@
       </dependency>
 
 
-  <!-- ======================================================== -->
-  <!-- Mocking -->
-  <!-- ======================================================== -->
+      <!-- ======================================================== -->
+      <!-- Mocking -->
+      <!-- ======================================================== -->
 
       <dependency>
         <groupId>org.mockito</groupId>
@@ -1272,49 +1156,89 @@
         <artifactId>easymock</artifactId>
         <version>${easymock.version}</version>
       </dependency>
-      <dependency>
-        <groupId>org.powermock</groupId>
-        <artifactId>powermock-core</artifactId>
-        <version>${powermock.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.powermock</groupId>
-        <artifactId>powermock-reflect</artifactId>
-        <version>${powermock.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.powermock</groupId>
-        <artifactId>powermock-api-easymock</artifactId>
-        <version>${powermock.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.powermock</groupId>
-        <artifactId>powermock-module-junit4</artifactId>
-        <version>${powermock.version}</version>
-      </dependency>
 
+      <!-- ======================================================== -->
+      <!-- Jetty -->
+      <!-- ======================================================== -->
+
+      <dependency>
+	      <groupId>org.mortbay.jetty</groupId>
+	      <artifactId>jetty-sslengine</artifactId>
+        <version>6.1.26</version>
+      </dependency>
 
     </dependencies>
   </dependencyManagement>
 
   <profiles>
 
+    <profile>
+      <id>apache-release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <version>${maven-assembly-plugin.version}</version>
+            <dependencies>
+              <dependency>
+                <groupId>org.apache.apache.resources</groupId>
+                <artifactId>apache-source-release-assembly-descriptor</artifactId>
+                <version>1.0.4</version>
+              </dependency>
+            </dependencies>
+            <executions>
+              <execution>
+                <id>source-release-assembly</id>
+                <goals>
+                  <goal>single</goal>
+                </goals>
+                <phase>package</phase>
+                <configuration>
+                  <runOnlyAtExecutionRoot>true</runOnlyAtExecutionRoot>
+                  <finalName>apache-slider-${project.version}</finalName>
+                  <descriptorRefs>
+                    <descriptorRef>source-release-zip-tar</descriptorRef>
+                  </descriptorRefs>
+                  <tarLongFileMode>gnu</tarLongFileMode>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
 
     <profile>
       <!-- local builds of everything -->
       <id>local</id>
       <properties>
         <hadoop.version>2.4.1-SNAPSHOT</hadoop.version>
-        <hbase.version>0.98.2-SNAPSHOT</hbase.version>
+        <hbase.version>0.98.3-SNAPSHOT</hbase.version>
         <accumulo.version>1.6.0-SNAPSHOT</accumulo.version>
       </properties>
     </profile>
 
     <profile>
-      <!-- hadoop 2.4 builds of everything -->
+      <!-- hadoop branch-2 builds  -->
+      <id>hadoop-2.4.1</id>
+      <properties>
+        <hadoop.version>2.4.1</hadoop.version>
+      </properties>
+    </profile>
+    <profile>
+      <!-- hadoop branch-2 builds  -->
       <id>branch-2</id>
       <properties>
-        <hadoop.version>2.4.0</hadoop.version>
+        <hadoop.version>2.5.0-SNAPSHOT</hadoop.version>
+      </properties>
+    </profile>
+    
+    <profile>
+      <!-- hadoop branch-2 builds  -->
+      <id>hadoop-trunk</id>
+      <properties>
+        <hadoop.version>3.0.0-SNAPSHOT</hadoop.version>
       </properties>
     </profile>
     
