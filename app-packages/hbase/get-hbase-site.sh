@@ -21,4 +21,5 @@ url="${url%,}"
 url="${url%\"}"
 url="${url#\"}"
 url="${url}ws/v1/slider/publisher/slider/hbase-site.xml"
-curl -k -o hbase-site.xml $url
+curl -k -o hbase-site.dnld $url
+grep -v 'hbase.tmp.dir' hbase-site.dnld > hbase-site.xml
