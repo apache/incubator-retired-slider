@@ -62,7 +62,6 @@ abstract class AccumuloCommandTestBase extends CommandTestBase {
 
 
   public static void assumeAccumuloTestsEnabled() {
-    assumeFunctionalTestsEnabled()
     assume(ACCUMULO_TESTS_ENABLED, "Accumulo tests disabled")
   }
   

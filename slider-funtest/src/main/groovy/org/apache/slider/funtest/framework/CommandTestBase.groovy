@@ -66,8 +66,6 @@ abstract class CommandTestBase extends SliderTestUtils {
 
   public static final int SLIDER_TEST_TIMEOUT
 
-  public static final boolean FUNTESTS_ENABLED
-
   public static final String YARN_RAM_REQUEST
   
 
@@ -83,8 +81,6 @@ abstract class CommandTestBase extends SliderTestUtils {
     SLIDER_TEST_TIMEOUT = getTimeOptionMillis(SLIDER_CONFIG,
         KEY_TEST_TIMEOUT,
         1000 * DEFAULT_TEST_TIMEOUT_SECONDS)
-    FUNTESTS_ENABLED =
-        SLIDER_CONFIG.getBoolean(KEY_SLIDER_FUNTESTS_ENABLED, true)
 
     YARN_RAM_REQUEST = SLIDER_CONFIG.get(
         KEY_TEST_YARN_RAM_REQUEST,
@@ -327,9 +323,7 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @param cluster
    */
   static void setupCluster(String cluster) {
-    if (FUNTESTS_ENABLED) {
-      ensureClusterDestroyed(cluster)
-    }
+    ensureClusterDestroyed(cluster)
   }
 
   /**
@@ -338,9 +332,7 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @param name cluster name
    */
   static void teardown(String name) {
-    if (FUNTESTS_ENABLED) {
-      freezeForce(name)
-    }
+    freezeForce(name)
   }
 
   /**
@@ -506,13 +498,6 @@ abstract class CommandTestBase extends SliderTestUtils {
       throw e;
     }
     return status
-  }
-
-  /**
-   * if tests are not enabled: skip them  
-   */
-  public static void assumeFunctionalTestsEnabled() {
-    assume(FUNTESTS_ENABLED, "Functional tests disabled")
   }
 
 }

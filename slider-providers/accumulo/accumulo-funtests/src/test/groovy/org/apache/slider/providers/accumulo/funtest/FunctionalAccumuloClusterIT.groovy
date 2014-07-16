@@ -18,7 +18,6 @@ package org.apache.slider.providers.accumulo.funtest
 
 import static org.apache.slider.providers.accumulo.AccumuloConfigFileOptions.*
 import static org.apache.slider.providers.accumulo.AccumuloKeys.*
-import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 
 import org.apache.slider.common.SliderExitCodes
@@ -33,7 +32,6 @@ import org.junit.Test
 /**
  * 
  */
-@CompileStatic
 @Slf4j
 class FunctionalAccumuloClusterIT extends AccumuloCommandTestBase
     implements FuntestProperties, Arguments, SliderExitCodes {

@@ -16,7 +16,6 @@
  */
 package org.apache.slider.providers.accumulo.funtest
 
-import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 
 import org.apache.accumulo.core.client.Connector
@@ -34,10 +33,6 @@ import org.apache.slider.funtest.framework.CommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.PortAssignments
 
-/**
- * 
- */
-@CompileStatic
 @Slf4j
 class AccumuloCIIT extends FunctionalAccumuloClusterIT {
   

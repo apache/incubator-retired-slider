@@ -16,17 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.slider.providers.accumulo
+package org.apache.slider.providers.accumulo.funtest;
 
-import org.junit.Test
-
-/**
- *  this is here to ensure there is always a test
- */
-class TestStub {
-
-  @Test
-  public void testStubTest() throws Throwable {
-
-  }
+class StubToForceGroovyTestsToCompile {
 }

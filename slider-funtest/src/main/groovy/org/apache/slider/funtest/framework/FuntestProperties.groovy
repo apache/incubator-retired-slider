@@ -40,7 +40,6 @@ public interface FuntestProperties extends SliderXMLConfKeysForTesting {
   String KEY_SLIDER_TEST_NUM_WORKERS = "slider.test.cluster.size"
   int DEFAULT_SLIDER_NUM_WORKERS = 1
 
-  String KEY_SLIDER_TEST_ZK_HOSTS = "slider.test.zkhosts";
   String DEFAULT_SLIDER_ZK_HOSTS = "localhost:2181";
 
   /**
@@ -48,8 +47,6 @@ public interface FuntestProperties extends SliderXMLConfKeysForTesting {
    */
   String KEY_AM_RESTART_SLEEP_TIME = "slider.test.am.restart.time"
   int DEFAULT_AM_RESTART_SLEEP_TIME = 30000
-
-  String KEY_SLIDER_FUNTESTS_ENABLED = "slider.funtest.enabled"
 
   String CLIENT_CONFIG_FILENAME = SliderKeys.CLIENT_RESOURCE
   

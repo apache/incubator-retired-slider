@@ -22,7 +22,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.client.SliderClient
 
-class DemoHBaseCluster extends TestFunctionalHBaseCluster {
+class DemoHBaseCluster extends FunctionalHBaseClusterIT {
 
 
   @Override

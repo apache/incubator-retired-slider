@@ -65,7 +65,6 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
   public TemporaryFolder folder = new TemporaryFolder();
 
   public static void assumeAgentTestsEnabled() {
-    assumeFunctionalTestsEnabled()
     assume(AGENTTESTS_ENABLED, "Agent tests disabled")
   }
 
