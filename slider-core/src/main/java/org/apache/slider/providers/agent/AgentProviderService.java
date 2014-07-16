@@ -572,6 +572,9 @@ public class AgentProviderService extends AbstractProviderService implements
     List<ComponentStatus> statuses = heartBeat.getComponentStatus();
     if (statuses != null && !statuses.isEmpty()) {
       log.info("Processing {} status reports.", statuses.size());
+      Application application = getMetainfo().getApplication();
+      List<ExportGroup> exportGroups = application.getExportGroups();
+      boolean hasExportGroups = exportGroups != null && !exportGroups.isEmpty();
       for (ComponentStatus status : statuses) {
         log.info("Status report: " + status.toString());
         if (status.getConfigs() != null) {
@@ -580,10 +583,7 @@ public class AgentProviderService extends AbstractProviderService implements
             publishComponentConfiguration(key, key, configs.entrySet());
           }
 
-          Application application = getMetainfo().getApplication();
-          List<ExportGroup> exportGroups = application.getExportGroups();
-          if (exportGroups != null && !exportGroups.isEmpty()) {
-
+          if (hasExportGroups) {
             String configKeyFormat = "${site.%s.%s}";
             String hostKeyFormat = "${%s_HOST}";
 
