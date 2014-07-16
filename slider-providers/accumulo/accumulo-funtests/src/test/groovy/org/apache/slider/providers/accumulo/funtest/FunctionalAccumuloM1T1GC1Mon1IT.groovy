@@ -26,7 +26,7 @@ import org.apache.slider.common.params.SliderActions
 
 @CompileStatic
 @Slf4j
-public class TestFunctionalAccumuloM1T1GC1Mon1 extends TestFunctionalAccumuloCluster {
+public class FunctionalAccumuloM1T1GC1Mon1IT extends FunctionalAccumuloClusterIT {
 
   @Override
   public String getClusterName() {

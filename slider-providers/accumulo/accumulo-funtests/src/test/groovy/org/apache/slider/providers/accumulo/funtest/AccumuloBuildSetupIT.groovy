@@ -22,12 +22,11 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.slider.funtest.abstracttests.AbstractTestBuildSetup
 import org.junit.Test
 
-class TestAccumuloBuildSetup extends AbstractTestBuildSetup {
+class AccumuloBuildSetupIT extends AbstractTestBuildSetup {
 
   @Test
   public void testAccumuloBuildsHavePathsDefined() throws Throwable {
     Configuration conf = loadSliderConf();
-    assumeBoolOption(conf, KEY_SLIDER_FUNTESTS_ENABLED, true)
 
     assumeBoolOption(conf, KEY_TEST_ACCUMULO_ENABLED, true)
 

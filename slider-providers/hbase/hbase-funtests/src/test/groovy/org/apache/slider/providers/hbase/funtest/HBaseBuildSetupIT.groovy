@@ -16,30 +16,21 @@
  * limitations under the License.
  */
 
-package org.apache.slider.funtest.commands
+package org.apache.slider.providers.hbase.funtest
 
-import groovy.transform.CompileStatic
-import groovy.util.logging.Slf4j
-import org.apache.bigtop.itest.shell.Shell
-import org.apache.slider.funtest.framework.CommandTestBase
-import org.apache.slider.funtest.framework.SliderShell
-import org.apache.slider.common.params.SliderActions
+import org.apache.hadoop.conf.Configuration
+import org.apache.slider.funtest.abstracttests.AbstractTestBuildSetup
 import org.junit.Test
 
-@CompileStatic
-@Slf4j
-public class TestSimpleCommands extends CommandTestBase {
+class HBaseBuildSetupIT extends AbstractTestBuildSetup {
 
   @Test
-  public void testVersion() throws Throwable {
-    Shell shell = slider([SliderActions.ACTION_VERSION])
-    assertSuccess(shell)
-  }
+  public void testHBaseBuildsHavePathsDefined() throws Throwable {
+    Configuration conf = loadSliderConf();
 
-  @Test
-  public void testUsage() throws Throwable {
-    SliderShell shell = slider(0, [SliderActions.ACTION_USAGE])
-    assertSuccess(shell)
+    assumeBoolOption(conf, KEY_TEST_HBASE_ENABLED, true)
+
+    assertStringOptionSet(conf, KEY_TEST_HBASE_APPCONF)
+    assertStringOptionSet(conf, KEY_TEST_HBASE_TAR)
   }
-  
 }

@@ -34,7 +34,7 @@ import org.junit.Test
 
 @CompileStatic
 @Slf4j
-public class TestHBaseClusterLifecycle extends HBaseCommandTestBase
+public class HBaseClusterLifecycleIT extends HBaseCommandTestBase
     implements FuntestProperties, Arguments, SliderExitCodes {
 
 

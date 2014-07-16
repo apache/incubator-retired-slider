@@ -34,7 +34,7 @@ import org.junit.Test
 
 @CompileStatic
 @Slf4j
-public class TestClusterBuildDestroy extends AgentCommandTestBase
+public class ClusterBuildDestroyIT extends AgentCommandTestBase
     implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
 

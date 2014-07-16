@@ -39,7 +39,7 @@ import org.apache.slider.funtest.framework.PortAssignments
  */
 @CompileStatic
 @Slf4j
-class TestAccumuloCI extends TestFunctionalAccumuloCluster {
+class AccumuloCIIT extends FunctionalAccumuloClusterIT {
   
   @Override
   String getClusterName() {

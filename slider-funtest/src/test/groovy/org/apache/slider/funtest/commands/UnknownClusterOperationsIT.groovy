@@ -35,14 +35,9 @@ import org.junit.Test
 @CompileStatic
 @Slf4j
 @org.junit.experimental.categories.Category(FunctionalTests)
-public class TestUnknownClusterOperations extends CommandTestBase {
+public class UnknownClusterOperationsIT extends CommandTestBase {
 
   public static final String UNKNOWN = "unknown_cluster"
-
-  @BeforeClass
-  public static void prepareCluster() {
-    assumeFunctionalTestsEnabled();
-  }
 
   @Test
   public void testFreezeUnknownCluster() throws Throwable {

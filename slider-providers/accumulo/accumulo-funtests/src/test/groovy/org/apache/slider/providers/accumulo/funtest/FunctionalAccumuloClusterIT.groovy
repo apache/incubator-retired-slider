@@ -35,7 +35,7 @@ import org.junit.Test
  */
 @CompileStatic
 @Slf4j
-class TestFunctionalAccumuloCluster extends AccumuloCommandTestBase
+class FunctionalAccumuloClusterIT extends AccumuloCommandTestBase
     implements FuntestProperties, Arguments, SliderExitCodes {
 
       

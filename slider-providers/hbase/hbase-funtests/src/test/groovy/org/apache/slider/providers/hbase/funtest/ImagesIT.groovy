@@ -26,7 +26,7 @@ import org.apache.slider.funtest.framework.FuntestProperties
 import org.junit.Before
 import org.junit.Test
 
-class TestImages extends CommandTestBase implements FuntestProperties {
+class ImagesIT extends CommandTestBase implements FuntestProperties {
 
 
   @Before

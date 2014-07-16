@@ -16,21 +16,30 @@
  * limitations under the License.
  */
 
-package org.apache.slider.funtest.basic
+package org.apache.slider.funtest.commands
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.slider.funtest.abstracttests.AbstractTestBuildSetup
+import org.apache.bigtop.itest.shell.Shell
+import org.apache.slider.funtest.framework.CommandTestBase
+import org.apache.slider.funtest.framework.SliderShell
+import org.apache.slider.common.params.SliderActions
+import org.junit.Test
 
-/**
- * Simple tests to verify that the build has been set up: if these
- * fail then the arguments to the test run are incomplete.
- *
- * This deliberately doesn't depend on CommandTestBase,
- * so that individual tests fail with more diagnostics
- * than the @BeforeClass failing
- */
 @CompileStatic
 @Slf4j
-class TestBuildSetup extends AbstractTestBuildSetup {
+public class SimpleCommandsIT extends CommandTestBase {
+
+  @Test
+  public void testVersion() throws Throwable {
+    Shell shell = slider([SliderActions.ACTION_VERSION])
+    assertSuccess(shell)
+  }
+
+  @Test
+  public void testUsage() throws Throwable {
+    SliderShell shell = slider(0, [SliderActions.ACTION_USAGE])
+    assertSuccess(shell)
+  }
+  
 }

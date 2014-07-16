@@ -16,26 +16,28 @@
  * limitations under the License.
  */
 
-package org.apache.slider.funtest.commands
+package org.apache.slider.funtest.basic
 
-import groovy.transform.CompileStatic
-import groovy.util.logging.Slf4j
-import org.apache.slider.funtest.framework.CommandTestBase
-import org.junit.BeforeClass
 import org.junit.Test
 
-@CompileStatic
-@Slf4j
-public class TestListCommand extends CommandTestBase {
+import static org.apache.slider.funtest.framework.SliderShell.signCorrect
 
-  @BeforeClass
-  public static void prepareCluster() {
-    assumeFunctionalTestsEnabled();
-  }
-  
+/**
+ * This just verifies the two's complement sign correction that will
+ * be applied after the return code is picked up from the shell
+ */
+class SignCorrectionIT {
+
   @Test
-  public void testListAll() throws Throwable {
-    assertSuccess(list(null))
+  public void test255ToMinus1() throws Throwable {
+    assert -1 == signCorrect(255) 
   }
-
+  @Test
+  public void test74To74() throws Throwable {
+    assert 74 == signCorrect(74) 
+  }
+  @Test
+  public void test1To1() throws Throwable {
+    assert 1 == signCorrect(1) 
+  }
 }
