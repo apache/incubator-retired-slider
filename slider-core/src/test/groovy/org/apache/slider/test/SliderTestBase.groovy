@@ -19,7 +19,11 @@
 package org.apache.slider.test
 
 import groovy.transform.CompileStatic
+import org.apache.hadoop.fs.FileUtil
+import org.apache.slider.common.SliderXMLConfKeysForTesting
 import org.junit.Before
+
+import java.nio.file.Files
 
 /**
  * Base class for unit tests as well as ones starting mini clusters
@@ -35,6 +39,7 @@ public abstract class SliderTestBase extends SliderTestUtils {
   public void setup() {
     //give our thread a name
     Thread.currentThread().name = "JUnit"
+    FileUtil.fullyDelete(new File(SliderXMLConfKeysForTesting.TEST_SECURITY_DIR))
   }
 
 }

@@ -71,4 +71,9 @@ public interface SliderXMLConfKeysForTesting {
    */
   String KEY_TEST_YARN_RAM_REQUEST = "slider.test.yarn.ram";
   String DEFAULT_YARN_RAM_REQUEST = "192";
+
+  /**
+   * security related keys
+   */
+  String TEST_SECURITY_DIR = "/tmp/work/security";
 }

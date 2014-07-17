@@ -32,6 +32,7 @@ import org.apache.slider.server.appmaster.web.rest.agent.RegistrationResponse
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationStatus
 import org.apache.slider.server.services.security.CertificateManager
 import org.apache.slider.server.services.security.SecurityUtils
+import org.junit.Before
 import org.junit.Test
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -73,6 +74,12 @@ class TestAgentAMManagementWS extends AgentTestBase {
                     }
                 });
 
+    }
+
+    @Override
+    @Before
+    void setup() {
+        super.setup()
         MapOperations compOperations = new MapOperations();
         compOperations.put(SliderKeys.KEYSTORE_LOCATION, "/tmp/work/security/keystore.p12");
         SecurityUtils.initializeSecurityParameters(compOperations);
@@ -83,9 +90,10 @@ class TestAgentAMManagementWS extends AgentTestBase {
         System.setProperty("javax.net.ssl.trustStore", keystoreFile);
         System.setProperty("javax.net.ssl.trustStorePassword", password);
         System.setProperty("javax.net.ssl.trustStoreType", "PKCS12");
+
     }
 
-  @Test
+    @Test
   public void testAgentAMManagementWS() throws Throwable {
     def clustername = "test_agentammanagementws"
     createMiniCluster(
