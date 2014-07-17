@@ -106,9 +106,10 @@ class FunctionalAccumuloClusterIT extends AccumuloCommandTestBase
         extraArgs,
         true,
         clusterOps,
-        "256",
+        "128",
         getPassword()
         )
+    ensureApplicationIsUp(getClusterName())
 
     //get a slider client against the cluster
     SliderClient sliderClient = bondToCluster(SLIDER_CONFIG, getClusterName())

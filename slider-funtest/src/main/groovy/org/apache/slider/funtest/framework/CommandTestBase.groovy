@@ -500,4 +500,46 @@ abstract class CommandTestBase extends SliderTestUtils {
     return status
   }
 
+  protected void ensureApplicationIsUp(String clusterName) {
+    repeatUntilTrue(this.&isApplicationUp, 15, 1000 * 3, ['arg1': clusterName],
+      true, 'Application did not start, aborting test.')
+  }
+
+  protected boolean isApplicationUp(Map<String, String> args) {
+    String applicationName = args['arg1'];
+    return isApplicationInState("RUNNING", applicationName);
+  }
+
+  public static boolean isApplicationInState(String text, String applicationName) {
+    boolean exists = false
+    SliderShell shell = slider(0,
+      [
+        ACTION_LIST,
+        applicationName])
+    for (String str in shell.out) {
+      if (str.contains(text)) {
+        exists = true
+      }
+    }
+
+    return exists
+  }
+
+  protected void repeatUntilTrue(Closure c, int maxAttempts, int sleepDur, Map args,
+                                 boolean failIfUnsuccessful = false, String message = "") {
+    int attemptCount = 0
+    while (attemptCount < maxAttempts) {
+      if (c(args)) {
+        break
+      };
+      attemptCount++;
+
+      if (failIfUnsuccessful) {
+        assert attemptCount != maxAttempts, message
+      }
+
+      sleep(sleepDur)
+    }
+  }
+
 }

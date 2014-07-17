@@ -62,7 +62,6 @@ class AccumuloCIIT extends FunctionalAccumuloClusterIT {
     String zookeepers = SLIDER_CONFIG.get(SliderXmlConfKeys.REGISTRY_ZK_QUORUM,
         FuntestProperties.DEFAULT_SLIDER_ZK_HOSTS)
     ZooKeeperInstance inst = new ZooKeeperInstance(currentUser + "-" + clustername, zookeepers)
-    PasswordToken passwd = new PasswordToken(getPassword())
     Connector conn = inst.getConnector("root", new PasswordToken(getPassword()))
     
     // Create the test table with some split points
@@ -78,7 +77,7 @@ class AccumuloCIIT extends FunctionalAccumuloClusterIT {
     String[] ciOpts = ["-i", inst.getInstanceName(),
       "-z", zookeepers, "-u", "root",
       "-p", getPassword(), "--table", tableName,
-      "--num", Integer.toString(1000 * 1000 * 15 * getNumTservers()),
+      "--num", Integer.toString(1000 * 1000 * 4 * getNumTservers()),
       "--batchMemory", "100000000",
       "--batchLatency", "600000",
       "--batchThreads", "1"]
@@ -90,7 +89,7 @@ class AccumuloCIIT extends FunctionalAccumuloClusterIT {
     Path verifyOutput = new Path("/user/" + currentUser + "/.slider/cluster/" + clustername + "/verify-output")
     assert !clusterFS.exists(verifyOutput)
     
-    YarnConfiguration verifyConf = new YarnConfiguration(CommandTestBase.SLIDER_CONFIG);
+    YarnConfiguration verifyConf = new YarnConfiguration(SLIDER_CONFIG);
 
         // Try to load the necessary classes for the Mappers to find them
     if (loadClassesForMapReduce(verifyConf)) {

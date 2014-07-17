@@ -23,10 +23,6 @@ import org.apache.hadoop.fs.Path
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
-import org.apache.slider.funtest.framework.AgentUploads
-import org.apache.slider.funtest.framework.CommandTestBase
-import org.apache.slider.funtest.framework.FuntestProperties
-import org.apache.slider.funtest.framework.SliderShell
 import org.apache.tools.zip.ZipEntry
 import org.apache.tools.zip.ZipOutputStream
 import org.junit.Before
@@ -157,31 +153,6 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     return null;
   }
 
-  public static boolean isApplicationInState(String text, String applicationName) {
-    boolean exists = false
-    SliderShell shell = slider(EXIT_SUCCESS,
-        [
-            ACTION_LIST,
-            applicationName])
-    for (String str in shell.out) {
-      if (str.contains(text)) {
-        exists = true
-      }
-    }
-
-    return exists
-  }
-
-  protected void ensureApplicationIsUp(String clusterName) {
-    repeatUntilTrue(this.&isApplicationUp, 15, 1000 * 3, ['arg1': clusterName],
-        true, 'Application did not start, aborting test.')
-  }
-
-  boolean isApplicationUp(Map<String, String> args) {
-    String applicationName = args['arg1'];
-    return isApplicationInState("RUNNING", applicationName);
-  }
-
   public static void addDir(File dirObj, ZipOutputStream zipFile, String prefix) {
     dirObj.eachFile() { file ->
       if (file.directory) {
@@ -192,23 +163,6 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
         file.eachByte(1024) { buffer, len -> zipFile.write(buffer, 0, len) }
         zipFile.closeEntry()
       }
-    }
-  }
-
-  protected void repeatUntilTrue(Closure c, int maxAttempts, int sleepDur, Map args,
-                                 boolean failIfUnsuccessful = false, String message = "") {
-    int attemptCount = 0
-    while (attemptCount < maxAttempts) {
-      if (c(args)) {
-        break
-      };
-      attemptCount++;
-
-      if (failIfUnsuccessful) {
-        assert attemptCount != maxAttempts, message
-      }
-
-      sleep(sleepDur)
     }
   }
 
