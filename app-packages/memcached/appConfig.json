@@ -1,0 +1,24 @@
+{
+  "schema": "http://example.org/specification/v2.0.0",
+  "metadata": {
+  },
+  "global": {
+    "application.def": "/slider/jmemcached-1.0.0.zip",
+    "java_home": "/usr/jdk64/jdk1.7.0_45",
+    "package_list": "files/jmemcached-1.0.0.tar",
+    "config_types": "",
+    "site.global.app_user": "yarn",
+    "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/jmemcached-1.0.0",
+    "site.global.additional_cp": "/usr/lib/hadoop/lib/*",
+    "site.global.xmx_val": "256m",
+    "site.global.xms_val": "128m",
+    "site.global.memory_val": "200M"
+  },
+  "components": {
+    "slider-appmaster": {
+      "jvm.heapsize": "256M"
+    },
+    "MEMCACHED": {
+    }
+  }
+}
