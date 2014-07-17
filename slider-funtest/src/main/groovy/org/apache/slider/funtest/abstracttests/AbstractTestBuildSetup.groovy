@@ -143,7 +143,6 @@ abstract class AbstractTestBuildSetup extends SliderTestUtils implements Funtest
   @Test
   public void testConfHasDefaultFS() throws Throwable {
     Configuration conf = loadSliderConf()
-    assumeBoolOption(conf, KEY_SLIDER_FUNTESTS_ENABLED, true)
     String fs = conf.get("fs.defaultFS")
     log.info("Test Filesystem $fs")
     assert fs != null
@@ -152,9 +151,7 @@ abstract class AbstractTestBuildSetup extends SliderTestUtils implements Funtest
 
   @Test
   public void testConfHasRM() throws Throwable {
-
     Configuration conf = loadSliderConf()
-    assumeBoolOption(conf, KEY_SLIDER_FUNTESTS_ENABLED, true)
     String val = conf.get(YarnConfiguration.RM_ADDRESS)
     log.info("$YarnConfiguration.RM_ADDRESS = $val")
     assert val != YarnConfiguration.DEFAULT_RM_ADDRESS

@@ -16,17 +16,22 @@
  * limitations under the License.
  */
 
-package org.apache.slider.providers.accumulo
+package org.apache.slider.providers.accumulo.funtest
 
+import org.apache.hadoop.conf.Configuration
+import org.apache.slider.funtest.abstracttests.AbstractTestBuildSetup
 import org.junit.Test
 
-/**
- *  this is here to ensure there is always a test
- */
-class TestStub {
+class AccumuloBuildSetupIT extends AbstractTestBuildSetup {
 
   @Test
-  public void testStubTest() throws Throwable {
+  public void testAccumuloBuildsHavePathsDefined() throws Throwable {
+    Configuration conf = loadSliderConf();
 
+    assumeBoolOption(conf, KEY_TEST_ACCUMULO_ENABLED, true)
+
+    assertStringOptionSet(conf, KEY_TEST_ACCUMULO_APPCONF)
+    assertStringOptionSet(conf, KEY_TEST_ACCUMULO_TAR)
   }
+
 }

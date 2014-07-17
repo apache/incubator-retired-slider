@@ -27,7 +27,7 @@ import org.apache.slider.common.params.ActionKillContainerArgs
 import org.apache.slider.providers.hbase.HBaseKeys
 import org.apache.slider.providers.hbase.HBaseTestUtils
 
-class TestHBaseNodeFailure extends TestFunctionalHBaseCluster {
+class HBaseNodeFailureIT extends FunctionalHBaseClusterIT {
 
 
   public static final int RESTART_SLEEP_TIME = 5000

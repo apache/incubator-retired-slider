@@ -38,11 +38,6 @@
   </property>
 
   <property>
-    <name>slider.funtest.enabled</name>
-    <value>false</value>
-  </property>
-
-  <property>
     <name>yarn.application.classpath</name>
     <value>
       /etc/hadoop/conf,/usr/lib/hadoop/*,/usr/lib/hadoop/lib/*,/usr/lib/hadoop-hdfs/*,/usr/lib/hadoop-hdfs/lib/*,/usr/lib/hadoop-yarn/*,/usr/lib/hadoop-yarn/lib/*,/usr/lib/hadoop-mapreduce/*,/usr/lib/hadoop-mapreduce/lib/*
@@ -61,12 +56,6 @@
     <value></value>
   </property>
  
-  <property>
-    <name>slider.test.zkhosts</name>
-    <description>list of the zookeeper hosts</description>
-    <value></value>
-  </property>
-  
   <property>
     <name>slider.test.accumulo.enabled</name>
     <description>Flag to enable/disable Accumulo tests</description>

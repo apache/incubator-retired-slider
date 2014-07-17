@@ -34,16 +34,11 @@ import org.junit.Test
  * Test basic connectivity with the target cluster, including 
  * HDFS, YARN and ZK
  */
-class TestClusterConnectivity extends CommandTestBase {
+class ClusterConnectivityIT extends CommandTestBase {
 
 
   public static final int CONNECT_TIMEOUT = 2000
 
-  @BeforeClass
-  public static void setup() {
-    assumeFunctionalTestsEnabled()
-  }
-  
   @Test
   public void testFileSystemUp() throws Throwable {
 

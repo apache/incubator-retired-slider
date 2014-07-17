@@ -18,7 +18,6 @@ package org.apache.slider.providers.accumulo.funtest
 
 import static org.apache.slider.providers.accumulo.AccumuloConfigFileOptions.*
 import static org.apache.slider.providers.accumulo.AccumuloKeys.*
-import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 
 import org.apache.slider.common.SliderExitCodes
@@ -33,9 +32,8 @@ import org.junit.Test
 /**
  * 
  */
-@CompileStatic
 @Slf4j
-class TestFunctionalAccumuloCluster extends AccumuloCommandTestBase
+class FunctionalAccumuloClusterIT extends AccumuloCommandTestBase
     implements FuntestProperties, Arguments, SliderExitCodes {
 
       
@@ -108,9 +106,10 @@ class TestFunctionalAccumuloCluster extends AccumuloCommandTestBase
         extraArgs,
         true,
         clusterOps,
-        "256",
+        "128",
         getPassword()
         )
+    ensureApplicationIsUp(getClusterName())
 
     //get a slider client against the cluster
     SliderClient sliderClient = bondToCluster(SLIDER_CONFIG, getClusterName())

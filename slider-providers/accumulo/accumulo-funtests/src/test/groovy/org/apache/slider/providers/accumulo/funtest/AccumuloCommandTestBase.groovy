@@ -18,6 +18,13 @@
 
 package org.apache.slider.providers.accumulo.funtest
 
+import org.apache.hadoop.security.UserGroupInformation
+import org.apache.slider.common.SliderExitCodes
+import org.apache.slider.common.params.SliderActions
+import org.apache.slider.funtest.framework.FileUploader
+import org.apache.slider.providers.accumulo.AccumuloClientProvider
+import org.junit.BeforeClass
+
 import static SliderXMLConfKeysForTesting.KEY_TEST_ACCUMULO_APPCONF
 import static SliderXMLConfKeysForTesting.KEY_TEST_ACCUMULO_TAR
 import static org.apache.slider.api.ResourceKeys.YARN_MEMORY
@@ -47,10 +54,14 @@ import org.junit.Before
 /**
  * Anything specific to accumulo tests
  */
-abstract class AccumuloCommandTestBase extends CommandTestBase {
+abstract class AccumuloCommandTestBase extends CommandTestBase
+  implements SliderExitCodes, SliderActions {
 
   public static final int ACCUMULO_LAUNCH_WAIT_TIME
   public static final boolean ACCUMULO_TESTS_ENABLED
+  public static final FileUploader uploader
+  public Path ACCUMULO_TAR
+  public Path ACCUMULO_CONF
 
   static {
     ACCUMULO_LAUNCH_WAIT_TIME = getTimeOptionMillis(SLIDER_CONFIG,
@@ -58,22 +69,44 @@ abstract class AccumuloCommandTestBase extends CommandTestBase {
         1000 * DEFAULT_ACCUMULO_LAUNCH_TIME_SECONDS)
     ACCUMULO_TESTS_ENABLED =
         SLIDER_CONFIG.getBoolean(KEY_TEST_ACCUMULO_ENABLED, false)
+    uploader = new FileUploader(SLIDER_CONFIG, UserGroupInformation.currentUser)
   }
 
 
   public static void assumeAccumuloTestsEnabled() {
-    assumeFunctionalTestsEnabled()
     assume(ACCUMULO_TESTS_ENABLED, "Accumulo tests disabled")
   }
   
-  @Before
-  public void verifyPreconditions() {
-
+  @BeforeClass
+  public static void verifyPreconditions() {
     //if tests are not enabled: skip tests
     assumeAccumuloTestsEnabled()
     // but if they are -fail if the values are missing
     getRequiredConfOption(SLIDER_CONFIG, OPTION_ZK_HOME)
     getRequiredConfOption(SLIDER_CONFIG, OPTION_HADOOP_HOME)
+  }
+
+  @BeforeClass
+  public static void extendClasspath() {
+    addExtraJar(AccumuloClientProvider)
+  }
+
+  @Before
+  public void uploadFiles() {
+    File tar = new File(getRequiredConfOption(SLIDER_CONFIG,
+      KEY_TEST_ACCUMULO_TAR))
+    File conf = new File(getRequiredConfOption(SLIDER_CONFIG,
+      KEY_TEST_ACCUMULO_APPCONF))
+
+    //create the home dir or fail
+    Path home = uploader.mkHomeDir()
+
+    ACCUMULO_TAR = new Path(home, tar.getName())
+    ACCUMULO_CONF = new Path(home, "accumulo-conf")
+
+    // Upload the local accumulo tarball and conf directory to hdfs
+    uploader.copyIfOutOfDate(tar, ACCUMULO_TAR, false)
+    uploader.copyIfOutOfDate(conf, ACCUMULO_CONF, false)
   }
 
   /**
@@ -102,12 +135,10 @@ abstract class AccumuloCommandTestBase extends CommandTestBase {
     clusterOps[OPTION_HADOOP_HOME] = getRequiredConfOption(
         SLIDER_CONFIG,
         OPTION_HADOOP_HOME)
-    argsList << Arguments.ARG_IMAGE <<
-    getRequiredConfOption(SLIDER_CONFIG, KEY_TEST_ACCUMULO_TAR)
+    argsList << Arguments.ARG_IMAGE << ACCUMULO_TAR
 
-    argsList << Arguments.ARG_CONFDIR <<
-    getRequiredConfOption(SLIDER_CONFIG, KEY_TEST_ACCUMULO_APPCONF)
-    
+    argsList << Arguments.ARG_CONFDIR << ACCUMULO_CONF
+
     argsList << Arguments.ARG_OPTION << AccumuloKeys.OPTION_ACCUMULO_PASSWORD << password
 
     argsList << ARG_RES_COMP_OPT << ROLE_MASTER <<
@@ -125,7 +156,7 @@ abstract class AccumuloCommandTestBase extends CommandTestBase {
                              blockUntilRunning,
                              clusterOps)
   }
-                                         
+
   public boolean loadClassesForMapReduce(Configuration conf) {
     String[] neededClasses = [AccumuloInputFormat.class.getName(), TException.class.getName(), ZooStore.class.getName(), Tracer.class.getName()]
     String[] neededJars = ["accumulo-core.jar", "libthrift.jar", "accumulo-fate.jar", "accumulo-trace.jar"]

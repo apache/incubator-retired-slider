@@ -31,7 +31,7 @@ import org.junit.Test
 
 @CompileStatic
 @Slf4j
-public class TestAgentFailures2 extends AgentCommandTestBase
+public class AgentFailures2IT extends AgentCommandTestBase
 implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   private static String COMMAND_LOGGER = "COMMAND_LOGGER"

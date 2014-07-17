@@ -16,22 +16,21 @@
  * limitations under the License.
  */
 
-package org.apache.slider.providers.hbase.funtest
+package org.apache.slider.funtest.basic
 
-import org.apache.hadoop.conf.Configuration
+import groovy.transform.CompileStatic
+import groovy.util.logging.Slf4j
 import org.apache.slider.funtest.abstracttests.AbstractTestBuildSetup
-import org.junit.Test
 
-class TestHBaseBuildSetup extends AbstractTestBuildSetup {
-
-  @Test
-  public void testHBaseBuildsHavePathsDefined() throws Throwable {
-    Configuration conf = loadSliderConf();
-    assumeBoolOption(conf, KEY_SLIDER_FUNTESTS_ENABLED, true)
-
-    assumeBoolOption(conf, KEY_TEST_HBASE_ENABLED, true)
-
-    assertStringOptionSet(conf, KEY_TEST_HBASE_APPCONF)
-    assertStringOptionSet(conf, KEY_TEST_HBASE_TAR)
-  }
+/**
+ * Simple tests to verify that the build has been set up: if these
+ * fail then the arguments to the test run are incomplete.
+ *
+ * This deliberately doesn't depend on CommandTestBase,
+ * so that individual tests fail with more diagnostics
+ * than the @BeforeClass failing
+ */
+@CompileStatic
+@Slf4j
+class BuildSetupIT extends AbstractTestBuildSetup {
 }

@@ -16,7 +16,6 @@
  */
 package org.apache.slider.providers.accumulo.funtest
 
-import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 
 import org.apache.accumulo.core.client.Connector
@@ -34,12 +33,8 @@ import org.apache.slider.funtest.framework.CommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.PortAssignments
 
-/**
- * 
- */
-@CompileStatic
 @Slf4j
-class TestAccumuloCI extends TestFunctionalAccumuloCluster {
+class AccumuloCIIT extends FunctionalAccumuloClusterIT {
   
   @Override
   String getClusterName() {
@@ -67,7 +62,6 @@ class TestAccumuloCI extends TestFunctionalAccumuloCluster {
     String zookeepers = SLIDER_CONFIG.get(SliderXmlConfKeys.REGISTRY_ZK_QUORUM,
         FuntestProperties.DEFAULT_SLIDER_ZK_HOSTS)
     ZooKeeperInstance inst = new ZooKeeperInstance(currentUser + "-" + clustername, zookeepers)
-    PasswordToken passwd = new PasswordToken(getPassword())
     Connector conn = inst.getConnector("root", new PasswordToken(getPassword()))
     
     // Create the test table with some split points
@@ -83,7 +77,7 @@ class TestAccumuloCI extends TestFunctionalAccumuloCluster {
     String[] ciOpts = ["-i", inst.getInstanceName(),
       "-z", zookeepers, "-u", "root",
       "-p", getPassword(), "--table", tableName,
-      "--num", Integer.toString(1000 * 1000 * 15 * getNumTservers()),
+      "--num", Integer.toString(1000 * 1000 * 4 * getNumTservers()),
       "--batchMemory", "100000000",
       "--batchLatency", "600000",
       "--batchThreads", "1"]
@@ -95,7 +89,7 @@ class TestAccumuloCI extends TestFunctionalAccumuloCluster {
     Path verifyOutput = new Path("/user/" + currentUser + "/.slider/cluster/" + clustername + "/verify-output")
     assert !clusterFS.exists(verifyOutput)
     
-    YarnConfiguration verifyConf = new YarnConfiguration(CommandTestBase.SLIDER_CONFIG);
+    YarnConfiguration verifyConf = new YarnConfiguration(SLIDER_CONFIG);
 
         // Try to load the necessary classes for the Mappers to find them
     if (loadClassesForMapReduce(verifyConf)) {

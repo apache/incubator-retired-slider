@@ -36,7 +36,7 @@ import org.junit.Test
 
 @CompileStatic
 @Slf4j
-public class TestAgentClusterLifecycle extends AgentCommandTestBase
+public class AgentClusterLifecycleIT extends AgentCommandTestBase
   implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
 

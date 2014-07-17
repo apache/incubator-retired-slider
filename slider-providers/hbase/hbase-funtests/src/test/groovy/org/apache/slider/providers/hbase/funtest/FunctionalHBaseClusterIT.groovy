@@ -49,7 +49,7 @@ import static org.apache.slider.providers.hbase.HBaseKeys.ROLE_WORKER
 
 @CompileStatic
 @Slf4j
-public class TestFunctionalHBaseCluster extends HBaseCommandTestBase
+public class FunctionalHBaseClusterIT extends HBaseCommandTestBase
     implements FuntestProperties, Arguments, SliderExitCodes {
 
 

@@ -106,6 +106,7 @@
     test options
     -->
 
+    <slider.conf.dir>${project.basedir}/src/test/clusters/offline/slider</slider.conf.dir>
     <test.forkedProcessTimeoutInSeconds>18000</test.forkedProcessTimeoutInSeconds>
     <test.argLine>-Xmx1024m -XX:+HeapDumpOnOutOfMemoryError</test.argLine>
     <test.reuseForks>false</test.reuseForks>

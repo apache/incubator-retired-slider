@@ -19,23 +19,16 @@
 package org.apache.slider.providers.hbase.funtest
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.hbase.IntegrationTestIngest
-import org.apache.hadoop.hbase.IntegrationTestingUtility
-import org.apache.hadoop.util.ToolRunner
+import org.apache.hadoop.hbase.util.LoadTestTool
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.client.SliderClient
-import org.apache.slider.providers.hbase.HBaseConfigFileOptions;
+import org.apache.slider.providers.hbase.HBaseConfigFileOptions
 
-/* Runs IntegrationTestIngest on cluster
- *
- * Note: this test runs for about 20 minutes
- * please set slider.test.timeout.seconds accordingly
- */
-class TestHBaseIntegration extends TestFunctionalHBaseCluster {
+class HBaseLoadIT extends FunctionalHBaseClusterIT {
 
   @Override
   String getClusterName() {
-    return "test_hbase_integration"
+    return "test_hbase_load"
   }
 
   @Override
@@ -46,15 +39,17 @@ class TestHBaseIntegration extends TestFunctionalHBaseCluster {
       int numWorkers,
       Map<String, Integer> roleMap,
       ClusterDescription cd) {
-    String parent = "/yarnapps_slider_yarn_" + clustername
-    clientConf.set(HBaseConfigFileOptions.KEY_ZNODE_PARENT, parent)
+    assert clustername
+    int numKeys = 4000 * numWorkers
+    String[] args = ["-tn", "test", "-write", "4:100",
+        "-num_keys", numKeys,
+        "-zk", clientConf.get(HBaseConfigFileOptions.KEY_ZOOKEEPER_QUORUM),
+        "-zk_root", clientConf.get(HBaseConfigFileOptions.KEY_ZNODE_PARENT),
 
-    clientConf.set(IntegrationTestingUtility.IS_DISTRIBUTED_CLUSTER, "true")
-
-    String[] args = []
-    IntegrationTestIngest test = new IntegrationTestIngest();
-    test.setConf(clientConf)
-    int ret = ToolRunner.run(clientConf, test, args);
+    ]
+    LoadTestTool loadTool = new LoadTestTool();
+    loadTool.setConf(clientConf)
+    int ret = loadTool.run(args);
     assert ret == 0;
   }
 

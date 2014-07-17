@@ -85,8 +85,17 @@
      <!-- functional test -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>${maven-surefire-plugin.version}</version>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>${maven-failsafe-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>run-integration-tests</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
         <configuration>
           
           <!--mvn process fork options-->
@@ -107,15 +116,9 @@
             <java.security.krb5.realm>${slider.test.java.security.krb5.realm}</java.security.krb5.realm>
             <java.security.krb5.kdc>${slider.test.java.security.krb5.kdc}</java.security.krb5.kdc>
             <!-- this property must be supplied-->
-            <slider.conf.dir>../../../src/test/clusters/offline/slider</slider.conf.dir>
+            <slider.conf.dir>${slider.conf.dir}</slider.conf.dir>
             <slider.bin.dir>../../../slider-assembly/target/slider-${project.version}-all/slider-${project.version}</slider.bin.dir>
           </systemPropertyVariables>
-          <includes>
-            <include>**/Test*.java</include>
-          </includes>
-          <excludes>
-            <exclude>**/Test*$*.java</exclude>
-          </excludes>
         </configuration>
       </plugin>
  
