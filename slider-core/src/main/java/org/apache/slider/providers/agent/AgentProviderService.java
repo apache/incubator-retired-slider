@@ -919,9 +919,10 @@ public class AgentProviderService extends AbstractProviderService implements
     configList.add(GLOBAL_CONFIG_TAG);
 
     String configTypes = appConf.get("config_types");
-    String[] configs = configTypes.split(",");
-
-    configList.addAll(Arrays.asList(configs));
+    if (configTypes != null && configTypes.length() > 0) {
+      String[] configs = configTypes.split(",");
+      configList.addAll(Arrays.asList(configs));
+    }
 
     // remove duplicates.  mostly worried about 'global' being listed
     return new ArrayList<>(new HashSet<>(configList));
