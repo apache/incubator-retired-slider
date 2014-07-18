@@ -446,7 +446,8 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     boolean blockUntilRunning, Map<String, String> clusterOps) {
     assert clustername != null
     assert miniCluster != null
-    if (deleteExistingData) {
+    // update action should keep existing data
+    if (deleteExistingData && !SliderActions.ACTION_UPDATE.equals(action)) {
       HadoopFS dfs = HadoopFS.get(new URI(fsDefaultName), miniCluster.config)
       Path clusterDir = new SliderFileSystem(dfs, miniCluster.config).buildClusterDirPath(clustername)
       log.info("deleting customer data at $clusterDir")

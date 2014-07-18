@@ -130,7 +130,7 @@ class TestBuildStandaloneAM extends AgentMiniClusterTestBase {
             ARG_RES_COMP_OPT, master, ResourceKeys.COMPONENT_PRIORITY, "2",
             ARG_COMP_OPT, master, SERVICE_NAME, "HBASE",
         ],
-        false,
+        true,
         false,
         agentDefOptions)
 
