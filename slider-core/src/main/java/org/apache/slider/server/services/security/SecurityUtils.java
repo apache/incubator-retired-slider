@@ -18,6 +18,7 @@ package org.apache.slider.server.services.security;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang.SystemUtils;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.core.conf.MapOperations;
 import org.slf4j.Logger;
@@ -141,11 +142,17 @@ public class SecurityUtils {
       File newCertsDir = new File(dbDir, "newcerts");
       newCertsDir.mkdirs();
       try {
+        if(SystemUtils.IS_OS_WINDOWS) {
+          setFilePermissionForWindows(Paths.get(secDirFile.toURI()));
+          setFilePermissionForWindows(Paths.get(dbDir.toURI()));
+          setFilePermissionForWindows(Paths.get(newCertsDir.toURI()));
+        } else {
         Set<PosixFilePermission> perms =
             PosixFilePermissions.fromString("rwx------");
-//        Files.setPosixFilePermissions(Paths.get(secDirFile.toURI()), perms);
-//        Files.setPosixFilePermissions(Paths.get(dbDir.toURI()), perms);
-//        Files.setPosixFilePermissions(Paths.get(newCertsDir.toURI()), perms);
+          Files.setPosixFilePermissions(Paths.get(secDirFile.toURI()), perms);
+          Files.setPosixFilePermissions(Paths.get(dbDir.toURI()), perms);
+          Files.setPosixFilePermissions(Paths.get(newCertsDir.toURI()), perms);
+        }
         File indexFile = new File(dbDir, "index.txt");
         indexFile.createNewFile();
 
@@ -158,6 +165,15 @@ public class SecurityUtils {
     }
     keystorePass = getKeystorePassword(secDirFile);
     securityDir = secDirFile.getAbsolutePath();
+  }
+
+  private static void setFilePermissionForWindows(Path secDirFilePath) {
+    secDirFilePath.toFile().setReadable(false, false);
+    secDirFilePath.toFile().setExecutable(false, false);
+    secDirFilePath.toFile().setWritable(false, false);
+    secDirFilePath.toFile().setReadable(true, true);
+    secDirFilePath.toFile().setExecutable(true, true);
+    secDirFilePath.toFile().setWritable(true, true);
   }
 
   private static String getKeystorePassword(File secDirFile) {
