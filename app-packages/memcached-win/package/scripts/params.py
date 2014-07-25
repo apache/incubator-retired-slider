@@ -16,16 +16,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-Slider Agent
-
 """
 
-from resource_management.libraries.functions.default import *
-from resource_management.libraries.functions.format import *
-from resource_management.libraries.functions.get_kinit_path import *
-from resource_management.libraries.functions.get_unique_id_and_date import *
-from resource_management.libraries.functions.check_process_status import *
-from resource_management.libraries.functions.is_empty import *
-from resource_management.libraries.functions.substitute_vars import *
-from resource_management.libraries.functions.os_check import *
-from resource_management.libraries.functions.get_port_from_url import *
+from resource_management import *
+
+# server configurations
+config = Script.get_config()
+
+app_root = config['configurations']['global']['app_root']
+java64_home = config['hostLevelParams']['java_home']
+app_user = config['configurations']['global']['app_user']
+additional_cp = config['configurations']['global']['additional_cp']
+xmx_val = config['configurations']['global']['xmx_val']
+xms_val = config['configurations']['global']['xms_val']
+memory_val = config['configurations']['global']['memory_val']

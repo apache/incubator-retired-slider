@@ -24,6 +24,8 @@ import json
 import pprint
 import sys
 import socket
+import posixpath
+import platform
 from AgentConfig import AgentConfig
 from AgentException import AgentException
 from PythonExecutor import PythonExecutor
@@ -49,10 +51,10 @@ class CustomServiceOrchestrator():
     self.config = config
     self.tmp_dir = config.getResolvedPath(AgentConfig.APP_TASK_DIR)
     self.python_executor = PythonExecutor(self.tmp_dir, config)
-    self.status_commands_stdout = os.path.join(self.tmp_dir,
-                                               'status_command_stdout.txt')
-    self.status_commands_stderr = os.path.join(self.tmp_dir,
-                                               'status_command_stderr.txt')
+    self.status_commands_stdout = os.path.realpath(posixpath.join(self.tmp_dir,
+                                               'status_command_stdout.txt'))
+    self.status_commands_stderr = os.path.realpath(posixpath.join(self.tmp_dir,
+                                               'status_command_stderr.txt'))
     self.public_fqdn = hostname.public_hostname()
     self.applied_configs = {}
     # Clean up old status command files if any
@@ -61,8 +63,8 @@ class CustomServiceOrchestrator():
       os.unlink(self.status_commands_stderr)
     except OSError:
       pass # Ignore fail
-    self.base_dir = os.path.join(
-      config.getResolvedPath(AgentConfig.APP_PACKAGE_DIR), "package")
+    self.base_dir = os.path.realpath(posixpath.join(
+      config.getResolvedPath(AgentConfig.APP_PACKAGE_DIR), "package"))
 
 
   def runCommand(self, command, tmpoutfile, tmperrfile,
@@ -78,8 +80,8 @@ class CustomServiceOrchestrator():
       script_path = self.resolve_script_path(self.base_dir, script, script_type)
       script_tuple = (script_path, self.base_dir)
 
-      tmpstrucoutfile = os.path.join(self.tmp_dir,
-                                     "structured-out-{0}.json".format(task_id))
+      tmpstrucoutfile = os.path.realpath(posixpath.join(self.tmp_dir,
+                                     "structured-out-{0}.json".format(task_id)))
       if script_type.upper() != self.SCRIPT_TYPE_PYTHON:
       # We don't support anything else yet
         message = "Unknown script type {0}".format(script_type)
@@ -94,11 +96,15 @@ class CustomServiceOrchestrator():
       ret = None
       for py_file, current_base_dir in filtered_py_file_list:
         script_params = [command_name, json_path, current_base_dir]
-        python_paths = [os.path.join(self.config.getWorkRootPath(),
-                                     "infra/agent/slider-agent/jinja2"),
-                        os.path.join(self.config.getWorkRootPath(),
-                                     "infra/agent/slider-agent")]
-        environment_vars = [("PYTHONPATH", ":".join(python_paths))]
+        python_paths = [os.path.realpath(posixpath.join(self.config.getWorkRootPath(),
+                                     "infra", "agent", "slider-agent", "jinja2")),
+                        os.path.realpath(posixpath.join(self.config.getWorkRootPath(),
+                                     "infra", "agent", "slider-agent"))]
+        if platform.system() != "Windows":
+          environment_vars = [("PYTHONPATH", ":".join(python_paths))]
+        else:
+          environment_vars = [("PYTHONPATH", ";".join(python_paths))]
+
         ret = self.python_executor.run_file(py_file, script_params,
                                             tmpoutfile, tmperrfile, timeout,
                                             tmpstrucoutfile,
@@ -141,7 +147,7 @@ class CustomServiceOrchestrator():
     """
     Encapsulates logic of script location determination.
     """
-    path = os.path.join(base_dir, script)
+    path = os.path.realpath(posixpath.join(base_dir, script))
     if not os.path.exists(path):
       message = "Script {0} does not exist".format(path)
       raise AgentException(message)
@@ -207,10 +213,10 @@ class CustomServiceOrchestrator():
     if command_type == ActionQueue.STATUS_COMMAND:
       # These files are frequently created, thats why we don't
       # store them all, but only the latest one
-      file_path = os.path.join(self.tmp_dir, "status_command.json")
+      file_path = os.path.realpath(posixpath.join(self.tmp_dir, "status_command.json"))
     else:
       task_id = command['taskId']
-      file_path = os.path.join(self.tmp_dir, "command-{0}.json".format(task_id))
+      file_path = os.path.realpath(posixpath.join(self.tmp_dir, "command-{0}.json".format(task_id)))
       # Json may contain passwords, that's why we need proper permissions
     if os.path.isfile(file_path):
       os.unlink(file_path)

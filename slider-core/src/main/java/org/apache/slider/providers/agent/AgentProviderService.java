@@ -55,6 +55,8 @@ import org.apache.slider.providers.agent.application.metadata.Component;
 import org.apache.slider.providers.agent.application.metadata.Export;
 import org.apache.slider.providers.agent.application.metadata.ExportGroup;
 import org.apache.slider.providers.agent.application.metadata.Metainfo;
+import org.apache.slider.providers.agent.application.metadata.OSPackage;
+import org.apache.slider.providers.agent.application.metadata.OSSpecific;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentCommandType;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
@@ -756,9 +758,7 @@ public class AgentProviderService extends AbstractProviderService implements
     cmd.setRole(roleName);
     Map<String, String> hostLevelParams = new TreeMap<>();
     hostLevelParams.put(JAVA_HOME, appConf.getGlobalOptions().getMandatoryOption(JAVA_HOME));
-    hostLevelParams.put(PACKAGE_LIST, "[{\"type\":\"tarball\",\"name\":\"" +
-                                      appConf.getGlobalOptions().getMandatoryOption(
-                                          PACKAGE_LIST) + "\"}]");
+    hostLevelParams.put(PACKAGE_LIST, getPackageList());
     hostLevelParams.put(CONTAINER_ID, containerId);
     cmd.setHostLevelParams(hostLevelParams);
 
@@ -768,6 +768,31 @@ public class AgentProviderService extends AbstractProviderService implements
 
     cmd.setHostname(getClusterInfoPropertyValue(StatusKeys.INFO_AM_HOSTNAME));
     response.addExecutionCommand(cmd);
+  }
+
+  private String getPackageList() {
+    String pkgFormatString = "{\"type\":\"%s\",\"name\":\"%s\"}";
+    String pkgListFormatString = "[%s]";
+    List<String> packages = new ArrayList();
+    Application application = getMetainfo().getApplication();
+    if (application != null) {
+      List<OSSpecific> osSpecifics = application.getOSSpecifics();
+      if (osSpecifics != null && osSpecifics.size() > 0) {
+        for (OSSpecific osSpecific : osSpecifics) {
+          if (osSpecific.getOsType().equals("any")) {
+            for (OSPackage osPackage : osSpecific.getPackages()) {
+              packages.add(String.format(pkgFormatString, osPackage.getType(), osPackage.getName()));
+            }
+          }
+        }
+      }
+    }
+
+    if (packages.size() > 0) {
+      return String.format(pkgListFormatString, StringUtils.join(",", packages));
+    } else {
+      return "[]";
+    }
   }
 
   private void prepareExecutionCommand(ExecutionCommand cmd) {

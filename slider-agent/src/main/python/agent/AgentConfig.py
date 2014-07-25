@@ -22,6 +22,7 @@ import ConfigParser
 import StringIO
 import os
 import logging
+import posixpath
 
 logger = logging.getLogger()
 
@@ -141,7 +142,7 @@ class AgentConfig:
       if name in AgentConfig.FOLDER_MAPPING and AgentConfig.FOLDER_MAPPING[
         name] == "LOG":
         root_folder_to_use = self.logroot
-      return os.path.join(root_folder_to_use, relativePath)
+      return posixpath.join(root_folder_to_use, relativePath)
     else:
       return relativePath
 

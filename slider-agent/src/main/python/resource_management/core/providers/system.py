@@ -22,9 +22,9 @@ Slider Agent
 
 from __future__ import with_statement
 
-import grp
+#import grp
 import os
-import pwd
+#import pwd
 import time
 import shutil
 from resource_management.core import shell
@@ -38,10 +38,10 @@ def _coerce_uid(user):
   try:
     uid = int(user)
   except ValueError:
-    try:
-      uid = pwd.getpwnam(user).pw_uid
-    except KeyError:
-      raise Fail("User %s doesn't exist." % user)
+    #try:
+    #  uid = pwd.getpwnam(user).pw_uid
+    #except KeyError:
+    raise Fail("User %s doesn't exist." % user)
   return uid
 
 
@@ -49,10 +49,10 @@ def _coerce_gid(group):
   try:
     gid = int(group)
   except ValueError:
-    try:
-      gid = grp.getgrnam(group).gr_gid
-    except KeyError:
-      raise Fail("Group %s doesn't exist." % group)
+    #try:
+    #  gid = grp.getgrnam(group).gr_gid
+    #except KeyError:
+    raise Fail("Group %s doesn't exist." % group)
   return gid
 
 

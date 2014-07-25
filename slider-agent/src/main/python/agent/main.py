@@ -26,13 +26,17 @@ import sys
 import traceback
 import os
 import time
-import errno
+import platform
+import ConfigParser
 import ProcessHelper
+import errno
+import posixpath
 from Controller import Controller
 from AgentConfig import AgentConfig
 from NetUtil import NetUtil
 
 logger = logging.getLogger()
+IS_WINDOWS = platform.system() == "Windows"
 formatstr = "%(levelname)s %(asctime)s %(filename)s:%(lineno)d - %(message)s"
 agentPid = os.getpid()
 
@@ -99,12 +103,13 @@ def update_log_level(config, logfile):
 def bind_signal_handlers():
   signal.signal(signal.SIGINT, signal_handler)
   signal.signal(signal.SIGTERM, signal_handler)
-  signal.signal(signal.SIGUSR1, debug)
+  if platform.system() != "Windows":
+    signal.signal(signal.SIGUSR1, debug)
 
 
 def update_config_from_file(agentConfig):
   try:
-    configFile = os.path.join(agentConfig.getWorkRootPath(), configFileRelPath)
+    configFile = posixpath.join(agentConfig.getWorkRootPath(), configFileRelPath)
     if os.path.exists(configFile):
       agentConfig.setConfig(configFile)
     else:
@@ -136,7 +141,7 @@ def ensure_folder_layout(config):
 
 def ensure_path_exists(path):
   try:
-    os.makedirs(path)
+    os.makedirs(os.path.realpath(path))
   except OSError as exception:
     if exception.errno != errno.EEXIST:
       raise
@@ -188,7 +193,8 @@ def main():
   if not options.label:
     parser.error("label is required.");
 
-  bind_signal_handlers()
+  if not IS_WINDOWS:
+    bind_signal_handlers()
 
   # Check for configuration file.
   agentConfig = AgentConfig(options.root_folder, options.log_folder, options.label)
@@ -208,11 +214,11 @@ def main():
     agentConfig.set(AgentConfig.AGENT_SECTION, AgentConfig.APP_DBG_CMD, options.debug)
 
   # set the security directory to a subdirectory of the run dir
-  secDir = os.path.join(agentConfig.getResolvedPath(AgentConfig.RUN_DIR), "security")
+  secDir = posixpath.join(agentConfig.getResolvedPath(AgentConfig.RUN_DIR), "security")
   logger.info("Security/Keys directory: " + secDir)
   agentConfig.set(AgentConfig.SECURITY_SECTION, "keysdir", secDir)
 
-  logFile = os.path.join(agentConfig.getResolvedPath(AgentConfig.LOG_DIR), logFileName)
+  logFile = posixpath.join(agentConfig.getResolvedPath(AgentConfig.LOG_DIR), logFileName)
 
   perform_prestart_checks(agentConfig)
   ensure_folder_layout(agentConfig)

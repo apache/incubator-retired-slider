@@ -143,13 +143,13 @@ public class SecurityUtils {
       try {
         Set<PosixFilePermission> perms =
             PosixFilePermissions.fromString("rwx------");
-        Files.setPosixFilePermissions(Paths.get(secDirFile.toURI()), perms);
-        Files.setPosixFilePermissions(Paths.get(dbDir.toURI()), perms);
-        Files.setPosixFilePermissions(Paths.get(newCertsDir.toURI()), perms);
+//        Files.setPosixFilePermissions(Paths.get(secDirFile.toURI()), perms);
+//        Files.setPosixFilePermissions(Paths.get(dbDir.toURI()), perms);
+//        Files.setPosixFilePermissions(Paths.get(newCertsDir.toURI()), perms);
         File indexFile = new File(dbDir, "index.txt");
         indexFile.createNewFile();
 
-        SecurityUtils.writeCaConfigFile(secDirFile.getAbsolutePath());
+        SecurityUtils.writeCaConfigFile(secDirFile.getAbsolutePath().replace('\\', '/'));
 
       } catch (IOException e) {
         LOG.error("Unable to create SSL configuration directories/files", e);

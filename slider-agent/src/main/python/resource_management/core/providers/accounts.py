@@ -22,8 +22,8 @@ Slider Agent
 
 from __future__ import with_statement
 
-import grp
-import pwd
+#import grp
+#import pwd
 from resource_management.core import shell
 from resource_management.core.providers import Provider
 from resource_management.core.logger import Logger
@@ -70,10 +70,10 @@ class UserProvider(Provider):
 
   @property
   def user(self):
-    try:
-      return pwd.getpwnam(self.resource.username)
-    except KeyError:
-      return None
+    #try:
+    #  return pwd.getpwnam(self.resource.username)
+    #except KeyError:
+    return None
 
 
 class GroupProvider(Provider):
@@ -110,7 +110,7 @@ class GroupProvider(Provider):
 
   @property
   def group(self):
-    try:
-      return grp.getgrnam(self.resource.group_name)
-    except KeyError:
-      return None
+    #try:
+    #  return grp.getgrnam(self.resource.group_name)
+    #except KeyError:
+    return None

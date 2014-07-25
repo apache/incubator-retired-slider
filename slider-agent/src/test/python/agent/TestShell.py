@@ -42,12 +42,6 @@ class TestShell(unittest.TestCase):
 
     return linux_dist
 
-  @patch("os.setuid")
-  def test_changeUid(self, os_setUIDMock):
-    shell.threadLocal.uid = 9999
-    shell.changeUid()
-    self.assertTrue(os_setUIDMock.called)
-
 
   def test_kill_process_with_children(self):
     dist = self.linux_distribution()

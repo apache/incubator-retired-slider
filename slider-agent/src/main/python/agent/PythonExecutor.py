@@ -28,6 +28,7 @@ from threading import Thread
 from Grep import Grep
 import shell
 import sys
+import platform
 import Constants
 
 
@@ -125,6 +126,7 @@ class PythonExecutor:
     Creates subprocess with given parameters. This functionality was moved to separate method
     to make possible unit testing
     """
+    close_fds = None if platform.system() == "Windows" else True
     env = os.environ.copy()
     if environment_vars:
       for k, v in environment_vars:
@@ -132,13 +134,14 @@ class PythonExecutor:
         env[k] = v
     return subprocess.Popen(command,
                             stdout=tmpout,
-                            stderr=tmperr, close_fds=True, env=env)
+                            stderr=tmperr, close_fds=close_fds, env=env)
 
   def isSuccessfull(self, returncode):
     return not self.python_process_has_been_killed and returncode == 0
 
   def python_command(self, script, script_params):
-    python_binary = sys.executable
+    #we need manually pass python executable on windows because sys.executable will return service wrapper
+    python_binary = os.environ['PYTHON_EXE'] if 'PYTHON_EXE' in os.environ else sys.executable
     python_command = [python_binary, "-S", script] + script_params
     return python_command
 

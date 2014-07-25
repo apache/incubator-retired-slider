@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -19,13 +18,3 @@ limitations under the License.
 Slider Agent
 
 """
-
-from resource_management.libraries.functions.default import *
-from resource_management.libraries.functions.format import *
-from resource_management.libraries.functions.get_kinit_path import *
-from resource_management.libraries.functions.get_unique_id_and_date import *
-from resource_management.libraries.functions.check_process_status import *
-from resource_management.libraries.functions.is_empty import *
-from resource_management.libraries.functions.substitute_vars import *
-from resource_management.libraries.functions.os_check import *
-from resource_management.libraries.functions.get_port_from_url import *
