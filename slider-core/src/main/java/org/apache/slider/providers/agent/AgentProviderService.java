@@ -745,7 +745,6 @@ public class AgentProviderService extends AbstractProviderService implements
       throws SliderException {
     assert getAmState().isApplicationLive();
     ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
-    ConfTreeOperations resourcesConf = getAmState().getResourcesSnapshot();
     ConfTreeOperations internalsConf = getAmState().getInternalsSnapshot();
 
     ExecutionCommand cmd = new ExecutionCommand(AgentCommandType.EXECUTION_COMMAND);
