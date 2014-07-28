@@ -463,7 +463,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
                                                YarnException,
                                                IOException {
 
-    buildInstanceDefinition(clustername, buildInfo, false);
+    buildInstanceDefinition(clustername, buildInfo, false, false);
     return EXIT_SUCCESS; 
   }
 
@@ -477,7 +477,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    */
   public int actionUpdate(String clustername, AbstractClusterBuildingActionArgs buildInfo) throws
       YarnException, IOException {
-    buildInstanceDefinition(clustername, buildInfo, true);
+    buildInstanceDefinition(clustername, buildInfo, true, true);
     return EXIT_SUCCESS; 
   }
 
@@ -487,17 +487,18 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @param clustername name of the cluster
    * @param buildInfo the arguments needed to build the cluster
    * @param overwrite true if existing cluster directory can be overwritten
+   * @param liveClusterAllowed true if live cluster can be modified
    * @throws YarnException
    * @throws IOException
    */
   
   public void buildInstanceDefinition(String clustername,
-      AbstractClusterBuildingActionArgs buildInfo, boolean overwrite)
+      AbstractClusterBuildingActionArgs buildInfo, boolean overwrite, boolean liveClusterAllowed)
         throws YarnException, IOException {
     // verify that a live cluster isn't there
     SliderUtils.validateClusterName(clustername);
     verifyBindingsDefined();
-    verifyNoLiveClusters(clustername);
+    if (!liveClusterAllowed) verifyNoLiveClusters(clustername);
 
     Configuration conf = getConfig();
     String registryQuorum = lookupZKQuorum();
