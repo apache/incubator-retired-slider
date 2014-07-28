@@ -58,9 +58,9 @@ class TestRegistration(TestCase):
 
     self.assertEquals(os.path.join(tmpdir, "app/definition"), config.getResolvedPath("app_pkg_dir"))
     self.assertEquals(os.path.join(tmpdir, "app/install"), config.getResolvedPath("app_install_dir"))
-    self.assertEquals(os.path.join(ver_dir, "app/log"), config.getResolvedPath("app_log_dir"))
-    self.assertEquals(os.path.join(ver_dir, "infra/log"), config.getResolvedPath("log_dir"))
-    self.assertEquals(os.path.join(ver_dir, "app/command-log"), config.getResolvedPath("app_task_dir"))
+    self.assertEquals(os.path.join(ver_dir, "."), config.getResolvedPath("app_log_dir"))
+    self.assertEquals(os.path.join(ver_dir, "."), config.getResolvedPath("log_dir"))
+    self.assertEquals(os.path.join(ver_dir, "."), config.getResolvedPath("app_task_dir"))
 
     os.remove(ver_file)
     os.removedirs(ver_dir)

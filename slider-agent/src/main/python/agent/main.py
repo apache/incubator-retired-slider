@@ -185,11 +185,17 @@ def main():
   (options, args) = parser.parse_args()
 
   if not 'AGENT_WORK_ROOT' in os.environ:
-    parser.error("AGENT_WORK_ROOT environment variable must be set.");
+    parser.error("AGENT_WORK_ROOT environment variable must be set.")
   options.root_folder = os.environ['AGENT_WORK_ROOT']
   if not 'AGENT_LOG_ROOT' in os.environ:
-    parser.error("AGENT_LOG_ROOT environment variable must be set.");
+    parser.error("AGENT_LOG_ROOT environment variable must be set.")
   options.log_folder = os.environ['AGENT_LOG_ROOT']
+  all_log_folders = [x.strip() for x in options.log_folder.split(',')]
+  if len(all_log_folders) > 1:
+    options.log_folder = all_log_folders[0]
+
+  # If there are multiple log folder, separate by comma, pick one
+
   if not options.label:
     parser.error("label is required.");
 
@@ -231,6 +237,9 @@ def main():
 
   logger.info("Using AGENT_WORK_ROOT = " + options.root_folder)
   logger.info("Using AGENT_LOG_ROOT = " + options.log_folder)
+
+  if len(all_log_folders) > 1:
+    logger.info("Selected log folder from available: " + ",".join(all_log_folders))
 
   server_url = SERVER_STATUS_URL.format(
     agentConfig.get(AgentConfig.SERVER_SECTION, 'hostname'),
