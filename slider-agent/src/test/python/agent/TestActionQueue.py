@@ -209,7 +209,7 @@ class TestActionQueue(TestCase):
   @patch("traceback.print_exc")
   @patch.object(ActionQueue, "execute_command")
   @patch.object(ActionQueue, "execute_status_command")
-  def test_process_command(self, execute_status_command_mock,
+  def test_process_command2(self, execute_status_command_mock,
                            execute_command_mock, print_exc_mock):
     dummy_controller = MagicMock()
     actionQueue = ActionQueue(AgentConfig("", ""), dummy_controller)

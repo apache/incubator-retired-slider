@@ -152,9 +152,9 @@ class TestController(unittest.TestCase):
 
   @patch("urllib2.build_opener")
   @patch("urllib2.install_opener")
-  @patch.object(ActionQueue.ActionQueue, "run")
+  @patch.object(ActionQueue.ActionQueue, "start")
   def test_repeatRegistration(self,
-                              run_mock, installMock, buildMock):
+                              start_mock, installMock, buildMock):
 
     registerAndHeartbeat = MagicMock(name="registerAndHeartbeat")
 
@@ -162,6 +162,7 @@ class TestController(unittest.TestCase):
     self.controller.run()
     self.assertTrue(installMock.called)
     self.assertTrue(buildMock.called)
+    self.assertTrue(start_mock.called)
     self.controller.registerAndHeartbeat.assert_called_once_with()
 
     calls = []
