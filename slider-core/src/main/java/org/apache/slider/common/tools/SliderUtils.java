@@ -1357,9 +1357,9 @@ public final class SliderUtils {
 
   /**
    * Append a list of paths, inserting "/" signs as appropriate
-   * @param base
-   * @param paths
-   * @return
+   * @param base base path/URL
+   * @param paths subpaths
+   * @return base+"/"+paths[0]+"/"+paths[1]...
    */
   public static String appendToURL(String base, String...paths) {
     String result = base;
