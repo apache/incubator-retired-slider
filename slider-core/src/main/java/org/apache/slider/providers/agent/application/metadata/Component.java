@@ -16,6 +16,9 @@
  */
 package org.apache.slider.providers.agent.application.metadata;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  *
  */
@@ -26,9 +29,11 @@ public class Component {
   String minInstanceCount;
   String maxInstanceCount;
   CommandScript commandScript;
+  List<Export> exports;
 
   public Component() {
     publishConfig = Boolean.FALSE.toString();
+    exports = new ArrayList<>();
   }
 
   public String getName() {
@@ -77,6 +82,14 @@ public class Component {
 
   public void addCommandScript(CommandScript commandScript) {
     this.commandScript = commandScript;
+  }
+
+  public void addExport(Export export) {
+    exports.add(export);
+  }
+
+  public List<Export> getExports() {
+    return exports;
   }
 
   @Override

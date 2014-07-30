@@ -52,9 +52,9 @@ class CustomServiceOrchestrator():
     self.tmp_dir = config.getResolvedPath(AgentConfig.APP_TASK_DIR)
     self.python_executor = PythonExecutor(self.tmp_dir, config)
     self.status_commands_stdout = os.path.realpath(posixpath.join(self.tmp_dir,
-                                               'status_command_stdout.txt'))
+                                                                  'status_command_stdout.txt'))
     self.status_commands_stderr = os.path.realpath(posixpath.join(self.tmp_dir,
-                                               'status_command_stderr.txt'))
+                                                                  'status_command_stderr.txt'))
     self.public_fqdn = hostname.public_hostname()
     self.applied_configs = {}
     # Clean up old status command files if any
@@ -81,7 +81,7 @@ class CustomServiceOrchestrator():
       script_tuple = (script_path, self.base_dir)
 
       tmpstrucoutfile = os.path.realpath(posixpath.join(self.tmp_dir,
-                                     "structured-out-{0}.json".format(task_id)))
+                                                        "structured-out-{0}.json".format(task_id)))
       if script_type.upper() != self.SCRIPT_TYPE_PYTHON:
       # We don't support anything else yet
         message = "Unknown script type {0}".format(script_type)
@@ -97,9 +97,9 @@ class CustomServiceOrchestrator():
       for py_file, current_base_dir in filtered_py_file_list:
         script_params = [command_name, json_path, current_base_dir]
         python_paths = [os.path.realpath(posixpath.join(self.config.getWorkRootPath(),
-                                     "infra", "agent", "slider-agent", "jinja2")),
+                                                        "infra", "agent", "slider-agent", "jinja2")),
                         os.path.realpath(posixpath.join(self.config.getWorkRootPath(),
-                                     "infra", "agent", "slider-agent"))]
+                                                        "infra", "agent", "slider-agent"))]
         if platform.system() != "Windows":
           environment_vars = [("PYTHONPATH", ":".join(python_paths))]
         else:
@@ -137,8 +137,8 @@ class CustomServiceOrchestrator():
     # Irrespective of the outcome report the folder paths
     if command_name == 'INSTALL':
       ret[Constants.FOLDERS] = {
-        Constants.AGENT_LOG_ROOT : self.config.getLogPath(),
-        Constants.AGENT_WORK_ROOT : self.config.getWorkRootPath()
+        Constants.AGENT_LOG_ROOT: self.config.getLogPath(),
+        Constants.AGENT_WORK_ROOT: self.config.getWorkRootPath()
       }
     return ret
 
@@ -249,9 +249,7 @@ class CustomServiceOrchestrator():
               value = value.replace("${AGENT_LOG_ROOT}",
                                     self.config.getLogPath())
               if port_allocation_req in value:
-                port = self.allocate_port()
-                value = value.replace(port_allocation_req, str(port))
-                logger.info("Allocated port " + str(port) + " for " + port_allocation_req)
+                value = self.allocate_ports(value, port_allocation_req)
                 allocated_ports[k] = value
               command['configurations'][key][k] = value
               pass
@@ -266,7 +264,34 @@ class CustomServiceOrchestrator():
 
   pass
 
-  def allocate_port(self):
+  def allocate_ports(self, value, port_req_pattern):
+    default_port_pattern = "{DEFAULT_"
+    index = value.find(port_req_pattern)
+    while index != -1:
+      replaced_pattern = port_req_pattern
+      def_port = None
+      if index == value.find(port_req_pattern + default_port_pattern):
+        replaced_pattern = port_req_pattern + default_port_pattern
+        start_index = index + len(replaced_pattern)
+        end_index = value.find("}", start_index)
+        def_port_str = value[start_index:end_index]
+        def_port = int(def_port_str)
+        replaced_pattern = replaced_pattern + def_port_str + "}"
+        pass
+      port = self.allocate_port(def_port)
+      value = value.replace(replaced_pattern, str(port), 1)
+      logger.info("Allocated port " + str(port) + " for " + replaced_pattern)
+      index = value.find(port_req_pattern)
+      pass
+    return value
+    pass
+
+
+  def allocate_port(self, default_port=None):
+    if default_port != None:
+      if self.is_port_available(default_port):
+        return default_port
+
     MAX_ATTEMPT = 5
     iter = 0
     port = -1
@@ -283,5 +308,15 @@ class CustomServiceOrchestrator():
       pass
     logger.info("Allocated dynamic port: " + str(port))
     return port
+
+  def is_port_available(self, port):
+    try:
+      sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+      sock.settimeout(0.2)
+      sock.connect(('127.0.0.1', port))
+      sock.close()
+    except:
+      return True
+    return False
 
 

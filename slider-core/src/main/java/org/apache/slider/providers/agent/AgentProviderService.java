@@ -109,6 +109,7 @@ public class AgentProviderService extends AbstractProviderService implements
   private static final String CONTAINER_ID = "container_id";
   private static final String GLOBAL_CONFIG_TAG = "global";
   private static final String LOG_FOLDERS_TAG = "LogFolders";
+  private static final String COMPONENT_DATA_TAG = "ComponentData";
   private static final int MAX_LOG_ENTRIES = 20;
   private static final int DEFAULT_HEARTBEAT_MONITOR_INTERVAL = 60 * 1000;
   private final Object syncLock = new Object();
@@ -126,6 +127,7 @@ public class AgentProviderService extends AbstractProviderService implements
           return size() > MAX_LOG_ENTRIES;
         }
       });
+  private Map<String, Map<String, String>> componentData = new ConcurrentHashMap();
   private Boolean canAnyMasterPublish = null;
   private AgentLaunchParameter agentLaunchParameter = null;
 
@@ -566,6 +568,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
     publishComponentConfiguration(LOG_FOLDERS_TAG, LOG_FOLDERS_TAG, (new HashMap<>(this.workFolders)).entrySet());
   }
+
 
   /**
    * Process return status for component instances

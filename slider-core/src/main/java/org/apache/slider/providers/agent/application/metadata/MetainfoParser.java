@@ -58,6 +58,10 @@ public class MetainfoParser {
     digester.addBeanPropertySetter("*/component/publishConfig");
     digester.addBeanPropertySetter("*/component/minInstanceCount");
     digester.addBeanPropertySetter("*/component/maxInstanceCount");
+    digester.addObjectCreate("*/component/export", Export.class);
+    digester.addBeanPropertySetter("*/component/export/name");
+    digester.addBeanPropertySetter("*/component/export/value");
+    digester.addSetNext("*/component/export", "addExport");
     digester.addSetNext("*/component", "addComponent");
 
     digester.addObjectCreate("*/commandScript", CommandScript.class);

@@ -26,11 +26,11 @@ import unittest
 from agent import ProcessHelper, main
 import logging
 import signal
-from agent.AgentConfig import AgentConfig
+from AgentConfig import AgentConfig
 import ConfigParser
 import os
 import tempfile
-from agent.Controller import Controller
+from Controller import Controller
 from optparse import OptionParser
 
 logger = logging.getLogger()

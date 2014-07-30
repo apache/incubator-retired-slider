@@ -25,8 +25,8 @@ import errno
 import tempfile
 from mock.mock import patch
 from mock.mock import MagicMock
-from agent.Register import Register
-from agent.AgentConfig import AgentConfig
+from Register import Register
+from AgentConfig import AgentConfig
 
 class TestRegistration(TestCase):
 

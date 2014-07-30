@@ -27,6 +27,12 @@
       <component>
         <name>MEMCACHED</name>
         <category>MASTER</category>
+        <exports>
+          <export>
+            <name>host_port</name>
+            <value>${THIS_HOST}:${site.global.listen_port}</value>
+          </export>
+        </exports>
         <commandScript>
           <script>scripts/memcached.py</script>
           <scriptType>PYTHON</scriptType>
