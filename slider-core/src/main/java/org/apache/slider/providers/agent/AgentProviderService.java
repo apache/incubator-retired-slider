@@ -210,7 +210,9 @@ public class AgentProviderService extends AbstractProviderService implements
     String logDir = ApplicationConstants.Environment.LOG_DIRS.$();
     launcher.setEnv("AGENT_LOG_ROOT", logDir);
     log.info("AGENT_LOG_ROOT set to {}", logDir);
-    launcher.setEnv(HADOOP_USER_NAME, System.getenv(HADOOP_USER_NAME));
+    if (System.getenv(HADOOP_USER_NAME) != null) {
+      launcher.setEnv(HADOOP_USER_NAME, System.getenv(HADOOP_USER_NAME));
+    }
     // for 2-Way SSL
     launcher.setEnv(SLIDER_PASSPHRASE, SliderKeys.PASSPHRASE);
 
