@@ -250,7 +250,7 @@ class CustomServiceOrchestrator():
                                     self.config.getLogPath())
               if port_allocation_req in value:
                 value = self.allocate_ports(value, port_allocation_req)
-                allocated_ports[k] = value
+                allocated_ports[key + "." + k] = value
               command['configurations'][key][k] = value
               pass
             pass

@@ -843,8 +843,8 @@ public class TestAgentProviderService {
     roleClusterNodeMap.put("HBASE_MASTER", container);
     doReturn(roleClusterNodeMap).when(mockAps).getRoleClusterNodeMapping();
     Map<String, String> allocatedPorts = new HashMap<>();
-    allocatedPorts.put("a.port", "10023");
-    allocatedPorts.put("b.port", "10024");
+    allocatedPorts.put("hbase-site.a.port", "10023");
+    allocatedPorts.put("hbase-site.b.port", "10024");
     doReturn(allocatedPorts).when(mockAps).getAllocatedPorts();
 
     replay(access);

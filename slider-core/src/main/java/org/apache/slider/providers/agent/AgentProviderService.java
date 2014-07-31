@@ -109,7 +109,7 @@ public class AgentProviderService extends AbstractProviderService implements
   private static final String CONTAINER_ID = "container_id";
   private static final String GLOBAL_CONFIG_TAG = "global";
   private static final String LOG_FOLDERS_TAG = "LogFolders";
-  private static final String COMPONENT_DATA_TAG = "ComponentData";
+  private static final String COMPONENT_DATA_TAG = "ComponentInstanceData";
   private static final int MAX_LOG_ENTRIES = 20;
   private static final int DEFAULT_HEARTBEAT_MONITOR_INTERVAL = 60 * 1000;
   private final Object syncLock = new Object();
@@ -127,7 +127,7 @@ public class AgentProviderService extends AbstractProviderService implements
           return size() > MAX_LOG_ENTRIES;
         }
       });
-  private Map<String, Map<String, String>> componentData = new ConcurrentHashMap();
+  private Map<String, Map<String, String>> componentInstanceData = new ConcurrentHashMap();
   private Boolean canAnyMasterPublish = null;
   private AgentLaunchParameter agentLaunchParameter = null;
 
@@ -501,6 +501,9 @@ public class AgentProviderService extends AbstractProviderService implements
           log.info("Recording allocated port for {} as {}", port.getKey(), port.getValue());
           this.allocatedPorts.put(port.getKey(), port.getValue());
         }
+
+        // component specific publishes
+        processComponentSpecificPublishes(ports, containerId, heartBeat.getFqdn(), roleName);
       }
       CommandResult result = CommandResult.getCommandResult(report.getStatus());
       Command command = Command.getCommand(report.getRoleCommand());
@@ -632,6 +635,64 @@ public class AgentProviderService extends AbstractProviderService implements
           componentStatus.setConfigReported(true);
         }
       }
+    }
+  }
+
+  /** Publish component instance specific data if the component demands it */
+  protected void processComponentSpecificPublishes(Map<String, String> ports,
+                                                   String containerId,
+                                                   String hostFqdn,
+                                                   String roleName) {
+    String portVarFormat = "${site.%s}";
+    String hostNamePattern = "${THIS_HOST}";
+    Map<String, String> toPublish = new HashMap<>();
+
+    Application application = getMetainfo().getApplication();
+    for (Component component : application.getComponents()) {
+      if (component.getName().equals(roleName)) {
+        if(component.getExports().size() > 0) {
+
+          for(Export export : component.getExports()) {
+            String templateToExport = export.getValue();
+            for(String portName : ports.keySet()) {
+              boolean publishData = false;
+              String portValPattern = String.format(portVarFormat, portName);
+              if(templateToExport.contains(portValPattern)) {
+                templateToExport.replace(portValPattern, ports.get(portName));
+                publishData = true;
+              }
+              if(templateToExport.contains(hostNamePattern)) {
+                templateToExport.replace(hostNamePattern, hostFqdn);
+                publishData = true;
+              }
+              if(publishData) {
+                toPublish.put(export.getName(), templateToExport);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if(toPublish.size() > 0) {
+      Map<String, String> perContainerData = null;
+      if(!this.componentInstanceData.containsKey(containerId)) {
+        perContainerData = new ConcurrentHashMap<>();
+      } else {
+        perContainerData = this.componentInstanceData.get(containerId);
+      }
+      perContainerData.putAll(toPublish);
+      this.componentInstanceData.put(containerId, perContainerData);
+      Map<String, String> dataToPublish = new HashMap<>();
+      synchronized (this.componentInstanceData) {
+        for(String container : this.componentInstanceData.keySet()) {
+          for(String prop : this.componentInstanceData.get(container).keySet()) {
+            dataToPublish.put(
+                container + "." + prop, this.componentInstanceData.get(container).get(prop));
+          }
+        }
+      }
+      publishComponentConfiguration(COMPONENT_DATA_TAG, COMPONENT_DATA_TAG, dataToPublish.entrySet());
     }
   }
 
@@ -971,8 +1032,9 @@ public class AgentProviderService extends AbstractProviderService implements
     //apply any port updates
     if (!this.getAllocatedPorts().isEmpty()) {
       for (String key : config.keySet()) {
-        if (this.getAllocatedPorts().containsKey(key)) {
-          config.put(key, getAllocatedPorts().get(key));
+        String lookupKey = configName + "." + key;
+        if (this.getAllocatedPorts().containsKey(lookupKey)) {
+          config.put(key, getAllocatedPorts().get(lookupKey));
         }
       }
     }

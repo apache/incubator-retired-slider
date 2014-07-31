@@ -226,7 +226,7 @@ class TestCustomServiceOrchestrator(TestCase):
     }
     ret = orchestrator.runCommand(command, "out.txt", "err.txt")
     self.assertEqual(ret['exitcode'], 0)
-    self.assertEqual(ret['allocated_ports'], {'a.port': '10233'})
+    self.assertEqual(ret['allocated_ports'], {'a.a.port': '10233'})
     self.assertTrue(run_file_mock.called)
     self.assertEqual(run_file_mock.call_count, 1)
 
@@ -480,8 +480,8 @@ class TestCustomServiceOrchestrator(TestCase):
     self.assertEqual(command['configurations']['oozie-site']['a_port'], "10023")
     self.assertEqual(orchestrator.applied_configs, {})
     self.assertEqual(len(allocated_ports), 1)
-    self.assertTrue('a_port' in allocated_ports)
-    self.assertEqual(allocated_ports['a_port'], '10023')
+    self.assertTrue('oozie-site.a_port' in allocated_ports)
+    self.assertEqual(allocated_ports['oozie-site.a_port'], '10023')
 
     command['configurations']['hbase-site']['work_root'] = "${AGENT_WORK_ROOT}"
     command['configurations']['hbase-site']['log_root'] = "${AGENT_LOG_ROOT}/log"
