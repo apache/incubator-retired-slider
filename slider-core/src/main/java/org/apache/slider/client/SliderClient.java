@@ -33,6 +33,8 @@ import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
+import org.apache.hadoop.yarn.registry.client.api.RegistryConstants;
+import org.apache.hadoop.yarn.registry.server.services.YarnRegistryService;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterNode;
 import org.apache.slider.api.OptionKeys;
@@ -86,7 +88,7 @@ import org.apache.slider.core.launch.RunningApplication;
 import org.apache.slider.core.main.RunService;
 import org.apache.slider.core.persist.ConfPersister;
 import org.apache.slider.core.persist.LockAcquireFailedException;
-import org.apache.slider.core.registry.YARNRegistryClient;
+import org.apache.slider.core.registry.YarnAppListClient;
 import org.apache.slider.core.registry.docstore.ConfigFormat;
 import org.apache.slider.core.registry.docstore.PublishedConfigSet;
 import org.apache.slider.core.registry.docstore.PublishedConfiguration;
@@ -154,9 +156,15 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * Yarn client service
    */
   private SliderYarnClientImpl yarnClient;
-  private YARNRegistryClient YARNRegistryClient;
+  private YarnAppListClient YarnAppListClient;
   private AggregateConf launchedInstanceDefinition;
   private SliderRegistryService registry;
+
+
+  /**
+   * The YARN registry service
+   */
+  private YarnRegistryService yarnRegistry;
 
   /**
    * Constructor
@@ -196,8 +204,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     
     //here the superclass is inited; getConfig returns a non-null value
     sliderFileSystem = new SliderFileSystem(getConfig());
-    YARNRegistryClient =
-      new YARNRegistryClient(yarnClient, getUsername(), getConfig());
+    YarnAppListClient =
+      new YarnAppListClient(yarnClient, getUsername(), getConfig());
   }
 
   /**
@@ -1014,8 +1022,12 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     
     addConfOptionToCLI(commandLine, config, REGISTRY_PATH,
         DEFAULT_REGISTRY_PATH);
+    addMandatoryConfOptionToCLI(commandLine, config, RegistryConstants.REGISTRY_ZK_QUORUM);
     addMandatoryConfOptionToCLI(commandLine, config, REGISTRY_ZK_QUORUM);
-    
+    define(commandLine, RegistryConstants.REGISTRY_ZK_QUORUM,
+        getYarnRegistry().getCurrentZookeeperQuorum());
+
+
     if (clusterSecure) {
       // if the cluster is secure, make sure that
       // the relevant security settings go over
@@ -1134,18 +1146,30 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       String key) {
     String val = conf.get(key);
     if (val != null) {
-      cmdLine.add(Arguments.ARG_DEFINE, key + "=" + val);
+      define(cmdLine, key, val);
       return true;
     } else {
       return false;
     }
   }
-  
-  private void addConfOptionToCLI(CommandLineBuilder cmdLine,
+
+  private String addConfOptionToCLI(CommandLineBuilder cmdLine,
       Configuration conf,
-      String key, String defVal) {
+      String key,
+      String defVal) {
     String val = conf.get(key, defVal);
-      cmdLine.add(Arguments.ARG_DEFINE, key + "=" + val);
+    define(cmdLine, key, val);
+    return val;
+  }
+
+  /**
+   * Add a define command to the CLI
+   * @param cmdLine
+   * @param key
+   * @param val
+   */
+  private void define(CommandLineBuilder cmdLine, String key, String val) {
+    cmdLine.add(Arguments.ARG_DEFINE, key + "=" + val);
   }
 
   private void addMandatoryConfOptionToCLI(CommandLineBuilder cmdLine,
@@ -1331,7 +1355,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   @VisibleForTesting
   public List<ApplicationReport> listSliderInstances(String user)
     throws YarnException, IOException {
-    return YARNRegistryClient.listInstances();
+    return YarnAppListClient.listInstances();
   }
 
   /**
@@ -1498,8 +1522,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * Get at the service registry operations
    * @return registry client -valid after the service is inited.
    */
-  public YARNRegistryClient getYARNRegistryClient() {
-    return YARNRegistryClient;
+  public YarnAppListClient getYarnAppListClient() {
+    return YarnAppListClient;
   }
 
   /**
@@ -1512,7 +1536,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   private ApplicationReport findInstance(String appname) throws
                                                         YarnException,
                                                         IOException {
-    return YARNRegistryClient.findInstance(appname);
+    return YarnAppListClient.findInstance(appname);
   }
   
   private RunningApplication findApplication(String appname) throws
@@ -1532,7 +1556,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   private List<ApplicationReport> findAllLiveInstances(String appname)
     throws YarnException, IOException {
     
-    return YARNRegistryClient.findAllLiveInstances(appname);
+    return YarnAppListClient.findAllLiveInstances(appname);
   }
 
 
@@ -2307,8 +2331,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    */
   public List<CuratorServiceInstance<ServiceInstanceData>> listRegistryInstances()
       throws IOException, YarnException {
-    maybeStartRegistry();
-    return registry.listInstances(SliderKeys.APP_TYPE);
+    return getRegistry().listInstances(SliderKeys.APP_TYPE);
   }
 
   /**
@@ -2321,8 +2344,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       IOException,
       YarnException {
     try {
-      maybeStartRegistry();
-      return registry.instanceIDs(SliderKeys.APP_TYPE);
+      return getRegistry().instanceIDs(SliderKeys.APP_TYPE);
     } catch (YarnException | IOException e) {
       throw e;
     } catch (Exception e) {
@@ -2359,6 +2381,33 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       SliderException,
       IOException {
     return maybeStartRegistry();
+  }
+
+
+  /**
+   * Start the registry if it is not there yet
+   * @return the registry service
+   * @throws SliderException
+   * @throws IOException
+   */
+  private synchronized YarnRegistryService maybeStartYarnRegistry() throws
+      SliderException,
+      IOException {
+
+    if (yarnRegistry == null) {
+      yarnRegistry = startYarnRegistryService();
+    }
+    return yarnRegistry;
+  }
+
+  /**
+   * Get the YARN registry
+   * @return the registry 
+   */
+  public YarnRegistryService getYarnRegistry() throws
+      SliderException,
+      IOException {
+    return maybeStartYarnRegistry();
   }
 
   /**

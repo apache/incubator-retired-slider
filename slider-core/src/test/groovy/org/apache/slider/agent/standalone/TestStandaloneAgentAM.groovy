@@ -80,7 +80,7 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
 
 
     String username = client.username
-    def serviceRegistryClient = client.YARNRegistryClient
+    def serviceRegistryClient = client.yarnAppListClient
     describe("list of all applications")
     logApplications(apps)
     describe("apps of user $username")
@@ -92,7 +92,7 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     logReport(instance)
     assert instance != null
 
-    //switch to the ZK-based registry
+    //switch to the slider ZK-based registry
 
     describe "service registry names"
     SliderRegistryService registry = client.registry
@@ -106,13 +106,16 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     instanceIds.each { String it -> log.info(it) }
 
     describe "service registry slider instances"
-    List<CuratorServiceInstance<ServiceInstanceData>> instances = client.listRegistryInstances(
-    )
+    List<CuratorServiceInstance<ServiceInstanceData>> instances =
+        client.listRegistryInstances()
     instances.each { CuratorServiceInstance<ServiceInstanceData> svc ->
       log.info svc.toString()
     }
     describe "end list service registry slider instances"
 
+    describe "Yarn registry"
+    def yarnRegistry = client.yarnRegistry
+    
     describe "teardown of cluster instance #1"
     //now kill that cluster
     assert 0 == clusterActionFreeze(client, clustername)

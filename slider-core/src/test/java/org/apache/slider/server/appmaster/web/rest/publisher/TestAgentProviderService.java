@@ -16,7 +16,7 @@
  */
 package org.apache.slider.server.appmaster.web.rest.publisher;
 
-import org.apache.hadoop.yarn.registry.client.binding.zk.YarnRegistryService;
+import org.apache.hadoop.yarn.registry.server.services.YarnRegistryService;
 import org.apache.slider.providers.agent.AgentProviderService;
 import org.apache.slider.server.appmaster.AMViewForProviders;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;

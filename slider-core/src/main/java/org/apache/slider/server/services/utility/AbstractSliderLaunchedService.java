@@ -22,7 +22,7 @@ package org.apache.slider.server.services.utility;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.registry.client.api.RegistryConstants;
-import org.apache.hadoop.yarn.registry.client.binding.zk.YarnRegistryService;
+import org.apache.hadoop.yarn.registry.server.services.YarnRegistryService;
 import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
@@ -49,6 +49,13 @@ public abstract class AbstractSliderLaunchedService extends
     new YarnConfiguration();
   }
 
+  @Override
+  protected void serviceInit(Configuration conf) throws Exception {
+    String quorum = lookupZKQuorum();
+    conf.set(RegistryConstants.REGISTRY_ZK_QUORUM, quorum);
+    super.serviceInit(conf);
+  }
+
   /**
    * Start the registration service
    * @return the instance
@@ -70,15 +77,14 @@ public abstract class AbstractSliderLaunchedService extends
    * @throws BadConfigException if it is not there or invalid
    */
   public String lookupZKQuorum() throws BadConfigException {
-    String registryQuorum = getConfig().get(
-        RegistryConstants.ZK_QUORUM);
+    String registryQuorum = getConfig().get(RegistryConstants.REGISTRY_ZK_QUORUM);
     registryQuorum = getConfig().get(
         SliderXmlConfKeys.REGISTRY_ZK_QUORUM,
         registryQuorum);
     if (SliderUtils.isUnset(registryQuorum)) {
       throw new BadConfigException(
           "No Zookeeper quorum provided in the"
-          + " configuration property " + RegistryConstants.ZK_QUORUM
+          + " configuration property " + RegistryConstants.REGISTRY_ZK_QUORUM
       );
     }
     ZookeeperUtils.splitToHostsAndPortsStrictly(registryQuorum);
@@ -113,12 +119,10 @@ public abstract class AbstractSliderLaunchedService extends
   public YarnRegistryService startYarnRegistryService()
       throws BadConfigException {
 
-    String quorum = lookupZKQuorum();
     Configuration conf = getConfig();
     // push back the slider registry entry if needed
-    if (conf.get(RegistryConstants.ZK_QUORUM) == null) {
-      conf.set(RegistryConstants.ZK_QUORUM, quorum);
-    }
+    String quorum = lookupZKQuorum();
+    conf.set(RegistryConstants.REGISTRY_ZK_QUORUM, quorum);
     YarnRegistryService yarnRegistryService =
         new YarnRegistryService("YarnRegistry");
     deployChildService(yarnRegistryService);

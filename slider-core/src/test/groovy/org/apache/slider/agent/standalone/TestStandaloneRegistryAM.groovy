@@ -97,7 +97,7 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
 
 
     String username = client.username
-    def yarnRegistryClient = client.YARNRegistryClient
+    def yarnRegistryClient = client.yarnAppListClient
     describe("list of all applications")
     logApplications(apps)
     describe("apps of user $username")

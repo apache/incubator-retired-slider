@@ -65,7 +65,7 @@ class TestBuildStandaloneAM extends AgentMiniClusterTestBase {
     //but the cluster is still there for the default
     assert 0 == sliderClient.actionExists(clustername, false)
 
-    def serviceRegistryClient = sliderClient.YARNRegistryClient
+    def serviceRegistryClient = sliderClient.yarnAppListClient
     ApplicationReport report = serviceRegistryClient.findInstance(clustername)
     assert report == null;
 
@@ -115,7 +115,7 @@ class TestBuildStandaloneAM extends AgentMiniClusterTestBase {
     //but the cluster is still there for the default
     assert 0 == sliderClient.actionExists(clustername, false)
 
-    def serviceRegistryClient = sliderClient.YARNRegistryClient
+    def serviceRegistryClient = sliderClient.yarnAppListClient
     ApplicationReport report = serviceRegistryClient.findInstance(clustername)
     assert report == null;
 

@@ -50,7 +50,7 @@ import org.apache.hadoop.yarn.client.api.async.impl.NMClientAsyncImpl;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.ipc.YarnRPC;
-import org.apache.hadoop.yarn.registry.client.binding.zk.YarnRegistryService;
+import org.apache.hadoop.yarn.registry.server.services.YarnRegistryService;
 import org.apache.hadoop.yarn.registry.client.types.RegistryTypeUtils;
 import org.apache.hadoop.yarn.registry.client.types.ServiceEntry;
 import org.apache.hadoop.yarn.security.AMRMTokenIdentifier;
@@ -290,7 +290,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * The registry service
    */
   @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
-  private SliderRegistryService registry;
+  private SliderRegistryService sliderRegistry;
   
   
   /**
@@ -601,8 +601,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       
       //registry
-      registry = startRegistrationService();
+      log.info("Starting slider registry");
+      sliderRegistry = startRegistrationService();
+      log.info("Starting Yarn registry");
       yarnRegistry = startYarnRegistryService();
+      log.info(yarnRegistry.toString());
 
       //build the role map
       List<ProviderRole> providerRoles =
@@ -617,7 +620,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       startAgentWebApp(appInformation, serviceConf);
 
-      webApp = new SliderAMWebApp(registry);
+      webApp = new SliderAMWebApp(sliderRegistry, yarnRegistry);
       WebApps.$for(SliderAMWebApp.BASE_PATH, WebAppApi.class,
                    new WebAppApiImpl(this,
                                      stateForProviders,
@@ -727,8 +730,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
 
     //Give the provider restricted access to the state, registry
-    providerService.bind(stateForProviders, registry, yarnRegistry, this);
-    sliderAMProvider.bind(stateForProviders, registry, yarnRegistry, null);
+    providerService.bind(stateForProviders, sliderRegistry, yarnRegistry, this);
+    sliderAMProvider.bind(stateForProviders, sliderRegistry, yarnRegistry, null);
 
     // now do the registration
     registerServiceInstance(clustername, appid);
@@ -806,7 +809,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       RegistryNaming.createRegistryName(instanceName, service_user_name,
           serviceName, id);
 
-    List<String> serviceInstancesRunning = registry.instanceIDs(serviceName);
+    List<String> serviceInstancesRunning = sliderRegistry.instanceIDs(serviceName);
     log.info("service instances already running: {}", serviceInstancesRunning);
 
 
@@ -847,7 +850,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     // push the registration info to ZK
 
-    registry.registerSelf(instanceData, unsecureWebAPI);
+    sliderRegistry.registerSelf(instanceData, unsecureWebAPI);
     yarnRegistry.putServiceEntry(service_user_name,
         SliderKeys.APP_TYPE, instanceName,
         registryEntry );

@@ -107,7 +107,7 @@ class TestActionList extends AgentMiniClusterTestBase {
     //now look for the explicit sevice
     
 
-    def serviceRegistryClient = sliderClient.YARNRegistryClient
+    def serviceRegistryClient = sliderClient.yarnAppListClient
     ApplicationReport instance = serviceRegistryClient.findInstance(clustername)
     assert instance != null
     log.info(instance.toString())

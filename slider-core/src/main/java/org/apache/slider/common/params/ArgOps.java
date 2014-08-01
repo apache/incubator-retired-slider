@@ -82,7 +82,7 @@ public class ArgOps {
     for (Map.Entry<String, String> entry : definitionMap.entrySet()) {
       String key = entry.getKey();
       String val = entry.getValue();
-      log.debug("configuration[{}]=\"{}\"", key, val);
+      log.debug("configuration[{}]<=\"{}\"", key, val);
       conf.set(key, val, "command line");
     }
   }

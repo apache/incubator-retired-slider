@@ -27,27 +27,28 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * Client code for interacting with a registry of service instances.
+ * Client code for interacting with a list of service instances.
  * The initial logic just enumerates service instances in the YARN RM
  */
-public class YARNRegistryClient {
+public class YarnAppListClient {
 
   final SliderYarnClientImpl yarnClient;
   final String username;
   final Configuration conf;
 
 
-  public YARNRegistryClient(SliderYarnClientImpl yarnClient,
-                            String username,
-                            Configuration conf) {
+  public YarnAppListClient(SliderYarnClientImpl yarnClient,
+      String username,
+      Configuration conf) {
     this.yarnClient = yarnClient;
     this.username = username;
     this.conf = conf;
   }
 
   /**
-   * find all live instances of a specific app -if there is >1 in the cluster,
-   * this returns them all. State should be running or less
+   * find all live instances of a specific app -if there is more than one 
+   * in the cluster, this returns them all. State should be running or earlier
+   * in the lifecycle
    * @param appname application name
    * @return the list of all matching application instances
    */
