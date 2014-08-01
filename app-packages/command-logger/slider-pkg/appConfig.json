@@ -3,7 +3,6 @@
     "metadata": {
     },
     "global": {
-        "agent.conf": "agent.ini",
         "application.def": "apache-slider-command-logger.zip",
         "config_types": "cl-site",
         "java_home": "/usr/jdk64/jdk1.7.0_45",

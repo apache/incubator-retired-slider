@@ -17,9 +17,12 @@
 package org.apache.slider.server.appmaster.web.rest.agent;
 
 import org.apache.slider.server.appmaster.web.WebAppApi;
+import org.apache.slider.server.services.security.SignCertResponse;
+import org.apache.slider.server.services.security.SignMessage;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -50,14 +53,14 @@ public class AgentResource {
   }
 
   @GET
-  @Path("/agents/register")
+  @Path("/agent/register")
   public Response endpointAgentRegister() {
     Response response = Response.status(200).entity("/agent/register").build();
     return response;
   }
 
   @GET
-  @Path("/agents")
+  @Path("/agent")
   public Response endpointAgent() {
     Response response = Response.status(200).entity("/agent").build();
     return response;
@@ -93,5 +96,23 @@ public class AgentResource {
     init(res);
     AgentRestOperations ops = slider.getAgentRestOperations();
     return ops.handleHeartBeat(message);
+  }
+
+  @GET
+  @Path("/cert/ca")
+  @Produces({MediaType.TEXT_PLAIN})
+  public String downloadSrvrCrt() {
+    return slider.getCertificateManager().getServerCert();
+  }
+
+  @Path("/certs/{hostName}")
+  @POST
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+  public SignCertResponse signAgentCrt(@PathParam("hostName") String hostname,
+                                       SignMessage message, @Context HttpServletRequest req) {
+    return slider.getCertificateManager().signAgentCrt(hostname,
+                                                       message.getCsr(),
+                                                       message.getPassphrase());
   }
 }

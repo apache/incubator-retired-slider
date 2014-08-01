@@ -22,6 +22,7 @@ import org.apache.slider.server.appmaster.state.AppState;
 import org.apache.slider.server.appmaster.state.RoleStatus;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
+import org.apache.slider.server.services.security.CertificateManager;
 
 import java.util.Map;
 
@@ -39,7 +40,13 @@ public interface WebAppApi {
    * The {@link ProviderService} for the current cluster
    */
   public ProviderService getProviderService();
-  
+
+
+  /**
+   * The {@link CertificateManager} for the current cluster
+   */
+  public CertificateManager getCertificateManager();
+
   /**
    * The {@link SliderClusterProtocol} for the current cluster
    */

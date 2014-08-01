@@ -24,6 +24,7 @@ import os
 import sys
 import json
 import logging
+import shutil
 
 from resource_management.core.environment import Environment
 from resource_management.core.exceptions import Fail, ClientComponentHasNoStatus, ComponentIsNotRunning
@@ -32,6 +33,7 @@ from resource_management.core.resources import Tarball
 from resource_management.core.resources import Directory
 from resource_management.libraries.script.config_dictionary import ConfigDictionary
 from resource_management.libraries.script.repo_installer import RepoInstaller
+from resource_management.core.logger import Logger
 
 USAGE = """Usage: {0} <COMMAND> <JSON_CONFIG> <BASEDIR> <STROUTPUT> <LOGGING_LEVEL>
 
@@ -178,12 +180,23 @@ class Script(object):
             Directory(install_location, action = "delete")
             Directory(install_location)
             Tarball(tarball, location=install_location)
+          elif type.lower() == "folder":
+            if name.startswith(os.path.sep):
+              src = name
+            else:
+              basedir = env.config.basedir
+              src = os.path.join(basedir, name)
+            dest = config['configurations']['global']['app_install_dir']
+            Directory(dest, action = "delete")
+            Logger.info("Copying from " + src + " to " + dest)
+            shutil.copytree(src, dest)
           else:
             if not repo_installed:
               RepoInstaller.install_repos(config)
               repo_installed = True
             Package(name)
-    except KeyError:
+    except KeyError, e:
+      Logger.info("Error installing packages. " + repr(e))
       pass # No reason to worry
 
     #RepoInstaller.remove_repos(config)

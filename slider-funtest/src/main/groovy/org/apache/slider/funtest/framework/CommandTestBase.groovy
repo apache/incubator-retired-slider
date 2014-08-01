@@ -66,8 +66,6 @@ abstract class CommandTestBase extends SliderTestUtils {
 
   public static final int SLIDER_TEST_TIMEOUT
 
-  public static final boolean FUNTESTS_ENABLED
-
   public static final String YARN_RAM_REQUEST
   
 
@@ -83,8 +81,6 @@ abstract class CommandTestBase extends SliderTestUtils {
     SLIDER_TEST_TIMEOUT = getTimeOptionMillis(SLIDER_CONFIG,
         KEY_TEST_TIMEOUT,
         1000 * DEFAULT_TEST_TIMEOUT_SECONDS)
-    FUNTESTS_ENABLED =
-        SLIDER_CONFIG.getBoolean(KEY_SLIDER_FUNTESTS_ENABLED, true)
 
     YARN_RAM_REQUEST = SLIDER_CONFIG.get(
         KEY_TEST_YARN_RAM_REQUEST,
@@ -327,9 +323,7 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @param cluster
    */
   static void setupCluster(String cluster) {
-    if (FUNTESTS_ENABLED) {
-      ensureClusterDestroyed(cluster)
-    }
+    ensureClusterDestroyed(cluster)
   }
 
   /**
@@ -338,9 +332,7 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @param name cluster name
    */
   static void teardown(String name) {
-    if (FUNTESTS_ENABLED) {
-      freezeForce(name)
-    }
+    freezeForce(name)
   }
 
   /**
@@ -508,11 +500,46 @@ abstract class CommandTestBase extends SliderTestUtils {
     return status
   }
 
-  /**
-   * if tests are not enabled: skip them  
-   */
-  public static void assumeFunctionalTestsEnabled() {
-    assume(FUNTESTS_ENABLED, "Functional tests disabled")
+  protected void ensureApplicationIsUp(String clusterName) {
+    repeatUntilTrue(this.&isApplicationUp, 15, 1000 * 3, ['arg1': clusterName],
+      true, 'Application did not start, aborting test.')
+  }
+
+  protected boolean isApplicationUp(Map<String, String> args) {
+    String applicationName = args['arg1'];
+    return isApplicationInState("RUNNING", applicationName);
+  }
+
+  public static boolean isApplicationInState(String text, String applicationName) {
+    boolean exists = false
+    SliderShell shell = slider(0,
+      [
+        ACTION_LIST,
+        applicationName])
+    for (String str in shell.out) {
+      if (str.contains(text)) {
+        exists = true
+      }
+    }
+
+    return exists
+  }
+
+  protected void repeatUntilTrue(Closure c, int maxAttempts, int sleepDur, Map args,
+                                 boolean failIfUnsuccessful = false, String message = "") {
+    int attemptCount = 0
+    while (attemptCount < maxAttempts) {
+      if (c(args)) {
+        break
+      };
+      attemptCount++;
+
+      if (failIfUnsuccessful) {
+        assert attemptCount != maxAttempts, message
+      }
+
+      sleep(sleepDur)
+    }
   }
 
 }

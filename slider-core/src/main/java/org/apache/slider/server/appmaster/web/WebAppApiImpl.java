@@ -23,6 +23,7 @@ import org.apache.slider.providers.ProviderService;
 import org.apache.slider.server.appmaster.state.RoleStatus;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
+import org.apache.slider.server.services.security.CertificateManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,9 +46,12 @@ public class WebAppApiImpl implements WebAppApi {
   protected final SliderClusterProtocol clusterProto;
   protected final StateAccessForProviders appState;
   protected final ProviderService provider;
+  protected final CertificateManager certificateManager;
   
   public WebAppApiImpl(SliderClusterProtocol clusterProto,
-                       StateAccessForProviders appState, ProviderService provider) {
+                       StateAccessForProviders appState,
+                       ProviderService provider,
+                       CertificateManager certificateManager) {
     checkNotNull(clusterProto);
     checkNotNull(appState);
     checkNotNull(provider);
@@ -55,6 +59,7 @@ public class WebAppApiImpl implements WebAppApi {
     this.clusterProto = clusterProto;
     this.appState = appState;
     this.provider = provider;
+    this.certificateManager = certificateManager;
   }
 
   /* (non-Javadoc)
@@ -73,9 +78,14 @@ public class WebAppApiImpl implements WebAppApi {
     return provider;
   }
 
+  @Override
+  public CertificateManager getCertificateManager() {
+    return certificateManager;
+  }
+
   /* (non-Javadoc)
-   * @see org.apache.slider.server.appmaster.web.WebAppApi#getClusterProtocol()
-   */
+     * @see org.apache.slider.server.appmaster.web.WebAppApi#getClusterProtocol()
+     */
   @Override
   public SliderClusterProtocol getClusterProtocol() {
     return clusterProto;

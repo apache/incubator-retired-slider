@@ -20,6 +20,7 @@ package org.apache.slider.common.tools
 
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
+import org.apache.slider.client.SliderClient
 import org.apache.slider.core.zk.ZKIntegration
 import org.apache.slider.test.KeysForTests
 import org.apache.slider.test.YarnZKMiniClusterTestBase
@@ -88,10 +89,62 @@ class TestZKIntegration extends YarnZKMiniClusterTestBase implements KeysForTest
            (c1.endsWith(clusters[1]) && c2.endsWith(clusters[0]))
   }
 
+  @Test
+  public void testCreateAndDeleteDefaultZKPath() throws Throwable {
+    MockSliderClient client = new MockSliderClient()
+
+    String path = client.createZookeeperNode("cl1", true)
+    ZKIntegration zki = client.getLastZKIntegration()
+
+    String zkPath = ZKIntegration.mkClusterPath(USERNAME, "cl1")
+    assert zkPath == "/services/slider/users/" + USERNAME + "/cl1", "zkPath must be as expected"
+    assert path == zkPath
+    assert zki == null, "ZKIntegration should be null."
+    zki = createZKIntegrationInstance(getZKBinding(), "cl1", true, false, 5000);
+    assert false == zki.exists(zkPath), "zkPath should not exist"
+
+    path = client.createZookeeperNode("cl1", false)
+    zki = client.getLastZKIntegration()
+    assert zkPath == "/services/slider/users/" + USERNAME + "/cl1", "zkPath must be as expected"
+    assert path == zkPath
+    assert true == zki.exists(zkPath), "zkPath must exist"
+    zki.createPath(zkPath, "/cn", ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT)
+    assert true == zki.exists(zkPath + "/cn"), "zkPath with child node must exist"
+    client.deleteZookeeperNode("cl1")
+    assert false == zki.exists(zkPath), "zkPath must not exist"
+
+  }
+
   public String createEphemeralChild(ZKIntegration zki, String userPath) {
     return zki.createPath(userPath, "/cluster-",
                           ZooDefs.Ids.OPEN_ACL_UNSAFE,
                           CreateMode.EPHEMERAL_SEQUENTIAL)
+  }
+
+  class MockSliderClient extends SliderClient {
+    private ZKIntegration zki;
+
+    @Override
+    public String getUsername() {
+      return USERNAME
+    }
+
+    @Override
+    protected ZKIntegration getZkClient(String clusterName, String user) {
+      zki = createZKIntegrationInstance(getZKBinding(), "cl1", true, false, 5000)
+      return zki;
+    }
+
+    @Override
+    public synchronized Configuration getConfig() {
+      Configuration conf = new Configuration();
+      return conf;
+    }
+
+    public ZKIntegration getLastZKIntegration() {
+      return zki
+    }
+
   }
 
 }

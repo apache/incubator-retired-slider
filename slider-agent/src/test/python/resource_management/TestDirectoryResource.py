@@ -26,7 +26,7 @@ from resource_management.core import Environment, Fail
 from resource_management.core.resources import Directory
 
 @patch.object(System, "os_family", new = 'redhat')
-class TestFileResource(TestCase):
+class TestDirectoryResource(TestCase):
   
   @patch.object(os.path, "exists")
   @patch.object(os, "makedirs")

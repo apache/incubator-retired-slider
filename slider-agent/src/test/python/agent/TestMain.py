@@ -33,6 +33,7 @@ import tempfile
 from agent.Controller import Controller
 from optparse import OptionParser
 
+logger = logging.getLogger()
 
 class TestMain(unittest.TestCase):
   def setUp(self):
@@ -148,8 +149,7 @@ class TestMain(unittest.TestCase):
   @patch("sys.exit")
   @patch("os.path.isfile")
   @patch("os.path.isdir")
-  @patch("hostname.hostname")
-  def test_perform_prestart_checks(self, hostname_mock, isdir_mock, isfile_mock,
+  def test_perform_prestart_checks(self, isdir_mock, isfile_mock,
                                    exit_mock, remove_mock):
     main.config = AgentConfig("", "")
 
@@ -221,7 +221,6 @@ class TestMain(unittest.TestCase):
 
   @patch.object(main, "setup_logging")
   @patch.object(main, "bind_signal_handlers")
-  @patch.object(main, "stop_agent")
   @patch.object(main, "update_config_from_file")
   @patch.object(main, "perform_prestart_checks")
   @patch.object(main, "write_pid")
@@ -231,13 +230,15 @@ class TestMain(unittest.TestCase):
   @patch.object(Controller, "start")
   @patch.object(Controller, "join")
   @patch("optparse.OptionParser.parse_args")
-  def test_main(self, parse_args_mock, join_mock, start_mock,
+  @patch.object(Controller, "is_alive")
+  def test_main(self, isAlive_mock, parse_args_mock, join_mock, start_mock,
                 Controller_init_mock, try_to_connect_mock,
                 update_log_level_mock, write_pid_mock,
                 perform_prestart_checks_mock,
-                update_config_from_file_mock, stop_mock,
+                update_config_from_file_mock,
                 bind_signal_handlers_mock, setup_logging_mock):
     Controller_init_mock.return_value = None
+    isAlive_mock.return_value = False
     options = MagicMock()
     parse_args_mock.return_value = (options, MagicMock)
 
@@ -245,24 +246,25 @@ class TestMain(unittest.TestCase):
 
     #testing call without command-line arguments
     os.environ["AGENT_WORK_ROOT"] = os.path.join(tmpdir, "work")
-    os.environ["AGENT_LOG_ROOT"] = os.path.join(tmpdir, "log")
+    os.environ["AGENT_LOG_ROOT"] = ",".join([os.path.join(tmpdir, "log"),os.path.join(tmpdir, "log2")])
     main.main()
 
     self.assertTrue(setup_logging_mock.called)
     self.assertTrue(bind_signal_handlers_mock.called)
-    self.assertTrue(stop_mock.called)
     self.assertTrue(update_config_from_file_mock.called)
     self.assertTrue(perform_prestart_checks_mock.called)
     self.assertTrue(write_pid_mock.called)
     self.assertTrue(update_log_level_mock.called)
+    self.assertTrue(options.log_folder == os.path.join(tmpdir, "log"))
     try_to_connect_mock.assert_called_once_with(ANY, -1, ANY)
     self.assertTrue(start_mock.called)
 
   class AgentOptions:
-      def __init__(self, label, host, port, verbose, debug):
+      def __init__(self, label, host, port, secured_port, verbose, debug):
           self.label = label
           self.host = host
           self.port = port
+          self.secured_port = secured_port
           self.verbose = verbose
           self.debug = debug
 
@@ -280,7 +282,7 @@ class TestMain(unittest.TestCase):
   @patch.object(Controller, "join")
   @patch.object(Controller, "is_alive")
   @patch("optparse.OptionParser.parse_args")
-  def test_main(self, parse_args_mock, isAlive_mock, join_mock, start_mock,
+  def test_main2(self, parse_args_mock, isAlive_mock, join_mock, start_mock,
                 Controller_init_mock, AgentConfig_set_mock,
                 try_to_connect_mock,
                 update_log_level_mock, write_pid_mock,
@@ -290,17 +292,19 @@ class TestMain(unittest.TestCase):
       Controller_init_mock.return_value = None
       isAlive_mock.return_value = False
       parse_args_mock.return_value = (
-          TestMain.AgentOptions("agent", "host1", "8080", True, ""), [])
+          TestMain.AgentOptions("agent", "host1", "8080", "8081", True, ""), [])
       tmpdir = tempfile.gettempdir()
 
       #testing call without command-line arguments
       os.environ["AGENT_WORK_ROOT"] = os.path.join(tmpdir, "work")
       os.environ["AGENT_LOG_ROOT"] = os.path.join(tmpdir, "log")
       main.main()
-      self.assertTrue(AgentConfig_set_mock.call_count == 2)
+      self.assertTrue(AgentConfig_set_mock.call_count == 4)
       AgentConfig_set_mock.assert_any_call("server", "hostname", "host1")
       AgentConfig_set_mock.assert_any_call("server", "port", "8080")
+      AgentConfig_set_mock.assert_any_call("server", "secured_port", "8081")
 
 
 if __name__ == "__main__":
+  logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
   unittest.main()

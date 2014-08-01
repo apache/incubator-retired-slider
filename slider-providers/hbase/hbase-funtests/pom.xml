@@ -27,7 +27,7 @@
   <parent>
     <groupId>org.apache.slider</groupId>
     <artifactId>slider</artifactId>
-    <version>0.31.0-incubating-SNAPSHOT</version>
+    <version>0.41.0-incubating-SNAPSHOT</version>
     <relativePath>../../../</relativePath>
   </parent>
 
@@ -59,14 +59,6 @@
       
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>${maven-compiler-plugin.version}</version>
-        <configuration>
-          <compilerId>groovy-eclipse-compiler</compilerId>
-          <!-- set verbose to be true if you want lots of uninteresting messages -->
-          <!-- <verbose>true</verbose> -->
-          <source>${project.java.src.version}</source>
-          <target>${project.java.src.version}</target>
-        </configuration>
         <dependencies>
           <dependency>
             <groupId>org.codehaus.groovy</groupId>
@@ -85,8 +77,17 @@
      <!-- functional test -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>${maven-surefire-plugin.version}</version>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>${maven-failsafe-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>run-integration-tests</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
         <configuration>
           
           <!--mvn process fork options-->
@@ -110,12 +111,6 @@
             <slider.conf.dir>${slider.conf.dir}</slider.conf.dir>
             <slider.bin.dir>../../../slider-assembly/target/slider-${project.version}-all/slider-${project.version}</slider.bin.dir>
           </systemPropertyVariables>
-          <includes>
-            <include>**/Test*.java</include>
-          </includes>
-          <excludes>
-            <exclude>**/Test*$*.java</exclude>
-          </excludes>
         </configuration>
       </plugin>
  

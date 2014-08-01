@@ -442,10 +442,13 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
    * @param clusterOps map of key=value cluster options to set with the --option arg
    * @return launcher which will have executed the command.
    */
-  public ServiceLauncher<SliderClient> createOrBuildCluster(String action, String clustername, Map<String, Integer> roles, List<String> extraArgs, boolean deleteExistingData, boolean blockUntilRunning, Map<String, String> clusterOps) {
+  public ServiceLauncher<SliderClient> createOrBuildCluster(String action, String clustername,
+    Map<String, Integer> roles, List<String> extraArgs, boolean deleteExistingData,
+    boolean blockUntilRunning, Map<String, String> clusterOps) {
     assert clustername != null
     assert miniCluster != null
-    if (deleteExistingData) {
+    // update action should keep existing data
+    if (deleteExistingData && !SliderActions.ACTION_UPDATE.equals(action)) {
       HadoopFS dfs = HadoopFS.get(new URI(fsDefaultName), miniCluster.config)
       Path clusterDir = new SliderFileSystem(dfs, miniCluster.config).buildClusterDirPath(clustername)
       log.info("deleting customer data at $clusterDir")

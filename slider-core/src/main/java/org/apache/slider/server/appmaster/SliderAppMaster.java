@@ -105,6 +105,8 @@ import org.apache.slider.server.appmaster.state.ProviderAppState;
 import org.apache.slider.server.appmaster.state.RMOperationHandler;
 import org.apache.slider.server.appmaster.state.RoleInstance;
 import org.apache.slider.server.appmaster.state.RoleStatus;
+import org.apache.slider.server.appmaster.web.AgentService;
+import org.apache.slider.server.appmaster.web.rest.agent.AgentWebApp;
 import org.apache.slider.server.appmaster.web.SliderAMWebApp;
 import org.apache.slider.server.appmaster.web.SliderAmFilterInitializer;
 import org.apache.slider.server.appmaster.web.SliderAmIpFilter;
@@ -112,9 +114,10 @@ import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.WebAppApiImpl;
 import org.apache.slider.server.appmaster.web.rest.RestPaths;
 import org.apache.slider.server.services.registry.SliderRegistryService;
+import org.apache.slider.server.services.security.CertificateManager;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
-import org.apache.slider.server.services.workflow.WorkflowRpcService;
 import org.apache.slider.server.services.utility.WebAppService;
+import org.apache.slider.server.services.workflow.WorkflowRpcService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -123,6 +126,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -135,6 +139,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static org.apache.slider.server.appmaster.web.rest.RestPaths.WS_AGENT_CONTEXT_ROOT;
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.WS_CONTEXT_ROOT;
 
 /**
@@ -307,6 +312,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private InetSocketAddress rpcServiceAddress;
   private ProviderService sliderAMProvider;
+  private String agentAccessUrl;
+  private CertificateManager certificateManager;
 
   /**
    * Service Constructor
@@ -473,7 +480,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // Try to get the proper filtering of static resources through the yarn proxy working
     serviceConf.set(HADOOP_HTTP_FILTER_INITIALIZERS,
                     SliderAmFilterInitializer.NAME);
-    serviceConf.set(SliderAmIpFilter.WS_CONTEXT_ROOT, WS_CONTEXT_ROOT);
+    serviceConf.set(SliderAmIpFilter.WS_CONTEXT_ROOT, WS_CONTEXT_ROOT + "|" + WS_AGENT_CONTEXT_ROOT);
     
     //get our provider
     MapOperations globalInternalOptions =
@@ -590,10 +597,20 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       providerRoles.addAll(SliderAMClientProvider.ROLES);
 
       // Start up the WebApp and track the URL for it
+      certificateManager = new CertificateManager();
+      certificateManager.initRootCert(
+          instanceDefinition.getAppConfOperations()
+              .getComponent(SliderKeys.COMPONENT_AM));
+
+      startAgentWebApp(appInformation, serviceConf);
+
       webApp = new SliderAMWebApp(registry);
       WebApps.$for(SliderAMWebApp.BASE_PATH, WebAppApi.class,
-          new WebAppApiImpl(this, stateForProviders, providerService),
-          RestPaths.WS_CONTEXT)
+                   new WebAppApiImpl(this,
+                                     stateForProviders,
+                                     providerService,
+                                     certificateManager),
+                   RestPaths.WS_CONTEXT)
                       .with(serviceConf)
                       .start(webApp);
       appMasterTrackingUrl = "http://" + appMasterHostname + ":" + webApp.port();
@@ -605,7 +622,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       addService(webAppService);
 
       appInformation.put(StatusKeys.INFO_AM_WEB_URL, appMasterTrackingUrl + "/");
-      appInformation.set(StatusKeys.INFO_AM_WEB_PORT, webApp.port());      
+      appInformation.set(StatusKeys.INFO_AM_WEB_PORT, webApp.port());
 
       // Register self with ResourceManager
       // This will start heartbeating to the RM
@@ -723,6 +740,37 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     return amExitCode;
   }
 
+  private void startAgentWebApp(MapOperations appInformation,
+                                Configuration serviceConf) {
+    URL[] urls = ((URLClassLoader) AgentWebApp.class.getClassLoader() ).getURLs();
+    StringBuilder sb = new StringBuilder("AM classpath:");
+    for (URL url : urls) {
+      sb.append("\n").append(url.toString());
+    }
+    LOG_YARN.info(sb.append("\n").toString());
+    // Start up the agent web app and track the URL for it
+    AgentWebApp agentWebApp = AgentWebApp.$for(AgentWebApp.BASE_PATH,
+                     new WebAppApiImpl(this,
+                                       stateForProviders,
+                                       providerService,
+                                       certificateManager),
+                     RestPaths.AGENT_WS_CONTEXT)
+        .withComponentConfig(getInstanceDefinition().getAppConfOperations()
+                                 .getComponent(SliderKeys.COMPONENT_AM))
+        .start();
+    agentAccessUrl = "https://" + appMasterHostname + ":" + agentWebApp.getSecuredPort();
+    AgentService agentService =
+      new AgentService("slider-agent", agentWebApp);
+
+    agentService.init(serviceConf);
+    agentService.start();
+    addService(agentService);
+
+    appInformation.put(StatusKeys.INFO_AM_AGENT_URL, agentAccessUrl + "/");
+    appInformation.set(StatusKeys.INFO_AM_AGENT_PORT, agentWebApp.getPort());
+    appInformation.set(StatusKeys.INFO_AM_SECURED_AGENT_PORT,
+                       agentWebApp.getSecuredPort());
+  }
 
   /**
    * This registers the service instance and its external values
@@ -733,7 +781,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private void registerServiceInstance(String instanceName,
       ApplicationId appid) throws Exception {
     // the registry is running, so register services
-    URL amWebAPI = new URL(appMasterTrackingUrl);
+    URL unsecureWebAPI = new URL(appMasterTrackingUrl);
+    URL secureWebAPI = new URL(agentAccessUrl);
     String serviceName = SliderKeys.APP_TYPE;
     int id = appid.getId();
     String appServiceType = RegistryNaming.createRegistryServiceType(
@@ -762,16 +811,22 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     // internal services
    
-    sliderAMProvider.applyInitialRegistryDefinitions(amWebAPI, instanceData);
+    sliderAMProvider.applyInitialRegistryDefinitions(unsecureWebAPI,
+                                                     secureWebAPI,
+                                                     instanceData
+    );
 
     // provider service dynamic definitions.
-    providerService.applyInitialRegistryDefinitions(amWebAPI, instanceData);
+    providerService.applyInitialRegistryDefinitions(unsecureWebAPI,
+                                                    secureWebAPI,
+                                                    instanceData
+    );
 
 
     // push the registration info to ZK
 
     registry.registerSelf(
-        instanceData, amWebAPI
+        instanceData, unsecureWebAPI
     );
   }
 

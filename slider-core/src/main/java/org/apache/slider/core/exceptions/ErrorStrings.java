@@ -20,7 +20,7 @@ package org.apache.slider.core.exceptions;
 
 public interface ErrorStrings {
   String E_UNSTABLE_CLUSTER = "Unstable Application Instance :";
-  String E_CLUSTER_RUNNING = "Application Instance  lready running";
+  String E_CLUSTER_RUNNING = "Application Instance already running";
   String E_ALREADY_EXISTS = "already exists";
   String PRINTF_E_INSTANCE_ALREADY_EXISTS = "Application Instance \"%s\" already exists and is defined in %s";
   String PRINTF_E_INSTANCE_DIR_ALREADY_EXISTS = "Application Instance dir already exists: %s";

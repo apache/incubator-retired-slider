@@ -140,6 +140,36 @@ public abstract class AgentTestBase extends YarnZKMiniClusterTestBase {
         clusterOps)
   }
 
+  /**
+   * Update an agent cluster
+   * @param clustername
+   * @param roles
+   * @param extraArgs
+   * @param deleteExistingData
+   * @return the cluster launcher
+   */
+  public ServiceLauncher<SliderClient> updateAgentCluster(
+      String clustername,
+      Map<String, Integer> roles,
+      List<String> extraArgs,
+      boolean deleteExistingData) {
+
+    YarnConfiguration conf = testConfiguration
+
+    def clusterOps = [
+        :
+    ]
+
+    return createOrBuildCluster(
+        SliderActions.ACTION_UPDATE,
+        clustername,
+        roles,
+        extraArgs,
+        deleteExistingData,
+        false,
+        clusterOps)
+  }
+
   public String getApplicationHome() {
     return "/"
   }

@@ -28,14 +28,14 @@ OPTION-II: Manual
 ****** OPTION - I (use mvn command) **
 You need the HBase version available on local maven repo to create the Slider App Package for HBase.
 
-The version of HBase used for the app package can be adjusted by adding a
-flag such as
-  -Dhbase.version=0.98.3
-
 Download the tarball for HBase:
   e.g. path to tarball ~/Downloads/hbase-0.98.3-hadoop2-bin.tar.gz
 
-Use the following command to install HBase tarball locally:
+The version of HBase used for the app package can be adjusted by adding a
+flag such as
+  -Dhbase.version=0.98.3-hadoop2
+
+Use the following command to install HBase tarball locally (under local workspace of HBase repo):
   mvn install:install-file -Dfile=<path-to-tarball> -DgroupId=org.apache.hbase -DartifactId=hbase -Dversion=0.98.3-hadoop2 -Dclassifier=bin -Dpackaging=tar.gz
 
 You may need to copy the hbase tarball to the following location if the above step doesn't publish the tarball:

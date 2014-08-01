@@ -21,7 +21,6 @@ package org.apache.slider.server.appmaster.model.mock
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.service.LifecycleEvent
-import org.apache.hadoop.service.Service.STATE
 import org.apache.hadoop.service.ServiceStateChangeListener
 import org.apache.hadoop.yarn.api.records.Container
 import org.apache.slider.api.ClusterDescription
@@ -44,6 +43,7 @@ import org.apache.slider.server.appmaster.web.rest.agent.RegistrationResponse
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationStatus
 import org.apache.slider.server.services.registry.RegistryViewForProviders
 import org.apache.slider.providers.ProviderCompleted
+import org.apache.hadoop.service.Service.STATE
 
 class MockProviderService implements ProviderService {
 
@@ -95,12 +95,11 @@ class MockProviderService implements ProviderService {
     return null;
   }
 
-  @Override
   public STATE getServiceState() {
-    return null;
+    return null
   }
 
-  @Override
+    @Override
   public long getStartTime() {
     return 0;
   }
@@ -188,7 +187,7 @@ class MockProviderService implements ProviderService {
   }
 
   @Override
-  public Map<String, URL> buildMonitorDetails(ClusterDescription clusterSpec) {
+  public Map<String, String> buildMonitorDetails(ClusterDescription clusterSpec) {
     return null;
   }
 
@@ -226,8 +225,7 @@ class MockProviderService implements ProviderService {
 
   @Override
   void applyInitialRegistryDefinitions(
-      URL amWebAPI,
-      ServiceInstanceData registryInstanceData)
+          URL unsecureWebAPI, URL secureWebAPI, ServiceInstanceData registryInstanceData)
   throws MalformedURLException, IOException {
 
   }

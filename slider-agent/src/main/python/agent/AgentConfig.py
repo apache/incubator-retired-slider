@@ -22,6 +22,7 @@ import ConfigParser
 import StringIO
 import os
 import logging
+import posixpath
 
 logger = logging.getLogger()
 
@@ -43,11 +44,11 @@ app_run_dir=app/run
 app_dbg_cmd=
 debug_mode_enabled=true
 
-app_task_dir=app/command-log
-app_log_dir=app/log
+app_task_dir=.
+app_log_dir=.
 app_tmp_dir=app/tmp
 
-log_dir=infra/log
+log_dir=.
 run_dir=infra/run
 version_file=infra/version
 
@@ -60,6 +61,9 @@ max_retries=2
 sleep_between_retries=1
 
 [security]
+keysdir=security/keys
+server_crt=ca.crt
+passphrase_env_var_name=SLIDER_PASSPHRASE
 
 [heartbeat]
 state_interval=6
@@ -138,7 +142,7 @@ class AgentConfig:
       if name in AgentConfig.FOLDER_MAPPING and AgentConfig.FOLDER_MAPPING[
         name] == "LOG":
         root_folder_to_use = self.logroot
-      return os.path.join(root_folder_to_use, relativePath)
+      return posixpath.join(root_folder_to_use, relativePath)
     else:
       return relativePath
 

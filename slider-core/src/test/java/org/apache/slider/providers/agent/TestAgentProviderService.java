@@ -57,6 +57,7 @@ import org.apache.slider.server.appmaster.state.ProviderAppState;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.CommandReport;
 import org.apache.slider.server.appmaster.web.rest.agent.ComponentStatus;
+import org.apache.slider.server.appmaster.web.rest.agent.ExecutionCommand;
 import org.apache.slider.server.appmaster.web.rest.agent.HeartBeat;
 import org.apache.slider.server.appmaster.web.rest.agent.HeartBeatResponse;
 import org.apache.slider.server.appmaster.web.rest.agent.Register;
@@ -255,7 +256,8 @@ public class TestAgentProviderService {
     expect(access.isApplicationLive()).andReturn(true).anyTimes();
     ClusterDescription desc = new ClusterDescription();
     desc.setInfo(StatusKeys.INFO_AM_HOSTNAME, "host1");
-    desc.setInfo(StatusKeys.INFO_AM_WEB_PORT, "8088");
+    desc.setInfo(StatusKeys.INFO_AM_AGENT_PORT, "8088");
+    desc.setInfo(StatusKeys.INFO_AM_SECURED_AGENT_PORT, "8089");
     desc.setInfo(OptionKeys.APPLICATION_NAME, "HBASE");
     expect(access.getClusterStatus()).andReturn(desc).anyTimes();
 
@@ -578,7 +580,8 @@ public class TestAgentProviderService {
     expect(access.isApplicationLive()).andReturn(true).anyTimes();
     ClusterDescription desc = new ClusterDescription();
     desc.setInfo(StatusKeys.INFO_AM_HOSTNAME, "host1");
-    desc.setInfo(StatusKeys.INFO_AM_WEB_PORT, "8088");
+    desc.setInfo(StatusKeys.INFO_AM_AGENT_PORT, "8088");
+    desc.setInfo(StatusKeys.INFO_AM_SECURED_AGENT_PORT, "8089");
     desc.setInfo(OptionKeys.APPLICATION_NAME, "HBASE");
     expect(access.getClusterStatus()).andReturn(desc).anyTimes();
 
@@ -740,6 +743,51 @@ public class TestAgentProviderService {
         anyString(),
         anyString(),
         anyCollection());
+  }
+
+  @Test
+  public void testAddInstallCommand() throws Exception {
+    InputStream metainfo_1 = new ByteArrayInputStream(metainfo_1_str.getBytes());
+    Metainfo metainfo = new MetainfoParser().parse(metainfo_1);
+    AgentProviderService aps = new AgentProviderService();
+    HeartBeatResponse hbr = new HeartBeatResponse();
+
+    StateAccessForProviders access = createNiceMock(StateAccessForProviders.class);
+    AgentProviderService mockAps = Mockito.spy(aps);
+    doReturn(access).when(mockAps).getAmState();
+
+    AggregateConf aggConf = new AggregateConf();
+    ConfTreeOperations treeOps = aggConf.getAppConfOperations();
+    treeOps.getGlobalOptions().put(AgentKeys.JAVA_HOME, "java_home");
+    treeOps.set(OptionKeys.APPLICATION_NAME, "HBASE");
+    treeOps.set("site.fs.defaultFS", "hdfs://HOST1:8020/");
+    treeOps.set("internal.data.dir.path", "hdfs://HOST1:8020/database");
+    treeOps.set(OptionKeys.ZOOKEEPER_HOSTS, "HOST1");
+
+    expect(access.getAppConfSnapshot()).andReturn(treeOps).anyTimes();
+    expect(access.getInternalsSnapshot()).andReturn(treeOps).anyTimes();
+    expect(access.isApplicationLive()).andReturn(true).anyTimes();
+
+    doReturn("HOST1").when(mockAps).getClusterInfoPropertyValue(anyString());
+    doReturn(metainfo).when(mockAps).getMetainfo();
+
+    Map<String, Map<String, ClusterNode>> roleClusterNodeMap = new HashMap<>();
+    Map<String, ClusterNode> container = new HashMap<>();
+    ClusterNode cn1 = new ClusterNode(new MyContainerId(1));
+    cn1.host = "HOST1";
+    container.put("cid1", cn1);
+    roleClusterNodeMap.put("HBASE_MASTER", container);
+    doReturn(roleClusterNodeMap).when(mockAps).getRoleClusterNodeMapping();
+
+    replay(access);
+
+    mockAps.addInstallCommand("HBASE_MASTER", "cid1", hbr, "");
+    ExecutionCommand cmd = hbr.getExecutionCommands().get(0);
+    String pkgs = cmd.getHostLevelParams().get(AgentKeys.PACKAGE_LIST);
+    Assert.assertEquals("[{\"type\":\"tarball\",\"name\":\"files/hbase-0.96.1-hadoop2-bin.tar.gz\"}]", pkgs);
+    Assert.assertEquals("java_home", cmd.getHostLevelParams().get(AgentKeys.JAVA_HOME));
+    Assert.assertEquals("cid1", cmd.getHostLevelParams().get("container_id"));
+    Assert.assertEquals(Command.INSTALL.toString(), cmd.getRoleCommand());
   }
 
   @Test

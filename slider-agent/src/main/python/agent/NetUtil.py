@@ -18,6 +18,7 @@ from urlparse import urlparse
 import time
 import logging
 import httplib
+from ssl import SSLError
 
 logger = logging.getLogger()
 
@@ -37,7 +38,7 @@ class NetUtil:
     logger.info("Connecting to the following url " + url);
     try:
       parsedurl = urlparse(url)
-      ca_connection = httplib.HTTPConnection(parsedurl[1])
+      ca_connection = httplib.HTTPSConnection(parsedurl[1])
       ca_connection.request("GET", parsedurl[2])
       response = ca_connection.getresponse()  
       status = response.status    
@@ -46,6 +47,11 @@ class NetUtil:
       if status == 200: 
         return True
       else: 
+        return False
+    except SSLError as slerror:
+        logger.error(str(slerror))
+        logger.error("SSLError: Failed to connect. Please check openssl library versions. \n" +
+                     "Refer to: https://bugzilla.redhat.com/show_bug.cgi?id=1022468 for more details.")
         return False
     except Exception, e:
       logger.info("Failed to connect to " + str(url) + " due to " + str(e))

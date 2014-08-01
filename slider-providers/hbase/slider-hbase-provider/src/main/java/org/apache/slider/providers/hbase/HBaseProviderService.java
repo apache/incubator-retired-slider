@@ -191,6 +191,11 @@ public class HBaseProviderService extends AbstractProviderService implements
 
         logfile = "/master.txt";
         break;
+      case ROLE_REST_GATEWAY:
+        roleCommand = REST_GATEWAY;
+
+        logfile = "/rest-gateway.txt";
+        break;
       default:
         throw new SliderInternalStateException("Cannot start role %s", role);
     }
@@ -205,9 +210,10 @@ public class HBaseProviderService extends AbstractProviderService implements
 
   @Override
   public void applyInitialRegistryDefinitions(URL web,
-      ServiceInstanceData instanceData) throws
+                                              URL secureWebAPI,
+                                              ServiceInstanceData instanceData) throws
       IOException {
-    super.applyInitialRegistryDefinitions(web, instanceData);
+    super.applyInitialRegistryDefinitions(web, secureWebAPI, instanceData);
   }
 
   @Override

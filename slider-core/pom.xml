@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.apache.slider</groupId>
     <artifactId>slider</artifactId>
-    <version>0.31.0-incubating-SNAPSHOT</version>
+    <version>0.41.0-incubating-SNAPSHOT</version>
   </parent>
 
   <build>
@@ -62,14 +62,6 @@
       
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>${maven-compiler-plugin.version}</version>
-        <configuration>
-          <compilerId>groovy-eclipse-compiler</compilerId>
-          <!-- set verbose to be true if you want lots of uninteresting messages -->
-          <!-- <verbose>true</verbose> -->
-          <source>${project.java.src.version}</source>
-          <target>${project.java.src.version}</target>
-        </configuration>
         <dependencies>
           <dependency>
             <groupId>org.codehaus.groovy</groupId>
@@ -215,6 +207,7 @@
             <exclude>src/test/python/agent.ini</exclude>
             <exclude>src/test/python/version</exclude>
             <exclude>src/main/resources/webapps/slideram/.keep</exclude>
+            <exclude>src/main/resources/webapps/slideragent/.keep</exclude>
             <exclude>src/main/resources/webapps/static/yarn.dt.plugins.js</exclude>
             <!-- jQuery DataTables files (BSD license) -->
             <exclude>src/main/resources/webapps/static/dt-1.9.4/**</exclude>
@@ -505,6 +498,12 @@
       <groupId>org.easymock</groupId>
       <artifactId>easymock</artifactId>
       <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.mortbay.jetty</groupId>
+      <artifactId>jetty-sslengine</artifactId>
+      <scope>compile</scope>
     </dependency>
 
   </dependencies>

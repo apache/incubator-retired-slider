@@ -391,6 +391,19 @@ class TestCommonArgParsing implements SliderActions, Arguments {
   }
   
   @Test
+  public void testArgUpdate() throws Throwable {
+    def ca = createClientArgs([
+        ACTION_UPDATE, 'cluster1',
+        ARG_TEMPLATE, "appConfig.json",
+    ])
+    assert ca.action == ACTION_UPDATE
+    assert ca.coreAction instanceof ActionUpdateArgs
+    assert ca.actionUpdateArgs instanceof ActionUpdateArgs
+    AbstractClusterBuildingActionArgs args = ca.actionUpdateArgs
+    assert args.template != null
+  }
+  
+  @Test
   public void testFlexArgs() throws Throwable {
     def ca = createClientArgs([
         ACTION_FLEX, 'cluster1',

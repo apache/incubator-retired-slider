@@ -55,6 +55,8 @@ import org.apache.slider.providers.agent.application.metadata.Component;
 import org.apache.slider.providers.agent.application.metadata.Export;
 import org.apache.slider.providers.agent.application.metadata.ExportGroup;
 import org.apache.slider.providers.agent.application.metadata.Metainfo;
+import org.apache.slider.providers.agent.application.metadata.OSPackage;
+import org.apache.slider.providers.agent.application.metadata.OSSpecific;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentCommandType;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
@@ -208,7 +210,11 @@ public class AgentProviderService extends AbstractProviderService implements
     String logDir = ApplicationConstants.Environment.LOG_DIRS.$();
     launcher.setEnv("AGENT_LOG_ROOT", logDir);
     log.info("AGENT_LOG_ROOT set to {}", logDir);
-    launcher.setEnv(HADOOP_USER_NAME, System.getenv(HADOOP_USER_NAME));
+    if (System.getenv(HADOOP_USER_NAME) != null) {
+      launcher.setEnv(HADOOP_USER_NAME, System.getenv(HADOOP_USER_NAME));
+    }
+    // for 2-Way SSL
+    launcher.setEnv(SLIDER_PASSPHRASE, SliderKeys.PASSPHRASE);
 
     //local resources
 
@@ -234,11 +240,13 @@ public class AgentProviderService extends AbstractProviderService implements
     launcher.addLocalResource(AgentKeys.APP_DEFINITION_DIR, appDefRes);
 
     String agentConf = instanceDefinition.getAppConfOperations().
-        getGlobalOptions().getMandatoryOption(AgentKeys.AGENT_CONF);
-    LocalResource agentConfRes = fileSystem.createAmResource(
-        fileSystem.getFileSystem().resolvePath(new Path(agentConf)),
-        LocalResourceType.FILE);
-    launcher.addLocalResource(AgentKeys.AGENT_CONFIG_FILE, agentConfRes);
+        getGlobalOptions().getOption(AgentKeys.AGENT_CONF, "");
+    if (org.apache.commons.lang.StringUtils.isNotEmpty(agentConf)) {
+      LocalResource agentConfRes = fileSystem.createAmResource(fileSystem
+          .getFileSystem().resolvePath(new Path(agentConf)),
+          LocalResourceType.FILE);
+      launcher.addLocalResource(AgentKeys.AGENT_CONFIG_FILE, agentConfRes);
+    }
 
     String agentVer = instanceDefinition.getAppConfOperations().
         getGlobalOptions().getOption(AgentKeys.AGENT_VERSION, null);
@@ -259,7 +267,9 @@ public class AgentProviderService extends AbstractProviderService implements
     operation.add(ARG_HOST);
     operation.add(getClusterInfoPropertyValue(StatusKeys.INFO_AM_HOSTNAME));
     operation.add(ARG_PORT);
-    operation.add(getClusterInfoPropertyValue(StatusKeys.INFO_AM_WEB_PORT));
+    operation.add(getClusterInfoPropertyValue(StatusKeys.INFO_AM_AGENT_PORT));
+    operation.add(ARG_SECURED_PORT);
+    operation.add(getClusterInfoPropertyValue(StatusKeys.INFO_AM_SECURED_AGENT_PORT));
 
     String debugCmd = agentLaunchParameter.getNextLaunchParameter(role);
     if (debugCmd != null && debugCmd.length() != 0) {
@@ -566,6 +576,9 @@ public class AgentProviderService extends AbstractProviderService implements
     List<ComponentStatus> statuses = heartBeat.getComponentStatus();
     if (statuses != null && !statuses.isEmpty()) {
       log.info("Processing {} status reports.", statuses.size());
+      Application application = getMetainfo().getApplication();
+      List<ExportGroup> exportGroups = application.getExportGroups();
+      boolean hasExportGroups = exportGroups != null && !exportGroups.isEmpty();
       for (ComponentStatus status : statuses) {
         log.info("Status report: " + status.toString());
         if (status.getConfigs() != null) {
@@ -574,10 +587,7 @@ public class AgentProviderService extends AbstractProviderService implements
             publishComponentConfiguration(key, key, configs.entrySet());
           }
 
-          Application application = getMetainfo().getApplication();
-          List<ExportGroup> exportGroups = application.getExportGroups();
-          if (exportGroups != null && !exportGroups.isEmpty()) {
-
+          if (hasExportGroups) {
             String configKeyFormat = "${site.%s.%s}";
             String hostKeyFormat = "${%s_HOST}";
 
@@ -737,7 +747,6 @@ public class AgentProviderService extends AbstractProviderService implements
       throws SliderException {
     assert getAmState().isApplicationLive();
     ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
-    ConfTreeOperations resourcesConf = getAmState().getResourcesSnapshot();
     ConfTreeOperations internalsConf = getAmState().getInternalsSnapshot();
 
     ExecutionCommand cmd = new ExecutionCommand(AgentCommandType.EXECUTION_COMMAND);
@@ -750,9 +759,7 @@ public class AgentProviderService extends AbstractProviderService implements
     cmd.setRole(roleName);
     Map<String, String> hostLevelParams = new TreeMap<>();
     hostLevelParams.put(JAVA_HOME, appConf.getGlobalOptions().getMandatoryOption(JAVA_HOME));
-    hostLevelParams.put(PACKAGE_LIST, "[{\"type\":\"tarball\",\"name\":\"" +
-                                      appConf.getGlobalOptions().getMandatoryOption(
-                                          PACKAGE_LIST) + "\"}]");
+    hostLevelParams.put(PACKAGE_LIST, getPackageList());
     hostLevelParams.put(CONTAINER_ID, containerId);
     cmd.setHostLevelParams(hostLevelParams);
 
@@ -762,6 +769,31 @@ public class AgentProviderService extends AbstractProviderService implements
 
     cmd.setHostname(getClusterInfoPropertyValue(StatusKeys.INFO_AM_HOSTNAME));
     response.addExecutionCommand(cmd);
+  }
+
+  private String getPackageList() {
+    String pkgFormatString = "{\"type\":\"%s\",\"name\":\"%s\"}";
+    String pkgListFormatString = "[%s]";
+    List<String> packages = new ArrayList();
+    Application application = getMetainfo().getApplication();
+    if (application != null) {
+      List<OSSpecific> osSpecifics = application.getOSSpecifics();
+      if (osSpecifics != null && osSpecifics.size() > 0) {
+        for (OSSpecific osSpecific : osSpecifics) {
+          if (osSpecific.getOsType().equals("any")) {
+            for (OSPackage osPackage : osSpecific.getPackages()) {
+              packages.add(String.format(pkgFormatString, osPackage.getType(), osPackage.getName()));
+            }
+          }
+        }
+      }
+    }
+
+    if (packages.size() > 0) {
+      return String.format(pkgListFormatString, StringUtils.join(",", packages));
+    } else {
+      return "[]";
+    }
   }
 
   private void prepareExecutionCommand(ExecutionCommand cmd) {
@@ -898,6 +930,7 @@ public class AgentProviderService extends AbstractProviderService implements
     tokens.put("${NN_URI}", nnuri);
     tokens.put("${NN_HOST}", URI.create(nnuri).getHost());
     tokens.put("${ZK_HOST}", appConf.get(OptionKeys.ZOOKEEPER_HOSTS));
+    tokens.put("${DEF_ZK_PATH}", appConf.get(OptionKeys.ZOOKEEPER_PATH));
     tokens.put("${DEFAULT_DATA_DIR}", getAmState()
         .getInternalsSnapshot()
         .getGlobalOptions()
@@ -912,9 +945,10 @@ public class AgentProviderService extends AbstractProviderService implements
     configList.add(GLOBAL_CONFIG_TAG);
 
     String configTypes = appConf.get("config_types");
-    String[] configs = configTypes.split(",");
-
-    configList.addAll(Arrays.asList(configs));
+    if (configTypes != null && configTypes.length() > 0) {
+      String[] configs = configTypes.split(",");
+      configList.addAll(Arrays.asList(configs));
+    }
 
     // remove duplicates.  mostly worried about 'global' being listed
     return new ArrayList<>(new HashSet<>(configList));
@@ -983,15 +1017,19 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   @Override
-  public void applyInitialRegistryDefinitions(URL amWebAPI,
+  public void applyInitialRegistryDefinitions(URL unsecureWebAPI,
+                                              URL secureWebAPI,
                                               ServiceInstanceData instanceData) throws IOException {
-    super.applyInitialRegistryDefinitions(amWebAPI, instanceData);
+    super.applyInitialRegistryDefinitions(unsecureWebAPI,
+                                          secureWebAPI,
+                                          instanceData
+    );
 
     try {
       instanceData.internalView.endpoints.put(
           CustomRegistryConstants.AGENT_REST_API,
           new RegisteredEndpoint(
-              new URL(amWebAPI, SLIDER_PATH_AGENTS),
+              new URL(secureWebAPI, SLIDER_PATH_AGENTS),
               "Agent REST API"));
     } catch (URISyntaxException e) {
       throw new IOException(e);

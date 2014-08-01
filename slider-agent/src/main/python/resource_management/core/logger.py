@@ -79,7 +79,10 @@ class Logger:
         val = "[EMPTY]"
       # correctly output 'mode' (as they are octal values like 0755)
       elif y and x == 'mode':
-        val = oct(y)
+        try:
+          val = oct(y)
+        except:
+          val = repr(y)
       else:
         val = repr(y)
       

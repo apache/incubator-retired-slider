@@ -223,7 +223,98 @@ class TestBuildBasicAgent extends AgentTestBase {
         true, false,
         false)
   }
+  @Test
+  public void testUpdate() throws Throwable {
 
+    def clustername = "test_update_basic_agent"
+    createMiniCluster(
+        clustername,
+        configuration,
+        1,
+        1,
+        1,
+        true,
+        false)
+    
+    def master = "hbase-master"
+    def rs = "hbase-rs"
+    ServiceLauncher<SliderClient> launcher = buildAgentCluster(clustername,
+        [
+            (ROLE_NODE): 5,
+            (master): 1,
+            (rs): 5
+        ],
+        [
+            ARG_OPTION, CONTROLLER_URL, "http://localhost",
+            ARG_OPTION, PACKAGE_PATH, ".",
+            ARG_OPTION, APP_DEF, "file://" + getAppDef().absolutePath,
+            ARG_OPTION, AGENT_CONF, "file://" + getAgentConf().absolutePath,
+            ARG_COMP_OPT, master, SCRIPT_PATH, "agent/scripts/agent.py",
+            ARG_COMP_OPT, rs, SCRIPT_PATH, "agent/scripts/agent.py",
+            ARG_RES_COMP_OPT, master, ResourceKeys.COMPONENT_PRIORITY, "2",
+            ARG_RES_COMP_OPT, rs, ResourceKeys.COMPONENT_PRIORITY, "3",
+            ARG_COMP_OPT, master, SERVICE_NAME, "HBASE",
+            ARG_COMP_OPT, rs, SERVICE_NAME, "HBASE",
+            ARG_COMP_OPT, master, AgentKeys.APP_HOME, "/share/hbase/hbase-0.96.1-hadoop2",
+            ARG_COMP_OPT, rs, AgentKeys.APP_HOME, "/share/hbase/hbase-0.96.1-hadoop2",
+            ARG_COMP_OPT, ROLE_NODE, SCRIPT_PATH, "agent/scripts/agent.py",
+            ARG_RES_COMP_OPT, ROLE_NODE, ResourceKeys.COMPONENT_PRIORITY, "1",
+        ],
+        true, false,
+        false)
+    def instanceD = launcher.service.loadPersistedClusterDescription(
+        clustername)
+    dumpClusterDescription("$clustername:", instanceD)
+    def resource = instanceD.getResourceOperations()
+
+    def agentComponent = resource.getMandatoryComponent(ROLE_NODE)
+    agentComponent.getMandatoryOption(ResourceKeys.COMPONENT_PRIORITY)
+
+    def masterC = resource.getMandatoryComponent(master)
+    assert "2" == masterC.getMandatoryOption(ResourceKeys.COMPONENT_PRIORITY)
+
+    def rscomponent = resource.getMandatoryComponent(rs)
+    assert "5" == rscomponent.getMandatoryOption(ResourceKeys.COMPONENT_INSTANCES)
+
+    // change master priority and rs instances through update action
+    ServiceLauncher<SliderClient> launcher2 = updateAgentCluster(clustername,
+        [
+            (ROLE_NODE): 5,
+            (master): 1,
+            (rs): 6
+        ],
+        [
+            ARG_OPTION, CONTROLLER_URL, "http://localhost",
+            ARG_OPTION, PACKAGE_PATH, ".",
+            ARG_OPTION, APP_DEF, "file://" + getAppDef().absolutePath,
+            ARG_OPTION, AGENT_CONF, "file://" + getAgentConf().absolutePath,
+            ARG_COMP_OPT, master, SCRIPT_PATH, "agent/scripts/agent.py",
+            ARG_COMP_OPT, rs, SCRIPT_PATH, "agent/scripts/agent.py",
+            ARG_RES_COMP_OPT, master, ResourceKeys.COMPONENT_PRIORITY, "4",
+            ARG_RES_COMP_OPT, rs, ResourceKeys.COMPONENT_PRIORITY, "3",
+            ARG_COMP_OPT, master, SERVICE_NAME, "HBASE",
+            ARG_COMP_OPT, rs, SERVICE_NAME, "HBASE",
+            ARG_COMP_OPT, master, AgentKeys.APP_HOME, "/share/hbase/hbase-0.96.1-hadoop2",
+            ARG_COMP_OPT, rs, AgentKeys.APP_HOME, "/share/hbase/hbase-0.96.1-hadoop2",
+            ARG_COMP_OPT, ROLE_NODE, SCRIPT_PATH, "agent/scripts/agent.py",
+            ARG_RES_COMP_OPT, ROLE_NODE, ResourceKeys.COMPONENT_PRIORITY, "1",
+        ],
+        true)
+    def instanceDef = launcher.service.loadPersistedClusterDescription(
+        clustername)
+    dumpClusterDescription("$clustername:", instanceDef)
+    def resource2 = instanceDef.getResourceOperations()
+
+    def agentComponent2 = resource2.getMandatoryComponent(ROLE_NODE)
+    agentComponent2.getMandatoryOption(ResourceKeys.COMPONENT_PRIORITY)
+
+    def masterC2 = resource2.getMandatoryComponent(master)
+    assert "4" == masterC2.getMandatoryOption(ResourceKeys.COMPONENT_PRIORITY)
+
+    def rscomponent2 = resource2.getMandatoryComponent(rs)
+    assert "6" == rscomponent2.getMandatoryOption(ResourceKeys.COMPONENT_INSTANCES)
+  }
+  
   public AggregateConf loadInstanceDefinition(String name) {
     def cluster4
     def sliderFS = createSliderFileSystem()
@@ -235,8 +326,40 @@ class TestBuildBasicAgent extends AgentTestBase {
   }
 
   @Test
+  public void testAgentArgs() throws Throwable {
+    def clustername = "test_good_agent_args"
+    createMiniCluster(
+        clustername,
+        configuration,
+        1,
+        1,
+        1,
+        true,
+        false)
+
+    try {
+      def badArgs1 = "test_good_agent_args-1"
+      buildAgentCluster(clustername,
+          [:],
+          [
+              ARG_OPTION, CONTROLLER_URL, "http://localhost",
+              ARG_PACKAGE, ".",
+              ARG_OPTION, APP_DEF, "file://" + getAppDef().absolutePath,
+              ARG_RESOURCES, TEST_FILES + "good/resources.json",
+              ARG_TEMPLATE, TEST_FILES + "good/appconf.json"
+          ],
+          true, false,
+          false)
+    } catch (BadConfigException exception) {
+      log.error(
+          "Build operation should not have failed with exception : \n$exception")
+      fail("Build operation should not fail")
+    }
+  }
+  
+  @Test
   public void testBadAgentArgs() throws Throwable {
-    def clustername = "test_bad_template_args"
+    def clustername = "test_bad_agent_args"
     createMiniCluster(
         clustername,
         configuration,
@@ -248,7 +371,7 @@ class TestBuildBasicAgent extends AgentTestBase {
 
     try {
       def badArgs1 = "test_bad_agent_args-1"
-      buildAgentCluster(clustername,
+      buildAgentCluster(badArgs1,
           [:],
           [
               ARG_OPTION, CONTROLLER_URL, "http://localhost",
@@ -261,16 +384,17 @@ class TestBuildBasicAgent extends AgentTestBase {
           false)
       failWithBuildSucceeding(badArgs1, "missing package home or image path")
     } catch (BadConfigException expected) {
-
+      log.info("Expected failure.", expected)
+      assert expected.message.contains("Either agent package path agent.package.root or image root internal.application.image.path must be provided")
     }
 
     try {
       def badArgs1 = "test_bad_agent_args-2"
-      buildAgentCluster(clustername,
+      buildAgentCluster(badArgs1,
           [:],
           [
               ARG_OPTION, CONTROLLER_URL, "http://localhost",
-              ARG_IMAGE, "file://" + getAgentImg().absolutePath + ".badfile",
+              ARG_IMAGE, "file://" + getAgentImg().absolutePath,
               ARG_OPTION, APP_DEF, "file://" + getAppDef().absolutePath,
               ARG_OPTION, AGENT_CONF, "file://" + getAgentConf().absolutePath,
               ARG_RESOURCES, TEST_FILES + "good/resources.json",
@@ -278,46 +402,34 @@ class TestBuildBasicAgent extends AgentTestBase {
           ],
           true, false,
           false)
-      failWithBuildSucceeding(badArgs1, "bad image path")
+      failWithBuildSucceeding(badArgs1, "both app image path and home dir was provided")
     } catch (BadConfigException expected) {
+      log.info("Expected failure.", expected)
+      assert expected.message.contains("Both application image path and home dir have been provided")
     }
 
     try {
       def badArgs1 = "test_bad_agent_args-3"
-      buildAgentCluster(clustername,
+      buildAgentCluster(badArgs1,
           [:],
           [
               ARG_OPTION, CONTROLLER_URL, "http://localhost",
               ARG_OPTION, AGENT_CONF, "file://" + getAgentConf().absolutePath,
-              ARG_RESOURCES, TEST_FILES + "good/resources.json",
-              ARG_TEMPLATE, TEST_FILES + "good/appconf.json"
-          ],
-          true, false,
-          false)
-      failWithBuildSucceeding(badArgs1, "bad app def file")
-    } catch (BadConfigException expected) {
-    }
-
-    try {
-      def badArgs1 = "test_bad_agent_args-5"
-      buildAgentCluster(clustername,
-          [:],
-          [
-              ARG_OPTION, CONTROLLER_URL, "http://localhost",
               ARG_PACKAGE, ".",
-              ARG_OPTION, APP_DEF, "file://" + getAppDef().absolutePath,
               ARG_RESOURCES, TEST_FILES + "good/resources.json",
               ARG_TEMPLATE, TEST_FILES + "good/appconf.json"
           ],
           true, false,
           false)
-      failWithBuildSucceeding(badArgs1, "bad agent conf file")
+      failWithBuildSucceeding(badArgs1, "missing app def file")
     } catch (BadConfigException expected) {
+      log.info("Expected failure.", expected)
+      assert expected.message.contains("Application definition must be provided. Missing option application.def")
     }
 
     try {
       def badArgs1 = "test_bad_agent_args-6"
-      buildAgentCluster(clustername,
+      buildAgentCluster(badArgs1,
           [:],
           [
               ARG_OPTION, CONTROLLER_URL, "http://localhost",

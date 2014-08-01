@@ -36,7 +36,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class SliderAmIpFilter implements Filter {
@@ -54,13 +56,13 @@ public class SliderAmIpFilter implements Filter {
   private Set<String> proxyAddresses = null;
   private long lastUpdate;
   private String proxyUriBase;
-  private String wsContextRoot;
+  private List<String> wsContextRoots;
   
   @Override
   public void init(FilterConfig conf) throws ServletException {
     proxyHost = conf.getInitParameter(PROXY_HOST);
     proxyUriBase = conf.getInitParameter(PROXY_URI_BASE);
-    wsContextRoot = conf.getInitParameter(WS_CONTEXT_ROOT);
+    wsContextRoots = Arrays.asList(conf.getInitParameter(WS_CONTEXT_ROOT).split("\\|"));
   }
   
   protected Set<String> getProxyAddresses() throws ServletException {
@@ -102,7 +104,7 @@ public class SliderAmIpFilter implements Filter {
       log.debug("Remote address for request is: " + httpReq.getRemoteAddr());
     }
     String requestURI = httpReq.getRequestURI();
-    if(!requestURI.startsWith(wsContextRoot) &&
+      if(!isWsRequest(requestURI) &&
        !getProxyAddresses().contains(httpReq.getRemoteAddr())) {
       String redirectUrl = httpResp.encodeRedirectURL(proxyUriBase +
                                                       requestURI);
@@ -135,5 +137,15 @@ public class SliderAmIpFilter implements Filter {
       log.warn("When fetching {}: {}", requestURI, e);
       throw e;
     }
+  }
+
+  private boolean isWsRequest(String requestURI) {
+    boolean isWsReq = false;
+    for (String wsContext : wsContextRoots) {
+      isWsReq = requestURI.startsWith(wsContext);
+      if (isWsReq) break;
+    }
+
+    return isWsReq;
   }
 }
