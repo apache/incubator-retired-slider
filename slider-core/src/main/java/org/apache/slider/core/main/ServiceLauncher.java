@@ -202,15 +202,11 @@ public class ServiceLauncher<S extends Service>
    * to the configuration, and <code>service</code> to the service.
    *
    * @param conf configuration to use
-   * @throws ClassNotFoundException no such class
-   * @throws InstantiationException no empty constructor,
-   * problems with dependencies
    * @throws ClassNotFoundException classname not on the classpath
    * @throws IllegalAccessException not allowed at the class
    * @throws InstantiationException not allowed to instantiate it
-   * @throws InterruptedException thread interrupted
-   * @throws Throwable any other failure
    */
+  @SuppressWarnings("unchecked")
   public Service instantiateService(Configuration conf)
       throws ClassNotFoundException, InstantiationException, IllegalAccessException,
       ExitUtil.ExitException, NoSuchMethodException, InvocationTargetException {
@@ -447,6 +443,7 @@ public class ServiceLauncher<S extends Service>
         try {
           conf.addResource(file.toURI().toURL());
         } catch (MalformedURLException e) {
+          LOG.debug("File {} cannot be converted to URL: {}", e);
           exitWithMessage(EXIT_COMMAND_ARGUMENT_ERROR,
               ARG_CONF + ": configuration file path invalid: " + file);
         }
