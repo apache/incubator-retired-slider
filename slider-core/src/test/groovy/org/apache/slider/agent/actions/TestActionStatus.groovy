@@ -48,7 +48,7 @@ class TestActionStatus extends AgentMiniClusterTestBase {
   @Before
   public void setup() {
     super.setup()
-    createMiniCluster("test_action_status", configuration, 1, false)
+    createMiniCluster("", configuration, 1, false)
   }
 
   /**
@@ -71,7 +71,7 @@ class TestActionStatus extends AgentMiniClusterTestBase {
           new YarnConfiguration(miniCluster.config),
           [
               SliderActions.ACTION_STATUS,
-              "test_status_missing_cluster",
+              "teststatusmissingcluster",
               Arguments.ARG_MANAGER, RMAddr
           ]
       )
@@ -84,7 +84,7 @@ class TestActionStatus extends AgentMiniClusterTestBase {
   
   public void testStatusLiveCluster() throws Throwable {
     describe("create a live cluster then exec the status command")
-    String clustername = "test_status_live_cluster"
+    String clustername = "teststatuslivecluster"
     
     //launch the cluster
     ServiceLauncher<SliderClient> launcher = createMasterlessAM(clustername, 0, true, false)

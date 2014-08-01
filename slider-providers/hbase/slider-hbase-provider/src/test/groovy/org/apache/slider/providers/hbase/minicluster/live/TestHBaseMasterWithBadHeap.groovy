@@ -42,8 +42,7 @@ class TestHBaseMasterWithBadHeap extends HBaseMiniClusterTestBase {
 
   @Test
   public void testHBaseMasterWithBadHeap() throws Throwable {
-    String clustername = "test_hbase_master_with_bad_heap"
-    createMiniCluster(clustername, configuration, 1, true)
+    String clustername = createMiniCluster("", configuration, 1, true)
 
     describe "verify that bad Java heap options are picked up"
     //now launch the cluster with 1 region server

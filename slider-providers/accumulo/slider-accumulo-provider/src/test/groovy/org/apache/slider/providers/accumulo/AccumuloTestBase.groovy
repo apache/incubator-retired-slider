@@ -195,7 +195,7 @@ public abstract class AccumuloTestBase extends YarnZKMiniClusterTestBase {
       String clustername, List<Map<String, Integer>> plan) {
     int planCount = plan.size()
     assert planCount > 0
-    createMiniCluster(clustername, getConfiguration(),
+    createMiniCluster(clustername, configuration,
         1,
         true);
     //now launch the cluster

@@ -30,7 +30,7 @@ class TestLiveClusterFromArchiveOnHDFS extends TestLiveClusterFromArchive {
 
   @Override
   String getTestClusterName() {
-    "test_live_cluster_from_archiveonhdfs"
+    "testliveclusterfromarchiveonhdfs"
   }
 
   @Override

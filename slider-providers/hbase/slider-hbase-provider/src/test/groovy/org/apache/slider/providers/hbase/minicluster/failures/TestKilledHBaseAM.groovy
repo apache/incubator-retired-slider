@@ -49,7 +49,6 @@ class TestKilledHBaseAM extends HBaseMiniClusterTestBase {
   public void testKilledHBaseAM() throws Throwable {
     skip("SLIDER-66: AM Restart Failing -YARN issues")
     
-    String clustername = "test_killed_hbase_am"
     int regionServerCount = 1
 
 
@@ -58,7 +57,7 @@ class TestKilledHBaseAM extends HBaseMiniClusterTestBase {
     conf.setInt(SliderXmlConfKeys.KEY_AM_RESTART_LIMIT, 3)
 
     conf.set(YarnConfiguration.RM_SCHEDULER, FIFO_SCHEDULER);
-    createMiniCluster(clustername, conf, 1, 1, 1, true, false)
+    String clustername = createMiniCluster("", conf, 1, 1, 1, true, false)
     describe(" Kill the AM, expect cluster to die");
 
     //now launch the cluster

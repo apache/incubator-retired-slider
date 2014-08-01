@@ -41,9 +41,9 @@ class TestLiveTwoNodeRegionService extends HBaseMiniClusterTestBase {
   @Test
   public void testLiveTwoNodeRegionService() throws Throwable {
     
-    String clustername = "test_live_two_node_regionservice"
     int regionServerCount = 2
-    createMiniCluster(clustername, configuration, 1, 1, 1, true, false)
+    String clustername = createMiniCluster(
+        "", configuration, 1, 1, 1, true, false)
 
     describe(" Create a two node region service cluster");
 

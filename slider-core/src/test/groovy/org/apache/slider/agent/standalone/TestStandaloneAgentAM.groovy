@@ -44,8 +44,7 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     describe "create a masterless AM then get the service and look it up via the AM"
 
     //launch fake master
-    String clustername = "test_standalone_agent_am"
-    createMiniCluster(clustername, configuration, 1, true)
+    String clustername = createMiniCluster("", configuration, 1, true)
     ServiceLauncher<SliderClient> launcher =
         createMasterlessAM(clustername, 0, true, false)
     SliderClient client = launcher.service

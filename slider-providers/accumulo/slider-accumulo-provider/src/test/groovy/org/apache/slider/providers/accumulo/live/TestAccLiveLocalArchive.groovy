@@ -36,11 +36,11 @@ class TestAccLiveLocalArchive extends AccumuloTestBase {
 
   @Test
   public void testAccLiveLocalArchive() throws Throwable {
-    String clustername = "test_acc_live_local_archive"
     int tablets = 1
     int monitor = 1
     int gc = 1
-    createMiniCluster(clustername, getConfiguration(), 1, 1, 1, true, false)
+    String clustername = createMiniCluster(
+        "", configuration, 1, 1, 1, true, false)
     describe(" Create an accumulo cluster from an archive");
 
     //image mode

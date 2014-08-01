@@ -42,9 +42,8 @@ class TestFreezeCommands extends AgentMiniClusterTestBase {
 
   @Test
   public void testFreezeCommands() throws Throwable {
-    String clustername = "test_freeze_commands"
     YarnConfiguration conf = configuration
-    createMiniCluster(clustername, conf, 1, 1, 1, true, false)
+    String clustername = createMiniCluster("", conf, 1, 1, 1, true, false)
 
     describe "create a masterless AM, freeze it, try to freeze again"
 

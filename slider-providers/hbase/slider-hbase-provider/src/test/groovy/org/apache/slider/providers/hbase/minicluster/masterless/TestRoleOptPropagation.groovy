@@ -42,8 +42,7 @@ class TestRoleOptPropagation extends HBaseMiniClusterTestBase {
   
   public void testRoleOptPropagation() throws Throwable {
     skip("Disabled")
-    String clustername = "test_role_opt_propagation"
-    createMiniCluster(clustername, getConfiguration(), 1, true)
+    String clustername = createMiniCluster("", getConfiguration(), 1, true)
 
     describe "verify that role options propagate down to deployed roles"
 
@@ -71,8 +70,7 @@ class TestRoleOptPropagation extends HBaseMiniClusterTestBase {
 
   @Test
   public void testUnknownRole() throws Throwable {
-    String clustername = "test_unknown_role"
-    createMiniCluster(clustername, getConfiguration(), 1, true)
+    String clustername = createMiniCluster("", configuration, 1, true)
 
     describe "verify that unknown role results in cluster creation failure"
     try {

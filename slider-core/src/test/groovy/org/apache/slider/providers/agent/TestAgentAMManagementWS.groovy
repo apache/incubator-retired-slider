@@ -95,9 +95,7 @@ class TestAgentAMManagementWS extends AgentTestBase {
 
     @Test
   public void testAgentAMManagementWS() throws Throwable {
-    def clustername = "test_agentammanagementws"
-    createMiniCluster(
-        clustername,
+      String clustername = createMiniCluster("",
         configuration,
         1,
         1,

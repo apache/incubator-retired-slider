@@ -37,8 +37,8 @@ class TestLiveClusterFromArchive extends HBaseMiniClusterTestBase {
 
   @Test
   public void testLiveClusterFromArchive() throws Throwable {
-    String clustername = testClusterName
     int regionServerCount = 1
+    String clustername = testClusterName
     createMiniCluster(clustername,
         configuration,
         regionServerCount + 1,
@@ -66,7 +66,7 @@ class TestLiveClusterFromArchive extends HBaseMiniClusterTestBase {
   }
 
   public String getTestClusterName() {
-    return "test_live_cluster_from_archive"
+    return "testliveclusterfromarchive"
   }
 
   public boolean startHDFS() {

@@ -34,11 +34,11 @@ class TestAccFreezeThaw extends AccumuloTestBase {
 
   @Test
   public void testAccFreezeThaw() throws Throwable {
-    String clustername = "test_acc_freeze_thaw"
     int tablets = 1
     int monitor = 1
     int gc = 1
-    createMiniCluster(clustername, configuration, 1, 1, 1, true, false)
+    String clustername = createMiniCluster("",
+        configuration, 1, 1, 1, true, false)
     describe(" Create an accumulo cluster");
 
     //make sure that ZK is up and running at the binding string

@@ -36,11 +36,11 @@ class TestAccLiveHDFSArchive extends AccumuloTestBase {
 
   @Test
   public void testAccLiveHDFSArchive() throws Throwable {
-    String clustername = "test_acc_live_hdfs_archive"
     int tablets = 1
     int monitor = 1
     int gc = 1
-    createMiniCluster(clustername, configuration, 1, 1, 1, true, true)
+    String clustername = createMiniCluster(
+        "", configuration, 1, 1, 1, true, true)
     describe(" Create an accumulo cluster from an archive");
 
     enableTestRunAgainstUploadedArchive();

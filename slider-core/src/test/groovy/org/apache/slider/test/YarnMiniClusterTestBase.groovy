@@ -137,14 +137,6 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
   } 
 
 
-  @Rule
-  public TestName methodName = new TestName();
-
-  @Before
-  public void nameThread() {
-    Thread.currentThread().setName("JUnit");
-  }
-
   /**
    * Create the cluster name from the method name and an auto-incrementing
    * counter.
@@ -152,7 +144,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
    */
   protected String createClusterName() {
     def base = methodName.getMethodName().toLowerCase(Locale.ENGLISH)
-    if (clusterCount++>1) {
+    if (clusterCount++ > 1) {
       base += "-$clusterCount"
     }
     return base
@@ -162,7 +154,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
   @Override
   void setup() {
     super.setup()
-    def testConf = getTestConfiguration();
+    def testConf = testConfiguration;
     thawWaitTime = getTimeOptionMillis(testConf,
         KEY_TEST_THAW_WAIT_TIME,
         thawWaitTime)
@@ -230,15 +222,16 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
 
   /**
    * Create and start a minicluster
-   * @param name cluster/test name
+   * @param name cluster/test name; if empty one is created from the junit method
    * @param conf configuration to use
    * @param noOfNodeManagers #of NMs
    * @param numLocalDirs #of local dirs
    * @param numLogDirs #of log dirs
    * @param startZK create a ZK micro cluster
    * @param startHDFS create an HDFS mini cluster
+   * @return the name of the cluster
    */
-  protected void createMiniCluster(String name,
+  protected String createMiniCluster(String name,
                                    YarnConfiguration conf,
                                    int noOfNodeManagers,
                                    int numLocalDirs,
@@ -247,12 +240,16 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     conf.setInt(YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_MB, 64);
     conf.set(YarnConfiguration.RM_SCHEDULER, FIFO_SCHEDULER);
     SliderUtils.patchConfiguration(conf)
+    if (!name) {
+      name = createClusterName()
+    }
     miniCluster = new MiniYARNCluster(name, noOfNodeManagers, numLocalDirs, numLogDirs)
     miniCluster.init(conf)
     miniCluster.start();
     if (startHDFS) {
       createMiniHDFSCluster(name, conf)
     }
+    return name
   }
 
   /**

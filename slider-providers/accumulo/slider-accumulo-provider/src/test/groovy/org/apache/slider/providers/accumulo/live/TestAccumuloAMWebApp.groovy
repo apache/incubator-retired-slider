@@ -38,11 +38,11 @@ class TestAccumuloAMWebApp extends AccumuloTestBase {
 
   @Test
   public void testAccumuloAMWebApp() throws Throwable {
-    String clustername = "test_accumulo_am_webapp"
     int tablets = 1
     int monitor = 1
     int gc = 1
-    createMiniCluster(clustername, getConfiguration(), 1, 1, 1, true, false)
+    String clustername = createMiniCluster( "",
+        configuration, 1, 1, 1, true, false)
     describe(" Create an accumulo cluster");
 
     //make sure that ZK is up and running at the binding string

@@ -46,9 +46,8 @@ class TestSliderConfDirToMasterlessAM extends HBaseMiniClusterTestBase {
 
   @Test
   public void testSliderConfDirToMasterlessAM() throws Throwable {
-    String clustername = "test_slider_conf_dir_to_masterless_am"
     YarnConfiguration conf = configuration
-    createMiniCluster(clustername, conf, 1, true)
+    String clustername = createMiniCluster("", conf, 1, true)
 
     describe "verify that a conf dir will propagate via the sytem proerpty"
 

@@ -35,11 +35,10 @@ class TestAccM1T1GC1Mon1 extends AccumuloTestBase {
 
   @Test
   public void testAccM1T1GC1Mon1() throws Throwable {
-    String clustername = "test_acc_m1t1gc1mon1"
     int tablets = 1
     int monitor = 1
     int gc = 1
-    createMiniCluster(clustername, getConfiguration(), 1, 1, 1, true, false)
+    String clustername = createMiniCluster( "", configuration, 1, 1, 1, true, false)
     describe(" Create an accumulo cluster");
 
     //make sure that ZK is up and running at the binding string
