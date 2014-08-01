@@ -43,9 +43,7 @@ class TestAgentEcho extends AgentTestBase {
 
   @Test
   public void testEchoOperation() throws Throwable {
-    def clustername = "test_agent_echo"
-    createMiniCluster(
-        clustername,
+    String clustername = createMiniCluster("",
         configuration,
         1,
         1,

@@ -45,7 +45,7 @@ class TestFailureThreshold extends HBaseMiniClusterTestBase {
 
   @Test
   public void testFailedRegionService() throws Throwable {
-    failureThresholdTestRun("test_failure_threshold", true, 2, 5)
+    failureThresholdTestRun("", true, 2, 5)
   }
 
 
@@ -55,10 +55,9 @@ class TestFailureThreshold extends HBaseMiniClusterTestBase {
       boolean toKill,
       int threshold,
       int killAttempts) {
-    String clustername = testName
     String action = toKill ? "kill" : "stop"
     int regionServerCount = 2
-    createMiniCluster(clustername, configuration, 1, 1, 1, true, true)
+    String clustername = createMiniCluster(testName, configuration, 1, 1, 1, true, true)
     describe(
         "Create a single region service cluster then " + action + " the RS");
 

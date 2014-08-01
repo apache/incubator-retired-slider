@@ -44,7 +44,7 @@ class TestAccFlexTablets1to3 extends AccumuloTestBase {
         (AccumuloKeys.ROLE_GARBAGE_COLLECTOR): 1]
 
     ClusterDescription cd = flexAccClusterTestRun(
-        "test_acc_flex_tablets1to3",
+        createClusterName(),
         [plan1, plan2]
     )
 

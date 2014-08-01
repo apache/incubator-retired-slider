@@ -308,9 +308,9 @@
                   <sources>
                     <source>
                       <location>${project.build.directory}/agent</location>
-      <includes>
-        <include>slider-agent.tar.gz</include>
-      </includes>
+                      <includes>
+                        <include>slider-agent.tar.gz</include>
+                      </includes>
                     </source>
                   </sources>
                 </mapping>

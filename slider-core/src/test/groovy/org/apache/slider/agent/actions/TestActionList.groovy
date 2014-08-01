@@ -40,7 +40,7 @@ class TestActionList extends AgentMiniClusterTestBase {
   @Before
   public void setup() {
     super.setup()
-    createMiniCluster("test_action_list", configuration, 1, false)
+    createMiniCluster("", configuration, 1, false)
   }
 
   /**

@@ -50,6 +50,7 @@ class TestRegistryRestResources extends AgentTestBase {
 
   public static final String REGISTRY_URI = RestPaths.SLIDER_PATH_REGISTRY;
   public static final String WADL = "vnd.sun.wadl+xml"
+  public static final String CLUSTERNAME = "testregistryws"
 
 
   private String id(String instanceName) {
@@ -64,7 +65,7 @@ class TestRegistryRestResources extends AgentTestBase {
 
   @Test
   public void testRestURIs() throws Throwable {
-    def clustername = "test_registryws"
+    def clustername = CLUSTERNAME
     createMiniCluster(
         clustername,
         configuration,
@@ -143,7 +144,8 @@ class TestRegistryRestResources extends AgentTestBase {
 
     webResource = client.resource(
         appendToURL(registry_url,
-            "${RestPaths.REGISTRY_SERVICE}/${SliderKeys.APP_TYPE}/"+id("test_registryws")));
+            "${RestPaths.REGISTRY_SERVICE}/${SliderKeys.APP_TYPE}/"+id(
+                clustername)));
     service = webResource.type(MediaType.APPLICATION_JSON)
               .get(CuratorServiceInstance.class);
     validateService(service)
@@ -164,7 +166,7 @@ class TestRegistryRestResources extends AgentTestBase {
 
     try {
       webResource = client.resource(appendToURL(registry_url,
-          "${RestPaths.REGISTRY_SERVICE}/${SliderKeys.APP_TYPE}/test_registryws-99"));
+          "${RestPaths.REGISTRY_SERVICE}/${SliderKeys.APP_TYPE}/testregistryws99"));
       
       service = webResource.type(MediaType.APPLICATION_JSON)
                            .get(CuratorServiceInstance.class);
@@ -188,6 +190,6 @@ class TestRegistryRestResources extends AgentTestBase {
   private void validateService(CuratorServiceInstance service) {
     assert service.name.equals(SliderKeys.APP_TYPE)
     assert service.serviceType == ServiceType.DYNAMIC
-    assert service.id.contains("test_registryws")
+    assert service.id.contains(CLUSTERNAME)
   }
 }

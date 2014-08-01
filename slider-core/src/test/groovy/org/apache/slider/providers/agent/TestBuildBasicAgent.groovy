@@ -69,9 +69,8 @@ class TestBuildBasicAgent extends AgentTestBase {
   @Test
   public void testBuildMultipleRoles() throws Throwable {
 
-    def clustername = "test_build_basic_agent"
-    createMiniCluster(
-        clustername,
+    String clustername = createMiniCluster(
+        "",
         configuration,
         1,
         1,
@@ -223,12 +222,12 @@ class TestBuildBasicAgent extends AgentTestBase {
         true, false,
         false)
   }
+  
   @Test
-  public void testUpdate() throws Throwable {
+  public void testUpdateBasicAgent() throws Throwable {
 
-    def clustername = "test_update_basic_agent"
-    createMiniCluster(
-        clustername,
+    String clustername = createMiniCluster(
+        "",
         configuration,
         1,
         1,
@@ -326,10 +325,9 @@ class TestBuildBasicAgent extends AgentTestBase {
   }
 
   @Test
-  public void testAgentArgs() throws Throwable {
-    def clustername = "test_good_agent_args"
-    createMiniCluster(
-        clustername,
+  public void testGoodAgentArgs() throws Throwable {
+    String clustername = createMiniCluster(
+        "",
         configuration,
         1,
         1,
@@ -344,7 +342,7 @@ class TestBuildBasicAgent extends AgentTestBase {
           [
               ARG_OPTION, CONTROLLER_URL, "http://localhost",
               ARG_PACKAGE, ".",
-              ARG_OPTION, APP_DEF, "file://" + getAppDef().absolutePath,
+              ARG_OPTION, APP_DEF, "file://" + appDef.absolutePath,
               ARG_RESOURCES, TEST_FILES + "good/resources.json",
               ARG_TEMPLATE, TEST_FILES + "good/appconf.json"
           ],
@@ -359,9 +357,8 @@ class TestBuildBasicAgent extends AgentTestBase {
   
   @Test
   public void testBadAgentArgs() throws Throwable {
-    def clustername = "test_bad_agent_args"
-    createMiniCluster(
-        clustername,
+    String clustername = createMiniCluster(
+        "",
         configuration,
         1,
         1,
@@ -451,10 +448,8 @@ class TestBuildBasicAgent extends AgentTestBase {
   @Test
   public void testTemplateArgs() throws Throwable {
 
-
-    def clustername = "test_build_template_args"
-    createMiniCluster(
-        clustername,
+    String clustername = createMiniCluster(
+        "",
         configuration,
         1,
         1,
@@ -479,10 +474,8 @@ class TestBuildBasicAgent extends AgentTestBase {
   @Test
   public void testBadTemplates() throws Throwable {
 
-
-    def clustername = "test_bad_template_args"
-    createMiniCluster(
-        clustername,
+    String clustername = createMiniCluster(
+        "",
         configuration,
         1,
         1,

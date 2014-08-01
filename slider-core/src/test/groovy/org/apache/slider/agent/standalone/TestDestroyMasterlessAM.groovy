@@ -43,8 +43,7 @@ class TestDestroyMasterlessAM extends AgentMiniClusterTestBase {
 
   @Test
   public void testDestroyMasterlessAM() throws Throwable {
-    String clustername = "test_destroy_masterless_am"
-    createMiniCluster(clustername, configuration, 1, false)
+    String clustername = createMiniCluster("", configuration, 1, false)
 
     describe "create a masterless AM, stop it, try to create" +
              "a second cluster with the same name, destroy it, try a third time"

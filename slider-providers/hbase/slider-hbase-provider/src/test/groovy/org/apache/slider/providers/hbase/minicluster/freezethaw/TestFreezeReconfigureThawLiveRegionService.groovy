@@ -47,13 +47,12 @@ class TestFreezeReconfigureThawLiveRegionService
 
   @Test
   public void testFreezeReconfigureThawLiveRegionService() throws Throwable {
-    String clustername = "test_freeze_reconfigure_thaw_live_regionservice"
     int regionServerCount = 4
     int nodemanagers = 3
     YarnConfiguration conf = configuration
     //one vcore per node
     conf.setInt("yarn.nodemanager.resource.cpu-vcores", 1)
-    createMiniCluster(clustername, conf, nodemanagers, true)
+    String clustername = createMiniCluster("", conf, nodemanagers, true)
     describe(
         "Create a $regionServerCount node cluster, freeze it, patch the configuration files," +
         " thaw it and verify that it came back with the new settings")

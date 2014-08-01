@@ -45,7 +45,7 @@ class TestActionExists extends AgentMiniClusterTestBase {
   @Before
   public void setup() {
     super.setup()
-    createMiniCluster("TestActionExists", configuration, 1, false)
+    createMiniCluster("", configuration, 1, false)
   }
   
   @Test

@@ -42,8 +42,7 @@ class TestTwoLiveClusters extends HBaseMiniClusterTestBase {
    */
   @Test
   public void testTwoLiveClusters() throws Throwable {
-    def name = "test_two_live_clusters"
-    createMiniCluster(name, configuration, 1, true)
+    String clustername = createMiniCluster("", configuration, 1, true)
 
     String clustername1 = name + "-1"
     //now launch the cluster

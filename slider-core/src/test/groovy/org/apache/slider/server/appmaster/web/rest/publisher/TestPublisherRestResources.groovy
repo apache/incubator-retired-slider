@@ -47,9 +47,8 @@ class TestPublisherRestResources extends AgentTestBase {
 
   @Test
   public void testRestURIs() throws Throwable {
-    def clustername = "test_publisherws"
-    createMiniCluster(
-        clustername,
+    String clustername = createMiniCluster(
+        "",
         configuration,
         1,
         1,

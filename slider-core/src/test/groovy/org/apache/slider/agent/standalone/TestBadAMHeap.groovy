@@ -39,8 +39,7 @@ class TestBadAMHeap extends AgentMiniClusterTestBase {
 
   @Test
   public void testBadAMHeap() throws Throwable {
-    String clustername = "test_bad_am_heap"
-    createMiniCluster(clustername, configuration, 1, true)
+    String clustername = createMiniCluster("", configuration, 1, true)
 
     describe "verify that bad Java heap options are picked up"
 

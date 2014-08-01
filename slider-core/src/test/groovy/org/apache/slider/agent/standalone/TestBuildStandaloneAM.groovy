@@ -43,8 +43,7 @@ class TestBuildStandaloneAM extends AgentMiniClusterTestBase {
 
   @Test
   public void testBuildCluster() throws Throwable {
-    String clustername = "test_build_cluster"
-    createMiniCluster(clustername, configuration, 1, true)
+    String clustername = createMiniCluster("", configuration, 1, true)
 
     describe "verify that a build cluster is created but not started"
 
@@ -94,8 +93,7 @@ class TestBuildStandaloneAM extends AgentMiniClusterTestBase {
 
   @Test
   public void testUpdateCluster() throws Throwable {
-    String clustername = "test_update_cluster"
-    createMiniCluster(clustername, configuration, 1, true)
+    String clustername = createMiniCluster("", configuration, 1, true)
 
     describe "verify that a build cluster can be updated"
 

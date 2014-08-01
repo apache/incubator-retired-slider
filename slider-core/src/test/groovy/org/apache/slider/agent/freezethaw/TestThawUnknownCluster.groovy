@@ -37,8 +37,7 @@ class TestThawUnknownCluster extends YarnZKMiniClusterTestBase {
 
   @Test
   public void testThawUnknownCluster() throws Throwable {
-    String clustername = "test_thaw_unknown_cluster"
-    createMiniCluster(clustername, configuration, 1, true)
+    String clustername = createMiniCluster("", configuration, 1, true)
 
     describe "try to start a cluster that isn't defined"
 

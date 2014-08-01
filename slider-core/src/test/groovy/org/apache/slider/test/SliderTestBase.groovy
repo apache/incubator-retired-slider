@@ -22,6 +22,9 @@ import groovy.transform.CompileStatic
 import org.apache.hadoop.fs.FileUtil
 import org.apache.slider.common.SliderXMLConfKeysForTesting
 import org.junit.Before
+import org.junit.BeforeClass
+import org.junit.Rule
+import org.junit.rules.TestName
 
 import java.nio.file.Files
 
@@ -35,11 +38,21 @@ import java.nio.file.Files
 @CompileStatic
 public abstract class SliderTestBase extends SliderTestUtils {
 
+
+  @Rule
+  public TestName methodName = new TestName();
+
+  @BeforeClass
+  public static void nameThread() {
+    Thread.currentThread().setName("JUnit");
+  }
+
   @Before
   public void setup() {
-    //give our thread a name
-    Thread.currentThread().name = "JUnit"
     FileUtil.fullyDelete(new File(SliderXMLConfKeysForTesting.TEST_SECURITY_DIR))
   }
+
+  
+  
 
 }

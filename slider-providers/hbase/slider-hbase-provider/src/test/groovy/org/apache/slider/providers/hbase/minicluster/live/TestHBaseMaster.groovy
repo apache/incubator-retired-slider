@@ -46,8 +46,7 @@ class TestHBaseMaster extends HBaseMiniClusterTestBase {
 
   @Test
   public void testHBaseMaster() throws Throwable {
-    String clustername = "test_hbase_master"
-    createMiniCluster(clustername, configuration, 1, true)
+    String clustername = createMiniCluster("", configuration, 1, true)
     //make sure that ZK is up and running at the binding string
     ZKIntegration zki = createZKIntegrationInstance(ZKBinding, clustername, false, false, 5000)
     //now launch the cluster with 1 region server

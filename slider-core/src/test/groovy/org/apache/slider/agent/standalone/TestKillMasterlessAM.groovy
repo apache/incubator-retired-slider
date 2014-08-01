@@ -41,8 +41,7 @@ class TestKillMasterlessAM extends AgentMiniClusterTestBase {
 
   @Test
   public void testKillMasterlessAM() throws Throwable {
-    String clustername = "test_kill_masterless_am"
-    createMiniCluster(clustername, configuration, 1, true)
+    String clustername = createMiniCluster("", configuration, 1, true)
 
     describe "kill a masterless AM and verify that it shuts down"
     ServiceLauncher<SliderClient> launcher =
