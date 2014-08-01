@@ -50,7 +50,7 @@ public interface SliderKeys extends SliderXmlConfKeys {
   /**
    * Application type for YARN  {@value}
    */
-  String APP_TYPE = "org.apache.slider";
+  String APP_TYPE = "org-apache-slider";
 
   /**
    * JVM arg to force IPv4  {@value}
