@@ -20,6 +20,8 @@ package org.apache.slider.providers;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.Service;
+import org.apache.hadoop.yarn.registry.client.binding.zk.YarnRegistryService;
+import org.apache.hadoop.yarn.registry.client.types.ServiceEntry;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.tools.ConfigHelper;
@@ -42,7 +44,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.HashMap;
@@ -69,6 +70,7 @@ public abstract class AbstractProviderService
   protected ServiceInstanceData registryInstanceData;
   protected AMViewForProviders amView;
   protected URL amWebAPI;
+  private YarnRegistryService yarnRegistry;
 
   public AbstractProviderService(String name) {
     super(name);
@@ -93,9 +95,12 @@ public abstract class AbstractProviderService
 
   @Override
   public void bind(StateAccessForProviders stateAccessor,
-      RegistryViewForProviders reg, AMViewForProviders amView) {
+      RegistryViewForProviders reg,
+      YarnRegistryService yarnRegistry,
+      AMViewForProviders amView) {
     this.amState = stateAccessor;
     this.registry = reg;
+    this.yarnRegistry = yarnRegistry;
     this.amView = amView;
   }
 
@@ -297,11 +302,6 @@ public abstract class AbstractProviderService
   @Override
   public void buildEndpointDetails(Map<String, String> details) {
       ServiceInstanceData self = registry.getSelfRegistration();
-    buildEndpointDetails(details, self);
-  }
-
-  public static void buildEndpointDetails(Map<String, String> details,
-      ServiceInstanceData self) {
     Map<String, RegisteredEndpoint> endpoints =
         self.getRegistryView(true).endpoints;
     for (Map.Entry<String, RegisteredEndpoint> endpoint : endpoints.entrySet()) {
@@ -311,13 +311,15 @@ public abstract class AbstractProviderService
       }
     }
   }
+
   @Override
   public void applyInitialRegistryDefinitions(URL unsecureWebAPI,
-                                              URL secureWebAPI,
-                                              ServiceInstanceData registryInstanceData) throws MalformedURLException,
-      IOException {
+      URL secureWebAPI,
+      ServiceInstanceData registryInstanceData,
+      ServiceEntry serviceEntry)
+      throws IOException {
 
-      this.amWebAPI = unsecureWebAPI;
+    this.amWebAPI = unsecureWebAPI;
     this.registryInstanceData = registryInstanceData;
   }
 }

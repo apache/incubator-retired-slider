@@ -18,6 +18,8 @@
 
 package org.apache.slider.core.registry.info;
 
+import org.apache.hadoop.yarn.registry.client.types.AddressTypes;
+import org.apache.hadoop.yarn.registry.client.types.ProtocolTypes;
 import org.apache.slider.core.exceptions.SliderException;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
@@ -37,58 +39,29 @@ public class RegisteredEndpoint {
   /**
    * URL: {@value}
    */
-  public static final String TYPE_URL = "url";
+  public static final String TYPE_URL = AddressTypes.ADDRESS_URI;
   
-  /**
-   * hostname: {@value}
-   */
-  public static final String TYPE_HOSTNAME = "hostname";
   
   /**
    * "hostname:port" pair: {@value}
    */
-  public static final String TYPE_INETADDRESS = "inetaddress";
+  public static final String TYPE_INETADDRESS = AddressTypes.ADDRESS_HOSTNAME_AND_PORT;
   
   /**
    * simple path string: {@value}
    */
-  public static final String TYPE_PATH = "path";
+  public static final String TYPE_PATH = AddressTypes.ADDRESS_PATH;
 
   // standard protocols
-
-  /**
-   * Generic TCP protocol: {@value}
-   */
-
-  public static final String PROTOCOL_TCP = "tcp";
-
-  /**
-   * Generic TCP protocol: {@value}
-   */
-
-  public static final String PROTOCOL_UDP = "udp";
-
-  /**
-   * HTTP: {@value}
-   */
-
-  public static final String PROTOCOL_HTTP = "http";
-
-  /**
-   * HTTPS: {@value}
-   */
-
-  public static final String PROTOCOL_HTTPS = "http";
-
   /**
    * Classic "Writable" Hadoop IPC: {@value}
    */
-  public static final String PROTOCOL_HADOOP_RPC = "org.apache.hadoop.ipc.RPC";
+  public static final String PROTOCOL_HADOOP_RPC = ProtocolTypes.PROTOCOL_HADOOP_IPC;
 
   /**
    * Protocol buffer based Hadoop IPC: {@value}
    */
-  public static final String PROTOCOL_HADOOP_PROTOBUF = "org.apache.hadoop.ipc.Protobuf";
+  public static final String PROTOCOL_HADOOP_PROTOBUF = ProtocolTypes.PROTOCOL_HADOOP_IPC_PROTOBUF;
 
   /**
    * The address -format is driven by the type entry

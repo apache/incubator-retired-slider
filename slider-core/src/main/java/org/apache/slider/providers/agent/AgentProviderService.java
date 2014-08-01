@@ -26,6 +26,9 @@ import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.LocalResourceType;
+import org.apache.hadoop.yarn.registry.client.types.Endpoint;
+import org.apache.hadoop.yarn.registry.client.types.ProtocolTypes;
+import org.apache.hadoop.yarn.registry.client.types.ServiceEntry;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterDescriptionKeys;
 import org.apache.slider.api.ClusterNode;
@@ -1018,19 +1021,29 @@ public class AgentProviderService extends AbstractProviderService implements
 
   @Override
   public void applyInitialRegistryDefinitions(URL unsecureWebAPI,
-                                              URL secureWebAPI,
-                                              ServiceInstanceData instanceData) throws IOException {
+      URL secureWebAPI,
+      ServiceInstanceData instanceData, ServiceEntry serviceEntry) throws IOException {
     super.applyInitialRegistryDefinitions(unsecureWebAPI,
-                                          secureWebAPI,
-                                          instanceData
-    );
+        secureWebAPI,
+        instanceData,
+        serviceEntry);
 
     try {
+      URL url = new URL(secureWebAPI, SLIDER_PATH_AGENTS);
+
+      URI uri = url.toURI();
       instanceData.internalView.endpoints.put(
           CustomRegistryConstants.AGENT_REST_API,
           new RegisteredEndpoint(
-              new URL(secureWebAPI, SLIDER_PATH_AGENTS),
+              url,
               "Agent REST API"));
+      
+      serviceEntry.putInternalEndpoint(
+          CustomRegistryConstants.AGENT_REST_API,
+          new Endpoint(CustomRegistryConstants.AGENT_REST_API,
+              ProtocolTypes.PROTOCOL_REST,
+              "Agent REST API",
+              uri));
     } catch (URISyntaxException e) {
       throw new IOException(e);
     }

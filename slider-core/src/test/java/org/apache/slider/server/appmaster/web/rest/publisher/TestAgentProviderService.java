@@ -16,6 +16,7 @@
  */
 package org.apache.slider.server.appmaster.web.rest.publisher;
 
+import org.apache.hadoop.yarn.registry.client.binding.zk.YarnRegistryService;
 import org.apache.slider.providers.agent.AgentProviderService;
 import org.apache.slider.server.appmaster.AMViewForProviders;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
@@ -40,8 +41,10 @@ public class TestAgentProviderService extends AgentProviderService{
 
   @Override
   public void bind(StateAccessForProviders stateAccessor,
-                   RegistryViewForProviders reg, AMViewForProviders amView) {
-    super.bind(stateAccessor, reg, amView);
+      RegistryViewForProviders reg,
+      YarnRegistryService yarnRegistry,
+      AMViewForProviders amView) {
+    super.bind(stateAccessor, reg, yarnRegistry, amView);
     Map<String,String> dummyProps = new HashMap<>();
     dummyProps.put("prop1", "val1");
     dummyProps.put("prop2", "val2");

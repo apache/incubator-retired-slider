@@ -50,6 +50,9 @@ import org.apache.hadoop.yarn.client.api.async.impl.NMClientAsyncImpl;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.ipc.YarnRPC;
+import org.apache.hadoop.yarn.registry.client.binding.zk.YarnRegistryService;
+import org.apache.hadoop.yarn.registry.client.types.RegistryTypeUtils;
+import org.apache.hadoop.yarn.registry.client.types.ServiceEntry;
 import org.apache.hadoop.yarn.security.AMRMTokenIdentifier;
 import org.apache.hadoop.yarn.security.client.ClientToAMTokenSecretManager;
 import org.apache.hadoop.yarn.util.ConverterUtils;
@@ -179,6 +182,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
   public static final int HEARTBEAT_INTERVAL = 1000;
   public static final int NUM_RPC_HANDLERS = 5;
+  public static final String SLIDER_AM_RPC = "Slider AM RPC";
 
   /** YARN RPC to communicate with the Resource Manager or Node Manager */
   private YarnRPC yarnRPC;
@@ -288,6 +292,14 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private SliderRegistryService registry;
   
+  
+  /**
+   * The YARN registry service
+   */
+  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
+  private YarnRegistryService yarnRegistry;
+
+
   /**
    * Record of the max no. of cores allowed in this cluster
    */
@@ -590,6 +602,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       
       //registry
       registry = startRegistrationService();
+      yarnRegistry = startYarnRegistryService();
 
       //build the role map
       List<ProviderRole> providerRoles =
@@ -714,8 +727,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
 
     //Give the provider restricted access to the state, registry
-    providerService.bind(stateForProviders, registry, this);
-    sliderAMProvider.bind(stateForProviders, registry, null);
+    providerService.bind(stateForProviders, registry, yarnRegistry, this);
+    sliderAMProvider.bind(stateForProviders, registry, yarnRegistry, null);
 
     // now do the registration
     registerServiceInstance(clustername, appid);
@@ -785,7 +798,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     URL secureWebAPI = new URL(agentAccessUrl);
     String serviceName = SliderKeys.APP_TYPE;
     int id = appid.getId();
-    String appServiceType = RegistryNaming.createRegistryServiceType(
+    String serviceType = RegistryNaming.createRegistryServiceType(
         instanceName,
         service_user_name,
         serviceName);
@@ -797,37 +810,48 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     log.info("service instances already running: {}", serviceInstancesRunning);
 
 
+    // slider instance data
     ServiceInstanceData instanceData = new ServiceInstanceData(registryId,
-        appServiceType);
+        serviceType);
 
+    // Yarn registry
+    ServiceEntry registryEntry = new ServiceEntry();
 
     // IPC services
     instanceData.externalView.endpoints.put(
         CustomRegistryConstants.AM_IPC_PROTOCOL,
         new RegisteredEndpoint(rpcServiceAddress,
             RegisteredEndpoint.PROTOCOL_HADOOP_PROTOBUF,
-            "Slider AM RPC") );
+            SLIDER_AM_RPC) );
 
-
+    registryEntry.putExternalEndpoint(CustomRegistryConstants.AM_IPC_PROTOCOL,
+        RegistryTypeUtils.ipcEndpoint(
+            CustomRegistryConstants.AM_IPC_PROTOCOL,
+            SLIDER_AM_RPC,
+            true,
+            RegistryTypeUtils.toWireFormat(rpcServiceAddress)));
+    
     // internal services
-   
+
     sliderAMProvider.applyInitialRegistryDefinitions(unsecureWebAPI,
-                                                     secureWebAPI,
-                                                     instanceData
-    );
+        secureWebAPI,
+        instanceData,
+        registryEntry);
 
     // provider service dynamic definitions.
     providerService.applyInitialRegistryDefinitions(unsecureWebAPI,
-                                                    secureWebAPI,
-                                                    instanceData
-    );
+        secureWebAPI,
+        instanceData,
+        registryEntry);
 
 
     // push the registration info to ZK
 
-    registry.registerSelf(
-        instanceData, unsecureWebAPI
-    );
+    registry.registerSelf(instanceData, unsecureWebAPI);
+    yarnRegistry.putServiceEntry(service_user_name,
+        SliderKeys.APP_TYPE, instanceName,
+        registryEntry );
+    
   }
 
   /**

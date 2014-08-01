@@ -23,6 +23,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.apache.hadoop.yarn.registry.client.types.ServiceEntry;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.tools.ConfigHelper;
 import org.apache.slider.common.tools.SliderFileSystem;
@@ -111,12 +112,12 @@ public class SliderAMProviderService extends AbstractProviderService implements
 
   @Override
   public void applyInitialRegistryDefinitions(URL unsecureWebAPI,
-                                              URL secureWebAPI,
-                                              ServiceInstanceData instanceData) throws IOException {
+      URL secureWebAPI,
+      ServiceInstanceData instanceData, ServiceEntry serviceEntry) throws IOException {
     super.applyInitialRegistryDefinitions(unsecureWebAPI,
                                           secureWebAPI,
-                                          instanceData
-    );
+                                          instanceData,
+                                          serviceEntry);
 
     // now publish site.xml files
     YarnConfiguration defaultYarnConfig = new YarnConfiguration();

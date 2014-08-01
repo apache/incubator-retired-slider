@@ -22,6 +22,7 @@ package org.apache.slider.providers.hbase;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.Container;
+import org.apache.hadoop.yarn.registry.client.types.ServiceEntry;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.OptionKeys;
@@ -210,10 +211,11 @@ public class HBaseProviderService extends AbstractProviderService implements
 
   @Override
   public void applyInitialRegistryDefinitions(URL web,
-                                              URL secureWebAPI,
-                                              ServiceInstanceData instanceData) throws
+      URL secureWebAPI,
+      ServiceInstanceData instanceData, ServiceEntry serviceEntry) throws
       IOException {
-    super.applyInitialRegistryDefinitions(web, secureWebAPI, instanceData);
+    super.applyInitialRegistryDefinitions(web, secureWebAPI, instanceData,
+        serviceEntry);
   }
 
   @Override

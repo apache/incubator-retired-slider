@@ -22,6 +22,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.service.Service;
 import org.apache.hadoop.yarn.api.records.Container;
+import org.apache.hadoop.yarn.registry.client.binding.zk.YarnRegistryService;
+import org.apache.hadoop.yarn.registry.client.types.ServiceEntry;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.core.conf.AggregateConf;
@@ -139,11 +141,12 @@ public interface ProviderService extends ProviderCore, Service,
    * bind operation -invoked before the service is started
    * @param stateAccessor interface offering read access to the state
    * @param registry
+   * @param yarnRegistry
    * @param amView
    */
   void bind(StateAccessForProviders stateAccessor,
-            RegistryViewForProviders registry,
-            AMViewForProviders amView);
+      RegistryViewForProviders registry,
+      YarnRegistryService yarnRegistry, AMViewForProviders amView);
 
   /**
    * Returns the agent rest operations interface.
@@ -162,9 +165,10 @@ public interface ProviderService extends ProviderCore, Service,
    * @param unsecureWebAPI
    * @param secureWebAPI
    * @param registryInstanceData
+   * @param serviceEntry
    */
   void applyInitialRegistryDefinitions(URL unsecureWebAPI,
-                                       URL secureWebAPI,
-                                       ServiceInstanceData registryInstanceData) throws MalformedURLException,
-      IOException;
+      URL secureWebAPI,
+      ServiceInstanceData registryInstanceData,
+      ServiceEntry serviceEntry) throws IOException;
 }

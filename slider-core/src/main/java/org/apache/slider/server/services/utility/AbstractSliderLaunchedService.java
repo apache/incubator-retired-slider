@@ -19,7 +19,10 @@
 package org.apache.slider.server.services.utility;
 
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.apache.hadoop.yarn.registry.client.api.RegistryConstants;
+import org.apache.hadoop.yarn.registry.client.binding.zk.YarnRegistryService;
 import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
@@ -30,7 +33,6 @@ import org.apache.slider.server.services.registry.SliderRegistryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.slider.common.SliderXmlConfKeys.DEFAULT_REGISTRY_PATH;
 import static org.apache.slider.common.SliderXmlConfKeys.REGISTRY_PATH;
 
 /**
@@ -56,8 +58,10 @@ public abstract class AbstractSliderLaunchedService extends
       throws BadConfigException {
 
     String registryQuorum = lookupZKQuorum();
-    String zkPath = getConfig().get(REGISTRY_PATH, DEFAULT_REGISTRY_PATH);
-    return startRegistrationService(registryQuorum, zkPath);
+    String zkPath = getConfig().get(RegistryConstants.REGISTRY_ZK_ROOT,
+        RegistryConstants.DEFAULT_REGISTRY_ROOT);
+    zkPath = getConfig().get(REGISTRY_PATH, zkPath);
+    return startSliderRegistrationService(registryQuorum, zkPath);
   }
 
   /**
@@ -67,11 +71,14 @@ public abstract class AbstractSliderLaunchedService extends
    */
   public String lookupZKQuorum() throws BadConfigException {
     String registryQuorum = getConfig().get(
-        SliderXmlConfKeys.REGISTRY_ZK_QUORUM);
+        RegistryConstants.ZK_QUORUM);
+    registryQuorum = getConfig().get(
+        SliderXmlConfKeys.REGISTRY_ZK_QUORUM,
+        registryQuorum);
     if (SliderUtils.isUnset(registryQuorum)) {
       throw new BadConfigException(
           "No Zookeeper quorum provided in the"
-          + " configuration property " + SliderXmlConfKeys.REGISTRY_ZK_QUORUM
+          + " configuration property " + RegistryConstants.ZK_QUORUM
       );
     }
     ZookeeperUtils.splitToHostsAndPortsStrictly(registryQuorum);
@@ -84,8 +91,9 @@ public abstract class AbstractSliderLaunchedService extends
    * @param zkPath
    * @return
    */
-  public SliderRegistryService startRegistrationService(
-    String zkConnection, String zkPath) {
+  public SliderRegistryService startSliderRegistrationService(
+      String zkConnection,
+      String zkPath) {
     CuratorHelper curatorHelper =
       new CuratorHelper(getConfig(), zkConnection);
 
@@ -96,9 +104,36 @@ public abstract class AbstractSliderLaunchedService extends
     return registryBinderService;
   }
 
-  protected void requireArgumentSet(String argname, String argfield)
+  /**
+   * Start the YARN registration service
+   * @param zkConnection
+   * @param zkPath
+   * @return
+   */
+  public YarnRegistryService startYarnRegistryService()
+      throws BadConfigException {
+
+    String quorum = lookupZKQuorum();
+    Configuration conf = getConfig();
+    // push back the slider registry entry if needed
+    if (conf.get(RegistryConstants.ZK_QUORUM) == null) {
+      conf.set(RegistryConstants.ZK_QUORUM, quorum);
+    }
+    YarnRegistryService yarnRegistryService =
+        new YarnRegistryService("YarnRegistry");
+    deployChildService(yarnRegistryService);
+    return yarnRegistryService;
+  }
+
+  /**
+   * Utility method to require an argument to be set (non null, non-empty)
+   * @param argname argument name
+   * @param value value
+   * @throws BadCommandArgumentsException if the condition is not met
+   */
+  protected static void requireArgumentSet(String argname, String value)
       throws BadCommandArgumentsException {
-    if (isUnset(argfield)) {
+    if (isUnset(value)) {
       throw new BadCommandArgumentsException("Required argument "
                                              + argname
                                              + " missing");
