@@ -24,6 +24,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.records.Container;
+import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.LocalResourceType;
 import org.apache.slider.api.ClusterDescription;
@@ -110,6 +111,7 @@ public class AgentProviderService extends AbstractProviderService implements
   private static final String GLOBAL_CONFIG_TAG = "global";
   private static final String LOG_FOLDERS_TAG = "LogFolders";
   private static final String COMPONENT_DATA_TAG = "ComponentInstanceData";
+  private static final String SHARED_PORT_TAG = "{SHARED}";
   private static final int MAX_LOG_ENTRIES = 20;
   private static final int DEFAULT_HEARTBEAT_MONITOR_INTERVAL = 60 * 1000;
   private final Object syncLock = new Object();
@@ -290,116 +292,6 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   /**
-   * Reads and sets the heartbeat monitoring interval. If bad value is provided then log it and set to default.
-   * @param instanceDefinition
-   */
-  private void readAndSetHeartbeatMonitoringInterval(AggregateConf instanceDefinition) {
-    String hbMonitorInterval = instanceDefinition.getAppConfOperations().
-        getGlobalOptions().getOption(AgentKeys.HEARTBEAT_MONITOR_INTERVAL,
-                                     Integer.toString(DEFAULT_HEARTBEAT_MONITOR_INTERVAL));
-    try {
-      setHeartbeatMonitorInterval(Integer.parseInt(hbMonitorInterval));
-    }catch (NumberFormatException e) {
-      log.warn(
-          "Bad value {} for {}. Defaulting to ",
-          hbMonitorInterval,
-          HEARTBEAT_MONITOR_INTERVAL,
-          DEFAULT_HEARTBEAT_MONITOR_INTERVAL);
-    }
-  }
-
-  /**
-   * Reads and sets the heartbeat monitoring interval. If bad value is provided then log it and set to default.
-   * @param instanceDefinition
-   */
-  private void initializeAgentDebugCommands(AggregateConf instanceDefinition) {
-    String launchParameterStr = instanceDefinition.getAppConfOperations().
-        getGlobalOptions().getOption(AgentKeys.AGENT_INSTANCE_DEBUG_DATA, "");
-    agentLaunchParameter = new AgentLaunchParameter(launchParameterStr);
-  }
-
-  @VisibleForTesting
-  protected Metainfo getMetainfo() {
-    return this.metainfo;
-  }
-
-  @VisibleForTesting
-  protected Map<String, ComponentInstanceState> getComponentStatuses() {
-    return componentStatuses;
-  }
-
-  @VisibleForTesting
-  protected Metainfo getApplicationMetainfo(SliderFileSystem fileSystem,
-                                            String appDef) throws IOException {
-    return AgentUtils.getApplicationMetainfo(fileSystem, appDef);
-  }
-
-  @VisibleForTesting
-  protected void setHeartbeatMonitorInterval(int heartbeatMonitorInterval) {
-    this.heartbeatMonitorInterval = heartbeatMonitorInterval;
-  }
-
-  private int getHeartbeatMonitorInterval() {
-    return this.heartbeatMonitorInterval;
-  }
-
-  /**
-   * Publish a named config bag that may contain name-value pairs for app configurations such as hbase-site
-   * @param name
-   * @param description
-   * @param entries
-   */
-  protected void publishComponentConfiguration(String name, String description,
-                                               Iterable<Map.Entry<String, String>> entries) {
-    PublishedConfiguration pubconf = new PublishedConfiguration();
-    pubconf.description = description;
-    pubconf.putValues(entries);
-    log.info("publishing {}", pubconf);
-    getAmState().getPublishedSliderConfigurations().put(name, pubconf);
-  }
-
-  /**
-   * Get a list of all hosts for all role/container per role
-   * @return
-   */
-  protected Map<String, Map<String, ClusterNode>> getRoleClusterNodeMapping() {
-    amState.refreshClusterStatus();
-    return (Map<String, Map<String, ClusterNode>>)
-        amState.getClusterStatus().status.get(
-            ClusterDescriptionKeys.KEY_CLUSTER_LIVE);
-  }
-
-  private String getContainerLabel(Container container, String role) {
-    return container.getId().toString() + LABEL_MAKER + role;
-  }
-
-  protected String getClusterInfoPropertyValue(String name) {
-    StateAccessForProviders accessor = getAmState();
-    assert accessor.isApplicationLive();
-    ClusterDescription description = accessor.getClusterStatus();
-    return description.getInfo(name);
-  }
-
-  /**
-   * Lost heartbeat from the container - release it and ask for a replacement
-   *
-   * @param label
-   *
-   * @return if release is requested successfully
-   */
-  protected boolean releaseContainer(String label) {
-    componentStatuses.remove(label);
-    try {
-      getAppMaster().refreshContainer(getContainerId(label), true);
-    } catch (SliderException e) {
-      log.info("Error while requesting container release for {}. Message: {}", label, e.getMessage());
-      return false;
-    }
-
-    return true;
-  }
-
-  /**
    * Run this service
    *
    * @param instanceDefinition component description
@@ -419,16 +311,6 @@ public class AgentProviderService extends AbstractProviderService implements
       SliderException {
 
     return false;
-  }
-
-  /**
-   * Build the provider status, can be empty
-   *
-   * @return the provider status - map of entries to add to the info section
-   */
-  public Map<String, String> buildProviderStatus() {
-    Map<String, String> stats = new HashMap<>();
-    return stats;
   }
 
   @Override
@@ -489,7 +371,7 @@ public class AgentProviderService extends AbstractProviderService implements
     // Otherwise, wait till the master that can publish is ready
     if (isMaster &&
         (canAnyMasterPublishConfig() == false || canPublishConfig(roleName))) {
-      processReturnedStatus(heartBeat, componentStatus);
+      publishConfigAndExportGroups(heartBeat, componentStatus);
     }
 
     List<CommandReport> reports = heartBeat.getReports();
@@ -511,7 +393,7 @@ public class AgentProviderService extends AbstractProviderService implements
       log.info("Component operation. Status: {}", result);
 
       if (command == Command.INSTALL && report.getFolders() != null && report.getFolders().size() > 0) {
-        processFolderPaths(report.getFolders(), containerId, heartBeat.getFqdn());
+        publishLogFolderPaths(report.getFolders(), containerId, heartBeat.getFqdn());
       }
     }
 
@@ -558,13 +440,168 @@ public class AgentProviderService extends AbstractProviderService implements
     return response;
   }
 
+  @Override
+  public Map<String, String> buildMonitorDetails(ClusterDescription clusterDesc) {
+    Map<String, String> details = super.buildMonitorDetails(clusterDesc);
+    buildRoleHostDetails(details);
+    return details;
+  }
+
+  @Override
+  public void applyInitialRegistryDefinitions(URL unsecureWebAPI,
+                                              URL secureWebAPI,
+                                              ServiceInstanceData instanceData) throws IOException {
+    super.applyInitialRegistryDefinitions(unsecureWebAPI,
+                                          secureWebAPI,
+                                          instanceData
+    );
+
+    try {
+      instanceData.internalView.endpoints.put(
+          CustomRegistryConstants.AGENT_REST_API,
+          new RegisteredEndpoint(
+              new URL(secureWebAPI, SLIDER_PATH_AGENTS),
+              "Agent REST API"));
+    } catch (URISyntaxException e) {
+      throw new IOException(e);
+    }
+  }
+
+  @Override
+  public void notifyContainerCompleted(ContainerId containerId) {
+    if(containerId != null) {
+      String containerIdStr = containerId.toString();
+    }
+  }
+
   /**
-   * Format the folder locations before publishing in the registry service
+   * Reads and sets the heartbeat monitoring interval. If bad value is provided then log it and set to default.
+   * @param instanceDefinition
+   */
+  private void readAndSetHeartbeatMonitoringInterval(AggregateConf instanceDefinition) {
+    String hbMonitorInterval = instanceDefinition.getAppConfOperations().
+        getGlobalOptions().getOption(AgentKeys.HEARTBEAT_MONITOR_INTERVAL,
+                                     Integer.toString(DEFAULT_HEARTBEAT_MONITOR_INTERVAL));
+    try {
+      setHeartbeatMonitorInterval(Integer.parseInt(hbMonitorInterval));
+    }catch (NumberFormatException e) {
+      log.warn(
+          "Bad value {} for {}. Defaulting to ",
+          hbMonitorInterval,
+          HEARTBEAT_MONITOR_INTERVAL,
+          DEFAULT_HEARTBEAT_MONITOR_INTERVAL);
+    }
+  }
+
+  /**
+   * Reads and sets the heartbeat monitoring interval. If bad value is provided then log it and set to default.
+   * @param instanceDefinition
+   */
+  private void initializeAgentDebugCommands(AggregateConf instanceDefinition) {
+    String launchParameterStr = instanceDefinition.getAppConfOperations().
+        getGlobalOptions().getOption(AgentKeys.AGENT_INSTANCE_DEBUG_DATA, "");
+    agentLaunchParameter = new AgentLaunchParameter(launchParameterStr);
+  }
+
+  @VisibleForTesting
+  protected Metainfo getMetainfo() {
+    return this.metainfo;
+  }
+
+  @VisibleForTesting
+  protected Map<String, ComponentInstanceState> getComponentStatuses() {
+    return componentStatuses;
+  }
+
+  @VisibleForTesting
+  protected Metainfo getApplicationMetainfo(SliderFileSystem fileSystem,
+                                            String appDef) throws IOException {
+    return AgentUtils.getApplicationMetainfo(fileSystem, appDef);
+  }
+
+  @VisibleForTesting
+  protected void setHeartbeatMonitorInterval(int heartbeatMonitorInterval) {
+    this.heartbeatMonitorInterval = heartbeatMonitorInterval;
+  }
+
+  private int getHeartbeatMonitorInterval() {
+    return this.heartbeatMonitorInterval;
+  }
+
+  /**
+   * Publish a named property bag that may contain name-value pairs for app configurations such as hbase-site
+   * @param name
+   * @param description
+   * @param entries
+   */
+  protected void publishComponentConfiguration(String name, String description,
+                                               Iterable<Map.Entry<String, String>> entries) {
+    PublishedConfiguration pubconf = new PublishedConfiguration();
+    pubconf.description = description;
+    pubconf.putValues(entries);
+    log.info("publishing {}", pubconf);
+    getAmState().getPublishedSliderConfigurations().put(name, pubconf);
+  }
+
+  /**
+   * Get a list of all hosts for all role/container per role
+   * @return
+   */
+  protected Map<String, Map<String, ClusterNode>> getRoleClusterNodeMapping() {
+    amState.refreshClusterStatus();
+    return (Map<String, Map<String, ClusterNode>>)
+        amState.getClusterStatus().status.get(
+            ClusterDescriptionKeys.KEY_CLUSTER_LIVE);
+  }
+
+  private String getContainerLabel(Container container, String role) {
+    return container.getId().toString() + LABEL_MAKER + role;
+  }
+
+  protected String getClusterInfoPropertyValue(String name) {
+    StateAccessForProviders accessor = getAmState();
+    assert accessor.isApplicationLive();
+    ClusterDescription description = accessor.getClusterStatus();
+    return description.getInfo(name);
+  }
+
+  /**
+   * Lost heartbeat from the container - release it and ask for a replacement
+   *
+   * @param label
+   *
+   * @return if release is requested successfully
+   */
+  protected boolean releaseContainer(String label) {
+    componentStatuses.remove(label);
+    try {
+      getAppMaster().refreshContainer(getContainerId(label), true);
+    } catch (SliderException e) {
+      log.info("Error while requesting container release for {}. Message: {}", label, e.getMessage());
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Build the provider status, can be empty
+   *
+   * @return the provider status - map of entries to add to the info section
+   */
+  public Map<String, String> buildProviderStatus() {
+    Map<String, String> stats = new HashMap<>();
+    return stats;
+  }
+
+
+  /**
+   * Format the folder locations and publish in the registry service
    * @param folders
    * @param containerId
    * @param hostFqdn
    */
-  private void processFolderPaths(Map<String, String> folders, String containerId, String hostFqdn) {
+  private void publishLogFolderPaths(Map<String, String> folders, String containerId, String hostFqdn) {
     for (String key : folders.keySet()) {
       workFolders.put(String.format("%s-%s-%s", hostFqdn, containerId, key), folders.get(key));
     }
@@ -578,7 +615,7 @@ public class AgentProviderService extends AbstractProviderService implements
    * @param heartBeat
    * @param componentStatus
    */
-  protected void processReturnedStatus(HeartBeat heartBeat, ComponentInstanceState componentStatus) {
+  protected void publishConfigAndExportGroups(HeartBeat heartBeat, ComponentInstanceState componentStatus) {
     List<ComponentStatus> statuses = heartBeat.getComponentStatus();
     if (statuses != null && !statuses.isEmpty()) {
       log.info("Processing {} status reports.", statuses.size());
@@ -658,11 +695,11 @@ public class AgentProviderService extends AbstractProviderService implements
               boolean publishData = false;
               String portValPattern = String.format(portVarFormat, portName);
               if(templateToExport.contains(portValPattern)) {
-                templateToExport.replace(portValPattern, ports.get(portName));
+                templateToExport = templateToExport.replace(portValPattern, ports.get(portName));
                 publishData = true;
               }
               if(templateToExport.contains(hostNamePattern)) {
-                templateToExport.replace(hostNamePattern, hostFqdn);
+                templateToExport = templateToExport.replace(hostNamePattern, hostFqdn);
                 publishData = true;
               }
               if(publishData) {
@@ -1032,9 +1069,13 @@ public class AgentProviderService extends AbstractProviderService implements
     //apply any port updates
     if (!this.getAllocatedPorts().isEmpty()) {
       for (String key : config.keySet()) {
-        String lookupKey = configName + "." + key;
-        if (this.getAllocatedPorts().containsKey(lookupKey)) {
-          config.put(key, getAllocatedPorts().get(lookupKey));
+        String value = config.get(key);
+        if(!value.contains(SHARED_PORT_TAG)) {
+          // If the config property is not shared then do not pass on the already allocated value
+          String lookupKey = configName + "." + key;
+          if (this.getAllocatedPorts().containsKey(lookupKey)) {
+            config.put(key, getAllocatedPorts().get(lookupKey));
+          }
         }
       }
     }
@@ -1065,13 +1106,6 @@ public class AgentProviderService extends AbstractProviderService implements
     config.put("app_install_dir", "${AGENT_WORK_ROOT}/app/install");
   }
 
-  @Override
-  public Map<String, String> buildMonitorDetails(ClusterDescription clusterDesc) {
-    Map<String, String> details = super.buildMonitorDetails(clusterDesc);
-    buildRoleHostDetails(details);
-    return details;
-  }
-
   private void buildRoleHostDetails(Map<String, String> details) {
     for (Map.Entry<String, Map<String, ClusterNode>> entry :
         getRoleClusterNodeMapping().entrySet()) {
@@ -1079,26 +1113,5 @@ public class AgentProviderService extends AbstractProviderService implements
                   getHostsList(entry.getValue().values(), false),
                   "");
     }
-  }
-
-  @Override
-  public void applyInitialRegistryDefinitions(URL unsecureWebAPI,
-                                              URL secureWebAPI,
-                                              ServiceInstanceData instanceData) throws IOException {
-    super.applyInitialRegistryDefinitions(unsecureWebAPI,
-                                          secureWebAPI,
-                                          instanceData
-    );
-
-    try {
-      instanceData.internalView.endpoints.put(
-          CustomRegistryConstants.AGENT_REST_API,
-          new RegisteredEndpoint(
-              new URL(secureWebAPI, SLIDER_PATH_AGENTS),
-              "Agent REST API"));
-    } catch (URISyntaxException e) {
-      throw new IOException(e);
-    }
-
   }
 }

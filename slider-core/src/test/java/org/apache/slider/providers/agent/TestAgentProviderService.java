@@ -355,6 +355,45 @@ public class TestAgentProviderService {
   }
 
   @Test
+  public void testComponentSpecificPublishes() throws Exception {
+    InputStream metainfo_1 = new ByteArrayInputStream(metainfo_1_str.getBytes());
+    Metainfo metainfo = new MetainfoParser().parse(metainfo_1);
+    AgentProviderService aps = new AgentProviderService();
+    AgentProviderService mockAps = Mockito.spy(aps);
+    doNothing().when(mockAps).publishComponentConfiguration(anyString(), anyString(), anyCollection());
+    doReturn(metainfo).when(mockAps).getMetainfo();
+
+    Map<String, String> ports = new HashMap<>();
+    ports.put("global.listen_port", "10010");
+    mockAps.processComponentSpecificPublishes(ports,
+                                              "cid1",
+                                              "host1",
+                                              "HBASE_REGIONSERVER");
+    ArgumentCaptor<Collection> entriesCaptor = ArgumentCaptor.
+        forClass(Collection.class);
+    ArgumentCaptor<String> publishNameCaptor = ArgumentCaptor.
+        forClass(String.class);
+    Mockito.verify(mockAps, Mockito.times(1)).publishComponentConfiguration(
+        anyString(),
+        publishNameCaptor.capture(),
+        entriesCaptor.capture());
+    assert entriesCaptor.getAllValues().size() == 1;
+    for (Collection coll : entriesCaptor.getAllValues()) {
+      Set<Map.Entry<String, String>> entrySet = (Set<Map.Entry<String, String>>) coll;
+      for (Map.Entry entry : entrySet) {
+        log.info("{}:{}", entry.getKey(), entry.getValue().toString());
+        if (entry.getKey().equals("PropertyA")) {
+          assert entry.getValue().toString().equals("host1:10010");
+        }
+      }
+    }
+    assert publishNameCaptor.getAllValues().size() == 1;
+    for (String coll : publishNameCaptor.getAllValues()) {
+      assert coll.equals("ComponentInstanceData");
+    }
+  }
+
+  @Test
   public void testProcessConfig() throws Exception {
     InputStream metainfo_1 = new ByteArrayInputStream(metainfo_1_str.getBytes());
     Metainfo metainfo = new MetainfoParser().parse(metainfo_1);
@@ -387,16 +426,16 @@ public class TestAgentProviderService {
     doReturn(metainfo).when(mockAps).getMetainfo();
     doReturn(roleClusterNodeMap).when(mockAps).getRoleClusterNodeMapping();
 
-    mockAps.processReturnedStatus(hb, componentStatus);
+    mockAps.publishConfigAndExportGroups(hb, componentStatus);
     assert componentStatus.getConfigReported() == true;
-    ArgumentCaptor<Collection> commandCaptor = ArgumentCaptor.
+    ArgumentCaptor<Collection> entriesCaptor = ArgumentCaptor.
         forClass(Collection.class);
     Mockito.verify(mockAps, Mockito.times(3)).publishComponentConfiguration(
         anyString(),
         anyString(),
-        commandCaptor.capture());
-    assert commandCaptor.getAllValues().size() == 3;
-    for (Collection coll : commandCaptor.getAllValues()) {
+        entriesCaptor.capture());
+    assert entriesCaptor.getAllValues().size() == 3;
+    for (Collection coll : entriesCaptor.getAllValues()) {
       Set<Map.Entry<String, String>> entrySet = (Set<Map.Entry<String, String>>) coll;
       for (Map.Entry entry : entrySet) {
         log.info("{}:{}", entry.getKey(), entry.getValue().toString());

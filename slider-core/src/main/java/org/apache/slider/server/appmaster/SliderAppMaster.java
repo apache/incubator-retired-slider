@@ -1061,6 +1061,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         RoleInstance ri = result.roleInstance;
         log.error("Role instance {} failed ", ri);
       }
+
+      getProviderService().notifyContainerCompleted(containerId);
     }
 
     // ask for more containers if any failed
