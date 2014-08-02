@@ -19,6 +19,7 @@
 package org.apache.slider.core.launch;
 
 
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.slider.common.tools.SliderUtils;
 
@@ -63,6 +64,8 @@ public class JavaCommandLineBuilder extends CommandLineBuilder {
    * @param value
    */
   public void sysprop(String property, String value) {
+    Preconditions.checkArgument(property != null, "null property name");
+    Preconditions.checkArgument(value != null, "null value");
     add("-D" + property + "=" + value);
   }
   

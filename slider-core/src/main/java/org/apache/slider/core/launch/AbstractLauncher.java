@@ -18,6 +18,7 @@
 
 package org.apache.slider.core.launch;
 
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
@@ -238,6 +239,8 @@ public abstract class AbstractLauncher extends Configured {
     setEnv("CLASSPATH", classpath.buildClasspath());
   }
   public void setEnv(String var, String value) {
+    Preconditions.checkArgument(var != null, "null variable name");
+    Preconditions.checkArgument(value != null, "null value");
     env.put(var, value);
   }
 
