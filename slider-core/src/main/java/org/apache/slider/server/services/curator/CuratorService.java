@@ -65,11 +65,11 @@ public class CuratorService extends AbstractService {
     closeCuratorComponent(curator);
   }
 
-  public CuratorFramework getCurator() {
+  public final CuratorFramework getCurator() {
     return curator;
   }
 
-  protected void closeCuratorComponent(Closeable closeable) {
+  protected final void closeCuratorComponent(Closeable closeable) {
     try {
       IOUtils.closeStream(closeable);
     } catch (Throwable ignored) {
@@ -78,21 +78,21 @@ public class CuratorService extends AbstractService {
     }
   }
 
-  public String pathForServicetype(String servicetype) {
+  public final String pathForServicetype(String servicetype) {
     return ZKPaths.makePath(getBasePath(), servicetype);
   }
 
-  protected String pathForInstance(String servicetype, String id) {
+  protected final String pathForInstance(String servicetype, String id) {
     Preconditions.checkNotNull(servicetype);
     Preconditions.checkNotNull(id);
     return ZKPaths.makePath(pathForServicetype(servicetype), id);
   }
 
-  public String getBasePath() {
+  public final String getBasePath() {
     return basePath;
   }
 
-  public CuratorHelper getCuratorHelper() {
+  public final CuratorHelper getCuratorHelper() {
     return curatorHelper;
   }
 }
