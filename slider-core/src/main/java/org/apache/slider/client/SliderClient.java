@@ -34,6 +34,7 @@ import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.registry.client.api.RegistryConstants;
+import org.apache.hadoop.yarn.registry.client.binding.zk.ZKPathDumper;
 import org.apache.hadoop.yarn.registry.server.services.YarnRegistryService;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterNode;
@@ -666,7 +667,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   public FsPermission getClusterDirectoryPermissions(Configuration conf) {
     String clusterDirPermsOct =
       conf.get(CLUSTER_DIRECTORY_PERMISSIONS,
-               DEFAULT_CLUSTER_DIRECTORY_PERMISSIONS);
+          DEFAULT_CLUSTER_DIRECTORY_PERMISSIONS);
     return new FsPermission(clusterDirPermsOct);
   }
 
@@ -1233,7 +1234,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    */
   private boolean getUsingMiniMRCluster() {
     return getConfig().getBoolean(YarnConfiguration.IS_MINI_YARN_CLUSTER,
-                                  false);
+        false);
   }
 
   /**
@@ -2334,6 +2335,16 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     return getRegistry().listInstances(SliderKeys.APP_TYPE);
   }
 
+
+  /**
+   * Get an on-demand path jumper
+   * @return a class that can dump the contents of the registry
+   */
+  @VisibleForTesting
+  public ZKPathDumper dumpSliderRegistry() throws SliderException, IOException {
+    return getRegistry().dumpPath();
+  }
+  
   /**
    * List instances in the registry
    * @return the instance IDs
@@ -2409,6 +2420,17 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       IOException {
     return maybeStartYarnRegistry();
   }
+
+
+  /**
+   * Get an on-demand path jumper
+   * @return a class that can dump the contents of the registry
+   */
+  @VisibleForTesting
+  public ZKPathDumper dumpYarnRegistry() throws SliderException, IOException {
+    return getYarnRegistry().dumpPath();
+  }
+
 
   /**
    * Output to standard out/stderr (implementation specific detail)

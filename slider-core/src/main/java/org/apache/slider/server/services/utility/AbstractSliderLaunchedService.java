@@ -65,9 +65,9 @@ public abstract class AbstractSliderLaunchedService extends
       throws BadConfigException {
 
     String registryQuorum = lookupZKQuorum();
-    String zkPath = getConfig().get(RegistryConstants.REGISTRY_ZK_ROOT,
-        RegistryConstants.DEFAULT_REGISTRY_ROOT);
-    zkPath = getConfig().get(REGISTRY_PATH, zkPath);
+    String zkPath = getConfig().get(
+        SliderXmlConfKeys.REGISTRY_PATH,
+        SliderXmlConfKeys.DEFAULT_REGISTRY_PATH);
     return startSliderRegistrationService(registryQuorum, zkPath);
   }
 

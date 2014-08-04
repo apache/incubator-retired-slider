@@ -135,4 +135,9 @@ public class CuratorHelper extends Configured {
                                         ServiceInstanceData.class);
 
   }
+
+  @Override
+  public String toString() {
+    return "Curator binding " + connectionString;
+  }
 }

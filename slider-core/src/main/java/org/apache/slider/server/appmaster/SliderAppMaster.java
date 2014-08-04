@@ -603,6 +603,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       //registry
       log.info("Starting slider registry");
       sliderRegistry = startRegistrationService();
+      log.info(sliderRegistry.toString());
+
       log.info("Starting Yarn registry");
       yarnRegistry = startYarnRegistryService();
       log.info(yarnRegistry.toString());

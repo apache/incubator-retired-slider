@@ -18,12 +18,14 @@
 
 package org.apache.slider.server.services.curator;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.utils.ZKPaths;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.service.AbstractService;
+import org.apache.hadoop.yarn.registry.client.binding.zk.ZKPathDumper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,5 +96,20 @@ public class CuratorService extends AbstractService {
 
   public final CuratorHelper getCuratorHelper() {
     return curatorHelper;
+  }
+
+  @Override
+  public String toString() {
+    return super.toString() + "; "
+           + (curatorHelper != null ? curatorHelper : "( unbound)")
+           + "; " + basePath;
+  }
+
+  /**
+   * Get an on-demand path jumper
+   * @return a class that can dump the contents of the registry
+   */
+  public ZKPathDumper dumpPath() {
+    return new ZKPathDumper(curator, basePath);
   }
 }
