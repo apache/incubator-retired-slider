@@ -117,7 +117,7 @@
     <!--
     core artifacts
     -->
-    <hadoop.version>2.4.1</hadoop.version>
+    <hadoop.version>2.6.0-SNAPSHOT</hadoop.version>
 
     <hbase.version>0.98.4-hadoop2</hbase.version>
     <accumulo.version>1.6.0</accumulo.version>
@@ -1264,12 +1264,12 @@
       <!-- hadoop branch-2 builds  -->
       <id>branch-2</id>
       <properties>
-        <hadoop.version>2.5.0-SNAPSHOT</hadoop.version>
+        <hadoop.version>2.6.0-SNAPSHOT</hadoop.version>
       </properties>
     </profile>
     
     <profile>
-      <!-- hadoop branch-2 builds  -->
+      <!-- hadoop trunk builds  -->
       <id>hadoop-trunk</id>
       <properties>
         <hadoop.version>3.0.0-SNAPSHOT</hadoop.version>

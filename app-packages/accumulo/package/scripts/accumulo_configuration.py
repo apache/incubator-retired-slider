@@ -31,6 +31,15 @@ def setup_conf_dir(name=None, # 'master' or 'tserver' or 'monitor' or 'gc' or 't
       recursive = True
   )
 
+  if name == "master":
+    jarname = "CustomAuthenticator.jar"
+    File(format("{params.accumulo_root}/lib/{jarname}"),
+      mode=0644,
+      group=params.user_group,
+      owner=params.accumulo_user,
+      content=StaticFile(jarname)
+    )
+
   if name != "client":
     # create pid dir
     Directory( params.pid_dir,

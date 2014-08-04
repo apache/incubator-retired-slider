@@ -27,10 +27,9 @@ abstract class AccumuloAgentCommandTestBase extends AgentCommandTestBase {
   protected static final int ACCUMULO_LAUNCH_WAIT_TIME
   protected static final int ACCUMULO_GO_LIVE_TIME = 60000
 
-  // parameters must match those found in the default appConfig.json
-  protected static final String INSTANCE_NAME = "instancename"
   protected static final String USER = "root"
-  protected static final String PASSWORD = "secret"
+  protected static final String PASSWORD = "secret_password"
+  protected static final String INSTANCE_SECRET = "other_secret_password"
 
   static {
     ACCUMULO_LAUNCH_WAIT_TIME = getTimeOptionMillis(SLIDER_CONFIG,

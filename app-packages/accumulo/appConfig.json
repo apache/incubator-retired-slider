@@ -20,14 +20,16 @@
     "site.global.hadoop_prefix": "/usr/lib/hadoop",
     "site.global.hadoop_conf_dir": "/etc/hadoop/conf",
     "site.global.zookeeper_home": "/usr/lib/zookeeper",
-    "site.global.accumulo_instance_name": "instancename",
-    "site.global.accumulo_root_password": "secret",
+    "site.global.accumulo_instance_name": "${USER}-${CLUSTER_NAME}",
+    "site.global.accumulo_root_password": "NOT_USED",
     "site.global.user_group": "hadoop",
     "site.global.security_enabled": "false",
     "site.global.monitor_protocol": "http",
     "site.accumulo-site.instance.volumes": "${DEFAULT_DATA_DIR}/data",
     "site.accumulo-site.instance.zookeeper.host": "${ZK_HOST}",
     "site.accumulo-site.instance.secret": "DEFAULT",
+    "site.accumulo-site.instance.security.authenticator": "org.apache.slider.accumulo.CustomAuthenticator",
+    "site.accumulo-site.instance.security.credential.provider": "jceks://hdfs/user/${USER}/accumulo-${CLUSTER_NAME}.jceks",
     "site.accumulo-site.tserver.memory.maps.max": "80M",
     "site.accumulo-site.tserver.cache.data.size": "7M",
     "site.accumulo-site.tserver.cache.index.size": "20M",
@@ -42,6 +44,9 @@
     "site.accumulo-site.monitor.port.client": "${ACCUMULO_MONITOR.ALLOCATED_PORT}",
     "site.accumulo-site.monitor.port.log4j": "0",
     "site.accumulo-site.general.classpaths": "$ACCUMULO_HOME/lib/accumulo-server.jar,\n$ACCUMULO_HOME/lib/accumulo-core.jar,\n$ACCUMULO_HOME/lib/accumulo-start.jar,\n$ACCUMULO_HOME/lib/accumulo-fate.jar,\n$ACCUMULO_HOME/lib/accumulo-proxy.jar,\n$ACCUMULO_HOME/lib/[^.].*.jar,\n$ZOOKEEPER_HOME/zookeeper[^.].*.jar,\n$HADOOP_CONF_DIR,\n$HADOOP_PREFIX/[^.].*.jar,\n$HADOOP_PREFIX/lib/[^.].*.jar,\n$HADOOP_PREFIX/share/hadoop/common/.*.jar,\n$HADOOP_PREFIX/share/hadoop/common/lib/.*.jar,\n$HADOOP_PREFIX/share/hadoop/hdfs/.*.jar,\n$HADOOP_PREFIX/share/hadoop/mapreduce/.*.jar,\n$HADOOP_PREFIX/share/hadoop/yarn/.*.jar,\n/usr/lib/hadoop/.*.jar,\n/usr/lib/hadoop/lib/.*.jar,\n/usr/lib/hadoop-hdfs/.*.jar,\n/usr/lib/hadoop-mapreduce/.*.jar,\n/usr/lib/hadoop-yarn/.*.jar,"
+  },
+  "credentials": {
+    "jceks://hdfs/user/${USER}/accumulo-${CLUSTER_NAME}.jceks": ["root", "instance.secret"]
   },
   "components": {
     "ACCUMULO_MASTER": {

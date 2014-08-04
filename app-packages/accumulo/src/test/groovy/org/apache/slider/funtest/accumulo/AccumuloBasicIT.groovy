@@ -17,18 +17,59 @@
 package org.apache.slider.funtest.accumulo
 
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
+import org.apache.hadoop.security.ProviderUtils
+import org.apache.hadoop.security.UserGroupInformation
+import org.apache.hadoop.security.alias.CredentialProvider
+import org.apache.hadoop.security.alias.CredentialProviderFactory
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderKeys
+import org.apache.slider.core.conf.ConfTree
+import org.apache.slider.core.persist.ConfTreeSerDeser
 import org.apache.slider.core.registry.docstore.PublishedConfiguration
 import org.apache.slider.core.registry.info.ServiceInstanceData
 import org.apache.slider.core.registry.retrieve.RegistryRetriever
 import org.apache.slider.funtest.framework.SliderShell
 import org.apache.slider.server.services.curator.CuratorServiceInstance
+import org.junit.Before
 import org.junit.Test
 
 @Slf4j
 class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
+  protected static final String PROVIDER =
+    "site.accumulo-site.instance.security.credential.provider"
+  protected ConfTree tree
+
+  @Before
+  public void createKeyStore() {
+    ConfTreeSerDeser c = new ConfTreeSerDeser()
+    tree = c.fromFile(new File(APP_TEMPLATE))
+    assume tree.credentials.size() > 0, "No credentials requested, " +
+      "skipping creation of credentials"
+    SliderClient.replaceTokens(tree, UserGroupInformation.getCurrentUser()
+      .getShortUserName(), getClusterName())
+    String jks = tree.global.get(PROVIDER)
+    def keys = tree.credentials.get(jks)
+    assert keys!=null, "jks specified in $PROVIDER wasn't requested in " +
+      "credentials"
+    assert keys.size()==2, "test expects root and instance.secret to be " +
+      "requested"
+    Path jksPath = ProviderUtils.unnestUri(new URI(jks))
+    if (clusterFS.exists(jksPath)) {
+      clusterFS.delete(jksPath, false)
+    }
+    Configuration conf = loadSliderConf()
+    conf.set(CredentialProviderFactory.CREDENTIAL_PROVIDER_PATH, jks)
+    CredentialProvider provider =
+      CredentialProviderFactory.getProviders(conf).get(0)
+    provider.createCredentialEntry(USER, PASSWORD.toCharArray())
+    provider.createCredentialEntry("instance.secret", INSTANCE_SECRET.toCharArray())
+    provider.flush()
+    assert clusterFS.exists(jksPath), "jks $jks not created"
+    log.info("Created credential provider $jks for test")
+  }
 
   @Override
   public String getClusterName() {
@@ -101,9 +142,9 @@ class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
 
   public static void checkMonitorPage(String monitorUrl) {
     String monitor = fetchWebPageWithoutError(monitorUrl);
-    assume monitor != null, "Monitor page null"
-    assume monitor.length() > 100, "Monitor page too short"
-    assume monitor.contains("Accumulo Overview"), "Monitor page didn't contain expected text"
+    assert monitor != null, "Monitor page null"
+    assert monitor.length() > 100, "Monitor page too short"
+    assert monitor.contains("Accumulo Overview"), "Monitor page didn't contain expected text"
   }
 
   /**
