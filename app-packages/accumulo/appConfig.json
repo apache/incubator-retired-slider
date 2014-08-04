@@ -27,13 +27,11 @@
     "site.global.monitor_protocol": "http",
     "site.accumulo-site.instance.volumes": "${DEFAULT_DATA_DIR}/data",
     "site.accumulo-site.instance.zookeeper.host": "${ZK_HOST}",
-    "site.accumulo-site.instance.secret": "DEFAULT",
     "site.accumulo-site.instance.security.authenticator": "org.apache.slider.accumulo.CustomAuthenticator",
-    "site.accumulo-site.instance.security.credential.provider": "jceks://hdfs/user/${USER}/accumulo-${CLUSTER_NAME}.jceks",
+    "site.accumulo-site.general.security.credential.provider.paths": "jceks://hdfs/user/${USER}/accumulo-${CLUSTER_NAME}.jceks",
     "site.accumulo-site.tserver.memory.maps.max": "80M",
     "site.accumulo-site.tserver.cache.data.size": "7M",
     "site.accumulo-site.tserver.cache.index.size": "20M",
-    "site.accumulo-site.trace.token.property.password": "secret",
     "site.accumulo-site.trace.user": "root",
     "site.accumulo-site.tserver.sort.buffer.size": "50M",
     "site.accumulo-site.tserver.walog.max.size": "100M",
@@ -46,7 +44,7 @@
     "site.accumulo-site.general.classpaths": "$ACCUMULO_HOME/lib/accumulo-server.jar,\n$ACCUMULO_HOME/lib/accumulo-core.jar,\n$ACCUMULO_HOME/lib/accumulo-start.jar,\n$ACCUMULO_HOME/lib/accumulo-fate.jar,\n$ACCUMULO_HOME/lib/accumulo-proxy.jar,\n$ACCUMULO_HOME/lib/[^.].*.jar,\n$ZOOKEEPER_HOME/zookeeper[^.].*.jar,\n$HADOOP_CONF_DIR,\n$HADOOP_PREFIX/[^.].*.jar,\n$HADOOP_PREFIX/lib/[^.].*.jar,\n$HADOOP_PREFIX/share/hadoop/common/.*.jar,\n$HADOOP_PREFIX/share/hadoop/common/lib/.*.jar,\n$HADOOP_PREFIX/share/hadoop/hdfs/.*.jar,\n$HADOOP_PREFIX/share/hadoop/mapreduce/.*.jar,\n$HADOOP_PREFIX/share/hadoop/yarn/.*.jar,\n/usr/lib/hadoop/.*.jar,\n/usr/lib/hadoop/lib/.*.jar,\n/usr/lib/hadoop-hdfs/.*.jar,\n/usr/lib/hadoop-mapreduce/.*.jar,\n/usr/lib/hadoop-yarn/.*.jar,"
   },
   "credentials": {
-    "jceks://hdfs/user/${USER}/accumulo-${CLUSTER_NAME}.jceks": ["root", "instance.secret"]
+    "jceks://hdfs/user/${USER}/accumulo-${CLUSTER_NAME}.jceks": ["root.initial.password", "instance.secret", "trace.token.property.password"]
   },
   "components": {
     "ACCUMULO_MASTER": {

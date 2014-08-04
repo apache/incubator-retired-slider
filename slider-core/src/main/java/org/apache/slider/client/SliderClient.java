@@ -29,7 +29,6 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.alias.CredentialProvider;
 import org.apache.hadoop.security.alias.CredentialProviderFactory;
 import org.apache.hadoop.security.alias.CredentialShell;
-import org.apache.hadoop.security.alias.CredentialShell.PasswordReader;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
@@ -110,27 +109,20 @@ import org.apache.slider.server.appmaster.rpc.RpcBinder;
 import org.apache.slider.server.services.curator.CuratorServiceInstance;
 import org.apache.slider.server.services.registry.SliderRegistryService;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
-
-import static org.apache.slider.common.params.SliderActions.*;
-
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.Console;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -140,6 +132,8 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Pattern;
+
+import static org.apache.slider.common.params.SliderActions.*;
 
 /**
  * Client service for Slider
@@ -497,7 +491,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
           continue;
         }
         String[] csarg = new String[]{
-            "create", alias, "--provider", provider};
+            "create", alias, "-provider", provider};
         log.info("Creating credentials for {} in {}", alias, provider);
         credentialShell.run(csarg);
       }

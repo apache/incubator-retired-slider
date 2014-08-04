@@ -17,12 +17,14 @@
 package org.apache.slider.funtest.accumulo
 
 import groovy.util.logging.Slf4j
+import org.apache.accumulo.core.conf.Property
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.security.ProviderUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.security.alias.CredentialProvider
 import org.apache.hadoop.security.alias.CredentialProviderFactory
+import org.apache.slider.accumulo.CustomAuthenticator
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderKeys
@@ -38,8 +40,8 @@ import org.junit.Test
 
 @Slf4j
 class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
-  protected static final String PROVIDER =
-    "site.accumulo-site.instance.security.credential.provider"
+  protected static final String PROVIDER_PROPERTY = "site.accumulo-site." +
+    Property.GENERAL_SECURITY_CREDENTIAL_PROVIDER_PATHS
   protected ConfTree tree
 
   @Before
@@ -50,12 +52,11 @@ class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
       "skipping creation of credentials"
     SliderClient.replaceTokens(tree, UserGroupInformation.getCurrentUser()
       .getShortUserName(), getClusterName())
-    String jks = tree.global.get(PROVIDER)
+    String jks = tree.global.get(PROVIDER_PROPERTY)
     def keys = tree.credentials.get(jks)
-    assert keys!=null, "jks specified in $PROVIDER wasn't requested in " +
-      "credentials"
-    assert keys.size()==2, "test expects root and instance.secret to be " +
-      "requested"
+    assert keys!=null, "jks specified in $PROVIDER_PROPERTY wasn't requested " +
+      "in credentials"
+    assert keys.size()==3, "test expects 3 passwords to be requested"
     Path jksPath = ProviderUtils.unnestUri(new URI(jks))
     if (clusterFS.exists(jksPath)) {
       clusterFS.delete(jksPath, false)
@@ -64,8 +65,12 @@ class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
     conf.set(CredentialProviderFactory.CREDENTIAL_PROVIDER_PATH, jks)
     CredentialProvider provider =
       CredentialProviderFactory.getProviders(conf).get(0)
-    provider.createCredentialEntry(USER, PASSWORD.toCharArray())
-    provider.createCredentialEntry("instance.secret", INSTANCE_SECRET.toCharArray())
+    provider.createCredentialEntry(
+      CustomAuthenticator.ROOT_INITIAL_PASSWORD_PROPERTY, PASSWORD.toCharArray())
+    provider.createCredentialEntry(Property.INSTANCE_SECRET.toString(),
+      INSTANCE_SECRET.toCharArray())
+    provider.createCredentialEntry(Property.TRACE_TOKEN_PROPERTY_PREFIX
+      .toString() + "password", PASSWORD.toCharArray())
     provider.flush()
     assert clusterFS.exists(jksPath), "jks $jks not created"
     log.info("Created credential provider $jks for test")

@@ -38,8 +38,8 @@ import java.util.List;
 import java.util.Set;
 
 public final class CustomAuthenticator implements Authenticator {
-  private static final String CREDENTIAL_PROVIDER_PROPERTY =
-      "instance.security.credential.provider";
+  public static final String ROOT_INITIAL_PASSWORD_PROPERTY =
+      "root.initial.password";
   private static ZKAuthenticator zkAuthenticator = null;
 
   public CustomAuthenticator() {
@@ -55,14 +55,15 @@ public final class CustomAuthenticator implements Authenticator {
   public void initializeSecurity(TCredentials credentials, String principal,
       byte[] token) throws AccumuloSecurityException {
     char[] pass = null;
-    SiteConfiguration siteconf = SiteConfiguration.getInstance
-        (DefaultConfiguration.getInstance());
-    String jksFile = siteconf.getAllPropertiesWithPrefix(
-        Property.INSTANCE_PREFIX).get(CREDENTIAL_PROVIDER_PROPERTY);
+    SiteConfiguration siteconf = SiteConfiguration.getInstance(
+        DefaultConfiguration.getInstance());
+    String jksFile = siteconf.get(
+        Property.GENERAL_SECURITY_CREDENTIAL_PROVIDER_PATHS);
 
     if (jksFile == null) {
-      throw new RuntimeException("instance.security.credential.provider not " +
-          "specified in accumulo-site.xml");
+      throw new RuntimeException(
+          Property.GENERAL_SECURITY_CREDENTIAL_PROVIDER_PATHS +
+              " not specified in accumulo-site.xml");
     }
     try {
       Configuration conf = new Configuration();
@@ -73,25 +74,27 @@ public final class CustomAuthenticator implements Authenticator {
       if (providers != null) {
         for (CredentialProvider provider : providers) {
           try {
-            CredentialEntry entry = provider.getCredentialEntry(principal);
+            CredentialEntry entry = provider.getCredentialEntry(
+                ROOT_INITIAL_PASSWORD_PROPERTY);
             if (entry != null) {
               pass = entry.getCredential();
               break;
             }
           }
           catch (IOException ioe) {
-            throw new IOException("Can't get key " + principal + " from " +
+            throw new IOException("Can't get key " +
+                ROOT_INITIAL_PASSWORD_PROPERTY + " from " +
                 provider.getClass().getName() + ", " + jksFile, ioe);
           }
         }
       }
     } catch (IOException ioe) {
-      throw new RuntimeException("Can't get key " + principal + " from " +
-          jksFile, ioe);
+      throw new RuntimeException("Can't get key " +
+          ROOT_INITIAL_PASSWORD_PROPERTY + " from " + jksFile, ioe);
     }
     if (pass == null) {
-      throw new RuntimeException("Can't get key " + principal + " from " +
-          jksFile);
+      throw new RuntimeException("Can't get key " +
+          ROOT_INITIAL_PASSWORD_PROPERTY + " from " + jksFile);
     }
     zkAuthenticator.initializeSecurity(credentials, principal,
         new String(pass).getBytes(StandardCharsets.UTF_8));
