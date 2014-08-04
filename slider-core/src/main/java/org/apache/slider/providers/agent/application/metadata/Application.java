@@ -26,6 +26,7 @@ public class Application {
   String name;
   String comment;
   String version;
+  String exportedConfigs;
   List<Component> components;
   List<ExportGroup> exportGroups;
   List<OSSpecific> osSpecifics;
@@ -61,6 +62,14 @@ public class Application {
 
   public void setVersion(String version) {
     this.version = version;
+  }
+
+  public String getExportedConfigs() {
+    return exportedConfigs;
+  }
+
+  public void setExportedConfigs(String exportedConfigs) {
+    this.exportedConfigs = exportedConfigs;
   }
 
   public ConfigurationDependencies getConfigDependencies() {

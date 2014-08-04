@@ -22,6 +22,7 @@
     <name>MEMCACHED</name>
     <comment>Memcache is a network accessible key/value storage system, often used as a distributed cache.</comment>
     <version>1.0.0</version>
+    <exportedConfigs>None</exportedConfigs>
 
     <components>
       <component>

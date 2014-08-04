@@ -88,6 +88,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -637,12 +638,26 @@ public class AgentProviderService extends AbstractProviderService implements
       Application application = getMetainfo().getApplication();
       List<ExportGroup> exportGroups = application.getExportGroups();
       boolean hasExportGroups = exportGroups != null && !exportGroups.isEmpty();
+      Set<String> exportedConfigs = new HashSet();
+      String exportedConfigsStr = application.getExportedConfigs();
+      boolean exportedConfigSpecified = exportedConfigsStr != null;
+      if (application.getExportedConfigs() != null && application.getExportedConfigs().length() > 0) {
+        for (String exportedConfig : application.getExportedConfigs().split(",")) {
+          if (exportedConfig.trim().length() > 0) {
+            exportedConfigs.add(exportedConfig.trim());
+          }
+        }
+      }
+
       for (ComponentStatus status : statuses) {
         log.info("Status report: " + status.toString());
         if (status.getConfigs() != null) {
           for (String key : status.getConfigs().keySet()) {
-            Map<String, String> configs = status.getConfigs().get(key);
-            publishApplicationInstanceData(key, key, configs.entrySet());
+            if ((exportedConfigSpecified && exportedConfigs.contains(key)) ||
+                !exportedConfigSpecified) {
+              Map<String, String> configs = status.getConfigs().get(key);
+              publishApplicationInstanceData(key, key, configs.entrySet());
+            }
           }
 
           if (hasExportGroups) {

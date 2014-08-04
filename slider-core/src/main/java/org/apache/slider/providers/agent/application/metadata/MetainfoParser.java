@@ -38,6 +38,7 @@ public class MetainfoParser {
     digester.addBeanPropertySetter("*/application/name");
     digester.addBeanPropertySetter("*/application/comment");
     digester.addBeanPropertySetter("*/application/version");
+    digester.addBeanPropertySetter("*/application/exportedConfigs");
 
     digester.addObjectCreate("*/commandOrder", CommandOrder.class);
     digester.addBeanPropertySetter("*/commandOrder/command");

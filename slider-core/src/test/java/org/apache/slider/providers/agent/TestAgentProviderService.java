@@ -106,6 +106,7 @@ public class TestAgentProviderService {
                                                + "      <version>0.96.0.2.1.1</version>\n"
                                                + "      <type>YARN-APP</type>\n"
                                                + "      <minHadoopVersion>2.1.0</minHadoopVersion>\n"
+                                               + "      <exportedConfigs>hbase-site,global</exportedConfigs>\n"
                                                + "      <exportGroups>\n"
                                                + "        <exportGroup>\n"
                                                + "          <name>QuickLinks</name>\n"
@@ -454,6 +455,7 @@ public class TestAgentProviderService {
     Application application = metainfo.getApplication();
     log.info("Service: " + application.toString());
     Assert.assertEquals(application.getName(), "HBASE");
+    Assert.assertEquals(application.getExportedConfigs(), "hbase-site,global");
     Assert.assertEquals(application.getComponents().size(), 2);
     List<Component> components = application.getComponents();
     int found = 0;
