@@ -18,7 +18,6 @@
 
 package org.apache.slider.server.services.curator;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.utils.ZKPaths;
@@ -109,7 +108,7 @@ public class CuratorService extends AbstractService {
    * Get an on-demand path jumper
    * @return a class that can dump the contents of the registry
    */
-  public ZKPathDumper dumpPath() {
-    return new ZKPathDumper(curator, basePath);
+  public ZKPathDumper dumpPath(boolean verbose) {
+    return new ZKPathDumper(curator, basePath, verbose);
   }
 }

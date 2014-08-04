@@ -39,6 +39,7 @@ import org.apache.slider.server.services.registry.RegistryViewForProviders;
 import org.apache.slider.server.services.workflow.ForkedProcessService;
 import org.apache.slider.server.services.workflow.ServiceParent;
 import org.apache.slider.server.services.workflow.WorkflowSequenceService;
+import org.apache.slider.server.services.yarnregistry.YarnRegistryViewForProviders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,7 +71,7 @@ public abstract class AbstractProviderService
   protected ServiceInstanceData registryInstanceData;
   protected AMViewForProviders amView;
   protected URL amWebAPI;
-  private YarnRegistryService yarnRegistry;
+  protected YarnRegistryViewForProviders yarnRegistry;
 
   public AbstractProviderService(String name) {
     super(name);
@@ -96,7 +97,7 @@ public abstract class AbstractProviderService
   @Override
   public void bind(StateAccessForProviders stateAccessor,
       RegistryViewForProviders reg,
-      YarnRegistryService yarnRegistry,
+      YarnRegistryViewForProviders yarnRegistry,
       AMViewForProviders amView) {
     this.amState = stateAccessor;
     this.registry = reg;

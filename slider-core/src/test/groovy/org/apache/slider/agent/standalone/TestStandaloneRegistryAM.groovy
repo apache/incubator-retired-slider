@@ -112,8 +112,8 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     //switch to the ZK-based registry
 
     
-    log.info("slider service registry: \n${client.dumpSliderRegistry()}\n")
-    log.info("yarn service registry: \n${client.dumpYarnRegistry()}\n")
+    log.info("slider service registry: \n${client.dumpSliderRegistry(true)}\n")
+    log.info("yarn service registry: \n${client.dumpYarnRegistry(true)}\n")
         
     
     describe "service registry names"

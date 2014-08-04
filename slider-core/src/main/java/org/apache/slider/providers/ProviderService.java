@@ -37,6 +37,7 @@ import org.apache.slider.server.appmaster.AMViewForProviders;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
 import org.apache.slider.server.services.registry.RegistryViewForProviders;
+import org.apache.slider.server.services.yarnregistry.YarnRegistryViewForProviders;
 
 import java.io.File;
 import java.io.IOException;
@@ -145,7 +146,7 @@ public interface ProviderService extends ProviderCore, Service,
    */
   void bind(StateAccessForProviders stateAccessor,
       RegistryViewForProviders registry,
-      YarnRegistryService yarnRegistry, AMViewForProviders amView);
+      YarnRegistryViewForProviders yarnRegistry, AMViewForProviders amView);
 
   /**
    * Returns the agent rest operations interface.

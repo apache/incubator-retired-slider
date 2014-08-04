@@ -16,11 +16,11 @@
  */
 package org.apache.slider.server.appmaster.web.rest.publisher;
 
-import org.apache.hadoop.yarn.registry.server.services.YarnRegistryService;
 import org.apache.slider.providers.agent.AgentProviderService;
 import org.apache.slider.server.appmaster.AMViewForProviders;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.services.registry.RegistryViewForProviders;
+import org.apache.slider.server.services.yarnregistry.YarnRegistryViewForProviders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +42,7 @@ public class TestAgentProviderService extends AgentProviderService{
   @Override
   public void bind(StateAccessForProviders stateAccessor,
       RegistryViewForProviders reg,
-      YarnRegistryService yarnRegistry,
+      YarnRegistryViewForProviders yarnRegistry,
       AMViewForProviders amView) {
     super.bind(stateAccessor, reg, yarnRegistry, amView);
     Map<String,String> dummyProps = new HashMap<>();

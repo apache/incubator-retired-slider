@@ -23,7 +23,6 @@ import org.apache.hadoop.fs.Path
 import org.apache.hadoop.service.LifecycleEvent
 import org.apache.hadoop.service.ServiceStateChangeListener
 import org.apache.hadoop.yarn.api.records.Container
-import org.apache.hadoop.yarn.registry.server.services.YarnRegistryService
 import org.apache.hadoop.yarn.registry.client.types.ServiceEntry
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.common.tools.SliderFileSystem
@@ -46,6 +45,7 @@ import org.apache.slider.server.appmaster.web.rest.agent.RegistrationStatus
 import org.apache.slider.server.services.registry.RegistryViewForProviders
 import org.apache.slider.providers.ProviderCompleted
 import org.apache.hadoop.service.Service.STATE
+import org.apache.slider.server.services.yarnregistry.YarnRegistryViewForProviders
 
 class MockProviderService implements ProviderService {
 
@@ -197,7 +197,7 @@ class MockProviderService implements ProviderService {
   void bind(
       StateAccessForProviders stateAccessor,
       RegistryViewForProviders registry,
-      YarnRegistryService yarnRegistry,
+      YarnRegistryViewForProviders yarnRegistry,
       AMViewForProviders amView) {
 
   }

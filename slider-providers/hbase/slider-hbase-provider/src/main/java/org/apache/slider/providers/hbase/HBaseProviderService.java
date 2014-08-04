@@ -22,6 +22,7 @@ package org.apache.slider.providers.hbase;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.Container;
+import org.apache.hadoop.yarn.registry.client.api.RegistryWriter;
 import org.apache.hadoop.yarn.registry.client.types.ServiceEntry;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.api.ClusterDescription;
@@ -240,6 +241,24 @@ public class HBaseProviderService extends AbstractProviderService implements
     configSet.put(HBASE_SITE_PUBLISHED_CONFIG, publishedSite);
 
     registry.registerServiceInstance(instanceData, null);
+    
+    ServiceEntry yse = new ServiceEntry();
+
+
+    RegistryWriter registryWriter = yarnRegistry.getRegistryWriter();
+    registryWriter.putServiceEntry(
+        yarnRegistry.getUser(),
+        HBASE_SERVICE_TYPE,
+        yarnRegistry.getInstanceName(),
+        yse);
+
+    registryWriter.putServiceLiveness(
+        yarnRegistry.getUser(),
+        HBASE_SERVICE_TYPE,
+        yarnRegistry.getInstanceName(),
+        true, true);
+
+
   }
 
   /**

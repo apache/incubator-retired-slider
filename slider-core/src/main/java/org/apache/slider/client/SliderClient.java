@@ -2341,8 +2341,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @return a class that can dump the contents of the registry
    */
   @VisibleForTesting
-  public ZKPathDumper dumpSliderRegistry() throws SliderException, IOException {
-    return getRegistry().dumpPath();
+  public ZKPathDumper dumpSliderRegistry(boolean verbose) throws SliderException, IOException {
+    return getRegistry().dumpPath(verbose);
   }
   
   /**
@@ -2427,8 +2427,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @return a class that can dump the contents of the registry
    */
   @VisibleForTesting
-  public ZKPathDumper dumpYarnRegistry() throws SliderException, IOException {
-    return getYarnRegistry().dumpPath();
+  public ZKPathDumper dumpYarnRegistry(boolean verbose) throws SliderException, IOException {
+    return getYarnRegistry().dumpPath(verbose);
   }
 
 

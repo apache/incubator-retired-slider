@@ -121,6 +121,7 @@ import org.apache.slider.server.services.security.CertificateManager;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
 import org.apache.slider.server.services.utility.WebAppService;
 import org.apache.slider.server.services.workflow.WorkflowRpcService;
+import org.apache.slider.server.services.yarnregistry.YarnRegistryViewForProviders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -731,10 +732,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     appState.noteAMLaunched();
 
 
-    //Give the provider restricted access to the state, registry
-    providerService.bind(stateForProviders, sliderRegistry, yarnRegistry, this);
-    sliderAMProvider.bind(stateForProviders, sliderRegistry, yarnRegistry, null);
-
+ 
     // now do the registration
     registerServiceInstance(clustername, appid);
 
@@ -811,6 +809,16 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       RegistryNaming.createRegistryName(instanceName, service_user_name,
           serviceName, id);
 
+
+    //Give the provider restricted access to the state, registry
+    YarnRegistryViewForProviders yarnRegistryView =
+        new YarnRegistryViewForProviders(
+            yarnRegistry, service_user_name,
+            SliderKeys.APP_TYPE,
+            instanceName);
+    providerService.bind(stateForProviders, sliderRegistry, yarnRegistryView, this);
+    sliderAMProvider.bind(stateForProviders, sliderRegistry, yarnRegistryView, null);
+
     List<String> serviceInstancesRunning = sliderRegistry.instanceIDs(serviceName);
     log.info("service instances already running: {}", serviceInstancesRunning);
 
@@ -854,9 +862,23 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     sliderRegistry.registerSelf(instanceData, unsecureWebAPI);
     yarnRegistry.putServiceEntry(service_user_name,
-        SliderKeys.APP_TYPE, instanceName,
+        SliderKeys.APP_TYPE, 
+        instanceName,
         registryEntry );
-    
+    yarnRegistry.putServiceLiveness(service_user_name,
+        SliderKeys.APP_TYPE,
+        instanceName,
+        true,
+        true);
+    // and an ephemeral binding to the app
+    yarnRegistry.putComponent(service_user_name,
+        SliderKeys.APP_TYPE,
+        instanceName,
+        "appmaster",
+        registryEntry,
+        true);
+
+
   }
 
   /**
