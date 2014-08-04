@@ -233,12 +233,17 @@ class CustomServiceOrchestrator():
   patch content
   ${AGENT_WORK_ROOT} -> AgentConfig.getWorkRootPath()
   ${AGENT_LOG_ROOT} -> AgentConfig.getLogPath()
+  ALLOCATED_PORT is a hint to allocate port. It works as follows:
+  Its of the form {component_name.ALLOCATED_PORT}[{DEFAULT_default_port}][{DO_NOT_PROPAGATE}]
+  Either a port gets allocated or if not then just set the value to "0"
   """
 
   def finalize_command(self, command, store_config, allocated_ports):
     component = command['componentName']
-    allocated_port_format = "${{{0}.ALLOCATED_PORT}}"
-    port_allocation_req = allocated_port_format.format(component)
+    allocated_for_this_component_format = "${{{0}.ALLOCATED_PORT}}"
+    allocated_for_any = ".ALLOCATED_PORT}"
+
+    port_allocation_req = allocated_for_this_component_format.format(component)
     if 'configurations' in command:
       for key in command['configurations']:
         if len(command['configurations'][key]) > 0:
@@ -251,6 +256,10 @@ class CustomServiceOrchestrator():
               if port_allocation_req in value:
                 value = self.allocate_ports(value, port_allocation_req)
                 allocated_ports[key + "." + k] = value
+              elif allocated_for_any in value:
+                ## All unallocated ports should be set to 0
+                logger.info("Assigning port 0 " + "for " + value)
+                value = "0"
               command['configurations'][key][k] = value
               pass
             pass
@@ -264,8 +273,15 @@ class CustomServiceOrchestrator():
 
   pass
 
+  """
+  Port allocation can asks for multiple dynamic ports
+  port_req_pattern is of type ${component_name.ALLOCATED_PORT}
+    append {DEFAULT_ and find the default value
+    append {DO_NOT_PROPAGATE} if it exists
+  """
   def allocate_ports(self, value, port_req_pattern):
     default_port_pattern = "{DEFAULT_"
+    do_not_propagate_pattern = "{DO_NOT_PROPAGATE}"
     index = value.find(port_req_pattern)
     while index != -1:
       replaced_pattern = port_req_pattern
@@ -276,7 +292,14 @@ class CustomServiceOrchestrator():
         end_index = value.find("}", start_index)
         def_port_str = value[start_index:end_index]
         def_port = int(def_port_str)
+        # default value of 0 means allocate any dynamic port
+        if def_port == 0:
+          def_port = None
+
         replaced_pattern = replaced_pattern + def_port_str + "}"
+        pass
+      if index == value.find(replaced_pattern + do_not_propagate_pattern):
+        replaced_pattern = replaced_pattern + do_not_propagate_pattern
         pass
       port = self.allocate_port(def_port)
       value = value.replace(replaced_pattern, str(port), 1)

@@ -46,8 +46,8 @@ public class TestAgentProviderService extends AgentProviderService{
     dummyProps.put("prop1", "val1");
     dummyProps.put("prop2", "val2");
     log.info("publishing dummy-site.xml with values {}", dummyProps);
-    publishComponentConfiguration("dummy-site", "dummy configuration",
-                                  dummyProps.entrySet());
+    publishApplicationInstanceData("dummy-site", "dummy configuration",
+                                   dummyProps.entrySet());
 
   }
 

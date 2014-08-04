@@ -360,20 +360,20 @@ public class TestAgentProviderService {
     Metainfo metainfo = new MetainfoParser().parse(metainfo_1);
     AgentProviderService aps = new AgentProviderService();
     AgentProviderService mockAps = Mockito.spy(aps);
-    doNothing().when(mockAps).publishComponentConfiguration(anyString(), anyString(), anyCollection());
+    doNothing().when(mockAps).publishApplicationInstanceData(anyString(), anyString(), anyCollection());
     doReturn(metainfo).when(mockAps).getMetainfo();
 
     Map<String, String> ports = new HashMap<>();
     ports.put("global.listen_port", "10010");
-    mockAps.processComponentSpecificPublishes(ports,
-                                              "cid1",
-                                              "host1",
-                                              "HBASE_REGIONSERVER");
+    mockAps.processAndPublishComponentSpecificData(ports,
+                                                   "cid1",
+                                                   "host1",
+                                                   "HBASE_REGIONSERVER");
     ArgumentCaptor<Collection> entriesCaptor = ArgumentCaptor.
         forClass(Collection.class);
     ArgumentCaptor<String> publishNameCaptor = ArgumentCaptor.
         forClass(String.class);
-    Mockito.verify(mockAps, Mockito.times(1)).publishComponentConfiguration(
+    Mockito.verify(mockAps, Mockito.times(1)).publishApplicationInstanceData(
         anyString(),
         publishNameCaptor.capture(),
         entriesCaptor.capture());
@@ -422,7 +422,7 @@ public class TestAgentProviderService {
 
     ComponentInstanceState componentStatus = new ComponentInstanceState("HBASE_MASTER", "aid", "cid");
     AgentProviderService mockAps = Mockito.spy(aps);
-    doNothing().when(mockAps).publishComponentConfiguration(anyString(), anyString(), anyCollection());
+    doNothing().when(mockAps).publishApplicationInstanceData(anyString(), anyString(), anyCollection());
     doReturn(metainfo).when(mockAps).getMetainfo();
     doReturn(roleClusterNodeMap).when(mockAps).getRoleClusterNodeMapping();
 
@@ -430,7 +430,7 @@ public class TestAgentProviderService {
     assert componentStatus.getConfigReported() == true;
     ArgumentCaptor<Collection> entriesCaptor = ArgumentCaptor.
         forClass(Collection.class);
-    Mockito.verify(mockAps, Mockito.times(3)).publishComponentConfiguration(
+    Mockito.verify(mockAps, Mockito.times(3)).publishApplicationInstanceData(
         anyString(),
         anyString(),
         entriesCaptor.capture());
@@ -627,7 +627,7 @@ public class TestAgentProviderService {
           anyString(),
           anyString(),
           any(HeartBeatResponse.class));
-      doNothing().when(mockAps).publishComponentConfiguration(
+      doNothing().when(mockAps).publishApplicationInstanceData(
           anyString(),
           anyString(),
           anyCollection());
@@ -797,10 +797,41 @@ public class TestAgentProviderService {
       log.warn(he.getMessage());
     }
 
-    Mockito.verify(mockAps, Mockito.times(1)).publishComponentConfiguration(
+    Mockito.verify(mockAps, Mockito.times(1)).publishApplicationInstanceData(
         anyString(),
         anyString(),
         anyCollection());
+  }
+
+  @Test
+  public void testNotifyContainerCompleted() {
+    AgentProviderService aps = new AgentProviderService();
+    AgentProviderService mockAps = Mockito.spy(aps);
+    doNothing().when(mockAps).publishApplicationInstanceData(anyString(), anyString(), anyCollection());
+
+    ContainerId cid = new MyContainerId(1);
+    String id = cid.toString();
+    mockAps.getAllocatedPorts().put("a", "100");
+    mockAps.getAllocatedPorts(id).put("b", "101");
+    mockAps.getAllocatedPorts("cid2").put("c", "102");
+
+    mockAps.getComponentInstanceData().put("cid2", new HashMap<String, String>());
+    mockAps.getComponentInstanceData().put(id, new HashMap<String, String>());
+
+    Assert.assertNotNull(mockAps.getComponentInstanceData().get(id));
+    Assert.assertNotNull(mockAps.getComponentInstanceData().get("cid2"));
+
+    Assert.assertEquals(mockAps.getAllocatedPorts().size(), 1);
+    Assert.assertEquals(mockAps.getAllocatedPorts(id).size(), 1);
+    Assert.assertEquals(mockAps.getAllocatedPorts("cid2").size(), 1);
+    mockAps.notifyContainerCompleted(new MyContainerId(1));
+
+    Assert.assertNull(mockAps.getComponentInstanceData().get(id));
+    Assert.assertNotNull(mockAps.getComponentInstanceData().get("cid2"));
+
+    Assert.assertEquals(mockAps.getAllocatedPorts().size(), 1);
+    Assert.assertEquals(mockAps.getAllocatedPorts(id).size(), 0);
+    Assert.assertEquals(mockAps.getAllocatedPorts("cid2").size(), 1);
   }
 
   @Test
@@ -867,6 +898,8 @@ public class TestAgentProviderService {
     treeOps.set("config_types", "hbase-site");
     treeOps.getGlobalOptions().put("site.hbase-site.a.port", "${HBASE_MASTER.ALLOCATED_PORT}");
     treeOps.getGlobalOptions().put("site.hbase-site.b.port", "${HBASE_MASTER.ALLOCATED_PORT}");
+    treeOps.getGlobalOptions().put("site.hbase-site.random.port", "${HBASE_MASTER.ALLOCATED_PORT}{DO_NOT_PROPAGATE}");
+    treeOps.getGlobalOptions().put("site.hbase-site.random2.port", "${HBASE_MASTER.ALLOCATED_PORT}");
 
     expect(access.getAppConfSnapshot()).andReturn(treeOps).anyTimes();
     expect(access.getInternalsSnapshot()).andReturn(treeOps).anyTimes();
@@ -885,6 +918,9 @@ public class TestAgentProviderService {
     allocatedPorts.put("hbase-site.a.port", "10023");
     allocatedPorts.put("hbase-site.b.port", "10024");
     doReturn(allocatedPorts).when(mockAps).getAllocatedPorts();
+    Map<String, String> allocatedPorts2 = new HashMap<>();
+    allocatedPorts2.put("hbase-site.random.port", "10025");
+    doReturn(allocatedPorts2).when(mockAps).getAllocatedPorts(anyString());
 
     replay(access);
 
@@ -894,6 +930,8 @@ public class TestAgentProviderService {
     Assert.assertTrue(hbaseSiteConf.containsKey("a.port"));
     Assert.assertTrue(hbaseSiteConf.get("a.port").equals("10023"));
     Assert.assertTrue(hbaseSiteConf.get("b.port").equals("10024"));
+    Assert.assertTrue(hbaseSiteConf.get("random.port").equals("10025"));
+    Assert.assertTrue(hbaseSiteConf.get("random2.port").equals("${HBASE_MASTER.ALLOCATED_PORT}"));
   }
 
   private static class MyContainer extends Container {

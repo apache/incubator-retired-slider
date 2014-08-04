@@ -284,8 +284,9 @@ class TestCustomServiceOrchestrator(TestCase):
     self.assertEqual(ret, 102)
 
 
+  @patch.object(CustomServiceOrchestrator, "is_port_available")
   @patch.object(CustomServiceOrchestrator, "allocate_port")
-  def test_allocate_port_combinations(self, allocate_port_mock):
+  def test_allocate_port_combinations(self, allocate_port_mock, is_port_available_mock):
     tempdir = tempfile.gettempdir()
     config = MagicMock()
     config.get.return_value = "something"
@@ -296,13 +297,20 @@ class TestCustomServiceOrchestrator(TestCase):
     dummy_controller = MagicMock()
     orchestrator = CustomServiceOrchestrator(config, dummy_controller)
 
-    allocate_port_mock.side_effect = [101, 102, 103]
+    is_port_available_mock.return_value = False
+    allocate_port_mock.side_effect = [101, 102, 103, 104, 105, 106]
     ret = orchestrator.allocate_ports("1000", "${A.ALLOCATED_PORT}")
     self.assertEqual(ret, "1000")
     ret = orchestrator.allocate_ports("${A.ALLOCATED_PORT}", "${A.ALLOCATED_PORT}")
     self.assertEqual(ret, "101")
     ret = orchestrator.allocate_ports("${A.ALLOCATED_PORT},${A.ALLOCATED_PORT}", "${A.ALLOCATED_PORT}")
     self.assertEqual(ret, "102,103")
+    ret = orchestrator.allocate_ports("${A.ALLOCATED_PORT}{DEFAULT_0}", "${A.ALLOCATED_PORT}")
+    self.assertEqual(ret, "104")
+    ret = orchestrator.allocate_ports("${A.ALLOCATED_PORT}{DEFAULT_0}{DO_NOT_PROPAGATE}", "${A.ALLOCATED_PORT}")
+    self.assertEqual(ret, "105")
+    ret = orchestrator.allocate_ports("${A.ALLOCATED_PORT}{DO_NOT_PROPAGATE}", "${A.ALLOCATED_PORT}")
+    self.assertEqual(ret, "106")
 
 
   @patch.object(CustomServiceOrchestrator, "is_port_available")
@@ -320,10 +328,14 @@ class TestCustomServiceOrchestrator(TestCase):
     is_port_available_mock.return_value = True
     ret = orchestrator.allocate_ports("${A.ALLOCATED_PORT}{DEFAULT_1005}", "${A.ALLOCATED_PORT}")
     self.assertEqual(ret, "1005")
+
     ret = orchestrator.allocate_ports("${A.ALLOCATED_PORT}{DEFAULT_1005}-${A.ALLOCATED_PORT}{DEFAULT_1006}",
                                       "${A.ALLOCATED_PORT}")
     self.assertEqual(ret, "1005-1006")
 
+    ret = orchestrator.allocate_ports("${A.ALLOCATED_PORT}{DEFAULT_1006}{DO_NOT_PROPAGATE}",
+                                      "${A.ALLOCATED_PORT}")
+    self.assertEqual(ret, "1006")
 
   @patch("hostname.public_hostname")
   @patch("os.path.isfile")
@@ -492,7 +504,7 @@ class TestCustomServiceOrchestrator(TestCase):
     orchestrator.finalize_command(command, True, {})
     self.assertEqual(command['configurations']['hbase-site']['log_root'], tempdir + "/log")
     self.assertEqual(command['configurations']['hbase-site']['blog_root'], "/b/" + tempdir + "/log")
-    self.assertEqual(command['configurations']['oozie-site']['b_port'], "${HBASE_REGIONSERVER.ALLOCATED_PORT}")
+    self.assertEqual(command['configurations']['oozie-site']['b_port'], "0")
     self.assertEqual(orchestrator.applied_configs, command['configurations'])
 
 
