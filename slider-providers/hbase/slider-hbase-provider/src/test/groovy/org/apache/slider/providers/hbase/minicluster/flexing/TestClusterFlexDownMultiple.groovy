@@ -34,13 +34,13 @@ class TestClusterFlexDownMultiple extends HBaseMiniClusterTestBase {
   @Test
   public void testClusterFlexDownMultiple() throws Throwable {
     def clusterName = createClusterName();
-    SliderClient sliderClient = startHBaseCluster(clusterName, 1, 4)
+    SliderClient sliderClient = startHBaseCluster(clusterName, 1, 3)
     
     assert flexCluster(
         sliderClient,
         clusterName,
         1,
-        3,
+        2,
         true)
 
     assert flexCluster(

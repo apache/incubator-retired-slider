@@ -136,6 +136,9 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     }
   } 
 
+  protected String buildClustername(String clustername) {
+    return clustername ?: createClusterName()
+  }
 
   /**
    * Create the cluster name from the method name and an auto-incrementing
@@ -240,9 +243,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     conf.setInt(YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_MB, 64);
     conf.set(YarnConfiguration.RM_SCHEDULER, FIFO_SCHEDULER);
     SliderUtils.patchConfiguration(conf)
-    if (!name) {
-      name = createClusterName()
-    }
+    name = buildClustername(name)
     miniCluster = new MiniYARNCluster(name, noOfNodeManagers, numLocalDirs, numLogDirs)
     miniCluster.init(conf)
     miniCluster.start();

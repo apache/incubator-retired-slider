@@ -284,6 +284,7 @@ public abstract class HBaseMiniClusterTestBase extends YarnZKMiniClusterTestBase
       int workers,
       int workerFlexTarget,
       boolean testHBaseAfter) {
+    clustername = buildClustername(clustername);
     SliderClient sliderClient = startHBaseCluster(clustername, masters, workers)
 
     //now flex
