@@ -340,7 +340,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     SliderAMCreateAction createAction = (SliderAMCreateAction) action;
     //sort out the location of the AM
     serviceArgs.applyDefinitions(conf);
-    serviceArgs.applyFileSystemURL(conf);
+    serviceArgs.applyFileSystemBinding(conf);
 
     String rmAddress = createAction.getRmAddress();
     if (rmAddress != null) {
@@ -348,7 +348,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       SliderUtils.setRmSchedulerAddress(conf, rmAddress);
     }
     serviceArgs.applyDefinitions(conf);
-    serviceArgs.applyFileSystemURL(conf);
+    serviceArgs.applyFileSystemBinding(conf);
     //init security with our conf
     if (SliderUtils.isHadoopClusterSecure(conf)) {
       log.info("Secure mode with kerberos realm {}",
