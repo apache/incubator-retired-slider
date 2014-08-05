@@ -696,7 +696,7 @@ public class AppState {
                                    roleStatusMap.get(priority));
     }
     roleStatusMap.put(priority,
-                      new RoleStatus(providerRole));
+        new RoleStatus(providerRole));
     roles.put(providerRole.name, providerRole);
   }
 
@@ -1175,10 +1175,14 @@ public class AppState {
       log.info("Container was queued for release");
       Container container = containersBeingReleased.remove(containerId);
       RoleStatus roleStatus = lookupRoleStatus(container);
-      log.info("decrementing role count for role {}", roleStatus.getName());
-      roleStatus.decReleasing();
-      roleStatus.decActual();
-      roleStatus.incCompleted();
+      int releasing = roleStatus.decReleasing();
+      int actual = roleStatus.decActual();
+      int completedCount = roleStatus.incCompleted();
+      log.info("decrementing role count for role {} to {}; releasing={}, completed={}",
+          roleStatus.getName(),
+          actual,
+          releasing,
+          completedCount);
       roleHistory.onReleaseCompleted(container);
 
     } else if (surplusNodes.remove(containerId)) {
@@ -1205,25 +1209,17 @@ public class AppState {
           roleStatus.decActual();
           boolean shortLived = isShortLived(roleInstance);
           String message;
-          if (roleInstance.container != null) {
-            String user = null;
-            try {
-              user = SliderUtils.getCurrentUser().getShortUserName();
-            } catch (IOException ignored) {
-            }
-            String completedLogsUrl = null;
-            Container c = roleInstance.container;
-            String url = logServerURL;
-            if (user != null && SliderUtils.isSet(url)) {
-              completedLogsUrl = url
-                  + "/" + c.getNodeId() + "/" + roleInstance.getContainerId() + "/ctx/" + user;
-            }
-            message = String.format("Failure %s on host %s" +
-                (completedLogsUrl != null ? ", see %s" : ""), roleInstance.getContainerId(),
-                c.getNodeId().getHost(), completedLogsUrl);
+          Container failedContainer = roleInstance.container;
+          
+          //build the failure message
+          if (failedContainer != null) {
+            String completedLogsUrl = getLogsURLForContainer(failedContainer);
+            message = String.format("Failure %s on host %s: %s" +
+                roleInstance.getContainerId(),
+                failedContainer.getNodeId().getHost(),
+                completedLogsUrl);
           } else {
-            message = String.format("Failure %s",
-                                    containerId.toString());
+            message = String.format("Failure %s", containerId);
           }
           roleStatus.noteFailed(message);
           //have a look to see if it short lived
@@ -1231,8 +1227,8 @@ public class AppState {
             roleStatus.incStartFailed();
           }
           
-          if (roleInstance.container != null) {
-            roleHistory.onFailedContainer(roleInstance.container, shortLived);
+          if (failedContainer!= null) {
+            roleHistory.onFailedContainer(failedContainer, shortLived);
           }
           
         } catch (YarnRuntimeException e1) {
@@ -1268,6 +1264,29 @@ public class AppState {
       result.roleInstance = node;
     }
     return result;
+  }
+
+  /**
+   * Get the URL log for a container
+   * @param c container
+   * @return the URL or "" if it cannot be determined
+   */
+  protected String getLogsURLForContainer(Container c) {
+    if (c==null) {
+      return null;
+    }
+    String user = null;
+    try {
+      user = SliderUtils.getCurrentUser().getShortUserName();
+    } catch (IOException ignored) {
+    }
+    String completedLogsUrl = "";
+    String url = logServerURL;
+    if (user != null && SliderUtils.isSet(url)) {
+      completedLogsUrl = url
+          + "/" + c.getNodeId() + "/" + c.getId() + "/ctx/" + user;
+    }
+    return completedLogsUrl;
   }
 
 
