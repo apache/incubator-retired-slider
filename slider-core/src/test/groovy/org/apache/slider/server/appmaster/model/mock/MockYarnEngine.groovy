@@ -86,9 +86,7 @@ class MockYarnEngine {
    * @param ops
    * @return
    */
-  List<Container> execute(
-      List<AbstractRMOperation> ops
-      ) {
+  List<Container> execute(List<AbstractRMOperation> ops) {
     return execute(ops, [])
   }
 

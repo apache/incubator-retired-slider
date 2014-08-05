@@ -54,7 +54,6 @@ import org.apache.slider.core.exceptions.ErrorStrings;
 import org.apache.slider.core.exceptions.NoSuchNodeException;
 import org.apache.slider.core.exceptions.SliderInternalStateException;
 import org.apache.slider.core.exceptions.TriggerClusterTeardownException;
-import org.apache.slider.core.registry.docstore.PublishedConfigSet;
 import org.apache.slider.providers.ProviderRole;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -250,6 +249,8 @@ public class AppState {
   private long startTimeThreshold;
   
   private int failureThreshold = 10;
+  
+  private String logServerURL = "";
 
   public AppState(AbstractRecordFactory recordFactory) {
     this.recordFactory = recordFactory;
@@ -432,6 +433,7 @@ public class AppState {
   /**
    * Build up the application state
    * @param instanceDefinition definition of the applicatin instance
+   * @param appmasterConfig
    * @param publishedProviderConf any configuration info to be published by a provider
    * @param providerRoles roles offered by a provider
    * @param fs filesystem
@@ -440,12 +442,12 @@ public class AppState {
    * @param applicationInfo
    */
   public synchronized void buildInstance(AggregateConf instanceDefinition,
-                            Configuration publishedProviderConf,
-                            List<ProviderRole> providerRoles,
-                            FileSystem fs,
-                            Path historyDir,
-                            List<Container> liveContainers,
-                            Map<String, String> applicationInfo) throws
+      Configuration appmasterConfig, Configuration publishedProviderConf,
+      List<ProviderRole> providerRoles,
+      FileSystem fs,
+      Path historyDir,
+      List<Container> liveContainers,
+      Map<String, String> applicationInfo) throws
                                                                  BadClusterStateException,
                                                                  BadConfigException,
                                                                  IOException {
@@ -514,6 +516,10 @@ public class AppState {
     //rebuild any live containers
     rebuildModelFromRestart(liveContainers);
     
+    // any am config options to pick up
+
+    logServerURL = appmasterConfig.get(YarnConfiguration.YARN_LOG_SERVER_URL,
+        "");
     //mark as live
     applicationLive = true;
   }
@@ -1161,18 +1167,6 @@ public class AppState {
    * @return NodeCompletionResult
    */
   public synchronized NodeCompletionResult onCompletedNode(ContainerStatus status) {
-    return onCompletedNode(null, status);
-  }
-  
-  /**
-   * handle completed node in the CD -move something from the live
-   * server list to the completed server list
-   * @param amConf YarnConfiguration
-   * @param status the node that has just completed
-   * @return NodeCompletionResult
-   */
-  public synchronized NodeCompletionResult onCompletedNode(Configuration amConf,
-      ContainerStatus status) {
     ContainerId containerId = status.getContainerId();
     NodeCompletionResult result = new NodeCompletionResult();
     RoleInstance roleInstance;
@@ -1219,11 +1213,8 @@ public class AppState {
             }
             String completedLogsUrl = null;
             Container c = roleInstance.container;
-            String url = null;
-            if (amConf != null) {
-              url = amConf.get(YarnConfiguration.YARN_LOG_SERVER_URL);
-            }
-            if (user != null && url != null) {
+            String url = logServerURL;
+            if (user != null && SliderUtils.isSet(url)) {
               completedLogsUrl = url
                   + "/" + c.getNodeId() + "/" + roleInstance.getContainerId() + "/ctx/" + user;
             }
@@ -1255,12 +1246,12 @@ public class AppState {
         completionOfUnknownContainerEvent.incrementAndGet();
       }
     }
-    
+
     if (result.surplusNode) {
       //a surplus node
       return result;
     }
-    
+
     //record the complete node's details; this pulls it from the livenode set 
     //remove the node
     ContainerId id = status.getContainerId();

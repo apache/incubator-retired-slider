@@ -71,11 +71,13 @@ class TestAppStateRebuildOnAMRestart extends BaseMockAppStateTest
     //and rebuild
     appState.buildInstance(
         factory.newInstanceDefinition(r0, r1, r2),
+        new Configuration(),
         new Configuration(false),
         factory.ROLES,
         fs,
         historyPath,
-        containers, null)
+        containers,
+        null)
 
     assert appState.getStartedCountainerCount() == clusterSize
 
