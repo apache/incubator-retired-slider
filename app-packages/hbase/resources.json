@@ -22,5 +22,10 @@
       "yarn.component.instances": "1",
       "yarn.memory": "256"
     }
+    "HBASE_THRIFT": {
+      "yarn.role.priority": "3",
+      "yarn.component.instances": "1",
+      "yarn.memory": "256"
+    }
   }
 }

@@ -18,32 +18,45 @@ limitations under the License.
 
 """
 
+import sys
 from resource_management import *
 
-def hbase_service(
-  name,
-  action = 'start'): # 'start' or 'stop' or 'status'
-    
-    import params
-  
-    role = name
-    cmd = format("{daemon_script} --config {conf_dir}")
-    pid_file = format("{pid_dir}/hbase-{hbase_user}-{role}.pid")
-    
-    daemon_cmd = None
-    no_op_test = None
-    
-    if action == 'start':
-      daemon_cmd = format("{cmd} start {role}")
-      if name == 'rest':
-        daemon_cmd = format("{daemon_cmd} -p {rest_port}")
-      elif name == 'thrift':
-        daemon_cmd = format("{daemon_cmd} -p {thrift_port}")
-      no_op_test = format("ls {pid_file} >/dev/null 2>&1 && ps `cat {pid_file}` >/dev/null 2>&1")
-    elif action == 'stop':
-      daemon_cmd = format("{cmd} stop {role} && rm -f {pid_file}")
+from hbase import hbase
+from hbase_service import hbase_service
 
-    if daemon_cmd is not None:
-      Execute ( daemon_cmd,
-        not_if = no_op_test
-      )
+         
+class HbaseThrift(Script):
+  def install(self, env):
+    self.install_packages(env)
+    
+  def configure(self, env):
+    import params
+    env.set_params(params)
+
+    hbase(name='thrift')
+      
+  def start(self, env):
+    import params
+    env.set_params(params)
+    self.configure(env) # for security
+
+    hbase_service( 'thrift',
+      action = 'start'
+    )
+    
+  def stop(self, env):
+    import params
+    env.set_params(params)
+
+    hbase_service( 'thrift',
+      action = 'stop'
+    )
+
+  def status(self, env):
+    import status_params
+    env.set_params(status_params)
+    pid_file = format("{pid_dir}/hbase-{hbase_user}-thrift.pid")
+    check_process_status(pid_file)
+    
+if __name__ == "__main__":
+  HbaseThrift().execute()

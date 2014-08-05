@@ -239,7 +239,7 @@ public class HBaseClientProvider extends AbstractClientProvider implements
     providerUtils.validateNodeCount(instanceDefinition, HBaseKeys.ROLE_MASTER,
                                     0, -1);
 
-    providerUtils.validateNodeCount(instanceDefinition, HBaseKeys.ROLE_REST_GATEWAY,
+    providerUtils.validateNodeCount(instanceDefinition, HBaseKeys.ROLE_THRIFT_GATEWAY,
       0, -1);
   }
 
