@@ -26,7 +26,6 @@ import org.apache.hadoop.hbase.client.HConnection
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.ClusterNode
 import org.apache.slider.api.ResourceKeys
-import org.apache.slider.providers.hbase.HBaseKeys
 import org.apache.slider.client.SliderClient
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.providers.hbase.HBaseTestUtils
@@ -214,9 +213,7 @@ public abstract class HBaseMiniClusterTestBase extends YarnZKMiniClusterTestBase
         (ROLE_MASTER): masters,
         (ROLE_WORKER): workers,
     ];
-    extraArgs << ARG_RES_COMP_OPT << ROLE_MASTER << ResourceKeys.YARN_MEMORY << YRAM
-    extraArgs << ARG_RES_COMP_OPT << ROLE_WORKER << ResourceKeys.YARN_MEMORY << YRAM
-    extraArgs << ARG_PROVIDER << PROVIDER_HBASE;
+    hbaseArgs(extraArgs)
     
     return createCluster(clustername,
         roles,
@@ -224,6 +221,15 @@ public abstract class HBaseMiniClusterTestBase extends YarnZKMiniClusterTestBase
         deleteExistingData,
         blockUntilRunning,
         [:])
+  }
+
+  public List<String> hbaseArgs(List<String> extraArgs) {
+    extraArgs << ARG_RES_COMP_OPT << ROLE_MASTER << ResourceKeys.YARN_MEMORY <<
+    YRAM
+    extraArgs << ARG_RES_COMP_OPT << ROLE_WORKER << ResourceKeys.YARN_MEMORY <<
+    YRAM
+    extraArgs << ARG_PROVIDER << PROVIDER_HBASE;
+    return extraArgs;
   }
 
   /**
@@ -241,9 +247,7 @@ public abstract class HBaseMiniClusterTestBase extends YarnZKMiniClusterTestBase
     ];
     return createCluster(clustername,
         roles,
-        [
-            ARG_PROVIDER, PROVIDER_HBASE
-        ],
+        hbaseArgs([]),
         deleteExistingData,
         blockUntilRunning,
         [:])
@@ -278,62 +282,93 @@ public abstract class HBaseMiniClusterTestBase extends YarnZKMiniClusterTestBase
       int masters,
       int masterFlexTarget,
       int workers,
-      int flexTarget,
+      int workerFlexTarget,
       boolean testHBaseAfter) {
-    createMiniCluster(clustername, configuration,
-                      1,
-                      true);
+    SliderClient sliderClient = startHBaseCluster(clustername, masters, workers)
+
+    //now flex
+    return flexCluster(
+        sliderClient,
+        clustername,
+        masterFlexTarget,
+        workerFlexTarget,
+        testHBaseAfter)
+
+  }
+
+  public SliderClient startHBaseCluster(
+      String clustername,
+      int masters,
+      int workers) {
+    clustername = createMiniCluster(clustername, configuration,
+        1,
+        true);
     //now launch the cluster
     SliderClient sliderClient;
     ServiceLauncher<SliderClient> launcher = createCluster(clustername,
-           [
-               (ROLE_MASTER): masters,
-               (ROLE_WORKER): workers,
-           ],
-           [
-               ARG_RES_COMP_OPT , ROLE_MASTER, ResourceKeys.YARN_MEMORY, YRAM,
-               ARG_RES_COMP_OPT , ROLE_WORKER, ResourceKeys.YARN_MEMORY, YRAM,
-               ARG_PROVIDER , PROVIDER_HBASE
-           ],
-           true,
-           true,
-           [:]);
+        [
+            (ROLE_MASTER): masters,
+            (ROLE_WORKER): workers,
+        ],
+        hbaseArgs([]),
+        true,
+        true,
+        [:]);
     sliderClient = launcher.service;
-    try {
-      basicHBaseClusterStartupSequence(sliderClient);
 
-      describe("Waiting for initial worker count of $workers");
+    basicHBaseClusterStartupSequence(sliderClient);
 
-      //verify the #of roles is as expected
-      //get the hbase status
-      waitForWorkerInstanceCount(sliderClient, workers, hbaseClusterStartupToLiveTime);
-      waitForSliderMasterCount(sliderClient, masters, hbaseClusterStartupToLiveTime);
+    describe("Waiting for initial worker count of $workers");
 
-      log.info("Slider worker count at $workers, waiting for region servers to match");
-      waitForHBaseRegionServerCount(sliderClient, clustername, workers, hbaseClusterStartupToLiveTime);
+    //verify the #of roles is as expected
+    //get the hbase status
+    waitForWorkerInstanceCount(
+        sliderClient,
+        workers,
+        hbaseClusterStartupToLiveTime);
+    waitForSliderMasterCount(
+        sliderClient,
+        masters,
+        hbaseClusterStartupToLiveTime);
 
-      //now flex
-      describe("Flexing  masters:$masters -> $masterFlexTarget ; workers $workers -> $flexTarget");
-      boolean flexed;
-      flexed = 0 == sliderClient.flex(clustername,
-          [
-              (ROLE_WORKER): flexTarget,
-              (ROLE_MASTER): masterFlexTarget
-          ]
-      );
-      waitForWorkerInstanceCount(sliderClient, flexTarget, hbaseClusterStartupToLiveTime);
-      waitForSliderMasterCount(sliderClient, masterFlexTarget,
-                             hbaseClusterStartupToLiveTime);
+    log.info(
+        "Slider worker count at $workers, waiting for region servers to match");
+    waitForHBaseRegionServerCount(
+        sliderClient,
+        clustername,
+        workers,
+        hbaseClusterStartupToLiveTime);
+    sliderClient
+  }
 
-      if (testHBaseAfter) {
-        waitForHBaseRegionServerCount(sliderClient, clustername, flexTarget,
-                                      hbaseClusterStartupToLiveTime);
-      }
-      return flexed;
-    } finally {
-      maybeStopCluster(sliderClient, null, "end of flex test run");
+  public boolean flexCluster(
+      SliderClient sliderClient,
+      String clustername,
+      int masterFlexTarget,
+      int workerFlexTarget,
+      boolean testHBaseAfter) {
+    int flexTarget
+    describe(
+        "Flexing  masters -> $masterFlexTarget ; workers -> ${workerFlexTarget}");
+    boolean flexed;
+    flexed = 0 == sliderClient.flex(clustername,
+        [
+            (ROLE_WORKER): workerFlexTarget,
+            (ROLE_MASTER): masterFlexTarget
+        ]
+    );
+    waitForWorkerInstanceCount(
+        sliderClient,
+        workerFlexTarget,
+        hbaseClusterStartupToLiveTime);
+    waitForSliderMasterCount(sliderClient, masterFlexTarget,
+        hbaseClusterStartupToLiveTime);
+
+    if (testHBaseAfter) {
+      waitForHBaseRegionServerCount(sliderClient, clustername, workerFlexTarget,
+          hbaseClusterStartupToLiveTime);
     }
-
+    flexed
   }
 
   /**
