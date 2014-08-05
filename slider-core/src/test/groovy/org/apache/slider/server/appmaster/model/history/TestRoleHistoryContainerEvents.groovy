@@ -158,7 +158,7 @@ class TestRoleHistoryContainerEvents extends BaseMockAppStateTest {
     assert roleEntry.active == 0
 
     // release completed
-    roleHistory.onReleaseCompleted(container)
+    roleHistory.onReleaseCompleted(container, true)
     assert roleEntry.releasing == 0
     assert roleEntry.live == 0
     assert roleEntry.active == 0

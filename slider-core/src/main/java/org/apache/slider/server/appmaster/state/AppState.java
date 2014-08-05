@@ -1172,7 +1172,7 @@ public class AppState {
     RoleInstance roleInstance;
 
     if (containersBeingReleased.containsKey(containerId)) {
-      log.info("Container was queued for release");
+      log.info("Container was queued for release : {}", containerId);
       Container container = containersBeingReleased.remove(containerId);
       RoleStatus roleStatus = lookupRoleStatus(container);
       int releasing = roleStatus.decReleasing();
@@ -1183,7 +1183,7 @@ public class AppState {
           actual,
           releasing,
           completedCount);
-      roleHistory.onReleaseCompleted(container);
+      roleHistory.onReleaseCompleted(container, true);
 
     } else if (surplusNodes.remove(containerId)) {
       //its a surplus one being purged
@@ -1251,18 +1251,28 @@ public class AppState {
     //record the complete node's details; this pulls it from the livenode set 
     //remove the node
     ContainerId id = status.getContainerId();
+    log.info("Removing node ID {}", id);
     RoleInstance node = getLiveNodes().remove(id);
-    if (node == null) {
-      log.warn("Received notification of completion of unknown node {}", id);
-      completionOfNodeNotInLiveListEvent.incrementAndGet();
-
-    } else {
+    if (node != null) {
       node.state = ClusterDescription.STATE_DESTROYED;
       node.exitCode = status.getExitStatus();
       node.diagnostics = status.getDiagnostics();
       getCompletedNodes().put(id, node);
       result.roleInstance = node;
+    } else {
+      // not in the list
+      log.warn("Received notification of completion of unknown node {}", id);
+      completionOfNodeNotInLiveListEvent.incrementAndGet();
+
     }
+    // finally, verify the node doesn't exist any more
+    assert !containersBeingReleased.containsKey(
+        containerId) : "container in release queue";
+    assert !getLiveNodes().containsKey(
+        containerId) : " container in live nodes";
+    assert getActiveContainer(containerId) ==
+           null : "Container still in active container list";
+
     return result;
   }
 
@@ -1422,6 +1432,7 @@ public class AppState {
    * @throws SliderInternalStateException if the operation reveals that
    * the internal state of the application is inconsistent.
    */
+  @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
   public List<AbstractRMOperation> reviewOneRole(RoleStatus role)
       throws SliderInternalStateException, TriggerClusterTeardownException {
     List<AbstractRMOperation> operations = new ArrayList<>();
