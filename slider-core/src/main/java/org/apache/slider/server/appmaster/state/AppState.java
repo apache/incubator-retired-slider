@@ -1252,7 +1252,7 @@ public class AppState {
           if (failedContainer != null) {
             String completedLogsUrl = getLogsURLForContainer(failedContainer);
             message = String.format("Failure %s on host %s: %s",
-                roleInstance.getContainerId(),
+                roleInstance.getContainerId().toString(),
                 failedContainer.getNodeId().getHost(),
                 completedLogsUrl);
           } else {
