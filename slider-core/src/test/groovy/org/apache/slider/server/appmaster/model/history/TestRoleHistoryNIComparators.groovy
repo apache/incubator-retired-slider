@@ -26,7 +26,7 @@ import org.junit.Test
 /**
  * Unit test to verify the comparators sort as expected
  */
-class TestNIComparators extends BaseMockAppStateTest  {
+class TestRoleHistoryNIComparators extends BaseMockAppStateTest  {
 
   NodeInstance age1Active4 = nodeInstance(1000, 4, 0, 0)
   NodeInstance age2Active2 = nodeInstance(1001, 2, 0, 0)

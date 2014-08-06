@@ -29,7 +29,7 @@ import org.junit.Test
 
 @Slf4j
 @CompileStatic
-class TestFindNodesForRelease extends BaseMockAppStateTest {
+class TestRoleHistoryFindNodesForRelease extends BaseMockAppStateTest {
 
 
   @Override

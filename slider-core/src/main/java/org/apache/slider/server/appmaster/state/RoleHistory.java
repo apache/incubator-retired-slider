@@ -529,6 +529,20 @@ public class RoleHistory {
     return nodemap.findNodesForRelease(role, count);
   }
  
+
+  /**
+   * Get the list of active nodes ... walks the node  map so 
+   * is O(nodes)
+   * @param role role index
+   * @return a possibly empty list of nodes with an instance of that node
+   */
+  public synchronized List<NodeInstance> listActiveNodes(int role) {
+    return nodemap.listActiveNodes(role);
+  }
+ 
+  
+  
+  
   /**
    * Get the node entry of a container
    * @param container container to look up

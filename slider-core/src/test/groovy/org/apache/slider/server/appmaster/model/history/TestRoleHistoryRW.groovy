@@ -32,7 +32,7 @@ import org.junit.Test
 
 @Slf4j
 @CompileStatic
-class TestHistoryRW extends BaseMockAppStateTest {
+class TestRoleHistoryRW extends BaseMockAppStateTest {
 
   static long time = System.currentTimeMillis();
   
