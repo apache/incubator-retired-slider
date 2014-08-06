@@ -786,7 +786,10 @@ public class AppState {
   public RoleInstance getActiveContainer(ContainerId id) {
     return activeContainers.get(id);
   }
-
+  
+  private RoleInstance removeActiveContainer(ContainerId id) {
+    return activeContainers.remove(id);
+  }
 
   public synchronized List<RoleInstance> cloneLiveContainerInfoList() {
     List<RoleInstance> allRoleInstances;
@@ -1265,11 +1268,15 @@ public class AppState {
       completionOfNodeNotInLiveListEvent.incrementAndGet();
 
     }
+    
+    // and the active node list if present
+    removeActiveContainer(containerId);
+    
     // finally, verify the node doesn't exist any more
     assert !containersBeingReleased.containsKey(
-        containerId) : "container in release queue";
+        containerId) : "container still in release queue";
     assert !getLiveNodes().containsKey(
-        containerId) : " container in live nodes";
+        containerId) : " container still in live nodes";
     assert getActiveContainer(containerId) ==
            null : "Container still in active container list";
 

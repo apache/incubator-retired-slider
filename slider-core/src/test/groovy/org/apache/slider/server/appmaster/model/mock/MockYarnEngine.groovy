@@ -104,7 +104,7 @@ class MockYarnEngine {
       if (op instanceof ContainerReleaseOperation) {
         ContainerReleaseOperation cro = (ContainerReleaseOperation) op
         ContainerId cid = cro.containerId
-        releaseContainer(cid);
+        assert releaseContainer(cid);
         released.add(cid)
       } else {
         ContainerRequestOperation req = (ContainerRequestOperation) op
