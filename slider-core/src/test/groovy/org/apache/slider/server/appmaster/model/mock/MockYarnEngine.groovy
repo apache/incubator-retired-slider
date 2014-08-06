@@ -86,9 +86,7 @@ class MockYarnEngine {
    * @param ops
    * @return
    */
-  List<Container> execute(
-      List<AbstractRMOperation> ops
-      ) {
+  List<Container> execute(List<AbstractRMOperation> ops) {
     return execute(ops, [])
   }
 
@@ -106,7 +104,7 @@ class MockYarnEngine {
       if (op instanceof ContainerReleaseOperation) {
         ContainerReleaseOperation cro = (ContainerReleaseOperation) op
         ContainerId cid = cro.containerId
-        releaseContainer(cid);
+        assert releaseContainer(cid);
         released.add(cid)
       } else {
         ContainerRequestOperation req = (ContainerRequestOperation) op

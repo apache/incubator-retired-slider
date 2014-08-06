@@ -671,12 +671,13 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       //build the instance
       appState.buildInstance(instanceDefinition,
-                             providerConf,
-                             providerRoles,
-                             fs.getFileSystem(),
-                             historyDir,
-                             liveContainers,
-                             appInformation);
+          serviceConf,
+          providerConf,
+          providerRoles,
+          fs.getFileSystem(),
+          historyDir,
+          liveContainers,
+          appInformation);
 
       // add the AM to the list of nodes in the cluster
       
@@ -1055,8 +1056,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       // non complete containers should not be here
       assert (status.getState() == ContainerState.COMPLETE);
-      AppState.NodeCompletionResult result = appState.onCompletedNode(
-          getConfig(), status);
+      AppState.NodeCompletionResult result = appState.onCompletedNode(status);
       if (result.containerFailed) {
         RoleInstance ri = result.roleInstance;
         log.error("Role instance {} failed ", ri);

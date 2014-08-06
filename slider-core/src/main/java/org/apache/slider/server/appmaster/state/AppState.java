@@ -54,7 +54,6 @@ import org.apache.slider.core.exceptions.ErrorStrings;
 import org.apache.slider.core.exceptions.NoSuchNodeException;
 import org.apache.slider.core.exceptions.SliderInternalStateException;
 import org.apache.slider.core.exceptions.TriggerClusterTeardownException;
-import org.apache.slider.core.registry.docstore.PublishedConfigSet;
 import org.apache.slider.providers.ProviderRole;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -250,6 +249,8 @@ public class AppState {
   private long startTimeThreshold;
   
   private int failureThreshold = 10;
+  
+  private String logServerURL = "";
 
   public AppState(AbstractRecordFactory recordFactory) {
     this.recordFactory = recordFactory;
@@ -432,6 +433,7 @@ public class AppState {
   /**
    * Build up the application state
    * @param instanceDefinition definition of the applicatin instance
+   * @param appmasterConfig
    * @param publishedProviderConf any configuration info to be published by a provider
    * @param providerRoles roles offered by a provider
    * @param fs filesystem
@@ -440,12 +442,12 @@ public class AppState {
    * @param applicationInfo
    */
   public synchronized void buildInstance(AggregateConf instanceDefinition,
-                            Configuration publishedProviderConf,
-                            List<ProviderRole> providerRoles,
-                            FileSystem fs,
-                            Path historyDir,
-                            List<Container> liveContainers,
-                            Map<String, String> applicationInfo) throws
+      Configuration appmasterConfig, Configuration publishedProviderConf,
+      List<ProviderRole> providerRoles,
+      FileSystem fs,
+      Path historyDir,
+      List<Container> liveContainers,
+      Map<String, String> applicationInfo) throws
                                                                  BadClusterStateException,
                                                                  BadConfigException,
                                                                  IOException {
@@ -514,6 +516,10 @@ public class AppState {
     //rebuild any live containers
     rebuildModelFromRestart(liveContainers);
     
+    // any am config options to pick up
+
+    logServerURL = appmasterConfig.get(YarnConfiguration.YARN_LOG_SERVER_URL,
+        "");
     //mark as live
     applicationLive = true;
   }
@@ -690,7 +696,7 @@ public class AppState {
                                    roleStatusMap.get(priority));
     }
     roleStatusMap.put(priority,
-                      new RoleStatus(providerRole));
+        new RoleStatus(providerRole));
     roles.put(providerRole.name, providerRole);
   }
 
@@ -780,7 +786,10 @@ public class AppState {
   public RoleInstance getActiveContainer(ContainerId id) {
     return activeContainers.get(id);
   }
-
+  
+  private RoleInstance removeActiveContainer(ContainerId id) {
+    return activeContainers.remove(id);
+  }
 
   public synchronized List<RoleInstance> cloneLiveContainerInfoList() {
     List<RoleInstance> allRoleInstances;
@@ -1161,31 +1170,23 @@ public class AppState {
    * @return NodeCompletionResult
    */
   public synchronized NodeCompletionResult onCompletedNode(ContainerStatus status) {
-    return onCompletedNode(null, status);
-  }
-  
-  /**
-   * handle completed node in the CD -move something from the live
-   * server list to the completed server list
-   * @param amConf YarnConfiguration
-   * @param status the node that has just completed
-   * @return NodeCompletionResult
-   */
-  public synchronized NodeCompletionResult onCompletedNode(Configuration amConf,
-      ContainerStatus status) {
     ContainerId containerId = status.getContainerId();
     NodeCompletionResult result = new NodeCompletionResult();
     RoleInstance roleInstance;
 
     if (containersBeingReleased.containsKey(containerId)) {
-      log.info("Container was queued for release");
+      log.info("Container was queued for release : {}", containerId);
       Container container = containersBeingReleased.remove(containerId);
       RoleStatus roleStatus = lookupRoleStatus(container);
-      log.info("decrementing role count for role {}", roleStatus.getName());
-      roleStatus.decReleasing();
-      roleStatus.decActual();
-      roleStatus.incCompleted();
-      roleHistory.onReleaseCompleted(container);
+      int releasing = roleStatus.decReleasing();
+      int actual = roleStatus.decActual();
+      int completedCount = roleStatus.incCompleted();
+      log.info("decrementing role count for role {} to {}; releasing={}, completed={}",
+          roleStatus.getName(),
+          actual,
+          releasing,
+          completedCount);
+      roleHistory.onReleaseCompleted(container, true);
 
     } else if (surplusNodes.remove(containerId)) {
       //its a surplus one being purged
@@ -1211,28 +1212,17 @@ public class AppState {
           roleStatus.decActual();
           boolean shortLived = isShortLived(roleInstance);
           String message;
-          if (roleInstance.container != null) {
-            String user = null;
-            try {
-              user = SliderUtils.getCurrentUser().getShortUserName();
-            } catch (IOException ignored) {
-            }
-            String completedLogsUrl = null;
-            Container c = roleInstance.container;
-            String url = null;
-            if (amConf != null) {
-              url = amConf.get(YarnConfiguration.YARN_LOG_SERVER_URL);
-            }
-            if (user != null && url != null) {
-              completedLogsUrl = url
-                  + "/" + c.getNodeId() + "/" + roleInstance.getContainerId() + "/ctx/" + user;
-            }
-            message = String.format("Failure %s on host %s" +
-                (completedLogsUrl != null ? ", see %s" : ""), roleInstance.getContainerId(),
-                c.getNodeId().getHost(), completedLogsUrl);
+          Container failedContainer = roleInstance.container;
+          
+          //build the failure message
+          if (failedContainer != null) {
+            String completedLogsUrl = getLogsURLForContainer(failedContainer);
+            message = String.format("Failure %s on host %s: %s" +
+                roleInstance.getContainerId(),
+                failedContainer.getNodeId().getHost(),
+                completedLogsUrl);
           } else {
-            message = String.format("Failure %s",
-                                    containerId.toString());
+            message = String.format("Failure %s", containerId);
           }
           roleStatus.noteFailed(message);
           //have a look to see if it short lived
@@ -1240,8 +1230,8 @@ public class AppState {
             roleStatus.incStartFailed();
           }
           
-          if (roleInstance.container != null) {
-            roleHistory.onFailedContainer(roleInstance.container, shortLived);
+          if (failedContainer!= null) {
+            roleHistory.onFailedContainer(failedContainer, shortLived);
           }
           
         } catch (YarnRuntimeException e1) {
@@ -1255,28 +1245,65 @@ public class AppState {
         completionOfUnknownContainerEvent.incrementAndGet();
       }
     }
-    
+
     if (result.surplusNode) {
       //a surplus node
       return result;
     }
-    
+
     //record the complete node's details; this pulls it from the livenode set 
     //remove the node
     ContainerId id = status.getContainerId();
+    log.info("Removing node ID {}", id);
     RoleInstance node = getLiveNodes().remove(id);
-    if (node == null) {
-      log.warn("Received notification of completion of unknown node {}", id);
-      completionOfNodeNotInLiveListEvent.incrementAndGet();
-
-    } else {
+    if (node != null) {
       node.state = ClusterDescription.STATE_DESTROYED;
       node.exitCode = status.getExitStatus();
       node.diagnostics = status.getDiagnostics();
       getCompletedNodes().put(id, node);
       result.roleInstance = node;
+    } else {
+      // not in the list
+      log.warn("Received notification of completion of unknown node {}", id);
+      completionOfNodeNotInLiveListEvent.incrementAndGet();
+
     }
+    
+    // and the active node list if present
+    removeActiveContainer(containerId);
+    
+    // finally, verify the node doesn't exist any more
+    assert !containersBeingReleased.containsKey(
+        containerId) : "container still in release queue";
+    assert !getLiveNodes().containsKey(
+        containerId) : " container still in live nodes";
+    assert getActiveContainer(containerId) ==
+           null : "Container still in active container list";
+
     return result;
+  }
+
+  /**
+   * Get the URL log for a container
+   * @param c container
+   * @return the URL or "" if it cannot be determined
+   */
+  protected String getLogsURLForContainer(Container c) {
+    if (c==null) {
+      return null;
+    }
+    String user = null;
+    try {
+      user = SliderUtils.getCurrentUser().getShortUserName();
+    } catch (IOException ignored) {
+    }
+    String completedLogsUrl = "";
+    String url = logServerURL;
+    if (user != null && SliderUtils.isSet(url)) {
+      completedLogsUrl = url
+          + "/" + c.getNodeId() + "/" + c.getId() + "/ctx/" + user;
+    }
+    return completedLogsUrl;
   }
 
 
@@ -1412,6 +1439,7 @@ public class AppState {
    * @throws SliderInternalStateException if the operation reveals that
    * the internal state of the application is inconsistent.
    */
+  @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
   public List<AbstractRMOperation> reviewOneRole(RoleStatus role)
       throws SliderInternalStateException, TriggerClusterTeardownException {
     List<AbstractRMOperation> operations = new ArrayList<>();

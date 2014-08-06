@@ -24,7 +24,6 @@ import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.api.json.JSONConfiguration;
-import com.sun.jersey.test.framework.JerseyTest;
 import junit.framework.Assert;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -43,7 +42,6 @@ import org.apache.slider.server.appmaster.web.WebAppApiImpl;
 import org.apache.slider.server.appmaster.web.rest.RestPaths;
 import org.apache.slider.server.services.security.CertificateManager;
 import org.apache.slider.server.services.security.SecurityUtils;
-import org.apache.slider.test.SliderTestBase;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -125,6 +123,7 @@ public class TestAMAgentWebServices {
       appState.setContainerLimits(RM_MAX_RAM, RM_MAX_CORES);
       appState.buildInstance(
           factory.newInstanceDefinition(0, 0, 0),
+          new Configuration(),
           new Configuration(false),
           factory.ROLES,
           fs,

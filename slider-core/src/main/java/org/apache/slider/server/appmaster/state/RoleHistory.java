@@ -29,7 +29,6 @@ import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.server.avro.RoleHistoryHeader;
 import org.apache.slider.server.avro.RoleHistoryWriter;
-import org.mortbay.log.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -659,10 +658,11 @@ public class RoleHistory {
   /**
    * App state notified of a container completed 
    * @param container completed container
+   * @param wasReleased
    * @return true if the node was queued
    */
-  public boolean onReleaseCompleted(Container container) {
-    return markContainerFinished(container, true, false);
+  public boolean onReleaseCompleted(Container container, boolean wasReleased) {
+    return markContainerFinished(container, wasReleased, false);
   }
 
   /**

@@ -72,11 +72,13 @@ class TestAppStateDynamicRoles extends BaseMockAppStateTest
     
     appState.buildInstance(
         instance,
+        new Configuration(),
         new Configuration(false),
         factory.ROLES,
         fs,
         historyPath,
-        null, null)
+        null,
+        null)
   }
 
   @Test

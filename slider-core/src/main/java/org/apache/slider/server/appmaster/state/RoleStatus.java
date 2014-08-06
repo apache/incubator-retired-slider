@@ -175,8 +175,8 @@ public final class RoleStatus implements Cloneable {
     this.completed = completed;
   }
 
-  public void incCompleted() {
-    completed ++;
+  public int incCompleted() {
+    return completed ++;
   }
   public int getStarted() {
     return started;

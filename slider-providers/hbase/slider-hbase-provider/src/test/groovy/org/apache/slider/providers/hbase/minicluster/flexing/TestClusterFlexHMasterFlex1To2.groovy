@@ -28,10 +28,10 @@ import org.junit.Test
  */
 @CompileStatic
 @Slf4j
-class TestHMasterFlex1To2 extends HBaseMiniClusterTestBase {
+class TestClusterFlexHMasterFlex1To2 extends HBaseMiniClusterTestBase {
 
   @Test
-  public void testClusterFlex1To2() throws Throwable {
+  public void testClusterMasterFlex1To2() throws Throwable {
     assert flexHBaseClusterTestRun(
         "",
         1,

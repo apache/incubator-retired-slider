@@ -170,6 +170,7 @@ public class TestAMManagementWebServices extends JerseyTest {
           appState.setContainerLimits(RM_MAX_RAM, RM_MAX_CORES);
           appState.buildInstance(
               factory.newInstanceDefinition(0, 0, 0),
+              new Configuration(),
               new Configuration(false),
               factory.ROLES,
               fs,

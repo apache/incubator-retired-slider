@@ -20,6 +20,7 @@ package org.apache.slider.providers.hbase.minicluster.flexing
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.slider.client.SliderClient
 import org.apache.slider.providers.hbase.minicluster.HBaseMiniClusterTestBase
 import org.junit.Test
 
@@ -28,17 +29,29 @@ import org.junit.Test
  */
 @CompileStatic
 @Slf4j
-class TestClusterFlex2To5 extends HBaseMiniClusterTestBase {
+class TestClusterFlexDownMultiple extends HBaseMiniClusterTestBase {
 
   @Test
-  public void testClusterFlex2To5() throws Throwable {
-    assert flexHBaseClusterTestRun(
-        "",
-        1,
+  public void testClusterFlexDownMultiple() throws Throwable {
+    def clusterName = createClusterName();
+    SliderClient sliderClient = startHBaseCluster(clusterName, 1, 3)
+    
+    assert flexCluster(
+        sliderClient,
+        clusterName,
         1,
         2,
-        5,
         true)
+
+    assert flexCluster(
+        sliderClient,
+        clusterName,
+        1,
+        1,
+        true)
+    
+
+    
   }
 
 
