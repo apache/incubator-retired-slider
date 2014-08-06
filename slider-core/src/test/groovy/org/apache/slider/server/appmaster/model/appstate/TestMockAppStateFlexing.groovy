@@ -39,14 +39,12 @@ import static org.apache.slider.server.appmaster.state.ContainerPriority.buildPr
 import static org.apache.slider.server.appmaster.state.ContainerPriority.extractRole
 
 @Slf4j
-class TestMockFlexing extends BaseMockAppStateTest implements MockRoles {
+class TestMockAppStateFlexing extends BaseMockAppStateTest implements MockRoles {
 
   @Override
   String getTestName() {
     return "TestMockFlexing"
   }
-
-
 
   @Test
   public void testFlexDuringLaunchPhase() throws Throwable {

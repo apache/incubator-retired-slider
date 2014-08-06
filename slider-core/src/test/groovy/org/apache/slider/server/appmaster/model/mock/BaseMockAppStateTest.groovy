@@ -87,7 +87,7 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
         factory.ROLES,
         fs,
         historyPath,
-        null, null)
+        null, null, new SimpleReleaseSelector())
   }
 
   abstract String getTestName();

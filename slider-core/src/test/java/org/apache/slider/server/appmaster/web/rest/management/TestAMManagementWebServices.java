@@ -45,6 +45,7 @@ import org.apache.slider.server.appmaster.model.mock.MockRecordFactory;
 import org.apache.slider.server.appmaster.model.mock.MockSliderClusterProtocol;
 import org.apache.slider.server.appmaster.state.AppState;
 import org.apache.slider.server.appmaster.state.ProviderAppState;
+import org.apache.slider.server.appmaster.state.SimpleReleaseSelector;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.WebAppApiImpl;
 import org.apache.slider.server.appmaster.web.rest.AMWebServices;
@@ -175,7 +176,7 @@ public class TestAMManagementWebServices extends JerseyTest {
               factory.ROLES,
               fs,
               historyPath,
-              null, null);
+              null, null, new SimpleReleaseSelector());
         } catch (IOException | BadClusterStateException | URISyntaxException | BadConfigException e) {
           log.error("{}", e, e);
         }

@@ -33,6 +33,7 @@ import org.apache.slider.core.launch.ContainerLauncher;
 import org.apache.slider.core.main.ExitCodeProvider;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.server.appmaster.AMViewForProviders;
+import org.apache.slider.server.appmaster.state.ContainerReleaseSelector;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
 import org.apache.slider.server.services.registry.RegistryViewForProviders;
@@ -172,6 +173,13 @@ public interface ProviderService extends ProviderCore, Service,
    */
   void applyInitialRegistryDefinitions(URL unsecureWebAPI,
                                        URL secureWebAPI,
-                                       ServiceInstanceData registryInstanceData) throws MalformedURLException,
-      IOException;
+                                       ServiceInstanceData registryInstanceData)
+      throws IOException;
+
+  /**
+   * Create the container release selector for this provider...any policy
+   * can be implemented
+   * @return the selector to use for choosing containers.
+   */
+  ContainerReleaseSelector createContainerReleaseSelector();
 }

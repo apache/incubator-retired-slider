@@ -35,7 +35,7 @@ import static org.apache.slider.server.appmaster.state.ContainerPriority.extract
  */
 @CompileStatic
 @Slf4j
-class TestAppStateRolePlacement extends BaseMockAppStateTest
+class TestMockAppStateRolePlacement extends BaseMockAppStateTest
     implements MockRoles {
 
   @Override

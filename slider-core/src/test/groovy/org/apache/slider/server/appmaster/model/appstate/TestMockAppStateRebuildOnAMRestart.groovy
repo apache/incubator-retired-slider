@@ -34,7 +34,7 @@ import org.junit.Test
  */
 @CompileStatic
 @Slf4j
-class TestAppStateRebuildOnAMRestart extends BaseMockAppStateTest
+class TestMockAppStateRebuildOnAMRestart extends BaseMockAppStateTest
     implements MockRoles {
 
   @Override
@@ -77,7 +77,7 @@ class TestAppStateRebuildOnAMRestart extends BaseMockAppStateTest
         fs,
         historyPath,
         containers,
-        null)
+        null, new SimpleReleaseSelector())
 
     assert appState.getStartedCountainerCount() == clusterSize
 

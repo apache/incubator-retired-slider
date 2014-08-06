@@ -20,12 +20,16 @@ package org.apache.slider.server.appmaster.model.appstate
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.hadoop.yarn.api.records.ContainerId
+import org.apache.hadoop.conf.Configuration
+import org.apache.slider.api.ResourceKeys
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
+import org.apache.slider.server.appmaster.model.mock.MockRecordFactory
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.model.mock.MockYarnEngine
 import org.apache.slider.server.appmaster.state.AbstractRMOperation
+import org.apache.slider.server.appmaster.state.AppState
 import org.apache.slider.server.appmaster.state.RoleInstance
+import org.apache.slider.server.appmaster.state.SimpleReleaseSelector
 import org.junit.Test
 
 /**
@@ -33,12 +37,12 @@ import org.junit.Test
  */
 @CompileStatic
 @Slf4j
-class TestAppStateRoleRelease extends BaseMockAppStateTest
+class TestMockAppStateDynamicRoles extends BaseMockAppStateTest
     implements MockRoles {
 
   @Override
   String getTestName() {
-    return "TestAppStateRolePlacement"
+    return "TestAppStateDynamicRoles"
   }
 
   /**
@@ -51,32 +55,40 @@ class TestAppStateRoleRelease extends BaseMockAppStateTest
     return new MockYarnEngine(4, 4)
   }
 
+  @Override
+  void initApp() {
+    super.initApp()
+    appState = new AppState(new MockRecordFactory())
+    appState.setContainerLimits(RM_MAX_RAM, RM_MAX_CORES)
+
+    def instance = factory.newInstanceDefinition(0,0,0)
+
+    def opts = [
+        (ResourceKeys.COMPONENT_INSTANCES): "1",
+        (ResourceKeys.COMPONENT_PRIORITY): "4",
+    ]
+
+    instance.resourceOperations.components["dynamic"]= opts
+    
+    
+    appState.buildInstance(
+        instance,
+        new Configuration(),
+        new Configuration(false),
+        factory.ROLES,
+        fs,
+        historyPath,
+        null,
+        null, new SimpleReleaseSelector())
+  }
+
   @Test
   public void testAllocateReleaseRealloc() throws Throwable {
-    /**
-     * Allocate to all nodes
-     */
-    role0Status.desired = 6
-    role1Status.desired = 5
-    role2Status.desired = 4
+
     List<RoleInstance> instances = createAndStartNodes()
-    assert instances.size() == 15
-
-    //now it is surplus
-    role0Status.desired = 0
     List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()
-    
-    List<ContainerId> released = []
-    engine.execute(ops, released)
-    List<ContainerId> ids = extractContainerIds(instances, 0)
-    released.each { ContainerId cid ->
-      assert appState.onCompletedNode(containerStatus(cid)).roleInstance
-      assert ids.contains(cid)
-    }
-
-    //view the world
     appState.getRoleHistory().dump();
     
   }
-
+  
 }

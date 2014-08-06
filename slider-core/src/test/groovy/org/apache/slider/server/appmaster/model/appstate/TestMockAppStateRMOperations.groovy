@@ -32,7 +32,7 @@ import static org.apache.slider.server.appmaster.state.ContainerPriority.buildPr
 import static org.apache.slider.server.appmaster.state.ContainerPriority.extractRole
 
 @Slf4j
-class TestMockRMOperations extends BaseMockAppStateTest implements MockRoles {
+class TestMockAppStateRMOperations extends BaseMockAppStateTest implements MockRoles {
 
   @Override
   String getTestName() {

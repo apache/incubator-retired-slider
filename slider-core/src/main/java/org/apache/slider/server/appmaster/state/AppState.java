@@ -18,7 +18,9 @@
 
 package org.apache.slider.server.appmaster.state;
 
+import com.beust.jcommander.internal.Lists;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -63,7 +65,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -251,6 +255,8 @@ public class AppState {
   private int failureThreshold = 10;
   
   private String logServerURL = "";
+  
+  private ContainerReleaseSelector containerReleaseSelector;
 
   public AppState(AbstractRecordFactory recordFactory) {
     this.recordFactory = recordFactory;
@@ -440,22 +446,27 @@ public class AppState {
    * @param historyDir directory containing history files
    * @param liveContainers list of live containers supplied on an AM restart
    * @param applicationInfo
+   * @param releaseSelector
    */
   public synchronized void buildInstance(AggregateConf instanceDefinition,
-      Configuration appmasterConfig, Configuration publishedProviderConf,
+      Configuration appmasterConfig,
+      Configuration publishedProviderConf,
       List<ProviderRole> providerRoles,
       FileSystem fs,
       Path historyDir,
       List<Container> liveContainers,
-      Map<String, String> applicationInfo) throws
-                                                                 BadClusterStateException,
-                                                                 BadConfigException,
-                                                                 IOException {
+      Map<String, String> applicationInfo,
+      SimpleReleaseSelector releaseSelector)
+      throws  BadClusterStateException, BadConfigException, IOException {
+    Preconditions.checkArgument(instanceDefinition != null);
+    Preconditions.checkArgument(releaseSelector != null);
+
     this.publishedProviderConf = publishedProviderConf;
-    this.applicationInfo = applicationInfo != null ? applicationInfo 
-                                         : new HashMap<String, String>();
+    this.applicationInfo = applicationInfo != null ? applicationInfo
+                                                   : new HashMap<String, String>();
 
     clientProperties = new HashMap<>();
+    containerReleaseSelector = releaseSelector;
 
 
     Set<String> confKeys = ConfigHelper.sortedConfigKeys(publishedProviderConf);
@@ -465,8 +476,8 @@ public class AppState {
       String val = publishedProviderConf.get(key);
       clientProperties.put(key, val);
     }
-    
-    
+
+
     // set the cluster specification (once its dependency the client properties
     // is out the way
 
@@ -479,15 +490,16 @@ public class AppState {
     }
 
     ConfTreeOperations resources =
-      instanceDefinition.getResourceOperations();
-    
+        instanceDefinition.getResourceOperations();
+
     Set<String> roleNames = resources.getComponentNames();
     for (String name : roleNames) {
       if (!roles.containsKey(name)) {
         // this is a new value
         log.info("Adding new role {}", name);
         MapOperations resComponent = resources.getComponent(name);
-        ProviderRole dynamicRole = createDynamicProviderRole(name, resComponent);
+        ProviderRole dynamicRole =
+            createDynamicProviderRole(name, resComponent);
         buildRole(dynamicRole);
         providerRoles.add(dynamicRole);
       }
@@ -498,24 +510,24 @@ public class AppState {
 
     //set the livespan
     MapOperations globalInternalOpts =
-      instanceDefinition.getInternalOperations().getGlobalOptions();
+        instanceDefinition.getInternalOperations().getGlobalOptions();
     startTimeThreshold = globalInternalOpts.getOptionInt(
-      OptionKeys.INTERNAL_CONTAINER_FAILURE_SHORTLIFE,
-      OptionKeys.DEFAULT_CONTAINER_FAILURE_SHORTLIFE);
-    
+        OptionKeys.INTERNAL_CONTAINER_FAILURE_SHORTLIFE,
+        OptionKeys.DEFAULT_CONTAINER_FAILURE_SHORTLIFE);
+
     failureThreshold = globalInternalOpts.getOptionInt(
-      OptionKeys.INTERNAL_CONTAINER_FAILURE_THRESHOLD,
-      OptionKeys.DEFAULT_CONTAINER_FAILURE_THRESHOLD);
+        OptionKeys.INTERNAL_CONTAINER_FAILURE_THRESHOLD,
+        OptionKeys.DEFAULT_CONTAINER_FAILURE_THRESHOLD);
     initClusterStatus();
 
 
     // add the roles
     roleHistory = new RoleHistory(providerRoles);
     roleHistory.onStart(fs, historyDir);
-    
+
     //rebuild any live containers
     rebuildModelFromRestart(liveContainers);
-    
+
     // any am config options to pick up
 
     logServerURL = appmasterConfig.get(YarnConfiguration.YARN_LOG_SERVER_URL,
@@ -845,6 +857,27 @@ public class AppState {
     return nodes;
   }
 
+ 
+  /**
+   * enum nodes by role ID, from either the active or live node list
+   * @param roleId role the container must be in
+   * @param active flag to indicate "use active list" rather than the smaller
+   * "live" list
+   * @return a list of nodes, may be empty
+   */
+  public synchronized List<RoleInstance> enumNodesWithRoleId(int roleId,
+      boolean active) {
+    List<RoleInstance> nodes = new ArrayList<>();
+    Collection<RoleInstance> allRoleInstances;
+    allRoleInstances = active? activeContainers.values() : liveNodes.values();
+    for (RoleInstance node : allRoleInstances) {
+      if (node.roleId == roleId) {
+        nodes.add(node);
+      }
+    }
+    return nodes;
+  }
+
 
   /**
    * Build an instance map.
@@ -911,19 +944,19 @@ public class AppState {
       throws SliderInternalStateException {
     ContainerId id = container.getId();
     //look up the container
-    RoleInstance info = getActiveContainer(id);
-    if (info == null) {
+    RoleInstance instance = getActiveContainer(id);
+    if (instance == null) {
       throw new SliderInternalStateException(
-        "No active container with ID " + id.toString());
+        "No active container with ID " + id);
     }
     //verify that it isn't already released
     if (containersBeingReleased.containsKey(id)) {
       throw new SliderInternalStateException(
         "Container %s already queued for release", id);
     }
-    info.released = true;
-    containersBeingReleased.put(id, info.container);
-    RoleStatus role = lookupRoleStatus(info.roleId);
+    instance.released = true;
+    containersBeingReleased.put(id, instance.container);
+    RoleStatus role = lookupRoleStatus(instance.roleId);
     role.incReleasing();
     roleHistory.onContainerReleaseSubmitted(container);
   }
@@ -1229,8 +1262,8 @@ public class AppState {
           if (shortLived) {
             roleStatus.incStartFailed();
           }
-          
-          if (failedContainer!= null) {
+
+          if (failedContainer != null) {
             roleHistory.onFailedContainer(failedContainer, shortLived);
           }
           
@@ -1485,18 +1518,43 @@ public class AppState {
 
       // get the nodes to release
       int roleId = role.getKey();
-      List<NodeInstance> nodesForRelease =
-        roleHistory.findNodesForRelease(roleId, excess);
-      
-      for (NodeInstance node : nodesForRelease) {
-        RoleInstance possible = findRoleInstanceOnHost(node, roleId);
-        if (possible == null) {
-          throw new SliderInternalStateException(
-            "Failed to find a container to release on node %s", node.hostname);
-        }
-        containerReleaseSubmitted(possible.container);
-        operations.add(new ContainerReleaseOperation(possible.getId()));
+            
+      // enum all active nodes that aren't being released
+      List<RoleInstance> containersToRelease = enumNodesWithRoleId(roleId, true);
 
+      // cut all release-in-progress nodes
+      ListIterator<RoleInstance> li = containersToRelease.listIterator();
+      while (li.hasNext()) {
+        RoleInstance next = li.next();
+        if (next.released) {
+          li.remove();
+        }
+      }
+
+      // warn if the desired state can't be reaced
+      if (containersToRelease.size() < excess) {
+        log.warn("Not enough nodes to release...short of {} nodes",
+            containersToRelease.size() - excess);
+      }
+      
+      // ask the release selector to sort the targets
+      containersToRelease =  containerReleaseSelector.sortCandidates(
+          roleId,
+          containersToRelease,
+          excess);
+      
+      //crop to the excess
+
+      List<RoleInstance> finalCandidates = (excess < containersToRelease.size()) 
+          ? containersToRelease.subList(0, excess)
+          : containersToRelease;
+      
+
+      // then build up a release operation, logging each container as released
+      for (RoleInstance possible : finalCandidates) {
+        log.debug("Targeting for release: {}", possible);
+        containerReleaseSubmitted(possible.container);
+        operations.add(new ContainerReleaseOperation(possible.getId()));       
       }
    
     }

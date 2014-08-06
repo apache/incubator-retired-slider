@@ -105,6 +105,7 @@ import org.apache.slider.server.appmaster.state.ProviderAppState;
 import org.apache.slider.server.appmaster.state.RMOperationHandler;
 import org.apache.slider.server.appmaster.state.RoleInstance;
 import org.apache.slider.server.appmaster.state.RoleStatus;
+import org.apache.slider.server.appmaster.state.SimpleReleaseSelector;
 import org.apache.slider.server.appmaster.web.AgentService;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentWebApp;
 import org.apache.slider.server.appmaster.web.SliderAMWebApp;
@@ -677,7 +678,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
           fs.getFileSystem(),
           historyDir,
           liveContainers,
-          appInformation);
+          appInformation,
+          new SimpleReleaseSelector());
 
       // add the AM to the list of nodes in the cluster
       

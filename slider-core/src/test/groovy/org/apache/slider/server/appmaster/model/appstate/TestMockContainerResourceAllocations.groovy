@@ -35,7 +35,7 @@ import org.junit.Test
  */
 @CompileStatic
 @Slf4j
-class TestContainerResourceAllocations extends BaseMockAppStateTest {
+class TestMockContainerResourceAllocations extends BaseMockAppStateTest {
 
   @Override
   String getTestName() {

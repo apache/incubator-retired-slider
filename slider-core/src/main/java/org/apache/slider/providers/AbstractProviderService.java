@@ -32,6 +32,8 @@ import org.apache.slider.core.main.ExitCodeProvider;
 import org.apache.slider.core.registry.info.RegisteredEndpoint;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.server.appmaster.AMViewForProviders;
+import org.apache.slider.server.appmaster.state.ContainerReleaseSelector;
+import org.apache.slider.server.appmaster.state.MostRecentContainerReleaseSelector;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
 import org.apache.slider.server.services.registry.RegistryViewForProviders;
@@ -318,11 +320,21 @@ public abstract class AbstractProviderService
   }
   @Override
   public void applyInitialRegistryDefinitions(URL unsecureWebAPI,
-                                              URL secureWebAPI,
-                                              ServiceInstanceData registryInstanceData) throws MalformedURLException,
-      IOException {
+      URL secureWebAPI,
+      ServiceInstanceData registryInstanceData) throws IOException {
 
       this.amWebAPI = unsecureWebAPI;
     this.registryInstanceData = registryInstanceData;
+  }
+
+  /**
+   * {@inheritDoc}
+   * 
+   * 
+   * @return The base implementation returns the most recent containers first.
+   */
+  @Override
+  public ContainerReleaseSelector createContainerReleaseSelector() {
+    return new MostRecentContainerReleaseSelector();
   }
 }
