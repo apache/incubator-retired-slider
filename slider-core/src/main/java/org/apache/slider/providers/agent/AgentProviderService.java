@@ -116,24 +116,26 @@ public class AgentProviderService extends AbstractProviderService implements
   private static final String DO_NOT_PROPAGATE_TAG = "{DO_NOT_PROPAGATE}";
   private static final int MAX_LOG_ENTRIES = 20;
   private static final int DEFAULT_HEARTBEAT_MONITOR_INTERVAL = 60 * 1000;
+
   private final Object syncLock = new Object();
-  private final Map<String, Map<String, String>> allocatedPorts = new ConcurrentHashMap<>();
   private int heartbeatMonitorInterval = 0;
   private AgentClientProvider clientProvider;
-  private Map<String, ComponentInstanceState> componentStatuses = new ConcurrentHashMap<>();
   private AtomicInteger taskId = new AtomicInteger(0);
   private volatile Metainfo metainfo = null;
   private ComponentCommandOrder commandOrder = null;
   private HeartbeatMonitor monitor;
+  private Boolean canAnyMasterPublish = null;
+  private AgentLaunchParameter agentLaunchParameter = null;
+
+  private Map<String, ComponentInstanceState> componentStatuses = new ConcurrentHashMap<>();
+  private Map<String, Map<String, String>> componentInstanceData = new ConcurrentHashMap();
+  private final Map<String, Map<String, String>> allocatedPorts = new ConcurrentHashMap<>();
   private Map<String, String> workFolders =
       Collections.synchronizedMap(new LinkedHashMap<String, String>(MAX_LOG_ENTRIES, 0.75f, false) {
         protected boolean removeEldestEntry(Map.Entry eldest) {
           return size() > MAX_LOG_ENTRIES;
         }
       });
-  private Map<String, Map<String, String>> componentInstanceData = new ConcurrentHashMap();
-  private Boolean canAnyMasterPublish = null;
-  private AgentLaunchParameter agentLaunchParameter = null;
 
   /**
    * Create an instance of AgentProviderService
@@ -286,11 +288,11 @@ public class AgentProviderService extends AbstractProviderService implements
     launcher.addCommand(operation.build());
 
     // initialize the component instance state
-    componentStatuses.put(label,
-                          new ComponentInstanceState(
-                              role,
-                              container.getId().toString(),
-                              getClusterInfoPropertyValue(OptionKeys.APPLICATION_NAME)));
+    getComponentStatuses().put(label,
+                               new ComponentInstanceState(
+                                   role,
+                                   container.getId().toString(),
+                                   getClusterInfoPropertyValue(OptionKeys.APPLICATION_NAME)));
   }
 
   /**
@@ -329,12 +331,13 @@ public class AgentProviderService extends AbstractProviderService implements
   public RegistrationResponse handleRegistration(Register registration) {
     RegistrationResponse response = new RegistrationResponse();
     String label = registration.getHostname();
-    if (componentStatuses.containsKey(label)) {
+    if (getComponentStatuses().containsKey(label)) {
       response.setResponseStatus(RegistrationStatus.OK);
-      componentStatuses.get(label).setLastHeartbeat(System.currentTimeMillis());
+      getComponentStatuses().get(label).setLastHeartbeat(System.currentTimeMillis());
     } else {
       response.setResponseStatus(RegistrationStatus.FAILED);
       response.setLog("Label not recognized.");
+      log.warn("Received registration request from unknown label {}", label);
     }
     return response;
   }
@@ -362,12 +365,12 @@ public class AgentProviderService extends AbstractProviderService implements
       return response;
     }
 
-    if (!componentStatuses.containsKey(label)) {
+    if (!getComponentStatuses().containsKey(label)) {
       return response;
     }
 
     Boolean isMaster = isMaster(roleName);
-    ComponentInstanceState componentStatus = componentStatuses.get(label);
+    ComponentInstanceState componentStatus = getComponentStatuses().get(label);
     componentStatus.setLastHeartbeat(System.currentTimeMillis());
     // If no Master can explicitly publish then publish if its a master
     // Otherwise, wait till the master that can publish is ready
@@ -405,7 +408,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
     if (id < waitForCount) {
       log.info("Waiting until heartbeat count {}. Current val: {}", waitForCount, id);
-      componentStatuses.put(roleName, componentStatus);
+      getComponentStatuses().put(roleName, componentStatus);
       return response;
     }
 
@@ -418,7 +421,7 @@ public class AgentProviderService extends AbstractProviderService implements
           componentStatus.commandIssued(command);
         } else if (command == Command.START) {
           // check against dependencies
-          boolean canExecute = commandOrder.canExecute(roleName, command, componentStatuses.values());
+          boolean canExecute = commandOrder.canExecute(roleName, command, getComponentStatuses().values());
           if (canExecute) {
             log.info("Starting {} on {}.", roleName, containerId);
             addStartCommand(roleName, containerId, response, scriptPath);
@@ -474,17 +477,21 @@ public class AgentProviderService extends AbstractProviderService implements
   public void notifyContainerCompleted(ContainerId containerId) {
     if (containerId != null) {
       String containerIdStr = containerId.toString();
-      if (this.componentInstanceData.containsKey(containerIdStr)) {
-        synchronized (this.componentInstanceData) {
-          this.componentInstanceData.remove(containerIdStr);
-        }
+      if (getComponentInstanceData().containsKey(containerIdStr)) {
+        getComponentInstanceData().remove(containerIdStr);
         log.info("Removing container specific data for {}", containerIdStr);
         publishComponentInstanceData();
       }
 
       if (this.allocatedPorts.containsKey(containerIdStr)) {
-        synchronized (this.allocatedPorts) {
-          this.allocatedPorts.remove(containerIdStr);
+        this.allocatedPorts.remove(containerIdStr);
+      }
+
+      synchronized (this.componentStatuses) {
+        for (String label : getComponentStatuses().keySet()) {
+          if (label.startsWith(containerIdStr)) {
+            getComponentStatuses().remove(label);
+          }
         }
       }
     }
@@ -589,7 +596,7 @@ public class AgentProviderService extends AbstractProviderService implements
    * @return if release is requested successfully
    */
   protected boolean releaseContainer(String label) {
-    componentStatuses.remove(label);
+    getComponentStatuses().remove(label);
     try {
       getAppMaster().refreshContainer(getContainerId(label), true);
     } catch (SliderException e) {
@@ -640,7 +647,7 @@ public class AgentProviderService extends AbstractProviderService implements
       boolean hasExportGroups = exportGroups != null && !exportGroups.isEmpty();
       Set<String> exportedConfigs = new HashSet();
       String exportedConfigsStr = application.getExportedConfigs();
-      boolean exportedConfigSpecified = exportedConfigsStr != null;
+      boolean exportedAllConfigs = exportedConfigsStr == null || exportedConfigsStr.isEmpty();
       if (application.getExportedConfigs() != null && application.getExportedConfigs().length() > 0) {
         for (String exportedConfig : application.getExportedConfigs().split(",")) {
           if (exportedConfig.trim().length() > 0) {
@@ -653,8 +660,8 @@ public class AgentProviderService extends AbstractProviderService implements
         log.info("Status report: " + status.toString());
         if (status.getConfigs() != null) {
           for (String key : status.getConfigs().keySet()) {
-            if ((exportedConfigSpecified && exportedConfigs.contains(key)) ||
-                !exportedConfigSpecified) {
+            if ((!exportedAllConfigs && exportedConfigs.contains(key)) ||
+                exportedAllConfigs) {
               Map<String, String> configs = status.getConfigs().get(key);
               publishApplicationInstanceData(key, key, configs.entrySet());
             }
@@ -745,13 +752,13 @@ public class AgentProviderService extends AbstractProviderService implements
 
     if (toPublish.size() > 0) {
       Map<String, String> perContainerData = null;
-      if (!this.componentInstanceData.containsKey(containerId)) {
+      if (!getComponentInstanceData().containsKey(containerId)) {
         perContainerData = new ConcurrentHashMap<>();
       } else {
-        perContainerData = this.componentInstanceData.get(containerId);
+        perContainerData = getComponentInstanceData().get(containerId);
       }
       perContainerData.putAll(toPublish);
-      this.componentInstanceData.put(containerId, perContainerData);
+      getComponentInstanceData().put(containerId, perContainerData);
       publishComponentInstanceData();
     }
   }
@@ -759,10 +766,10 @@ public class AgentProviderService extends AbstractProviderService implements
   private void publishComponentInstanceData() {
     Map<String, String> dataToPublish = new HashMap<>();
     synchronized (this.componentInstanceData) {
-      for (String container : this.componentInstanceData.keySet()) {
-        for (String prop : this.componentInstanceData.get(container).keySet()) {
+      for (String container : getComponentInstanceData().keySet()) {
+        for (String prop : getComponentInstanceData().get(container).keySet()) {
           dataToPublish.put(
-              container + "." + prop, this.componentInstanceData.get(container).get(prop));
+              container + "." + prop, getComponentInstanceData().get(container).get(prop));
         }
       }
     }

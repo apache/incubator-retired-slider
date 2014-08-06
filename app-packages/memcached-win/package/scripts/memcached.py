@@ -34,7 +34,7 @@ class Memcached(Script):
     import params
     env.set_params(params)
     self.configure(env)
-    process_cmd = format("{java64_home}\\bin\\java -Xmx{xmx_val} -Xms{xms_val} -classpath {app_root}\\*;{additional_cp} com.thimbleware.jmemcached.Main --memory={memory_val}")
+    process_cmd = format("{java64_home}\\bin\\java -Xmx{xmx_val} -Xms{xms_val} -classpath {app_root}\\*;{additional_cp} com.thimbleware.jmemcached.Main --memory={memory_val} --port={port}")
 
     Execute(process_cmd,
         user=params.app_user,

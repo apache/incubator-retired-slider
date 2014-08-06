@@ -820,20 +820,31 @@ public class TestAgentProviderService {
     mockAps.getComponentInstanceData().put("cid2", new HashMap<String, String>());
     mockAps.getComponentInstanceData().put(id, new HashMap<String, String>());
 
+    mockAps.getComponentStatuses().put("cid2_HM", new ComponentInstanceState("HM", "cid2", "aid"));
+    mockAps.getComponentStatuses().put(id + "_HM", new ComponentInstanceState("HM", id, "aid"));
+
     Assert.assertNotNull(mockAps.getComponentInstanceData().get(id));
     Assert.assertNotNull(mockAps.getComponentInstanceData().get("cid2"));
+
+    Assert.assertNotNull(mockAps.getComponentStatuses().get(id + "_HM"));
+    Assert.assertNotNull(mockAps.getComponentStatuses().get("cid2_HM"));
 
     Assert.assertEquals(mockAps.getAllocatedPorts().size(), 1);
     Assert.assertEquals(mockAps.getAllocatedPorts(id).size(), 1);
     Assert.assertEquals(mockAps.getAllocatedPorts("cid2").size(), 1);
-    mockAps.notifyContainerCompleted(new MyContainerId(1));
 
-    Assert.assertNull(mockAps.getComponentInstanceData().get(id));
-    Assert.assertNotNull(mockAps.getComponentInstanceData().get("cid2"));
+    // Make the call
+    mockAps.notifyContainerCompleted(new MyContainerId(1));
 
     Assert.assertEquals(mockAps.getAllocatedPorts().size(), 1);
     Assert.assertEquals(mockAps.getAllocatedPorts(id).size(), 0);
     Assert.assertEquals(mockAps.getAllocatedPorts("cid2").size(), 1);
+
+    Assert.assertNull(mockAps.getComponentInstanceData().get(id));
+    Assert.assertNotNull(mockAps.getComponentInstanceData().get("cid2"));
+
+    Assert.assertNull(mockAps.getComponentStatuses().get(id + "_HM"));
+    Assert.assertNotNull(mockAps.getComponentStatuses().get("cid2_HM"));
   }
 
   @Test

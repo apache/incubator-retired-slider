@@ -37,7 +37,6 @@
         <commandScript>
           <script>scripts/memcached.py</script>
           <scriptType>PYTHON</scriptType>
-          <timeout>600</timeout>
         </commandScript>
       </component>
     </components>
