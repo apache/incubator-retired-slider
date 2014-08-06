@@ -37,6 +37,7 @@ import org.apache.slider.server.appmaster.model.mock.MockRecordFactory;
 import org.apache.slider.server.appmaster.model.mock.MockSliderClusterProtocol;
 import org.apache.slider.server.appmaster.state.AppState;
 import org.apache.slider.server.appmaster.state.ProviderAppState;
+import org.apache.slider.server.appmaster.state.SimpleReleaseSelector;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.WebAppApiImpl;
 import org.apache.slider.server.appmaster.web.rest.RestPaths;
@@ -128,7 +129,7 @@ public class TestAMAgentWebServices {
           factory.ROLES,
           fs,
           historyPath,
-          null, null);
+          null, null, new SimpleReleaseSelector());
     } catch (Exception e) {
       log.error("Failed to set up app {}", e);
     }

@@ -102,60 +102,6 @@ public class NodeMap extends HashMap<String, NodeInstance> {
     }
     return purged;
   }
-  
-  
-
-  /**
-   * Find a list of node for release; algorithm may make its own
-   * decisions on which to release.
-   * @param role role index
-   * @param count number of nodes to release
-   * @return a possibly empty list of nodes.
-   */
-  public List<NodeInstance> findNodesForRelease(int role, int count) {
-    List<NodeInstance> targets = new ArrayList<>(count);
-    List<NodeInstance> active = listActiveNodes(role);
-    List<NodeInstance> multiple = new ArrayList<>();
-    int nodesRemaining = count;
-    log.debug("searching for {} nodes with candidate set size {}",
-              nodesRemaining, active.size());
-    ListIterator<NodeInstance> it = active.listIterator();
-    while (it.hasNext() && nodesRemaining > 0) {
-      NodeInstance ni = it.next();
-      int load = ni.getActiveRoleInstances(role);
-      log.debug("Node {} load={}", ni, load);
-      assert load != 0; 
-      if (load == 1) {
-        // at the tail of the list, from here active[*] is a load=1 entry
-        break;
-      }
-      // load is >1. Add an entry to the target list FOR EACH INSTANCE ABOVE 1
-      for (int i = 0; i < (load - 1) && nodesRemaining > 0; i++) {
-        nodesRemaining--;
-        log.debug("Push {} #{}", ni, i);
-        targets.add(ni);
-      }
-      // and add to the multiple list
-      multiple.add(ni);
-      // then pop it from the active list
-      it.remove();
-    }
-    //here either the number is found or there is still some left.
-
-    if (nodesRemaining > 0) {
-      // leftovers. Append any of the multiple node entries to the tail of 
-      // the active list (so they get chosen last)
-      active.addAll(multiple);
-      // all the entries in the list have exactly one node
-      // so ask for as many as are needed
-      int ask = Math.min(nodesRemaining, active.size());
-      log.debug("load=1 nodes to select={} multiples={} available={} ask={}",
-                nodesRemaining, multiple.size(),active.size(), ask);
-      targets.addAll(active.subList(0, ask));
-    }
-    return targets;
-  }
-
 
   /**
    * Clone point

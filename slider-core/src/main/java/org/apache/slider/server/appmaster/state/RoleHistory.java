@@ -517,18 +517,16 @@ public class RoleHistory {
     return requestInstanceOnNode(node, role, resource);
   }
 
-
   /**
-   * Find a list of node for release; algorithm may make its own
-   * decisions on which to release.
+   * Get the list of active nodes ... walks the node  map so 
+   * is O(nodes)
    * @param role role index
-   * @param count number of nodes to release
-   * @return a possibly empty list of nodes.
+   * @return a possibly empty list of nodes with an instance of that node
    */
-  public synchronized List<NodeInstance> findNodesForRelease(int role, int count) {
-    return nodemap.findNodesForRelease(role, count);
+  public synchronized List<NodeInstance> listActiveNodes(int role) {
+    return nodemap.listActiveNodes(role);
   }
- 
+  
   /**
    * Get the node entry of a container
    * @param container container to look up

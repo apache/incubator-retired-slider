@@ -27,7 +27,6 @@ import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.core.conf.MapOperations
 import org.apache.slider.core.main.ServiceLauncher
-import org.apache.slider.server.appmaster.web.SliderAMWebApp
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationResponse
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationStatus
 import org.apache.slider.server.services.security.CertificateManager
@@ -37,13 +36,15 @@ import org.junit.Test
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+import javax.net.ssl.HostnameVerifier
+import javax.net.ssl.HttpsURLConnection
+import javax.net.ssl.SSLSession
 import javax.ws.rs.core.MediaType
 
 import static org.apache.slider.common.params.Arguments.ARG_OPTION
 import static org.apache.slider.providers.agent.AgentKeys.*
 import static org.apache.slider.providers.agent.AgentTestUtils.createDummyJSONRegister
 import static org.apache.slider.providers.agent.AgentTestUtils.createTestClient
-import static org.apache.slider.test.SliderTestUtils.log
 
 @CompileStatic
 @Slf4j
@@ -53,10 +54,10 @@ class TestAgentAMManagementWS extends AgentTestBase {
     final static Logger logger = LoggerFactory.getLogger(TestAgentAMManagementWS.class)
     static {
         //for localhost testing only
-        javax.net.ssl.HttpsURLConnection.setDefaultHostnameVerifier(
-                new javax.net.ssl.HostnameVerifier(){
+        HttpsURLConnection.setDefaultHostnameVerifier(
+                new HostnameVerifier(){
                     public boolean verify(String hostname,
-                                          javax.net.ssl.SSLSession sslSession) {
+                                          SSLSession sslSession) {
                         logger.info("verifying hostname ${hostname}")
                         InetAddress[] addresses =
                             InetAddress.getAllByName(hostname);

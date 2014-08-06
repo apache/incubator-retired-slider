@@ -24,7 +24,7 @@ import org.apache.slider.server.appmaster.state.OutstandingRequest
 import org.apache.slider.server.appmaster.state.OutstandingRequestTracker
 import org.junit.Test
 
-class TestOutstandingRequestTracker extends BaseMockAppStateTest {
+class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest {
 
   NodeInstance host1 = new NodeInstance("host1", 3)
   NodeInstance host2 = new NodeInstance("host2", 3)

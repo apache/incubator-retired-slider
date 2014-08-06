@@ -16,16 +16,29 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster.state;
+package org.apache.slider.server.appmaster.operations;
 
-public class AbstractRMOperation {
+import org.apache.hadoop.yarn.api.records.ContainerId;
 
-  /**
-   * Execute the operation
-   * @param asyncRMClient client
-   */
-  public void execute(RMOperationHandler handler) {
+public class ContainerReleaseOperation extends AbstractRMOperation {
 
+  private final ContainerId containerId;
+
+  public ContainerReleaseOperation(ContainerId containerId) {
+    this.containerId = containerId;
   }
-  
+
+  public ContainerId getContainerId() {
+    return containerId;
+  }
+
+  @Override
+  public void execute(RMOperationHandler handler) {
+    handler.releaseAssignedContainer(containerId);
+  }
+
+  @Override
+  public String toString() {
+    return "release container " + containerId;
+  }
 }

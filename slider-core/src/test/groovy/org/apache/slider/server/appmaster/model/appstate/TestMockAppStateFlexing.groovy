@@ -20,33 +20,21 @@ package org.apache.slider.server.appmaster.model.appstate
 
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.Container
-import org.apache.hadoop.yarn.api.records.ContainerId
-import org.apache.hadoop.yarn.client.api.AMRMClient
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
-import org.apache.slider.server.appmaster.model.mock.MockFactory
-import org.apache.slider.server.appmaster.model.mock.MockRMOperationHandler
 import org.apache.slider.server.appmaster.model.mock.MockRoles
-import org.apache.slider.server.appmaster.state.AbstractRMOperation
+import org.apache.slider.server.appmaster.operations.AbstractRMOperation
 import org.apache.slider.server.appmaster.state.AppState
 import org.apache.slider.server.appmaster.state.ContainerAssignment
-import org.apache.slider.server.appmaster.state.ContainerReleaseOperation
-import org.apache.slider.server.appmaster.state.ContainerRequestOperation
-import org.apache.slider.server.appmaster.state.RMOperationHandler
 import org.apache.slider.server.appmaster.state.RoleInstance
 import org.junit.Test
 
-import static org.apache.slider.server.appmaster.state.ContainerPriority.buildPriority
-import static org.apache.slider.server.appmaster.state.ContainerPriority.extractRole
-
 @Slf4j
-class TestMockFlexing extends BaseMockAppStateTest implements MockRoles {
+class TestMockAppStateFlexing extends BaseMockAppStateTest implements MockRoles {
 
   @Override
   String getTestName() {
     return "TestMockFlexing"
   }
-
-
 
   @Test
   public void testFlexDuringLaunchPhase() throws Throwable {

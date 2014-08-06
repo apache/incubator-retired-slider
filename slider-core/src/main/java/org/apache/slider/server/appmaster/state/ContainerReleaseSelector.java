@@ -18,27 +18,21 @@
 
 package org.apache.slider.server.appmaster.state;
 
-import org.apache.hadoop.yarn.client.api.AMRMClient;
+import java.util.List;
 
-public class ContainerRequestOperation extends AbstractRMOperation {
+/**
+ * Interface implemented by anything that must choose containers to release
+ * 
+ */
+public interface ContainerReleaseSelector {
 
-  private final AMRMClient.ContainerRequest request;
-
-  public ContainerRequestOperation(AMRMClient.ContainerRequest request) {
-    this.request = request;
-  }
-
-  public AMRMClient.ContainerRequest getRequest() {
-    return request;
-  }
-
-  @Override
-  public void execute(RMOperationHandler handler) {
-    handler.addContainerRequest(request);
-  }
-
-  @Override
-  public String toString() {
-    return "request container ";
-  }
+  /**
+   * Given a list of candidate containers, return a sorted version of the priority
+   * in which they should be released. 
+   * @param candidates candidate list ... everything considered suitable
+   * @return
+   */
+  List<RoleInstance> sortCandidates(int roleId,
+      List<RoleInstance> candidates,
+      int minimumToSelect);
 }

@@ -33,7 +33,7 @@ import java.util.regex.Matcher
 import java.util.regex.Pattern
 
 @Slf4j
-class TestHistoryRWOrdering extends BaseMockAppStateTest {
+class TestRoleHistoryRWOrdering extends BaseMockAppStateTest {
 
   def paths = pathlist(
       [

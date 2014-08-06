@@ -38,7 +38,7 @@ import org.junit.Test
  */
 @Slf4j
 @CompileStatic
-class TestFindNodesForNewInstances extends BaseMockAppStateTest {
+class TestRoleHistoryFindNodesForNewInstances extends BaseMockAppStateTest {
 
   @Override
   String getTestName() {

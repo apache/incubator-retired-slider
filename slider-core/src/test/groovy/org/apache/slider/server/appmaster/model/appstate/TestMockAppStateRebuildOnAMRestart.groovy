@@ -26,6 +26,7 @@ import org.apache.slider.api.StatusKeys
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockRecordFactory
 import org.apache.slider.server.appmaster.model.mock.MockRoles
+import org.apache.slider.server.appmaster.operations.AbstractRMOperation
 import org.apache.slider.server.appmaster.state.*
 import org.junit.Test
 
@@ -34,7 +35,7 @@ import org.junit.Test
  */
 @CompileStatic
 @Slf4j
-class TestAppStateRebuildOnAMRestart extends BaseMockAppStateTest
+class TestMockAppStateRebuildOnAMRestart extends BaseMockAppStateTest
     implements MockRoles {
 
   @Override
@@ -77,7 +78,7 @@ class TestAppStateRebuildOnAMRestart extends BaseMockAppStateTest
         fs,
         historyPath,
         containers,
-        null)
+        null, new SimpleReleaseSelector())
 
     assert appState.getStartedCountainerCount() == clusterSize
 

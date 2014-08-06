@@ -16,19 +16,11 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster.state;
-
-import org.apache.hadoop.yarn.api.records.ContainerId;
-import org.apache.hadoop.yarn.client.api.AMRMClient;
+package org.apache.slider.server.appmaster.operations;
 
 import java.util.List;
 
-public abstract class RMOperationHandler {
-
-
-  public abstract void releaseAssignedContainer(ContainerId containerId);
-
-  public abstract void addContainerRequest(AMRMClient.ContainerRequest req);
+public abstract class RMOperationHandler implements RMOperationHandlerActions {
 
 
   /**

@@ -24,6 +24,7 @@ import org.apache.hadoop.service.LifecycleEvent
 import org.apache.hadoop.service.ServiceStateChangeListener
 import org.apache.hadoop.yarn.api.records.Container
 import org.apache.hadoop.yarn.api.records.ContainerId
+import org.apache.hadoop.yarn.client.api.AMRMClient
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.common.tools.SliderFileSystem
 import org.apache.slider.core.conf.AggregateConf
@@ -35,6 +36,8 @@ import org.apache.slider.core.registry.info.ServiceInstanceData
 import org.apache.slider.providers.ProviderRole
 import org.apache.slider.providers.ProviderService
 import org.apache.slider.server.appmaster.AMViewForProviders
+import org.apache.slider.server.appmaster.state.ContainerReleaseSelector
+import org.apache.slider.server.appmaster.state.MostRecentContainerReleaseSelector
 import org.apache.slider.server.appmaster.state.StateAccessForProviders
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations
 import org.apache.slider.server.appmaster.web.rest.agent.HeartBeat
@@ -64,7 +67,8 @@ class MockProviderService implements ProviderService {
   }
 
   @Override
-  public void validateInstanceDefinition(AggregateConf instanceDefinition) throws SliderException {
+  public void validateInstanceDefinition(AggregateConf instanceDefinition)
+  throws SliderException {
   }
 
   @Override
@@ -100,7 +104,7 @@ class MockProviderService implements ProviderService {
     return null
   }
 
-    @Override
+  @Override
   public long getStartTime() {
     return 0;
   }
@@ -131,7 +135,7 @@ class MockProviderService implements ProviderService {
   }
 
   @Override
-  public Map<String,String> getBlockers() {
+  public Map<String, String> getBlockers() {
     return null;
   }
 
@@ -156,7 +160,8 @@ class MockProviderService implements ProviderService {
   }
 
   @Override
-  public Configuration loadProviderConfigurationInformation(File confDir) throws BadCommandArgumentsException, IOException {
+  public Configuration loadProviderConfigurationInformation(File confDir)
+  throws BadCommandArgumentsException, IOException {
     return null;
   }
 
@@ -169,7 +174,7 @@ class MockProviderService implements ProviderService {
 
 
   @Override
-  public Map<String,String> buildProviderStatus() {
+  public Map<String, String> buildProviderStatus() {
     return null;
   }
 
@@ -188,7 +193,8 @@ class MockProviderService implements ProviderService {
   }
 
   @Override
-  public Map<String, String> buildMonitorDetails(ClusterDescription clusterSpec) {
+  public Map<String, String> buildMonitorDetails(
+      ClusterDescription clusterSpec) {
     return null;
   }
 
@@ -201,23 +207,23 @@ class MockProviderService implements ProviderService {
   }
 
   @Override
-    AgentRestOperations getAgentRestOperations() {
-        return new AgentRestOperations() {
-            @Override
-            public RegistrationResponse handleRegistration(Register registration) {
-                // dummy impl
-                RegistrationResponse response = new RegistrationResponse();
-                response.setResponseStatus(RegistrationStatus.OK);
-                return response;
-            }
+  AgentRestOperations getAgentRestOperations() {
+    return new AgentRestOperations() {
+      @Override
+      public RegistrationResponse handleRegistration(Register registration) {
+        // dummy impl
+        RegistrationResponse response = new RegistrationResponse();
+        response.setResponseStatus(RegistrationStatus.OK);
+        return response;
+      }
 
-            @Override
-            public HeartBeatResponse handleHeartBeat(HeartBeat heartBeat) {
-                // dummy impl
-                return new HeartBeatResponse();
-            }
-        }
+      @Override
+      public HeartBeatResponse handleHeartBeat(HeartBeat heartBeat) {
+        // dummy impl
+        return new HeartBeatResponse();
+      }
     }
+  }
 
   @Override
   void buildEndpointDetails(Map<String, String> details) {
@@ -226,12 +232,29 @@ class MockProviderService implements ProviderService {
 
   @Override
   void applyInitialRegistryDefinitions(
-          URL unsecureWebAPI, URL secureWebAPI, ServiceInstanceData registryInstanceData)
+      URL unsecureWebAPI,
+      URL secureWebAPI,
+      ServiceInstanceData registryInstanceData)
   throws MalformedURLException, IOException {
 
   }
 
   @Override
   public void notifyContainerCompleted(ContainerId containerId) {
+  }
+
+  @Override
+  ContainerReleaseSelector createContainerReleaseSelector() {
+    return new MostRecentContainerReleaseSelector()
+  }
+
+  @Override
+  public void releaseAssignedContainer(ContainerId containerId) {
+    // no-op
+  }
+
+  @Override
+  public void addContainerRequest(AMRMClient.ContainerRequest req) {
+    // no-op
   }
 }

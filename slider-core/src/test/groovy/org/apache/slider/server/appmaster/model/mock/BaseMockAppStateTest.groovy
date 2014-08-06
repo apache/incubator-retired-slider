@@ -31,6 +31,7 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.common.tools.SliderFileSystem
 import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.core.main.LauncherExitCodes
+import org.apache.slider.server.appmaster.operations.AbstractRMOperation
 import org.apache.slider.server.appmaster.state.*
 import org.apache.slider.test.SliderTestBase
 import org.junit.Before
@@ -87,7 +88,7 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
         factory.ROLES,
         fs,
         historyPath,
-        null, null)
+        null, null, new SimpleReleaseSelector())
   }
 
   abstract String getTestName();
