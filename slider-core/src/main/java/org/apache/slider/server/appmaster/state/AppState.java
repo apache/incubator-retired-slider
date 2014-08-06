@@ -1217,7 +1217,7 @@ public class AppState {
           //build the failure message
           if (failedContainer != null) {
             String completedLogsUrl = getLogsURLForContainer(failedContainer);
-            message = String.format("Failure %s on host %s: %s" +
+            message = String.format("Failure %s on host %s: %s",
                 roleInstance.getContainerId(),
                 failedContainer.getNodeId().getHost(),
                 completedLogsUrl);
@@ -1510,12 +1510,12 @@ public class AppState {
    * @return
    * @throws SliderInternalStateException
    */
-  public List<AbstractRMOperation> releaseContainer(String containerId)
+  public List<AbstractRMOperation> releaseContainer(ContainerId containerId)
       throws SliderInternalStateException {
     List<AbstractRMOperation> operations = new ArrayList<>();
     List<RoleInstance> activeRoleInstances = cloneActiveContainerList();
     for (RoleInstance role : activeRoleInstances) {
-      if (role.container.getId().toString().equals(containerId)) {
+      if (role.container.getId().equals(containerId)) {
         containerReleaseSubmitted(role.container);
         operations.add(new ContainerReleaseOperation(role.getId()));
       }

@@ -58,6 +58,7 @@ import org.apache.slider.providers.agent.application.metadata.ExportGroup;
 import org.apache.slider.providers.agent.application.metadata.Metainfo;
 import org.apache.slider.providers.agent.application.metadata.OSPackage;
 import org.apache.slider.providers.agent.application.metadata.OSSpecific;
+import org.apache.slider.server.appmaster.AMViewForProviders;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentCommandType;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
@@ -127,10 +128,10 @@ public class AgentProviderService extends AbstractProviderService implements
   private Boolean canAnyMasterPublish = null;
   private AgentLaunchParameter agentLaunchParameter = null;
 
-  private Map<String, ComponentInstanceState> componentStatuses = new ConcurrentHashMap<>();
-  private Map<String, Map<String, String>> componentInstanceData = new ConcurrentHashMap();
+  private final Map<String, ComponentInstanceState> componentStatuses = new ConcurrentHashMap<>();
+  private final Map<String, Map<String, String>> componentInstanceData = new ConcurrentHashMap<>();
   private final Map<String, Map<String, String>> allocatedPorts = new ConcurrentHashMap<>();
-  private Map<String, String> workFolders =
+  private final Map<String, String> workFolders =
       Collections.synchronizedMap(new LinkedHashMap<String, String>(MAX_LOG_ENTRIES, 0.75f, false) {
         protected boolean removeEldestEntry(Map.Entry eldest) {
           return size() > MAX_LOG_ENTRIES;
@@ -291,7 +292,7 @@ public class AgentProviderService extends AbstractProviderService implements
     getComponentStatuses().put(label,
                                new ComponentInstanceState(
                                    role,
-                                   container.getId().toString(),
+                                   container.getId(),
                                    getClusterInfoPropertyValue(OptionKeys.APPLICATION_NAME)));
   }
 
@@ -333,7 +334,7 @@ public class AgentProviderService extends AbstractProviderService implements
     String label = registration.getHostname();
     if (getComponentStatuses().containsKey(label)) {
       response.setResponseStatus(RegistrationStatus.OK);
-      getComponentStatuses().get(label).setLastHeartbeat(System.currentTimeMillis());
+      getComponentStatuses().get(label).heartbeat(System.currentTimeMillis());
     } else {
       response.setResponseStatus(RegistrationStatus.FAILED);
       response.setLog("Label not recognized.");
@@ -371,7 +372,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
     Boolean isMaster = isMaster(roleName);
     ComponentInstanceState componentStatus = getComponentStatuses().get(label);
-    componentStatus.setLastHeartbeat(System.currentTimeMillis());
+    componentStatus.heartbeat(System.currentTimeMillis());
     // If no Master can explicitly publish then publish if its a master
     // Otherwise, wait till the master that can publish is ready
     if (isMaster &&
@@ -591,20 +592,18 @@ public class AgentProviderService extends AbstractProviderService implements
   /**
    * Lost heartbeat from the container - release it and ask for a replacement
    *
-   * @param label
    *
-   * @return if release is requested successfully
+   * @param label
+   * @param containerId
+   *
+   * @return outcome of the operation
    */
-  protected boolean releaseContainer(String label) {
+  protected AMViewForProviders.ContainerLossReportOutcomes lostContainer(
+      String label,
+      ContainerId containerId) throws
+      SliderException {
     getComponentStatuses().remove(label);
-    try {
-      getAppMaster().refreshContainer(getContainerId(label), true);
-    } catch (SliderException e) {
-      log.info("Error while requesting container release for {}. Message: {}", label, e.getMessage());
-      return false;
-    }
-
-    return true;
+    return getAppMaster().providerLostContainer(containerId);
   }
 
   /**
@@ -1059,7 +1058,8 @@ public class AgentProviderService extends AbstractProviderService implements
     if (!this.allocatedPorts.containsKey(containerId)) {
       synchronized (this.allocatedPorts) {
         if (!this.allocatedPorts.containsKey(containerId)) {
-          this.allocatedPorts.put(containerId, new ConcurrentHashMap());
+          this.allocatedPorts.put(containerId,
+              new ConcurrentHashMap<String, String>());
         }
       }
     }

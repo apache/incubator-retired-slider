@@ -17,6 +17,9 @@
  */
 package org.apache.slider.providers.agent;
 
+import com.google.common.annotations.VisibleForTesting;
+import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.slider.core.exceptions.SliderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,10 +56,7 @@ public class HeartbeatMonitor implements Runnable {
   }
 
   public boolean isAlive() {
-    if (monitorThread != null) {
-      return monitorThread.isAlive();
-    }
-    return false;
+    return monitorThread != null && monitorThread.isAlive();
   }
 
   @Override
@@ -66,7 +66,7 @@ public class HeartbeatMonitor implements Runnable {
         log.debug("Putting monitor to sleep for " + threadWakeupInterval + " " +
                   "milliseconds");
         Thread.sleep(threadWakeupInterval);
-        doWork();
+        doWork(System.currentTimeMillis());
       } catch (InterruptedException ex) {
         log.warn("Scheduler thread is interrupted going to stop", ex);
         shouldRun = false;
@@ -83,32 +83,52 @@ public class HeartbeatMonitor implements Runnable {
    * received in last check interval they are marked as UNHEALTHY. INIT is when the agent is started but it did not
    * communicate at all. HEALTHY being the AM has received heartbeats. After an interval as UNHEALTHY the container is
    * declared unavailable
+   * @param now current time in milliseconds ... tests can set this explicitly
    */
-  private void doWork() {
+  @VisibleForTesting
+  public void doWork(long now) {
     Map<String, ComponentInstanceState> componentStatuses = provider.getComponentStatuses();
     if (componentStatuses != null) {
       for (String containerLabel : componentStatuses.keySet()) {
         ComponentInstanceState componentInstanceState = componentStatuses.get(containerLabel);
-        long timeSinceLastHeartbeat = System.currentTimeMillis() - componentInstanceState.getLastHeartbeat();
+        long timeSinceLastHeartbeat = now - componentInstanceState.getLastHeartbeat();
 
         if (timeSinceLastHeartbeat > threadWakeupInterval) {
-          if (componentInstanceState.getContainerState() == ContainerState.HEALTHY ||
-              componentInstanceState.getContainerState() == ContainerState.INIT) {
-            componentInstanceState.setContainerState(ContainerState.UNHEALTHY);
-            log.warn("Component {} marked UNHEALTHY. Last heartbeat received at {} approx. {} ms. back.",
-                     containerLabel, componentInstanceState.getLastHeartbeat(),
-                     timeSinceLastHeartbeat);
-            continue;
+          switch (componentInstanceState.getContainerState()) {
+            case INIT:
+            case HEALTHY:
+              componentInstanceState.setContainerState(ContainerState.UNHEALTHY);
+              log.warn(
+                  "Component {} marked UNHEALTHY. Last heartbeat received at {} approx. {} ms. back.",
+                  componentInstanceState,
+                  componentInstanceState.getLastHeartbeat(),
+                  timeSinceLastHeartbeat);
+              break;
+            case UNHEALTHY:
+              if (timeSinceLastHeartbeat > threadWakeupInterval * 2) {
+                componentInstanceState.setContainerState(
+                    ContainerState.HEARTBEAT_LOST);
+                log.warn(
+                    "Component {} marked HEARTBEAT_LOST. Last heartbeat received at {} approx. {} ms. back.",
+                    componentInstanceState, componentInstanceState.getLastHeartbeat(),
+                    timeSinceLastHeartbeat);
+                ContainerId containerId =
+                    componentInstanceState.getContainerId();
+                try {
+                  provider.lostContainer(containerLabel, containerId);
+                } catch (SliderException e) {
+                  log.info(
+                      "Error while requesting container release for {}. Message: {}",
+                      containerId, e, e);
+                }
+              }
+              break;
+            case HEARTBEAT_LOST:
+              // unexpected case
+              log.warn("Heartbeat from lost component: {}", componentInstanceState);
+              break;
           }
-          if (componentInstanceState.getContainerState() == ContainerState.UNHEALTHY
-              && timeSinceLastHeartbeat > threadWakeupInterval * 2) {
-            componentInstanceState.setContainerState(ContainerState.HEARTBEAT_LOST);
-            log.warn("Component {} marked HEARTBEAT_LOST. Last heartbeat received at {} approx. {} ms. back.",
-                     containerLabel, componentInstanceState.getLastHeartbeat(),
-                     timeSinceLastHeartbeat);
-            this.provider.releaseContainer(containerLabel);
-            continue;
-          }
+            
         }
       }
     }

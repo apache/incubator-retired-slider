@@ -1431,22 +1431,27 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   /* =================================================================== */
 
   /**
-   * Refreshes the container by releasing it and having it reallocated
+   * report container loss. If this isn't already known about, react
    *
-   * @param containerId       id of the container to release
-   * @param newHostIfPossible allocate the replacement container on a new host
-   *
+   * @param containerId       id of the container which has failed
    * @throws SliderException
    */
-  public void refreshContainer(String containerId, boolean newHostIfPossible)
+  public synchronized ContainerLossReportOutcomes providerLostContainer(
+      ContainerId containerId)
       throws SliderException {
-    log.info(
-        "Refreshing container {} per provider request.",
+    log.info("containerLostContactWithProvider: container {} lost",
         containerId);
-    rmOperationHandler.execute(appState.releaseContainer(containerId));
-
-    // ask for more containers if needed
-    reviewRequestAndReleaseNodes();
+    RoleInstance activeContainer = appState.getActiveContainer(containerId);
+    if (activeContainer != null) {
+      rmOperationHandler.execute(appState.releaseContainer(containerId));
+      // ask for more containers if needed
+      log.info("Container released; triggering review");
+      reviewRequestAndReleaseNodes();
+      return ContainerLossReportOutcomes.CONTAINER_LOST_REVIEW_INITIATED;
+    } else {
+      log.info("Container not in active set - ignoring");
+      return ContainerLossReportOutcomes.CONTAINER_NOT_IN_USE;
+    }
   }
 
   /* =================================================================== */

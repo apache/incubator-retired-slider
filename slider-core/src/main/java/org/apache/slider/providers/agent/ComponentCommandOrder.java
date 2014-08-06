@@ -126,18 +126,18 @@ public class ComponentCommandOrder {
       for (ComponentState stateToMatch : required) {
         for (ComponentInstanceState currState : currentStates) {
           log.debug("Checking schedule {} {} against dependency {} is {}",
-                    component, command, currState.getCompName(), currState.getState());
-          if (currState.getCompName().equals(stateToMatch.componentName)) {
+                    component, command, currState.getComponentName(), currState.getState());
+          if (currState.getComponentName().equals(stateToMatch.componentName)) {
             if (currState.getState() != stateToMatch.state) {
               if (stateToMatch.state == State.STARTED) {
                 log.info("Cannot schedule {} {} as dependency {} is {}",
-                         component, command, currState.getCompName(), currState.getState());
+                         component, command, currState.getComponentName(), currState.getState());
                 canExecute = false;
               } else {
                 //state is INSTALLED
                 if (currState.getState() != State.STARTING && currState.getState() != State.STARTED) {
                   log.info("Cannot schedule {} {} as dependency {} is {}",
-                           component, command, currState.getCompName(), currState.getState());
+                           component, command, currState.getComponentName(), currState.getState());
                   canExecute = false;
                 }
               }

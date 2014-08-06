@@ -20,7 +20,7 @@ package org.apache.slider.server.appmaster.model.mock
 
 import org.apache.hadoop.yarn.api.records.*
 
-class MockContainer extends Container{
+class MockContainer extends Container {
   
   ContainerId id;
   NodeId nodeId

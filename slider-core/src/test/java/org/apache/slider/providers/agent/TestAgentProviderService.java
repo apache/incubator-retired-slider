@@ -21,7 +21,6 @@ package org.apache.slider.providers.agent;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FilterFileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
@@ -85,6 +84,7 @@ import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyCollection;
 import static org.mockito.Matchers.anyString;
@@ -315,15 +315,15 @@ public class TestAgentProviderService {
         ClusterDescription cd = new ClusterDescription();
         cd.status = new HashMap<String, Object>();
         Map<String, Map<String, ClusterNode>> roleMap = new HashMap<>();
-        ClusterNode cn1 = new ClusterNode(new MyContainerId(1));
+        ClusterNode cn1 = new ClusterNode(new MockContainerId(1));
         cn1.host = "FIRST_HOST";
         Map<String, ClusterNode> map1 = new HashMap<>();
         map1.put("FIRST_CONTAINER", cn1);
-        ClusterNode cn2 = new ClusterNode(new MyContainerId(2));
+        ClusterNode cn2 = new ClusterNode(new MockContainerId(2));
         cn2.host = "SECOND_HOST";
         Map<String, ClusterNode> map2 = new HashMap<>();
         map2.put("SECOND_CONTAINER", cn2);
-        ClusterNode cn3 = new ClusterNode(new MyContainerId(3));
+        ClusterNode cn3 = new ClusterNode(new MockContainerId(3));
         cn3.host = "THIRD_HOST";
         map2.put("THIRD_CONTAINER", cn3);
 
@@ -416,12 +416,13 @@ public class TestAgentProviderService {
 
     Map<String, Map<String, ClusterNode>> roleClusterNodeMap = new HashMap<>();
     Map<String, ClusterNode> container = new HashMap<>();
-    ClusterNode cn1 = new ClusterNode(new MyContainerId(1));
+    ClusterNode cn1 = new ClusterNode(new MockContainerId(1));
     cn1.host = "HOST1";
     container.put("cid1", cn1);
     roleClusterNodeMap.put("HBASE_MASTER", container);
 
-    ComponentInstanceState componentStatus = new ComponentInstanceState("HBASE_MASTER", "aid", "cid");
+    ComponentInstanceState componentStatus = new ComponentInstanceState("HBASE_MASTER", 
+        new MockContainerId(1), "cid");
     AgentProviderService mockAps = Mockito.spy(aps);
     doNothing().when(mockAps).publishApplicationInstanceData(anyString(), anyString(), anyCollection());
     doReturn(metainfo).when(mockAps).getMetainfo();
@@ -572,7 +573,7 @@ public class TestAgentProviderService {
   }
 
   @Test
-  public void testOrchastratedAppStart() throws IOException {
+  public void testOrchestratedAppStart() throws IOException {
     // App has two components HBASE_MASTER and HBASE_REGIONSERVER
     // Start of HBASE_RS depends on the start of HBASE_MASTER
     InputStream metainfo_1 = new ByteArrayInputStream(metainfo_1_str.getBytes());
@@ -811,8 +812,9 @@ public class TestAgentProviderService {
     AgentProviderService mockAps = Mockito.spy(aps);
     doNothing().when(mockAps).publishApplicationInstanceData(anyString(), anyString(), anyCollection());
 
-    ContainerId cid = new MyContainerId(1);
+    ContainerId cid = new MockContainerId(1);
     String id = cid.toString();
+    ContainerId cid2 = new MockContainerId(2);
     mockAps.getAllocatedPorts().put("a", "100");
     mockAps.getAllocatedPorts(id).put("b", "101");
     mockAps.getAllocatedPorts("cid2").put("c", "102");
@@ -820,8 +822,8 @@ public class TestAgentProviderService {
     mockAps.getComponentInstanceData().put("cid2", new HashMap<String, String>());
     mockAps.getComponentInstanceData().put(id, new HashMap<String, String>());
 
-    mockAps.getComponentStatuses().put("cid2_HM", new ComponentInstanceState("HM", "cid2", "aid"));
-    mockAps.getComponentStatuses().put(id + "_HM", new ComponentInstanceState("HM", id, "aid"));
+    mockAps.getComponentStatuses().put("cid2_HM", new ComponentInstanceState("HM", cid2, "aid"));
+    mockAps.getComponentStatuses().put(id + "_HM", new ComponentInstanceState("HM", cid, "aid"));
 
     Assert.assertNotNull(mockAps.getComponentInstanceData().get(id));
     Assert.assertNotNull(mockAps.getComponentInstanceData().get("cid2"));
@@ -834,7 +836,7 @@ public class TestAgentProviderService {
     Assert.assertEquals(mockAps.getAllocatedPorts("cid2").size(), 1);
 
     // Make the call
-    mockAps.notifyContainerCompleted(new MyContainerId(1));
+    mockAps.notifyContainerCompleted(new MockContainerId(1));
 
     Assert.assertEquals(mockAps.getAllocatedPorts().size(), 1);
     Assert.assertEquals(mockAps.getAllocatedPorts(id).size(), 0);
@@ -875,7 +877,7 @@ public class TestAgentProviderService {
 
     Map<String, Map<String, ClusterNode>> roleClusterNodeMap = new HashMap<>();
     Map<String, ClusterNode> container = new HashMap<>();
-    ClusterNode cn1 = new ClusterNode(new MyContainerId(1));
+    ClusterNode cn1 = new ClusterNode(new MockContainerId(1));
     cn1.host = "HOST1";
     container.put("cid1", cn1);
     roleClusterNodeMap.put("HBASE_MASTER", container);
@@ -922,7 +924,7 @@ public class TestAgentProviderService {
 
     Map<String, Map<String, ClusterNode>> roleClusterNodeMap = new HashMap<>();
     Map<String, ClusterNode> container = new HashMap<>();
-    ClusterNode cn1 = new ClusterNode(new MyContainerId(1));
+    ClusterNode cn1 = new ClusterNode(new MockContainerId(1));
     cn1.host = "HOST1";
     container.put("cid1", cn1);
     roleClusterNodeMap.put("HBASE_MASTER", container);
@@ -941,124 +943,11 @@ public class TestAgentProviderService {
     Assert.assertTrue(hbr.getExecutionCommands().get(0).getConfigurations().containsKey("hbase-site"));
     Map<String, String> hbaseSiteConf = hbr.getExecutionCommands().get(0).getConfigurations().get("hbase-site");
     Assert.assertTrue(hbaseSiteConf.containsKey("a.port"));
-    Assert.assertTrue(hbaseSiteConf.get("a.port").equals("10023"));
-    Assert.assertTrue(hbaseSiteConf.get("b.port").equals("10024"));
-    Assert.assertTrue(hbaseSiteConf.get("random.port").equals("10025"));
-    Assert.assertTrue(hbaseSiteConf.get("random2.port").equals("${HBASE_MASTER.ALLOCATED_PORT}"));
+    Assert.assertEquals("10023", hbaseSiteConf.get("a.port"));
+    Assert.assertEquals("10024", hbaseSiteConf.get("b.port"));
+    Assert.assertEquals("10025", hbaseSiteConf.get("random.port"));
+    assertEquals("${HBASE_MASTER.ALLOCATED_PORT}",
+        hbaseSiteConf.get("random2.port"));
   }
 
-  private static class MyContainer extends Container {
-
-    ContainerId cid = null;
-
-    @Override
-    public ContainerId getId() {
-      return this.cid;
-    }
-
-    @Override
-    public void setId(ContainerId containerId) {
-      this.cid = containerId;
-    }
-
-    @Override
-    public NodeId getNodeId() {
-      return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void setNodeId(NodeId nodeId) {
-      //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public String getNodeHttpAddress() {
-      return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void setNodeHttpAddress(String s) {
-      //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public Resource getResource() {
-      return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void setResource(Resource resource) {
-      //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public Priority getPriority() {
-      return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void setPriority(Priority priority) {
-      //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public Token getContainerToken() {
-      return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void setContainerToken(Token token) {
-      //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public int compareTo(Container o) {
-      return 0;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-  }
-
-  private static class MyContainerId extends ContainerId {
-    int id;
-
-    private MyContainerId(int id) {
-      this.id = id;
-    }
-
-    @Override
-    public ApplicationAttemptId getApplicationAttemptId() {
-      return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    protected void setApplicationAttemptId(ApplicationAttemptId applicationAttemptId) {
-      //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public int getId() {
-      return id;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    protected void setId(int i) {
-      //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    protected void build() {
-      //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public int hashCode() {
-      return this.id;
-    }
-
-    @Override
-    public String toString() {
-      return "MyContainerId{" +
-             "id=" + id +
-             '}';
-    }
-  }
 }

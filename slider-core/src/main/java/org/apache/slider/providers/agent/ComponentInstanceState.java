@@ -19,6 +19,8 @@
 package org.apache.slider.providers.agent;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
+import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,8 +32,9 @@ public class ComponentInstanceState {
   private static String INVALID_TRANSITION_ERROR =
       "Result {0} for command {1} is not expected for component {2} in state {3}.";
 
-  private final String compName;
-  private final String containerId;
+  private final String componentName;
+  private final ContainerId containerId;
+  private final String containerIdAsString;
   private final String applicationId;
   private State state = State.INIT;
   private State targetState = State.STARTED;
@@ -40,18 +43,19 @@ public class ComponentInstanceState {
   private long lastHeartbeat = 0;
   private ContainerState containerState;
 
-  public ComponentInstanceState(String compName,
-                                String containerId,
-                                String applicationId) {
-    this.compName = compName;
+  public ComponentInstanceState(String componentName,
+      ContainerId containerId,
+      String applicationId) {
+    this.componentName = componentName;
     this.containerId = containerId;
+    this.containerIdAsString = containerId.toString();
     this.applicationId = applicationId;
     this.containerState = ContainerState.INIT;
     this.lastHeartbeat = System.currentTimeMillis();
   }
 
-  public String getCompName() {
-    return compName;
+  public String getComponentName() {
+    return componentName;
   }
 
   public Boolean getConfigReported() {
@@ -74,20 +78,32 @@ public class ComponentInstanceState {
     return lastHeartbeat;
   }
 
-  public void setLastHeartbeat(long lastHeartbeat) {
-    this.lastHeartbeat = lastHeartbeat;
-    if(this.containerState == ContainerState.UNHEALTHY ||
-       this.containerState == ContainerState.INIT) {
-      this.containerState = ContainerState.HEALTHY;
+  /**
+   * Update the heartbeat, and change container state
+   * to mark as healthy if appropriate
+   * @param heartbeatTime last time the heartbeat was seen
+   * @return the current container state
+   */
+  public ContainerState heartbeat(long heartbeatTime) {
+    this.lastHeartbeat = heartbeatTime;
+    if(containerState == ContainerState.UNHEALTHY ||
+       containerState == ContainerState.INIT) {
+      containerState = ContainerState.HEALTHY;
     }
+    return containerState;
+  }
+  
+
+  public ContainerId getContainerId() {
+    return containerId;
   }
 
   public void commandIssued(Command command) {
     Command expected = getNextCommand();
     if (expected != command) {
-      throw new IllegalArgumentException("Command " + command + " is not allowed is state " + state);
+      throw new IllegalArgumentException("Command " + command + " is not allowed in state " + state);
     }
-    this.state = this.state.getNextState(command);
+    state = state.getNextState(command);
   }
 
   public void applyCommandResult(CommandResult result, Command command) {
@@ -101,12 +117,12 @@ public class ComponentInstanceState {
       } else if (result == CommandResult.COMPLETED) {
         failuresSeen = 0;
       }
-      this.state = this.state.getNextState(result);
+      state = state.getNextState(result);
     } catch (IllegalArgumentException e) {
       String message = String.format(INVALID_TRANSITION_ERROR,
                                      result.toString(),
                                      command.toString(),
-                                     compName,
+                                     componentName,
                                      state.toString());
       log.warn(message);
       throw new IllegalStateException(message);
@@ -114,8 +130,8 @@ public class ComponentInstanceState {
   }
 
   public boolean hasPendingCommand() {
-    if (this.state.canIssueCommands() &&
-        this.state != this.targetState &&
+    if (state.canIssueCommands() &&
+        state != targetState &&
         failuresSeen < MAX_FAILURE_TOLERATED) {
       return true;
     }
@@ -144,8 +160,8 @@ public class ComponentInstanceState {
   public int hashCode() {
     int hashCode = 1;
 
-    hashCode = hashCode ^ (compName != null ? compName.hashCode() : 0);
-    hashCode = hashCode ^ (containerId != null ? containerId.hashCode() : 0);
+    hashCode = hashCode ^ (componentName != null ? componentName.hashCode() : 0);
+    hashCode = hashCode ^ (containerIdAsString != null ? containerIdAsString.hashCode() : 0);
     hashCode = hashCode ^ (applicationId != null ? applicationId.hashCode() : 0);
     return hashCode;
   }
@@ -158,13 +174,13 @@ public class ComponentInstanceState {
 
     ComponentInstanceState that = (ComponentInstanceState) o;
 
-    if (this.compName != null ?
-        !this.compName.equals(that.compName) : this.compName != null) {
+    if (this.componentName != null ?
+        !this.componentName.equals(that.componentName) : this.componentName != null) {
       return false;
     }
 
-    if (this.containerId != null ?
-        !this.containerId.equals(that.containerId) : this.containerId != null) {
+    if (this.containerIdAsString != null ?
+        !this.containerIdAsString.equals(that.containerIdAsString) : this.containerIdAsString != null) {
       return false;
     }
 
@@ -174,5 +190,19 @@ public class ComponentInstanceState {
     }
 
     return true;
+  }
+
+  @Override
+  public String toString() {
+    final StringBuilder sb =
+        new StringBuilder("ComponentInstanceState{");
+    sb.append("containerIdAsString='").append(containerIdAsString).append('\'');
+    sb.append(", state=").append(state);
+    sb.append(", failuresSeen=").append(failuresSeen);
+    sb.append(", lastHeartbeat=").append(lastHeartbeat);
+    sb.append(", containerState=").append(containerState);
+    sb.append(", componentName='").append(componentName).append('\'');
+    sb.append('}');
+    return sb.toString();
   }
 }

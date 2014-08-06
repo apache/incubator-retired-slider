@@ -18,10 +18,29 @@
 
 package org.apache.slider.server.appmaster;
 
+import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.slider.core.exceptions.SliderException;
 
 /** Operations available to a provider from AppMaster */
 public interface AMViewForProviders {
+
+  /**
+   * Outcomes from container loss
+   */
+  enum ContainerLossReportOutcomes {
+    /**
+     * The container doesn't exist...either it wasn't in use or it
+     * has been released
+     */
+    CONTAINER_NOT_IN_USE,
+
+    /**
+     * The container is known about and a review has been initated
+     */
+    CONTAINER_LOST_REVIEW_INITIATED,
+  }
+  
   /** Provider can ask AppMaster to release a specific container */
-  void refreshContainer(String containerId, boolean newHostIfPossible) throws SliderException;
+  ContainerLossReportOutcomes providerLostContainer(ContainerId containerId) throws SliderException;
+  
 }

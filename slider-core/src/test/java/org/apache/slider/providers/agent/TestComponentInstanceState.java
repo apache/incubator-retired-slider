@@ -19,6 +19,7 @@
 package org.apache.slider.providers.agent;
 
 import junit.framework.TestCase;
+import org.apache.slider.server.appmaster.model.mock.MockContainerId;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,7 @@ public class TestComponentInstanceState {
   private State[] states = new State[]{
       State.INIT, State.INSTALLING, State.INSTALLED,
       State.STARTING, State.STARTED, State.INSTALL_FAILED};
+  private final MockContainerId containerId = new MockContainerId(1);
 
   @Test
   public void testValidateSupportedCommands() {
@@ -67,97 +69,107 @@ public class TestComponentInstanceState {
 
   @Test
   public void testGetNextStateBasedOnCommand() {
-    for (int index = 0; index < states.length; index++) {
-      TestCase.assertEquals(states[index], states[index].getNextState(Command.NOP));
+    for (State state : states) {
+      TestCase.assertEquals(state, state.getNextState(Command.NOP));
     }
 
     TestCase.assertEquals(State.INSTALLING, State.INIT.getNextState(Command.INSTALL));
     TestCase.assertEquals(State.INSTALLING, State.INSTALL_FAILED.getNextState(Command.INSTALL));
-    expectExceptionOnGetNextForCommand(IllegalArgumentException.class, State.INSTALLED, Command.INSTALL);
-    expectExceptionOnGetNextForCommand(IllegalArgumentException.class, State.STARTING, Command.INSTALL);
-    expectExceptionOnGetNextForCommand(IllegalArgumentException.class, State.STARTED, Command.INSTALL);
+    expectIllegalArgumentException(State.INSTALLED, Command.INSTALL);
+    expectIllegalArgumentException(State.STARTING, Command.INSTALL);
+    expectIllegalArgumentException(State.STARTED, Command.INSTALL);
 
     TestCase.assertEquals(State.STARTING, State.INSTALLED.getNextState(Command.START));
-    expectExceptionOnGetNextForCommand(IllegalArgumentException.class, State.INIT, Command.START);
-    expectExceptionOnGetNextForCommand(IllegalArgumentException.class, State.INSTALL_FAILED, Command.START);
-    expectExceptionOnGetNextForCommand(IllegalArgumentException.class, State.STARTING, Command.START);
-    expectExceptionOnGetNextForCommand(IllegalArgumentException.class, State.INSTALLING, Command.START);
-    expectExceptionOnGetNextForCommand(IllegalArgumentException.class, State.STARTED, Command.START);
+    expectIllegalArgumentException(State.INIT, Command.START);
+    expectIllegalArgumentException(State.INSTALL_FAILED, Command.START);
+    expectIllegalArgumentException(State.STARTING, Command.START);
+    expectIllegalArgumentException(State.INSTALLING, Command.START);
+    expectIllegalArgumentException(State.STARTED, Command.START);
+  }
+
+  protected void expectIllegalArgumentException(State state, Command command) {
+    expectExceptionOnGetNextForCommand(IllegalArgumentException.class,
+        state, command);
   }
 
   @Test
   public void validateStateTransitionNormal() {
-    ComponentInstanceState componentInstanceState = new ComponentInstanceState("HBASE_MASTER", "CID_001", "AID_001");
-    TestCase.assertEquals(State.INIT, componentInstanceState.getState());
+    ComponentInstanceState componentInstanceState = new ComponentInstanceState("HBASE_MASTER", containerId, "AID_001");
+    assertInState(State.INIT, componentInstanceState);
     TestCase.assertEquals(true, componentInstanceState.hasPendingCommand());
     TestCase.assertEquals(Command.INSTALL, componentInstanceState.getNextCommand());
-    TestCase.assertEquals(State.INIT, componentInstanceState.getState());
+    assertInState(State.INIT, componentInstanceState);
     componentInstanceState.commandIssued(Command.INSTALL);
-    TestCase.assertEquals(State.INSTALLING, componentInstanceState.getState());
+    assertInState(State.INSTALLING, componentInstanceState);
     componentInstanceState.applyCommandResult(CommandResult.IN_PROGRESS, Command.INSTALL);
-    TestCase.assertEquals(State.INSTALLING, componentInstanceState.getState());
+    assertInState(State.INSTALLING, componentInstanceState);
     componentInstanceState.applyCommandResult(CommandResult.COMPLETED, Command.INSTALL);
-    TestCase.assertEquals(State.INSTALLED, componentInstanceState.getState());
+    assertInState(State.INSTALLED, componentInstanceState);
     TestCase.assertEquals(Command.START, componentInstanceState.getNextCommand());
     componentInstanceState.commandIssued(Command.START);
-    TestCase.assertEquals(State.STARTING, componentInstanceState.getState());
+    assertInState(State.STARTING, componentInstanceState);
     componentInstanceState.applyCommandResult(CommandResult.IN_PROGRESS, Command.START);
-    TestCase.assertEquals(State.STARTING, componentInstanceState.getState());
+    assertInState(State.STARTING, componentInstanceState);
     componentInstanceState.applyCommandResult(CommandResult.COMPLETED, Command.START);
-    TestCase.assertEquals(State.STARTED, componentInstanceState.getState());
+    assertInState(State.STARTED, componentInstanceState);
+  }
+
+  protected void assertInState(State state,
+      ComponentInstanceState componentInstanceState) {
+    TestCase.assertEquals(state, componentInstanceState.getState());
   }
 
   @Test
   public void validateStateTransitionScenario2() {
-    ComponentInstanceState componentInstanceState = new ComponentInstanceState("HBASE_MASTER", "CID_001", "AID_001");
-    TestCase.assertEquals(State.INIT, componentInstanceState.getState());
+    ComponentInstanceState componentInstanceState = new ComponentInstanceState("HBASE_MASTER", containerId, "AID_001");
+    assertInState(State.INIT, componentInstanceState);
     TestCase.assertEquals(true, componentInstanceState.hasPendingCommand());
     TestCase.assertEquals(Command.INSTALL, componentInstanceState.getNextCommand());
-    TestCase.assertEquals(State.INIT, componentInstanceState.getState());
+    assertInState(State.INIT, componentInstanceState);
 
     componentInstanceState.commandIssued(Command.INSTALL);
-    TestCase.assertEquals(State.INSTALLING, componentInstanceState.getState());
+    assertInState(State.INSTALLING, componentInstanceState);
     componentInstanceState.applyCommandResult(CommandResult.FAILED, Command.INSTALL);
-    TestCase.assertEquals(State.INSTALL_FAILED, componentInstanceState.getState());
+    assertInState(State.INSTALL_FAILED, componentInstanceState);
 
     componentInstanceState.commandIssued(Command.INSTALL);
-    TestCase.assertEquals(State.INSTALLING, componentInstanceState.getState());
+    assertInState(State.INSTALLING, componentInstanceState);
     componentInstanceState.applyCommandResult(CommandResult.COMPLETED, Command.INSTALL);
-    TestCase.assertEquals(State.INSTALLED, componentInstanceState.getState());
+    assertInState(State.INSTALLED, componentInstanceState);
     TestCase.assertEquals(Command.START, componentInstanceState.getNextCommand());
 
     componentInstanceState.commandIssued(Command.START);
-    TestCase.assertEquals(State.STARTING, componentInstanceState.getState());
+    assertInState(State.STARTING, componentInstanceState);
     componentInstanceState.applyCommandResult(CommandResult.FAILED, Command.START);
-    TestCase.assertEquals(State.INSTALLED, componentInstanceState.getState());
+    assertInState(State.INSTALLED, componentInstanceState);
 
     componentInstanceState.commandIssued(Command.START);
     componentInstanceState.applyCommandResult(CommandResult.COMPLETED, Command.START);
-    TestCase.assertEquals(State.STARTED, componentInstanceState.getState());
+    assertInState(State.STARTED, componentInstanceState);
   }
 
   @Test
   public void tolerateMaxFailures() {
-    ComponentInstanceState componentInstanceState = new ComponentInstanceState("HBASE_MASTER", "CID_001", "AID_001");
-    TestCase.assertEquals(State.INIT, componentInstanceState.getState());
+    ComponentInstanceState componentInstanceState = new ComponentInstanceState("HBASE_MASTER", containerId, "AID_001");
+    assertInState(State.INIT, componentInstanceState);
     TestCase.assertEquals(true, componentInstanceState.hasPendingCommand());
     TestCase.assertEquals(Command.INSTALL, componentInstanceState.getNextCommand());
-    TestCase.assertEquals(State.INIT, componentInstanceState.getState());
+    assertInState(State.INIT, componentInstanceState);
 
     componentInstanceState.commandIssued(Command.INSTALL);
-    TestCase.assertEquals(State.INSTALLING, componentInstanceState.getState());
+    assertInState(State.INSTALLING, componentInstanceState);
     componentInstanceState.applyCommandResult(CommandResult.FAILED, Command.INSTALL);
-    TestCase.assertEquals(State.INSTALL_FAILED, componentInstanceState.getState());
+    assertInState(State.INSTALL_FAILED, componentInstanceState);
 
     componentInstanceState.commandIssued(Command.INSTALL);
-    TestCase.assertEquals(State.INSTALLING, componentInstanceState.getState());
+    assertInState(State.INSTALLING, componentInstanceState);
     componentInstanceState.applyCommandResult(CommandResult.FAILED, Command.INSTALL);
-    TestCase.assertEquals(State.INSTALL_FAILED, componentInstanceState.getState());
+    assertInState(State.INSTALL_FAILED, componentInstanceState);
 
     componentInstanceState.commandIssued(Command.INSTALL);
-    TestCase.assertEquals(State.INSTALLING, componentInstanceState.getState());
+    assertInState(State.INSTALLING, componentInstanceState);
     componentInstanceState.applyCommandResult(CommandResult.FAILED, Command.INSTALL);
-    TestCase.assertEquals(State.INSTALL_FAILED, componentInstanceState.getState());
+    assertInState(State.INSTALL_FAILED, componentInstanceState);
 
     try {
       componentInstanceState.commandIssued(Command.INSTALL);
@@ -168,41 +180,41 @@ public class TestComponentInstanceState {
 
   @Test
   public void tolerateFewFailureThenReset() {
-    ComponentInstanceState componentInstanceState = new ComponentInstanceState("HBASE_MASTER", "CID_001", "AID_001");
-    TestCase.assertEquals(State.INIT, componentInstanceState.getState());
+    ComponentInstanceState componentInstanceState = new ComponentInstanceState("HBASE_MASTER", containerId, "AID_001");
+    assertInState(State.INIT, componentInstanceState);
     TestCase.assertEquals(true, componentInstanceState.hasPendingCommand());
     TestCase.assertEquals(Command.INSTALL, componentInstanceState.getNextCommand());
-    TestCase.assertEquals(State.INIT, componentInstanceState.getState());
+    assertInState(State.INIT, componentInstanceState);
 
     componentInstanceState.commandIssued(Command.INSTALL);
-    TestCase.assertEquals(State.INSTALLING, componentInstanceState.getState());
+    assertInState(State.INSTALLING, componentInstanceState);
     componentInstanceState.applyCommandResult(CommandResult.FAILED, Command.INSTALL);
-    TestCase.assertEquals(State.INSTALL_FAILED, componentInstanceState.getState());
+    assertInState(State.INSTALL_FAILED, componentInstanceState);
 
     componentInstanceState.commandIssued(Command.INSTALL);
-    TestCase.assertEquals(State.INSTALLING, componentInstanceState.getState());
+    assertInState(State.INSTALLING, componentInstanceState);
     componentInstanceState.applyCommandResult(CommandResult.FAILED, Command.INSTALL);
-    TestCase.assertEquals(State.INSTALL_FAILED, componentInstanceState.getState());
+    assertInState(State.INSTALL_FAILED, componentInstanceState);
 
     componentInstanceState.commandIssued(Command.INSTALL);
-    TestCase.assertEquals(State.INSTALLING, componentInstanceState.getState());
+    assertInState(State.INSTALLING, componentInstanceState);
     componentInstanceState.applyCommandResult(CommandResult.COMPLETED, Command.INSTALL);
-    TestCase.assertEquals(State.INSTALLED, componentInstanceState.getState());
+    assertInState(State.INSTALLED, componentInstanceState);
 
     componentInstanceState.commandIssued(Command.START);
-    TestCase.assertEquals(State.STARTING, componentInstanceState.getState());
+    assertInState(State.STARTING, componentInstanceState);
     componentInstanceState.applyCommandResult(CommandResult.FAILED, Command.START);
-    TestCase.assertEquals(State.INSTALLED, componentInstanceState.getState());
+    assertInState(State.INSTALLED, componentInstanceState);
 
     componentInstanceState.commandIssued(Command.START);
-    TestCase.assertEquals(State.STARTING, componentInstanceState.getState());
+    assertInState(State.STARTING, componentInstanceState);
     componentInstanceState.applyCommandResult(CommandResult.FAILED, Command.START);
-    TestCase.assertEquals(State.INSTALLED, componentInstanceState.getState());
+    assertInState(State.INSTALLED, componentInstanceState);
 
     componentInstanceState.commandIssued(Command.START);
-    TestCase.assertEquals(State.STARTING, componentInstanceState.getState());
+    assertInState(State.STARTING, componentInstanceState);
     componentInstanceState.applyCommandResult(CommandResult.FAILED, Command.START);
-    TestCase.assertEquals(State.INSTALLED, componentInstanceState.getState());
+    assertInState(State.INSTALLED, componentInstanceState);
 
     try {
       componentInstanceState.commandIssued(Command.START);
@@ -213,7 +225,7 @@ public class TestComponentInstanceState {
 
   @Test
   public void testBadTransitions() {
-    ComponentInstanceState componentInstanceState = new ComponentInstanceState("HBASE_MASTER", "CID_001", "AID_001");
+    ComponentInstanceState componentInstanceState = new ComponentInstanceState("HBASE_MASTER", containerId, "AID_001");
 
     try {
       componentInstanceState.commandIssued(Command.START);
@@ -268,7 +280,7 @@ public class TestComponentInstanceState {
       TestCase.fail("Must fail");
     } catch (Exception e) {
       if (!expected.isInstance(e)) {
-        TestCase.fail("Unexpected exception " + e.getClass());
+        throw e;
       }
     }
   }
@@ -280,7 +292,7 @@ public class TestComponentInstanceState {
       TestCase.fail("Must fail");
     } catch (Exception e) {
       if (!expected.isInstance(e)) {
-        TestCase.fail("Unexpected exception " + e.getClass());
+        throw e;
       }
     }
   }
