@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster.state;
+package org.apache.slider.server.appmaster.operations;
 
 import org.apache.hadoop.yarn.api.records.ContainerId;
 

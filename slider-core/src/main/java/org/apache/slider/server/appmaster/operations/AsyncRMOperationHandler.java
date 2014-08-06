@@ -16,36 +16,36 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster.model.mock
+package org.apache.slider.server.appmaster.operations;
 
-import groovy.util.logging.Slf4j
-import org.apache.hadoop.yarn.api.records.ContainerId
-import org.apache.hadoop.yarn.client.api.AMRMClient
-import org.apache.slider.server.appmaster.operations.AbstractRMOperation
-import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation
-import org.apache.slider.server.appmaster.operations.ContainerRequestOperation
-import org.apache.slider.server.appmaster.operations.RMOperationHandler
+import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.hadoop.yarn.client.api.AMRMClient;
+import org.apache.hadoop.yarn.client.api.async.AMRMClientAsync;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
-class MockRMOperationHandler extends RMOperationHandler {
-  public List<AbstractRMOperation> operations = [];
-  
+/**
+ * Hands off RM operations to the Resource Manager
+ */
+public class AsyncRMOperationHandler extends RMOperationHandler {
+  protected static final Logger log =
+    LoggerFactory.getLogger(AsyncRMOperationHandler.class);
+  private final AMRMClientAsync client;
+
+  public AsyncRMOperationHandler(AMRMClientAsync client) {
+    this.client = client;
+  }
+
   @Override
   public void releaseAssignedContainer(ContainerId containerId) {
-    operations.add(new ContainerReleaseOperation(containerId))
-    log.info("Releasing container ID " + containerId.getId())
+    log.debug("Releasing container {}", containerId);
+
+    client.releaseAssignedContainer(containerId);
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public void addContainerRequest(AMRMClient.ContainerRequest req) {
-    operations.add(new ContainerRequestOperation(req))
-    log.info("Requesting container role #" + req.priority);
-  }
-
-  /**
-   * clear the history
-   */
-  public void clear() {
-    operations.clear()
+    client.addContainerRequest(req);
   }
 }

@@ -16,16 +16,29 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster.state;
+package org.apache.slider.server.appmaster.operations;
 
-public class AbstractRMOperation {
+import org.apache.hadoop.yarn.client.api.AMRMClient;
 
-  /**
-   * Execute the operation
-   * @param asyncRMClient client
-   */
-  public void execute(RMOperationHandler handler) {
+public class ContainerRequestOperation extends AbstractRMOperation {
 
+  private final AMRMClient.ContainerRequest request;
+
+  public ContainerRequestOperation(AMRMClient.ContainerRequest request) {
+    this.request = request;
   }
-  
+
+  public AMRMClient.ContainerRequest getRequest() {
+    return request;
+  }
+
+  @Override
+  public void execute(RMOperationHandler handler) {
+    handler.addContainerRequest(request);
+  }
+
+  @Override
+  public String toString() {
+    return "request container ";
+  }
 }

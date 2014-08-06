@@ -16,36 +16,28 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster.model.mock
+package org.apache.slider.server.appmaster.operations;
 
-import groovy.util.logging.Slf4j
-import org.apache.hadoop.yarn.api.records.ContainerId
-import org.apache.hadoop.yarn.client.api.AMRMClient
-import org.apache.slider.server.appmaster.operations.AbstractRMOperation
-import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation
-import org.apache.slider.server.appmaster.operations.ContainerRequestOperation
-import org.apache.slider.server.appmaster.operations.RMOperationHandler
+import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.hadoop.yarn.client.api.AMRMClient;
+import org.apache.slider.providers.ProviderService;
 
-@Slf4j
-class MockRMOperationHandler extends RMOperationHandler {
-  public List<AbstractRMOperation> operations = [];
+public class ProviderNotifyingOperationHandler extends RMOperationHandler {
   
+  final ProviderService providerService;
+
+  public ProviderNotifyingOperationHandler(ProviderService providerService) {
+    this.providerService = providerService;
+  }
+
   @Override
   public void releaseAssignedContainer(ContainerId containerId) {
-    operations.add(new ContainerReleaseOperation(containerId))
-    log.info("Releasing container ID " + containerId.getId())
+    providerService.releaseAssignedContainer(containerId);
   }
 
   @Override
   public void addContainerRequest(AMRMClient.ContainerRequest req) {
-    operations.add(new ContainerRequestOperation(req))
-    log.info("Requesting container role #" + req.priority);
-  }
+    providerService.addContainerRequest(req);
 
-  /**
-   * clear the history
-   */
-  public void clear() {
-    operations.clear()
   }
 }
