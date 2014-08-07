@@ -20,6 +20,7 @@ package org.apache.slider.providers;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.Service;
+import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.slider.api.ClusterDescription;
@@ -46,7 +47,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.HashMap;
@@ -97,7 +97,9 @@ public abstract class AbstractProviderService
 
   @Override
   public void bind(StateAccessForProviders stateAccessor,
-      RegistryViewForProviders reg, AMViewForProviders amView) {
+      RegistryViewForProviders reg,
+      AMViewForProviders amView,
+      List<Container> liveContainers) {
     this.amState = stateAccessor;
     this.registry = reg;
     this.amView = amView;

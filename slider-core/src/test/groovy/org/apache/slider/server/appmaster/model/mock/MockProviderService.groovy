@@ -202,7 +202,8 @@ class MockProviderService implements ProviderService {
   void bind(
       StateAccessForProviders stateAccessor,
       RegistryViewForProviders registry,
-      AMViewForProviders amView) {
+      AMViewForProviders amView,
+      List<Container> liveContainers) {
 
   }
 
