@@ -42,6 +42,7 @@ import org.apache.slider.server.services.registry.RegistryViewForProviders;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.List;
 import java.util.Map;
 
 public interface ProviderService extends ProviderCore,
@@ -74,7 +75,7 @@ public interface ProviderService extends ProviderCore,
 
   /**
    * Notify the providers of container completion
-   * @param containerId
+   * @param containerId container that has completed
    */
   void notifyContainerCompleted(ContainerId containerId);
 
@@ -148,12 +149,15 @@ public interface ProviderService extends ProviderCore,
   /**
    * bind operation -invoked before the service is started
    * @param stateAccessor interface offering read access to the state
-   * @param registry
-   * @param amView
+   * @param registry registry view
+   * @param amView AM access
+   * @param liveContainers list of live containers. If non-empty, the AM was
+   * restarted with one more running containers.
    */
   void bind(StateAccessForProviders stateAccessor,
-            RegistryViewForProviders registry,
-            AMViewForProviders amView);
+      RegistryViewForProviders registry,
+      AMViewForProviders amView,
+      List<Container> liveContainers);
 
   /**
    * Returns the agent rest operations interface.

@@ -24,51 +24,50 @@ import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.client.SliderClient
-import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.Arguments
-import org.apache.slider.core.main.ServiceLaunchException
 import org.apache.slider.core.main.ServiceLauncher
 import org.junit.Test
 
+/**
+ * kill a masterless AM and verify it shuts down. This test
+ * also sets the retry count to 1 to stop recreation attempts
+ */
 @CompileStatic
 @Slf4j
 
-class TestBadYarnQueue extends AgentMiniClusterTestBase {
+class TestKillStandaloneAM extends AgentMiniClusterTestBase {
 
-  /**
-   * Test disabled because YARN queues don't get validated in the mini cluster
-   * @throws Throwable
-   */
 
   @Test
-  public void testBadYarnQueue() throws Throwable {
-    skip("untestable in minicluster")
+  public void testKillStandaloneAM() throws Throwable {
     String clustername = createMiniCluster("", configuration, 1, true)
 
-    describe "verify that a bad yarn queue fails the launch"
+    describe "kill a Standalone AM and verify that it shuts down"
+    ServiceLauncher<SliderClient> launcher =
+        createStandaloneAMWithArgs(clustername,
+          [
+              Arguments.ARG_OPTION, SliderXmlConfKeys.KEY_AM_RESTART_LIMIT, "1"
+          ],
+          true,
+          false)
+    SliderClient sliderClient = launcher.service
+    addToTeardown(sliderClient);
+    ApplicationReport report = waitForClusterLive(sliderClient)
 
-    try {
-      ServiceLauncher<SliderClient> launcher =
-          createStandaloneAMWithArgs(clustername,
-              [
-                  Arguments.ARG_DEFINE,
-                  SliderXmlConfKeys.KEY_YARN_QUEUE + "=noqueue",
-
-              ],
-              true,
-              false)
-
-      SliderClient sliderClient = launcher.service
-      addToTeardown(sliderClient);
-
-      ApplicationReport report = waitForClusterLive(sliderClient)
-      assert report.yarnApplicationState == YarnApplicationState.FAILED
-      
-    } catch (ServiceLaunchException e) {
-      assertExceptionDetails(e, SliderExitCodes.EXIT_YARN_SERVICE_FAILED)
-    }
-    
+    describe("listing Java processes")
+    lsJavaProcesses();
+    describe("killing AM")
+    killAM(SIGTERM);
+    waitWhileClusterLive(sliderClient);
+    //give yarn some time to notice
+    sleep(10000)
+    describe("final listing")
+    lsJavaProcesses();
+    report = sliderClient.applicationReport
+    assert YarnApplicationState.FAILED == report.yarnApplicationState;
+    clusterActionFreeze(sliderClient, clustername)
   }
+
 
 }

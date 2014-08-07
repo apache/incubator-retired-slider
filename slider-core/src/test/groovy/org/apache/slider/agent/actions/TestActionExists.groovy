@@ -29,8 +29,6 @@ import org.apache.slider.common.params.SliderActions
 import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
 import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.core.main.ServiceLauncher
-import org.apache.slider.test.SliderTestUtils
-import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
@@ -72,7 +70,10 @@ class TestActionExists extends AgentMiniClusterTestBase {
   public void testExistsLiveCluster() throws Throwable {
     //launch the cluster
     String clustername = createClusterName()
-    ServiceLauncher<SliderClient> launcher = createMasterlessAM(clustername, 0, true, false)
+    ServiceLauncher<SliderClient> launcher = createStandaloneAM(
+        clustername,
+        true,
+        false)
     SliderClient sliderClient = launcher.service
     addToTeardown(launcher)
     ApplicationReport report = waitForClusterLive(sliderClient)

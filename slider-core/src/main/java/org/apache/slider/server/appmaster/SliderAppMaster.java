@@ -133,6 +133,7 @@ import java.net.URLClassLoader;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -561,7 +562,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
 
     Map<String, String> envVars;
-
+    List<Container> liveContainers;
     /**
      * It is critical this section is synchronized, to stop async AM events
      * arriving while registering a restarting AM.
@@ -663,8 +664,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       }
 
       // extract container list
-      List<Container> liveContainers =
-          response.getContainersFromPreviousAttempts();
+
+      liveContainers = response.getContainersFromPreviousAttempts();
 
       //now validate the installation
       Configuration providerConf =
@@ -724,8 +725,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
 
     //Give the provider restricted access to the state, registry
-    providerService.bind(stateForProviders, registry, this);
-    sliderAMProvider.bind(stateForProviders, registry, null);
+    providerService.bind(stateForProviders, registry, this,
+        liveContainers);
+    sliderAMProvider.bind(stateForProviders, registry, this,
+        liveContainers);
 
     // now do the registration
     registerServiceInstance(clustername, appid);

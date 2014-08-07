@@ -30,10 +30,8 @@ import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.params.ActionStatusArgs
-import org.apache.slider.common.params.ClientArgs
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.conf.YarnConfiguration
-import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.core.main.ServiceLauncher
 import org.junit.Before
 import org.junit.Test
@@ -87,7 +85,10 @@ class TestActionStatus extends AgentMiniClusterTestBase {
     String clustername = "teststatuslivecluster"
     
     //launch the cluster
-    ServiceLauncher<SliderClient> launcher = createMasterlessAM(clustername, 0, true, false)
+    ServiceLauncher<SliderClient> launcher = createStandaloneAM(
+        clustername,
+        true,
+        false)
 
     SliderClient sliderClient = launcher.service
     ApplicationReport report = waitForClusterLive(sliderClient)
