@@ -205,7 +205,7 @@ class SliderTestUtils extends Assert {
   public static void waitUntilClusterLive(SliderClient client, int timeout) {
     Duration duration = new Duration(timeout);
     duration.start()
-    while (!client.actionExists(client.deployedClusterName, true) &&
+    while (0 != client.actionExists(client.deployedClusterName, true) &&
            !duration.limitExceeded) {
       sleep(1000);
     }
