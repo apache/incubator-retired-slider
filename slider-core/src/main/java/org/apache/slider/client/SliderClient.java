@@ -833,8 +833,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // set the application name;
     amLauncher.setKeepContainersOverRestarts(true);
 
-    amLauncher.setMaxAppAttempts(config.getInt(KEY_AM_RESTART_LIMIT,
-                                               DEFAULT_AM_RESTART_LIMIT));
+    int maxAppAttempts = config.getInt(KEY_AM_RESTART_LIMIT, 0);
+    amLauncher.setMaxAppAttempts(maxAppAttempts);
 
     sliderFileSystem.purgeAppInstanceTempFiles(clustername);
     Path tempPath = sliderFileSystem.createAppInstanceTempPath(
