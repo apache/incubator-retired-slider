@@ -137,6 +137,9 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     }
   } 
 
+  protected String buildClustername(String clustername) {
+    return clustername ?: createClusterName()
+  }
 
   /**
    * Create the cluster name from the method name and an auto-incrementing
@@ -241,9 +244,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     conf.setInt(YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_MB, 64);
     conf.set(YarnConfiguration.RM_SCHEDULER, FIFO_SCHEDULER);
     SliderUtils.patchConfiguration(conf)
-    if (!name) {
-      name = createClusterName()
-    }
+    name = buildClustername(name)
     miniCluster = new MiniYARNCluster(name, noOfNodeManagers, numLocalDirs, numLogDirs)
     miniCluster.init(conf)
     miniCluster.start();
@@ -445,9 +446,10 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     assert clustername != null
     assert miniCluster != null
     // update action should keep existing data
+    def config = miniCluster.config
     if (deleteExistingData && !SliderActions.ACTION_UPDATE.equals(action)) {
-      HadoopFS dfs = HadoopFS.get(new URI(fsDefaultName), miniCluster.config)
-      Path clusterDir = new SliderFileSystem(dfs, miniCluster.config).buildClusterDirPath(clustername)
+      HadoopFS dfs = HadoopFS.get(new URI(fsDefaultName), config)
+      Path clusterDir = new SliderFileSystem(dfs, config).buildClusterDirPath(clustername)
       log.info("deleting customer data at $clusterDir")
       //this is a safety check to stop us doing something stupid like deleting /
       assert clusterDir.toString().contains("/.slider/")
@@ -486,7 +488,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     }
     ServiceLauncher<SliderClient> launcher = launchClientAgainstMiniMR(
         //config includes RM binding info
-        new YarnConfiguration(miniCluster.config),
+        new YarnConfiguration(config),
         //varargs list of command line params
         argsList
     )

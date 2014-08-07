@@ -29,7 +29,6 @@ import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.server.avro.RoleHistoryHeader;
 import org.apache.slider.server.avro.RoleHistoryWriter;
-import org.mortbay.log.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -518,18 +517,16 @@ public class RoleHistory {
     return requestInstanceOnNode(node, role, resource);
   }
 
-
   /**
-   * Find a list of node for release; algorithm may make its own
-   * decisions on which to release.
+   * Get the list of active nodes ... walks the node  map so 
+   * is O(nodes)
    * @param role role index
-   * @param count number of nodes to release
-   * @return a possibly empty list of nodes.
+   * @return a possibly empty list of nodes with an instance of that node
    */
-  public synchronized List<NodeInstance> findNodesForRelease(int role, int count) {
-    return nodemap.findNodesForRelease(role, count);
+  public synchronized List<NodeInstance> listActiveNodes(int role) {
+    return nodemap.listActiveNodes(role);
   }
- 
+  
   /**
    * Get the node entry of a container
    * @param container container to look up
@@ -659,10 +656,11 @@ public class RoleHistory {
   /**
    * App state notified of a container completed 
    * @param container completed container
+   * @param wasReleased
    * @return true if the node was queued
    */
-  public boolean onReleaseCompleted(Container container) {
-    return markContainerFinished(container, true, false);
+  public boolean onReleaseCompleted(Container container, boolean wasReleased) {
+    return markContainerFinished(container, wasReleased, false);
   }
 
   /**

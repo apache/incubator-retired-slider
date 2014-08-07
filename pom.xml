@@ -1270,7 +1270,7 @@
       <!-- hadoop branch-2 builds  -->
       <id>branch-2</id>
       <properties>
-        <hadoop.version>2.5.0-SNAPSHOT</hadoop.version>
+        <hadoop.version>2.6.0-SNAPSHOT</hadoop.version>
       </properties>
     </profile>
     

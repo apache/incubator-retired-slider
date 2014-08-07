@@ -16,36 +16,13 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster;
+package org.apache.slider.server.appmaster.operations;
 
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
-import org.apache.hadoop.yarn.client.api.async.AMRMClientAsync;
-import org.apache.slider.server.appmaster.state.RMOperationHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-/**
- * Hands off RM operations to the Resource Manager
- */
-public class AsyncRMOperationHandler extends RMOperationHandler {
-  protected static final Logger log =
-    LoggerFactory.getLogger(AsyncRMOperationHandler.class);
-  private final AMRMClientAsync client;
+public interface RMOperationHandlerActions {
+  void releaseAssignedContainer(ContainerId containerId);
 
-  public AsyncRMOperationHandler(AMRMClientAsync client) {
-    this.client = client;
-  }
-
-  @Override
-  public void releaseAssignedContainer(ContainerId containerId) {
-    log.debug("Releasing container {}", containerId);
-
-    client.releaseAssignedContainer(containerId);
-  }
-
-  @Override
-  public void addContainerRequest(AMRMClient.ContainerRequest req) {
-    client.addContainerRequest(req);
-  }
+  void addContainerRequest(AMRMClient.ContainerRequest req);
 }

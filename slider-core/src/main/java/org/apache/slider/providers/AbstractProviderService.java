@@ -22,6 +22,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.Service;
 import org.apache.hadoop.yarn.registry.server.services.YarnRegistryService;
 import org.apache.hadoop.yarn.registry.client.types.ServiceEntry;
+import org.apache.hadoop.yarn.api.records.Container;
+import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.tools.ConfigHelper;
@@ -33,6 +36,8 @@ import org.apache.slider.core.main.ExitCodeProvider;
 import org.apache.slider.core.registry.info.RegisteredEndpoint;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.server.appmaster.AMViewForProviders;
+import org.apache.slider.server.appmaster.state.ContainerReleaseSelector;
+import org.apache.slider.server.appmaster.state.MostRecentContainerReleaseSelector;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
 import org.apache.slider.server.services.registry.RegistryViewForProviders;
@@ -94,20 +99,29 @@ public abstract class AbstractProviderService
     this.amState = amState;
   }
 
+  
   @Override
   public void bind(StateAccessForProviders stateAccessor,
       RegistryViewForProviders reg,
-      YarnRegistryViewForProviders yarnRegistry,
-      AMViewForProviders amView) {
+      AMViewForProviders amView,
+      List<Container> liveContainers) {
     this.amState = stateAccessor;
     this.registry = reg;
-    this.yarnRegistry = yarnRegistry;
     this.amView = amView;
+  }
+
+  @Override
+  public void bindToYarnRegistry(YarnRegistryViewForProviders yarnRegistry) {
+    this.yarnRegistry = yarnRegistry;
   }
 
   @Override
   public AgentRestOperations getAgentRestOperations() {
     return restOps;
+  }
+
+  @Override
+  public void notifyContainerCompleted(ContainerId containerId) {
   }
 
   public void setAgentRestOperations(AgentRestOperations agentRestOperations) {
@@ -322,5 +336,26 @@ public abstract class AbstractProviderService
 
     this.amWebAPI = unsecureWebAPI;
     this.registryInstanceData = registryInstanceData;
+  }
+
+  /**
+   * {@inheritDoc}
+   * 
+   * 
+   * @return The base implementation returns the most recent containers first.
+   */
+  @Override
+  public ContainerReleaseSelector createContainerReleaseSelector() {
+    return new MostRecentContainerReleaseSelector();
+  }
+
+  @Override
+  public void releaseAssignedContainer(ContainerId containerId) {
+    // no-op
+  }
+
+  @Override
+  public void addContainerRequest(AMRMClient.ContainerRequest req) {
+    // no-op
   }
 }

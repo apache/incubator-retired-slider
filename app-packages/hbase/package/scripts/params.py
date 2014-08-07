@@ -57,6 +57,9 @@ regionserver_jaas_config_file = default('hbase_regionserver_jaas_config_file', f
 ganglia_server_host = default('/configurations/global/ganglia_server_host', '')
 ganglia_server_port = default('/configurations/global/ganglia_server_port', '8663')
 
+rest_port = config['configurations']['global']['hbase_rest_port']
+thrift_port = config['configurations']['global']['hbase_thrift_port']
+
 if security_enabled:
   
   _use_hostname_in_principal = default('instance_name', True)

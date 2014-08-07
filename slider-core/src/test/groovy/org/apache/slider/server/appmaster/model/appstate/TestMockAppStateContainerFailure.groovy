@@ -34,7 +34,7 @@ import org.junit.Test
  */
 @CompileStatic
 @Slf4j
-class TestAppStateContainerFailure extends BaseMockAppStateTest
+class TestMockAppStateContainerFailure extends BaseMockAppStateTest
     implements MockRoles {
 
   @Override

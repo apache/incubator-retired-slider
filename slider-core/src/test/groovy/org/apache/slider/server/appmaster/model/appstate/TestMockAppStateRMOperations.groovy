@@ -25,6 +25,10 @@ import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockFactory
 import org.apache.slider.server.appmaster.model.mock.MockRMOperationHandler
 import org.apache.slider.server.appmaster.model.mock.MockRoles
+import org.apache.slider.server.appmaster.operations.AbstractRMOperation
+import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation
+import org.apache.slider.server.appmaster.operations.ContainerRequestOperation
+import org.apache.slider.server.appmaster.operations.RMOperationHandler
 import org.apache.slider.server.appmaster.state.*
 import org.junit.Test
 
@@ -32,7 +36,7 @@ import static org.apache.slider.server.appmaster.state.ContainerPriority.buildPr
 import static org.apache.slider.server.appmaster.state.ContainerPriority.extractRole
 
 @Slf4j
-class TestMockRMOperations extends BaseMockAppStateTest implements MockRoles {
+class TestMockAppStateRMOperations extends BaseMockAppStateTest implements MockRoles {
 
   @Override
   String getTestName() {
@@ -171,43 +175,6 @@ class TestMockRMOperations extends BaseMockAppStateTest implements MockRoles {
     log.warn("===============================================================")
     log.warn("Ignore any exception/stack trace that appeared above")
     assert ri3 == null
-  }
-
-  @Test
-  public void testFlexDuringLaunchPhase() throws Throwable {
-    role0Status.desired = 1
-
-    List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()
-    List<Container> allocations = engine.execute(
-        ops)
-    List<ContainerAssignment> assignments = [];
-    List<AbstractRMOperation> releases = []
-    appState.onContainersAllocated(allocations, assignments, releases)
-    assert assignments.size() == 1
-    ContainerAssignment assigned = assignments[0]
-    Container target = assigned.container
-    RoleInstance ri = roleInstance(assigned)
-
-    ops = appState.reviewRequestAndReleaseNodes()
-    assert ops.empty
-
-    //now this is the start point.
-    appState.containerStartSubmitted(target, ri);
-
-    ops = appState.reviewRequestAndReleaseNodes()
-    assert ops.empty
-
-    RoleInstance ri2 = appState.innerOnNodeManagerContainerStarted(target.id)
-  }
-
-  @Test
-  public void testFlexBeforeAllocationPhase() throws Throwable {
-    role0Status.desired = 1
-
-    List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()
-    assert !ops.empty
-    List<AbstractRMOperation> ops2 = appState.reviewRequestAndReleaseNodes()
-    assert ops2.empty
   }
 
 }

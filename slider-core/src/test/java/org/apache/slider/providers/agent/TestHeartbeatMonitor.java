@@ -16,6 +16,9 @@
  */
 package org.apache.slider.providers.agent;
 
+import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.slider.server.appmaster.AMViewForProviders;
+import org.apache.slider.server.appmaster.model.mock.MockContainerId;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -55,9 +58,11 @@ public class TestHeartbeatMonitor {
     HeartbeatMonitor hbm = new HeartbeatMonitor(provider, 500);
     Assert.assertFalse(hbm.isAlive());
     Map<String, ComponentInstanceState> statuses = new HashMap<>();
-    ComponentInstanceState state = new ComponentInstanceState("HBASE_MASTER", "Cid", "Aid");
+    ContainerId container1 = new MockContainerId(1);
+    ComponentInstanceState state = new ComponentInstanceState("HBASE_MASTER",
+        container1, "Aid");
     state.setState(State.STARTED);
-    state.setLastHeartbeat(System.currentTimeMillis());
+    state.heartbeat(System.currentTimeMillis());
     statuses.put("label_1", state);
     expect(provider.getComponentStatuses()).andReturn(statuses).anyTimes();
     replay(provider);
@@ -72,65 +77,100 @@ public class TestHeartbeatMonitor {
   @Test
   public void testHeartbeatMonitorWithUnhealthyAndThenLost() throws Exception {
     AgentProviderService provider = createNiceMock(AgentProviderService.class);
-    HeartbeatMonitor hbm = new HeartbeatMonitor(provider, 2 * 1000);
-    Assert.assertFalse(hbm.isAlive());
+    long now = 100000;
+    int wakeupInterval = 2 * 1000;
+
     Map<String, ComponentInstanceState> statuses = new HashMap<>();
-    ComponentInstanceState masterState = new ComponentInstanceState("HBASE_MASTER", "Cid1", "Aid1");
+    ContainerId masterContainer = new MockContainerId(1); 
+    ContainerId slaveContainer = new MockContainerId(2); 
+    ComponentInstanceState masterState = new ComponentInstanceState("HBASE_MASTER",
+        masterContainer, "Aid1");
+    String masterLabel = "Aid1_Cid1_HBASE_MASTER";
+    statuses.put(masterLabel, masterState);
+
+    ComponentInstanceState slaveState = new ComponentInstanceState("HBASE_REGIONSERVER",
+        slaveContainer, "Aid1");
+    String slaveLabel = "Aid1_Cid2_HBASE_REGIONSERVER";
+    statuses.put(slaveLabel, slaveState);
+
     masterState.setState(State.STARTED);
-    masterState.setLastHeartbeat(System.currentTimeMillis());
-    statuses.put("Aid1_Cid1_HBASE_MASTER", masterState);
-
-    ComponentInstanceState slaveState = new ComponentInstanceState("HBASE_REGIONSERVER", "Cid2", "Aid1");
+    masterState.heartbeat(now);
     slaveState.setState(State.STARTED);
-    slaveState.setLastHeartbeat(System.currentTimeMillis());
-    statuses.put("Aid1_Cid2_HBASE_REGIONSERVER", slaveState);
-
+    slaveState.heartbeat(now);
     expect(provider.getComponentStatuses()).andReturn(statuses).anyTimes();
-    expect(provider.releaseContainer("Aid1_Cid2_HBASE_REGIONSERVER")).andReturn(true).once();
+    expect(provider.lostContainer(slaveLabel, slaveContainer)).andReturn(
+        AMViewForProviders.ContainerLossReportOutcomes.CONTAINER_LOST_REVIEW_INITIATED).once();
+    // expect the second iteration to report no container any more
+    expect(provider.lostContainer(slaveLabel, slaveContainer)).andReturn(
+        AMViewForProviders.ContainerLossReportOutcomes.CONTAINER_NOT_IN_USE).once();
     replay(provider);
-    hbm.start();
 
-    Thread.sleep(1 * 1000);
+
+    HeartbeatMonitor heartbeatMonitor = new HeartbeatMonitor(provider,
+        wakeupInterval);
+    Assert.assertFalse(heartbeatMonitor.isAlive());
+    now += wakeupInterval;
+    masterState.setState(State.STARTED);
+    masterState.heartbeat(now);
+    
+    slaveState.setState(State.STARTED);
     // just dial back by at least 2 sec but no more than 4
-    slaveState.setLastHeartbeat(System.currentTimeMillis() - (2 * 1000 + 100));
-    masterState.setLastHeartbeat(System.currentTimeMillis());
+    slaveState.heartbeat(now - (wakeupInterval + 100));
 
-    Thread.sleep(1 * 1000 + 500);
-    masterState.setLastHeartbeat(System.currentTimeMillis());
 
-    log.info("Slave container state {}", slaveState.getContainerState());
-    Assert.assertEquals(ContainerState.HEALTHY, masterState.getContainerState());
-    Assert.assertEquals(ContainerState.UNHEALTHY, slaveState.getContainerState());
+    assertInState(ContainerState.HEALTHY, masterState, now);
+    assertInState(ContainerState.HEALTHY, slaveState, now);
+    
+    //tick #1
+    heartbeatMonitor.doWork(now);
 
-    Thread.sleep(1 * 1000);
-    // some lost heartbeats are ignored (e.g. ~ 1 sec)
-    masterState.setLastHeartbeat(System.currentTimeMillis() - 1 * 1000);
+    assertInState(ContainerState.HEALTHY, masterState, now);
+    assertInState(ContainerState.UNHEALTHY, slaveState, now);
 
-    Thread.sleep(1 * 1000 + 500);
+    // heartbeat from the master
+    masterState.heartbeat(now + 1500);
 
-    log.info("Slave container state {}", slaveState.getContainerState());
-    Assert.assertEquals(ContainerState.HEALTHY, masterState.getContainerState());
-    Assert.assertEquals(ContainerState.HEARTBEAT_LOST, slaveState.getContainerState());
-    hbm.shutdown();
+    // tick #2
+    now += wakeupInterval;
+    heartbeatMonitor.doWork(now);
+
+    assertInState(ContainerState.HEALTHY, masterState, now);
+    assertInState(ContainerState.HEARTBEAT_LOST, slaveState, now);
+  }
+
+  protected void assertInState(ContainerState expectedState,
+      ComponentInstanceState componentInstanceState, long now) {
+    ContainerState actualState = componentInstanceState.getContainerState();
+    if (!expectedState.equals(actualState)) {
+      // mismatch
+      Assert.fail(String.format("at [%06d] Expected component state %s " +
+                                "but found state %s in in component %s",
+          now, expectedState, actualState, componentInstanceState));
+    }
   }
 
   @Test
   public void testHeartbeatTransitions() {
-    ComponentInstanceState slaveState = new ComponentInstanceState("HBASE_REGIONSERVER", "Cid2", "Aid1");
+    ContainerId container2 = new MockContainerId(2);
+    ComponentInstanceState slaveState = new ComponentInstanceState("HBASE_REGIONSERVER",
+        container2, "Aid1");
     slaveState.setState(State.STARTED);
 
-    Assert.assertEquals(ContainerState.INIT, slaveState.getContainerState());
-    slaveState.setLastHeartbeat(System.currentTimeMillis());
-    Assert.assertEquals(ContainerState.HEALTHY, slaveState.getContainerState());
+    long lastHeartbeat = System.currentTimeMillis();
+    assertInState(ContainerState.INIT, slaveState, 0);
+    slaveState.heartbeat(lastHeartbeat);
+    assertInState(ContainerState.HEALTHY, slaveState, lastHeartbeat);
 
     slaveState.setContainerState(ContainerState.UNHEALTHY);
-    Assert.assertEquals(ContainerState.UNHEALTHY, slaveState.getContainerState());
-    slaveState.setLastHeartbeat(System.currentTimeMillis());
-    Assert.assertEquals(ContainerState.HEALTHY, slaveState.getContainerState());
+    lastHeartbeat = System.currentTimeMillis();
+    assertInState(ContainerState.UNHEALTHY, slaveState, lastHeartbeat);
+    slaveState.heartbeat(lastHeartbeat);
+    assertInState(ContainerState.HEALTHY, slaveState, lastHeartbeat);
 
     slaveState.setContainerState(ContainerState.HEARTBEAT_LOST);
-    Assert.assertEquals(ContainerState.HEARTBEAT_LOST, slaveState.getContainerState());
-    slaveState.setLastHeartbeat(System.currentTimeMillis());
-    Assert.assertEquals(ContainerState.HEARTBEAT_LOST, slaveState.getContainerState());
+    assertInState(ContainerState.HEARTBEAT_LOST, slaveState, lastHeartbeat);
+    lastHeartbeat = System.currentTimeMillis();
+    slaveState.heartbeat(lastHeartbeat);
+    assertInState(ContainerState.HEARTBEAT_LOST, slaveState, lastHeartbeat);
   }
 }

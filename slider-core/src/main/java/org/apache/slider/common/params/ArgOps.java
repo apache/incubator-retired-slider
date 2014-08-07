@@ -58,11 +58,12 @@ public class ArgOps {
     return triple(msg, min, min);
   }
 
-  public static void applyFileSystemURL(URI filesystemURL, Configuration conf) {
-    if (filesystemURL != null) {
+  public static void applyFileSystemBinding(String filesystemBinding,
+      Configuration conf) {
+    if (filesystemBinding != null) {
       //filesystem argument was set -this overwrites any defaults in the
       //configuration
-      FileSystem.setDefaultUri(conf, filesystemURL);
+      FileSystem.setDefaultUri(conf, filesystemBinding);
     }
   }
 

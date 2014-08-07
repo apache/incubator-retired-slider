@@ -26,9 +26,10 @@ import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockRecordFactory
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.model.mock.MockYarnEngine
-import org.apache.slider.server.appmaster.state.AbstractRMOperation
+import org.apache.slider.server.appmaster.operations.AbstractRMOperation
 import org.apache.slider.server.appmaster.state.AppState
 import org.apache.slider.server.appmaster.state.RoleInstance
+import org.apache.slider.server.appmaster.state.SimpleReleaseSelector
 import org.junit.Test
 
 /**
@@ -36,7 +37,7 @@ import org.junit.Test
  */
 @CompileStatic
 @Slf4j
-class TestAppStateDynamicRoles extends BaseMockAppStateTest
+class TestMockAppStateDynamicRoles extends BaseMockAppStateTest
     implements MockRoles {
 
   @Override
@@ -72,11 +73,13 @@ class TestAppStateDynamicRoles extends BaseMockAppStateTest
     
     appState.buildInstance(
         instance,
+        new Configuration(),
         new Configuration(false),
         factory.ROLES,
         fs,
         historyPath,
-        null, null)
+        null,
+        null, new SimpleReleaseSelector())
   }
 
   @Test

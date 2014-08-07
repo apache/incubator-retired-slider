@@ -30,6 +30,7 @@ import org.apache.slider.server.appmaster.model.mock.MockRecordFactory
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.model.mock.MockYarnEngine
 import org.apache.slider.server.appmaster.state.AppState
+import org.apache.slider.server.appmaster.state.SimpleReleaseSelector
 import org.apache.slider.server.avro.RoleHistoryWriter
 import org.junit.Test
 
@@ -38,7 +39,7 @@ import org.junit.Test
  */
 @CompileStatic
 @Slf4j
-class TestFlexDynamicRoles extends BaseMockAppStateTest
+class TestMockAppStateFlexDynamicRoles extends BaseMockAppStateTest
     implements MockRoles {
 
   @Override
@@ -73,11 +74,12 @@ class TestFlexDynamicRoles extends BaseMockAppStateTest
 
     
     appState.buildInstance(instance,
+        new Configuration(),
         new Configuration(false),
         factory.ROLES,
         fs,
         historyPath,
-        null, null)
+        null, null, new SimpleReleaseSelector())
   }
 
   
@@ -176,11 +178,12 @@ class TestFlexDynamicRoles extends BaseMockAppStateTest
     appState.setContainerLimits(RM_MAX_RAM, RM_MAX_CORES)
     appState.buildInstance(
         factory.newInstanceDefinition(0, 0, 0),
+        new Configuration(),
         new Configuration(false),
         factory.ROLES,
         fs,
         historyPath2,
-        null, null)
+        null, null, new SimpleReleaseSelector())
     historyWriter.read(fs, history, appState.roleHistory)
   }
 

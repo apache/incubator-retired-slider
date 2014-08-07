@@ -58,7 +58,10 @@ class TestFreezeThawMasterlessAM extends AgentMiniClusterTestBase {
     SliderUtils.copyDirectory(conf, resConfPath, tempConfPath, null)
 
 
-    ServiceLauncher<SliderClient> launcher = createMasterlessAM(clustername, 0, true, true)
+    ServiceLauncher<SliderClient> launcher = createStandaloneAM(
+        clustername,
+        true,
+        true)
     SliderClient sliderClient = launcher.service
     addToTeardown(sliderClient);
 

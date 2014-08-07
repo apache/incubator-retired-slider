@@ -21,7 +21,6 @@ package org.apache.slider.providers.agent;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FilterFileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
@@ -85,6 +84,7 @@ import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyCollection;
 import static org.mockito.Matchers.anyString;
@@ -106,6 +106,7 @@ public class TestAgentProviderService {
                                                + "      <version>0.96.0.2.1.1</version>\n"
                                                + "      <type>YARN-APP</type>\n"
                                                + "      <minHadoopVersion>2.1.0</minHadoopVersion>\n"
+                                               + "      <exportedConfigs>hbase-site,global</exportedConfigs>\n"
                                                + "      <exportGroups>\n"
                                                + "        <exportGroup>\n"
                                                + "          <name>QuickLinks</name>\n"
@@ -151,6 +152,16 @@ public class TestAgentProviderService {
                                                + "            <script>scripts/hbase_regionserver.py</script>\n"
                                                + "            <scriptType>PYTHON</scriptType>\n"
                                                + "          </commandScript>\n"
+                                               + "          <exports>\n"
+                                               + "            <export>\n"
+                                               + "              <name>PropertyA</name>\n"
+                                               + "              <value>${THIS_HOST}:${site.global.listen_port}</value>\n"
+                                               + "            </export>\n"
+                                               + "            <export>\n"
+                                               + "              <name>PropertyB</name>\n"
+                                               + "              <value>AConstant</value>\n"
+                                               + "            </export>\n"
+                                               + "          </exports>\n"
                                                + "        </component>\n"
                                                + "      </components>\n"
                                                + "      <osSpecifics>\n"
@@ -304,15 +315,15 @@ public class TestAgentProviderService {
         ClusterDescription cd = new ClusterDescription();
         cd.status = new HashMap<String, Object>();
         Map<String, Map<String, ClusterNode>> roleMap = new HashMap<>();
-        ClusterNode cn1 = new ClusterNode(new MyContainerId(1));
+        ClusterNode cn1 = new ClusterNode(new MockContainerId(1));
         cn1.host = "FIRST_HOST";
         Map<String, ClusterNode> map1 = new HashMap<>();
         map1.put("FIRST_CONTAINER", cn1);
-        ClusterNode cn2 = new ClusterNode(new MyContainerId(2));
+        ClusterNode cn2 = new ClusterNode(new MockContainerId(2));
         cn2.host = "SECOND_HOST";
         Map<String, ClusterNode> map2 = new HashMap<>();
         map2.put("SECOND_CONTAINER", cn2);
-        ClusterNode cn3 = new ClusterNode(new MyContainerId(3));
+        ClusterNode cn3 = new ClusterNode(new MockContainerId(3));
         cn3.host = "THIRD_HOST";
         map2.put("THIRD_CONTAINER", cn3);
 
@@ -345,6 +356,45 @@ public class TestAgentProviderService {
   }
 
   @Test
+  public void testComponentSpecificPublishes() throws Exception {
+    InputStream metainfo_1 = new ByteArrayInputStream(metainfo_1_str.getBytes());
+    Metainfo metainfo = new MetainfoParser().parse(metainfo_1);
+    AgentProviderService aps = new AgentProviderService();
+    AgentProviderService mockAps = Mockito.spy(aps);
+    doNothing().when(mockAps).publishApplicationInstanceData(anyString(), anyString(), anyCollection());
+    doReturn(metainfo).when(mockAps).getMetainfo();
+
+    Map<String, String> ports = new HashMap<>();
+    ports.put("global.listen_port", "10010");
+    mockAps.processAndPublishComponentSpecificData(ports,
+                                                   "cid1",
+                                                   "host1",
+                                                   "HBASE_REGIONSERVER");
+    ArgumentCaptor<Collection> entriesCaptor = ArgumentCaptor.
+        forClass(Collection.class);
+    ArgumentCaptor<String> publishNameCaptor = ArgumentCaptor.
+        forClass(String.class);
+    Mockito.verify(mockAps, Mockito.times(1)).publishApplicationInstanceData(
+        anyString(),
+        publishNameCaptor.capture(),
+        entriesCaptor.capture());
+    assert entriesCaptor.getAllValues().size() == 1;
+    for (Collection coll : entriesCaptor.getAllValues()) {
+      Set<Map.Entry<String, String>> entrySet = (Set<Map.Entry<String, String>>) coll;
+      for (Map.Entry entry : entrySet) {
+        log.info("{}:{}", entry.getKey(), entry.getValue().toString());
+        if (entry.getKey().equals("PropertyA")) {
+          assert entry.getValue().toString().equals("host1:10010");
+        }
+      }
+    }
+    assert publishNameCaptor.getAllValues().size() == 1;
+    for (String coll : publishNameCaptor.getAllValues()) {
+      assert coll.equals("ComponentInstanceData");
+    }
+  }
+
+  @Test
   public void testProcessConfig() throws Exception {
     InputStream metainfo_1 = new ByteArrayInputStream(metainfo_1_str.getBytes());
     Metainfo metainfo = new MetainfoParser().parse(metainfo_1);
@@ -366,27 +416,28 @@ public class TestAgentProviderService {
 
     Map<String, Map<String, ClusterNode>> roleClusterNodeMap = new HashMap<>();
     Map<String, ClusterNode> container = new HashMap<>();
-    ClusterNode cn1 = new ClusterNode(new MyContainerId(1));
+    ClusterNode cn1 = new ClusterNode(new MockContainerId(1));
     cn1.host = "HOST1";
     container.put("cid1", cn1);
     roleClusterNodeMap.put("HBASE_MASTER", container);
 
-    ComponentInstanceState componentStatus = new ComponentInstanceState("HBASE_MASTER", "aid", "cid");
+    ComponentInstanceState componentStatus = new ComponentInstanceState("HBASE_MASTER", 
+        new MockContainerId(1), "cid");
     AgentProviderService mockAps = Mockito.spy(aps);
-    doNothing().when(mockAps).publishComponentConfiguration(anyString(), anyString(), anyCollection());
+    doNothing().when(mockAps).publishApplicationInstanceData(anyString(), anyString(), anyCollection());
     doReturn(metainfo).when(mockAps).getMetainfo();
     doReturn(roleClusterNodeMap).when(mockAps).getRoleClusterNodeMapping();
 
-    mockAps.processReturnedStatus(hb, componentStatus);
+    mockAps.publishConfigAndExportGroups(hb, componentStatus);
     assert componentStatus.getConfigReported() == true;
-    ArgumentCaptor<Collection> commandCaptor = ArgumentCaptor.
+    ArgumentCaptor<Collection> entriesCaptor = ArgumentCaptor.
         forClass(Collection.class);
-    Mockito.verify(mockAps, Mockito.times(3)).publishComponentConfiguration(
+    Mockito.verify(mockAps, Mockito.times(3)).publishApplicationInstanceData(
         anyString(),
         anyString(),
-        commandCaptor.capture());
-    assert commandCaptor.getAllValues().size() == 3;
-    for (Collection coll : commandCaptor.getAllValues()) {
+        entriesCaptor.capture());
+    assert entriesCaptor.getAllValues().size() == 3;
+    for (Collection coll : entriesCaptor.getAllValues()) {
       Set<Map.Entry<String, String>> entrySet = (Set<Map.Entry<String, String>>) coll;
       for (Map.Entry entry : entrySet) {
         log.info("{}:{}", entry.getKey(), entry.getValue().toString());
@@ -405,6 +456,7 @@ public class TestAgentProviderService {
     Application application = metainfo.getApplication();
     log.info("Service: " + application.toString());
     Assert.assertEquals(application.getName(), "HBASE");
+    Assert.assertEquals(application.getExportedConfigs(), "hbase-site,global");
     Assert.assertEquals(application.getComponents().size(), 2);
     List<Component> components = application.getComponents();
     int found = 0;
@@ -414,6 +466,7 @@ public class TestAgentProviderService {
         Assert.assertEquals(component.getMaxInstanceCount(), "2");
         Assert.assertEquals(component.getCommandScript().getScript(), "scripts/hbase_master.py");
         Assert.assertEquals(component.getCategory(), "MASTER");
+        Assert.assertEquals(component.getExports().size(), 0);
         found++;
       }
       if (component.getName().equals("HBASE_REGIONSERVER")) {
@@ -421,16 +474,24 @@ public class TestAgentProviderService {
         Assert.assertNull(component.getMaxInstanceCount());
         Assert.assertEquals(component.getCommandScript().getScript(), "scripts/hbase_regionserver.py");
         Assert.assertEquals(component.getCategory(), "SLAVE");
+        Assert.assertEquals(component.getExports().size(), 2);
+        List<Export> es = component.getExports();
+        Export e = es.get(0);
+        Assert.assertEquals(e.getName(), "PropertyA");
+        Assert.assertEquals(e.getValue(), "${THIS_HOST}:${site.global.listen_port}");
+        e = es.get(1);
+        Assert.assertEquals(e.getName(), "PropertyB");
+        Assert.assertEquals(e.getValue(), "AConstant");
         found++;
       }
     }
     Assert.assertEquals(found, 2);
 
-    assert application.getExportGroups().size() == 1;
+    Assert.assertEquals(application.getExportGroups().size(), 1);
     List<ExportGroup> egs = application.getExportGroups();
     ExportGroup eg = egs.get(0);
-    assert eg.getName().equals("QuickLinks");
-    assert eg.getExports().size() == 2;
+    Assert.assertEquals(eg.getName(), "QuickLinks");
+    Assert.assertEquals(eg.getExports().size(), 2);
 
     found = 0;
     for (Export export : eg.getExports()) {
@@ -512,7 +573,7 @@ public class TestAgentProviderService {
   }
 
   @Test
-  public void testOrchastratedAppStart() throws IOException {
+  public void testOrchestratedAppStart() throws IOException {
     // App has two components HBASE_MASTER and HBASE_REGIONSERVER
     // Start of HBASE_RS depends on the start of HBASE_MASTER
     InputStream metainfo_1 = new ByteArrayInputStream(metainfo_1_str.getBytes());
@@ -569,7 +630,7 @@ public class TestAgentProviderService {
           anyString(),
           anyString(),
           any(HeartBeatResponse.class));
-      doNothing().when(mockAps).publishComponentConfiguration(
+      doNothing().when(mockAps).publishApplicationInstanceData(
           anyString(),
           anyString(),
           anyCollection());
@@ -739,10 +800,53 @@ public class TestAgentProviderService {
       log.warn(he.getMessage());
     }
 
-    Mockito.verify(mockAps, Mockito.times(1)).publishComponentConfiguration(
+    Mockito.verify(mockAps, Mockito.times(1)).publishApplicationInstanceData(
         anyString(),
         anyString(),
         anyCollection());
+  }
+
+  @Test
+  public void testNotifyContainerCompleted() {
+    AgentProviderService aps = new AgentProviderService();
+    AgentProviderService mockAps = Mockito.spy(aps);
+    doNothing().when(mockAps).publishApplicationInstanceData(anyString(), anyString(), anyCollection());
+
+    ContainerId cid = new MockContainerId(1);
+    String id = cid.toString();
+    ContainerId cid2 = new MockContainerId(2);
+    mockAps.getAllocatedPorts().put("a", "100");
+    mockAps.getAllocatedPorts(id).put("b", "101");
+    mockAps.getAllocatedPorts("cid2").put("c", "102");
+
+    mockAps.getComponentInstanceData().put("cid2", new HashMap<String, String>());
+    mockAps.getComponentInstanceData().put(id, new HashMap<String, String>());
+
+    mockAps.getComponentStatuses().put("cid2_HM", new ComponentInstanceState("HM", cid2, "aid"));
+    mockAps.getComponentStatuses().put(id + "_HM", new ComponentInstanceState("HM", cid, "aid"));
+
+    Assert.assertNotNull(mockAps.getComponentInstanceData().get(id));
+    Assert.assertNotNull(mockAps.getComponentInstanceData().get("cid2"));
+
+    Assert.assertNotNull(mockAps.getComponentStatuses().get(id + "_HM"));
+    Assert.assertNotNull(mockAps.getComponentStatuses().get("cid2_HM"));
+
+    Assert.assertEquals(mockAps.getAllocatedPorts().size(), 1);
+    Assert.assertEquals(mockAps.getAllocatedPorts(id).size(), 1);
+    Assert.assertEquals(mockAps.getAllocatedPorts("cid2").size(), 1);
+
+    // Make the call
+    mockAps.notifyContainerCompleted(new MockContainerId(1));
+
+    Assert.assertEquals(mockAps.getAllocatedPorts().size(), 1);
+    Assert.assertEquals(mockAps.getAllocatedPorts(id).size(), 0);
+    Assert.assertEquals(mockAps.getAllocatedPorts("cid2").size(), 1);
+
+    Assert.assertNull(mockAps.getComponentInstanceData().get(id));
+    Assert.assertNotNull(mockAps.getComponentInstanceData().get("cid2"));
+
+    Assert.assertNull(mockAps.getComponentStatuses().get(id + "_HM"));
+    Assert.assertNotNull(mockAps.getComponentStatuses().get("cid2_HM"));
   }
 
   @Test
@@ -773,7 +877,7 @@ public class TestAgentProviderService {
 
     Map<String, Map<String, ClusterNode>> roleClusterNodeMap = new HashMap<>();
     Map<String, ClusterNode> container = new HashMap<>();
-    ClusterNode cn1 = new ClusterNode(new MyContainerId(1));
+    ClusterNode cn1 = new ClusterNode(new MockContainerId(1));
     cn1.host = "HOST1";
     container.put("cid1", cn1);
     roleClusterNodeMap.put("HBASE_MASTER", container);
@@ -809,6 +913,8 @@ public class TestAgentProviderService {
     treeOps.set("config_types", "hbase-site");
     treeOps.getGlobalOptions().put("site.hbase-site.a.port", "${HBASE_MASTER.ALLOCATED_PORT}");
     treeOps.getGlobalOptions().put("site.hbase-site.b.port", "${HBASE_MASTER.ALLOCATED_PORT}");
+    treeOps.getGlobalOptions().put("site.hbase-site.random.port", "${HBASE_MASTER.ALLOCATED_PORT}{DO_NOT_PROPAGATE}");
+    treeOps.getGlobalOptions().put("site.hbase-site.random2.port", "${HBASE_MASTER.ALLOCATED_PORT}");
 
     expect(access.getAppConfSnapshot()).andReturn(treeOps).anyTimes();
     expect(access.getInternalsSnapshot()).andReturn(treeOps).anyTimes();
@@ -818,15 +924,18 @@ public class TestAgentProviderService {
 
     Map<String, Map<String, ClusterNode>> roleClusterNodeMap = new HashMap<>();
     Map<String, ClusterNode> container = new HashMap<>();
-    ClusterNode cn1 = new ClusterNode(new MyContainerId(1));
+    ClusterNode cn1 = new ClusterNode(new MockContainerId(1));
     cn1.host = "HOST1";
     container.put("cid1", cn1);
     roleClusterNodeMap.put("HBASE_MASTER", container);
     doReturn(roleClusterNodeMap).when(mockAps).getRoleClusterNodeMapping();
     Map<String, String> allocatedPorts = new HashMap<>();
-    allocatedPorts.put("a.port", "10023");
-    allocatedPorts.put("b.port", "10024");
+    allocatedPorts.put("hbase-site.a.port", "10023");
+    allocatedPorts.put("hbase-site.b.port", "10024");
     doReturn(allocatedPorts).when(mockAps).getAllocatedPorts();
+    Map<String, String> allocatedPorts2 = new HashMap<>();
+    allocatedPorts2.put("hbase-site.random.port", "10025");
+    doReturn(allocatedPorts2).when(mockAps).getAllocatedPorts(anyString());
 
     replay(access);
 
@@ -834,122 +943,11 @@ public class TestAgentProviderService {
     Assert.assertTrue(hbr.getExecutionCommands().get(0).getConfigurations().containsKey("hbase-site"));
     Map<String, String> hbaseSiteConf = hbr.getExecutionCommands().get(0).getConfigurations().get("hbase-site");
     Assert.assertTrue(hbaseSiteConf.containsKey("a.port"));
-    Assert.assertTrue(hbaseSiteConf.get("a.port").equals("10023"));
-    Assert.assertTrue(hbaseSiteConf.get("b.port").equals("10024"));
+    Assert.assertEquals("10023", hbaseSiteConf.get("a.port"));
+    Assert.assertEquals("10024", hbaseSiteConf.get("b.port"));
+    Assert.assertEquals("10025", hbaseSiteConf.get("random.port"));
+    assertEquals("${HBASE_MASTER.ALLOCATED_PORT}",
+        hbaseSiteConf.get("random2.port"));
   }
 
-  private static class MyContainer extends Container {
-
-    ContainerId cid = null;
-
-    @Override
-    public ContainerId getId() {
-      return this.cid;
-    }
-
-    @Override
-    public void setId(ContainerId containerId) {
-      this.cid = containerId;
-    }
-
-    @Override
-    public NodeId getNodeId() {
-      return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void setNodeId(NodeId nodeId) {
-      //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public String getNodeHttpAddress() {
-      return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void setNodeHttpAddress(String s) {
-      //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public Resource getResource() {
-      return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void setResource(Resource resource) {
-      //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public Priority getPriority() {
-      return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void setPriority(Priority priority) {
-      //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public Token getContainerToken() {
-      return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void setContainerToken(Token token) {
-      //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public int compareTo(Container o) {
-      return 0;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-  }
-
-  private static class MyContainerId extends ContainerId {
-    int id;
-
-    private MyContainerId(int id) {
-      this.id = id;
-    }
-
-    @Override
-    public ApplicationAttemptId getApplicationAttemptId() {
-      return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    protected void setApplicationAttemptId(ApplicationAttemptId applicationAttemptId) {
-      //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public int getId() {
-      return id;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    protected void setId(int i) {
-      //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    protected void build() {
-      //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public int hashCode() {
-      return this.id;
-    }
-
-    @Override
-    public String toString() {
-      return "MyContainerId{" +
-             "id=" + id +
-             '}';
-    }
-  }
 }

@@ -30,7 +30,6 @@ import org.apache.slider.core.exceptions.SliderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -215,12 +214,12 @@ public abstract class CommonArgs extends ArgOps implements SliderActions,
 
 
   /**
-   * If the Filesystem URL was provided, it overrides anything in
+   * If the Filesystem binding was provided, it overrides anything in
    * the configuration
    * @param conf configuration
    */
-  public void applyFileSystemURL(Configuration conf) {
-    ArgOps.applyFileSystemURL(getFilesystemURL(), conf);
+  public void applyFileSystemBinding(Configuration conf) {
+    ArgOps.applyFileSystemBinding(getFilesystemBinding(), conf);
   }
 
   public boolean isDebug() {
@@ -228,8 +227,8 @@ public abstract class CommonArgs extends ArgOps implements SliderActions,
   }
 
 
-  public URI getFilesystemURL() {
-    return coreAction.filesystemURL;
+  public String getFilesystemBinding() {
+    return coreAction.filesystemBinding;
   }
 
   public Path getBasePath() { return coreAction.basePath; }

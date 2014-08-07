@@ -19,7 +19,7 @@ limitations under the License.
 '''
 
 from unittest import TestCase
-from agent.Grep import Grep
+from Grep import Grep
 import socket
 import os, sys
 import logging

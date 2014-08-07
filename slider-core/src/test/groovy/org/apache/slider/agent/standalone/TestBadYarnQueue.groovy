@@ -50,7 +50,7 @@ class TestBadYarnQueue extends AgentMiniClusterTestBase {
 
     try {
       ServiceLauncher<SliderClient> launcher =
-          createMasterlessAMWithArgs(clustername,
+          createStandaloneAMWithArgs(clustername,
               [
                   Arguments.ARG_DEFINE,
                   SliderXmlConfKeys.KEY_YARN_QUEUE + "=noqueue",

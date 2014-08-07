@@ -103,9 +103,10 @@ public class ClientArgs extends CommonArgs {
       log.debug("Setting RM to {}", getManager());
       conf.set(YarnConfiguration.RM_ADDRESS, getManager());
     }
-    if ( getBasePath() != null ) {
+    if (getBasePath() != null) {
       log.debug("Setting basePath to {}", getBasePath());
-      conf.set(SliderXmlConfKeys.KEY_SLIDER_BASE_PATH, getBasePath().toString());
+      conf.set(SliderXmlConfKeys.KEY_SLIDER_BASE_PATH,
+          getBasePath().toString());
     }
   }
 

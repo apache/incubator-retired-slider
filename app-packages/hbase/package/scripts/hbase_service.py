@@ -35,6 +35,10 @@ def hbase_service(
     
     if action == 'start':
       daemon_cmd = format("{cmd} start {role}")
+      if name == 'rest':
+        daemon_cmd = format("{daemon_cmd} -p {rest_port}")
+      elif name == 'thrift':
+        daemon_cmd = format("{daemon_cmd} -p {thrift_port}")
       no_op_test = format("ls {pid_file} >/dev/null 2>&1 && ps `cat {pid_file}` >/dev/null 2>&1")
     elif action == 'stop':
       daemon_cmd = format("{cmd} stop {role} && rm -f {pid_file}")

@@ -97,17 +97,20 @@ import org.apache.slider.providers.ProviderService;
 import org.apache.slider.providers.SliderProviderFactory;
 import org.apache.slider.providers.slideram.SliderAMClientProvider;
 import org.apache.slider.providers.slideram.SliderAMProviderService;
+import org.apache.slider.server.appmaster.operations.AsyncRMOperationHandler;
+import org.apache.slider.server.appmaster.operations.ProviderNotifyingOperationHandler;
 import org.apache.slider.server.appmaster.rpc.RpcBinder;
 import org.apache.slider.server.appmaster.rpc.SliderAMPolicyProvider;
 import org.apache.slider.server.appmaster.rpc.SliderClusterProtocolPBImpl;
-import org.apache.slider.server.appmaster.state.AbstractRMOperation;
+import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
 import org.apache.slider.server.appmaster.state.AppState;
 import org.apache.slider.server.appmaster.state.ContainerAssignment;
-import org.apache.slider.server.appmaster.state.ContainerReleaseOperation;
+import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation;
 import org.apache.slider.server.appmaster.state.ProviderAppState;
-import org.apache.slider.server.appmaster.state.RMOperationHandler;
+import org.apache.slider.server.appmaster.operations.RMOperationHandler;
 import org.apache.slider.server.appmaster.state.RoleInstance;
 import org.apache.slider.server.appmaster.state.RoleStatus;
+import org.apache.slider.server.appmaster.state.SimpleReleaseSelector;
 import org.apache.slider.server.appmaster.web.AgentService;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentWebApp;
 import org.apache.slider.server.appmaster.web.SliderAMWebApp;
@@ -195,6 +198,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
 
   private RMOperationHandler rmOperationHandler;
+  
+  private RMOperationHandler providerRMOperationHandler;
 
   /** Handle to communicate with the Node Manager*/
   @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
@@ -291,7 +296,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * The registry service
    */
   @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
-  private SliderRegistryService sliderRegistry;
+  private SliderRegistryService registry;
   
   
   /**
@@ -353,7 +358,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     SliderAMCreateAction createAction = (SliderAMCreateAction) action;
     //sort out the location of the AM
     serviceArgs.applyDefinitions(conf);
-    serviceArgs.applyFileSystemURL(conf);
+    serviceArgs.applyFileSystemBinding(conf);
 
     String rmAddress = createAction.getRmAddress();
     if (rmAddress != null) {
@@ -361,7 +366,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       SliderUtils.setRmSchedulerAddress(conf, rmAddress);
     }
     serviceArgs.applyDefinitions(conf);
-    serviceArgs.applyFileSystemURL(conf);
+    serviceArgs.applyFileSystemBinding(conf);
     //init security with our conf
     if (SliderUtils.isHadoopClusterSecure(conf)) {
       log.info("Secure mode with kerberos realm {}",
@@ -507,6 +512,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     providerService = factory.createServerProvider();
     // init the provider BUT DO NOT START IT YET
     initAndAddService(providerService);
+    providerRMOperationHandler =
+        new ProviderNotifyingOperationHandler(providerService);
+    
     // create a slider AM provider
     sliderAMProvider = new SliderAMProviderService();
     initAndAddService(sliderAMProvider);
@@ -566,7 +574,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
 
     Map<String, String> envVars;
-
+    List<Container> liveContainers;
     /**
      * It is critical this section is synchronized, to stop async AM events
      * arriving while registering a restarting AM.
@@ -603,8 +611,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       
       //registry
       log.info("Starting slider registry");
-      sliderRegistry = startRegistrationService();
-      log.info(sliderRegistry.toString());
+      registry = startRegistrationService();
+      log.info(registry.toString());
 
       log.info("Starting Yarn registry");
       yarnRegistry = startYarnRegistryService();
@@ -623,7 +631,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       startAgentWebApp(appInformation, serviceConf);
 
-      webApp = new SliderAMWebApp(sliderRegistry, yarnRegistry);
+      webApp = new SliderAMWebApp(registry, yarnRegistry);
       WebApps.$for(SliderAMWebApp.BASE_PATH, WebAppApi.class,
                    new WebAppApiImpl(this,
                                      stateForProviders,
@@ -674,8 +682,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       }
 
       // extract container list
-      List<Container> liveContainers =
-          response.getContainersFromPreviousAttempts();
+
+      liveContainers = response.getContainersFromPreviousAttempts();
 
       //now validate the installation
       Configuration providerConf =
@@ -690,12 +698,14 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       //build the instance
       appState.buildInstance(instanceDefinition,
-                             providerConf,
-                             providerRoles,
-                             fs.getFileSystem(),
-                             historyDir,
-                             liveContainers,
-                             appInformation);
+          serviceConf,
+          providerConf,
+          providerRoles,
+          fs.getFileSystem(),
+          historyDir,
+          liveContainers,
+          appInformation,
+          new SimpleReleaseSelector());
 
       // add the AM to the list of nodes in the cluster
       
@@ -732,7 +742,12 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     appState.noteAMLaunched();
 
 
- 
+    //Give the provider restricted access to the state, registry
+    providerService.bind(stateForProviders, registry, this,
+        liveContainers);
+    sliderAMProvider.bind(stateForProviders, registry, this,
+        liveContainers);
+
     // now do the registration
     registerServiceInstance(clustername, appid);
 
@@ -816,10 +831,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
             yarnRegistry, service_user_name,
             SliderKeys.APP_TYPE,
             instanceName);
-    providerService.bind(stateForProviders, sliderRegistry, yarnRegistryView, this);
-    sliderAMProvider.bind(stateForProviders, sliderRegistry, yarnRegistryView, null);
+    providerService.bindToYarnRegistry(yarnRegistryView);
+    sliderAMProvider.bindToYarnRegistry(yarnRegistryView);
 
-    List<String> serviceInstancesRunning = sliderRegistry.instanceIDs(serviceName);
+    List<String> serviceInstancesRunning = registry.instanceIDs(serviceName);
     log.info("service instances already running: {}", serviceInstancesRunning);
 
 
@@ -860,7 +875,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     // push the registration info to ZK
 
-    sliderRegistry.registerSelf(instanceData, unsecureWebAPI);
+    registry.registerSelf(instanceData, unsecureWebAPI);
     yarnRegistry.putServiceEntry(service_user_name,
         SliderKeys.APP_TYPE, 
         instanceName,
@@ -1106,12 +1121,13 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       // non complete containers should not be here
       assert (status.getState() == ContainerState.COMPLETE);
-      AppState.NodeCompletionResult result = appState.onCompletedNode(
-          getConfig(), status);
+      AppState.NodeCompletionResult result = appState.onCompletedNode(status);
       if (result.containerFailed) {
         RoleInstance ri = result.roleInstance;
         log.error("Role instance {} failed ", ri);
       }
+
+      getProviderService().notifyContainerCompleted(containerId);
     }
 
     // ask for more containers if any failed
@@ -1156,6 +1172,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
     try {
       List<AbstractRMOperation> allOperations = appState.reviewRequestAndReleaseNodes();
+      // tell the provider
+      providerRMOperationHandler.execute(allOperations);
       //now apply the operations
       rmOperationHandler.execute(allOperations);
       return !allOperations.isEmpty();
@@ -1480,22 +1498,27 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   /* =================================================================== */
 
   /**
-   * Refreshes the container by releasing it and having it reallocated
+   * report container loss. If this isn't already known about, react
    *
-   * @param containerId       id of the container to release
-   * @param newHostIfPossible allocate the replacement container on a new host
-   *
+   * @param containerId       id of the container which has failed
    * @throws SliderException
    */
-  public void refreshContainer(String containerId, boolean newHostIfPossible)
+  public synchronized ContainerLossReportOutcomes providerLostContainer(
+      ContainerId containerId)
       throws SliderException {
-    log.info(
-        "Refreshing container {} per provider request.",
+    log.info("containerLostContactWithProvider: container {} lost",
         containerId);
-    rmOperationHandler.execute(appState.releaseContainer(containerId));
-
-    // ask for more containers if needed
-    reviewRequestAndReleaseNodes();
+    RoleInstance activeContainer = appState.getActiveContainer(containerId);
+    if (activeContainer != null) {
+      rmOperationHandler.execute(appState.releaseContainer(containerId));
+      // ask for more containers if needed
+      log.info("Container released; triggering review");
+      reviewRequestAndReleaseNodes();
+      return ContainerLossReportOutcomes.CONTAINER_LOST_REVIEW_INITIATED;
+    } else {
+      log.info("Container not in active set - ignoring");
+      return ContainerLossReportOutcomes.CONTAINER_NOT_IN_USE;
+    }
   }
 
   /* =================================================================== */

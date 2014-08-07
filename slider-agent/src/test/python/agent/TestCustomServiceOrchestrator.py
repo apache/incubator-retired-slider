@@ -34,6 +34,7 @@ from CustomServiceOrchestrator import CustomServiceOrchestrator
 from mock.mock import MagicMock, patch
 import StringIO
 import sys
+from socket import socket
 
 
 class TestCustomServiceOrchestrator(TestCase):
@@ -178,13 +179,13 @@ class TestCustomServiceOrchestrator(TestCase):
     pass
 
 
-  @patch.object(CustomServiceOrchestrator, "allocate_port")
+  @patch.object(CustomServiceOrchestrator, "allocate_ports")
   @patch.object(CustomServiceOrchestrator, "resolve_script_path")
   @patch.object(PythonExecutor, "run_file")
   def test_runCommand_get_port(self,
                                run_file_mock,
                                resolve_script_path_mock,
-                               allocate_port_mock):
+                               allocate_ports_mock):
     command = {
       'role': 'HBASE_REGIONSERVER',
       'hostLevelParams': {
@@ -212,7 +213,7 @@ class TestCustomServiceOrchestrator(TestCase):
     config.getWorkRootPath.return_value = tempdir
     config.getLogPath.return_value = tempdir
 
-    allocate_port_mock.return_value = 10233
+    allocate_ports_mock.return_value = str(10233)
 
     resolve_script_path_mock.return_value = "/basedir/scriptpath"
     dummy_controller = MagicMock()
@@ -225,10 +226,116 @@ class TestCustomServiceOrchestrator(TestCase):
     }
     ret = orchestrator.runCommand(command, "out.txt", "err.txt")
     self.assertEqual(ret['exitcode'], 0)
-    self.assertEqual(ret['allocated_ports'], {'a.port': '10233'})
+    self.assertEqual(ret['allocated_ports'], {'a.a.port': '10233'})
     self.assertTrue(run_file_mock.called)
     self.assertEqual(run_file_mock.call_count, 1)
 
+
+  @patch.object(socket, "close")
+  @patch.object(socket, "connect")
+  def test_allocate_port_def(self, socket_connect_mock, socket_close_mock):
+    e = OSError()
+    socket_connect_mock.side_effect = e
+    tempdir = tempfile.gettempdir()
+    config = MagicMock()
+    config.get.return_value = "something"
+    config.getResolvedPath.return_value = tempdir
+    config.getWorkRootPath.return_value = tempdir
+    config.getLogPath.return_value = tempdir
+
+    dummy_controller = MagicMock()
+    orchestrator = CustomServiceOrchestrator(config, dummy_controller)
+    ret = orchestrator.allocate_port(10)
+    self.assertEqual(ret, 10)
+
+  @patch.object(socket, "getsockname")
+  @patch.object(socket, "bind")
+  @patch.object(socket, "close")
+  @patch.object(socket, "connect")
+  def test_allocate_port_new(self, socket_connect_mock, socket_close_mock,
+                         socket_bind_mock, socket_getsockname_mock):
+    tempdir = tempfile.gettempdir()
+    config = MagicMock()
+    config.get.return_value = "something"
+    config.getResolvedPath.return_value = tempdir
+    config.getWorkRootPath.return_value = tempdir
+    config.getLogPath.return_value = tempdir
+
+    dummy_controller = MagicMock()
+    orchestrator = CustomServiceOrchestrator(config, dummy_controller)
+    socket_getsockname_mock.return_value = [100, 101]
+    ret = orchestrator.allocate_port(10)
+    self.assertEqual(ret, 101)
+
+  @patch.object(socket, "getsockname")
+  @patch.object(socket, "bind")
+  def test_allocate_port_no_def(self, socket_bind_mock, socket_getsockname_mock):
+    tempdir = tempfile.gettempdir()
+    config = MagicMock()
+    config.get.return_value = "something"
+    config.getResolvedPath.return_value = tempdir
+    config.getWorkRootPath.return_value = tempdir
+    config.getLogPath.return_value = tempdir
+
+    dummy_controller = MagicMock()
+    orchestrator = CustomServiceOrchestrator(config, dummy_controller)
+    socket_getsockname_mock.return_value = [100, 102]
+    ret = orchestrator.allocate_port()
+    self.assertEqual(ret, 102)
+
+
+  @patch.object(CustomServiceOrchestrator, "is_port_available")
+  @patch.object(CustomServiceOrchestrator, "allocate_port")
+  def test_allocate_port_combinations(self, allocate_port_mock, is_port_available_mock):
+    tempdir = tempfile.gettempdir()
+    config = MagicMock()
+    config.get.return_value = "something"
+    config.getResolvedPath.return_value = tempdir
+    config.getWorkRootPath.return_value = tempdir
+    config.getLogPath.return_value = tempdir
+
+    dummy_controller = MagicMock()
+    orchestrator = CustomServiceOrchestrator(config, dummy_controller)
+
+    is_port_available_mock.return_value = False
+    allocate_port_mock.side_effect = [101, 102, 103, 104, 105, 106]
+    ret = orchestrator.allocate_ports("1000", "${A.ALLOCATED_PORT}")
+    self.assertEqual(ret, "1000")
+    ret = orchestrator.allocate_ports("${A.ALLOCATED_PORT}", "${A.ALLOCATED_PORT}")
+    self.assertEqual(ret, "101")
+    ret = orchestrator.allocate_ports("${A.ALLOCATED_PORT},${A.ALLOCATED_PORT}", "${A.ALLOCATED_PORT}")
+    self.assertEqual(ret, "102,103")
+    ret = orchestrator.allocate_ports("${A.ALLOCATED_PORT}{DEFAULT_0}", "${A.ALLOCATED_PORT}")
+    self.assertEqual(ret, "104")
+    ret = orchestrator.allocate_ports("${A.ALLOCATED_PORT}{DEFAULT_0}{DO_NOT_PROPAGATE}", "${A.ALLOCATED_PORT}")
+    self.assertEqual(ret, "105")
+    ret = orchestrator.allocate_ports("${A.ALLOCATED_PORT}{DO_NOT_PROPAGATE}", "${A.ALLOCATED_PORT}")
+    self.assertEqual(ret, "106")
+
+
+  @patch.object(CustomServiceOrchestrator, "is_port_available")
+  def test_allocate_port_combinations2(self, is_port_available_mock):
+    tempdir = tempfile.gettempdir()
+    config = MagicMock()
+    config.get.return_value = "something"
+    config.getResolvedPath.return_value = tempdir
+    config.getWorkRootPath.return_value = tempdir
+    config.getLogPath.return_value = tempdir
+
+    dummy_controller = MagicMock()
+    orchestrator = CustomServiceOrchestrator(config, dummy_controller)
+
+    is_port_available_mock.return_value = True
+    ret = orchestrator.allocate_ports("${A.ALLOCATED_PORT}{DEFAULT_1005}", "${A.ALLOCATED_PORT}")
+    self.assertEqual(ret, "1005")
+
+    ret = orchestrator.allocate_ports("${A.ALLOCATED_PORT}{DEFAULT_1005}-${A.ALLOCATED_PORT}{DEFAULT_1006}",
+                                      "${A.ALLOCATED_PORT}")
+    self.assertEqual(ret, "1005-1006")
+
+    ret = orchestrator.allocate_ports("${A.ALLOCATED_PORT}{DEFAULT_1006}{DO_NOT_PROPAGATE}",
+                                      "${A.ALLOCATED_PORT}")
+    self.assertEqual(ret, "1006")
 
   @patch("hostname.public_hostname")
   @patch("os.path.isfile")
@@ -353,8 +460,8 @@ class TestCustomServiceOrchestrator(TestCase):
     status = orchestrator.requestComponentStatus(status_command)
     self.assertEqual(CustomServiceOrchestrator.DEAD_STATUS, status['exitcode'])
 
-  @patch.object(CustomServiceOrchestrator, "allocate_port")
-  def test_finalize_command(self, mock_allocate_port):
+  @patch.object(CustomServiceOrchestrator, "allocate_ports")
+  def test_finalize_command(self, mock_allocate_ports):
     dummy_controller = MagicMock()
     tempdir = tempfile.gettempdir()
     tempWorkDir = tempdir + "W"
@@ -363,7 +470,7 @@ class TestCustomServiceOrchestrator(TestCase):
     config.getResolvedPath.return_value = tempdir
     config.getWorkRootPath.return_value = tempWorkDir
     config.getLogPath.return_value = tempdir
-    mock_allocate_port.return_value = "10023"
+    mock_allocate_ports.return_value = "10023"
 
     orchestrator = CustomServiceOrchestrator(config, dummy_controller)
     command = {}
@@ -385,8 +492,8 @@ class TestCustomServiceOrchestrator(TestCase):
     self.assertEqual(command['configurations']['oozie-site']['a_port'], "10023")
     self.assertEqual(orchestrator.applied_configs, {})
     self.assertEqual(len(allocated_ports), 1)
-    self.assertTrue('a_port' in allocated_ports)
-    self.assertEqual(allocated_ports['a_port'], '10023')
+    self.assertTrue('oozie-site.a_port' in allocated_ports)
+    self.assertEqual(allocated_ports['oozie-site.a_port'], '10023')
 
     command['configurations']['hbase-site']['work_root'] = "${AGENT_WORK_ROOT}"
     command['configurations']['hbase-site']['log_root'] = "${AGENT_LOG_ROOT}/log"
@@ -397,7 +504,7 @@ class TestCustomServiceOrchestrator(TestCase):
     orchestrator.finalize_command(command, True, {})
     self.assertEqual(command['configurations']['hbase-site']['log_root'], tempdir + "/log")
     self.assertEqual(command['configurations']['hbase-site']['blog_root'], "/b/" + tempdir + "/log")
-    self.assertEqual(command['configurations']['oozie-site']['b_port'], "${HBASE_REGIONSERVER.ALLOCATED_PORT}")
+    self.assertEqual(command['configurations']['oozie-site']['b_port'], "0")
     self.assertEqual(orchestrator.applied_configs, command['configurations'])
 
 

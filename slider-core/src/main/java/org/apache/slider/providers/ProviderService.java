@@ -24,6 +24,7 @@ import org.apache.hadoop.service.Service;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.registry.server.services.YarnRegistryService;
 import org.apache.hadoop.yarn.registry.client.types.ServiceEntry;
+import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.core.conf.AggregateConf;
@@ -34,6 +35,8 @@ import org.apache.slider.core.launch.ContainerLauncher;
 import org.apache.slider.core.main.ExitCodeProvider;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.server.appmaster.AMViewForProviders;
+import org.apache.slider.server.appmaster.state.ContainerReleaseSelector;
+import org.apache.slider.server.appmaster.operations.RMOperationHandlerActions;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
 import org.apache.slider.server.services.registry.RegistryViewForProviders;
@@ -42,10 +45,13 @@ import org.apache.slider.server.services.yarnregistry.YarnRegistryViewForProvide
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.List;
 import java.util.Map;
 
-public interface ProviderService extends ProviderCore, Service,
-                                         ExitCodeProvider {
+public interface ProviderService extends ProviderCore,
+    Service,
+    RMOperationHandlerActions,
+    ExitCodeProvider {
 
   /**
    * Set up the entire container launch context
@@ -69,6 +75,12 @@ public interface ProviderService extends ProviderCore, Service,
       Path containerTmpDirPath) throws
       IOException,
       SliderException;
+
+  /**
+   * Notify the providers of container completion
+   * @param containerId container that has completed
+   */
+  void notifyContainerCompleted(ContainerId containerId);
 
   /**
    * Execute a process in the AM
@@ -140,13 +152,21 @@ public interface ProviderService extends ProviderCore, Service,
   /**
    * bind operation -invoked before the service is started
    * @param stateAccessor interface offering read access to the state
-   * @param registry
-   * @param yarnRegistry
-   * @param amView
+   * @param registry registry view
+   * @param amView AM access
+   * @param liveContainers list of live containers. If non-empty, the AM was
+   * restarted with one more running containers.
    */
   void bind(StateAccessForProviders stateAccessor,
       RegistryViewForProviders registry,
-      YarnRegistryViewForProviders yarnRegistry, AMViewForProviders amView);
+      AMViewForProviders amView,
+      List<Container> liveContainers);
+
+  /**
+   * Bind to the YARN registry
+   * @param yarnRegistry YARN registry
+   */
+  void bindToYarnRegistry(YarnRegistryViewForProviders yarnRegistry);
 
   /**
    * Returns the agent rest operations interface.
@@ -171,4 +191,11 @@ public interface ProviderService extends ProviderCore, Service,
       URL secureWebAPI,
       ServiceInstanceData registryInstanceData,
       ServiceEntry serviceEntry) throws IOException;
+
+  /**
+   * Create the container release selector for this provider...any policy
+   * can be implemented
+   * @return the selector to use for choosing containers.
+   */
+  ContainerReleaseSelector createContainerReleaseSelector();
 }

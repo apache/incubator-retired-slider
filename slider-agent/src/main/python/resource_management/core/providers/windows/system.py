@@ -23,15 +23,26 @@ from resource_management.core.providers import Provider
 from resource_management.core.logger import Logger
 from resource_management.core.base import Fail
 from resource_management.core import ExecuteTimeoutException
+from multiprocessing import Queue
 import time
 import os
 import subprocess
+import shutil
 
 
 def _call_command(command, logoutput=False, cwd=None, env=None, wait_for_finish=True, timeout=None):
   # TODO implement timeout, logoutput, wait_for_finish
+  Logger.info("Executing %s" % (command))
   proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                           cwd=cwd, env=env, shell=False)
+  if not wait_for_finish:
+    return None, None
+
+  if timeout:
+    q = Queue()
+    t = threading.Timer( timeout, on_timeout, [proc, q] )
+    t.start()
+
   out = proc.communicate()[0].strip()
   code = proc.returncode
   if logoutput and out:
@@ -83,7 +94,8 @@ class FileProvider(Provider):
         if content:
           fp.write(content)
 
-    _set_file_acl(self.resource.path, self.resource.owner, self.resource.mode)
+    if self.resource.owner and self.resource.mode:
+      _set_file_acl(self.resource.path, self.resource.owner, self.resource.mode)
 
   def action_delete(self):
     path = self.resource.path
@@ -133,10 +145,46 @@ class ExecuteProvider(Provider):
           time.sleep(self.resource.try_sleep)
       except ExecuteTimeoutException:
         err_msg = ("Execution of '%s' was killed due timeout after %d seconds") % (
-        self.resource.command, self.resource.timeout)
+          self.resource.command, self.resource.timeout)
 
         if self.resource.on_timeout:
           Logger.info("Executing '%s'. Reason: %s" % (self.resource.on_timeout, err_msg))
           _call_command(self.resource.on_timeout)
         else:
           raise Fail(err_msg)
+
+
+class DirectoryProvider(Provider):
+  def action_create(self):
+    path = DirectoryProvider._trim_uri(self.resource.path)
+    if not os.path.exists(path):
+      Logger.info("Creating directory %s" % self.resource)
+      if self.resource.recursive:
+        os.makedirs(path)
+      else:
+        dirname = os.path.dirname(path)
+        if not os.path.isdir(dirname):
+          raise Fail("Applying %s failed, parent directory %s doesn't exist" % (self.resource, dirname))
+
+        os.mkdir(path)
+
+    if not os.path.isdir(path):
+      raise Fail("Applying %s failed, file %s already exists" % (self.resource, path))
+
+    if self.resource.owner and self.resource.mode:
+      _set_file_acl(path, self.resource.owner, self.resource.mode)
+
+  def action_delete(self):
+    path = self.resource.path
+    if os.path.exists(path):
+      if not os.path.isdir(path):
+        raise Fail("Applying %s failed, %s is not a directory" % (self.resource, path))
+
+      Logger.info("Removing directory %s and all its content" % self.resource)
+      shutil.rmtree(path)
+
+  @staticmethod
+  def _trim_uri(file_uri):
+    if file_uri.startswith("file:///"):
+      return file_uri[8:]
+    return file_uri

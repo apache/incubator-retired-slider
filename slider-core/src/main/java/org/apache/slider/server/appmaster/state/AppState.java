@@ -19,6 +19,7 @@
 package org.apache.slider.server.appmaster.state;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -54,8 +55,10 @@ import org.apache.slider.core.exceptions.ErrorStrings;
 import org.apache.slider.core.exceptions.NoSuchNodeException;
 import org.apache.slider.core.exceptions.SliderInternalStateException;
 import org.apache.slider.core.exceptions.TriggerClusterTeardownException;
-import org.apache.slider.core.registry.docstore.PublishedConfigSet;
 import org.apache.slider.providers.ProviderRole;
+import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
+import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation;
+import org.apache.slider.server.appmaster.operations.ContainerRequestOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,6 +68,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -250,6 +254,10 @@ public class AppState {
   private long startTimeThreshold;
   
   private int failureThreshold = 10;
+  
+  private String logServerURL = "";
+  
+  private ContainerReleaseSelector containerReleaseSelector;
 
   public AppState(AbstractRecordFactory recordFactory) {
     this.recordFactory = recordFactory;
@@ -432,28 +440,34 @@ public class AppState {
   /**
    * Build up the application state
    * @param instanceDefinition definition of the applicatin instance
+   * @param appmasterConfig
    * @param publishedProviderConf any configuration info to be published by a provider
    * @param providerRoles roles offered by a provider
    * @param fs filesystem
    * @param historyDir directory containing history files
    * @param liveContainers list of live containers supplied on an AM restart
    * @param applicationInfo
+   * @param releaseSelector
    */
   public synchronized void buildInstance(AggregateConf instanceDefinition,
-                            Configuration publishedProviderConf,
-                            List<ProviderRole> providerRoles,
-                            FileSystem fs,
-                            Path historyDir,
-                            List<Container> liveContainers,
-                            Map<String, String> applicationInfo) throws
-                                                                 BadClusterStateException,
-                                                                 BadConfigException,
-                                                                 IOException {
+      Configuration appmasterConfig,
+      Configuration publishedProviderConf,
+      List<ProviderRole> providerRoles,
+      FileSystem fs,
+      Path historyDir,
+      List<Container> liveContainers,
+      Map<String, String> applicationInfo,
+      SimpleReleaseSelector releaseSelector)
+      throws  BadClusterStateException, BadConfigException, IOException {
+    Preconditions.checkArgument(instanceDefinition != null);
+    Preconditions.checkArgument(releaseSelector != null);
+
     this.publishedProviderConf = publishedProviderConf;
-    this.applicationInfo = applicationInfo != null ? applicationInfo 
-                                         : new HashMap<String, String>();
+    this.applicationInfo = applicationInfo != null ? applicationInfo
+                                                   : new HashMap<String, String>();
 
     clientProperties = new HashMap<>();
+    containerReleaseSelector = releaseSelector;
 
 
     Set<String> confKeys = ConfigHelper.sortedConfigKeys(publishedProviderConf);
@@ -463,8 +477,8 @@ public class AppState {
       String val = publishedProviderConf.get(key);
       clientProperties.put(key, val);
     }
-    
-    
+
+
     // set the cluster specification (once its dependency the client properties
     // is out the way
 
@@ -477,15 +491,16 @@ public class AppState {
     }
 
     ConfTreeOperations resources =
-      instanceDefinition.getResourceOperations();
-    
+        instanceDefinition.getResourceOperations();
+
     Set<String> roleNames = resources.getComponentNames();
     for (String name : roleNames) {
       if (!roles.containsKey(name)) {
         // this is a new value
         log.info("Adding new role {}", name);
         MapOperations resComponent = resources.getComponent(name);
-        ProviderRole dynamicRole = createDynamicProviderRole(name, resComponent);
+        ProviderRole dynamicRole =
+            createDynamicProviderRole(name, resComponent);
         buildRole(dynamicRole);
         providerRoles.add(dynamicRole);
       }
@@ -496,24 +511,28 @@ public class AppState {
 
     //set the livespan
     MapOperations globalInternalOpts =
-      instanceDefinition.getInternalOperations().getGlobalOptions();
+        instanceDefinition.getInternalOperations().getGlobalOptions();
     startTimeThreshold = globalInternalOpts.getOptionInt(
-      OptionKeys.INTERNAL_CONTAINER_FAILURE_SHORTLIFE,
-      OptionKeys.DEFAULT_CONTAINER_FAILURE_SHORTLIFE);
-    
+        OptionKeys.INTERNAL_CONTAINER_FAILURE_SHORTLIFE,
+        OptionKeys.DEFAULT_CONTAINER_FAILURE_SHORTLIFE);
+
     failureThreshold = globalInternalOpts.getOptionInt(
-      OptionKeys.INTERNAL_CONTAINER_FAILURE_THRESHOLD,
-      OptionKeys.DEFAULT_CONTAINER_FAILURE_THRESHOLD);
+        OptionKeys.INTERNAL_CONTAINER_FAILURE_THRESHOLD,
+        OptionKeys.DEFAULT_CONTAINER_FAILURE_THRESHOLD);
     initClusterStatus();
 
 
     // add the roles
     roleHistory = new RoleHistory(providerRoles);
     roleHistory.onStart(fs, historyDir);
-    
+
     //rebuild any live containers
     rebuildModelFromRestart(liveContainers);
-    
+
+    // any am config options to pick up
+
+    logServerURL = appmasterConfig.get(YarnConfiguration.YARN_LOG_SERVER_URL,
+        "");
     //mark as live
     applicationLive = true;
   }
@@ -690,7 +709,7 @@ public class AppState {
                                    roleStatusMap.get(priority));
     }
     roleStatusMap.put(priority,
-                      new RoleStatus(providerRole));
+        new RoleStatus(providerRole));
     roles.put(providerRole.name, providerRole);
   }
 
@@ -780,7 +799,10 @@ public class AppState {
   public RoleInstance getActiveContainer(ContainerId id) {
     return activeContainers.get(id);
   }
-
+  
+  private RoleInstance removeActiveContainer(ContainerId id) {
+    return activeContainers.remove(id);
+  }
 
   public synchronized List<RoleInstance> cloneLiveContainerInfoList() {
     List<RoleInstance> allRoleInstances;
@@ -830,6 +852,27 @@ public class AppState {
     Collection<RoleInstance> allRoleInstances = getLiveNodes().values();
     for (RoleInstance node : allRoleInstances) {
       if (role.isEmpty() || role.equals(node.role)) {
+        nodes.add(node);
+      }
+    }
+    return nodes;
+  }
+
+ 
+  /**
+   * enum nodes by role ID, from either the active or live node list
+   * @param roleId role the container must be in
+   * @param active flag to indicate "use active list" rather than the smaller
+   * "live" list
+   * @return a list of nodes, may be empty
+   */
+  public synchronized List<RoleInstance> enumNodesWithRoleId(int roleId,
+      boolean active) {
+    List<RoleInstance> nodes = new ArrayList<>();
+    Collection<RoleInstance> allRoleInstances;
+    allRoleInstances = active? activeContainers.values() : liveNodes.values();
+    for (RoleInstance node : allRoleInstances) {
+      if (node.roleId == roleId) {
         nodes.add(node);
       }
     }
@@ -902,19 +945,19 @@ public class AppState {
       throws SliderInternalStateException {
     ContainerId id = container.getId();
     //look up the container
-    RoleInstance info = getActiveContainer(id);
-    if (info == null) {
+    RoleInstance instance = getActiveContainer(id);
+    if (instance == null) {
       throw new SliderInternalStateException(
-        "No active container with ID " + id.toString());
+        "No active container with ID " + id);
     }
     //verify that it isn't already released
     if (containersBeingReleased.containsKey(id)) {
       throw new SliderInternalStateException(
         "Container %s already queued for release", id);
     }
-    info.released = true;
-    containersBeingReleased.put(id, info.container);
-    RoleStatus role = lookupRoleStatus(info.roleId);
+    instance.released = true;
+    containersBeingReleased.put(id, instance.container);
+    RoleStatus role = lookupRoleStatus(instance.roleId);
     role.incReleasing();
     roleHistory.onContainerReleaseSubmitted(container);
   }
@@ -1161,31 +1204,23 @@ public class AppState {
    * @return NodeCompletionResult
    */
   public synchronized NodeCompletionResult onCompletedNode(ContainerStatus status) {
-    return onCompletedNode(null, status);
-  }
-  
-  /**
-   * handle completed node in the CD -move something from the live
-   * server list to the completed server list
-   * @param amConf YarnConfiguration
-   * @param status the node that has just completed
-   * @return NodeCompletionResult
-   */
-  public synchronized NodeCompletionResult onCompletedNode(Configuration amConf,
-      ContainerStatus status) {
     ContainerId containerId = status.getContainerId();
     NodeCompletionResult result = new NodeCompletionResult();
     RoleInstance roleInstance;
 
     if (containersBeingReleased.containsKey(containerId)) {
-      log.info("Container was queued for release");
+      log.info("Container was queued for release : {}", containerId);
       Container container = containersBeingReleased.remove(containerId);
       RoleStatus roleStatus = lookupRoleStatus(container);
-      log.info("decrementing role count for role {}", roleStatus.getName());
-      roleStatus.decReleasing();
-      roleStatus.decActual();
-      roleStatus.incCompleted();
-      roleHistory.onReleaseCompleted(container);
+      int releasing = roleStatus.decReleasing();
+      int actual = roleStatus.decActual();
+      int completedCount = roleStatus.incCompleted();
+      log.info("decrementing role count for role {} to {}; releasing={}, completed={}",
+          roleStatus.getName(),
+          actual,
+          releasing,
+          completedCount);
+      roleHistory.onReleaseCompleted(container, true);
 
     } else if (surplusNodes.remove(containerId)) {
       //its a surplus one being purged
@@ -1211,37 +1246,26 @@ public class AppState {
           roleStatus.decActual();
           boolean shortLived = isShortLived(roleInstance);
           String message;
-          if (roleInstance.container != null) {
-            String user = null;
-            try {
-              user = SliderUtils.getCurrentUser().getShortUserName();
-            } catch (IOException ignored) {
-            }
-            String completedLogsUrl = null;
-            Container c = roleInstance.container;
-            String url = null;
-            if (amConf != null) {
-              url = amConf.get(YarnConfiguration.YARN_LOG_SERVER_URL);
-            }
-            if (user != null && url != null) {
-              completedLogsUrl = url
-                  + "/" + c.getNodeId() + "/" + roleInstance.getContainerId() + "/ctx/" + user;
-            }
-            message = String.format("Failure %s on host %s" +
-                (completedLogsUrl != null ? ", see %s" : ""), roleInstance.getContainerId(),
-                c.getNodeId().getHost(), completedLogsUrl);
+          Container failedContainer = roleInstance.container;
+          
+          //build the failure message
+          if (failedContainer != null) {
+            String completedLogsUrl = getLogsURLForContainer(failedContainer);
+            message = String.format("Failure %s on host %s: %s",
+                roleInstance.getContainerId().toString(),
+                failedContainer.getNodeId().getHost(),
+                completedLogsUrl);
           } else {
-            message = String.format("Failure %s",
-                                    containerId.toString());
+            message = String.format("Failure %s", containerId);
           }
           roleStatus.noteFailed(message);
           //have a look to see if it short lived
           if (shortLived) {
             roleStatus.incStartFailed();
           }
-          
-          if (roleInstance.container != null) {
-            roleHistory.onFailedContainer(roleInstance.container, shortLived);
+
+          if (failedContainer != null) {
+            roleHistory.onFailedContainer(failedContainer, shortLived);
           }
           
         } catch (YarnRuntimeException e1) {
@@ -1255,28 +1279,65 @@ public class AppState {
         completionOfUnknownContainerEvent.incrementAndGet();
       }
     }
-    
+
     if (result.surplusNode) {
       //a surplus node
       return result;
     }
-    
+
     //record the complete node's details; this pulls it from the livenode set 
     //remove the node
     ContainerId id = status.getContainerId();
+    log.info("Removing node ID {}", id);
     RoleInstance node = getLiveNodes().remove(id);
-    if (node == null) {
-      log.warn("Received notification of completion of unknown node {}", id);
-      completionOfNodeNotInLiveListEvent.incrementAndGet();
-
-    } else {
+    if (node != null) {
       node.state = ClusterDescription.STATE_DESTROYED;
       node.exitCode = status.getExitStatus();
       node.diagnostics = status.getDiagnostics();
       getCompletedNodes().put(id, node);
       result.roleInstance = node;
+    } else {
+      // not in the list
+      log.warn("Received notification of completion of unknown node {}", id);
+      completionOfNodeNotInLiveListEvent.incrementAndGet();
+
     }
+    
+    // and the active node list if present
+    removeActiveContainer(containerId);
+    
+    // finally, verify the node doesn't exist any more
+    assert !containersBeingReleased.containsKey(
+        containerId) : "container still in release queue";
+    assert !getLiveNodes().containsKey(
+        containerId) : " container still in live nodes";
+    assert getActiveContainer(containerId) ==
+           null : "Container still in active container list";
+
     return result;
+  }
+
+  /**
+   * Get the URL log for a container
+   * @param c container
+   * @return the URL or "" if it cannot be determined
+   */
+  protected String getLogsURLForContainer(Container c) {
+    if (c==null) {
+      return null;
+    }
+    String user = null;
+    try {
+      user = SliderUtils.getCurrentUser().getShortUserName();
+    } catch (IOException ignored) {
+    }
+    String completedLogsUrl = "";
+    String url = logServerURL;
+    if (user != null && SliderUtils.isSet(url)) {
+      completedLogsUrl = url
+          + "/" + c.getNodeId() + "/" + c.getId() + "/ctx/" + user;
+    }
+    return completedLogsUrl;
   }
 
 
@@ -1412,6 +1473,7 @@ public class AppState {
    * @throws SliderInternalStateException if the operation reveals that
    * the internal state of the application is inconsistent.
    */
+  @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
   public List<AbstractRMOperation> reviewOneRole(RoleStatus role)
       throws SliderInternalStateException, TriggerClusterTeardownException {
     List<AbstractRMOperation> operations = new ArrayList<>();
@@ -1457,18 +1519,43 @@ public class AppState {
 
       // get the nodes to release
       int roleId = role.getKey();
-      List<NodeInstance> nodesForRelease =
-        roleHistory.findNodesForRelease(roleId, excess);
-      
-      for (NodeInstance node : nodesForRelease) {
-        RoleInstance possible = findRoleInstanceOnHost(node, roleId);
-        if (possible == null) {
-          throw new SliderInternalStateException(
-            "Failed to find a container to release on node %s", node.hostname);
-        }
-        containerReleaseSubmitted(possible.container);
-        operations.add(new ContainerReleaseOperation(possible.getId()));
+            
+      // enum all active nodes that aren't being released
+      List<RoleInstance> containersToRelease = enumNodesWithRoleId(roleId, true);
 
+      // cut all release-in-progress nodes
+      ListIterator<RoleInstance> li = containersToRelease.listIterator();
+      while (li.hasNext()) {
+        RoleInstance next = li.next();
+        if (next.released) {
+          li.remove();
+        }
+      }
+
+      // warn if the desired state can't be reaced
+      if (containersToRelease.size() < excess) {
+        log.warn("Not enough nodes to release...short of {} nodes",
+            containersToRelease.size() - excess);
+      }
+      
+      // ask the release selector to sort the targets
+      containersToRelease =  containerReleaseSelector.sortCandidates(
+          roleId,
+          containersToRelease,
+          excess);
+      
+      //crop to the excess
+
+      List<RoleInstance> finalCandidates = (excess < containersToRelease.size()) 
+          ? containersToRelease.subList(0, excess)
+          : containersToRelease;
+      
+
+      // then build up a release operation, logging each container as released
+      for (RoleInstance possible : finalCandidates) {
+        log.debug("Targeting for release: {}", possible);
+        containerReleaseSubmitted(possible.container);
+        operations.add(new ContainerReleaseOperation(possible.getId()));       
       }
    
     }
@@ -1482,12 +1569,12 @@ public class AppState {
    * @return
    * @throws SliderInternalStateException
    */
-  public List<AbstractRMOperation> releaseContainer(String containerId)
+  public List<AbstractRMOperation> releaseContainer(ContainerId containerId)
       throws SliderInternalStateException {
     List<AbstractRMOperation> operations = new ArrayList<>();
     List<RoleInstance> activeRoleInstances = cloneActiveContainerList();
     for (RoleInstance role : activeRoleInstances) {
-      if (role.container.getId().toString().equals(containerId)) {
+      if (role.container.getId().equals(containerId)) {
         containerReleaseSubmitted(role.container);
         operations.add(new ContainerReleaseOperation(role.getId()));
       }

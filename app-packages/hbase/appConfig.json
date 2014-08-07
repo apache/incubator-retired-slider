@@ -23,6 +23,7 @@
     "site.global.ganglia_server_host": "${NN_HOST}",
     "site.global.ganglia_server_port": "8667",
     "site.global.ganglia_server_id": "Application1",
+    "site.global.hbase_thrift_port": "${HBASE_THRIFT.ALLOCATED_PORT}",
     "site.hbase-site.hbase.hstore.flush.retries.number": "120",
     "site.hbase-site.hbase.client.keyvalue.maxsize": "10485760",
     "site.hbase-site.hbase.hstore.compactionThreshold": "3",

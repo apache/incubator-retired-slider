@@ -20,17 +20,17 @@ limitations under the License.
 import StringIO
 import sys
 
-from agent import NetUtil, security
+import NetUtil, security
 from mock.mock import MagicMock, patch, ANY
 import unittest
-from agent import ProcessHelper, main
+import ProcessHelper, main
 import logging
 import signal
-from agent.AgentConfig import AgentConfig
+from AgentConfig import AgentConfig
 import ConfigParser
 import os
 import tempfile
-from agent.Controller import Controller
+from Controller import Controller
 from optparse import OptionParser
 
 logger = logging.getLogger()

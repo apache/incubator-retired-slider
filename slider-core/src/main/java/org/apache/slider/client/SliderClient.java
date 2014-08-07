@@ -191,7 +191,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     Configuration clientConf = SliderUtils.loadClientConfigurationResource();
     ConfigHelper.mergeConfigurations(conf, clientConf, CLIENT_RESOURCE);
     serviceArgs.applyDefinitions(conf);
-    serviceArgs.applyFileSystemURL(conf);
+    serviceArgs.applyFileSystemBinding(conf);
     // init security with our conf
     if (SliderUtils.isHadoopClusterSecure(conf)) {
       SliderUtils.forceLogin();
@@ -339,9 +339,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
           client.createPath(zkPath, "", ZooDefs.Ids.OPEN_ACL_UNSAFE,
                             CreateMode.PERSISTENT);
           return zkPath;
-        } catch (InterruptedException e) {
-          log.warn("Unable to create zk node {}", zkPath, e);
-        } catch (KeeperException e) {
+        } catch (InterruptedException | KeeperException e) {
           log.warn("Unable to create zk node {}", zkPath, e);
         }
       }
@@ -844,8 +842,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // set the application name;
     amLauncher.setKeepContainersOverRestarts(true);
 
-    amLauncher.setMaxAppAttempts(config.getInt(KEY_AM_RESTART_LIMIT,
-                                               DEFAULT_AM_RESTART_LIMIT));
+    int maxAppAttempts = config.getInt(KEY_AM_RESTART_LIMIT, 0);
+    amLauncher.setMaxAppAttempts(maxAppAttempts);
 
     sliderFileSystem.purgeAppInstanceTempFiles(clustername);
     Path tempPath = sliderFileSystem.createAppInstanceTempPath(
@@ -1017,8 +1015,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       commandLine.add(Arguments.ARG_RM_ADDR, rmAddr);
     }
 
-    if (serviceArgs.getFilesystemURL() != null) {
-      commandLine.add(Arguments.ARG_FILESYSTEM, serviceArgs.getFilesystemURL());
+    if (serviceArgs.getFilesystemBinding() != null) {
+      commandLine.add(Arguments.ARG_FILESYSTEM, serviceArgs.getFilesystemBinding());
     }
     
     addConfOptionToCLI(commandLine, config, REGISTRY_PATH,

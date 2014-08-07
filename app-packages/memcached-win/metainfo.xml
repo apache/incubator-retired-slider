@@ -22,15 +22,21 @@
     <name>MEMCACHED</name>
     <comment>Memcache is a network accessible key/value storage system, often used as a distributed cache.</comment>
     <version>1.0.0</version>
+    <exportedConfigs>None</exportedConfigs>
 
     <components>
       <component>
         <name>MEMCACHED</name>
         <category>MASTER</category>
+        <exports>
+          <export>
+            <name>host_port</name>
+            <value>${THIS_HOST}:${site.global.listen_port}</value>
+          </export>
+        </exports>
         <commandScript>
           <script>scripts/memcached.py</script>
           <scriptType>PYTHON</scriptType>
-          <timeout>600</timeout>
         </commandScript>
       </component>
     </components>

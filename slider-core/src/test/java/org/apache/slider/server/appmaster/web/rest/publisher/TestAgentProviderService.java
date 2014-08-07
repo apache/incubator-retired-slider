@@ -16,6 +16,7 @@
  */
 package org.apache.slider.server.appmaster.web.rest.publisher;
 
+import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.slider.providers.agent.AgentProviderService;
 import org.apache.slider.server.appmaster.AMViewForProviders;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
@@ -25,12 +26,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  *
  */
-public class TestAgentProviderService extends AgentProviderService{
+public class TestAgentProviderService extends AgentProviderService {
   protected static final Logger log =
       LoggerFactory.getLogger(TestAgentProviderService.class);
 
@@ -42,15 +44,15 @@ public class TestAgentProviderService extends AgentProviderService{
   @Override
   public void bind(StateAccessForProviders stateAccessor,
       RegistryViewForProviders reg,
-      YarnRegistryViewForProviders yarnRegistry,
-      AMViewForProviders amView) {
-    super.bind(stateAccessor, reg, yarnRegistry, amView);
+      AMViewForProviders amView,
+      List<Container> liveContainers) {
+    super.bind(stateAccessor, reg, amView, liveContainers);
     Map<String,String> dummyProps = new HashMap<>();
     dummyProps.put("prop1", "val1");
     dummyProps.put("prop2", "val2");
     log.info("publishing dummy-site.xml with values {}", dummyProps);
-    publishComponentConfiguration("dummy-site", "dummy configuration",
-                                  dummyProps.entrySet());
+    publishApplicationInstanceData("dummy-site", "dummy configuration",
+                                   dummyProps.entrySet());
 
   }
 

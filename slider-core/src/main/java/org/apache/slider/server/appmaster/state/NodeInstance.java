@@ -75,7 +75,7 @@ public class NodeInstance {
   }
 
   /**
-   * Cout the number of active role instances on this node
+   * Count the number of active role instances on this node
    * @param role role index
    * @return 0 if there are none, otherwise the #of nodes that are running and
    * not being released already.
@@ -83,6 +83,16 @@ public class NodeInstance {
   public int getActiveRoleInstances(int role) {
     NodeEntry nodeEntry = get(role);
     return (nodeEntry != null ) ? nodeEntry.getActive() : 0;
+  }
+  
+  /**
+   * Count the number of live role instances on this node
+   * @param role role index
+   * @return 0 if there are none, otherwise the #of nodes that are running 
+   */
+  public int getLiveRoleInstances(int role) {
+    NodeEntry nodeEntry = get(role);
+    return (nodeEntry != null ) ? nodeEntry.getLive() : 0;
   }
 
   /**
