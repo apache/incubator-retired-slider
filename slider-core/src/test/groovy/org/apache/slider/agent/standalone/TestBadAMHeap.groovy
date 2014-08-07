@@ -45,7 +45,7 @@ class TestBadAMHeap extends AgentMiniClusterTestBase {
 
     try {
       ServiceLauncher<SliderClient> launcher =
-          createMasterlessAMWithArgs(clustername,
+          createStandaloneAMWithArgs(clustername,
               [
                   Arguments.ARG_COMP_OPT,
                   SliderKeys.COMPONENT_AM,

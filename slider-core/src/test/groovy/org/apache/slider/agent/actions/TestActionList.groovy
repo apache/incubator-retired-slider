@@ -88,7 +88,10 @@ class TestActionList extends AgentMiniClusterTestBase {
   public void testListLiveCluster() throws Throwable {
     //launch the cluster
     String clustername = createClusterName()
-    ServiceLauncher<SliderClient> launcher = createMasterlessAM(clustername, 0, true, false)
+    ServiceLauncher<SliderClient> launcher = createStandaloneAM(
+        clustername,
+        true,
+        false)
     addToTeardown(launcher)
     //do the low level operations to get a better view of what is going on 
     SliderClient sliderClient = launcher.service

@@ -133,13 +133,12 @@ extends YarnZKMiniClusterTestBase {
  * @param blockUntilRunning block until the AM is running
  * @return launcher which will have executed the command.
  */
-  public ServiceLauncher<SliderClient> createMasterlessAM(
+  public ServiceLauncher<SliderClient> createStandaloneAM(
       String clustername,
-      int size,
       boolean deleteExistingData,
       boolean blockUntilRunning) {
     List<String> args = [];
-    return createMasterlessAMWithArgs(
+    return createStandaloneAMWithArgs(
         clustername,
         args,
         deleteExistingData,
@@ -155,7 +154,7 @@ extends YarnZKMiniClusterTestBase {
  * @param blockUntilRunning block until the AM is running
  * @return launcher which will have executed the command.
  */
-  public ServiceLauncher<SliderClient> createMasterlessAMWithArgs(
+  public ServiceLauncher<SliderClient> createStandaloneAMWithArgs(
       String clustername,
       List<String> extraArgs,
       boolean deleteExistingData,

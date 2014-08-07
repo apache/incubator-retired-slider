@@ -47,9 +47,9 @@ class TestFreezeCommands extends AgentMiniClusterTestBase {
 
     describe "create a masterless AM, freeze it, try to freeze again"
 
-    ServiceLauncher<SliderClient> launcher = createMasterlessAM(
-        clustername,
-        0,
+    ServiceLauncher<SliderClient> launcher = createStandaloneAM(
+        clustername
+        ,
         true,
         true);
     addToTeardown(launcher.service);

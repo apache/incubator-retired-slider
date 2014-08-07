@@ -39,13 +39,13 @@ import org.junit.Test
 @CompileStatic
 @Slf4j
 
-class TestDestroyMasterlessAM extends AgentMiniClusterTestBase {
+class TestDestroyStandaloneAM extends AgentMiniClusterTestBase {
 
   @Test
-  public void testDestroyMasterlessAM() throws Throwable {
+  public void testDestroyStandaloneAM() throws Throwable {
     String clustername = createMiniCluster("", configuration, 1, false)
 
-    describe "create a masterless AM, stop it, try to create" +
+    describe "create a Standalone AM, stop it, try to create" +
              "a second cluster with the same name, destroy it, try a third time"
 
     ServiceLauncher<SliderClient> launcher1 = launchClientAgainstMiniMR(
@@ -59,7 +59,10 @@ class TestDestroyMasterlessAM extends AgentMiniClusterTestBase {
 
 
 
-    ServiceLauncher<SliderClient> launcher = createMasterlessAM(clustername, 0, true, true)
+    ServiceLauncher<SliderClient> launcher = createStandaloneAM(
+        clustername,
+        true,
+        true)
     SliderClient sliderClient = launcher.service
     addToTeardown(sliderClient);
 
@@ -81,7 +84,7 @@ class TestDestroyMasterlessAM extends AgentMiniClusterTestBase {
     
     //now try to create instance #2, and expect an in-use failure
     try {
-      createMasterlessAM(clustername, 0, false, false)
+      createStandaloneAM(clustername, false, false)
       fail("expected a failure, got an AM")
     } catch (SliderException e) {
       assertExceptionDetails(e,
@@ -121,7 +124,7 @@ class TestDestroyMasterlessAM extends AgentMiniClusterTestBase {
     describe "recreating $clustername"
 
     //and create a new cluster
-    launcher = createMasterlessAM(clustername, 0, false, true)
+    launcher = createStandaloneAM(clustername, false, true)
     SliderClient cluster2 = launcher.service
 
     // do an echo here of a large string

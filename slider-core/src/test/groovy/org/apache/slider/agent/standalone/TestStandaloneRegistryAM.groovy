@@ -64,7 +64,7 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     //launch fake master
     String clustername = createMiniCluster(configuration, 1, true)
     ServiceLauncher<SliderClient> launcher
-    launcher = createMasterlessAM(clustername, 0, true, false)
+    launcher = createStandaloneAM(clustername, true, false)
     SliderClient client = launcher.service
     addToTeardown(client);
 

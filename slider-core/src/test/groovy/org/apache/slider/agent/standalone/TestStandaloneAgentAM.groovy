@@ -46,7 +46,7 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     //launch fake master
     String clustername = createMiniCluster("", configuration, 1, true)
     ServiceLauncher<SliderClient> launcher =
-        createMasterlessAM(clustername, 0, true, false)
+        createStandaloneAM(clustername, true, false)
     SliderClient client = launcher.service
     addToTeardown(client);
 
@@ -123,7 +123,7 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     assert oldInstance.yarnApplicationState >= YarnApplicationState.FINISHED
 
     //create another AM
-    launcher = createMasterlessAM(clustername, 0, true, true)
+    launcher = createStandaloneAM(clustername, true, true)
     client = launcher.service
     ApplicationId i2AppID = client.applicationId
 
@@ -140,7 +140,7 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     describe("attempting to create instance #3")
     //now try to create instance #3, and expect an in-use failure
     try {
-      createMasterlessAM(clustername, 0, false, true)
+      createStandaloneAM(clustername, false, true)
       fail("expected a failure, got a masterless AM")
     } catch (SliderException e) {
       assertFailureClusterInUse(e);
