@@ -31,7 +31,7 @@ import org.apache.slider.server.avro.RoleHistoryWriter
 import org.junit.Test
 
 @Slf4j
-@CompileStatic
+//@CompileStatic
 class TestRoleHistoryRW extends BaseMockAppStateTest {
 
   static long time = System.currentTimeMillis();

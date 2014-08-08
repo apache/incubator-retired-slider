@@ -154,7 +154,7 @@ and simply in applications which are built from composite YARN services.
  then signals its owning service to stop once that runnable is completed. 
  Any exception raised in the run is stored.
  </li>
- <li>{@link org.apache.slider.server.services.workflow.AbstractWorkflowExecutorService}:
+ <li>{@link org.apache.slider.server.services.workflow.WorkflowExecutorService}:
  A base class for services that wish to have a {@link java.util.concurrent.ExecutorService}
  with a lifespan mapped to that of a service. When the service is stopped, the
  {@link java.util.concurrent.ExecutorService#shutdownNow()} method is called to

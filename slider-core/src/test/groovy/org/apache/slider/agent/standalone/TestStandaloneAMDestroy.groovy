@@ -39,7 +39,7 @@ import org.junit.Test
 @CompileStatic
 @Slf4j
 
-class TestDestroyStandaloneAM extends AgentMiniClusterTestBase {
+class TestStandaloneAMDestroy extends AgentMiniClusterTestBase {
 
   @Test
   public void testDestroyStandaloneAM() throws Throwable {
@@ -56,8 +56,6 @@ class TestDestroyStandaloneAM extends AgentMiniClusterTestBase {
             Arguments.ARG_FILESYSTEM, fsDefaultName,
         ])
     assert launcher1.serviceExitCode == 0
-
-
 
     ServiceLauncher<SliderClient> launcher = createStandaloneAM(
         clustername,
