@@ -23,8 +23,6 @@ import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
 import org.apache.slider.server.appmaster.SliderAppMaster;
 import org.apache.slider.server.appmaster.state.RoleInstance;
 
-import java.io.IOException;
-
 public class ActionStartContainer extends AsyncAction {
 
   private final Container container;
@@ -43,7 +41,7 @@ public class ActionStartContainer extends AsyncAction {
   }
 
   @Override
-  public void execute(SliderAppMaster appMaster) throws IOException {
+  public void execute(SliderAppMaster appMaster) throws Exception {
     appMaster.startContainer(container, ctx, instance);
   }
 }

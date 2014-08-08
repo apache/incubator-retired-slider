@@ -21,8 +21,6 @@ package org.apache.slider.server.appmaster.actions;
 import org.apache.hadoop.util.ExitUtil;
 import org.apache.slider.server.appmaster.SliderAppMaster;
 
-import java.io.IOException;
-
 public class ActionHalt extends AsyncAction {
 
   private final int status;
@@ -37,7 +35,7 @@ public class ActionHalt extends AsyncAction {
   }
 
   @Override
-  public void execute(SliderAppMaster appMaster) throws IOException {
+  public void execute(SliderAppMaster appMaster) throws Exception {
     ExitUtil.halt(status, text);
   }
 }

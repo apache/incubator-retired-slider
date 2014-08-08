@@ -24,8 +24,6 @@ import org.apache.slider.server.appmaster.SliderAppMaster;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-
 /**
  * Executor for async actions - hands them off to the AM as 
  * appropriate
@@ -41,7 +39,7 @@ public class QueueExecutor implements Runnable {
       QueueService actionQueues) {
     Preconditions.checkNotNull(appMaster);
     Preconditions.checkNotNull(actionQueues);
-    
+
     this.appMaster = appMaster;
     this.actionQueues = actionQueues;
   }
@@ -52,7 +50,7 @@ public class QueueExecutor implements Runnable {
     this.appMaster = null;
     this.actionQueues = actionQueues;
   }
-  
+
   /**
    * Run until the queue has been told to stop
    */
@@ -67,9 +65,11 @@ public class QueueExecutor implements Runnable {
         take.execute(appMaster);
       } while (!(take instanceof ActionStopQueue));
       log.info("Queue Executor run() stopped");
-    } catch (InterruptedException | IOException e) {
-     log.error("Exception processing {}: {}", take, e, e);
-
+    } catch (Exception e) {
+      log.error("Exception processing {}: {}", take, e, e);
+      if (appMaster != null) {
+        appMaster.onExceptionInThread(Thread.currentThread(), e);
+      }
     }
   }
 }

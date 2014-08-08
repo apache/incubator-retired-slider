@@ -20,8 +20,6 @@ package org.apache.slider.server.appmaster.actions;
 
 import org.apache.slider.server.appmaster.SliderAppMaster;
 
-import java.io.IOException;
-
 /**
  * Action to tell a queue executor to stop -after handing this on/executing it
  */
@@ -32,7 +30,7 @@ public class ActionStopQueue extends AsyncAction {
   }
 
   @Override
-  public void execute(SliderAppMaster appMaster) throws IOException {
+  public void execute(SliderAppMaster appMaster) throws Exception {
     // no-op
   }
 }

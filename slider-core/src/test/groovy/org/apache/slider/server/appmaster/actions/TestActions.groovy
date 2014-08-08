@@ -159,7 +159,7 @@ class TestActions {
     }
 
     @Override
-    public void execute(SliderAppMaster appMaster) throws IOException {
+    public void execute(SliderAppMaster appMaster) throws Exception {
       log.info("Executing $name");
       executed.set(true);
       executionTimeNanos.set(System.nanoTime())

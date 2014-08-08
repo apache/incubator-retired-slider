@@ -80,6 +80,7 @@ import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.exceptions.SliderInternalStateException;
 import org.apache.slider.core.exceptions.TriggerClusterTeardownException;
+import org.apache.slider.core.main.ExitCodeProvider;
 import org.apache.slider.core.main.LauncherExitCodes;
 import org.apache.slider.core.main.RunService;
 import org.apache.slider.core.main.ServiceLauncher;
@@ -168,9 +169,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     SliderClusterProtocol,
     ServiceStateChangeListener,
     RoleKeys,
-    ProviderCompleted,
-    ContainerStartOperation,
-    AMViewForProviders {
+    ProviderCompleted {
   protected static final Logger log =
     LoggerFactory.getLogger(SliderAppMaster.class);
 
@@ -763,9 +762,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
 
     //Give the provider restricted access to the state, registry
-    providerService.bind(stateForProviders, registry, this,
+    providerService.bind(stateForProviders, registry, actionQueues,
         liveContainers);
-    sliderAMProvider.bind(stateForProviders, registry, this,
+    sliderAMProvider.bind(stateForProviders, registry, actionQueues,
         liveContainers);
 
     // now do the registration
@@ -1219,7 +1218,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public void onError(Throwable e) {
     //callback says it's time to finish
     LOG_YARN.error("AMRMClientAsync.onError() received " + e, e);
-    signalAMComplete(EXIT_EXCEPTION_THROWN, "AMRMClientAsync.onError() received " + e);
+    signalAMComplete(EXIT_EXCEPTION_THROWN,
+        "AMRMClientAsync.onError() received " + e);
   }
   
 /* =================================================================== */
@@ -1484,18 +1484,13 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
   }
 
-
-  /* =================================================================== */
-  /* ProviderAMOperations */
-  /* =================================================================== */
-
   /**
    * report container loss. If this isn't already known about, react
    *
    * @param containerId       id of the container which has failed
    * @throws SliderException
    */
-  public synchronized ContainerLossReportOutcomes providerLostContainer(
+  public synchronized void providerLostContainer(
       ContainerId containerId)
       throws SliderException {
     log.info("containerLostContactWithProvider: container {} lost",
@@ -1506,10 +1501,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       // ask for more containers if needed
       log.info("Container released; triggering review");
       reviewRequestAndReleaseNodes();
-      return ContainerLossReportOutcomes.CONTAINER_LOST_REVIEW_INITIATED;
     } else {
       log.info("Container not in active set - ignoring");
-      return ContainerLossReportOutcomes.CONTAINER_NOT_IN_USE;
     }
   }
 
@@ -1570,7 +1563,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * @param ctx context
    * @param instance node details
    */
-  @Override // ContainerStartOperation
   public void startContainer(Container container,
                              ContainerLaunchContext ctx,
                              RoleInstance instance) {
@@ -1676,6 +1668,22 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     actionQueues.delayedActions.add(action);
   }
 
+
+  /**
+   * Handle any exception in a thread. If the exception provides an exit
+   * code, that is the one that will be used
+   * @param thread thread throwing the exception
+   * @param exception exception
+   */
+  public void onExceptionInThread(Thread thread, Exception exception) {
+    log.error("Exception in {}: {}", thread.getName(), exception, exception);
+    int exitCode = EXIT_EXCEPTION_THROWN;
+    if (exception instanceof ExitCodeProvider) {
+      exitCode = ((ExitCodeProvider) exception).getExitCode();
+    }
+    signalAMComplete(exitCode, exception.toString());
+  }
+  
   /**
    * This is the main entry point for the service launcher.
    * @param args command line arguments.
@@ -1691,4 +1699,5 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     //now have the service launcher do its work
     ServiceLauncher.serviceMain(extendedArgs);
   }
+
 }

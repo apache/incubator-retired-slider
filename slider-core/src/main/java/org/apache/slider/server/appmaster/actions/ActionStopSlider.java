@@ -21,8 +21,6 @@ package org.apache.slider.server.appmaster.actions;
 import org.apache.slider.core.main.LauncherExitCodes;
 import org.apache.slider.server.appmaster.SliderAppMaster;
 
-import java.io.IOException;
-
 public class ActionStopSlider extends AsyncAction {
   public ActionStopSlider(String message,
       int delay) {
@@ -30,7 +28,7 @@ public class ActionStopSlider extends AsyncAction {
   }
 
   @Override
-  public void execute(SliderAppMaster appMaster) throws IOException {
+  public void execute(SliderAppMaster appMaster) throws Exception {
     String message = name;
     SliderAppMaster.getLog().info("SliderAppMasterApi.stopCluster: {}",
         message);

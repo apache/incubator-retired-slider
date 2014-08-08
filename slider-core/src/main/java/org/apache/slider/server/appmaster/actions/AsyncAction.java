@@ -112,7 +112,7 @@ public abstract class AsyncAction implements Delayed {
    * @param appMaster
    * @throws IOException
    */
-  public abstract void execute(SliderAppMaster appMaster) throws IOException;
+  public abstract void execute(SliderAppMaster appMaster) throws Exception;
 
   public enum ActionAttributes {
     SHRINKS_CLUSTER,
