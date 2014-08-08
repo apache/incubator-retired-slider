@@ -28,7 +28,7 @@ import java.util.concurrent.DelayQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 
 public class QueueService extends AbstractService
-    implements Runnable {
+    implements Runnable, QueueAccess {
   private static final Logger log =
       LoggerFactory.getLogger(QueueService.class);
 
@@ -41,11 +41,13 @@ public class QueueService extends AbstractService
     super("action queue");
   }
 
+  @Override
   public void put(AsyncAction action) {
     log.debug("Queueing {}", action);
     actionQueue.add(action);
   }
 
+  @Override
   public void putDelayed(AsyncAction action) {
     log.debug("Delayed Queueing {}", action);
     delayedActions.add(action);

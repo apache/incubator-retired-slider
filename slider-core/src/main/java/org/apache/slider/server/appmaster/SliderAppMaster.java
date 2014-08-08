@@ -750,8 +750,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     fs.getFileSystem().mkdirs(launcherTmpDirPath);
     
     //launcher service
-    launchService = new RoleLaunchService(this,
-                                          actionQueues.actionQueue,
+    launchService = new RoleLaunchService(actionQueues,
                                           providerService,
                                           fs,
                                           new Path(getGeneratedConfDir()),

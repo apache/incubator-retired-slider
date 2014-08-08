@@ -30,6 +30,7 @@ import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderService;
 import org.apache.slider.server.appmaster.actions.ActionStartContainer;
 import org.apache.slider.server.appmaster.actions.AsyncAction;
+import org.apache.slider.server.appmaster.actions.QueueAccess;
 import org.apache.slider.server.appmaster.state.RoleInstance;
 import org.apache.slider.server.appmaster.state.RoleStatus;
 import org.apache.slider.server.services.workflow.WorkflowExecutorService;
@@ -52,13 +53,11 @@ public class RoleLaunchService
 
   public static final String ROLE_LAUNCH_SERVICE = "RoleLaunchService";
 
-  /**
-   * Callback to whatever has the task of actually running the container
-   * start operation
-   */
-  private final ContainerStartOperation containerStarter;
 
-  private final Queue<AsyncAction> actionQueue;
+  /**
+   * Queue submission API
+   */
+  private final QueueAccess actionQueue;
 
   /**
    * Provider bulding up the command
@@ -93,15 +92,14 @@ public class RoleLaunchService
    * @param envVars environment variables
    * @param launcherTmpDirPath path for a temporary data in the launch process
    */
-  public RoleLaunchService(ContainerStartOperation startOperation,
-      Queue<AsyncAction> actionQueue, ProviderService provider,
+  public RoleLaunchService(QueueAccess queueAccess,
+      ProviderService provider,
       SliderFileSystem fs,
       Path generatedConfDirPath,
       Map<String, String> envVars,
       Path launcherTmpDirPath) {
     super(ROLE_LAUNCH_SERVICE);
-    containerStarter = startOperation;
-    this.actionQueue = actionQueue;
+    this.actionQueue = queueAccess;
     this.fs = fs;
     this.generatedConfDirPath = generatedConfDirPath;
     this.launcherTmpDirPath = launcherTmpDirPath;
@@ -216,7 +214,7 @@ public class RoleLaunchService
         instance.role = containerRole;
         instance.roleId = role.id;
         instance.environment = envDescription;
-        actionQueue.add(new ActionStartContainer("starting " + containerRole,
+        actionQueue.put(new ActionStartContainer("starting " + containerRole,
             0, container,
             containerLauncher.completeContainerLaunch(),
             instance));
