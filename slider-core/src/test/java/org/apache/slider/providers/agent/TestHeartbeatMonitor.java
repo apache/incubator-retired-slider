@@ -17,7 +17,6 @@
 package org.apache.slider.providers.agent;
 
 import org.apache.hadoop.yarn.api.records.ContainerId;
-import org.apache.slider.server.appmaster.AMViewForProviders;
 import org.apache.slider.server.appmaster.model.mock.MockContainerId;
 import org.junit.Assert;
 import org.junit.Test;
@@ -98,11 +97,6 @@ public class TestHeartbeatMonitor {
     slaveState.setState(State.STARTED);
     slaveState.heartbeat(now);
     expect(provider.getComponentStatuses()).andReturn(statuses).anyTimes();
-    expect(provider.lostContainer(slaveLabel, slaveContainer)).andReturn(
-        AMViewForProviders.ContainerLossReportOutcomes.CONTAINER_LOST_REVIEW_INITIATED).once();
-    // expect the second iteration to report no container any more
-    expect(provider.lostContainer(slaveLabel, slaveContainer)).andReturn(
-        AMViewForProviders.ContainerLossReportOutcomes.CONTAINER_NOT_IN_USE).once();
     replay(provider);
 
 

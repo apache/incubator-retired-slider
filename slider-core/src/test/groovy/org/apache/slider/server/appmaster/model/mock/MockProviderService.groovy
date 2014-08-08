@@ -35,7 +35,7 @@ import org.apache.slider.core.launch.ContainerLauncher
 import org.apache.slider.core.registry.info.ServiceInstanceData
 import org.apache.slider.providers.ProviderRole
 import org.apache.slider.providers.ProviderService
-import org.apache.slider.server.appmaster.AMViewForProviders
+import org.apache.slider.server.appmaster.actions.QueueAccess
 import org.apache.slider.server.appmaster.state.ContainerReleaseSelector
 import org.apache.slider.server.appmaster.state.MostRecentContainerReleaseSelector
 import org.apache.slider.server.appmaster.state.StateAccessForProviders
@@ -202,7 +202,7 @@ class MockProviderService implements ProviderService {
   void bind(
       StateAccessForProviders stateAccessor,
       RegistryViewForProviders registry,
-      AMViewForProviders amView,
+      QueueAccess queueAccess,
       List<Container> liveContainers) {
 
   }

@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -65,8 +66,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * it calls its {@link #stop()} method. If the error code was non-zero, 
  * the service is logged as having failed.
  */
-public class ForkedProcessService extends AbstractWorkflowExecutorService implements
-    LongLivedProcessLifecycleEvent, Runnable {
+public class ForkedProcessService
+    extends WorkflowExecutorService<ExecutorService>
+    implements LongLivedProcessLifecycleEvent, Runnable {
 
   /**
    * Log for the forked master process

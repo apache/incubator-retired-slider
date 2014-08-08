@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
  * started in this service's <code>start()</code> operation.
  */
 public class WorkflowCallbackService<V> extends
-    AbstractWorkflowExecutorService {
+    WorkflowScheduledExecutorService<ScheduledExecutorService> {
   protected static final Logger LOG =
     LoggerFactory.getLogger(WorkflowCallbackService.class);
   private final Callable<V> callback;
@@ -47,7 +47,6 @@ public class WorkflowCallbackService<V> extends
    */
   private Callable<V> callable;
   private ScheduledFuture<V> scheduledFuture;
-
 
   /**
    * Create an instance of the service

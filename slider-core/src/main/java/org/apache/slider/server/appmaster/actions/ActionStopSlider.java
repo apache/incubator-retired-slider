@@ -16,25 +16,24 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster;
+package org.apache.slider.server.appmaster.actions;
 
-import org.apache.hadoop.yarn.api.records.Container;
-import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
-import org.apache.slider.server.appmaster.state.RoleInstance;
+import org.apache.slider.core.main.LauncherExitCodes;
+import org.apache.slider.server.appmaster.SliderAppMaster;
 
-/**
- * Callback for container start requests
- */
-public interface ContainerStartOperation {
-  /**
-   * Add a node to the list of starting
-   * nodes then trigger the NM start operation with the given
-   * launch context
-   * @param container container
-   * @param ctx context
-   * @param instance node details
-   */
-  void startContainer(Container container,
-                      ContainerLaunchContext ctx,
-                      RoleInstance instance) ;
+public class ActionStopSlider extends AsyncAction {
+  public ActionStopSlider(String message,
+      int delay) {
+    super(message, delay, ActionAttributes.HALTS_CLUSTER);
+  }
+
+  @Override
+  public void execute(SliderAppMaster appMaster) throws Exception {
+    String message = name;
+    SliderAppMaster.getLog().info("SliderAppMasterApi.stopCluster: {}",
+        message);
+    appMaster.signalAMComplete(
+        LauncherExitCodes.EXIT_CLIENT_INITIATED_SHUTDOWN,
+        message);
+  }
 }
