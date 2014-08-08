@@ -103,8 +103,8 @@ class TestActions {
   @Test
   public void testImmediateQueue() throws Throwable {
     ActionNoteExecuted noteExecuted = new ActionNoteExecuted("executed", 0)
-    queues.putImmediately(noteExecuted)
-    queues.putImmediately(new ActionStopQueue(0))
+    queues.put(noteExecuted)
+    queues.put(new ActionStopQueue(0))
     QueueExecutor ex = new QueueExecutor(queues)
     ex.run();
     assert queues.actionQueue.empty
@@ -120,9 +120,9 @@ class TestActions {
 
     List<AsyncAction> actions = [note1, stop, note2]
     Collections.sort(actions)
-    assert actions.get(0) == note1
-    assert actions.get(1) == note2
-    assert actions.get(3) == stop
+    assert actions[0] == note1
+    assert actions[1] == note2
+    assert actions[2] == stop
   }
   
   @Test
@@ -136,8 +136,8 @@ class TestActions {
     assert note1.nanos < note2.nanos
     assert note2.nanos < stop.nanos
     queues.putDelayed(note1)
-    queues.putDelayed(stop)
     queues.putDelayed(note2)
+    queues.putDelayed(stop)
     // async to sync expected to run in order
     queues.run();
     assert queues.delayedActions.empty

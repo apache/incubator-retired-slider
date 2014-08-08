@@ -41,11 +41,13 @@ public class QueueService extends AbstractService
     super("action queue");
   }
 
-  public void putImmediately(AsyncAction action) {
+  public void put(AsyncAction action) {
+    log.debug("Queueing {}", action);
     actionQueue.add(action);
   }
 
   public void putDelayed(AsyncAction action) {
+    log.debug("Delayed Queueing {}", action);
     delayedActions.add(action);
   }
 
@@ -56,13 +58,15 @@ public class QueueService extends AbstractService
   public void run() {
     try {
 
-      log.info("ActionExecutor Queue terminated");
+      log.info("QueueService processor started");
 
       AsyncAction take;
       do {
         take = delayedActions.take();
-        actionQueue.push(take);
+        log.debug("Propagating {}", take);
+        actionQueue.put(take);
       } while (!(take instanceof ActionStopQueue));
+      log.info("QueueService processor terminated");
     } catch (InterruptedException e) {
       //game over
     }
