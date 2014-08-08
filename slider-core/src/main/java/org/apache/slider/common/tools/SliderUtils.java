@@ -1073,7 +1073,7 @@ public final class SliderUtils {
       UserGroupInformation currentUser = UserGroupInformation.getCurrentUser();
       return currentUser;
     } catch (IOException e) {
-      log.info("Failed to grt user info", e);
+      log.info("Failed to get user info", e);
       throw e;
     }
   }
@@ -1414,6 +1414,21 @@ public final class SliderUtils {
     }
   }
 
+  /**
+   * A compareTo function that converts the result of a long
+   * comparision into the integer that <code>Comparable</code>
+   * expects.
+   * @param left left side
+   * @param right right side
+   * @return -1, 0, 1 depending on the diff
+   */
+  public static int compareTo(long left, long right) {
+    long diff = left - right;
+    if (diff < 0) return -1;
+    if (diff > 0) return 1;
+    return 0;
+  }
+  
   /**
    * This wrapps ApplicationReports and generates a string version
    * iff the toString() operator is invoked

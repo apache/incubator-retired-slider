@@ -21,11 +21,10 @@ package org.apache.slider.agent.standalone
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.ApplicationReport
-import org.apache.hadoop.yarn.conf.YarnConfiguration
+import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderXmlConfKeys
-import org.apache.slider.common.params.ActionAMSuicideArgs
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.core.main.ServiceLauncher
 import org.junit.Test
@@ -37,59 +36,37 @@ import org.junit.Test
 @CompileStatic
 @Slf4j
 
-class TestRestartStandaloneAM extends AgentMiniClusterTestBase {
+class TestStandaloneAMKill extends AgentMiniClusterTestBase {
 
 
   @Test
-  public void testRestartStandaloneAM() throws Throwable {
-    describe "kill a Standalone AM and verify that it restarts"
-    // patch the configuration for AM restart
-    YarnConfiguration conf = getRestartableConfiguration(5)
+  public void testKillStandaloneAM() throws Throwable {
+    String clustername = createMiniCluster("", configuration, 1, true)
 
-    String clustername = createMiniCluster("", conf, 1, true)
+    describe "kill a Standalone AM and verify that it shuts down"
     ServiceLauncher<SliderClient> launcher =
         createStandaloneAMWithArgs(clustername,
-            [
-                Arguments.ARG_OPTION, SliderXmlConfKeys.KEY_AM_RESTART_LIMIT, "4"
-            ],
-            true,
-            false)
+          [
+              Arguments.ARG_OPTION, SliderXmlConfKeys.KEY_AM_RESTART_LIMIT, "1"
+          ],
+          true,
+          false)
     SliderClient sliderClient = launcher.service
     addToTeardown(sliderClient);
-
     ApplicationReport report = waitForClusterLive(sliderClient)
-    logReport(report)
-    waitUntilClusterLive(sliderClient, 30000)
 
-
-    ActionAMSuicideArgs args = new ActionAMSuicideArgs()
-    args.message = "test AM iteration"
-    args.waittime = 100
-    args.exitcode = 1
-    sliderClient.actionAmSuicide(clustername, args)
+    describe("listing Java processes")
+    lsJavaProcesses();
+    describe("killing AM")
+    killAM(SIGTERM);
     waitWhileClusterLive(sliderClient);
     //give yarn some time to notice
-    sleep(20000)
-    waitUntilClusterLive(sliderClient, 40000)
-
-
-    // app should be running here
-    assert 0 == sliderClient.actionExists(clustername, true)
-    
-    
+    sleep(10000)
+    describe("final listing")
+    lsJavaProcesses();
+    report = sliderClient.applicationReport
+    assert YarnApplicationState.FAILED == report.yarnApplicationState;
     clusterActionFreeze(sliderClient, clustername)
-  }
-
-  /**
-   * Get a restartable configuration
-   * @param restarts
-   * @return
-   */
-  public YarnConfiguration getRestartableConfiguration(int restarts) {
-    def conf = new YarnConfiguration(configuration)
-    conf.setInt(YarnConfiguration.RM_AM_MAX_ATTEMPTS, restarts)
-    conf.setInt(SliderXmlConfKeys.KEY_AM_RESTART_LIMIT, restarts)
-    conf
   }
 
 

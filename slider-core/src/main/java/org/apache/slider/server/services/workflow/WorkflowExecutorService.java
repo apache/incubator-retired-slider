@@ -18,6 +18,7 @@
 
 package org.apache.slider.server.services.workflow;
 
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.service.AbstractService;
 
 import java.util.concurrent.Callable;
@@ -28,16 +29,16 @@ import java.util.concurrent.Future;
  * A service that hosts an executor -when the service is stopped,
  * {@link ExecutorService#shutdownNow()} is invoked.
  */
-public abstract class AbstractWorkflowExecutorService extends AbstractService {
+public class WorkflowExecutorService<E extends ExecutorService> extends AbstractService {
 
-  private ExecutorService executor;
+  private E executor;
 
   /**
    * Construct an instance with the given name -but
    * no executor
    * @param name service name
    */
-  public AbstractWorkflowExecutorService(String name) {
+  public WorkflowExecutorService(String name) {
     this(name, null);
   }
 
@@ -46,8 +47,8 @@ public abstract class AbstractWorkflowExecutorService extends AbstractService {
    * @param name service name
    * @param executor exectuor
    */
-  protected AbstractWorkflowExecutorService(String name,
-      ExecutorService executor) {
+  public WorkflowExecutorService(String name,
+      E executor) {
     super(name);
     this.executor = executor;
   }
@@ -56,16 +57,17 @@ public abstract class AbstractWorkflowExecutorService extends AbstractService {
    * Get the executor
    * @return the executor
    */
-  public synchronized ExecutorService getExecutor() {
+  public synchronized E getExecutor() {
     return executor;
   }
 
   /**
-   * Set the executor. This is protected as it
-   * is intended to be restricted to subclasses
+   * Set the executor. Only valid if the current one is null
    * @param executor executor
    */
-  protected synchronized void setExecutor(ExecutorService executor) {
+  public synchronized void setExecutor(E executor) {
+    Preconditions.checkState(this.executor == null,
+        "Executor already set");
     this.executor = executor;
   }
 
@@ -87,6 +89,7 @@ public abstract class AbstractWorkflowExecutorService extends AbstractService {
   public <V> Future<V> submit(Callable<V> callable) {
     return getExecutor().submit(callable);
   }
+
   /**
    * Stop the service: halt the executor. 
    * @throws Exception exception.
