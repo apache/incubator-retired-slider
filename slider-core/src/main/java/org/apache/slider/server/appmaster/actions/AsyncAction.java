@@ -43,6 +43,13 @@ public abstract class AsyncAction implements Delayed {
   }
 
   protected AsyncAction(String name,
+      int delayMillis) {
+    this.name = name;
+    this.nanos = convertAndOffset(delayMillis);
+    attrs = EnumSet.noneOf(ActionAttributes.class);
+  }
+
+  protected AsyncAction(String name,
       int delayMillis, EnumSet<ActionAttributes> attrs) {
     this.name = name;
     this.nanos = convertAndOffset(delayMillis);
@@ -54,13 +61,6 @@ public abstract class AsyncAction implements Delayed {
       ActionAttributes... attributes) {
     this(name, delayMillis);
     Collections.addAll(attrs, attributes);
-  }
-
-  protected AsyncAction(String name,
-      int delayMillis) {
-    this.name = name;
-    this.nanos = convertAndOffset(delayMillis);
-    attrs = EnumSet.noneOf(ActionAttributes.class);
   }
 
   private long convertAndOffset(int delay) {
