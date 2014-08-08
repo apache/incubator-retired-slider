@@ -201,6 +201,11 @@ public class HBaseProviderService extends AbstractProviderService implements
 
         logfile = "/thrift-gateway.txt";
         break;
+      case ROLE_THRIFT2_GATEWAY:
+        roleCommand = THRIFT2_GATEWAY;
+
+        logfile = "/thrift2-gateway.txt";
+        break;
       default:
         throw new SliderInternalStateException("Cannot start role %s", role);
     }

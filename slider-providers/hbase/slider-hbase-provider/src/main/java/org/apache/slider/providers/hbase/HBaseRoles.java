@@ -41,6 +41,7 @@ public class HBaseRoles {
 
   public static final int KEY_THRIFT_GATEWAY = SliderKeys.ROLE_AM_PRIORITY_INDEX + 4;
 
+  public static final int KEY_THRIFT2_GATEWAY = SliderKeys.ROLE_AM_PRIORITY_INDEX + 5;
   /**
    * Initialize role list
    */
@@ -49,6 +50,7 @@ public class HBaseRoles {
     ROLES.add(new ProviderRole(HBaseKeys.ROLE_MASTER, KEY_MASTER));
     ROLES.add(new ProviderRole(HBaseKeys.ROLE_REST_GATEWAY, KEY_REST_GATEWAY));
     ROLES.add(new ProviderRole(HBaseKeys.ROLE_THRIFT_GATEWAY, KEY_THRIFT_GATEWAY));
+    ROLES.add(new ProviderRole(HBaseKeys.ROLE_THRIFT_GATEWAY, KEY_THRIFT2_GATEWAY));
   }
 
 

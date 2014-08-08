@@ -59,6 +59,7 @@ ganglia_server_port = default('/configurations/global/ganglia_server_port', '866
 
 rest_port = config['configurations']['global']['hbase_rest_port']
 thrift_port = config['configurations']['global']['hbase_thrift_port']
+thrift2_port = config['configurations']['global']['hbase_thrift2_port']
 
 if security_enabled:
   

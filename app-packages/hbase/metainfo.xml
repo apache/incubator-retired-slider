@@ -45,6 +45,10 @@
             <value>http://${HBASE_REST_HOST}:${site.global.hbase_rest_port}</value>
           </export>
           <export>
+            <name>org.apache.slider.hbase.thrift2</name>
+            <value>http://${HBASE_THRIFT2_HOST}:${site.global.hbase_thrift2_port}</value>
+          </export>
+          <export>
             <name>org.apache.slider.hbase.thrift</name>
             <value>http://${HBASE_THRIFT_HOST}:${site.global.hbase_thrift_port}</value>
           </export>
@@ -68,6 +72,7 @@
         <command>HBASE_MASTER-START</command>
         <requires>HBASE_REST-INSTALLED</requires>
         <requires>HBASE_THRIFT-INSTALLED</requires>
+        <requires>HBASE_THRIFT2-INSTALLED</requires>
       </commandOrder>
     </commandOrders>
     <components>
@@ -109,6 +114,16 @@
         <minInstanceCount>1</minInstanceCount>
         <commandScript>
           <script>scripts/hbase_thrift.py</script>
+          <scriptType>PYTHON</scriptType>
+        </commandScript>
+      </component>
+
+      <component>
+        <name>HBASE_THRIFT2</name>
+        <category>SLAVE</category>
+        <minInstanceCount>1</minInstanceCount>
+        <commandScript>
+          <script>scripts/hbase_thrift2.py</script>
           <scriptType>PYTHON</scriptType>
         </commandScript>
       </component>

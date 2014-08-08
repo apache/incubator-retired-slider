@@ -30,6 +30,8 @@ public interface HBaseKeys {
   
   String ROLE_THRIFT_GATEWAY = "THRIFT";
   
+  String ROLE_THRIFT2_GATEWAY = "THRIFT2";
+  
   /** {@value */
   String REGION_SERVER = "regionserver";
 
@@ -38,6 +40,9 @@ public interface HBaseKeys {
 
   /** {@value */
   String THRIFT_GATEWAY = "thrift";
+  /** {@value */
+  String THRIFT2_GATEWAY = "thrift2";
+  /**
   /**
    * What is the command for hbase to print a version: {@value}
    */
