@@ -1620,6 +1620,8 @@ public class AppState {
       Container possible = instance.container;
       ContainerId id = possible.getId();
       if (!instance.released) {
+        String url = getLogsURLForContainer(possible);
+        log.info("Releasing container. Log: " + url);
         try {
           containerReleaseSubmitted(possible);
         } catch (SliderInternalStateException e) {
