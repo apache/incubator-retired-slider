@@ -28,7 +28,7 @@ public class ActionStopSlider extends AsyncAction {
   }
 
   @Override
-  public void execute(SliderAppMaster appMaster) throws Exception {
+  public void execute(SliderAppMaster appMaster, QueueAccess queueService) throws Exception {
     String message = name;
     SliderAppMaster.getLog().info("SliderAppMasterApi.stopCluster: {}",
         message);

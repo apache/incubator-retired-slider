@@ -139,27 +139,52 @@ class TestActions {
     queues.putDelayed(note2)
     queues.putDelayed(stop)
     // async to sync expected to run in order
+    runQueuesToCompletion()
+    assert note1.executed.get()
+    assert note2.executed.get()
+  }
+
+  public void runQueuesToCompletion() {
     queues.run();
     assert queues.delayedActions.empty
     assert !queues.actionQueue.empty
     QueueExecutor ex = new QueueExecutor(queues)
     ex.run();
     assert queues.actionQueue.empty
-    assert note1.executed.get()
-    assert note2.executed.get()
+  }
+
+  @Test
+  public void testRenewedActionFiresOnceAtLeast() throws Throwable {
+    ActionNoteExecuted note1 = new ActionNoteExecuted("note1", 500)
+    RenewingAction renewer = new RenewingAction(
+        note1,
+        500,
+        100,
+        TimeUnit.MILLISECONDS,
+        3)
+    queues.putDelayed(renewer);
+    def stop = new ActionStopQueue(4, TimeUnit.SECONDS)
+    queues.putDelayed(stop);
+    // this runs all the delayed actions FIRST, so can't be used
+    // to play tricks of renewing actions ahead of the stop action
+    runQueuesToCompletion()
+    assert renewer.executionCount == 1
+    assert note1.executionCount == 1
+    // assert the renewed item is back in
+    assert queues.delayedActions.contains(renewer)
   }
 
   public class ActionNoteExecuted extends AsyncAction {
     public final AtomicBoolean executed = new AtomicBoolean(false);
     public final AtomicLong executionTimeNanos = new AtomicLong()
-    public final AtomicLong executionCount = new AtomicLong()
+    private final AtomicLong executionCount = new AtomicLong()
 
     public ActionNoteExecuted(String text, int delay) {
       super(text, delay);
     }
 
     @Override
-    public void execute(SliderAppMaster appMaster) throws Exception {
+    public void execute(SliderAppMaster appMaster, QueueAccess queueService) throws Exception {
       log.info("Executing $name");
       executed.set(true);
       executionTimeNanos.set(System.nanoTime())
@@ -175,6 +200,8 @@ class TestActions {
              " executed=${executed.get()}; count=${executionCount.get()};"
     }
 
-
+    long getExecutionCount() {
+      return executionCount.get()
+    }
   }
 }

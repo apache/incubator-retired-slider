@@ -23,6 +23,10 @@ import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
 import org.apache.slider.server.appmaster.SliderAppMaster;
 import org.apache.slider.server.appmaster.state.RoleInstance;
 
+/**
+ * Start a container
+ * @see SliderAppMaster#startContainer(Container, ContainerLaunchContext, RoleInstance) 
+ */
 public class ActionStartContainer extends AsyncAction {
 
   private final Container container;
@@ -41,7 +45,7 @@ public class ActionStartContainer extends AsyncAction {
   }
 
   @Override
-  public void execute(SliderAppMaster appMaster) throws Exception {
+  public void execute(SliderAppMaster appMaster, QueueAccess queueService) throws Exception {
     appMaster.startContainer(container, ctx, instance);
   }
 }

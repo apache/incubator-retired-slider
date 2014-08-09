@@ -33,7 +33,7 @@ public abstract class AsyncAction implements Delayed {
   private static final AtomicLong sequencer = new AtomicLong(0);
 
   public final String name;
-  public final long nanos;
+  private long nanos;
   private final EnumSet<ActionAttributes> attrs;
   private final long sequenceNumber = sequencer.incrementAndGet();
 
@@ -44,36 +44,55 @@ public abstract class AsyncAction implements Delayed {
 
   protected AsyncAction(String name,
       int delayMillis) {
+    this(name, delayMillis, TimeUnit.MILLISECONDS);
+  }
+
+  protected AsyncAction(String name,
+      int delay,
+      TimeUnit timeUnit) {
     this.name = name;
-    this.nanos = convertAndOffset(delayMillis);
+    this.setNanos(convertAndOffset(delay, timeUnit));
     attrs = EnumSet.noneOf(ActionAttributes.class);
   }
 
   protected AsyncAction(String name,
-      int delayMillis, EnumSet<ActionAttributes> attrs) {
+      int delay,
+      TimeUnit timeUnit,
+      EnumSet<ActionAttributes> attrs) {
     this.name = name;
-    this.nanos = convertAndOffset(delayMillis);
+    this.setNanos(convertAndOffset(delay, timeUnit));
     this.attrs = attrs;
   }
 
   protected AsyncAction(String name,
-      int delayMillis,
+      int delay,
+      TimeUnit timeUnit,
       ActionAttributes... attributes) {
-    this(name, delayMillis);
+    this(name, delay, timeUnit);
     Collections.addAll(attrs, attributes);
   }
-
-  private long convertAndOffset(int delay) {
-    return now() + TimeUnit.NANOSECONDS.convert(delay, TimeUnit.MILLISECONDS);
+  
+  protected AsyncAction(String name,
+      int delayMillis,
+      ActionAttributes... attributes) {
+    this(name, delayMillis, TimeUnit.MILLISECONDS);
   }
 
+  protected long convertAndOffset(int delay, TimeUnit timeUnit) {
+    return now() + TimeUnit.NANOSECONDS.convert(delay, timeUnit);
+  }
+
+  /**
+   * The current time in nanos
+   * @return now
+   */
   protected long now() {
     return System.nanoTime();
   }
 
   @Override
   public long getDelay(TimeUnit unit) {
-    return unit.convert(nanos - now(), TimeUnit.NANOSECONDS);
+    return unit.convert(getNanos() - now(), TimeUnit.NANOSECONDS);
   }
 
   @Override
@@ -91,11 +110,15 @@ public abstract class AsyncAction implements Delayed {
     final StringBuilder sb =
         new StringBuilder(super.toString());
     sb.append(" name='").append(name).append('\'');
-    sb.append(", nanos=").append(nanos);
+    sb.append(", nanos=").append(getNanos());
     sb.append(", attrs=").append(attrs);
     sb.append(", sequenceNumber=").append(sequenceNumber);
     sb.append('}');
     return sb.toString();
+  }
+
+  protected EnumSet<ActionAttributes> getAttrs() {
+    return attrs;
   }
 
   /**
@@ -110,9 +133,19 @@ public abstract class AsyncAction implements Delayed {
   /**
    * Actual application
    * @param appMaster
+   * @param queueService
    * @throws IOException
    */
-  public abstract void execute(SliderAppMaster appMaster) throws Exception;
+  public abstract void execute(SliderAppMaster appMaster,
+      QueueAccess queueService) throws Exception;
+
+  public long getNanos() {
+    return nanos;
+  }
+
+  public void setNanos(long nanos) {
+    this.nanos = nanos;
+  }
 
   public enum ActionAttributes {
     SHRINKS_CLUSTER,

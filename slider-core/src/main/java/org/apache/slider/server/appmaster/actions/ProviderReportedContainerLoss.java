@@ -41,7 +41,7 @@ public class ProviderReportedContainerLoss extends AsyncAction {
   }
 
   @Override
-  public void execute(SliderAppMaster appMaster) throws Exception {
+  public void execute(SliderAppMaster appMaster, QueueAccess queueService) throws Exception {
     appMaster.providerLostContainer(containerId);
   }
 }

@@ -18,6 +18,9 @@
 
 package org.apache.slider.server.appmaster.actions;
 
+/**
+ * Access for queue operations
+ */
 public interface QueueAccess {
   /**
    * Put an action on the immediate queue -to be executed when the queue

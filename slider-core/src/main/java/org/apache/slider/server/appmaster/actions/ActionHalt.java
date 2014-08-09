@@ -21,6 +21,10 @@ package org.apache.slider.server.appmaster.actions;
 import org.apache.hadoop.util.ExitUtil;
 import org.apache.slider.server.appmaster.SliderAppMaster;
 
+/**
+ * Exit a JVM halt.
+ * @see ExitUtil#halt(int, String) 
+ */
 public class ActionHalt extends AsyncAction {
 
   private final int status;
@@ -28,14 +32,15 @@ public class ActionHalt extends AsyncAction {
 
   public ActionHalt(
       int status,
-      String text, int delay) {
+      String text,
+      int delay) {
     super("Halt", delay, ActionAttributes.HALTS_CLUSTER);
     this.status = status;
     this.text = text;
   }
 
   @Override
-  public void execute(SliderAppMaster appMaster) throws Exception {
+  public void execute(SliderAppMaster appMaster, QueueAccess queueService) throws Exception {
     ExitUtil.halt(status, text);
   }
 }

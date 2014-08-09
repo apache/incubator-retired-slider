@@ -62,7 +62,7 @@ public class QueueExecutor implements Runnable {
       do {
         take = actionQueues.actionQueue.take();
         log.debug("Executing {}", take);
-        take.execute(appMaster);
+        take.execute(appMaster, actionQueues);
       } while (!(take instanceof ActionStopQueue));
       log.info("Queue Executor run() stopped");
     } catch (Exception e) {

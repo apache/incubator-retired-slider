@@ -20,6 +20,8 @@ package org.apache.slider.server.appmaster.actions;
 
 import org.apache.slider.server.appmaster.SliderAppMaster;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Action to tell a queue executor to stop -after handing this on/executing it
  */
@@ -29,8 +31,13 @@ public class ActionStopQueue extends AsyncAction {
     super("stop queue", delay);
   }
 
+  public ActionStopQueue(int delay,
+      TimeUnit timeUnit) {
+    super("stop queue", delay, timeUnit);
+  }
+
   @Override
-  public void execute(SliderAppMaster appMaster) throws Exception {
+  public void execute(SliderAppMaster appMaster, QueueAccess queueService) throws Exception {
     // no-op
   }
 }
