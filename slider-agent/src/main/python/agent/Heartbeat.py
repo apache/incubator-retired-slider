@@ -36,7 +36,8 @@ class Heartbeat:
     self.config = config
     self.reports = []
 
-  def build(self, commandResult, id='-1', componentsMapped=False):
+  def build(self, commandResult, componentActualState, id='-1',
+            componentsMapped=False):
     timestamp = int(time.time() * 1000)
     queueResult = self.actionQueue.result()
     logger.info("Queue result: " + pformat(queueResult))
@@ -48,7 +49,8 @@ class Heartbeat:
                  'timestamp': timestamp,
                  'hostname': self.config.getLabel(),
                  'nodeStatus': nodeStatus,
-                 'fqdn': hostname.public_hostname()
+                 'fqdn': hostname.public_hostname(),
+                 'agentState': componentActualState
     }
 
     commandsInProgress = False

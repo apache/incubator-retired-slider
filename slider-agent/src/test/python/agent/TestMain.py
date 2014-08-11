@@ -260,13 +260,15 @@ class TestMain(unittest.TestCase):
     self.assertTrue(start_mock.called)
 
   class AgentOptions:
-      def __init__(self, label, host, port, secured_port, verbose, debug):
+      def __init__(self, label, host, port, secured_port, zk_quorum, zk_reg_path, verbose, debug):
           self.label = label
           self.host = host
           self.port = port
           self.secured_port = secured_port
           self.verbose = verbose
           self.debug = debug
+          self.zk_quorum = zk_quorum
+          self.zk_reg_path = zk_reg_path
 
   @patch.object(main, "setup_logging")
   @patch.object(main, "bind_signal_handlers")
@@ -292,7 +294,7 @@ class TestMain(unittest.TestCase):
       Controller_init_mock.return_value = None
       isAlive_mock.return_value = False
       parse_args_mock.return_value = (
-          TestMain.AgentOptions("agent", "host1", "8080", "8081", True, ""), [])
+          TestMain.AgentOptions("agent", "host1", "8080", "8081", "host1:2181", "/registry/org-apache-slider/cl1", True, ""), [])
       tmpdir = tempfile.gettempdir()
 
       #testing call without command-line arguments
