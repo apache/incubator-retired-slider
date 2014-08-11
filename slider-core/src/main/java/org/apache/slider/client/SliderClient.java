@@ -77,6 +77,7 @@ import org.apache.slider.common.params.ActionEchoArgs;
 import org.apache.slider.common.params.ActionFlexArgs;
 import org.apache.slider.common.params.ActionFreezeArgs;
 import org.apache.slider.common.params.ActionKillContainerArgs;
+import org.apache.slider.common.params.ActionListArgs;
 import org.apache.slider.common.params.ActionRegistryArgs;
 import org.apache.slider.common.params.ActionResolveArgs;
 import org.apache.slider.common.params.ActionStatusArgs;
@@ -304,7 +305,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
             serviceArgs.getActionAMSuicideArgs());
         break;
       case ACTION_LIST:
-        exitCode = actionList(clusterName);
+        exitCode = actionList(clusterName, serviceArgs.getActionListArgs());
         break;
       case ACTION_REGISTRY:
         exitCode = actionRegistry(
@@ -1676,28 +1677,50 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
   @Override
+  /**
+   * Implement the list action: list all nodes
+   *
+   * live: List out only live instances
+   * history: List out only history instances
+   *
+   * If arguments are not given then list out both finished and
+   * running instances
+   *
+   * @param clustername List out specific cluster
+   * @param args Action list arguments
+   * @return exit code of 0 if a list was created
+   */
   @VisibleForTesting
-  public int actionList(String clustername) throws IOException, YarnException {
+  public int actionList(String clustername, ActionListArgs args)
+      throws IOException, YarnException {
     verifyBindingsDefined();
 
     String user = UserGroupInformation.getCurrentUser().getUserName();
     List<ApplicationReport> instances = listSliderInstances(user);
-
+    SliderUtils.sortApplicationReport(instances);
     if (isUnset(clustername)) {
       log.info("Instances for {}: {}",
-               (user != null ? user : "all users"),
-               instances.size());
+          (user != null ? user : "all users"),
+          instances.size());
       for (ApplicationReport report : instances) {
-        logAppReport(report);
+        logAppReport(report, args.live, args.history);
       }
       return EXIT_SUCCESS;
     } else {
       SliderUtils.validateClusterName(clustername);
       log.debug("Listing cluster named {}", clustername);
-      ApplicationReport report =
-        findClusterInInstanceList(instances, clustername);
+      if (args.history) {
+        for (ApplicationReport report : instances) {
+          if (report.getName().equals(clustername)) {
+            logAppReport(report, args.live, args.history);
+          }
+        }
+        return EXIT_SUCCESS;
+      }
+      ApplicationReport report = findClusterInInstanceList(instances,
+          clustername);
       if (report != null) {
-        logAppReport(report);
+        logAppReport(report, true, false);
         return EXIT_SUCCESS;
       } else {
         throw unknownClusterException(clustername);
@@ -1709,8 +1732,17 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * Log the application report at INFO
    * @param report report to log
    */
-  public void logAppReport(ApplicationReport report) {
-    log.info(SliderUtils.appReportToString(report, "\n"));
+  public void logAppReport(ApplicationReport report, boolean live, boolean history) {
+    boolean active = report.getYarnApplicationState() == YarnApplicationState.RUNNING
+                || report.getYarnApplicationState() ==
+                   YarnApplicationState.ACCEPTED;
+    if (active && live && !history) {
+      log.info(SliderUtils.appReportToString(report, "\n"));
+    } else if (!active && history && !live) {
+      log.info(SliderUtils.appReportToString(report, "\n"));
+    } else {
+      log.info(SliderUtils.appReportToString(report, "\n"));
+    }
   }
 
   @Override

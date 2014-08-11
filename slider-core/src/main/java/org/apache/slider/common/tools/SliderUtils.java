@@ -85,6 +85,8 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -615,6 +617,53 @@ public final class SliderUtils {
       builder.append(separator).append("Diagnostics :").append(diagnostics);
     }
     return builder.toString();
+  }
+
+  /**
+   * Sorts the given list of application reports
+   * Finished instances are ordered by finished time and running/accepted instances are
+   * ordered by start time
+   * Finally Instance are order by finished instances and running instances
+   *
+   * @param instances
+   */
+  public static void sortApplicationReport(List<ApplicationReport> instances) {
+    if (instances.size() <= 1) {
+      return;
+    }
+    List<ApplicationReport> nonLiveInstance = new ArrayList<>(instances.size());
+    List<ApplicationReport> liveInstance = new ArrayList<>(instances.size());
+
+    for (ApplicationReport report : instances) {
+      if (report.getYarnApplicationState() == YarnApplicationState.RUNNING
+          || report.getYarnApplicationState() == YarnApplicationState.ACCEPTED) {
+        liveInstance.add(report);
+      } else {
+        nonLiveInstance.add(report);
+      }
+    }
+
+    if (liveInstance.size() > 1) {
+      Comparator<ApplicationReport> liveInstanceComparator = new Comparator<ApplicationReport>() {
+        @Override
+        public int compare(ApplicationReport r1, ApplicationReport r2) {
+          return Long.compare(r1.getStartTime(), r2.getStartTime());
+        }
+      };
+      Collections.sort(liveInstance, liveInstanceComparator);
+    }
+    if (nonLiveInstance.size() > 1) {
+      Comparator<ApplicationReport> nonLiveInstanceComparator = new Comparator<ApplicationReport>() {
+        @Override
+        public int compare(ApplicationReport r1, ApplicationReport r2) {
+          return Long.compare(r1.getFinishTime(), r2.getFinishTime());
+        }
+      };
+      Collections.sort(nonLiveInstance, nonLiveInstanceComparator);
+    }
+    instances.clear();
+    instances.addAll(nonLiveInstance);
+    instances.addAll(liveInstance);
   }
 
   /**
