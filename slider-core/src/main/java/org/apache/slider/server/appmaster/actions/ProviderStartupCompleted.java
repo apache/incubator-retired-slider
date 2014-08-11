@@ -19,6 +19,7 @@
 package org.apache.slider.server.appmaster.actions;
 
 import org.apache.slider.server.appmaster.SliderAppMaster;
+import org.apache.slider.server.appmaster.state.AppState;
 
 public class ProviderStartupCompleted extends AsyncAction {
 
@@ -26,12 +27,14 @@ public class ProviderStartupCompleted extends AsyncAction {
     super("ProviderStartupCompleted");
   }
 
-  public ProviderStartupCompleted(int delayMillis) {
+  public ProviderStartupCompleted(long delayMillis) {
     super("ProviderStartupCompleted", delayMillis);
   }
 
   @Override
-  public void execute(SliderAppMaster appMaster, QueueAccess queueService) throws Exception {
+  public void execute(SliderAppMaster appMaster,
+      QueueAccess queueService,
+      AppState appState) throws Exception {
     appMaster.eventCallbackEvent(null);
   }
 }

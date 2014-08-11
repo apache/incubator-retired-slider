@@ -36,7 +36,6 @@ import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterDescriptionKeys;
 import org.apache.slider.api.ClusterDescriptionOperations;
 import org.apache.slider.api.ClusterNode;
-import org.apache.slider.api.OptionKeys;
 import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.RoleKeys;
 import org.apache.slider.api.StatusKeys;
@@ -510,15 +509,16 @@ public class AppState {
 
 
     //set the livespan
-    MapOperations globalInternalOpts =
-        instanceDefinition.getInternalOperations().getGlobalOptions();
-    startTimeThreshold = globalInternalOpts.getOptionInt(
-        OptionKeys.INTERNAL_CONTAINER_FAILURE_SHORTLIFE,
-        OptionKeys.DEFAULT_CONTAINER_FAILURE_SHORTLIFE);
+    MapOperations globalResOpts =
+        instanceDefinition.getResourceOperations().getGlobalOptions();
+    
+    startTimeThreshold = globalResOpts.getOptionInt(
+        ResourceKeys.CONTAINER_FAILURE_SHORTLIFE,
+        ResourceKeys.DEFAULT_CONTAINER_FAILURE_SHORTLIFE);
 
-    failureThreshold = globalInternalOpts.getOptionInt(
-        OptionKeys.INTERNAL_CONTAINER_FAILURE_THRESHOLD,
-        OptionKeys.DEFAULT_CONTAINER_FAILURE_THRESHOLD);
+    failureThreshold = globalResOpts.getOptionInt(
+        ResourceKeys.CONTAINER_FAILURE_THRESHOLD,
+        ResourceKeys.DEFAULT_CONTAINER_FAILURE_THRESHOLD);
     initClusterStatus();
 
 
@@ -531,8 +531,7 @@ public class AppState {
 
     // any am config options to pick up
 
-    logServerURL = appmasterConfig.get(YarnConfiguration.YARN_LOG_SERVER_URL,
-        "");
+    logServerURL = appmasterConfig.get(YarnConfiguration.YARN_LOG_SERVER_URL, "");
     //mark as live
     applicationLive = true;
   }
@@ -630,7 +629,7 @@ public class AppState {
   }
   
   /**
-   * The resource configuration is updated -review and update state
+   * The resource configuration is updated -review and update state.
    * @param resources updated resources specification
    */
   public synchronized void updateResourceDefinitions(ConfTree resources) throws
@@ -1137,11 +1136,14 @@ public class AppState {
     RoleInstance instance = getStartingNodes().remove(containerId);
     if (null != instance) {
       RoleStatus roleStatus = lookupRoleStatus(instance.roleId);
+      String text;
       if (null != thrown) {
-        instance.diagnostics = SliderUtils.stringify(thrown);
+        text = SliderUtils.stringify(thrown);
+      } else {
+        text = "container start failure";
       }
-      roleStatus.noteFailed(null);
-      roleStatus.incStartFailed(); 
+      instance.diagnostics = text;
+      roleStatus.noteFailed(true, null);
       getFailedNodes().put(containerId, instance);
       roleHistory.onNodeManagerContainerStartFailed(instance.container);
     }
@@ -1258,12 +1260,7 @@ public class AppState {
           } else {
             message = String.format("Failure %s", containerId);
           }
-          roleStatus.noteFailed(message);
-          //have a look to see if it short lived
-          if (shortLived) {
-            roleStatus.incStartFailed();
-          }
-
+          roleStatus.noteFailed(shortLived, message);
           if (failedContainer != null) {
             roleHistory.onFailedContainer(failedContainer, shortLived);
           }
@@ -1446,9 +1443,15 @@ public class AppState {
     }
     return allOperations;
   }
-  
-  public void checkFailureThreshold(RoleStatus role) throws
-                                                        TriggerClusterTeardownException {
+
+  /**
+   * Check the failure threshold for a role
+   * @param role role to examine
+   * @throws TriggerClusterTeardownException if the role
+   * has failed too many times
+   */
+  private void checkFailureThreshold(RoleStatus role)
+      throws TriggerClusterTeardownException {
     int failures = role.getFailed();
 
     if (failures > failureThreshold) {
@@ -1463,6 +1466,17 @@ public class AppState {
         role.getFailureMessage());
     }
   }
+
+  /**
+   * Reset the failure counts of all roles
+   */
+  public void resetFailureCounts() {
+    for (RoleStatus roleStatus : getRoleStatusMap().values()) {
+      int failed = roleStatus.resetFailed();
+      log.debug("Resetting failure count of {}; was {}", roleStatus.getName(),
+          failed);
+    }
+  }
   
   /**
    * Look at the allocation status of one role, and trigger add/release
@@ -1474,7 +1488,7 @@ public class AppState {
    * the internal state of the application is inconsistent.
    */
   @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
-  public List<AbstractRMOperation> reviewOneRole(RoleStatus role)
+  private List<AbstractRMOperation> reviewOneRole(RoleStatus role)
       throws SliderInternalStateException, TriggerClusterTeardownException {
     List<AbstractRMOperation> operations = new ArrayList<>();
     int delta;

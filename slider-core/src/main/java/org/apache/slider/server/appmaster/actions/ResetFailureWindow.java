@@ -18,33 +18,22 @@
 
 package org.apache.slider.server.appmaster.actions;
 
-import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.slider.server.appmaster.SliderAppMaster;
 import org.apache.slider.server.appmaster.state.AppState;
 
 /**
- * Report container loss to the AM
- * {@link SliderAppMaster#providerLostContainer(ContainerId)}
+ * Requests the AM to reset the failure window
  */
-public class ProviderReportedContainerLoss extends AsyncAction {
+public class ResetFailureWindow extends AsyncAction {
 
-  private final ContainerId containerId;
-  
-  public ProviderReportedContainerLoss(ContainerId containerId) {
-    super("lost container " + containerId);
-    this.containerId = containerId;
-  }
-
-  public ProviderReportedContainerLoss(
-      ContainerId containerId, long delayMillis) {
-    super("lost container " + containerId, delayMillis);
-    this.containerId = containerId;
+  public ResetFailureWindow() {
+    super("ResetFailureWindow");
   }
 
   @Override
   public void execute(SliderAppMaster appMaster,
       QueueAccess queueService,
       AppState appState) throws Exception {
-    appMaster.providerLostContainer(containerId);
+    appState.resetFailureCounts();
   }
 }

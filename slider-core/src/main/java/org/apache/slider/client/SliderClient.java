@@ -753,9 +753,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     return instanceDefinition;
 
   }
-  
-  
-
 
   /**
    *

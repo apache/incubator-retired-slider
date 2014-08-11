@@ -19,26 +19,67 @@
 package org.apache.slider.server.appmaster.actions;
 
 
-import org.apache.hadoop.service.AbstractService;
+import com.google.common.annotations.VisibleForTesting;
+import org.apache.slider.server.services.workflow.ServiceThreadFactory;
+import org.apache.slider.server.services.workflow.WorkflowExecutorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.DelayQueue;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
 
-public class QueueService extends AbstractService
-    implements Runnable, QueueAccess {
+/**
+ * The Queue service provides immediate and scheduled queues, as well
+ * as an executor thread that moves queued actions from the scheduled
+ * queue to the immediate one.
+ * 
+ * <p>
+ * This code to be revisited to see if all that was needed is the single scheduled
+ * queue, implicitly making actions immediate by giving them an execution
+ * time of "now". It would force having a sequence number to all actions, one 
+ * which the queue would have to set from its (monotonic, thread-safe) counter
+ * on every submission, with a modified comparison operator. This would guarantee
+ * that earlier submissions were picked before later ones.
+ */
+public class QueueService extends WorkflowExecutorService<ExecutorService>
+implements Runnable, QueueAccess {
   private static final Logger log =
       LoggerFactory.getLogger(QueueService.class);
+  public static final String NAME = "Action Queue";
 
-  public final DelayQueue<AsyncAction> delayedActions = new DelayQueue<>();
-
-  public final BlockingDeque<AsyncAction> actionQueue =
+  /**
+   * Immediate actions.
+   * Package scoped for testing.
+   */
+  @VisibleForTesting
+  final BlockingDeque<AsyncAction> actionQueue =
       new LinkedBlockingDeque<>();
 
+  /**
+   * Actions to be scheduled in the future
+   * Package scoped for testing.
+   */
+  @VisibleForTesting
+  final DelayQueue<AsyncAction> scheduledActions = new DelayQueue<>();
+
+  /**
+   * Map of renewing actions by name ... this is to allow them to 
+   * be cancelled by name
+   */
+  private final Map<String, RenewingAction<? extends AsyncAction>> renewingActions
+      = new ConcurrentHashMap<>();
+  
+  /**
+   * Create a queue instance with a single thread executor
+   */
   public QueueService() {
-    super("action queue");
+    super(NAME,
+        ServiceThreadFactory.singleThreadExecutor(NAME, true));
   }
 
   @Override
@@ -48,9 +89,53 @@ public class QueueService extends AbstractService
   }
 
   @Override
-  public void putDelayed(AsyncAction action) {
-    log.debug("Delayed Queueing {}", action);
-    delayedActions.add(action);
+  public void schedule(AsyncAction action) {
+    log.debug("Scheduling {}", action);
+    scheduledActions.add(action);
+  }
+
+  @Override
+  public boolean remove(AsyncAction action) {
+    boolean removedFromDelayQueue = scheduledActions.remove(action);
+    boolean removedFromActions = actionQueue.remove(action);
+    return removedFromActions || removedFromDelayQueue;
+  }
+  
+  @Override
+  public void renewing(String name,
+      RenewingAction<? extends AsyncAction> renewingAction) {
+    log.debug("Adding renewing Action \"{}\": {}", name,
+        renewingAction.getAction());
+    if (removeRenewingAction(name)) {
+      log.debug("Removed predecessor action");
+    }
+    renewingActions.put(name, renewingAction);
+    schedule(renewingAction);
+  } 
+
+  @Override
+  public RenewingAction<? extends AsyncAction> lookupRenewingAction(String name) {
+    return renewingActions.get(name);
+  }
+
+  @Override
+  public boolean removeRenewingAction(String name) {
+    RenewingAction<? extends AsyncAction> action = renewingActions.remove(name);
+     return action != null && remove(action);
+  }
+  
+  /**
+   * Stop the service by scheduling an {@link ActionStopQueue} action
+   * ..if the processor thread is working this will propagate through
+   * and stop the queue handling after all other actions complete.
+   * @throws Exception
+   */
+  @Override
+  protected void serviceStop() throws Exception {
+    ActionStopQueue stopQueue = new ActionStopQueue("serviceStop: "+ this,
+        0, TimeUnit.MILLISECONDS);
+    schedule(stopQueue);
+    super.serviceStop();
   }
 
   /**
@@ -64,7 +149,7 @@ public class QueueService extends AbstractService
 
       AsyncAction take;
       do {
-        take = delayedActions.take();
+        take = scheduledActions.take();
         log.debug("Propagating {}", take);
         actionQueue.put(take);
       } while (!(take instanceof ActionStopQueue));

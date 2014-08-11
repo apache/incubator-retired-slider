@@ -34,5 +34,34 @@ public interface QueueAccess {
    * after its action time has been reached
    * @param action action to queue
    */
-  void putDelayed(AsyncAction action);
+  void schedule(AsyncAction action);
+
+  /**
+   * Remove an action from the queues.
+   * @param action action to remove
+   * @return true if the action was removed
+   */
+  boolean remove(AsyncAction action);
+
+  /**
+   * Add a named renewing action
+   * @param name name
+   * @param renewingAction wrapped action
+   */
+  void renewing(String name,
+      RenewingAction<? extends AsyncAction> renewingAction);
+
+  /**
+   * Look up a renewing action
+   * @param name name of the action
+   * @return the action or null if none was found
+   */
+  RenewingAction<? extends AsyncAction> lookupRenewingAction(String name);
+
+  /**
+   * Remove a renewing action
+   * @param name action name name of the action
+   * @return true if the action was found and removed.
+   */
+  boolean removeRenewingAction(String name);
 }

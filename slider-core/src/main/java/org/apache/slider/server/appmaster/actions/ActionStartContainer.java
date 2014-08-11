@@ -21,6 +21,7 @@ package org.apache.slider.server.appmaster.actions;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
 import org.apache.slider.server.appmaster.SliderAppMaster;
+import org.apache.slider.server.appmaster.state.AppState;
 import org.apache.slider.server.appmaster.state.RoleInstance;
 
 /**
@@ -34,7 +35,7 @@ public class ActionStartContainer extends AsyncAction {
   private final RoleInstance instance;
 
   public ActionStartContainer(String name,
-      int delay,
+      long delay,
       Container container,
       ContainerLaunchContext ctx,
       RoleInstance instance) {
@@ -45,7 +46,9 @@ public class ActionStartContainer extends AsyncAction {
   }
 
   @Override
-  public void execute(SliderAppMaster appMaster, QueueAccess queueService) throws Exception {
+  public void execute(SliderAppMaster appMaster,
+      QueueAccess queueService,
+      AppState appState) throws Exception {
     appMaster.startContainer(container, ctx, instance);
   }
 }
