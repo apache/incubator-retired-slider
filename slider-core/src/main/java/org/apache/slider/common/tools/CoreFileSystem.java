@@ -335,6 +335,7 @@ public class CoreFileSystem {
     }
     dst.delete();
     if (!found) throw new FileNotFoundException("file: " + file + " not found in " + path);
+    log.info("Verification of " + path + " passed");
   }
   /**
    * Create the application-instance specific temporary directory

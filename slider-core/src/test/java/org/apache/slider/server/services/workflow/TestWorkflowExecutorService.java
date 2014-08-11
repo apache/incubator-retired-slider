@@ -20,9 +20,13 @@ package org.apache.slider.server.services.workflow;
 
 import org.junit.Test;
 
+import java.util.concurrent.ExecutorService;
 
+
+/**
+ * Basic tests for executor service
+ */
 public class TestWorkflowExecutorService extends WorkflowServiceTestBase {
-
 
   @Test
   public void testAsyncRun() throws Throwable {
@@ -51,7 +55,8 @@ public class TestWorkflowExecutorService extends WorkflowServiceTestBase {
     assertNotNull(runnable.getException());
   }
 
-  private static class ExecutorSvc extends AbstractWorkflowExecutorService {
+  private static class ExecutorSvc
+      extends WorkflowExecutorService<ExecutorService> {
     private ExecutorSvc() {
       super("ExecutorService",
           ServiceThreadFactory.singleThreadExecutor("test", true));

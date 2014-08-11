@@ -61,7 +61,7 @@ import org.apache.slider.providers.agent.application.metadata.ExportGroup;
 import org.apache.slider.providers.agent.application.metadata.Metainfo;
 import org.apache.slider.providers.agent.application.metadata.OSPackage;
 import org.apache.slider.providers.agent.application.metadata.OSSpecific;
-import org.apache.slider.server.appmaster.AMViewForProviders;
+import org.apache.slider.server.appmaster.actions.ProviderReportedContainerLoss;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentCommandType;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
@@ -605,19 +605,16 @@ public class AgentProviderService extends AbstractProviderService implements
 
   /**
    * Lost heartbeat from the container - release it and ask for a replacement
-   *
-   *
-   * @param label
+   * (async operation)
+   *  @param label
    * @param containerId
    *
-   * @return outcome of the operation
    */
-  protected AMViewForProviders.ContainerLossReportOutcomes lostContainer(
+  protected void lostContainer(
       String label,
-      ContainerId containerId) throws
-      SliderException {
+      ContainerId containerId) {
     getComponentStatuses().remove(label);
-    return getAppMaster().providerLostContainer(containerId);
+    getQueueAccess().put(new ProviderReportedContainerLoss(containerId));
   }
 
   /**

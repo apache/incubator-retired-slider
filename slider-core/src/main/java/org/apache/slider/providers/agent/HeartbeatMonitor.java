@@ -19,7 +19,6 @@ package org.apache.slider.providers.agent;
 
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.hadoop.yarn.api.records.ContainerId;
-import org.apache.slider.core.exceptions.SliderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -114,13 +113,7 @@ public class HeartbeatMonitor implements Runnable {
                     timeSinceLastHeartbeat);
                 ContainerId containerId =
                     componentInstanceState.getContainerId();
-                try {
-                  provider.lostContainer(containerLabel, containerId);
-                } catch (SliderException e) {
-                  log.info(
-                      "Error while requesting container release for {}. Message: {}",
-                      containerId, e, e);
-                }
+                provider.lostContainer(containerLabel, containerId);
               }
               break;
             case HEARTBEAT_LOST:

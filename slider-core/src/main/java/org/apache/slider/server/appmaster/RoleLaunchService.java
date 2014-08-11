@@ -28,32 +28,42 @@ import org.apache.slider.core.conf.MapOperations;
 import org.apache.slider.core.launch.ContainerLauncher;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderService;
+import org.apache.slider.server.appmaster.actions.ActionStartContainer;
+import org.apache.slider.server.appmaster.actions.AsyncAction;
+import org.apache.slider.server.appmaster.actions.QueueAccess;
 import org.apache.slider.server.appmaster.state.RoleInstance;
 import org.apache.slider.server.appmaster.state.RoleStatus;
-import org.apache.slider.server.services.workflow.AbstractWorkflowExecutorService;
+import org.apache.slider.server.services.workflow.WorkflowExecutorService;
 import org.apache.slider.server.services.workflow.ServiceThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
  * A service for launching containers
  */
-public class RoleLaunchService extends AbstractWorkflowExecutorService {
+public class RoleLaunchService
+    extends WorkflowExecutorService<ExecutorService> {
   protected static final Logger log =
     LoggerFactory.getLogger(RoleLaunchService.class);
 
   public static final String ROLE_LAUNCH_SERVICE = "RoleLaunchService";
 
-  /**
-   * Callback to whatever has the task of actually running the container
-   * start operation
-   */
-  private final ContainerStartOperation containerStarter;
 
+  /**
+   * Queue submission API
+   */
+  private final QueueAccess actionQueue;
+
+  /**
+   * Provider bulding up the command
+   */
   private final ProviderService provider;
+  
   /**
    * Filesystem to use for the launch
    */
@@ -75,20 +85,21 @@ public class RoleLaunchService extends AbstractWorkflowExecutorService {
   /**
    * Construct an instance of the launcher
    * @param startOperation the callback to start the opreation
+   * @param actionQueue
    * @param provider the provider
    * @param fs filesystem
    * @param generatedConfDirPath path in the FS for the generated dir
    * @param envVars environment variables
    * @param launcherTmpDirPath path for a temporary data in the launch process
    */
-  public RoleLaunchService(ContainerStartOperation startOperation,
-                           ProviderService provider,
-                           SliderFileSystem fs,
-                           Path generatedConfDirPath,
-                           Map<String, String> envVars,
+  public RoleLaunchService(QueueAccess queueAccess,
+      ProviderService provider,
+      SliderFileSystem fs,
+      Path generatedConfDirPath,
+      Map<String, String> envVars,
       Path launcherTmpDirPath) {
     super(ROLE_LAUNCH_SERVICE);
-    containerStarter = startOperation;
+    this.actionQueue = queueAccess;
     this.fs = fs;
     this.generatedConfDirPath = generatedConfDirPath;
     this.launcherTmpDirPath = launcherTmpDirPath;
@@ -203,9 +214,10 @@ public class RoleLaunchService extends AbstractWorkflowExecutorService {
         instance.role = containerRole;
         instance.roleId = role.id;
         instance.environment = envDescription;
-        containerStarter.startContainer(container,
-                                        containerLauncher.completeContainerLaunch(),
-                                        instance);
+        actionQueue.put(new ActionStartContainer("starting " + containerRole,
+            0, container,
+            containerLauncher.completeContainerLaunch(),
+            instance));
       } catch (Exception e) {
         log.error("Exception thrown while trying to start {}: {}",
             containerRole, e);

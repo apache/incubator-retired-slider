@@ -35,7 +35,7 @@ import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.main.ExitCodeProvider;
 import org.apache.slider.core.registry.info.RegisteredEndpoint;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
-import org.apache.slider.server.appmaster.AMViewForProviders;
+import org.apache.slider.server.appmaster.actions.QueueAccess;
 import org.apache.slider.server.appmaster.state.ContainerReleaseSelector;
 import org.apache.slider.server.appmaster.state.MostRecentContainerReleaseSelector;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
@@ -74,9 +74,9 @@ public abstract class AbstractProviderService
   protected AgentRestOperations restOps;
   protected RegistryViewForProviders registry;
   protected ServiceInstanceData registryInstanceData;
-  protected AMViewForProviders amView;
   protected URL amWebAPI;
   protected YarnRegistryViewForProviders yarnRegistry;
+  protected QueueAccess queueAccess;
 
   public AbstractProviderService(String name) {
     super(name);
@@ -91,8 +91,8 @@ public abstract class AbstractProviderService
     return amState;
   }
 
-  public AMViewForProviders getAppMaster() {
-    return amView;
+  public QueueAccess getQueueAccess() {
+    return queueAccess;
   }
 
   public void setAmState(StateAccessForProviders amState) {
@@ -103,11 +103,11 @@ public abstract class AbstractProviderService
   @Override
   public void bind(StateAccessForProviders stateAccessor,
       RegistryViewForProviders reg,
-      AMViewForProviders amView,
+      QueueAccess queueAccess,
       List<Container> liveContainers) {
     this.amState = stateAccessor;
     this.registry = reg;
-    this.amView = amView;
+    this.queueAccess = queueAccess;
   }
 
   @Override

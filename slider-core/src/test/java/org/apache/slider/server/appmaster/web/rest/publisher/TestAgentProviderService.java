@@ -18,7 +18,7 @@ package org.apache.slider.server.appmaster.web.rest.publisher;
 
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.slider.providers.agent.AgentProviderService;
-import org.apache.slider.server.appmaster.AMViewForProviders;
+import org.apache.slider.server.appmaster.actions.QueueAccess;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.services.registry.RegistryViewForProviders;
 import org.apache.slider.server.services.yarnregistry.YarnRegistryViewForProviders;
@@ -44,9 +44,9 @@ public class TestAgentProviderService extends AgentProviderService {
   @Override
   public void bind(StateAccessForProviders stateAccessor,
       RegistryViewForProviders reg,
-      AMViewForProviders amView,
+      QueueAccess queueAccess,
       List<Container> liveContainers) {
-    super.bind(stateAccessor, reg, amView, liveContainers);
+    super.bind(stateAccessor, reg, queueAccess, liveContainers);
     Map<String,String> dummyProps = new HashMap<>();
     dummyProps.put("prop1", "val1");
     dummyProps.put("prop2", "val2");

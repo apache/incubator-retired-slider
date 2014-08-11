@@ -34,7 +34,7 @@ import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.ContainerLauncher;
 import org.apache.slider.core.main.ExitCodeProvider;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
-import org.apache.slider.server.appmaster.AMViewForProviders;
+import org.apache.slider.server.appmaster.actions.QueueAccess;
 import org.apache.slider.server.appmaster.state.ContainerReleaseSelector;
 import org.apache.slider.server.appmaster.operations.RMOperationHandlerActions;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
@@ -149,17 +149,9 @@ public interface ProviderService extends ProviderCore,
    */
   Map<String, String> buildMonitorDetails(ClusterDescription clusterSpec);
 
-  /**
-   * bind operation -invoked before the service is started
-   * @param stateAccessor interface offering read access to the state
-   * @param registry registry view
-   * @param amView AM access
-   * @param liveContainers list of live containers. If non-empty, the AM was
-   * restarted with one more running containers.
-   */
-  void bind(StateAccessForProviders stateAccessor,
-      RegistryViewForProviders registry,
-      AMViewForProviders amView,
+  public void bind(StateAccessForProviders stateAccessor,
+      RegistryViewForProviders reg,
+      QueueAccess queueAccess,
       List<Container> liveContainers);
 
   /**

@@ -16,31 +16,24 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster;
+package org.apache.slider.server.appmaster.actions;
 
-import org.apache.hadoop.yarn.api.records.ContainerId;
-import org.apache.slider.core.exceptions.SliderException;
+import org.apache.slider.core.main.LauncherExitCodes;
+import org.apache.slider.server.appmaster.SliderAppMaster;
 
-/** Operations available to a provider from AppMaster */
-public interface AMViewForProviders {
-
-  /**
-   * Outcomes from container loss
-   */
-  enum ContainerLossReportOutcomes {
-    /**
-     * The container doesn't exist...either it wasn't in use or it
-     * has been released
-     */
-    CONTAINER_NOT_IN_USE,
-
-    /**
-     * The container is known about and a review has been initated
-     */
-    CONTAINER_LOST_REVIEW_INITIATED,
+public class ActionStopSlider extends AsyncAction {
+  public ActionStopSlider(String message,
+      int delay) {
+    super(message, delay, ActionAttributes.HALTS_CLUSTER);
   }
-  
-  /** Provider can ask AppMaster to release a specific container */
-  ContainerLossReportOutcomes providerLostContainer(ContainerId containerId) throws SliderException;
-  
+
+  @Override
+  public void execute(SliderAppMaster appMaster, QueueAccess queueService) throws Exception {
+    String message = name;
+    SliderAppMaster.getLog().info("SliderAppMasterApi.stopCluster: {}",
+        message);
+    appMaster.signalAMComplete(
+        LauncherExitCodes.EXIT_CLIENT_INITIATED_SHUTDOWN,
+        message);
+  }
 }

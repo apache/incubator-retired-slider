@@ -16,25 +16,23 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster;
-
-import org.apache.hadoop.yarn.api.records.Container;
-import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
-import org.apache.slider.server.appmaster.state.RoleInstance;
+package org.apache.slider.server.appmaster.actions;
 
 /**
- * Callback for container start requests
+ * Access for queue operations
  */
-public interface ContainerStartOperation {
+public interface QueueAccess {
   /**
-   * Add a node to the list of starting
-   * nodes then trigger the NM start operation with the given
-   * launch context
-   * @param container container
-   * @param ctx context
-   * @param instance node details
+   * Put an action on the immediate queue -to be executed when the queue
+   * reaches it.
+   * @param action action to queue
    */
-  void startContainer(Container container,
-                      ContainerLaunchContext ctx,
-                      RoleInstance instance) ;
+  void put(AsyncAction action);
+
+  /**
+   * Put a delayed action: this will only be added to the main queue
+   * after its action time has been reached
+   * @param action action to queue
+   */
+  void putDelayed(AsyncAction action);
 }
