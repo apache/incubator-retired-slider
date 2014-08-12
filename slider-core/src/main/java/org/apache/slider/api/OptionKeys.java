@@ -69,29 +69,6 @@ public interface OptionKeys {
   String APPLICATION_NAME = "application.name";
 
   /**
-   * Time in milliseconds before a container is considered long-lived.
-   * Shortlived containers are interpreted as a problem with the role
-   * and/or the host: {@value}
-   */
-  String INTERNAL_CONTAINER_FAILURE_SHORTLIFE = "internal.container.failure.shortlife";
-
-  /**
-   * Default short life threshold: {@value}
-   */
-  int DEFAULT_CONTAINER_FAILURE_SHORTLIFE = 60;
-
-  /**
-   * maximum number of failed containers (in a single role)
-   * before the cluster is deemed to have failed {@value}
-   */
-  String INTERNAL_CONTAINER_FAILURE_THRESHOLD = "internal.container.failure.threshold";
-
-  /**
-   * Default failure threshold: {@value}
-   */
-  int DEFAULT_CONTAINER_FAILURE_THRESHOLD = 5;
-
-  /**
    * delay for container startup:{@value}
    */
   int DEFAULT_CONTAINER_STARTUP_DELAY = 5000;

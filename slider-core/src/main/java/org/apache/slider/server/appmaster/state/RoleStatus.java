@@ -45,7 +45,7 @@ public final class RoleStatus implements Cloneable {
   private final ProviderRole providerRole;
 
   private int desired, actual, requested, releasing;
-  private int failed, started, startFailed, completed, totalRequested;
+  private volatile int failed, started, startFailed, completed, totalRequested;
 
   private String failureMessage = "";
 
@@ -143,16 +143,34 @@ public final class RoleStatus implements Cloneable {
   }
 
   /**
+   * Reset the failure counts
+   * @return the total number of failures up to this point
+   */
+  public int resetFailed() {
+    int total = failed + startFailed;
+    failed = 0;
+    startFailed = 0;
+    return total;
+  }
+
+  /**
    * Note that a role failed, text will
    * be used in any diagnostics if an exception
    * is later raised.
+   * @param startupFailure flag to indicate this was a startup event
+   * @return the number of failures
    * @param text text about the failure
    */
-  public void noteFailed(String text) {
-    failed++;
+  public int noteFailed(boolean startupFailure, String text) {
+    int current = ++failed;
     if (text != null) {
       failureMessage = text;
     }
+    //have a look to see if it short lived
+    if (startupFailure) {
+      incStartFailed();
+    }
+    return current;
   }
 
   public int getStartFailed() {

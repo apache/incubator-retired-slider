@@ -19,6 +19,7 @@
 package org.apache.slider.server.appmaster.actions;
 
 import org.apache.slider.server.appmaster.SliderAppMaster;
+import org.apache.slider.server.appmaster.state.AppState;
 
 import java.util.concurrent.TimeUnit;
 
@@ -27,17 +28,25 @@ import java.util.concurrent.TimeUnit;
  */
 public class ActionStopQueue extends AsyncAction {
 
-  public ActionStopQueue(int delay) {
+  public ActionStopQueue(long delay) {
     super("stop queue", delay);
   }
 
-  public ActionStopQueue(int delay,
+  public ActionStopQueue(long delay,
       TimeUnit timeUnit) {
     super("stop queue", delay, timeUnit);
   }
 
+  public ActionStopQueue(String name,
+      long delay,
+      TimeUnit timeUnit) {
+    super(name, delay, timeUnit);
+  }
+
   @Override
-  public void execute(SliderAppMaster appMaster, QueueAccess queueService) throws Exception {
+  public void execute(SliderAppMaster appMaster,
+      QueueAccess queueService,
+      AppState appState) throws Exception {
     // no-op
   }
 }

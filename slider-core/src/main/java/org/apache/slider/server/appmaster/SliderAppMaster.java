@@ -75,6 +75,7 @@ import org.apache.slider.common.tools.SliderVersionInfo;
 import org.apache.slider.core.build.InstanceIO;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
+import org.apache.slider.core.conf.ConfTreeOperations;
 import org.apache.slider.core.conf.MapOperations;
 import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.core.exceptions.SliderException;
@@ -100,6 +101,8 @@ import org.apache.slider.server.appmaster.actions.ActionHalt;
 import org.apache.slider.server.appmaster.actions.QueueService;
 import org.apache.slider.server.appmaster.actions.ActionStopSlider;
 import org.apache.slider.server.appmaster.actions.AsyncAction;
+import org.apache.slider.server.appmaster.actions.RenewingAction;
+import org.apache.slider.server.appmaster.actions.ResetFailureWindow;
 import org.apache.slider.server.appmaster.operations.AsyncRMOperationHandler;
 import org.apache.slider.server.appmaster.operations.ProviderNotifyingOperationHandler;
 import org.apache.slider.server.appmaster.rpc.RpcBinder;
@@ -150,6 +153,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -330,11 +334,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private String agentAccessUrl;
   private CertificateManager certificateManager;
 
-  private WorkflowScheduledExecutorService<ScheduledExecutorService>
-      scheduledExecutors;
-  private WorkflowExecutorService<ExecutorService>
-      executorService;
-  
+  private WorkflowExecutorService<ExecutorService> executorService;
   
   private final QueueService actionQueues = new QueueService();
   
@@ -388,14 +388,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     //look at settings of Hadoop Auth, to pick up a problem seen once
     checkAndWarnForAuthTokenProblems();
-
-    scheduledExecutors =
-        new WorkflowScheduledExecutorService<>(
-            "AmExecutor",
-            Executors.newScheduledThreadPool(
-                SCHEDULED_EXECUTOR_POOL_SIZE,
-                new ServiceThreadFactory("AmScheduledExecutor", true)));
-    addService(scheduledExecutors);
 
     executorService = new WorkflowExecutorService<>("AmExecutor",
         Executors.newCachedThreadPool(
@@ -938,6 +930,14 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   }
 
   /**
+   * Get the application state
+   * @return the application state
+   */
+  public AppState getAppState() {
+    return appState;
+  }
+
+  /**
    * Block until it is signalled that the AM is done
    */
   private void waitForAMCompletionSignal() {
@@ -1000,7 +1000,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     //stop any launches in progress
     launchService.stop();
 
-
     //now release all containers
     releaseAllContainers();
 
@@ -1008,8 +1007,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // signal to the RM
     log.info("Application completed. Signalling finish to RM");
 
-
     //if there were failed containers and the app isn't already down as failing, it is now
+/*
     int failedContainerCount = appState.getFailedCountainerCount();
     if (failedContainerCount != 0 &&
         appStatus == FinalApplicationStatus.SUCCEEDED) {
@@ -1018,6 +1017,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         "Completed with exit code =  " + exitCode + " - " + getContainerDiagnosticInfo();
       success = false;
     }
+*/
     try {
       log.info("Unregistering AM status={} message={}", appStatus, appMessage);
       asyncRMClient.unregisterApplicationMaster(appStatus, appMessage, null);
@@ -1140,18 +1140,62 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * Implementation of cluster flexing.
    * It should be the only way that anything -even the AM itself on startup-
    * asks for nodes. 
+   * @param resources the resource tree
    * @return true if the any requests were made
    * @throws IOException
    */
-  private boolean flexCluster(ConfTree updated)
+  private boolean flexCluster(ConfTree resources)
     throws IOException, SliderInternalStateException, BadConfigException {
 
-    appState.updateResourceDefinitions(updated);
+    appState.updateResourceDefinitions(resources);
+    appState.resetFailureCounts();
+    // reset the scheduled window resetter...the values
+    // may have changed
+    
+
 
     // ask for more containers if needed
     return reviewRequestAndReleaseNodes();
   }
 
+  /**
+   * Schedule the failure window
+   * @param resources 
+   * @throws BadConfigException if the window is out of range
+   */
+  private void scheduleFailureWindowResets(ConfTree resources) throws
+      BadConfigException {
+    ResetFailureWindow reset = new ResetFailureWindow();
+    ConfTreeOperations ops = new ConfTreeOperations(resources);
+    MapOperations globals = ops.getGlobalOptions();
+    int days = globals.getOptionInt(ResourceKeys.CONTAINER_FAILURE_WINDOW_DAYS,
+        ResourceKeys.DEFAULT_CONTAINER_FAILURE_WINDOW_DAYS);
+    int hours = globals.getOptionInt(
+        ResourceKeys.CONTAINER_FAILURE_WINDOW_HOURS,
+        ResourceKeys.DEFAULT_CONTAINER_FAILURE_WINDOW_HOURS);
+    int minutes = globals.getOptionInt(
+        ResourceKeys.CONTAINER_FAILURE_WINDOW_MINUTES,
+        ResourceKeys.DEFAULT_CONTAINER_FAILURE_WINDOW_MINUTES);
+    // range check
+    if (days < 0 || hours < 0 || minutes < 0) {
+      throw new BadConfigException("Failure window contains negative values:"
+         + "days=%d hours=%d, minutes=%d",
+          days, hours, minutes);
+    }
+    // calculate total time, schedule the reset if expected
+    int totalMinutes = days * 24 * 60 + hours * 24 + minutes;
+    if (totalMinutes > 0) {
+      log.info(
+          "Scheduling the failure window reset interval  to every {} minutes",
+          totalMinutes);
+      RenewingAction<ResetFailureWindow> renew = new RenewingAction<>(
+          reset, totalMinutes, totalMinutes, TimeUnit.MINUTES, 0);
+      actionQueues.renewing("failures", renew);
+    } else {
+      log.warn("Failure window reset interval is not set");
+    }
+  }
+  
   /**
    * Look at where the current node state is -and whether it should be changed
    */
@@ -1255,7 +1299,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     SliderUtils.getCurrentUser();
     String message = request.getMessage();
     log.info("SliderAppMasterApi.stopCluster: {}", message);
-    queue(new ActionStopSlider(message, 1000));
+    schedule(new ActionStopSlider(message, 1000, TimeUnit.MILLISECONDS));
     return Messages.StopClusterResponseProto.getDefaultInstance();
   }
 
@@ -1267,8 +1311,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     String payload = request.getClusterSpec();
     ConfTreeSerDeser confTreeSerDeser = new ConfTreeSerDeser();
-    ConfTree updated = confTreeSerDeser.fromJson(payload);
-    boolean flexed = flexCluster(updated);
+    ConfTree updatedResources = confTreeSerDeser.fromJson(payload);
+    boolean flexed = flexCluster(updatedResources);
     return Messages.FlexClusterResponseProto.newBuilder().setResponse(flexed).build();
   }
 
@@ -1590,7 +1634,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     LOG_YARN.info("Started Container {} ", containerId);
     RoleInstance cinfo = appState.onNodeManagerContainerStarted(containerId);
     if (cinfo != null) {
-      LOG_YARN.info("Deployed instance of role {}", cinfo.role);
+      LOG_YARN.info("Deployed instance of role {} onto {}",
+          cinfo.role, containerId);
       //trigger an async container status
       nmClientAsync.getContainerStatusAsync(containerId,
                                             cinfo.container.getNodeId());
@@ -1657,7 +1702,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * @param action action to execute
    */
   public void queue(AsyncAction action) {
-    actionQueues.actionQueue.add(action);
+    actionQueues.put(action);
   }
 
   /**
@@ -1665,7 +1710,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * @param action for delayed execution
    */
   public void schedule(AsyncAction action) {
-    actionQueues.delayedActions.add(action);
+    actionQueues.schedule(action);
   }
 
 

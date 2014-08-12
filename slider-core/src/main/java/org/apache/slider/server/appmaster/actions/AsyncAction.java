@@ -20,6 +20,7 @@ package org.apache.slider.server.appmaster.actions;
 
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.server.appmaster.SliderAppMaster;
+import org.apache.slider.server.appmaster.state.AppState;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -43,12 +44,12 @@ public abstract class AsyncAction implements Delayed {
   }
 
   protected AsyncAction(String name,
-      int delayMillis) {
+      long delayMillis) {
     this(name, delayMillis, TimeUnit.MILLISECONDS);
   }
 
   protected AsyncAction(String name,
-      int delay,
+      long delay,
       TimeUnit timeUnit) {
     this.name = name;
     this.setNanos(convertAndOffset(delay, timeUnit));
@@ -56,7 +57,7 @@ public abstract class AsyncAction implements Delayed {
   }
 
   protected AsyncAction(String name,
-      int delay,
+      long delay,
       TimeUnit timeUnit,
       EnumSet<ActionAttributes> attrs) {
     this.name = name;
@@ -65,7 +66,7 @@ public abstract class AsyncAction implements Delayed {
   }
 
   protected AsyncAction(String name,
-      int delay,
+      long delay,
       TimeUnit timeUnit,
       ActionAttributes... attributes) {
     this(name, delay, timeUnit);
@@ -73,12 +74,12 @@ public abstract class AsyncAction implements Delayed {
   }
   
   protected AsyncAction(String name,
-      int delayMillis,
+      long delayMillis,
       ActionAttributes... attributes) {
     this(name, delayMillis, TimeUnit.MILLISECONDS);
   }
 
-  protected long convertAndOffset(int delay, TimeUnit timeUnit) {
+  protected long convertAndOffset(long delay, TimeUnit timeUnit) {
     return now() + TimeUnit.NANOSECONDS.convert(delay, timeUnit);
   }
 
@@ -134,10 +135,11 @@ public abstract class AsyncAction implements Delayed {
    * Actual application
    * @param appMaster
    * @param queueService
+   * @param appState
    * @throws IOException
    */
   public abstract void execute(SliderAppMaster appMaster,
-      QueueAccess queueService) throws Exception;
+      QueueAccess queueService, AppState appState) throws Exception;
 
   public long getNanos() {
     return nanos;

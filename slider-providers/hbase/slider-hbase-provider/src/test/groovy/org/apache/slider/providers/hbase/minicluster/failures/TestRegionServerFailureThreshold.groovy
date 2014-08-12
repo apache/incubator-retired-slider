@@ -23,10 +23,10 @@ import groovy.util.logging.Slf4j
 import org.apache.hadoop.hbase.ClusterStatus
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus
+import org.apache.slider.api.ResourceKeys
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.api.ClusterDescription
-import org.apache.slider.api.OptionKeys
 import org.apache.slider.core.exceptions.BadClusterStateException
 import org.apache.slider.core.exceptions.ErrorStrings
 import org.apache.slider.common.params.Arguments
@@ -41,38 +41,42 @@ import org.junit.Test
 @CompileStatic
 @Slf4j
 
-class TestFailureThreshold extends HBaseMiniClusterTestBase {
+class TestRegionServerFailureThreshold extends HBaseMiniClusterTestBase {
 
   @Test
   public void testFailedRegionService() throws Throwable {
     failureThresholdTestRun("", true, 2, 5)
   }
 
-
-  
   private void failureThresholdTestRun(
       String testName,
       boolean toKill,
       int threshold,
       int killAttempts) {
     String action = toKill ? "kill" : "stop"
-    int regionServerCount = 2
+    int regionServerCount = 1
     String clustername = createMiniCluster(testName, configuration, 1, 1, 1, true, true)
     describe(
-        "Create a single region service cluster then " + action + " the RS");
+        "Create a single region service HBase instance then " + action + " the RS");
 
     //now launch the cluster
     ServiceLauncher<SliderClient> launcher = createHBaseCluster(
         clustername,
         regionServerCount,
         [
-            Arguments.ARG_OPTION, OptionKeys.INTERNAL_CONTAINER_FAILURE_THRESHOLD,
+            Arguments.ARG_RESOURCE_OPT, 
+            ResourceKeys.CONTAINER_FAILURE_THRESHOLD,
             Integer.toString(threshold)
         ],
         true,
         true)
     SliderClient client = launcher.service
     addToTeardown(client);
+    def aggregateConf = client.loadPersistedClusterDescription(clustername)
+    log.info aggregateConf.toString()
+    def failureOptValue = aggregateConf.resourceOperations.globalOptions.getMandatoryOptionInt(
+        ResourceKeys.CONTAINER_FAILURE_THRESHOLD)
+    assert threshold == failureOptValue
     ClusterDescription status = client.getClusterDescription(clustername)
 
     ClusterStatus clustat = basicHBaseClusterStartupSequence(client)
@@ -108,7 +112,7 @@ class TestFailureThreshold extends HBaseMiniClusterTestBase {
         describe("waiting for recovery")
 
         //and expect a recovery 
-        if (restarts < threshold) {
+        if (restarts <= threshold) {
 
           def restartTime = 1000
           status = waitForWorkerInstanceCount(
@@ -124,12 +128,21 @@ class TestFailureThreshold extends HBaseMiniClusterTestBase {
           //expect the cluster to have failed
           try {
             def finalCD = client.getClusterDescription(clustername)
-            dumpClusterDescription("expected the AM to have failed", finalCD)
+            describe( "failure threshold ignored")
+            dumpClusterDescription("expected the cluster to have failed", finalCD)
+            describe "stopping cluster"
+            maybeStopCluster(
+                client,
+                "",
+                "stopping cluster that isn't failing correctly")
+            
+            
             fail("AM had not failed after $restarts worker kills")
             
           } catch (BadClusterStateException e) {
-            assert e.toString().contains(ErrorStrings.E_APPLICATION_NOT_RUNNING)
-            assert e.exitCode == SliderExitCodes.EXIT_BAD_STATE
+            assertExceptionDetails(e,
+                SliderExitCodes.EXIT_BAD_STATE,
+                ErrorStrings.E_APPLICATION_NOT_RUNNING)
             //success
             break;
           }
