@@ -237,7 +237,8 @@ class Controller(threading.Thread):
             return
 
         if serverId != self.responseId + 1:
-          logger.error("Error in responseId sequence - restarting")
+          logger.error("Error in responseId sequence expected " + str(self.responseId + 1)
+                       + " but got " + str(serverId) + " - restarting")
           self.restartAgent()
         else:
           self.responseId = serverId

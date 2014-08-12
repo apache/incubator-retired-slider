@@ -30,12 +30,16 @@ import subprocess
 import shutil
 
 
-def _call_command(command, logoutput=False, cwd=None, env=None, wait_for_finish=True, timeout=None):
-  # TODO implement timeout, logoutput, wait_for_finish
+def _call_command(command, logoutput=False, cwd=None, env=None, wait_for_finish=True, timeout=None, pid_file_name=None):
+  # TODO implement logoutput
   Logger.info("Executing %s" % (command))
   proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                           cwd=cwd, env=env, shell=False)
   if not wait_for_finish:
+    if pid_file_name:
+      pidfile = open(pid_file_name, 'w')
+      pidfile.write(str(proc.pid))
+      pidfile.close()
     return None, None
 
   if timeout:
@@ -135,7 +139,8 @@ class ExecuteProvider(Provider):
       try:
         _call_command(self.resource.command, logoutput=self.resource.logoutput,
                       cwd=self.resource.cwd, env=self.resource.environment,
-                      wait_for_finish=self.resource.wait_for_finish, timeout=self.resource.timeout)
+                      wait_for_finish=self.resource.wait_for_finish, timeout=self.resource.timeout,
+                      pid_file_name=self.resource.pid_file)
         break
       except Fail as ex:
         if i == self.resource.tries - 1:  # last try

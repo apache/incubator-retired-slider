@@ -39,6 +39,7 @@ public class MetainfoParser {
     digester.addBeanPropertySetter("*/application/comment");
     digester.addBeanPropertySetter("*/application/version");
     digester.addBeanPropertySetter("*/application/exportedConfigs");
+    digester.addBeanPropertySetter("*/application/autoStartOnFailure");
 
     digester.addObjectCreate("*/commandOrder", CommandOrder.class);
     digester.addBeanPropertySetter("*/commandOrder/command");

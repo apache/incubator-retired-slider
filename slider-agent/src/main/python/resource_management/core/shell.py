@@ -31,15 +31,15 @@ from exceptions import ExecuteTimeoutException
 from resource_management.core.logger import Logger
 
 def checked_call(command, logoutput=False, 
-         cwd=None, env=None, preexec_fn=None, user=None, wait_for_finish=True, timeout=None):
-  return _call(command, logoutput, True, cwd, env, preexec_fn, user, wait_for_finish, timeout)
+         cwd=None, env=None, preexec_fn=None, user=None, wait_for_finish=True, timeout=None, pid_file=None):
+  return _call(command, logoutput, True, cwd, env, preexec_fn, user, wait_for_finish, timeout, pid_file)
 
 def call(command, logoutput=False, 
-         cwd=None, env=None, preexec_fn=None, user=None, wait_for_finish=True, timeout=None):
-  return _call(command, logoutput, False, cwd, env, preexec_fn, user, wait_for_finish, timeout)
+         cwd=None, env=None, preexec_fn=None, user=None, wait_for_finish=True, timeout=None, pid_file=None):
+  return _call(command, logoutput, False, cwd, env, preexec_fn, user, wait_for_finish, timeout, pid_file)
             
 def _call(command, logoutput=False, throw_on_failure=True, 
-         cwd=None, env=None, preexec_fn=None, user=None, wait_for_finish=True, timeout=None):
+         cwd=None, env=None, preexec_fn=None, user=None, wait_for_finish=True, timeout=None, pid_file_name=None):
   """
   Execute shell command
   
@@ -67,6 +67,10 @@ def _call(command, logoutput=False, throw_on_failure=True,
                           preexec_fn=preexec_fn)
 
   if not wait_for_finish:
+    if pid_file_name:
+      pidfile = open(pid_file_name, 'w')
+      pidfile.write(str(proc.pid))
+      pidfile.close()
     return None, None
   
   if timeout:

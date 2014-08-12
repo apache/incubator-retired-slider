@@ -134,6 +134,7 @@ public class TestAgentProviderService {
                                                + "        <component>\n"
                                                + "          <name>HBASE_MASTER</name>\n"
                                                + "          <category>MASTER</category>\n"
+                                               + "          <autoStartOnFailure>true</autoStartOnFailure>\n"
                                                + "          <minInstanceCount>1</minInstanceCount>\n"
                                                + "          <maxInstanceCount>2</maxInstanceCount>\n"
                                                + "          <commandScript>\n"
@@ -146,6 +147,7 @@ public class TestAgentProviderService {
                                                + "          <name>HBASE_REGIONSERVER</name>\n"
                                                + "          <category>SLAVE</category>\n"
                                                + "          <minInstanceCount>1</minInstanceCount>\n"
+                                               + "          <autoStartOnFailure>Falsee</autoStartOnFailure>\n"
                                                + "          <commandScript>\n"
                                                + "            <script>scripts/hbase_regionserver.py</script>\n"
                                                + "            <scriptType>PYTHON</scriptType>\n"
@@ -469,6 +471,8 @@ public class TestAgentProviderService {
     int found = 0;
     for (Component component : components) {
       if (component.getName().equals("HBASE_MASTER")) {
+        Assert.assertEquals(component.getAutoStartOnFailure(), "true");
+        Assert.assertEquals(component.getRequiresAutoRestart(), Boolean.TRUE);
         Assert.assertEquals(component.getMinInstanceCount(), "1");
         Assert.assertEquals(component.getMaxInstanceCount(), "2");
         Assert.assertEquals(component.getCommandScript().getScript(), "scripts/hbase_master.py");
@@ -477,6 +481,8 @@ public class TestAgentProviderService {
         found++;
       }
       if (component.getName().equals("HBASE_REGIONSERVER")) {
+        Assert.assertEquals(component.getAutoStartOnFailure(), "Falsee");
+        Assert.assertEquals(component.getRequiresAutoRestart(), Boolean.FALSE);
         Assert.assertEquals(component.getMinInstanceCount(), "1");
         Assert.assertNull(component.getMaxInstanceCount());
         Assert.assertEquals(component.getCommandScript().getScript(), "scripts/hbase_regionserver.py");

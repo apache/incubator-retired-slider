@@ -24,6 +24,7 @@ from resource_management import *
 class Memcached(Script):
   def install(self, env):
     self.install_packages(env)
+    pass
 
   def configure(self, env):
     import params
@@ -38,7 +39,8 @@ class Memcached(Script):
     Execute(process_cmd,
         user=params.app_user,
         logoutput=False,
-        wait_for_finish=False
+        wait_for_finish=False,
+        pid_file=params.pid_file
     )
 
   def stop(self, env):
@@ -48,6 +50,7 @@ class Memcached(Script):
   def status(self, env):
     import params
     env.set_params(params)
+    check_process_status(params.pid_file)
 
 if __name__ == "__main__":
   Memcached().execute()

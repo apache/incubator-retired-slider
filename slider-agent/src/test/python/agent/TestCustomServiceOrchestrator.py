@@ -484,12 +484,20 @@ class TestCustomServiceOrchestrator(TestCase):
     command['configurations']['oozie-site'] = {}
     command['configurations']['oozie-site']['log_root'] = "${AGENT_LOG_ROOT}"
     command['configurations']['oozie-site']['a_port'] = "${HBASE_MASTER.ALLOCATED_PORT}"
+    command['configurations']['oozie-site']['ignore_port1'] = "[${HBASE_RS.ALLOCATED_PORT}]"
+    command['configurations']['oozie-site']['ignore_port2'] = "[${HBASE_RS.ALLOCATED_PORT},${HBASE_REST.ALLOCATED_PORT}{DO_NOT_PROPAGATE}]"
+    command['configurations']['oozie-site']['ignore_port3'] = "[${HBASE_RS.ALLOCATED_PORT}{a}{b}{c},${A.ALLOCATED_PORT}{DO_NOT_PROPAGATE},${A.ALLOCATED_PORT}{DEFAULT_3}{DO_NOT_PROPAGATE}]"
+    command['configurations']['oozie-site']['ignore_port4'] = "${HBASE_RS}{a}{b}{c}"
 
     allocated_ports = {}
     orchestrator.finalize_command(command, False, allocated_ports)
     self.assertEqual(command['configurations']['hbase-site']['work_root'], tempWorkDir)
     self.assertEqual(command['configurations']['oozie-site']['log_root'], tempdir)
     self.assertEqual(command['configurations']['oozie-site']['a_port'], "10023")
+    self.assertEqual(command['configurations']['oozie-site']['ignore_port1'], "[0]")
+    self.assertEqual(command['configurations']['oozie-site']['ignore_port2'], "[0,0]")
+    self.assertEqual(command['configurations']['oozie-site']['ignore_port3'], "[0,0,0]")
+    self.assertEqual(command['configurations']['oozie-site']['ignore_port4'], "${HBASE_RS}{a}{b}{c}")
     self.assertEqual(orchestrator.applied_configs, {})
     self.assertEqual(len(allocated_ports), 1)
     self.assertTrue('oozie-site.a_port' in allocated_ports)

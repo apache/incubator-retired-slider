@@ -35,7 +35,6 @@ public interface OptionKeys extends InternalKeys {
    */
   String APPLICATION_TYPE = "application.type";
   
-
   String APPLICATION_NAME = "application.name";
 
   /**

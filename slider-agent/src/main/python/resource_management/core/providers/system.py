@@ -242,7 +242,8 @@ class ExecuteProvider(Provider):
         shell.checked_call(self.resource.command, logoutput=self.resource.logoutput,
                             cwd=self.resource.cwd, env=self.resource.environment,
                             preexec_fn=_preexec_fn(self.resource), user=self.resource.user,
-                            wait_for_finish=self.resource.wait_for_finish, timeout=self.resource.timeout)
+                            wait_for_finish=self.resource.wait_for_finish, timeout=self.resource.timeout,
+                            pid_file=self.resource.pid_file)
         break
       except Fail as ex:
         if i == self.resource.tries-1: # last try

@@ -21,6 +21,7 @@ from resource_management import *
 
 config = Script.get_config()
 
+container_id = config['configurations']['global']['app_container_id']
 pid_dir = config['configurations']['global']['app_pid_dir']
 pid_nimbus = format("{pid_dir}/nimbus.pid")
 pid_supervisor = format("{pid_dir}/supervisor.pid")

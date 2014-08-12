@@ -28,6 +28,7 @@ public class Component {
   String publishConfig;
   String minInstanceCount;
   String maxInstanceCount;
+  String autoStartOnFailure;
   CommandScript commandScript;
   List<Export> exports;
 
@@ -60,6 +61,14 @@ public class Component {
     this.publishConfig = publishConfig;
   }
 
+  public String getAutoStartOnFailure() {
+    return autoStartOnFailure;
+  }
+
+  public void setAutoStartOnFailure(String autoStartOnFailure) {
+    this.autoStartOnFailure = autoStartOnFailure;
+  }
+
   public String getMinInstanceCount() {
     return minInstanceCount;
   }
@@ -90,6 +99,10 @@ public class Component {
 
   public List<Export> getExports() {
     return exports;
+  }
+
+  public Boolean getRequiresAutoRestart() {
+    return Boolean.parseBoolean(this.autoStartOnFailure);
   }
 
   @Override

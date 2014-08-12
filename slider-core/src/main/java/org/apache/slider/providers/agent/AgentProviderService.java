@@ -131,6 +131,7 @@ public class AgentProviderService extends AbstractProviderService implements
   private HeartbeatMonitor monitor;
   private Boolean canAnyMasterPublish = null;
   private AgentLaunchParameter agentLaunchParameter = null;
+  private String clusterName = null;
 
   private final Map<String, ComponentInstanceState> componentStatuses =
       new ConcurrentHashMap<String, ComponentInstanceState>();
@@ -629,6 +630,13 @@ public class AgentProviderService extends AbstractProviderService implements
     return this.heartbeatMonitorInterval;
   }
 
+  private String getClusterName() {
+    if (clusterName == null || clusterName.length() == 0) {
+      clusterName = getAmState().getInternalsSnapshot().get(OptionKeys.APPLICATION_NAME);
+    }
+    return clusterName;
+  }
+
   /**
    * Publish a named property bag that may contain name-value pairs for app configurations such as hbase-site
    * @param name
@@ -973,11 +981,10 @@ public class AgentProviderService extends AbstractProviderService implements
       throws SliderException {
     assert getAmState().isApplicationLive();
     ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
-    ConfTreeOperations internalsConf = getAmState().getInternalsSnapshot();
 
     ExecutionCommand cmd = new ExecutionCommand(AgentCommandType.EXECUTION_COMMAND);
     prepareExecutionCommand(cmd);
-    String clusterName = internalsConf.get(OptionKeys.APPLICATION_NAME);
+    String clusterName = getClusterName();
     cmd.setClusterName(clusterName);
     cmd.setRoleCommand(Command.INSTALL.toString());
     cmd.setServiceName(clusterName);
@@ -1050,10 +1057,9 @@ public class AgentProviderService extends AbstractProviderService implements
       throws SliderException {
     assert getAmState().isApplicationLive();
     ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
-    ConfTreeOperations internalsConf = getAmState().getInternalsSnapshot();
 
     StatusCommand cmd = new StatusCommand();
-    String clusterName = internalsConf.get(OptionKeys.APPLICATION_NAME);
+    String clusterName = getClusterName();
 
     cmd.setCommandType(AgentCommandType.STATUS_COMMAND);
     cmd.setComponentName(roleName);
@@ -1079,10 +1085,9 @@ public class AgentProviderService extends AbstractProviderService implements
   protected void addGetConfigCommand(String roleName, String containerId, HeartBeatResponse response)
       throws SliderException {
     assert getAmState().isApplicationLive();
-    ConfTreeOperations internalsConf = getAmState().getInternalsSnapshot();
 
     StatusCommand cmd = new StatusCommand();
-    String clusterName = internalsConf.get(OptionKeys.APPLICATION_NAME);
+    String clusterName = getClusterName();
 
     cmd.setCommandType(AgentCommandType.STATUS_COMMAND);
     cmd.setComponentName(roleName);
@@ -1203,7 +1208,7 @@ public class AgentProviderService extends AbstractProviderService implements
                                      Map<String, String> tokens, String containerId) {
     Map<String, String> config = new HashMap<String, String>();
     if (configName.equals(GLOBAL_CONFIG_TAG)) {
-      addDefaultGlobalConfig(config);
+      addDefaultGlobalConfig(config, containerId);
     }
     // add role hosts to tokens
     addRoleRelatedTokens(tokens);
@@ -1248,10 +1253,11 @@ public class AgentProviderService extends AbstractProviderService implements
     return hosts;
   }
 
-  private void addDefaultGlobalConfig(Map<String, String> config) {
-    config.put("app_log_dir", "${AGENT_LOG_ROOT}/app/log");
+  private void addDefaultGlobalConfig(Map<String, String> config, String containerId) {
+    config.put("app_log_dir", "${AGENT_LOG_ROOT}");
     config.put("app_pid_dir", "${AGENT_WORK_ROOT}/app/run");
     config.put("app_install_dir", "${AGENT_WORK_ROOT}/app/install");
+    config.put("app_container_id", containerId);
   }
 
   private void buildRoleHostDetails(Map<String, String> details) {

@@ -39,7 +39,8 @@ class Memcached(Script):
     Execute(process_cmd,
         user=params.app_user,
         logoutput=False,
-        wait_for_finish=False
+        wait_for_finish=False,
+        pid_file=params.pid_file
     )
 
   def stop(self, env):
@@ -49,6 +50,8 @@ class Memcached(Script):
   def status(self, env):
     import params
     env.set_params(params)
+    #Check process status need to be changed for Windows
+    #check_process_status(params.pid_file)
 
 if __name__ == "__main__":
   Memcached().execute()

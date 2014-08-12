@@ -259,7 +259,7 @@ class CustomServiceOrchestrator():
               elif allocated_for_any in value:
                 ## All unallocated ports should be set to 0
                 logger.info("Assigning port 0 " + "for " + value)
-                value = "0"
+                value = self.set_all_unallocated_ports(value)
               command['configurations'][key][k] = value
               pass
             pass
@@ -272,6 +272,35 @@ class CustomServiceOrchestrator():
       self.applied_configs = command['configurations']
 
   pass
+
+  """
+  All unallocated ports should be set to 0
+  Look for "${SOME_COMPONENT_NAME.ALLOCATED_PORT}"
+        or "${component.ALLOCATED_PORT}{DEFAULT_port}"
+        or "${component.ALLOCATED_PORT}{DEFAULT_port}{DO_NOT_PROPAGATE}"
+  """
+
+  def set_all_unallocated_ports(self, value):
+    pattern_start = "${"
+    sub_section_start = "}{"
+    pattern_end = "}"
+    index = value.find(pattern_start)
+    while index != -1:
+      replace_index_start = index
+      replace_index_end = value.find(pattern_end, replace_index_start)
+      next_pattern_start = value.find(sub_section_start, replace_index_start)
+      while next_pattern_start == replace_index_end:
+        replace_index_end = value.find(pattern_end, replace_index_end + 1)
+        next_pattern_start = value.find(sub_section_start, next_pattern_start + 1)
+        pass
+
+      value = value[:replace_index_start] + "0" + value[replace_index_end + 1:]
+
+      # look for the next
+      index = value.find(pattern_start)
+
+    return value
+    pass
 
   """
   Port allocation can asks for multiple dynamic ports
