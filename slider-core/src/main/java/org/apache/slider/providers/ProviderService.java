@@ -115,6 +115,17 @@ public interface ProviderService extends ProviderCore,
     throws BadCommandArgumentsException, IOException;
 
   /**
+   * The application configuration should be initialized here
+   * 
+   * @param instanceDefinition
+   * @param fileSystem
+   * @throws IOException
+   * @throws SliderException
+   */
+  void initializeApplicationConfiguration(AggregateConf instanceDefinition,
+      SliderFileSystem fileSystem) throws IOException, SliderException;
+
+  /**
    * This is a validation of the application configuration on the AM.
    * Here is where things like the existence of keytabs and other
    * not-seen-client-side properties can be tested, before
@@ -180,4 +191,15 @@ public interface ProviderService extends ProviderCore,
    * @return the selector to use for choosing containers.
    */
   ContainerReleaseSelector createContainerReleaseSelector();
+
+  /**
+   * On AM restart (for whatever reason) this API is required to rebuild the AM
+   * internal state with the containers which were already assigned and running
+   * 
+   * @param liveContainers
+   * @param applicationId
+   * @param providerRoles
+   */
+  void rebuildContainerDetails(List<Container> liveContainers,
+      String applicationId, Map<Integer, ProviderRole> providerRoles);
 }

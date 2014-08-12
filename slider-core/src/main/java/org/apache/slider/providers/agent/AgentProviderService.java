@@ -19,6 +19,7 @@
 package org.apache.slider.providers.agent;
 
 import com.google.common.annotations.VisibleForTesting;
+import org.apache.curator.utils.ZKPaths;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.util.StringUtils;
@@ -27,6 +28,7 @@ import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.LocalResourceType;
+import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterDescriptionKeys;
 import org.apache.slider.api.ClusterNode;
@@ -39,6 +41,7 @@ import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTreeOperations;
 import org.apache.slider.core.conf.MapOperations;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
+import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.CommandLineBuilder;
 import org.apache.slider.core.launch.ContainerLauncher;
@@ -59,6 +62,8 @@ import org.apache.slider.providers.agent.application.metadata.Metainfo;
 import org.apache.slider.providers.agent.application.metadata.OSPackage;
 import org.apache.slider.providers.agent.application.metadata.OSSpecific;
 import org.apache.slider.server.appmaster.actions.ProviderReportedContainerLoss;
+import org.apache.slider.server.appmaster.state.ContainerPriority;
+import org.apache.slider.server.appmaster.state.RoleStatus;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentCommandType;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
@@ -172,6 +177,40 @@ public class AgentProviderService extends AbstractProviderService implements
     clientProvider.validateInstanceDefinition(instanceDefinition);
   }
 
+  // Reads the metainfo.xml in the application package and loads it
+  private void buildMetainfo(AggregateConf instanceDefinition,
+      SliderFileSystem fileSystem) throws IOException, SliderException {
+    String appDef = instanceDefinition.getAppConfOperations()
+        .getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
+
+    if (metainfo == null) {
+      synchronized (syncLock) {
+        if (metainfo == null) {
+          readAndSetHeartbeatMonitoringInterval(instanceDefinition);
+          initializeAgentDebugCommands(instanceDefinition);
+
+          metainfo = getApplicationMetainfo(fileSystem, appDef);
+          if (metainfo == null || metainfo.getApplication() == null) {
+            log.error("metainfo.xml is unavailable or malformed at {}.", appDef);
+            throw new SliderException(
+                "metainfo.xml is required in app package.");
+          }
+          commandOrder = new ComponentCommandOrder(metainfo.getApplication()
+              .getCommandOrder());
+          monitor = new HeartbeatMonitor(this, getHeartbeatMonitorInterval());
+          monitor.start();
+        }
+      }
+    }
+  }
+
+  @Override
+  public void initializeApplicationConfiguration(
+      AggregateConf instanceDefinition, SliderFileSystem fileSystem)
+      throws IOException, SliderException {
+    buildMetainfo(instanceDefinition, fileSystem);
+  }
+
   @Override
   public void buildContainerLaunchContext(ContainerLauncher launcher,
                                           AggregateConf instanceDefinition,
@@ -188,24 +227,7 @@ public class AgentProviderService extends AbstractProviderService implements
     String appDef = instanceDefinition.getAppConfOperations().
         getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
 
-    if (metainfo == null) {
-      synchronized (syncLock) {
-        if (metainfo == null) {
-          readAndSetHeartbeatMonitoringInterval(instanceDefinition);
-          initializeAgentDebugCommands(instanceDefinition);
-
-          metainfo = getApplicationMetainfo(fileSystem, appDef);
-          if (metainfo == null || metainfo.getApplication() == null) {
-            log.error("metainfo.xml is unavailable or malformed at {}.", appDef);
-            throw new SliderException("metainfo.xml is required in app package.");
-          }
-
-          commandOrder = new ComponentCommandOrder(metainfo.getApplication().getCommandOrder());
-          monitor = new HeartbeatMonitor(this, getHeartbeatMonitorInterval());
-          monitor.start();
-        }
-      }
-    }
+    initializeApplicationConfiguration(instanceDefinition, fileSystem);
 
     log.info("Build launch context for Agent");
     log.debug(instanceDefinition.toString());
@@ -234,6 +256,13 @@ public class AgentProviderService extends AbstractProviderService implements
     if (SliderUtils.isSet(appHome)) {
       scriptPath = new File(appHome, AgentKeys.AGENT_MAIN_SCRIPT).getPath();
     }
+
+    // set PYTHONPATH
+    List<String> pythonPaths = new ArrayList<String>();
+    pythonPaths.add(AgentKeys.AGENT_MAIN_SCRIPT_ROOT);
+    String pythonPath = StringUtils.join(File.pathSeparator, pythonPaths);
+    launcher.setEnv(PYTHONPATH, pythonPath);
+    log.info("PYTHONPATH set to {}", pythonPath);
 
     String agentImage = instanceDefinition.getInternalOperations().
         get(OptionKeys.INTERNAL_APPLICATION_IMAGE_PATH);
@@ -273,12 +302,10 @@ public class AgentProviderService extends AbstractProviderService implements
 
     operation.add(scriptPath);
     operation.add(ARG_LABEL, label);
-    operation.add(ARG_HOST);
-    operation.add(getClusterInfoPropertyValue(StatusKeys.INFO_AM_HOSTNAME));
-    operation.add(ARG_PORT);
-    operation.add(getClusterInfoPropertyValue(StatusKeys.INFO_AM_AGENT_PORT));
-    operation.add(ARG_SECURED_PORT);
-    operation.add(getClusterInfoPropertyValue(StatusKeys.INFO_AM_SECURED_AGENT_PORT));
+    operation.add(ARG_ZOOKEEPER_QUORUM);
+    operation.add(getClusterOptionPropertyValue(OptionKeys.ZOOKEEPER_QUORUM));
+    operation.add(ARG_ZOOKEEPER_REGISTRY_PATH);
+    operation.add(getZkRegistryPath());
 
     String debugCmd = agentLaunchParameter.getNextLaunchParameter(role);
     if (debugCmd != null && debugCmd.length() != 0) {
@@ -294,6 +321,36 @@ public class AgentProviderService extends AbstractProviderService implements
                                    role,
                                    container.getId(),
                                    getClusterInfoPropertyValue(OptionKeys.APPLICATION_NAME)));
+  }
+
+  // build the zookeeper registry path
+  private String getZkRegistryPath() {
+    String zkRegistryRoot = getConfig().get(REGISTRY_PATH,
+        DEFAULT_REGISTRY_PATH);
+    String appType = APP_TYPE;
+    String zkRegistryPath = ZKPaths.makePath(zkRegistryRoot, appType);
+    String clusterName = getAmState().getInternalsSnapshot().get(
+        OptionKeys.APPLICATION_NAME);
+    zkRegistryPath = ZKPaths.makePath(zkRegistryPath, clusterName);
+    return zkRegistryPath;
+  }
+
+  @Override
+  public void rebuildContainerDetails(List<Container> liveContainers,
+      String applicationId, Map<Integer, ProviderRole> providerRoleMap) {
+    for (Container container : liveContainers) {
+      // get the role name and label
+      Priority priority = container.getPriority();
+      String roleName = providerRoleMap.get(priority.getPriority()).name;
+      String label = getContainerLabel(container, roleName);
+      log.info("Rebuilding in-memory: container {} in role {} in cluster {}",
+          container.getId().toString(), roleName, applicationId);
+      getComponentStatuses()
+          .put(
+              label,
+              new ComponentInstanceState(roleName, container.getId(),
+                  applicationId));
+    }
   }
 
   /**
@@ -330,6 +387,7 @@ public class AgentProviderService extends AbstractProviderService implements
    */
   @Override
   public RegistrationResponse handleRegistration(Register registration) {
+    log.info("Handling registration: " + registration);
     RegistrationResponse response = new RegistrationResponse();
     String label = registration.getHostname();
     if (getComponentStatuses().containsKey(label)) {
@@ -340,6 +398,7 @@ public class AgentProviderService extends AbstractProviderService implements
       response.setLog("Label not recognized.");
       log.warn("Received registration request from unknown label {}", label);
     }
+    log.info("Registration response: " + response);
     return response;
   }
 
@@ -350,12 +409,14 @@ public class AgentProviderService extends AbstractProviderService implements
    */
   @Override
   public HeartBeatResponse handleHeartBeat(HeartBeat heartBeat) {
+    log.debug("Handling heartbeat: " + heartBeat);
     HeartBeatResponse response = new HeartBeatResponse();
     long id = heartBeat.getResponseId();
     response.setResponseId(id + 1L);
 
     String label = heartBeat.getHostname();
     String roleName = getRoleName(label);
+    State agentState = heartBeat.getAgentState();
 
     String containerId = getContainerId(label);
     StateAccessForProviders accessor = getAmState();
@@ -372,6 +433,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
     Boolean isMaster = isMaster(roleName);
     ComponentInstanceState componentStatus = getComponentStatuses().get(label);
+    updateComponentStatusWithAgentState(componentStatus, agentState);
     componentStatus.heartbeat(System.currentTimeMillis());
     // If no Master can explicitly publish then publish if its a master
     // Otherwise, wait till the master that can publish is ready
@@ -444,7 +506,15 @@ public class AgentProviderService extends AbstractProviderService implements
       log.warn("Component instance failed operation.", e);
     }
 
+    log.debug("Heartbeat response: " + response);
     return response;
+  }
+
+  private void updateComponentStatusWithAgentState(
+      ComponentInstanceState componentStatus, State agentState) {
+    if (agentState != null) {
+      componentStatus.setState(agentState);
+    }
   }
 
   @Override
@@ -587,6 +657,14 @@ public class AgentProviderService extends AbstractProviderService implements
     assert accessor.isApplicationLive();
     ClusterDescription description = accessor.getClusterStatus();
     return description.getInfo(name);
+  }
+
+  protected String getClusterOptionPropertyValue(String name)
+      throws BadConfigException {
+    StateAccessForProviders accessor = getAmState();
+    assert accessor.isApplicationLive();
+    ClusterDescription description = accessor.getClusterStatus();
+    return description.getMandatoryOption(name);
   }
 
   /**

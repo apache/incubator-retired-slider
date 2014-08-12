@@ -167,4 +167,9 @@ public interface SliderKeys extends SliderXmlConfKeys {
   String PASSPHRASE = "DEV";
   String PASS_LEN = "50";
   String KEYSTORE_LOCATION = "ssl.server.keystore.location";
+
+  /**
+   * Python specific
+   */
+  String PYTHONPATH = "PYTHONPATH";
 }

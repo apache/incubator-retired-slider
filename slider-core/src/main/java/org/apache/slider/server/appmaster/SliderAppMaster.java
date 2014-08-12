@@ -111,6 +111,7 @@ import org.apache.slider.server.appmaster.rpc.SliderClusterProtocolPBImpl;
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
 import org.apache.slider.server.appmaster.state.AppState;
 import org.apache.slider.server.appmaster.state.ContainerAssignment;
+import org.apache.slider.server.appmaster.state.ContainerPriority;
 import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation;
 import org.apache.slider.server.appmaster.state.ProviderAppState;
 import org.apache.slider.server.appmaster.operations.RMOperationHandler;
@@ -700,6 +701,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       Configuration providerConf =
         providerService.loadProviderConfigurationInformation(confDir);
 
+      providerService
+          .initializeApplicationConfiguration(instanceDefinition, fs);
+
       providerService.validateApplicationConfiguration(instanceDefinition, 
                                                        confDir,
                                                        securityEnabled);
@@ -717,6 +721,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
           liveContainers,
           appInformation,
           new SimpleReleaseSelector());
+
+      providerService.rebuildContainerDetails(liveContainers,
+          instanceDefinition.getName(), appState.getRolePriorityMap());
 
       // add the AM to the list of nodes in the cluster
       

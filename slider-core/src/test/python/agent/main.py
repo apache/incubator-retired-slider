@@ -34,9 +34,8 @@ def main():
   parser.add_option("--config", dest="conf_folder", help="conf folder")
   parser.add_option('--command', dest='command', help='command to execute')
   parser.add_option('--label', dest='label', help='label')
-  parser.add_option('--host', dest='host', help='port')
-  parser.add_option('--port', dest='port', help='host')
-  parser.add_option('--secured_port', dest='secured_port', help='host')
+  parser.add_option('--zk-quorum', dest='host:2181', help='zookeeper quorum')
+  parser.add_option('--zk-reg-path', dest='/register/org-apache-slider/cl1', help='zookeeper registry path')
 
   (options, args) = parser.parse_args()
 

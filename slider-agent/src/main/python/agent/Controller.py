@@ -34,6 +34,7 @@ from Heartbeat import Heartbeat
 from Register import Register
 from ActionQueue import ActionQueue
 from NetUtil import NetUtil
+from Registry import Registry
 import ssl
 import ProcessHelper
 import Constants
@@ -43,7 +44,12 @@ import security
 logger = logging.getLogger()
 
 AGENT_AUTO_RESTART_EXIT_CODE = 77
+HEART_BEAT_RETRY_THRESHOLD = 2
 
+WS_AGENT_CONTEXT_ROOT = '/ws'
+SLIDER_PATH_AGENTS = WS_AGENT_CONTEXT_ROOT + '/v1/slider/agents/'
+SLIDER_REL_PATH_REGISTER = '/register'
+SLIDER_REL_PATH_HEARTBEAT = '/heartbeat'
 
 class State:
   INIT, INSTALLING, INSTALLED, STARTING, STARTED, FAILED = range(6)
@@ -57,13 +63,12 @@ class Controller(threading.Thread):
     self.safeMode = True
     self.credential = None
     self.config = config
-    self.hostname = config.getLabel()
-    server_url = 'https://' + config.get(AgentConfig.SERVER_SECTION,
-                                        'hostname') + \
-                 ':' + config.get(AgentConfig.SERVER_SECTION,
-                                  'secured_port')
-    self.registerUrl = server_url + '/ws/v1/slider/agents/' + self.hostname + '/register'
-    self.heartbeatUrl = server_url + '/ws/v1/slider/agents/' + self.hostname + '/heartbeat'
+    self.label = config.getLabel()
+    self.hostname = config.get(AgentConfig.SERVER_SECTION, 'hostname')
+    self.secured_port = config.get(AgentConfig.SERVER_SECTION, 'secured_port')
+    self.server_url = 'https://' + self.hostname + ':' + self.secured_port
+    self.registerUrl = self.server_url + SLIDER_PATH_AGENTS + self.label + SLIDER_REL_PATH_REGISTER
+    self.heartbeatUrl = self.server_url + SLIDER_PATH_AGENTS + self.label + SLIDER_REL_PATH_HEARTBEAT
     self.netutil = NetUtil()
     self.responseId = -1
     self.repeatRegistration = False
@@ -80,6 +85,7 @@ class Controller(threading.Thread):
     self.componentActualState = State.INIT
     self.statusCommand = None
     self.failureCount = 0
+    self.heartBeatRetryCount = 0
 
 
   def __del__(self):
@@ -204,8 +210,8 @@ class Controller(threading.Thread):
       try:
         if not retry:
           data = json.dumps(
-            self.heartbeat.build(commandResult, self.responseId,
-                                 self.hasMappedComponents))
+            self.heartbeat.build(commandResult, self.componentActualState,
+                                 self.responseId, self.hasMappedComponents))
           self.updateStateBasedOnResult(commandResult)
           logger.debug("Sending request: " + data)
           pass
@@ -285,9 +291,33 @@ class Controller(threading.Thread):
             print(
               "Server certificate verify failed. Did you regenerate server certificate?")
             certVerifFailed = True
+        self.heartBeatRetryCount += 1
+        logger.error(
+          "Heartbeat retry count = %d" % (self.heartBeatRetryCount))
+        # Re-read zk registry in case AM was restarted and came up with new 
+        # host/port, but do this only after heartbeat retry attempts crosses
+        # threshold
+        if self.heartBeatRetryCount > HEART_BEAT_RETRY_THRESHOLD:
+          self.isRegistered = False
+          self.repeatRegistration = True
+          self.heartBeatRetryCount = 0
+          self.cachedconnect = None # Previous connection is broken now
+          zk_quorum = self.config.get(AgentConfig.SERVER_SECTION, Constants.ZK_QUORUM)
+          zk_reg_path = self.config.get(AgentConfig.SERVER_SECTION, Constants.ZK_REG_PATH)
+          registry = Registry(zk_quorum, zk_reg_path)
+          amHost, amSecuredPort = registry.readAMHostPort()
+          logger.info("Read from ZK registry: AM host = %s, AM secured port = %s" % (amHost, amSecuredPort))
+          self.hostname = amHost
+          self.secured_port = amSecuredPort
+          self.config.set(AgentConfig.SERVER_SECTION, "hostname", self.hostname)
+          self.config.set(AgentConfig.SERVER_SECTION, "secured_port", self.secured_port)
+          self.server_url = 'https://' + self.hostname + ':' + self.secured_port
+          self.registerUrl = self.server_url + SLIDER_PATH_AGENTS + self.label + SLIDER_REL_PATH_REGISTER
+          self.heartbeatUrl = self.server_url + SLIDER_PATH_AGENTS + self.label + SLIDER_REL_PATH_HEARTBEAT
+          return
         self.cachedconnect = None # Previous connection is broken now
         retry = True
-        # Sleep for some time
+      # Sleep for some time
       timeout = self.netutil.HEARTBEAT_IDDLE_INTERVAL_SEC \
                 - self.netutil.MINIMUM_INTERVAL_BETWEEN_HEARTBEATS
       self.heartbeat_wait_event.wait(timeout=timeout)
@@ -358,8 +388,8 @@ class Controller(threading.Thread):
     statusCommand["serviceName"] = command["serviceName"]
     statusCommand["taskId"] = "status"
     statusCommand['auto_generated'] = True
-    return statusCommand
     logger.info("Status command: " + pprint.pformat(statusCommand))
+    return statusCommand
     pass
 
 

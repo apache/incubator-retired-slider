@@ -151,6 +151,9 @@ public class AppState {
   private final Map<String, ProviderRole> roles =
     new ConcurrentHashMap<>();
 
+  private final Map<Integer, ProviderRole> rolePriorityMap = 
+    new ConcurrentHashMap<>();
+
   /**
    * The master node.
    */
@@ -318,6 +321,10 @@ public class AppState {
   
   protected Map<String, ProviderRole> getRoleMap() {
     return roles;
+  }
+
+  public Map<Integer, ProviderRole> getRolePriorityMap() {
+    return rolePriorityMap;
   }
 
   private Map<ContainerId, RoleInstance> getStartingNodes() {
@@ -710,6 +717,7 @@ public class AppState {
     roleStatusMap.put(priority,
         new RoleStatus(providerRole));
     roles.put(providerRole.name, providerRole);
+    rolePriorityMap.put(priority, providerRole);
   }
 
   /**
