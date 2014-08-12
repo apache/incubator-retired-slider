@@ -25,6 +25,7 @@ import org.apache.slider.server.services.workflow.WorkflowExecutorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ConcurrentHashMap;
@@ -138,6 +139,21 @@ implements Runnable, QueueAccess {
     super.serviceStop();
   }
 
+  /**
+   * Flush an action queue of all types of a specific action
+   * @param clazz 
+   */
+  protected void flushActionQueue(Class<? extends AsyncAction> clazz) {
+    Iterator<AsyncAction> iterator =
+        actionQueue.descendingIterator();
+    while (iterator.hasNext()) {
+      AsyncAction next = iterator.next();
+      if (next.getClass().equals(clazz)) {
+        iterator.remove();
+      }
+    }
+  }
+  
   /**
    * Run until the queue has been told to stop
    */

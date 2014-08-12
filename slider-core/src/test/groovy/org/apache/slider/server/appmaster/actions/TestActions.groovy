@@ -151,6 +151,9 @@ class TestActions {
     assert !queues.actionQueue.empty
     QueueExecutor ex = new QueueExecutor(queues)
     ex.run();
+    // flush all stop commands from the queue
+    queues.flushActionQueue(ActionStopQueue.class)
+    
     assert queues.actionQueue.empty
   }
 
