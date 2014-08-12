@@ -467,13 +467,19 @@ public final class SliderUtils {
    */
   public static String join(Collection collection, String separator, boolean trailing) {
     StringBuilder b = new StringBuilder();
+    // fast return on empty collection
+    if (collection.isEmpty()) {
+      return trailing ? separator : "";
+    }
     for (Object o : collection) {
       b.append(o);
       b.append(separator);
     }
-    return trailing? 
-           b.toString()
-           : (b.substring(0, b.length() - separator.length()));
+    int length = separator.length();
+    String s = b.toString();
+    return (trailing || s.isEmpty())?
+           s
+           : (b.substring(0, b.length() - length));
   }
 
   /**
