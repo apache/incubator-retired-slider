@@ -112,7 +112,7 @@ public class LongLivedProcess implements Runnable {
     this.processLog = processLog;
     ServiceThreadFactory factory = new ServiceThreadFactory(name, true);
     processExecutor = Executors.newSingleThreadExecutor(factory);
-    logExecutor=    Executors.newSingleThreadExecutor(factory);
+    logExecutor = Executors.newSingleThreadExecutor(factory);
     processBuilder = new ProcessBuilder(commands);
     processBuilder.redirectErrorStream(false);
   }
@@ -288,6 +288,7 @@ public class LongLivedProcess implements Runnable {
    */
   @Override // Runnable
   public void run() {
+    Preconditions.checkNotNull(process, "null process");
     LOG.debug("Lifecycle callback thread running");
     //notify the callback that the process has started
     if (lifecycleCallback != null) {
@@ -326,10 +327,10 @@ public class LongLivedProcess implements Runnable {
   public void start() throws IOException {
 
     spawnChildProcess();
-    processExecutor.submit(this);
     processStreamReader =
-      new ProcessStreamReader(processLog, STREAM_READER_SLEEP_TIME);
+        new ProcessStreamReader(processLog, STREAM_READER_SLEEP_TIME);
     logExecutor.submit(processStreamReader);
+    processExecutor.submit(this);
   }
 
   /**
