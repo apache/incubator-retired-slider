@@ -51,6 +51,7 @@ class Registry:
       pass
     finally:
       if not zk == None:
+        zk.stop()
         zk.close()
     logger.info("AM Host = %s, AM Secured Port = %s" % (amHost, amSecuredPort))
     return amHost, amSecuredPort
