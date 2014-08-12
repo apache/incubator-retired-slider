@@ -157,11 +157,12 @@ public final class RoleStatus implements Cloneable {
    * Note that a role failed, text will
    * be used in any diagnostics if an exception
    * is later raised.
-   * @param startupFailure
+   * @param startupFailure flag to indicate this was a startup event
+   * @return the number of failures
    * @param text text about the failure
    */
-  public void noteFailed(boolean startupFailure, String text) {
-    failed++;
+  public int noteFailed(boolean startupFailure, String text) {
+    int current = ++failed;
     if (text != null) {
       failureMessage = text;
     }
@@ -169,6 +170,7 @@ public final class RoleStatus implements Cloneable {
     if (startupFailure) {
       incStartFailed();
     }
+    return current;
   }
 
   public int getStartFailed() {

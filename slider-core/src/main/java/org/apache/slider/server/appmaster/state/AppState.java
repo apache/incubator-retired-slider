@@ -1242,7 +1242,8 @@ public class AppState {
       }
       if (roleInstance != null) {
         int roleId = roleInstance.roleId;
-        log.info("Failed container in role {}", roleId);
+        String rolename = roleInstance.role;
+        log.info("Failed container in role[{}] : {}", roleId, rolename);
         try {
           RoleStatus roleStatus = lookupRoleStatus(roleId);
           roleStatus.decActual();
@@ -1260,7 +1261,9 @@ public class AppState {
           } else {
             message = String.format("Failure %s", containerId);
           }
-          roleStatus.noteFailed(shortLived, message);
+          int failed = roleStatus.noteFailed(shortLived, message);
+          log.info("Current count of failed role[{}] {} =  {}",
+              roleId, rolename, failed);
           if (failedContainer != null) {
             roleHistory.onFailedContainer(failedContainer, shortLived);
           }
@@ -1453,8 +1456,11 @@ public class AppState {
   private void checkFailureThreshold(RoleStatus role)
       throws TriggerClusterTeardownException {
     int failures = role.getFailed();
+    int threshold = getFailureThresholdForRole(role);
+    log.debug("Failure count of role: {}: {}, threshold={}",
+        role.getName(), failures, threshold);
 
-    if (failures > failureThreshold) {
+    if (failures > threshold) {
       throw new TriggerClusterTeardownException(
         SliderExitCodes.EXIT_DEPLOYMENT_FAILED,
         ErrorStrings.E_UNSTABLE_CLUSTER +
@@ -1462,11 +1468,15 @@ public class AppState {
         role.getName(),
         role.getFailed(),
         role.getStartFailed(),
-        failureThreshold,
+          threshold,
         role.getFailureMessage());
     }
   }
 
+  private int getFailureThresholdForRole(RoleStatus status) {
+    return failureThreshold;
+  }
+  
   /**
    * Reset the failure counts of all roles
    */

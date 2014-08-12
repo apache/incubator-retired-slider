@@ -115,12 +115,12 @@ public final class RoleInstance implements Cloneable {
   public String toString() {
     final StringBuilder sb =
       new StringBuilder("RoleInstance{");
-    sb.append("container=").append(SliderUtils.containerToString(container));
+    sb.append("role='").append(role).append('\'');
     sb.append(", id='").append(id).append('\'');
+    sb.append(", container=").append(SliderUtils.containerToString(container));
     sb.append(", createTime=").append(createTime);
     sb.append(", startTime=").append(startTime);
     sb.append(", released=").append(released);
-    sb.append(", role='").append(role).append('\'');
     sb.append(", roleId=").append(roleId);
     sb.append(", host=").append(host);
     sb.append(", hostURL=").append(hostURL);

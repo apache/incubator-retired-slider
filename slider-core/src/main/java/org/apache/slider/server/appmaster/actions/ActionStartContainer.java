@@ -24,6 +24,8 @@ import org.apache.slider.server.appmaster.SliderAppMaster;
 import org.apache.slider.server.appmaster.state.AppState;
 import org.apache.slider.server.appmaster.state.RoleInstance;
 
+import java.util.Locale;
+
 /**
  * Start a container
  * @see SliderAppMaster#startContainer(Container, ContainerLaunchContext, RoleInstance) 
@@ -39,7 +41,11 @@ public class ActionStartContainer extends AsyncAction {
       Container container,
       ContainerLaunchContext ctx,
       RoleInstance instance) {
-    super(name, delay);
+    super(
+        String.format(Locale.ENGLISH,
+            "%s %s: /",
+            name , container.getId().toString()), 
+        delay);
     this.container = container;
     this.ctx = ctx;
     this.instance = instance;

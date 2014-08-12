@@ -72,6 +72,11 @@ class TestRegionServerFailureThreshold extends HBaseMiniClusterTestBase {
         true)
     SliderClient client = launcher.service
     addToTeardown(client);
+    def aggregateConf = client.loadPersistedClusterDescription(clustername)
+    log.info aggregateConf.toString()
+    def failureOptValue = aggregateConf.resourceOperations.globalOptions.getMandatoryOptionInt(
+        ResourceKeys.CONTAINER_FAILURE_THRESHOLD)
+    assert threshold == failureOptValue
     ClusterDescription status = client.getClusterDescription(clustername)
 
     ClusterStatus clustat = basicHBaseClusterStartupSequence(client)
@@ -107,7 +112,7 @@ class TestRegionServerFailureThreshold extends HBaseMiniClusterTestBase {
         describe("waiting for recovery")
 
         //and expect a recovery 
-        if (restarts < threshold) {
+        if (restarts <= threshold) {
 
           def restartTime = 1000
           status = waitForWorkerInstanceCount(
@@ -123,12 +128,21 @@ class TestRegionServerFailureThreshold extends HBaseMiniClusterTestBase {
           //expect the cluster to have failed
           try {
             def finalCD = client.getClusterDescription(clustername)
-            dumpClusterDescription("expected the AM to have failed", finalCD)
+            describe( "failure threshold ignored")
+            dumpClusterDescription("expected the cluster to have failed", finalCD)
+            describe "stopping cluster"
+            maybeStopCluster(
+                client,
+                "",
+                "stopping cluster that isn't failing correctly")
+            
+            
             fail("AM had not failed after $restarts worker kills")
             
           } catch (BadClusterStateException e) {
-            assert e.toString().contains(ErrorStrings.E_APPLICATION_NOT_RUNNING)
-            assert e.exitCode == SliderExitCodes.EXIT_BAD_STATE
+            assertExceptionDetails(e,
+                SliderExitCodes.EXIT_BAD_STATE,
+                ErrorStrings.E_APPLICATION_NOT_RUNNING)
             //success
             break;
           }

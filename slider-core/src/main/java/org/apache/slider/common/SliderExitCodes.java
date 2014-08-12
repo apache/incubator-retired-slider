@@ -73,7 +73,7 @@ public interface SliderExitCodes extends LauncherExitCodes {
   int EXIT_PROCESS_FAILED = 72;
 
   /**
-   * The cluster failed -too many containers were
+   * The instance failed -too many containers were
    * failing or some other threshold was reached
    */
   int EXIT_DEPLOYMENT_FAILED = 73;

@@ -1634,7 +1634,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     LOG_YARN.info("Started Container {} ", containerId);
     RoleInstance cinfo = appState.onNodeManagerContainerStarted(containerId);
     if (cinfo != null) {
-      LOG_YARN.info("Deployed instance of role {}", cinfo.role);
+      LOG_YARN.info("Deployed instance of role {} onto {}",
+          cinfo.role, containerId);
       //trigger an async container status
       nmClientAsync.getContainerStatusAsync(containerId,
                                             cinfo.container.getNodeId());
