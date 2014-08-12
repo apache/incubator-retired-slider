@@ -111,7 +111,6 @@ import org.apache.slider.server.appmaster.rpc.SliderClusterProtocolPBImpl;
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
 import org.apache.slider.server.appmaster.state.AppState;
 import org.apache.slider.server.appmaster.state.ContainerAssignment;
-import org.apache.slider.server.appmaster.state.ContainerPriority;
 import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation;
 import org.apache.slider.server.appmaster.state.ProviderAppState;
 import org.apache.slider.server.appmaster.operations.RMOperationHandler;
@@ -153,7 +152,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
@@ -1332,26 +1330,12 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     String result;
     //quick update
     //query and json-ify
-    ClusterDescription cd;
-    cd = getCurrentClusterStatus();
+    ClusterDescription cd = updateClusterStatus();
     result = cd.toJsonString();
     String stat = result;
     return Messages.GetJSONClusterStatusResponseProto.newBuilder()
       .setClusterSpec(stat)
       .build();
-  }
-
-  /**
-   * Get the current cluster status, including any provider-specific info
-   * @return a status document
-   */
-  public ClusterDescription getCurrentClusterStatus() {
-    ClusterDescription cd;
-    synchronized (this) {
-      updateClusterStatus();
-      cd = getClusterDescription();
-    }
-    return cd;
   }
 
 
@@ -1485,10 +1469,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   /**
    * Update the cluster description with anything interesting
    */
-  public synchronized void updateClusterStatus() {
+  public synchronized ClusterDescription updateClusterStatus() {
     Map<String, String> providerStatus = providerService.buildProviderStatus();
     assert providerStatus != null : "null provider status";
-    appState.refreshClusterStatus(providerStatus);
+    return appState.refreshClusterStatus(providerStatus);
   }
 
   /**

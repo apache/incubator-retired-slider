@@ -18,6 +18,7 @@
 
 package org.apache.slider.common.tools;
 
+import com.google.common.base.Preconditions;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.io.output.ByteArrayOutputStream;
@@ -616,6 +617,8 @@ public final class SliderUtils {
    */
   public static <T1, T2> Map<T1, T2> mergeMapsIgnoreDuplicateKeys(Map<T1, T2> first,
                                                                   Map<T1, T2> second) {
+    Preconditions.checkArgument(first != null, "Null 'first' value");
+    Preconditions.checkArgument(second != null, "Null 'second' value");
     for (Map.Entry<T1, T2> entry : second.entrySet()) {
       T1 key = entry.getKey();
       if (!first.containsKey(key)) {

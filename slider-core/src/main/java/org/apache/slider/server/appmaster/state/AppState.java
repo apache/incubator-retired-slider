@@ -1379,7 +1379,7 @@ public class AppState {
    * Update the cluster description with anything interesting
    * @param providerStatus status from the provider for the cluster info section
    */
-  public void refreshClusterStatus(Map<String, String> providerStatus) {
+  public synchronized ClusterDescription refreshClusterStatus(Map<String, String> providerStatus) {
     ClusterDescription cd = getClusterStatus();
     long now = now();
     cd.setInfoTime(StatusKeys.INFO_STATUS_TIME_HUMAN,
@@ -1390,7 +1390,7 @@ public class AppState {
         cd.setInfo(entry.getKey(),entry.getValue());
       }
     }
-    MapOperations infoOps = new MapOperations("info",cd.info);
+    MapOperations infoOps = new MapOperations("info", cd.info);
     infoOps.mergeWithoutOverwrite(applicationInfo);
     SliderUtils.addBuildInfo(infoOps, "status");
     cd.statistics = new HashMap<>();
@@ -1436,7 +1436,7 @@ public class AppState {
     sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_UNKNOWN_COMPLETED,
         completionOfUnknownContainerEvent.get());
     cd.statistics.put(SliderKeys.COMPONENT_AM, sliderstats);
-    
+    return cd;
   }
 
   /**
