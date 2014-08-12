@@ -33,6 +33,7 @@ import org.apache.slider.core.main.ServiceLauncher
 import org.junit.Test
 
 import static org.apache.slider.common.params.Arguments.ARG_COMP_OPT
+import static org.apache.slider.common.params.Arguments.ARG_RESOURCE_OPT
 import static org.apache.slider.common.params.Arguments.ARG_RES_COMP_OPT
 import static org.apache.slider.providers.agent.AgentKeys.SERVICE_NAME
 
@@ -51,7 +52,7 @@ class TestBuildStandaloneAM extends AgentMiniClusterTestBase {
         SliderActions.ACTION_BUILD,
         clustername,
         [:],
-        [],
+        [ARG_RESOURCE_OPT, "yarn.container.failure.window.years", "4"],
         true,
         false,
         agentDefOptions)
@@ -64,10 +65,19 @@ class TestBuildStandaloneAM extends AgentMiniClusterTestBase {
 
     //but the cluster is still there for the default
     assert 0 == sliderClient.actionExists(clustername, false)
-
+    
+    
+    
+    // verify the YARN registry doesn't know of it
     def serviceRegistryClient = sliderClient.YARNRegistryClient
     ApplicationReport report = serviceRegistryClient.findInstance(clustername)
     assert report == null;
+    
+    // verify that global resource options propagate from the CLI
+    def aggregateConf = sliderClient.loadPersistedClusterDescription(clustername)
+    def windowDays = aggregateConf.resourceOperations.globalOptions.getMandatoryOptionInt(
+        "yarn.container.failure.window.years")
+    assert 4 == windowDays
 
     //and a second attempt will fail as the cluster now exists
     try {
@@ -84,6 +94,8 @@ class TestBuildStandaloneAM extends AgentMiniClusterTestBase {
       assertExceptionDetails(e, SliderExitCodes.EXIT_INSTANCE_EXISTS, "")
     }
 
+    
+    
     //thaw time
     ServiceLauncher<SliderClient> l2 = thawCluster(clustername, [], true)
     SliderClient thawed = l2.service
@@ -95,7 +107,7 @@ class TestBuildStandaloneAM extends AgentMiniClusterTestBase {
   public void testUpdateCluster() throws Throwable {
     String clustername = createMiniCluster("", configuration, 1, true)
 
-    describe "verify that a build cluster can be updated"
+    describe "verify that a built cluster can be updated"
 
     ServiceLauncher<SliderClient> launcher = createOrBuildCluster(
         SliderActions.ACTION_BUILD,

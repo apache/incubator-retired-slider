@@ -586,6 +586,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     // resource component args
     appConf.merge(cmdLineResourceOptions);
+    resources.merge(cmdLineResourceOptions);
     resources.mergeComponents(buildInfo.getResourceCompOptionMap());
 
     builder.init(providerName, instanceDefinition);
@@ -1854,10 +1855,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @throws IOException any problems loading -including a missing file
    */
   @VisibleForTesting
-  public AggregateConf loadPersistedClusterDescription(String clustername) throws
-                                                                           IOException,
-      SliderException,
-                                                                           LockAcquireFailedException {
+  public AggregateConf loadPersistedClusterDescription(String clustername)
+      throws IOException, SliderException, LockAcquireFailedException {
     Path clusterDirectory = sliderFileSystem.buildClusterDirPath(clustername);
     ConfPersister persister = new ConfPersister(sliderFileSystem, clusterDirectory);
     AggregateConf instanceDescription = new AggregateConf();
