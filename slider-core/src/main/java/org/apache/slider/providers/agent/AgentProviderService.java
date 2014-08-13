@@ -1131,7 +1131,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
   @VisibleForTesting
   protected void addStartCommand(String roleName, String containerId, HeartBeatResponse response,
-                                 String scriptPath, Boolean isMarkedAutoRestart)
+                                 String scriptPath, boolean isMarkedAutoRestart)
       throws
       SliderException {
     assert getAmState().isApplicationLive();

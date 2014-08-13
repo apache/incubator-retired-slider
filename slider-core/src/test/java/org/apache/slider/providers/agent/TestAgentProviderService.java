@@ -63,6 +63,7 @@ import org.apache.slider.server.appmaster.web.rest.agent.RegistrationStatus;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -566,11 +567,11 @@ public class TestAgentProviderService {
     String role_hm = "HBASE_MASTER";
     String role_hrs = "HBASE_REGIONSERVER";
 
-    AgentProviderService aps = new AgentProviderService();
-    AgentProviderService mockAps = Mockito.spy(aps);
+    AgentProviderService aps1 = new AgentProviderService();
+    AgentProviderService mockAps = Mockito.spy(aps1);
     doReturn(metainfo).when(mockAps).getMetainfo();
 
-    AgentProviderService mockAps2 = Mockito.spy(aps);
+    AgentProviderService mockAps2 = Mockito.spy(aps1);
     doReturn(metainfo2).when(mockAps2).getMetainfo();
 
     Assert.assertTrue(mockAps.isMaster(role_hm));
@@ -644,7 +645,7 @@ public class TestAgentProviderService {
           anyString(),
           any(HeartBeatResponse.class),
           anyString(),
-          anyBoolean());
+          Matchers.anyBoolean());
       doNothing().when(mockAps).addGetConfigCommand(
           anyString(),
           anyString(),
@@ -747,7 +748,7 @@ public class TestAgentProviderService {
                                                                 anyString(),
                                                                 any(HeartBeatResponse.class),
                                                                 anyString(),
-                                                                anyBoolean());
+                                                                Matchers.anyBoolean());
       // RS still does not start
       hb = new HeartBeat();
       hb.setResponseId(3);
@@ -758,7 +759,7 @@ public class TestAgentProviderService {
                                                                 anyString(),
                                                                 any(HeartBeatResponse.class),
                                                                 anyString(),
-                                                                anyBoolean());
+                                                                Matchers.anyBoolean());
 
       // MASTER succeeds install and issues start
       hb = new HeartBeat();
@@ -778,7 +779,7 @@ public class TestAgentProviderService {
                                                                 anyString(),
                                                                 any(HeartBeatResponse.class),
                                                                 anyString(),
-                                                                anyBoolean());
+                                                                Matchers.anyBoolean());
       Map<String, String> allocatedPorts = mockAps.getAllocatedPorts();
       Assert.assertTrue(allocatedPorts != null);
       Assert.assertTrue(allocatedPorts.size() == 1);
@@ -794,7 +795,7 @@ public class TestAgentProviderService {
                                                                 anyString(),
                                                                 any(HeartBeatResponse.class),
                                                                 anyString(),
-                                                                anyBoolean());
+                                                                Matchers.anyBoolean());
       // MASTER succeeds start
       hb = new HeartBeat();
       hb.setResponseId(3);
@@ -819,7 +820,7 @@ public class TestAgentProviderService {
                                                                 anyString(),
                                                                 any(HeartBeatResponse.class),
                                                                 anyString(),
-                                                                anyBoolean());
+                                                                Matchers.anyBoolean());
     // JDK7 
     } catch (SliderException he) {
       log.warn(he.getMessage());
