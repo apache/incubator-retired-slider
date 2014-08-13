@@ -18,21 +18,21 @@
 
 package org.apache.slider.server.appmaster.monkey;
 
-import org.apache.slider.server.appmaster.SliderAppMaster;
 import org.apache.slider.server.appmaster.actions.ActionHalt;
 import org.apache.slider.server.appmaster.actions.QueueAccess;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Kill the AM
+ */
 public class ChaosKillAM implements ChaosTarget {
 
-  private final SliderAppMaster appMaster;
+  public static final int DELAY = 1000;
   private final QueueAccess queues;
   private final int exitCode;
 
-  public ChaosKillAM(SliderAppMaster appMaster,
-      QueueAccess queues, int exitCode) {
-    this.appMaster = appMaster;
+  public ChaosKillAM(QueueAccess queues, int exitCode) {
     this.queues = queues;
     this.exitCode = exitCode;
   }
@@ -42,7 +42,7 @@ public class ChaosKillAM implements ChaosTarget {
    */
   @Override
   public void chaosAction() {
-    queues.schedule(new ActionHalt(exitCode, "Chaos invoked halt", 1000,
+    queues.schedule(new ActionHalt(exitCode, "Chaos invoked halt", DELAY,
         TimeUnit.MILLISECONDS));
   }
 }

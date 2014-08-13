@@ -20,7 +20,6 @@ package org.apache.slider.server.appmaster.monkey;
 
 import com.codahale.metrics.MetricRegistry;
 import org.apache.hadoop.service.AbstractService;
-import org.apache.slider.server.appmaster.actions.AsyncAction;
 import org.apache.slider.server.appmaster.actions.QueueAccess;
 import org.apache.slider.server.appmaster.actions.RenewingAction;
 import org.slf4j.Logger;
@@ -28,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -36,8 +36,16 @@ import java.util.concurrent.TimeUnit;
 public class ChaosMonkeyService extends AbstractService {
   protected static final Logger log =
       LoggerFactory.getLogger(ChaosMonkeyService.class);
+  public static final int PERCENT_1 = 100;
+  public static final double PERCENT_1D = 100.0;
+  
+  /**
+   * the percentage value as multiplied up
+   */
+  public static final int PERCENT_100 = 100 * PERCENT_1;
   private final MetricRegistry metrics;
   private final QueueAccess queues;
+  private final Random random = new Random();
 
   private static final List<ChaosEntry> chaosEntries =
       new ArrayList<ChaosEntry>();
@@ -50,14 +58,19 @@ public class ChaosMonkeyService extends AbstractService {
 
 
   public synchronized void addTarget(String name,
-      ChaosTarget target,
-      long probability) {
-
+      ChaosTarget target, long probability) {
+    log.info("Adding {} with probability {}", name, probability / PERCENT_1);
     chaosEntries.add(new ChaosEntry(name, target, probability, metrics));
   }
 
+  /**
+   * Iterate through all the entries and invoke chaos on those wanted
+   */
   public void play() {
-
+    for (ChaosEntry chaosEntry : chaosEntries) {
+      long p = random.nextInt(PERCENT_100);
+      chaosEntry.maybeInvokeChaos(p);
+    }
   }
 
   public RenewingAction<MonkeyPlayAction> getChaosAction(long time, TimeUnit timeUnit) {

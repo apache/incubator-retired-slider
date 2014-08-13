@@ -18,9 +18,11 @@
 
 package org.apache.slider.server.appmaster.monkey;
 
-import org.apache.slider.server.appmaster.SliderAppMaster;
+import com.google.common.base.Preconditions;
 import org.apache.slider.server.appmaster.actions.ActionKillContainer;
 import org.apache.slider.server.appmaster.actions.QueueAccess;
+import org.apache.slider.server.appmaster.operations.RMOperationHandler;
+import org.apache.slider.server.appmaster.state.AppState;
 import org.apache.slider.server.appmaster.state.RoleInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,24 +37,29 @@ import java.util.concurrent.TimeUnit;
 public class ChaosKillContainer implements ChaosTarget {
   protected static final Logger log =
       LoggerFactory.getLogger(ChaosKillContainer.class);
-  private final SliderAppMaster appMaster;
+  public static final int DELAY = 100;
+  private final AppState appState;
   private final QueueAccess queues;
   private final Random random = new Random();
+  private final RMOperationHandler operationHandler;
 
-  public ChaosKillContainer(SliderAppMaster appMaster,
-      QueueAccess queues) {
-    this.appMaster = appMaster;
+  public ChaosKillContainer(AppState appState,
+      QueueAccess queues,
+      RMOperationHandler operationHandler) {
+    Preconditions.checkNotNull(appState);
+    Preconditions.checkNotNull(queues);
+    this.appState = appState;
     this.queues = queues;
+    this.operationHandler = operationHandler;
   }
 
   /**
-   * Trigger a container kill halt
+   * Trigger a container kill 
    */
-  
   @Override
   public void chaosAction() {
     List<RoleInstance> liveContainers =
-        appMaster.getAppState().cloneLiveContainerInfoList();
+        appState.cloneLiveContainerInfoList();
     int size = liveContainers.size();
     if (size == 0) {
       log.info("No containers to kill");
@@ -63,6 +70,6 @@ public class ChaosKillContainer implements ChaosTarget {
     log.info("Killing {}", roleInstance);
 
     queues.schedule(new ActionKillContainer(roleInstance.getId(),
-        100, TimeUnit.MILLISECONDS));
+        DELAY, TimeUnit.MILLISECONDS, operationHandler));
   }
 }

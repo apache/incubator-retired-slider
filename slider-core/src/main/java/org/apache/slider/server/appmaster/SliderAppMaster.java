@@ -19,6 +19,7 @@
 package org.apache.slider.server.appmaster;
 
 import com.codahale.metrics.MetricRegistry;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.BlockingService;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
@@ -1195,31 +1196,19 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     ResetFailureWindow reset = new ResetFailureWindow();
     ConfTreeOperations ops = new ConfTreeOperations(resources);
     MapOperations globals = ops.getGlobalOptions();
-    int days = globals.getOptionInt(ResourceKeys.CONTAINER_FAILURE_WINDOW_DAYS,
-        ResourceKeys.DEFAULT_CONTAINER_FAILURE_WINDOW_DAYS);
-    int hours = globals.getOptionInt(
-        ResourceKeys.CONTAINER_FAILURE_WINDOW_HOURS,
-        ResourceKeys.DEFAULT_CONTAINER_FAILURE_WINDOW_HOURS);
-    int minutes = globals.getOptionInt(
-        ResourceKeys.CONTAINER_FAILURE_WINDOW_MINUTES,
-        ResourceKeys.DEFAULT_CONTAINER_FAILURE_WINDOW_MINUTES);
-    // range check
-    if (days < 0 || hours < 0 || minutes < 0) {
-      throw new BadConfigException("Failure window contains negative values:"
-         + "days=%d hours=%d, minutes=%d",
-          days, hours, minutes);
-    }
-    // calculate total time, schedule the reset if expected
-    int totalMinutes = days * 24 * 60 + hours * 24 + minutes;
-    if (totalMinutes > 0) {
+    long seconds = globals.getTimeRange(ResourceKeys.CONTAINER_FAILURE_WINDOW,
+        ResourceKeys.DEFAULT_CONTAINER_FAILURE_WINDOW_DAYS,
+        ResourceKeys.DEFAULT_CONTAINER_FAILURE_WINDOW_HOURS,
+        ResourceKeys.DEFAULT_CONTAINER_FAILURE_WINDOW_MINUTES, 0);
+    if (seconds > 0) {
       log.info(
-          "Scheduling the failure window reset interval  to every {} minutes",
-          totalMinutes);
+          "Scheduling the failure window reset interval to every {} seconds",
+          seconds);
       RenewingAction<ResetFailureWindow> renew = new RenewingAction<>(
-          reset, totalMinutes, totalMinutes, TimeUnit.MINUTES, 0);
+          reset, seconds, seconds, TimeUnit.SECONDS, 0);
       actionQueues.renewing("failures", renew);
     } else {
-      log.warn("Failure window reset interval is not set");
+      log.info("Failure window reset interval is not set");
     }
   }
   
@@ -1458,7 +1447,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     //throws NoSuchNodeException if it is missing
     RoleInstance instance =
       appState.getLiveInstanceByContainerID(containerID);
-    queue(new ActionKillContainer(instance.getId(), 0, TimeUnit.MILLISECONDS));
+    queue(new ActionKillContainer(instance.getId(), 0, TimeUnit.MILLISECONDS,
+        rmOperationHandler));
     Messages.KillContainerResponseProto.Builder builder =
       Messages.KillContainerResponseProto.newBuilder();
     builder.setSuccess(true);
@@ -1467,6 +1457,15 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
   public void executeRMOperations(List<AbstractRMOperation> operations) {
     rmOperationHandler.execute(operations);
+  }
+
+
+  /**
+   * Get the RM operations handler for direct scheduling of work.
+   */
+  @VisibleForTesting
+  public RMOperationHandler getRmOperationHandler() {
+    return rmOperationHandler;
   }
 
   @Override
@@ -1742,18 +1741,45 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   }
   
   public boolean maybeStartMonkey() {
+    MapOperations internals = getGlobalInternalOptions();
+
+    Boolean enabled =
+        internals.getOptionBool(InternalKeys.INTERNAL_CHAOS_MONKEY_ENABLED,
+            InternalKeys.DEFAULT_INTERNAL_CHAOS_MONKEY_ENABLED);
+    if (!enabled) {
+      log.info("Chaos monkey disabled");
+    }
+    
+    long monkeyInterval = internals.getTimeRange(
+        InternalKeys.INTERNAL_CHAOS_MONKEY_RATE,
+        InternalKeys.DEFAULT_INTERNAL_CHAOS_MONKEY_RATE_DAYS,
+        InternalKeys.DEFAULT_INTERNAL_CHAOS_MONKEY_RATE_HOURS,
+        InternalKeys.DEFAULT_INTERNAL_CHAOS_MONKEY_RATE_MINUTES,
+        0);
+    log.info("Adding Chaos Monkey scheduled every {} seconds ({} hours)",
+        monkeyInterval, monkeyInterval/(60*60));
     monkey = new ChaosMonkeyService(metrics, actionQueues);
-    int amKillProbability = 100;
-    int containerKillProbability = 200;
-    monkey.addTarget("AM killer", 
-        new ChaosKillAM(this, actionQueues, -1),
-        amKillProbability);
-    monkey.addTarget("Container killer", 
-        new ChaosKillContainer(this, actionQueues),
-        amKillProbability);
+    int amKillProbability = internals.getOptionInt(
+        InternalKeys.INTERNAL_CHAOS_MONKEY_PROBABILITY_AM_FAILURE,
+        InternalKeys.DEFAULT_CHAOS_MONKEY_PROBABILITY_AM_FAILURE);
+    if (amKillProbability > 0) {
+      log.info("Adding AM killer with probability %f", amKillProbability/100.0);
+      monkey.addTarget("AM killer",
+          new ChaosKillAM(actionQueues, -1), amKillProbability
+      );
+    }
+    int containerKillProbability = internals.getOptionInt(
+        InternalKeys.INTERNAL_CHAOS_MONKEY_PROBABILITY_CONTAINER_FAILURE,
+        InternalKeys.DEFAULT_CHAOS_MONKEY_PROBABILITY_CONTAINER_FAILURE);
+    if (containerKillProbability > 0) {
+      monkey.addTarget("Container killer",
+          new ChaosKillContainer(appState, actionQueues, rmOperationHandler),
+          amKillProbability
+      );
+    }
     initAndAddService(monkey);
     // and schedule it
-    schedule(monkey.getChaosAction(60, TimeUnit.SECONDS));
+    schedule(monkey.getChaosAction(monkeyInterval, TimeUnit.SECONDS));
     return true;
   }
   

@@ -18,6 +18,7 @@
 
 package org.apache.slider.test
 
+import com.codahale.metrics.MetricRegistry
 import groovy.transform.CompileStatic
 import org.apache.hadoop.fs.FileUtil
 import org.apache.slider.common.SliderXMLConfKeysForTesting
@@ -38,7 +39,11 @@ import java.nio.file.Files
 @CompileStatic
 public abstract class SliderTestBase extends SliderTestUtils {
 
-
+  /**
+   * Singleton metric registry
+   */
+  public static final MetricRegistry metricRegistry = new MetricRegistry()
+  
   @Rule
   public TestName methodName = new TestName();
 

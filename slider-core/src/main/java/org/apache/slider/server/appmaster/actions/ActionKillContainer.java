@@ -18,10 +18,12 @@
 
 package org.apache.slider.server.appmaster.actions;
 
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.slider.server.appmaster.SliderAppMaster;
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
 import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation;
+import org.apache.slider.server.appmaster.operations.RMOperationHandler;
 import org.apache.slider.server.appmaster.state.AppState;
 
 import java.util.LinkedList;
@@ -31,11 +33,25 @@ import java.util.concurrent.TimeUnit;
 public class ActionKillContainer extends AsyncAction {
 
   private final ContainerId containerId;
-  
-  public ActionKillContainer(ContainerId containerId, long delay,
-      TimeUnit timeUnit) {
+  private final RMOperationHandler operationHandler;
+  public ActionKillContainer(
+      ContainerId containerId,
+      long delay,
+      TimeUnit timeUnit,
+      RMOperationHandler operationHandler) {
     super("kill container", delay, timeUnit);
+    this.operationHandler = operationHandler;
+    Preconditions.checkArgument(containerId != null);
+    
     this.containerId = containerId;
+  }
+
+  /**
+   * Get the container ID to kill
+   * @return
+   */
+  public ContainerId getContainerId() {
+    return containerId;
   }
 
   @Override
@@ -46,6 +62,6 @@ public class ActionKillContainer extends AsyncAction {
     ContainerReleaseOperation release = new ContainerReleaseOperation(containerId);
     opsList.add(release);
     //now apply the operations
-    appMaster.executeRMOperations(opsList);
+    operationHandler.execute(opsList);
   }
 }

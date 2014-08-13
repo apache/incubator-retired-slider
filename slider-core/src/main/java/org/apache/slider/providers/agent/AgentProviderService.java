@@ -32,6 +32,7 @@ import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterDescriptionKeys;
 import org.apache.slider.api.ClusterNode;
+import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.OptionKeys;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.common.SliderKeys;
@@ -62,8 +63,6 @@ import org.apache.slider.providers.agent.application.metadata.Metainfo;
 import org.apache.slider.providers.agent.application.metadata.OSPackage;
 import org.apache.slider.providers.agent.application.metadata.OSSpecific;
 import org.apache.slider.server.appmaster.actions.ProviderReportedContainerLoss;
-import org.apache.slider.server.appmaster.state.ContainerPriority;
-import org.apache.slider.server.appmaster.state.RoleStatus;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentCommandType;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
@@ -265,7 +264,7 @@ public class AgentProviderService extends AbstractProviderService implements
     log.info("PYTHONPATH set to {}", pythonPath);
 
     String agentImage = instanceDefinition.getInternalOperations().
-        get(OptionKeys.INTERNAL_APPLICATION_IMAGE_PATH);
+        get(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH);
     if (agentImage != null) {
       LocalResource agentImageRes = fileSystem.createAmResource(new Path(agentImage), LocalResourceType.ARCHIVE);
       launcher.addLocalResource(AgentKeys.AGENT_INSTALL_DIR, agentImageRes);
@@ -1169,7 +1168,7 @@ public class AgentProviderService extends AbstractProviderService implements
     tokens.put("${DEFAULT_DATA_DIR}", getAmState()
         .getInternalsSnapshot()
         .getGlobalOptions()
-        .getMandatoryOption(OptionKeys.INTERNAL_DATA_DIR_PATH));
+        .getMandatoryOption(InternalKeys.INTERNAL_DATA_DIR_PATH));
     return tokens;
   }
 

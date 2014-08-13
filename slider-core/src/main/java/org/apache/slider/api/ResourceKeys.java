@@ -112,34 +112,14 @@ public interface ResourceKeys {
       "yarn.container.failure.threshold";
 
   /**
-   * Minutes range of the container failure reset window.
-   * This is combined with the hour and day values to
-   * produce the full window.
+   * prefix for the time of the container failure reset window.
    * {@value}
    */
-  String CONTAINER_FAILURE_WINDOW_MINUTES =
-      "yarn.container.failure.window.minutes";
 
-  
-  
-  /**
-   * Hours range of the container failure reset window
-   * This is combined with the minute and day values to
-   * produce the full window.
-   * {@value}
-   */
-  String CONTAINER_FAILURE_WINDOW_HOURS =
-      "yarn.container.failure.window.hours";
+  String CONTAINER_FAILURE_WINDOW =
+      "yarn.container.failure.window";
 
 
-  /**
-   * Hours range of the container failure reset window
-   * This is combined with the hour and minute values to
-   * produce the full window.
-   * {@value}
-   */
-  String CONTAINER_FAILURE_WINDOW_DAYS =
-      "yarn.container.failure.window.days";
 
   int DEFAULT_CONTAINER_FAILURE_WINDOW_DAYS = 0;
   int DEFAULT_CONTAINER_FAILURE_WINDOW_HOURS = 6;

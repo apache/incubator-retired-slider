@@ -41,7 +41,7 @@ public class ChaosEntry {
 
 
   /**
-   * Constructor -includes validaton of all arguments
+   * Constructor -includes validation of all arguments
    * @param name
    * @param target
    * @param probability
@@ -51,7 +51,8 @@ public class ChaosEntry {
     Preconditions.checkArgument(!StringUtils.isEmpty(name), "missing name");
     Preconditions.checkArgument(target != null, "null target");
     Preconditions.checkArgument(probability > 0, "negative probability");
-    Preconditions.checkArgument(probability < 10000, "probability over 100%");
+    Preconditions.checkArgument(probability <= ChaosMonkeyService.PERCENT_100,
+        "probability over 100%");
     this.name = name;
     this.target = target;
     this.probability = probability;
@@ -71,11 +72,12 @@ public class ChaosEntry {
 
   /**
    * Invoke Chaos if the trigger value is in range of the probability
-   * @param trigger trigger value, 0-10K
+   * @param value trigger value, 0-10K
    * @return true if the chaos method was invoked
    */
-  public boolean maybeInvokeChaos(long trigger) {
-    if (probability < 0) {
+  public boolean maybeInvokeChaos(long value) {
+    log.debug("Probability {} trigger={}", probability, value);
+    if (value < probability) {
       invokeChaos();
       return true;
     }
