@@ -18,6 +18,7 @@
 
 package org.apache.slider.server.appmaster;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.protobuf.BlockingService;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
@@ -196,6 +197,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public static final int NUM_RPC_HANDLERS = 5;
   public static final int SCHEDULED_EXECUTOR_POOL_SIZE = 1;
 
+  /**
+   * Singleton of metrics registry
+   */
+  public static final MetricRegistry metrics = new MetricRegistry();
+  
   /** YARN RPC to communicate with the Resource Manager or Node Manager */
   private YarnRPC yarnRPC;
 
