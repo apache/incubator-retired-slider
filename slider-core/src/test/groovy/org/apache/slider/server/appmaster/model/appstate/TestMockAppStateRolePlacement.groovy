@@ -43,7 +43,7 @@ class TestMockAppStateRolePlacement extends BaseMockAppStateTest
 
   @Override
   String getTestName() {
-    return "TestAppStateRolePlacement"
+    return "TestMockAppStateRolePlacement"
   }
 
 

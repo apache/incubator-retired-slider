@@ -16,36 +16,33 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster.actions;
+package org.apache.slider.server.appmaster.monkey;
 
-import org.apache.hadoop.util.ExitUtil;
 import org.apache.slider.server.appmaster.SliderAppMaster;
+import org.apache.slider.server.appmaster.actions.AsyncAction;
+import org.apache.slider.server.appmaster.actions.QueueAccess;
 import org.apache.slider.server.appmaster.state.AppState;
 
 import java.util.concurrent.TimeUnit;
 
 /**
- * Exit a JVM halt.
- * @see ExitUtil#halt(int, String) 
+ * Queueable action which calls {@link ChaosMonkeyService#play()} when
+ * executed.
  */
-public class ActionHalt extends AsyncAction {
+public class MonkeyPlayAction extends AsyncAction {
 
-  private final int status;
-  private final String text;
+  private final ChaosMonkeyService monkey;
 
-  public ActionHalt(
-      int status,
-      String text,
-      long delay, TimeUnit timeUnit) {
-    super("Halt", delay, ActionAttributes.HALTS_CLUSTER);
-    this.status = status;
-    this.text = text;
+  public MonkeyPlayAction(ChaosMonkeyService monkey, long delay,
+      TimeUnit timeUnit) {
+    super("chaos monkey", delay, timeUnit);
+    this.monkey = monkey;
   }
 
   @Override
   public void execute(SliderAppMaster appMaster,
       QueueAccess queueService,
       AppState appState) throws Exception {
-    ExitUtil.halt(status, text);
+    monkey.play();
   }
 }

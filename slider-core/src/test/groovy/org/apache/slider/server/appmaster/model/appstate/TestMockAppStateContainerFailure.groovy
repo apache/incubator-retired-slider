@@ -43,7 +43,7 @@ class TestMockAppStateContainerFailure extends BaseMockAppStateTest
 
   @Override
   String getTestName() {
-    return "TestAppStateContainerFailure"
+    return "TestMockAppStateContainerFailure"
   }
 
   /**

@@ -149,8 +149,9 @@ class TestRegionServerFailureThreshold extends HBaseMiniClusterTestBase {
         }
       }
     } catch (BadClusterStateException e) {
-      assert e.toString().contains(ErrorStrings.E_APPLICATION_NOT_RUNNING)
-      assert e.exitCode == SliderExitCodes.EXIT_BAD_STATE
+      assertExceptionDetails(e,
+          SliderExitCodes.EXIT_BAD_STATE, 
+          ErrorStrings.E_APPLICATION_NOT_RUNNING)
     }
     ApplicationReport report = client.applicationReport
     log.info(report.diagnostics)

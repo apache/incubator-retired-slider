@@ -27,13 +27,10 @@ import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.LocalResourceType;
-import org.apache.hadoop.yarn.api.records.NodeId;
-import org.apache.hadoop.yarn.api.records.Priority;
-import org.apache.hadoop.yarn.api.records.Resource;
-import org.apache.hadoop.yarn.api.records.Token;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterDescriptionKeys;
 import org.apache.slider.api.ClusterNode;
+import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.OptionKeys;
 import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.common.tools.SliderFileSystem;
@@ -218,7 +215,7 @@ public class TestAgentProviderService {
   public void testRegistration() throws IOException {
 
     ConfTree tree = new ConfTree();
-    tree.global.put(OptionKeys.INTERNAL_APPLICATION_IMAGE_PATH, ".");
+    tree.global.put(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH, ".");
 
     AgentProviderService aps = new AgentProviderService();
     ContainerLaunchContext ctx = createNiceMock(ContainerLaunchContext.class);
@@ -585,7 +582,7 @@ public class TestAgentProviderService {
     InputStream metainfo_1 = new ByteArrayInputStream(metainfo_1_str.getBytes());
     Metainfo metainfo = new MetainfoParser().parse(metainfo_1);
     ConfTree tree = new ConfTree();
-    tree.global.put(OptionKeys.INTERNAL_APPLICATION_IMAGE_PATH, ".");
+    tree.global.put(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH, ".");
 
     AgentProviderService aps = new AgentProviderService();
     ContainerLaunchContext ctx = createNiceMock(ContainerLaunchContext.class);

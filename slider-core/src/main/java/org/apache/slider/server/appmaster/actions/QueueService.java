@@ -55,18 +55,14 @@ implements Runnable, QueueAccess {
 
   /**
    * Immediate actions.
-   * Package scoped for testing.
    */
-  @VisibleForTesting
-  final BlockingDeque<AsyncAction> actionQueue =
+  public final BlockingDeque<AsyncAction> actionQueue =
       new LinkedBlockingDeque<>();
 
   /**
    * Actions to be scheduled in the future
-   * Package scoped for testing.
    */
-  @VisibleForTesting
-  final DelayQueue<AsyncAction> scheduledActions = new DelayQueue<>();
+  public final DelayQueue<AsyncAction> scheduledActions = new DelayQueue<>();
 
   /**
    * Map of renewing actions by name ... this is to allow them to 

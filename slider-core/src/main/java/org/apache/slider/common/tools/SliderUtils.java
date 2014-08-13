@@ -43,7 +43,7 @@ import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
-import org.apache.slider.api.OptionKeys;
+import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.RoleKeys;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.SliderXmlConfKeys;
@@ -1303,8 +1303,8 @@ public final class SliderUtils {
       SliderException, IOException {
     Path imagePath;
     String imagePathOption =
-        internalOptions.get(OptionKeys.INTERNAL_APPLICATION_IMAGE_PATH);
-    String appHomeOption = internalOptions.get(OptionKeys.INTERNAL_APPLICATION_HOME);
+        internalOptions.get(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH);
+    String appHomeOption = internalOptions.get(InternalKeys.INTERNAL_APPLICATION_HOME);
     if (!isUnset(imagePathOption)) {
       imagePath = fs.createPathThatMustExist(imagePathOption);
     } else {
@@ -1476,7 +1476,7 @@ public final class SliderUtils {
           }
           is = new ByteArrayInputStream(content);
         } else {
-          log.info("Size unknown. Reading {}", zipEntry.getName());
+          log.debug("Size unknown. Reading {}", zipEntry.getName());
           ByteArrayOutputStream baos = new ByteArrayOutputStream();
           while (true) {
             int byteRead = zis.read();

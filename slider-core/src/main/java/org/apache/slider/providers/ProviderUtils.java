@@ -23,6 +23,7 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.slider.api.ClusterDescription;
+import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.OptionKeys;
 import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.RoleKeys;
@@ -282,9 +283,9 @@ public class ProviderUtils implements RoleKeys {
     MapOperations globalOptions =
       instanceDefinition.getInternalOperations().getGlobalOptions();
     String applicationHome =
-      globalOptions.get(OptionKeys.INTERNAL_APPLICATION_HOME);
+      globalOptions.get(InternalKeys.INTERNAL_APPLICATION_HOME);
     String imagePath =
-      globalOptions.get(OptionKeys.INTERNAL_APPLICATION_IMAGE_PATH);
+      globalOptions.get(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH);
     return buildPathToHomeDir(imagePath, applicationHome, bindir, script);
   }
 
@@ -350,8 +351,8 @@ public class ProviderUtils implements RoleKeys {
                                 String script) throws FileNotFoundException {
     
     String homedir = buildPathToHomeDir(
-      internal.get(OptionKeys.INTERNAL_APPLICATION_IMAGE_PATH),
-      internal.get(OptionKeys.INTERNAL_APPLICATION_HOME),
+      internal.get(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH),
+      internal.get(InternalKeys.INTERNAL_APPLICATION_HOME),
       bindir,
       script);
     return buildScriptPath(bindir, script, homedir);

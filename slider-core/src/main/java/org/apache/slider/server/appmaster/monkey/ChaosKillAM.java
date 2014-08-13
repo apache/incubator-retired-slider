@@ -16,36 +16,33 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster.actions;
+package org.apache.slider.server.appmaster.monkey;
 
-import org.apache.hadoop.util.ExitUtil;
-import org.apache.slider.server.appmaster.SliderAppMaster;
-import org.apache.slider.server.appmaster.state.AppState;
+import org.apache.slider.server.appmaster.actions.ActionHalt;
+import org.apache.slider.server.appmaster.actions.QueueAccess;
 
 import java.util.concurrent.TimeUnit;
 
 /**
- * Exit a JVM halt.
- * @see ExitUtil#halt(int, String) 
+ * Kill the AM
  */
-public class ActionHalt extends AsyncAction {
+public class ChaosKillAM implements ChaosTarget {
 
-  private final int status;
-  private final String text;
+  public static final int DELAY = 1000;
+  private final QueueAccess queues;
+  private final int exitCode;
 
-  public ActionHalt(
-      int status,
-      String text,
-      long delay, TimeUnit timeUnit) {
-    super("Halt", delay, ActionAttributes.HALTS_CLUSTER);
-    this.status = status;
-    this.text = text;
+  public ChaosKillAM(QueueAccess queues, int exitCode) {
+    this.queues = queues;
+    this.exitCode = exitCode;
   }
 
+  /**
+   * Trigger a delayed halt
+   */
   @Override
-  public void execute(SliderAppMaster appMaster,
-      QueueAccess queueService,
-      AppState appState) throws Exception {
-    ExitUtil.halt(status, text);
+  public void chaosAction() {
+    queues.schedule(new ActionHalt(exitCode, "Chaos invoked halt", DELAY,
+        TimeUnit.MILLISECONDS));
   }
 }

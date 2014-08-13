@@ -25,9 +25,9 @@ import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.hbase.ClusterStatus
 import org.apache.hadoop.yarn.conf.YarnConfiguration
+import org.apache.slider.api.InternalKeys
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.api.ClusterDescription
-import org.apache.slider.api.OptionKeys
 import org.apache.slider.core.build.InstanceIO
 import org.apache.slider.providers.hbase.HBaseKeys
 import org.apache.slider.common.tools.ConfigHelper
@@ -93,7 +93,7 @@ class TestFreezeReconfigureThawLiveRegionService
         clusterDir)
 
     def snapshotPath = instanceDefinition.internalOperations.get(
-        OptionKeys.INTERNAL_SNAPSHOT_CONF_PATH)
+        InternalKeys.INTERNAL_SNAPSHOT_CONF_PATH)
     assert snapshotPath != null
 
     Path confdir = new Path(snapshotPath);

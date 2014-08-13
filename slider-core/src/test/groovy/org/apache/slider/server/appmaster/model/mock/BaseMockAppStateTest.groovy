@@ -101,7 +101,13 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
     factory.newInstanceDefinition(0, 0, 0)
   }
 
-  abstract String getTestName();
+  /**
+   * Get the test name ... defaults to method name
+   * @return
+   */
+  String getTestName() {
+    methodName.methodName;
+  }
 
   public RoleStatus getRole0Status() {
     return appState.lookupRoleStatus(ROLE0)

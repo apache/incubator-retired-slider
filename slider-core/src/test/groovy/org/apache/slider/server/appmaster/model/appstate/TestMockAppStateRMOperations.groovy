@@ -40,7 +40,7 @@ class TestMockAppStateRMOperations extends BaseMockAppStateTest implements MockR
 
   @Override
   String getTestName() {
-    return "TestMockRMOperations"
+    return "TestMockAppStateRMOperations"
   }
 
   @Test

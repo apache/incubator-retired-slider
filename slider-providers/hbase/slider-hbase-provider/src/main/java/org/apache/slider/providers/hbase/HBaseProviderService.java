@@ -22,9 +22,9 @@ package org.apache.slider.providers.hbase;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.Container;
+import org.apache.slider.api.InternalKeys;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.api.ClusterDescription;
-import org.apache.slider.api.OptionKeys;
 import org.apache.slider.api.RoleKeys;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.core.conf.AggregateConf;
@@ -152,7 +152,7 @@ public class HBaseProviderService extends AbstractProviderService implements
     //Add binaries
     //now add the image if it was set
     String imageURI = instanceDefinition.getInternalOperations()
-                  .get(OptionKeys.INTERNAL_APPLICATION_IMAGE_PATH);
+                  .get(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH);
     coreFS.maybeAddImagePath(launcher.getLocalResources(), imageURI);
 
     CommandLineBuilder cli = new CommandLineBuilder();

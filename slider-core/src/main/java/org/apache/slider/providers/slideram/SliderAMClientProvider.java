@@ -28,7 +28,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.Resource;
-import org.apache.slider.api.OptionKeys;
+import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.RoleKeys;
 import org.apache.slider.common.SliderKeys;
@@ -123,7 +123,7 @@ public class SliderAMClientProvider extends AbstractClientProvider implements
       dataPath = instanceDefinition.getInternalOperations()
                                    .getGlobalOptions()
                                    .getMandatoryOption(
-                                     OptionKeys.INTERNAL_DATA_DIR_PATH);
+                                     InternalKeys.INTERNAL_DATA_DIR_PATH);
 
     Path path = new Path(dataPath);
     sliderFileSystem.verifyDirectoryWriteAccess(path);
