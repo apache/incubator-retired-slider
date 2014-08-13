@@ -18,18 +18,67 @@
 
 package org.apache.slider.server.appmaster.monkey;
 
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.base.Preconditions;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Entry in the chaos list
  */
 public class ChaosEntry {
-  
+
+  protected static final Logger log =
+      LoggerFactory.getLogger(ChaosEntry.class);
   public final String name;
   public final ChaosTarget target;
   public final long probability;
 
-  public ChaosEntry(String name, ChaosTarget target, long probability) {
+  private final MetricRegistry metrics;
+  private final Counter invocationCounter;
+
+
+  /**
+   * Constructor -includes validaton of all arguments
+   * @param name
+   * @param target
+   * @param probability
+   */
+  public ChaosEntry(String name, ChaosTarget target, long probability,
+      MetricRegistry metrics) {
+    Preconditions.checkArgument(!StringUtils.isEmpty(name), "missing name");
+    Preconditions.checkArgument(target != null, "null target");
+    Preconditions.checkArgument(probability > 0, "negative probability");
+    Preconditions.checkArgument(probability < 10000, "probability over 100%");
     this.name = name;
     this.target = target;
     this.probability = probability;
+    this.metrics = metrics;
+    invocationCounter =
+        metrics.counter(MetricRegistry.name(ChaosEntry.class, name));
+  }
+
+  /**
+   * Trigger the chaos action
+   */
+  public void invokeChaos() {
+    log.info("Invoking {}", name);
+    invocationCounter.inc();
+    target.chaosAction();
+  }
+
+  /**
+   * Invoke Chaos if the trigger value is in range of the probability
+   * @param trigger trigger value, 0-10K
+   * @return true if the chaos method was invoked
+   */
+  public boolean maybeInvokeChaos(long trigger) {
+    if (probability < 0) {
+      invokeChaos();
+      return true;
+    }
+    return false;
   }
 }

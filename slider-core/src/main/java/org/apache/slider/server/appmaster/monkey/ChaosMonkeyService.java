@@ -19,15 +19,20 @@
 package org.apache.slider.server.appmaster.monkey;
 
 import com.codahale.metrics.MetricRegistry;
-import com.google.common.base.Preconditions;
 import org.apache.hadoop.service.AbstractService;
+import org.apache.slider.server.appmaster.actions.AsyncAction;
 import org.apache.slider.server.appmaster.actions.QueueAccess;
+import org.apache.slider.server.appmaster.actions.RenewingAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
+/**
+ * A chaos monkey service which will invoke ChaosTarget events 
+ */
 public class ChaosMonkeyService extends AbstractService {
   protected static final Logger log =
       LoggerFactory.getLogger(ChaosMonkeyService.class);
@@ -36,25 +41,33 @@ public class ChaosMonkeyService extends AbstractService {
 
   private static final List<ChaosEntry> chaosEntries =
       new ArrayList<ChaosEntry>();
-      
+
   public ChaosMonkeyService(MetricRegistry metrics, QueueAccess queues) {
     super("ChaosMonkeyService");
     this.metrics = metrics;
     this.queues = queues;
   }
 
-  
-  @Override
-  protected void serviceStart() throws Exception {
-    super.serviceStart();
-    
+
+  public synchronized void addTarget(String name,
+      ChaosTarget target,
+      long probability) {
+
+    chaosEntries.add(new ChaosEntry(name, target, probability, metrics));
   }
-  
-  
-  public synchronized void addTarget(ChaosTarget target,  long probability) {
-    Preconditions.checkArgument(target != null, "null target");
-    Preconditions.checkArgument(probability > 0, "negative probability");
-    Preconditions.checkArgument(probability > 10000, "probability over 100%");
+
+  public void play() {
+
   }
-  
+
+  public RenewingAction<MonkeyPlayAction> getChaosAction(long time, TimeUnit timeUnit) {
+    RenewingAction<MonkeyPlayAction> action = new RenewingAction<>(
+        new MonkeyPlayAction(this, 0, TimeUnit.MILLISECONDS),
+        time,
+        time,
+        timeUnit,
+        0
+    );
+    return action;
+  }
 }

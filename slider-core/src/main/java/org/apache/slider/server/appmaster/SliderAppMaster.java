@@ -97,6 +97,7 @@ import org.apache.slider.providers.ProviderService;
 import org.apache.slider.providers.SliderProviderFactory;
 import org.apache.slider.providers.slideram.SliderAMClientProvider;
 import org.apache.slider.providers.slideram.SliderAMProviderService;
+import org.apache.slider.server.appmaster.actions.ActionKillContainer;
 import org.apache.slider.server.appmaster.actions.QueueExecutor;
 import org.apache.slider.server.appmaster.actions.ActionHalt;
 import org.apache.slider.server.appmaster.actions.QueueService;
@@ -104,6 +105,9 @@ import org.apache.slider.server.appmaster.actions.ActionStopSlider;
 import org.apache.slider.server.appmaster.actions.AsyncAction;
 import org.apache.slider.server.appmaster.actions.RenewingAction;
 import org.apache.slider.server.appmaster.actions.ResetFailureWindow;
+import org.apache.slider.server.appmaster.monkey.ChaosKillAM;
+import org.apache.slider.server.appmaster.monkey.ChaosKillContainer;
+import org.apache.slider.server.appmaster.monkey.ChaosMonkeyService;
 import org.apache.slider.server.appmaster.operations.AsyncRMOperationHandler;
 import org.apache.slider.server.appmaster.operations.ProviderNotifyingOperationHandler;
 import org.apache.slider.server.appmaster.rpc.RpcBinder;
@@ -112,7 +116,6 @@ import org.apache.slider.server.appmaster.rpc.SliderClusterProtocolPBImpl;
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
 import org.apache.slider.server.appmaster.state.AppState;
 import org.apache.slider.server.appmaster.state.ContainerAssignment;
-import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation;
 import org.apache.slider.server.appmaster.state.ProviderAppState;
 import org.apache.slider.server.appmaster.operations.RMOperationHandler;
 import org.apache.slider.server.appmaster.state.RoleInstance;
@@ -147,7 +150,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -300,6 +302,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private ContainerId appMasterContainerID;
 
+  /**
+   * Monkey Service -may be null
+   */
+  private ChaosMonkeyService monkey;
+  
   /**
    * ProviderService of this cluster
    */
@@ -780,6 +787,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // starts the node review process
     launchProviderService(instanceDefinition, confDir);
 
+    // chaos monkey
+    maybeStartMonkey();
 
     try {
       //now block waiting to be told to exit the process
@@ -1103,7 +1112,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
     
     //for all the operations, exec them
-    rmOperationHandler.execute(operations);
+    executeRMOperations(operations);
     log.info("Diagnostics: " + getContainerDiagnosticInfo());
   }
 
@@ -1221,7 +1230,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       // tell the provider
       providerRMOperationHandler.execute(allOperations);
       //now apply the operations
-      rmOperationHandler.execute(allOperations);
+      executeRMOperations(allOperations);
       return !allOperations.isEmpty();
     } catch (TriggerClusterTeardownException e) {
 
@@ -1237,7 +1246,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   private void releaseAllContainers() {
     //now apply the operations
-    rmOperationHandler.execute(appState.releaseAllContainers());
+    executeRMOperations(appState.releaseAllContainers());
   }
 
   /**
@@ -1441,17 +1450,15 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     //throws NoSuchNodeException if it is missing
     RoleInstance instance =
       appState.getLiveInstanceByContainerID(containerID);
-    List<AbstractRMOperation> opsList =
-      new LinkedList<>();
-    ContainerReleaseOperation release =
-      new ContainerReleaseOperation(instance.getId());
-    opsList.add(release);
-    //now apply the operations
-    rmOperationHandler.execute(opsList);
+    queue(new ActionKillContainer(instance.getId(), 0, TimeUnit.MILLISECONDS));
     Messages.KillContainerResponseProto.Builder builder =
       Messages.KillContainerResponseProto.newBuilder();
     builder.setSuccess(true);
     return builder.build();
+  }
+
+  public void executeRMOperations(List<AbstractRMOperation> operations) {
+    rmOperationHandler.execute(operations);
   }
 
   @Override
@@ -1462,7 +1469,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     String text = request.getText();
     int delay = request.getDelay();
     log.info("AM Suicide with signal {}, message {} delay = {}", signal, text, delay);
-    ActionHalt action = new ActionHalt(signal, text, delay);
+    ActionHalt action = new ActionHalt(signal, text, delay,
+        TimeUnit.MILLISECONDS);
     schedule(action);
     return Messages.AMSuicideResponseProto.getDefaultInstance();
   }
@@ -1537,7 +1545,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         containerId);
     RoleInstance activeContainer = appState.getActiveContainer(containerId);
     if (activeContainer != null) {
-      rmOperationHandler.execute(appState.releaseContainer(containerId));
+      executeRMOperations(appState.releaseContainer(containerId));
       // ask for more containers if needed
       log.info("Container released; triggering review");
       reviewRequestAndReleaseNodes();
@@ -1723,6 +1731,22 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       exitCode = ((ExitCodeProvider) exception).getExitCode();
     }
     signalAMComplete(exitCode, exception.toString());
+  }
+  
+  public boolean maybeStartMonkey() {
+    monkey = new ChaosMonkeyService(metrics, actionQueues);
+    int amKillProbability = 100;
+    int containerKillProbability = 200;
+    monkey.addTarget("AM killer", 
+        new ChaosKillAM(this, actionQueues, -1),
+        amKillProbability);
+    monkey.addTarget("Container killer", 
+        new ChaosKillContainer(this, actionQueues),
+        amKillProbability);
+    initAndAddService(monkey);
+    // and schedule it
+    schedule(monkey.getChaosAction(60, TimeUnit.SECONDS));
+    return true;
   }
   
   /**

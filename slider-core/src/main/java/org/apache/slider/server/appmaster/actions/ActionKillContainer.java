@@ -18,34 +18,34 @@
 
 package org.apache.slider.server.appmaster.actions;
 
-import org.apache.hadoop.util.ExitUtil;
+import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.slider.server.appmaster.SliderAppMaster;
+import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
+import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation;
 import org.apache.slider.server.appmaster.state.AppState;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Exit a JVM halt.
- * @see ExitUtil#halt(int, String) 
- */
-public class ActionHalt extends AsyncAction {
+public class ActionKillContainer extends AsyncAction {
 
-  private final int status;
-  private final String text;
-
-  public ActionHalt(
-      int status,
-      String text,
-      long delay, TimeUnit timeUnit) {
-    super("Halt", delay, ActionAttributes.HALTS_CLUSTER);
-    this.status = status;
-    this.text = text;
+  private final ContainerId containerId;
+  
+  public ActionKillContainer(ContainerId containerId, long delay,
+      TimeUnit timeUnit) {
+    super("kill container", delay, timeUnit);
+    this.containerId = containerId;
   }
 
   @Override
   public void execute(SliderAppMaster appMaster,
       QueueAccess queueService,
       AppState appState) throws Exception {
-    ExitUtil.halt(status, text);
+    List<AbstractRMOperation> opsList = new LinkedList<>();
+    ContainerReleaseOperation release = new ContainerReleaseOperation(containerId);
+    opsList.add(release);
+    //now apply the operations
+    appMaster.executeRMOperations(opsList);
   }
 }

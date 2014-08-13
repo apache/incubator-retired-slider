@@ -101,7 +101,7 @@ public class AppState {
    * Flag set to indicate the application is live -this only happens
    * after the buildInstance operation
    */
-  boolean applicationLive = false;
+  private boolean applicationLive = false;
 
   /**
    * The definition of the instance. Flexing updates the resources section
@@ -811,6 +811,10 @@ public class AppState {
     return activeContainers.remove(id);
   }
 
+  /**
+   * Clone the live container list. This is synchronized.
+   * @return a snapshot of the live node list
+   */
   public synchronized List<RoleInstance> cloneLiveContainerInfoList() {
     List<RoleInstance> allRoleInstances;
     Collection<RoleInstance> values = getLiveNodes().values();
@@ -818,8 +822,12 @@ public class AppState {
     return allRoleInstances;
   }
 
-
-
+  /**
+   * Lookup live instance by string value of container ID
+   * @param containerId container ID
+   * @return the role instance for that container
+   * @throws NoSuchNodeException if it does not exist
+   */
   public synchronized RoleInstance getLiveInstanceByContainerID(String containerId)
     throws NoSuchNodeException {
     Collection<RoleInstance> nodes = getLiveNodes().values();
