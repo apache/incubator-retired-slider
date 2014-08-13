@@ -33,7 +33,7 @@ class TestMockAppStateFlexing extends BaseMockAppStateTest implements MockRoles 
 
   @Override
   String getTestName() {
-    return "TestMockFlexing"
+    return "TestMockAppStateFlexing"
   }
 
   @Test

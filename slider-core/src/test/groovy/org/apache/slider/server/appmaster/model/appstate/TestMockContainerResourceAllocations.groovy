@@ -39,7 +39,7 @@ class TestMockContainerResourceAllocations extends BaseMockAppStateTest {
 
   @Override
   String getTestName() {
-    "TestContainerResourceAllocations"
+    "TestMockContainerResourceAllocations"
   }
 
   @Test

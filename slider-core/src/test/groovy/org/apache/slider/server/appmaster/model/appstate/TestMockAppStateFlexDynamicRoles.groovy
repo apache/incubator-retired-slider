@@ -44,7 +44,7 @@ class TestMockAppStateFlexDynamicRoles extends BaseMockAppStateTest
 
   @Override
   String getTestName() {
-    return "TestAppStateDynamicRoles"
+    return "TestMockAppStateFlexDynamicRoles"
   }
 
   /**

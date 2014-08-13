@@ -40,7 +40,7 @@ class TestMockAppStateRebuildOnAMRestart extends BaseMockAppStateTest
 
   @Override
   String getTestName() {
-    return "TestAppStateRebuildOnAMRestart"
+    return "TestMockAppStateRebuildOnAMRestart"
   }
 
   @Test
