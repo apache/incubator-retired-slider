@@ -84,31 +84,54 @@ public interface InternalKeys {
    * Flag to indicate whether or not the chaos monkey is enabled:
    * {@value}
    */
-  String INTERNAL_CHAOS_MONKEY_ENABLED = "internal.chaos.monkey.enabled";
-  boolean DEFAULT_INTERNAL_CHAOS_MONKEY_ENABLED = false;
+  String CHAOS_MONKEY_ENABLED = "internal.chaos.monkey.enabled";
+  boolean DEFAULT_CHAOS_MONKEY_ENABLED = false;
 
 
   /**
    * Rate
    */
 
-  String INTERNAL_CHAOS_MONKEY_RATE = "internal.chaos.monkey.rate";
-
-  int DEFAULT_INTERNAL_CHAOS_MONKEY_RATE_DAYS = 0;
-  int DEFAULT_INTERNAL_CHAOS_MONKEY_RATE_HOURS = 1;
-  int DEFAULT_INTERNAL_CHAOS_MONKEY_RATE_MINUTES = 0;
+  String CHAOS_MONKEY_INTERVAL = "internal.chaos.monkey.interval";
+  String CHAOS_MONKEY_INTERVAL_DAYS = CHAOS_MONKEY_INTERVAL + ".days";
+  String CHAOS_MONKEY_INTERVAL_HOURS = CHAOS_MONKEY_INTERVAL + ".hours";
+  String CHAOS_MONKEY_INTERVAL_MINUTES = CHAOS_MONKEY_INTERVAL + ".minutes";
+  String CHAOS_MONKEY_INTERVAL_SECONDS = CHAOS_MONKEY_INTERVAL + ".seconds";
   
-  String INTERNAL_CHAOS_MONKEY_PROBABILITY =
+  int DEFAULT_CHAOS_MONKEY_INTERVAL_DAYS = 0;
+  int DEFAULT_CHAOS_MONKEY_INTERVAL_HOURS = 0;
+  int DEFAULT_CHAOS_MONKEY_INTERVAL_MINUTES = 0;
+
+  /**
+   * Prefix for all chaos monkey probabilities
+   */
+  String CHAOS_MONKEY_PROBABILITY =
       "internal.chaos.monkey.probability";
   /**
    * Probabilies are out of 10000 ; 100==1%
    */
 
-  String INTERNAL_CHAOS_MONKEY_PROBABILITY_AM_FAILURE = INTERNAL_CHAOS_MONKEY_PROBABILITY +".amfailure";
-  int DEFAULT_CHAOS_MONKEY_PROBABILITY_AM_FAILURE = 10;
-  String INTERNAL_CHAOS_MONKEY_PROBABILITY_CONTAINER_FAILURE =
-      INTERNAL_CHAOS_MONKEY_PROBABILITY + ".containerfailure";
-  int DEFAULT_CHAOS_MONKEY_PROBABILITY_CONTAINER_FAILURE = 100;
+  /**
+   * Probability of a monkey check killing the AM:  {@value}
+   */
+  String CHAOS_MONKEY_PROBABILITY_AM_FAILURE = CHAOS_MONKEY_PROBABILITY +".amfailure";
+
+  /**
+   * Default probability of a monkey check killing the AM:  {@value}
+   */
+  int DEFAULT_CHAOS_MONKEY_PROBABILITY_AM_FAILURE = 0;
+
+  /**
+   * Probability of a monkey check killing a container:  {@value}
+   */
+
+  String CHAOS_MONKEY_PROBABILITY_CONTAINER_FAILURE =
+      CHAOS_MONKEY_PROBABILITY + ".containerfailure";
+
+  /**
+   * Default probability of a monkey check killing the a container:  {@value}
+   */
+  int DEFAULT_CHAOS_MONKEY_PROBABILITY_CONTAINER_FAILURE = 0;
 
 
 }

@@ -1476,7 +1476,7 @@ public final class SliderUtils {
           }
           is = new ByteArrayInputStream(content);
         } else {
-          log.info("Size unknown. Reading {}", zipEntry.getName());
+          log.debug("Size unknown. Reading {}", zipEntry.getName());
           ByteArrayOutputStream baos = new ByteArrayOutputStream();
           while (true) {
             int byteRead = zis.read();

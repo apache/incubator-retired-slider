@@ -779,16 +779,15 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // now do the registration
     registerServiceInstance(clustername, appid);
 
-    sliderAMProvider.start();
-
-
-    
-    // launch the provider; this is expected to trigger a callback that
-    // starts the node review process
-    launchProviderService(instanceDefinition, confDir);
-
     // chaos monkey
     maybeStartMonkey();
+
+    // Start the Slider AM provider
+    sliderAMProvider.start();
+
+    // launch the real provider; this is expected to trigger a callback that
+    // starts the node review process
+    launchProviderService(instanceDefinition, confDir);
 
     try {
       //now block waiting to be told to exit the process
@@ -1459,7 +1458,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     rmOperationHandler.execute(operations);
   }
 
-
   /**
    * Get the RM operations handler for direct scheduling of work.
    */
@@ -1739,42 +1737,45 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
     signalAMComplete(exitCode, exception.toString());
   }
-  
-  public boolean maybeStartMonkey() {
+
+  /**
+   * Start the chaos monkey
+   * @return true if it started
+   */
+  private boolean maybeStartMonkey() {
     MapOperations internals = getGlobalInternalOptions();
 
     Boolean enabled =
-        internals.getOptionBool(InternalKeys.INTERNAL_CHAOS_MONKEY_ENABLED,
-            InternalKeys.DEFAULT_INTERNAL_CHAOS_MONKEY_ENABLED);
+        internals.getOptionBool(InternalKeys.CHAOS_MONKEY_ENABLED,
+            InternalKeys.DEFAULT_CHAOS_MONKEY_ENABLED);
     if (!enabled) {
       log.info("Chaos monkey disabled");
     }
     
     long monkeyInterval = internals.getTimeRange(
-        InternalKeys.INTERNAL_CHAOS_MONKEY_RATE,
-        InternalKeys.DEFAULT_INTERNAL_CHAOS_MONKEY_RATE_DAYS,
-        InternalKeys.DEFAULT_INTERNAL_CHAOS_MONKEY_RATE_HOURS,
-        InternalKeys.DEFAULT_INTERNAL_CHAOS_MONKEY_RATE_MINUTES,
+        InternalKeys.CHAOS_MONKEY_INTERVAL,
+        InternalKeys.DEFAULT_CHAOS_MONKEY_INTERVAL_DAYS,
+        InternalKeys.DEFAULT_CHAOS_MONKEY_INTERVAL_HOURS,
+        InternalKeys.DEFAULT_CHAOS_MONKEY_INTERVAL_MINUTES,
         0);
     log.info("Adding Chaos Monkey scheduled every {} seconds ({} hours)",
         monkeyInterval, monkeyInterval/(60*60));
     monkey = new ChaosMonkeyService(metrics, actionQueues);
     int amKillProbability = internals.getOptionInt(
-        InternalKeys.INTERNAL_CHAOS_MONKEY_PROBABILITY_AM_FAILURE,
+        InternalKeys.CHAOS_MONKEY_PROBABILITY_AM_FAILURE,
         InternalKeys.DEFAULT_CHAOS_MONKEY_PROBABILITY_AM_FAILURE);
     if (amKillProbability > 0) {
-      log.info("Adding AM killer with probability %f", amKillProbability/100.0);
       monkey.addTarget("AM killer",
           new ChaosKillAM(actionQueues, -1), amKillProbability
       );
     }
     int containerKillProbability = internals.getOptionInt(
-        InternalKeys.INTERNAL_CHAOS_MONKEY_PROBABILITY_CONTAINER_FAILURE,
+        InternalKeys.CHAOS_MONKEY_PROBABILITY_CONTAINER_FAILURE,
         InternalKeys.DEFAULT_CHAOS_MONKEY_PROBABILITY_CONTAINER_FAILURE);
     if (containerKillProbability > 0) {
       monkey.addTarget("Container killer",
           new ChaosKillContainer(appState, actionQueues, rmOperationHandler),
-          amKillProbability
+          containerKillProbability
       );
     }
     initAndAddService(monkey);
