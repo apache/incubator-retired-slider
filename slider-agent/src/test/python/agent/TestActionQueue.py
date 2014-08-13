@@ -274,6 +274,7 @@ class TestActionQueue(TestCase):
   def test_execute_command(self, status_update_callback_mock, open_mock, json_load_mock,
                            resolve_script_path_mock):
 
+    self.assertEqual.__self__.maxDiff = None
     tempdir = tempfile.gettempdir()
     config = MagicMock()
     config.get.return_value = "something"
@@ -344,7 +345,8 @@ class TestActionQueue(TestCase):
                 'role': u'HBASE_MASTER',
                 'actionId': '1-1',
                 'taskId': 3,
-                'exitcode': 777}
+                'exitcode': 777,
+                'reportResult': True}
     self.assertEqual(report['reports'][0], expected)
     # Continue command execution
     unfreeze_flag.set()
@@ -406,7 +408,8 @@ class TestActionQueue(TestCase):
                 'actionId': '1-1',
                 'taskId': 3,
                 'structuredOut': '',
-                'exitcode': 13}
+                'exitcode': 13,
+                'reportResult': True}
     self.assertEqual(len(report['reports']), 1)
     self.assertEqual(report['reports'][0], expected)
 

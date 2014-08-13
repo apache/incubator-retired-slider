@@ -268,7 +268,8 @@ class Controller(threading.Thread):
           if len(stored_command) > 0:
              auto_start_command = self.create_start_command(stored_command)
              if auto_start_command:
-               self.updateStateBasedOnCommand([auto_start_command])
+               logger.info("Automatically adding a start command.")
+               self.updateStateBasedOnCommand([auto_start_command], False)
                self.addToQueue([auto_start_command])
           pass
 
@@ -343,21 +344,25 @@ class Controller(threading.Thread):
     pass
     logger.info("Controller stopped heart-beating.")
 
+
   def create_start_command(self, stored_command):
     taskId = int(stored_command['taskId'])
     taskId = taskId + 1
     stored_command['taskId'] = taskId
     stored_command['commandId'] = "{0}-1".format(taskId)
     stored_command[Constants.AUTO_GENERATED] = True
+    return stored_command
     pass
 
-  def updateStateBasedOnCommand(self, commands):
+
+  def updateStateBasedOnCommand(self, commands, createStatus=True):
     for command in commands:
       if command["roleCommand"] == "START":
         self.componentExpectedState = State.STARTED
         self.componentActualState = State.STARTING
         self.failureCount = 0
-        self.statusCommand = self.createStatusCommand(command)
+        if createStatus:
+          self.statusCommand = self.createStatusCommand(command)
 
       if command["roleCommand"] == "INSTALL":
         self.componentExpectedState = State.INSTALLED

@@ -135,6 +135,7 @@ class ActionQueue(threading.Thread):
       'reportResult': reportResult
     })
     self.commandStatuses.put_command_status(command, in_progress_status, reportResult)
+
     store_config = False
     if ActionQueue.STORE_APPLIED_CONFIG in command['commandParams']:
       store_config = 'true' == command['commandParams'][ActionQueue.STORE_APPLIED_CONFIG]
