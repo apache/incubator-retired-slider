@@ -28,7 +28,6 @@ import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.LocalResourceType;
-import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterDescriptionKeys;
 import org.apache.slider.api.ClusterNode;
@@ -63,6 +62,7 @@ import org.apache.slider.providers.agent.application.metadata.Metainfo;
 import org.apache.slider.providers.agent.application.metadata.OSPackage;
 import org.apache.slider.providers.agent.application.metadata.OSSpecific;
 import org.apache.slider.server.appmaster.actions.ProviderReportedContainerLoss;
+import org.apache.slider.server.appmaster.state.ContainerPriority;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentCommandType;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
@@ -339,16 +339,21 @@ public class AgentProviderService extends AbstractProviderService implements
       String applicationId, Map<Integer, ProviderRole> providerRoleMap) {
     for (Container container : liveContainers) {
       // get the role name and label
-      Priority priority = container.getPriority();
-      String roleName = providerRoleMap.get(priority.getPriority()).name;
-      String label = getContainerLabel(container, roleName);
-      log.info("Rebuilding in-memory: container {} in role {} in cluster {}",
-          container.getId().toString(), roleName, applicationId);
-      getComponentStatuses()
-          .put(
-              label,
-              new ComponentInstanceState(roleName, container.getId(),
-                  applicationId));
+      ProviderRole role = providerRoleMap.get(ContainerPriority
+          .extractRole(container));
+      if (role != null) {
+        String roleName = role.name;
+        String label = getContainerLabel(container, roleName);
+        log.info("Rebuilding in-memory: container {} in role {} in cluster {}",
+            container.getId(), roleName, applicationId);
+        getComponentStatuses().put(
+            label,
+            new ComponentInstanceState(roleName, container.getId(),
+                applicationId));
+      } else {
+        log.warn("Role not found for container {} in cluster {}",
+            container.getId(), applicationId);
+      }
     }
   }
 
