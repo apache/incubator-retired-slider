@@ -24,6 +24,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
+import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.OptionKeys;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.common.SliderXmlConfKeys;
@@ -139,7 +140,7 @@ public class InstanceBuilder {
                     instancePaths.dataPath.toUri());
 
 
-    internalOps.set(OptionKeys.INTERNAL_PROVIDER_NAME, provider);
+    internalOps.set(InternalKeys.INTERNAL_PROVIDER_NAME, provider);
     internalOps.set(OptionKeys.APPLICATION_NAME, clustername);
 
   }

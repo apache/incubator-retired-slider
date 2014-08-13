@@ -56,7 +56,7 @@ import org.apache.hadoop.yarn.security.client.ClientToAMTokenSecretManager;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.webapp.WebApps;
 import org.apache.slider.api.ClusterDescription;
-import org.apache.slider.api.OptionKeys;
+import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.RoleKeys;
 import org.apache.slider.api.SliderClusterProtocol;
@@ -529,10 +529,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     serviceConf.set(SliderAmIpFilter.WS_CONTEXT_ROOT, WS_CONTEXT_ROOT + "|" + WS_AGENT_CONTEXT_ROOT);
     
     //get our provider
-    MapOperations globalInternalOptions =
-      instanceDefinition.getInternalOperations().getGlobalOptions();
+    MapOperations globalInternalOptions = getGlobalInternalOptions();
     String providerType = globalInternalOptions.getMandatoryOption(
-      OptionKeys.INTERNAL_PROVIDER_NAME);
+      InternalKeys.INTERNAL_PROVIDER_NAME);
     log.info("Cluster provider type is {}", providerType);
     SliderProviderFactory factory =
       SliderProviderFactory.createSliderProviderFactory(
@@ -751,7 +750,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
     String rolesTmpSubdir = appMasterContainerID.toString() + "/roles";
 
-    String amTmpDir = globalInternalOptions.getMandatoryOption(OptionKeys.INTERNAL_AM_TMP_DIR);
+    String amTmpDir = globalInternalOptions.getMandatoryOption(InternalKeys.INTERNAL_AM_TMP_DIR);
 
     Path tmpDirPath = new Path(amTmpDir);
     Path launcherTmpDirPath = new Path(tmpDirPath, rolesTmpSubdir);
@@ -927,9 +926,18 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * @return the generated configuration dir
    */
   public String getGeneratedConfDir() {
+    return getGlobalInternalOptions().get(
+        InternalKeys.INTERNAL_GENERATED_CONF_PATH);
+  }
+
+  /**
+   * Get the global internal options for the AM
+   * @return a map to access the internals
+   */
+  public MapOperations getGlobalInternalOptions() {
     return getInstanceDefinition()
       .getInternalOperations().
-      getGlobalOptions().get(OptionKeys.INTERNAL_GENERATED_CONF_PATH);
+      getGlobalOptions();
   }
 
   /**
@@ -1179,7 +1187,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
   /**
    * Schedule the failure window
-   * @param resources 
+   * @param resources the resource tree
    * @throws BadConfigException if the window is out of range
    */
   private void scheduleFailureWindowResets(ConfTree resources) throws

@@ -35,6 +35,7 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterNode;
+import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.OptionKeys;
 import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.SliderClusterProtocol;
@@ -793,16 +794,16 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       instanceDefinition.getAppConfOperations();
     Path generatedConfDirPath =
       createPathThatMustExist(internalOptions.getMandatoryOption(
-        OptionKeys.INTERNAL_GENERATED_CONF_PATH));
+        InternalKeys.INTERNAL_GENERATED_CONF_PATH));
     Path snapshotConfPath =
       createPathThatMustExist(internalOptions.getMandatoryOption(
-        OptionKeys.INTERNAL_SNAPSHOT_CONF_PATH));
+        InternalKeys.INTERNAL_SNAPSHOT_CONF_PATH));
 
 
     // cluster Provider
     AbstractClientProvider provider = createClientProvider(
       internalOptions.getMandatoryOption(
-        OptionKeys.INTERNAL_PROVIDER_NAME));
+        InternalKeys.INTERNAL_PROVIDER_NAME));
     // make sure the conf dir is valid;
     
     // now build up the image path
