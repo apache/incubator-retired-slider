@@ -38,6 +38,7 @@ from socket import socket
 
 
 class TestCustomServiceOrchestrator(TestCase):
+
   def setUp(self):
     # disable stdout
     out = StringIO.StringIO()
@@ -415,9 +416,10 @@ class TestCustomServiceOrchestrator(TestCase):
     }
 
     ret = orchestrator.runCommand(command, "out.txt", "err.txt", True, True)
+    self.assertEqual.__self__.maxDiff = None
     self.assertEqual(ret['exitcode'], 0)
     self.assertTrue(run_file_mock.called)
-    self.assertEqual(orchestrator.applied_configs, expected)
+    self.assertEqual(orchestrator.stored_command, command)
 
     ret = orchestrator.requestComponentStatus(command_get)
     self.assertEqual(ret['configurations'], expected)
@@ -498,7 +500,7 @@ class TestCustomServiceOrchestrator(TestCase):
     self.assertEqual(command['configurations']['oozie-site']['ignore_port2'], "[0,0]")
     self.assertEqual(command['configurations']['oozie-site']['ignore_port3'], "[0,0,0]")
     self.assertEqual(command['configurations']['oozie-site']['ignore_port4'], "${HBASE_RS}{a}{b}{c}")
-    self.assertEqual(orchestrator.applied_configs, {})
+    self.assertEqual(orchestrator.stored_command, {})
     self.assertEqual(len(allocated_ports), 1)
     self.assertTrue('oozie-site.a_port' in allocated_ports)
     self.assertEqual(allocated_ports['oozie-site.a_port'], '10023')
@@ -513,7 +515,7 @@ class TestCustomServiceOrchestrator(TestCase):
     self.assertEqual(command['configurations']['hbase-site']['log_root'], tempdir + "/log")
     self.assertEqual(command['configurations']['hbase-site']['blog_root'], "/b/" + tempdir + "/log")
     self.assertEqual(command['configurations']['oozie-site']['b_port'], "0")
-    self.assertEqual(orchestrator.applied_configs, command['configurations'])
+    self.assertEqual(orchestrator.stored_command, command)
 
 
   def test_port_allocation(self):

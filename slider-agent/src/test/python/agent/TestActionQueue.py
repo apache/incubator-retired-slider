@@ -61,6 +61,8 @@ class TestActionQueue(TestCase):
     'serviceName': u'HBASE',
     'configurations': {'global': {}},
     'configurationTags': {'global': {'tag': 'v1'}},
+    'auto_generated': False,
+    'roleParams': {'auto_restart':'false'},
     'commandParams': {'script_type': 'PYTHON',
                       'script': 'scripts/abc.py',
                       'command_timeout': '600'}
@@ -365,7 +367,8 @@ class TestActionQueue(TestCase):
                 'structuredOut': '',
                 'exitcode': 0,
                 'allocatedPorts': {},
-                'folders': {'AGENT_LOG_ROOT': tempdir, 'AGENT_WORK_ROOT': tempdir}}
+                'folders': {'AGENT_LOG_ROOT': tempdir, 'AGENT_WORK_ROOT': tempdir},
+                'reportResult': True}
     self.assertEqual(len(report['reports']), 1)
     self.assertEqual(report['reports'][0], expected)
     self.assertTrue(os.path.isfile(configname))

@@ -78,6 +78,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.easymock.EasyMock.anyBoolean;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
@@ -642,7 +643,8 @@ public class TestAgentProviderService {
           anyString(),
           anyString(),
           any(HeartBeatResponse.class),
-          anyString());
+          anyString(),
+          anyBoolean());
       doNothing().when(mockAps).addGetConfigCommand(
           anyString(),
           anyString(),
@@ -744,7 +746,8 @@ public class TestAgentProviderService {
       Mockito.verify(mockAps, Mockito.times(0)).addStartCommand(anyString(),
                                                                 anyString(),
                                                                 any(HeartBeatResponse.class),
-                                                                anyString());
+                                                                anyString(),
+                                                                anyBoolean());
       // RS still does not start
       hb = new HeartBeat();
       hb.setResponseId(3);
@@ -754,7 +757,8 @@ public class TestAgentProviderService {
       Mockito.verify(mockAps, Mockito.times(0)).addStartCommand(anyString(),
                                                                 anyString(),
                                                                 any(HeartBeatResponse.class),
-                                                                anyString());
+                                                                anyString(),
+                                                                anyBoolean());
 
       // MASTER succeeds install and issues start
       hb = new HeartBeat();
@@ -773,7 +777,8 @@ public class TestAgentProviderService {
       Mockito.verify(mockAps, Mockito.times(1)).addStartCommand(anyString(),
                                                                 anyString(),
                                                                 any(HeartBeatResponse.class),
-                                                                anyString());
+                                                                anyString(),
+                                                                anyBoolean());
       Map<String, String> allocatedPorts = mockAps.getAllocatedPorts();
       Assert.assertTrue(allocatedPorts != null);
       Assert.assertTrue(allocatedPorts.size() == 1);
@@ -788,7 +793,8 @@ public class TestAgentProviderService {
       Mockito.verify(mockAps, Mockito.times(1)).addStartCommand(anyString(),
                                                                 anyString(),
                                                                 any(HeartBeatResponse.class),
-                                                                anyString());
+                                                                anyString(),
+                                                                anyBoolean());
       // MASTER succeeds start
       hb = new HeartBeat();
       hb.setResponseId(3);
@@ -812,7 +818,8 @@ public class TestAgentProviderService {
       Mockito.verify(mockAps, Mockito.times(2)).addStartCommand(anyString(),
                                                                 anyString(),
                                                                 any(HeartBeatResponse.class),
-                                                                anyString());
+                                                                anyString(),
+                                                                anyBoolean());
     // JDK7 
     } catch (SliderException he) {
       log.warn(he.getMessage());
@@ -959,7 +966,7 @@ public class TestAgentProviderService {
 
     replay(access);
 
-    mockAps.addStartCommand("HBASE_MASTER", "cid1", hbr, "");
+    mockAps.addStartCommand("HBASE_MASTER", "cid1", hbr, "", Boolean.FALSE);
     Assert.assertTrue(hbr.getExecutionCommands().get(0).getConfigurations().containsKey("hbase-site"));
     Map<String, String> hbaseSiteConf = hbr.getExecutionCommands().get(0).getConfigurations().get("hbase-site");
     Assert.assertTrue(hbaseSiteConf.containsKey("a.port"));

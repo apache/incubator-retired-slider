@@ -56,7 +56,7 @@ class CustomServiceOrchestrator():
     self.status_commands_stderr = os.path.realpath(posixpath.join(self.tmp_dir,
                                                                   'status_command_stderr.txt'))
     self.public_fqdn = hostname.public_hostname()
-    self.applied_configs = {}
+    self.stored_command = {}
     # Clean up old status command files if any
     try:
       os.unlink(self.status_commands_stdout)
@@ -68,7 +68,7 @@ class CustomServiceOrchestrator():
 
 
   def runCommand(self, command, tmpoutfile, tmperrfile,
-                 override_output_files=True, store_config=False):
+                 override_output_files=True, store_command=False):
     allocated_port = {}
     try:
       script_type = command['commandParams']['script_type']
@@ -86,7 +86,7 @@ class CustomServiceOrchestrator():
       # We don't support anything else yet
         message = "Unknown script type {0}".format(script_type)
         raise AgentException(message)
-      json_path = self.dump_command_to_json(command, allocated_port, store_config)
+      json_path = self.dump_command_to_json(command, allocated_port, store_command)
       py_file_list = [script_tuple]
       # filter None values
       filtered_py_file_list = [i for i in py_file_list if i]
@@ -154,22 +154,28 @@ class CustomServiceOrchestrator():
     return path
 
   def getConfig(self, command):
-    if 'commandParams' in command and 'config_type' in command['commandParams']:
-      config_type = command['commandParams']['config_type']
-      logger.info("Requesting applied config for type {0}".format(config_type))
-      if config_type in self.applied_configs:
-        return {
-          'configurations': {config_type: self.applied_configs[config_type]}
-        }
+    if 'configurations' in self.stored_command:
+      if 'commandParams' in command and 'config_type' in command['commandParams']:
+        config_type = command['commandParams']['config_type']
+        logger.info("Requesting applied config for type {0}".format(config_type))
+        if config_type in self.stored_command['configurations']:
+          return {
+            'configurations': {config_type: self.stored_command['configurations'][config_type]}
+          }
+        else:
+          return {
+            'configurations': {}
+          }
+        pass
       else:
+        logger.info("Requesting all applied config.")
         return {
-          'configurations': {}
+          'configurations': self.stored_command['configurations']
         }
       pass
     else:
-      logger.info("Requesting all applied config.")
       return {
-        'configurations': self.applied_configs
+        'configurations': {}
       }
     pass
 
@@ -184,7 +190,7 @@ class CustomServiceOrchestrator():
       override_output_files = False
 
     if command['roleCommand'] == "GET_CONFIG":
-      return self.getConfig(command)
+     return self.getConfig(command)
 
     else:
       res = self.runCommand(command, self.status_commands_stdout,
@@ -198,7 +204,7 @@ class CustomServiceOrchestrator():
       return res
     pass
 
-  def dump_command_to_json(self, command, allocated_ports, store_config=False):
+  def dump_command_to_json(self, command, allocated_ports, store_command=False):
     """
     Converts command to json file and returns file path
     """
@@ -221,7 +227,7 @@ class CustomServiceOrchestrator():
     if os.path.isfile(file_path):
       os.unlink(file_path)
 
-    self.finalize_command(command, store_config, allocated_ports)
+    self.finalize_command(command, store_command, allocated_ports)
 
     with os.fdopen(os.open(file_path, os.O_WRONLY | os.O_CREAT,
                            0600), 'w') as f:
@@ -238,7 +244,7 @@ class CustomServiceOrchestrator():
   Either a port gets allocated or if not then just set the value to "0"
   """
 
-  def finalize_command(self, command, store_config, allocated_ports):
+  def finalize_command(self, command, store_command, allocated_ports):
     component = command['componentName']
     allocated_for_this_component_format = "${{{0}.ALLOCATED_PORT}}"
     allocated_for_any = ".ALLOCATED_PORT}"
@@ -267,9 +273,9 @@ class CustomServiceOrchestrator():
         pass
       pass
 
-    if store_config:
+    if store_command:
       logger.info("Storing applied config: " + pprint.pformat(command['configurations']))
-      self.applied_configs = command['configurations']
+      self.stored_command = command
 
   pass
 

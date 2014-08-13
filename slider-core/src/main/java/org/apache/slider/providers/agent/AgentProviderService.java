@@ -495,7 +495,7 @@ public class AgentProviderService extends AbstractProviderService implements
           boolean canExecute = commandOrder.canExecute(roleName, command, getComponentStatuses().values());
           if (canExecute) {
             log.info("Starting {} on {}.", roleName, containerId);
-            addStartCommand(roleName, containerId, response, scriptPath);
+            addStartCommand(roleName, containerId, response, scriptPath, isMarkedAutoRestart(roleName));
             componentStatus.commandIssued(command);
           } else {
             log.info("Start of {} on {} delayed as dependencies have not started.", roleName, containerId);
@@ -508,6 +508,13 @@ public class AgentProviderService extends AbstractProviderService implements
         if (!componentStatus.getConfigReported()) {
           addGetConfigCommand(roleName, containerId, response);
         }
+      }
+
+      // if restart is required then signal
+      response.setRestartEnabled(false);
+      if (componentStatus.getState() == State.STARTED
+          && command == Command.NOP && isMarkedAutoRestart(roleName)) {
+        response.setRestartEnabled(true);
       }
     } catch (SliderException e) {
       componentStatus.applyCommandResult(CommandResult.FAILED, command);
@@ -936,6 +943,25 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   /**
+   * Checks if the role is marked auto-restart
+   * @param roleName
+   * @return
+   */
+  protected boolean isMarkedAutoRestart(String roleName) {
+    Application application = getMetainfo().getApplication();
+    if (application == null) {
+      log.error("Malformed app definition: Expect application as the top level element for metainfo.xml");
+    } else {
+      for (Component component : application.getComponents()) {
+        if (component.getName().equals(roleName)) {
+          return component.getRequiresAutoRestart();
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
    * Can any master publish config explicitly, if not a random master is used
    * @return
    */
@@ -1104,7 +1130,8 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   @VisibleForTesting
-  protected void addStartCommand(String roleName, String containerId, HeartBeatResponse response, String scriptPath)
+  protected void addStartCommand(String roleName, String containerId, HeartBeatResponse response,
+                                 String scriptPath, Boolean isMarkedAutoRestart)
       throws
       SliderException {
     assert getAmState().isApplicationLive();
@@ -1125,6 +1152,10 @@ public class AgentProviderService extends AbstractProviderService implements
     hostLevelParams.put(JAVA_HOME, appConf.getGlobalOptions().getMandatoryOption(JAVA_HOME));
     hostLevelParams.put(CONTAINER_ID, containerId);
     cmd.setHostLevelParams(hostLevelParams);
+
+    Map<String, String> roleParams = new TreeMap<>();
+    cmd.setRoleParams(roleParams);
+    cmd.getRoleParams().put("auto_restart", Boolean.toString(isMarkedAutoRestart));
 
     cmd.setCommandParams(setCommandParameters(scriptPath, true));
 

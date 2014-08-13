@@ -86,6 +86,7 @@ class Controller(threading.Thread):
     self.statusCommand = None
     self.failureCount = 0
     self.heartBeatRetryCount = 0
+    self.autoRestart = False
 
 
   def __del__(self):
@@ -224,6 +225,9 @@ class Controller(threading.Thread):
 
         serverId = int(response['responseId'])
 
+        if 'restartEnabled' in response:
+          restartEnabled = 'true' == response['restartEnabled']
+
         if 'hasMappedComponents' in response.keys():
           self.hasMappedComponents = response['hasMappedComponents'] != False
 
@@ -255,6 +259,17 @@ class Controller(threading.Thread):
           self.restartAgent()
         else:
           logger.info("No commands sent from the Server.")
+          pass
+
+        # Add a start command
+        if self.componentActualState == State.INSTALLED and \
+                self.componentExpectedState == State.STARTED and restartEnabled:
+          stored_command = self.actionQueue.customServiceOrchestrator.stored_command
+          if len(stored_command) > 0:
+             auto_start_command = self.create_start_command(stored_command)
+             if auto_start_command:
+               self.updateStateBasedOnCommand([auto_start_command])
+               self.addToQueue([auto_start_command])
           pass
 
         # Add a status command
@@ -328,6 +343,14 @@ class Controller(threading.Thread):
     pass
     logger.info("Controller stopped heart-beating.")
 
+  def create_start_command(self, stored_command):
+    taskId = int(stored_command['taskId'])
+    taskId = taskId + 1
+    stored_command['taskId'] = taskId
+    stored_command['commandId'] = "{0}-1".format(taskId)
+    stored_command[Constants.AUTO_GENERATED] = True
+    pass
+
   def updateStateBasedOnCommand(self, commands):
     for command in commands:
       if command["roleCommand"] == "START":
@@ -388,7 +411,7 @@ class Controller(threading.Thread):
     statusCommand["hostLevelParams"] = command["hostLevelParams"]
     statusCommand["serviceName"] = command["serviceName"]
     statusCommand["taskId"] = "status"
-    statusCommand['auto_generated'] = True
+    statusCommand[Constants.AUTO_GENERATED] = True
     logger.info("Status command: " + pprint.pformat(statusCommand))
     return statusCommand
     pass

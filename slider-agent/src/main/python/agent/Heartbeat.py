@@ -57,7 +57,11 @@ class Heartbeat:
     if not self.actionQueue.commandQueue.empty():
       commandsInProgress = True
     if len(queueResult) != 0:
-      heartbeat['reports'] = queueResult['reports']
+      heartbeat['reports'] = []
+      for report in queueResult['reports']:
+        if report['reportResult']:
+          del report['reportResult']
+          heartbeat['reports'].append(report)
       if len(heartbeat['reports']) > 0:
         # There may be IN_PROGRESS tasks
         commandsInProgress = True

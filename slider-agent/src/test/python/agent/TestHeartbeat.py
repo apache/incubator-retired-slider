@@ -86,7 +86,8 @@ class TestHeartbeat(TestCase):
                    'role': u'DATANODE',
                    'actionId': '1-1',
                    'taskId': 3,
-                   'exitcode': 777},
+                   'exitcode': 777,
+                   'reportResult' : True},
 
                   {'status': 'COMPLETED',
                    'stderr': 'stderr',
@@ -97,7 +98,8 @@ class TestHeartbeat(TestCase):
                    'role': 'role',
                    'actionId': 17,
                    'taskId': 'taskId',
-                   'exitcode': 0},
+                   'exitcode': 0,
+                   'reportResult' : True},
 
                   {'status': 'FAILED',
                    'stderr': 'stderr',
@@ -108,7 +110,8 @@ class TestHeartbeat(TestCase):
                    'role': u'DATANODE',
                    'actionId': '1-1',
                    'taskId': 3,
-                   'exitcode': 13},
+                   'exitcode': 13,
+                   'reportResult' : True},
 
                   {'status': 'COMPLETED',
                    'stderr': 'stderr',
@@ -120,8 +123,21 @@ class TestHeartbeat(TestCase):
                    'role': u'DATANODE',
                    'actionId': '1-1',
                    'taskId': 3,
-                   'exitcode': 0}
+                   'exitcode': 0,
+                   'reportResult' : True},
 
+                  {'status': 'COMPLETED',
+                   'stderr': 'stderr',
+                   'stdout': 'out',
+                   'clusterName': u'cc',
+                   'configurationTags': {'global': {'tag': 'v1'}},
+                   'roleCommand': u'INSTALL',
+                   'serviceName': u'HDFS',
+                   'role': u'DATANODE',
+                   'actionId': '1-1',
+                   'taskId': 3,
+                   'exitcode': 0,
+                   'reportResult' : False}
       ],
       'componentStatus': [
         {'status': 'HEALTHY', 'componentName': 'DATANODE', 'reportResult' : True},
@@ -159,6 +175,7 @@ class TestHeartbeat(TestCase):
        'stderr': 'stderr'}],  'componentStatus': [
       {'status': 'HEALTHY', 'componentName': 'DATANODE'},
       {'status': 'UNHEALTHY', 'componentName': 'NAMENODE'}]}
+    self.assertEqual.__self__.maxDiff = None
     self.assertEquals(hb, expected)
 
 
