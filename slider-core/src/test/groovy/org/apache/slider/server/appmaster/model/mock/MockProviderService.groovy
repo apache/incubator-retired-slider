@@ -18,6 +18,8 @@
 
 package org.apache.slider.server.appmaster.model.mock
 
+import java.io.IOException;
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.service.LifecycleEvent
@@ -168,6 +170,11 @@ class MockProviderService implements ProviderService {
   }
 
   @Override
+  void initializeApplicationConfiguration(AggregateConf instanceDefinition,
+      SliderFileSystem fileSystem) throws IOException, SliderException {
+  }
+
+  @Override
   public void validateApplicationConfiguration(
       AggregateConf instanceDefinition,
       File confDir,
@@ -264,5 +271,10 @@ class MockProviderService implements ProviderService {
   @Override
   public void addContainerRequest(AMRMClient.ContainerRequest req) {
     // no-op
+  }
+
+  @Override
+  void rebuildContainerDetails(List<Container> liveContainers, String applicationId,
+      Map<Integer, ProviderRole> roleProviderMap) {
   }
 }

@@ -22,6 +22,7 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.client.SliderClient
@@ -76,8 +77,10 @@ class TestFreezeThawMasterlessAM extends AgentMiniClusterTestBase {
     //now start the cluster
     ServiceLauncher launcher2 = thawCluster(clustername, [], true);
     SliderClient newCluster = launcher2.service
+    addToTeardown(newCluster);
+
+//    ApplicationReport report = waitForClusterLive(newCluster)
     newCluster.getClusterDescription(clustername);
-    
     //freeze
     assert 0 == clusterActionFreeze(sliderClient, clustername)
 

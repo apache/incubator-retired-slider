@@ -21,8 +21,12 @@ package org.apache.slider.server.appmaster.model.appstate
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.ContainerId
+import org.apache.slider.api.ResourceKeys
+import org.apache.slider.core.conf.AggregateConf
+import org.apache.slider.core.conf.MapOperations
 import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.exceptions.TriggerClusterTeardownException
+import org.apache.slider.server.appmaster.actions.ResetFailureWindow
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.model.mock.MockYarnEngine
@@ -39,7 +43,7 @@ class TestMockAppStateContainerFailure extends BaseMockAppStateTest
 
   @Override
   String getTestName() {
-    return "TestAppStateContainerFailure"
+    return "TestMockAppStateContainerFailure"
   }
 
   /**
@@ -50,6 +54,15 @@ class TestMockAppStateContainerFailure extends BaseMockAppStateTest
   @Override
   MockYarnEngine createYarnEngine() {
     return new MockYarnEngine(8000, 4)
+  }
+
+  @Override
+  AggregateConf buildInstanceDefinition() {
+    def aggregateConf = super.buildInstanceDefinition()
+    def globalOptions = aggregateConf.resourceOperations.globalOptions
+    globalOptions.put(ResourceKeys.CONTAINER_FAILURE_THRESHOLD, "10")
+    
+    return aggregateConf
   }
 
   @Test
@@ -153,7 +166,7 @@ class TestMockAppStateContainerFailure extends BaseMockAppStateTest
         ContainerId cid = ids[0]
         log.info("$i instance $instances[0] $cid")
         assert cid 
-        appState.onNodeManagerContainerStartFailed(cid, new SliderException("oops"))
+        appState.onNodeManagerContainerStartFailed(cid, new SliderException("failure #${i}"))
         AppState.NodeCompletionResult result = appState.onCompletedNode(containerStatus(cid))
         assert result.containerFailed
       }
@@ -161,6 +174,35 @@ class TestMockAppStateContainerFailure extends BaseMockAppStateTest
     } catch (TriggerClusterTeardownException teardown) {
       log.info("Exception $teardown.exitCode : $teardown")
     }
+  }
+
+
+  @Test
+  public void testFailureWindow() throws Throwable {
+
+    ResetFailureWindow resetter = new ResetFailureWindow();
+
+    // initial reset
+    resetter.execute(null, null, appState)
+    
+    role0Status.desired = 1
+      for (int i = 0; i < 100; i++) {
+        resetter.execute(null, null, appState)
+        List<RoleInstance> instances = createAndSubmitNodes()
+        assert instances.size() == 1
+
+        List<ContainerId> ids = extractContainerIds(instances, 0)
+
+        ContainerId cid = ids[0]
+        log.info("$i instance $instances[0] $cid")
+        assert cid
+        appState.onNodeManagerContainerStartFailed(
+            cid,
+            new SliderException("failure #${i}"))
+        AppState.NodeCompletionResult result = appState.onCompletedNode(
+            containerStatus(cid))
+        assert result.containerFailed
+      }
   }
 
 }

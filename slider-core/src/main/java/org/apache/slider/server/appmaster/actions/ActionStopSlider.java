@@ -20,15 +20,26 @@ package org.apache.slider.server.appmaster.actions;
 
 import org.apache.slider.core.main.LauncherExitCodes;
 import org.apache.slider.server.appmaster.SliderAppMaster;
+import org.apache.slider.server.appmaster.state.AppState;
+
+import java.util.concurrent.TimeUnit;
 
 public class ActionStopSlider extends AsyncAction {
   public ActionStopSlider(String message,
-      int delay) {
+      long delay) {
     super(message, delay, ActionAttributes.HALTS_CLUSTER);
   }
 
+  public ActionStopSlider(String name,
+      long delay,
+      TimeUnit timeUnit) {
+    super(name, delay, timeUnit, ActionAttributes.HALTS_CLUSTER);
+  }
+
   @Override
-  public void execute(SliderAppMaster appMaster, QueueAccess queueService) throws Exception {
+  public void execute(SliderAppMaster appMaster,
+      QueueAccess queueService,
+      AppState appState) throws Exception {
     String message = name;
     SliderAppMaster.getLog().info("SliderAppMasterApi.stopCluster: {}",
         message);

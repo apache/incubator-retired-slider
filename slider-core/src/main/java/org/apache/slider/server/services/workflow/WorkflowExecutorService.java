@@ -96,8 +96,8 @@ public class WorkflowExecutorService<E extends ExecutorService> extends Abstract
    */
   @Override
   protected void serviceStop() throws Exception {
-    super.serviceStop();
     stopExecutor();
+    super.serviceStop();
   }
 
   /**

@@ -478,7 +478,7 @@ public class RoleHistory {
       }
     }
     if (nodeInstance == null) {
-      log.debug("No node selected for {}", role.getName());
+      log.debug("No historical node found for {}", role.getName());
     }
     return nodeInstance;
   }

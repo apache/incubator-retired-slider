@@ -23,16 +23,18 @@ import groovy.util.logging.Slf4j
 import org.apache.hadoop.hbase.ClusterStatus
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus
+import org.apache.slider.api.ResourceKeys
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.api.ClusterDescription
-import org.apache.slider.api.OptionKeys
 import org.apache.slider.core.exceptions.BadClusterStateException
 import org.apache.slider.core.exceptions.ErrorStrings
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.client.SliderClient
 import org.apache.slider.providers.hbase.minicluster.HBaseMiniClusterTestBase
 import org.junit.Test
+
+import static org.apache.slider.providers.hbase.HBaseKeys.ROLE_WORKER
 
 /**
  * test that if a container is killed too many times,
@@ -41,38 +43,61 @@ import org.junit.Test
 @CompileStatic
 @Slf4j
 
-class TestFailureThreshold extends HBaseMiniClusterTestBase {
+class TestRegionServerFailureThreshold extends HBaseMiniClusterTestBase {
 
   @Test
-  public void testFailedRegionService() throws Throwable {
+  public void testRegionServerFailureThreshold() throws Throwable {
     failureThresholdTestRun("", true, 2, 5)
   }
 
-
-  
+  /**
+   * Sets the failure threshold then runs the #of kill attempts
+   * @param testName
+   * @param toKill
+   * @param threshold
+   * @param killAttempts
+   */
   private void failureThresholdTestRun(
       String testName,
       boolean toKill,
       int threshold,
       int killAttempts) {
     String action = toKill ? "kill" : "stop"
-    int regionServerCount = 2
+    int regionServerCount = 1
     String clustername = createMiniCluster(testName, configuration, 1, 1, 1, true, true)
     describe(
-        "Create a single region service cluster then " + action + " the RS");
+        "Create a single region service HBase instance" +
+        "then $action the RS $killAttempts times with a threshold of $threshold");
 
     //now launch the cluster
+    def globalThreshold = threshold - 1
     ServiceLauncher<SliderClient> launcher = createHBaseCluster(
         clustername,
         regionServerCount,
         [
-            Arguments.ARG_OPTION, OptionKeys.INTERNAL_CONTAINER_FAILURE_THRESHOLD,
-            Integer.toString(threshold)
+            Arguments.ARG_RES_COMP_OPT,
+            ROLE_WORKER,
+            ResourceKeys.CONTAINER_FAILURE_THRESHOLD,
+            Integer.toString(threshold),
+
+            Arguments.ARG_RESOURCE_OPT, 
+            ResourceKeys.CONTAINER_FAILURE_THRESHOLD,
+            Integer.toString(globalThreshold)
         ],
         true,
         true)
     SliderClient client = launcher.service
     addToTeardown(client);
+    def aggregateConf = client.loadPersistedClusterDescription(clustername)
+    log.info aggregateConf.toString()
+
+    def resourceOperations = aggregateConf.resourceOperations
+    def failureOptValue = resourceOperations.globalOptions.getMandatoryOptionInt(
+        ResourceKeys.CONTAINER_FAILURE_THRESHOLD)
+    assert globalThreshold == failureOptValue
+    def workerThreshold = resourceOperations.getComponentOptInt(ROLE_WORKER,
+        ResourceKeys.CONTAINER_FAILURE_THRESHOLD, 0)
+    assert threshold == workerThreshold
     ClusterDescription status = client.getClusterDescription(clustername)
 
     ClusterStatus clustat = basicHBaseClusterStartupSequence(client)
@@ -108,7 +133,7 @@ class TestFailureThreshold extends HBaseMiniClusterTestBase {
         describe("waiting for recovery")
 
         //and expect a recovery 
-        if (restarts < threshold) {
+        if (restarts <= threshold) {
 
           def restartTime = 1000
           status = waitForWorkerInstanceCount(
@@ -124,20 +149,30 @@ class TestFailureThreshold extends HBaseMiniClusterTestBase {
           //expect the cluster to have failed
           try {
             def finalCD = client.getClusterDescription(clustername)
-            dumpClusterDescription("expected the AM to have failed", finalCD)
+            describe( "failure threshold ignored")
+            dumpClusterDescription("expected the cluster to have failed", finalCD)
+            describe "stopping cluster"
+            maybeStopCluster(
+                client,
+                "",
+                "stopping cluster that isn't failing correctly")
+            
+            
             fail("AM had not failed after $restarts worker kills")
             
           } catch (BadClusterStateException e) {
-            assert e.toString().contains(ErrorStrings.E_APPLICATION_NOT_RUNNING)
-            assert e.exitCode == SliderExitCodes.EXIT_BAD_STATE
+            assertExceptionDetails(e,
+                SliderExitCodes.EXIT_BAD_STATE,
+                ErrorStrings.E_APPLICATION_NOT_RUNNING)
             //success
             break;
           }
         }
       }
     } catch (BadClusterStateException e) {
-      assert e.toString().contains(ErrorStrings.E_APPLICATION_NOT_RUNNING)
-      assert e.exitCode == SliderExitCodes.EXIT_BAD_STATE
+      assertExceptionDetails(e,
+          SliderExitCodes.EXIT_BAD_STATE, 
+          ErrorStrings.E_APPLICATION_NOT_RUNNING)
     }
     ApplicationReport report = client.applicationReport
     log.info(report.diagnostics)

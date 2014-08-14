@@ -20,6 +20,7 @@ package org.apache.slider.server.appmaster.actions;
 
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.slider.server.appmaster.SliderAppMaster;
+import org.apache.slider.server.appmaster.state.AppState;
 
 /**
  * Report container loss to the AM
@@ -35,13 +36,15 @@ public class ProviderReportedContainerLoss extends AsyncAction {
   }
 
   public ProviderReportedContainerLoss(
-      ContainerId containerId, int delayMillis) {
+      ContainerId containerId, long delayMillis) {
     super("lost container " + containerId, delayMillis);
     this.containerId = containerId;
   }
 
   @Override
-  public void execute(SliderAppMaster appMaster, QueueAccess queueService) throws Exception {
+  public void execute(SliderAppMaster appMaster,
+      QueueAccess queueService,
+      AppState appState) throws Exception {
     appMaster.providerLostContainer(containerId);
   }
 }

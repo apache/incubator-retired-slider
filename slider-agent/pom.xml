@@ -69,7 +69,7 @@
                 <argument>unitTests.py</argument>
               </arguments>
               <environmentVariables>
-                <PYTHONPATH>${project.basedir}/src/main/python/jinja2:${project.basedir}/src/test/python:${project.basedir}/src/main/python:${project.basedir}/src/main/python/agent:${project.basedir}/src/main/python/resource_management:${project.basedir}/src/test/python/agent:${project.basedir}/src/test/python/resource_management</PYTHONPATH>
+                <PYTHONPATH>${project.basedir}/src/main/python/jinja2:${project.basedir}/src/test/python:${project.basedir}/src/main/python:${project.basedir}/src/main/python/agent:${project.basedir}/src/main/python/resource_management:${project.basedir}/src/test/python/agent:${project.basedir}/src/test/python/resource_management:${project.basedir}/src/main/python/kazoo</PYTHONPATH>
               </environmentVariables>
               <skip>${skipTests}</skip>
             </configuration>
@@ -102,6 +102,8 @@
             <exclude>src/main/python/jinja2/**</exclude>
             <!-- mock files (BSD license) -->
             <exclude>src/test/python/mock/**</exclude>
+            <!-- kazoo files (Apache License, Version 2.0) -->
+            <exclude>src/main/python/kazoo/**</exclude>
           </excludes>
         </configuration>
       </plugin>

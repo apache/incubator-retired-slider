@@ -21,6 +21,7 @@ package org.apache.slider.providers.hbase;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.LocalResource;
+import org.apache.slider.api.InternalKeys;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.api.OptionKeys;
@@ -122,7 +123,7 @@ public class HBaseClientProvider extends AbstractClientProvider implements
 
     sitexml.put(KEY_HBASE_ROOTDIR,
         globalInstanceOptions.getMandatoryOption(
-            OptionKeys.INTERNAL_DATA_DIR_PATH)
+            InternalKeys.INTERNAL_DATA_DIR_PATH)
     );
     providerUtils.propagateOption(globalAppOptions, OptionKeys.ZOOKEEPER_PATH,
                                   sitexml, KEY_ZNODE_PARENT);

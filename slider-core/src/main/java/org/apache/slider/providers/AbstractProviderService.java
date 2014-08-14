@@ -28,6 +28,7 @@ import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.tools.ConfigHelper;
+import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
@@ -152,6 +153,15 @@ public abstract class AbstractProviderService
     log.info("{} file is at {}", siteXMLFilename, siteXML);
     log.info(ConfigHelper.dumpConfigToString(siteConf));
     return siteConf;
+  }
+
+  /**
+   * No-op implementation of this method.
+   */
+  @Override
+  public void initializeApplicationConfiguration(
+      AggregateConf instanceDefinition, SliderFileSystem fileSystem)
+      throws IOException, SliderException {
   }
 
   /**
@@ -357,5 +367,13 @@ public abstract class AbstractProviderService
   @Override
   public void addContainerRequest(AMRMClient.ContainerRequest req) {
     // no-op
+  }
+
+  /**
+   * No-op implementation of this method.
+   */
+  @Override
+  public void rebuildContainerDetails(List<Container> liveContainers,
+      String applicationId, Map<Integer, ProviderRole> providerRoles) {
   }
 }

@@ -21,6 +21,7 @@ package org.apache.slider.server.appmaster.actions;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import org.apache.slider.server.appmaster.SliderAppMaster;
+import org.apache.slider.server.appmaster.state.AppState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +35,7 @@ public class QueueExecutor implements Runnable {
 
   private final SliderAppMaster appMaster;
   private final QueueService actionQueues;
+  private final AppState appState;
 
   public QueueExecutor(SliderAppMaster appMaster,
       QueueService actionQueues) {
@@ -42,12 +44,14 @@ public class QueueExecutor implements Runnable {
 
     this.appMaster = appMaster;
     this.actionQueues = actionQueues;
+    this.appState = appMaster.getAppState();
   }
 
   @VisibleForTesting
   QueueExecutor(QueueService actionQueues) {
     Preconditions.checkNotNull(actionQueues);
     this.appMaster = null;
+    this.appState = null;
     this.actionQueues = actionQueues;
   }
 
@@ -62,7 +66,8 @@ public class QueueExecutor implements Runnable {
       do {
         take = actionQueues.actionQueue.take();
         log.debug("Executing {}", take);
-        take.execute(appMaster, actionQueues);
+        
+        take.execute(appMaster, actionQueues, appState);
       } while (!(take instanceof ActionStopQueue));
       log.info("Queue Executor run() stopped");
     } catch (Exception e) {

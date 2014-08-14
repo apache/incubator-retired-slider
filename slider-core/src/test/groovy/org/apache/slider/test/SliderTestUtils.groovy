@@ -480,6 +480,8 @@ class SliderTestUtils extends Assert {
       List args) {
     ServiceLauncher<SliderClient> serviceLauncher =
         new ServiceLauncher<SliderClient>(SliderClient.name);
+
+    log.debug("slider ${SliderUtils.join(args, " ", false)}")
     serviceLauncher.launchService(conf,
         toArray(args),
         false);
@@ -492,6 +494,8 @@ class SliderTestUtils extends Assert {
       Throwable {
     ServiceLauncher serviceLauncher =
         new ServiceLauncher(serviceClass.name);
+    log.debug("slider ${SliderUtils.join(args, " ", false)}")
+
     serviceLauncher.launchService(conf,
         toArray(args),
         false);

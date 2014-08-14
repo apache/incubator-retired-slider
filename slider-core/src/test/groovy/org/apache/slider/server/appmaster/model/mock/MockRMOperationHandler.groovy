@@ -29,17 +29,20 @@ import org.apache.slider.server.appmaster.operations.RMOperationHandler
 @Slf4j
 class MockRMOperationHandler extends RMOperationHandler {
   public List<AbstractRMOperation> operations = [];
-  
+  int requests, releases;
+
   @Override
   public void releaseAssignedContainer(ContainerId containerId) {
     operations.add(new ContainerReleaseOperation(containerId))
     log.info("Releasing container ID " + containerId.getId())
+    releases++;
   }
 
   @Override
   public void addContainerRequest(AMRMClient.ContainerRequest req) {
     operations.add(new ContainerRequestOperation(req))
     log.info("Requesting container role #" + req.priority);
+    requests++;
   }
 
   /**
@@ -47,5 +50,7 @@ class MockRMOperationHandler extends RMOperationHandler {
    */
   public void clear() {
     operations.clear()
+    releases = 0;
+    requests = 0;
   }
 }

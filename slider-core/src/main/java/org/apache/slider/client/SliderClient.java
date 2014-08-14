@@ -38,6 +38,7 @@ import org.apache.hadoop.yarn.registry.client.binding.zk.ZKPathDumper;
 import org.apache.hadoop.yarn.registry.server.services.YarnRegistryService;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterNode;
+import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.OptionKeys;
 import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.SliderClusterProtocol;
@@ -595,6 +596,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     // resource component args
     appConf.merge(cmdLineResourceOptions);
+    resources.merge(cmdLineResourceOptions);
     resources.mergeComponents(buildInfo.getResourceCompOptionMap());
 
     builder.init(providerName, instanceDefinition);
@@ -762,9 +764,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     return instanceDefinition;
 
   }
-  
-  
-
 
   /**
    *
@@ -804,16 +803,16 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       instanceDefinition.getAppConfOperations();
     Path generatedConfDirPath =
       createPathThatMustExist(internalOptions.getMandatoryOption(
-        OptionKeys.INTERNAL_GENERATED_CONF_PATH));
+        InternalKeys.INTERNAL_GENERATED_CONF_PATH));
     Path snapshotConfPath =
       createPathThatMustExist(internalOptions.getMandatoryOption(
-        OptionKeys.INTERNAL_SNAPSHOT_CONF_PATH));
+        InternalKeys.INTERNAL_SNAPSHOT_CONF_PATH));
 
 
     // cluster Provider
     AbstractClientProvider provider = createClientProvider(
       internalOptions.getMandatoryOption(
-        OptionKeys.INTERNAL_PROVIDER_NAME));
+        InternalKeys.INTERNAL_PROVIDER_NAME));
     // make sure the conf dir is valid;
     
     // now build up the image path
@@ -1882,10 +1881,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @throws IOException any problems loading -including a missing file
    */
   @VisibleForTesting
-  public AggregateConf loadPersistedClusterDescription(String clustername) throws
-                                                                           IOException,
-      SliderException,
-                                                                           LockAcquireFailedException {
+  public AggregateConf loadPersistedClusterDescription(String clustername)
+      throws IOException, SliderException, LockAcquireFailedException {
     Path clusterDirectory = sliderFileSystem.buildClusterDirPath(clustername);
     ConfPersister persister = new ConfPersister(sliderFileSystem, clusterDirectory);
     AggregateConf instanceDescription = new AggregateConf();

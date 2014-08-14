@@ -24,9 +24,9 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.registry.client.api.RegistryWriter;
 import org.apache.hadoop.yarn.registry.client.types.ServiceEntry;
+import org.apache.slider.api.InternalKeys;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.api.ClusterDescription;
-import org.apache.slider.api.OptionKeys;
 import org.apache.slider.api.RoleKeys;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.core.conf.AggregateConf;
@@ -154,7 +154,7 @@ public class HBaseProviderService extends AbstractProviderService implements
     //Add binaries
     //now add the image if it was set
     String imageURI = instanceDefinition.getInternalOperations()
-                  .get(OptionKeys.INTERNAL_APPLICATION_IMAGE_PATH);
+                  .get(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH);
     coreFS.maybeAddImagePath(launcher.getLocalResources(), imageURI);
 
     CommandLineBuilder cli = new CommandLineBuilder();

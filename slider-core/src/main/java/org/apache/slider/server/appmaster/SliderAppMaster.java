@@ -18,6 +18,8 @@
 
 package org.apache.slider.server.appmaster;
 
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.BlockingService;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
@@ -58,7 +60,7 @@ import org.apache.hadoop.yarn.security.client.ClientToAMTokenSecretManager;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.webapp.WebApps;
 import org.apache.slider.api.ClusterDescription;
-import org.apache.slider.api.OptionKeys;
+import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.RoleKeys;
 import org.apache.slider.api.SliderClusterProtocol;
@@ -78,6 +80,7 @@ import org.apache.slider.common.tools.SliderVersionInfo;
 import org.apache.slider.core.build.InstanceIO;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
+import org.apache.slider.core.conf.ConfTreeOperations;
 import org.apache.slider.core.conf.MapOperations;
 import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.core.exceptions.SliderException;
@@ -98,11 +101,17 @@ import org.apache.slider.providers.ProviderService;
 import org.apache.slider.providers.SliderProviderFactory;
 import org.apache.slider.providers.slideram.SliderAMClientProvider;
 import org.apache.slider.providers.slideram.SliderAMProviderService;
+import org.apache.slider.server.appmaster.actions.ActionKillContainer;
 import org.apache.slider.server.appmaster.actions.QueueExecutor;
 import org.apache.slider.server.appmaster.actions.ActionHalt;
 import org.apache.slider.server.appmaster.actions.QueueService;
 import org.apache.slider.server.appmaster.actions.ActionStopSlider;
 import org.apache.slider.server.appmaster.actions.AsyncAction;
+import org.apache.slider.server.appmaster.actions.RenewingAction;
+import org.apache.slider.server.appmaster.actions.ResetFailureWindow;
+import org.apache.slider.server.appmaster.monkey.ChaosKillAM;
+import org.apache.slider.server.appmaster.monkey.ChaosKillContainer;
+import org.apache.slider.server.appmaster.monkey.ChaosMonkeyService;
 import org.apache.slider.server.appmaster.operations.AsyncRMOperationHandler;
 import org.apache.slider.server.appmaster.operations.ProviderNotifyingOperationHandler;
 import org.apache.slider.server.appmaster.rpc.RpcBinder;
@@ -111,7 +120,6 @@ import org.apache.slider.server.appmaster.rpc.SliderClusterProtocolPBImpl;
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
 import org.apache.slider.server.appmaster.state.AppState;
 import org.apache.slider.server.appmaster.state.ContainerAssignment;
-import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation;
 import org.apache.slider.server.appmaster.state.ProviderAppState;
 import org.apache.slider.server.appmaster.operations.RMOperationHandler;
 import org.apache.slider.server.appmaster.state.RoleInstance;
@@ -148,12 +156,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -199,6 +206,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public static final String SLIDER_AM_RPC = "Slider AM RPC";
   public static final int SCHEDULED_EXECUTOR_POOL_SIZE = 1;
 
+  /**
+   * Singleton of metrics registry
+   */
+  public static final MetricRegistry metrics = new MetricRegistry();
+  
   /** YARN RPC to communicate with the Resource Manager or Node Manager */
   private YarnRPC yarnRPC;
 
@@ -298,6 +310,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private ContainerId appMasterContainerID;
 
   /**
+   * Monkey Service -may be null
+   */
+  private ChaosMonkeyService monkey;
+  
+  /**
    * ProviderService of this cluster
    */
   @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
@@ -343,11 +360,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private String agentAccessUrl;
   private CertificateManager certificateManager;
 
-  private WorkflowScheduledExecutorService<ScheduledExecutorService>
-      scheduledExecutors;
-  private WorkflowExecutorService<ExecutorService>
-      executorService;
-  
+  private WorkflowExecutorService<ExecutorService> executorService;
   
   private final QueueService actionQueues = new QueueService();
   
@@ -401,14 +414,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     //look at settings of Hadoop Auth, to pick up a problem seen once
     checkAndWarnForAuthTokenProblems();
-
-    scheduledExecutors =
-        new WorkflowScheduledExecutorService<>(
-            "AmExecutor",
-            Executors.newScheduledThreadPool(
-                SCHEDULED_EXECUTOR_POOL_SIZE,
-                new ServiceThreadFactory("AmScheduledExecutor", true)));
-    addService(scheduledExecutors);
 
     executorService = new WorkflowExecutorService<>("AmExecutor",
         Executors.newCachedThreadPool(
@@ -539,10 +544,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     serviceConf.set(SliderAmIpFilter.WS_CONTEXT_ROOT, WS_CONTEXT_ROOT + "|" + WS_AGENT_CONTEXT_ROOT);
     
     //get our provider
-    MapOperations globalInternalOptions =
-      instanceDefinition.getInternalOperations().getGlobalOptions();
+    MapOperations globalInternalOptions = getGlobalInternalOptions();
     String providerType = globalInternalOptions.getMandatoryOption(
-      OptionKeys.INTERNAL_PROVIDER_NAME);
+      InternalKeys.INTERNAL_PROVIDER_NAME);
     log.info("Cluster provider type is {}", providerType);
     SliderProviderFactory factory =
       SliderProviderFactory.createSliderProviderFactory(
@@ -727,6 +731,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       Configuration providerConf =
         providerService.loadProviderConfigurationInformation(confDir);
 
+      providerService
+          .initializeApplicationConfiguration(instanceDefinition, fs);
+
       providerService.validateApplicationConfiguration(instanceDefinition, 
                                                        confDir,
                                                        securityEnabled);
@@ -745,6 +752,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
           appInformation,
           new SimpleReleaseSelector());
 
+      providerService.rebuildContainerDetails(liveContainers,
+          instanceDefinition.getName(), appState.getRolePriorityMap());
+
       // add the AM to the list of nodes in the cluster
       
       appState.buildAppMasterNode(appMasterContainerID,
@@ -761,7 +771,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
     String rolesTmpSubdir = appMasterContainerID.toString() + "/roles";
 
-    String amTmpDir = globalInternalOptions.getMandatoryOption(OptionKeys.INTERNAL_AM_TMP_DIR);
+    String amTmpDir = globalInternalOptions.getMandatoryOption(InternalKeys.INTERNAL_AM_TMP_DIR);
 
     Path tmpDirPath = new Path(amTmpDir);
     Path launcherTmpDirPath = new Path(tmpDirPath, rolesTmpSubdir);
@@ -789,14 +799,15 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // now do the registration
     registerServiceInstance(clustername, appid);
 
+    // chaos monkey
+    maybeStartMonkey();
+
+    // Start the Slider AM provider
     sliderAMProvider.start();
 
-
-    
-    // launch the provider; this is expected to trigger a callback that
+    // launch the real provider; this is expected to trigger a callback that
     // starts the node review process
     launchProviderService(instanceDefinition, confDir);
-
 
     try {
       //now block waiting to be told to exit the process
@@ -970,9 +981,18 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * @return the generated configuration dir
    */
   public String getGeneratedConfDir() {
+    return getGlobalInternalOptions().get(
+        InternalKeys.INTERNAL_GENERATED_CONF_PATH);
+  }
+
+  /**
+   * Get the global internal options for the AM
+   * @return a map to access the internals
+   */
+  public MapOperations getGlobalInternalOptions() {
     return getInstanceDefinition()
       .getInternalOperations().
-      getGlobalOptions().get(OptionKeys.INTERNAL_GENERATED_CONF_PATH);
+      getGlobalOptions();
   }
 
   /**
@@ -989,6 +1009,14 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   public static Logger getLog() {
     return log;
+  }
+
+  /**
+   * Get the application state
+   * @return the application state
+   */
+  public AppState getAppState() {
+    return appState;
   }
 
   /**
@@ -1054,7 +1082,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     //stop any launches in progress
     launchService.stop();
 
-
     //now release all containers
     releaseAllContainers();
 
@@ -1062,8 +1089,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // signal to the RM
     log.info("Application completed. Signalling finish to RM");
 
-
     //if there were failed containers and the app isn't already down as failing, it is now
+/*
     int failedContainerCount = appState.getFailedCountainerCount();
     if (failedContainerCount != 0 &&
         appStatus == FinalApplicationStatus.SUCCEEDED) {
@@ -1072,6 +1099,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         "Completed with exit code =  " + exitCode + " - " + getContainerDiagnosticInfo();
       success = false;
     }
+*/
     try {
       log.info("Unregistering AM status={} message={}", appStatus, appMessage);
       asyncRMClient.unregisterApplicationMaster(appStatus, appMessage, null);
@@ -1147,7 +1175,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
     
     //for all the operations, exec them
-    rmOperationHandler.execute(operations);
+    executeRMOperations(operations);
     log.info("Diagnostics: " + getContainerDiagnosticInfo());
   }
 
@@ -1194,18 +1222,50 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * Implementation of cluster flexing.
    * It should be the only way that anything -even the AM itself on startup-
    * asks for nodes. 
+   * @param resources the resource tree
    * @return true if the any requests were made
    * @throws IOException
    */
-  private boolean flexCluster(ConfTree updated)
+  private boolean flexCluster(ConfTree resources)
     throws IOException, SliderInternalStateException, BadConfigException {
 
-    appState.updateResourceDefinitions(updated);
+    appState.updateResourceDefinitions(resources);
+    appState.resetFailureCounts();
+    // reset the scheduled window resetter...the values
+    // may have changed
+    
+
 
     // ask for more containers if needed
     return reviewRequestAndReleaseNodes();
   }
 
+  /**
+   * Schedule the failure window
+   * @param resources the resource tree
+   * @throws BadConfigException if the window is out of range
+   */
+  private void scheduleFailureWindowResets(ConfTree resources) throws
+      BadConfigException {
+    ResetFailureWindow reset = new ResetFailureWindow();
+    ConfTreeOperations ops = new ConfTreeOperations(resources);
+    MapOperations globals = ops.getGlobalOptions();
+    long seconds = globals.getTimeRange(ResourceKeys.CONTAINER_FAILURE_WINDOW,
+        ResourceKeys.DEFAULT_CONTAINER_FAILURE_WINDOW_DAYS,
+        ResourceKeys.DEFAULT_CONTAINER_FAILURE_WINDOW_HOURS,
+        ResourceKeys.DEFAULT_CONTAINER_FAILURE_WINDOW_MINUTES, 0);
+    if (seconds > 0) {
+      log.info(
+          "Scheduling the failure window reset interval to every {} seconds",
+          seconds);
+      RenewingAction<ResetFailureWindow> renew = new RenewingAction<>(
+          reset, seconds, seconds, TimeUnit.SECONDS, 0);
+      actionQueues.renewing("failures", renew);
+    } else {
+      log.info("Failure window reset interval is not set");
+    }
+  }
+  
   /**
    * Look at where the current node state is -and whether it should be changed
    */
@@ -1221,7 +1281,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       // tell the provider
       providerRMOperationHandler.execute(allOperations);
       //now apply the operations
-      rmOperationHandler.execute(allOperations);
+      executeRMOperations(allOperations);
       return !allOperations.isEmpty();
     } catch (TriggerClusterTeardownException e) {
 
@@ -1237,7 +1297,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   private void releaseAllContainers() {
     //now apply the operations
-    rmOperationHandler.execute(appState.releaseAllContainers());
+    executeRMOperations(appState.releaseAllContainers());
   }
 
   /**
@@ -1309,7 +1369,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     SliderUtils.getCurrentUser();
     String message = request.getMessage();
     log.info("SliderAppMasterApi.stopCluster: {}", message);
-    queue(new ActionStopSlider(message, 1000));
+    schedule(new ActionStopSlider(message, 1000, TimeUnit.MILLISECONDS));
     return Messages.StopClusterResponseProto.getDefaultInstance();
   }
 
@@ -1321,8 +1381,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     String payload = request.getClusterSpec();
     ConfTreeSerDeser confTreeSerDeser = new ConfTreeSerDeser();
-    ConfTree updated = confTreeSerDeser.fromJson(payload);
-    boolean flexed = flexCluster(updated);
+    ConfTree updatedResources = confTreeSerDeser.fromJson(payload);
+    boolean flexed = flexCluster(updatedResources);
     return Messages.FlexClusterResponseProto.newBuilder().setResponse(flexed).build();
   }
 
@@ -1335,26 +1395,12 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     String result;
     //quick update
     //query and json-ify
-    ClusterDescription cd;
-    cd = getCurrentClusterStatus();
+    ClusterDescription cd = updateClusterStatus();
     result = cd.toJsonString();
     String stat = result;
     return Messages.GetJSONClusterStatusResponseProto.newBuilder()
       .setClusterSpec(stat)
       .build();
-  }
-
-  /**
-   * Get the current cluster status, including any provider-specific info
-   * @return a status document
-   */
-  public ClusterDescription getCurrentClusterStatus() {
-    ClusterDescription cd;
-    synchronized (this) {
-      updateClusterStatus();
-      cd = getClusterDescription();
-    }
-    return cd;
   }
 
 
@@ -1455,17 +1501,24 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     //throws NoSuchNodeException if it is missing
     RoleInstance instance =
       appState.getLiveInstanceByContainerID(containerID);
-    List<AbstractRMOperation> opsList =
-      new LinkedList<>();
-    ContainerReleaseOperation release =
-      new ContainerReleaseOperation(instance.getId());
-    opsList.add(release);
-    //now apply the operations
-    rmOperationHandler.execute(opsList);
+    queue(new ActionKillContainer(instance.getId(), 0, TimeUnit.MILLISECONDS,
+        rmOperationHandler));
     Messages.KillContainerResponseProto.Builder builder =
       Messages.KillContainerResponseProto.newBuilder();
     builder.setSuccess(true);
     return builder.build();
+  }
+
+  public void executeRMOperations(List<AbstractRMOperation> operations) {
+    rmOperationHandler.execute(operations);
+  }
+
+  /**
+   * Get the RM operations handler for direct scheduling of work.
+   */
+  @VisibleForTesting
+  public RMOperationHandler getRmOperationHandler() {
+    return rmOperationHandler;
   }
 
   @Override
@@ -1476,7 +1529,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     String text = request.getText();
     int delay = request.getDelay();
     log.info("AM Suicide with signal {}, message {} delay = {}", signal, text, delay);
-    ActionHalt action = new ActionHalt(signal, text, delay);
+    ActionHalt action = new ActionHalt(signal, text, delay,
+        TimeUnit.MILLISECONDS);
     schedule(action);
     return Messages.AMSuicideResponseProto.getDefaultInstance();
   }
@@ -1488,10 +1542,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   /**
    * Update the cluster description with anything interesting
    */
-  public synchronized void updateClusterStatus() {
+  public synchronized ClusterDescription updateClusterStatus() {
     Map<String, String> providerStatus = providerService.buildProviderStatus();
     assert providerStatus != null : "null provider status";
-    appState.refreshClusterStatus(providerStatus);
+    return appState.refreshClusterStatus(providerStatus);
   }
 
   /**
@@ -1551,7 +1605,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         containerId);
     RoleInstance activeContainer = appState.getActiveContainer(containerId);
     if (activeContainer != null) {
-      rmOperationHandler.execute(appState.releaseContainer(containerId));
+      executeRMOperations(appState.releaseContainer(containerId));
       // ask for more containers if needed
       log.info("Container released; triggering review");
       reviewRequestAndReleaseNodes();
@@ -1644,7 +1698,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     LOG_YARN.info("Started Container {} ", containerId);
     RoleInstance cinfo = appState.onNodeManagerContainerStarted(containerId);
     if (cinfo != null) {
-      LOG_YARN.info("Deployed instance of role {}", cinfo.role);
+      LOG_YARN.info("Deployed instance of role {} onto {}",
+          cinfo.role, containerId);
       //trigger an async container status
       nmClientAsync.getContainerStatusAsync(containerId,
                                             cinfo.container.getNodeId());
@@ -1711,7 +1766,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * @param action action to execute
    */
   public void queue(AsyncAction action) {
-    actionQueues.actionQueue.add(action);
+    actionQueues.put(action);
   }
 
   /**
@@ -1719,7 +1774,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * @param action for delayed execution
    */
   public void schedule(AsyncAction action) {
-    actionQueues.delayedActions.add(action);
+    actionQueues.schedule(action);
   }
 
 
@@ -1736,6 +1791,52 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       exitCode = ((ExitCodeProvider) exception).getExitCode();
     }
     signalAMComplete(exitCode, exception.toString());
+  }
+
+  /**
+   * Start the chaos monkey
+   * @return true if it started
+   */
+  private boolean maybeStartMonkey() {
+    MapOperations internals = getGlobalInternalOptions();
+
+    Boolean enabled =
+        internals.getOptionBool(InternalKeys.CHAOS_MONKEY_ENABLED,
+            InternalKeys.DEFAULT_CHAOS_MONKEY_ENABLED);
+    if (!enabled) {
+      log.info("Chaos monkey disabled");
+    }
+    
+    long monkeyInterval = internals.getTimeRange(
+        InternalKeys.CHAOS_MONKEY_INTERVAL,
+        InternalKeys.DEFAULT_CHAOS_MONKEY_INTERVAL_DAYS,
+        InternalKeys.DEFAULT_CHAOS_MONKEY_INTERVAL_HOURS,
+        InternalKeys.DEFAULT_CHAOS_MONKEY_INTERVAL_MINUTES,
+        0);
+    log.info("Adding Chaos Monkey scheduled every {} seconds ({} hours)",
+        monkeyInterval, monkeyInterval/(60*60));
+    monkey = new ChaosMonkeyService(metrics, actionQueues);
+    int amKillProbability = internals.getOptionInt(
+        InternalKeys.CHAOS_MONKEY_PROBABILITY_AM_FAILURE,
+        InternalKeys.DEFAULT_CHAOS_MONKEY_PROBABILITY_AM_FAILURE);
+    if (amKillProbability > 0) {
+      monkey.addTarget("AM killer",
+          new ChaosKillAM(actionQueues, -1), amKillProbability
+      );
+    }
+    int containerKillProbability = internals.getOptionInt(
+        InternalKeys.CHAOS_MONKEY_PROBABILITY_CONTAINER_FAILURE,
+        InternalKeys.DEFAULT_CHAOS_MONKEY_PROBABILITY_CONTAINER_FAILURE);
+    if (containerKillProbability > 0) {
+      monkey.addTarget("Container killer",
+          new ChaosKillContainer(appState, actionQueues, rmOperationHandler),
+          containerKillProbability
+      );
+    }
+    initAndAddService(monkey);
+    // and schedule it
+    schedule(monkey.getChaosAction(monkeyInterval, TimeUnit.SECONDS));
+    return true;
   }
   
   /**

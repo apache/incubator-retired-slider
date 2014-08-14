@@ -34,6 +34,8 @@ import posixpath
 from Controller import Controller
 from AgentConfig import AgentConfig
 from NetUtil import NetUtil
+from Registry import Registry
+import Constants
 
 logger = logging.getLogger()
 IS_WINDOWS = platform.system() == "Windows"
@@ -178,9 +180,8 @@ def main():
   parser = OptionParser()
   parser.add_option("-v", "--verbose", dest="verbose", help="verbose log output", default=False)
   parser.add_option("-l", "--label", dest="label", help="label of the agent", default=None)
-  parser.add_option("--host", dest="host", help="AppMaster host", default=None)
-  parser.add_option("--port", dest="port", help="AppMaster port", default=None)
-  parser.add_option("--secured_port", dest="secured_port", help="AppMaster 2 Way port", default=None)
+  parser.add_option("--zk-quorum", dest=Constants.ZK_QUORUM, help="Zookeeper Quorum", default=None)
+  parser.add_option("--zk-reg-path", dest=Constants.ZK_REG_PATH, help="Zookeeper Registry Path", default=None)
   parser.add_option("--debug", dest="debug", help="Agent debug hint", default="")
   (options, args) = parser.parse_args()
 
@@ -207,17 +208,23 @@ def main():
   update_config_from_file(agentConfig)
 
   # update configurations if needed
-  if options.host:
-      agentConfig.set(AgentConfig.SERVER_SECTION, "hostname", options.host)
+  if options.zk_quorum:
+      agentConfig.set(AgentConfig.SERVER_SECTION, Constants.ZK_QUORUM, options.zk_quorum)
 
-  if options.port:
-      agentConfig.set(AgentConfig.SERVER_SECTION, "port", options.port)
-
-  if options.secured_port:
-      agentConfig.set(AgentConfig.SERVER_SECTION, "secured_port", options.secured_port)
+  if options.zk_reg_path:
+      agentConfig.set(AgentConfig.SERVER_SECTION, Constants.ZK_REG_PATH, options.zk_reg_path)
 
   if options.debug:
     agentConfig.set(AgentConfig.AGENT_SECTION, AgentConfig.APP_DBG_CMD, options.debug)
+
+  # Extract the AM hostname and secured port from ZK registry
+  registry = Registry(options.zk_quorum, options.zk_reg_path)
+  amHost, amSecuredPort = registry.readAMHostPort()
+  if amHost:
+      agentConfig.set(AgentConfig.SERVER_SECTION, "hostname", amHost)
+
+  if amSecuredPort:
+      agentConfig.set(AgentConfig.SERVER_SECTION, "secured_port", amSecuredPort)
 
   # set the security directory to a subdirectory of the run dir
   secDir = posixpath.join(agentConfig.getResolvedPath(AgentConfig.RUN_DIR), "security")
@@ -243,7 +250,7 @@ def main():
 
   server_url = SERVER_STATUS_URL.format(
     agentConfig.get(AgentConfig.SERVER_SECTION, 'hostname'),
-    agentConfig.get(AgentConfig.SERVER_SECTION, 'port'),
+    agentConfig.get(AgentConfig.SERVER_SECTION, 'secured_port'),
     agentConfig.get(AgentConfig.SERVER_SECTION, 'check_path'))
   print("Connecting to the server at " + server_url + "...")
   logger.info('Connecting to the server at: ' + server_url)

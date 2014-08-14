@@ -30,6 +30,7 @@ import org.apache.hadoop.yarn.api.records.ContainerStatus
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.common.tools.SliderFileSystem
 import org.apache.slider.common.tools.SliderUtils
+import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
 import org.apache.slider.server.appmaster.state.*
@@ -82,16 +83,31 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
     appState = new AppState(new MockRecordFactory())
     appState.setContainerLimits(RM_MAX_RAM, RM_MAX_CORES)
     appState.buildInstance(
-        factory.newInstanceDefinition(0, 0, 0),
+        buildInstanceDefinition(),
         new Configuration(),
         new Configuration(false),
         factory.ROLES,
         fs,
         historyPath,
-        null, null, new SimpleReleaseSelector())
+        null, null,
+        new SimpleReleaseSelector())
   }
 
-  abstract String getTestName();
+  /**
+   * Override point, define the instance definition
+   * @return
+   */
+  public AggregateConf buildInstanceDefinition() {
+    factory.newInstanceDefinition(0, 0, 0)
+  }
+
+  /**
+   * Get the test name ... defaults to method name
+   * @return
+   */
+  String getTestName() {
+    methodName.methodName;
+  }
 
   public RoleStatus getRole0Status() {
     return appState.lookupRoleStatus(ROLE0)

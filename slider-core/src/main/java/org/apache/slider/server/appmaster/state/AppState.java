@@ -36,7 +36,6 @@ import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterDescriptionKeys;
 import org.apache.slider.api.ClusterDescriptionOperations;
 import org.apache.slider.api.ClusterNode;
-import org.apache.slider.api.OptionKeys;
 import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.RoleKeys;
 import org.apache.slider.api.StatusKeys;
@@ -102,7 +101,7 @@ public class AppState {
    * Flag set to indicate the application is live -this only happens
    * after the buildInstance operation
    */
-  boolean applicationLive = false;
+  private boolean applicationLive = false;
 
   /**
    * The definition of the instance. Flexing updates the resources section
@@ -150,6 +149,9 @@ public class AppState {
     new ConcurrentHashMap<>();
 
   private final Map<String, ProviderRole> roles =
+    new ConcurrentHashMap<>();
+
+  private final Map<Integer, ProviderRole> rolePriorityMap = 
     new ConcurrentHashMap<>();
 
   /**
@@ -319,6 +321,10 @@ public class AppState {
   
   protected Map<String, ProviderRole> getRoleMap() {
     return roles;
+  }
+
+  public Map<Integer, ProviderRole> getRolePriorityMap() {
+    return rolePriorityMap;
   }
 
   private Map<ContainerId, RoleInstance> getStartingNodes() {
@@ -510,15 +516,16 @@ public class AppState {
 
 
     //set the livespan
-    MapOperations globalInternalOpts =
-        instanceDefinition.getInternalOperations().getGlobalOptions();
-    startTimeThreshold = globalInternalOpts.getOptionInt(
-        OptionKeys.INTERNAL_CONTAINER_FAILURE_SHORTLIFE,
-        OptionKeys.DEFAULT_CONTAINER_FAILURE_SHORTLIFE);
+    MapOperations globalResOpts =
+        instanceDefinition.getResourceOperations().getGlobalOptions();
+    
+    startTimeThreshold = globalResOpts.getOptionInt(
+        ResourceKeys.CONTAINER_FAILURE_SHORTLIFE,
+        ResourceKeys.DEFAULT_CONTAINER_FAILURE_SHORTLIFE);
 
-    failureThreshold = globalInternalOpts.getOptionInt(
-        OptionKeys.INTERNAL_CONTAINER_FAILURE_THRESHOLD,
-        OptionKeys.DEFAULT_CONTAINER_FAILURE_THRESHOLD);
+    failureThreshold = globalResOpts.getOptionInt(
+        ResourceKeys.CONTAINER_FAILURE_THRESHOLD,
+        ResourceKeys.DEFAULT_CONTAINER_FAILURE_THRESHOLD);
     initClusterStatus();
 
 
@@ -531,8 +538,7 @@ public class AppState {
 
     // any am config options to pick up
 
-    logServerURL = appmasterConfig.get(YarnConfiguration.YARN_LOG_SERVER_URL,
-        "");
+    logServerURL = appmasterConfig.get(YarnConfiguration.YARN_LOG_SERVER_URL, "");
     //mark as live
     applicationLive = true;
   }
@@ -630,7 +636,7 @@ public class AppState {
   }
   
   /**
-   * The resource configuration is updated -review and update state
+   * The resource configuration is updated -review and update state.
    * @param resources updated resources specification
    */
   public synchronized void updateResourceDefinitions(ConfTree resources) throws
@@ -711,6 +717,7 @@ public class AppState {
     roleStatusMap.put(priority,
         new RoleStatus(providerRole));
     roles.put(providerRole.name, providerRole);
+    rolePriorityMap.put(priority, providerRole);
   }
 
   /**
@@ -804,6 +811,10 @@ public class AppState {
     return activeContainers.remove(id);
   }
 
+  /**
+   * Clone the live container list. This is synchronized.
+   * @return a snapshot of the live node list
+   */
   public synchronized List<RoleInstance> cloneLiveContainerInfoList() {
     List<RoleInstance> allRoleInstances;
     Collection<RoleInstance> values = getLiveNodes().values();
@@ -811,8 +822,12 @@ public class AppState {
     return allRoleInstances;
   }
 
-
-
+  /**
+   * Lookup live instance by string value of container ID
+   * @param containerId container ID
+   * @return the role instance for that container
+   * @throws NoSuchNodeException if it does not exist
+   */
   public synchronized RoleInstance getLiveInstanceByContainerID(String containerId)
     throws NoSuchNodeException {
     Collection<RoleInstance> nodes = getLiveNodes().values();
@@ -1137,11 +1152,14 @@ public class AppState {
     RoleInstance instance = getStartingNodes().remove(containerId);
     if (null != instance) {
       RoleStatus roleStatus = lookupRoleStatus(instance.roleId);
+      String text;
       if (null != thrown) {
-        instance.diagnostics = SliderUtils.stringify(thrown);
+        text = SliderUtils.stringify(thrown);
+      } else {
+        text = "container start failure";
       }
-      roleStatus.noteFailed(null);
-      roleStatus.incStartFailed(); 
+      instance.diagnostics = text;
+      roleStatus.noteFailed(true, null);
       getFailedNodes().put(containerId, instance);
       roleHistory.onNodeManagerContainerStartFailed(instance.container);
     }
@@ -1240,7 +1258,8 @@ public class AppState {
       }
       if (roleInstance != null) {
         int roleId = roleInstance.roleId;
-        log.info("Failed container in role {}", roleId);
+        String rolename = roleInstance.role;
+        log.info("Failed container in role[{}] : {}", roleId, rolename);
         try {
           RoleStatus roleStatus = lookupRoleStatus(roleId);
           roleStatus.decActual();
@@ -1258,12 +1277,9 @@ public class AppState {
           } else {
             message = String.format("Failure %s", containerId);
           }
-          roleStatus.noteFailed(message);
-          //have a look to see if it short lived
-          if (shortLived) {
-            roleStatus.incStartFailed();
-          }
-
+          int failed = roleStatus.noteFailed(shortLived, message);
+          log.info("Current count of failed role[{}] {} =  {}",
+              roleId, rolename, failed);
           if (failedContainer != null) {
             roleHistory.onFailedContainer(failedContainer, shortLived);
           }
@@ -1371,7 +1387,7 @@ public class AppState {
    * Update the cluster description with anything interesting
    * @param providerStatus status from the provider for the cluster info section
    */
-  public void refreshClusterStatus(Map<String, String> providerStatus) {
+  public synchronized ClusterDescription refreshClusterStatus(Map<String, String> providerStatus) {
     ClusterDescription cd = getClusterStatus();
     long now = now();
     cd.setInfoTime(StatusKeys.INFO_STATUS_TIME_HUMAN,
@@ -1382,7 +1398,7 @@ public class AppState {
         cd.setInfo(entry.getKey(),entry.getValue());
       }
     }
-    MapOperations infoOps = new MapOperations("info",cd.info);
+    MapOperations infoOps = new MapOperations("info", cd.info);
     infoOps.mergeWithoutOverwrite(applicationInfo);
     SliderUtils.addBuildInfo(infoOps, "status");
     cd.statistics = new HashMap<>();
@@ -1428,7 +1444,7 @@ public class AppState {
     sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_UNKNOWN_COMPLETED,
         completionOfUnknownContainerEvent.get());
     cd.statistics.put(SliderKeys.COMPONENT_AM, sliderstats);
-    
+    return cd;
   }
 
   /**
@@ -1446,21 +1462,56 @@ public class AppState {
     }
     return allOperations;
   }
-  
-  public void checkFailureThreshold(RoleStatus role) throws
-                                                        TriggerClusterTeardownException {
-    int failures = role.getFailed();
 
-    if (failures > failureThreshold) {
+  /**
+   * Check the failure threshold for a role
+   * @param role role to examine
+   * @throws TriggerClusterTeardownException if the role
+   * has failed too many times
+   */
+  private void checkFailureThreshold(RoleStatus role)
+      throws TriggerClusterTeardownException {
+    int failures = role.getFailed();
+    int threshold = getFailureThresholdForRole(role);
+    log.debug("Failure count of role: {}: {}, threshold={}",
+        role.getName(), failures, threshold);
+
+    if (failures > threshold) {
       throw new TriggerClusterTeardownException(
         SliderExitCodes.EXIT_DEPLOYMENT_FAILED,
         ErrorStrings.E_UNSTABLE_CLUSTER +
-        " - failed with role %s failing %d times (%d in startup); threshold is %d - last failure: %s",
+        " - failed with role %s failing %d times (%d in startup);" +
+        " threshold is %d - last failure: %s",
         role.getName(),
         role.getFailed(),
         role.getStartFailed(),
-        failureThreshold,
+          threshold,
         role.getFailureMessage());
+    }
+  }
+
+  /**
+   * Get the failure threshold for a specific role, falling back to
+   * the global one if not
+   * @param roleStatus
+   * @return the threshold for failures
+   */
+  private int getFailureThresholdForRole(RoleStatus roleStatus) {
+    ConfTreeOperations resources =
+        instanceDefinition.getResourceOperations();
+    return resources.getComponentOptInt(roleStatus.getName(),
+        ResourceKeys.CONTAINER_FAILURE_SHORTLIFE,
+        failureThreshold);
+  }
+  
+  /**
+   * Reset the failure counts of all roles
+   */
+  public void resetFailureCounts() {
+    for (RoleStatus roleStatus : getRoleStatusMap().values()) {
+      int failed = roleStatus.resetFailed();
+      log.debug("Resetting failure count of {}; was {}", roleStatus.getName(),
+          failed);
     }
   }
   
@@ -1474,7 +1525,7 @@ public class AppState {
    * the internal state of the application is inconsistent.
    */
   @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
-  public List<AbstractRMOperation> reviewOneRole(RoleStatus role)
+  private List<AbstractRMOperation> reviewOneRole(RoleStatus role)
       throws SliderInternalStateException, TriggerClusterTeardownException {
     List<AbstractRMOperation> operations = new ArrayList<>();
     int delta;
@@ -1620,6 +1671,8 @@ public class AppState {
       Container possible = instance.container;
       ContainerId id = possible.getId();
       if (!instance.released) {
+        String url = getLogsURLForContainer(possible);
+        log.info("Releasing container. Log: " + url);
         try {
           containerReleaseSubmitted(possible);
         } catch (SliderInternalStateException e) {

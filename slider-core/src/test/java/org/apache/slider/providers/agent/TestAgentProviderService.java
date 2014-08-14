@@ -18,6 +18,7 @@
 
 package org.apache.slider.providers.agent;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FilterFileSystem;
 import org.apache.hadoop.fs.Path;
@@ -26,15 +27,12 @@ import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.LocalResourceType;
-import org.apache.hadoop.yarn.api.records.NodeId;
-import org.apache.hadoop.yarn.api.records.Priority;
-import org.apache.hadoop.yarn.api.records.Resource;
-import org.apache.hadoop.yarn.api.records.Token;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterDescriptionKeys;
 import org.apache.slider.api.ClusterNode;
+import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.OptionKeys;
-import org.apache.slider.api.StatusKeys;
+import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
@@ -217,7 +215,7 @@ public class TestAgentProviderService {
   public void testRegistration() throws IOException {
 
     ConfTree tree = new ConfTree();
-    tree.global.put(OptionKeys.INTERNAL_APPLICATION_IMAGE_PATH, ".");
+    tree.global.put(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH, ".");
 
     AgentProviderService aps = new AgentProviderService();
     ContainerLaunchContext ctx = createNiceMock(ContainerLaunchContext.class);
@@ -254,6 +252,10 @@ public class TestAgentProviderService {
     metainfo.setApplication(new Application());
     doReturn(metainfo).when(mockAps).getApplicationMetainfo(any(SliderFileSystem.class), anyString());
 
+    Configuration conf = new Configuration();
+    conf.set(SliderXmlConfKeys.REGISTRY_PATH,
+        SliderXmlConfKeys.DEFAULT_REGISTRY_PATH);
+
     try {
       doReturn(true).when(mockAps).isMaster(anyString());
       doNothing().when(mockAps).addInstallCommand(
@@ -261,21 +263,22 @@ public class TestAgentProviderService {
           eq("mockcontainer_1"),
           any(HeartBeatResponse.class),
           eq("scripts/hbase_master.py"));
+      doReturn(conf).when(mockAps).getConfig();
     } catch (SliderException e) {
     }
 
     expect(access.isApplicationLive()).andReturn(true).anyTimes();
     ClusterDescription desc = new ClusterDescription();
-    desc.setInfo(StatusKeys.INFO_AM_HOSTNAME, "host1");
-    desc.setInfo(StatusKeys.INFO_AM_AGENT_PORT, "8088");
-    desc.setInfo(StatusKeys.INFO_AM_SECURED_AGENT_PORT, "8089");
+    desc.setOption(OptionKeys.ZOOKEEPER_QUORUM, "host1:2181");
     desc.setInfo(OptionKeys.APPLICATION_NAME, "HBASE");
     expect(access.getClusterStatus()).andReturn(desc).anyTimes();
 
     AggregateConf aggConf = new AggregateConf();
     ConfTreeOperations treeOps = aggConf.getAppConfOperations();
     treeOps.getOrAddComponent("HBASE_MASTER").put(AgentKeys.WAIT_HEARTBEAT, "0");
+    treeOps.set(OptionKeys.APPLICATION_NAME, "HBASE");
     expect(access.getInstanceDefinitionSnapshot()).andReturn(aggConf);
+    expect(access.getInternalsSnapshot()).andReturn(treeOps).anyTimes();
     replay(access, ctx, container, sliderFileSystem);
 
     try {
@@ -579,7 +582,7 @@ public class TestAgentProviderService {
     InputStream metainfo_1 = new ByteArrayInputStream(metainfo_1_str.getBytes());
     Metainfo metainfo = new MetainfoParser().parse(metainfo_1);
     ConfTree tree = new ConfTree();
-    tree.global.put(OptionKeys.INTERNAL_APPLICATION_IMAGE_PATH, ".");
+    tree.global.put(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH, ".");
 
     AgentProviderService aps = new AgentProviderService();
     ContainerLaunchContext ctx = createNiceMock(ContainerLaunchContext.class);
@@ -614,6 +617,10 @@ public class TestAgentProviderService {
     doReturn(access).when(mockAps).getAmState();
     doReturn(metainfo).when(mockAps).getApplicationMetainfo(any(SliderFileSystem.class), anyString());
 
+    Configuration conf = new Configuration();
+    conf.set(SliderXmlConfKeys.REGISTRY_PATH,
+        SliderXmlConfKeys.DEFAULT_REGISTRY_PATH);
+
     try {
       doReturn(true).when(mockAps).isMaster(anyString());
       doNothing().when(mockAps).addInstallCommand(
@@ -634,15 +641,13 @@ public class TestAgentProviderService {
           anyString(),
           anyString(),
           anyCollection());
-
+      doReturn(conf).when(mockAps).getConfig();
     } catch (SliderException e) {
     }
 
     expect(access.isApplicationLive()).andReturn(true).anyTimes();
     ClusterDescription desc = new ClusterDescription();
-    desc.setInfo(StatusKeys.INFO_AM_HOSTNAME, "host1");
-    desc.setInfo(StatusKeys.INFO_AM_AGENT_PORT, "8088");
-    desc.setInfo(StatusKeys.INFO_AM_SECURED_AGENT_PORT, "8089");
+    desc.setOption(OptionKeys.ZOOKEEPER_QUORUM, "host1:2181");
     desc.setInfo(OptionKeys.APPLICATION_NAME, "HBASE");
     expect(access.getClusterStatus()).andReturn(desc).anyTimes();
 
@@ -650,7 +655,9 @@ public class TestAgentProviderService {
     ConfTreeOperations treeOps = aggConf.getAppConfOperations();
     treeOps.getOrAddComponent("HBASE_MASTER").put(AgentKeys.WAIT_HEARTBEAT, "0");
     treeOps.getOrAddComponent("HBASE_REGIONSERVER").put(AgentKeys.WAIT_HEARTBEAT, "0");
+    treeOps.set(OptionKeys.APPLICATION_NAME, "HBASE");
     expect(access.getInstanceDefinitionSnapshot()).andReturn(aggConf).anyTimes();
+    expect(access.getInternalsSnapshot()).andReturn(treeOps).anyTimes();
     replay(access, ctx, container, sliderFileSystem);
 
     // build two containers

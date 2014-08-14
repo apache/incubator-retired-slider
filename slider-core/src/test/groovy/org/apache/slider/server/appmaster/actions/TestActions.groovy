@@ -22,6 +22,7 @@ import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.service.ServiceOperations
 import org.apache.slider.server.appmaster.SliderAppMaster
+import org.apache.slider.server.appmaster.state.AppState
 import org.apache.slider.server.services.workflow.ServiceThreadFactory
 import org.apache.slider.server.services.workflow.WorkflowExecutorService
 import org.junit.After
@@ -91,7 +92,7 @@ class TestActions {
     long start = System.currentTimeMillis()
     
     ActionStopQueue stopAction = new ActionStopQueue(1000);
-    queues.delayedActions.add(stopAction);
+    queues.scheduledActions.add(stopAction);
     queues.run();
     AsyncAction take = queues.actionQueue.take();
     assert take == stopAction
@@ -135,9 +136,9 @@ class TestActions {
     assert note2.compareTo(stop) < 0
     assert note1.nanos < note2.nanos
     assert note2.nanos < stop.nanos
-    queues.putDelayed(note1)
-    queues.putDelayed(note2)
-    queues.putDelayed(stop)
+    queues.schedule(note1)
+    queues.schedule(note2)
+    queues.schedule(stop)
     // async to sync expected to run in order
     runQueuesToCompletion()
     assert note1.executed.get()
@@ -146,10 +147,13 @@ class TestActions {
 
   public void runQueuesToCompletion() {
     queues.run();
-    assert queues.delayedActions.empty
+    assert queues.scheduledActions.empty
     assert !queues.actionQueue.empty
     QueueExecutor ex = new QueueExecutor(queues)
     ex.run();
+    // flush all stop commands from the queue
+    queues.flushActionQueue(ActionStopQueue.class)
+    
     assert queues.actionQueue.empty
   }
 
@@ -162,18 +166,34 @@ class TestActions {
         100,
         TimeUnit.MILLISECONDS,
         3)
-    queues.putDelayed(renewer);
+    queues.schedule(renewer);
     def stop = new ActionStopQueue(4, TimeUnit.SECONDS)
-    queues.putDelayed(stop);
+    queues.schedule(stop);
     // this runs all the delayed actions FIRST, so can't be used
     // to play tricks of renewing actions ahead of the stop action
     runQueuesToCompletion()
     assert renewer.executionCount == 1
     assert note1.executionCount == 1
     // assert the renewed item is back in
-    assert queues.delayedActions.contains(renewer)
+    assert queues.scheduledActions.contains(renewer)
   }
 
+
+  @Test
+  public void testRenewingActionOperations() throws Throwable {
+    ActionNoteExecuted note1 = new ActionNoteExecuted("note1", 500)
+    RenewingAction renewer = new RenewingAction(
+        note1,
+        100,
+        100,
+        TimeUnit.MILLISECONDS,
+        3)
+    queues.renewing("note", renewer)
+    assert queues.removeRenewingAction("note")
+    queues.stop()
+    queues.waitForServiceToStop(10000)
+  }
+  
   public class ActionNoteExecuted extends AsyncAction {
     public final AtomicBoolean executed = new AtomicBoolean(false);
     public final AtomicLong executionTimeNanos = new AtomicLong()
@@ -184,11 +204,16 @@ class TestActions {
     }
 
     @Override
-    public void execute(SliderAppMaster appMaster, QueueAccess queueService) throws Exception {
+    public void execute(
+        SliderAppMaster appMaster,
+        QueueAccess queueService,
+        AppState appState) throws Exception {
       log.info("Executing $name");
       executed.set(true);
       executionTimeNanos.set(System.nanoTime())
       executionCount.incrementAndGet()
+      log.info(this.toString())
+      
       synchronized (this) {
         this.notify();
       }

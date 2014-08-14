@@ -37,9 +37,9 @@ import org.junit.Test
 @CompileStatic
 @Slf4j
 class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
+  
   @Test
   public void testStandaloneAgentAM() throws Throwable {
-
 
     describe "create a masterless AM then get the service and look it up via the AM"
 

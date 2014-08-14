@@ -260,11 +260,10 @@ class TestMain(unittest.TestCase):
     self.assertTrue(start_mock.called)
 
   class AgentOptions:
-      def __init__(self, label, host, port, secured_port, verbose, debug):
+      def __init__(self, label, zk_quorum, zk_reg_path, verbose, debug):
           self.label = label
-          self.host = host
-          self.port = port
-          self.secured_port = secured_port
+          self.zk_quorum = zk_quorum
+          self.zk_reg_path = zk_reg_path
           self.verbose = verbose
           self.debug = debug
 
@@ -292,17 +291,16 @@ class TestMain(unittest.TestCase):
       Controller_init_mock.return_value = None
       isAlive_mock.return_value = False
       parse_args_mock.return_value = (
-          TestMain.AgentOptions("agent", "host1", "8080", "8081", True, ""), [])
+          TestMain.AgentOptions("agent", "host1:2181", "/registry/org-apache-slider/cl1", True, ""), [])
       tmpdir = tempfile.gettempdir()
 
       #testing call without command-line arguments
       os.environ["AGENT_WORK_ROOT"] = os.path.join(tmpdir, "work")
       os.environ["AGENT_LOG_ROOT"] = os.path.join(tmpdir, "log")
       main.main()
-      self.assertTrue(AgentConfig_set_mock.call_count == 4)
-      AgentConfig_set_mock.assert_any_call("server", "hostname", "host1")
-      AgentConfig_set_mock.assert_any_call("server", "port", "8080")
-      AgentConfig_set_mock.assert_any_call("server", "secured_port", "8081")
+      self.assertTrue(AgentConfig_set_mock.call_count == 3)
+      AgentConfig_set_mock.assert_any_call("server", "zk_quorum", "host1:2181")
+      AgentConfig_set_mock.assert_any_call("server", "zk_reg_path", "/registry/org-apache-slider/cl1")
 
 
 if __name__ == "__main__":

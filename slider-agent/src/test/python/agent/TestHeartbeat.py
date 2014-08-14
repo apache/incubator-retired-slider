@@ -30,7 +30,7 @@ from mock.mock import patch, MagicMock, call
 import StringIO
 import sys
 import logging
-
+from Controller import State
 
 class TestHeartbeat(TestCase):
   def setUp(self):
@@ -50,7 +50,7 @@ class TestHeartbeat(TestCase):
     dummy_controller = MagicMock()
     actionQueue = ActionQueue(config, dummy_controller)
     heartbeat = Heartbeat(actionQueue, config)
-    result = heartbeat.build({}, 100)
+    result = heartbeat.build({}, State.STARTED, 100)
     print "Heartbeat: " + str(result)
     self.assertEquals(result['hostname'] != '', True,
                       "hostname should not be empty")
@@ -63,8 +63,9 @@ class TestHeartbeat(TestCase):
     self.assertEquals(len(result['nodeStatus']), 2)
     self.assertEquals(result['nodeStatus']['cause'], "NONE")
     self.assertEquals(result['nodeStatus']['status'], "HEALTHY")
+    self.assertEquals(result['agentState'], State.STARTED)
     # result may or may NOT have an agentEnv structure in it
-    self.assertEquals((len(result) is 5) or (len(result) is 6), True)
+    self.assertEquals((len(result) is 6) or (len(result) is 7), True)
     self.assertEquals(not heartbeat.reports, True,
                       "Heartbeat should not contain task in progress")
 
@@ -129,7 +130,8 @@ class TestHeartbeat(TestCase):
       ],
     }
     heartbeat = Heartbeat(actionQueue, config)
-    hb = heartbeat.build({}, 10)
+    # State.STARTED results in agentState to be set to 4 (enum order)
+    hb = heartbeat.build({}, State.STARTED, 10)
     hb['hostname'] = 'hostname'
     hb['timestamp'] = 'timestamp'
     hb['fqdn'] = 'fqdn'
@@ -137,7 +139,7 @@ class TestHeartbeat(TestCase):
                   {'status': 'HEALTHY',
                    'cause': 'NONE'},
                 'timestamp': 'timestamp', 'hostname': 'hostname', 'fqdn': 'fqdn',
-                'responseId': 10, 'reports': [
+                'agentState': 4, 'responseId': 10, 'reports': [
       {'status': 'IN_PROGRESS', 'roleCommand': u'INSTALL',
        'serviceName': u'HDFS', 'role': u'DATANODE', 'actionId': '1-1',
        'stderr': 'Read from /tmp/errors-3.txt',

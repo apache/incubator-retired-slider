@@ -64,15 +64,15 @@ public class ClusterDescriptionOperations {
     MapOperations appOptions =
       aggregateConf.getAppConfOperations().getGlobalOptions();
 
-    cd.type = internalOptions.getOption(OptionKeys.INTERNAL_PROVIDER_NAME,
+    cd.type = internalOptions.getOption(InternalKeys.INTERNAL_PROVIDER_NAME,
                                 SliderProviderFactory.DEFAULT_CLUSTER_TYPE);
 
-    cd.dataPath = internalOptions.get(OptionKeys.INTERNAL_DATA_DIR_PATH);
+    cd.dataPath = internalOptions.get(InternalKeys.INTERNAL_DATA_DIR_PATH);
     cd.name = internalOptions.get(OptionKeys.APPLICATION_NAME);
-    cd.originConfigurationPath = internalOptions.get(OptionKeys.INTERNAL_SNAPSHOT_CONF_PATH);
-    cd.generatedConfigurationPath = internalOptions.get(OptionKeys.INTERNAL_GENERATED_CONF_PATH);
-    cd.setImagePath(internalOptions.get(OptionKeys.INTERNAL_APPLICATION_IMAGE_PATH));
-    cd.setApplicationHome(internalOptions.get(OptionKeys.INTERNAL_APPLICATION_HOME));
+    cd.originConfigurationPath = internalOptions.get(InternalKeys.INTERNAL_SNAPSHOT_CONF_PATH);
+    cd.generatedConfigurationPath = internalOptions.get(InternalKeys.INTERNAL_GENERATED_CONF_PATH);
+    cd.setImagePath(internalOptions.get(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH));
+    cd.setApplicationHome(internalOptions.get(InternalKeys.INTERNAL_APPLICATION_HOME));
     cd.setZkPath(appOptions.get(ZOOKEEPER_PATH));
     cd.setZkHosts(appOptions.get(ZOOKEEPER_QUORUM));
     

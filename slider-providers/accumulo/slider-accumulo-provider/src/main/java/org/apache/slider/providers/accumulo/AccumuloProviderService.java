@@ -26,6 +26,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.service.Service;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.records.Container;
+import org.apache.slider.api.InternalKeys;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.OptionKeys;
@@ -161,7 +162,7 @@ public class AccumuloProviderService extends AbstractProviderService implements
     //Add binaries
     //now add the image if it was set
     String imageURI = instanceDefinition.getInternalOperations()
-                                        .get(OptionKeys.INTERNAL_APPLICATION_IMAGE_PATH);
+                                        .get(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH);
     fileSystem.maybeAddImagePath(launcher.getLocalResources(), imageURI);
 
     CommandLineBuilder commandLine = new CommandLineBuilder();
@@ -333,8 +334,8 @@ public class AccumuloProviderService extends AbstractProviderService implements
     //callback to AM to trigger cluster review is set up to happen after
     //the init/verify action has succeeded
     int delay = internalOperations.getGlobalOptions().getOptionInt(
-        OptionKeys.INTERNAL_CONTAINER_STARTUP_DELAY,
-        OptionKeys.DEFAULT_CONTAINER_STARTUP_DELAY);
+        InternalKeys.INTERNAL_CONTAINER_STARTUP_DELAY,
+        InternalKeys.DEFAULT_INTERNAL_CONTAINER_STARTUP_DELAY);
     ProviderCompletedCallable completedCallable =
         new ProviderCompletedCallable(execInProgress, null);
     Service notifier = new WorkflowCallbackService<>(
@@ -364,7 +365,7 @@ public class AccumuloProviderService extends AbstractProviderService implements
     String dataDir = cd.getInternalOperations()
                                .getGlobalOptions()
                                .getMandatoryOption(
-                                 OptionKeys.INTERNAL_DATA_DIR_PATH);
+                                 InternalKeys.INTERNAL_DATA_DIR_PATH);
     Path accumuloInited = new Path(dataDir, INSTANCE_ID);
     FileSystem fs2 = FileSystem.get(accumuloInited.toUri(), getConf());
     return fs2.exists(accumuloInited);
