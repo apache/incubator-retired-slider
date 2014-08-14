@@ -34,6 +34,8 @@ import org.apache.slider.client.SliderClient
 import org.apache.slider.providers.hbase.minicluster.HBaseMiniClusterTestBase
 import org.junit.Test
 
+import static org.apache.slider.providers.hbase.HBaseKeys.ROLE_WORKER
+
 /**
  * test that if a container is killed too many times,
  * the AM stays down
@@ -44,10 +46,17 @@ import org.junit.Test
 class TestRegionServerFailureThreshold extends HBaseMiniClusterTestBase {
 
   @Test
-  public void testFailedRegionService() throws Throwable {
+  public void testRegionServerFailureThreshold() throws Throwable {
     failureThresholdTestRun("", true, 2, 5)
   }
 
+  /**
+   * Sets the failure threshold then runs the #of kill attempts
+   * @param testName
+   * @param toKill
+   * @param threshold
+   * @param killAttempts
+   */
   private void failureThresholdTestRun(
       String testName,
       boolean toKill,
@@ -57,16 +66,23 @@ class TestRegionServerFailureThreshold extends HBaseMiniClusterTestBase {
     int regionServerCount = 1
     String clustername = createMiniCluster(testName, configuration, 1, 1, 1, true, true)
     describe(
-        "Create a single region service HBase instance then " + action + " the RS");
+        "Create a single region service HBase instance" +
+        "then $action the RS $killAttempts times with a threshold of $threshold");
 
     //now launch the cluster
+    def globalThreshold = threshold - 1
     ServiceLauncher<SliderClient> launcher = createHBaseCluster(
         clustername,
         regionServerCount,
         [
+            Arguments.ARG_RES_COMP_OPT,
+            ROLE_WORKER,
+            ResourceKeys.CONTAINER_FAILURE_THRESHOLD,
+            Integer.toString(threshold),
+
             Arguments.ARG_RESOURCE_OPT, 
             ResourceKeys.CONTAINER_FAILURE_THRESHOLD,
-            Integer.toString(threshold)
+            Integer.toString(globalThreshold)
         ],
         true,
         true)
@@ -74,9 +90,14 @@ class TestRegionServerFailureThreshold extends HBaseMiniClusterTestBase {
     addToTeardown(client);
     def aggregateConf = client.loadPersistedClusterDescription(clustername)
     log.info aggregateConf.toString()
-    def failureOptValue = aggregateConf.resourceOperations.globalOptions.getMandatoryOptionInt(
+
+    def resourceOperations = aggregateConf.resourceOperations
+    def failureOptValue = resourceOperations.globalOptions.getMandatoryOptionInt(
         ResourceKeys.CONTAINER_FAILURE_THRESHOLD)
-    assert threshold == failureOptValue
+    assert globalThreshold == failureOptValue
+    def workerThreshold = resourceOperations.getComponentOptInt(ROLE_WORKER,
+        ResourceKeys.CONTAINER_FAILURE_THRESHOLD, 0)
+    assert threshold == workerThreshold
     ClusterDescription status = client.getClusterDescription(clustername)
 
     ClusterStatus clustat = basicHBaseClusterStartupSequence(client)

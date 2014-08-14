@@ -1480,7 +1480,8 @@ public class AppState {
       throw new TriggerClusterTeardownException(
         SliderExitCodes.EXIT_DEPLOYMENT_FAILED,
         ErrorStrings.E_UNSTABLE_CLUSTER +
-        " - failed with role %s failing %d times (%d in startup); threshold is %d - last failure: %s",
+        " - failed with role %s failing %d times (%d in startup);" +
+        " threshold is %d - last failure: %s",
         role.getName(),
         role.getFailed(),
         role.getStartFailed(),
@@ -1489,8 +1490,18 @@ public class AppState {
     }
   }
 
-  private int getFailureThresholdForRole(RoleStatus status) {
-    return failureThreshold;
+  /**
+   * Get the failure threshold for a specific role, falling back to
+   * the global one if not
+   * @param roleStatus
+   * @return the threshold for failures
+   */
+  private int getFailureThresholdForRole(RoleStatus roleStatus) {
+    ConfTreeOperations resources =
+        instanceDefinition.getResourceOperations();
+    return resources.getComponentOptInt(roleStatus.getName(),
+        ResourceKeys.CONTAINER_FAILURE_SHORTLIFE,
+        failureThreshold);
   }
   
   /**
