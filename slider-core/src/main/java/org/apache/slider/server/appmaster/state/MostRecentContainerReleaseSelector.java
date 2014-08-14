@@ -40,7 +40,7 @@ public class MostRecentContainerReleaseSelector implements ContainerReleaseSelec
 
   private static class newerThan implements Comparator<RoleInstance>, Serializable {
     private final Comparator<Long> innerComparator =
-        new Comparators.ComparatorReverser<>(new Comparators.LongComparator());
+        new Comparators.ComparatorReverser<Long>(new Comparators.LongComparator());
     public int compare(RoleInstance o1, RoleInstance o2) {
       return innerComparator.compare(o1.createTime, o2.createTime);
 

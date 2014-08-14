@@ -73,7 +73,7 @@ public class NodeMap extends HashMap<String, NodeInstance> {
    * in that role
    */
   public List<NodeInstance> listActiveNodes(int role) {
-    List<NodeInstance> nodes = new ArrayList<>();
+    List<NodeInstance> nodes = new ArrayList<NodeInstance>();
     for (NodeInstance instance : values()) {
       if (instance.getActiveRoleInstances(role) > 0) {
         nodes.add(instance);

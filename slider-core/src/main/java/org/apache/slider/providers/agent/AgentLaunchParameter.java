@@ -94,7 +94,7 @@ class AgentLaunchParameter {
             }
 
             if (trackers == null) {
-              trackers = new HashMap<>(10);
+              trackers = new HashMap<String, CommandTracker>(10);
             }
             String componentName = parameters[0];
             CommandTracker tracker = new CommandTracker(Arrays.copyOfRange(parameters, 1, parameters.length));

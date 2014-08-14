@@ -74,7 +74,7 @@ public class ChaosMonkeyService extends AbstractService {
   }
 
   public RenewingAction<MonkeyPlayAction> getChaosAction(long time, TimeUnit timeUnit) {
-    RenewingAction<MonkeyPlayAction> action = new RenewingAction<>(
+    RenewingAction<MonkeyPlayAction> action = new RenewingAction<MonkeyPlayAction>(
         new MonkeyPlayAction(this, 0, TimeUnit.MILLISECONDS),
         time,
         time,

@@ -55,7 +55,7 @@ public abstract class AbstractActionArgs extends ArgOps implements Arguments {
    * This is the default parameter
    */
   @Parameter
-  public final List<String> parameters = new ArrayList<>();
+  public final List<String> parameters = new ArrayList<String>();
 
   /**
    * get the name: relies on arg 1 being the cluster name in all operations 
@@ -76,7 +76,7 @@ public abstract class AbstractActionArgs extends ArgOps implements Arguments {
    */
 
   @Parameter(names = ARG_DEFINE, arity = 1, description = "Definitions")
-  public final List<String> definitions = new ArrayList<>();
+  public final List<String> definitions = new ArrayList<String>();
 
   /**
    * System properties
@@ -84,7 +84,7 @@ public abstract class AbstractActionArgs extends ArgOps implements Arguments {
   @Parameter(names = {ARG_SYSPROP}, arity = 1,
              description = "system properties in the form name value" +
                            " These are set after the JVM is started.")
-  public final List<String> sysprops = new ArrayList<>(0);
+  public final List<String> sysprops = new ArrayList<String>(0);
 
 
   @Parameter(names = {ARG_MANAGER_SHORT, ARG_MANAGER},

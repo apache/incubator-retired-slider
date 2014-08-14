@@ -180,6 +180,8 @@ public class HBaseProviderService extends AbstractProviderService implements
     String roleCommand;
     String logfile;
     //now look at the role
+
+/* JDK7
     switch (role) {
       case ROLE_WORKER:
         //role is region server
@@ -210,6 +212,33 @@ public class HBaseProviderService extends AbstractProviderService implements
         throw new SliderInternalStateException("Cannot start role %s", role);
     }
 
+*/
+    if (ROLE_WORKER.equals(role)) {
+      //role is region server
+      roleCommand = REGION_SERVER;
+      logfile = "/region-server.txt";
+      
+    } else if (ROLE_MASTER.equals(role)) {
+      roleCommand = MASTER;
+      logfile = "/master.txt";
+
+    } else if (ROLE_REST_GATEWAY.equals(role)) {
+      roleCommand = REST_GATEWAY;
+      logfile = "/rest-gateway.txt";
+
+    } else if (ROLE_THRIFT_GATEWAY.equals(role)) {
+      roleCommand = THRIFT_GATEWAY;
+      logfile = "/thrift-gateway.txt";
+
+    } else if (ROLE_THRIFT2_GATEWAY.equals(role)) {
+      roleCommand = THRIFT2_GATEWAY;
+      logfile = "/thrift2-gateway.txt";
+    }
+    
+    else {
+      throw new SliderInternalStateException("Cannot start role %s", role);
+    }
+    
     cli.add(roleCommand);
     cli.add(ACTION_START);
     //log details
@@ -319,7 +348,7 @@ public class HBaseProviderService extends AbstractProviderService implements
    * @return the provider status - map of entries to add to the info section
    */
   public Map<String, String> buildProviderStatus() {
-    Map<String, String> stats = new HashMap<>();
+    Map<String, String> stats = new HashMap<String, String>();
 
     return stats;
   }

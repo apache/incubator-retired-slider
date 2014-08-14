@@ -54,10 +54,10 @@ public class RegistryBinderService<Payload> extends CuratorService {
   private final ServiceDiscovery<Payload> discovery;
 
   private final Map<String, ServiceInstance<Payload>> entries =
-    new HashMap<>();
+    new HashMap<String, ServiceInstance<Payload>>();
 
   private JsonSerDeser<CuratorServiceInstance<Payload>> deser =
-    new JsonSerDeser<>(CuratorServiceInstance.class);
+    new JsonSerDeser<CuratorServiceInstance<Payload>>(CuratorServiceInstance.class);
 
   /**
    * Create an instance
@@ -221,7 +221,7 @@ public class RegistryBinderService<Payload> extends CuratorService {
     try {
       List<String> instanceIDs = instanceIDs(servicetype);
       List<CuratorServiceInstance<Payload>> instances =
-        new ArrayList<>(instanceIDs.size());
+        new ArrayList<CuratorServiceInstance<Payload>>(instanceIDs.size());
       for (String instanceID : instanceIDs) {
         CuratorServiceInstance<Payload> instance =
           queryForInstance(servicetype, instanceID);

@@ -70,7 +70,7 @@ public class SliderAmIpFilter implements Filter {
     synchronized(this) {
       if(proxyAddresses == null || (lastUpdate + updateInterval) >= now) {
         try {
-          proxyAddresses = new HashSet<>();
+          proxyAddresses = new HashSet<String>();
           for(InetAddress add : InetAddress.getAllByName(proxyHost)) {
             if (log.isDebugEnabled()) {
               log.debug("proxy address is: " + add.getHostAddress());
@@ -133,7 +133,11 @@ public class SliderAmIpFilter implements Filter {
             principal);
         chain.doFilter(requestWrapper, resp);
       }
-    } catch (IOException | ServletException e) {
+// JKD7    } catch (IOException | ServletException e) {
+    } catch (IOException e) {
+      log.warn("When fetching {}: {}", requestURI, e);
+      throw e;
+    } catch (ServletException e) {
       log.warn("When fetching {}: {}", requestURI, e);
       throw e;
     }

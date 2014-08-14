@@ -75,9 +75,9 @@ public class MiniZooKeeperCluster {
     this.started = false;
     this.configuration = configuration;
     activeZKServerIndex = -1;
-    zooKeeperServers = new ArrayList<>();
-    clientPortList = new ArrayList<>();
-    standaloneServerFactoryList = new ArrayList<>();
+    zooKeeperServers = new ArrayList<ZooKeeperServer>();
+    clientPortList = new ArrayList<Integer>();
+    standaloneServerFactoryList = new ArrayList<NIOServerCnxnFactory>();
   }
 
   public void setDefaultClientPort(int clientPort) {

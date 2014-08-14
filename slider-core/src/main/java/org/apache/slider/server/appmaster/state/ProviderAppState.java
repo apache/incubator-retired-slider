@@ -39,7 +39,7 @@ public class ProviderAppState implements StateAccessForProviders {
 
 
   private final Map<String, PublishedConfigSet> publishedConfigSets =
-      new ConcurrentHashMap<>(5);
+      new ConcurrentHashMap<String, PublishedConfigSet>(5);
   private static final PatternValidator validator = new PatternValidator(
       RestPaths.PUBLISHED_CONFIGURATION_SET_REGEXP);
   private String applicationName;
@@ -92,7 +92,7 @@ public class ProviderAppState implements StateAccessForProviders {
   public List<String> listConfigSets() {
 
     synchronized (publishedConfigSets) {
-      List<String> sets = new ArrayList<>(publishedConfigSets.keySet());
+      List<String> sets = new ArrayList<String>(publishedConfigSets.keySet());
       return sets;
     }
   }

@@ -216,7 +216,7 @@ public class AgentClientProvider extends AbstractClientProvider
     }
 
     Application application = metainfo.getApplication();
-    tags = new HashSet<>();
+    tags = new HashSet<String>();
     tags.add("Name: " + application.getName());
     tags.add("Version: " + application.getVersion());
     tags.add("Description: " + SliderUtils.truncate(application.getComment(), 80));

@@ -97,7 +97,7 @@
     <!-- 
     Java versions
     -->
-    <project.java.src.version>1.7</project.java.src.version>
+    <project.java.src.version>1.6</project.java.src.version>
     <enforced.java.version>${project.java.src.version}</enforced.java.version>
     <groovy.version>2.2.2</groovy.version>
     
@@ -227,8 +227,8 @@
           <version>${maven-compiler-plugin.version}</version>
           <configuration>
             <compilerId>groovy-eclipse-compiler</compilerId>
-            <source>1.7</source>
-            <target>1.7</target>
+            <source>${project.java.src.version}</source>
+            <target>${project.java.src.version}</target>
             <!-- set verbose to be true if you want lots of uninteresting messages -->
             <!-- <verbose>true</verbose> -->
           </configuration>
@@ -248,7 +248,7 @@
             <configuration>
               <rules>
                 <requireJavaVersion>
-                  <version>[1.7,)</version>
+                  <version>[${project.java.src.version},)</version>
                 </requireJavaVersion>
               </rules>
             </configuration>

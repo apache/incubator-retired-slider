@@ -83,7 +83,7 @@ public class SliderAMClientProvider extends AbstractClientProvider implements
    * List of roles
    */
   public static final List<ProviderRole> ROLES =
-    new ArrayList<>();
+    new ArrayList<ProviderRole>();
 
   public static final int KEY_AM = ROLE_AM_PRIORITY_INDEX;
 
@@ -147,7 +147,7 @@ public class SliderAMClientProvider extends AbstractClientProvider implements
     throws IOException, SliderException {
 
     Map<String, LocalResource> providerResources =
-        new HashMap<>();
+        new HashMap<String, LocalResource>();
 
 
     ProviderUtils.addProviderJar(providerResources,

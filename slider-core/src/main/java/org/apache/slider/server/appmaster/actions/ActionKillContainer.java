@@ -58,7 +58,7 @@ public class ActionKillContainer extends AsyncAction {
   public void execute(SliderAppMaster appMaster,
       QueueAccess queueService,
       AppState appState) throws Exception {
-    List<AbstractRMOperation> opsList = new LinkedList<>();
+      List<AbstractRMOperation> opsList = new LinkedList<AbstractRMOperation>();
     ContainerReleaseOperation release = new ContainerReleaseOperation(containerId);
     opsList.add(release);
     //now apply the operations

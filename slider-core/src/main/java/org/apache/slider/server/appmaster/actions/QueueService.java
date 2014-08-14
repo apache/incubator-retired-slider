@@ -57,19 +57,19 @@ implements Runnable, QueueAccess {
    * Immediate actions.
    */
   public final BlockingDeque<AsyncAction> actionQueue =
-      new LinkedBlockingDeque<>();
+      new LinkedBlockingDeque<AsyncAction>();
 
   /**
    * Actions to be scheduled in the future
    */
-  public final DelayQueue<AsyncAction> scheduledActions = new DelayQueue<>();
+  public final DelayQueue<AsyncAction> scheduledActions = new DelayQueue<AsyncAction>();
 
   /**
    * Map of renewing actions by name ... this is to allow them to 
    * be cancelled by name
    */
   private final Map<String, RenewingAction<? extends AsyncAction>> renewingActions
-      = new ConcurrentHashMap<>();
+      = new ConcurrentHashMap<String, RenewingAction<? extends AsyncAction>>();
   
   /**
    * Create a queue instance with a single thread executor

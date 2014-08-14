@@ -419,7 +419,7 @@ public class ServiceLauncher<S extends Service>
     if (argCount <= 1 ) {
       return new String[0];
     }
-    List<String> argsList = new ArrayList<>(argCount);
+    List<String> argsList = new ArrayList<String>(argCount);
     ListIterator<String> arguments = args.listIterator();
     //skip that first entry
     arguments.next();

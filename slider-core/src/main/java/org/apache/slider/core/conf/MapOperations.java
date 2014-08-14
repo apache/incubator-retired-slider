@@ -47,7 +47,7 @@ public class MapOperations implements Map<String, String> {
   public final String name;
 
   public MapOperations() {
-    options = new HashMap<>();
+    options = new HashMap<String, String>();
     name = "";
   }
 

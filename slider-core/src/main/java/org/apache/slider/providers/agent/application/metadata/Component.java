@@ -33,7 +33,7 @@ public class Component {
 
   public Component() {
     publishConfig = Boolean.FALSE.toString();
-    exports = new ArrayList<>();
+    exports = new ArrayList<Export>();
   }
 
   public String getName() {

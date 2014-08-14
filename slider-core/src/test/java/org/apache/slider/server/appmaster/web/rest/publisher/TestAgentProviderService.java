@@ -46,7 +46,7 @@ public class TestAgentProviderService extends AgentProviderService {
       QueueAccess queueAccess,
       List<Container> liveContainers) {
     super.bind(stateAccessor, reg, queueAccess, liveContainers);
-    Map<String,String> dummyProps = new HashMap<>();
+    Map<String,String> dummyProps = new HashMap<String, String>();
     dummyProps.put("prop1", "val1");
     dummyProps.put("prop2", "val2");
     log.info("publishing dummy-site.xml with values {}", dummyProps);
