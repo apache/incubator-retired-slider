@@ -170,6 +170,8 @@ public class AccumuloProviderService extends AbstractProviderService implements
     String heap = "-Xmx" + appComponent.getOption(RoleKeys.JVM_HEAP, DEFAULT_JVM_HEAP);
     String opt = "ACCUMULO_OTHER_OPTS";
     if (SliderUtils.isSet(heap)) {
+/* JDK7
+
       switch (role) {
         case AccumuloKeys.ROLE_MASTER:
           opt = "ACCUMULO_MASTER_OPTS";
@@ -183,6 +185,16 @@ public class AccumuloProviderService extends AbstractProviderService implements
         case AccumuloKeys.ROLE_GARBAGE_COLLECTOR:
           opt = "ACCUMULO_GC_OPTS";
           break;
+      }
+*/
+      if (AccumuloKeys.ROLE_MASTER.equals(role)) {
+        opt = "ACCUMULO_MASTER_OPTS";
+      } else if (AccumuloKeys.ROLE_TABLET.equals(role)) {
+        opt = "ACCUMULO_TSERVER_OPTS";
+      } else if (AccumuloKeys.ROLE_MONITOR.equals(role)) {
+        opt = "ACCUMULO_MONITOR_OPTS";
+      } else if (AccumuloKeys.ROLE_GARBAGE_COLLECTOR.equals(role)) {
+        opt = "ACCUMULO_GC_OPTS";
       }
       launcher.setEnv(opt, heap);
     }
@@ -239,7 +251,7 @@ public class AccumuloProviderService extends AbstractProviderService implements
 
 
     String accumuloScript = AccumuloClientProvider.buildScriptBinPath(instance);
-    List<String> launchSequence = new ArrayList<>(8);
+    List<String> launchSequence = new ArrayList<String>(8);
     launchSequence.add(0, accumuloScript);
     Collections.addAll(launchSequence, commands);
     return launchSequence;
@@ -338,7 +350,8 @@ public class AccumuloProviderService extends AbstractProviderService implements
         InternalKeys.DEFAULT_INTERNAL_CONTAINER_STARTUP_DELAY);
     ProviderCompletedCallable completedCallable =
         new ProviderCompletedCallable(execInProgress, null);
-    Service notifier = new WorkflowCallbackService<>(
+    // JDK7
+    Service notifier = new WorkflowCallbackService(
         "accumulo notifier",
         completedCallable,
         delay,
@@ -389,7 +402,7 @@ public class AccumuloProviderService extends AbstractProviderService implements
   @Override
   public Map<String, String> buildProviderStatus() {
     
-    Map<String,String> status = new HashMap<>();
+    Map<String,String> status = new HashMap<String, String>();
     
     
     return status;
