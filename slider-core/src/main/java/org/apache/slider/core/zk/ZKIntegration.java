@@ -49,7 +49,7 @@ public class ZKIntegration implements Watcher {
   public static String SVC_SLIDER = "/" + ZK_SERVICES + "/" + ZK_SLIDER;
   public static String SVC_SLIDER_USERS = SVC_SLIDER + "/" + ZK_USERS;
 
-  public static final List<String> ZK_USERS_PATH_LIST = new ArrayList<>();
+  public static final List<String> ZK_USERS_PATH_LIST = new ArrayList<String>();
   static {
     ZK_USERS_PATH_LIST.add(ZK_SERVICES);
     ZK_USERS_PATH_LIST.add(ZK_SLIDER);

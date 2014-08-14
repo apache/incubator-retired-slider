@@ -442,7 +442,7 @@ public class CoreFileSystem {
     //copied to the destination
     FileStatus[] fileset = fileSystem.listStatus(srcDir);
     Map<String, LocalResource> localResources =
-            new HashMap<>(fileset.length);
+            new HashMap<String, LocalResource>(fileset.length);
     for (FileStatus entry : fileset) {
 
       LocalResource resource = createAmResource(entry.getPath(),

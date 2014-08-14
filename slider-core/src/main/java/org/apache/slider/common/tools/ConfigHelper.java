@@ -81,7 +81,7 @@ public class ConfigHelper {
 
    */
   public static TreeSet<String> sortedConfigKeys(Iterable<Map.Entry<String, String>> conf) {
-    TreeSet<String> sorted = new TreeSet<>();
+    TreeSet<String> sorted = new TreeSet<String>();
     for (Map.Entry<String, String> entry : conf) {
       sorted.add(entry.getKey());
     }
@@ -510,7 +510,7 @@ public class ConfigHelper {
    * @return hash map
    */
   public static Map<String, String> buildMapFromConfiguration(Configuration conf) {
-    Map<String, String> map = new HashMap<>();
+    Map<String, String> map = new HashMap<String, String>();
     return SliderUtils.mergeEntries(map, conf);
   }
 

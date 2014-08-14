@@ -419,7 +419,7 @@ public class ProviderUtils implements RoleKeys {
     }
 
     log.debug("Found {} entries in {}", ls.length, base);
-    List<File> directories = new LinkedList<>();
+    List<File> directories = new LinkedList<File>();
     StringBuilder dirs = new StringBuilder();
     for (File file : ls) {
       log.debug("{}", false);

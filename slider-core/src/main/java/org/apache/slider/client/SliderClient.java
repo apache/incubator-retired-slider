@@ -1381,7 +1381,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     verifyBindingsDefined();
     SliderUtils.validateClusterName(name);
     log.debug("actionFlex({})", name);
-    Map<String, Integer> roleInstances = new HashMap<>();
+    Map<String, Integer> roleInstances = new HashMap<String, Integer>();
     Map<String, String> roleMap = args.getComponentMap();
     for (Map.Entry<String, String> roleEntry : roleMap.entrySet()) {
       String key = roleEntry.getKey();
@@ -1934,7 +1934,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     if (uuids.length == 0) {
       // short cut on an empty list
-      return new LinkedList<>();
+      return new LinkedList<ClusterNode>();
     }
     return createClusterOperations().listClusterNodes(uuids);
   }
@@ -2133,7 +2133,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
                                       + serviceType
                                       + " name " + name);
     }
-    List<ServiceInstanceData> sids = new ArrayList<>(size);
+    List<ServiceInstanceData> sids = new ArrayList<ServiceInstanceData>(size);
     for (CuratorServiceInstance<ServiceInstanceData> instance : instances) {
       ServiceInstanceData payload = instance.payload;
       logInstance(payload, registryArgs.verbose);

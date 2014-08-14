@@ -70,7 +70,7 @@ public class SliderAmIpFilter implements Filter {
     synchronized(this) {
       if(proxyAddresses == null || (lastUpdate + updateInterval) >= now) {
         try {
-          proxyAddresses = new HashSet<>();
+          proxyAddresses = new HashSet<String>();
           for(InetAddress add : InetAddress.getAllByName(proxyHost)) {
             if (log.isDebugEnabled()) {
               log.debug("proxy address is: " + add.getHostAddress());

@@ -31,7 +31,8 @@ public class RegistryView {
   /**
    * Endpoints
    */
-  public Map<String, RegisteredEndpoint> endpoints = new HashMap<>(2);
+  public Map<String, RegisteredEndpoint> endpoints =
+      new HashMap<String, RegisteredEndpoint>(2);
 
   public String configurationsURL;
   

@@ -34,10 +34,10 @@ public class Application {
   ConfigurationDependencies configDependencies;
 
   public Application() {
-    exportGroups = new ArrayList<>();
-    components = new ArrayList<>();
-    osSpecifics = new ArrayList<>();
-    commandOrders = new ArrayList<>();
+    exportGroups = new ArrayList<ExportGroup>();
+    components = new ArrayList<Component>();
+    osSpecifics = new ArrayList<OSSpecific>();
+    commandOrders = new ArrayList<CommandOrder>();
   }
 
   public String getName() {

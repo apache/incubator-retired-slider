@@ -291,7 +291,7 @@ public abstract class AbstractProviderService
    */
   @Override
   public Map<String, String> buildProviderStatus() {
-    return new HashMap<>();
+    return new HashMap<String, String>();
   }
 
   /*
@@ -300,7 +300,7 @@ public abstract class AbstractProviderService
    */
   @Override
   public Map<String, String> buildMonitorDetails(ClusterDescription clusterDesc) {
-    Map<String, String> details = new LinkedHashMap<>();
+    Map<String, String> details = new LinkedHashMap<String, String>();
 
     // add in all the 
     buildEndpointDetails(details);

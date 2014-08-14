@@ -440,7 +440,7 @@ public final class SliderUtils {
    * @return a stringified list
    */
   public static List<String> collectionToStringList(Collection c) {
-    List<String> l = new ArrayList<>(c.size());
+    List<String> l = new ArrayList<String>(c.size());
     for (Object o : c) {
       l.add(o.toString());
     }
@@ -839,7 +839,7 @@ public final class SliderUtils {
    * @return a possibly empty map of environment variables.
    */
   public static Map<String, String> buildEnvMap(Map<String, String> roleOpts) {
-    Map<String, String> env = new HashMap<>();
+    Map<String, String> env = new HashMap<String, String>();
     if (roleOpts != null) {
       for (Map.Entry<String, String> entry: roleOpts.entrySet()) {
         String key = entry.getKey();
@@ -866,7 +866,7 @@ public final class SliderUtils {
       Map<String, String> optionMap = entry.getValue();
       Map<String, String> existingMap = clusterRoleMap.get(key);
       if (existingMap == null) {
-        existingMap = new HashMap<>();
+        existingMap = new HashMap<String, String>();
       }
       log.debug("Overwriting role options with command line values {}",
                 stringifyMap(optionMap));
@@ -1031,7 +1031,7 @@ public final class SliderUtils {
   }
 
     public static Map<String, Map<String, String>> deepClone(Map<String, Map<String, String>> src) {
-    Map<String, Map<String, String>> dest = new HashMap<>();
+    Map<String, Map<String, String>> dest = new HashMap<String, Map<String, String>>();
     for (Map.Entry<String, Map<String, String>> entry : src.entrySet()) {
       dest.put(entry.getKey(), stringMapClone(entry.getValue()));
     }
@@ -1039,7 +1039,7 @@ public final class SliderUtils {
   }
 
   public static Map<String, String> stringMapClone(Map<String, String> src) {
-    Map<String, String> dest =  new HashMap<>();
+    Map<String, String> dest =  new HashMap<String, String>();
     return mergeEntries(dest, src.entrySet());
   }
 

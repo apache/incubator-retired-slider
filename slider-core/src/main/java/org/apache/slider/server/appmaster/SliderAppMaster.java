@@ -401,7 +401,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     //look at settings of Hadoop Auth, to pick up a problem seen once
     checkAndWarnForAuthTokenProblems();
 
-    executorService = new WorkflowExecutorService<>("AmExecutor",
+    executorService = new WorkflowExecutorService<ExecutorService>("AmExecutor",
         Executors.newCachedThreadPool(
         new ServiceThreadFactory("AmExecutor", true)));
     addService(executorService);
@@ -642,7 +642,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       //build the role map
       List<ProviderRole> providerRoles =
-        new ArrayList<>(providerService.getRoles());
+        new ArrayList<ProviderRole>(providerService.getRoles());
       providerRoles.addAll(SliderAMClientProvider.ROLES);
 
       // Start up the WebApp and track the URL for it
@@ -664,7 +664,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
                       .start(webApp);
       appMasterTrackingUrl = "http://" + appMasterHostname + ":" + webApp.port();
       WebAppService<SliderAMWebApp> webAppService =
-        new WebAppService<>("slider", webApp);
+        new WebAppService<SliderAMWebApp>("slider", webApp);
 
       webAppService.init(serviceConf);
       webAppService.start();
@@ -744,7 +744,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       // build up environment variables that the AM wants set in every container
       // irrespective of provider and role.
-      envVars = new HashMap<>();
+      envVars = new HashMap<String, String>();
       if (hadoop_user_name != null) {
         envVars.put(HADOOP_USER_NAME, hadoop_user_name);
       }
@@ -1106,8 +1106,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   @Override //AMRMClientAsync
   public void onContainersAllocated(List<Container> allocatedContainers) {
     LOG_YARN.info("onContainersAllocated({})", allocatedContainers.size());
-    List<ContainerAssignment> assignments = new ArrayList<>();
-    List<AbstractRMOperation> operations = new ArrayList<>();
+    List<ContainerAssignment> assignments = new ArrayList<ContainerAssignment>();
+    List<AbstractRMOperation> operations = new ArrayList<AbstractRMOperation>();
     
     //app state makes all the decisions
     appState.onContainersAllocated(allocatedContainers, assignments, operations);
@@ -1203,7 +1203,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       log.info(
           "Scheduling the failure window reset interval to every {} seconds",
           seconds);
-      RenewingAction<ResetFailureWindow> renew = new RenewingAction<>(
+      RenewingAction<ResetFailureWindow> renew = new RenewingAction<ResetFailureWindow>(
           reset, seconds, seconds, TimeUnit.SECONDS, 0);
       actionQueues.renewing("failures", renew);
     } else {
@@ -1504,7 +1504,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   protected synchronized void launchProviderService(AggregateConf instanceDefinition,
                                                     File confDir)
     throws IOException, SliderException {
-    Map<String, String> env = new HashMap<>();
+    Map<String, String> env = new HashMap<String, String>();
     boolean execStarted = providerService.exec(instanceDefinition, confDir, env, this);
     if (execStarted) {
       providerService.registerServiceListener(this);
@@ -1793,7 +1793,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     //turn the args to a list
     List<String> argsList = Arrays.asList(args);
     //create a new list, as the ArrayList type doesn't push() on an insert
-    List<String> extendedArgs = new ArrayList<>(argsList);
+    List<String> extendedArgs = new ArrayList<String>(argsList);
     //insert the service name
     extendedArgs.add(0, SERVICE_CLASSNAME);
     //now have the service launcher do its work

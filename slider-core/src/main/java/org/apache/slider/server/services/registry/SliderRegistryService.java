@@ -53,7 +53,7 @@ public class SliderRegistryService
       IOException {
     List<CuratorServiceInstance<ServiceInstanceData>> services =
         listInstances(serviceType);
-    List<ServiceInstanceData> payloads = new ArrayList<>(services.size());
+    List<ServiceInstanceData> payloads = new ArrayList<ServiceInstanceData>(services.size());
     for (CuratorServiceInstance<ServiceInstanceData> instance : services) {
       payloads.add(instance.payload);
     }

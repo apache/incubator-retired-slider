@@ -132,9 +132,12 @@ public class AgentProviderService extends AbstractProviderService implements
   private Boolean canAnyMasterPublish = null;
   private AgentLaunchParameter agentLaunchParameter = null;
 
-  private final Map<String, ComponentInstanceState> componentStatuses = new ConcurrentHashMap<>();
-  private final Map<String, Map<String, String>> componentInstanceData = new ConcurrentHashMap<>();
-  private final Map<String, Map<String, String>> allocatedPorts = new ConcurrentHashMap<>();
+  private final Map<String, ComponentInstanceState> componentStatuses =
+      new ConcurrentHashMap<String, ComponentInstanceState>();
+  private final Map<String, Map<String, String>> componentInstanceData =
+      new ConcurrentHashMap<String, Map<String, String>>();
+  private final Map<String, Map<String, String>> allocatedPorts =
+      new ConcurrentHashMap<String, Map<String, String>>();
   private final Map<String, String> workFolders =
       Collections.synchronizedMap(new LinkedHashMap<String, String>(MAX_LOG_ENTRIES, 0.75f, false) {
         protected boolean removeEldestEntry(Map.Entry eldest) {
@@ -691,7 +694,7 @@ public class AgentProviderService extends AbstractProviderService implements
    * @return the provider status - map of entries to add to the info section
    */
   public Map<String, String> buildProviderStatus() {
-    Map<String, String> stats = new HashMap<>();
+    Map<String, String> stats = new HashMap<String, String>();
     return stats;
   }
 
@@ -707,7 +710,8 @@ public class AgentProviderService extends AbstractProviderService implements
       workFolders.put(String.format("%s-%s-%s", hostFqdn, containerId, key), folders.get(key));
     }
 
-    publishApplicationInstanceData(LOG_FOLDERS_TAG, LOG_FOLDERS_TAG, (new HashMap<>(this.workFolders)).entrySet());
+    publishApplicationInstanceData(LOG_FOLDERS_TAG, LOG_FOLDERS_TAG,
+        (new HashMap<String, String>(this.workFolders)).entrySet());
   }
 
 
@@ -750,7 +754,7 @@ public class AgentProviderService extends AbstractProviderService implements
             String hostKeyFormat = "${%s_HOST}";
 
             // publish export groups if any
-            Map<String, String> replaceTokens = new HashMap<>();
+            Map<String, String> replaceTokens = new HashMap<String, String>();
             for (Map.Entry<String, Map<String, ClusterNode>> entry : getRoleClusterNodeMapping().entrySet()) {
               String hostName = getHostsList(entry.getValue().values(), true).iterator().next();
               replaceTokens.put(String.format(hostKeyFormat, entry.getKey().toUpperCase(Locale.ENGLISH)), hostName);
@@ -768,7 +772,7 @@ public class AgentProviderService extends AbstractProviderService implements
               List<Export> exports = exportGroup.getExports();
               if (exports != null && !exports.isEmpty()) {
                 String exportGroupName = exportGroup.getName();
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 for (Export export : exports) {
                   String value = export.getValue();
                   // replace host names
@@ -797,7 +801,7 @@ public class AgentProviderService extends AbstractProviderService implements
                                                         String roleName) {
     String portVarFormat = "${site.%s}";
     String hostNamePattern = "${THIS_HOST}";
-    Map<String, String> toPublish = new HashMap<>();
+    Map<String, String> toPublish = new HashMap<String, String>();
 
     Application application = getMetainfo().getApplication();
     for (Component component : application.getComponents()) {
@@ -831,7 +835,7 @@ public class AgentProviderService extends AbstractProviderService implements
     if (toPublish.size() > 0) {
       Map<String, String> perContainerData = null;
       if (!getComponentInstanceData().containsKey(containerId)) {
-        perContainerData = new ConcurrentHashMap<>();
+        perContainerData = new ConcurrentHashMap<String, String>();
       } else {
         perContainerData = getComponentInstanceData().get(containerId);
       }
@@ -842,7 +846,7 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   private void publishComponentInstanceData() {
-    Map<String, String> dataToPublish = new HashMap<>();
+    Map<String, String> dataToPublish = new HashMap<String, String>();
     synchronized (this.componentInstanceData) {
       for (String container : getComponentInstanceData().keySet()) {
         for (String prop : getComponentInstanceData().get(container).keySet()) {
@@ -979,7 +983,7 @@ public class AgentProviderService extends AbstractProviderService implements
     cmd.setServiceName(clusterName);
     cmd.setComponentName(roleName);
     cmd.setRole(roleName);
-    Map<String, String> hostLevelParams = new TreeMap<>();
+    Map<String, String> hostLevelParams = new TreeMap<String, String>();
     hostLevelParams.put(JAVA_HOME, appConf.getGlobalOptions().getMandatoryOption(JAVA_HOME));
     hostLevelParams.put(PACKAGE_LIST, getPackageList());
     hostLevelParams.put(CONTAINER_ID, containerId);
@@ -1024,7 +1028,7 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   private Map<String, String> setCommandParameters(String scriptPath, boolean recordConfig) {
-    Map<String, String> cmdParams = new TreeMap<>();
+    Map<String, String> cmdParams = new TreeMap<String, String>();
     cmdParams.put("service_package_folder",
                   "${AGENT_WORK_ROOT}/work/app/definition/package");
     cmdParams.put("script", scriptPath);
@@ -1057,7 +1061,7 @@ public class AgentProviderService extends AbstractProviderService implements
     cmd.setClusterName(clusterName);
     cmd.setRoleCommand(StatusCommand.STATUS_COMMAND);
 
-    Map<String, String> hostLevelParams = new TreeMap<>();
+    Map<String, String> hostLevelParams = new TreeMap<String, String>();
     hostLevelParams.put(JAVA_HOME, appConf.getGlobalOptions().getMandatoryOption(JAVA_HOME));
     hostLevelParams.put(CONTAINER_ID, containerId);
     cmd.setHostLevelParams(hostLevelParams);
@@ -1085,7 +1089,7 @@ public class AgentProviderService extends AbstractProviderService implements
     cmd.setServiceName(clusterName);
     cmd.setClusterName(clusterName);
     cmd.setRoleCommand(StatusCommand.GET_CONFIG_COMMAND);
-    Map<String, String> hostLevelParams = new TreeMap<>();
+    Map<String, String> hostLevelParams = new TreeMap<String, String>();
     hostLevelParams.put(CONTAINER_ID, containerId);
     cmd.setHostLevelParams(hostLevelParams);
 
@@ -1112,7 +1116,7 @@ public class AgentProviderService extends AbstractProviderService implements
     cmd.setServiceName(clusterName);
     cmd.setComponentName(roleName);
     cmd.setRole(roleName);
-    Map<String, String> hostLevelParams = new TreeMap<>();
+    Map<String, String> hostLevelParams = new TreeMap<String, String>();
     hostLevelParams.put(JAVA_HOME, appConf.getGlobalOptions().getMandatoryOption(JAVA_HOME));
     hostLevelParams.put(CONTAINER_ID, containerId);
     cmd.setHostLevelParams(hostLevelParams);
@@ -1149,7 +1153,8 @@ public class AgentProviderService extends AbstractProviderService implements
       ConfTreeOperations appConf, String containerId)
       throws SliderException {
 
-    Map<String, Map<String, String>> configurations = new TreeMap<>();
+    Map<String, Map<String, String>> configurations =
+        new TreeMap<String, Map<String, String>>();
     Map<String, String> tokens = getStandardTokenMap(appConf);
 
     List<String> configs = getApplicationConfigurationTypes(appConf);
@@ -1164,7 +1169,7 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   private Map<String, String> getStandardTokenMap(ConfTreeOperations appConf) throws SliderException {
-    Map<String, String> tokens = new HashMap<>();
+    Map<String, String> tokens = new HashMap<String, String>();
     String nnuri = appConf.get("site.fs.defaultFS");
     tokens.put("${NN_URI}", nnuri);
     tokens.put("${NN_HOST}", URI.create(nnuri).getHost());
@@ -1180,7 +1185,7 @@ public class AgentProviderService extends AbstractProviderService implements
   private List<String> getApplicationConfigurationTypes(ConfTreeOperations appConf) {
     // for now, reading this from appConf.  In the future, modify this method to
     // process metainfo.xml
-    List<String> configList = new ArrayList<>();
+    List<String> configList = new ArrayList<String>();
     configList.add(GLOBAL_CONFIG_TAG);
 
     String configTypes = appConf.get("config_types");
@@ -1190,13 +1195,13 @@ public class AgentProviderService extends AbstractProviderService implements
     }
 
     // remove duplicates.  mostly worried about 'global' being listed
-    return new ArrayList<>(new HashSet<>(configList));
+    return new ArrayList<String>(new HashSet<String>(configList));
   }
 
   private void addNamedConfiguration(String configName, Map<String, String> sourceConfig,
                                      Map<String, Map<String, String>> configurations,
                                      Map<String, String> tokens, String containerId) {
-    Map<String, String> config = new HashMap<>();
+    Map<String, String> config = new HashMap<String, String>();
     if (configName.equals(GLOBAL_CONFIG_TAG)) {
       addDefaultGlobalConfig(config);
     }
@@ -1235,7 +1240,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
   private Iterable<String> getHostsList(Collection<ClusterNode> values,
                                         boolean hostOnly) {
-    List<String> hosts = new ArrayList<>();
+    List<String> hosts = new ArrayList<String>();
     for (ClusterNode cn : values) {
       hosts.add(hostOnly ? cn.host : cn.host + "/" + cn.name);
     }

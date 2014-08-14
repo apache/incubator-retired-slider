@@ -37,7 +37,8 @@ public class ComponentCommandOrder {
   public static final Logger log =
       LoggerFactory.getLogger(ComponentCommandOrder.class);
   private static char SPLIT_CHAR = '-';
-  Map<Command, Map<String, List<ComponentState>>> dependencies = new HashMap<>();
+  Map<Command, Map<String, List<ComponentState>>> dependencies =
+      new HashMap<Command, Map<String, List<ComponentState>>>();
 
   public ComponentCommandOrder(List<CommandOrder> commandOrders) {
     if (commandOrders != null && commandOrders.size() > 0) {
@@ -48,13 +49,13 @@ public class ComponentCommandOrder {
         if (requiredStates.size() > 0) {
           Map<String, List<ComponentState>> compDep = dependencies.get(componentCmd.command);
           if (compDep == null) {
-            compDep = new HashMap<>();
+            compDep = new HashMap<String, List<ComponentState>>();
             dependencies.put(componentCmd.command, compDep);
           }
 
           List<ComponentState> requirements = compDep.get(componentCmd.componentName);
           if (requirements == null) {
-            requirements = new ArrayList<>();
+            requirements = new ArrayList<ComponentState>();
             compDep.put(componentCmd.componentName, requirements);
           }
 
@@ -70,7 +71,7 @@ public class ComponentCommandOrder {
     }
 
     String[] componentStates = requires.split(",");
-    List<ComponentState> retList = new ArrayList<>();
+    List<ComponentState> retList = new ArrayList<ComponentState>();
     for (String componentStateStr : componentStates) {
       retList.add(getComponentState(componentStateStr));
     }
