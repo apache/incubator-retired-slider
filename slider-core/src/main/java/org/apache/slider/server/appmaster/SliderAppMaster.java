@@ -459,7 +459,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     String action = serviceArgs.getAction();
     List<String> actionArgs = serviceArgs.getActionArgs();
     int exitCode;
-    switch (action) {
+/*  JDK7
+  switch (action) {
       case SliderActions.ACTION_HELP:
         log.info(getName() + serviceArgs.usage());
         exitCode = LauncherExitCodes.EXIT_USAGE;
@@ -469,6 +470,15 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         break;
       default:
         throw new SliderException("Unimplemented: " + action);
+    }
+    */
+    if (action.equals(SliderActions.ACTION_HELP)) {
+      log.info(getName() + serviceArgs.usage());
+      exitCode = SliderExitCodes.EXIT_USAGE;
+    } else if (action.equals(SliderActions.ACTION_CREATE)) {
+      exitCode = createAndRunCluster(actionArgs.get(0));
+    } else {
+      throw new SliderException("Unimplemented: " + action);
     }
     log.info("Exiting AM; final exit code = {}", exitCode);
     return exitCode;
@@ -1048,7 +1058,14 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     try {
       log.info("Unregistering AM status={} message={}", appStatus, appMessage);
       asyncRMClient.unregisterApplicationMaster(appStatus, appMessage, null);
+/* JDK7
     } catch (YarnException | IOException e) {
+      log.info("Failed to unregister application: " + e, e);
+    }
+*/
+    } catch (IOException e) {
+      log.info("Failed to unregister application: " + e, e);
+    } catch (YarnException e) {
       log.info("Failed to unregister application: " + e, e);
     }
   }

@@ -291,7 +291,10 @@ public class TestAgentProviderService {
                                           resourceComponent,
                                           appComponent,
                                           containerTmpDirPath);
-    } catch (SliderException | IOException he) {
+      // JDK7
+    } catch (IOException he) {
+      log.warn("{}", he, he);
+    } catch (SliderException he) {
       log.warn("{}", he, he);
     }
 
@@ -317,14 +320,14 @@ public class TestAgentProviderService {
       public ClusterDescription getClusterStatus() {
         ClusterDescription cd = new ClusterDescription();
         cd.status = new HashMap<String, Object>();
-        Map<String, Map<String, ClusterNode>> roleMap = new HashMap<>();
+        Map<String, Map<String, ClusterNode>> roleMap = new HashMap<String, Map<String, ClusterNode>>();
         ClusterNode cn1 = new ClusterNode(new MockContainerId(1));
         cn1.host = "FIRST_HOST";
-        Map<String, ClusterNode> map1 = new HashMap<>();
+        Map<String, ClusterNode> map1 = new HashMap<String, ClusterNode>();
         map1.put("FIRST_CONTAINER", cn1);
         ClusterNode cn2 = new ClusterNode(new MockContainerId(2));
         cn2.host = "SECOND_HOST";
-        Map<String, ClusterNode> map2 = new HashMap<>();
+        Map<String, ClusterNode> map2 = new HashMap<String, ClusterNode>();
         map2.put("SECOND_CONTAINER", cn2);
         ClusterNode cn3 = new ClusterNode(new MockContainerId(3));
         cn3.host = "THIRD_HOST";
@@ -350,7 +353,7 @@ public class TestAgentProviderService {
     };
 
     aps.setAmState(appState);
-    Map<String, String> tokens = new HashMap<>();
+    Map<String, String> tokens = new HashMap<String, String>();
     aps.addRoleRelatedTokens(tokens);
     Assert.assertEquals(2, tokens.size());
     Assert.assertEquals("FIRST_HOST", tokens.get("${FIRST_ROLE_HOST}"));
@@ -367,7 +370,7 @@ public class TestAgentProviderService {
     doNothing().when(mockAps).publishApplicationInstanceData(anyString(), anyString(), anyCollection());
     doReturn(metainfo).when(mockAps).getMetainfo();
 
-    Map<String, String> ports = new HashMap<>();
+    Map<String, String> ports = new HashMap<String, String>();
     ports.put("global.listen_port", "10010");
     mockAps.processAndPublishComponentSpecificData(ports,
                                                    "cid1",
@@ -408,17 +411,18 @@ public class TestAgentProviderService {
     status.setClusterName("test");
     status.setComponentName("HBASE_MASTER");
     status.setRoleCommand("GET_CONFIG");
-    Map<String, String> hbaseSite = new HashMap<>();
+    Map<String, String> hbaseSite = new HashMap<String, String>();
     hbaseSite.put("hbase.master.info.port", "60012");
     hbaseSite.put("c", "d");
-    Map<String, Map<String, String>> configs = new HashMap<>();
+    Map<String, Map<String, String>> configs = 
+        new HashMap<String, Map<String, String>>();
     configs.put("hbase-site", hbaseSite);
     configs.put("global", hbaseSite);
     status.setConfigs(configs);
-    hb.setComponentStatus(new ArrayList<>(Arrays.asList(status)));
+    hb.setComponentStatus(new ArrayList<ComponentStatus>(Arrays.asList(status)));
 
-    Map<String, Map<String, ClusterNode>> roleClusterNodeMap = new HashMap<>();
-    Map<String, ClusterNode> container = new HashMap<>();
+    Map<String, Map<String, ClusterNode>> roleClusterNodeMap = new HashMap<String, Map<String, ClusterNode>>();
+    Map<String, ClusterNode> container = new HashMap<String, ClusterNode>();
     ClusterNode cn1 = new ClusterNode(new MockContainerId(1));
     cn1.host = "HOST1";
     container.put("cid1", cn1);
@@ -754,7 +758,7 @@ public class TestAgentProviderService {
       cr.setRole("HBASE_MASTER");
       cr.setRoleCommand("INSTALL");
       cr.setStatus("COMPLETED");
-      Map<String, String> ap = new HashMap<>();
+      Map<String, String> ap = new HashMap<String, String>();
       ap.put("a.port", "10233");
       cr.setAllocatedPorts(ap);
       hb.setReports(Arrays.asList(cr));
@@ -803,7 +807,10 @@ public class TestAgentProviderService {
                                                                 anyString(),
                                                                 any(HeartBeatResponse.class),
                                                                 anyString());
-    } catch (SliderException | IOException he) {
+    // JDK7 
+    } catch (SliderException he) {
+      log.warn(he.getMessage());
+    } catch (IOException he) {
       log.warn(he.getMessage());
     }
 
@@ -882,8 +889,8 @@ public class TestAgentProviderService {
     doReturn("HOST1").when(mockAps).getClusterInfoPropertyValue(anyString());
     doReturn(metainfo).when(mockAps).getMetainfo();
 
-    Map<String, Map<String, ClusterNode>> roleClusterNodeMap = new HashMap<>();
-    Map<String, ClusterNode> container = new HashMap<>();
+    Map<String, Map<String, ClusterNode>> roleClusterNodeMap = new HashMap<String, Map<String, ClusterNode>>();
+    Map<String, ClusterNode> container = new HashMap<String, ClusterNode>();
     ClusterNode cn1 = new ClusterNode(new MockContainerId(1));
     cn1.host = "HOST1";
     container.put("cid1", cn1);
@@ -929,18 +936,18 @@ public class TestAgentProviderService {
 
     doReturn("HOST1").when(mockAps).getClusterInfoPropertyValue(anyString());
 
-    Map<String, Map<String, ClusterNode>> roleClusterNodeMap = new HashMap<>();
-    Map<String, ClusterNode> container = new HashMap<>();
+    Map<String, Map<String, ClusterNode>> roleClusterNodeMap = new HashMap<String, Map<String, ClusterNode>>();
+    Map<String, ClusterNode> container = new HashMap<String, ClusterNode>();
     ClusterNode cn1 = new ClusterNode(new MockContainerId(1));
     cn1.host = "HOST1";
     container.put("cid1", cn1);
     roleClusterNodeMap.put("HBASE_MASTER", container);
     doReturn(roleClusterNodeMap).when(mockAps).getRoleClusterNodeMapping();
-    Map<String, String> allocatedPorts = new HashMap<>();
+    Map<String, String> allocatedPorts = new HashMap<String, String>();
     allocatedPorts.put("hbase-site.a.port", "10023");
     allocatedPorts.put("hbase-site.b.port", "10024");
     doReturn(allocatedPorts).when(mockAps).getAllocatedPorts();
-    Map<String, String> allocatedPorts2 = new HashMap<>();
+    Map<String, String> allocatedPorts2 = new HashMap<String, String>();
     allocatedPorts2.put("hbase-site.random.port", "10025");
     doReturn(allocatedPorts2).when(mockAps).getAllocatedPorts(anyString());
 

@@ -133,7 +133,11 @@ public class SliderAmIpFilter implements Filter {
             principal);
         chain.doFilter(requestWrapper, resp);
       }
-    } catch (IOException | ServletException e) {
+// JKD7    } catch (IOException | ServletException e) {
+    } catch (IOException e) {
+      log.warn("When fetching {}: {}", requestURI, e);
+      throw e;
+    } catch (ServletException e) {
       log.warn("When fetching {}: {}", requestURI, e);
       throw e;
     }

@@ -177,7 +177,14 @@ public class TestAMManagementWebServices extends JerseyTest {
               fs,
               historyPath,
               null, null, new SimpleReleaseSelector());
-        } catch (IOException | BadClusterStateException | URISyntaxException | BadConfigException e) {
+// JDK7        } catch (IOException | BadClusterStateException | URISyntaxException | BadConfigException e) {
+        } catch (IOException e) {
+          log.error("{}", e, e);
+        } catch (BadClusterStateException e) {
+          log.error("{}", e, e);
+        } catch (URISyntaxException e) {
+          log.error("{}", e, e);
+        } catch (BadConfigException e) {
           log.error("{}", e, e);
         }
         ProviderAppState providerAppState = new ProviderAppState("undefined",
