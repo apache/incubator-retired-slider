@@ -179,6 +179,11 @@ public class ProviderAppState implements StateAccessForProviders {
   }
 
   @Override
+  public RoleInstance getOwnedContainer(String id) throws NoSuchNodeException {
+    return appState.getOwnedInstanceByContainerID(id);
+  }
+
+  @Override
   public List<RoleInstance> cloneLiveContainerInfoList() {
     return appState.cloneLiveContainerInfoList();
   }

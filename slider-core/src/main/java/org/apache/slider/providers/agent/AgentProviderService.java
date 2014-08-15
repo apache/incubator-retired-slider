@@ -42,6 +42,7 @@ import org.apache.slider.core.conf.ConfTreeOperations;
 import org.apache.slider.core.conf.MapOperations;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.BadConfigException;
+import org.apache.slider.core.exceptions.NoSuchNodeException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.CommandLineBuilder;
 import org.apache.slider.core.launch.ContainerLauncher;
@@ -62,7 +63,9 @@ import org.apache.slider.providers.agent.application.metadata.Metainfo;
 import org.apache.slider.providers.agent.application.metadata.OSPackage;
 import org.apache.slider.providers.agent.application.metadata.OSSpecific;
 import org.apache.slider.server.appmaster.actions.ProviderReportedContainerLoss;
+import org.apache.slider.server.appmaster.actions.PublishRegistryDetails;
 import org.apache.slider.server.appmaster.state.ContainerPriority;
+import org.apache.slider.server.appmaster.state.RoleInstance;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentCommandType;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
@@ -96,6 +99,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_AGENTS;
@@ -541,14 +545,36 @@ public class AgentProviderService extends AbstractProviderService implements
                                      String roleName,
                                      String containerId,
                                      Map<String, String> ports) {
+    RoleInstance instance;
+    try {
+      instance = getAmState().getOwnedContainer(containerId);
+    } catch (NoSuchNodeException e) {
+      log.warn("Failed to locate instance of container {}: {}", containerId, e);
+      instance = null;
+    }
     for (Map.Entry<String, String> port : ports.entrySet()) {
-      log.info("Recording allocated port for {} as {}", port.getKey(), port.getValue());
-      this.getAllocatedPorts().put(port.getKey(), port.getValue());
-      this.getAllocatedPorts(containerId).put(port.getKey(), port.getValue());
+      String portname = port.getKey();
+      String portNo = port.getValue();
+      log.info("Recording allocated port for {} as {}", portname, portNo);
+      this.getAllocatedPorts().put(portname, portNo);
+      this.getAllocatedPorts(containerId).put(portname, portNo);
+        if (instance!=null) {
+          try {
+            instance.registerPortEndpoint(Integer.valueOf(portNo), portname, "");
+          } catch (NumberFormatException e) {
+            log.warn("Failed to parse {}: {}", portNo, e);
+          }
+        }
     }
 
     // component specific publishes
     processAndPublishComponentSpecificData(ports, containerId, fqdn, roleName);
+    
+    // and update registration entries
+    if (instance != null) {
+      queueAccess.put(new PublishRegistryDetails(instance.getId(), 0,
+          TimeUnit.MILLISECONDS));
+    }
   }
 
   private void updateComponentStatusWithAgentState(

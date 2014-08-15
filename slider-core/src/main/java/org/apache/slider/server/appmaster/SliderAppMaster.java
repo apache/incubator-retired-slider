@@ -84,7 +84,6 @@ import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.exceptions.SliderInternalStateException;
 import org.apache.slider.core.exceptions.TriggerClusterTeardownException;
 import org.apache.slider.core.main.ExitCodeProvider;
-import org.apache.slider.core.main.LauncherExitCodes;
 import org.apache.slider.core.main.RunService;
 import org.apache.slider.core.main.ServiceLauncher;
 import org.apache.slider.core.persist.ConfTreeSerDeser;
@@ -99,6 +98,7 @@ import org.apache.slider.providers.SliderProviderFactory;
 import org.apache.slider.providers.slideram.SliderAMClientProvider;
 import org.apache.slider.providers.slideram.SliderAMProviderService;
 import org.apache.slider.server.appmaster.actions.ActionKillContainer;
+import org.apache.slider.server.appmaster.actions.PublishRegistryDetails;
 import org.apache.slider.server.appmaster.actions.QueueExecutor;
 import org.apache.slider.server.appmaster.actions.ActionHalt;
 import org.apache.slider.server.appmaster.actions.QueueService;
@@ -901,6 +901,20 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   }
 
   /**
+   * Register/re-register a component (that is already in the app state
+   * @param id the component
+   */
+  public boolean registerComponent(ContainerId id) {
+    RoleInstance instance = appState.getOwnedContainer(id);
+    if (instance == null) {
+      return false;
+    }
+    // this is where component registrations will go
+
+    return true;
+  }
+  
+  /**
    * looks for a specific case where a token file is provided as an environment
    * variable, yet the file is not there.
    * 
@@ -1192,9 +1206,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     throws IOException, SliderInternalStateException, BadConfigException {
 
     appState.updateResourceDefinitions(resources);
-    appState.resetFailureCounts();
-    // reset the scheduled window resetter...the values
+
+    // reset the scheduled windows...the values
     // may have changed
+    appState.resetFailureCounts();
     
 
 
@@ -1665,6 +1680,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       //trigger an async container status
       nmClientAsync.getContainerStatusAsync(containerId,
                                             cinfo.container.getNodeId());
+      // push out a registration
+      queue(new PublishRegistryDetails(containerId, 0, TimeUnit.MILLISECONDS));
+      
     } else {
       //this is a hypothetical path not seen. We react by warning
       log.error("Notified of started container that isn't pending {} - releasing",

@@ -160,6 +160,13 @@ public interface StateAccessForProviders {
   RoleInstance getOwnedContainer(ContainerId id);
 
   /**
+   * Get any active container with the given ID
+   * @param id container Id
+   * @return the active container or null if it is not found
+   */
+  RoleInstance getOwnedContainer(String id) throws NoSuchNodeException;
+
+  /**
    * Create a clone of the list of live cluster nodes.
    * @return the list of nodes, may be empty
    */

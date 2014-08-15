@@ -68,11 +68,8 @@ import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_
  * This class implements the server-side aspects
  * of an HBase Cluster
  */
-public class HBaseProviderService extends AbstractProviderService implements
-                                                                  ProviderCore,
-                                                                  HBaseKeys,
-    SliderKeys,
-    AgentRestOperations{
+public class HBaseProviderService extends AbstractProviderService 
+    implements ProviderCore, HBaseKeys, SliderKeys, AgentRestOperations{
 
   protected static final Logger log =
     LoggerFactory.getLogger(HBaseProviderService.class);
@@ -109,8 +106,8 @@ public class HBaseProviderService extends AbstractProviderService implements
    * @param instanceDefinition the instance definition to validate
    */
   @Override // Client and Server
-  public void validateInstanceDefinition(AggregateConf instanceDefinition) throws
-      SliderException {
+  public void validateInstanceDefinition(AggregateConf instanceDefinition) 
+      throws SliderException {
     clientProvider.validateInstanceDefinition(instanceDefinition);
   }
 

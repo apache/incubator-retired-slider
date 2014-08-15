@@ -850,20 +850,53 @@ public class AppState {
 
   /**
    * Lookup live instance by string value of container ID
-   * @param containerId container ID
+   * @param containerId container ID as a string
    * @return the role instance for that container
    * @throws NoSuchNodeException if it does not exist
    */
   public synchronized RoleInstance getLiveInstanceByContainerID(String containerId)
-    throws NoSuchNodeException {
+      throws NoSuchNodeException {
     Collection<RoleInstance> nodes = getLiveNodes().values();
+    return findNodeInCollection(containerId, nodes);
+  }
+
+  /**
+   * Lookup owned instance by string value of container ID
+   * @param containerId container ID as a string
+   * @return the role instance for that container
+   * @throws NoSuchNodeException if it does not exist
+   */
+  public synchronized RoleInstance getOwnedInstanceByContainerID(String containerId)
+      throws NoSuchNodeException {
+    Collection<RoleInstance> nodes = ownedContainers.values();
+    return findNodeInCollection(containerId, nodes);
+  }
+
+  
+  
+  /**
+   * Iterate through a collection of role instances to find one with a
+   * specific (string) container ID
+   * @param containerId container ID as a string
+   * @param nodes collection
+   * @return 
+   * @throws NoSuchNodeException if there was no match
+   */
+  private RoleInstance findNodeInCollection(String containerId,
+      Collection<RoleInstance> nodes) throws NoSuchNodeException {
+    RoleInstance found = null;
     for (RoleInstance node : nodes) {
       if (containerId.equals(node.id)) {
-        return node;
+        found = node;
+        break;
       }
     }
-    //at this point: no node
-    throw new NoSuchNodeException(containerId);
+    if (found != null) {
+      return found;
+    } else {
+      //at this point: no node
+      throw new NoSuchNodeException(containerId);
+    }
   }
 
 

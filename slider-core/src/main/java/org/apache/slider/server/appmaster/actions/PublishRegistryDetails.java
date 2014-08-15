@@ -31,7 +31,7 @@ public class PublishRegistryDetails extends AsyncAction {
 
   public PublishRegistryDetails(ContainerId containerId, long delay,
       TimeUnit timeUnit) {
-    super("PublishEndpointDetails :" + containerId.toString(),
+    super("PublishRegistryDetails :" + containerId.toString(),
         delay, timeUnit);
     this.containerId = containerId;
   }
@@ -40,6 +40,5 @@ public class PublishRegistryDetails extends AsyncAction {
   public void execute(SliderAppMaster appMaster,
       QueueAccess queueService,
       AppState appState) throws Exception {
-    
   }
 }
