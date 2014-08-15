@@ -148,7 +148,7 @@ public class ConfTreeOperations {
       return operations;
     }
     //create a new instances
-    Map<String, String> map = new HashMap<>();
+    Map<String, String> map = new HashMap<String, String>();
     confTree.components.put(name, map);
     return new MapOperations(name, map);
   }
@@ -159,7 +159,7 @@ public class ConfTreeOperations {
    */
   @JsonIgnore
   public Set<String> getComponentNames() {
-    return new HashSet<>(confTree.components.keySet());
+    return new HashSet<String>(confTree.components.keySet());
   }
   
   

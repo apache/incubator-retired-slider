@@ -92,12 +92,6 @@ public class AgentClientProvider extends AbstractClientProvider
         getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
     Path appDefPath = new Path(appDef);
     sliderFileSystem.verifyFileExists(appDefPath);
-    
-    String pkgList = instanceDefinition.getAppConfOperations().
-        getGlobalOptions().getOption(AgentKeys.PACKAGE_LIST, null);
-    if (pkgList != null) {
-      sliderFileSystem.verifyFileExistsInZip(appDefPath, pkgList);
-    }
 
     String agentConf = instanceDefinition.getAppConfOperations().
         getGlobalOptions().getOption(AgentKeys.AGENT_CONF, "");
@@ -216,7 +210,7 @@ public class AgentClientProvider extends AbstractClientProvider
     }
 
     Application application = metainfo.getApplication();
-    tags = new HashSet<>();
+    tags = new HashSet<String>();
     tags.add("Name: " + application.getName());
     tags.add("Version: " + application.getVersion());
     tags.add("Description: " + SliderUtils.truncate(application.getComment(), 80));

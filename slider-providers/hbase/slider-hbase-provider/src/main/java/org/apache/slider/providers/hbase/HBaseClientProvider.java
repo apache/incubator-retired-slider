@@ -108,7 +108,7 @@ public class HBaseClientProvider extends AbstractClientProvider implements
 
     MapOperations worker = appconf.getMandatoryComponent(HBaseKeys.ROLE_WORKER);
     
-    Map<String, String> sitexml = new HashMap<>();
+    Map<String, String> sitexml = new HashMap<String, String>();
 
     //map all cluster-wide site. options
     providerUtils.propagateSiteOptions(globalAppOptions, sitexml);
@@ -210,7 +210,7 @@ public class HBaseClientProvider extends AbstractClientProvider implements
     }
   }
 
-  private static Set<String> knownRoleNames = new HashSet<>();
+  private static Set<String> knownRoleNames = new HashSet<String>();
   static {
     List<ProviderRole> roles = HBaseRoles.getRoles();
     knownRoleNames.add(SliderKeys.COMPONENT_AM);
@@ -263,7 +263,7 @@ public class HBaseClientProvider extends AbstractClientProvider implements
 
     // add any and all dependency files
     Map<String, LocalResource> providerResources =
-        new HashMap<>();
+        new HashMap<String, LocalResource>();
 
     ProviderUtils.addProviderJar(providerResources,
         this,

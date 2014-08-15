@@ -126,7 +126,7 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
       log.info("Connected via Client {}", sliderClient.toString())
 
       //freeze
-      freeze(CLUSTER, [
+      freeze(0, CLUSTER, [
           ARG_WAIT, Integer.toString(FREEZE_WAIT_TIME),
           ARG_MESSAGE, "freeze-in-test-cluster-lifecycle"
       ])
@@ -145,7 +145,7 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
       exists(0, CLUSTER)
       describe " >>> Cluster is now thawed."
 
-      freeze(CLUSTER,
+      freeze(0, CLUSTER,
           [
               ARG_FORCE,
               ARG_WAIT, Integer.toString(FREEZE_WAIT_TIME),
@@ -178,7 +178,12 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
           StatusKeys.INFO_CONTAINERS_AM_RESTART)
       assert restarted != null
       assert Integer.parseInt(restarted) == 0
-      freeze(CLUSTER)
+      freeze(0, CLUSTER,
+          [
+              ARG_FORCE,
+              ARG_WAIT, Integer.toString(FREEZE_WAIT_TIME),
+              ARG_MESSAGE, "final-shutdown"
+          ])
 
       destroy(0, CLUSTER)
 

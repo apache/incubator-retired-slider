@@ -101,6 +101,10 @@ class Execute(Resource):
   - try_sleep
   """
   wait_for_finish = BooleanArgument(default=True)
+  """
+  if wait_for_finish is True then optionally the caller can ask for the pid to be written
+  """
+  pid_file = ResourceArgument()
 
 
 class ExecuteScript(Resource):

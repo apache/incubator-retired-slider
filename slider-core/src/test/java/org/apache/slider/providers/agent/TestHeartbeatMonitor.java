@@ -56,7 +56,7 @@ public class TestHeartbeatMonitor {
     AgentProviderService provider = createNiceMock(AgentProviderService.class);
     HeartbeatMonitor hbm = new HeartbeatMonitor(provider, 500);
     Assert.assertFalse(hbm.isAlive());
-    Map<String, ComponentInstanceState> statuses = new HashMap<>();
+    Map<String, ComponentInstanceState> statuses = new HashMap<String, ComponentInstanceState>();
     ContainerId container1 = new MockContainerId(1);
     ComponentInstanceState state = new ComponentInstanceState("HBASE_MASTER",
         container1, "Aid");
@@ -79,7 +79,7 @@ public class TestHeartbeatMonitor {
     long now = 100000;
     int wakeupInterval = 2 * 1000;
 
-    Map<String, ComponentInstanceState> statuses = new HashMap<>();
+    Map<String, ComponentInstanceState> statuses = new HashMap<String, ComponentInstanceState>();
     ContainerId masterContainer = new MockContainerId(1); 
     ContainerId slaveContainer = new MockContainerId(2); 
     ComponentInstanceState masterState = new ComponentInstanceState("HBASE_MASTER",

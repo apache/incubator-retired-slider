@@ -126,7 +126,7 @@ public class WebAppApiImpl implements WebAppApi {
    */
   private TreeMap<String, RoleStatus> getRoleStatusesByName(Map<Integer, ProviderRole> rolesById,
       Map<Integer, RoleStatus> statusById) {
-    TreeMap<String, RoleStatus> statusByName = new TreeMap<>();
+    TreeMap<String, RoleStatus> statusByName = new TreeMap<String, RoleStatus>();
     for (Entry<Integer, ProviderRole> role : rolesById.entrySet()) {
       final RoleStatus status = statusById.get(role.getKey());
 

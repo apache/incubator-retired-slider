@@ -48,9 +48,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -442,7 +442,7 @@ public class CoreFileSystem {
     //copied to the destination
     FileStatus[] fileset = fileSystem.listStatus(srcDir);
     Map<String, LocalResource> localResources =
-            new HashMap<>(fileset.length);
+            new HashMap<String, LocalResource>(fileset.length);
     for (FileStatus entry : fileset) {
 
       LocalResource resource = createAmResource(entry.getPath(),

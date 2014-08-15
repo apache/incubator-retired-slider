@@ -16,15 +16,14 @@
  */
 package org.apache.slider.server.appmaster.web.rest.agent;
 
+import org.apache.slider.providers.agent.State;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 
-/**
- *
- * Data model for agent to send heartbeat to ambari and/or app master.
- *
- */
+import java.util.Map;
+
+/** Data model for agent to send heartbeat to ambari and/or app master. */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 public class Register {
@@ -36,6 +35,9 @@ public class Register {
   private String publicHostname;
   private AgentEnv agentEnv;
   private String agentVersion;
+  private State actualState;
+  private State expectedState;
+  private Map<String, String> allocatedPorts;
 
   @JsonProperty("responseId")
   public int getResponseId() {
@@ -44,11 +46,15 @@ public class Register {
 
   @JsonProperty("responseId")
   public void setResponseId(int responseId) {
-    this.responseId=responseId;
+    this.responseId = responseId;
   }
 
   public long getTimestamp() {
     return timestamp;
+  }
+
+  public void setTimestamp(long timestamp) {
+    this.timestamp = timestamp;
   }
 
   public String getHostname() {
@@ -65,10 +71,6 @@ public class Register {
 
   public void setHardwareProfile(HostInfo hardwareProfile) {
     this.hardwareProfile = hardwareProfile;
-  }
-
-  public void setTimestamp(long timestamp) {
-    this.timestamp = timestamp;
   }
 
   public String getPublicHostname() {
@@ -103,15 +105,45 @@ public class Register {
     this.currentPingPort = currentPingPort;
   }
 
+  public State getActualState() {
+    return actualState;
+  }
+
+  public void setActualState(State actualState) {
+    this.actualState = actualState;
+  }
+
+  public State getExpectedState() {
+    return expectedState;
+  }
+
+  public void setExpectedState(State expectedState) {
+    this.expectedState = expectedState;
+  }
+
+  /** @return the allocated ports, or <code>null</code> if none are present */
+  @JsonProperty("allocatedPorts")
+  public Map<String, String> getAllocatedPorts() {
+    return allocatedPorts;
+  }
+
+  /** @param ports allocated ports */
+  @JsonProperty("allocatedPorts")
+  public void setAllocatedPorts(Map<String, String> ports) {
+    this.allocatedPorts = ports;
+  }
+
   @Override
   public String toString() {
     String ret = "responseId=" + responseId + "\n" +
                  "timestamp=" + timestamp + "\n" +
-                 "hostname="  + hostname + "\n" +
-                 "currentPingPort=" + currentPingPort + "\n";
+                 "hostname=" + hostname + "\n" +
+                 "expectedState=" + expectedState + "\n" +
+                 "actualState=" + actualState + "\n";
 
-    if (hardwareProfile != null)
+    if (hardwareProfile != null) {
       ret = ret + "hardwareprofile=" + this.hardwareProfile.toString();
+    }
     return ret;
   }
 }

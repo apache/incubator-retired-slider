@@ -44,7 +44,7 @@ public class TestComponentInstanceState {
   }
 
   @Test
-  public void testGetNextStateBasedOnResult() {
+  public void testGetNextStateBasedOnResult() throws Exception {
     TestCase.assertEquals(State.INSTALLING, State.INSTALLING.getNextState(CommandResult.IN_PROGRESS));
     TestCase.assertEquals(State.STARTING, State.STARTING.getNextState(CommandResult.IN_PROGRESS));
     expectExceptionOnGetNextForResult(IllegalArgumentException.class, State.INIT, CommandResult.IN_PROGRESS);
@@ -68,7 +68,7 @@ public class TestComponentInstanceState {
   }
 
   @Test
-  public void testGetNextStateBasedOnCommand() {
+  public void testGetNextStateBasedOnCommand() throws Exception {
     for (State state : states) {
       TestCase.assertEquals(state, state.getNextState(Command.NOP));
     }
@@ -87,7 +87,8 @@ public class TestComponentInstanceState {
     expectIllegalArgumentException(State.STARTED, Command.START);
   }
 
-  protected void expectIllegalArgumentException(State state, Command command) {
+  protected void expectIllegalArgumentException(State state, Command command) throws
+      Exception {
     expectExceptionOnGetNextForCommand(IllegalArgumentException.class,
         state, command);
   }
@@ -274,7 +275,7 @@ public class TestComponentInstanceState {
   }
 
   private <T extends Throwable> void expectExceptionOnGetNextForResult(
-      Class<T> expected, State state, CommandResult result) {
+      Class<T> expected, State state, CommandResult result) throws Exception {
     try {
       state.getNextState(result);
       TestCase.fail("Must fail");
@@ -286,7 +287,7 @@ public class TestComponentInstanceState {
   }
 
   private <T extends Throwable> void expectExceptionOnGetNextForCommand(
-      Class<T> expected, State state, Command command) {
+      Class<T> expected, State state, Command command) throws Exception {
     try {
       state.getNextState(command);
       TestCase.fail("Must fail");

@@ -42,7 +42,7 @@ class TestController(unittest.TestCase):
   @patch.object(hostname, "hostname")
   def setUp(self, hostname_method, NetUtil_mock, lockMock, threadMock):
 
-    Controller.logger = MagicMock()
+    #Controller.logger = MagicMock()
     lockMock.return_value = MagicMock()
     NetUtil_mock.return_value = MagicMock()
     hostname_method.return_value = "test_hostname"
@@ -55,6 +55,7 @@ class TestController(unittest.TestCase):
     self.controller = Controller.Controller(config)
     self.controller.netutil.MINIMUM_INTERVAL_BETWEEN_HEARTBEATS = 0.1
     self.controller.netutil.HEARTBEAT_NOT_IDDLE_INTERVAL_SEC = 0.1
+    self.controller.actionQueue = ActionQueue.ActionQueue(config, self.controller)
 
 
   @patch("json.dumps")
@@ -289,7 +290,7 @@ class TestController(unittest.TestCase):
     self.controller.sendRequest = sendRequest
 
     self.controller.responseId = 1
-    response = {"responseId":"2", "restartAgent":"false"}
+    response = {"responseId":"2", "restartAgent": False}
     loadsMock.return_value = response
 
     def one_heartbeat(*args, **kwargs):
@@ -589,9 +590,139 @@ class TestController(unittest.TestCase):
     self.controller.config = original_value
     pass
 
+  def test_create_start_command(self):
+    stored_command = {
+      'commandType': 'EXECUTION_COMMAND',
+      'role': u'HBASE_MASTER',
+      "componentName": "HBASE_MASTER",
+      'roleCommand': u'INSTALL',
+      'commandId': '1-1',
+      'taskId': 3,
+      'clusterName': u'cc',
+      'serviceName': u'HBASE',
+      'configurations': {'global': {}},
+      'configurationTags': {'global': {'tag': 'v1'}},
+      'auto_generated': False,
+      'roleParams': {'auto_restart':'false'},
+      'commandParams': {'script_type': 'PYTHON',
+                        'script': 'scripts/abc.py',
+                        'command_timeout': '600'}
+    }
+
+    expected = {
+      'commandType': 'EXECUTION_COMMAND',
+      'role': u'HBASE_MASTER',
+      "componentName": "HBASE_MASTER",
+      'roleCommand': u'INSTALL',
+      'commandId': '4-1',
+      'taskId': 4,
+      'clusterName': u'cc',
+      'serviceName': u'HBASE',
+      'configurations': {'global': {}},
+      'configurationTags': {'global': {'tag': 'v1'}},
+      'auto_generated': False,
+      'roleParams': {'auto_restart':'false'},
+      'commandParams': {'script_type': 'PYTHON',
+                        'script': 'scripts/abc.py',
+                        'command_timeout': '600'},
+      'auto_generated': True
+    }
+
+    modified_command = self.controller.create_start_command(stored_command)
+    self.assertEqual.__self__.maxDiff = None
+    self.assertEqual(modified_command, expected)
+
+  @patch.object(Controller.Controller, "createStatusCommand")
+  @patch.object(threading._Event, "wait")
+  @patch("time.sleep")
+  @patch("json.loads")
+  @patch("json.dumps")
+  def test_auto_start(self, dumpsMock, loadsMock, timeMock, waitMock, mock_createStatusCommand):
+    original_value = self.controller.config
+    self.controller.config = AgentConfig("", "")
+    out = StringIO.StringIO()
+    sys.stdout = out
+
+    heartbeat = MagicMock()
+    self.controller.heartbeat = heartbeat
+
+    dumpsMock.return_value = "data"
+
+    sendRequest = MagicMock(name="sendRequest")
+    self.controller.sendRequest = sendRequest
+
+    self.controller.responseId = 1
+    response1 = {"responseId": "2", "restartAgent": False, "restartEnabled": True}
+    response2 = {"responseId": "2", "restartAgent": False, "restartEnabled": False}
+    loadsMock.side_effect = [response1, response2, response1]
+
+    def one_heartbeat(*args, **kwargs):
+      self.controller.DEBUG_STOP_HEARTBEATING = True
+      return "data"
+
+    sendRequest.side_effect = one_heartbeat
+
+    actionQueue = MagicMock()
+    actionQueue.isIdle.return_value = True
+
+    # one successful request, after stop
+    self.controller.actionQueue = actionQueue
+    self.controller.componentActualState = State.FAILED
+    self.controller.componentExpectedState = State.STARTED
+    self.assertTrue(self.controller.componentActualState, State.FAILED)
+    self.controller.actionQueue.customServiceOrchestrator.stored_command = {
+      'commandType': 'EXECUTION_COMMAND',
+      'role': u'HBASE',
+      'roleCommand': u'START',
+      'commandId': '7-1',
+      'taskId': 7,
+      "componentName": "HBASE_MASTER",
+      'clusterName': u'cc',
+      'serviceName': u'HDFS'
+    }
+    addToQueue = MagicMock(name="addToQueue")
+    self.controller.addToQueue = addToQueue
+
+    self.controller.heartbeatWithServer()
+    self.assertTrue(sendRequest.called)
+
+    self.assertTrue(self.controller.componentActualState, State.STARTING)
+    self.assertTrue(self.controller.componentExpectedState, State.STARTED)
+    self.assertEquals(self.controller.failureCount, 0)
+    self.assertFalse(mock_createStatusCommand.called)
+    addToQueue.assert_has_calls([call([{
+      'commandType': 'EXECUTION_COMMAND',
+      'clusterName': u'cc',
+      'serviceName': u'HDFS',
+      'role': u'HBASE',
+      'taskId': 8,
+      'roleCommand': u'START',
+      'componentName': 'HBASE_MASTER',
+      'commandId': '8-1',
+      'auto_generated': True}])])
+    self.controller.config = original_value
+
+    # restartEnabled = False
+    self.controller.componentActualState = State.FAILED
+    self.controller.heartbeatWithServer()
+
+    self.assertTrue(sendRequest.called)
+    self.assertTrue(self.controller.componentActualState, State.FAILED)
+    self.assertTrue(self.controller.componentExpectedState, State.STARTED)
+
+    # restartEnabled = True
+    self.controller.componentActualState = State.INSTALLED
+    self.controller.componentExpectedState = State.INSTALLED
+    self.controller.heartbeatWithServer()
+
+    self.assertTrue(sendRequest.called)
+    self.assertTrue(self.controller.componentActualState, State.INSTALLED)
+    self.assertTrue(self.controller.componentExpectedState, State.INSTALLED)
+    pass
+
 
 if __name__ == "__main__":
-  logging.basicConfig(format='%(asctime)s %(message)s',level=logging.DEBUG)
+  logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
   unittest.main()
 
 

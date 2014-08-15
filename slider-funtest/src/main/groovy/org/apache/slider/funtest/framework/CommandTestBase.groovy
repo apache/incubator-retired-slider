@@ -211,6 +211,20 @@ abstract class CommandTestBase extends SliderTestUtils {
     ])
   }
 
+
+  static SliderShell freeze(
+      int exitCode,
+      String name,
+      Collection<String> args) {
+    slider(exitCode, [ACTION_FREEZE, name] + args)
+  }
+
+  /**
+   * Freeze cluster: no exit code checking
+   * @param name
+   * @param args
+   * @return
+   */
   static SliderShell freeze(String name, Collection<String> args) {
     slider([ACTION_FREEZE, name] + args)
   }
@@ -288,7 +302,7 @@ abstract class CommandTestBase extends SliderTestUtils {
   }
 
   static SliderShell thaw(String name, Collection<String> args) {
-    slider([ACTION_THAW, name] + args)
+    slider(0, [ACTION_THAW, name] + args)
   }
 
   static SliderShell registry(int result, Collection<String> commands) {

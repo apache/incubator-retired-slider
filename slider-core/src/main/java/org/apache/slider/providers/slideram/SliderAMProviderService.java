@@ -100,7 +100,7 @@ public class SliderAMProviderService extends AbstractProviderService implements
 
   @Override
   public List<ProviderRole> getRoles() {
-    return new ArrayList<>(0);
+    return new ArrayList<ProviderRole>(0);
   }
 
   @Override

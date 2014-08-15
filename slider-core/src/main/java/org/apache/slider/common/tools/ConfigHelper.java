@@ -81,7 +81,7 @@ public class ConfigHelper {
 
    */
   public static TreeSet<String> sortedConfigKeys(Iterable<Map.Entry<String, String>> conf) {
-    TreeSet<String> sorted = new TreeSet<>();
+    TreeSet<String> sorted = new TreeSet<String>();
     for (Map.Entry<String, String> entry : conf) {
       sorted.add(entry.getKey());
     }
@@ -182,24 +182,53 @@ public class ConfigHelper {
   public Document parseConfiguration(FileSystem fs,
                                      Path path) throws
                                                 IOException {
-    int len = (int) fs.getLength(path);
-    byte[] data = new byte[len];
-    try(FSDataInputStream in = fs.open(path)) {
-      in.readFully(0, data);
-    }
 
+
+    byte[] data = loadBytes(fs, path);
     //this is here to track down a parse issue
     //related to configurations
-    String s = new String(data, 0, len);
+    String s = new String(data, 0, data.length);
     log.debug("XML resource {} is \"{}\"", path, s);
+/* JDK7
     try (ByteArrayInputStream in = new ByteArrayInputStream(data)) {
       Document document = parseConfigXML(in);
       return document;
     } catch (ParserConfigurationException | SAXException e) {
       throw new IOException(e);
     }
+*/
+    ByteArrayInputStream in= null;
+    try {
+      in = new ByteArrayInputStream(data);
+      Document document = parseConfigXML(in);
+      return document;
+    } catch (ParserConfigurationException e) {
+      throw new IOException(e);
+    } catch (SAXException e) {
+      throw new IOException(e);
+    } finally {
+      IOUtils.closeStream(in);
+    }
   }
-  
+
+  public static byte[] loadBytes(FileSystem fs, Path path) throws IOException {
+    int len = (int) fs.getLength(path);
+    byte[] data = new byte[len];
+    /* JDK7
+    try(FSDataInputStream in = fs.open(path)) {
+      in.readFully(0, data);
+    }
+*/
+    FSDataInputStream in = null;
+    in = fs.open(path);
+    try {
+      in.readFully(0, data);
+    } finally {
+      IOUtils.closeStream(in);
+    }
+    return data;
+  }
+
   /**
    * Load a configuration from ANY FS path. The normal Configuration
    * loader only works with file:// URIs
@@ -209,13 +238,9 @@ public class ConfigHelper {
    * @throws IOException
    */
   public static Configuration loadConfiguration(FileSystem fs,
-                                                Path path) throws
-                                                                   IOException {
-    int len = (int) fs.getLength(path);
-    byte[] data = new byte[len];
-    try (FSDataInputStream in = fs.open(path)) {
-      in.readFully(0, data);
-    }
+                                                Path path) throws IOException {
+    byte[] data = loadBytes(fs, path);
+
     ByteArrayInputStream in2;
 
     in2 = new ByteArrayInputStream(data);
@@ -510,7 +535,7 @@ public class ConfigHelper {
    * @return hash map
    */
   public static Map<String, String> buildMapFromConfiguration(Configuration conf) {
-    Map<String, String> map = new HashMap<>();
+    Map<String, String> map = new HashMap<String, String>();
     return SliderUtils.mergeEntries(map, conf);
   }
 
@@ -523,7 +548,8 @@ public class ConfigHelper {
    * @param valuesource the source of values
    * @return a new configuration where <code>foreach key in keysource, get(key)==valuesource.get(key)</code>
    */
-  public static Configuration resolveConfiguration(Iterable<Map.Entry<String, String>> keysource,
+  public static Configuration resolveConfiguration(
+      Iterable<Map.Entry<String, String>> keysource,
       Configuration valuesource) {
     Configuration result = new Configuration(false);
     for (Map.Entry<String, String> entry : keysource) {

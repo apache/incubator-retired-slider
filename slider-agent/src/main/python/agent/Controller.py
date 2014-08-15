@@ -86,6 +86,7 @@ class Controller(threading.Thread):
     self.statusCommand = None
     self.failureCount = 0
     self.heartBeatRetryCount = 0
+    self.autoRestart = False
 
 
   def __del__(self):
@@ -117,7 +118,11 @@ class Controller(threading.Thread):
 
     while not self.isRegistered:
       try:
-        data = json.dumps(self.register.build(id))
+        data = json.dumps(self.register.build(
+          self.componentActualState,
+          self.componentExpectedState,
+          self.actionQueue.customServiceOrchestrator.allocated_ports,
+          id))
         logger.info("Registering with the server at " + self.registerUrl +
                     " with data " + pprint.pformat(data))
         response = self.sendRequest(self.registerUrl, data)
@@ -210,7 +215,7 @@ class Controller(threading.Thread):
       try:
         if not retry:
           data = json.dumps(
-            self.heartbeat.build(commandResult, self.componentActualState,
+            self.heartbeat.build(commandResult,
                                  self.responseId, self.hasMappedComponents))
           self.updateStateBasedOnResult(commandResult)
           logger.debug("Sending request: " + data)
@@ -223,6 +228,12 @@ class Controller(threading.Thread):
         logger.debug('Got server response: ' + pprint.pformat(response))
 
         serverId = int(response['responseId'])
+
+        restartEnabled = False
+        if 'restartEnabled' in response:
+          restartEnabled = response['restartEnabled']
+          if restartEnabled:
+            logger.info("Component auto-restart is enabled.")
 
         if 'hasMappedComponents' in response.keys():
           self.hasMappedComponents = response['hasMappedComponents'] != False
@@ -237,7 +248,8 @@ class Controller(threading.Thread):
             return
 
         if serverId != self.responseId + 1:
-          logger.error("Error in responseId sequence - restarting")
+          logger.error("Error in responseId sequence expected " + str(self.responseId + 1)
+                       + " but got " + str(serverId) + " - restarting")
           self.restartAgent()
         else:
           self.responseId = serverId
@@ -254,6 +266,19 @@ class Controller(threading.Thread):
           self.restartAgent()
         else:
           logger.info("No commands sent from the Server.")
+          pass
+
+        # Add a start command
+        if self.componentActualState == State.FAILED and \
+                self.componentExpectedState == State.STARTED and restartEnabled:
+          stored_command = self.actionQueue.customServiceOrchestrator.stored_command
+          if len(stored_command) > 0:
+            auto_start_command = self.create_start_command(stored_command)
+            if auto_start_command:
+              logger.info("Automatically adding a start command.")
+              logger.debug("Auto start command: " + pprint.pformat(auto_start_command))
+              self.updateStateBasedOnCommand([auto_start_command], False)
+              self.addToQueue([auto_start_command])
           pass
 
         # Add a status command
@@ -327,13 +352,25 @@ class Controller(threading.Thread):
     pass
     logger.info("Controller stopped heart-beating.")
 
-  def updateStateBasedOnCommand(self, commands):
+
+  def create_start_command(self, stored_command):
+    taskId = int(stored_command['taskId'])
+    taskId = taskId + 1
+    stored_command['taskId'] = taskId
+    stored_command['commandId'] = "{0}-1".format(taskId)
+    stored_command[Constants.AUTO_GENERATED] = True
+    return stored_command
+    pass
+
+
+  def updateStateBasedOnCommand(self, commands, createStatus=True):
     for command in commands:
       if command["roleCommand"] == "START":
         self.componentExpectedState = State.STARTED
         self.componentActualState = State.STARTING
         self.failureCount = 0
-        self.statusCommand = self.createStatusCommand(command)
+        if createStatus:
+          self.statusCommand = self.createStatusCommand(command)
 
       if command["roleCommand"] == "INSTALL":
         self.componentExpectedState = State.INSTALLED
@@ -359,6 +396,7 @@ class Controller(threading.Thread):
 
       if "healthStatus" in commandResult:
         if commandResult["healthStatus"] == "INSTALLED":
+          # Mark it FAILED as its a failure remedied by auto-start or container restart
           self.componentActualState = State.FAILED
           self.failureCount += 1
           self.logStates()
@@ -387,7 +425,7 @@ class Controller(threading.Thread):
     statusCommand["hostLevelParams"] = command["hostLevelParams"]
     statusCommand["serviceName"] = command["serviceName"]
     statusCommand["taskId"] = "status"
-    statusCommand['auto_generated'] = True
+    statusCommand[Constants.AUTO_GENERATED] = True
     logger.info("Status command: " + pprint.pformat(statusCommand))
     return statusCommand
     pass

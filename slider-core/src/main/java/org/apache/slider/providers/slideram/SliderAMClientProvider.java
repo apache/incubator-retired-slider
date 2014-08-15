@@ -19,6 +19,7 @@
 package org.apache.slider.providers.slideram;
 
 import com.beust.jcommander.JCommander;
+import com.codahale.metrics.MetricRegistry;
 import com.google.gson.GsonBuilder;
 import org.apache.curator.CuratorZookeeperClient;
 import org.apache.curator.framework.CuratorFramework;
@@ -59,8 +60,8 @@ import java.util.Map;
  * This keeps aspects of role, cluster validation and Clusterspec setup
  * out of the core slider client
  */
-public class SliderAMClientProvider extends AbstractClientProvider implements
-    SliderKeys {
+public class SliderAMClientProvider extends AbstractClientProvider
+    implements SliderKeys {
 
 
   protected static final Logger log =
@@ -83,7 +84,7 @@ public class SliderAMClientProvider extends AbstractClientProvider implements
    * List of roles
    */
   public static final List<ProviderRole> ROLES =
-    new ArrayList<>();
+    new ArrayList<ProviderRole>();
 
   public static final int KEY_AM = ROLE_AM_PRIORITY_INDEX;
 
@@ -113,9 +114,8 @@ public class SliderAMClientProvider extends AbstractClientProvider implements
                                                     AggregateConf instanceDefinition,
                                                     Path clusterDirPath,
                                                     Path generatedConfDirPath,
-                                                    boolean secure) throws
-      SliderException,
-                                                                    IOException {
+                                                    boolean secure)
+      throws SliderException, IOException {
 
     super.preflightValidateClusterConfiguration(sliderFileSystem, clustername, configuration, instanceDefinition, clusterDirPath, generatedConfDirPath, secure);
     //add a check for the directory being writeable by the current user
@@ -147,7 +147,7 @@ public class SliderAMClientProvider extends AbstractClientProvider implements
     throws IOException, SliderException {
 
     Map<String, LocalResource> providerResources =
-        new HashMap<>();
+        new HashMap<String, LocalResource>();
 
 
     ProviderUtils.addProviderJar(providerResources,
@@ -167,7 +167,7 @@ public class SliderAMClientProvider extends AbstractClientProvider implements
       CuratorZookeeperClient.class,
       ServiceInstance.class,
       ServiceNames.class,
-
+      MetricRegistry.class
     };
     String[] jars =
       {
@@ -179,6 +179,7 @@ public class SliderAMClientProvider extends AbstractClientProvider implements
         "curator-client.jar",
         "curator-x-discovery.jar",
         "curator-x-discovery-service.jar",
+        "metrics-core.jar"
       };
     ProviderUtils.addDependencyJars(providerResources, fileSystem, tempPath,
                                     libdir, jars,
@@ -209,11 +210,11 @@ public class SliderAMClientProvider extends AbstractClientProvider implements
    * add them to the command line
    */
   public void addJVMOptions(AggregateConf aggregateConf,
-                            JavaCommandLineBuilder cmdLine) throws
-                                                        BadConfigException {
-    
+                            JavaCommandLineBuilder cmdLine)
+      throws BadConfigException {
+
     MapOperations sliderAM =
-      aggregateConf.getAppConfOperations().getMandatoryComponent(
+        aggregateConf.getAppConfOperations().getMandatoryComponent(
         SliderKeys.COMPONENT_AM);
     cmdLine.forceIPv4().headless();
     String heap = sliderAM.getOption(RoleKeys.JVM_HEAP,
@@ -227,11 +228,10 @@ public class SliderAMClientProvider extends AbstractClientProvider implements
 
 
   @Override
-  public void prepareInstanceConfiguration(AggregateConf aggregateConf) throws
-      SliderException,
-                                                                        IOException {
+  public void prepareInstanceConfiguration(AggregateConf aggregateConf)
+      throws SliderException, IOException {
     mergeTemplates(aggregateConf,
-                   INTERNAL_JSON, RESOURCES_JSON, APPCONF_JSON
+        INTERNAL_JSON, RESOURCES_JSON, APPCONF_JSON
                   );
   }
 }

@@ -8,7 +8,7 @@
 
     "site.global.app_user": "hadoop",
     "site.global.app_root": "${AGENT_WORK_ROOT}\\app\\install",
-
+    "site.global.pid_file": "${AGENT_WORK_ROOT}\\app\\run\\component.pid",
     "site.global.additional_cp": "C:\\hdp\\hadoop-2.4.0.2.1.3.0-1990\\share\\hadoop\\common\\lib\\*",
     "site.global.xmx_val": "256m",
     "site.global.xms_val": "128m",

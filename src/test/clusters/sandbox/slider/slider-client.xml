@@ -52,7 +52,7 @@
   <property>
     <name>slider.test.agent.enabled</name>
     <description>Flag to enable/disable Agent tests</description>
-    <value>false</value>
+    <value>true</value>
   </property>
 
 

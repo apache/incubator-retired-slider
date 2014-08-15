@@ -124,13 +124,13 @@ public class ServiceInstanceData implements Serializable {
   public Map<String, RegisteredEndpoint> listEndpoints(boolean external) {
     RegistryView view = getRegistryView(external);
     if (view == null) {
-      return new HashMap<>(0);
+      return new HashMap<String, RegisteredEndpoint>(0);
     }
     Map<String, RegisteredEndpoint> endpoints = view.endpoints;
     if (endpoints != null) {
       return endpoints;
     } else {
-      return new HashMap<>(0);
+      return new HashMap<String, RegisteredEndpoint>(0);
     }
   }
   
