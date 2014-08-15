@@ -24,12 +24,12 @@ import org.apache.slider.server.appmaster.state.AppState;
 
 import java.util.concurrent.TimeUnit;
 
-public class PublishEndpointDetails extends AsyncAction {
+public class PublishRegistryDetails extends AsyncAction {
   
 
   public final ContainerId containerId;
 
-  public PublishEndpointDetails(ContainerId containerId, long delay,
+  public PublishRegistryDetails(ContainerId containerId, long delay,
       TimeUnit timeUnit) {
     super("PublishEndpointDetails :" + containerId.toString(),
         delay, timeUnit);
