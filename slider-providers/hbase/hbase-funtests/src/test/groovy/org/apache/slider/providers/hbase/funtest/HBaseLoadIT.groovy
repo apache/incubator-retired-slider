@@ -23,12 +23,19 @@ import org.apache.hadoop.hbase.util.LoadTestTool
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.client.SliderClient
 import org.apache.slider.providers.hbase.HBaseConfigFileOptions
+import org.junit.Assume
+import org.junit.Ignore
 
 class HBaseLoadIT extends FunctionalHBaseClusterIT {
 
   @Override
   String getClusterName() {
     return "test_hbase_load"
+  }
+
+  @Override
+  void testHBaseCreateCluster() throws Throwable {
+    super.testHBaseCreateCluster()
   }
 
   @Override
