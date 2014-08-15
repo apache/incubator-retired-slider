@@ -43,6 +43,7 @@ import org.apache.slider.core.launch.ContainerLauncher;
 import org.apache.slider.providers.agent.application.metadata.Application;
 import org.apache.slider.providers.agent.application.metadata.CommandOrder;
 import org.apache.slider.providers.agent.application.metadata.Component;
+import org.apache.slider.providers.agent.application.metadata.ComponentExport;
 import org.apache.slider.providers.agent.application.metadata.Export;
 import org.apache.slider.providers.agent.application.metadata.ExportGroup;
 import org.apache.slider.providers.agent.application.metadata.Metainfo;
@@ -138,6 +139,7 @@ public class TestAgentProviderService {
                                                + "          <name>HBASE_MASTER</name>\n"
                                                + "          <category>MASTER</category>\n"
                                                + "          <autoStartOnFailure>true</autoStartOnFailure>\n"
+                                               + "          <appExports>QuickLinks-JMX_Endpoint,QuickLinks-Master_Status</appExports>\n"
                                                + "          <minInstanceCount>1</minInstanceCount>\n"
                                                + "          <maxInstanceCount>2</maxInstanceCount>\n"
                                                + "          <commandScript>\n"
@@ -155,16 +157,16 @@ public class TestAgentProviderService {
                                                + "            <script>scripts/hbase_regionserver.py</script>\n"
                                                + "            <scriptType>PYTHON</scriptType>\n"
                                                + "          </commandScript>\n"
-                                               + "          <exports>\n"
-                                               + "            <export>\n"
+                                               + "          <componentExports>\n"
+                                               + "            <componentExport>\n"
                                                + "              <name>PropertyA</name>\n"
                                                + "              <value>${THIS_HOST}:${site.global.listen_port}</value>\n"
-                                               + "            </export>\n"
-                                               + "            <export>\n"
+                                               + "            </componentExport>\n"
+                                               + "            <componentExport>\n"
                                                + "              <name>PropertyB</name>\n"
                                                + "              <value>AConstant</value>\n"
-                                               + "            </export>\n"
-                                               + "          </exports>\n"
+                                               + "            </componentExport>\n"
+                                               + "          </componentExport>\n"
                                                + "        </component>\n"
                                                + "      </components>\n"
                                                + "      <osSpecifics>\n"
@@ -496,7 +498,8 @@ public class TestAgentProviderService {
         Assert.assertEquals(component.getMaxInstanceCount(), "2");
         Assert.assertEquals(component.getCommandScript().getScript(), "scripts/hbase_master.py");
         Assert.assertEquals(component.getCategory(), "MASTER");
-        Assert.assertEquals(component.getExports().size(), 0);
+        Assert.assertEquals(component.getComponentExports().size(), 0);
+        Assert.assertEquals(component.getAppExports(), "QuickLinks-JMX_Endpoint,QuickLinks-Master_Status");
         found++;
       }
       if (component.getName().equals("HBASE_REGIONSERVER")) {
@@ -506,9 +509,9 @@ public class TestAgentProviderService {
         Assert.assertNull(component.getMaxInstanceCount());
         Assert.assertEquals(component.getCommandScript().getScript(), "scripts/hbase_regionserver.py");
         Assert.assertEquals(component.getCategory(), "SLAVE");
-        Assert.assertEquals(component.getExports().size(), 2);
-        List<Export> es = component.getExports();
-        Export e = es.get(0);
+        Assert.assertEquals(component.getComponentExports().size(), 2);
+        List<ComponentExport> es = component.getComponentExports();
+        ComponentExport e = es.get(0);
         Assert.assertEquals(e.getName(), "PropertyA");
         Assert.assertEquals(e.getValue(), "${THIS_HOST}:${site.global.listen_port}");
         e = es.get(1);
