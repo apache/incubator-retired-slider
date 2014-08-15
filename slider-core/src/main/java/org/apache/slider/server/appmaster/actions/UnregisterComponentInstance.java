@@ -24,14 +24,14 @@ import org.apache.slider.server.appmaster.state.AppState;
 
 import java.util.concurrent.TimeUnit;
 
-public class PublishRegistryDetails extends AsyncAction {
+public class UnregisterComponentInstance extends AsyncAction {
   
 
   public final ContainerId containerId;
 
-  public PublishRegistryDetails(ContainerId containerId, long delay,
+  public UnregisterComponentInstance(ContainerId containerId, long delay,
       TimeUnit timeUnit) {
-    super("PublishRegistryDetails :" + containerId.toString(),
+    super("UnregisterComponentInstance :" + containerId.toString(),
         delay, timeUnit);
     this.containerId = containerId;
   }
@@ -40,5 +40,7 @@ public class PublishRegistryDetails extends AsyncAction {
   public void execute(SliderAppMaster appMaster,
       QueueAccess queueService,
       AppState appState) throws Exception {
+    appMaster.unregisterComponent(containerId);
+
   }
 }

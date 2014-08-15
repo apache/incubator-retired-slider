@@ -98,7 +98,7 @@ import org.apache.slider.providers.SliderProviderFactory;
 import org.apache.slider.providers.slideram.SliderAMClientProvider;
 import org.apache.slider.providers.slideram.SliderAMProviderService;
 import org.apache.slider.server.appmaster.actions.ActionKillContainer;
-import org.apache.slider.server.appmaster.actions.PublishRegistryDetails;
+import org.apache.slider.server.appmaster.actions.RegisterComponentInstance;
 import org.apache.slider.server.appmaster.actions.QueueExecutor;
 import org.apache.slider.server.appmaster.actions.ActionHalt;
 import org.apache.slider.server.appmaster.actions.QueueService;
@@ -106,6 +106,7 @@ import org.apache.slider.server.appmaster.actions.ActionStopSlider;
 import org.apache.slider.server.appmaster.actions.AsyncAction;
 import org.apache.slider.server.appmaster.actions.RenewingAction;
 import org.apache.slider.server.appmaster.actions.ResetFailureWindow;
+import org.apache.slider.server.appmaster.actions.UnregisterComponentInstance;
 import org.apache.slider.server.appmaster.monkey.ChaosKillAM;
 import org.apache.slider.server.appmaster.monkey.ChaosKillContainer;
 import org.apache.slider.server.appmaster.monkey.ChaosMonkeyService;
@@ -910,8 +911,19 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       return false;
     }
     // this is where component registrations will go
+    log.info("Registering component {}", id);
 
     return true;
+  }
+  
+  /**
+   * unregister a component. At the time this message is received,
+   * the component may already been deleted from/never added to
+   * the app state
+   * @param id the component
+   */
+  public void unregisterComponent(ContainerId id) {
+    log.info("Unregistering component {}", id);
   }
   
   /**
@@ -1178,14 +1190,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       }
 
       getProviderService().notifyContainerCompleted(containerId);
+      queue(new UnregisterComponentInstance(containerId, 0, TimeUnit.MILLISECONDS));
     }
-
-    // ask for more containers if any failed
-    // In the case of Slider, we don't expect containers to complete since
-    // Slider is a long running application. Keep track of how many containers
-    // are completing. If too many complete, abort the application
-    // TODO: this needs to be better thought about (and maybe something to
-    // better handle in Yarn for long running apps)
 
     try {
       reviewRequestAndReleaseNodes();
@@ -1681,7 +1687,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       nmClientAsync.getContainerStatusAsync(containerId,
                                             cinfo.container.getNodeId());
       // push out a registration
-      queue(new PublishRegistryDetails(containerId, 0, TimeUnit.MILLISECONDS));
+      queue(new RegisterComponentInstance(containerId, 0, TimeUnit.MILLISECONDS));
       
     } else {
       //this is a hypothetical path not seen. We react by warning

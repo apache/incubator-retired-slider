@@ -63,7 +63,7 @@ import org.apache.slider.providers.agent.application.metadata.Metainfo;
 import org.apache.slider.providers.agent.application.metadata.OSPackage;
 import org.apache.slider.providers.agent.application.metadata.OSSpecific;
 import org.apache.slider.server.appmaster.actions.ProviderReportedContainerLoss;
-import org.apache.slider.server.appmaster.actions.PublishRegistryDetails;
+import org.apache.slider.server.appmaster.actions.RegisterComponentInstance;
 import org.apache.slider.server.appmaster.state.ContainerPriority;
 import org.apache.slider.server.appmaster.state.RoleInstance;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
@@ -572,7 +572,7 @@ public class AgentProviderService extends AbstractProviderService implements
     
     // and update registration entries
     if (instance != null) {
-      queueAccess.put(new PublishRegistryDetails(instance.getId(), 0,
+      queueAccess.put(new RegisterComponentInstance(instance.getId(), 0,
           TimeUnit.MILLISECONDS));
     }
   }
