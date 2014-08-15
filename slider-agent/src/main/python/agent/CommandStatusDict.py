@@ -114,7 +114,7 @@ class CommandStatusDict():
     grep = Grep()
     output = grep.tail(tmpout, Grep.OUTPUT_LAST_LINES)
     inprogress = self.generate_report_template(command)
-    reportResult = not command[Constants.AUTO_GENERATED]
+    reportResult = CommandStatusDict.shouldReportResult(command)
     inprogress.update({
       'stdout': grep.filterMarkup(output),
       'stderr': tmperr,
@@ -142,3 +142,6 @@ class CommandStatusDict():
     return stub
 
 
+  @staticmethod
+  def shouldReportResult(command):
+    return not (Constants.AUTO_GENERATED in command and command[Constants.AUTO_GENERATED])

@@ -50,7 +50,7 @@ class TestHeartbeat(TestCase):
     dummy_controller = MagicMock()
     actionQueue = ActionQueue(config, dummy_controller)
     heartbeat = Heartbeat(actionQueue, config)
-    result = heartbeat.build({}, State.STARTED, 100)
+    result = heartbeat.build({}, 100)
     print "Heartbeat: " + str(result)
     self.assertEquals(result['hostname'] != '', True,
                       "hostname should not be empty")
@@ -63,7 +63,6 @@ class TestHeartbeat(TestCase):
     self.assertEquals(len(result['nodeStatus']), 2)
     self.assertEquals(result['nodeStatus']['cause'], "NONE")
     self.assertEquals(result['nodeStatus']['status'], "HEALTHY")
-    self.assertEquals(result['agentState'], State.STARTED)
     # result may or may NOT have an agentEnv structure in it
     self.assertEquals((len(result) is 6) or (len(result) is 7), True)
     self.assertEquals(not heartbeat.reports, True,
@@ -147,7 +146,7 @@ class TestHeartbeat(TestCase):
     }
     heartbeat = Heartbeat(actionQueue, config)
     # State.STARTED results in agentState to be set to 4 (enum order)
-    hb = heartbeat.build({}, State.STARTED, 10)
+    hb = heartbeat.build({}, 10)
     hb['hostname'] = 'hostname'
     hb['timestamp'] = 'timestamp'
     hb['fqdn'] = 'fqdn'
@@ -155,7 +154,7 @@ class TestHeartbeat(TestCase):
                   {'status': 'HEALTHY',
                    'cause': 'NONE'},
                 'timestamp': 'timestamp', 'hostname': 'hostname', 'fqdn': 'fqdn',
-                'agentState': 4, 'responseId': 10, 'reports': [
+                'responseId': 10, 'reports': [
       {'status': 'IN_PROGRESS', 'roleCommand': u'INSTALL',
        'serviceName': u'HDFS', 'role': u'DATANODE', 'actionId': '1-1',
        'stderr': 'Read from /tmp/errors-3.txt',
@@ -177,6 +176,81 @@ class TestHeartbeat(TestCase):
       {'status': 'UNHEALTHY', 'componentName': 'NAMENODE'}]}
     self.assertEqual.__self__.maxDiff = None
     self.assertEquals(hb, expected)
+
+  @patch.object(ActionQueue, "result")
+  def test_build_result2(self, result_mock):
+    config = AgentConfig("", "")
+    config.set('agent', 'prefix', 'tmp')
+    dummy_controller = MagicMock()
+    actionQueue = ActionQueue(config, dummy_controller)
+    result_mock.return_value = {
+      'reports': [{'status': 'IN_PROGRESS',
+                   'stderr': 'Read from /tmp/errors-3.txt',
+                   'stdout': 'Read from /tmp/output-3.txt',
+                   'clusterName': u'cc',
+                   'roleCommand': u'INSTALL',
+                   'serviceName': u'HDFS',
+                   'role': u'DATANODE',
+                   'actionId': '1-1',
+                   'taskId': 3,
+                   'exitcode': 777,
+                   'reportResult' : False}
+      ],
+      'componentStatus': []
+      }
+    heartbeat = Heartbeat(actionQueue, config)
+
+    commandResult = {}
+    hb = heartbeat.build(commandResult, 10)
+    hb['hostname'] = 'hostname'
+    hb['timestamp'] = 'timestamp'
+    hb['fqdn'] = 'fqdn'
+    expected = {'nodeStatus':
+                  {'status': 'HEALTHY',
+                   'cause': 'NONE'},
+                'timestamp': 'timestamp', 'hostname': 'hostname', 'fqdn': 'fqdn',
+                'responseId': 10, 'reports': []}
+    self.assertEqual.__self__.maxDiff = None
+    self.assertEquals(hb, expected)
+    self.assertEquals(commandResult, {'commandStatus': 'IN_PROGRESS'})
+
+  @patch.object(ActionQueue, "result")
+  def test_build_result3(self, result_mock):
+    config = AgentConfig("", "")
+    config.set('agent', 'prefix', 'tmp')
+    dummy_controller = MagicMock()
+    actionQueue = ActionQueue(config, dummy_controller)
+    result_mock.return_value = {
+      'reports': [{'status': 'COMPLETED',
+                   'stderr': 'Read from /tmp/errors-3.txt',
+                   'stdout': 'Read from /tmp/output-3.txt',
+                   'clusterName': u'cc',
+                   'roleCommand': u'INSTALL',
+                   'serviceName': u'HDFS',
+                   'role': u'DATANODE',
+                   'actionId': '1-1',
+                   'taskId': 3,
+                   'exitcode': 777,
+                   'reportResult' : False}
+      ],
+      'componentStatus': []
+    }
+    heartbeat = Heartbeat(actionQueue, config)
+
+    commandResult = {}
+    hb = heartbeat.build(commandResult, 10)
+    hb['hostname'] = 'hostname'
+    hb['timestamp'] = 'timestamp'
+    hb['fqdn'] = 'fqdn'
+    expected = {'nodeStatus':
+                  {'status': 'HEALTHY',
+                   'cause': 'NONE'},
+                'timestamp': 'timestamp', 'hostname': 'hostname', 'fqdn': 'fqdn',
+                'responseId': 10, 'reports': []}
+    self.assertEqual.__self__.maxDiff = None
+    self.assertEquals(hb, expected)
+    self.assertEquals(commandResult, {'commandStatus': 'COMPLETED'})
+
 
 
 if __name__ == "__main__":

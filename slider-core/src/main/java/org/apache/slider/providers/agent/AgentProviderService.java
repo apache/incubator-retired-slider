@@ -398,9 +398,19 @@ public class AgentProviderService extends AbstractProviderService implements
     log.info("Handling registration: " + registration);
     RegistrationResponse response = new RegistrationResponse();
     String label = registration.getHostname();
+    State agentState = registration.getActualState();
     if (getComponentStatuses().containsKey(label)) {
       response.setResponseStatus(RegistrationStatus.OK);
-      getComponentStatuses().get(label).heartbeat(System.currentTimeMillis());
+      ComponentInstanceState componentStatus = getComponentStatuses().get(label);
+      componentStatus.heartbeat(System.currentTimeMillis());
+      updateComponentStatusWithAgentState(componentStatus, agentState);
+
+      Map<String, String> ports = registration.getAllocatedPorts();
+      if (ports != null && !ports.isEmpty()) {
+        String roleName = getRoleName(label);
+        String containerId = getContainerId(label);
+        processAllocatedPorts(registration.getPublicHostname(), roleName, containerId, ports);
+      }
     } else {
       response.setResponseStatus(RegistrationStatus.FAILED);
       response.setLog("Label not recognized.");
@@ -424,9 +434,8 @@ public class AgentProviderService extends AbstractProviderService implements
 
     String label = heartBeat.getHostname();
     String roleName = getRoleName(label);
-    State agentState = heartBeat.getAgentState();
-
     String containerId = getContainerId(label);
+
     StateAccessForProviders accessor = getAmState();
     String scriptPath = getScriptPathFromMetainfo(roleName);
 
@@ -441,13 +450,22 @@ public class AgentProviderService extends AbstractProviderService implements
 
     Boolean isMaster = isMaster(roleName);
     ComponentInstanceState componentStatus = getComponentStatuses().get(label);
-    updateComponentStatusWithAgentState(componentStatus, agentState);
     componentStatus.heartbeat(System.currentTimeMillis());
     // If no Master can explicitly publish then publish if its a master
     // Otherwise, wait till the master that can publish is ready
     if (isMaster &&
         (canAnyMasterPublishConfig() == false || canPublishConfig(roleName))) {
       publishConfigAndExportGroups(heartBeat, componentStatus);
+    } else {
+      // Ack that config has been reported
+      List<ComponentStatus> statuses = heartBeat.getComponentStatus();
+      if (statuses != null && !statuses.isEmpty()) {
+        ComponentStatus status = statuses.get(0);
+        if(status.getConfigs().size() > 0) {
+          log.info("Config got reported by {} but discarded as component {} cannot publish.", label, roleName);
+          componentStatus.setConfigReported(true);
+        }
+      }
     }
 
     List<CommandReport> reports = heartBeat.getReports();
@@ -455,14 +473,7 @@ public class AgentProviderService extends AbstractProviderService implements
       CommandReport report = reports.get(0);
       Map<String, String> ports = report.getAllocatedPorts();
       if (ports != null && !ports.isEmpty()) {
-        for (Map.Entry<String, String> port : ports.entrySet()) {
-          log.info("Recording allocated port for {} as {}", port.getKey(), port.getValue());
-          this.getAllocatedPorts().put(port.getKey(), port.getValue());
-          this.getAllocatedPorts(containerId).put(port.getKey(), port.getValue());
-        }
-
-        // component specific publishes
-        processAndPublishComponentSpecificData(ports, containerId, heartBeat.getFqdn(), roleName);
+        processAllocatedPorts(heartBeat.getFqdn(), roleName, containerId, ports);
       }
       CommandResult result = CommandResult.getCommandResult(report.getStatus());
       Command command = Command.getCommand(report.getRoleCommand());
@@ -506,6 +517,7 @@ public class AgentProviderService extends AbstractProviderService implements
       if (isMaster && componentStatus.getState() == State.STARTED
           && command == Command.NOP) {
         if (!componentStatus.getConfigReported()) {
+          log.info("Requesting applied config for {} on {}.", roleName, containerId);
           addGetConfigCommand(roleName, containerId, response);
         }
       }
@@ -523,6 +535,20 @@ public class AgentProviderService extends AbstractProviderService implements
 
     log.debug("Heartbeat response: " + response);
     return response;
+  }
+
+  protected void processAllocatedPorts(String fqdn,
+                                     String roleName,
+                                     String containerId,
+                                     Map<String, String> ports) {
+    for (Map.Entry<String, String> port : ports.entrySet()) {
+      log.info("Recording allocated port for {} as {}", port.getKey(), port.getValue());
+      this.getAllocatedPorts().put(port.getKey(), port.getValue());
+      this.getAllocatedPorts(containerId).put(port.getKey(), port.getValue());
+    }
+
+    // component specific publishes
+    processAndPublishComponentSpecificData(ports, containerId, fqdn, roleName);
   }
 
   private void updateComponentStatusWithAgentState(
@@ -803,6 +829,7 @@ public class AgentProviderService extends AbstractProviderService implements
               }
             }
           }
+          log.info("Received and stored config for {}", heartBeat.getHostname());
           componentStatus.setConfigReported(true);
         }
       }

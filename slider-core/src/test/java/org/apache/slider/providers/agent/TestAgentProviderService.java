@@ -87,6 +87,7 @@ import static org.easymock.EasyMock.replay;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyCollection;
+import static org.mockito.Matchers.anyMap;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -271,6 +272,12 @@ public class TestAgentProviderService {
     } catch (SliderException e) {
     }
 
+    doNothing().when(mockAps).processAllocatedPorts(
+        anyString(),
+        anyString(),
+        anyString(),
+        anyMap()
+    );
     expect(access.isApplicationLive()).andReturn(true).anyTimes();
     ClusterDescription desc = new ClusterDescription();
     desc.setOption(OptionKeys.ZOOKEEPER_QUORUM, "host1:2181");
@@ -305,9 +312,19 @@ public class TestAgentProviderService {
     Register reg = new Register();
     reg.setResponseId(0);
     reg.setHostname("mockcontainer_1___HBASE_MASTER");
+    Map<String,String> ports = new HashMap();
+    ports.put("a","100");
+    reg.setAllocatedPorts(ports);
     RegistrationResponse resp = mockAps.handleRegistration(reg);
     Assert.assertEquals(0, resp.getResponseId());
     Assert.assertEquals(RegistrationStatus.OK, resp.getResponseStatus());
+
+    Mockito.verify(mockAps, Mockito.times(1)).processAllocatedPorts(
+        anyString(),
+        anyString(),
+        anyString(),
+        anyMap()
+    );
 
     HeartBeat hb = new HeartBeat();
     hb.setResponseId(1);

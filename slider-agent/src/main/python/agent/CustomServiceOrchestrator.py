@@ -57,6 +57,7 @@ class CustomServiceOrchestrator():
                                                                   'status_command_stderr.txt'))
     self.public_fqdn = hostname.public_hostname()
     self.stored_command = {}
+    self.allocated_ports = {}
     # Clean up old status command files if any
     try:
       os.unlink(self.status_commands_stdout)
@@ -69,7 +70,7 @@ class CustomServiceOrchestrator():
 
   def runCommand(self, command, tmpoutfile, tmperrfile,
                  override_output_files=True, store_command=False):
-    allocated_port = {}
+    allocated_ports = {}
     try:
       script_type = command['commandParams']['script_type']
       script = command['commandParams']['script']
@@ -86,7 +87,7 @@ class CustomServiceOrchestrator():
       # We don't support anything else yet
         message = "Unknown script type {0}".format(script_type)
         raise AgentException(message)
-      json_path = self.dump_command_to_json(command, allocated_port, store_command)
+      json_path = self.dump_command_to_json(command, allocated_ports, store_command)
       py_file_list = [script_tuple]
       # filter None values
       filtered_py_file_list = [i for i in py_file_list if i]
@@ -132,7 +133,8 @@ class CustomServiceOrchestrator():
       }
 
     if Constants.EXIT_CODE in ret and ret[Constants.EXIT_CODE] == 0:
-      ret[Constants.ALLOCATED_PORTS] = allocated_port
+      ret[Constants.ALLOCATED_PORTS] = allocated_ports
+      self.allocated_ports = allocated_ports
 
     # Irrespective of the outcome report the folder paths
     if command_name == 'INSTALL':

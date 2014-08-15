@@ -118,7 +118,11 @@ class Controller(threading.Thread):
 
     while not self.isRegistered:
       try:
-        data = json.dumps(self.register.build(id))
+        data = json.dumps(self.register.build(
+          self.componentActualState,
+          self.componentExpectedState,
+          self.actionQueue.customServiceOrchestrator.allocated_ports,
+          id))
         logger.info("Registering with the server at " + self.registerUrl +
                     " with data " + pprint.pformat(data))
         response = self.sendRequest(self.registerUrl, data)
@@ -211,7 +215,7 @@ class Controller(threading.Thread):
       try:
         if not retry:
           data = json.dumps(
-            self.heartbeat.build(commandResult, self.componentActualState,
+            self.heartbeat.build(commandResult,
                                  self.responseId, self.hasMappedComponents))
           self.updateStateBasedOnResult(commandResult)
           logger.debug("Sending request: " + data)
@@ -225,8 +229,11 @@ class Controller(threading.Thread):
 
         serverId = int(response['responseId'])
 
+        restartEnabled = False
         if 'restartEnabled' in response:
-          restartEnabled = 'true' == response['restartEnabled']
+          restartEnabled = response['restartEnabled']
+          if restartEnabled:
+            logger.info("Component auto-restart is enabled.")
 
         if 'hasMappedComponents' in response.keys():
           self.hasMappedComponents = response['hasMappedComponents'] != False
@@ -262,15 +269,16 @@ class Controller(threading.Thread):
           pass
 
         # Add a start command
-        if self.componentActualState == State.INSTALLED and \
+        if self.componentActualState == State.FAILED and \
                 self.componentExpectedState == State.STARTED and restartEnabled:
           stored_command = self.actionQueue.customServiceOrchestrator.stored_command
           if len(stored_command) > 0:
-             auto_start_command = self.create_start_command(stored_command)
-             if auto_start_command:
-               logger.info("Automatically adding a start command.")
-               self.updateStateBasedOnCommand([auto_start_command], False)
-               self.addToQueue([auto_start_command])
+            auto_start_command = self.create_start_command(stored_command)
+            if auto_start_command:
+              logger.info("Automatically adding a start command.")
+              logger.debug("Auto start command: " + pprint.pformat(auto_start_command))
+              self.updateStateBasedOnCommand([auto_start_command], False)
+              self.addToQueue([auto_start_command])
           pass
 
         # Add a status command
@@ -388,6 +396,7 @@ class Controller(threading.Thread):
 
       if "healthStatus" in commandResult:
         if commandResult["healthStatus"] == "INSTALLED":
+          # Mark it FAILED as its a failure remedied by auto-start or container restart
           self.componentActualState = State.FAILED
           self.failureCount += 1
           self.logStates()

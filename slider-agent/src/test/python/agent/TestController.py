@@ -55,6 +55,7 @@ class TestController(unittest.TestCase):
     self.controller = Controller.Controller(config)
     self.controller.netutil.MINIMUM_INTERVAL_BETWEEN_HEARTBEATS = 0.1
     self.controller.netutil.HEARTBEAT_NOT_IDDLE_INTERVAL_SEC = 0.1
+    self.controller.actionQueue = ActionQueue.ActionQueue(config, self.controller)
 
 
   @patch("json.dumps")
@@ -289,7 +290,7 @@ class TestController(unittest.TestCase):
     self.controller.sendRequest = sendRequest
 
     self.controller.responseId = 1
-    response = {"responseId":"2", "restartAgent":"false"}
+    response = {"responseId":"2", "restartAgent": False}
     loadsMock.return_value = response
 
     def one_heartbeat(*args, **kwargs):
@@ -651,8 +652,9 @@ class TestController(unittest.TestCase):
     self.controller.sendRequest = sendRequest
 
     self.controller.responseId = 1
-    response = {"responseId":"2", "restartAgent":"false", "restartEnabled":'true'}
-    loadsMock.return_value = response
+    response1 = {"responseId": "2", "restartAgent": False, "restartEnabled": True}
+    response2 = {"responseId": "2", "restartAgent": False, "restartEnabled": False}
+    loadsMock.side_effect = [response1, response2, response1]
 
     def one_heartbeat(*args, **kwargs):
       self.controller.DEBUG_STOP_HEARTBEATING = True
@@ -665,9 +667,9 @@ class TestController(unittest.TestCase):
 
     # one successful request, after stop
     self.controller.actionQueue = actionQueue
-    self.controller.componentActualState = State.INSTALLED
+    self.controller.componentActualState = State.FAILED
     self.controller.componentExpectedState = State.STARTED
-    self.assertTrue(self.controller.componentActualState, State.INSTALLED)
+    self.assertTrue(self.controller.componentActualState, State.FAILED)
     self.controller.actionQueue.customServiceOrchestrator.stored_command = {
       'commandType': 'EXECUTION_COMMAND',
       'role': u'HBASE',
@@ -699,6 +701,23 @@ class TestController(unittest.TestCase):
       'commandId': '8-1',
       'auto_generated': True}])])
     self.controller.config = original_value
+
+    # restartEnabled = False
+    self.controller.componentActualState = State.FAILED
+    self.controller.heartbeatWithServer()
+
+    self.assertTrue(sendRequest.called)
+    self.assertTrue(self.controller.componentActualState, State.FAILED)
+    self.assertTrue(self.controller.componentExpectedState, State.STARTED)
+
+    # restartEnabled = True
+    self.controller.componentActualState = State.INSTALLED
+    self.controller.componentExpectedState = State.INSTALLED
+    self.controller.heartbeatWithServer()
+
+    self.assertTrue(sendRequest.called)
+    self.assertTrue(self.controller.componentActualState, State.INSTALLED)
+    self.assertTrue(self.controller.componentExpectedState, State.INSTALLED)
     pass
 
 

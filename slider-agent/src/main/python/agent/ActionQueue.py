@@ -122,7 +122,8 @@ class ActionQueue(threading.Thread):
 
     taskId = command['taskId']
 
-    reportResult = not command[Constants.AUTO_GENERATED]
+    # if auto generated then do not report result
+    reportResult = CommandStatusDict.shouldReportResult(command)
 
     # Preparing 'IN_PROGRESS' report
     in_progress_status = self.commandStatuses.generate_report_template(command)
@@ -140,7 +141,8 @@ class ActionQueue(threading.Thread):
     if ActionQueue.STORE_APPLIED_CONFIG in command['commandParams']:
       store_config = 'true' == command['commandParams'][ActionQueue.STORE_APPLIED_CONFIG]
     store_command = False
-    if ActionQueue.AUTO_RESTART in command['roleParams']:
+    if 'roleParams' in command and ActionQueue.AUTO_RESTART in command['roleParams']:
+      logger.info("Component has indicated auto-restart. Saving details from START command.")
       store_command = 'true' == command['roleParams'][ActionQueue.AUTO_RESTART]
 
 
@@ -195,10 +197,7 @@ class ActionQueue(threading.Thread):
       cluster = command['clusterName']
       service = command['serviceName']
       component = command['componentName']
-      reportResult = True
-      if Constants.AUTO_GENERATED in command:
-        reportResult = not command[Constants.AUTO_GENERATED]
-
+      reportResult = CommandStatusDict.shouldReportResult(command)
       component_status = self.customServiceOrchestrator.requestComponentStatus(command)
 
       result = {"componentName": component,

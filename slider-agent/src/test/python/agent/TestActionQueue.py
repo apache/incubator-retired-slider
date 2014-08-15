@@ -61,8 +61,6 @@ class TestActionQueue(TestCase):
     'serviceName': u'HBASE',
     'configurations': {'global': {}},
     'configurationTags': {'global': {'tag': 'v1'}},
-    'auto_generated': False,
-    'roleParams': {'auto_restart':'false'},
     'commandParams': {'script_type': 'PYTHON',
                       'script': 'scripts/abc.py',
                       'command_timeout': '600'}

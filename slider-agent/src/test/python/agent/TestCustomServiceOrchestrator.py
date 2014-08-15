@@ -230,6 +230,8 @@ class TestCustomServiceOrchestrator(TestCase):
     self.assertEqual(ret['allocated_ports'], {'a.a.port': '10233'})
     self.assertTrue(run_file_mock.called)
     self.assertEqual(run_file_mock.call_count, 1)
+    self.assertEqual(orchestrator.allocated_ports, {'a.a.port': '10233'})
+    self.assertEqual(orchestrator.stored_command, {})
 
 
   @patch.object(socket, "close")
