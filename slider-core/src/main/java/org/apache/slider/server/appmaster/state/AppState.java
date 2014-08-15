@@ -163,7 +163,7 @@ public class AppState {
    * Hash map of the containers we have. This includes things that have
    * been allocated but are not live; it is a superset of the live list
    */
-  private final ConcurrentMap<ContainerId, RoleInstance> activeContainers =
+  private final ConcurrentMap<ContainerId, RoleInstance> ownedContainers =
     new ConcurrentHashMap<ContainerId, RoleInstance>();
 
   /**
@@ -792,23 +792,49 @@ public class AppState {
   }
 
 
-  public synchronized List<RoleInstance> cloneActiveContainerList() {
-    Collection<RoleInstance> values = activeContainers.values();
+  /**
+   * Clone the list of active (==owned) containers
+   * @return the list of role instances representing all owned containers
+   */
+  public synchronized List<RoleInstance> cloneOwnedContainerList() {
+    Collection<RoleInstance> values = ownedContainers.values();
     return new ArrayList<RoleInstance>(values);
   }
-  
 
-  public int getNumActiveContainers() {
-    return activeContainers.size();
+  /**
+   * Get the number of active (==owned) containers
+   * @return
+   */
+  public int getNumOwnedContainers() {
+    return ownedContainers.size();
   }
   
-
-  public RoleInstance getActiveContainer(ContainerId id) {
-    return activeContainers.get(id);
+  /**
+   * Look up an active container: any container that the AM has, even
+   * if it is not currently running/live
+   */
+  public RoleInstance getOwnedContainer(ContainerId id) {
+    return ownedContainers.get(id);
   }
-  
-  private RoleInstance removeActiveContainer(ContainerId id) {
-    return activeContainers.remove(id);
+
+  /**
+   * Remove an owned container
+   * @param id container ID
+   * @return the instance removed
+   */
+  private RoleInstance removeOwnedContainer(ContainerId id) {
+    return ownedContainers.remove(id);
+  }
+
+  /**
+   * set/update an owned container
+   * @param id container ID
+   * @param instance
+   * @return
+   */
+  private RoleInstance putOwnedContainer(ContainerId id,
+      RoleInstance instance) {
+    return ownedContainers.put(id, instance);
   }
 
   /**
@@ -824,20 +850,53 @@ public class AppState {
 
   /**
    * Lookup live instance by string value of container ID
-   * @param containerId container ID
+   * @param containerId container ID as a string
    * @return the role instance for that container
    * @throws NoSuchNodeException if it does not exist
    */
   public synchronized RoleInstance getLiveInstanceByContainerID(String containerId)
-    throws NoSuchNodeException {
+      throws NoSuchNodeException {
     Collection<RoleInstance> nodes = getLiveNodes().values();
+    return findNodeInCollection(containerId, nodes);
+  }
+
+  /**
+   * Lookup owned instance by string value of container ID
+   * @param containerId container ID as a string
+   * @return the role instance for that container
+   * @throws NoSuchNodeException if it does not exist
+   */
+  public synchronized RoleInstance getOwnedInstanceByContainerID(String containerId)
+      throws NoSuchNodeException {
+    Collection<RoleInstance> nodes = ownedContainers.values();
+    return findNodeInCollection(containerId, nodes);
+  }
+
+  
+  
+  /**
+   * Iterate through a collection of role instances to find one with a
+   * specific (string) container ID
+   * @param containerId container ID as a string
+   * @param nodes collection
+   * @return 
+   * @throws NoSuchNodeException if there was no match
+   */
+  private RoleInstance findNodeInCollection(String containerId,
+      Collection<RoleInstance> nodes) throws NoSuchNodeException {
+    RoleInstance found = null;
     for (RoleInstance node : nodes) {
       if (containerId.equals(node.id)) {
-        return node;
+        found = node;
+        break;
       }
     }
-    //at this point: no node
-    throw new NoSuchNodeException(containerId);
+    if (found != null) {
+      return found;
+    } else {
+      //at this point: no node
+      throw new NoSuchNodeException(containerId);
+    }
   }
 
 
@@ -885,7 +944,7 @@ public class AppState {
       boolean active) {
     List<RoleInstance> nodes = new ArrayList<RoleInstance>();
     Collection<RoleInstance> allRoleInstances;
-    allRoleInstances = active? activeContainers.values() : liveNodes.values();
+    allRoleInstances = active? ownedContainers.values() : liveNodes.values();
     for (RoleInstance node : allRoleInstances) {
       if (node.roleId == roleId) {
         nodes.add(node);
@@ -943,7 +1002,7 @@ public class AppState {
     instance.container = container;
     instance.createTime = now();
     getStartingNodes().put(container.getId(), instance);
-    activeContainers.put(container.getId(), instance);
+    putOwnedContainer(container.getId(), instance);
     roleHistory.onContainerStartSubmitted(container, instance);
   }
 
@@ -960,7 +1019,7 @@ public class AppState {
       throws SliderInternalStateException {
     ContainerId id = container.getId();
     //look up the container
-    RoleInstance instance = getActiveContainer(id);
+    RoleInstance instance = getOwnedContainer(id);
     if (instance == null) {
       throw new SliderInternalStateException(
         "No active container with ID " + id);
@@ -1110,7 +1169,7 @@ public class AppState {
   @VisibleForTesting
   public RoleInstance innerOnNodeManagerContainerStarted(ContainerId containerId) {
     incStartedCountainerCount();
-    RoleInstance instance = activeContainers.get(containerId);
+    RoleInstance instance = getOwnedContainer(containerId);
     if (instance == null) {
       //serious problem
       throw new YarnRuntimeException("Container not in active containers start "+
@@ -1146,7 +1205,7 @@ public class AppState {
    */
   public synchronized void onNodeManagerContainerStartFailed(ContainerId containerId,
                                                              Throwable thrown) {
-    activeContainers.remove(containerId);
+    removeOwnedContainer(containerId);
     incFailedCountainerCount();
     incStartFailedCountainerCount();
     RoleInstance instance = getStartingNodes().remove(containerId);
@@ -1246,7 +1305,7 @@ public class AppState {
     } else {
       //a container has failed 
       result.containerFailed = true;
-      roleInstance = activeContainers.remove(containerId);
+      roleInstance = removeOwnedContainer(containerId);
       if (roleInstance != null) {
         //it was active, move it to failed 
         incFailedCountainerCount();
@@ -1320,14 +1379,14 @@ public class AppState {
     }
     
     // and the active node list if present
-    removeActiveContainer(containerId);
+    removeOwnedContainer(containerId);
     
     // finally, verify the node doesn't exist any more
     assert !containersBeingReleased.containsKey(
         containerId) : "container still in release queue";
     assert !getLiveNodes().containsKey(
         containerId) : " container still in live nodes";
-    assert getActiveContainer(containerId) ==
+    assert getOwnedContainer(containerId) ==
            null : "Container still in active container list";
 
     return result;
@@ -1623,7 +1682,7 @@ public class AppState {
   public List<AbstractRMOperation> releaseContainer(ContainerId containerId)
       throws SliderInternalStateException {
     List<AbstractRMOperation> operations = new ArrayList<AbstractRMOperation>();
-    List<RoleInstance> activeRoleInstances = cloneActiveContainerList();
+    List<RoleInstance> activeRoleInstances = cloneOwnedContainerList();
     for (RoleInstance role : activeRoleInstances) {
       if (role.container.getId().equals(containerId)) {
         containerReleaseSubmitted(role.container);
@@ -1645,7 +1704,7 @@ public class AppState {
    * that can be released.
    */
   private RoleInstance findRoleInstanceOnHost(NodeInstance node, int roleId) {
-    Collection<RoleInstance> targets = cloneActiveContainerList();
+    Collection<RoleInstance> targets = cloneOwnedContainerList();
     String hostname = node.hostname;
     for (RoleInstance ri : targets) {
       if (hostname.equals(RoleHistoryUtils.hostnameOf(ri.container))
@@ -1663,7 +1722,7 @@ public class AppState {
    */
   public synchronized List<AbstractRMOperation> releaseAllContainers() {
 
-    Collection<RoleInstance> targets = cloneActiveContainerList();
+    Collection<RoleInstance> targets = cloneOwnedContainerList();
     log.info("Releasing {} containers", targets.size());
     List<AbstractRMOperation> operations =
       new ArrayList<AbstractRMOperation>(targets.size());
@@ -1817,7 +1876,7 @@ public class AppState {
     instance.container = container;
     instance.createTime = now();
     instance.state = ClusterDescription.STATE_LIVE;
-    activeContainers.put(cid, instance);
+    putOwnedContainer(cid, instance);
     //role history gets told
     roleHistory.onContainerAssigned(container);
     // pretend the container has just had its start actions submitted

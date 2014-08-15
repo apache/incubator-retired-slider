@@ -84,7 +84,6 @@ import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.exceptions.SliderInternalStateException;
 import org.apache.slider.core.exceptions.TriggerClusterTeardownException;
 import org.apache.slider.core.main.ExitCodeProvider;
-import org.apache.slider.core.main.LauncherExitCodes;
 import org.apache.slider.core.main.RunService;
 import org.apache.slider.core.main.ServiceLauncher;
 import org.apache.slider.core.persist.ConfTreeSerDeser;
@@ -99,6 +98,7 @@ import org.apache.slider.providers.SliderProviderFactory;
 import org.apache.slider.providers.slideram.SliderAMClientProvider;
 import org.apache.slider.providers.slideram.SliderAMProviderService;
 import org.apache.slider.server.appmaster.actions.ActionKillContainer;
+import org.apache.slider.server.appmaster.actions.RegisterComponentInstance;
 import org.apache.slider.server.appmaster.actions.QueueExecutor;
 import org.apache.slider.server.appmaster.actions.ActionHalt;
 import org.apache.slider.server.appmaster.actions.QueueService;
@@ -106,6 +106,7 @@ import org.apache.slider.server.appmaster.actions.ActionStopSlider;
 import org.apache.slider.server.appmaster.actions.AsyncAction;
 import org.apache.slider.server.appmaster.actions.RenewingAction;
 import org.apache.slider.server.appmaster.actions.ResetFailureWindow;
+import org.apache.slider.server.appmaster.actions.UnregisterComponentInstance;
 import org.apache.slider.server.appmaster.monkey.ChaosKillAM;
 import org.apache.slider.server.appmaster.monkey.ChaosKillContainer;
 import org.apache.slider.server.appmaster.monkey.ChaosMonkeyService;
@@ -901,6 +902,31 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   }
 
   /**
+   * Register/re-register a component (that is already in the app state
+   * @param id the component
+   */
+  public boolean registerComponent(ContainerId id) {
+    RoleInstance instance = appState.getOwnedContainer(id);
+    if (instance == null) {
+      return false;
+    }
+    // this is where component registrations will go
+    log.info("Registering component {}", id);
+
+    return true;
+  }
+  
+  /**
+   * unregister a component. At the time this message is received,
+   * the component may already been deleted from/never added to
+   * the app state
+   * @param id the component
+   */
+  public void unregisterComponent(ContainerId id) {
+    log.info("Unregistering component {}", id);
+  }
+  
+  /**
    * looks for a specific case where a token file is provided as an environment
    * variable, yet the file is not there.
    * 
@@ -1164,14 +1190,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       }
 
       getProviderService().notifyContainerCompleted(containerId);
+      queue(new UnregisterComponentInstance(containerId, 0, TimeUnit.MILLISECONDS));
     }
-
-    // ask for more containers if any failed
-    // In the case of Slider, we don't expect containers to complete since
-    // Slider is a long running application. Keep track of how many containers
-    // are completing. If too many complete, abort the application
-    // TODO: this needs to be better thought about (and maybe something to
-    // better handle in Yarn for long running apps)
 
     try {
       reviewRequestAndReleaseNodes();
@@ -1192,9 +1212,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     throws IOException, SliderInternalStateException, BadConfigException {
 
     appState.updateResourceDefinitions(resources);
-    appState.resetFailureCounts();
-    // reset the scheduled window resetter...the values
+
+    // reset the scheduled windows...the values
     // may have changed
+    appState.resetFailureCounts();
     
 
 
@@ -1565,7 +1586,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       throws SliderException {
     log.info("containerLostContactWithProvider: container {} lost",
         containerId);
-    RoleInstance activeContainer = appState.getActiveContainer(containerId);
+    RoleInstance activeContainer = appState.getOwnedContainer(containerId);
     if (activeContainer != null) {
       executeRMOperations(appState.releaseContainer(containerId));
       // ask for more containers if needed
@@ -1665,6 +1686,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       //trigger an async container status
       nmClientAsync.getContainerStatusAsync(containerId,
                                             cinfo.container.getNodeId());
+      // push out a registration
+      queue(new RegisterComponentInstance(containerId, 0, TimeUnit.MILLISECONDS));
+      
     } else {
       //this is a hypothetical path not seen. We react by warning
       log.error("Notified of started container that isn't pending {} - releasing",
