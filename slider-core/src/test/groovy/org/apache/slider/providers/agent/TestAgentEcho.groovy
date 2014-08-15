@@ -66,7 +66,7 @@ class TestAgentEcho extends AgentTestBase {
 
     def role = "echo"
     Map<String, Integer> roles = [
-        (role): 1,
+        (role): 2,
     ];
     ServiceLauncher<SliderClient> launcher = buildAgentCluster(clustername,
         roles,
