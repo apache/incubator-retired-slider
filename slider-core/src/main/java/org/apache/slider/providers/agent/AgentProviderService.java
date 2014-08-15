@@ -1180,7 +1180,7 @@ public class AgentProviderService extends AbstractProviderService implements
     hostLevelParams.put(CONTAINER_ID, containerId);
     cmd.setHostLevelParams(hostLevelParams);
 
-    Map<String, String> roleParams = new TreeMap<>();
+    Map<String, String> roleParams = new TreeMap<String, String>();
     cmd.setRoleParams(roleParams);
     cmd.getRoleParams().put("auto_restart", Boolean.toString(isMarkedAutoRestart));
 
