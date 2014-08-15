@@ -1565,7 +1565,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       throws SliderException {
     log.info("containerLostContactWithProvider: container {} lost",
         containerId);
-    RoleInstance activeContainer = appState.getActiveContainer(containerId);
+    RoleInstance activeContainer = appState.getOwnedContainer(containerId);
     if (activeContainer != null) {
       executeRMOperations(appState.releaseContainer(containerId));
       // ask for more containers if needed

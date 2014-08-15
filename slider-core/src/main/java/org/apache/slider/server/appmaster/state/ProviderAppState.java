@@ -164,18 +164,18 @@ public class ProviderAppState implements StateAccessForProviders {
   }
 
   @Override
-  public List<RoleInstance> cloneActiveContainerList() {
-    return appState.cloneActiveContainerList();
+  public List<RoleInstance> cloneOwnedContainerList() {
+    return appState.cloneOwnedContainerList();
   }
 
   @Override
-  public int getNumActiveContainers() {
-    return appState.getNumActiveContainers();
+  public int getNumOwnedContainers() {
+    return appState.getNumOwnedContainers();
   }
 
   @Override
-  public RoleInstance getActiveContainer(ContainerId id) {
-    return appState.getActiveContainer(id);
+  public RoleInstance getOwnedContainer(ContainerId id) {
+    return appState.getOwnedContainer(id);
   }
 
   @Override

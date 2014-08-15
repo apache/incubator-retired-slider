@@ -96,7 +96,7 @@ public class ContainerStatsBlock extends HtmlBlock {
   protected void render(Block html) {
     // TODO Probably better to just get a copy of this list for us to avoid the repeated synchronization?
     // does this change if we have 50 node, 100node, 500 node clusters?
-    final Map<String,RoleInstance> containerInstances = getContainerInstances(slider.getAppState().cloneActiveContainerList());
+    final Map<String,RoleInstance> containerInstances = getContainerInstances(slider.getAppState().cloneOwnedContainerList());
 
     for (Entry<String,RoleStatus> entry : slider.getRoleStatusByName().entrySet()) {
       final String name = entry.getKey();

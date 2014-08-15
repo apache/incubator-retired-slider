@@ -144,20 +144,20 @@ public interface StateAccessForProviders {
    * @return the active containers at the time
    * the call was made
    */
-  List<RoleInstance> cloneActiveContainerList();
+  List<RoleInstance> cloneOwnedContainerList();
 
   /**
    * Get the number of active containers
    * @return the number of active containers the time the call was made
    */
-  int getNumActiveContainers();
+  int getNumOwnedContainers();
 
   /**
    * Get any active container with the given ID
    * @param id container Id
    * @return the active container or null if it is not found
    */
-  RoleInstance getActiveContainer(ContainerId id);
+  RoleInstance getOwnedContainer(ContainerId id);
 
   /**
    * Create a clone of the list of live cluster nodes.
