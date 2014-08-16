@@ -45,7 +45,7 @@
             <value>http://${site.global.ganglia_server_host}/ganglia?c=${site.global.ganglia_server_id}</value>
           </export>
           <export>
-            <name>nimbus.url</name>
+            <name>nimbus.host_port</name>
             <value>http://${NIMBUS_HOST}:${site.storm-site.nimbus.thrift.port}</value>
           </export>
         </exports>
@@ -82,7 +82,7 @@
         <name>NIMBUS</name>
         <category>MASTER</category>
         <autoStartOnFailure>true</autoStartOnFailure>
-        <appExports>QuickLinks-nimbus.url,QuickLinks-ganglia.ui,QuickLinks-app.metrics</appExports>
+        <appExports>QuickLinks-nimbus.host_port,QuickLinks-ganglia.ui,QuickLinks-app.metrics</appExports>
         <commandScript>
           <script>scripts/nimbus.py</script>
           <scriptType>PYTHON</scriptType>
