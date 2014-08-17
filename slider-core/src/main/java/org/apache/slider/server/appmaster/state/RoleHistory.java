@@ -60,7 +60,7 @@ public class RoleHistory {
     LoggerFactory.getLogger(RoleHistory.class);
   private final List<ProviderRole> providerRoles;
   private final Map<String, ProviderRole> providerRoleMap =
-    new HashMap<>();
+    new HashMap<String, ProviderRole>();
   private long startTime;
   /**
    * Time when saved
@@ -107,9 +107,8 @@ public class RoleHistory {
     nodemap = new NodeMap(roleSize);
     resetAvailableNodeLists();
 
-    resetAvailableNodeLists();
     outstandingRequests = new OutstandingRequestTracker();
-    Map<Integer, RoleStatus> roleStats = new HashMap<>();
+    Map<Integer, RoleStatus> roleStats = new HashMap<Integer, RoleStatus>();
 
 
     for (ProviderRole providerRole : providerRoles) {
@@ -141,7 +140,7 @@ public class RoleHistory {
    */
   public void addNewProviderRole(ProviderRole providerRole)
     throws BadConfigException {
-    Map<Integer, RoleStatus> roleStats = new HashMap<>();
+    Map<Integer, RoleStatus> roleStats = new HashMap<Integer, RoleStatus>();
 
 
     for (ProviderRole role : providerRoles) {
@@ -155,7 +154,7 @@ public class RoleHistory {
    * Clear the lists of available nodes
    */
   private synchronized void resetAvailableNodeLists() {
-    availableNodes = new HashMap<>(roleSize);
+    availableNodes = new HashMap<Integer, LinkedList<NodeInstance>>(roleSize);
   }
 
   /**
@@ -433,7 +432,7 @@ public class RoleHistory {
   private LinkedList<NodeInstance> getOrCreateNodesForRoleId(int id) {
     LinkedList<NodeInstance> instances = availableNodes.get(id);
     if (instances == null) {
-      instances = new LinkedList<>();
+      instances = new LinkedList<NodeInstance>();
       availableNodes.put(id, instances);
     }
     return instances;
@@ -569,7 +568,7 @@ public class RoleHistory {
     List<Container> requested =
       new ArrayList<Container>(allocatedContainers.size());
     List<Container> unrequested =
-      new ArrayList<>(allocatedContainers.size());
+      new ArrayList<Container>(allocatedContainers.size());
     outstandingRequests.partitionRequests(this, allocatedContainers, requested, unrequested);
     
     //give the unrequested ones lower priority
@@ -748,7 +747,7 @@ public class RoleHistory {
    */
   @VisibleForTesting
   public List<NodeInstance> cloneAvailableList(int role) {
-    return new LinkedList<>(getOrCreateNodesForRoleId(role));
+    return new LinkedList<NodeInstance>(getOrCreateNodesForRoleId(role));
   }
 
   /**

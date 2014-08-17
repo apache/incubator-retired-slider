@@ -24,13 +24,16 @@ import org.apache.hadoop.hbase.IntegrationTestingUtility
 import org.apache.hadoop.util.ToolRunner
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.client.SliderClient
-import org.apache.slider.providers.hbase.HBaseConfigFileOptions;
+import org.apache.slider.providers.hbase.HBaseConfigFileOptions
+import org.junit.Ignore;
 
 /* Runs IntegrationTestIngest on cluster
  *
  * Note: this test runs for about 20 minutes
  * please set slider.test.timeout.seconds accordingly
  */
+
+@Ignore("appears localhost only")
 class HBaseIntegrationIT extends FunctionalHBaseClusterIT {
 
   @Override

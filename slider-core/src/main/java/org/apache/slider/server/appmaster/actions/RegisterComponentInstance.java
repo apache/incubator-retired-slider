@@ -21,47 +21,28 @@ package org.apache.slider.server.appmaster.actions;
 import com.google.common.base.Preconditions;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.slider.server.appmaster.SliderAppMaster;
-import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
-import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation;
-import org.apache.slider.server.appmaster.operations.RMOperationHandler;
 import org.apache.slider.server.appmaster.state.AppState;
 
-import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public class ActionKillContainer extends AsyncAction {
+public class RegisterComponentInstance extends AsyncAction {
+  
 
-  private final ContainerId containerId;
-  private final RMOperationHandler operationHandler;
-  public ActionKillContainer(
-      ContainerId containerId,
-      long delay,
-      TimeUnit timeUnit,
-      RMOperationHandler operationHandler) {
-    super("kill container", delay, timeUnit);
-    this.operationHandler = operationHandler;
+  public final ContainerId containerId;
+
+  public RegisterComponentInstance(ContainerId containerId, long delay,
+      TimeUnit timeUnit) {
+    super("RegisterComponentInstance :" + containerId,
+        delay, timeUnit);
     Preconditions.checkArgument(containerId != null);
-    
     this.containerId = containerId;
-  }
-
-  /**
-   * Get the container ID to kill
-   * @return
-   */
-  public ContainerId getContainerId() {
-    return containerId;
   }
 
   @Override
   public void execute(SliderAppMaster appMaster,
       QueueAccess queueService,
       AppState appState) throws Exception {
-      List<AbstractRMOperation> opsList = new LinkedList<AbstractRMOperation>();
-    ContainerReleaseOperation release = new ContainerReleaseOperation(containerId);
-    opsList.add(release);
-    //now apply the operations
-    operationHandler.execute(opsList);
+
+    appMaster.registerComponent(containerId);
   }
 }

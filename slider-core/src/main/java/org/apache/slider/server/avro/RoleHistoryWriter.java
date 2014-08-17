@@ -90,7 +90,7 @@ public class RoleHistoryWriter {
     throws IOException {
     try {
       DatumWriter<RoleHistoryRecord> writer =
-        new SpecificDatumWriter<>(RoleHistoryRecord.class);
+        new SpecificDatumWriter<RoleHistoryRecord>(RoleHistoryRecord.class);
 
       int roles = history.getRoleSize();
       RoleHistoryHeader header = new RoleHistoryHeader();
@@ -184,7 +184,7 @@ public class RoleHistoryWriter {
                                                        BadConfigException {
     try {
       DatumReader<RoleHistoryRecord> reader =
-        new SpecificDatumReader<>(RoleHistoryRecord.class);
+        new SpecificDatumReader<RoleHistoryRecord>(RoleHistoryRecord.class);
       Decoder decoder =
         DecoderFactory.get().jsonDecoder(RoleHistoryRecord.getClassSchema(),
                                          in);
@@ -336,7 +336,7 @@ public class RoleHistoryWriter {
     
     PathFilter filter = new GlobFilter(SliderKeys.HISTORY_FILENAME_GLOB_PATTERN);
     FileStatus[] stats = fs.listStatus(dir, filter);
-    List<Path> paths = new ArrayList<>(stats.length);
+    List<Path> paths = new ArrayList<Path>(stats.length);
     for (FileStatus stat : stats) {
       log.debug("Possible entry: {}", stat.toString());
       if (stat.isFile() && (includeEmptyFiles || stat.getLen() > 0)) {

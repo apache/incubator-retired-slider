@@ -30,7 +30,6 @@ import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URL;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -63,7 +62,7 @@ public class IndexBlock extends HtmlBlock {
 
     UL<DIV<Hamlet>> ul = div.ul();
 
-    ul.li("Total number of containers for cluster: " + appState.getNumActiveContainers());
+    ul.li("Total number of containers for cluster: " + appState.getNumOwnedContainers());
     ul.li("Cluster created: " + getInfoAvoidingNulls(StatusKeys.INFO_CREATE_TIME_HUMAN));
     ul.li("Cluster last flexed: " + getInfoAvoidingNulls(StatusKeys.INFO_FLEX_TIME_HUMAN));
     ul.li("Cluster running since: " + getInfoAvoidingNulls(StatusKeys.INFO_LIVE_TIME_HUMAN));

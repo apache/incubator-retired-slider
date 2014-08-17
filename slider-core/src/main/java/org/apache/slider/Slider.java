@@ -42,7 +42,7 @@ public class Slider extends SliderClient {
     //turn the args to a list
     List<String> argsList = Arrays.asList(args);
     //create a new list, as the ArrayList type doesn't push() on an insert
-    List<String> extendedArgs = new ArrayList<>(argsList);
+    List<String> extendedArgs = new ArrayList<String>(argsList);
     //insert the service name
     extendedArgs.add(0, SERVICE_CLASSNAME);
     //now have the service launcher do its work

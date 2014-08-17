@@ -118,11 +118,13 @@ public class HBaseClusterLifecycleIT extends HBaseCommandTestBase
       log.info("Connected via Client {}", sliderClient.toString())
 
       //freeze
-      freeze(CLUSTER, [
+      def frozen = freeze(0, CLUSTER, [
           ARG_WAIT, Integer.toString(FREEZE_WAIT_TIME),
-          ARG_MESSAGE, "freeze-in-test cluster lifecycle"
+          ARG_MESSAGE, "freeze-in-test-cluster-lifecycle"
       ])
+      frozen.assertExitCode(0)
 
+//      sleep(FREEZE_WAIT_TIME)
       //cluster exists if you don't want it to be live
       exists(0, CLUSTER, false)
       // condition returns false if it is required to be live
@@ -136,7 +138,7 @@ public class HBaseClusterLifecycleIT extends HBaseCommandTestBase
               ARG_WAIT, Integer.toString(THAW_WAIT_TIME),
           ])
       exists(0, CLUSTER)
-      freeze(CLUSTER,
+      freeze(0, CLUSTER,
           [
               ARG_FORCE,
               ARG_WAIT, Integer.toString(FREEZE_WAIT_TIME),
@@ -165,7 +167,13 @@ public class HBaseClusterLifecycleIT extends HBaseCommandTestBase
           StatusKeys.INFO_CONTAINERS_AM_RESTART)
       assert restarted != null
       assert Integer.parseInt(restarted) == 0
-      freeze(CLUSTER)
+      freeze(0, CLUSTER,
+          [
+              ARG_FORCE,
+              ARG_WAIT, Integer.toString(FREEZE_WAIT_TIME),
+              ARG_MESSAGE, "teardown-freeze"
+          ])
+      
 
       destroy(0, CLUSTER)
 

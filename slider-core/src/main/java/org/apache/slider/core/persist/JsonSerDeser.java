@@ -105,7 +105,8 @@ public class JsonSerDeser<T> {
    * @throws IOException IO problems
    * @throws JsonMappingException failure to map from the JSON to this class
    */
-  public T fromResource(String resource)
+/* JDK7
+ public T fromResource(String resource)
     throws IOException, JsonParseException, JsonMappingException {
     try(InputStream resStream = this.getClass().getResourceAsStream(resource)) {
       if (resStream == null) {
@@ -115,6 +116,30 @@ public class JsonSerDeser<T> {
     } catch (IOException e) {
       log.error("Exception while parsing json resource {}: {}", resource, e);
       throw e;
+    }
+  }*/
+
+  /**
+   * Convert from a JSON file
+   * @param resource input file
+   * @return the parsed JSON
+   * @throws IOException IO problems
+   * @throws JsonMappingException failure to map from the JSON to this class
+   */
+  public synchronized T fromResource(String resource)
+      throws IOException, JsonParseException, JsonMappingException {
+    InputStream resStream = null;
+    try {
+      resStream = this.getClass().getResourceAsStream(resource);
+      if (resStream == null) {
+        throw new FileNotFoundException(resource);
+      }
+      return (T) (mapper.readValue(resStream, classType));
+    } catch (IOException e) {
+      log.error("Exception while parsing json resource {}: {}", resource, e);
+      throw e;
+    } finally {
+      IOUtils.closeStream(resStream);
     }
   }
 

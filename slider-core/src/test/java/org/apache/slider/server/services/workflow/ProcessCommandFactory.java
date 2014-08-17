@@ -37,7 +37,7 @@ public class ProcessCommandFactory {
    * @return commands
    */
   public List<String> ls(File dir) {
-    List<String> commands = new ArrayList<>(5);
+    List<String> commands = new ArrayList<String>(5);
     commands.add("ls");
     commands.add("-1");
     commands.add(dir.getAbsolutePath());
@@ -50,7 +50,7 @@ public class ProcessCommandFactory {
    * @return commands
    */
   public List<String> echo(String text) {
-    List<String> commands = new ArrayList<>(5);
+    List<String> commands = new ArrayList<String>(5);
     commands.add("echo");
     commands.add(text);
     return commands;
@@ -72,7 +72,7 @@ public class ProcessCommandFactory {
    * @return commands
    */
   public List<String> exitFalse() {
-    List<String> commands = new ArrayList<>(2);
+    List<String> commands = new ArrayList<String>(2);
     commands.add("false");
     return commands;
   }

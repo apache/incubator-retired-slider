@@ -3,7 +3,7 @@
   "metadata": {
   },
   "global": {
-    "application.def": "/slider/storm_v091.zip",
+    "application.def": "package/storm_v091.zip",
     "config_types": "storm-site",
     "java_home": "/usr/jdk64/jdk1.7.0_45",
     "package_list": "files/apache-storm-0.9.1.2.1.1.0-237.tar.gz",
@@ -68,7 +68,7 @@
     "site.storm-site.logviewer.appender.name": "A1",
     "site.storm-site.nimbus.host": "${NIMBUS_HOST}",
     "site.storm-site.ui.port": "${STORM_UI_SERVER.ALLOCATED_PORT}",
-    "site.storm-site.supervisor.slots.ports": "[${SUPERVISOR.ALLOCATED_PORT}]",
+    "site.storm-site.supervisor.slots.ports": "[${SUPERVISOR.ALLOCATED_PORT}{DO_NOT_PROPAGATE},${SUPERVISOR.ALLOCATED_PORT}{DO_NOT_PROPAGATE}]",
     "site.storm-site.nimbus.file.copy.expiration.secs": "600",
     "site.storm-site.supervisor.monitor.frequency.secs": "3",
     "site.storm-site.transactional.zookeeper.servers": "null",
@@ -105,7 +105,7 @@
     "site.storm-site.topology.trident.batch.emit.interval.millis": "500",
     "site.storm-site.topology.builtin.metrics.bucket.size.secs": "60",
     "site.storm-site.storm.thrift.transport": "backtype.storm.security.auth.SimpleTransportPlugin",
-    "site.storm-site.logviewer.port": "0",
+    "site.storm-site.logviewer.port": "${SUPERVISOR.ALLOCATED_PORT}{DO_NOT_PROPAGATE}",
     "site.storm-site.topology.debug": "false"
   },
   "components": {

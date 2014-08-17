@@ -41,7 +41,7 @@ public class NodeInstance {
    */
   public NodeInstance(String hostname, int roles) {
     this.hostname = hostname;
-    nodeEntries = new ArrayList<>(roles);
+    nodeEntries = new ArrayList<NodeEntry>(roles);
   }
 
   /**

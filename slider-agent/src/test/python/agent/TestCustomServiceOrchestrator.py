@@ -38,6 +38,7 @@ from socket import socket
 
 
 class TestCustomServiceOrchestrator(TestCase):
+
   def setUp(self):
     # disable stdout
     out = StringIO.StringIO()
@@ -229,6 +230,8 @@ class TestCustomServiceOrchestrator(TestCase):
     self.assertEqual(ret['allocated_ports'], {'a.a.port': '10233'})
     self.assertTrue(run_file_mock.called)
     self.assertEqual(run_file_mock.call_count, 1)
+    self.assertEqual(orchestrator.allocated_ports, {'a.a.port': '10233'})
+    self.assertEqual(orchestrator.stored_command, {})
 
 
   @patch.object(socket, "close")
@@ -415,9 +418,10 @@ class TestCustomServiceOrchestrator(TestCase):
     }
 
     ret = orchestrator.runCommand(command, "out.txt", "err.txt", True, True)
+    self.assertEqual.__self__.maxDiff = None
     self.assertEqual(ret['exitcode'], 0)
     self.assertTrue(run_file_mock.called)
-    self.assertEqual(orchestrator.applied_configs, expected)
+    self.assertEqual(orchestrator.stored_command, command)
 
     ret = orchestrator.requestComponentStatus(command_get)
     self.assertEqual(ret['configurations'], expected)
@@ -484,13 +488,21 @@ class TestCustomServiceOrchestrator(TestCase):
     command['configurations']['oozie-site'] = {}
     command['configurations']['oozie-site']['log_root'] = "${AGENT_LOG_ROOT}"
     command['configurations']['oozie-site']['a_port'] = "${HBASE_MASTER.ALLOCATED_PORT}"
+    command['configurations']['oozie-site']['ignore_port1'] = "[${HBASE_RS.ALLOCATED_PORT}]"
+    command['configurations']['oozie-site']['ignore_port2'] = "[${HBASE_RS.ALLOCATED_PORT},${HBASE_REST.ALLOCATED_PORT}{DO_NOT_PROPAGATE}]"
+    command['configurations']['oozie-site']['ignore_port3'] = "[${HBASE_RS.ALLOCATED_PORT}{a}{b}{c},${A.ALLOCATED_PORT}{DO_NOT_PROPAGATE},${A.ALLOCATED_PORT}{DEFAULT_3}{DO_NOT_PROPAGATE}]"
+    command['configurations']['oozie-site']['ignore_port4'] = "${HBASE_RS}{a}{b}{c}"
 
     allocated_ports = {}
     orchestrator.finalize_command(command, False, allocated_ports)
     self.assertEqual(command['configurations']['hbase-site']['work_root'], tempWorkDir)
     self.assertEqual(command['configurations']['oozie-site']['log_root'], tempdir)
     self.assertEqual(command['configurations']['oozie-site']['a_port'], "10023")
-    self.assertEqual(orchestrator.applied_configs, {})
+    self.assertEqual(command['configurations']['oozie-site']['ignore_port1'], "[0]")
+    self.assertEqual(command['configurations']['oozie-site']['ignore_port2'], "[0,0]")
+    self.assertEqual(command['configurations']['oozie-site']['ignore_port3'], "[0,0,0]")
+    self.assertEqual(command['configurations']['oozie-site']['ignore_port4'], "${HBASE_RS}{a}{b}{c}")
+    self.assertEqual(orchestrator.stored_command, {})
     self.assertEqual(len(allocated_ports), 1)
     self.assertTrue('oozie-site.a_port' in allocated_ports)
     self.assertEqual(allocated_ports['oozie-site.a_port'], '10023')
@@ -505,7 +517,7 @@ class TestCustomServiceOrchestrator(TestCase):
     self.assertEqual(command['configurations']['hbase-site']['log_root'], tempdir + "/log")
     self.assertEqual(command['configurations']['hbase-site']['blog_root'], "/b/" + tempdir + "/log")
     self.assertEqual(command['configurations']['oozie-site']['b_port'], "0")
-    self.assertEqual(orchestrator.applied_configs, command['configurations'])
+    self.assertEqual(orchestrator.stored_command, command)
 
 
   def test_port_allocation(self):

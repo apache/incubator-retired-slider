@@ -49,6 +49,7 @@ class ActionQueue(threading.Thread):
   FAILED_STATUS = 'FAILED'
 
   STORE_APPLIED_CONFIG = 'record_config'
+  AUTO_RESTART = 'auto_restart'
 
   def __init__(self, config, controller):
     super(ActionQueue, self).__init__()
@@ -120,6 +121,10 @@ class ActionQueue(threading.Thread):
     logger.debug(pprint.pformat(command))
 
     taskId = command['taskId']
+
+    # if auto generated then do not report result
+    reportResult = CommandStatusDict.shouldReportResult(command)
+
     # Preparing 'IN_PROGRESS' report
     in_progress_status = self.commandStatuses.generate_report_template(command)
     in_progress_status.update({
@@ -127,12 +132,19 @@ class ActionQueue(threading.Thread):
       'tmperr': self.tmpdir + os.sep + 'errors-' + str(taskId) + '.txt',
       'structuredOut': self.tmpdir + os.sep + 'structured-out-' + str(
         taskId) + '.json',
-      'status': self.IN_PROGRESS_STATUS
+      'status': self.IN_PROGRESS_STATUS,
+      'reportResult': reportResult
     })
-    self.commandStatuses.put_command_status(command, in_progress_status)
+    self.commandStatuses.put_command_status(command, in_progress_status, reportResult)
+
     store_config = False
     if ActionQueue.STORE_APPLIED_CONFIG in command['commandParams']:
       store_config = 'true' == command['commandParams'][ActionQueue.STORE_APPLIED_CONFIG]
+    store_command = False
+    if 'roleParams' in command and ActionQueue.AUTO_RESTART in command['roleParams']:
+      logger.info("Component has indicated auto-restart. Saving details from START command.")
+      store_command = 'true' == command['roleParams'][ActionQueue.AUTO_RESTART]
+
 
     # running command
     commandresult = self.customServiceOrchestrator.runCommand(command,
@@ -141,7 +153,7 @@ class ActionQueue(threading.Thread):
                                                               in_progress_status[
                                                                 'tmperr'],
                                                               True,
-                                                              store_config)
+                                                              store_config or store_command)
     # dumping results
     status = self.COMPLETED_STATUS
     if commandresult[Constants.EXIT_CODE] != 0:
@@ -152,6 +164,7 @@ class ActionQueue(threading.Thread):
       'stderr': commandresult['stderr'],
       Constants.EXIT_CODE: commandresult[Constants.EXIT_CODE],
       'status': status,
+      'reportResult': reportResult
     })
     if roleResult['stdout'] == '':
       roleResult['stdout'] = 'None'
@@ -170,7 +183,7 @@ class ActionQueue(threading.Thread):
         roleResult['allocatedPorts'] = commandresult[Constants.ALLOCATED_PORTS]
       if Constants.FOLDERS in commandresult:
         roleResult['folders'] = commandresult[Constants.FOLDERS]
-    self.commandStatuses.put_command_status(command, roleResult)
+    self.commandStatuses.put_command_status(command, roleResult, reportResult)
 
   # Store action result to agent response queue
   def result(self):
@@ -184,10 +197,7 @@ class ActionQueue(threading.Thread):
       cluster = command['clusterName']
       service = command['serviceName']
       component = command['componentName']
-      reportResult = True
-      if 'auto_generated' in command:
-        reportResult = not command['auto_generated']
-
+      reportResult = CommandStatusDict.shouldReportResult(command)
       component_status = self.customServiceOrchestrator.requestComponentStatus(command)
 
       result = {"componentName": component,

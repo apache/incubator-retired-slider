@@ -40,6 +40,7 @@ public class HeartBeatResponse {
   RegistrationCommand registrationCommand;
 
   boolean restartAgent = false;
+  boolean restartEnabled = true;
   boolean hasMappedComponents = false;
 
   @JsonProperty("responseId")
@@ -90,6 +91,16 @@ public class HeartBeatResponse {
   @JsonProperty("restartAgent")
   public void setRestartAgent(boolean restartAgent) {
     this.restartAgent = restartAgent;
+  }
+
+  @JsonProperty("restartEnabled")
+  public boolean getRstartEnabled() {
+    return restartEnabled;
+  }
+
+  @JsonProperty("restartEnabled")
+  public void setRestartEnabled(boolean restartEnabled) {
+    this.restartEnabled = restartEnabled;
   }
 
   @JsonProperty("hasMappedComponents")

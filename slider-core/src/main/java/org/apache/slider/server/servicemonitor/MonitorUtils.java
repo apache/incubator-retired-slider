@@ -50,7 +50,7 @@ public final class MonitorUtils {
    * @return a list view with no empty strings
    */
   public static List<String> prepareArgs(String[] args) {
-    List<String> argsList = new ArrayList<>(args.length);
+    List<String> argsList = new ArrayList<String>(args.length);
     StringBuilder argsStr = new StringBuilder("Arguments: [");
     for (String arg : args) {
       argsStr.append('"').append(arg).append("\" ");

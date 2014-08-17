@@ -56,7 +56,8 @@ class CustomServiceOrchestrator():
     self.status_commands_stderr = os.path.realpath(posixpath.join(self.tmp_dir,
                                                                   'status_command_stderr.txt'))
     self.public_fqdn = hostname.public_hostname()
-    self.applied_configs = {}
+    self.stored_command = {}
+    self.allocated_ports = {}
     # Clean up old status command files if any
     try:
       os.unlink(self.status_commands_stdout)
@@ -68,8 +69,8 @@ class CustomServiceOrchestrator():
 
 
   def runCommand(self, command, tmpoutfile, tmperrfile,
-                 override_output_files=True, store_config=False):
-    allocated_port = {}
+                 override_output_files=True, store_command=False):
+    allocated_ports = {}
     try:
       script_type = command['commandParams']['script_type']
       script = command['commandParams']['script']
@@ -86,7 +87,7 @@ class CustomServiceOrchestrator():
       # We don't support anything else yet
         message = "Unknown script type {0}".format(script_type)
         raise AgentException(message)
-      json_path = self.dump_command_to_json(command, allocated_port, store_config)
+      json_path = self.dump_command_to_json(command, allocated_ports, store_command)
       py_file_list = [script_tuple]
       # filter None values
       filtered_py_file_list = [i for i in py_file_list if i]
@@ -132,7 +133,8 @@ class CustomServiceOrchestrator():
       }
 
     if Constants.EXIT_CODE in ret and ret[Constants.EXIT_CODE] == 0:
-      ret[Constants.ALLOCATED_PORTS] = allocated_port
+      ret[Constants.ALLOCATED_PORTS] = allocated_ports
+      self.allocated_ports = allocated_ports
 
     # Irrespective of the outcome report the folder paths
     if command_name == 'INSTALL':
@@ -154,22 +156,28 @@ class CustomServiceOrchestrator():
     return path
 
   def getConfig(self, command):
-    if 'commandParams' in command and 'config_type' in command['commandParams']:
-      config_type = command['commandParams']['config_type']
-      logger.info("Requesting applied config for type {0}".format(config_type))
-      if config_type in self.applied_configs:
-        return {
-          'configurations': {config_type: self.applied_configs[config_type]}
-        }
+    if 'configurations' in self.stored_command:
+      if 'commandParams' in command and 'config_type' in command['commandParams']:
+        config_type = command['commandParams']['config_type']
+        logger.info("Requesting applied config for type {0}".format(config_type))
+        if config_type in self.stored_command['configurations']:
+          return {
+            'configurations': {config_type: self.stored_command['configurations'][config_type]}
+          }
+        else:
+          return {
+            'configurations': {}
+          }
+        pass
       else:
+        logger.info("Requesting all applied config.")
         return {
-          'configurations': {}
+          'configurations': self.stored_command['configurations']
         }
       pass
     else:
-      logger.info("Requesting all applied config.")
       return {
-        'configurations': self.applied_configs
+        'configurations': {}
       }
     pass
 
@@ -184,7 +192,7 @@ class CustomServiceOrchestrator():
       override_output_files = False
 
     if command['roleCommand'] == "GET_CONFIG":
-      return self.getConfig(command)
+     return self.getConfig(command)
 
     else:
       res = self.runCommand(command, self.status_commands_stdout,
@@ -198,7 +206,7 @@ class CustomServiceOrchestrator():
       return res
     pass
 
-  def dump_command_to_json(self, command, allocated_ports, store_config=False):
+  def dump_command_to_json(self, command, allocated_ports, store_command=False):
     """
     Converts command to json file and returns file path
     """
@@ -221,7 +229,7 @@ class CustomServiceOrchestrator():
     if os.path.isfile(file_path):
       os.unlink(file_path)
 
-    self.finalize_command(command, store_config, allocated_ports)
+    self.finalize_command(command, store_command, allocated_ports)
 
     with os.fdopen(os.open(file_path, os.O_WRONLY | os.O_CREAT,
                            0600), 'w') as f:
@@ -238,7 +246,7 @@ class CustomServiceOrchestrator():
   Either a port gets allocated or if not then just set the value to "0"
   """
 
-  def finalize_command(self, command, store_config, allocated_ports):
+  def finalize_command(self, command, store_command, allocated_ports):
     component = command['componentName']
     allocated_for_this_component_format = "${{{0}.ALLOCATED_PORT}}"
     allocated_for_any = ".ALLOCATED_PORT}"
@@ -259,7 +267,7 @@ class CustomServiceOrchestrator():
               elif allocated_for_any in value:
                 ## All unallocated ports should be set to 0
                 logger.info("Assigning port 0 " + "for " + value)
-                value = "0"
+                value = self.set_all_unallocated_ports(value)
               command['configurations'][key][k] = value
               pass
             pass
@@ -267,11 +275,40 @@ class CustomServiceOrchestrator():
         pass
       pass
 
-    if store_config:
+    if store_command:
       logger.info("Storing applied config: " + pprint.pformat(command['configurations']))
-      self.applied_configs = command['configurations']
+      self.stored_command = command
 
   pass
+
+  """
+  All unallocated ports should be set to 0
+  Look for "${SOME_COMPONENT_NAME.ALLOCATED_PORT}"
+        or "${component.ALLOCATED_PORT}{DEFAULT_port}"
+        or "${component.ALLOCATED_PORT}{DEFAULT_port}{DO_NOT_PROPAGATE}"
+  """
+
+  def set_all_unallocated_ports(self, value):
+    pattern_start = "${"
+    sub_section_start = "}{"
+    pattern_end = "}"
+    index = value.find(pattern_start)
+    while index != -1:
+      replace_index_start = index
+      replace_index_end = value.find(pattern_end, replace_index_start)
+      next_pattern_start = value.find(sub_section_start, replace_index_start)
+      while next_pattern_start == replace_index_end:
+        replace_index_end = value.find(pattern_end, replace_index_end + 1)
+        next_pattern_start = value.find(sub_section_start, next_pattern_start + 1)
+        pass
+
+      value = value[:replace_index_start] + "0" + value[replace_index_end + 1:]
+
+      # look for the next
+      index = value.find(pattern_start)
+
+    return value
+    pass
 
   """
   Port allocation can asks for multiple dynamic ports

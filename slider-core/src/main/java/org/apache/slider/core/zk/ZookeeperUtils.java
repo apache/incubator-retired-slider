@@ -49,7 +49,7 @@ public class ZookeeperUtils {
     if (strings != null) {
       len = strings.length;
     }
-    List<String> tuples = new ArrayList<>(len);
+    List<String> tuples = new ArrayList<String>(len);
     if (strings != null) {
       for (String s : strings) {
         tuples.add(s.trim());
@@ -70,7 +70,7 @@ public class ZookeeperUtils {
     if (strings != null) {
       len = strings.length;
     }
-    List<HostAndPort> list = new ArrayList<>(len);
+    List<HostAndPort> list = new ArrayList<HostAndPort>(len);
     if (strings != null) {
       for (String s : strings) {
         list.add(HostAndPort.fromString(s.trim()));
@@ -113,7 +113,7 @@ public class ZookeeperUtils {
    * @return
    */
   public static String buildQuorum(List<HostAndPort> hostAndPorts, int defaultPort) {
-    List<String> entries = new ArrayList<>(hostAndPorts.size());
+    List<String> entries = new ArrayList<String>(hostAndPorts.size());
     for (HostAndPort hostAndPort : hostAndPorts) {
       entries.add(buildQuorumEntry(hostAndPort, defaultPort));
     }

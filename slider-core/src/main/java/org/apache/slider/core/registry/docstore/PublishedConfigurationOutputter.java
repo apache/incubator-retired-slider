@@ -48,10 +48,22 @@ public abstract class PublishedConfigurationOutputter {
    * @param dest destination file
    * @throws IOException
    */
+/* JDK7
   public void save(File dest) throws IOException {
     try(FileOutputStream out = new FileOutputStream(dest)) {
       save(out);
       out.close();
+    }
+  }
+*/
+  public void save(File dest) throws IOException {
+    FileOutputStream out = null;
+    try {
+      out = new FileOutputStream(dest);
+      save(out);
+      out.close();
+    } finally {
+      org.apache.hadoop.io.IOUtils.closeStream(out);
     }
   }
 

@@ -87,7 +87,6 @@ import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.exceptions.SliderInternalStateException;
 import org.apache.slider.core.exceptions.TriggerClusterTeardownException;
 import org.apache.slider.core.main.ExitCodeProvider;
-import org.apache.slider.core.main.LauncherExitCodes;
 import org.apache.slider.core.main.RunService;
 import org.apache.slider.core.main.ServiceLauncher;
 import org.apache.slider.core.persist.ConfTreeSerDeser;
@@ -102,6 +101,7 @@ import org.apache.slider.providers.SliderProviderFactory;
 import org.apache.slider.providers.slideram.SliderAMClientProvider;
 import org.apache.slider.providers.slideram.SliderAMProviderService;
 import org.apache.slider.server.appmaster.actions.ActionKillContainer;
+import org.apache.slider.server.appmaster.actions.RegisterComponentInstance;
 import org.apache.slider.server.appmaster.actions.QueueExecutor;
 import org.apache.slider.server.appmaster.actions.ActionHalt;
 import org.apache.slider.server.appmaster.actions.QueueService;
@@ -109,6 +109,7 @@ import org.apache.slider.server.appmaster.actions.ActionStopSlider;
 import org.apache.slider.server.appmaster.actions.AsyncAction;
 import org.apache.slider.server.appmaster.actions.RenewingAction;
 import org.apache.slider.server.appmaster.actions.ResetFailureWindow;
+import org.apache.slider.server.appmaster.actions.UnregisterComponentInstance;
 import org.apache.slider.server.appmaster.monkey.ChaosKillAM;
 import org.apache.slider.server.appmaster.monkey.ChaosKillContainer;
 import org.apache.slider.server.appmaster.monkey.ChaosMonkeyService;
@@ -415,7 +416,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     //look at settings of Hadoop Auth, to pick up a problem seen once
     checkAndWarnForAuthTokenProblems();
 
-    executorService = new WorkflowExecutorService<>("AmExecutor",
+    executorService = new WorkflowExecutorService<ExecutorService>("AmExecutor",
         Executors.newCachedThreadPool(
         new ServiceThreadFactory("AmExecutor", true)));
     addService(executorService);
@@ -473,7 +474,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     String action = serviceArgs.getAction();
     List<String> actionArgs = serviceArgs.getActionArgs();
     int exitCode;
-    switch (action) {
+/*  JDK7
+  switch (action) {
       case SliderActions.ACTION_HELP:
         log.info(getName() + serviceArgs.usage());
         exitCode = LauncherExitCodes.EXIT_USAGE;
@@ -483,6 +485,15 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         break;
       default:
         throw new SliderException("Unimplemented: " + action);
+    }
+    */
+    if (action.equals(SliderActions.ACTION_HELP)) {
+      log.info(getName() + serviceArgs.usage());
+      exitCode = SliderExitCodes.EXIT_USAGE;
+    } else if (action.equals(SliderActions.ACTION_CREATE)) {
+      exitCode = createAndRunCluster(actionArgs.get(0));
+    } else {
+      throw new SliderException("Unimplemented: " + action);
     }
     log.info("Exiting AM; final exit code = {}", exitCode);
     return exitCode;
@@ -662,7 +673,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       //build the role map
       List<ProviderRole> providerRoles =
-        new ArrayList<>(providerService.getRoles());
+        new ArrayList<ProviderRole>(providerService.getRoles());
       providerRoles.addAll(SliderAMClientProvider.ROLES);
 
       // Start up the WebApp and track the URL for it
@@ -684,7 +695,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
                       .start(webApp);
       appMasterTrackingUrl = "http://" + appMasterHostname + ":" + webApp.port();
       WebAppService<SliderAMWebApp> webAppService =
-        new WebAppService<>("slider", webApp);
+        new WebAppService<SliderAMWebApp>("slider", webApp);
 
       webAppService.init(serviceConf);
       webAppService.start();
@@ -764,7 +775,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       // build up environment variables that the AM wants set in every container
       // irrespective of provider and role.
-      envVars = new HashMap<>();
+      envVars = new HashMap<String, String>();
       if (hadoop_user_name != null) {
         envVars.put(HADOOP_USER_NAME, hadoop_user_name);
       }
@@ -946,6 +957,31 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   }
 
   /**
+   * Register/re-register a component (that is already in the app state
+   * @param id the component
+   */
+  public boolean registerComponent(ContainerId id) {
+    RoleInstance instance = appState.getOwnedContainer(id);
+    if (instance == null) {
+      return false;
+    }
+    // this is where component registrations will go
+    log.info("Registering component {}", id);
+
+    return true;
+  }
+  
+  /**
+   * unregister a component. At the time this message is received,
+   * the component may already been deleted from/never added to
+   * the app state
+   * @param id the component
+   */
+  public void unregisterComponent(ContainerId id) {
+    log.info("Unregistering component {}", id);
+  }
+  
+  /**
    * looks for a specific case where a token file is provided as an environment
    * variable, yet the file is not there.
    * 
@@ -1103,7 +1139,14 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     try {
       log.info("Unregistering AM status={} message={}", appStatus, appMessage);
       asyncRMClient.unregisterApplicationMaster(appStatus, appMessage, null);
+/* JDK7
     } catch (YarnException | IOException e) {
+      log.info("Failed to unregister application: " + e, e);
+    }
+*/
+    } catch (IOException e) {
+      log.info("Failed to unregister application: " + e, e);
+    } catch (YarnException e) {
       log.info("Failed to unregister application: " + e, e);
     }
   }
@@ -1161,8 +1204,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   @Override //AMRMClientAsync
   public void onContainersAllocated(List<Container> allocatedContainers) {
     LOG_YARN.info("onContainersAllocated({})", allocatedContainers.size());
-    List<ContainerAssignment> assignments = new ArrayList<>();
-    List<AbstractRMOperation> operations = new ArrayList<>();
+    List<ContainerAssignment> assignments = new ArrayList<ContainerAssignment>();
+    List<AbstractRMOperation> operations = new ArrayList<AbstractRMOperation>();
     
     //app state makes all the decisions
     appState.onContainersAllocated(allocatedContainers, assignments, operations);
@@ -1202,14 +1245,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       }
 
       getProviderService().notifyContainerCompleted(containerId);
+      queue(new UnregisterComponentInstance(containerId, 0, TimeUnit.MILLISECONDS));
     }
-
-    // ask for more containers if any failed
-    // In the case of Slider, we don't expect containers to complete since
-    // Slider is a long running application. Keep track of how many containers
-    // are completing. If too many complete, abort the application
-    // TODO: this needs to be better thought about (and maybe something to
-    // better handle in Yarn for long running apps)
 
     try {
       reviewRequestAndReleaseNodes();
@@ -1230,9 +1267,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     throws IOException, SliderInternalStateException, BadConfigException {
 
     appState.updateResourceDefinitions(resources);
-    appState.resetFailureCounts();
-    // reset the scheduled window resetter...the values
+
+    // reset the scheduled windows...the values
     // may have changed
+    appState.resetFailureCounts();
     
 
 
@@ -1258,7 +1296,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       log.info(
           "Scheduling the failure window reset interval to every {} seconds",
           seconds);
-      RenewingAction<ResetFailureWindow> renew = new RenewingAction<>(
+      RenewingAction<ResetFailureWindow> renew = new RenewingAction<ResetFailureWindow>(
           reset, seconds, seconds, TimeUnit.SECONDS, 0);
       actionQueues.renewing("failures", renew);
     } else {
@@ -1559,7 +1597,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   protected synchronized void launchProviderService(AggregateConf instanceDefinition,
                                                     File confDir)
     throws IOException, SliderException {
-    Map<String, String> env = new HashMap<>();
+    Map<String, String> env = new HashMap<String, String>();
     boolean execStarted = providerService.exec(instanceDefinition, confDir, env, this);
     if (execStarted) {
       providerService.registerServiceListener(this);
@@ -1603,7 +1641,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       throws SliderException {
     log.info("containerLostContactWithProvider: container {} lost",
         containerId);
-    RoleInstance activeContainer = appState.getActiveContainer(containerId);
+    RoleInstance activeContainer = appState.getOwnedContainer(containerId);
     if (activeContainer != null) {
       executeRMOperations(appState.releaseContainer(containerId));
       // ask for more containers if needed
@@ -1703,6 +1741,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       //trigger an async container status
       nmClientAsync.getContainerStatusAsync(containerId,
                                             cinfo.container.getNodeId());
+      // push out a registration
+      queue(new RegisterComponentInstance(containerId, 0, TimeUnit.MILLISECONDS));
+      
     } else {
       //this is a hypothetical path not seen. We react by warning
       log.error("Notified of started container that isn't pending {} - releasing",
@@ -1848,7 +1889,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     //turn the args to a list
     List<String> argsList = Arrays.asList(args);
     //create a new list, as the ArrayList type doesn't push() on an insert
-    List<String> extendedArgs = new ArrayList<>(argsList);
+    List<String> extendedArgs = new ArrayList<String>(argsList);
     //insert the service name
     extendedArgs.add(0, SERVICE_CLASSNAME);
     //now have the service launcher do its work

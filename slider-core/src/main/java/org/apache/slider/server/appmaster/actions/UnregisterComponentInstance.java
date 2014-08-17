@@ -16,19 +16,31 @@
  * limitations under the License.
  */
 
-package org.apache.slider.common.params;
+package org.apache.slider.server.appmaster.actions;
 
-import com.beust.jcommander.converters.IParameterSplitter;
+import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.slider.server.appmaster.SliderAppMaster;
+import org.apache.slider.server.appmaster.state.AppState;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.TimeUnit;
 
-public class DontSplitArguments implements IParameterSplitter {
+public class UnregisterComponentInstance extends AsyncAction {
+  
+
+  public final ContainerId containerId;
+
+  public UnregisterComponentInstance(ContainerId containerId, long delay,
+      TimeUnit timeUnit) {
+    super("UnregisterComponentInstance :" + containerId.toString(),
+        delay, timeUnit);
+    this.containerId = containerId;
+  }
 
   @Override
-  public List<String> split(String value) {
-    List<String> list = new ArrayList<String>(1);
-    list.add(value);
-    return list;
+  public void execute(SliderAppMaster appMaster,
+      QueueAccess queueService,
+      AppState appState) throws Exception {
+    appMaster.unregisterComponent(containerId);
+
   }
 }
