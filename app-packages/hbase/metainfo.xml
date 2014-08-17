@@ -53,11 +53,11 @@
             <value>http://${HBASE_THRIFT_HOST}:${site.global.hbase_thrift_port}</value>
           </export>
           <export>
-            <name>org.apache.slider.metrics</name>
+            <name>app.metrics</name>
             <value>http://${site.global.ganglia_server_host}/cgi-bin/rrd.py?c=${site.global.ganglia_server_id}</value>
           </export>
           <export>
-            <name>org.apache.slider.ganglia</name>
+            <name>app.ganglia</name>
             <value>http://${site.global.ganglia_server_host}/ganglia?c=${site.global.ganglia_server_id}</value>
           </export>
         </exports>
@@ -81,6 +81,17 @@
         <category>MASTER</category>
         <minInstanceCount>1</minInstanceCount>
         <maxInstanceCount>2</maxInstanceCount>
+        <appExports>QuickLinks-org.apache.slider.jmx,QuickLinks-org.apache.slider.monitor,QuickLinks-app.metrics,QuickLinks-app.ganglia</appExports>
+        <componentExports>
+          <componentExport>
+            <name>app.jmx</name>
+            <value>${THIS_HOST}:${site.hbase-site.hbase.master.info.port}/jmx</value>
+          </componentExport>
+          <componentExport>
+            <name>app.monitor</name>
+            <value>${THIS_HOST}:${site.hbase-site.hbase.master.info.port}/master-status</value>
+          </componentExport>
+        </componentExports>
         <commandScript>
           <script>scripts/hbase_master.py</script>
           <scriptType>PYTHON</scriptType>
@@ -100,8 +111,9 @@
 
       <component>
         <name>HBASE_REST</name>
-        <category>SLAVE</category>
-        <minInstanceCount>1</minInstanceCount>
+        <category>MASTER</category>
+        <minInstanceCount>0</minInstanceCount>
+        <appExports>QuickLinks-org.apache.slider.hbase.rest</appExports>
         <commandScript>
           <script>scripts/hbase_rest.py</script>
           <scriptType>PYTHON</scriptType>
@@ -110,8 +122,9 @@
 
       <component>
         <name>HBASE_THRIFT</name>
-        <category>SLAVE</category>
-        <minInstanceCount>1</minInstanceCount>
+        <category>MASTER</category>
+        <minInstanceCount>0</minInstanceCount>
+        <appExports>QuickLinks-org.apache.slider.hbase.thrift</appExports>
         <commandScript>
           <script>scripts/hbase_thrift.py</script>
           <scriptType>PYTHON</scriptType>
@@ -120,8 +133,9 @@
 
       <component>
         <name>HBASE_THRIFT2</name>
-        <category>SLAVE</category>
-        <minInstanceCount>1</minInstanceCount>
+        <category>MASTER</category>
+        <minInstanceCount>0</minInstanceCount>
+        <appExports>QuickLinks-org.apache.slider.hbase.thrift2</appExports>
         <commandScript>
           <script>scripts/hbase_thrift2.py</script>
           <scriptType>PYTHON</scriptType>

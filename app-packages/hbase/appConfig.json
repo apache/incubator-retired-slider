@@ -25,6 +25,7 @@
     "site.global.ganglia_server_id": "Application1",
     "site.global.hbase_thrift_port": "${HBASE_THRIFT.ALLOCATED_PORT}",
     "site.global.hbase_thrift2_port": "${HBASE_THRIFT2.ALLOCATED_PORT}",
+    "site.global.hbase_rest_port": "${HBASE_REST.ALLOCATED_PORT}",
     "site.hbase-site.hbase.hstore.flush.retries.number": "120",
     "site.hbase-site.hbase.client.keyvalue.maxsize": "10485760",
     "site.hbase-site.hbase.hstore.compactionThreshold": "3",
