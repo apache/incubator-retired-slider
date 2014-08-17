@@ -27,9 +27,9 @@ import java.io.InputStream;
 /**
  *
  */
-public class MetainfoParserTest {
+public class TestMetainfoParser {
   protected static final Logger log =
-      LoggerFactory.getLogger(MetainfoParserTest.class);
+      LoggerFactory.getLogger(TestMetainfoParser.class);
   public static final String METAINFO_XML =
       "/org/apache/slider/providers/agent/application/metadata/metainfo.xml";
 
@@ -52,6 +52,10 @@ public class MetainfoParserTest {
     for (Component comp : application.getComponents()) {
       if (comp != null && comp.getName().equals("NIMBUS")) {
         found = true;
+        Assert.assertEquals(0, comp.getComponentExports().size());
+      }
+      if (comp != null && comp.getName().equals("SUPERVISOR")) {
+        Assert.assertEquals(1, comp.getComponentExports().size());
       }
     }
     assert found;
