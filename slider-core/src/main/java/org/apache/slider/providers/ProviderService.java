@@ -22,9 +22,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.service.Service;
 import org.apache.hadoop.yarn.api.records.Container;
-import org.apache.hadoop.yarn.registry.server.services.YarnRegistryService;
-import org.apache.hadoop.yarn.registry.client.types.ServiceEntry;
 import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.core.conf.AggregateConf;
@@ -35,8 +34,8 @@ import org.apache.slider.core.launch.ContainerLauncher;
 import org.apache.slider.core.main.ExitCodeProvider;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.server.appmaster.actions.QueueAccess;
-import org.apache.slider.server.appmaster.state.ContainerReleaseSelector;
 import org.apache.slider.server.appmaster.operations.RMOperationHandlerActions;
+import org.apache.slider.server.appmaster.state.ContainerReleaseSelector;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
 import org.apache.slider.server.services.registry.RegistryViewForProviders;
@@ -188,12 +187,12 @@ public interface ProviderService extends ProviderCore,
    * @param unsecureWebAPI
    * @param secureWebAPI
    * @param registryInstanceData
-   * @param serviceEntry
+   * @param serviceRecord
    */
   void applyInitialRegistryDefinitions(URL unsecureWebAPI,
       URL secureWebAPI,
       ServiceInstanceData registryInstanceData,
-      ServiceEntry serviceEntry) throws IOException;
+      ServiceRecord serviceRecord) throws IOException;
 
   /**
    * Create the container release selector for this provider...any policy

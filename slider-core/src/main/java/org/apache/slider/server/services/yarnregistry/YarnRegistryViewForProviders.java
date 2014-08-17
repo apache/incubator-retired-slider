@@ -19,7 +19,7 @@
 package org.apache.slider.server.services.yarnregistry;
 
 import org.apache.hadoop.yarn.registry.client.api.RegistryWriter;
-import org.apache.hadoop.yarn.registry.client.types.ComponentEntry;
+import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
 
 import java.io.IOException;
 
@@ -64,7 +64,7 @@ public class YarnRegistryViewForProviders {
    * @throws IOException
    */
   public void putComponent(String componentName,
-      ComponentEntry entry,
+      ServiceRecord entry,
       boolean ephemeral) throws
       IOException {
     registryWriter.putComponent(user, sliderServiceclass, instanceName,
@@ -82,7 +82,7 @@ public class YarnRegistryViewForProviders {
    */
   public void putComponent(String serviceClass,
       String serviceName,
-      String componentName, ComponentEntry entry, boolean ephemeral) throws
+      String componentName, ServiceRecord entry, boolean ephemeral) throws
       IOException {
     registryWriter.putComponent(user, serviceClass, serviceName, componentName,
         entry,

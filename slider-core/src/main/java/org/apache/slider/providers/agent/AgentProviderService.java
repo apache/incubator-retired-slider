@@ -30,7 +30,7 @@ import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.LocalResourceType;
 import org.apache.hadoop.yarn.registry.client.types.Endpoint;
 import org.apache.hadoop.yarn.registry.client.types.ProtocolTypes;
-import org.apache.hadoop.yarn.registry.client.types.ServiceEntry;
+import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterDescriptionKeys;
 import org.apache.slider.api.ClusterNode;
@@ -597,12 +597,12 @@ public class AgentProviderService extends AbstractProviderService implements
   @Override
   public void applyInitialRegistryDefinitions(URL unsecureWebAPI,
       URL secureWebAPI,
-      ServiceInstanceData instanceData, ServiceEntry serviceEntry) throws
+      ServiceInstanceData instanceData, ServiceRecord serviceRecord) throws
       IOException {
     super.applyInitialRegistryDefinitions(unsecureWebAPI,
         secureWebAPI,
         instanceData,
-        serviceEntry);
+        serviceRecord);
 
     try {
       URL url = new URL(secureWebAPI, SLIDER_PATH_AGENTS);
@@ -614,7 +614,7 @@ public class AgentProviderService extends AbstractProviderService implements
               url,
               "Agent REST API"));
 
-      serviceEntry.putInternalEndpoint(
+      serviceRecord.putInternalEndpoint(
           CustomRegistryConstants.AGENT_REST_API,
           new Endpoint(CustomRegistryConstants.AGENT_REST_API,
               ProtocolTypes.PROTOCOL_REST,

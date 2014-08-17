@@ -23,7 +23,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.registry.client.api.RegistryWriter;
-import org.apache.hadoop.yarn.registry.client.types.ServiceEntry;
+import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
 import org.apache.slider.api.InternalKeys;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.api.ClusterDescription;
@@ -249,10 +249,10 @@ public class HBaseProviderService extends AbstractProviderService
   @Override
   public void applyInitialRegistryDefinitions(URL web,
       URL secureWebAPI,
-      ServiceInstanceData instanceData, ServiceEntry serviceEntry) throws
+      ServiceInstanceData instanceData, ServiceRecord serviceRecord) throws
       IOException {
     super.applyInitialRegistryDefinitions(web, secureWebAPI, instanceData,
-        serviceEntry);
+        serviceRecord);
   }
 
   @Override
@@ -278,7 +278,7 @@ public class HBaseProviderService extends AbstractProviderService
 
     registry.registerServiceInstance(instanceData, null);
     
-    ServiceEntry yse = new ServiceEntry();
+    ServiceRecord yse = new ServiceRecord();
 
 
     RegistryWriter registryWriter = yarnRegistry.getRegistryWriter();

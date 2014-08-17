@@ -52,9 +52,9 @@ import org.apache.hadoop.yarn.client.api.async.impl.NMClientAsyncImpl;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.ipc.YarnRPC;
+import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
 import org.apache.hadoop.yarn.registry.server.services.YarnRegistryService;
 import org.apache.hadoop.yarn.registry.client.types.RegistryTypeUtils;
-import org.apache.hadoop.yarn.registry.client.types.ServiceEntry;
 import org.apache.hadoop.yarn.security.AMRMTokenIdentifier;
 import org.apache.hadoop.yarn.security.client.ClientToAMTokenSecretManager;
 import org.apache.hadoop.yarn.util.ConverterUtils;
@@ -142,7 +142,6 @@ import org.apache.slider.server.services.workflow.ServiceThreadFactory;
 import org.apache.slider.server.services.workflow.WorkflowExecutorService;
 import org.apache.slider.server.services.workflow.WorkflowRpcService;
 import org.apache.slider.server.services.yarnregistry.YarnRegistryViewForProviders;
-import org.apache.slider.server.services.workflow.WorkflowScheduledExecutorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -903,7 +902,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         serviceType);
 
     // Yarn registry
-    ServiceEntry registryEntry = new ServiceEntry();
+    ServiceRecord registryEntry = new ServiceRecord();
 
     // IPC services
     instanceData.externalView.endpoints.put(

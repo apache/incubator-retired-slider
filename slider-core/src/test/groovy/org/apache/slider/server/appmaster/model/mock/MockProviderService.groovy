@@ -18,16 +18,14 @@
 
 package org.apache.slider.server.appmaster.model.mock
 
-import java.io.IOException;
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.service.LifecycleEvent
 import org.apache.hadoop.service.ServiceStateChangeListener
 import org.apache.hadoop.yarn.api.records.Container
-import org.apache.hadoop.yarn.registry.client.types.ServiceEntry
 import org.apache.hadoop.yarn.api.records.ContainerId
 import org.apache.hadoop.yarn.client.api.AMRMClient
+import org.apache.hadoop.yarn.registry.client.types.ServiceRecord
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.common.tools.SliderFileSystem
 import org.apache.slider.core.conf.AggregateConf
@@ -250,7 +248,7 @@ class MockProviderService implements ProviderService {
       URL unsecureWebAPI,
       URL secureWebAPI,
       ServiceInstanceData registryInstanceData,
-      ServiceEntry serviceEntry) throws IOException {
+      ServiceRecord serviceEntry) throws IOException {
 
   }
 

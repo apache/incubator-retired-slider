@@ -20,11 +20,10 @@ package org.apache.slider.providers;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.Service;
-import org.apache.hadoop.yarn.registry.server.services.YarnRegistryService;
-import org.apache.hadoop.yarn.registry.client.types.ServiceEntry;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
+import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.tools.ConfigHelper;
@@ -341,7 +340,7 @@ public abstract class AbstractProviderService
   public void applyInitialRegistryDefinitions(URL unsecureWebAPI,
       URL secureWebAPI,
       ServiceInstanceData registryInstanceData,
-      ServiceEntry serviceEntry)
+      ServiceRecord serviceRecord)
       throws IOException {
 
     this.amWebAPI = unsecureWebAPI;
