@@ -43,6 +43,7 @@ import org.apache.slider.core.launch.ContainerLauncher;
 import org.apache.slider.providers.agent.application.metadata.Application;
 import org.apache.slider.providers.agent.application.metadata.CommandOrder;
 import org.apache.slider.providers.agent.application.metadata.Component;
+import org.apache.slider.providers.agent.application.metadata.ComponentExport;
 import org.apache.slider.providers.agent.application.metadata.Export;
 import org.apache.slider.providers.agent.application.metadata.ExportGroup;
 import org.apache.slider.providers.agent.application.metadata.Metainfo;
@@ -135,9 +136,20 @@ public class TestAgentProviderService {
                                                + "      </commandOrders>\n"
                                                + "      <components>\n"
                                                + "        <component>\n"
+                                               + "          <name>HBASE_REST</name>\n"
+                                               + "          <category>MASTER</category>\n"
+                                               + "          <commandScript>\n"
+                                               + "            <script>scripts/hbase_rest.py</script>\n"
+                                               + "            <scriptType>PYTHON</scriptType>\n"
+                                               + "            <timeout>600</timeout>\n"
+                                               + "          </commandScript>\n"
+                                               + "        </component>\n"
+                                               + "        <component>\n"
                                                + "          <name>HBASE_MASTER</name>\n"
                                                + "          <category>MASTER</category>\n"
+                                               + "          <publishConfig>true</publishConfig>\n"
                                                + "          <autoStartOnFailure>true</autoStartOnFailure>\n"
+                                               + "          <appExports>QuickLinks-JMX_Endpoint,QuickLinks-Master_Status</appExports>\n"
                                                + "          <minInstanceCount>1</minInstanceCount>\n"
                                                + "          <maxInstanceCount>2</maxInstanceCount>\n"
                                                + "          <commandScript>\n"
@@ -155,16 +167,16 @@ public class TestAgentProviderService {
                                                + "            <script>scripts/hbase_regionserver.py</script>\n"
                                                + "            <scriptType>PYTHON</scriptType>\n"
                                                + "          </commandScript>\n"
-                                               + "          <exports>\n"
-                                               + "            <export>\n"
+                                               + "          <componentExports>\n"
+                                               + "            <componentExport>\n"
                                                + "              <name>PropertyA</name>\n"
                                                + "              <value>${THIS_HOST}:${site.global.listen_port}</value>\n"
-                                               + "            </export>\n"
-                                               + "            <export>\n"
+                                               + "            </componentExport>\n"
+                                               + "            <componentExport>\n"
                                                + "              <name>PropertyB</name>\n"
                                                + "              <value>AConstant</value>\n"
-                                               + "            </export>\n"
-                                               + "          </exports>\n"
+                                               + "            </componentExport>\n"
+                                               + "          </componentExports>\n"
                                                + "        </component>\n"
                                                + "      </components>\n"
                                                + "      <osSpecifics>\n"
@@ -456,15 +468,15 @@ public class TestAgentProviderService {
     doReturn(metainfo).when(mockAps).getMetainfo();
     doReturn(roleClusterNodeMap).when(mockAps).getRoleClusterNodeMapping();
 
-    mockAps.publishConfigAndExportGroups(hb, componentStatus);
-    assert componentStatus.getConfigReported() == true;
+    mockAps.publishConfigAndExportGroups(hb, componentStatus, "HBASE_MASTER");
+    Assert.assertTrue(componentStatus.getConfigReported());
     ArgumentCaptor<Collection> entriesCaptor = ArgumentCaptor.
         forClass(Collection.class);
     Mockito.verify(mockAps, Mockito.times(3)).publishApplicationInstanceData(
         anyString(),
         anyString(),
         entriesCaptor.capture());
-    assert entriesCaptor.getAllValues().size() == 3;
+    Assert.assertEquals(3, entriesCaptor.getAllValues().size());
     for (Collection coll : entriesCaptor.getAllValues()) {
       Set<Map.Entry<String, String>> entrySet = (Set<Map.Entry<String, String>>) coll;
       for (Map.Entry entry : entrySet) {
@@ -474,6 +486,16 @@ public class TestAgentProviderService {
         }
       }
     }
+
+    Map<String, String> exports = mockAps.getCurrentExports("QuickLinks");
+    Assert.assertEquals(2, exports.size());
+    Assert.assertEquals(exports.get("JMX_Endpoint"), "http://HOST1:60012/jmx");
+
+    mockAps.publishConfigAndExportGroups(hb, componentStatus, "HBASE_REST");
+    Mockito.verify(mockAps, Mockito.times(3)).publishApplicationInstanceData(
+        anyString(),
+        anyString(),
+        entriesCaptor.capture());
   }
 
   @Test
@@ -485,7 +507,7 @@ public class TestAgentProviderService {
     log.info("Service: " + application.toString());
     Assert.assertEquals(application.getName(), "HBASE");
     Assert.assertEquals(application.getExportedConfigs(), "hbase-site,global");
-    Assert.assertEquals(application.getComponents().size(), 2);
+    Assert.assertEquals(application.getComponents().size(), 3);
     List<Component> components = application.getComponents();
     int found = 0;
     for (Component component : components) {
@@ -496,7 +518,8 @@ public class TestAgentProviderService {
         Assert.assertEquals(component.getMaxInstanceCount(), "2");
         Assert.assertEquals(component.getCommandScript().getScript(), "scripts/hbase_master.py");
         Assert.assertEquals(component.getCategory(), "MASTER");
-        Assert.assertEquals(component.getExports().size(), 0);
+        Assert.assertEquals(component.getComponentExports().size(), 0);
+        Assert.assertEquals(component.getAppExports(), "QuickLinks-JMX_Endpoint,QuickLinks-Master_Status");
         found++;
       }
       if (component.getName().equals("HBASE_REGIONSERVER")) {
@@ -506,9 +529,9 @@ public class TestAgentProviderService {
         Assert.assertNull(component.getMaxInstanceCount());
         Assert.assertEquals(component.getCommandScript().getScript(), "scripts/hbase_regionserver.py");
         Assert.assertEquals(component.getCategory(), "SLAVE");
-        Assert.assertEquals(component.getExports().size(), 2);
-        List<Export> es = component.getExports();
-        Export e = es.get(0);
+        Assert.assertEquals(component.getComponentExports().size(), 2);
+        List<ComponentExport> es = component.getComponentExports();
+        ComponentExport e = es.get(0);
         Assert.assertEquals(e.getName(), "PropertyA");
         Assert.assertEquals(e.getValue(), "${THIS_HOST}:${site.global.listen_port}");
         e = es.get(1);
@@ -593,9 +616,9 @@ public class TestAgentProviderService {
 
     Assert.assertTrue(mockAps.isMaster(role_hm));
     Assert.assertFalse(mockAps.isMaster(role_hrs));
-    Assert.assertFalse(mockAps.canPublishConfig(role_hm));
+    Assert.assertTrue(mockAps.canPublishConfig(role_hm));
     Assert.assertFalse(mockAps.canPublishConfig(role_hrs));
-    Assert.assertFalse(mockAps.canAnyMasterPublishConfig());
+    Assert.assertTrue(mockAps.canAnyMasterPublishConfig());
 
     Assert.assertTrue(mockAps2.isMaster(role_hm));
     Assert.assertFalse(mockAps2.isMaster(role_hrs));

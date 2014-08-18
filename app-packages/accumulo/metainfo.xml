@@ -40,7 +40,7 @@
             </value>
           </export>
           <export>
-            <name>org.apache.slider.jmx</name>
+            <name>app.jmx</name>
             <value>
               ${site.global.monitor_protocol}://${ACCUMULO_MONITOR_HOST}:${site.accumulo-site.monitor.port.client}/xml
             </value>
@@ -85,6 +85,7 @@
         <name>ACCUMULO_MONITOR</name>
         <category>MASTER</category>
         <publishConfig>true</publishConfig>
+        <appExports>QuickLinks-app.jmx,QuickLinks-org.apache.slider.monitor</appExports>
         <commandScript>
           <script>scripts/accumulo_monitor.py</script>
           <scriptType>PYTHON</scriptType>

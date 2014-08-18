@@ -60,6 +60,7 @@ import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
 import org.apache.slider.providers.agent.application.metadata.Application;
 import org.apache.slider.providers.agent.application.metadata.Component;
+import org.apache.slider.providers.agent.application.metadata.ComponentExport;
 import org.apache.slider.providers.agent.application.metadata.Export;
 import org.apache.slider.providers.agent.application.metadata.ExportGroup;
 import org.apache.slider.providers.agent.application.metadata.Metainfo;
@@ -143,6 +144,8 @@ public class AgentProviderService extends AbstractProviderService implements
   private final Map<String, ComponentInstanceState> componentStatuses =
       new ConcurrentHashMap<String, ComponentInstanceState>();
   private final Map<String, Map<String, String>> componentInstanceData =
+      new ConcurrentHashMap<String, Map<String, String>>();
+  private final Map<String, Map<String, String>> exportGroups =
       new ConcurrentHashMap<String, Map<String, String>>();
   private final Map<String, Map<String, String>> allocatedPorts =
       new ConcurrentHashMap<String, Map<String, String>>();
@@ -458,22 +461,8 @@ public class AgentProviderService extends AbstractProviderService implements
     Boolean isMaster = isMaster(roleName);
     ComponentInstanceState componentStatus = getComponentStatuses().get(label);
     componentStatus.heartbeat(System.currentTimeMillis());
-    // If no Master can explicitly publish then publish if its a master
-    // Otherwise, wait till the master that can publish is ready
-    if (isMaster &&
-        (canAnyMasterPublishConfig() == false || canPublishConfig(roleName))) {
-      publishConfigAndExportGroups(heartBeat, componentStatus);
-    } else {
-      // Ack that config has been reported
-      List<ComponentStatus> statuses = heartBeat.getComponentStatus();
-      if (statuses != null && !statuses.isEmpty()) {
-        ComponentStatus status = statuses.get(0);
-        if(status.getConfigs().size() > 0) {
-          log.info("Config got reported by {} but discarded as component {} cannot publish.", label, roleName);
-          componentStatus.setConfigReported(true);
-        }
-      }
-    }
+
+    publishConfigAndExportGroups(heartBeat, componentStatus, roleName);
 
     List<CommandReport> reports = heartBeat.getReports();
     if (reports != null && !reports.isEmpty()) {
@@ -520,6 +509,7 @@ public class AgentProviderService extends AbstractProviderService implements
           }
         }
       }
+
       // if there is no outstanding command then retrieve config
       if (isMaster && componentStatus.getState() == State.STARTED
           && command == Command.NOP) {
@@ -798,39 +788,60 @@ public class AgentProviderService extends AbstractProviderService implements
 
   /**
    * Process return status for component instances
+   *
    * @param heartBeat
    * @param componentStatus
    */
-  protected void publishConfigAndExportGroups(HeartBeat heartBeat, ComponentInstanceState componentStatus) {
+  protected void publishConfigAndExportGroups(
+      HeartBeat heartBeat, ComponentInstanceState componentStatus, String roleName) {
     List<ComponentStatus> statuses = heartBeat.getComponentStatus();
     if (statuses != null && !statuses.isEmpty()) {
       log.info("Processing {} status reports.", statuses.size());
-      Application application = getMetainfo().getApplication();
-      List<ExportGroup> exportGroups = application.getExportGroups();
-      boolean hasExportGroups = exportGroups != null && !exportGroups.isEmpty();
-      Set<String> exportedConfigs = new HashSet();
-      String exportedConfigsStr = application.getExportedConfigs();
-      boolean exportedAllConfigs = exportedConfigsStr == null || exportedConfigsStr.isEmpty();
-      if (application.getExportedConfigs() != null && application.getExportedConfigs().length() > 0) {
-        for (String exportedConfig : application.getExportedConfigs().split(",")) {
-          if (exportedConfig.trim().length() > 0) {
-            exportedConfigs.add(exportedConfig.trim());
-          }
-        }
-      }
-
       for (ComponentStatus status : statuses) {
         log.info("Status report: " + status.toString());
+
         if (status.getConfigs() != null) {
-          for (String key : status.getConfigs().keySet()) {
-            if ((!exportedAllConfigs && exportedConfigs.contains(key)) ||
-                exportedAllConfigs) {
-              Map<String, String> configs = status.getConfigs().get(key);
-              publishApplicationInstanceData(key, key, configs.entrySet());
+          Application application = getMetainfo().getApplication();
+
+          if (canAnyMasterPublishConfig() == false || canPublishConfig(roleName)) {
+            // If no Master can explicitly publish then publish if its a master
+            // Otherwise, wait till the master that can publish is ready
+
+            Set<String> exportedConfigs = new HashSet();
+            String exportedConfigsStr = application.getExportedConfigs();
+            boolean exportedAllConfigs = exportedConfigsStr == null || exportedConfigsStr.isEmpty();
+            if (!exportedAllConfigs) {
+              for (String exportedConfig : exportedConfigsStr.split(",")) {
+                if (exportedConfig.trim().length() > 0) {
+                  exportedConfigs.add(exportedConfig.trim());
+                }
+              }
+            }
+
+            for (String key : status.getConfigs().keySet()) {
+              if ((!exportedAllConfigs && exportedConfigs.contains(key)) ||
+                  exportedAllConfigs) {
+                Map<String, String> configs = status.getConfigs().get(key);
+                publishApplicationInstanceData(key, key, configs.entrySet());
+              }
             }
           }
 
-          if (hasExportGroups) {
+          List<ExportGroup> exportGroups = application.getExportGroups();
+          boolean hasExportGroups = exportGroups != null && !exportGroups.isEmpty();
+
+          Set<String> appExports = new HashSet();
+          String appExportsStr = getApplicationComponent(roleName).getAppExports();
+          boolean hasNoAppExports = appExportsStr == null || appExportsStr.isEmpty();
+          if (!hasNoAppExports) {
+            for (String appExport : appExportsStr.split(",")) {
+              if (appExport.trim().length() > 0) {
+                appExports.add(appExport.trim());
+              }
+            }
+          }
+
+          if (hasExportGroups && appExports.size() > 0) {
             String configKeyFormat = "${site.%s.%s}";
             String hostKeyFormat = "${%s_HOST}";
 
@@ -849,29 +860,59 @@ public class AgentProviderService extends AbstractProviderService implements
               }
             }
 
+            Set<String> modifiedGroups = new HashSet<String>();
             for (ExportGroup exportGroup : exportGroups) {
               List<Export> exports = exportGroup.getExports();
               if (exports != null && !exports.isEmpty()) {
                 String exportGroupName = exportGroup.getName();
-                Map<String, String> map = new HashMap<String, String>();
+                Map<String, String> map = getCurrentExports(exportGroupName);
                 for (Export export : exports) {
-                  String value = export.getValue();
-                  // replace host names
-                  for (String token : replaceTokens.keySet()) {
-                    if (value.contains(token)) {
-                      value = value.replace(token, replaceTokens.get(token));
+                  if (canBeExported(exportGroupName, export.getName(), appExports)) {
+                    String value = export.getValue();
+                    // replace host names
+                    for (String token : replaceTokens.keySet()) {
+                      if (value.contains(token)) {
+                        value = value.replace(token, replaceTokens.get(token));
+                      }
                     }
+                    map.put(export.getName(), value);
+                    log.info("Preparing to publish. Key {} and Value {}", export.getName(), value);
                   }
-                  map.put(export.getName(), value);
-                  log.info("Preparing to publish. Key {} and Value {}", export.getName(), value);
                 }
-                publishApplicationInstanceData(exportGroupName, exportGroupName, map.entrySet());
+                modifiedGroups.add(exportGroupName);
               }
             }
+            publishModifiedExportGroups(modifiedGroups);
           }
-          log.info("Received and stored config for {}", heartBeat.getHostname());
+
+          log.info("Received and processed config for {}", heartBeat.getHostname());
           componentStatus.setConfigReported(true);
+
         }
+      }
+    }
+  }
+
+  private boolean canBeExported(String exportGroupName, String name, Set<String> appExports) {
+    return  appExports.contains(String.format("%s-%s", exportGroupName, name));
+  }
+
+  protected Map<String, String> getCurrentExports(String groupName) {
+    if(!this.exportGroups.containsKey(groupName)) {
+       synchronized (this.exportGroups) {
+         if(!this.exportGroups.containsKey(groupName)) {
+           this.exportGroups.put(groupName, new ConcurrentHashMap<String, String>());
+         }
+       }
+    }
+
+    return this.exportGroups.get(groupName);
+  }
+
+  private void publishModifiedExportGroups(Set<String> modifiedGroups) {
+    synchronized (this.exportGroups) {
+      for(String groupName : modifiedGroups) {
+        publishApplicationInstanceData(groupName, groupName, this.exportGroups.get(groupName).entrySet());
       }
     }
   }
@@ -888,9 +929,9 @@ public class AgentProviderService extends AbstractProviderService implements
     Application application = getMetainfo().getApplication();
     for (Component component : application.getComponents()) {
       if (component.getName().equals(roleName)) {
-        if (component.getExports().size() > 0) {
+        if (component.getComponentExports().size() > 0) {
 
-          for (Export export : component.getExports()) {
+          for (ComponentExport export : component.getComponentExports()) {
             String templateToExport = export.getValue();
             for (String portName : ports.keySet()) {
               boolean publishData = false;
@@ -941,6 +982,25 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   /**
+   * Return Component based on name
+   * @param roleName
+   * @return
+   */
+  protected Component getApplicationComponent(String roleName) {
+    Application application = getMetainfo().getApplication();
+    if (application == null) {
+      log.error("Malformed app definition: Expect application as the top level element for metainfo.xml");
+    } else {
+      for (Component component : application.getComponents()) {
+        if (component.getName().equals(roleName)) {
+          return component;
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
    * Extract script path from the application metainfo
    *
    * @param roleName
@@ -948,19 +1008,11 @@ public class AgentProviderService extends AbstractProviderService implements
    * @return
    */
   protected String getScriptPathFromMetainfo(String roleName) {
-    String scriptPath = null;
-    Application application = getMetainfo().getApplication();
-    if (application == null) {
-      log.error("Malformed app definition: Expect application as the top level element for metainfo.xml");
-      return scriptPath;
+    Component component = getApplicationComponent(roleName);
+    if (component != null) {
+      return component.getCommandScript().getScript();
     }
-    for (Component component : application.getComponents()) {
-      if (component.getName().equals(roleName)) {
-        scriptPath = component.getCommandScript().getScript();
-        break;
-      }
-    }
-    return scriptPath;
+    return null;
   }
 
   /**
@@ -971,18 +1023,10 @@ public class AgentProviderService extends AbstractProviderService implements
    * @return
    */
   protected boolean isMaster(String roleName) {
-    Application application = getMetainfo().getApplication();
-    if (application == null) {
-      log.error("Malformed app definition: Expect application as the top level element for metainfo.xml");
-    } else {
-      for (Component component : application.getComponents()) {
-        if (component.getName().equals(roleName)) {
-          if (component.getCategory().equals("MASTER")) {
-            return true;
-          } else {
-            return false;
-          }
-        }
+    Component component = getApplicationComponent(roleName);
+    if (component != null) {
+      if (component.getCategory().equals("MASTER")) {
+        return true;
       }
     }
     return false;
@@ -996,34 +1040,24 @@ public class AgentProviderService extends AbstractProviderService implements
    * @return
    */
   protected boolean canPublishConfig(String roleName) {
-    Application application = getMetainfo().getApplication();
-    if (application == null) {
-      log.error("Malformed app definition: Expect application as the top level element for metainfo.xml");
-    } else {
-      for (Component component : application.getComponents()) {
-        if (component.getName().equals(roleName)) {
-          return Boolean.TRUE.toString().equals(component.getPublishConfig());
-        }
-      }
+    Component component = getApplicationComponent(roleName);
+    if (component != null) {
+      return Boolean.TRUE.toString().equals(component.getPublishConfig());
     }
     return false;
   }
 
   /**
    * Checks if the role is marked auto-restart
+   *
    * @param roleName
+   *
    * @return
    */
   protected boolean isMarkedAutoRestart(String roleName) {
-    Application application = getMetainfo().getApplication();
-    if (application == null) {
-      log.error("Malformed app definition: Expect application as the top level element for metainfo.xml");
-    } else {
-      for (Component component : application.getComponents()) {
-        if (component.getName().equals(roleName)) {
-          return component.getRequiresAutoRestart();
-        }
-      }
+    Component component = getApplicationComponent(roleName);
+    if (component != null) {
+      return component.getRequiresAutoRestart();
     }
     return false;
   }
