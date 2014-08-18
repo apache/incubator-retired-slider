@@ -53,8 +53,8 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.ipc.YarnRPC;
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
-import org.apache.hadoop.yarn.registry.server.services.YarnRegistryService;
-import org.apache.hadoop.yarn.registry.client.types.RegistryTypeUtils;
+import org.apache.hadoop.yarn.registry.client.draft1.RegistryWriterService;
+import org.apache.hadoop.yarn.registry.client.binding.RegistryTypeUtils;
 import org.apache.hadoop.yarn.security.AMRMTokenIdentifier;
 import org.apache.hadoop.yarn.security.client.ClientToAMTokenSecretManager;
 import org.apache.hadoop.yarn.util.ConverterUtils;
@@ -331,7 +331,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * The YARN registry service
    */
   @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
-  private YarnRegistryService yarnRegistry;
+  private RegistryWriterService yarnRegistry;
 
 
   /**

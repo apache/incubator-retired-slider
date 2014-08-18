@@ -22,7 +22,7 @@ package org.apache.slider.server.services.utility;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.registry.client.api.RegistryConstants;
-import org.apache.hadoop.yarn.registry.server.services.YarnRegistryService;
+import org.apache.hadoop.yarn.registry.client.draft1.RegistryWriterService;
 import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
@@ -32,8 +32,6 @@ import org.apache.slider.server.services.curator.CuratorHelper;
 import org.apache.slider.server.services.registry.SliderRegistryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.slider.common.SliderXmlConfKeys.REGISTRY_PATH;
 
 /**
  * Base service for the standard slider client/server services
@@ -116,17 +114,17 @@ public abstract class AbstractSliderLaunchedService extends
    * @param zkPath
    * @return
    */
-  public YarnRegistryService startYarnRegistryService()
+  public RegistryWriterService startYarnRegistryService()
       throws BadConfigException {
 
     Configuration conf = getConfig();
     // push back the slider registry entry if needed
     String quorum = lookupZKQuorum();
     conf.set(RegistryConstants.REGISTRY_ZK_QUORUM, quorum);
-    YarnRegistryService yarnRegistryService =
-        new YarnRegistryService("YarnRegistry");
-    deployChildService(yarnRegistryService);
-    return yarnRegistryService;
+    RegistryWriterService registryWriterService =
+        new RegistryWriterService("YarnRegistry");
+    deployChildService(registryWriterService);
+    return registryWriterService;
   }
 
   /**

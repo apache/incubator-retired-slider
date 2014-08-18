@@ -22,7 +22,7 @@ package org.apache.slider.providers.hbase;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.Container;
-import org.apache.hadoop.yarn.registry.client.api.RegistryWriter;
+import org.apache.hadoop.yarn.registry.client.draft1.RegistryWriter;
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
 import org.apache.slider.api.InternalKeys;
 import org.apache.slider.common.SliderKeys;

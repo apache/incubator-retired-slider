@@ -18,7 +18,7 @@
 
 package org.apache.slider.server.services.yarnregistry;
 
-import org.apache.hadoop.yarn.registry.client.api.RegistryWriter;
+import org.apache.hadoop.yarn.registry.client.draft1.RegistryWriter;
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
 
 import java.io.IOException;

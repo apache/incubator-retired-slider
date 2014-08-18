@@ -34,8 +34,8 @@ import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.registry.client.api.RegistryConstants;
-import org.apache.hadoop.yarn.registry.client.binding.zk.ZKPathDumper;
-import org.apache.hadoop.yarn.registry.server.services.YarnRegistryService;
+import org.apache.hadoop.yarn.registry.client.binding.ZKPathDumper;
+import org.apache.hadoop.yarn.registry.client.draft1.RegistryWriterService;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterNode;
 import org.apache.slider.api.InternalKeys;
@@ -166,7 +166,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   /**
    * The YARN registry service
    */
-  private YarnRegistryService yarnRegistry;
+  private RegistryWriterService yarnRegistry;
 
   /**
    * Constructor
@@ -2484,7 +2484,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @throws SliderException
    * @throws IOException
    */
-  private synchronized YarnRegistryService maybeStartYarnRegistry() throws
+  private synchronized RegistryWriterService maybeStartYarnRegistry() throws
       SliderException,
       IOException {
 
@@ -2498,7 +2498,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * Get the YARN registry
    * @return the registry 
    */
-  public YarnRegistryService getYarnRegistry() throws
+  public RegistryWriterService getYarnRegistry() throws
       SliderException,
       IOException {
     return maybeStartYarnRegistry();

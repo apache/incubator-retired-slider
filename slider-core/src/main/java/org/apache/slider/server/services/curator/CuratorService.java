@@ -24,7 +24,7 @@ import org.apache.curator.utils.ZKPaths;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.service.AbstractService;
-import org.apache.hadoop.yarn.registry.client.binding.zk.ZKPathDumper;
+import org.apache.hadoop.yarn.registry.client.binding.ZKPathDumper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
