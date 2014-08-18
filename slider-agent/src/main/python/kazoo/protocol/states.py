@@ -1,3 +1,4 @@
+"""license: Apache License 2.0, see LICENSE for more details."""
 """Kazoo State and Event objects"""
 from collections import namedtuple
 

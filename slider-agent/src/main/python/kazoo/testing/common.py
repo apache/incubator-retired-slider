@@ -1,3 +1,4 @@
+"""license: Apache License 2.0, see LICENSE for more details."""
 #
 #  Copyright (C) 2010-2011, 2011 Canonical Ltd. All Rights Reserved
 #
