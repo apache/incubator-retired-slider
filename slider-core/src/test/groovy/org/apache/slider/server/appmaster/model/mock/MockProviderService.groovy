@@ -240,9 +240,7 @@ class MockProviderService implements ProviderService {
 
   @Override
   void applyInitialRegistryDefinitions(
-      URL unsecureWebAPI,
-      URL secureWebAPI,
-      ServiceInstanceData registryInstanceData)
+          URL amWebURI, URL agentOpsURI, URL agentStatusURI, ServiceInstanceData registryInstanceData)
   throws MalformedURLException, IOException {
 
   }

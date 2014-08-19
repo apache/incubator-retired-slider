@@ -582,24 +582,24 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   @Override
-  public void applyInitialRegistryDefinitions(URL unsecureWebAPI,
-                                              URL secureWebAPI,
+  public void applyInitialRegistryDefinitions(URL amWebURI,
+                                              URL agentOpsURI,
+                                              URL agentStatusURI,
                                               ServiceInstanceData instanceData) throws IOException {
-    super.applyInitialRegistryDefinitions(unsecureWebAPI,
-                                          secureWebAPI,
-                                          instanceData
-    );
+    super.applyInitialRegistryDefinitions(amWebURI,
+                                          agentOpsURI,
+                                          agentStatusURI, instanceData);
 
     try {
       instanceData.internalView.endpoints.put(
           CustomRegistryConstants.AGENT_SECURE_REST_API,
           new RegisteredEndpoint(
-              new URL(secureWebAPI, SLIDER_PATH_AGENTS),
+              new URL(agentOpsURI, SLIDER_PATH_AGENTS),
               "Agent Secure REST API"));
       instanceData.internalView.endpoints.put(
           CustomRegistryConstants.AGENT_ONEWAY_REST_API,
           new RegisteredEndpoint(
-              new URL(unsecureWebAPI, SLIDER_PATH_AGENTS),
+              new URL(agentStatusURI, SLIDER_PATH_AGENTS),
               "Agent Oneway REST API"));
     } catch (URISyntaxException e) {
       throw new IOException(e);
