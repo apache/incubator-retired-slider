@@ -390,7 +390,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       exitCode = actionAmSuicide(clusterName,
           serviceArgs.getActionAMSuicideArgs());
     } else if (ACTION_LIST.equals(action)) {
-      exitCode = actionList(clusterName);
+      exitCode = actionList(clusterName, serviceArgs.getActionListArgs());
     } else if (ACTION_REGISTRY.equals(action)) {
       exitCode = actionRegistry(serviceArgs.getActionRegistryArgs());
     } else if (ACTION_RESOLVE.equals(action)) {

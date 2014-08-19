@@ -631,8 +631,8 @@ public final class SliderUtils {
     if (instances.size() <= 1) {
       return;
     }
-    List<ApplicationReport> nonLiveInstance = new ArrayList<>(instances.size());
-    List<ApplicationReport> liveInstance = new ArrayList<>(instances.size());
+    List<ApplicationReport> nonLiveInstance = new ArrayList<ApplicationReport>(instances.size());
+    List<ApplicationReport> liveInstance = new ArrayList<ApplicationReport>(instances.size());
 
     for (ApplicationReport report : instances) {
       if (report.getYarnApplicationState() == YarnApplicationState.RUNNING
