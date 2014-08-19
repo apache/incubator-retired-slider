@@ -1,4 +1,6 @@
-"""A threading based handler.
+"""
+license: Apache License 2.0, see LICENSE for more details.
+A threading based handler.
 
 The :class:`SequentialThreadingHandler` is intended for regular Python
 environments that use threads.

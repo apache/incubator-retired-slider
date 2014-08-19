@@ -1,3 +1,4 @@
+"""license: Apache License 2.0, see LICENSE for more details."""
 def normpath(path, trailing=False):
     """Normalize path, eliminating double slashes, etc."""
     comps = path.split('/')

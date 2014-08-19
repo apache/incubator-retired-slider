@@ -169,12 +169,23 @@
     </dependency>
     <dependency>
       <groupId>org.apache.slider</groupId>
+      <artifactId>slider-core</artifactId>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.slider</groupId>
       <artifactId>slider-funtest</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.codehaus.groovy</groupId>
       <artifactId>groovy-all</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

@@ -1,3 +1,4 @@
+"""license: Apache License 2.0, see LICENSE for more details."""
 """Kazoo Security"""
 from base64 import b64encode
 from collections import namedtuple

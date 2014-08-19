@@ -1,3 +1,4 @@
+"""license: Apache License 2.0, see LICENSE for more details."""
 """Kazoo testing harnesses"""
 import atexit
 import logging

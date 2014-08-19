@@ -1,4 +1,8 @@
-"""A gevent based handler."""
+"""
+license: Apache License 2.0, see LICENSE for more details.
+A gevent based handler.
+"""
+
 from __future__ import absolute_import
 
 import atexit

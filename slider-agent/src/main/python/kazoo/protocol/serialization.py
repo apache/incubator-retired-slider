@@ -1,3 +1,4 @@
+"""license: Apache License 2.0, see LICENSE for more details."""
 """Zookeeper Serializers, Deserializers, and NamedTuple objects"""
 from collections import namedtuple
 import struct
