@@ -1728,8 +1728,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         ApplicationReport report =
             findClusterInInstanceList(instances, clustername);
         if (report != null) {
-          logAppReport(report, true, true);
-          instanceFound = true;
+          instanceFound = logAppReport(report, true, false);
         }
       }
       // exit code if the instance was found
@@ -1746,8 +1745,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @param report report to log
    * @param live only list live apps
    * @param history list historical containers
+   * @return whether the report was logged or not
    */
-  public void logAppReport(ApplicationReport report, boolean live, boolean history) {
+  public boolean logAppReport(ApplicationReport report,
+      boolean live,
+      boolean history) {
     // app is active if it is accepted or running
     boolean active = isApplicationActive(report);
     
@@ -1755,6 +1757,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     if (toLog) {
       log.info(SliderUtils.appReportToString(report, "\n"));
     }
+    return toLog;
   }
 
   /**
