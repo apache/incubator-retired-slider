@@ -140,6 +140,11 @@
     <dependency>
       <groupId>org.apache.slider</groupId>
       <artifactId>slider-core</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.slider</groupId>
+      <artifactId>slider-core</artifactId>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>

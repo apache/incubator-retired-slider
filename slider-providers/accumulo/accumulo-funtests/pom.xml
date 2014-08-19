@@ -143,6 +143,16 @@
     <dependency>
       <groupId>org.apache.slider</groupId>
       <artifactId>slider-core</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.slider</groupId>
+      <artifactId>slider-core</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
@@ -207,7 +217,20 @@
 
     <dependency>
       <groupId>org.apache.accumulo</groupId>
+      <artifactId>accumulo-fate</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.accumulo</groupId>
       <artifactId>accumulo-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.thrift</groupId>
+      <artifactId>libthrift</artifactId>
+      <version>0.9.0</version>
       <scope>test</scope>
     </dependency>
     

@@ -145,9 +145,11 @@
     <jackson.version>1.9.13</jackson.version>
     <jcommander.version>1.30</jcommander.version>
 
+    <jetty.version>6.1.26</jetty.version>
     <jersey.version>1.9</jersey.version>
     <servlet-api.version>2.5</servlet-api.version>
     <jsr311-api.version>1.1.1</jsr311-api.version>
+    <jaxb-api.version>2.2.7</jaxb-api.version>
 
     <junit.version>4.11</junit.version>
     <log4j.version>1.2.17</log4j.version>
@@ -1119,6 +1121,12 @@
       </dependency>
 
       <dependency>
+        <groupId>javax.xml.bind</groupId>
+        <artifactId>jaxb-api</artifactId>
+        <version>${jaxb-api.version}</version>
+      </dependency>
+
+      <dependency>
         <groupId>com.sun.jersey</groupId>
         <artifactId>jersey-client</artifactId>
         <version>${jersey.version}</version>
@@ -1205,9 +1213,19 @@
       <!-- ======================================================== -->
 
       <dependency>
-	      <groupId>org.mortbay.jetty</groupId>
-	      <artifactId>jetty-sslengine</artifactId>
-        <version>6.1.26</version>
+        <groupId>org.mortbay.jetty</groupId>
+        <artifactId>jetty</artifactId>
+        <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.mortbay.jetty</groupId>
+        <artifactId>jetty-util</artifactId>
+        <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.mortbay.jetty</groupId>
+        <artifactId>jetty-sslengine</artifactId>
+        <version>${jetty.version}</version>
       </dependency>
 
     </dependencies>
