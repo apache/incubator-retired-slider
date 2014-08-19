@@ -623,9 +623,9 @@ public final class SliderUtils {
    * Sorts the given list of application reports
    * Finished instances are ordered by finished time and running/accepted instances are
    * ordered by start time
-   * Finally Instance are order by finished instances and running instances
+   * Finally Instance are order by finished instances coming after running instances
    *
-   * @param instances
+   * @param instances list of intances
    */
   public static void sortApplicationReport(List<ApplicationReport> instances) {
     if (instances.size() <= 1) {
@@ -662,8 +662,8 @@ public final class SliderUtils {
       Collections.sort(nonLiveInstance, nonLiveInstanceComparator);
     }
     instances.clear();
-    instances.addAll(nonLiveInstance);
     instances.addAll(liveInstance);
+    instances.addAll(nonLiveInstance);
   }
 
   /**

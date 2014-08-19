@@ -173,15 +173,11 @@ class TestActionList extends AgentMiniClusterTestBase {
     
     args.live = true;
     args.history = false;
-    try {
-      int exitCode = sliderClient.actionList(clustername, args);
-      fail("expected an exception, got a status code $exitCode")
-    } catch (UnknownApplicationInstanceException expected) {
-    }
+    assert 0 == sliderClient.actionList(clustername, args);
 
     // historical list will work
     args.history = true;
-    assert sliderClient.actionList(clustername, args) == 0;
+    assert 0 == sliderClient.actionList(clustername, args)
 
     // thaw
     ActionThawArgs thawArgs = new ActionThawArgs();
@@ -192,7 +188,6 @@ class TestActionList extends AgentMiniClusterTestBase {
     args.live = true;
     args.history = false;
     assert 0 == sliderClient.actionList(clustername, args);
-    assert launcher.serviceExitCode == 0
 
     //Listing all the instance both history (previously freezed instance) and live
     args.live = true

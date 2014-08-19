@@ -107,7 +107,8 @@ class TestFreezeCommands extends AgentMiniClusterTestBase {
     ServiceLauncher thawCommand = execSliderCommand(conf, commands);
     assertSucceeded(thawCommand)
     assertSucceeded(execSliderCommand(conf,
-        [SliderActions.ACTION_LIST, clustername]))
+        [SliderActions.ACTION_LIST, clustername, 
+         Arguments.ARG_LIVE]))
     assertSucceeded(execSliderCommand(conf,
         [SliderActions.ACTION_EXISTS, clustername]))
 

@@ -1698,29 +1698,42 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     String user = UserGroupInformation.getCurrentUser().getUserName();
     List<ApplicationReport> instances = listSliderInstances(user);
     SliderUtils.sortApplicationReport(instances);
+    boolean live = args.live;
+    boolean history = args.history;
     if (isUnset(clustername)) {
+      // no cluster name: list all
       log.info("Instances for {}: {}",
-          (user != null ? user : "all users"),
-          instances.size());
+               (user != null ? user : "all users"),
+               instances.size());
       for (ApplicationReport report : instances) {
-        logAppReport(report, args.live, args.history);
+        logAppReport(report, live, history);
       }
+      // and always succeed
       return EXIT_SUCCESS;
     } else {
+      // cluster name provided
       SliderUtils.validateClusterName(clustername);
-      log.debug("Listing cluster named {}", clustername);
-      if (args.history) {
+      log.debug("Listing cluster named {}, live={}, history={}",
+          clustername, live, history);
+      boolean instanceFound = false;
+      if (history) {
         for (ApplicationReport report : instances) {
           if (report.getName().equals(clustername)) {
-            logAppReport(report, args.live, args.history);
+            logAppReport(report, live, true);
+            instanceFound = true;
           }
         }
-        return EXIT_SUCCESS;
+      } else {
+        // no history flag, only list live value
+        ApplicationReport report =
+            findClusterInInstanceList(instances, clustername);
+        if (report != null) {
+          logAppReport(report, true, true);
+          instanceFound = true;
+        }
       }
-      ApplicationReport report = findClusterInInstanceList(instances,
-          clustername);
-      if (report != null) {
-        logAppReport(report, true, false);
+      // exit code if the instance was found
+      if (instanceFound) {
         return EXIT_SUCCESS;
       } else {
         throw unknownClusterException(clustername);
@@ -1731,19 +1744,33 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   /**
    * Log the application report at INFO
    * @param report report to log
+   * @param live only list live apps
+   * @param history list historical containers
    */
   public void logAppReport(ApplicationReport report, boolean live, boolean history) {
-    boolean active = report.getYarnApplicationState() == YarnApplicationState.RUNNING
-                || report.getYarnApplicationState() ==
-                   YarnApplicationState.ACCEPTED;
-    if (active && live && !history) {
-      log.info(SliderUtils.appReportToString(report, "\n"));
-    } else if (!active && history && !live) {
-      log.info(SliderUtils.appReportToString(report, "\n"));
-    } else {
+    // app is active if it is accepted or running
+    boolean active = isApplicationActive(report);
+    
+    boolean toLog = (active && live) || (!active && history);
+    if (toLog) {
       log.info(SliderUtils.appReportToString(report, "\n"));
     }
   }
+
+  /**
+   * Is an application active: accepted or running
+   * @param report the application report
+   * @return true if it is running or scheduled to run.
+   */
+  public boolean isApplicationActive(ApplicationReport report) {
+    return report.getYarnApplicationState() == YarnApplicationState.RUNNING
+                || report.getYarnApplicationState() == YarnApplicationState.ACCEPTED;
+  }
+
+  /**
+   * Implement the islive action: probe for a cluster of the given name existing
+   * @return exit code
+   */
 
   @Override
   @VisibleForTesting
