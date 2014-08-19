@@ -39,11 +39,16 @@ class Registry:
       data, stat = zk.get(self.zk_reg_path)
       logger.debug("Registry Data: %s" % (data.decode("utf-8")))
       sliderRegistry = json.loads(data)
-      amUrl = sliderRegistry["payload"]["internalView"]["endpoints"]["org.apache.slider.agents"]["address"]
+      amUrl = sliderRegistry["payload"]["internalView"]["endpoints"]["org.apache.slider.agents.secure"]["address"]
       amHost = amUrl.split("/")[2].split(":")[0]
       amSecuredPort = amUrl.split(":")[2].split("/")[0]
-      # the port needs to be utf-8 encoded 
+
+      amUnsecureUrl = sliderRegistry["payload"]["internalView"]["endpoints"]["org.apache.slider.agents.oneway"]["address"]
+      amUnsecuredPort = amUnsecureUrl.split(":")[2].split("/")[0]
+
+      # the port needs to be utf-8 encoded
       amSecuredPort = amSecuredPort.encode('utf8', 'ignore')
+      amUnecuredPort = amUnsecuredPort.encode('utf8', 'ignore')
     except Exception:
       # log and let empty strings be returned
       logger.error("Could not connect to zk registry at %s in quorum %s" % 
@@ -54,4 +59,4 @@ class Registry:
         zk.stop()
         zk.close()
     logger.info("AM Host = %s, AM Secured Port = %s" % (amHost, amSecuredPort))
-    return amHost, amSecuredPort
+    return amHost, amUnecuredPort, amSecuredPort

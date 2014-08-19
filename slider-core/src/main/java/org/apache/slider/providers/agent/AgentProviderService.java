@@ -592,10 +592,15 @@ public class AgentProviderService extends AbstractProviderService implements
 
     try {
       instanceData.internalView.endpoints.put(
-          CustomRegistryConstants.AGENT_REST_API,
+          CustomRegistryConstants.AGENT_SECURE_REST_API,
           new RegisteredEndpoint(
               new URL(secureWebAPI, SLIDER_PATH_AGENTS),
-              "Agent REST API"));
+              "Agent Secure REST API"));
+      instanceData.internalView.endpoints.put(
+          CustomRegistryConstants.AGENT_ONEWAY_REST_API,
+          new RegisteredEndpoint(
+              new URL(unsecureWebAPI, SLIDER_PATH_AGENTS),
+              "Agent Oneway REST API"));
     } catch (URISyntaxException e) {
       throw new IOException(e);
     }

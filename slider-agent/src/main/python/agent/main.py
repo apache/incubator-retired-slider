@@ -219,12 +219,15 @@ def main():
 
   # Extract the AM hostname and secured port from ZK registry
   registry = Registry(options.zk_quorum, options.zk_reg_path)
-  amHost, amSecuredPort = registry.readAMHostPort()
+  amHost, amUnsecuredPort, amSecuredPort = registry.readAMHostPort()
   if amHost:
       agentConfig.set(AgentConfig.SERVER_SECTION, "hostname", amHost)
 
   if amSecuredPort:
       agentConfig.set(AgentConfig.SERVER_SECTION, "secured_port", amSecuredPort)
+
+  if amUnsecuredPort:
+      agentConfig.set(AgentConfig.SERVER_SECTION, "port", amUnsecuredPort)
 
   # set the security directory to a subdirectory of the run dir
   secDir = posixpath.join(agentConfig.getResolvedPath(AgentConfig.RUN_DIR), "security")
@@ -250,7 +253,7 @@ def main():
 
   server_url = SERVER_STATUS_URL.format(
     agentConfig.get(AgentConfig.SERVER_SECTION, 'hostname'),
-    agentConfig.get(AgentConfig.SERVER_SECTION, 'secured_port'),
+    agentConfig.get(AgentConfig.SERVER_SECTION, 'port'),
     agentConfig.get(AgentConfig.SERVER_SECTION, 'check_path'))
   print("Connecting to the server at " + server_url + "...")
   logger.info('Connecting to the server at: ' + server_url)
