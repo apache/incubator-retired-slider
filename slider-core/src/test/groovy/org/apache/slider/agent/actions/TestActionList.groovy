@@ -57,7 +57,7 @@ class TestActionList extends AgentMiniClusterTestBase {
     testListAllUsersNoClusters()
     testListLiveCluster()
     testListMissingCluster()
-//    testActionListHistory()
+    testActionListHistory()
   }
   
   public void testListThisUserNoClusters() throws Throwable {
@@ -151,7 +151,6 @@ class TestActionList extends AgentMiniClusterTestBase {
   }
 
 
-  @Test
   public void testActionListHistory() {
     String clustername = createClusterName()
     ServiceLauncher<SliderClient> launcher = createStandaloneAM(
@@ -173,9 +172,14 @@ class TestActionList extends AgentMiniClusterTestBase {
     
     args.live = true;
     args.history = false;
-    assert 0 == sliderClient.actionList(clustername, args);
+    try {
+      sliderClient.actionList(clustername, args);
+      fail("expected a failure")
+    } catch (UnknownApplicationInstanceException e) {
+    
+    }
 
-    // historical list will work
+      // historical list will work
     args.history = true;
     assert 0 == sliderClient.actionList(clustername, args)
 
