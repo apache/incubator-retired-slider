@@ -23,6 +23,8 @@ import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.client.SliderClient
+import org.apache.slider.common.params.ActionListArgs
+import org.apache.slider.common.params.ActionThawArgs
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
 import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
@@ -40,7 +42,7 @@ class TestActionList extends AgentMiniClusterTestBase {
   @Before
   public void setup() {
     super.setup()
-    createMiniCluster("", configuration, 1, false)
+    createMiniCluster("", configuration, 1, true)
   }
 
   /**
@@ -55,6 +57,7 @@ class TestActionList extends AgentMiniClusterTestBase {
     testListAllUsersNoClusters()
     testListLiveCluster()
     testListMissingCluster()
+//    testActionListHistory()
   }
   
   public void testListThisUserNoClusters() throws Throwable {
@@ -128,7 +131,7 @@ class TestActionList extends AgentMiniClusterTestBase {
   }
 
   public void testListMissingCluster() throws Throwable {
-    describe("exec the status command against an unknown cluster")
+    describe("exec the list command against an unknown cluster")
 
     ServiceLauncher<SliderClient> launcher
     try {
@@ -138,7 +141,7 @@ class TestActionList extends AgentMiniClusterTestBase {
           //varargs list of command line params
           [
               SliderActions.ACTION_LIST,
-              createClusterName()
+              "no-instance"
           ]
       )
       fail("expected an exception, got a status code " + launcher.serviceExitCode)
@@ -147,5 +150,54 @@ class TestActionList extends AgentMiniClusterTestBase {
     }
   }
 
+
+  @Test
+  public void testActionListHistory() {
+    String clustername = createClusterName()
+    ServiceLauncher<SliderClient> launcher = createStandaloneAM(
+        clustername,
+        true,
+        true)
+    addToTeardown(launcher)
+    SliderClient sliderClient = launcher.service
+    waitForClusterLive(sliderClient)
+
+    ActionListArgs args = new ActionListArgs();
+    //Listing only live instances
+    args.live = true;
+    assert sliderClient.actionList(clustername, args) == 0;
+    clusterActionFreeze(sliderClient, clustername, "stopping first cluster")
+    waitForAppToFinish(sliderClient)
+
+    //Listing only live instances but prints nothing since instance is freezed/stopped
+    
+    args.live = true;
+    args.history = false;
+    try {
+      int exitCode = sliderClient.actionList(clustername, args);
+      fail("expected an exception, got a status code $exitCode")
+    } catch (UnknownApplicationInstanceException expected) {
+    }
+
+    // historical list will work
+    args.history = true;
+    assert sliderClient.actionList(clustername, args) == 0;
+
+    // thaw
+    ActionThawArgs thawArgs = new ActionThawArgs();
+    sliderClient.actionThaw(clustername, thawArgs);
+    waitForClusterLive(sliderClient)
+
+    //Listing only live instances
+    args.live = true;
+    args.history = false;
+    assert 0 == sliderClient.actionList(clustername, args);
+    assert launcher.serviceExitCode == 0
+
+    //Listing all the instance both history (previously freezed instance) and live
+    args.live = true
+    args.history = true
+    assert 0 == sliderClient.actionList("", args);
+  }
 
 }
