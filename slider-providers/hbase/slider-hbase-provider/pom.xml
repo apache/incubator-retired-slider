@@ -29,7 +29,7 @@
   <parent>
     <groupId>org.apache.slider</groupId>
     <artifactId>slider</artifactId>
-    <version>0.41.0-incubating-SNAPSHOT</version>
+    <version>0.50.0-incubating</version>
     <relativePath>../../../</relativePath>
   </parent>
 
