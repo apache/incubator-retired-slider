@@ -58,11 +58,14 @@ import org.apache.slider.providers.ProviderUtils;
 import org.apache.slider.providers.agent.application.metadata.Application;
 import org.apache.slider.providers.agent.application.metadata.Component;
 import org.apache.slider.providers.agent.application.metadata.ComponentExport;
+import org.apache.slider.providers.agent.application.metadata.ConfigFile;
+import org.apache.slider.providers.agent.application.metadata.DefaultConfig;
 import org.apache.slider.providers.agent.application.metadata.Export;
 import org.apache.slider.providers.agent.application.metadata.ExportGroup;
 import org.apache.slider.providers.agent.application.metadata.Metainfo;
 import org.apache.slider.providers.agent.application.metadata.OSPackage;
 import org.apache.slider.providers.agent.application.metadata.OSSpecific;
+import org.apache.slider.providers.agent.application.metadata.PropertyInfo;
 import org.apache.slider.server.appmaster.actions.ProviderReportedContainerLoss;
 import org.apache.slider.server.appmaster.actions.RegisterComponentInstance;
 import org.apache.slider.server.appmaster.state.ContainerPriority;
@@ -132,6 +135,7 @@ public class AgentProviderService extends AbstractProviderService implements
   private AgentClientProvider clientProvider;
   private AtomicInteger taskId = new AtomicInteger(0);
   private volatile Metainfo metainfo = null;
+  private Map<String, DefaultConfig> defaultConfigs = null;
   private ComponentCommandOrder commandOrder = null;
   private HeartbeatMonitor monitor;
   private Boolean canAnyMasterPublish = null;
@@ -207,6 +211,7 @@ public class AgentProviderService extends AbstractProviderService implements
           }
           commandOrder = new ComponentCommandOrder(metainfo.getApplication()
               .getCommandOrder());
+          defaultConfigs = initializeDefaultConfigs(fileSystem, appDef, metainfo);
           monitor = new HeartbeatMonitor(this, getHeartbeatMonitorInterval());
           monitor.start();
         }
@@ -305,6 +310,11 @@ public class AgentProviderService extends AbstractProviderService implements
       launcher.addLocalResource(AgentKeys.AGENT_VERSION_FILE, agentVerRes);
     }
 
+    //add the configuration resources
+    launcher.addLocalResources(fileSystem.submitDirectory(
+        generatedConfPath,
+        SliderKeys.PROPAGATED_CONF_DIR_NAME));
+
     String label = getContainerLabel(container, role);
     CommandLineBuilder operation = new CommandLineBuilder();
 
@@ -336,7 +346,7 @@ public class AgentProviderService extends AbstractProviderService implements
   // build the zookeeper registry path
   private String getZkRegistryPath() {
     String zkRegistryRoot = getConfig().get(REGISTRY_PATH,
-        DEFAULT_REGISTRY_PATH);
+                                            DEFAULT_REGISTRY_PATH);
     String appType = APP_TYPE;
     String zkRegistryPath = ZKPaths.makePath(zkRegistryRoot, appType);
     String clusterName = getAmState().getInternalsSnapshot().get(
@@ -673,6 +683,40 @@ public class AgentProviderService extends AbstractProviderService implements
   @VisibleForTesting
   protected void setHeartbeatMonitorInterval(int heartbeatMonitorInterval) {
     this.heartbeatMonitorInterval = heartbeatMonitorInterval;
+  }
+
+  /**
+   * Read all default configs
+   * @param fileSystem
+   * @param appDef
+   * @param metainfo
+   * @return
+   * @throws IOException
+   */
+  protected Map<String, DefaultConfig> initializeDefaultConfigs(SliderFileSystem fileSystem,
+                                                                String appDef, Metainfo metainfo) throws IOException {
+    Map<String, DefaultConfig> defaultConfigMap = new HashMap<String, DefaultConfig>();
+    if (metainfo.getApplication().getConfigFiles() != null &&
+        metainfo.getApplication().getConfigFiles().size() > 0) {
+      for (ConfigFile configFile : metainfo.getApplication().getConfigFiles()) {
+        DefaultConfig config = null;
+        try {
+          config = AgentUtils.getDefaultConfig(fileSystem, appDef, configFile.getDictionaryName() + ".xml");
+        } catch (IOException e) {
+          log.warn("Default config file not found. Only the config as input during create will be applied for {}",
+                   configFile.getDictionaryName());
+        }
+        if (config != null) {
+          defaultConfigMap.put(configFile.getDictionaryName(), config);
+        }
+      }
+    }
+
+    return defaultConfigMap;
+  }
+
+  protected Map<String, DefaultConfig> getDefaultConfigs() {
+    return defaultConfigs;
   }
 
   private int getHeartbeatMonitorInterval() {
@@ -1280,7 +1324,7 @@ public class AgentProviderService extends AbstractProviderService implements
         new TreeMap<String, Map<String, String>>();
     Map<String, String> tokens = getStandardTokenMap(appConf);
 
-    List<String> configs = getApplicationConfigurationTypes(appConf);
+    List<String> configs = getApplicationConfigurationTypes();
 
     //Add global
     for (String configType : configs) {
@@ -1305,16 +1349,14 @@ public class AgentProviderService extends AbstractProviderService implements
     return tokens;
   }
 
-  private List<String> getApplicationConfigurationTypes(ConfTreeOperations appConf) {
-    // for now, reading this from appConf.  In the future, modify this method to
-    // process metainfo.xml
+  @VisibleForTesting
+  protected List<String> getApplicationConfigurationTypes() {
     List<String> configList = new ArrayList<String>();
     configList.add(GLOBAL_CONFIG_TAG);
 
-    String configTypes = appConf.get("config_types");
-    if (configTypes != null && configTypes.length() > 0) {
-      String[] configs = configTypes.split(",");
-      configList.addAll(Arrays.asList(configs));
+    List<ConfigFile> configFiles = getMetainfo().getApplication().getConfigFiles();
+    for(ConfigFile configFile : configFiles) {
+      configList.add(configFile.getDictionaryName());
     }
 
     // remove duplicates.  mostly worried about 'global' being listed
@@ -1350,6 +1392,20 @@ public class AgentProviderService extends AbstractProviderService implements
         }
       }
     }
+
+    //apply defaults only if the key is not present and value is not empty
+    if(getDefaultConfigs().containsKey(configName)) {
+      for(PropertyInfo defaultConfigProp : getDefaultConfigs().get(configName).getPropertyInfos()) {
+        if(!config.containsKey(defaultConfigProp.getName())){
+          if(!defaultConfigProp.getName().isEmpty() &&
+             defaultConfigProp.getValue() != null &&
+              !defaultConfigProp.getValue().isEmpty()) {
+            config.put(defaultConfigProp.getName(), defaultConfigProp.getValue());
+          }
+        }
+      }
+    }
+
     configurations.put(configName, config);
   }
 
@@ -1375,6 +1431,7 @@ public class AgentProviderService extends AbstractProviderService implements
     config.put("app_log_dir", "${AGENT_LOG_ROOT}");
     config.put("app_pid_dir", "${AGENT_WORK_ROOT}/app/run");
     config.put("app_install_dir", "${AGENT_WORK_ROOT}/app/install");
+    config.put("app_input_conf_dir", "${AGENT_WORK_ROOT}/" + SliderKeys.PROPAGATED_CONF_DIR_NAME);
     config.put("app_container_id", containerId);
   }
 

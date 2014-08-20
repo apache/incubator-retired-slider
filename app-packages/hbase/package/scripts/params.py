@@ -41,10 +41,12 @@ metric_prop_file_name = "hadoop-metrics2-hbase.properties"
 java64_home = config['hostLevelParams']['java_home']
 
 log_dir = config['configurations']['global']['app_log_dir']
-master_heapsize = config['configurations']['global']['hbase_master_heapsize']
+master_heapsize = config['configurations']['hbase-env']['hbase_master_heapsize']
 
-regionserver_heapsize = config['configurations']['global']['hbase_regionserver_heapsize']
-regionserver_xmn_size = calc_xmn_from_xms(regionserver_heapsize, 0.2, 512)
+regionserver_heapsize = config['configurations']['hbase-env']['hbase_regionserver_heapsize']
+regionserver_xmn_max = config['configurations']['hbase-env']['hbase_regionserver_xmn_max']
+regionserver_xmn_percent = config['configurations']['hbase-env']['hbase_regionserver_xmn_ratio']
+regionserver_xmn_size = calc_xmn_from_xms(regionserver_heapsize, regionserver_xmn_percent, regionserver_xmn_max)
 
 pid_dir = status_params.pid_dir
 tmp_dir = config['configurations']['hbase-site']['hbase.tmp.dir']
@@ -62,20 +64,10 @@ thrift_port = config['configurations']['global']['hbase_thrift_port']
 thrift2_port = config['configurations']['global']['hbase_thrift2_port']
 
 if security_enabled:
-  
-  _use_hostname_in_principal = default('instance_name', True)
-  _master_primary_name = config['configurations']['global']['hbase_master_primary_name']
   _hostname_lowercase = config['hostname'].lower()
-  _kerberos_domain = config['configurations']['global']['kerberos_domain']
-  _master_principal_name = config['configurations']['global']['hbase_master_principal_name']
-  _regionserver_primary_name = config['configurations']['global']['hbase_regionserver_primary_name']
-  
-  if _use_hostname_in_principal:
-    master_jaas_princ = format("{_master_primary_name}/{_hostname_lowercase}@{_kerberos_domain}")
-    regionserver_jaas_princ = format("{_regionserver_primary_name}/{_hostname_lowercase}@{_kerberos_domain}")
-  else:
-    master_jaas_princ = format("{_master_principal_name}@{_kerberos_domain}")
-    regionserver_jaas_princ = format("{_regionserver_primary_name}@{_kerberos_domain}")
+  master_jaas_princ = config['configurations']['hbase-site']['hbase.master.kerberos.principal'].replace('_HOST',_hostname_lowercase)
+  regionserver_jaas_princ = config['configurations']['hbase-site']['hbase.regionserver.kerberos.principal'].replace('_HOST',_hostname_lowercase)
+
     
 master_keytab_path = config['configurations']['hbase-site']['hbase.master.keytab.file']
 regionserver_keytab_path = config['configurations']['hbase-site']['hbase.regionserver.keytab.file']
@@ -91,6 +83,7 @@ if (('hbase-log4j' in config['configurations']) and ('content' in config['config
 else:
   log4j_props = None
 
+hbase_env_sh_template = config['configurations']['hbase-env']['content']
 
 hbase_hdfs_root_dir = config['configurations']['hbase-site']['hbase.rootdir']
 hbase_staging_dir = config['configurations']['hbase-site']['hbase.stagingdir']

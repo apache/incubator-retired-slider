@@ -44,10 +44,13 @@ import org.apache.slider.providers.agent.application.metadata.Application;
 import org.apache.slider.providers.agent.application.metadata.CommandOrder;
 import org.apache.slider.providers.agent.application.metadata.Component;
 import org.apache.slider.providers.agent.application.metadata.ComponentExport;
+import org.apache.slider.providers.agent.application.metadata.ConfigFile;
+import org.apache.slider.providers.agent.application.metadata.DefaultConfig;
 import org.apache.slider.providers.agent.application.metadata.Export;
 import org.apache.slider.providers.agent.application.metadata.ExportGroup;
 import org.apache.slider.providers.agent.application.metadata.Metainfo;
 import org.apache.slider.providers.agent.application.metadata.MetainfoParser;
+import org.apache.slider.providers.agent.application.metadata.PropertyInfo;
 import org.apache.slider.server.appmaster.model.mock.MockContainerId;
 import org.apache.slider.server.appmaster.model.mock.MockFileSystem;
 import org.apache.slider.server.appmaster.model.mock.MockNodeId;
@@ -80,7 +83,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.easymock.EasyMock.anyBoolean;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
@@ -190,6 +192,18 @@ public class TestAgentProviderService {
                                                + "          </packages>\n"
                                                + "        </osSpecific>\n"
                                                + "      </osSpecifics>\n"
+                                               + "      <configFiles>\n"
+                                               + "        <configFile>\n"
+                                               + "          <type>xml</type>\n"
+                                               + "          <fileName>hbase-site.xml</fileName>\n"
+                                               + "          <dictionaryName>hbase-site</dictionaryName>\n"
+                                               + "        </configFile>\n"
+                                               + "        <configFile>\n"
+                                               + "          <type>env</type>\n"
+                                               + "          <fileName>hbase-env.sh</fileName>\n"
+                                               + "          <dictionaryName>hbase-env</dictionaryName>\n"
+                                               + "        </configFile>\n"
+                                               + "      </configFiles>\n"
                                                + "  </application>\n"
                                                + "</metainfo>";
   private static final String metainfo_2_str = "<metainfo>\n"
@@ -578,6 +592,23 @@ public class TestAgentProviderService {
     }
     Assert.assertEquals(found, 2);
 
+    List<ConfigFile> configFiles = application.getConfigFiles();
+    Assert.assertEquals(configFiles.size(), 2);
+    found = 0;
+    for (ConfigFile configFile : configFiles) {
+      if (configFile.getDictionaryName().equals("hbase-site")) {
+        Assert.assertEquals("hbase-site.xml", configFile.getFileName());
+        Assert.assertEquals("xml", configFile.getType());
+        found++;
+      }
+      if (configFile.getDictionaryName().equals("hbase-env")) {
+        Assert.assertEquals("hbase-env.sh", configFile.getFileName());
+        Assert.assertEquals("env", configFile.getType());
+        found++;
+      }
+    }
+    Assert.assertEquals("Two config dependencies must be found.", found, 2);
+
     AgentProviderService aps = new AgentProviderService();
     AgentProviderService mockAps = Mockito.spy(aps);
     doReturn(metainfo).when(mockAps).getMetainfo();
@@ -668,6 +699,8 @@ public class TestAgentProviderService {
     AgentProviderService mockAps = Mockito.spy(aps);
     doReturn(access).when(mockAps).getAmState();
     doReturn(metainfo).when(mockAps).getApplicationMetainfo(any(SliderFileSystem.class), anyString());
+    doReturn(new HashMap<String, DefaultConfig>()).when(mockAps).
+        initializeDefaultConfigs(any(SliderFileSystem.class), anyString(), any(Metainfo.class));
 
     Configuration conf = new Configuration();
     conf.set(SliderXmlConfKeys.REGISTRY_PATH,
@@ -942,6 +975,7 @@ public class TestAgentProviderService {
 
     doReturn("HOST1").when(mockAps).getClusterInfoPropertyValue(anyString());
     doReturn(metainfo).when(mockAps).getMetainfo();
+    doReturn(new HashMap<String, DefaultConfig>()).when(mockAps).getDefaultConfigs();
 
     Map<String, Map<String, ClusterNode>> roleClusterNodeMap = new HashMap<String, Map<String, ClusterNode>>();
     Map<String, ClusterNode> container = new HashMap<String, ClusterNode>();
@@ -960,6 +994,11 @@ public class TestAgentProviderService {
     Assert.assertEquals("java_home", cmd.getHostLevelParams().get(AgentKeys.JAVA_HOME));
     Assert.assertEquals("cid1", cmd.getHostLevelParams().get("container_id"));
     Assert.assertEquals(Command.INSTALL.toString(), cmd.getRoleCommand());
+    Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("app_log_dir"));
+    Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("app_pid_dir"));
+    Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("app_install_dir"));
+    Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("app_input_conf_dir"));
+    Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("app_container_id"));
   }
 
   @Test
@@ -978,17 +1017,33 @@ public class TestAgentProviderService {
     treeOps.set("site.fs.defaultFS", "hdfs://HOST1:8020/");
     treeOps.set("internal.data.dir.path", "hdfs://HOST1:8020/database");
     treeOps.set(OptionKeys.ZOOKEEPER_HOSTS, "HOST1");
-    treeOps.set("config_types", "hbase-site");
     treeOps.getGlobalOptions().put("site.hbase-site.a.port", "${HBASE_MASTER.ALLOCATED_PORT}");
     treeOps.getGlobalOptions().put("site.hbase-site.b.port", "${HBASE_MASTER.ALLOCATED_PORT}");
     treeOps.getGlobalOptions().put("site.hbase-site.random.port", "${HBASE_MASTER.ALLOCATED_PORT}{DO_NOT_PROPAGATE}");
     treeOps.getGlobalOptions().put("site.hbase-site.random2.port", "${HBASE_MASTER.ALLOCATED_PORT}");
+
+    Map<String, DefaultConfig> defaultConfigMap = new HashMap<String, DefaultConfig>();
+    DefaultConfig defaultConfig = new DefaultConfig();
+    PropertyInfo propertyInfo1 = new PropertyInfo();
+    propertyInfo1.setName("defaultA");
+    propertyInfo1.setValue("Avalue");
+    defaultConfig.addPropertyInfo(propertyInfo1);
+    propertyInfo1 = new PropertyInfo();
+    propertyInfo1.setName("defaultB");
+    propertyInfo1.setValue("");
+    defaultConfig.addPropertyInfo(propertyInfo1);
+    defaultConfigMap.put("hbase-site", defaultConfig);
 
     expect(access.getAppConfSnapshot()).andReturn(treeOps).anyTimes();
     expect(access.getInternalsSnapshot()).andReturn(treeOps).anyTimes();
     expect(access.isApplicationLive()).andReturn(true).anyTimes();
 
     doReturn("HOST1").when(mockAps).getClusterInfoPropertyValue(anyString());
+    doReturn(defaultConfigMap).when(mockAps).getDefaultConfigs();
+    List<String> configurations = new ArrayList<String>();
+    configurations.add("hbase-site");
+    configurations.add("global");
+    doReturn(configurations).when(mockAps).getApplicationConfigurationTypes();
 
     Map<String, Map<String, ClusterNode>> roleClusterNodeMap = new HashMap<String, Map<String, ClusterNode>>();
     Map<String, ClusterNode> container = new HashMap<String, ClusterNode>();
@@ -1015,7 +1070,15 @@ public class TestAgentProviderService {
     Assert.assertEquals("10024", hbaseSiteConf.get("b.port"));
     Assert.assertEquals("10025", hbaseSiteConf.get("random.port"));
     assertEquals("${HBASE_MASTER.ALLOCATED_PORT}",
-        hbaseSiteConf.get("random2.port"));
+                 hbaseSiteConf.get("random2.port"));
+    ExecutionCommand cmd = hbr.getExecutionCommands().get(0);
+    Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("app_log_dir"));
+    Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("app_pid_dir"));
+    Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("app_install_dir"));
+    Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("app_input_conf_dir"));
+    Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("app_container_id"));
+    Assert.assertTrue(cmd.getConfigurations().get("hbase-site").containsKey("defaultA"));
+    Assert.assertFalse(cmd.getConfigurations().get("hbase-site").containsKey("defaultB"));
   }
 
 }
