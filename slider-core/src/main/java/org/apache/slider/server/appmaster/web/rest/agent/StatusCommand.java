@@ -125,4 +125,17 @@ public class StatusCommand {
   public void setRoleCommand(String roleCommand) {
     this.roleCommand = roleCommand;
   }
+
+  @Override
+  public String toString() {
+    StringBuilder builder = new StringBuilder();
+    builder.append("StatusCommand [agentCommandType=").append(agentCommandType)
+        .append(", clusterName=").append(clusterName).append(", serviceName=")
+        .append(serviceName).append(", componentName=").append(componentName)
+        .append(", configurations=").append(configurations)
+        .append(", commandParams=").append(commandParams)
+        .append(", hostLevelParams=").append(hostLevelParams)
+        .append(", roleCommand=").append(roleCommand).append("]");
+    return builder.toString();
+  }
 }
