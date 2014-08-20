@@ -98,7 +98,7 @@
 
   <property>
     <name>slider.test.accumulo.tar</name>
-    <value>/home/slider/Projects/accumulo/accumulo-1.5.1-bin.tar</value>
+    <value>/home/slider/Projects/accumulo/accumulo-1.6.0-bin.tar.gz</value>
     <description>Accumulo archive URI</description>
   </property>
 

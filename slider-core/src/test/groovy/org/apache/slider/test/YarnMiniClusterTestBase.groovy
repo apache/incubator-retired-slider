@@ -28,12 +28,11 @@ import org.apache.hadoop.fs.FileUtil
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.hdfs.MiniDFSCluster
 import org.apache.hadoop.service.ServiceOperations
+import org.apache.hadoop.util.Shell
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.yarn.server.MiniYARNCluster
-import org.apache.hadoop.yarn.server.resourcemanager.scheduler.ResourceScheduler
-import org.apache.hadoop.yarn.server.resourcemanager.scheduler.fifo.FifoScheduler
 import org.apache.slider.api.ClusterNode
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderExitCodes
@@ -50,13 +49,17 @@ import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.main.ServiceLauncherBaseTest
 import org.apache.slider.server.appmaster.SliderAppMaster
 import org.junit.After
+import org.junit.Assert
+import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.Rule
+import org.junit.rules.TestName
 import org.junit.rules.Timeout
 
-import static org.apache.slider.common.SliderXMLConfKeysForTesting.*
 import static org.apache.slider.test.KeysForTests.*
-import static org.apache.slider.test.SliderTestUtils.log
 
+import static org.apache.slider.common.SliderKeys.*;
+import static org.apache.slider.common.SliderXMLConfKeysForTesting.*;
 /**
  * Base class for mini cluster tests -creates a field for the
  * mini yarn cluster
@@ -80,6 +83,9 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
    */
   public static final String YRAM = "256"
 
+  public static final String FIFO_SCHEDULER = "org.apache.hadoop.yarn.server" +
+    ".resourcemanager.scheduler.fifo.FifoScheduler";
+
 
   public static final YarnConfiguration SLIDER_CONFIG = SliderUtils.createConfiguration();
   static {
@@ -88,7 +94,6 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     SLIDER_CONFIG.setBoolean(YarnConfiguration.NM_PMEM_CHECK_ENABLED, false)
     SLIDER_CONFIG.setBoolean(YarnConfiguration.NM_VMEM_CHECK_ENABLED, false)
     SLIDER_CONFIG.setInt(YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_MB, 1)
-    
   }
 
 
@@ -110,18 +115,13 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
   protected boolean switchToImageDeploy = false
   protected boolean imageIsRemote = false
   protected URI remoteImageURI
+  private int clusterCount =1;
 
   protected List<SliderClient> clustersToTeardown = [];
 
   /**
    * This is set in a system property
    */
-/*
-  @Rule
-  public Timeout testTimeout = new Timeout(1000* 
-      Integer.getInteger(KEY_TEST_TIMEOUT, DEFAULT_TEST_TIMEOUT))
-
-*/
 
   @Rule
   public Timeout testTimeout = new Timeout(
@@ -129,11 +129,35 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
           KEY_TEST_TIMEOUT,
           DEFAULT_TEST_TIMEOUT_SECONDS * 1000)
   )
+  @BeforeClass
+  public static void checkWindowsSupport() {
+    if (Shell.WINDOWS) {
+      assertNotNull("winutils.exe not found", Shell.WINUTILS)
+    }
+  } 
+
+  protected String buildClustername(String clustername) {
+    return clustername ?: createClusterName()
+  }
+
+  /**
+   * Create the cluster name from the method name and an auto-incrementing
+   * counter.
+   * @return a cluster name
+   */
+  protected String createClusterName() {
+    def base = methodName.getMethodName().toLowerCase(Locale.ENGLISH)
+    if (clusterCount++ > 1) {
+      base += "-$clusterCount"
+    }
+    return base
+  }
+
 
   @Override
   void setup() {
     super.setup()
-    def testConf = getTestConfiguration();
+    def testConf = testConfiguration;
     thawWaitTime = getTimeOptionMillis(testConf,
         KEY_TEST_THAW_WAIT_TIME,
         thawWaitTime)
@@ -154,7 +178,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
         hbaseLaunchWaitTime)
 
     accumuloTestsEnabled =
-        testConf.getBoolean(KEY_TEST_ACCUMULO_ENABLED, hbaseTestsEnabled)
+        testConf.getBoolean(KEY_TEST_ACCUMULO_ENABLED, accumuloTestsEnabled)
     accumuloLaunchWaitTime = getTimeOptionMillis(testConf,
         KEY_ACCUMULO_LAUNCH_TIME,
         accumuloLaunchWaitTime)
@@ -194,37 +218,39 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
   }
 
   public void stopMiniCluster() {
-    Log l = LogFactory.getLog(this.getClass())
-    ServiceOperations.stopQuietly(l, miniCluster)
+    Log commonslog = LogFactory.getLog(this.class)
+    ServiceOperations.stopQuietly(commonslog, miniCluster)
     hdfsCluster?.shutdown();
   }
 
   /**
    * Create and start a minicluster
-   * @param name cluster/test name
+   * @param name cluster/test name; if empty one is created from the junit method
    * @param conf configuration to use
    * @param noOfNodeManagers #of NMs
    * @param numLocalDirs #of local dirs
    * @param numLogDirs #of log dirs
    * @param startZK create a ZK micro cluster
    * @param startHDFS create an HDFS mini cluster
+   * @return the name of the cluster
    */
-  protected void createMiniCluster(String name,
+  protected String createMiniCluster(String name,
                                    YarnConfiguration conf,
                                    int noOfNodeManagers,
                                    int numLocalDirs,
                                    int numLogDirs,
                                    boolean startHDFS) {
     conf.setInt(YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_MB, 64);
-    conf.setClass(YarnConfiguration.RM_SCHEDULER,
-        FifoScheduler.class, ResourceScheduler.class);
+    conf.set(YarnConfiguration.RM_SCHEDULER, FIFO_SCHEDULER);
     SliderUtils.patchConfiguration(conf)
+    name = buildClustername(name)
     miniCluster = new MiniYARNCluster(name, noOfNodeManagers, numLocalDirs, numLogDirs)
     miniCluster.init(conf)
     miniCluster.start();
     if (startHDFS) {
       createMiniHDFSCluster(name, conf)
     }
+    return name
   }
 
   /**
@@ -413,12 +439,16 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
    * @param clusterOps map of key=value cluster options to set with the --option arg
    * @return launcher which will have executed the command.
    */
-  public ServiceLauncher<SliderClient> createOrBuildCluster(String action, String clustername, Map<String, Integer> roles, List<String> extraArgs, boolean deleteExistingData, boolean blockUntilRunning, Map<String, String> clusterOps) {
+  public ServiceLauncher<SliderClient> createOrBuildCluster(String action, String clustername,
+    Map<String, Integer> roles, List<String> extraArgs, boolean deleteExistingData,
+    boolean blockUntilRunning, Map<String, String> clusterOps) {
     assert clustername != null
     assert miniCluster != null
-    if (deleteExistingData) {
-      HadoopFS dfs = HadoopFS.get(new URI(fsDefaultName), miniCluster.config)
-      Path clusterDir = new SliderFileSystem(dfs, miniCluster.config).buildClusterDirPath(clustername)
+    // update action should keep existing data
+    def config = miniCluster.config
+    if (deleteExistingData && !SliderActions.ACTION_UPDATE.equals(action)) {
+      HadoopFS dfs = HadoopFS.get(new URI(fsDefaultName), config)
+      Path clusterDir = new SliderFileSystem(dfs, config).buildClusterDirPath(clustername)
       log.info("deleting customer data at $clusterDir")
       //this is a safety check to stop us doing something stupid like deleting /
       assert clusterDir.toString().contains("/.slider/")
@@ -457,7 +487,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     }
     ServiceLauncher<SliderClient> launcher = launchClientAgainstMiniMR(
         //config includes RM binding info
-        new YarnConfiguration(miniCluster.config),
+        new YarnConfiguration(config),
         //varargs list of command line params
         argsList
     )

@@ -20,15 +20,19 @@ package org.apache.slider.agent
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream
+import org.apache.commons.compress.utils.IOUtils
+import org.apache.commons.io.FileUtils
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderXMLConfKeysForTesting
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.providers.agent.AgentKeys
 import org.apache.slider.test.YarnZKMiniClusterTestBase
+import org.junit.AfterClass
 import org.junit.BeforeClass
-
-import javax.swing.ListModel
+import org.junit.rules.TemporaryFolder
 
 /**
  * test base for agent clusters
@@ -36,27 +40,51 @@ import javax.swing.ListModel
 @CompileStatic
 @Slf4j
 public abstract class AgentMiniClusterTestBase
-    extends YarnZKMiniClusterTestBase {
+extends YarnZKMiniClusterTestBase {
   protected static File agentConf
   protected static File agentDef
   protected static File imagePath
-  protected static Map<String, String> agentDefOptions 
+  protected static Map<String, String> agentDefOptions
+  private static TemporaryFolder tempFolder = new TemporaryFolder();
 
   @BeforeClass
   public static void createSubConfFiles() {
+
     File destDir = new File("target/agent_minicluster_testbase")
     destDir.mkdirs()
     agentConf = new File(destDir, "agentconf.zip")
     agentConf.createNewFile()
     agentDef = new File(destDir, "agentdef")
     agentDef.createNewFile()
-    File slider_dir = new File(new File(".").absoluteFile, "src/test/python");
-    imagePath = new File(slider_dir, "appdef_1.zip")
+
+    // dynamically create the app package for the test
+    tempFolder.create()
+    def pkgPath = tempFolder.newFolder("testpkg")
+    File imagePath = new File(pkgPath, "appdef_1.zip").canonicalFile
+    File metainfo = new File(new File(".").absoluteFile, "src/test/python/metainfo.xml");
+    ZipArchiveOutputStream zipFile = new ZipArchiveOutputStream(new FileOutputStream(imagePath));
+    try {
+      zipFile.putArchiveEntry(new ZipArchiveEntry(metainfo.name));
+      IOUtils.copy(new FileInputStream(metainfo), zipFile);
+      zipFile.closeArchiveEntry();
+    }
+    finally {
+      zipFile.close();
+    }
+
     agentDefOptions = [
-        (AgentKeys.APP_DEF)   : imagePath.toURI().toString(),
+        (AgentKeys.APP_DEF): imagePath.toURI().toString(),
         (AgentKeys.AGENT_CONF): agentConf.toURI().toString()
     ]
   }
+
+  @AfterClass
+  public static void cleanSubConfFiles() {
+    if (tempFolder.getRoot().exists()) {
+      FileUtils.deleteDirectory(tempFolder.getRoot());
+    }
+  }
+
 
   @Override
   public String getTestConfigurationPath() {
@@ -76,7 +104,6 @@ public abstract class AgentMiniClusterTestBase
   void teardown() {
     super.teardown();
     if (teardownKillall) {
-
     }
   }
 
@@ -106,13 +133,12 @@ public abstract class AgentMiniClusterTestBase
  * @param blockUntilRunning block until the AM is running
  * @return launcher which will have executed the command.
  */
-  public ServiceLauncher<SliderClient> createMasterlessAM(
+  public ServiceLauncher<SliderClient> createStandaloneAM(
       String clustername,
-      int size,
       boolean deleteExistingData,
       boolean blockUntilRunning) {
     List<String> args = [];
-    return createMasterlessAMWithArgs(
+    return createStandaloneAMWithArgs(
         clustername,
         args,
         deleteExistingData,
@@ -128,7 +154,7 @@ public abstract class AgentMiniClusterTestBase
  * @param blockUntilRunning block until the AM is running
  * @return launcher which will have executed the command.
  */
-  public ServiceLauncher<SliderClient> createMasterlessAMWithArgs(
+  public ServiceLauncher<SliderClient> createStandaloneAMWithArgs(
       String clustername,
       List<String> extraArgs,
       boolean deleteExistingData,

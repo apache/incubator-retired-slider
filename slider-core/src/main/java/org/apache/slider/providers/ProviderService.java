@@ -22,6 +22,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.service.Service;
 import org.apache.hadoop.yarn.api.records.Container;
+import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.core.conf.AggregateConf;
@@ -31,20 +32,23 @@ import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.ContainerLauncher;
 import org.apache.slider.core.main.ExitCodeProvider;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
+import org.apache.slider.server.appmaster.actions.QueueAccess;
+import org.apache.slider.server.appmaster.state.ContainerReleaseSelector;
+import org.apache.slider.server.appmaster.operations.RMOperationHandlerActions;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
-import org.apache.slider.server.services.curator.RegistryBinderService;
 import org.apache.slider.server.services.registry.RegistryViewForProviders;
-import org.apache.slider.server.services.utility.EventCallback;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
 import java.util.Map;
 
-public interface ProviderService extends ProviderCore, Service,
-                                         ExitCodeProvider {
+public interface ProviderService extends ProviderCore,
+    Service,
+    RMOperationHandlerActions,
+    ExitCodeProvider {
 
   /**
    * Set up the entire container launch context
@@ -70,6 +74,12 @@ public interface ProviderService extends ProviderCore, Service,
       SliderException;
 
   /**
+   * Notify the providers of container completion
+   * @param containerId container that has completed
+   */
+  void notifyContainerCompleted(ContainerId containerId);
+
+  /**
    * Execute a process in the AM
    * @param instanceDefinition cluster description
    * @param confDir configuration directory
@@ -82,7 +92,7 @@ public interface ProviderService extends ProviderCore, Service,
   boolean exec(AggregateConf instanceDefinition,
                File confDir,
                Map<String, String> env,
-               EventCallback execInProgress) throws IOException,
+               ProviderCompleted execInProgress) throws IOException,
       SliderException;
 
   /**
@@ -103,6 +113,17 @@ public interface ProviderService extends ProviderCore, Service,
    */
   Configuration loadProviderConfigurationInformation(File confDir)
     throws BadCommandArgumentsException, IOException;
+
+  /**
+   * The application configuration should be initialized here
+   * 
+   * @param instanceDefinition
+   * @param fileSystem
+   * @throws IOException
+   * @throws SliderException
+   */
+  void initializeApplicationConfiguration(AggregateConf instanceDefinition,
+      SliderFileSystem fileSystem) throws IOException, SliderException;
 
   /**
    * This is a validation of the application configuration on the AM.
@@ -136,13 +157,10 @@ public interface ProviderService extends ProviderCore, Service,
    */
   Map<String, String> buildMonitorDetails(ClusterDescription clusterSpec);
 
-  /**
-   * bind operation -invoked before the service is started
-   * @param stateAccessor interface offering read access to the state
-   * @param registry
-   */
-  void bind(StateAccessForProviders stateAccessor,
-      RegistryViewForProviders registry);
+  public void bind(StateAccessForProviders stateAccessor,
+      RegistryViewForProviders reg,
+      QueueAccess queueAccess,
+      List<Container> liveContainers);
 
   /**
    * Returns the agent rest operations interface.
@@ -158,10 +176,30 @@ public interface ProviderService extends ProviderCore, Service,
 
   /**
    * Prior to going live -register the initial service registry data
-   * @param amWebAPI
+   * @param unsecureWebAPI
+   * @param secureWebAPI
    * @param registryInstanceData
    */
-  void applyInitialRegistryDefinitions(URL amWebAPI,
-      ServiceInstanceData registryInstanceData) throws MalformedURLException,
-      IOException;
+  void applyInitialRegistryDefinitions(URL unsecureWebAPI,
+                                       URL secureWebAPI,
+                                       ServiceInstanceData registryInstanceData)
+      throws IOException;
+
+  /**
+   * Create the container release selector for this provider...any policy
+   * can be implemented
+   * @return the selector to use for choosing containers.
+   */
+  ContainerReleaseSelector createContainerReleaseSelector();
+
+  /**
+   * On AM restart (for whatever reason) this API is required to rebuild the AM
+   * internal state with the containers which were already assigned and running
+   * 
+   * @param liveContainers
+   * @param applicationId
+   * @param providerRoles
+   */
+  void rebuildContainerDetails(List<Container> liveContainers,
+      String applicationId, Map<Integer, ProviderRole> providerRoles);
 }

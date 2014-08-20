@@ -19,9 +19,6 @@
 
 <!--
   Properties set here are picked up in the client.
-  They are not passed to the AM -though the filesystem
-  binding details (URL And principal) are added to the
-  hbase-site.xml file when a cluster is created.
 -->
 <configuration>
   <property>

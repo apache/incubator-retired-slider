@@ -44,7 +44,7 @@ public class ArgOps {
    * create a 3-tuple
    */
   public static List<Object> triple(String msg, int min, int max) {
-    List<Object> l = new ArrayList<>(3);
+    List<Object> l = new ArrayList<Object>(3);
     l.add(msg);
     l.add(min);
     l.add(max);
@@ -58,11 +58,12 @@ public class ArgOps {
     return triple(msg, min, min);
   }
 
-  public static void applyFileSystemURL(URI filesystemURL, Configuration conf) {
-    if (filesystemURL != null) {
+  public static void applyFileSystemBinding(String filesystemBinding,
+      Configuration conf) {
+    if (filesystemBinding != null) {
       //filesystem argument was set -this overwrites any defaults in the
       //configuration
-      FileSystem.setDefaultUri(conf, filesystemURL);
+      FileSystem.setDefaultUri(conf, filesystemBinding);
     }
   }
 
@@ -99,7 +100,7 @@ public class ArgOps {
   public static Map<String, String> convertTupleListToMap(String description,
                                                           List<String> list) throws
                                                                              BadCommandArgumentsException {
-    Map<String, String> results = new HashMap<>();
+    Map<String, String> results = new HashMap<String, String>();
     if (list != null && !list.isEmpty()) {
       int size = list.size();
       if (size % 2 != 0) {
@@ -133,7 +134,7 @@ public class ArgOps {
                                                                          List<String> list) throws
                                                                                             BadCommandArgumentsException {
     Map<String, Map<String, String>> results =
-      new HashMap<>();
+      new HashMap<String, Map<String, String>>();
     if (list != null && !list.isEmpty()) {
       int size = list.size();
       if (size % 3 != 0) {
@@ -148,7 +149,7 @@ public class ArgOps {
         Map<String, String> roleMap = results.get(role);
         if (roleMap == null) {
           //demand create new role map
-          roleMap = new HashMap<>();
+          roleMap = new HashMap<String, String>();
           results.put(role, roleMap);
         }
         if (roleMap.get(key) != null) {

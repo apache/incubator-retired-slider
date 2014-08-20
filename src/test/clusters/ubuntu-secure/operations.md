@@ -1,15 +1,18 @@
 <!---
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-  
-   http://www.apache.org/licenses/LICENSE-2.0
-  
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License. See accompanying LICENSE file.
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to You under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
 -->
 
 # Just some operations for manual runs against a kerberized Ubunt VM
@@ -34,7 +37,7 @@
     yarn-daemon.sh --config $HADOOP_CONF_DIR stop resourcemanager
     yarn-daemon.sh --config $HADOOP_CONF_DIR stop nodemanager
     
-
+    ~/zookeeper/bin/zkServer.sh stop
 
 
   export SLIDER_JVM_OPTS="-Djava.security.krb5.realm=COTHAM -Djava.security.krb5.kdc=ubuntu -Djava.net.preferIPv4Stack=true"
@@ -53,7 +56,7 @@
       --manager ubuntu:8032 --filesystem hdfs://ubuntu:9090 \
          --role workers 4\
           --zkhosts ubuntu --zkport 2121 \
-          -D slider.security.enabled=true -S java.security.krb5.realm=COTHAM \
+          -S java.security.krb5.realm=COTHAM \
           -S java.security.krb5.kdc=ubuntu \
           --image hdfs://ubuntu:9090/hbase.tar \
           --appconf file:////Users/slider/Hadoop/configs/master/hbase \
@@ -67,7 +70,7 @@
     bin/slider create cl1 \
           --provider hbase \
     --manager ubuntu:8032 --filesystem hdfs://ubuntu:9090 \
-    -D slider.security.enabled=true -S java.security.krb5.realm=COTHAM \
+    -S java.security.krb5.realm=COTHAM \
     -S java.security.krb5.kdc=ubuntu \
      -D yarn.resourcemanager.principal=yarn/ubuntu@COTHAM \
             --role worker 1\
@@ -84,7 +87,7 @@
     bin/slider create cl1 \
           --provider hbase \
     --manager ubuntu:8032 --filesystem hdfs://ubuntu:9090 \
-    -D slider.security.enabled=true -S java.security.krb5.realm=COTHAM \
+    -S java.security.krb5.realm=COTHAM \
     -S java.security.krb5.kdc=ubuntu \
      -D yarn.resourcemanager.principal=yarn/ubuntu@COTHAM \
      -D dfs.namenode.kerberos.principal=hdfs/ubuntu@COTHAM \
@@ -99,14 +102,14 @@
         
     bin/slider status clu1 \
     --manager ubuntu:8032 --filesystem hdfs://ubuntu:9090 \
-    -D slider.security.enabled=true -S java.security.krb5.realm=COTHAM \
+    -S java.security.krb5.realm=COTHAM \
     -S java.security.krb5.kdc=ubuntu \
      -D yarn.resourcemanager.principal=yarn/ubuntu@COTHAM \
      -D dfs.namenode.kerberos.principal=hdfs/ubuntu@COTHAM 
            
     bin/slider list \
     --manager ubuntu:8032 \
-    -D slider.security.enabled=true -S java.security.krb5.realm=COTHAM -S java.security.krb5.kdc=ubuntu \
+    -S java.security.krb5.realm=COTHAM -S java.security.krb5.kdc=ubuntu \
      -D yarn.resourcemanager.principal=yarn/ubuntu@COTHAM \
       -D dfs.namenode.kerberos.principal=hdfs/ubuntu@COTHAM
                
@@ -119,7 +122,7 @@
           --provider hbase \
     --zkhosts ubuntu --zkport 2121 \
     --manager ubuntu:8032 --filesystem hdfs://ubuntu:9090 \
-    -D slider.security.enabled=true -S java.security.krb5.realm=COTHAM -S java.security.krb5.kdc=ubuntu \
+    -S java.security.krb5.realm=COTHAM -S java.security.krb5.kdc=ubuntu \
     -D yarn.resourcemanager.principal=yarn/ubuntu@COTHAM \
     -D dfs.namenode.kerberos.principal=hdfs/ubuntu@COTHAM \
     --image hdfs://ubuntu:9090/hbase.tar \
@@ -135,7 +138,7 @@
       --provider hbase \
       --zkhosts ubuntu  --zkport 2121 \
       --manager ubuntu:8032 --filesystem hdfs://ubuntu:9090 \
-      -D slider.security.enabled=true -S java.security.krb5.realm=COTHAM -S java.security.krb5.kdc=ubuntu \
+      -S java.security.krb5.realm=COTHAM -S java.security.krb5.kdc=ubuntu \
       -D yarn.resourcemanager.principal=yarn/ubuntu@COTHAM \
       -D dfs.namenode.kerberos.principal=hdfs/ubuntu@COTHAM \
       --image hdfs://ubuntu:9090/hbase.tar \
@@ -148,7 +151,7 @@
           --provider hbase \
          --zkhosts ubuntu  --zkport 2121 \
          --manager ubuntu:8032 --filesystem hdfs://ubuntu:9090 \
-         -D slider.security.enabled=true -S java.security.krb5.realm=COTHAM -S java.security.krb5.kdc=ubuntu \
+         -S java.security.krb5.realm=COTHAM -S java.security.krb5.kdc=ubuntu \
          -D yarn.resourcemanager.principal=yarn/ubuntu@COTHAM \
          -D dfs.namenode.kerberos.principal=hdfs/ubuntu@COTHAM \
          --image hdfs://ubuntu:9090/hbase.tar \
@@ -163,7 +166,7 @@
       --zkhosts ubuntu \
       --zkport 2121 \
       --manager ubuntu:8032 --filesystem hdfs://ubuntu:9090 \
-      -D slider.security.enabled=true -S java.security.krb5.realm=COTHAM -S java.security.krb5.kdc=ubuntu \
+      -S java.security.krb5.realm=COTHAM -S java.security.krb5.kdc=ubuntu \
       -D yarn.resourcemanager.principal=yarn/ubuntu@COTHAM \
       -D dfs.namenode.kerberos.principal=hdfs/ubuntu@COTHAM \
       --image hdfs://ubuntu:9090/hbase.tar \
@@ -173,23 +176,23 @@
                
     bin/slider  status cl1 \
     --manager ubuntu:8032 --filesystem hdfs://ubuntu:9090 \
-     -D slider.security.enabled=true -S java.security.krb5.realm=COTHAM -S java.security.krb5.kdc=ubuntu \
+     -S java.security.krb5.realm=COTHAM -S java.security.krb5.kdc=ubuntu \
      -D yarn.resourcemanager.principal=yarn/ubuntu@COTHAM \
      -D dfs.namenode.kerberos.principal=hdfs/ubuntu@COTHAM 
      
                
-    bin/slider  status cl1 -D slider.security.enabled=true -S java.security.krb5.realm=COTHAM -S java.security.krb5.kdc=ubuntu 
+    bin/slider  status cl1 -S java.security.krb5.realm=COTHAM -S java.security.krb5.kdc=ubuntu 
     
     
     bin/slider  status cl1 \
     --manager ubuntu:8032 --filesystem hdfs://ubuntu:9090 \
-    -D slider.security.enabled=true \
+    \
      -D yarn.resourcemanager.principal=yarn/ubuntu@COTHAM \
      -D dfs.namenode.kerberos.principal=hdfs/ubuntu@COTHAM 
      
    bin/slider  status cluster3 \
     --manager ubuntu:8032 --filesystem hdfs://ubuntu:9090 \
-     -D slider.security.enabled=true \
+     \
      -D yarn.resourcemanager.principal=yarn/ubuntu@COTHAM \
      -D dfs.namenode.kerberos.principal=hdfs/ubuntu@COTHAM 
      
@@ -197,28 +200,28 @@
                
     bin/slider  thaw cl1 \
     --manager ubuntu:8032 --filesystem hdfs://ubuntu:9090 \
-    -D slider.security.enabled=true \
+    \
      -S java.security.krb5.realm=COTHAM -S java.security.krb5.kdc=ubuntu \
      -D yarn.resourcemanager.principal=yarn/ubuntu@COTHAM \
      -D dfs.namenode.kerberos.principal=hdfs/ubuntu@COTHAM 
                    
     bin/slider  freeze cl1 \
     --manager ubuntu:8032 --filesystem hdfs://ubuntu:9090 \
-    -D slider.security.enabled=true \
+    \
     -S java.security.krb5.realm=COTHAM -S java.security.krb5.kdc=ubuntu \
      -D yarn.resourcemanager.principal=yarn/ubuntu@COTHAM \
      -D dfs.namenode.kerberos.principal=hdfs/ubuntu@COTHAM   
                       
     bin/slider  freeze cluster3 \
     --manager ubuntu:8032 --filesystem hdfs://ubuntu:9090 \
-    -D slider.security.enabled=true \
+    \
     -S java.security.krb5.realm=COTHAM -S java.security.krb5.kdc=ubuntu \
      -D yarn.resourcemanager.principal=yarn/ubuntu@COTHAM \
      -D dfs.namenode.kerberos.principal=hdfs/ubuntu@COTHAM 
     
     bin/slider  destroy cl1 \
     --manager ubuntu:8032 --filesystem hdfs://ubuntu:9090 \
-    -D slider.security.enabled=true \
+    \
     -S java.security.krb5.realm=COTHAM -S java.security.krb5.kdc=ubuntu \
      -D yarn.resourcemanager.principal=yarn/ubuntu@COTHAM \
      -D dfs.namenode.kerberos.principal=hdfs/ubuntu@COTHAM \
@@ -228,7 +231,7 @@
          
     bin/slider  emergency-force-kill all \
     --manager ubuntu:8032 --filesystem hdfs://ubuntu:9090 \
-    -D slider.security.enabled=true -S java.security.krb5.realm=COTHAM \
+    -S java.security.krb5.realm=COTHAM \
      -S java.security.krb5.kdc=ubuntu \
      -D yarn.resourcemanager.principal=yarn/ubuntu@COTHAM \
      -D dfs.namenode.kerberos.principal=hdfs/ubuntu@COTHAM 

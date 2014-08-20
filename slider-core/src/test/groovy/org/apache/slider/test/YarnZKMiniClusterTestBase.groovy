@@ -21,14 +21,17 @@ package org.apache.slider.test
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.io.IOUtils
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.common.SliderXmlConfKeys
-import org.apache.slider.core.registry.zk.BlockingZKWatcher
-import org.apache.slider.core.registry.zk.ZKIntegration
+import org.apache.slider.core.zk.BlockingZKWatcher
+import org.apache.slider.core.zk.ZKIntegration
 
 import java.util.concurrent.atomic.AtomicBoolean
 
-import static org.apache.slider.test.KeysForTests.USERNAME
+import static org.apache.slider.common.SliderKeys.*;
+import static org.apache.slider.common.SliderXMLConfKeysForTesting.*;
+import static org.apache.slider.test.KeysForTests.*;
 
 /**
  * Base class for mini cluster tests that use Zookeeper
@@ -41,7 +44,7 @@ public abstract class YarnZKMiniClusterTestBase extends YarnMiniClusterTestBase 
   
   public void stopMiniCluster() {
     super.stopMiniCluster()
-    microZKCluster?.close()
+    IOUtils.closeStream(microZKCluster);
   }
 
   public ZKIntegration createZKIntegrationInstance(String zkQuorum,
@@ -92,19 +95,20 @@ public abstract class YarnZKMiniClusterTestBase extends YarnMiniClusterTestBase 
    * @param startZK create a ZK micro cluster
    * @param startHDFS create an HDFS mini cluster
    */
-  protected void createMiniCluster(String name,
+  protected String createMiniCluster(String name,
                                    YarnConfiguration conf,
                                    int noOfNodeManagers,
                                    int numLocalDirs,
                                    int numLogDirs,
                                    boolean startZK,
                                    boolean startHDFS) {
-    createMiniCluster(name, conf, noOfNodeManagers, numLocalDirs, numLogDirs,
+    name = createMiniCluster(name, conf, noOfNodeManagers, numLocalDirs, numLogDirs,
         startHDFS)
 
     if (startZK) {
       createMicroZKCluster(conf)
     }
+    return name
   }
 
   /**
@@ -114,11 +118,24 @@ public abstract class YarnZKMiniClusterTestBase extends YarnMiniClusterTestBase 
    * @param noOfNodeManagers #of NMs
    * @param startZK create a ZK micro cluster
    */
-  protected void createMiniCluster(String name,
+  protected String createMiniCluster(String name,
                                    YarnConfiguration conf,
                                    int noOfNodeManagers,
                                    boolean startZK) {
-    createMiniCluster(name, conf, noOfNodeManagers, 1, 1, startZK, false)
+    return createMiniCluster(name, conf, noOfNodeManagers, 1, 1, startZK, false)
+  }
+
+  /**
+   * Create and start a minicluster with the name from the test method
+   * @param name cluster/test name
+   * @param conf configuration to use
+   * @param noOfNodeManagers #of NMs
+   * @param startZK create a ZK micro cluster
+   */
+  protected String createMiniCluster(YarnConfiguration conf,
+      int noOfNodeManagers,
+      boolean startZK) {
+    return createMiniCluster("", conf, noOfNodeManagers, 1, 1, startZK, false)
   }
 
   public void createMicroZKCluster(Configuration conf) {

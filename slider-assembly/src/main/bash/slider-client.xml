@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!--
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to You under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+
+<!--
+  Properties set here are picked up in the client.
+  They are not passed to the AM -though the filesystem
+  binding details (URL And principal) are added to the
+  hbase-site.xml file when a cluster is created.
+-->
+<configuration>
+
+  <property>
+    <name>yarn.log-aggregation-enable</name>
+    <value>true</value>
+  </property>
+  
+
+  <property>
+    <name>slider.yarn.queue</name>
+    <value>default</value>
+    <description>YARN queue for the Application Master</description>
+  </property>
+  
+  <property>
+    <name>yarn.resourcemanager.address</name>
+    <value>@@RM_ADDRESS@@</value>
+  </property>
+
+  <property>
+    <name>yarn.resourcemanager.scheduler.address</name>
+    <value>@@RM_SCHED_ADDRESS@@</value>
+  </property>
+
+  <property>
+    <name>fs.defaultFS</name>
+    <value>@@DEFAULT_FS@@</value>
+  </property>
+
+  <property>
+     <name>yarn.application.classpath</name>
+     <value>@@YARN_CP@@</value>
+  </property>
+
+  <property>
+     <name>slider.zookeeper.quorum</name>
+     <value>@@ZK_QUORUM@@</value>
+  </property>
+
+<!--
+  <property>
+    <name>yarn.resourcemanager.principal</name>
+    <value>yarn/master@MINICLUSTER</value>
+  </property>
+
+  <property>
+    <name>slider.security.enabled</name>
+    <value>true</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.kerberos.principal</name>
+    <value>hdfs/master@MINICLUSTER</value>
+  </property>
+-->
+
+
+</configuration>

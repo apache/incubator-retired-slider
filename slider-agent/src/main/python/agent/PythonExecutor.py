@@ -28,6 +28,7 @@ from threading import Thread
 from Grep import Grep
 import shell
 import sys
+import platform
 import Constants
 
 
@@ -52,7 +53,7 @@ class PythonExecutor:
     pass
 
   def run_file(self, script, script_params, tmpoutfile, tmperrfile, timeout,
-               tmpstructedoutfile, override_output_files=True,
+               tmpstructedoutfile, logger_level, override_output_files=True,
                environment_vars=None):
     """
     Executes the specified python file in a separate subprocess.
@@ -69,7 +70,16 @@ class PythonExecutor:
     else: # Append to files
       tmpout = open(tmpoutfile, 'a')
       tmperr = open(tmperrfile, 'a')
-    script_params += [tmpstructedoutfile]
+
+    # need to remove this file for the following case:
+    # status call 1 does not write to file; call 2 writes to file;
+    # call 3 does not write to file, so contents are still call 2's result
+    try:
+      os.unlink(tmpstructedoutfile)
+    except OSError:
+      pass # no error
+
+    script_params += [tmpstructedoutfile, logger_level]
     pythonCommand = self.python_command(script, script_params)
     logger.info("Running command " + pprint.pformat(pythonCommand))
     process = self.launch_python_subprocess(pythonCommand, tmpout, tmperr,
@@ -100,7 +110,7 @@ class PythonExecutor:
         }
         logger.warn(structured_out)
       else:
-        structured_out = '{}'
+        structured_out = {}
 
     if self.python_process_has_been_killed:
       error = str(error) + "\n Python script has been killed due to timeout"
@@ -116,6 +126,7 @@ class PythonExecutor:
     Creates subprocess with given parameters. This functionality was moved to separate method
     to make possible unit testing
     """
+    close_fds = None if platform.system() == "Windows" else True
     env = os.environ.copy()
     if environment_vars:
       for k, v in environment_vars:
@@ -123,13 +134,14 @@ class PythonExecutor:
         env[k] = v
     return subprocess.Popen(command,
                             stdout=tmpout,
-                            stderr=tmperr, close_fds=True, env=env)
+                            stderr=tmperr, close_fds=close_fds, env=env)
 
   def isSuccessfull(self, returncode):
     return not self.python_process_has_been_killed and returncode == 0
 
   def python_command(self, script, script_params):
-    python_binary = sys.executable
+    #we need manually pass python executable on windows because sys.executable will return service wrapper
+    python_binary = os.environ['PYTHON_EXE'] if 'PYTHON_EXE' in os.environ else sys.executable
     python_command = [python_binary, "-S", script] + script_params
     return python_command
 

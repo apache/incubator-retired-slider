@@ -23,8 +23,10 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.service.Service;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.records.Container;
+import org.apache.slider.api.InternalKeys;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.OptionKeys;
@@ -39,16 +41,17 @@ import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.providers.AbstractProviderService;
+import org.apache.slider.providers.ProviderCompleted;
+import org.apache.slider.providers.ProviderCompletedCallable;
 import org.apache.slider.providers.ProviderCore;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.common.tools.SliderUtils;
-import org.apache.slider.core.registry.zk.BlockingZKWatcher;
+import org.apache.slider.core.zk.BlockingZKWatcher;
 import org.apache.slider.common.tools.ConfigHelper;
-import org.apache.slider.server.services.utility.EventCallback;
-import org.apache.slider.server.services.utility.EventNotifyingService;
-import org.apache.slider.server.services.utility.ForkedProcessService;
+import org.apache.slider.server.services.workflow.ForkedProcessService;
+import org.apache.slider.server.services.workflow.WorkflowCallbackService;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
@@ -56,7 +59,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -160,7 +162,7 @@ public class AccumuloProviderService extends AbstractProviderService implements
     //Add binaries
     //now add the image if it was set
     String imageURI = instanceDefinition.getInternalOperations()
-                                        .get(OptionKeys.INTERNAL_APPLICATION_IMAGE_PATH);
+                                        .get(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH);
     fileSystem.maybeAddImagePath(launcher.getLocalResources(), imageURI);
 
     CommandLineBuilder commandLine = new CommandLineBuilder();
@@ -168,6 +170,8 @@ public class AccumuloProviderService extends AbstractProviderService implements
     String heap = "-Xmx" + appComponent.getOption(RoleKeys.JVM_HEAP, DEFAULT_JVM_HEAP);
     String opt = "ACCUMULO_OTHER_OPTS";
     if (SliderUtils.isSet(heap)) {
+/* JDK7
+
       switch (role) {
         case AccumuloKeys.ROLE_MASTER:
           opt = "ACCUMULO_MASTER_OPTS";
@@ -181,6 +185,16 @@ public class AccumuloProviderService extends AbstractProviderService implements
         case AccumuloKeys.ROLE_GARBAGE_COLLECTOR:
           opt = "ACCUMULO_GC_OPTS";
           break;
+      }
+*/
+      if (AccumuloKeys.ROLE_MASTER.equals(role)) {
+        opt = "ACCUMULO_MASTER_OPTS";
+      } else if (AccumuloKeys.ROLE_TABLET.equals(role)) {
+        opt = "ACCUMULO_TSERVER_OPTS";
+      } else if (AccumuloKeys.ROLE_MONITOR.equals(role)) {
+        opt = "ACCUMULO_MONITOR_OPTS";
+      } else if (AccumuloKeys.ROLE_GARBAGE_COLLECTOR.equals(role)) {
+        opt = "ACCUMULO_GC_OPTS";
       }
       launcher.setEnv(opt, heap);
     }
@@ -237,7 +251,7 @@ public class AccumuloProviderService extends AbstractProviderService implements
 
 
     String accumuloScript = AccumuloClientProvider.buildScriptBinPath(instance);
-    List<String> launchSequence = new ArrayList<>(8);
+    List<String> launchSequence = new ArrayList<String>(8);
     launchSequence.add(0, accumuloScript);
     Collections.addAll(launchSequence, commands);
     return launchSequence;
@@ -265,9 +279,8 @@ public class AccumuloProviderService extends AbstractProviderService implements
   public boolean exec(AggregateConf instanceDefinition,
                       File confDir,
                       Map<String, String> env,
-                      EventCallback execInProgress) throws
-                                                 IOException,
-      SliderException {
+                      ProviderCompleted execInProgress)
+      throws IOException, SliderException {
 
 
     //now pull in these files and do a bit of last-minute validation
@@ -332,10 +345,18 @@ public class AccumuloProviderService extends AbstractProviderService implements
     
     //callback to AM to trigger cluster review is set up to happen after
     //the init/verify action has succeeded
-    EventNotifyingService notifier = new EventNotifyingService(execInProgress,
-           internalOperations.getGlobalOptions().getOptionInt(
-             OptionKeys.INTERNAL_CONTAINER_STARTUP_DELAY,
-             OptionKeys.DEFAULT_CONTAINER_STARTUP_DELAY));
+    int delay = internalOperations.getGlobalOptions().getOptionInt(
+        InternalKeys.INTERNAL_CONTAINER_STARTUP_DELAY,
+        InternalKeys.DEFAULT_INTERNAL_CONTAINER_STARTUP_DELAY);
+    ProviderCompletedCallable completedCallable =
+        new ProviderCompletedCallable(execInProgress, null);
+    // JDK7
+    Service notifier = new WorkflowCallbackService(
+        "accumulo notifier",
+        completedCallable,
+        delay,
+        true);
+    
     // register the service for lifecycle management; 
     // this service is started after the accumulo process completes
     addService(notifier);
@@ -357,7 +378,7 @@ public class AccumuloProviderService extends AbstractProviderService implements
     String dataDir = cd.getInternalOperations()
                                .getGlobalOptions()
                                .getMandatoryOption(
-                                 OptionKeys.INTERNAL_DATA_DIR_PATH);
+                                 InternalKeys.INTERNAL_DATA_DIR_PATH);
     Path accumuloInited = new Path(dataDir, INSTANCE_ID);
     FileSystem fs2 = FileSystem.get(accumuloInited.toUri(), getConf());
     return fs2.exists(accumuloInited);
@@ -381,7 +402,7 @@ public class AccumuloProviderService extends AbstractProviderService implements
   @Override
   public Map<String, String> buildProviderStatus() {
     
-    Map<String,String> status = new HashMap<>();
+    Map<String,String> status = new HashMap<String, String>();
     
     
     return status;
@@ -403,9 +424,13 @@ public class AccumuloProviderService extends AbstractProviderService implements
     String monitorKey = "Active Accumulo Monitor: ";
     String monitorAddr = getInfoAvoidingNull(clusterDesc, AccumuloKeys.MONITOR_ADDRESS);
     if (!StringUtils.isBlank(monitorAddr)) {
+      try {
         HostAndPort hostPort = HostAndPort.fromString(monitorAddr);
         details.put(monitorKey,
             String.format("http://%s:%d", hostPort.getHostText(), hostPort.getPort()));
+      } catch (Exception e) {
+        details.put(monitorKey + "N/A", null);
+      }
     } else {
       details.put(monitorKey + "N/A", null);
     }

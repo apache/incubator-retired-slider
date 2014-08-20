@@ -36,18 +36,58 @@ size of managed applications consistent with the specified configuration, even
 in the face of failures of servers in the cluster -as well as parts of the
 application itself
 
+## Open-Source Development
+
+Apache Slider is an effort undergoing incubation at The Apache Software
+Foundation (ASF), sponsored by Apache Incubator.
+ 
+Incubation is required of all newly accepted projects until a further review
+indicates that the infrastructure, communications, and decision making process
+have stabilized in a manner consistent with other successful ASF projects.
+While incubation status is not necessarily a reflection of the completeness
+or stability of the code, it does indicate that the project has yet
+to be fully endorsed by the ASF.
+
+### Mailing Lists
+
+We have a single mailing list for developers and users of Slider: dev@slider.incubator.apache.org
+
+1. You can subscribe to this by emailing dev-subscribe@slider.incubator.apache.org from the
+email account to which you wish to subscribe from -and follow the instructions returned.
+1. You can unsubscribe later by emailing dev-unsubscribe@slider.incubator.apache.org
+
+There is a mailing list of every commit to the source code repository, commits@slider.incubator.apache.org.
+This is generally only of interest to active developers.
+
+
+### Bug reports
+
+Bug reports and other issues can be filed on the [Apache Jira](https://issues.apache.org/jira/) server.
+Please use the SLIDER project for filing the issues.
+
+### Source code access
+
+Read-only:
+
+*  [https://git.apache.org/repos/asf/incubator-slider.git](https://git.apache.org/repos/asf/incubator-slider.git)
+*  [https://github.com/apache/incubator-slider.git](https://github.com/apache/incubator-slider.git)
+
+Read-write (for committers):
+
+*  [https://git-wip-us.apache.org/repos/asf/incubator-slider.git](https://git-wip-us.apache.org/repos/asf/incubator-slider.git)
+  
 
 # License
 
 
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-  
-   (http://www.apache.org/licenses/LICENSE-2.0)
-  
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License. See accompanying LICENSE file.
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+    
+     (http://www.apache.org/licenses/LICENSE-2.0)
+    
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License. See accompanying LICENSE file.

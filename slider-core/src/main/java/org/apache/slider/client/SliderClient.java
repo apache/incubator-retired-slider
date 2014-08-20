@@ -23,6 +23,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
+import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
@@ -34,6 +35,7 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterNode;
+import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.OptionKeys;
 import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.SliderClusterProtocol;
@@ -93,7 +95,9 @@ import org.apache.slider.core.registry.docstore.PublishedConfigurationOutputter;
 import org.apache.slider.core.registry.info.RegisteredEndpoint;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.core.registry.retrieve.RegistryRetriever;
-import org.apache.slider.core.registry.zk.ZKPathBuilder;
+import org.apache.slider.core.zk.BlockingZKWatcher;
+import org.apache.slider.core.zk.ZKIntegration;
+import org.apache.slider.core.zk.ZKPathBuilder;
 import org.apache.slider.providers.AbstractClientProvider;
 import org.apache.slider.providers.SliderProviderFactory;
 import org.apache.slider.providers.agent.AgentKeys;
@@ -105,6 +109,10 @@ import org.apache.slider.server.services.registry.SliderRegistryService;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
 
 import static org.apache.slider.common.params.SliderActions.*;
+
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.ZooDefs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -156,6 +164,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    */
   public SliderClient() {
     super("Slider Client");
+    new HdfsConfiguration();
+    new YarnConfiguration();
   }
 
   @Override
@@ -173,7 +183,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     Configuration clientConf = SliderUtils.loadClientConfigurationResource();
     ConfigHelper.mergeConfigurations(conf, clientConf, CLIENT_RESOURCE);
     serviceArgs.applyDefinitions(conf);
-    serviceArgs.applyFileSystemURL(conf);
+    serviceArgs.applyFileSystemBinding(conf);
     // init security with our conf
     if (SliderUtils.isHadoopClusterSecure(conf)) {
       SliderUtils.forceLogin();
@@ -196,6 +206,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @return the exit code
    * @throws Throwable anything that went wrong
    */
+/* JDK7
+
   @Override
   public int runService() throws Throwable {
 
@@ -207,6 +219,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     switch (action) {
       case ACTION_BUILD:
         exitCode = actionBuild(clusterName, serviceArgs.getActionBuildArgs());
+        break;
+      case ACTION_UPDATE:
+        exitCode = actionUpdate(clusterName, serviceArgs.getActionUpdateArgs());
         break;
       case ACTION_CREATE:
         exitCode = actionCreate(clusterName, serviceArgs.getActionCreateArgs());
@@ -265,6 +280,152 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     return exitCode;
   }
 
+*/
+  @Override
+  public int runService() throws Throwable {
+
+    // choose the action
+    String action = serviceArgs.getAction();
+    int exitCode = EXIT_SUCCESS;
+    String clusterName = serviceArgs.getClusterName();
+    // actions
+    if (ACTION_BUILD.equals(action)) {
+      exitCode = actionBuild(clusterName, serviceArgs.getActionBuildArgs());
+    } else if (ACTION_CREATE.equals(action)) {
+      exitCode = actionCreate(clusterName, serviceArgs.getActionCreateArgs());
+    } else if (ACTION_FREEZE.equals(action)) {
+      exitCode = actionFreeze(clusterName,
+          serviceArgs.getActionFreezeArgs());
+    } else if (ACTION_THAW.equals(action)) {
+      exitCode = actionThaw(clusterName, serviceArgs.getActionThawArgs());
+    } else if (ACTION_DESTROY.equals(action)) {
+      exitCode = actionDestroy(clusterName);
+    } else if (ACTION_EXISTS.equals(action)) {
+      exitCode = actionExists(clusterName,
+          serviceArgs.getActionExistsArgs().live);
+    } else if (ACTION_FLEX.equals(action)) {
+      exitCode = actionFlex(clusterName, serviceArgs.getActionFlexArgs());
+    } else if (ACTION_GETCONF.equals(action)) {
+      exitCode = actionGetConf(clusterName, serviceArgs.getActionGetConfArgs());
+    } else if (ACTION_HELP.equals(action) ||
+               ACTION_USAGE.equals(action)) {
+      log.info(serviceArgs.usage());
+
+    } else if (ACTION_KILL_CONTAINER.equals(action)) {
+      exitCode = actionKillContainer(clusterName,
+          serviceArgs.getActionKillContainerArgs());
+
+    } else if (ACTION_AM_SUICIDE.equals(action)) {
+      exitCode = actionAmSuicide(clusterName,
+          serviceArgs.getActionAMSuicideArgs());
+
+    } else if (ACTION_LIST.equals(action)) {
+      exitCode = actionList(clusterName);
+    } else if (ACTION_REGISTRY.equals(action)) {
+      exitCode = actionRegistry(
+          serviceArgs.getActionRegistryArgs());
+    } else if (ACTION_STATUS.equals(action)) {
+      exitCode = actionStatus(clusterName,
+          serviceArgs.getActionStatusArgs());
+    } else if (ACTION_UPDATE.equals(action)) {
+      exitCode = actionUpdate(clusterName, serviceArgs.getActionUpdateArgs());
+
+    } else if (ACTION_VERSION.equals(action)) {
+
+      exitCode = actionVersion();
+    } else {
+      throw new SliderException(EXIT_UNIMPLEMENTED,
+          "Unimplemented: " + action);
+    }
+
+    return exitCode;
+  }
+  /**
+   * Delete the zookeeper node associated with the calling user and the cluster
+   **/
+  protected boolean deleteZookeeperNode(String clusterName) throws YarnException, IOException {
+    String user = getUsername();
+    String zkPath = ZKIntegration.mkClusterPath(user, clusterName);
+    Exception e = null;
+    try {
+      Configuration config = getConfig();
+      if (!SliderUtils.isHadoopClusterSecure(config)) {
+        ZKIntegration client = getZkClient(clusterName, user);
+        if (client != null) {
+          if (client.exists(zkPath)) {
+            log.info("Deleting zookeeper path {}", zkPath);
+          }
+          client.deleteRecursive(zkPath);
+          return true;
+        }
+      } else {
+        log.warn("Default zookeeper node is not available for secure cluster");
+      }
+    } catch (InterruptedException ignored) {
+      e = ignored;
+    } catch (KeeperException ignored) {
+      e = ignored;
+    } catch (BadConfigException ignored) {
+      e = ignored;
+    }
+    if (e != null) {
+      log.warn("Unable to recursively delete zk node {}", zkPath);
+      log.debug("Reason: ", e);
+    }
+
+    return false;
+  }
+
+  /**
+   * Create the zookeeper node associated with the calling user and the cluster
+   */
+  protected String createZookeeperNode(String clusterName, Boolean nameOnly) throws YarnException, IOException {
+    String user = getUsername();
+    String zkPath = ZKIntegration.mkClusterPath(user, clusterName);
+    if(nameOnly) {
+      return zkPath;
+    }
+    Configuration config = getConfig();
+    if (!SliderUtils.isHadoopClusterSecure(config)) {
+      ZKIntegration client = getZkClient(clusterName, user);
+      if (client != null) {
+        try {
+          client.createPath(zkPath, "", ZooDefs.Ids.OPEN_ACL_UNSAFE,
+                            CreateMode.PERSISTENT);
+          return zkPath;
+          
+          //JDK7
+//        } catch (InterruptedException | KeeperException e) {
+        } catch (InterruptedException e) {
+          log.warn("Unable to create zk node {}", zkPath, e);
+        } catch ( KeeperException e) {
+          log.warn("Unable to create zk node {}", zkPath, e);
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Gets a zookeeper client, returns null if it cannot connect to zookeeper
+   **/
+  protected ZKIntegration getZkClient(String clusterName, String user) throws YarnException {
+    String registryQuorum = lookupZKQuorum();
+    ZKIntegration client = null;
+    try {
+      BlockingZKWatcher watcher = new BlockingZKWatcher();
+      client = ZKIntegration.newInstance(registryQuorum, user, clusterName, true, false, watcher);
+      client.init();
+      watcher.waitForZKConnection(2 * 1000);
+    } catch (InterruptedException e) {
+      client = null;
+      log.warn("Unable to connect to zookeeper quorum {}", registryQuorum, e);
+    } catch (IOException e) {
+      log.warn("Unable to connect to zookeeper quorum {}", registryQuorum, e);
+    }
+    return client;
+  }
 
   /**
    * Destroy a cluster. There's two race conditions here
@@ -292,6 +453,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       sliderFileSystem.getFileSystem().delete(clusterDirectory, true);
     if (!deleted) {
       log.warn("Filesystem returned false from delete() operation");
+    }
+
+    if(!deleteZookeeperNode(clustername)) {
+      log.warn("Unable to perform node cleanup in Zookeeper.");
     }
 
     List<ApplicationReport> instances = findAllLiveInstances(clustername);
@@ -364,27 +529,42 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
                                                YarnException,
                                                IOException {
 
-    buildInstanceDefinition(clustername, buildInfo);
+    buildInstanceDefinition(clustername, buildInfo, false, false);
     return EXIT_SUCCESS; 
   }
 
+  /**
+   * Update the cluster specification
+   *
+   * @param clustername cluster name
+   * @param buildInfo the arguments needed to update the cluster
+   * @throws YarnException Yarn problems
+   * @throws IOException other problems
+   */
+  public int actionUpdate(String clustername, AbstractClusterBuildingActionArgs buildInfo) throws
+      YarnException, IOException {
+    buildInstanceDefinition(clustername, buildInfo, true, true);
+    return EXIT_SUCCESS; 
+  }
 
   /**
    * Build up the AggregateConfiguration for an application instance then
    * persists it
    * @param clustername name of the cluster
    * @param buildInfo the arguments needed to build the cluster
+   * @param overwrite true if existing cluster directory can be overwritten
+   * @param liveClusterAllowed true if live cluster can be modified
    * @throws YarnException
    * @throws IOException
    */
   
   public void buildInstanceDefinition(String clustername,
-                                         AbstractClusterBuildingActionArgs buildInfo)
+      AbstractClusterBuildingActionArgs buildInfo, boolean overwrite, boolean liveClusterAllowed)
         throws YarnException, IOException {
     // verify that a live cluster isn't there
     SliderUtils.validateClusterName(clustername);
     verifyBindingsDefined();
-    verifyNoLiveClusters(clustername);
+    if (!liveClusterAllowed) verifyNoLiveClusters(clustername);
 
     Configuration conf = getConfig();
     String registryQuorum = lookupZKQuorum();
@@ -474,6 +654,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     // resource component args
     appConf.merge(cmdLineResourceOptions);
+    resources.merge(cmdLineResourceOptions);
     resources.mergeComponents(buildInfo.getResourceCompOptionMap());
 
     builder.init(providerName, instanceDefinition);
@@ -495,11 +676,25 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         registryQuorum,
         quorum);
     String zookeeperRoot = buildInfo.getAppZKPath();
-    
+
     if (isSet(zookeeperRoot)) {
       zkPaths.setAppPath(zookeeperRoot);
-      
+    } else {
+      String createDefaultZkNode = appConf.getGlobalOptions().getOption(AgentKeys.CREATE_DEF_ZK_NODE, "false");
+      if (createDefaultZkNode.equals("true")) {
+        String defaultZKPath = createZookeeperNode(clustername, false);
+        log.info("ZK node created for application instance: {}.", defaultZKPath);
+        if (defaultZKPath != null) {
+          zkPaths.setAppPath(defaultZKPath);
+        }
+      } else {
+        // create AppPath if default is being used
+        String defaultZKPath = createZookeeperNode(clustername, true);
+        log.info("ZK node assigned to application instance: {}.", defaultZKPath);
+        zkPaths.setAppPath(defaultZKPath);
+      }
     }
+
     builder.addZKBinding(zkPaths);
 
     //then propagate any package URI
@@ -519,7 +714,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       throw e;
     }
     try {
-      builder.persist(appconfdir);
+      builder.persist(appconfdir, overwrite);
     } catch (LockAcquireFailedException e) {
       log.warn("Failed to get a Lock on {} : {}", builder, e);
       throw new BadClusterStateException("Failed to save " + clustername
@@ -627,9 +822,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     return instanceDefinition;
 
   }
-  
-  
-
 
   /**
    *
@@ -643,8 +835,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    */
   public LaunchedApplication launchApplication(String clustername,
                                                Path clusterDirectory,
-                               AggregateConf instanceDefinition,
-                               boolean debugAM)
+                                               AggregateConf instanceDefinition,
+                                               boolean debugAM)
     throws YarnException, IOException {
 
 
@@ -669,16 +861,16 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       instanceDefinition.getAppConfOperations();
     Path generatedConfDirPath =
       createPathThatMustExist(internalOptions.getMandatoryOption(
-        OptionKeys.INTERNAL_GENERATED_CONF_PATH));
+        InternalKeys.INTERNAL_GENERATED_CONF_PATH));
     Path snapshotConfPath =
       createPathThatMustExist(internalOptions.getMandatoryOption(
-        OptionKeys.INTERNAL_SNAPSHOT_CONF_PATH));
+        InternalKeys.INTERNAL_SNAPSHOT_CONF_PATH));
 
 
     // cluster Provider
     AbstractClientProvider provider = createClientProvider(
       internalOptions.getMandatoryOption(
-        OptionKeys.INTERNAL_PROVIDER_NAME));
+        InternalKeys.INTERNAL_PROVIDER_NAME));
     // make sure the conf dir is valid;
     
     // now build up the image path
@@ -707,8 +899,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // set the application name;
     amLauncher.setKeepContainersOverRestarts(true);
 
-    amLauncher.setMaxAppAttempts(config.getInt(KEY_AM_RESTART_LIMIT,
-                                               DEFAULT_AM_RESTART_LIMIT));
+    int maxAppAttempts = config.getInt(KEY_AM_RESTART_LIMIT, 0);
+    amLauncher.setMaxAppAttempts(maxAppAttempts);
 
     sliderFileSystem.purgeAppInstanceTempFiles(clustername);
     Path tempPath = sliderFileSystem.createAppInstanceTempPath(
@@ -880,8 +1072,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       commandLine.add(Arguments.ARG_RM_ADDR, rmAddr);
     }
 
-    if (serviceArgs.getFilesystemURL() != null) {
-      commandLine.add(Arguments.ARG_FILESYSTEM, serviceArgs.getFilesystemURL());
+    if (serviceArgs.getFilesystemBinding() != null) {
+      commandLine.add(Arguments.ARG_FILESYSTEM, serviceArgs.getFilesystemBinding());
     }
     
     addConfOptionToCLI(commandLine, config, REGISTRY_PATH,
@@ -891,7 +1083,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     if (clusterSecure) {
       // if the cluster is secure, make sure that
       // the relevant security settings go over
-      addConfOptionToCLI(commandLine, config, KEY_SECURITY_ENABLED);
+/*
+      addConfOptionToCLI(commandLine, config, KEY_SECURITY);
+*/
       addConfOptionToCLI(commandLine,
           config,
           DFSConfigKeys.DFS_NAMENODE_USER_NAME_KEY);
@@ -1254,7 +1448,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     verifyBindingsDefined();
     SliderUtils.validateClusterName(name);
     log.debug("actionFlex({})", name);
-    Map<String, Integer> roleInstances = new HashMap<>();
+    Map<String, Integer> roleInstances = new HashMap<String, Integer>();
     Map<String, String> roleMap = args.getComponentMap();
     for (Map.Entry<String, String> roleEntry : roleMap.entrySet()) {
       String key = roleEntry.getKey();
@@ -1549,7 +1743,12 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
           return EXIT_FALSE;
         }
       }
-    } catch (YarnException | IOException e) {
+
+// JDK7    } catch (YarnException | IOException e) {
+    } catch (YarnException e) {
+      log.warn("Exception while waiting for the cluster {} to shut down: {}",
+               clustername, e);
+    } catch ( IOException e) {
       log.warn("Exception while waiting for the cluster {} to shut down: {}",
                clustername, e);
     }
@@ -1613,6 +1812,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     }
     try {
       String description = "Slider Application Instance " + clustername;
+// JDK7      
+/*
       switch (format) {
         case Arguments.FORMAT_XML:
           Configuration siteConf = getSiteConf(status, clustername);
@@ -1624,6 +1825,17 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
           props.store(writer, description);
           break;
         default:
+          throw new BadCommandArgumentsException("Unknown format: " + format);
+      }
+*/
+      if (Arguments.FORMAT_XML.equals(format)) {
+        Configuration siteConf = getSiteConf(status, clustername);
+        siteConf.writeXml(writer);
+      } else if (Arguments.FORMAT_PROPERTIES.equals(format)) {
+        Properties props = new Properties();
+        props.putAll(status.clientProperties);
+        props.store(writer, description);
+      } else {
           throw new BadCommandArgumentsException("Unknown format: " + format);
       }
     } finally {
@@ -1729,10 +1941,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @throws IOException any problems loading -including a missing file
    */
   @VisibleForTesting
-  public AggregateConf loadPersistedClusterDescription(String clustername) throws
-                                                                           IOException,
-      SliderException,
-                                                                           LockAcquireFailedException {
+  public AggregateConf loadPersistedClusterDescription(String clustername)
+      throws IOException, SliderException, LockAcquireFailedException {
     Path clusterDirectory = sliderFileSystem.buildClusterDirPath(clustername);
     ConfPersister persister = new ConfPersister(sliderFileSystem, clusterDirectory);
     AggregateConf instanceDescription = new AggregateConf();
@@ -1809,7 +2019,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     if (uuids.length == 0) {
       // short cut on an empty list
-      return new LinkedList<>();
+      return new LinkedList<ClusterNode>();
     }
     return createClusterOperations().listClusterNodes(uuids);
   }
@@ -2008,7 +2218,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
                                       + serviceType
                                       + " name " + name);
     }
-    List<ServiceInstanceData> sids = new ArrayList<>(size);
+    List<ServiceInstanceData> sids = new ArrayList<ServiceInstanceData>(size);
     for (CuratorServiceInstance<ServiceInstanceData> instance : instances) {
       ServiceInstanceData payload = instance.payload;
       logInstance(payload, registryArgs.verbose);
@@ -2187,13 +2397,16 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @throws IOException
    * @throws YarnException
    */
-  public List<String> listRegistryInstanceIDs() throws
+  public List<String> listRegisteredSliderInstances() throws
       IOException,
       YarnException {
     try {
       maybeStartRegistry();
       return registry.instanceIDs(SliderKeys.APP_TYPE);
-    } catch (YarnException | IOException e) {
+/// JDK7    } catch (YarnException | IOException e) {
+    } catch (IOException e) {
+      throw e;
+    } catch (YarnException e) {
       throw e;
     } catch (Exception e) {
       throw new IOException(e);

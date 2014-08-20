@@ -29,8 +29,6 @@ import org.apache.slider.common.params.SliderActions
 import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
 import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.core.main.ServiceLauncher
-import org.apache.slider.test.SliderTestUtils
-import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
@@ -45,7 +43,7 @@ class TestActionExists extends AgentMiniClusterTestBase {
   @Before
   public void setup() {
     super.setup()
-    createMiniCluster("TestActionExists", configuration, 1, false)
+    createMiniCluster("", configuration, 1, false)
   }
   
   @Test
@@ -62,7 +60,7 @@ class TestActionExists extends AgentMiniClusterTestBase {
           Arguments.ARG_MANAGER, RMAddr
           ],
       )
-      Assert.fail("expected an exception, got a status code "+ launcher.serviceExitCode)
+      fail("expected an exception, got a status code "+ launcher.serviceExitCode)
     } catch (UnknownApplicationInstanceException e) {
       
     }
@@ -71,11 +69,14 @@ class TestActionExists extends AgentMiniClusterTestBase {
   @Test
   public void testExistsLiveCluster() throws Throwable {
     //launch the cluster
-    String clustername = "testExistsLiveCluster"
-    ServiceLauncher launcher = createMasterlessAM(clustername, 0, true, false)
+    String clustername = createClusterName()
+    ServiceLauncher<SliderClient> launcher = createStandaloneAM(
+        clustername,
+        true,
+        false)
     SliderClient sliderClient = launcher.service
     addToTeardown(launcher)
-    ApplicationReport report = waitForClusterLive((SliderClient) launcher.service)
+    ApplicationReport report = waitForClusterLive(sliderClient)
 
     // exists holds when cluster is running
     launcher = launchClientAgainstMiniMR(
@@ -88,7 +89,7 @@ class TestActionExists extends AgentMiniClusterTestBase {
           Arguments.ARG_MANAGER, RMAddr
           ],
       )
-    SliderTestUtils.assertSucceeded(launcher)
+    assertSucceeded(launcher)
 
     //and when cluster is running
     launcher = launchClientAgainstMiniMR(
@@ -103,7 +104,7 @@ class TestActionExists extends AgentMiniClusterTestBase {
           ],
       )
 
-    SliderTestUtils.assertSucceeded(launcher)
+    assertSucceeded(launcher)
     
     // assert that the cluster exists
 

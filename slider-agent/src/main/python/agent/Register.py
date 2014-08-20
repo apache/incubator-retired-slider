@@ -29,7 +29,7 @@ class Register:
   def __init__(self, config):
     self.config = config
 
-  def build(self, id='-1'):
+  def build(self, actualState, expectedState, allocated_ports, id='-1'):
     timestamp = int(time.time() * 1000)
 
     version = self.read_agent_version()
@@ -38,7 +38,10 @@ class Register:
                 'timestamp': timestamp,
                 'hostname': self.config.getLabel(),
                 'publicHostname': hostname.public_hostname(),
-                'agentVersion': version
+                'agentVersion': version,
+                'actualState': actualState,
+                'expectedState': expectedState,
+                'allocatedPorts': allocated_ports
     }
     return register
 

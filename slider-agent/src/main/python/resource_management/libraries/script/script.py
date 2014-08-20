@@ -24,6 +24,7 @@ import os
 import sys
 import json
 import logging
+import shutil
 
 from resource_management.core.environment import Environment
 from resource_management.core.exceptions import Fail, ClientComponentHasNoStatus, ComponentIsNotRunning
@@ -32,6 +33,16 @@ from resource_management.core.resources import Tarball
 from resource_management.core.resources import Directory
 from resource_management.libraries.script.config_dictionary import ConfigDictionary
 from resource_management.libraries.script.repo_installer import RepoInstaller
+from resource_management.core.logger import Logger
+
+USAGE = """Usage: {0} <COMMAND> <JSON_CONFIG> <BASEDIR> <STROUTPUT> <LOGGING_LEVEL>
+
+<COMMAND> command type (INSTALL/CONFIGURE/START/STOP/SERVICE_CHECK...)
+<JSON_CONFIG> path to command json file. Ex: /var/lib/ambari-agent/data/command-2.json
+<BASEDIR> path to service metadata dir. Ex: /var/lib/ambari-agent/cache/stacks/HDP/2.0.6/services/HDFS
+<STROUTPUT> path to file with structured command output (file will be created). Ex:/tmp/my.txt
+<LOGGING_LEVEL> log level for stdout. Ex:DEBUG,INFO
+"""
 
 class Script(object):
   """
@@ -52,9 +63,8 @@ class Script(object):
   def put_structured_out(self, sout):
     Script.structuredOut.update(sout)
     try:
-      structuredOut = json.dumps(Script.structuredOut)
       with open(self.stroutfile, 'w') as fp:
-        json.dump(structuredOut, fp)
+        json.dump(Script.structuredOut, fp)
     except IOError:
       Script.structuredOut.update({"errMsg" : "Unable to write to " + self.stroutfile})
 
@@ -75,15 +85,23 @@ class Script(object):
     cherr.setFormatter(formatter)
     logger.addHandler(cherr)
     logger.addHandler(chout)
+    
     # parse arguments
-    if len(sys.argv) < 5:
-      logger.error("Script expects at least 4 arguments")
-      sys.exit(1)
+    if len(sys.argv) < 6: 
+     logger.error("Script expects at least 5 arguments")
+     print USAGE.format(os.path.basename(sys.argv[0])) # print to stdout
+     sys.exit(1)
+    
     command_name = str.lower(sys.argv[1])
-    # parse command parameters
     command_data_file = sys.argv[2]
     basedir = sys.argv[3]
     self.stroutfile = sys.argv[4]
+    logging_level = sys.argv[5]
+    
+    logging_level_str = logging._levelNames[logging_level]
+    chout.setLevel(logging_level_str)
+    logger.setLevel(logging_level_str)
+      
     try:
       with open(command_data_file, "r") as f:
         pass
@@ -162,12 +180,23 @@ class Script(object):
             Directory(install_location, action = "delete")
             Directory(install_location)
             Tarball(tarball, location=install_location)
+          elif type.lower() == "folder":
+            if name.startswith(os.path.sep):
+              src = name
+            else:
+              basedir = env.config.basedir
+              src = os.path.join(basedir, name)
+            dest = config['configurations']['global']['app_install_dir']
+            Directory(dest, action = "delete")
+            Logger.info("Copying from " + src + " to " + dest)
+            shutil.copytree(src, dest)
           else:
             if not repo_installed:
               RepoInstaller.install_repos(config)
               repo_installed = True
             Package(name)
-    except KeyError:
+    except KeyError, e:
+      Logger.info("Error installing packages. " + repr(e))
       pass # No reason to worry
 
     #RepoInstaller.remove_repos(config)

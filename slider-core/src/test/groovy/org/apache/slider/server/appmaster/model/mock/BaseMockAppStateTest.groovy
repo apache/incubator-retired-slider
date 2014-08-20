@@ -30,7 +30,9 @@ import org.apache.hadoop.yarn.api.records.ContainerStatus
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.common.tools.SliderFileSystem
 import org.apache.slider.common.tools.SliderUtils
+import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.main.LauncherExitCodes
+import org.apache.slider.server.appmaster.operations.AbstractRMOperation
 import org.apache.slider.server.appmaster.state.*
 import org.apache.slider.test.SliderTestBase
 import org.junit.Before
@@ -81,15 +83,31 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
     appState = new AppState(new MockRecordFactory())
     appState.setContainerLimits(RM_MAX_RAM, RM_MAX_CORES)
     appState.buildInstance(
-        factory.newInstanceDefinition(0, 0, 0),
+        buildInstanceDefinition(),
+        new Configuration(),
         new Configuration(false),
         factory.ROLES,
         fs,
         historyPath,
-        null, null)
+        null, null,
+        new SimpleReleaseSelector())
   }
 
-  abstract String getTestName();
+  /**
+   * Override point, define the instance definition
+   * @return
+   */
+  public AggregateConf buildInstanceDefinition() {
+    factory.newInstanceDefinition(0, 0, 0)
+  }
+
+  /**
+   * Get the test name ... defaults to method name
+   * @return
+   */
+  String getTestName() {
+    methodName.methodName;
+  }
 
   public RoleStatus getRole0Status() {
     return appState.lookupRoleStatus(ROLE0)
@@ -166,11 +184,53 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
    * @return a list of roles
    */
   protected List<RoleInstance> createAndStartNodes() {
-    List<RoleInstance> instances = createAndSubmitNodes()
+    return createStartAndStopNodes([])
+  }
+
+  /**
+   * Create, Start and stop nodes
+   * @param completionResults List filled in with the status on all completed nodes
+   * @return the nodes
+   */
+  public List<RoleInstance> createStartAndStopNodes(
+      List<AppState.NodeCompletionResult> completionResults) {
+    List<ContainerId> released = []
+    List<RoleInstance> instances = createAndSubmitNodes(released)
     for (RoleInstance instance : instances) {
       assert appState.onNodeManagerContainerStarted(instance.containerId)
     }
+    releaseContainers(completionResults,
+        released,
+        ContainerState.COMPLETE,
+        "released",
+        0
+    )
     return instances
+  }
+
+  /**
+   * Release a list of containers, updating the completion results
+   * @param completionResults
+   * @param containerIds
+   * @param containerState
+   * @param exitText
+   * @param containerExitCode
+   * @return
+   */
+  public def releaseContainers(
+      List<AppState.NodeCompletionResult> completionResults,
+      List<ContainerId> containerIds,
+      ContainerState containerState,
+      String exitText,
+      int containerExitCode) {
+    containerIds.each { ContainerId id ->
+      ContainerStatus status = ContainerStatus.newInstance(id,
+          containerState,
+          exitText,
+          containerExitCode)
+      completionResults << appState.onCompletedNode(status)
+
+    }
   }
 
   /**
@@ -178,8 +238,18 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
    * @return a list of roles
    */
   public List<RoleInstance> createAndSubmitNodes() {
+    return createAndSubmitNodes([])
+  }
+
+  /**
+   * Create nodes and submit them
+   * @param released a list that is built up of all released nodes
+   * @return a list of roles allocated
+   */
+  public List<RoleInstance> createAndSubmitNodes(
+      List<ContainerId> released) {
     List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()
-    List<Container> allocatedContainers = engine.execute(ops)
+    List<Container> allocatedContainers = engine.execute(ops, released)
     List<ContainerAssignment> assignments = [];
     List<AbstractRMOperation> operations = []
     appState.onContainersAllocated(allocatedContainers, assignments, operations)

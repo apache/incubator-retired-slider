@@ -40,23 +40,18 @@ import static org.apache.slider.common.params.Arguments.ARG_RES_COMP_OPT
 @Slf4j
 public abstract class AccumuloTestBase extends YarnZKMiniClusterTestBase {
 
-  public static final int ACCUMULO_LAUNCH_WAIT_TIME
-  public static final boolean ACCUMULO_TESTS_ENABLED
 
-
-  public static final int ACCUMULO_CLUSTER_STARTUP_TIME = ACCUMULO_LAUNCH_WAIT_TIME
-  public static final int ACCUMULO_CLUSTER_STOP_TIME = 1 * 60 * 1000
+  public final int accumulo_cluster_startup_time = accumuloLaunchWaitTime
 
   /**
    * The time to sleep before trying to talk to the HBase Master and
    * expect meaningful results.
    */
-  public static final int ACCUMULO_CLUSTER_STARTUP_TO_LIVE_TIME = ACCUMULO_CLUSTER_STARTUP_TIME
+  public final int accumulo_cluster_startup_to_live_time = accumulo_cluster_startup_time
   public static final int ACCUMULO_GO_LIVE_TIME = 60000
-
   @Override
   public String getTestConfigurationPath() {
-    return "src/main/resources/" + CONF_RESOURCE; 
+    return "src/main/resources/" + CONF_RESOURCE;
   }
 
   @Override
@@ -79,7 +74,7 @@ public abstract class AccumuloTestBase extends YarnZKMiniClusterTestBase {
       killAllAccumuloProcesses();
     }
   }
-  
+
   void killAllAccumuloProcesses() {
     killJavaProcesses("org.apache.accumulo.start.Main", SIGKILL)
   }
@@ -103,7 +98,7 @@ public abstract class AccumuloTestBase extends YarnZKMiniClusterTestBase {
    * path is valid -that is expected to be a failure on tests that require
    * HBase home to be set.
    */
-  
+
   public void assumeOtherSettings(YarnConfiguration conf) {
     assumeStringOptionSet(conf, OPTION_ZK_HOME)
   }
@@ -118,13 +113,23 @@ public abstract class AccumuloTestBase extends YarnZKMiniClusterTestBase {
    * @param blockUntilRunning block until the AM is running
    * @return launcher which will have executed the command.
    */
-  public ServiceLauncher<SliderClient> createAccCluster(String clustername, int tablets, List<String> extraArgs, boolean deleteExistingData, boolean blockUntilRunning) {
+  public ServiceLauncher<SliderClient> createAccCluster(
+      String clustername,
+      int tablets,
+      List<String> extraArgs,
+      boolean deleteExistingData,
+      boolean blockUntilRunning) {
     Map<String, Integer> roles = [
         (ROLE_MASTER): 1,
         (ROLE_TABLET): tablets,
     ];
-    return createAccCluster(clustername, roles, extraArgs, deleteExistingData, blockUntilRunning);
-}
+    return createAccCluster(
+        clustername,
+        roles,
+        extraArgs,
+        deleteExistingData,
+        blockUntilRunning);
+  }
 
   /**
    * Create an accumulo cluster
@@ -135,30 +140,43 @@ public abstract class AccumuloTestBase extends YarnZKMiniClusterTestBase {
    * @param blockUntilRunning
    * @return the cluster launcher
    */
-  public ServiceLauncher<SliderClient> createAccCluster(String clustername, Map<String, Integer> roles, List<String> extraArgs, boolean deleteExistingData, boolean blockUntilRunning) {
+  public ServiceLauncher<SliderClient> createAccCluster(
+      String clustername,
+      Map<String, Integer> roles,
+      List<String> extraArgs,
+      boolean deleteExistingData,
+      boolean blockUntilRunning) {
     extraArgs << ARG_PROVIDER << PROVIDER_ACCUMULO;
 
     YarnConfiguration conf = testConfiguration
 
     def clusterOps = [
-        (OPTION_ZK_HOME): conf.getTrimmed(OPTION_ZK_HOME),
-        (OPTION_HADOOP_HOME): conf.getTrimmed(OPTION_HADOOP_HOME),
-        ("site." + AccumuloConfigFileOptions.MONITOR_PORT_CLIENT): AccumuloConfigFileOptions.MONITOR_PORT_CLIENT_DEFAULT,
-        ("site." + AccumuloConfigFileOptions.MASTER_PORT_CLIENT): AccumuloConfigFileOptions.MASTER_PORT_CLIENT_DEFAULT,
+        (OPTION_ZK_HOME)                                         : conf.getTrimmed(
+            OPTION_ZK_HOME),
+        (OPTION_HADOOP_HOME)                                     : conf.getTrimmed(
+            OPTION_HADOOP_HOME),
+        ("site." +
+         AccumuloConfigFileOptions.MONITOR_PORT_CLIENT)          : AccumuloConfigFileOptions.MONITOR_PORT_CLIENT_DEFAULT,
+        ("site." +
+         AccumuloConfigFileOptions.MASTER_PORT_CLIENT)           : AccumuloConfigFileOptions.MASTER_PORT_CLIENT_DEFAULT,
     ]
 
 
-    extraArgs << ARG_RES_COMP_OPT << ROLE_MASTER << ResourceKeys.YARN_MEMORY << YRAM; 
-    extraArgs << ARG_RES_COMP_OPT << ROLE_TABLET << ResourceKeys.YARN_MEMORY << YRAM
-    extraArgs << ARG_RES_COMP_OPT << ROLE_MONITOR << ResourceKeys.YARN_MEMORY << YRAM
-    extraArgs << ARG_RES_COMP_OPT << ROLE_GARBAGE_COLLECTOR << ResourceKeys.YARN_MEMORY << YRAM
+    extraArgs << ARG_RES_COMP_OPT << ROLE_MASTER << ResourceKeys.YARN_MEMORY <<
+    YRAM;
+    extraArgs << ARG_RES_COMP_OPT << ROLE_TABLET << ResourceKeys.YARN_MEMORY <<
+    YRAM
+    extraArgs << ARG_RES_COMP_OPT << ROLE_MONITOR << ResourceKeys.YARN_MEMORY <<
+    YRAM
+    extraArgs << ARG_RES_COMP_OPT << ROLE_GARBAGE_COLLECTOR <<
+    ResourceKeys.YARN_MEMORY << YRAM
 
     return createCluster(clustername,
-                             roles,
-                             extraArgs,
-                             deleteExistingData,
-                             blockUntilRunning, 
-                             clusterOps)
+        roles,
+        extraArgs,
+        deleteExistingData,
+        blockUntilRunning,
+        clusterOps)
   }
 
   def getAccClusterStatus() {
@@ -166,34 +184,34 @@ public abstract class AccumuloTestBase extends YarnZKMiniClusterTestBase {
     instance.getConnector("user", "pass").instanceOperations().tabletServers;
   }
 
-  
+
   public String fetchLocalPage(int port, String page) {
-    String url = "http://localhost:" + port+ page
+    String url = "http://localhost:" + port + page
     return fetchWebPage(url)
-    
+
   }
 
   public ClusterDescription flexAccClusterTestRun(
       String clustername, List<Map<String, Integer>> plan) {
     int planCount = plan.size()
     assert planCount > 0
-    createMiniCluster(clustername, getConfiguration(),
-                      1,
-                      true);
+    createMiniCluster(clustername, configuration,
+        1,
+        true);
     //now launch the cluster
     SliderClient sliderClient = null;
     ServiceLauncher launcher = createAccCluster(clustername,
-                                                 plan[0],
-                                                 [],
-                                                 true,
-                                                 true);
+        plan[0],
+        [],
+        true,
+        true);
     sliderClient = (SliderClient) launcher.service;
     try {
 
       //verify the #of roles is as expected
       //get the hbase status
       waitForRoleCount(sliderClient, plan[0],
-                       ACCUMULO_CLUSTER_STARTUP_TO_LIVE_TIME);
+          accumulo_cluster_startup_to_live_time);
       sleep(ACCUMULO_GO_LIVE_TIME);
 
       plan.remove(0)
@@ -209,12 +227,12 @@ public abstract class AccumuloTestBase extends YarnZKMiniClusterTestBase {
             flexTarget
         );
         cd = waitForRoleCount(sliderClient, flexTarget,
-                              ACCUMULO_CLUSTER_STARTUP_TO_LIVE_TIME);
+            accumulo_cluster_startup_to_live_time);
 
         sleep(ACCUMULO_GO_LIVE_TIME);
 
       }
-      
+
       return cd;
 
     } finally {
@@ -222,5 +240,5 @@ public abstract class AccumuloTestBase extends YarnZKMiniClusterTestBase {
     }
 
   }
-  
+
 }

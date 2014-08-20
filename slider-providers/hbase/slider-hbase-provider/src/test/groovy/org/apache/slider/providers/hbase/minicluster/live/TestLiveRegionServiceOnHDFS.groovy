@@ -22,7 +22,7 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.hbase.ClusterStatus
 import org.apache.slider.api.ClusterDescription
-import org.apache.slider.core.registry.zk.ZKIntegration
+import org.apache.slider.core.zk.ZKIntegration
 import org.apache.slider.client.SliderClient
 import org.apache.slider.providers.hbase.minicluster.HBaseMiniClusterTestBase
 import org.apache.slider.core.main.ServiceLauncher
@@ -37,9 +37,9 @@ class TestLiveRegionServiceOnHDFS extends HBaseMiniClusterTestBase {
 
   @Test
   public void testLiveRegionServiceOnHDFS() throws Throwable {
-    String clustername = "test_live_region_service_on_hdfs"
     int regionServerCount = 1
-    createMiniCluster(clustername, configuration, 1, 1, 1, true, true)
+    String clustername = createMiniCluster(
+        "", configuration, 1, 1, 1, true, true)
     describe(" Create a single region service cluster");
 
     //make sure that ZK is up and running at the binding string

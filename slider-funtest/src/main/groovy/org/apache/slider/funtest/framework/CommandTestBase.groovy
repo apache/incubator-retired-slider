@@ -30,7 +30,6 @@ import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.common.tools.SliderUtils
-import org.apache.slider.common.params.Arguments
 import org.apache.slider.client.SliderClient
 import org.apache.slider.test.SliderTestUtils
 import org.junit.Before
@@ -51,31 +50,28 @@ abstract class CommandTestBase extends SliderTestUtils {
       LoggerFactory.getLogger(CommandTestBase.class);
 
   public static final String SLIDER_CONF_DIR = sysprop(SLIDER_CONF_DIR_PROP)
-  public static final String SLIDER_BIN_DIR = sysprop(SLIDER_BIN_DIR_PROP)
-  public static final File SLIDER_BIN_DIRECTORY = new File(
-      SLIDER_BIN_DIR).canonicalFile
+  public static final String SLIDER_TAR_DIR = sysprop(SLIDER_BIN_DIR_PROP)
+  public static final File SLIDER_TAR_DIRECTORY = new File(
+      SLIDER_TAR_DIR).canonicalFile
   public static final File SLIDER_SCRIPT = new File(
-      SLIDER_BIN_DIRECTORY,
+      SLIDER_TAR_DIRECTORY,
       BIN_SLIDER).canonicalFile
   public static final File SLIDER_CONF_DIRECTORY = new File(
       SLIDER_CONF_DIR).canonicalFile
   public static final File SLIDER_CONF_XML = new File(SLIDER_CONF_DIRECTORY,
       CLIENT_CONFIG_FILENAME).canonicalFile
-
   public static final YarnConfiguration SLIDER_CONFIG
   public static final int THAW_WAIT_TIME
   public static final int FREEZE_WAIT_TIME
 
   public static final int SLIDER_TEST_TIMEOUT
 
-  public static final boolean FUNTESTS_ENABLED
-
   public static final String YARN_RAM_REQUEST
   
 
 
   static {
-    SLIDER_CONFIG = new ConfLoader().loadSliderConf(SLIDER_CONF_XML);
+    SLIDER_CONFIG = ConfLoader.loadSliderConf(SLIDER_CONF_XML);
     THAW_WAIT_TIME = getTimeOptionMillis(SLIDER_CONFIG,
         KEY_TEST_THAW_WAIT_TIME,
         1000 * DEFAULT_THAW_WAIT_TIME_SECONDS)
@@ -85,8 +81,6 @@ abstract class CommandTestBase extends SliderTestUtils {
     SLIDER_TEST_TIMEOUT = getTimeOptionMillis(SLIDER_CONFIG,
         KEY_TEST_TIMEOUT,
         1000 * DEFAULT_TEST_TIMEOUT_SECONDS)
-    FUNTESTS_ENABLED =
-        SLIDER_CONFIG.getBoolean(KEY_SLIDER_FUNTESTS_ENABLED, true)
 
     YARN_RAM_REQUEST = SLIDER_CONFIG.get(
         KEY_TEST_YARN_RAM_REQUEST,
@@ -105,14 +99,12 @@ abstract class CommandTestBase extends SliderTestUtils {
       log.debug("Security enabled")
       SliderUtils.forceLogin()
     } else {
-      log.info "Security off, making cluster dirs broadly accessible"
+      log.info "Security is off"
     }
     SliderShell.confDir = SLIDER_CONF_DIRECTORY
     SliderShell.script = SLIDER_SCRIPT
     log.info("Test using ${HadoopFS.getDefaultUri(SLIDER_CONFIG)} " +
              "and YARN RM @ ${SLIDER_CONFIG.get(YarnConfiguration.RM_ADDRESS)}")
-
-    // now patch the settings with the path of the conf direcotry
 
   }
 
@@ -164,7 +156,7 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @return
    */
   public static SliderShell slider(int exitCode, Collection<String> commands) {
-    return SliderShell.run(commands, exitCode)
+    return SliderShell.run(exitCode, commands)
   }
 
   /**
@@ -172,7 +164,7 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @return
    */
   public static Configuration loadSliderConf() {
-    Configuration conf = (new ConfLoader()).loadSliderConf(SLIDER_CONF_XML)
+    Configuration conf = ConfLoader.loadSliderConf(SLIDER_CONF_XML)
     return conf
   }
 
@@ -219,6 +211,20 @@ abstract class CommandTestBase extends SliderTestUtils {
     ])
   }
 
+
+  static SliderShell freeze(
+      int exitCode,
+      String name,
+      Collection<String> args) {
+    slider(exitCode, [ACTION_FREEZE, name] + args)
+  }
+
+  /**
+   * Freeze cluster: no exit code checking
+   * @param name
+   * @param args
+   * @return
+   */
   static SliderShell freeze(String name, Collection<String> args) {
     slider([ACTION_FREEZE, name] + args)
   }
@@ -296,7 +302,7 @@ abstract class CommandTestBase extends SliderTestUtils {
   }
 
   static SliderShell thaw(String name, Collection<String> args) {
-    slider([ACTION_THAW, name] + args)
+    slider(0, [ACTION_THAW, name] + args)
   }
 
   static SliderShell registry(int result, Collection<String> commands) {
@@ -331,9 +337,7 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @param cluster
    */
   static void setupCluster(String cluster) {
-    if (FUNTESTS_ENABLED) {
-      ensureClusterDestroyed(cluster)
-    }
+    ensureClusterDestroyed(cluster)
   }
 
   /**
@@ -342,9 +346,7 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @param name cluster name
    */
   static void teardown(String name) {
-    if (FUNTESTS_ENABLED) {
-      freezeForce(name)
-    }
+    freezeForce(name)
   }
 
   /**
@@ -512,11 +514,46 @@ abstract class CommandTestBase extends SliderTestUtils {
     return status
   }
 
-  /**
-   * if tests are not enabled: skip them  
-   */
-  public static void assumeFunctionalTestsEnabled() {
-    assume(FUNTESTS_ENABLED, "Functional tests disabled")
+  protected void ensureApplicationIsUp(String clusterName) {
+    repeatUntilTrue(this.&isApplicationUp, 15, 1000 * 3, ['arg1': clusterName],
+      true, 'Application did not start, aborting test.')
+  }
+
+  protected boolean isApplicationUp(Map<String, String> args) {
+    String applicationName = args['arg1'];
+    return isApplicationInState("RUNNING", applicationName);
+  }
+
+  public static boolean isApplicationInState(String text, String applicationName) {
+    boolean exists = false
+    SliderShell shell = slider(0,
+      [
+        ACTION_LIST,
+        applicationName])
+    for (String str in shell.out) {
+      if (str.contains(text)) {
+        exists = true
+      }
+    }
+
+    return exists
+  }
+
+  protected void repeatUntilTrue(Closure c, int maxAttempts, int sleepDur, Map args,
+                                 boolean failIfUnsuccessful = false, String message = "") {
+    int attemptCount = 0
+    while (attemptCount < maxAttempts) {
+      if (c(args)) {
+        break
+      };
+      attemptCount++;
+
+      if (failIfUnsuccessful) {
+        assert attemptCount != maxAttempts, message
+      }
+
+      sleep(sleepDur)
+    }
   }
 
 }

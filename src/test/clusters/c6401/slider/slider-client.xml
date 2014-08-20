@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!--
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to You under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+<!--
+  Properties set here are picked up in the client.
+  They are not passed to the AM
+-->
+<configuration>
+  
+  <property>
+    <name>hostname</name>
+    <value>c6401</value>
+  </property>
+  
+  <property>
+    <name>slider.client.resource.origin</name>
+    <value>configs/${hostname}/slider</value>
+    <description>This is just for diagnostics</description>
+  </property>
+
+  <property>
+    <name>yarn.resourcemanager.address</name>
+    <value>${hostname}:8050</value>
+  </property>
+  
+  <property>
+    <name>fs.defaultFS</name>
+    <value>hdfs://${hostname}.ambari.apache.org:8020</value>
+  </property>
+
+  <property>
+    <name>slider.zookeeper.quorum</name>
+    <value>${hostname}:2181</value>
+  </property>
+
+  <property>
+    <name>yarn.application.classpath</name>
+    <value>
+      /etc/hadoop/conf,/usr/lib/hadoop/*,/usr/lib/hadoop/lib/*,/usr/lib/hadoop-hdfs/*,/usr/lib/hadoop-hdfs/lib/*,/usr/lib/hadoop-yarn/*,/usr/lib/hadoop-yarn/lib/*,/usr/lib/hadoop-mapreduce/*,/usr/lib/hadoop-mapreduce/lib/*
+    </value>
+  </property>
+
+  <property>
+    <name>slider.test.agent.enabled</name>
+    <description>Flag to enable/disable Agent tests</description>
+    <value>true</value>
+  </property>
+
+
+  <property>
+    <name>slider.test.am.restart.time</name>
+    <description>Time in millis to await an AM restart</description>
+    <value>60000</value>
+  </property>
+
+
+</configuration>

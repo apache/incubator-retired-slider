@@ -100,7 +100,8 @@ public class RegistryRestResources extends DiscoveryResource<ServiceInstanceData
     try {
       List<CuratorServiceInstance<ServiceInstanceData>>
           instances = registry.listInstances(name);
-      return Response.ok(new CuratorServiceInstances<>(instances)).build();
+      return Response.ok(
+      new CuratorServiceInstances<ServiceInstanceData>(instances)).build();
     } catch (Exception e) {
       log.error("Error during generation of response", e);
       return Response.serverError().build();

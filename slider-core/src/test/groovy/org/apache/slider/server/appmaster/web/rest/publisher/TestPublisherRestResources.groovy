@@ -47,9 +47,8 @@ class TestPublisherRestResources extends AgentTestBase {
 
   @Test
   public void testRestURIs() throws Throwable {
-    def clustername = "test_publisherws"
-    createMiniCluster(
-        clustername,
+    String clustername = createMiniCluster(
+        "",
         configuration,
         1,
         1,
@@ -58,8 +57,7 @@ class TestPublisherRestResources extends AgentTestBase {
         false)
     Map<String, Integer> roles = [:]
     File slider_core = new File(new File(".").absoluteFile, "src/test/python");
-    String app_def = "appdef_1.zip"
-    File app_def_path = new File(slider_core, app_def)
+    File app_def_path = new File(app_def_pkg_path)
     String agt_ver = "version"
     File agt_ver_path = new File(slider_core, agt_ver)
     String agt_conf = "agent.ini"
@@ -101,32 +99,47 @@ class TestPublisherRestResources extends AgentTestBase {
     Client client = createTestClient();
 
     // test the available GET URIs
-    WebResource webResource = client.resource(publisher_url + "/dummy-site");
+    String sliderConfigset = publisher_url +"/"+ RestPaths.SLIDER_CONFIGSET + "/"
+    WebResource webResource
+    webResource = client.resource(sliderConfigset);
+    webResource = client.resource(sliderConfigset + "dummy-site");
 
     PublishedConfiguration config = webResource.type(MediaType.APPLICATION_JSON)
                           .get(PublishedConfiguration.class);
     assert config != null
     Map<String,String> entries = config.entries
     log.info("entries are {}", entries)
-    assert entries.get("prop1").equals("val1")
-    assert entries.get("prop2").equals("val2")
+    assert entries.get("prop1") =="val1"
+    assert entries.get("prop2")== "val2"
 
-    webResource = client.resource(publisher_url + "/dummy-site/prop1");
+    webResource = client.resource(sliderConfigset + "dummy-site/prop1");
     Map<String,String> val = webResource.type(MediaType.APPLICATION_JSON).get(Map.class);
     assert "val1".equals(val.get("prop1"))
 
     // some negative tests...
-    webResource = client.resource(appendToURL(publisher_url,
-        "/foobar-site"));
+    webResource = client.resource(appendToURL(sliderConfigset,
+        "foobar-site"));
 
     ClientResponse response = webResource.type(MediaType.APPLICATION_JSON)
                          .get(ClientResponse.class);
-    assert response.getStatus() == 404
+    assert 404 == response.status
 
-    webResource = client.resource(publisher_url + "/dummy-site/missing.prop");
+    webResource = client.resource(sliderConfigset + "dummy-site/missing.prop");
     response = webResource.type(MediaType.TEXT_PLAIN).get(ClientResponse.class);
-    assert response.getStatus() == 404
+    assert 404 == response.status
 
- }
+    String classpathUri = publisher_url +"/"+ RestPaths.SLIDER_CLASSPATH
+    webResource = client.resource(classpathUri)
+    Set uris = webResource.type(MediaType.APPLICATION_JSON)
+            .get(Set.class)
+    assert uris.size() > 0
+    log.info("Classpath URIs: {}", uris)
+    // check for some expected classpath elements
+    assert uris.any {it =~ /curator-x-discovery/}
+    assert uris.any {it =~ /hadoop-yarn-api/}
+    assert uris.any {it =~ /hadoop-hdfs/}
+    // and a negative test...
+    assert !uris.any {it =~ /foo-bar/}
+  }
 
 }

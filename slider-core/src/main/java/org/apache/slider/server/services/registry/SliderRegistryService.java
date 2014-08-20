@@ -53,7 +53,7 @@ public class SliderRegistryService
       IOException {
     List<CuratorServiceInstance<ServiceInstanceData>> services =
         listInstances(serviceType);
-    List<ServiceInstanceData> payloads = new ArrayList<>(services.size());
+    List<ServiceInstanceData> payloads = new ArrayList<ServiceInstanceData>(services.size());
     for (CuratorServiceInstance<ServiceInstanceData> instance : services) {
       payloads.add(instance.payload);
     }
@@ -72,29 +72,24 @@ public class SliderRegistryService
   /**
    * register an instance -only valid once the service is started.
    * This sets the selfRegistration field
-   * @param serviceType service type
-   * @param instanceName ID -must be unique
-   * @param url URL to register
    * @param instanceData instance data
+   * @param url URL to register
    * @throws IOException on registration problems
    */
-  public void registerSelf(String serviceType,
-      String instanceName,
-      URL url,
-      ServiceInstanceData instanceData) throws IOException {
-    registerServiceInstance(serviceType, instanceName, url, instanceData);
+  public void registerSelf(ServiceInstanceData instanceData, URL url) throws IOException {
+    registerServiceInstance(instanceData, url);
     setSelfRegistration(instanceData);
   }
 
   @Override
   public void registerServiceInstance(
-      String serviceType,
-      String instanceName,
-      URL url,
-      ServiceInstanceData instanceData) throws IOException {
+      ServiceInstanceData instanceData, URL url) throws IOException {
     Preconditions.checkNotNull(instanceData);
+    Preconditions.checkNotNull(instanceData.id);
+    Preconditions.checkNotNull(instanceData.serviceType);
+    
     try {
-      register(serviceType, instanceName, url, instanceData);
+      register(instanceData.serviceType, instanceData.id, url, instanceData);
     } catch (IOException e) {
       throw e;
     } catch (Exception e) {

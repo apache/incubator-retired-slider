@@ -1,9 +1,3 @@
-package org.apache.slider.funtest.framework
-
-import groovy.transform.CompileStatic
-import org.apache.slider.common.SliderXMLConfKeysForTesting
-import org.apache.slider.common.SliderKeys
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -21,6 +15,11 @@ import org.apache.slider.common.SliderKeys
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.slider.funtest.framework
+
+import groovy.transform.CompileStatic
+import org.apache.slider.common.SliderXMLConfKeysForTesting
+import org.apache.slider.common.SliderKeys
 
 /**
  * Properties unique to the functional tests
@@ -41,7 +40,6 @@ public interface FuntestProperties extends SliderXMLConfKeysForTesting {
   String KEY_SLIDER_TEST_NUM_WORKERS = "slider.test.cluster.size"
   int DEFAULT_SLIDER_NUM_WORKERS = 1
 
-  String KEY_SLIDER_TEST_ZK_HOSTS = "slider.test.zkhosts";
   String DEFAULT_SLIDER_ZK_HOSTS = "localhost:2181";
 
   /**
@@ -50,16 +48,18 @@ public interface FuntestProperties extends SliderXMLConfKeysForTesting {
   String KEY_AM_RESTART_SLEEP_TIME = "slider.test.am.restart.time"
   int DEFAULT_AM_RESTART_SLEEP_TIME = 30000
 
-  String KEY_SLIDER_FUNTESTS_ENABLED = "slider.funtest.enabled"
-
   String CLIENT_CONFIG_FILENAME = SliderKeys.CLIENT_RESOURCE
   
   String ENV_CONF_DIR = "SLIDER_CONF_DIR"
   String ENV_SLIDER_CLASSPATH_EXTRA = "SLIDER_CLASSPATH_EXTRA"
 
   String SCRIPT_NAME = "slider"
-  static final String KEY_TEST_CONF_XML = "slider.test.conf.xml"
-  static final String KEY_TEST_CONF_DIR = "slider.test.conf.dir"
-  static final String BIN_SLIDER = "bin/slider"
-  static final String AGENT_SLIDER_GZ = "agent/slider-agent.tar.gz"
+  String KEY_TEST_CONF_XML = "slider.test.conf.xml"
+  String KEY_TEST_CONF_DIR = "slider.test.conf.dir"
+  String BIN_SLIDER = "bin/slider"
+  String AGENT_INI = "agent.ini"
+  String AGENT_INI_IN_SLIDER_TAR = "agent/conf/" + AGENT_INI
+
+  String AGENT_TAR_FILENAME = "slider-agent.tar.gz"
+  String AGENT_SLIDER_GZ_IN_SLIDER_TAR = "agent/" + AGENT_TAR_FILENAME
 }

@@ -28,16 +28,19 @@ import threading
 import time
 import traceback
 import pprint
+import platform
 
-try:
+if platform.system() != "Windows":
+  try:
     import pwd
-except ImportError:
+  except ImportError:
     import winpwd as pwd
 
 global serverTracker
 serverTracker = {}
 logger = logging.getLogger()
 
+shellRunner = None
 threadLocal = threading.local()
 gracefull_kill_delay = 5 # seconds between SIGTERM and SIGKILL
 tempFiles = [] 
@@ -47,7 +50,51 @@ def noteTempFile(filename):
 def getTempFiles():
   return tempFiles
 
-def kill_process_with_children(parent_pid):
+class _dict_to_object:
+  def __init__(self, entries):
+    self.__dict__.update(entries)
+  def __getitem__(self, item):
+    return self.__dict__[item]
+# windows specific code
+def _kill_process_with_children_windows(parent_pid):
+  shellRunner().run(["taskkill", "/T", "/PID", "{0}".format(parent_pid)])
+
+
+class shellRunnerWindows:
+  # Run any command
+  def run(self, script, user=None):
+    logger.warn("user argument ignored on windows")
+    code = 0
+    if not isinstance(script, list):
+      cmd = " "
+      cmd = cmd.join(script)
+    else:
+      cmd = script
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE, shell=False)
+    out, err = p.communicate()
+    code = p.wait()
+    logger.debug("Exitcode for %s is %d" % (cmd, code))
+    return {'exitCode': code, 'output': out, 'error': err}
+
+  def runPowershell(self, file=None, script_block=None, args=[]):
+    logger.warn("user argument ignored on windows")
+    code = 0
+    cmd = None
+    if file:
+      cmd = ['powershell', '-WindowStyle', 'Hidden', '-File', file] + args
+    elif script_block:
+      cmd = ['powershell', '-WindowStyle', 'Hidden', '-Command', script_block] + args
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE, shell=False)
+    out, err = p.communicate()
+    code = p.wait()
+    logger.debug("Exitcode for %s is %d" % (cmd, code))
+    return _dict_to_object({'exitCode': code, 'output': out, 'error': err})
+
+
+#linux specific code
+def _kill_process_with_children_linux(parent_pid):
   def kill_tree_function(pid, signal):
     '''
     Kills process tree starting from a given pid.
@@ -57,15 +104,15 @@ def kill_process_with_children(parent_pid):
     # a given PID and then passes list of "kill -<SIGNAL> PID" commands to 'sh'
     # shell.
     CMD = """ps xf | awk -v PID=""" + str(pid) + \
-        """ ' $1 == PID { P = $1; next } P && /_/ { P = P " " $1;""" + \
-        """K=P } P && !/_/ { P="" }  END { print "kill -""" \
-        + str(signal) + """ "K }' | sh """
+          """ ' $1 == PID { P = $1; next } P && /_/ { P = P " " $1;""" + \
+          """K=P } P && !/_/ { P="" }  END { print "kill -""" \
+          + str(signal) + """ "K }' | sh """
     process = subprocess.Popen(CMD, stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE, shell=True)
     process.communicate()
-  run_kill_function(kill_tree_function, parent_pid)
+  _run_kill_function(kill_tree_function, parent_pid)
 
-def run_kill_function(kill_function, pid):
+def _run_kill_function(kill_function, pid):
   try:
     kill_function(pid, signal.SIGTERM)
   except Exception, e:
@@ -80,8 +127,43 @@ def run_kill_function(kill_function, pid):
     logger.error("Failed to send SIGKILL to PID %d. Process exited?" % (pid))
     logger.error("Reported error: " + repr(e))
 
-def changeUid():
+def _changeUid():
   try:
     os.setuid(threadLocal.uid)
   except Exception:
     logger.warn("can not switch user for running command.")
+
+
+class shellRunnerLinux:
+  # Run any command
+  def run(self, script, user=None):
+    try:
+      if user != None:
+        user = pwd.getpwnam(user)[2]
+      else:
+        user = os.getuid()
+      threadLocal.uid = user
+    except Exception:
+      logger.warn("can not switch user for RUN_COMMAND.")
+    code = 0
+    cmd = " "
+    cmd = cmd.join(script)
+    p = subprocess.Popen(cmd, preexec_fn=_changeUid, stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE, shell=True, close_fds=True)
+    out, err = p.communicate()
+    code = p.wait()
+    logger.debug("Exitcode for %s is %d" % (cmd, code))
+    return {'exitCode': code, 'output': out, 'error': err}
+
+
+def kill_process_with_children(parent_pid):
+  if platform.system() == "Windows":
+    _kill_process_with_children_windows(parent_pid)
+  else:
+    _kill_process_with_children_linux(parent_pid)
+
+
+if platform.system() == "Windows":
+  shellRunner = shellRunnerWindows
+else:
+  shellRunner = shellRunnerLinux

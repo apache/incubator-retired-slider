@@ -25,9 +25,9 @@ import org.apache.hadoop.yarn.api.records.ApplicationId
 import org.apache.hadoop.yarn.api.records.Container
 import org.apache.hadoop.yarn.api.records.ContainerId
 import org.apache.hadoop.yarn.client.api.AMRMClient
-import org.apache.slider.server.appmaster.state.AbstractRMOperation
-import org.apache.slider.server.appmaster.state.ContainerReleaseOperation
-import org.apache.slider.server.appmaster.state.ContainerRequestOperation
+import org.apache.slider.server.appmaster.operations.AbstractRMOperation
+import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation
+import org.apache.slider.server.appmaster.operations.ContainerRequestOperation
 
 /**
  * This is an evolving engine to mock YARN operations
@@ -86,9 +86,7 @@ class MockYarnEngine {
    * @param ops
    * @return
    */
-  List<Container> execute(
-      List<AbstractRMOperation> ops
-      ) {
+  List<Container> execute(List<AbstractRMOperation> ops) {
     return execute(ops, [])
   }
 
@@ -106,7 +104,7 @@ class MockYarnEngine {
       if (op instanceof ContainerReleaseOperation) {
         ContainerReleaseOperation cro = (ContainerReleaseOperation) op
         ContainerId cid = cro.containerId
-        releaseContainer(cid);
+        assert releaseContainer(cid);
         released.add(cid)
       } else {
         ContainerRequestOperation req = (ContainerRequestOperation) op

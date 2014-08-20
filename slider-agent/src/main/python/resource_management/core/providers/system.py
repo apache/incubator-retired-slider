@@ -22,9 +22,8 @@ Slider Agent
 
 from __future__ import with_statement
 
-import grp
+import platform
 import os
-import pwd
 import time
 import shutil
 from resource_management.core import shell
@@ -33,14 +32,22 @@ from resource_management.core import ExecuteTimeoutException
 from resource_management.core.providers import Provider
 from resource_management.core.logger import Logger
 
+IS_WINDOWS = platform.system() == "Windows"
+
+if not IS_WINDOWS:
+  import grp
+  import pwd
 
 def _coerce_uid(user):
   try:
     uid = int(user)
   except ValueError:
-    try:
-      uid = pwd.getpwnam(user).pw_uid
-    except KeyError:
+    if not IS_WINDOWS:
+      try:
+        uid = pwd.getpwnam(user).pw_uid
+      except KeyError:
+       raise Fail("User %s doesn't exist." % user)
+    else:
       raise Fail("User %s doesn't exist." % user)
   return uid
 
@@ -49,10 +56,13 @@ def _coerce_gid(group):
   try:
     gid = int(group)
   except ValueError:
-    try:
-      gid = grp.getgrnam(group).gr_gid
-    except KeyError:
-      raise Fail("Group %s doesn't exist." % group)
+    if not IS_WINDOWS:
+      try:
+        gid = grp.getgrnam(group).gr_gid
+      except KeyError:
+        raise Fail("Group %s doesn't exist." % group)
+    else:
+      raise Fail("User %s doesn't exist." % user)
   return gid
 
 
@@ -232,7 +242,8 @@ class ExecuteProvider(Provider):
         shell.checked_call(self.resource.command, logoutput=self.resource.logoutput,
                             cwd=self.resource.cwd, env=self.resource.environment,
                             preexec_fn=_preexec_fn(self.resource), user=self.resource.user,
-                            wait_for_finish=self.resource.wait_for_finish, timeout=self.resource.timeout)
+                            wait_for_finish=self.resource.wait_for_finish, timeout=self.resource.timeout,
+                            pid_file=self.resource.pid_file)
         break
       except Fail as ex:
         if i == self.resource.tries-1: # last try

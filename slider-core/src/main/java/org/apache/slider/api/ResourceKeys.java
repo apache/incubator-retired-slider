@@ -20,6 +20,25 @@ package org.apache.slider.api;
 
 /**
  * These are the keys valid in resource options
+ *
+ /*
+
+ Container failure window.
+
+ The window is calculated in minutes as as (days * 24 *60 + hours* 24 + minutes)
+
+ Every interval of this period after the AM is started/restarted becomes
+ the time period in which the CONTAINER_FAILURE_THRESHOLD value is calculated.
+ 
+ After the window limit is reached, the failure counts are reset. This
+ is not a sliding window/moving average policy, simply a rule such as
+ "every six hours the failure count is reset"
+
+
+ <pre>
+ ===========================================================================
+ </pre>
+
  */
 public interface ResourceKeys {
 
@@ -69,4 +88,47 @@ public interface ResourceKeys {
    * placement policy
    */
   String COMPONENT_PLACEMENT_POLICY = "yarn.component.placement.policy";
+
+  
+
+  /**
+   * Time in seconds before a container is considered long-lived.
+   * Shortlived containers are interpreted as a problem with the role
+   * and/or the host: {@value}
+   */
+  String CONTAINER_FAILURE_SHORTLIFE =
+      "container.failure.shortlife";
+
+  /**
+   * Default short life threshold: {@value}
+   */
+  int DEFAULT_CONTAINER_FAILURE_SHORTLIFE = 60;
+
+  /**
+   * maximum number of failed containers (in a single role)
+   * before the cluster is deemed to have failed {@value}
+   */
+  String CONTAINER_FAILURE_THRESHOLD =
+      "yarn.container.failure.threshold";
+
+  /**
+   * prefix for the time of the container failure reset window.
+   * {@value}
+   */
+
+  String CONTAINER_FAILURE_WINDOW =
+      "yarn.container.failure.window";
+
+
+
+  int DEFAULT_CONTAINER_FAILURE_WINDOW_DAYS = 0;
+  int DEFAULT_CONTAINER_FAILURE_WINDOW_HOURS = 6;
+  int DEFAULT_CONTAINER_FAILURE_WINDOW_MINUTES = 0;
+
+
+  /**
+   * Default failure threshold: {@value}
+   */
+  int DEFAULT_CONTAINER_FAILURE_THRESHOLD = 5;
+
 }

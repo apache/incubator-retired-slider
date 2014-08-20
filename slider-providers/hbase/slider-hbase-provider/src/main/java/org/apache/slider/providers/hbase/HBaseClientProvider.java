@@ -21,6 +21,7 @@ package org.apache.slider.providers.hbase;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.LocalResource;
+import org.apache.slider.api.InternalKeys;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.api.OptionKeys;
@@ -37,7 +38,7 @@ import org.apache.slider.providers.ProviderUtils;
 import org.apache.slider.common.tools.ConfigHelper;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.common.tools.SliderUtils;
-import org.apache.slider.core.registry.zk.ZookeeperUtils;
+import org.apache.slider.core.zk.ZookeeperUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -122,7 +123,7 @@ public class HBaseClientProvider extends AbstractClientProvider implements
 
     sitexml.put(KEY_HBASE_ROOTDIR,
         globalInstanceOptions.getMandatoryOption(
-            OptionKeys.INTERNAL_DATA_DIR_PATH)
+            InternalKeys.INTERNAL_DATA_DIR_PATH)
     );
     providerUtils.propagateOption(globalAppOptions, OptionKeys.ZOOKEEPER_PATH,
                                   sitexml, KEY_ZNODE_PARENT);
@@ -239,6 +240,12 @@ public class HBaseClientProvider extends AbstractClientProvider implements
     providerUtils.validateNodeCount(instanceDefinition, HBaseKeys.ROLE_MASTER,
                                     0, -1);
 
+    providerUtils.validateNodeCount(instanceDefinition, HBaseKeys.ROLE_REST_GATEWAY,
+      0, -1);
+    providerUtils.validateNodeCount(instanceDefinition, HBaseKeys.ROLE_THRIFT_GATEWAY,
+      0, -1);
+    providerUtils.validateNodeCount(instanceDefinition, HBaseKeys.ROLE_THRIFT2_GATEWAY,
+      0, -1);
   }
 
   @Override

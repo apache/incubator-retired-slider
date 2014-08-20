@@ -1,0 +1,68 @@
+{
+  "schema": "http://example.org/specification/v2.0.0",
+  "metadata": {
+  },
+  "global": {
+    "agent.conf": "agent.ini",
+    "application.def": "${app.package.name}.zip",
+    "create.default.zookeeper.node": "true",
+    "config_types": "core-site,hdfs-site,hbase-site",
+    "java_home": "/usr/jdk64/jdk1.7.0_45",
+    "package_list": "files/hbase-${hbase.version}-bin.tar.gz",
+    "site.global.app_user": "yarn",
+    "site.global.app_log_dir": "app/log",
+    "site.global.app_pid_dir": "${AGENT_WORK_ROOT}/app/run",
+    "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/hbase-${hbase.version}",
+    "site.global.app_install_dir": "${AGENT_WORK_ROOT}/app/install",
+    "site.global.hbase_master_heapsize": "1024m",
+    "site.global.hbase_regionserver_heapsize": "1024m",
+    "site.global.hbase_instance_name": "instancename",
+    "site.global.hbase_root_password": "secret",
+    "site.global.user_group": "hadoop",
+    "site.global.security_enabled": "false",
+    "site.global.monitor_protocol": "https",
+    "site.global.ganglia_server_host": "${NN_HOST}",
+    "site.global.ganglia_server_port": "8667",
+    "site.global.ganglia_server_id": "Application1",
+    "site.hbase-site.hbase.hstore.flush.retries.number": "120",
+    "site.hbase-site.hbase.client.keyvalue.maxsize": "10485760",
+    "site.hbase-site.hbase.hstore.compactionThreshold": "3",
+    "site.hbase-site.hbase.rootdir": "${DEFAULT_DATA_DIR}/data",
+    "site.hbase-site.hbase.stagingdir": "${DEFAULT_DATA_DIR}/staging",
+    "site.hbase-site.hbase.regionserver.handler.count": "60",
+    "site.hbase-site.hbase.regionserver.global.memstore.lowerLimit": "0.38",
+    "site.hbase-site.hbase.hregion.memstore.block.multiplier": "2",
+    "site.hbase-site.hbase.hregion.memstore.flush.size": "134217728",
+    "site.hbase-site.hbase.superuser": "yarn",
+    "site.hbase-site.hbase.zookeeper.property.clientPort": "2181",
+    "site.hbase-site.hbase.regionserver.global.memstore.upperLimit": "0.4",
+    "site.hbase-site.zookeeper.session.timeout": "30000",
+    "site.hbase-site.hbase.tmp.dir": "${AGENT_WORK_ROOT}/work/app/tmp",
+    "site.hbase-site.hbase.local.dir": "${hbase.tmp.dir}/local",
+    "site.hbase-site.hbase.hregion.max.filesize": "10737418240",
+    "site.hbase-site.hfile.block.cache.size": "0.40",
+    "site.hbase-site.hbase.security.authentication": "simple",
+    "site.hbase-site.hbase.defaults.for.version.skip": "true",
+    "site.hbase-site.hbase.zookeeper.quorum": "${ZK_HOST}",
+    "site.hbase-site.zookeeper.znode.parent": "/hbase-unsecure",
+    "site.hbase-site.hbase.hstore.blockingStoreFiles": "10",
+    "site.hbase-site.hbase.hregion.majorcompaction": "86400000",
+    "site.hbase-site.hbase.security.authorization": "false",
+    "site.hbase-site.hbase.cluster.distributed": "true",
+    "site.hbase-site.hbase.hregion.memstore.mslab.enabled": "true",
+    "site.hbase-site.hbase.client.scanner.caching": "100",
+    "site.hbase-site.hbase.zookeeper.useMulti": "true",
+    "site.hbase-site.hbase.regionserver.info.port": "0",
+    "site.hbase-site.hbase.master.info.port": "${HBASE_MASTER.ALLOCATED_PORT}",
+    "site.hbase-site.hbase.regionserver.port": "0"
+  },
+  "components": {
+    "HBASE_MASTER": {
+    },
+    "slider-appmaster": {
+      "jvm.heapsize": "256M"
+    },
+    "HBASE_REGIONSERVER": {
+    }
+  }
+}

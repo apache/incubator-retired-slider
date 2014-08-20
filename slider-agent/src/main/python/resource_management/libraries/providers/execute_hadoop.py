@@ -32,7 +32,7 @@ class ExecuteHadoopProvider(Provider):
     principal = self.resource.principal
     
     if isinstance(command, (list, tuple)):
-      command = ' '.join(pipes.quote(x) for x in command)
+      command = ' '.join(quote_bash_args(x) for x in command)
     
     with Environment.get_instance_copy() as env:
       if self.resource.security_enabled and not self.resource.kinit_override:

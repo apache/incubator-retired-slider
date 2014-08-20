@@ -18,6 +18,7 @@
 
 package org.apache.slider.server.appmaster.web.rest.agent;
 
+import org.apache.slider.providers.agent.State;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
@@ -43,6 +44,7 @@ public class HeartBeat {
   private List<DiskInfo> mounts = new ArrayList<DiskInfo>();
   HostStatus nodeStatus;
   private AgentEnv agentEnv = null;
+  private String fqdn;
 
   public long getResponseId() {
     return responseId;
@@ -56,16 +58,24 @@ public class HeartBeat {
     return timestamp;
   }
 
-  public String getHostname() {
-    return hostname;
-  }
-
   public void setTimestamp(long timestamp) {
     this.timestamp = timestamp;
   }
 
+  public String getHostname() {
+    return hostname;
+  }
+
   public void setHostname(String hostname) {
     this.hostname = hostname;
+  }
+
+  public String getFqdn() {
+    return fqdn;
+  }
+
+  public void setFqdn(String fqdn) {
+    this.fqdn = fqdn;
   }
 
   @JsonProperty("reports")

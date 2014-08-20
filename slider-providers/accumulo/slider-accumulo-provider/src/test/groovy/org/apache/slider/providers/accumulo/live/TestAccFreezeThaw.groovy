@@ -25,7 +25,7 @@ import org.apache.slider.providers.accumulo.AccumuloConfigFileOptions
 import org.apache.slider.providers.accumulo.AccumuloKeys
 import org.apache.slider.client.SliderClient
 import org.apache.slider.providers.accumulo.AccumuloTestBase
-import org.apache.slider.core.registry.zk.ZKIntegration
+import org.apache.slider.core.zk.ZKIntegration
 import org.junit.Test
 
 @CompileStatic
@@ -34,11 +34,11 @@ class TestAccFreezeThaw extends AccumuloTestBase {
 
   @Test
   public void testAccFreezeThaw() throws Throwable {
-    String clustername = "test_acc_freeze_thaw"
     int tablets = 1
     int monitor = 1
     int gc = 1
-    createMiniCluster(clustername, configuration, 1, 1, 1, true, false)
+    String clustername = createMiniCluster("",
+        configuration, 1, 1, 1, true, false)
     describe(" Create an accumulo cluster");
 
     //make sure that ZK is up and running at the binding string
@@ -56,7 +56,7 @@ class TestAccFreezeThaw extends AccumuloTestBase {
     addToTeardown(sliderClient);
 
     
-    waitForRoleCount(sliderClient, roles, ACCUMULO_CLUSTER_STARTUP_TO_LIVE_TIME)
+    waitForRoleCount(sliderClient, roles, accumulo_cluster_startup_to_live_time)
     //now give the cluster a bit of time to actually start work
 
     log.info("Sleeping for a while")
@@ -93,7 +93,7 @@ class TestAccFreezeThaw extends AccumuloTestBase {
     ServiceLauncher launcher2 = thawCluster(clustername, [], true);
     SliderClient sliderClient2 = (SliderClient) launcher2.service
     addToTeardown(sliderClient2)
-    waitForRoleCount(sliderClient, roles, ACCUMULO_CLUSTER_STARTUP_TO_LIVE_TIME, "thawing")
+    waitForRoleCount(sliderClient, roles, accumulo_cluster_startup_to_live_time, "thawing")
 
 
     sleepForAccumuloClusterLive();

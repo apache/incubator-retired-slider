@@ -50,7 +50,7 @@ public class AppMasterLauncher extends AbstractLauncher {
   private final ApplicationSubmissionContext submissionContext;
   private final ApplicationId appId;
   private final boolean secureCluster;
-  private int maxAppAttempts = 2;
+  private int maxAppAttempts = 0;
   private boolean keepContainersOverRestarts = true;
   private String queue = YarnConfiguration.DEFAULT_QUEUE_NAME;
   private int priority = 1;
@@ -174,7 +174,10 @@ public class AppMasterLauncher extends AbstractLauncher {
       submissionContext.setKeepContainersAcrossApplicationAttempts(true);
     }
 
-    submissionContext.setMaxAppAttempts(maxAppAttempts);
+    if (maxAppAttempts > 0) {
+      log.debug("Setting max AM attempts to {}", maxAppAttempts);
+      submissionContext.setMaxAppAttempts(maxAppAttempts);
+    }
 
     if (secureCluster) {
       addSecurityTokens();

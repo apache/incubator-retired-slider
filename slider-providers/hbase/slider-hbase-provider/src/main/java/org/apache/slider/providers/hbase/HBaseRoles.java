@@ -37,13 +37,20 @@ public class HBaseRoles {
 
   public static final int KEY_MASTER = SliderKeys.ROLE_AM_PRIORITY_INDEX + 2;
 
+  public static final int KEY_REST_GATEWAY = SliderKeys.ROLE_AM_PRIORITY_INDEX + 3;
+
+  public static final int KEY_THRIFT_GATEWAY = SliderKeys.ROLE_AM_PRIORITY_INDEX + 4;
+
+  public static final int KEY_THRIFT2_GATEWAY = SliderKeys.ROLE_AM_PRIORITY_INDEX + 5;
   /**
    * Initialize role list
    */
   static {
     ROLES.add(new ProviderRole(HBaseKeys.ROLE_WORKER, KEY_WORKER));
-    // Master doesn't need data locality
-    ROLES.add(new ProviderRole(HBaseKeys.ROLE_MASTER, KEY_MASTER,PlacementPolicy.NO_DATA_LOCALITY));
+    ROLES.add(new ProviderRole(HBaseKeys.ROLE_MASTER, KEY_MASTER));
+    ROLES.add(new ProviderRole(HBaseKeys.ROLE_REST_GATEWAY, KEY_REST_GATEWAY));
+    ROLES.add(new ProviderRole(HBaseKeys.ROLE_THRIFT_GATEWAY, KEY_THRIFT_GATEWAY));
+    ROLES.add(new ProviderRole(HBaseKeys.ROLE_THRIFT_GATEWAY, KEY_THRIFT2_GATEWAY));
   }
 
 

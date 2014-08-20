@@ -27,7 +27,7 @@ import org.apache.slider.core.registry.docstore.PublishedConfigSet
 import org.apache.slider.core.registry.info.ServiceInstanceData
 import org.apache.slider.core.registry.retrieve.RegistryRetriever
 import org.apache.slider.providers.hbase.HBaseKeys
-import org.apache.slider.core.registry.zk.ZKIntegration
+import org.apache.slider.core.zk.ZKIntegration
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.client.SliderClient
 import org.apache.slider.providers.hbase.minicluster.HBaseMiniClusterTestBase
@@ -46,8 +46,7 @@ class TestHBaseMaster extends HBaseMiniClusterTestBase {
 
   @Test
   public void testHBaseMaster() throws Throwable {
-    String clustername = "test_hbase_master"
-    createMiniCluster(clustername, configuration, 1, true)
+    String clustername = createMiniCluster("", configuration, 1, true)
     //make sure that ZK is up and running at the binding string
     ZKIntegration zki = createZKIntegrationInstance(ZKBinding, clustername, false, false, 5000)
     //now launch the cluster with 1 region server
@@ -80,15 +79,28 @@ class TestHBaseMaster extends HBaseMiniClusterTestBase {
     describe "service registry names"
     SliderRegistryService registryService = client.registry
     def names = registryService.getServiceTypes();
-    dumpRegistryNames(names)
+    dumpRegistryServiceTypes(names)
 
     List<CuratorServiceInstance<ServiceInstanceData>> instances =
         client.listRegistryInstances();
-    def hbaseService = registryService.findByID(
-        instances,
-        HBaseKeys.HBASE_SERVICE_TYPE)
+
+    def hbaseInstances = registryService.findInstances( HBaseKeys.HBASE_SERVICE_TYPE, null)
+    assert hbaseInstances.size() == 1
+    def hbaseService = hbaseInstances[0]
     assert hbaseService
-    RegistryRetriever retriever = new RegistryRetriever(hbaseService.payload)
+    def hbaseServiceData = hbaseService.payload
+    log.info "HBase service 0 == $hbaseServiceData"
+    assert hbaseServiceData.id 
+    assert hbaseServiceData.serviceType == HBaseKeys.HBASE_SERVICE_TYPE
+
+    hbaseInstances = registryService.findInstances(
+        HBaseKeys.HBASE_SERVICE_TYPE,
+        clustername)
+    assert hbaseInstances.size() == 1
+    def hbaseServiceData2 = hbaseInstances[0].payload
+    assert hbaseServiceData == hbaseServiceData2
+
+    RegistryRetriever retriever = new RegistryRetriever(hbaseServiceData)
     log.info retriever.toString()
     assert retriever.hasConfigurations(true)
     PublishedConfigSet externalConfSet = retriever.getConfigurations(true)

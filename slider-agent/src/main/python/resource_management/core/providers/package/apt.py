@@ -15,7 +15,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-Ambari Agent
+Slider Agent
 
 """
 
@@ -23,7 +23,7 @@ from resource_management.core.providers.package import PackageProvider
 from resource_management.core import shell
 from resource_management.core.logger import Logger
 
-INSTALL_CMD = "/usr/bin/apt-get --assume-yes install %s"
+INSTALL_CMD = "/usr/bin/apt-get --force-yes --assume-yes install %s"
 REMOVE_CMD = "/usr/bin/apt-get -y -q remove %s"
 CHECK_CMD = "dpkg --get-selections %s | grep -v deinstall"
 

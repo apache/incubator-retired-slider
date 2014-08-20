@@ -54,7 +54,8 @@ def all_tests_suite():
   for directory in os.listdir(src_dir):
     if os.path.isdir(directory) and not directory in ignoredDirs:
       files_list += os.listdir(src_dir + os.sep + directory)
-  shuffle(files_list)
+  ## temporarily deleting to add more predictability
+  ## shuffle(files_list)
   tests_list = []
 
   logger.info('------------------------TESTS LIST:-------------------------------------')

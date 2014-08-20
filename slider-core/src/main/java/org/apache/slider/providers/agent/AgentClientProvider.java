@@ -18,9 +18,10 @@
 
 package org.apache.slider.providers.agent;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.slider.api.OptionKeys;
+import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.tools.SliderFileSystem;
@@ -34,8 +35,8 @@ import org.apache.slider.core.launch.AbstractLauncher;
 import org.apache.slider.providers.AbstractClientProvider;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
+import org.apache.slider.providers.agent.application.metadata.Application;
 import org.apache.slider.providers.agent.application.metadata.Metainfo;
-import org.apache.slider.providers.agent.application.metadata.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,14 +94,16 @@ public class AgentClientProvider extends AbstractClientProvider
     sliderFileSystem.verifyFileExists(appDefPath);
 
     String agentConf = instanceDefinition.getAppConfOperations().
-        getGlobalOptions().getMandatoryOption(AgentKeys.AGENT_CONF);
-    sliderFileSystem.verifyFileExists(new Path(agentConf));
+        getGlobalOptions().getOption(AgentKeys.AGENT_CONF, "");
+    if (StringUtils.isNotEmpty(agentConf)) {
+      sliderFileSystem.verifyFileExists(new Path(agentConf));
+    }
 
     String appHome = instanceDefinition.getAppConfOperations().
         getGlobalOptions().get(AgentKeys.PACKAGE_PATH);
     if (SliderUtils.isUnset(appHome)) {
       String agentImage = instanceDefinition.getInternalOperations().
-          get(OptionKeys.INTERNAL_APPLICATION_IMAGE_PATH);
+          get(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH);
       sliderFileSystem.verifyFileExists(new Path(agentImage));
     }
   }
@@ -152,7 +155,7 @@ public class AgentClientProvider extends AbstractClientProvider
       instanceDefinition.getAppConfOperations().
           getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
     } catch (BadConfigException bce) {
-      throw new BadConfigException("Application definition must be provided." + bce.getMessage());
+      throw new BadConfigException("Application definition must be provided. " + bce.getMessage());
     }
     String appDef = instanceDefinition.getAppConfOperations().
         getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
@@ -165,22 +168,13 @@ public class AgentClientProvider extends AbstractClientProvider
     String appHome = instanceDefinition.getAppConfOperations().
         getGlobalOptions().get(AgentKeys.PACKAGE_PATH);
     String agentImage = instanceDefinition.getInternalOperations().
-        get(OptionKeys.INTERNAL_APPLICATION_IMAGE_PATH);
+        get(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH);
 
     if (SliderUtils.isUnset(appHome) && SliderUtils.isUnset(agentImage)) {
       throw new BadConfigException("Either agent package path " +
                                    AgentKeys.PACKAGE_PATH + " or image root " +
-                                   OptionKeys.INTERNAL_APPLICATION_IMAGE_PATH
-                                   + " must be provided");
-    }
-
-    try {
-      // Validate the agent config
-      instanceDefinition.getAppConfOperations().
-          getGlobalOptions().getMandatoryOption(AgentKeys.AGENT_CONF);
-    } catch (BadConfigException bce) {
-      throw new BadConfigException("Agent config "+ AgentKeys.AGENT_CONF 
-                                   + " property must be provided.");
+                                   InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH
+                                   + " must be provided.");
     }
   }
 
@@ -202,17 +196,24 @@ public class AgentClientProvider extends AbstractClientProvider
   public Set<String> getApplicationTags(SliderFileSystem fileSystem,
                                         String appDef) throws SliderException {
     Set<String> tags;
+    Metainfo metainfo;
     try {
-      Metainfo metainfo = AgentUtils.getApplicationMetainfo(fileSystem, appDef);
-      Service service = metainfo.getServices().get(0);
-      tags = new HashSet<>();
-      tags.add("Name: " + service.getName());
-      tags.add("Version: " + service.getVersion());
-      tags.add("Description: " + service.getComment());
+      metainfo = AgentUtils.getApplicationMetainfo(fileSystem, appDef);
     } catch (IOException e) {
-      log.error("error retrieving metainfo from {}", appDef, e);
-      throw new SliderException("error retrieving metainfo", e);
+      log.error("Error retrieving metainfo from {}", appDef, e);
+      throw new SliderException("Error retrieving metainfo", e);
     }
+
+    if(metainfo == null) {
+      log.error("Error retrieving metainfo from {}", appDef);
+      throw new SliderException("Error parsing metainfo file, possibly bad structure.");
+    }
+
+    Application application = metainfo.getApplication();
+    tags = new HashSet<String>();
+    tags.add("Name: " + application.getName());
+    tags.add("Version: " + application.getVersion());
+    tags.add("Description: " + SliderUtils.truncate(application.getComment(), 80));
 
     return tags;
   }

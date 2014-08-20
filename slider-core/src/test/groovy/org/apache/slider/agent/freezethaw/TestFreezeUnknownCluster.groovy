@@ -39,9 +39,8 @@ class TestFreezeUnknownCluster extends AgentMiniClusterTestBase {
 
   @Test
   public void testFreezeUnknownCluster() throws Throwable {
-    String clustername = "test_start_unknown_cluster"
     YarnConfiguration conf = configuration
-    createMiniCluster(clustername, conf, 1, true)
+    String clustername = createMiniCluster("", conf, 1, true)
 
     describe "try to freeze a cluster that isn't defined"
 

@@ -16,15 +16,26 @@
  */
 package org.apache.slider.providers.agent.application.metadata;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  *
  */
 public class Component {
   String name;
   String category;
+  String publishConfig;
+  String minInstanceCount;
+  String maxInstanceCount;
+  String autoStartOnFailure;
+  String appExports;
   CommandScript commandScript;
+  List<ComponentExport> componentExports;
 
   public Component() {
+    publishConfig = Boolean.FALSE.toString();
+    componentExports = new ArrayList<ComponentExport>();
   }
 
   public String getName() {
@@ -43,12 +54,64 @@ public class Component {
     this.category = category;
   }
 
+  public String getPublishConfig() {
+    return publishConfig;
+  }
+
+  public void setPublishConfig(String publishConfig) {
+    this.publishConfig = publishConfig;
+  }
+
+  public String getAutoStartOnFailure() {
+    return autoStartOnFailure;
+  }
+
+  public void setAutoStartOnFailure(String autoStartOnFailure) {
+    this.autoStartOnFailure = autoStartOnFailure;
+  }
+
+  public String getAppExports() {
+    return appExports;
+  }
+
+  public void setAppExports(String appExports) {
+    this.appExports = appExports;
+  }
+
+  public String getMinInstanceCount() {
+    return minInstanceCount;
+  }
+
+  public void setMinInstanceCount(String minInstanceCount) {
+    this.minInstanceCount = minInstanceCount;
+  }
+
+  public String getMaxInstanceCount() {
+    return maxInstanceCount;
+  }
+
+  public void setMaxInstanceCount(String maxInstanceCount) {
+    this.maxInstanceCount = maxInstanceCount;
+  }
+
   public CommandScript getCommandScript() {
     return commandScript;
   }
 
   public void addCommandScript(CommandScript commandScript) {
     this.commandScript = commandScript;
+  }
+
+  public void addComponentExport(ComponentExport export) {
+    componentExports.add(export);
+  }
+
+  public List<ComponentExport> getComponentExports() {
+    return componentExports;
+  }
+
+  public Boolean getRequiresAutoRestart() {
+    return Boolean.parseBoolean(this.autoStartOnFailure);
   }
 
   @Override

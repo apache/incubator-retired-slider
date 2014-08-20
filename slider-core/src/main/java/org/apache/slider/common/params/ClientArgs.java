@@ -46,6 +46,7 @@ public class ClientArgs extends CommonArgs {
   private AbstractClusterBuildingActionArgs buildingActionArgs;
   private final ActionAMSuicideArgs actionAMSuicideArgs = new ActionAMSuicideArgs();
   private final ActionBuildArgs actionBuildArgs = new ActionBuildArgs();
+  private final ActionUpdateArgs actionUpdateArgs = new ActionUpdateArgs();
   private final ActionCreateArgs actionCreateArgs = new ActionCreateArgs();
   private final ActionDestroyArgs actionDestroyArgs = new ActionDestroyArgs();
   private final ActionExistsArgs actionExistsArgs = new ActionExistsArgs();
@@ -77,6 +78,7 @@ public class ClientArgs extends CommonArgs {
       actionAMSuicideArgs,
       actionBuildArgs,
       actionCreateArgs,
+      actionUpdateArgs,
       actionDestroyArgs,
       actionExistsArgs,
       actionFlexArgs,
@@ -101,9 +103,10 @@ public class ClientArgs extends CommonArgs {
       log.debug("Setting RM to {}", getManager());
       conf.set(YarnConfiguration.RM_ADDRESS, getManager());
     }
-    if ( getBasePath() != null ) {
+    if (getBasePath() != null) {
       log.debug("Setting basePath to {}", getBasePath());
-      conf.set(SliderXmlConfKeys.KEY_SLIDER_BASE_PATH, getBasePath().toString());
+      conf.set(SliderXmlConfKeys.KEY_SLIDER_BASE_PATH,
+          getBasePath().toString());
     }
   }
 
@@ -117,6 +120,10 @@ public class ClientArgs extends CommonArgs {
 
   public ActionBuildArgs getActionBuildArgs() {
     return actionBuildArgs;
+  }
+
+  public ActionUpdateArgs getActionUpdateArgs() {
+    return actionUpdateArgs;
   }
 
   public ActionCreateArgs getActionCreateArgs() {
@@ -181,6 +188,9 @@ public class ClientArgs extends CommonArgs {
       bindCoreAction(actionCreateArgs);
       //its a builder, so set those actions too
       buildingActionArgs = actionCreateArgs;
+
+    } else if (SliderActions.ACTION_UPDATE.equals(action)) {
+      bindCoreAction(actionUpdateArgs);
 
     } else if (SliderActions.ACTION_FREEZE.equals(action)) {
       bindCoreAction(actionFreezeArgs);

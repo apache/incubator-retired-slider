@@ -24,6 +24,8 @@ import json
 import pprint
 import sys
 import socket
+import posixpath
+import platform
 from AgentConfig import AgentConfig
 from AgentException import AgentException
 from PythonExecutor import PythonExecutor
@@ -49,25 +51,26 @@ class CustomServiceOrchestrator():
     self.config = config
     self.tmp_dir = config.getResolvedPath(AgentConfig.APP_TASK_DIR)
     self.python_executor = PythonExecutor(self.tmp_dir, config)
-    self.status_commands_stdout = os.path.join(self.tmp_dir,
-                                               'status_command_stdout.txt')
-    self.status_commands_stderr = os.path.join(self.tmp_dir,
-                                               'status_command_stderr.txt')
+    self.status_commands_stdout = os.path.realpath(posixpath.join(self.tmp_dir,
+                                                                  'status_command_stdout.txt'))
+    self.status_commands_stderr = os.path.realpath(posixpath.join(self.tmp_dir,
+                                                                  'status_command_stderr.txt'))
     self.public_fqdn = hostname.public_hostname()
-    self.applied_configs = {}
+    self.stored_command = {}
+    self.allocated_ports = {}
     # Clean up old status command files if any
     try:
       os.unlink(self.status_commands_stdout)
       os.unlink(self.status_commands_stderr)
     except OSError:
       pass # Ignore fail
-    self.base_dir = os.path.join(
-      config.getResolvedPath(AgentConfig.APP_PACKAGE_DIR), "package")
+    self.base_dir = os.path.realpath(posixpath.join(
+      config.getResolvedPath(AgentConfig.APP_PACKAGE_DIR), "package"))
 
 
   def runCommand(self, command, tmpoutfile, tmperrfile,
-                 override_output_files=True, store_config=False):
-    allocated_port = {}
+                 override_output_files=True, store_command=False):
+    allocated_ports = {}
     try:
       script_type = command['commandParams']['script_type']
       script = command['commandParams']['script']
@@ -78,29 +81,35 @@ class CustomServiceOrchestrator():
       script_path = self.resolve_script_path(self.base_dir, script, script_type)
       script_tuple = (script_path, self.base_dir)
 
-      tmpstrucoutfile = os.path.join(self.tmp_dir,
-                                     "structured-out-{0}.json".format(task_id))
+      tmpstrucoutfile = os.path.realpath(posixpath.join(self.tmp_dir,
+                                                        "structured-out-{0}.json".format(task_id)))
       if script_type.upper() != self.SCRIPT_TYPE_PYTHON:
       # We don't support anything else yet
         message = "Unknown script type {0}".format(script_type)
         raise AgentException(message)
-      json_path = self.dump_command_to_json(command, allocated_port, store_config)
+      json_path = self.dump_command_to_json(command, allocated_ports, store_command)
       py_file_list = [script_tuple]
       # filter None values
       filtered_py_file_list = [i for i in py_file_list if i]
+      logger_level = logging.getLevelName(logger.level)
 
       # Executing hooks and script
       ret = None
       for py_file, current_base_dir in filtered_py_file_list:
         script_params = [command_name, json_path, current_base_dir]
-        python_paths = [os.path.join(self.config.getWorkRootPath(),
-                                     "infra/agent/slider-agent/jinja2"),
-                        os.path.join(self.config.getWorkRootPath(),
-                                     "infra/agent/slider-agent")]
-        environment_vars = [("PYTHONPATH", ":".join(python_paths))]
+        python_paths = [os.path.realpath(posixpath.join(self.config.getWorkRootPath(),
+                                                        "infra", "agent", "slider-agent", "jinja2")),
+                        os.path.realpath(posixpath.join(self.config.getWorkRootPath(),
+                                                        "infra", "agent", "slider-agent"))]
+        if platform.system() != "Windows":
+          environment_vars = [("PYTHONPATH", ":".join(python_paths))]
+        else:
+          environment_vars = [("PYTHONPATH", ";".join(python_paths))]
+
         ret = self.python_executor.run_file(py_file, script_params,
                                             tmpoutfile, tmperrfile, timeout,
                                             tmpstrucoutfile,
+                                            logger_level,
                                             override_output_files,
                                             environment_vars)
         # Next run_file() invocations should always append to current output
@@ -124,7 +133,15 @@ class CustomServiceOrchestrator():
       }
 
     if Constants.EXIT_CODE in ret and ret[Constants.EXIT_CODE] == 0:
-      ret[Constants.ALLOCATED_PORTS] = allocated_port
+      ret[Constants.ALLOCATED_PORTS] = allocated_ports
+      self.allocated_ports = allocated_ports
+
+    # Irrespective of the outcome report the folder paths
+    if command_name == 'INSTALL':
+      ret[Constants.FOLDERS] = {
+        Constants.AGENT_LOG_ROOT: self.config.getLogPath(),
+        Constants.AGENT_WORK_ROOT: self.config.getWorkRootPath()
+      }
     return ret
 
 
@@ -132,29 +149,35 @@ class CustomServiceOrchestrator():
     """
     Encapsulates logic of script location determination.
     """
-    path = os.path.join(base_dir, script)
+    path = os.path.realpath(posixpath.join(base_dir, script))
     if not os.path.exists(path):
       message = "Script {0} does not exist".format(path)
       raise AgentException(message)
     return path
 
   def getConfig(self, command):
-    if 'commandParams' in command and 'config_type' in command['commandParams']:
-      config_type = command['commandParams']['config_type']
-      logger.info("Requesting applied config for type {0}".format(config_type))
-      if config_type in self.applied_configs:
-        return {
-          'configurations': {config_type: self.applied_configs[config_type]}
-        }
+    if 'configurations' in self.stored_command:
+      if 'commandParams' in command and 'config_type' in command['commandParams']:
+        config_type = command['commandParams']['config_type']
+        logger.info("Requesting applied config for type {0}".format(config_type))
+        if config_type in self.stored_command['configurations']:
+          return {
+            'configurations': {config_type: self.stored_command['configurations'][config_type]}
+          }
+        else:
+          return {
+            'configurations': {}
+          }
+        pass
       else:
+        logger.info("Requesting all applied config.")
         return {
-          'configurations': {}
+          'configurations': self.stored_command['configurations']
         }
       pass
     else:
-      logger.info("Requesting all applied config.")
       return {
-        'configurations': self.applied_configs
+        'configurations': {}
       }
     pass
 
@@ -169,7 +192,7 @@ class CustomServiceOrchestrator():
       override_output_files = False
 
     if command['roleCommand'] == "GET_CONFIG":
-      return self.getConfig(command)
+     return self.getConfig(command)
 
     else:
       res = self.runCommand(command, self.status_commands_stdout,
@@ -183,7 +206,7 @@ class CustomServiceOrchestrator():
       return res
     pass
 
-  def dump_command_to_json(self, command, allocated_ports, store_config=False):
+  def dump_command_to_json(self, command, allocated_ports, store_command=False):
     """
     Converts command to json file and returns file path
     """
@@ -198,15 +221,15 @@ class CustomServiceOrchestrator():
     if command_type == ActionQueue.STATUS_COMMAND:
       # These files are frequently created, thats why we don't
       # store them all, but only the latest one
-      file_path = os.path.join(self.tmp_dir, "status_command.json")
+      file_path = os.path.realpath(posixpath.join(self.tmp_dir, "status_command.json"))
     else:
       task_id = command['taskId']
-      file_path = os.path.join(self.tmp_dir, "command-{0}.json".format(task_id))
+      file_path = os.path.realpath(posixpath.join(self.tmp_dir, "command-{0}.json".format(task_id)))
       # Json may contain passwords, that's why we need proper permissions
     if os.path.isfile(file_path):
       os.unlink(file_path)
 
-    self.finalize_command(command, store_config, allocated_ports)
+    self.finalize_command(command, store_command, allocated_ports)
 
     with os.fdopen(os.open(file_path, os.O_WRONLY | os.O_CREAT,
                            0600), 'w') as f:
@@ -218,12 +241,17 @@ class CustomServiceOrchestrator():
   patch content
   ${AGENT_WORK_ROOT} -> AgentConfig.getWorkRootPath()
   ${AGENT_LOG_ROOT} -> AgentConfig.getLogPath()
+  ALLOCATED_PORT is a hint to allocate port. It works as follows:
+  Its of the form {component_name.ALLOCATED_PORT}[{DEFAULT_default_port}][{DO_NOT_PROPAGATE}]
+  Either a port gets allocated or if not then just set the value to "0"
   """
 
-  def finalize_command(self, command, store_config, allocated_ports):
+  def finalize_command(self, command, store_command, allocated_ports):
     component = command['componentName']
-    allocated_port_format = "${{{0}.ALLOCATED_PORT}}"
-    port_allocation_req = allocated_port_format.format(component)
+    allocated_for_this_component_format = "${{{0}.ALLOCATED_PORT}}"
+    allocated_for_any = ".ALLOCATED_PORT}"
+
+    port_allocation_req = allocated_for_this_component_format.format(component)
     if 'configurations' in command:
       for key in command['configurations']:
         if len(command['configurations'][key]) > 0:
@@ -234,10 +262,12 @@ class CustomServiceOrchestrator():
               value = value.replace("${AGENT_LOG_ROOT}",
                                     self.config.getLogPath())
               if port_allocation_req in value:
-                port = self.allocate_port()
-                value = value.replace(port_allocation_req, str(port))
-                logger.info("Allocated port " + str(port) + " for " + port_allocation_req)
-                allocated_ports[k] = value
+                value = self.allocate_ports(value, port_allocation_req)
+                allocated_ports[key + "." + k] = value
+              elif allocated_for_any in value:
+                ## All unallocated ports should be set to 0
+                logger.info("Assigning port 0 " + "for " + value)
+                value = self.set_all_unallocated_ports(value)
               command['configurations'][key][k] = value
               pass
             pass
@@ -245,13 +275,83 @@ class CustomServiceOrchestrator():
         pass
       pass
 
-    if store_config:
+    if store_command:
       logger.info("Storing applied config: " + pprint.pformat(command['configurations']))
-      self.applied_configs = command['configurations']
+      self.stored_command = command
 
   pass
 
-  def allocate_port(self):
+  """
+  All unallocated ports should be set to 0
+  Look for "${SOME_COMPONENT_NAME.ALLOCATED_PORT}"
+        or "${component.ALLOCATED_PORT}{DEFAULT_port}"
+        or "${component.ALLOCATED_PORT}{DEFAULT_port}{DO_NOT_PROPAGATE}"
+  """
+
+  def set_all_unallocated_ports(self, value):
+    pattern_start = "${"
+    sub_section_start = "}{"
+    pattern_end = "}"
+    index = value.find(pattern_start)
+    while index != -1:
+      replace_index_start = index
+      replace_index_end = value.find(pattern_end, replace_index_start)
+      next_pattern_start = value.find(sub_section_start, replace_index_start)
+      while next_pattern_start == replace_index_end:
+        replace_index_end = value.find(pattern_end, replace_index_end + 1)
+        next_pattern_start = value.find(sub_section_start, next_pattern_start + 1)
+        pass
+
+      value = value[:replace_index_start] + "0" + value[replace_index_end + 1:]
+
+      # look for the next
+      index = value.find(pattern_start)
+
+    return value
+    pass
+
+  """
+  Port allocation can asks for multiple dynamic ports
+  port_req_pattern is of type ${component_name.ALLOCATED_PORT}
+    append {DEFAULT_ and find the default value
+    append {DO_NOT_PROPAGATE} if it exists
+  """
+  def allocate_ports(self, value, port_req_pattern):
+    default_port_pattern = "{DEFAULT_"
+    do_not_propagate_pattern = "{DO_NOT_PROPAGATE}"
+    index = value.find(port_req_pattern)
+    while index != -1:
+      replaced_pattern = port_req_pattern
+      def_port = None
+      if index == value.find(port_req_pattern + default_port_pattern):
+        replaced_pattern = port_req_pattern + default_port_pattern
+        start_index = index + len(replaced_pattern)
+        end_index = value.find("}", start_index)
+        def_port_str = value[start_index:end_index]
+        def_port = int(def_port_str)
+        # default value of 0 means allocate any dynamic port
+        if def_port == 0:
+          def_port = None
+
+        replaced_pattern = replaced_pattern + def_port_str + "}"
+        pass
+      if index == value.find(replaced_pattern + do_not_propagate_pattern):
+        replaced_pattern = replaced_pattern + do_not_propagate_pattern
+        pass
+      port = self.allocate_port(def_port)
+      value = value.replace(replaced_pattern, str(port), 1)
+      logger.info("Allocated port " + str(port) + " for " + replaced_pattern)
+      index = value.find(port_req_pattern)
+      pass
+    return value
+    pass
+
+
+  def allocate_port(self, default_port=None):
+    if default_port != None:
+      if self.is_port_available(default_port):
+        return default_port
+
     MAX_ATTEMPT = 5
     iter = 0
     port = -1
@@ -268,5 +368,15 @@ class CustomServiceOrchestrator():
       pass
     logger.info("Allocated dynamic port: " + str(port))
     return port
+
+  def is_port_available(self, port):
+    try:
+      sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+      sock.settimeout(0.2)
+      sock.connect(('127.0.0.1', port))
+      sock.close()
+    except:
+      return True
+    return False
 
 

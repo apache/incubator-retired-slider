@@ -22,12 +22,13 @@ import os
 import logging
 import traceback
 import sys
+import posixpath
 from shell import getTempFiles
 
 logger = logging.getLogger()
 
 if 'AGENT_WORK_ROOT' in os.environ:
-  pidfile = os.path.join(os.environ['AGENT_WORK_ROOT'], "infra/run/agent.pid")
+  pidfile = os.path.realpath(posixpath.join(os.environ['AGENT_WORK_ROOT'], "infra", "run", "agent.pid"))
 else:
   pidfile = None
 

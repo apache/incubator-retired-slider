@@ -27,7 +27,7 @@ import org.apache.slider.providers.accumulo.AccumuloConfigFileOptions
 import org.apache.slider.providers.accumulo.AccumuloKeys
 import org.apache.slider.client.SliderClient
 import org.apache.slider.providers.accumulo.AccumuloTestBase
-import org.apache.slider.core.registry.zk.ZKIntegration
+import org.apache.slider.core.zk.ZKIntegration
 import org.junit.Test
 
 @CompileStatic
@@ -36,11 +36,11 @@ class TestAccLiveLocalArchive extends AccumuloTestBase {
 
   @Test
   public void testAccLiveLocalArchive() throws Throwable {
-    String clustername = "test_acc_live_local_archive"
     int tablets = 1
     int monitor = 1
     int gc = 1
-    createMiniCluster(clustername, getConfiguration(), 1, 1, 1, true, false)
+    String clustername = createMiniCluster(
+        "", configuration, 1, 1, 1, true, false)
     describe(" Create an accumulo cluster from an archive");
 
     //image mode
@@ -63,7 +63,7 @@ class TestAccLiveLocalArchive extends AccumuloTestBase {
 
     waitWhileClusterLive(sliderClient);
     assert sliderClient.applicationReport.yarnApplicationState == YarnApplicationState.RUNNING
-    waitForRoleCount(sliderClient, roles, ACCUMULO_CLUSTER_STARTUP_TO_LIVE_TIME)
+    waitForRoleCount(sliderClient, roles, accumulo_cluster_startup_to_live_time)
     describe("Cluster status")
     ClusterDescription status
     status = sliderClient.getClusterDescription(clustername)

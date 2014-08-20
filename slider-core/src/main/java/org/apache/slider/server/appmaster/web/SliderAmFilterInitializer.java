@@ -43,7 +43,7 @@ public class SliderAmFilterInitializer extends FilterInitializer {
   @Override
   public void initFilter(FilterContainer container, Configuration conf) {
     configuration = conf;
-    Map<String, String> params = new HashMap<>();
+    Map<String, String> params = new HashMap<String, String>();
     String proxy = WebAppUtils.getProxyHostAndPort(conf);
     String[] parts = proxy.split(":");
     params.put(SliderAmIpFilter.PROXY_HOST, parts[0]);

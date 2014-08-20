@@ -19,12 +19,11 @@
   <parent>
     <groupId>org.apache.slider</groupId>
     <artifactId>slider</artifactId>
-    <version>0.23.0-SNAPSHOT</version>
+    <version>0.50.0-incubating</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>slider-agent</artifactId>
   <packaging>pom</packaging>
-  <version>0.23.0-SNAPSHOT</version>
   <name>Slider Agent</name>
   <description>Slider Agent</description>
   <properties>
@@ -44,6 +43,7 @@
         <configuration>
           <tarLongFileMode>gnu</tarLongFileMode>
           <descriptor>src/packages/tarball/all.xml</descriptor>
+          <appendAssemblyId>false</appendAssemblyId>
         </configuration>
         <executions>
           <execution>
@@ -57,23 +57,19 @@
       </plugin>
       
       <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.0</version>
-      </plugin>
-      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <version>1.2</version>
         <executions>
           <execution>
             <configuration>
-              <executable>python2.6</executable>
+              <executable>${project.basedir}/src/test/python/python-wrap</executable>
               <workingDirectory>src/test/python</workingDirectory>
               <arguments>
                 <argument>unitTests.py</argument>
               </arguments>
               <environmentVariables>
-                <PYTHONPATH>${project.basedir}/src/main/python/jinja2:${project.basedir}/src/test/python:${project.basedir}/src/main/python:${project.basedir}/src/main/python/agent:${project.basedir}/src/main/python/resource_management:${project.basedir}/src/test/python/agent:${project.basedir}/src/test/python/resource_management</PYTHONPATH>
+                <PYTHONPATH>${project.basedir}/src/main/python/jinja2:${project.basedir}/src/test/python:${project.basedir}/src/main/python:${project.basedir}/src/main/python/agent:${project.basedir}/src/main/python/resource_management:${project.basedir}/src/test/python/agent:${project.basedir}/src/test/python/resource_management:${project.basedir}/src/main/python/kazoo</PYTHONPATH>
               </environmentVariables>
               <skip>${skipTests}</skip>
             </configuration>
@@ -106,6 +102,8 @@
             <exclude>src/main/python/jinja2/**</exclude>
             <!-- mock files (BSD license) -->
             <exclude>src/test/python/mock/**</exclude>
+            <!-- kazoo files (Apache License, Version 2.0) -->
+            <exclude>src/main/python/kazoo/**</exclude>
           </excludes>
         </configuration>
       </plugin>

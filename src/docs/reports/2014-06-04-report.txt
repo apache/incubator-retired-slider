@@ -1,0 +1,67 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+ 
+Slider is a collection of tools & technologies to package, deploy, and manage
+long running applications on Apache Hadoop YARN clusters.
+ 
+There are no Board-level issues at this time.
+
+
+When did the project last make any releases? 
+--------------------------------------------
+
+We have made our first ASF-hosted release on June 2
+
+This was a source-only release; some of the reviewers have made suggestions
+which will need to be incorporated into the next. We plan to do another
+release in a few weeks time, and so evolve the project rapidly.
+
+
+Describe the overall activity in the project over the past quarter
+-------------------------------------------------------------------
+
+Our main activity has been setting up the incubator-hosted project, JIRA,
+site, mailing list. etc. The Infra team have been very helpful here.
+
+-Making and publishing our site has educated us on site publishing
+
+-The initial release has taught us of the release process for incubating
+projects, and where we need to improve it.
+
+When were the last committers or PMC members elected?
+-----------------------------------------------------
+
+We have only just set up and so the committer and PMC membership is
+as covered in the incubator proposal.
+
+PMC and committer diversity
+---------------------------
+
+We're only getting started, and do not have any diversity yet. Our first
+goal will be to get users, bug reporters and developers. The dev list
+is up and running -and we do not have any separate user list, so we hope
+to pull users into coding. 
+
+The initial release will help to gain awareness, and should bring in users.
+
+Infrastructure issues or strategic needs
+----------------------------------------
+
+We're still trying to get Jenkins building, but that's a matter of
+handling protobuf-versions on the build machines, rather than infra
+involvement.

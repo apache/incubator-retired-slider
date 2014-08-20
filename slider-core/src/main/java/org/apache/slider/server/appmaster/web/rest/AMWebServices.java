@@ -42,12 +42,7 @@ public class AMWebServices {
     return new ManagementResource(slider);
   }
 
-  @Path(RestPaths.SLIDER_SUBPATH_AGENTS)
-  public AgentResource getAgentResource () {
-    return new AgentResource(slider);
-  }
-
-  @Path(RestPaths.SLIDER_SUBPATH_PUBLISHER) 
+  @Path(RestPaths.SLIDER_SUBPATH_PUBLISHER)
   public PublisherResource getPublisherResource() {
     return new PublisherResource(slider);
   }

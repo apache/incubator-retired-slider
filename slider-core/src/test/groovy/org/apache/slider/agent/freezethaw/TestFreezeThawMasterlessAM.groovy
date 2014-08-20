@@ -22,6 +22,7 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.client.SliderClient
@@ -48,9 +49,8 @@ class TestFreezeThawMasterlessAM extends AgentMiniClusterTestBase {
 
   @Test
   public void testFreezeThawMasterlessAM() throws Throwable {
-    String clustername = "test_freeze_thaw_masterless_am"
     YarnConfiguration conf = configuration
-    createMiniCluster(clustername, conf, 1, 1, 1, true, false)
+    String clustername = createMiniCluster("", conf, 1, 1, 1, true, false)
     
     describe "create a masterless AM, freeze it, thaw it"
     //copy the confdir somewhere
@@ -59,7 +59,10 @@ class TestFreezeThawMasterlessAM extends AgentMiniClusterTestBase {
     SliderUtils.copyDirectory(conf, resConfPath, tempConfPath, null)
 
 
-    ServiceLauncher<SliderClient> launcher = createMasterlessAM(clustername, 0, true, true)
+    ServiceLauncher<SliderClient> launcher = createStandaloneAM(
+        clustername,
+        true,
+        true)
     SliderClient sliderClient = launcher.service
     addToTeardown(sliderClient);
 
@@ -74,8 +77,10 @@ class TestFreezeThawMasterlessAM extends AgentMiniClusterTestBase {
     //now start the cluster
     ServiceLauncher launcher2 = thawCluster(clustername, [], true);
     SliderClient newCluster = launcher2.service
+    addToTeardown(newCluster);
+
+//    ApplicationReport report = waitForClusterLive(newCluster)
     newCluster.getClusterDescription(clustername);
-    
     //freeze
     assert 0 == clusterActionFreeze(sliderClient, clustername)
 

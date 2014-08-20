@@ -1,0 +1,31 @@
+{
+    "Component": {
+        "NIMBUS": {
+            "totalslots": {
+                "metric": "Total Slots",
+                "pointInTime": false,
+                "temporal": true
+            },
+            "totalexecutors": {
+                "metric": "Total Executors",
+                "pointInTime": false,
+                "temporal": true
+            },
+            "topologies": {
+                "metric": "Topologies",
+                "pointInTime": false,
+                "temporal": true
+            },
+            "totaltasks": {
+                "metric": "Total Tasks",
+                "pointInTime": false,
+                "temporal": true
+            },
+            "usedslots": {
+                "metric": "Used Slots",
+                "pointInTime": false,
+                "temporal": true
+            }
+        }
+    }
+}

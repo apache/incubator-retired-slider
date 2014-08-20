@@ -21,6 +21,10 @@ limitations under the License.
 import ConfigParser
 import StringIO
 import os
+import logging
+import posixpath
+
+logger = logging.getLogger()
 
 config = ConfigParser.RawConfigParser()
 content = """
@@ -29,6 +33,8 @@ content = """
 hostname=localhost
 port=8440
 secured_port=8441
+zk_quorum=localhost:2181
+zk_reg_path=/register/org-apache-slider/cl1
 check_path=/ws/v1/slider/agents/
 register_path=/ws/v1/slider/agents/{name}/register
 heartbeat_path=/ws/v1/slider/agents/{name}/heartbeat
@@ -37,12 +43,14 @@ heartbeat_path=/ws/v1/slider/agents/{name}/heartbeat
 app_pkg_dir=app/definition
 app_install_dir=app/install
 app_run_dir=app/run
+app_dbg_cmd=
+debug_mode_enabled=true
 
-app_task_dir=app/command-log
-app_log_dir=app/log
+app_task_dir=.
+app_log_dir=.
 app_tmp_dir=app/tmp
 
-log_dir=infra/log
+log_dir=.
 run_dir=infra/run
 version_file=infra/version
 
@@ -55,6 +63,9 @@ max_retries=2
 sleep_between_retries=1
 
 [security]
+keysdir=security/keys
+server_crt=ca.crt
+passphrase_env_var_name=SLIDER_PASSPHRASE
 
 [heartbeat]
 state_interval=6
@@ -79,6 +90,10 @@ class AgentConfig:
   APP_INSTALL_DIR = "app_install_dir"
   # the location to store component instance PID directories
   APP_RUN_DIR = "app_run_dir"
+  # debug hint for agents
+  APP_DBG_CMD = "app_dbg_cmd"
+  # allow agent to operate in debug mode
+  DEBUG_MODE_ENABLED = "debug_mode_enabled"
 
   # run time dir for command executions
   APP_TASK_DIR = "app_task_dir"
@@ -129,13 +144,25 @@ class AgentConfig:
       if name in AgentConfig.FOLDER_MAPPING and AgentConfig.FOLDER_MAPPING[
         name] == "LOG":
         root_folder_to_use = self.logroot
-      return os.path.join(root_folder_to_use, relativePath)
+      return posixpath.join(root_folder_to_use, relativePath)
     else:
       return relativePath
 
   def get(self, category, name):
     global config
     return config.get(category, name)
+
+  def isDebugEnabled(self):
+    global config
+    enabled = config.get(AgentConfig.AGENT_SECTION, AgentConfig.DEBUG_MODE_ENABLED)
+    return enabled == "true";
+
+  def debugCommand(self):
+    global config
+    command = config.get(AgentConfig.AGENT_SECTION, AgentConfig.APP_DBG_CMD)
+    if command == None:
+      return ""
+    return command
 
   def set(self, category, name, value):
     global config

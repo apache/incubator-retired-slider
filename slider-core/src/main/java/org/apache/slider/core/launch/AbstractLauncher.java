@@ -18,6 +18,7 @@
 
 package org.apache.slider.core.launch;
 
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
@@ -57,15 +58,15 @@ public abstract class AbstractLauncher extends Configured {
   /**
    * Env vars; set up at final launch stage
    */
-  protected final Map<String, String> envVars = new HashMap<>();
+  protected final Map<String, String> envVars = new HashMap<String, String>();
   protected final MapOperations env = new MapOperations("env", envVars);
   protected final ContainerLaunchContext containerLaunchContext =
     Records.newRecord(ContainerLaunchContext.class);
-  protected final List<String> commands = new ArrayList<>(20);
+  protected final List<String> commands = new ArrayList<String>(20);
   protected final Map<String, LocalResource> localResources =
-    new HashMap<>();
+    new HashMap<String, LocalResource>();
   private final Map<String, ByteBuffer> serviceData =
-    new HashMap<>();
+    new HashMap<String, ByteBuffer>();
   // security
   Credentials credentials = new Credentials();
 
@@ -238,6 +239,8 @@ public abstract class AbstractLauncher extends Configured {
     setEnv("CLASSPATH", classpath.buildClasspath());
   }
   public void setEnv(String var, String value) {
+    Preconditions.checkArgument(var != null, "null variable name");
+    Preconditions.checkArgument(value != null, "null value");
     env.put(var, value);
   }
 
@@ -266,7 +269,7 @@ public abstract class AbstractLauncher extends Configured {
 
   public String[] dumpEnvToString() {
 
-    List<String> nodeEnv = new ArrayList<>();
+    List<String> nodeEnv = new ArrayList<String>();
 
     for (Map.Entry<String, String> entry : env.entrySet()) {
       String envElt = String.format("%s=\"%s\"",

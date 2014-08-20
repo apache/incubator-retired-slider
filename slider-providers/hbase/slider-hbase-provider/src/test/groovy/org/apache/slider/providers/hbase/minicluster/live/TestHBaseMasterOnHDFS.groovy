@@ -35,8 +35,8 @@ class TestHBaseMasterOnHDFS extends HBaseMiniClusterTestBase {
 
   @Test
   public void testHBaseMasteOnHDFS() throws Throwable {
-    String clustername = "test_hbase_master_on_hdfs"
-    createMiniCluster(clustername, configuration, 1, 1, 1, true, true)
+    String clustername = createMiniCluster(
+        "", configuration, 1, 1, 1, true, true)
     log.info("HDFS is at $fsDefaultName")
     assert fsDefaultName.startsWith("hdfs://")
     ServiceLauncher<SliderClient> launcher = createHBaseCluster(clustername, 1, [], true, true) 

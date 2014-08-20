@@ -25,9 +25,9 @@ import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.hbase.ClusterStatus
 import org.apache.hadoop.yarn.conf.YarnConfiguration
+import org.apache.slider.api.InternalKeys
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.api.ClusterDescription
-import org.apache.slider.api.OptionKeys
 import org.apache.slider.core.build.InstanceIO
 import org.apache.slider.providers.hbase.HBaseKeys
 import org.apache.slider.common.tools.ConfigHelper
@@ -47,13 +47,12 @@ class TestFreezeReconfigureThawLiveRegionService
 
   @Test
   public void testFreezeReconfigureThawLiveRegionService() throws Throwable {
-    String clustername = "test_freeze_reconfigure_thaw_live_regionservice"
     int regionServerCount = 4
     int nodemanagers = 3
     YarnConfiguration conf = configuration
     //one vcore per node
     conf.setInt("yarn.nodemanager.resource.cpu-vcores", 1)
-    createMiniCluster(clustername, conf, nodemanagers, true)
+    String clustername = createMiniCluster("", conf, nodemanagers, true)
     describe(
         "Create a $regionServerCount node cluster, freeze it, patch the configuration files," +
         " thaw it and verify that it came back with the new settings")
@@ -94,7 +93,7 @@ class TestFreezeReconfigureThawLiveRegionService
         clusterDir)
 
     def snapshotPath = instanceDefinition.internalOperations.get(
-        OptionKeys.INTERNAL_SNAPSHOT_CONF_PATH)
+        InternalKeys.INTERNAL_SNAPSHOT_CONF_PATH)
     assert snapshotPath != null
 
     Path confdir = new Path(snapshotPath);

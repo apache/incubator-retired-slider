@@ -20,11 +20,17 @@ package org.apache.slider.providers.agent
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream
+import org.apache.commons.compress.utils.IOUtils
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.params.SliderActions
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.test.YarnZKMiniClusterTestBase
+import org.junit.Before
+import org.junit.Rule
+import org.junit.rules.TemporaryFolder
 
 import static org.apache.slider.common.SliderXMLConfKeysForTesting.*
 import static org.apache.slider.providers.agent.AgentKeys.CONF_RESOURCE
@@ -36,17 +42,31 @@ import static org.apache.slider.providers.agent.AgentKeys.CONF_RESOURCE
 @Slf4j
 public abstract class AgentTestBase extends YarnZKMiniClusterTestBase {
 
-  public static
-  final int AGENT_CLUSTER_STARTUP_TIME = 1000 * DEFAULT_AGENT_LAUNCH_TIME_SECONDS
+  public static final int AGENT_CLUSTER_STARTUP_TIME = 1000 * DEFAULT_AGENT_LAUNCH_TIME_SECONDS
 
-  /**
-   * The time to sleep before trying to talk to the HBase Master and
-   * expect meaningful results.
-   */
-  public static
-  final int AGENT_CLUSTER_STARTUP_TO_LIVE_TIME = AGENT_CLUSTER_STARTUP_TIME
-  public static final int AGENT_GO_LIVE_TIME = 60000
+  @Rule
+  public TemporaryFolder folder = new TemporaryFolder();
 
+  public String app_def_pkg_path;
+
+  @Before
+  public void setupAppPkg() {
+    if (app_def_pkg_path == null) {
+      def pkgPath = folder.newFolder("testpkg")
+      File zipFileName = new File(pkgPath, "appdef_1.zip").canonicalFile
+      File metainfo = new File(new File(".").absoluteFile, "src/test/python/metainfo.xml");
+      ZipArchiveOutputStream zipFile = new ZipArchiveOutputStream(new FileOutputStream(zipFileName));
+      try {
+        zipFile.putArchiveEntry(new ZipArchiveEntry(metainfo.name));
+        IOUtils.copy(new FileInputStream(metainfo), zipFile);
+        zipFile.closeArchiveEntry();
+      }
+      finally {
+        zipFile.close();
+      }
+      app_def_pkg_path = zipFileName.absolutePath
+    }
+  }
 
   @Override
   public String getTestConfigurationPath() {
@@ -102,7 +122,7 @@ public abstract class AgentTestBase extends YarnZKMiniClusterTestBase {
       boolean deleteExistingData,
       boolean create,
       boolean blockUntilRunning) {
-    
+
 
     YarnConfiguration conf = testConfiguration
 
@@ -117,6 +137,36 @@ public abstract class AgentTestBase extends YarnZKMiniClusterTestBase {
         extraArgs,
         deleteExistingData,
         create && blockUntilRunning,
+        clusterOps)
+  }
+
+  /**
+   * Update an agent cluster
+   * @param clustername
+   * @param roles
+   * @param extraArgs
+   * @param deleteExistingData
+   * @return the cluster launcher
+   */
+  public ServiceLauncher<SliderClient> updateAgentCluster(
+      String clustername,
+      Map<String, Integer> roles,
+      List<String> extraArgs,
+      boolean deleteExistingData) {
+
+    YarnConfiguration conf = testConfiguration
+
+    def clusterOps = [
+        :
+    ]
+
+    return createOrBuildCluster(
+        SliderActions.ACTION_UPDATE,
+        clustername,
+        roles,
+        extraArgs,
+        deleteExistingData,
+        false,
         clusterOps)
   }
 

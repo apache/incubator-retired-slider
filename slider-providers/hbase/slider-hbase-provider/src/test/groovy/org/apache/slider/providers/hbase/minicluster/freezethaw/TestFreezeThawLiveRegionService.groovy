@@ -41,9 +41,8 @@ class TestFreezeThawLiveRegionService extends HBaseMiniClusterTestBase {
 
   @Test
   public void testFreezeThawLiveRegionService() throws Throwable {
-    String clustername = "test_freeze_thaw_live_regionservice"
     int regionServerCount = 2
-    createMiniCluster(clustername, configuration, 1, true)
+    String clustername = createMiniCluster("", configuration, 1, true)
     describe("Create a cluster, freeze it, thaw it and verify that it came back ")
     //use a smaller AM HEAP to include it in the test cycle
     ServiceLauncher launcher = createHBaseCluster(clustername, regionServerCount,

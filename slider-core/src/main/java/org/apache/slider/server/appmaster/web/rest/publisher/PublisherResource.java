@@ -38,8 +38,14 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 import static  org.apache.slider.server.appmaster.web.rest.RestPaths.*;
 
@@ -100,6 +106,14 @@ public class PublisherResource {
   }
 
   @GET
+  @Path("/classpath")
+  @Produces({MediaType.APPLICATION_JSON})
+  public Set<URL> getAMClassPath() {
+    URL[] urls = ((URLClassLoader) getClass().getClassLoader()).getURLs();
+    return new LinkedHashSet<URL>(Arrays.asList(urls));
+  }
+
+  @GET
   @Path("/"+ SET_NAME)
   @Produces({MediaType.APPLICATION_JSON})
   public PublishedConfigSet getPublishedConfiguration(
@@ -150,7 +164,7 @@ public class PublisherResource {
   }
 
   @GET
-  @Path("/" + CONFIG+ ".json")
+  @Path("/" + CONFIG + ".json")
   @Produces({MediaType.APPLICATION_JSON})
   public String getConfigurationContentJson(
       @PathParam("setname") String setname,
@@ -217,7 +231,7 @@ public class PublisherResource {
           propertyName, config);
       throw new NotFoundException("Property not found: " + propertyName);
     }
-    Map<String,String> rtnVal = new HashMap<>();
+    Map<String, String> rtnVal = new HashMap<String, String>();
     rtnVal.put(propertyName, propVal);
 
     return rtnVal;

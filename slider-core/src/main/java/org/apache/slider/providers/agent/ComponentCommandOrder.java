@@ -37,7 +37,8 @@ public class ComponentCommandOrder {
   public static final Logger log =
       LoggerFactory.getLogger(ComponentCommandOrder.class);
   private static char SPLIT_CHAR = '-';
-  Map<Command, Map<String, List<ComponentState>>> dependencies = new HashMap<>();
+  Map<Command, Map<String, List<ComponentState>>> dependencies =
+      new HashMap<Command, Map<String, List<ComponentState>>>();
 
   public ComponentCommandOrder(List<CommandOrder> commandOrders) {
     if (commandOrders != null && commandOrders.size() > 0) {
@@ -48,13 +49,13 @@ public class ComponentCommandOrder {
         if (requiredStates.size() > 0) {
           Map<String, List<ComponentState>> compDep = dependencies.get(componentCmd.command);
           if (compDep == null) {
-            compDep = new HashMap<>();
+            compDep = new HashMap<String, List<ComponentState>>();
             dependencies.put(componentCmd.command, compDep);
           }
 
           List<ComponentState> requirements = compDep.get(componentCmd.componentName);
           if (requirements == null) {
-            requirements = new ArrayList<>();
+            requirements = new ArrayList<ComponentState>();
             compDep.put(componentCmd.componentName, requirements);
           }
 
@@ -70,7 +71,7 @@ public class ComponentCommandOrder {
     }
 
     String[] componentStates = requires.split(",");
-    List<ComponentState> retList = new ArrayList<>();
+    List<ComponentState> retList = new ArrayList<ComponentState>();
     for (String componentStateStr : componentStates) {
       retList.add(getComponentState(componentStateStr));
     }
@@ -93,7 +94,7 @@ public class ComponentCommandOrder {
 
     Command cmd = Command.valueOf(cmdStr);
 
-    if(cmd != Command.START) {
+    if (cmd != Command.START) {
       throw new IllegalArgumentException("Dependency order can only be specified for START.");
     }
     return new ComponentCommand(compStr, cmd);
@@ -113,8 +114,8 @@ public class ComponentCommandOrder {
     String stateStr = compStStr.substring(splitIndex + 1);
 
     State state = State.valueOf(stateStr);
-    if(state != State.STARTED) {
-      throw new IllegalArgumentException("Dependency order can only be specified against STARTED.");
+    if (state != State.STARTED && state != State.INSTALLED) {
+      throw new IllegalArgumentException("Dependency order can only be specified against STARTED/INSTALLED.");
     }
     return new ComponentState(compStr, state);
   }
@@ -126,12 +127,21 @@ public class ComponentCommandOrder {
       for (ComponentState stateToMatch : required) {
         for (ComponentInstanceState currState : currentStates) {
           log.debug("Checking schedule {} {} against dependency {} is {}",
-                    component, command, currState.getCompName(), currState.getState());
-          if (currState.getCompName().equals(stateToMatch.componentName)) {
+                    component, command, currState.getComponentName(), currState.getState());
+          if (currState.getComponentName().equals(stateToMatch.componentName)) {
             if (currState.getState() != stateToMatch.state) {
-              log.info("Cannot schedule {} {} as dependency {} is {}",
-                       component, command, currState.getCompName(), currState.getState());
-              canExecute = false;
+              if (stateToMatch.state == State.STARTED) {
+                log.info("Cannot schedule {} {} as dependency {} is {}",
+                         component, command, currState.getComponentName(), currState.getState());
+                canExecute = false;
+              } else {
+                //state is INSTALLED
+                if (currState.getState() != State.STARTING && currState.getState() != State.STARTED) {
+                  log.info("Cannot schedule {} {} as dependency {} is {}",
+                           component, command, currState.getComponentName(), currState.getState());
+                  canExecute = false;
+                }
+              }
             }
           }
           if (!canExecute) {

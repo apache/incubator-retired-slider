@@ -21,25 +21,28 @@ package org.apache.slider.server.appmaster.model.mock
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.ContainerId
 import org.apache.hadoop.yarn.client.api.AMRMClient
-import org.apache.slider.server.appmaster.state.AbstractRMOperation
-import org.apache.slider.server.appmaster.state.ContainerReleaseOperation
-import org.apache.slider.server.appmaster.state.ContainerRequestOperation
-import org.apache.slider.server.appmaster.state.RMOperationHandler
+import org.apache.slider.server.appmaster.operations.AbstractRMOperation
+import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation
+import org.apache.slider.server.appmaster.operations.ContainerRequestOperation
+import org.apache.slider.server.appmaster.operations.RMOperationHandler
 
 @Slf4j
 class MockRMOperationHandler extends RMOperationHandler {
   public List<AbstractRMOperation> operations = [];
-  
+  int requests, releases;
+
   @Override
   public void releaseAssignedContainer(ContainerId containerId) {
     operations.add(new ContainerReleaseOperation(containerId))
     log.info("Releasing container ID " + containerId.getId())
+    releases++;
   }
 
   @Override
   public void addContainerRequest(AMRMClient.ContainerRequest req) {
     operations.add(new ContainerRequestOperation(req))
     log.info("Requesting container role #" + req.priority);
+    requests++;
   }
 
   /**
@@ -47,5 +50,7 @@ class MockRMOperationHandler extends RMOperationHandler {
    */
   public void clear() {
     operations.clear()
+    releases = 0;
+    requests = 0;
   }
 }

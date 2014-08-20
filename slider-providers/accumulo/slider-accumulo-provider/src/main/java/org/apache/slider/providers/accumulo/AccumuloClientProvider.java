@@ -23,6 +23,7 @@ import org.apache.hadoop.fs.CommonConfigurationKeys;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.LocalResource;
+import org.apache.slider.api.InternalKeys;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.api.OptionKeys;
@@ -135,7 +136,7 @@ public class AccumuloClientProvider extends AbstractClientProvider implements
 
     propagateClientFSBinding(sitexml);
     setDatabasePath(sitexml,
-                    globalInstanceOptions.getMandatoryOption(OptionKeys.INTERNAL_DATA_DIR_PATH));
+                    globalInstanceOptions.getMandatoryOption(InternalKeys.INTERNAL_DATA_DIR_PATH));
 
 
     String quorum =

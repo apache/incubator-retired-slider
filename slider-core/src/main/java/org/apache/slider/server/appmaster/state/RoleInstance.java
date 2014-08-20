@@ -25,8 +25,12 @@ import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.proto.Messages;
 import org.apache.slider.common.tools.SliderUtils;
+import org.apache.slider.core.registry.info.RegisteredEndpoint;
 
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Tracking information about a container
@@ -82,11 +86,12 @@ public final class RoleInstance implements Cloneable {
   public String host;
   public String hostURL;
 
+
   /**
-   * Any information the provider wishes to retain on the state of
-   * an instance
+   * A list of registered endpoints.
    */
-  public Object providerInfo;
+  private List<RegisteredEndpoint> endpoints =
+      new ArrayList<RegisteredEndpoint>(2);
 
   public RoleInstance(Container container) {
     Preconditions.checkNotNull(container, "Null container");
@@ -115,12 +120,12 @@ public final class RoleInstance implements Cloneable {
   public String toString() {
     final StringBuilder sb =
       new StringBuilder("RoleInstance{");
-    sb.append("container=").append(SliderUtils.containerToString(container));
+    sb.append("role='").append(role).append('\'');
     sb.append(", id='").append(id).append('\'');
+    sb.append(", container=").append(SliderUtils.containerToString(container));
     sb.append(", createTime=").append(createTime);
     sb.append(", startTime=").append(startTime);
     sb.append(", released=").append(released);
-    sb.append(", role='").append(role).append('\'');
     sb.append(", roleId=").append(roleId);
     sb.append(", host=").append(host);
     sb.append(", hostURL=").append(hostURL);
@@ -188,8 +193,39 @@ public final class RoleInstance implements Cloneable {
   @Override
   public Object clone() throws CloneNotSupportedException {
     RoleInstance cloned = (RoleInstance) super.clone();
+    // clone the endpoint list, but not the values
+    cloned.endpoints = new ArrayList<RegisteredEndpoint>(this.endpoints);
     return cloned;
   }
 
+  /**
+   * Get the list of endpoints. 
+   * @return the endpoint list.
+   */
+  public List<RegisteredEndpoint> getEndpoints() {
+    return endpoints;
+  }
 
+  /**
+   * Add an endpoint registration
+   * @param endpoint
+   */
+  public void addEndpoint(RegisteredEndpoint endpoint) {
+    Preconditions.checkArgument(endpoint != null);
+    endpoints.add(endpoint);
+  }
+
+  /**
+   * Register a port endpoint as an inet-addr formatted endpoint, using the
+   * hostname as the first part of the address
+   * @param port
+   * @param protocol
+   * @param text
+   */
+  public void registerPortEndpoint(int port, String protocol, String text) {
+    InetSocketAddress addr = new InetSocketAddress(host, port);
+    RegisteredEndpoint epr = new RegisteredEndpoint(addr, protocol, text);
+    addEndpoint(epr);
+  }
+  
 }

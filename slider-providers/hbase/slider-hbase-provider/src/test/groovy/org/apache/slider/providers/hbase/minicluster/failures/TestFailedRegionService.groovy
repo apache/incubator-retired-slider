@@ -39,19 +39,18 @@ class TestFailedRegionService extends HBaseMiniClusterTestBase {
 
   @Test
   public void testFailedRegionService() throws Throwable {
-    testRegionService("test_failed_region_service", true)
+    testRegionService("", true)
   }
   
   @Test
   public void testStoppedRegionService() throws Throwable {
-    testRegionService("test_stopped_region_service", false)
+    testRegionService("", false)
   }
   
   private void testRegionService(String testName, boolean toKill) {
-    String clustername = testName
     String action = toKill ? "kill" : "stop"
     int regionServerCount = 2
-    createMiniCluster(clustername, configuration, 1, 1, 1, true, true)
+    String clustername = createMiniCluster(testName, configuration, 1, 1, 1, true, true)
     describe("Create a single region service cluster then " + action + " the RS");
 
     //now launch the cluster

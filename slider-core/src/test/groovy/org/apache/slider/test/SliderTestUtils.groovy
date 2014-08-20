@@ -205,7 +205,7 @@ class SliderTestUtils extends Assert {
   public static void waitUntilClusterLive(SliderClient client, int timeout) {
     Duration duration = new Duration(timeout);
     duration.start()
-    while (!client.actionExists(client.deployedClusterName, true) &&
+    while (0 != client.actionExists(client.deployedClusterName, true) &&
            !duration.limitExceeded) {
       sleep(1000);
     }
@@ -480,9 +480,11 @@ class SliderTestUtils extends Assert {
       List args) {
     ServiceLauncher<SliderClient> serviceLauncher =
         new ServiceLauncher<SliderClient>(SliderClient.name);
+
+    log.debug("slider ${SliderUtils.join(args, " ", false)}")
     serviceLauncher.launchService(conf,
-                                  toArray(args),
-                                  false);
+        toArray(args),
+        false);
     return serviceLauncher
   }
 
@@ -492,9 +494,11 @@ class SliderTestUtils extends Assert {
       Throwable {
     ServiceLauncher serviceLauncher =
         new ServiceLauncher(serviceClass.name);
+    log.debug("slider ${SliderUtils.join(args, " ", false)}")
+
     serviceLauncher.launchService(conf,
-                                  toArray(args),
-                                  false);
+        toArray(args),
+        false);
     return serviceLauncher;
   }
 
@@ -695,14 +699,17 @@ class SliderTestUtils extends Assert {
 
   public static void dumpRegistryInstanceIDs(List<String> instanceIds) {
     describe "service registry instance IDs"
-    log.info("number of instanceIds: ${instanceIds.size()}")
-    instanceIds.each { String it -> log.info(it) }
+    dumpCollection(instanceIds)
   }
 
-  public static void dumpRegistryNames(Collection<String> names) {
-    describe "service registry names"
-    log.info("number of names: ${names.size()}")
-    names.each { String it -> log.info(it) }
+  public static void dumpRegistryServiceTypes(Collection<String> entries) {
+    describe "service registry types"
+    dumpCollection(entries)
+  }
+
+  def static void dumpCollection(Collection<String> entries) {
+    log.info("number of entries: ${entries.size()}")
+    entries.each { String it -> log.info(it) }
   }
 
   /**

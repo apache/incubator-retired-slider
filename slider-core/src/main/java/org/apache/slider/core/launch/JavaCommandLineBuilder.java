@@ -19,6 +19,7 @@
 package org.apache.slider.core.launch;
 
 
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.slider.common.tools.SliderUtils;
 
@@ -38,7 +39,7 @@ public class JavaCommandLineBuilder extends CommandLineBuilder {
    * @return the path to the Java binary
    */
   protected String getJavaBinary() {
-    return ApplicationConstants.Environment.JAVA_HOME.$() + "/bin/java";
+    return ApplicationConstants.Environment.JAVA_HOME.$$() + "/bin/java";
   }
 
   /**
@@ -63,6 +64,18 @@ public class JavaCommandLineBuilder extends CommandLineBuilder {
    * @param value
    */
   public void sysprop(String property, String value) {
+    Preconditions.checkArgument(property != null, "null property name");
+    Preconditions.checkArgument(value != null, "null value");
     add("-D" + property + "=" + value);
+  }
+  
+  public JavaCommandLineBuilder forceIPv4() {
+    sysprop("java.net.preferIPv4Stack", "true");
+    return this;
+  }
+  
+  public JavaCommandLineBuilder headless() {
+    sysprop("java.awt.headless", "true");
+    return this;
   }
 }

@@ -18,6 +18,7 @@
 
 package org.apache.slider.core.conf;
 
+import com.google.common.base.Preconditions;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadConfigException;
 import org.slf4j.Logger;
@@ -46,7 +47,7 @@ public class MapOperations implements Map<String, String> {
   public final String name;
 
   public MapOperations() {
-    options = new HashMap<>();
+    options = new HashMap<String, String>();
     name = "";
   }
 
@@ -61,12 +62,11 @@ public class MapOperations implements Map<String, String> {
     this.name = name;
   }
 
-
   /**
-   * Get a cluster option or value
+   * Get an option value
    *
-   * @param key
-   * @param defVal
+   * @param key key
+   * @param defVal default value
    * @return option in map or the default
    */
   public String getOption(String key, String defVal) {
@@ -74,14 +74,27 @@ public class MapOperations implements Map<String, String> {
     return val != null ? val : defVal;
   }
 
+  /**
+   * Get a boolean option
+   *
+   * @param key option key
+   * @param defVal default value
+   * @return option true if the option equals "true", or the default value
+   * if the option was not defined at all.
+   */
+  public Boolean getOptionBool(String key, boolean defVal) {
+    String val = getOption(key, Boolean.toString(defVal));
+    return Boolean.valueOf(val);
+  }
 
   /**
    * Get a cluster option or value
    *
-   * @param key
+   * @param key option key
    * @return the value
    * @throws BadConfigException if the option is missing
    */
+
   public String getMandatoryOption(String key) throws BadConfigException {
     String val = options.get(key);
     if (val == null) {
@@ -246,5 +259,36 @@ public class MapOperations implements Map<String, String> {
              .append('\n');
     }
     return builder.toString();
+  }
+
+  /**
+   * Get the time range of a set of keys
+   * @param basekey
+   * @param defDays
+   * @param defHours
+   * @param defMins
+   * @param defSecs
+   * @return
+   */
+  public long getTimeRange(String basekey,
+      int defDays,
+      int defHours,
+      int defMins,
+      int defSecs) {
+    Preconditions.checkArgument(basekey != null);
+    int days = getOptionInt(basekey + ".days", defDays);
+    int hours = getOptionInt(basekey + ".hours", defHours);
+
+    int minutes = getOptionInt(basekey + ".minutes", defMins);
+    int seconds = getOptionInt(basekey + ".seconds", defSecs);
+    // range check
+    Preconditions.checkState(days >= 0 && hours >= 0 && minutes >= 0
+                             && seconds >= 0,
+        "Time range for %s has negative time component %s:%s:%s:%s",
+        basekey, days, hours, minutes, seconds);
+
+    // calculate total time, schedule the reset if expected
+    long totalMinutes = days * 24 * 60 + hours * 24 + minutes;
+    return totalMinutes * 60 + seconds;
   }
 }

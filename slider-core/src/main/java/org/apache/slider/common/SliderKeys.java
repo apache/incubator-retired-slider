@@ -50,7 +50,7 @@ public interface SliderKeys extends SliderXmlConfKeys {
   /**
    * Application type for YARN  {@value}
    */
-  String APP_TYPE = "org.apache.slider";
+  String APP_TYPE = "org-apache-slider";
 
   /**
    * JVM arg to force IPv4  {@value}
@@ -151,6 +151,25 @@ public interface SliderKeys extends SliderXmlConfKeys {
 
   String HADOOP_USER_NAME = "HADOOP_USER_NAME";
   String HADOOP_PROXY_USER = "HADOOP_PROXY_USER";
+  String SLIDER_PASSPHRASE = "SLIDER_PASSPHRASE";
 
   boolean PROPAGATE_RESOURCE_OPTION = true;
+
+  /**
+   * Security associated keys.
+   */
+  String SECURITY_DIR = "security";
+  String CRT_FILE_NAME = "ca.crt";
+  String CSR_FILE_NAME = "ca.csr";
+  String KEY_FILE_NAME = "ca.key";
+  String KEYSTORE_FILE_NAME = "keystore.p12";
+  String CRT_PASS_FILE_NAME = "pass.txt";
+  String PASSPHRASE = "DEV";
+  String PASS_LEN = "50";
+  String KEYSTORE_LOCATION = "ssl.server.keystore.location";
+
+  /**
+   * Python specific
+   */
+  String PYTHONPATH = "PYTHONPATH";
 }

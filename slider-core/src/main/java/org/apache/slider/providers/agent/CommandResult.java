@@ -22,5 +22,19 @@ package org.apache.slider.providers.agent;
 public enum CommandResult {
   IN_PROGRESS,  // Command is in progress
   COMPLETED,    // Command has successfully completed
-  FAILED        // Command has failed
+  FAILED;        // Command has failed
+
+  public static CommandResult getCommandResult(String commandResVal) {
+    if (commandResVal.equals(CommandResult.COMPLETED.toString())) {
+      return CommandResult.COMPLETED;
+    }
+    if (commandResVal.equals(CommandResult.FAILED.toString())) {
+      return CommandResult.FAILED;
+    }
+    if (commandResVal.equals(CommandResult.IN_PROGRESS.toString())) {
+      return CommandResult.IN_PROGRESS;
+    }
+
+    throw new IllegalArgumentException("Unrecognized value " + commandResVal);
+  }
 }

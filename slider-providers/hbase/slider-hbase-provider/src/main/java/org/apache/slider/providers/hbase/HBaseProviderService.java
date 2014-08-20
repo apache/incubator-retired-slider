@@ -22,9 +22,9 @@ package org.apache.slider.providers.hbase;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.Container;
+import org.apache.slider.api.InternalKeys;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.api.ClusterDescription;
-import org.apache.slider.api.OptionKeys;
 import org.apache.slider.api.RoleKeys;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.core.conf.AggregateConf;
@@ -38,6 +38,7 @@ import org.apache.slider.core.registry.docstore.PublishedConfigSet;
 import org.apache.slider.core.registry.docstore.PublishedConfiguration;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.providers.AbstractProviderService;
+import org.apache.slider.providers.ProviderCompleted;
 import org.apache.slider.providers.ProviderCore;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
@@ -50,7 +51,6 @@ import org.apache.slider.server.appmaster.web.rest.agent.HeartBeatResponse;
 import org.apache.slider.server.appmaster.web.rest.agent.Register;
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationResponse;
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationStatus;
-import org.apache.slider.server.services.utility.EventCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,6 +60,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_PUBLISHER;
 
@@ -67,11 +68,8 @@ import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_
  * This class implements the server-side aspects
  * of an HBase Cluster
  */
-public class HBaseProviderService extends AbstractProviderService implements
-                                                                  ProviderCore,
-                                                                  HBaseKeys,
-    SliderKeys,
-    AgentRestOperations{
+public class HBaseProviderService extends AbstractProviderService 
+    implements ProviderCore, HBaseKeys, SliderKeys, AgentRestOperations{
 
   protected static final Logger log =
     LoggerFactory.getLogger(HBaseProviderService.class);
@@ -108,8 +106,8 @@ public class HBaseProviderService extends AbstractProviderService implements
    * @param instanceDefinition the instance definition to validate
    */
   @Override // Client and Server
-  public void validateInstanceDefinition(AggregateConf instanceDefinition) throws
-      SliderException {
+  public void validateInstanceDefinition(AggregateConf instanceDefinition) 
+      throws SliderException {
     clientProvider.validateInstanceDefinition(instanceDefinition);
   }
 
@@ -127,12 +125,20 @@ public class HBaseProviderService extends AbstractProviderService implements
     // Set the environment
     launcher.putEnv(SliderUtils.buildEnvMap(appComponent));
 
-    launcher.setEnv(HBASE_LOG_DIR, providerUtils.getLogdir());
+    String logDirs = providerUtils.getLogdir();
+    String logDir;
+    int idx = logDirs.indexOf(",");
+    if (idx > 0) {
+      // randomly choose a log dir candidate
+      String[] segments = logDirs.split(",");
+      Random rand = new Random();
+      logDir = segments[rand.nextInt(segments.length)];
+    } else logDir = logDirs;
+    launcher.setEnv(HBASE_LOG_DIR, logDir);
 
     launcher.setEnv(PROPAGATED_CONFDIR,
         ProviderUtils.convertToAppRelativePath(
             SliderKeys.PROPAGATED_CONF_DIR_NAME) );
-
 
     //local resources
 
@@ -143,7 +149,7 @@ public class HBaseProviderService extends AbstractProviderService implements
     //Add binaries
     //now add the image if it was set
     String imageURI = instanceDefinition.getInternalOperations()
-                  .get(OptionKeys.INTERNAL_APPLICATION_IMAGE_PATH);
+                  .get(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH);
     coreFS.maybeAddImagePath(launcher.getLocalResources(), imageURI);
 
     CommandLineBuilder cli = new CommandLineBuilder();
@@ -171,6 +177,8 @@ public class HBaseProviderService extends AbstractProviderService implements
     String roleCommand;
     String logfile;
     //now look at the role
+
+/* JDK7
     switch (role) {
       case ROLE_WORKER:
         //role is region server
@@ -182,10 +190,52 @@ public class HBaseProviderService extends AbstractProviderService implements
 
         logfile = "/master.txt";
         break;
+      case ROLE_REST_GATEWAY:
+        roleCommand = REST_GATEWAY;
+
+        logfile = "/rest-gateway.txt";
+        break;
+      case ROLE_THRIFT_GATEWAY:
+        roleCommand = THRIFT_GATEWAY;
+
+        logfile = "/thrift-gateway.txt";
+        break;
+      case ROLE_THRIFT2_GATEWAY:
+        roleCommand = THRIFT2_GATEWAY;
+
+        logfile = "/thrift2-gateway.txt";
+        break;
       default:
         throw new SliderInternalStateException("Cannot start role %s", role);
     }
 
+*/
+    if (ROLE_WORKER.equals(role)) {
+      //role is region server
+      roleCommand = REGION_SERVER;
+      logfile = "/region-server.txt";
+      
+    } else if (ROLE_MASTER.equals(role)) {
+      roleCommand = MASTER;
+      logfile = "/master.txt";
+
+    } else if (ROLE_REST_GATEWAY.equals(role)) {
+      roleCommand = REST_GATEWAY;
+      logfile = "/rest-gateway.txt";
+
+    } else if (ROLE_THRIFT_GATEWAY.equals(role)) {
+      roleCommand = THRIFT_GATEWAY;
+      logfile = "/thrift-gateway.txt";
+
+    } else if (ROLE_THRIFT2_GATEWAY.equals(role)) {
+      roleCommand = THRIFT2_GATEWAY;
+      logfile = "/thrift2-gateway.txt";
+    }
+    
+    else {
+      throw new SliderInternalStateException("Cannot start role %s", role);
+    }
+    
     cli.add(roleCommand);
     cli.add(ACTION_START);
     //log details
@@ -196,40 +246,34 @@ public class HBaseProviderService extends AbstractProviderService implements
 
   @Override
   public void applyInitialRegistryDefinitions(URL web,
-      ServiceInstanceData instanceData) throws
+                                              URL secureWebAPI,
+                                              ServiceInstanceData instanceData) throws
       IOException {
-    super.applyInitialRegistryDefinitions(web, instanceData);
+    super.applyInitialRegistryDefinitions(web, secureWebAPI, instanceData);
   }
 
   @Override
   protected void serviceStart() throws Exception {
     registerHBaseServiceEntry();
-
-
     super.serviceStart();
   }
 
   private void registerHBaseServiceEntry() throws IOException {
 
-    // not a URL, but needed
-    URL hbaseURL = new URL("http://localhost:0");
-    ServiceInstanceData instanceData = new ServiceInstanceData();
+    String name = amState.getApplicationName() ; 
+//    name += ".hbase";
+    ServiceInstanceData instanceData = new ServiceInstanceData(name,
+        HBASE_SERVICE_TYPE);
+    log.info("registering {}/{}", name, HBASE_SERVICE_TYPE );
     PublishedConfiguration publishedSite =
-        new PublishedConfiguration("HBase site",
-            siteConf);
+        new PublishedConfiguration("HBase site", siteConf);
     PublishedConfigSet configSet =
         amState.getOrCreatePublishedConfigSet(HBASE_SERVICE_TYPE);
     instanceData.externalView.configurationsURL = SliderUtils.appendToURL(
         amWebAPI.toExternalForm(), SLIDER_PATH_PUBLISHER, HBASE_SERVICE_TYPE);
-    configSet.put(HBASE_SITE_PUBLISHED_CONFIG,
-        publishedSite);
-    String name = amState.getApplicationName()+".hbase";
-    log.info("registering {}/{}", name, HBASE_SERVICE_TYPE);
-    registry.registerServiceInstance(HBASE_SERVICE_TYPE,
-        name,
-        null,
-        instanceData
-    );
+    configSet.put(HBASE_SITE_PUBLISHED_CONFIG, publishedSite);
+
+    registry.registerServiceInstance(instanceData, null);
   }
 
   /**
@@ -247,7 +291,7 @@ public class HBaseProviderService extends AbstractProviderService implements
   public boolean exec(AggregateConf instanceDefinition,
                       File confDir,
                       Map<String, String> env,
-                      EventCallback execInProgress) throws
+                      ProviderCompleted execInProgress) throws
                                                  IOException,
       SliderException {
 
@@ -301,7 +345,7 @@ public class HBaseProviderService extends AbstractProviderService implements
    * @return the provider status - map of entries to add to the info section
    */
   public Map<String, String> buildProviderStatus() {
-    Map<String, String> stats = new HashMap<>();
+    Map<String, String> stats = new HashMap<String, String>();
 
     return stats;
   }

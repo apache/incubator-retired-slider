@@ -44,14 +44,13 @@ class TestBadYarnQueue extends AgentMiniClusterTestBase {
   @Test
   public void testBadYarnQueue() throws Throwable {
     skip("untestable in minicluster")
-    String clustername = "test_bad_yarn_queue"
-    createMiniCluster(clustername, configuration, 1, true)
+    String clustername = createMiniCluster("", configuration, 1, true)
 
     describe "verify that a bad yarn queue fails the launch"
 
     try {
       ServiceLauncher<SliderClient> launcher =
-          createMasterlessAMWithArgs(clustername,
+          createStandaloneAMWithArgs(clustername,
               [
                   Arguments.ARG_DEFINE,
                   SliderXmlConfKeys.KEY_YARN_QUEUE + "=noqueue",

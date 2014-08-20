@@ -38,7 +38,7 @@ class TestStandaloneBadClusterName extends AgentMiniClusterTestBase {
     describe "verify that bad cluster names are picked up"
 
     try {
-      addToTeardown(createMasterlessAM(clustername, 0, true, false).service);
+      addToTeardown(createStandaloneAM(clustername, true, false).service);
       fail("expected a failure")
     } catch (ServiceLaunchException e) {
       assertExceptionDetails(e, LauncherExitCodes.EXIT_COMMAND_ARGUMENT_ERROR)

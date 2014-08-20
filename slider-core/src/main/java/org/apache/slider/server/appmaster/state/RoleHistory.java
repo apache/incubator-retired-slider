@@ -60,7 +60,7 @@ public class RoleHistory {
     LoggerFactory.getLogger(RoleHistory.class);
   private final List<ProviderRole> providerRoles;
   private final Map<String, ProviderRole> providerRoleMap =
-    new HashMap<>();
+    new HashMap<String, ProviderRole>();
   private long startTime;
   /**
    * Time when saved
@@ -107,9 +107,8 @@ public class RoleHistory {
     nodemap = new NodeMap(roleSize);
     resetAvailableNodeLists();
 
-    resetAvailableNodeLists();
     outstandingRequests = new OutstandingRequestTracker();
-    Map<Integer, RoleStatus> roleStats = new HashMap<>();
+    Map<Integer, RoleStatus> roleStats = new HashMap<Integer, RoleStatus>();
 
 
     for (ProviderRole providerRole : providerRoles) {
@@ -141,7 +140,7 @@ public class RoleHistory {
    */
   public void addNewProviderRole(ProviderRole providerRole)
     throws BadConfigException {
-    Map<Integer, RoleStatus> roleStats = new HashMap<>();
+    Map<Integer, RoleStatus> roleStats = new HashMap<Integer, RoleStatus>();
 
 
     for (ProviderRole role : providerRoles) {
@@ -155,7 +154,7 @@ public class RoleHistory {
    * Clear the lists of available nodes
    */
   private synchronized void resetAvailableNodeLists() {
-    availableNodes = new HashMap<>(roleSize);
+    availableNodes = new HashMap<Integer, LinkedList<NodeInstance>>(roleSize);
   }
 
   /**
@@ -405,6 +404,7 @@ public class RoleHistory {
       for (int i = 0; i < roleSize; i++) {
         NodeEntry nodeEntry = ni.get(i);
         if (nodeEntry != null && nodeEntry.isAvailable()) {
+          log.debug("Adding {} for role {}", ni, i);
           getOrCreateNodesForRoleId(i).add(ni);
         }
       }
@@ -432,7 +432,7 @@ public class RoleHistory {
   private LinkedList<NodeInstance> getOrCreateNodesForRoleId(int id) {
     LinkedList<NodeInstance> instances = availableNodes.get(id);
     if (instances == null) {
-      instances = new LinkedList<>();
+      instances = new LinkedList<NodeInstance>();
       availableNodes.put(id, instances);
     }
     return instances;
@@ -468,11 +468,16 @@ public class RoleHistory {
     NodeInstance nodeInstance = null;
     
     List<NodeInstance> targets = getNodesForRoleId(roleKey);
+    int cnt = targets == null ? 0 : targets.size();
+    log.info("There're {} nodes to consider for {}", cnt, role.getName());
     while (targets != null && !targets.isEmpty() && nodeInstance == null) {
       NodeInstance head = targets.remove(0);
       if (head.getActiveRoleInstances(roleKey) == 0) {
         nodeInstance = head;
       }
+    }
+    if (nodeInstance == null) {
+      log.debug("No historical node found for {}", role.getName());
     }
     return nodeInstance;
   }
@@ -511,18 +516,16 @@ public class RoleHistory {
     return requestInstanceOnNode(node, role, resource);
   }
 
-
   /**
-   * Find a list of node for release; algorithm may make its own
-   * decisions on which to release.
+   * Get the list of active nodes ... walks the node  map so 
+   * is O(nodes)
    * @param role role index
-   * @param count number of nodes to release
-   * @return a possibly empty list of nodes.
+   * @return a possibly empty list of nodes with an instance of that node
    */
-  public synchronized List<NodeInstance> findNodesForRelease(int role, int count) {
-    return nodemap.findNodesForRelease(role, count);
+  public synchronized List<NodeInstance> listActiveNodes(int role) {
+    return nodemap.listActiveNodes(role);
   }
- 
+  
   /**
    * Get the node entry of a container
    * @param container container to look up
@@ -565,7 +568,7 @@ public class RoleHistory {
     List<Container> requested =
       new ArrayList<Container>(allocatedContainers.size());
     List<Container> unrequested =
-      new ArrayList<>(allocatedContainers.size());
+      new ArrayList<Container>(allocatedContainers.size());
     outstandingRequests.partitionRequests(this, allocatedContainers, requested, unrequested);
     
     //give the unrequested ones lower priority
@@ -591,6 +594,7 @@ public class RoleHistory {
         hosts = outstandingRequests.cancelOutstandingRequests(role);
       if (!hosts.isEmpty()) {
         //add the list
+        log.debug("Adding {} hosts for role {}", hosts.size(), role);
         getOrCreateNodesForRoleId(role).addAll(hosts);
         sortAvailableNodeList(role);
       }
@@ -651,10 +655,11 @@ public class RoleHistory {
   /**
    * App state notified of a container completed 
    * @param container completed container
+   * @param wasReleased
    * @return true if the node was queued
    */
-  public boolean onReleaseCompleted(Container container) {
-    return markContainerFinished(container, true, false);
+  public boolean onReleaseCompleted(Container container, boolean wasReleased) {
+    return markContainerFinished(container, wasReleased, false);
   }
 
   /**
@@ -742,7 +747,7 @@ public class RoleHistory {
    */
   @VisibleForTesting
   public List<NodeInstance> cloneAvailableList(int role) {
-    return new LinkedList<>(getOrCreateNodesForRoleId(role));
+    return new LinkedList<NodeInstance>(getOrCreateNodesForRoleId(role));
   }
 
   /**

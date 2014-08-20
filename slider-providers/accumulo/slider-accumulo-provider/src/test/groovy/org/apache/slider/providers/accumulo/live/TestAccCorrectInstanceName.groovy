@@ -30,7 +30,7 @@ import org.apache.slider.providers.accumulo.AccumuloKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.client.SliderClient
 import org.apache.slider.providers.accumulo.AccumuloTestBase
-import org.apache.slider.core.registry.zk.ZKIntegration
+import org.apache.slider.core.zk.ZKIntegration
 import org.junit.Test
 
 @CompileStatic
@@ -39,11 +39,11 @@ class TestAccCorrectInstanceName extends AccumuloTestBase {
 
   @Test
   public void testAccM1T1GC1Mon1() throws Throwable {
-    String clustername = "test_acc_m1t1gc1mon1"
     int tablets = 1
     int monitor = 1
     int gc = 1
-    createMiniCluster(clustername, getConfiguration(), 1, 1, 1, true, false)
+    String clustername = createMiniCluster( "",
+        configuration, 1, 1, 1, true, false)
     describe(" Create an accumulo cluster");
 
     //make sure that ZK is up and running at the binding string
@@ -65,7 +65,7 @@ class TestAccCorrectInstanceName extends AccumuloTestBase {
 
     waitWhileClusterLive(sliderClient);
     assert sliderClient.applicationReport.yarnApplicationState == YarnApplicationState.RUNNING
-    waitForRoleCount(sliderClient, roles, ACCUMULO_CLUSTER_STARTUP_TO_LIVE_TIME)
+    waitForRoleCount(sliderClient, roles, accumulo_cluster_startup_to_live_time)
     describe("Cluster status")
     ClusterDescription status
     status = sliderClient.getClusterDescription(clustername)

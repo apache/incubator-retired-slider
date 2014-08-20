@@ -18,7 +18,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <artifactId>slider-accumulo-provider</artifactId>
-  <version>0.23.0-SNAPSHOT</version>
   <name>Slider Accumulo Provider</name>
   <packaging>jar</packaging>
   <description>
@@ -29,7 +28,7 @@
   <parent>
     <groupId>org.apache.slider</groupId>
     <artifactId>slider</artifactId>
-    <version>0.23.0-SNAPSHOT</version>
+    <version>0.50.0-incubating</version>
     <relativePath>../../../</relativePath>
   </parent>
 
@@ -69,14 +68,6 @@
       
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>${maven-compiler-plugin.version}</version>
-        <configuration>
-          <compilerId>groovy-eclipse-compiler</compilerId>
-          <!-- set verbose to be true if you want lots of uninteresting messages -->
-          <!-- <verbose>true</verbose> -->
-          <source>${project.java.src.version}</source>
-          <target>${project.java.src.version}</target>
-        </configuration>
         <dependencies>
           <dependency>
             <groupId>org.codehaus.groovy</groupId>
@@ -165,14 +156,7 @@
 
     <dependency>
       <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-common</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-common</artifactId>
-      <type>test-jar</type>
-      <scope>test</scope>
+      <artifactId>hadoop-client</artifactId>
     </dependency>
 
     <dependency>
@@ -181,12 +165,6 @@
       <scope>test</scope>
     </dependency>
 
-    <dependency>
-      <groupId>org.apache.hbase</groupId>
-      <artifactId>hbase-server</artifactId>
-      <scope>test</scope>
-    </dependency>
-    
     <dependency>
       <groupId>org.apache.accumulo</groupId>
       <artifactId>accumulo-core</artifactId>
@@ -201,12 +179,6 @@
 
     <dependency>
       <groupId>org.apache.accumulo</groupId>
-      <artifactId>accumulo-start</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.accumulo</groupId>
       <artifactId>accumulo-trace</artifactId>
       <scope>test</scope>
     </dependency>
@@ -216,6 +188,33 @@
       <artifactId>accumulo-test</artifactId>
       <scope>test</scope>
     </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>commons-lang</groupId>
+      <artifactId>commons-lang</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.zookeeper</groupId>
+      <artifactId>zookeeper</artifactId>
+    </dependency>
+
 
   </dependencies>
 

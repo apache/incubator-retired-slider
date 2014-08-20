@@ -84,19 +84,6 @@ public interface SliderXmlConfKeys {
   String KEY_AM_RESTART_LIMIT = "slider.yarn.restart.limit";
 
   /**
-   * Default Limit on restarts for the AM
-   * {@value}
-   */
-  int DEFAULT_AM_RESTART_LIMIT = 2;
-
-  /**
-   * Flag which is set to indicate that security should be enabled
-   * when talking to this cluster.
-   */
-  String KEY_SECURITY_ENABLED =
-      CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION;
-
-  /**
    * queue name
    */
   String KEY_YARN_QUEUE = "slider.yarn.queue";
@@ -153,4 +140,6 @@ public interface SliderXmlConfKeys {
 
   String IPC_CLIENT_FALLBACK_TO_SIMPLE_AUTH =
       "ipc.client.fallback-to-simple-auth-allowed";
+  String HADOOP_HTTP_FILTER_INITIALIZERS =
+      "hadoop.http.filter.initializers";
 }

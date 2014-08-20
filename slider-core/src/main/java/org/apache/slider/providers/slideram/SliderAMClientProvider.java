@@ -19,6 +19,7 @@
 package org.apache.slider.providers.slideram;
 
 import com.beust.jcommander.JCommander;
+import com.codahale.metrics.MetricRegistry;
 import com.google.gson.GsonBuilder;
 import org.apache.curator.CuratorZookeeperClient;
 import org.apache.curator.framework.CuratorFramework;
@@ -28,7 +29,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.Resource;
-import org.apache.slider.api.OptionKeys;
+import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.RoleKeys;
 import org.apache.slider.common.SliderKeys;
@@ -39,16 +40,12 @@ import org.apache.slider.core.conf.MapOperations;
 import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.AbstractLauncher;
-import org.apache.slider.core.launch.CommandLineBuilder;
 import org.apache.slider.core.launch.JavaCommandLineBuilder;
 import org.apache.slider.providers.AbstractClientProvider;
 import org.apache.slider.providers.PlacementPolicy;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.jaxrs.JacksonJaxbJsonProvider;
-import org.codehaus.jackson.node.JsonNodeFactory;
-import org.codehaus.jackson.xc.JaxbAnnotationIntrospector;
+import org.mortbay.jetty.security.SslSelectChannelConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,8 +60,8 @@ import java.util.Map;
  * This keeps aspects of role, cluster validation and Clusterspec setup
  * out of the core slider client
  */
-public class SliderAMClientProvider extends AbstractClientProvider implements
-    SliderKeys {
+public class SliderAMClientProvider extends AbstractClientProvider
+    implements SliderKeys {
 
 
   protected static final Logger log =
@@ -117,9 +114,8 @@ public class SliderAMClientProvider extends AbstractClientProvider implements
                                                     AggregateConf instanceDefinition,
                                                     Path clusterDirPath,
                                                     Path generatedConfDirPath,
-                                                    boolean secure) throws
-      SliderException,
-                                                                    IOException {
+                                                    boolean secure)
+      throws SliderException, IOException {
 
     super.preflightValidateClusterConfiguration(sliderFileSystem, clustername, configuration, instanceDefinition, clusterDirPath, generatedConfDirPath, secure);
     //add a check for the directory being writeable by the current user
@@ -127,7 +123,7 @@ public class SliderAMClientProvider extends AbstractClientProvider implements
       dataPath = instanceDefinition.getInternalOperations()
                                    .getGlobalOptions()
                                    .getMandatoryOption(
-                                     OptionKeys.INTERNAL_DATA_DIR_PATH);
+                                     InternalKeys.INTERNAL_DATA_DIR_PATH);
 
     Path path = new Path(dataPath);
     sliderFileSystem.verifyDirectoryWriteAccess(path);
@@ -165,33 +161,25 @@ public class SliderAMClientProvider extends AbstractClientProvider implements
     Class<?>[] classes = {
       JCommander.class,
       GsonBuilder.class,
-      
+      SslSelectChannelConnector.class,
+
       CuratorFramework.class,
       CuratorZookeeperClient.class,
       ServiceInstance.class,
       ServiceNames.class,
-
-      JacksonJaxbJsonProvider.class,
-      JsonFactory.class,
-      JsonNodeFactory.class,
-      JaxbAnnotationIntrospector.class,
-      
+      MetricRegistry.class
     };
     String[] jars =
       {
         JCOMMANDER_JAR,
         GSON_JAR,
-        
+        "jetty-sslengine.jar",
+
         "curator-framework.jar",
         "curator-client.jar",
         "curator-x-discovery.jar",
         "curator-x-discovery-service.jar",
-        
-        "jackson-jaxrs",
-        "jackson-core-asl",
-        "jackson-mapper-asl",
-        "jackson-xc",
-        
+        "metrics-core.jar"
       };
     ProviderUtils.addDependencyJars(providerResources, fileSystem, tempPath,
                                     libdir, jars,
@@ -222,14 +210,13 @@ public class SliderAMClientProvider extends AbstractClientProvider implements
    * add them to the command line
    */
   public void addJVMOptions(AggregateConf aggregateConf,
-                            JavaCommandLineBuilder cmdLine) throws
-                                                        BadConfigException {
-    
+                            JavaCommandLineBuilder cmdLine)
+      throws BadConfigException {
+
     MapOperations sliderAM =
-      aggregateConf.getAppConfOperations().getMandatoryComponent(
+        aggregateConf.getAppConfOperations().getMandatoryComponent(
         SliderKeys.COMPONENT_AM);
-    cmdLine.sysprop("java.net.preferIPv4Stack", "true");
-    cmdLine.sysprop("java.awt.headless", "true");
+    cmdLine.forceIPv4().headless();
     String heap = sliderAM.getOption(RoleKeys.JVM_HEAP,
                                    DEFAULT_JVM_HEAP);
     cmdLine.setJVMHeap(heap);
@@ -241,11 +228,10 @@ public class SliderAMClientProvider extends AbstractClientProvider implements
 
 
   @Override
-  public void prepareInstanceConfiguration(AggregateConf aggregateConf) throws
-      SliderException,
-                                                                        IOException {
+  public void prepareInstanceConfiguration(AggregateConf aggregateConf)
+      throws SliderException, IOException {
     mergeTemplates(aggregateConf,
-                   INTERNAL_JSON, RESOURCES_JSON, APPCONF_JSON
+        INTERNAL_JSON, RESOURCES_JSON, APPCONF_JSON
                   );
   }
 }

@@ -62,10 +62,9 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     describe "create a masterless AM then perform registry operations on it"
 
     //launch fake master
-    String clustername = "test_standalone_registry_am"
-    createMiniCluster(clustername, configuration, 1, true)
+    String clustername = createMiniCluster(configuration, 1, true)
     ServiceLauncher<SliderClient> launcher
-    launcher = createMasterlessAM(clustername, 0, true, false)
+    launcher = createStandaloneAM(clustername, true, false)
     SliderClient client = launcher.service
     addToTeardown(client);
 
@@ -115,9 +114,9 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     describe "service registry names"
     SliderRegistryService registryService = client.registry
     def serviceTypes = registryService.serviceTypes;
-    dumpRegistryNames(serviceTypes)
+    dumpRegistryServiceTypes(serviceTypes)
 
-    List<String> instanceIds = client.listRegistryInstanceIDs()
+    List<String> instanceIds = client.listRegisteredSliderInstances()
 
 
     dumpRegistryInstanceIDs(instanceIds)

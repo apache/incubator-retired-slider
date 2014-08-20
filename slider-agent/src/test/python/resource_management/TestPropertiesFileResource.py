@@ -29,7 +29,7 @@ from resource_management.core.system import System
 from resource_management.libraries import PropertiesFile
 
 @patch.object(System, "os_family", new='redhat')
-class TestPropertiesFIleResource(TestCase):
+class TestPropertiesFileResource(TestCase):
   """
   PropertiesFile="resource_management.libraries.providers.properties_file.PropertiesFileProvider"
   Testing PropertiesFile(PropertiesFileProvider) with different 'properties dictionary'

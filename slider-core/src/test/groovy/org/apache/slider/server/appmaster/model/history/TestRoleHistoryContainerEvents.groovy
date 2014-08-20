@@ -114,12 +114,12 @@ class TestRoleHistoryContainerEvents extends BaseMockAppStateTest {
     RoleStatus roleStatus = new RoleStatus(provRole)
 
     //verify it is empty
-    assert roleHistory.findNodesForRelease(role, 1).isEmpty()
+    assert roleHistory.listActiveNodes(role).empty
 
     AMRMClient.ContainerRequest request =
         roleHistory.requestNode(roleStatus, resource);
 
-    List<String> nodes = request.getNodes()
+    List<String> nodes = request.nodes
     assert nodes == null
 
     //pick an idle host
@@ -128,7 +128,7 @@ class TestRoleHistoryContainerEvents extends BaseMockAppStateTest {
     //build a container
     MockContainer container = factory.newContainer()
     container.nodeId = new MockNodeId(hostname, 0)
-    container.priority = request.getPriority()
+    container.priority = request.priority
     roleHistory.onContainerAssigned(container);
 
     NodeMap nodemap = roleHistory.cloneNodemap();
@@ -147,10 +147,11 @@ class TestRoleHistoryContainerEvents extends BaseMockAppStateTest {
     assert roleEntry.live == 1
 
     // now pick that instance to destroy
+    List<NodeInstance> activeNodes = roleHistory.listActiveNodes(role)
 
-    List<NodeInstance> forRelease = roleHistory.findNodesForRelease(role, 1)
-    assert forRelease.size() == 1
-    NodeInstance target = forRelease[0]
+
+    assert activeNodes.size() == 1
+    NodeInstance target = activeNodes[0]
     assert target == allocated
     roleHistory.onContainerReleaseSubmitted(container);
     assert roleEntry.releasing == 1
@@ -158,19 +159,19 @@ class TestRoleHistoryContainerEvents extends BaseMockAppStateTest {
     assert roleEntry.active == 0
 
     // release completed
-    roleHistory.onReleaseCompleted(container)
+    roleHistory.onReleaseCompleted(container, true)
     assert roleEntry.releasing == 0
     assert roleEntry.live == 0
     assert roleEntry.active == 0
 
     // verify it is empty
-    assert roleHistory.findNodesForRelease(role, 1).isEmpty()
+    assert roleHistory.listActiveNodes(role).empty
 
     // ask for a container and expect to get the recently released one
     AMRMClient.ContainerRequest request2 =
         roleHistory.requestNode(roleStatus, resource);
 
-    List<String> nodes2 = request2.getNodes()
+    List<String> nodes2 = request2.nodes
     assert nodes2 != null
     String hostname2 = nodes2[0]
 

@@ -50,6 +50,9 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Enumeration;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import static org.apache.slider.common.SliderXmlConfKeys.CLUSTER_DIRECTORY_PERMISSIONS;
 import static org.apache.slider.common.SliderXmlConfKeys.DEFAULT_CLUSTER_DIRECTORY_PERMISSIONS;
@@ -242,6 +245,7 @@ public class CoreFileSystem {
           IOException,
       SliderException {
     if (fileSystem.exists(clusterDirectory)) {
+      
       log.error("Dir {} exists: {}",
                 clusterDirectory,
                 listFSDir(clusterDirectory));
@@ -302,6 +306,37 @@ public class CoreFileSystem {
     }
   }
 
+  /**
+   * Verify that a file exists in the zip file given by path
+   * @param path path to zip file
+   * @param file file expected to be in zip
+   * @throws FileNotFoundException file not found or is not a zip file
+   * @throws IOException  trouble with FS
+   */
+  public void verifyFileExistsInZip(Path path, String file) throws IOException {
+    fileSystem.copyToLocalFile(path, new Path("/tmp"));
+    File dst = new File((new Path("/tmp", path.getName())).toString());
+    Enumeration<? extends ZipEntry> entries;
+    ZipFile zipFile = new ZipFile(dst);
+    boolean found = false;
+
+    try {
+      entries = zipFile.entries();
+      while (entries.hasMoreElements()) {
+        ZipEntry entry = entries.nextElement();
+        String nm = entry.getName();
+        if (nm.endsWith(file)) {
+          found = true;
+          break;
+        }
+      }
+    } finally {
+      zipFile.close();
+    }
+    dst.delete();
+    if (!found) throw new FileNotFoundException("file: " + file + " not found in " + path);
+    log.info("Verification of " + path + " passed");
+  }
   /**
    * Create the application-instance specific temporary directory
    * in the DFS
@@ -407,7 +442,7 @@ public class CoreFileSystem {
     //copied to the destination
     FileStatus[] fileset = fileSystem.listStatus(srcDir);
     Map<String, LocalResource> localResources =
-            new HashMap<>(fileset.length);
+            new HashMap<String, LocalResource>(fileset.length);
     for (FileStatus entry : fileset) {
 
       LocalResource resource = createAmResource(entry.getPath(),
@@ -542,4 +577,10 @@ public class CoreFileSystem {
                                                                 clusterSpecPath);
     }
   }
+  
+  public Path fileToPath(File file) {
+    return new Path(file.getAbsoluteFile().toURI());
+
+  }
+  
 }

@@ -18,13 +18,12 @@
   <modelVersion>4.0.0</modelVersion>
   <artifactId>slider-core</artifactId>
   <name>Slider Core</name>
-  <version>0.23.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <description>Core Slider Module</description>
   <parent>
     <groupId>org.apache.slider</groupId>
     <artifactId>slider</artifactId>
-    <version>0.23.0-SNAPSHOT</version>
+    <version>0.50.0-incubating</version>
   </parent>
 
   <build>
@@ -63,14 +62,6 @@
       
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>${maven-compiler-plugin.version}</version>
-        <configuration>
-          <compilerId>groovy-eclipse-compiler</compilerId>
-          <!-- set verbose to be true if you want lots of uninteresting messages -->
-          <!-- <verbose>true</verbose> -->
-          <source>${project.java.src.version}</source>
-          <target>${project.java.src.version}</target>
-        </configuration>
         <dependencies>
           <dependency>
             <groupId>org.codehaus.groovy</groupId>
@@ -159,77 +150,6 @@
       </plugin>
 
       <plugin>
-        <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-maven-plugins</artifactId>
-        <version>${hadoop.version}</version>
-
-        <executions>
-          <execution>
-            <id>version-info</id>
-            <phase>generate-resources</phase>
-            <goals>
-              <goal>version-info</goal>
-            </goals>
-            <configuration>
-              <source>
-                <directory>${basedir}/src/main</directory>
-                <includes>
-                  <include>java/**/*.java</include>
-                  <include>proto/**/*.proto</include>
-                </includes>
-              </source>
-            </configuration>
-          </execution>
-          <execution>
-            <id>compile-protoc</id>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>protoc</goal>
-            </goals>
-            <configuration>
-              <protocVersion>${protobuf.version}</protocVersion>
-              <protocCommand>protoc</protocCommand>
-              <imports>
-                <param>${basedir}/src/main/proto</param>
-              </imports>
-              <source>
-                <directory>${basedir}/src/main/proto</directory>
-                <includes>
-                  <include>SliderClusterMessages.proto</include>
-                  <include>SliderClusterProtocol.proto</include>
-                </includes>
-              </source>
-              <output>${project.build.directory}/generated-sources/java</output>
-            </configuration>
-          </execution>
-          <!--
-                    <execution>
-                      <id>compile-test-protoc</id>
-                      <phase>generate-test-sources</phase>
-                      <goals>
-                        <goal>protoc</goal>
-                      </goals>
-                      <configuration>
-                        <protocVersion>${protobuf.version}</protocVersion>
-                        <protocCommand>${protoc.path}</protocCommand>
-                        <imports>
-                          <param>${basedir}/src/test/proto</param>
-                        </imports>
-                        <source>
-                          <directory>${basedir}/src/test/proto</directory>
-                          <includes>
-                            <include>test.proto</include>
-                            <include>test_rpc_service.proto</include>
-                          </includes>
-                        </source>
-                        <output>${project.build.directory}/generated-test-sources/java
-                        </output>
-                      </configuration>
-                    </execution>
-          -->
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-site-plugin</artifactId>
         <version>${maven-site-plugin.version}</version>
@@ -287,6 +207,7 @@
             <exclude>src/test/python/agent.ini</exclude>
             <exclude>src/test/python/version</exclude>
             <exclude>src/main/resources/webapps/slideram/.keep</exclude>
+            <exclude>src/main/resources/webapps/slideragent/.keep</exclude>
             <exclude>src/main/resources/webapps/static/yarn.dt.plugins.js</exclude>
             <!-- jQuery DataTables files (BSD license) -->
             <exclude>src/main/resources/webapps/static/dt-1.9.4/**</exclude>
@@ -297,6 +218,9 @@
             <exclude>src/main/resources/webapps/static/jquery/themes-1.9.1/base/jquery-ui.css</exclude>
             <!-- jQuery jsTree (MIT license) -->
             <exclude>src/main/resources/webapps/static/jt/jquery.jstree.js</exclude>
+            <!-- protobuf generated classes -->
+            <exclude>src/main/java/org/apache/slider/api/proto/Messages.java</exclude>
+            <exclude>src/main/java/org/apache/slider/api/proto/SliderClusterAPI.java</exclude>
           </excludes>
         </configuration>
       </plugin>
@@ -319,11 +243,6 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-log4j12</artifactId>
     </dependency>
 
     <dependency>
@@ -369,7 +288,20 @@
 
     <dependency>
       <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-common</artifactId>
+      <artifactId>hadoop-client</artifactId>
+      <scope>compile</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-yarn-client</artifactId>
+      <scope>compile</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-yarn-server-web-proxy</artifactId>
+      <scope>compile</scope>
     </dependency>
 
     <dependency>
@@ -378,97 +310,6 @@
       <scope>test</scope>
     </dependency>
 
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-hdfs</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-common</artifactId>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-yarn-server-common</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-yarn-common</artifactId>
-      <version>${hadoop.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-yarn-server-web-proxy</artifactId>
-      <version>${hadoop.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-client</artifactId>
-      <type>pom</type>
-        <exclusions>
-          <exclusion>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-client</artifactId>
-          </exclusion>
-        </exclusions>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.hbase</groupId>
-      <artifactId>hbase-client</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.hbase</groupId>
-      <artifactId>hbase-server</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <!--
-        <dependency>
-          <groupId>org.apache.accumulo</groupId>
-          <artifactId>accumulo</artifactId>
-          <version>${accumulo.version}</version>
-          <exclusions>
-            <exclusion>
-              <groupId>org.slf4j</groupId>
-              <artifactId>slf4j-api</artifactId>
-            </exclusion>
-          </exclusions>
-        </dependency>
-    -->
-
-    <dependency>
-      <groupId>org.apache.accumulo</groupId>
-      <artifactId>accumulo-core</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.accumulo</groupId>
-      <artifactId>accumulo-minicluster</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.accumulo</groupId>
-      <artifactId>accumulo-start</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.accumulo</groupId>
-      <artifactId>accumulo-trace</artifactId>
-      <scope>test</scope>
-    </dependency>
 
     <dependency>
       <groupId>junit</groupId>
@@ -482,8 +323,13 @@
     </dependency>
 
     <dependency>
-      <groupId>commons-codec</groupId>
-      <artifactId>commons-codec</artifactId>
+      <groupId>org.apache.avro</groupId>
+      <artifactId>avro</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-compress</artifactId>
     </dependency>
 
     <dependency>
@@ -491,6 +337,31 @@
       <artifactId>commons-digester</artifactId>
     </dependency>
 
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>commons-httpclient</groupId>
+      <artifactId>commons-httpclient</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>commons-lang</groupId>
+      <artifactId>commons-lang</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>commons-logging</groupId>
+      <artifactId>commons-logging</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.codahale.metrics</groupId>
+      <artifactId>metrics-core</artifactId>
+    </dependency>
+    
     <!-- ======================================================== -->
     <!-- service registry -->
     <!-- ======================================================== -->
@@ -498,25 +369,21 @@
     <dependency>
       <groupId>org.apache.curator</groupId>
       <artifactId>curator-client</artifactId>
-      <version>${curator.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.apache.curator</groupId>
       <artifactId>curator-framework</artifactId>
-      <version>${curator.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.apache.curator</groupId>
       <artifactId>curator-x-discovery</artifactId>
-      <version>${curator.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.apache.curator</groupId>
       <artifactId>curator-x-discovery-server</artifactId>
-      <version>${curator.version}</version>
     </dependency>
 
     <dependency>
@@ -529,10 +396,25 @@
     <!-- ======================================================== -->
 
     <dependency>
-      <groupId>com.sun.jersey</groupId>
-      <artifactId>jersey-core</artifactId>
+      <groupId>javax.servlet</groupId>
+      <artifactId>servlet-api</artifactId>
     </dependency>
-    
+
+    <dependency>
+      <groupId>javax.ws.rs</groupId>
+      <artifactId>jsr311-api</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>javax.xml.bind</groupId>
+      <artifactId>jaxb-api</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.sun.jersey</groupId>
+      <artifactId>jersey-client</artifactId>
+    </dependency>
+
     <dependency>
       <groupId>com.sun.jersey</groupId>
       <artifactId>jersey-json</artifactId>
@@ -568,10 +450,11 @@
         <artifactId>jersey-test-framework-core</artifactId>
         <scope>test</scope>
     </dependency>
-    
+
     <dependency>
-        <groupId>com.sun.jersey.jersey-test-framework</groupId>
-        <artifactId>jersey-test-framework-grizzly2</artifactId>
+      <groupId>com.sun.jersey.jersey-test-framework</groupId>
+      <artifactId>jersey-test-framework-grizzly2</artifactId>
+      <scope>test</scope>
     </dependency>
 
     <dependency>
@@ -585,25 +468,20 @@
       <artifactId>easymock</artifactId>
       <scope>test</scope>
     </dependency>
+
     <dependency>
-      <groupId>org.powermock</groupId>
-      <artifactId>powermock-core</artifactId>
-      <scope>test</scope>
+      <groupId>org.mortbay.jetty</groupId>
+      <artifactId>jetty</artifactId>
     </dependency>
+
     <dependency>
-      <groupId>org.powermock</groupId>
-      <artifactId>powermock-reflect</artifactId>
-      <scope>test</scope>
+      <groupId>org.mortbay.jetty</groupId>
+      <artifactId>jetty-util</artifactId>
     </dependency>
+
     <dependency>
-      <groupId>org.powermock</groupId>
-      <artifactId>powermock-api-easymock</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.powermock</groupId>
-      <artifactId>powermock-module-junit4</artifactId>
-      <scope>test</scope>
+      <groupId>org.mortbay.jetty</groupId>
+      <artifactId>jetty-sslengine</artifactId>
     </dependency>
 
   </dependencies>
@@ -611,6 +489,43 @@
 
   <profiles>
 
+    <profile>
+      <id>compile-protobuf</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-maven-plugins</artifactId>
+            <version>${hadoop.version}</version>
+
+            <executions>
+              <execution>
+                <id>compile-protoc</id>
+                <phase>generate-sources</phase>
+                <goals>
+                  <goal>protoc</goal>
+                </goals>
+                <configuration>
+                  <protocVersion>${protobuf.version}</protocVersion>
+                  <protocCommand>protoc</protocCommand>
+                  <imports>
+                    <param>${basedir}/src/main/proto</param>
+                  </imports>
+                  <source>
+                    <directory>${basedir}/src/main/proto</directory>
+                    <includes>
+                      <include>SliderClusterMessages.proto</include>
+                      <include>SliderClusterProtocol.proto</include>
+                    </includes>
+                  </source>
+                  <output>${basedir}/src/main/java</output>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
 
     <!--
     a test run, currently hard-coded for stevel's secure

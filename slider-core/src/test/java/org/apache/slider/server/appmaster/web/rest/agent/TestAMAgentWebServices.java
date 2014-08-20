@@ -18,165 +18,152 @@
 
 package org.apache.slider.server.appmaster.web.rest.agent;
 
-import com.google.inject.Guice;
-import com.google.inject.Inject;
-import com.google.inject.Injector;
-import com.google.inject.servlet.GuiceServletContextListener;
-import com.google.inject.servlet.ServletModule;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.api.json.JSONConfiguration;
-import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
-import com.sun.jersey.test.framework.JerseyTest;
-import com.sun.jersey.test.framework.WebAppDescriptor;
 import junit.framework.Assert;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
-import org.apache.hadoop.yarn.webapp.GenericExceptionHandler;
+import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.tools.SliderUtils;
+import org.apache.slider.core.conf.MapOperations;
 import org.apache.slider.server.appmaster.model.mock.MockFactory;
 import org.apache.slider.server.appmaster.model.mock.MockProviderService;
 import org.apache.slider.server.appmaster.model.mock.MockRecordFactory;
 import org.apache.slider.server.appmaster.model.mock.MockSliderClusterProtocol;
 import org.apache.slider.server.appmaster.state.AppState;
 import org.apache.slider.server.appmaster.state.ProviderAppState;
+import org.apache.slider.server.appmaster.state.SimpleReleaseSelector;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.WebAppApiImpl;
-import org.apache.slider.server.appmaster.web.rest.AMWebServices;
-import org.apache.slider.server.appmaster.web.rest.SliderJacksonJaxbJsonProvider;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
+import org.apache.slider.server.appmaster.web.rest.RestPaths;
+import org.apache.slider.server.services.security.CertificateManager;
+import org.apache.slider.server.services.security.SecurityUtils;
+import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.Path;
 import javax.ws.rs.core.MediaType;
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
-import java.util.HashMap;
-import java.util.Map;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 
 import static org.junit.Assert.assertEquals;
 
-public class TestAMAgentWebServices extends JerseyTest {
+public class TestAMAgentWebServices {
+
+  static {
+    //for localhost testing only
+    javax.net.ssl.HttpsURLConnection.setDefaultHostnameVerifier(
+        new javax.net.ssl.HostnameVerifier(){
+
+          public boolean verify(String hostname,
+                                javax.net.ssl.SSLSession sslSession) {
+            if (hostname.equals("localhost")) {
+              return true;
+            }
+            return false;
+          }
+        });
+
+    SecurityUtils.initializeSecurityParameters(new MapOperations());
+    MapOperations compOperations = new MapOperations();
+    CertificateManager certificateManager = new CertificateManager();
+    certificateManager.initRootCert(compOperations);
+    String keystoreFile = SecurityUtils.getSecurityDir() + File.separator + SliderKeys.KEYSTORE_FILE_NAME;
+    String password = SecurityUtils.getKeystorePass();
+    System.setProperty("javax.net.ssl.trustStore", keystoreFile);
+    System.setProperty("javax.net.ssl.trustStorePassword", password);
+    System.setProperty("javax.net.ssl.trustStoreType", "PKCS12");
+  }
+
   protected static final Logger log =
     LoggerFactory.getLogger(TestAMAgentWebServices.class);
   
   public static final int RM_MAX_RAM = 4096;
   public static final int RM_MAX_CORES = 64;
   public static final String AGENT_URL =
-    "http://localhost:9998/slideram/ws/v1/slider/agents/";
+    "https://localhost:${PORT}/ws/v1/slider/agents/";
   
   static MockFactory factory = new MockFactory();
   private static Configuration conf = new Configuration();
   private static WebAppApi slider;
 
-  private static Injector injector = createInjector();
   private static FileSystem fs;
-
-  public static class GuiceServletConfig extends GuiceServletContextListener {
-
-    public GuiceServletConfig() {
-      super();
-    }
-
-    @Override
-    protected Injector getInjector() {
-      return injector;
-    }
-  }
-
-//  @Path("/ws/v1/slider/agent")
-  @Path("/ws/v1/slider")
-  public static class MockAMWebServices extends AMWebServices {
-
-    @Inject
-    public MockAMWebServices(WebAppApi slider) {
-      super(slider);
-    }
-
-  }
+  private AgentWebApp webApp;
+  private String base_url;
 
   @Before
-  @Override
   public void setUp() throws Exception {
-    super.setUp();
-    injector = createInjector();
     YarnConfiguration conf = SliderUtils.createConfiguration();
     fs = FileSystem.get(new URI("file:///"), conf);
+    AppState appState = null;
+    try {
+      fs = FileSystem.get(new URI("file:///"), conf);
+      File
+          historyWorkDir =
+          new File("target/history", "TestAMAgentWebServices");
+      org.apache.hadoop.fs.Path
+          historyPath =
+          new org.apache.hadoop.fs.Path(historyWorkDir.toURI());
+      fs.delete(historyPath, true);
+      appState = new AppState(new MockRecordFactory());
+      appState.setContainerLimits(RM_MAX_RAM, RM_MAX_CORES);
+      appState.buildInstance(
+          factory.newInstanceDefinition(0, 0, 0),
+          new Configuration(),
+          new Configuration(false),
+          factory.ROLES,
+          fs,
+          historyPath,
+          null, null, new SimpleReleaseSelector());
+    } catch (Exception e) {
+      log.error("Failed to set up app {}", e);
+    }
+    ProviderAppState providerAppState = new ProviderAppState("undefined",
+                                                             appState);
+
+    slider = new WebAppApiImpl(new MockSliderClusterProtocol(), providerAppState,
+                               new MockProviderService(), null);
+
+    MapOperations compOperations = new MapOperations();
+
+    webApp = AgentWebApp.$for(AgentWebApp.BASE_PATH, slider,
+                              RestPaths.WS_AGENT_CONTEXT_ROOT)
+        .withComponentConfig(compOperations)
+        .start();
+    base_url = AGENT_URL.replace("${PORT}",
+                                 Integer.toString(webApp.getSecuredPort()));
+
   }
 
-  private static Injector createInjector() {
-    return Guice.createInjector(new ServletModule() {
-      @Override
-      protected void configureServlets() {
-
-        AppState appState = null;
-        try {
-          fs = FileSystem.get(new URI("file:///"), conf);
-          File
-              historyWorkDir =
-              new File("target/history", "TestAMAgentWebServices");
-          org.apache.hadoop.fs.Path
-              historyPath =
-              new org.apache.hadoop.fs.Path(historyWorkDir.toURI());
-          fs.delete(historyPath, true);
-          appState = new AppState(new MockRecordFactory());
-          appState.setContainerLimits(RM_MAX_RAM, RM_MAX_CORES);
-          appState.buildInstance(
-              factory.newInstanceDefinition(0, 0, 0),
-              new Configuration(false),
-              factory.ROLES,
-              fs,
-              historyPath,
-              null, null);
-        } catch (Exception e) {
-          log.error("Failed to set up app {}", e);
-        }
-        ProviderAppState providerAppState = new ProviderAppState("undefined",
-            appState);
-
-        slider = new WebAppApiImpl(new MockSliderClusterProtocol(), providerAppState,
-                                   new MockProviderService());
-
-        bind(SliderJacksonJaxbJsonProvider.class);
-        bind(GenericExceptionHandler.class);
-        bind(MockAMWebServices.class);
-        bind(WebAppApi.class).toInstance(slider);
-        bind(Configuration.class).toInstance(conf);
-
-        Map<String, String> params = new HashMap<String, String>();
-        addLoggingFilter(params);
-        serve("/*").with(GuiceContainer.class, params);
-      }
-    });
-  }
-
-  private static void addLoggingFilter(Map<String, String> params) {
-    params.put("com.sun.jersey.spi.container.ContainerRequestFilters", "com.sun.jersey.api.container.filter.LoggingFilter");
-    params.put("com.sun.jersey.spi.container.ContainerResponseFilters", "com.sun.jersey.api.container.filter.LoggingFilter");
+  @After
+  public void tearDown () throws Exception {
+    webApp.stop();
+    webApp = null;
   }
 
   public TestAMAgentWebServices() {
-    super(new WebAppDescriptor.Builder(
-      "org.apache.hadoop.yarn.appmaster.web")
-            .contextListenerClass(GuiceServletConfig.class)
-            .filterClass(com.google.inject.servlet.GuiceFilter.class)
-            .initParam("com.sun.jersey.api.json.POJOMappingFeature", "true")
-            .contextPath("slideram").servletPath("/").build());
   }
 
   @Test
-  public void testRegistration() throws JSONException, Exception {
+  public void testRegistration() throws Exception {
     RegistrationResponse response;
     Client client = createTestClient();
-    WebResource webResource = client.resource(AGENT_URL + "test/register");
+    WebResource webResource = client.resource(base_url + "test/register");
     response = webResource.type(MediaType.APPLICATION_JSON)
         .post(RegistrationResponse.class, createDummyJSONRegister());
     Assert.assertEquals(RegistrationStatus.OK, response.getResponseStatus());
@@ -189,31 +176,31 @@ public class TestAMAgentWebServices extends JerseyTest {
   }
 
   @Test
-  public void testHeartbeat() throws JSONException, Exception {
+  public void testHeartbeat() throws Exception {
     HeartBeatResponse response;
     Client client = createTestClient();
-    WebResource webResource = client.resource(AGENT_URL + "test/heartbeat");
+    WebResource webResource = client.resource(base_url + "test/heartbeat");
     response = webResource.type(MediaType.APPLICATION_JSON)
         .post(HeartBeatResponse.class, createDummyHeartBeat());
     assertEquals(response.getResponseId(), 0L);
   }
 
   @Test
-  public void testHeadURL() throws JSONException, Exception {
+  public void testHeadURL() throws Exception {
     Client client = createTestClient();
-    WebResource webResource = client.resource(AGENT_URL);
+    WebResource webResource = client.resource(base_url);
     ClientResponse response = webResource.type(MediaType.APPLICATION_JSON)
                                          .head();
     assertEquals(200, response.getStatus());
   }
 
-  @Test
-  public void testSleepForAWhile() throws Throwable {
-    log.info("Agent is running at {}", AGENT_URL);
-    Thread.sleep(60 * 1000);
-  }
+//  @Test
+//  public void testSleepForAWhile() throws Throwable {
+//    log.info("Agent is running at {}", base_url);
+//    Thread.sleep(60 * 1000);
+//  }
   
-  private Register createDummyJSONRegister() throws JSONException {
+  private Register createDummyJSONRegister() {
     Register register = new Register();
     register.setResponseId(-1);
     register.setTimestamp(System.currentTimeMillis());
@@ -221,12 +208,32 @@ public class TestAMAgentWebServices extends JerseyTest {
     return register;
   }
 
-  private JSONObject createDummyHeartBeat() throws JSONException {
-    JSONObject json = new JSONObject();
-    json.put("responseId", -1);
-    json.put("timestamp", System.currentTimeMillis());
-    json.put("hostname", "dummyHost");
+  private HeartBeat createDummyHeartBeat() {
+    HeartBeat json = new HeartBeat();
+    json.setResponseId(-1);
+    json.setTimestamp(System.currentTimeMillis());
+    json.setHostname("dummyHost");
     return json;
   }
 
+  @AfterClass
+  public static void tearDownClass() throws Exception{
+    Path directory = Paths.get(SecurityUtils.getSecurityDir());
+    Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
+      @Override
+      public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+          throws IOException {
+        Files.delete(file);
+        return FileVisitResult.CONTINUE;
+      }
+
+      @Override
+      public FileVisitResult postVisitDirectory(Path dir, IOException exc)
+          throws IOException {
+        Files.delete(dir);
+        return FileVisitResult.CONTINUE;
+      }
+
+    });
+  }
 }

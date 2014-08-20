@@ -20,9 +20,9 @@ Slider Agent
 
 """
 
-__all__ = ["checked_call", "call"]
+__all__ = ["checked_call", "call", "quote_bash_args"]
 
-import pipes
+import string
 import subprocess
 import threading
 from multiprocessing import Queue
@@ -31,15 +31,15 @@ from exceptions import ExecuteTimeoutException
 from resource_management.core.logger import Logger
 
 def checked_call(command, logoutput=False, 
-         cwd=None, env=None, preexec_fn=None, user=None, wait_for_finish=True, timeout=None):
-  return _call(command, logoutput, True, cwd, env, preexec_fn, user, wait_for_finish, timeout)
+         cwd=None, env=None, preexec_fn=None, user=None, wait_for_finish=True, timeout=None, pid_file=None):
+  return _call(command, logoutput, True, cwd, env, preexec_fn, user, wait_for_finish, timeout, pid_file)
 
 def call(command, logoutput=False, 
-         cwd=None, env=None, preexec_fn=None, user=None, wait_for_finish=True, timeout=None):
-  return _call(command, logoutput, False, cwd, env, preexec_fn, user, wait_for_finish, timeout)
+         cwd=None, env=None, preexec_fn=None, user=None, wait_for_finish=True, timeout=None, pid_file=None):
+  return _call(command, logoutput, False, cwd, env, preexec_fn, user, wait_for_finish, timeout, pid_file)
             
 def _call(command, logoutput=False, throw_on_failure=True, 
-         cwd=None, env=None, preexec_fn=None, user=None, wait_for_finish=True, timeout=None):
+         cwd=None, env=None, preexec_fn=None, user=None, wait_for_finish=True, timeout=None, pid_file_name=None):
   """
   Execute shell command
   
@@ -52,7 +52,7 @@ def _call(command, logoutput=False, throw_on_failure=True,
   """
   # convert to string and escape
   if isinstance(command, (list, tuple)):
-    command = ' '.join(pipes.quote(x) for x in command)
+    command = ' '.join(quote_bash_args(x) for x in command)
 
   """
   Do not su to the supplied user (need to differentiate between when to call su and when not to)
@@ -67,6 +67,10 @@ def _call(command, logoutput=False, throw_on_failure=True,
                           preexec_fn=preexec_fn)
 
   if not wait_for_finish:
+    if pid_file_name:
+      pidfile = open(pid_file_name, 'w')
+      pidfile.write(str(proc.pid))
+      pidfile.close()
     return None, None
   
   if timeout:
@@ -89,7 +93,7 @@ def _call(command, logoutput=False, throw_on_failure=True,
     Logger.info(out)
   
   if throw_on_failure and code:
-    err_msg = ("Execution of '%s' returned %d. %s") % (command[-1], code, out)
+    err_msg = Logger.get_protected_text(("Execution of '%s' returned %d. %s") % (command[-1], code, out))
     raise Fail(err_msg)
   
   return code, out
@@ -101,3 +105,12 @@ def on_timeout(proc, q):
       proc.terminate()
     except:
       pass
+
+def quote_bash_args(command):
+  if not command:
+    return "''"
+  valid = set(string.ascii_letters + string.digits + '@%_-+=:,./')
+  for char in command:
+    if char not in valid:
+      return "'" + command.replace("'", "'\"'\"'") + "'"
+  return command

@@ -26,21 +26,26 @@ import sys
 import traceback
 import os
 import time
-import errno
+import platform
 import ConfigParser
 import ProcessHelper
+import errno
+import posixpath
 from Controller import Controller
 from AgentConfig import AgentConfig
 from NetUtil import NetUtil
+from Registry import Registry
+import Constants
 
 logger = logging.getLogger()
+IS_WINDOWS = platform.system() == "Windows"
 formatstr = "%(levelname)s %(asctime)s %(filename)s:%(lineno)d - %(message)s"
 agentPid = os.getpid()
 
 configFileRelPath = "infra/conf/agent.ini"
 logFileName = "agent.log"
 
-SERVER_STATUS_URL="http://{0}:{1}{2}"
+SERVER_STATUS_URL="https://{0}:{1}{2}"
 
 
 def signal_handler(signum, frame):
@@ -100,12 +105,13 @@ def update_log_level(config, logfile):
 def bind_signal_handlers():
   signal.signal(signal.SIGINT, signal_handler)
   signal.signal(signal.SIGTERM, signal_handler)
-  signal.signal(signal.SIGUSR1, debug)
+  if platform.system() != "Windows":
+    signal.signal(signal.SIGUSR1, debug)
 
 
 def update_config_from_file(agentConfig):
   try:
-    configFile = os.path.join(agentConfig.getWorkRootPath(), configFileRelPath)
+    configFile = posixpath.join(agentConfig.getWorkRootPath(), configFileRelPath)
     if os.path.exists(configFile):
       agentConfig.setConfig(configFile)
     else:
@@ -137,7 +143,7 @@ def ensure_folder_layout(config):
 
 def ensure_path_exists(path):
   try:
-    os.makedirs(path)
+    os.makedirs(os.path.realpath(path))
   except OSError as exception:
     if exception.errno != errno.EEXIST:
       raise
@@ -174,35 +180,63 @@ def main():
   parser = OptionParser()
   parser.add_option("-v", "--verbose", dest="verbose", help="verbose log output", default=False)
   parser.add_option("-l", "--label", dest="label", help="label of the agent", default=None)
-  parser.add_option("--host", dest="host", help="AppMaster host", default=None)
-  parser.add_option("--port", dest="port", help="AppMaster port", default=None)
+  parser.add_option("--zk-quorum", dest=Constants.ZK_QUORUM, help="Zookeeper Quorum", default=None)
+  parser.add_option("--zk-reg-path", dest=Constants.ZK_REG_PATH, help="Zookeeper Registry Path", default=None)
+  parser.add_option("--debug", dest="debug", help="Agent debug hint", default="")
   (options, args) = parser.parse_args()
 
   if not 'AGENT_WORK_ROOT' in os.environ:
-    parser.error("AGENT_WORK_ROOT environment variable must be set.");
+    parser.error("AGENT_WORK_ROOT environment variable must be set.")
   options.root_folder = os.environ['AGENT_WORK_ROOT']
   if not 'AGENT_LOG_ROOT' in os.environ:
-    parser.error("AGENT_LOG_ROOT environment variable must be set.");
+    parser.error("AGENT_LOG_ROOT environment variable must be set.")
   options.log_folder = os.environ['AGENT_LOG_ROOT']
+  all_log_folders = [x.strip() for x in options.log_folder.split(',')]
+  if len(all_log_folders) > 1:
+    options.log_folder = all_log_folders[0]
+
+  # If there are multiple log folder, separate by comma, pick one
+
   if not options.label:
     parser.error("label is required.");
 
-  bind_signal_handlers()
+  if not IS_WINDOWS:
+    bind_signal_handlers()
 
   # Check for configuration file.
   agentConfig = AgentConfig(options.root_folder, options.log_folder, options.label)
   update_config_from_file(agentConfig)
 
   # update configurations if needed
-  if options.host:
-      agentConfig.set(AgentConfig.SERVER_SECTION, "hostname", options.host)
+  if options.zk_quorum:
+      agentConfig.set(AgentConfig.SERVER_SECTION, Constants.ZK_QUORUM, options.zk_quorum)
 
-  if options.port:
-      agentConfig.set(AgentConfig.SERVER_SECTION, "port", options.port)
+  if options.zk_reg_path:
+      agentConfig.set(AgentConfig.SERVER_SECTION, Constants.ZK_REG_PATH, options.zk_reg_path)
 
-  logFile = os.path.join(agentConfig.getResolvedPath(AgentConfig.LOG_DIR), logFileName)
+  if options.debug:
+    agentConfig.set(AgentConfig.AGENT_SECTION, AgentConfig.APP_DBG_CMD, options.debug)
+
+  # Extract the AM hostname and secured port from ZK registry
+  registry = Registry(options.zk_quorum, options.zk_reg_path)
+  amHost, amSecuredPort = registry.readAMHostPort()
+  if amHost:
+      agentConfig.set(AgentConfig.SERVER_SECTION, "hostname", amHost)
+
+  if amSecuredPort:
+      agentConfig.set(AgentConfig.SERVER_SECTION, "secured_port", amSecuredPort)
+
+  # set the security directory to a subdirectory of the run dir
+  secDir = posixpath.join(agentConfig.getResolvedPath(AgentConfig.RUN_DIR), "security")
+  logger.info("Security/Keys directory: " + secDir)
+  agentConfig.set(AgentConfig.SECURITY_SECTION, "keysdir", secDir)
+
+  logFile = posixpath.join(agentConfig.getResolvedPath(AgentConfig.LOG_DIR), logFileName)
+
   perform_prestart_checks(agentConfig)
   ensure_folder_layout(agentConfig)
+  # create security dir if necessary
+  ensure_path_exists(secDir)
 
   setup_logging(options.verbose, logFile)
   update_log_level(agentConfig, logFile)
@@ -211,9 +245,12 @@ def main():
   logger.info("Using AGENT_WORK_ROOT = " + options.root_folder)
   logger.info("Using AGENT_LOG_ROOT = " + options.log_folder)
 
+  if len(all_log_folders) > 1:
+    logger.info("Selected log folder from available: " + ",".join(all_log_folders))
+
   server_url = SERVER_STATUS_URL.format(
     agentConfig.get(AgentConfig.SERVER_SECTION, 'hostname'),
-    agentConfig.get(AgentConfig.SERVER_SECTION, 'port'),
+    agentConfig.get(AgentConfig.SERVER_SECTION, 'secured_port'),
     agentConfig.get(AgentConfig.SERVER_SECTION, 'check_path'))
   print("Connecting to the server at " + server_url + "...")
   logger.info('Connecting to the server at: ' + server_url)

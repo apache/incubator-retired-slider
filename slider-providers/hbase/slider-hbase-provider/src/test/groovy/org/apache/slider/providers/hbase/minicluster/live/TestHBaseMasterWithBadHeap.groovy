@@ -21,16 +21,13 @@ package org.apache.slider.providers.hbase.minicluster.live
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.hbase.ClusterStatus
-import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.RoleKeys
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderExitCodes
-import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.main.ServiceLaunchException
 import org.apache.slider.core.main.ServiceLauncher
-import org.apache.slider.core.registry.zk.ZKIntegration
 import org.apache.slider.providers.hbase.HBaseKeys
 import org.apache.slider.providers.hbase.minicluster.HBaseMiniClusterTestBase
 import org.junit.Test
@@ -45,8 +42,7 @@ class TestHBaseMasterWithBadHeap extends HBaseMiniClusterTestBase {
 
   @Test
   public void testHBaseMasterWithBadHeap() throws Throwable {
-    String clustername = "test_hbase_master_with_bad_heap"
-    createMiniCluster(clustername, configuration, 1, true)
+    String clustername = createMiniCluster("", configuration, 1, true)
 
     describe "verify that bad Java heap options are picked up"
     //now launch the cluster with 1 region server

@@ -1,0 +1,169 @@
+<?xml version="1.0"?>
+<!--
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to You under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+<metainfo>
+  <schemaVersion>2.0</schemaVersion>
+  <application>
+    <name>HBASE</name>
+    <comment>
+      Apache HBase is the Hadoop database, a distributed, scalable, big data store.
+      Requirements:
+      1. Ensure parent dir for path (hbase-site/hbase.rootdir) is accessible to the App owner.
+      2. Ensure ZK root (hbase-site/zookeeper.znode.parent) is unique for the App instance.
+    </comment>
+    <version>${hbase.version}</version>
+    <type>YARN-APP</type>
+    <minHadoopVersion>2.1.0</minHadoopVersion>
+    <exportGroups>
+      <exportGroup>
+        <name>QuickLinks</name>
+        <exports>
+          <export>
+            <name>org.apache.slider.jmx</name>
+            <value>http://${HBASE_MASTER_HOST}:${site.hbase-site.hbase.master.info.port}/jmx</value>
+          </export>
+          <export>
+            <name>org.apache.slider.monitor</name>
+            <value>http://${HBASE_MASTER_HOST}:${site.hbase-site.hbase.master.info.port}/master-status</value>
+          </export>
+          <export>
+            <name>org.apache.slider.hbase.rest</name>
+            <value>http://${HBASE_REST_HOST}:${site.global.hbase_rest_port}</value>
+          </export>
+          <export>
+            <name>org.apache.slider.hbase.thrift2</name>
+            <value>http://${HBASE_THRIFT2_HOST}:${site.global.hbase_thrift2_port}</value>
+          </export>
+          <export>
+            <name>org.apache.slider.hbase.thrift</name>
+            <value>http://${HBASE_THRIFT_HOST}:${site.global.hbase_thrift_port}</value>
+          </export>
+          <export>
+            <name>app.metrics</name>
+            <value>http://${site.global.ganglia_server_host}/cgi-bin/rrd.py?c=${site.global.ganglia_server_id}</value>
+          </export>
+          <export>
+            <name>app.ganglia</name>
+            <value>http://${site.global.ganglia_server_host}/ganglia?c=${site.global.ganglia_server_id}</value>
+          </export>
+        </exports>
+      </exportGroup>
+    </exportGroups>
+    <commandOrders>
+      <commandOrder>
+        <command>HBASE_REGIONSERVER-START</command>
+        <requires>HBASE_MASTER-STARTED</requires>
+      </commandOrder>
+      <commandOrder>
+        <command>HBASE_MASTER-START</command>
+        <requires>HBASE_REST-INSTALLED</requires>
+        <requires>HBASE_THRIFT-INSTALLED</requires>
+        <requires>HBASE_THRIFT2-INSTALLED</requires>
+      </commandOrder>
+    </commandOrders>
+    <components>
+      <component>
+        <name>HBASE_MASTER</name>
+        <category>MASTER</category>
+        <minInstanceCount>1</minInstanceCount>
+        <maxInstanceCount>2</maxInstanceCount>
+        <appExports>QuickLinks-org.apache.slider.jmx,QuickLinks-org.apache.slider.monitor,QuickLinks-app.metrics,QuickLinks-app.ganglia</appExports>
+        <componentExports>
+          <componentExport>
+            <name>app.jmx</name>
+            <value>${THIS_HOST}:${site.hbase-site.hbase.master.info.port}/jmx</value>
+          </componentExport>
+          <componentExport>
+            <name>app.monitor</name>
+            <value>${THIS_HOST}:${site.hbase-site.hbase.master.info.port}/master-status</value>
+          </componentExport>
+        </componentExports>
+        <commandScript>
+          <script>scripts/hbase_master.py</script>
+          <scriptType>PYTHON</scriptType>
+          <timeout>600</timeout>
+        </commandScript>
+      </component>
+
+      <component>
+        <name>HBASE_REGIONSERVER</name>
+        <category>SLAVE</category>
+        <minInstanceCount>1</minInstanceCount>
+        <commandScript>
+          <script>scripts/hbase_regionserver.py</script>
+          <scriptType>PYTHON</scriptType>
+        </commandScript>
+      </component>
+
+      <component>
+        <name>HBASE_REST</name>
+        <category>MASTER</category>
+        <minInstanceCount>0</minInstanceCount>
+        <appExports>QuickLinks-org.apache.slider.hbase.rest</appExports>
+        <commandScript>
+          <script>scripts/hbase_rest.py</script>
+          <scriptType>PYTHON</scriptType>
+        </commandScript>
+      </component>
+
+      <component>
+        <name>HBASE_THRIFT</name>
+        <category>MASTER</category>
+        <minInstanceCount>0</minInstanceCount>
+        <appExports>QuickLinks-org.apache.slider.hbase.thrift</appExports>
+        <commandScript>
+          <script>scripts/hbase_thrift.py</script>
+          <scriptType>PYTHON</scriptType>
+        </commandScript>
+      </component>
+
+      <component>
+        <name>HBASE_THRIFT2</name>
+        <category>MASTER</category>
+        <minInstanceCount>0</minInstanceCount>
+        <appExports>QuickLinks-org.apache.slider.hbase.thrift2</appExports>
+        <commandScript>
+          <script>scripts/hbase_thrift2.py</script>
+          <scriptType>PYTHON</scriptType>
+        </commandScript>
+      </component>
+
+      <component>
+        <name>HBASE_CLIENT</name>
+        <category>CLIENT</category>
+        <minInstanceCount>0</minInstanceCount>
+        <commandScript>
+          <script>scripts/hbase_client.py</script>
+          <scriptType>PYTHON</scriptType>
+        </commandScript>
+      </component>
+    </components>
+
+    <osSpecifics>
+      <osSpecific>
+        <osType>any</osType>
+        <packages>
+          <package>
+            <type>tarball</type>
+            <name>files/hbase-${hbase.version}-bin.tar.gz</name>
+          </package>
+        </packages>
+      </osSpecific>
+    </osSpecifics>
+
+  </application>
+</metainfo>

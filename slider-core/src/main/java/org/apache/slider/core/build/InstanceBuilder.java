@@ -24,6 +24,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
+import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.OptionKeys;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.common.SliderXmlConfKeys;
@@ -40,8 +41,8 @@ import org.apache.slider.core.persist.ConfPersister;
 import org.apache.slider.core.persist.InstancePaths;
 import org.apache.slider.core.persist.LockAcquireFailedException;
 import org.apache.slider.core.persist.LockHeldAction;
-import org.apache.slider.core.registry.zk.ZKPathBuilder;
-import org.apache.slider.core.registry.zk.ZookeeperUtils;
+import org.apache.slider.core.zk.ZKPathBuilder;
+import org.apache.slider.core.zk.ZookeeperUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -139,7 +140,7 @@ public class InstanceBuilder {
                     instancePaths.dataPath.toUri());
 
 
-    internalOps.set(OptionKeys.INTERNAL_PROVIDER_NAME, provider);
+    internalOps.set(InternalKeys.INTERNAL_PROVIDER_NAME, provider);
     internalOps.set(OptionKeys.APPLICATION_NAME, clustername);
 
   }
@@ -224,16 +225,18 @@ public class InstanceBuilder {
 
   /**
    * Persist this
+   * @param appconfdir conf dir
+   * @param overwrite if true, we don't need to create cluster dir
    * @throws IOException
    * @throws SliderException
    * @throws LockAcquireFailedException
    * @param appconfdir dir to persist the conf to
    */
-  public void persist(Path appconfdir) throws
+  public void persist(Path appconfdir, boolean overwrite) throws
       IOException,
       SliderException,
       LockAcquireFailedException {
-    coreFS.createClusterDirectories(instancePaths);
+    if (!overwrite) coreFS.createClusterDirectories(instancePaths);
     ConfPersister persister =
       new ConfPersister(coreFS, getInstanceDir());
     ConfDirSnapshotAction action = null;

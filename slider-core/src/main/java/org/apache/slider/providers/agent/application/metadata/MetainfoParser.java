@@ -34,10 +34,11 @@ public class MetainfoParser {
     digester.addObjectCreate("metainfo", Metainfo.class);
     digester.addBeanPropertySetter("metainfo/schemaVersion");
 
-    digester.addObjectCreate("*/service", Service.class);
-    digester.addBeanPropertySetter("*/service/name");
-    digester.addBeanPropertySetter("*/service/comment");
-    digester.addBeanPropertySetter("*/service/version");
+    digester.addObjectCreate("*/application", Application.class);
+    digester.addBeanPropertySetter("*/application/name");
+    digester.addBeanPropertySetter("*/application/comment");
+    digester.addBeanPropertySetter("*/application/version");
+    digester.addBeanPropertySetter("*/application/exportedConfigs");
 
     digester.addObjectCreate("*/commandOrder", CommandOrder.class);
     digester.addBeanPropertySetter("*/commandOrder/command");
@@ -55,6 +56,15 @@ public class MetainfoParser {
     digester.addObjectCreate("*/component", Component.class);
     digester.addBeanPropertySetter("*/component/name");
     digester.addBeanPropertySetter("*/component/category");
+    digester.addBeanPropertySetter("*/component/publishConfig");
+    digester.addBeanPropertySetter("*/component/minInstanceCount");
+    digester.addBeanPropertySetter("*/component/maxInstanceCount");
+    digester.addBeanPropertySetter("*/component/autoStartOnFailure");
+    digester.addBeanPropertySetter("*/component/appExports");
+    digester.addObjectCreate("*/componentExport", ComponentExport.class);
+    digester.addBeanPropertySetter("*/componentExport/name");
+    digester.addBeanPropertySetter("*/componentExport/value");
+    digester.addSetNext("*/componentExport", "addComponentExport");
     digester.addSetNext("*/component", "addComponent");
 
     digester.addObjectCreate("*/commandScript", CommandScript.class);
@@ -76,7 +86,7 @@ public class MetainfoParser {
     digester.addBeanPropertySetter("*/config-type", "configType");
     digester.addSetNext("*/configuration-dependencies", "setConfigDependencies");
 
-    digester.addSetNext("*/service", "addService");
+    digester.addSetRoot("*/application", "setApplication");
 
     try {
       return (Metainfo) digester.parse(metainfoStream);

@@ -30,10 +30,8 @@ import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.params.ActionStatusArgs
-import org.apache.slider.common.params.ClientArgs
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.conf.YarnConfiguration
-import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.core.main.ServiceLauncher
 import org.junit.Before
 import org.junit.Test
@@ -48,7 +46,7 @@ class TestActionStatus extends AgentMiniClusterTestBase {
   @Before
   public void setup() {
     super.setup()
-    createMiniCluster("test_action_status", configuration, 1, false)
+    createMiniCluster("", configuration, 1, false)
   }
 
   /**
@@ -71,7 +69,7 @@ class TestActionStatus extends AgentMiniClusterTestBase {
           new YarnConfiguration(miniCluster.config),
           [
               SliderActions.ACTION_STATUS,
-              "test_status_missing_cluster",
+              "teststatusmissingcluster",
               Arguments.ARG_MANAGER, RMAddr
           ]
       )
@@ -84,10 +82,13 @@ class TestActionStatus extends AgentMiniClusterTestBase {
   
   public void testStatusLiveCluster() throws Throwable {
     describe("create a live cluster then exec the status command")
-    String clustername = "test_status_live_cluster"
+    String clustername = "teststatuslivecluster"
     
     //launch the cluster
-    ServiceLauncher<SliderClient> launcher = createMasterlessAM(clustername, 0, true, false)
+    ServiceLauncher<SliderClient> launcher = createStandaloneAM(
+        clustername,
+        true,
+        false)
 
     SliderClient sliderClient = launcher.service
     ApplicationReport report = waitForClusterLive(sliderClient)

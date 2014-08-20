@@ -19,6 +19,7 @@
 package org.apache.slider.providers.agent;
 
 import org.apache.slider.providers.agent.application.metadata.CommandOrder;
+import org.apache.slider.server.appmaster.model.mock.MockContainerId;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -29,6 +30,7 @@ import java.util.Arrays;
 public class TestComponentCommandOrder {
   protected static final Logger log =
       LoggerFactory.getLogger(TestComponentCommandOrder.class);
+  private final MockContainerId containerId = new MockContainerId(1);
 
   @Test
   public void testComponentCommandOrder() throws Exception {
@@ -40,14 +42,15 @@ public class TestComponentCommandOrder {
     co2.setRequires("C-STARTED");
     CommandOrder co3 = new CommandOrder();
     co3.setCommand("B-START");
-    co3.setRequires("C-STARTED,D-STARTED,E-STARTED");
+    co3.setRequires("C-STARTED,D-STARTED,E-INSTALLED");
 
     ComponentCommandOrder cco = new ComponentCommandOrder(Arrays.asList(co1, co2, co3));
-    ComponentInstanceState cisB = new ComponentInstanceState("B", "cid", "aid");
-    ComponentInstanceState cisC = new ComponentInstanceState("C", "cid", "aid");
-    ComponentInstanceState cisD = new ComponentInstanceState("D", "cid", "aid");
-    ComponentInstanceState cisE = new ComponentInstanceState("E", "cid", "aid");
-    ComponentInstanceState cisE2 = new ComponentInstanceState("E", "cid", "aid");
+    ComponentInstanceState cisB = new ComponentInstanceState("B",
+        containerId, "aid");
+    ComponentInstanceState cisC = new ComponentInstanceState("C", containerId, "aid");
+    ComponentInstanceState cisD = new ComponentInstanceState("D", containerId, "aid");
+    ComponentInstanceState cisE = new ComponentInstanceState("E", containerId, "aid");
+    ComponentInstanceState cisE2 = new ComponentInstanceState("E", containerId, "aid");
     cisB.setState(State.STARTED);
     cisC.setState(State.INSTALLED);
     Assert.assertTrue(cco.canExecute("A", Command.START, Arrays.asList(cisB)));
@@ -73,10 +76,16 @@ public class TestComponentCommandOrder {
     cisD.setState(State.STARTED);
     Assert.assertTrue(cco.canExecute("B", Command.START, Arrays.asList(cisB, cisC, cisD, cisE)));
 
-    cisE2.setState(State.INSTALLED);
+    cisE2.setState(State.INSTALLING);
     Assert.assertFalse(cco.canExecute("B", Command.START, Arrays.asList(cisE, cisE2)));
 
+    cisE2.setState(State.INSTALLED);
+    Assert.assertTrue(cco.canExecute("B", Command.START, Arrays.asList(cisE, cisE2)));
+
     cisE2.setState(State.STARTED);
+    Assert.assertTrue(cco.canExecute("B", Command.START, Arrays.asList(cisE, cisE2)));
+
+    cisE2.setState(State.STARTING);
     Assert.assertTrue(cco.canExecute("B", Command.START, Arrays.asList(cisE, cisE2)));
   }
 
@@ -86,8 +95,8 @@ public class TestComponentCommandOrder {
     co.setCommand(" A-START");
     co.setRequires("B-STARTED , C-STARTED");
 
-    ComponentInstanceState cisB = new ComponentInstanceState("B", "cid", "aid");
-    ComponentInstanceState cisC = new ComponentInstanceState("C", "cid", "aid");
+    ComponentInstanceState cisB = new ComponentInstanceState("B", containerId, "aid");
+    ComponentInstanceState cisC = new ComponentInstanceState("C", containerId, "aid");
     cisB.setState(State.STARTED);
     cisC.setState(State.STARTED);
 
@@ -132,15 +141,6 @@ public class TestComponentCommandOrder {
 
     co.setCommand(" A-INSTALL");
     co.setRequires("B-STARTED");
-    try {
-      cco = new ComponentCommandOrder(Arrays.asList(co));
-      Assert.fail("Instantiation should have failed.");
-    } catch (IllegalArgumentException ie) {
-      log.info(ie.getMessage());
-    }
-
-    co.setCommand(" A-START");
-    co.setRequires("B-INSTALLED");
     try {
       cco = new ComponentCommandOrder(Arrays.asList(co));
       Assert.fail("Instantiation should have failed.");
