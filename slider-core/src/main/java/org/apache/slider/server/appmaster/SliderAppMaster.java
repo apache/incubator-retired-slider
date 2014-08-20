@@ -344,13 +344,14 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private InetSocketAddress rpcServiceAddress;
   private ProviderService sliderAMProvider;
-  private String agentAccessUrl;
   private CertificateManager certificateManager;
 
   private WorkflowExecutorService<ExecutorService> executorService;
   
   private final QueueService actionQueues = new QueueService();
-  
+  private String agentOpsUrl;
+  private String agentStatusUrl;
+
   /**
    * Service Constructor
    */
@@ -829,7 +830,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         .withComponentConfig(getInstanceDefinition().getAppConfOperations()
                                  .getComponent(SliderKeys.COMPONENT_AM))
         .start();
-    agentAccessUrl = "https://" + appMasterHostname + ":" + agentWebApp.getSecuredPort();
+    agentOpsUrl =
+        "https://" + appMasterHostname + ":" + agentWebApp.getSecuredPort();
+    agentStatusUrl =
+        "https://" + appMasterHostname + ":" + agentWebApp.getPort();
     AgentService agentService =
       new AgentService("slider-agent", agentWebApp);
 
@@ -837,9 +841,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     agentService.start();
     addService(agentService);
 
-    appInformation.put(StatusKeys.INFO_AM_AGENT_URL, agentAccessUrl + "/");
-    appInformation.set(StatusKeys.INFO_AM_AGENT_PORT, agentWebApp.getPort());
-    appInformation.set(StatusKeys.INFO_AM_SECURED_AGENT_PORT,
+    appInformation.put(StatusKeys.INFO_AM_AGENT_OPS_URL, agentOpsUrl + "/");
+    appInformation.put(StatusKeys.INFO_AM_AGENT_STATUS_URL, agentStatusUrl + "/");
+    appInformation.set(StatusKeys.INFO_AM_AGENT_STATUS_PORT, agentWebApp.getPort());
+    appInformation.set(StatusKeys.INFO_AM_AGENT_OPS_PORT,
                        agentWebApp.getSecuredPort());
   }
 
@@ -852,8 +857,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private void registerServiceInstance(String instanceName,
       ApplicationId appid) throws Exception {
     // the registry is running, so register services
-    URL unsecureWebAPI = new URL(appMasterTrackingUrl);
-    URL secureWebAPI = new URL(agentAccessUrl);
+    URL amWebURI = new URL(appMasterTrackingUrl);
+    URL agentOpsURI = new URL(agentOpsUrl);
+    URL agentStatusURI = new URL(agentStatusUrl);
     String serviceName = SliderKeys.APP_TYPE;
     int id = appid.getId();
     String appServiceType = RegistryNaming.createRegistryServiceType(
@@ -882,22 +888,22 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     // internal services
    
-    sliderAMProvider.applyInitialRegistryDefinitions(unsecureWebAPI,
-                                                     secureWebAPI,
-                                                     instanceData
-    );
+    sliderAMProvider.applyInitialRegistryDefinitions(amWebURI,
+                                                     agentOpsURI,
+                                                     agentStatusURI,
+                                                     instanceData);
 
     // provider service dynamic definitions.
-    providerService.applyInitialRegistryDefinitions(unsecureWebAPI,
-                                                    secureWebAPI,
-                                                    instanceData
-    );
+    providerService.applyInitialRegistryDefinitions(amWebURI,
+                                                    agentOpsURI,
+                                                    agentStatusURI,
+                                                    instanceData);
 
 
     // push the registration info to ZK
 
     registry.registerSelf(
-        instanceData, unsecureWebAPI
+        instanceData, amWebURI
     );
   }
 

@@ -332,11 +332,12 @@ public abstract class AbstractProviderService
     }
   }
   @Override
-  public void applyInitialRegistryDefinitions(URL unsecureWebAPI,
-      URL secureWebAPI,
-      ServiceInstanceData registryInstanceData) throws IOException {
+  public void applyInitialRegistryDefinitions(URL amWebURI,
+                                              URL agentOpsURI,
+                                              URL agentStatusURI,
+                                              ServiceInstanceData registryInstanceData) throws IOException {
 
-      this.amWebAPI = unsecureWebAPI;
+      this.amWebAPI = amWebURI;
     this.registryInstanceData = registryInstanceData;
   }
 

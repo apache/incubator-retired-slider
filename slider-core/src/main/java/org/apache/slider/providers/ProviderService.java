@@ -176,12 +176,14 @@ public interface ProviderService extends ProviderCore,
 
   /**
    * Prior to going live -register the initial service registry data
-   * @param unsecureWebAPI
-   * @param secureWebAPI
+   * @param amWebURI
+   * @param agentOpsURI
+   * @param agentStatusURI
    * @param registryInstanceData
    */
-  void applyInitialRegistryDefinitions(URL unsecureWebAPI,
-                                       URL secureWebAPI,
+  void applyInitialRegistryDefinitions(URL amWebURI,
+                                       URL agentOpsURI,
+                                       URL agentStatusURI,
                                        ServiceInstanceData registryInstanceData)
       throws IOException;
 

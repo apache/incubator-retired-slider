@@ -245,11 +245,15 @@ public class HBaseProviderService extends AbstractProviderService
   }
 
   @Override
-  public void applyInitialRegistryDefinitions(URL web,
-                                              URL secureWebAPI,
+  public void applyInitialRegistryDefinitions(URL amWebURI,
+                                              URL agentOpsURI,
+                                              URL agentStatusURI,
                                               ServiceInstanceData instanceData) throws
       IOException {
-    super.applyInitialRegistryDefinitions(web, secureWebAPI, instanceData);
+    super.applyInitialRegistryDefinitions(amWebURI, agentOpsURI,
+                                          agentStatusURI,
+                                          instanceData
+    );
   }
 
   @Override
