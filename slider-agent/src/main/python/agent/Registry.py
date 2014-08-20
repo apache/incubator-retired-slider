@@ -32,6 +32,7 @@ class Registry:
   def readAMHostPort(self):
     amHost = ""
     amSecuredPort = ""
+    amUnsecuredPort = ""
     zk = None
     try:
       zk = KazooClient(hosts=self.zk_quorum, read_only=True)
@@ -48,7 +49,7 @@ class Registry:
 
       # the port needs to be utf-8 encoded
       amSecuredPort = amSecuredPort.encode('utf8', 'ignore')
-      amUnecuredPort = amUnsecuredPort.encode('utf8', 'ignore')
+      amUnsecuredPort = amUnsecuredPort.encode('utf8', 'ignore')
     except Exception:
       # log and let empty strings be returned
       logger.error("Could not connect to zk registry at %s in quorum %s" % 
@@ -59,4 +60,4 @@ class Registry:
         zk.stop()
         zk.close()
     logger.info("AM Host = %s, AM Secured Port = %s" % (amHost, amSecuredPort))
-    return amHost, amUnecuredPort, amSecuredPort
+    return amHost, amUnsecuredPort, amSecuredPort
