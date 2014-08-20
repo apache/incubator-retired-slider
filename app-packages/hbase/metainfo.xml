@@ -28,6 +28,7 @@
     <version>${hbase.version}</version>
     <type>YARN-APP</type>
     <minHadoopVersion>2.1.0</minHadoopVersion>
+    <exportedConfigs>hbase-site</exportedConfigs>
     <exportGroups>
       <exportGroup>
         <name>QuickLinks</name>
