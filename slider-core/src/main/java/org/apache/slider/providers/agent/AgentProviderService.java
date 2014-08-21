@@ -604,11 +604,9 @@ public class AgentProviderService extends AbstractProviderService implements
               url,
               "Agent REST API"));
 
-      serviceRecord.putInternalEndpoint(
-          CustomRegistryConstants.AGENT_REST_API,
+      serviceRecord.addInternalEndpoint(
           new Endpoint(CustomRegistryConstants.AGENT_REST_API,
               ProtocolTypes.PROTOCOL_REST,
-              "Agent REST API",
               uri));
     } catch (URISyntaxException e) {
       throw new IOException(e);

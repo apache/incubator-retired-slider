@@ -911,12 +911,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
             RegisteredEndpoint.PROTOCOL_HADOOP_PROTOBUF,
             SLIDER_AM_RPC) );
 
-    registryEntry.putExternalEndpoint(CustomRegistryConstants.AM_IPC_PROTOCOL,
+    registryEntry.addExternalEndpoint(
         RegistryTypeUtils.ipcEndpoint(
             CustomRegistryConstants.AM_IPC_PROTOCOL,
-            SLIDER_AM_RPC,
             true,
-            RegistryTypeUtils.toWireFormat(rpcServiceAddress)));
+            RegistryTypeUtils.marshall(rpcServiceAddress)));
     
     // internal services
 
