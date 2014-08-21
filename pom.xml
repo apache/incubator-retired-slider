@@ -343,7 +343,6 @@
             <exclude>**/dfs.exclude</exclude>
             <exclude>**/*.iml</exclude>
             <exclude>**/rat.txt</exclude>
-            <exclude>**/get-hbase-site.sh</exclude>
             <exclude>DISCLAIMER</exclude>
             <exclude>app-packages/hbase/target/**</exclude>
           </excludes>
