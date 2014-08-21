@@ -2511,7 +2511,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    */
   @VisibleForTesting
   public ZKPathDumper dumpYarnRegistry(boolean verbose) throws SliderException, IOException {
-    return getYarnRegistry().dumpPath(verbose);
+    return getYarnRegistry().dumpPath();
   }
 
 

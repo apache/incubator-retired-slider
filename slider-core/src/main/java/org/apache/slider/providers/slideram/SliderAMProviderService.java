@@ -23,6 +23,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.apache.hadoop.yarn.registry.client.binding.RegistryTypeUtils;
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.tools.ConfigHelper;
@@ -113,7 +114,8 @@ public class SliderAMProviderService extends AbstractProviderService implements
   @Override
   public void applyInitialRegistryDefinitions(URL unsecureWebAPI,
       URL secureWebAPI,
-      ServiceInstanceData instanceData, ServiceRecord serviceRecord) throws IOException {
+      ServiceInstanceData instanceData,
+      ServiceRecord serviceRecord) throws IOException {
     super.applyInitialRegistryDefinitions(unsecureWebAPI,
                                           secureWebAPI,
                                           instanceData,
@@ -149,37 +151,53 @@ public class SliderAMProviderService extends AbstractProviderService implements
 
 
     try {
-      RegistryView externalView = instanceData.externalView;
       RegisteredEndpoint webUI =
           new RegisteredEndpoint(unsecureWebAPI, "Application Master Web UI");
 
+      URL managementAPI = new URL(unsecureWebAPI, SLIDER_PATH_MANAGEMENT);
+      URL registryREST = new URL(unsecureWebAPI, RestPaths.SLIDER_PATH_REGISTRY + "/" +
+                                                 RestPaths.REGISTRY_SERVICE);
+      URL publisherURL = new URL(unsecureWebAPI, SLIDER_PATH_PUBLISHER);
+
+      RegistryView externalView = instanceData.externalView;
       externalView.endpoints.put(CommonRegistryConstants.WEB_UI, webUI);
 
       externalView.endpoints.put(
           CustomRegistryConstants.MANAGEMENT_REST_API,
           new RegisteredEndpoint(
-              new URL(unsecureWebAPI, SLIDER_PATH_MANAGEMENT),
+              managementAPI,
               "Management REST API") );
 
       externalView.endpoints.put(
           CustomRegistryConstants.REGISTRY_REST_API,
           new RegisteredEndpoint(
-              new URL(unsecureWebAPI, RestPaths.SLIDER_PATH_REGISTRY + "/" +
-                                RestPaths.REGISTRY_SERVICE),
+              registryREST,
               "Registry Web Service" ) );
 
-      URL publisherURL = new URL(unsecureWebAPI, SLIDER_PATH_PUBLISHER);
       externalView.endpoints.put(
           CustomRegistryConstants.PUBLISHER_REST_API,
           new RegisteredEndpoint(
               publisherURL,
               "Publisher Service") );
-      
-    /*
-     * Set the configurations URL.
-     */
+
+      // Set the configurations URL.
+
       externalView.configurationsURL = SliderUtils.appendToURL(
           publisherURL.toExternalForm(), RestPaths.SLIDER_CONFIGSET);
+
+      serviceRecord.addExternalEndpoint(
+          RegistryTypeUtils.webEndpoint(
+              CommonRegistryConstants.WEB_UI, unsecureWebAPI.toURI()));
+      serviceRecord.addExternalEndpoint(
+          RegistryTypeUtils.restEndpoint(
+              CustomRegistryConstants.MANAGEMENT_REST_API,
+              managementAPI.toURI()));
+      serviceRecord.addExternalEndpoint(
+          RegistryTypeUtils.restEndpoint(
+              CustomRegistryConstants.PUBLISHER_REST_API,
+              publisherURL.toURI()));
+      
+      
 
     } catch (URISyntaxException e) {
       throw new IOException(e);

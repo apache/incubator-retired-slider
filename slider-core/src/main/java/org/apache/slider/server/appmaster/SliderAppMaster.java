@@ -901,8 +901,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     ServiceInstanceData instanceData = new ServiceInstanceData(registryId,
         serviceType);
 
-    // Yarn registry
-    ServiceRecord registryEntry = new ServiceRecord();
 
     // IPC services
     instanceData.externalView.endpoints.put(
@@ -911,7 +909,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
             RegisteredEndpoint.PROTOCOL_HADOOP_PROTOBUF,
             SLIDER_AM_RPC) );
 
-    registryEntry.addExternalEndpoint(
+    // Yarn registry
+    ServiceRecord serviceRecord = new ServiceRecord();
+
+    serviceRecord.addExternalEndpoint(
         RegistryTypeUtils.ipcEndpoint(
             CustomRegistryConstants.AM_IPC_PROTOCOL,
             true,
@@ -922,13 +923,13 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     sliderAMProvider.applyInitialRegistryDefinitions(unsecureWebAPI,
         secureWebAPI,
         instanceData,
-        registryEntry);
+        serviceRecord);
 
     // provider service dynamic definitions.
     providerService.applyInitialRegistryDefinitions(unsecureWebAPI,
         secureWebAPI,
         instanceData,
-        registryEntry);
+        serviceRecord);
 
 
     // push the registration info to ZK
@@ -937,7 +938,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     yarnRegistry.putServiceEntry(service_user_name,
         SliderKeys.APP_TYPE, 
         instanceName,
-        registryEntry );
+        serviceRecord );
     yarnRegistry.putServiceLiveness(service_user_name,
         SliderKeys.APP_TYPE,
         instanceName,
@@ -948,7 +949,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         SliderKeys.APP_TYPE,
         instanceName,
         "appmaster",
-        registryEntry,
+        serviceRecord,
         true);
 
 

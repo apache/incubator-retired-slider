@@ -109,6 +109,6 @@ public class CuratorService extends AbstractService {
    * @return a class that can dump the contents of the registry
    */
   public ZKPathDumper dumpPath(boolean verbose) {
-    return new ZKPathDumper(curator, basePath, verbose);
+    return new ZKPathDumper(curator, basePath);
   }
 }
