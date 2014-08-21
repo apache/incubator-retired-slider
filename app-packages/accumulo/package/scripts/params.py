@@ -23,6 +23,7 @@ import status_params
 
 # server configurations
 config = Script.get_config()
+hostname = config["hostname"]
 
 # user and status
 accumulo_user = status_params.accumulo_user
@@ -52,22 +53,25 @@ daemon_script = format("{accumulo_root}/bin/accumulo")
 
 # accumulo monitor certificate properties
 monitor_security_enabled = config['configurations']['global']['monitor_protocol'] == "https"
-keystore_path = format("{accumulo_root}/conf/keystore.jks")
-truststore_path = format("{accumulo_root}/conf/cacerts.jks")
-cert_path = format("{accumulo_root}/conf/server.cer")
-keystore_property = "monitor.ssl.keyStore"
-keystore_password_property = "monitor.ssl.keyStorePassword"
-truststore_property = "monitor.ssl.trustStore"
-truststore_password_property = "monitor.ssl.trustStorePassword"
+monitor_keystore_property = "monitor.ssl.keyStore"
+monitor_truststore_property = "monitor.ssl.trustStore"
+
+# accumulo ssl properties
+ssl_enabled = False
+if 'instance.rpc.ssl.enabled' in config['configurations']['accumulo-site']:
+  ssl_enabled = config['configurations']['accumulo-site']['instance.rpc.ssl.enabled']
+ssl_cert_dir = config['configurations']['global']['ssl_cert_dir']
+keystore_path = format("{conf_dir}/ssl/keystore.jks")
+truststore_path = format("{conf_dir}/ssl/truststore.jks")
+ssl_keystore_file_property = "rpc.javax.net.ssl.keyStore"
+ssl_truststore_file_property = "rpc.javax.net.ssl.trustStore"
+credential_provider = config['configurations']['accumulo-site']["general.security.credential.provider.paths"]
+#credential_provider = credential_provider.replace("${HOST}", hostname) # if enabled, must propagate to configuration
 
 # accumulo initialization parameters
 accumulo_instance_name = config['configurations']['global']['accumulo_instance_name']
 accumulo_root_password = config['configurations']['global']['accumulo_root_password']
-accumulo_hdfs_root_dir = None
-if ('instance.dfs.dir' in config['configurations']['accumulo-site']):
-  accumulo_hdfs_root_dir = config['configurations']['accumulo-site']['instance.dfs.dir']
-else:
-  accumulo_hdfs_root_dir = config['configurations']['accumulo-site']['instance.volumes'].split(",")[0]
+accumulo_hdfs_root_dir = config['configurations']['accumulo-site']['instance.volumes'].split(",")[0]
 
 #log4j.properties
 if (('accumulo-log4j' in config['configurations']) and ('content' in config['configurations']['accumulo-log4j'])):

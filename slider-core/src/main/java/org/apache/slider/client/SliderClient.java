@@ -485,7 +485,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
           CredentialProviderFactory.getProviders(c).get(0);
       Set<String> existingAliases = new HashSet<>(credentialProvider.getAliases());
       for (String alias : aliases) {
-        if (existingAliases.contains(alias)) {
+        if (existingAliases.contains(alias.toLowerCase())) {
           log.warn("Skipping creation of credentials for {}, " +
               "alias already exists in {}", alias, provider);
           continue;

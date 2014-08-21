@@ -5,7 +5,7 @@
   "global": {
     "application.def": "${app.package.name}.zip",
     "config_types": "accumulo-site",
-    "java_home": "/usr/jdk64/jdk1.7.0_45",
+    "java_home": "/usr/lib/jvm/java",
     "package_list": "files/accumulo-${accumulo.version}-bin.tar.gz",
     "site.global.app_user": "yarn",
     "site.global.app_log_dir": "${AGENT_LOG_ROOT}",
@@ -24,6 +24,7 @@
     "site.global.accumulo_root_password": "NOT_USED",
     "site.global.user_group": "hadoop",
     "site.global.security_enabled": "false",
+    "site.global.ssl_cert_dir": "ssl",
     "site.global.monitor_protocol": "http",
     "site.accumulo-site.instance.volumes": "${DEFAULT_DATA_DIR}/data",
     "site.accumulo-site.instance.zookeeper.host": "${ZK_HOST}",

@@ -42,6 +42,8 @@ import org.junit.Test
 class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
   protected static final String PROVIDER_PROPERTY = "site.accumulo-site." +
     Property.GENERAL_SECURITY_CREDENTIAL_PROVIDER_PATHS
+  protected static final String KEY_PASS = "keypass"
+  protected static final String TRUST_PASS = "trustpass"
   protected ConfTree tree
 
   @Before
@@ -56,7 +58,6 @@ class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
     def keys = tree.credentials.get(jks)
     assert keys!=null, "jks specified in $PROVIDER_PROPERTY wasn't requested " +
       "in credentials"
-    assert keys.size()==3, "test expects 3 passwords to be requested"
     Path jksPath = ProviderUtils.unnestUri(new URI(jks))
     if (clusterFS.exists(jksPath)) {
       clusterFS.delete(jksPath, false)
@@ -71,6 +72,14 @@ class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
       INSTANCE_SECRET.toCharArray())
     provider.createCredentialEntry(Property.TRACE_TOKEN_PROPERTY_PREFIX
       .toString() + "password", PASSWORD.toCharArray())
+    provider.createCredentialEntry(Property.RPC_SSL_KEYSTORE_PASSWORD
+      .toString(), KEY_PASS.toCharArray())
+    provider.createCredentialEntry(Property.RPC_SSL_TRUSTSTORE_PASSWORD
+      .toString(), TRUST_PASS.toCharArray())
+    provider.createCredentialEntry(Property.MONITOR_SSL_KEYSTOREPASS
+      .toString(), KEY_PASS.toCharArray())
+    provider.createCredentialEntry(Property.MONITOR_SSL_TRUSTSTOREPASS
+      .toString(), TRUST_PASS.toCharArray())
     provider.flush()
     assert clusterFS.exists(jksPath), "jks $jks not created"
     log.info("Created credential provider $jks for test")
@@ -131,18 +140,29 @@ class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
   }
 
   public static String getMonitorUrl(SliderClient sliderClient, String clusterName) {
-    CuratorServiceInstance<ServiceInstanceData> instance =
-      sliderClient.getRegistry().queryForInstance(SliderKeys.APP_TYPE, clusterName)
-    ServiceInstanceData serviceInstanceData = instance.payload
-    RegistryRetriever retriever = new RegistryRetriever(serviceInstanceData)
-    PublishedConfiguration configuration = retriever.retrieveConfiguration(
-      retriever.getConfigurations(true), "quicklinks", true)
+    int tries = 5
+    while (true) {
+      try {
+        CuratorServiceInstance<ServiceInstanceData> instance =
+          sliderClient.getRegistry().queryForInstance(SliderKeys.APP_TYPE, clusterName)
+        ServiceInstanceData serviceInstanceData = instance.payload
+        RegistryRetriever retriever = new RegistryRetriever(serviceInstanceData)
+        PublishedConfiguration configuration = retriever.retrieveConfiguration(
+          retriever.getConfigurations(true), "quicklinks", true)
 
-    // must match name set in metainfo.xml
-    String monitorUrl = configuration.entries.get("org.apache.slider.monitor")
-
-    assertNotNull monitorUrl
-    return monitorUrl
+        // must match name set in metainfo.xml
+        String monitorUrl = configuration.entries.get("org.apache.slider.monitor")
+        assertNotNull monitorUrl
+        return monitorUrl
+      } catch (Exception e) {
+        log.info("Got exception trying to read quicklinks")
+        if (tries-- == 0) {
+          break
+        }
+        sleep(20000)
+      }
+    }
+    fail("Couldn't retrieve quicklinks")
   }
 
   public static void checkMonitorPage(String monitorUrl) {

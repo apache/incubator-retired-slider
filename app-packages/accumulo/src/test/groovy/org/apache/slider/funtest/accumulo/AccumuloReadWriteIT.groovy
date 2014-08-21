@@ -78,7 +78,7 @@ class AccumuloReadWriteIT extends AccumuloBasicIT {
     TestIngest.ingest(connector, opts, new BatchWriterOpts());
   }
 
-  private static void verify(Connector connector, int rows, int cols, int width, int offset) throws Exception {
+  public static void verify(Connector connector, int rows, int cols, int width, int offset) throws Exception {
     ScannerOpts scannerOpts = new ScannerOpts();
     VerifyIngest.Opts opts = new VerifyIngest.Opts();
     opts.rows = rows;
@@ -89,7 +89,7 @@ class AccumuloReadWriteIT extends AccumuloBasicIT {
     VerifyIngest.verifyIngest(connector, opts, scannerOpts);
   }
 
-  static void interleaveTest(final Connector connector) throws Exception {
+  public static void interleaveTest(final Connector connector) throws Exception {
     final int ROWS = 200000;
     final AtomicBoolean fail = new AtomicBoolean(false);
     final int CHUNKSIZE = ROWS / 10;

@@ -50,7 +50,7 @@
     <file>
       <source>${project.build.directory}/slider-accumulo-app-package-${project.version}.jar</source>
       <outputDirectory>package/files</outputDirectory>
-      <destName>CustomAuthenticator.jar</destName>
+      <destName>SliderAccumuloUtils.jar</destName>
       <filtered>false</filtered>
       <fileMode>0755</fileMode>
     </file>

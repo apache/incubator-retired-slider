@@ -27,14 +27,9 @@ import org.apache.accumulo.server.security.handler.Authenticator;
 import org.apache.accumulo.server.security.handler.Authorizor;
 import org.apache.accumulo.server.security.handler.PermissionHandler;
 import org.apache.accumulo.server.security.handler.ZKAuthenticator;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.security.alias.CredentialProvider;
-import org.apache.hadoop.security.alias.CredentialProvider.CredentialEntry;
-import org.apache.hadoop.security.alias.CredentialProviderFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Set;
 
 public final class CustomAuthenticator implements Authenticator {
@@ -54,7 +49,7 @@ public final class CustomAuthenticator implements Authenticator {
   @Override
   public void initializeSecurity(TCredentials credentials, String principal,
       byte[] token) throws AccumuloSecurityException {
-    char[] pass = null;
+    String pass = null;
     SiteConfiguration siteconf = SiteConfiguration.getInstance(
         DefaultConfiguration.getInstance());
     String jksFile = siteconf.get(
@@ -66,38 +61,14 @@ public final class CustomAuthenticator implements Authenticator {
               " not specified in accumulo-site.xml");
     }
     try {
-      Configuration conf = new Configuration();
-      conf.set(CredentialProviderFactory.CREDENTIAL_PROVIDER_PATH, jksFile);
-      List<CredentialProvider> providers =
-          CredentialProviderFactory.getProviders(conf);
-
-      if (providers != null) {
-        for (CredentialProvider provider : providers) {
-          try {
-            CredentialEntry entry = provider.getCredentialEntry(
-                ROOT_INITIAL_PASSWORD_PROPERTY);
-            if (entry != null) {
-              pass = entry.getCredential();
-              break;
-            }
-          }
-          catch (IOException ioe) {
-            throw new IOException("Can't get key " +
-                ROOT_INITIAL_PASSWORD_PROPERTY + " from " +
-                provider.getClass().getName() + ", " + jksFile, ioe);
-          }
-        }
-      }
+      pass = new String(ProviderUtil.getPassword(jksFile,
+          ROOT_INITIAL_PASSWORD_PROPERTY));
     } catch (IOException ioe) {
       throw new RuntimeException("Can't get key " +
           ROOT_INITIAL_PASSWORD_PROPERTY + " from " + jksFile, ioe);
     }
-    if (pass == null) {
-      throw new RuntimeException("Can't get key " +
-          ROOT_INITIAL_PASSWORD_PROPERTY + " from " + jksFile);
-    }
     zkAuthenticator.initializeSecurity(credentials, principal,
-        new String(pass).getBytes(StandardCharsets.UTF_8));
+        pass.getBytes(StandardCharsets.UTF_8));
   }
 
   @Override

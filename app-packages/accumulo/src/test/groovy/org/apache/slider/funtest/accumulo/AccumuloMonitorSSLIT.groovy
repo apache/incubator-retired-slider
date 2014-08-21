@@ -30,7 +30,7 @@ import java.security.cert.CertificateException
 import java.security.cert.X509Certificate
 
 @Slf4j
-class AccumuloMonitorSSLIT extends AccumuloBasicIT {
+class AccumuloMonitorSSLIT extends AccumuloSSLTestBase {
   AccumuloMonitorSSLIT() {
     APP_TEMPLATE = "target/test-config/appConfig_monitor_ssl.json"
   }
