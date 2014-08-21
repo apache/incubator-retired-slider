@@ -45,6 +45,7 @@ class Directory(Resource):
   mode = ResourceArgument()
   owner = ResourceArgument()
   group = ResourceArgument()
+  content = ResourceArgument()
   recursive = BooleanArgument(default=False) # this work for 'create', 'delete' is anyway recursive
 
   actions = Resource.actions + ["create", "delete"]

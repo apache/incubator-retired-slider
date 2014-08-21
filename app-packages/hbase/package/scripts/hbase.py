@@ -21,6 +21,7 @@ import os
 
 from resource_management import *
 import sys
+import shutil
 
 def hbase(name=None # 'master' or 'regionserver' or 'client'
               ):
@@ -35,10 +36,12 @@ def hbase(name=None # 'master' or 'regionserver' or 'client'
                          mode=0711
     )
     params.HdfsDirectory(None, action="create")
+
   Directory( params.conf_dir,
       owner = params.hbase_user,
       group = params.user_group,
-      recursive = True
+      recursive = True,
+      content = params.input_conf_files_dir
   )
 
   Directory (params.tmp_dir,

@@ -51,6 +51,7 @@ regionserver_xmn_size = calc_xmn_from_xms(regionserver_heapsize, regionserver_xm
 pid_dir = status_params.pid_dir
 tmp_dir = config['configurations']['hbase-site']['hbase.tmp.dir']
 local_dir = substitute_vars(config['configurations']['hbase-site']['hbase.local.dir'], config['configurations']['hbase-site'])
+input_conf_files_dir = config['configurations']['global']['app_input_conf_dir']
 
 client_jaas_config_file = default('hbase_client_jaas_config_file', format("{conf_dir}/hbase_client_jaas.conf"))
 master_jaas_config_file = default('hbase_master_jaas_config_file', format("{conf_dir}/hbase_master_jaas.conf"))
