@@ -93,6 +93,8 @@ class TestWindowsSupport extends SliderTestUtils {
 
   @Test
   public void testSliderFS() throws Throwable {
+    assume(Shell.WINDOWS, "not windows")
+
     SliderFileSystem sfs = new SliderFileSystem(new Configuration())
     try {
       def metainfo = AgentUtils.getApplicationMetainfo(sfs, windowsFile)
