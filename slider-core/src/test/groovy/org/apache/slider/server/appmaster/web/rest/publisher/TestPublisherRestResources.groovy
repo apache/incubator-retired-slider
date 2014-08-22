@@ -65,14 +65,15 @@ class TestPublisherRestResources extends AgentTestBase {
     assert app_def_path.exists()
     assert agt_ver_path.exists()
     assert agt_conf_path.exists()
+
     ServiceLauncher<SliderClient> launcher = buildAgentCluster(clustername,
         roles,
         [
             ARG_PROVIDER, "org.apache.slider.server.appmaster.web.rest.publisher.TestSliderProviderFactory",
             ARG_OPTION, PACKAGE_PATH, slider_core.absolutePath,
-            ARG_OPTION, APP_DEF, "file://" + app_def_path.absolutePath,
-            ARG_OPTION, AGENT_CONF, "file://" + agt_conf_path.absolutePath,
-            ARG_OPTION, AGENT_VERSION, "file://" + agt_ver_path.absolutePath
+            ARG_OPTION, APP_DEF, toFileURI(app_def_path),
+            ARG_OPTION, AGENT_CONF, toFileURI(agt_conf_path),
+            ARG_OPTION, AGENT_VERSION, toFileURI(agt_ver_path)
         ],
         true, true,
         true)
@@ -140,6 +141,10 @@ class TestPublisherRestResources extends AgentTestBase {
     assert uris.any {it =~ /hadoop-hdfs/}
     // and a negative test...
     assert !uris.any {it =~ /foo-bar/}
+  }
+
+  public String toFileURI(File filename) {
+    "file://" + filename.absolutePath
   }
 
 }
