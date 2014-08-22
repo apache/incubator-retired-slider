@@ -35,7 +35,7 @@ import java.io.InputStream;
 public class AgentUtils {
   private static final Logger log = LoggerFactory.getLogger(AgentUtils.class);
 
-  static Metainfo getApplicationMetainfo(SliderFileSystem fileSystem,
+  public static Metainfo getApplicationMetainfo(SliderFileSystem fileSystem,
                                             String appDef) throws IOException {
     log.info("Reading metainfo at {}", appDef);
     FileSystem fs = fileSystem.getFileSystem();

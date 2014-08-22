@@ -26,6 +26,7 @@ import org.apache.hadoop.fs.FSDataInputStream
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.util.Shell
+import org.apache.slider.providers.agent.AgentUtils
 import org.apache.slider.test.SliderTestUtils
 import org.junit.Test
 
@@ -88,5 +89,16 @@ class TestWindowsSupport extends SliderTestUtils {
     } catch (FileNotFoundException fnfe) {
       // expected
     }
+  }
+
+  @Test
+  public void testSliderFS() throws Throwable {
+    SliderFileSystem sfs = new SliderFileSystem(new Configuration())
+    try {
+      def metainfo = AgentUtils.getApplicationMetainfo(sfs, windowsFile)
+    } catch (FileNotFoundException fnfe) {
+      // expected
+    }
+    
   }
 }
