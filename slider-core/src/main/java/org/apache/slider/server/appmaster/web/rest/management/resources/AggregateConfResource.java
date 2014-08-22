@@ -63,7 +63,7 @@ public class AggregateConfResource {
   }
 
   private void initConfMap() {
-    confMap = new HashMap<>();
+    confMap = new HashMap<String, ConfTreeResource>();
     confMap.put("internal", internal);
     confMap.put("resources", resources);
     confMap.put("appConf", appConf);
