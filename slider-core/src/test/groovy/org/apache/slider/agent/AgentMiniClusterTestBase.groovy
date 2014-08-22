@@ -80,8 +80,13 @@ extends YarnZKMiniClusterTestBase {
 
   @AfterClass
   public static void cleanSubConfFiles() {
-    if (tempFolder.getRoot().exists()) {
-      FileUtils.deleteDirectory(tempFolder.getRoot());
+    def tempRoot = tempFolder.root
+    if (tempRoot.exists()) {
+      try {
+        FileUtils.deleteDirectory(tempRoot);
+      } catch (IOException e) {
+        log.warn("Failed to delete $tempRoot :$e", e)
+      }
     }
   }
 
