@@ -42,6 +42,7 @@ import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.ContainerLauncher;
 import org.apache.slider.providers.agent.application.metadata.Application;
 import org.apache.slider.providers.agent.application.metadata.CommandOrder;
+import org.apache.slider.providers.agent.application.metadata.CommandScript;
 import org.apache.slider.providers.agent.application.metadata.Component;
 import org.apache.slider.providers.agent.application.metadata.ComponentExport;
 import org.apache.slider.providers.agent.application.metadata.ConfigFile;
@@ -83,6 +84,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.easymock.EasyMock.anyLong;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
@@ -278,7 +280,9 @@ public class TestAgentProviderService {
 
     AgentProviderService mockAps = Mockito.spy(aps);
     doReturn(access).when(mockAps).getAmState();
-    doReturn("scripts/hbase_master.py").when(mockAps).getScriptPathFromMetainfo(anyString());
+    CommandScript cs = new CommandScript();
+    cs.setScript("scripts/hbase_master.py");
+    doReturn(cs).when(mockAps).getScriptPathFromMetainfo(anyString());
     Metainfo metainfo = new Metainfo();
     metainfo.setApplication(new Application());
     doReturn(metainfo).when(mockAps).getApplicationMetainfo(any(SliderFileSystem.class), anyString());
@@ -293,7 +297,8 @@ public class TestAgentProviderService {
           eq("HBASE_MASTER"),
           eq("mockcontainer_1"),
           any(HeartBeatResponse.class),
-          eq("scripts/hbase_master.py"));
+          eq("scripts/hbase_master.py"),
+          eq(600L));
       doReturn(conf).when(mockAps).getConfig();
     } catch (SliderException e) {
     }
@@ -612,8 +617,8 @@ public class TestAgentProviderService {
     AgentProviderService aps = new AgentProviderService();
     AgentProviderService mockAps = Mockito.spy(aps);
     doReturn(metainfo).when(mockAps).getMetainfo();
-    String scriptPath = mockAps.getScriptPathFromMetainfo("HBASE_MASTER");
-    Assert.assertEquals(scriptPath, "scripts/hbase_master.py");
+    CommandScript script = mockAps.getScriptPathFromMetainfo("HBASE_MASTER");
+    Assert.assertEquals(script.getScript(), "scripts/hbase_master.py");
 
     String metainfo_1_str_bad = "<metainfo>\n"
                                 + "  <schemaVersion>2.0</schemaVersion>\n"
@@ -712,12 +717,14 @@ public class TestAgentProviderService {
           anyString(),
           anyString(),
           any(HeartBeatResponse.class),
-          anyString());
+          anyString(),
+          Mockito.anyLong());
       doNothing().when(mockAps).addStartCommand(
           anyString(),
           anyString(),
           any(HeartBeatResponse.class),
           anyString(),
+          Mockito.anyLong(),
           Matchers.anyBoolean());
       doNothing().when(mockAps).addGetConfigCommand(
           anyString(),
@@ -792,7 +799,8 @@ public class TestAgentProviderService {
       Mockito.verify(mockAps, Mockito.times(1)).addInstallCommand(anyString(),
                                                                   anyString(),
                                                                   any(HeartBeatResponse.class),
-                                                                  anyString());
+                                                                  anyString(),
+                                                                  Mockito.anyLong());
 
       hb = new HeartBeat();
       hb.setResponseId(1);
@@ -802,7 +810,8 @@ public class TestAgentProviderService {
       Mockito.verify(mockAps, Mockito.times(2)).addInstallCommand(anyString(),
                                                                   anyString(),
                                                                   any(HeartBeatResponse.class),
-                                                                  anyString());
+                                                                  anyString(),
+                                                                  Mockito.anyLong());
       // RS succeeds install but does not start
       hb = new HeartBeat();
       hb.setResponseId(2);
@@ -821,6 +830,7 @@ public class TestAgentProviderService {
                                                                 anyString(),
                                                                 any(HeartBeatResponse.class),
                                                                 anyString(),
+                                                                Mockito.anyLong(),
                                                                 Matchers.anyBoolean());
       // RS still does not start
       hb = new HeartBeat();
@@ -832,6 +842,7 @@ public class TestAgentProviderService {
                                                                 anyString(),
                                                                 any(HeartBeatResponse.class),
                                                                 anyString(),
+                                                                Mockito.anyLong(),
                                                                 Matchers.anyBoolean());
 
       // MASTER succeeds install and issues start
@@ -852,6 +863,7 @@ public class TestAgentProviderService {
                                                                 anyString(),
                                                                 any(HeartBeatResponse.class),
                                                                 anyString(),
+                                                                Mockito.anyLong(),
                                                                 Matchers.anyBoolean());
       Map<String, String> allocatedPorts = mockAps.getAllocatedPorts();
       Assert.assertTrue(allocatedPorts != null);
@@ -868,6 +880,7 @@ public class TestAgentProviderService {
                                                                 anyString(),
                                                                 any(HeartBeatResponse.class),
                                                                 anyString(),
+                                                                Mockito.anyLong(),
                                                                 Matchers.anyBoolean());
       // MASTER succeeds start
       hb = new HeartBeat();
@@ -893,6 +906,7 @@ public class TestAgentProviderService {
                                                                 anyString(),
                                                                 any(HeartBeatResponse.class),
                                                                 anyString(),
+                                                                Mockito.anyLong(),
                                                                 Matchers.anyBoolean());
     // JDK7 
     } catch (SliderException he) {
@@ -987,7 +1001,7 @@ public class TestAgentProviderService {
 
     replay(access);
 
-    mockAps.addInstallCommand("HBASE_MASTER", "cid1", hbr, "");
+    mockAps.addInstallCommand("HBASE_MASTER", "cid1", hbr, "", 0);
     ExecutionCommand cmd = hbr.getExecutionCommands().get(0);
     String pkgs = cmd.getHostLevelParams().get(AgentKeys.PACKAGE_LIST);
     Assert.assertEquals("[{\"type\":\"tarball\",\"name\":\"files/hbase-0.96.1-hadoop2-bin.tar.gz\"}]", pkgs);
@@ -1062,7 +1076,7 @@ public class TestAgentProviderService {
 
     replay(access);
 
-    mockAps.addStartCommand("HBASE_MASTER", "cid1", hbr, "", Boolean.FALSE);
+    mockAps.addStartCommand("HBASE_MASTER", "cid1", hbr, "", 0, Boolean.FALSE);
     Assert.assertTrue(hbr.getExecutionCommands().get(0).getConfigurations().containsKey("hbase-site"));
     Map<String, String> hbaseSiteConf = hbr.getExecutionCommands().get(0).getConfigurations().get("hbase-site");
     Assert.assertTrue(hbaseSiteConf.containsKey("a.port"));

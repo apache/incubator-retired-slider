@@ -56,6 +56,7 @@ import org.apache.slider.providers.ProviderCore;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
 import org.apache.slider.providers.agent.application.metadata.Application;
+import org.apache.slider.providers.agent.application.metadata.CommandScript;
 import org.apache.slider.providers.agent.application.metadata.Component;
 import org.apache.slider.providers.agent.application.metadata.ComponentExport;
 import org.apache.slider.providers.agent.application.metadata.ConfigFile;
@@ -454,11 +455,18 @@ public class AgentProviderService extends AbstractProviderService implements
     String containerId = getContainerId(label);
 
     StateAccessForProviders accessor = getAmState();
-    String scriptPath = getScriptPathFromMetainfo(roleName);
+    CommandScript cmdScript = getScriptPathFromMetainfo(roleName);
 
-    if (scriptPath == null) {
+    if (cmdScript == null || cmdScript.getScript() == null) {
       log.error("role.script is unavailable for " + roleName + ". Commands will not be sent.");
       return response;
+    }
+
+    String scriptPath = cmdScript.getScript();
+    long timeout = cmdScript.getTimeout();
+
+    if(timeout == 0L) {
+      timeout = 600L;
     }
 
     if (!getComponentStatuses().containsKey(label)) {
@@ -502,14 +510,14 @@ public class AgentProviderService extends AbstractProviderService implements
       if (Command.NOP != command) {
         if (command == Command.INSTALL) {
           log.info("Installing {} on {}.", roleName, containerId);
-          addInstallCommand(roleName, containerId, response, scriptPath);
+          addInstallCommand(roleName, containerId, response, scriptPath, timeout);
           componentStatus.commandIssued(command);
         } else if (command == Command.START) {
           // check against dependencies
           boolean canExecute = commandOrder.canExecute(roleName, command, getComponentStatuses().values());
           if (canExecute) {
             log.info("Starting {} on {}.", roleName, containerId);
-            addStartCommand(roleName, containerId, response, scriptPath, isMarkedAutoRestart(roleName));
+            addStartCommand(roleName, containerId, response, scriptPath, timeout, isMarkedAutoRestart(roleName));
             componentStatus.commandIssued(command);
           } else {
             log.info("Start of {} on {} delayed as dependencies have not started.", roleName, containerId);
@@ -1037,10 +1045,10 @@ public class AgentProviderService extends AbstractProviderService implements
    *
    * @return
    */
-  protected String getScriptPathFromMetainfo(String roleName) {
+  protected CommandScript getScriptPathFromMetainfo(String roleName) {
     Component component = getApplicationComponent(roleName);
     if (component != null) {
-      return component.getCommandScript().getScript();
+      return component.getCommandScript();
     }
     return null;
   }
@@ -1134,7 +1142,11 @@ public class AgentProviderService extends AbstractProviderService implements
    * @throws SliderException
    */
   @VisibleForTesting
-  protected void addInstallCommand(String roleName, String containerId, HeartBeatResponse response, String scriptPath)
+  protected void addInstallCommand(String roleName,
+                                   String containerId,
+                                   HeartBeatResponse response,
+                                   String scriptPath,
+                                   long timeout)
       throws SliderException {
     assert getAmState().isApplicationLive();
     ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
@@ -1155,7 +1167,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
     setInstallCommandConfigurations(cmd, containerId);
 
-    cmd.setCommandParams(setCommandParameters(scriptPath, false));
+    cmd.setCommandParams(setCommandParameters(scriptPath, timeout, false));
 
     cmd.setHostname(getClusterInfoPropertyValue(StatusKeys.INFO_AM_HOSTNAME));
     response.addExecutionCommand(cmd);
@@ -1191,13 +1203,13 @@ public class AgentProviderService extends AbstractProviderService implements
     cmd.setCommandId(cmd.getTaskId() + "-1");
   }
 
-  private Map<String, String> setCommandParameters(String scriptPath, boolean recordConfig) {
+  private Map<String, String> setCommandParameters(String scriptPath, long timeout, boolean recordConfig) {
     Map<String, String> cmdParams = new TreeMap<String, String>();
     cmdParams.put("service_package_folder",
                   "${AGENT_WORK_ROOT}/work/app/definition/package");
     cmdParams.put("script", scriptPath);
     cmdParams.put("schema_version", "2.0");
-    cmdParams.put("command_timeout", "300");
+    cmdParams.put("command_timeout", Long.toString(timeout));
     cmdParams.put("script_type", "PYTHON");
     cmdParams.put("record_config", Boolean.toString(recordConfig));
     return cmdParams;
@@ -1210,7 +1222,11 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   @VisibleForTesting
-  protected void addStatusCommand(String roleName, String containerId, HeartBeatResponse response, String scriptPath)
+  protected void addStatusCommand(String roleName,
+                                  String containerId,
+                                  HeartBeatResponse response,
+                                  String scriptPath,
+                                  long timeout)
       throws SliderException {
     assert getAmState().isApplicationLive();
     ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
@@ -1229,7 +1245,7 @@ public class AgentProviderService extends AbstractProviderService implements
     hostLevelParams.put(CONTAINER_ID, containerId);
     cmd.setHostLevelParams(hostLevelParams);
 
-    cmd.setCommandParams(setCommandParameters(scriptPath, false));
+    cmd.setCommandParams(setCommandParameters(scriptPath, timeout, false));
 
     Map<String, Map<String, String>> configurations = buildCommandConfigurations(appConf, containerId);
 
@@ -1262,7 +1278,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
   @VisibleForTesting
   protected void addStartCommand(String roleName, String containerId, HeartBeatResponse response,
-                                 String scriptPath, boolean isMarkedAutoRestart)
+                                 String scriptPath, long timeout, boolean isMarkedAutoRestart)
       throws
       SliderException {
     assert getAmState().isApplicationLive();
@@ -1288,7 +1304,7 @@ public class AgentProviderService extends AbstractProviderService implements
     cmd.setRoleParams(roleParams);
     cmd.getRoleParams().put("auto_restart", Boolean.toString(isMarkedAutoRestart));
 
-    cmd.setCommandParams(setCommandParameters(scriptPath, true));
+    cmd.setCommandParams(setCommandParameters(scriptPath, timeout, true));
 
     Map<String, Map<String, String>> configurations = buildCommandConfigurations(appConf, containerId);
 
