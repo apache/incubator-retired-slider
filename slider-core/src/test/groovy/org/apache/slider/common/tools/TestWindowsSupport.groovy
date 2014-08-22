@@ -24,13 +24,15 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.ChecksumFileSystem
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.fs.FileSystem as HadoopFS
+import org.apache.hadoop.util.Shell
+import org.apache.slider.test.SliderTestUtils
 import org.junit.Test
 
 import java.util.regex.Pattern
 
 @CompileStatic
 @Slf4j
-class TestWindowsSupport {
+class TestWindowsSupport extends SliderTestUtils {
 
   private static final Pattern hasDriveLetterSpecifier =
       Pattern.compile("^/?[a-zA-Z]:");
@@ -62,17 +64,18 @@ class TestWindowsSupport {
   
   @Test
   public void testPathHandling() throws Throwable {
-    System.setProperty("os.name", "Windows/286")
+    assume(Shell.WINDOWS, "not windows")
+    
     Path path = new Path(windowsFile);
     def uri = path.toUri()
 //    assert "file" == uri.scheme 
     assert uri.authority == null;
 
-    
-    
     Configuration conf = new Configuration()
 
     def localfs = HadoopFS.get(uri, conf)
     assert localfs instanceof ChecksumFileSystem
+    def stat = localfs.getFileStatus(path)
+    
   }
 }
