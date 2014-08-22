@@ -23,7 +23,7 @@ import status_params
 
 # server configurations
 config = Script.get_config()
-hostname = config["hostname"]
+hostname = config["public_hostname"]
 
 # user and status
 accumulo_user = status_params.accumulo_user
