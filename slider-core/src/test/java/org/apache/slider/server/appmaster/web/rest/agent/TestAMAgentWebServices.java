@@ -152,7 +152,7 @@ public class TestAMAgentWebServices {
 
   @After
   public void tearDown () throws Exception {
-    webApp.stop();
+    webApp.close();
     webApp = null;
   }
 

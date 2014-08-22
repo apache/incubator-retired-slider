@@ -16,38 +16,22 @@
  */
 package org.apache.slider.server.appmaster.web;
 
-import org.apache.hadoop.service.AbstractService;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentWebApp;
+import org.apache.slider.server.services.workflow.ClosingService;
+import org.apache.slider.server.services.workflow.WorkflowCompositeService;
 
 /**
- *
+ * agent service gives the agent webapp lifecycle integration
  */
-public class AgentService extends AbstractService {
-  private volatile AgentWebApp webApp;
+public class AgentService extends ClosingService<AgentWebApp> {
+
 
   public AgentService(String name) {
     super(name);
   }
 
   public AgentService(String name, AgentWebApp app) {
-    super(name);
-    webApp = app;
+    super(name, app);
   }
 
-  @Override
-  protected void serviceStart() throws Exception {
-
-  }
-
-  /**
-   * Stop operation stops the webapp; sets the reference to null
-   * @throws Exception
-   */
-  @Override
-  protected void serviceStop() throws Exception {
-    if (webApp != null) {
-      webApp.stop();
-      webApp = null;
-    }
-  }
 }
