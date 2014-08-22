@@ -16,6 +16,7 @@
  */
 package org.apache.slider.providers.agent;
 
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.common.tools.SliderUtils;
@@ -24,6 +25,7 @@ import org.apache.slider.providers.agent.application.metadata.MetainfoParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -36,11 +38,14 @@ public class AgentUtils {
   static Metainfo getApplicationMetainfo(SliderFileSystem fileSystem,
                                             String appDef) throws IOException {
     log.info("Reading metainfo at {}", appDef);
+    FileSystem fs = fileSystem.getFileSystem();
+    Path appPath = new Path(appDef);
     InputStream metainfoStream = SliderUtils.getApplicationResourceInputStream(
-        fileSystem.getFileSystem(), new Path(appDef), "metainfo.xml");
+        fs, appPath, "metainfo.xml");
     if (metainfoStream == null) {
       log.error("metainfo.xml is unavailable at {}.", appDef);
-      throw new IOException("metainfo.xml is required in app package.");
+      throw new FileNotFoundException("metainfo.xml is required in app package. " +
+                            appPath);
     }
 
     Metainfo metainfo = new MetainfoParser().parse(metainfoStream);

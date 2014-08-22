@@ -22,6 +22,7 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.ChecksumFileSystem
+import org.apache.hadoop.fs.FSDataInputStream
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.util.Shell
@@ -75,7 +76,17 @@ class TestWindowsSupport extends SliderTestUtils {
 
     def localfs = HadoopFS.get(uri, conf)
     assert localfs instanceof ChecksumFileSystem
-    def stat = localfs.getFileStatus(path)
-    
+    try {
+      def stat = localfs.getFileStatus(path)
+      fail("expected an exception, got $stat")
+    } catch (FileNotFoundException fnfe) {
+      // expected
+    }
+
+    try {
+      FSDataInputStream appStream = localfs.open(path);
+    } catch (FileNotFoundException fnfe) {
+      // expected
+    }
   }
 }
