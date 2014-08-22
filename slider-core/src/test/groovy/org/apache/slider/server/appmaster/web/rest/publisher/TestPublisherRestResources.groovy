@@ -144,7 +144,7 @@ class TestPublisherRestResources extends AgentTestBase {
   }
 
   public String toFileURI(File filename) {
-    "file://" + filename.absolutePath
+    filename.toURI().toString()
   }
 
 }
