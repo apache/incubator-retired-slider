@@ -166,6 +166,14 @@ class DirectoryProvider(Provider):
 
     _ensure_metadata(path, self.resource.owner, self.resource.group,
                         mode=self.resource.mode)
+    if self.resource.content and os.path.isdir(self.resource.content):
+      Logger.info("Copying from " + self.resource.content + " to " + path)
+      for item in os.listdir(self.resource.content):
+        src = os.path.join(self.resource.content, item)
+        dst = os.path.join(path, item)
+        if not os.path.isdir(src):
+          Logger.info("Copying " + src + " as " + dst)
+          shutil.copy2(src, dst)
 
   def action_delete(self):
     path = self.resource.path

@@ -20,20 +20,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
+ * Application default config
  */
-public class ConfigurationDependencies {
-  List<String> configTypes;
+public class DefaultConfig {
+  List<PropertyInfo> propertyInfos;
 
-  public ConfigurationDependencies() {
-    configTypes = new ArrayList<String>();
+  public DefaultConfig() {
+    propertyInfos = new ArrayList<PropertyInfo>();
   }
 
-  public void setConfigType(String type) {
-    configTypes.add(type);
+  public void addPropertyInfo(PropertyInfo propertyInfo) {
+    propertyInfos.add(propertyInfo);
   }
 
-  public List<String> getConfigTypes() {
-    return configTypes;
+  public List<PropertyInfo> getPropertyInfos() {
+    return propertyInfos;
   }
 }

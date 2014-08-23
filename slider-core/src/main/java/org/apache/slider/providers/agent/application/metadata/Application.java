@@ -31,13 +31,14 @@ public class Application {
   List<ExportGroup> exportGroups;
   List<OSSpecific> osSpecifics;
   List<CommandOrder> commandOrders;
-  ConfigurationDependencies configDependencies;
+  List<ConfigFile> configFiles;
 
   public Application() {
     exportGroups = new ArrayList<ExportGroup>();
     components = new ArrayList<Component>();
     osSpecifics = new ArrayList<OSSpecific>();
     commandOrders = new ArrayList<CommandOrder>();
+    configFiles = new ArrayList<ConfigFile>();
   }
 
   public String getName() {
@@ -72,12 +73,12 @@ public class Application {
     this.exportedConfigs = exportedConfigs;
   }
 
-  public ConfigurationDependencies getConfigDependencies() {
-    return configDependencies;
+  public List<ConfigFile> getConfigFiles() {
+    return configFiles;
   }
 
-  public void setConfigDependencies(ConfigurationDependencies configDependencies) {
-    this.configDependencies = configDependencies;
+  public void addConfigFile(ConfigFile configFile) {
+    this.configFiles.add(configFile);
   }
 
   public void addComponent(Component component) {

@@ -34,12 +34,12 @@ user_group = config['configurations']['global']['user_group']
 java64_home = config['hostLevelParams']['java_home']
 nimbus_host = config['configurations']['storm-site']['nimbus.host']
 nimbus_port = config['configurations']['storm-site']['nimbus.thrift.port']
-nimbus_host = config['configurations']['storm-site']['nimbus.host']
 rest_api_port = config['configurations']['global']['rest_api_port']
 rest_api_admin_port = config['configurations']['global']['rest_api_admin_port']
 rest_api_conf_file = format("{conf_dir}/config.yaml")
 rest_lib_dir = format("{app_root}/contrib/storm-rest")
 storm_bin = format("{app_root}/bin/storm")
+storm_env_sh_template = config['configurations']['storm-env']['content']
 
 ganglia_installed = config['configurations']['global']['ganglia_enabled']
 if ganglia_installed:
@@ -52,7 +52,7 @@ security_enabled = ( not is_empty(_authentication) and _authentication == 'kerbe
 
 if security_enabled:
   _hostname_lowercase = config['hostname'].lower()
-  _kerberos_domain = config['configurations']['global']['kerberos_domain']
-  _storm_principal_name = config['configurations']['global']['storm_principal_name']
+  _kerberos_domain = config['configurations']['storm-env']['kerberos_domain']
+  _storm_principal_name = config['configurations']['storm-env']['storm_principal_name']
   storm_jaas_principal = _storm_principal_name.replace('_HOST', _hostname_lowercase)
-  storm_keytab_path = config['configurations']['global']['storm_keytab']
+  storm_keytab_path = config['configurations']['storm-env']['storm_keytab']

@@ -48,5 +48,13 @@
       </osSpecific>
     </osSpecifics>
 
+    <configFiles>
+      <configFile>
+        <type>xml</type>
+        <fileName>cl-site.xml</fileName>
+        <dictionaryName>cl-site</dictionaryName>
+      </configFile>
+    </configFiles>
+
   </application>
 </metainfo>

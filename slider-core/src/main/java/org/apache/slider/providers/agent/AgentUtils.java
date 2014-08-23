@@ -20,12 +20,15 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.common.tools.SliderUtils;
+import org.apache.slider.providers.agent.application.metadata.DefaultConfig;
+import org.apache.slider.providers.agent.application.metadata.DefaultConfigParser;
 import org.apache.slider.providers.agent.application.metadata.Metainfo;
 import org.apache.slider.providers.agent.application.metadata.MetainfoParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.FileNotFoundException;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -36,7 +39,7 @@ public class AgentUtils {
   private static final Logger log = LoggerFactory.getLogger(AgentUtils.class);
 
   public static Metainfo getApplicationMetainfo(SliderFileSystem fileSystem,
-                                            String appDef) throws IOException {
+                                                String appDef) throws IOException {
     log.info("Reading metainfo at {}", appDef);
     FileSystem fs = fileSystem.getFileSystem();
     Path appPath = new Path(appDef);
@@ -53,4 +56,19 @@ public class AgentUtils {
     return metainfo;
   }
 
+  static DefaultConfig getDefaultConfig(SliderFileSystem fileSystem,
+                                        String appDef, String configFileName)
+      throws IOException {
+    // this is the path inside the zip file
+    String fileToRead = "configuration/" + configFileName;
+    log.info("Reading default config file {} at {}", fileToRead, appDef);
+    InputStream configStream = SliderUtils.getApplicationResourceInputStream(
+        fileSystem.getFileSystem(), new Path(appDef), fileToRead);
+    if (configStream == null) {
+      log.error("{} is unavailable at {}.", fileToRead, appDef);
+      throw new IOException("Expected config file " + fileToRead + " is not available.");
+    }
+
+    return new DefaultConfigParser().parse(configStream);
+  }
 }

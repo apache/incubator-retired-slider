@@ -21,19 +21,20 @@
 -->
 
 <configuration>
+
+  <!-- storm-env.sh -->
   <property>
-    <name>storm_user</name>
-    <value>storm</value>
-    <description></description>
-  </property>
-  <property>
-    <name>storm_log_dir</name>
-    <value>/var/log/storm</value>
-    <description></description>
-  </property>
-  <property>
-    <name>storm_pid_dir</name>
-    <value>/var/run/storm</value>
-    <description></description>
+    <name>content</name>
+    <description>This is the jinja template for storm-env.sh file</description>
+    <value>
+#!/bin/bash
+
+# Set Storm specific environment variables here.
+
+# The java implementation to use.
+export JAVA_HOME={{java_home}}
+
+# export STORM_CONF_DIR=""
+    </value>
   </property>
 </configuration>
