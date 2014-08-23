@@ -42,18 +42,19 @@ class Provider(object):
 
 PROVIDERS = dict(
   redhat=dict(
-    Package="resource_management.core.providers.package.yumrpm.YumProvider",
+    Package="resource_management.core.providers.package.yumrpm.YumProvider"
   ),
   suse=dict(
-    Package="resource_management.core.providers.package.zypper.ZypperProvider",
+    Package="resource_management.core.providers.package.zypper.ZypperProvider"
   ),
   debian=dict(
-    Package="resource_management.core.providers.package.apt.AptProvider",
+    Package="resource_management.core.providers.package.apt.AptProvider"
   ),
   winsrv=dict(
     Service="resource_management.core.providers.windows.service.ServiceProvider",
     Execute="resource_management.core.providers.windows.system.ExecuteProvider",
-    File="resource_management.core.providers.windows.system.FileProvider"
+    File="resource_management.core.providers.windows.system.FileProvider",
+    Tarball="resource_management.core.providers.windows.tarball.TarballProvider"
   ),
   default=dict(
     File="resource_management.core.providers.system.FileProvider",
@@ -65,8 +66,8 @@ PROVIDERS = dict(
     User="resource_management.core.providers.accounts.UserProvider",
     Group="resource_management.core.providers.accounts.GroupProvider",
     Service="resource_management.core.providers.service.ServiceProvider",
-    Tarball="resource_management.core.providers.tarball.TarballProvider",
-  ),
+    Tarball="resource_management.core.providers.tarball.TarballProvider"
+  )
 )
 
 

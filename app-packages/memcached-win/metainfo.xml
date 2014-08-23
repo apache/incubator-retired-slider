@@ -28,12 +28,12 @@
       <component>
         <name>MEMCACHED</name>
         <category>MASTER</category>
-        <exports>
-          <export>
+        <componentExports>
+          <componentExport>
             <name>host_port</name>
             <value>${THIS_HOST}:${site.global.listen_port}</value>
-          </export>
-        </exports>
+          </componentExport>
+        </componentExports>
         <commandScript>
           <script>scripts/memcached.py</script>
           <scriptType>PYTHON</scriptType>
@@ -46,8 +46,8 @@
         <osType>any</osType>
         <packages>
           <package>
-            <type>folder</type>
-            <name>files\\jmemcached-1.0.0</name>
+            <type>zip</type>
+            <name>files/jmemcached-1.0.0.zip</name>
           </package>
         </packages>
       </osSpecific>
