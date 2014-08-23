@@ -207,6 +207,16 @@
       <id>ASF Staging</id>
       <url>https://repository.apache.org/content/groups/staging/</url>
     </repository>
+    <repository>
+      <id>ASF Snapshots</id>
+      <url>https://repository.apache.org/content/repositories/snapshots/</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+    </repository>
   </repositories>
 
 

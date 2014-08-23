@@ -146,6 +146,24 @@
       <version>${accumulo.version}</version>
       <classifier>bin</classifier>
       <type>tar.gz</type>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.accumulo</groupId>
+          <artifactId>accumulo-fate</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.accumulo</groupId>
+          <artifactId>accumulo-gc</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.accumulo</groupId>
+          <artifactId>accumulo-master</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.accumulo</groupId>
+          <artifactId>accumulo-minicluster</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.accumulo</groupId>
