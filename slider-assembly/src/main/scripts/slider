@@ -71,4 +71,5 @@ echo ""
 echo "command is java ${slider_jvm_opts} --classpath \"${slider_classpath}\" ${launcher} $@"
 echo ""
 echo ""
-exec java ${slider_jvm_opts}  ${launcher} $@
+type java >/dev/null 2>&1 || javabin=${JAVA_HOME}/bin
+exec ${javabin}/java ${slider_jvm_opts}  ${launcher} $@

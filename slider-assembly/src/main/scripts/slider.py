@@ -118,6 +118,22 @@ def runProcess(commandline):
   print errline + err.decode()
   return exe.returncode
 
+def which(program):
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            path = path.strip('"')
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+
+    return None
 
 def java(classname, args, classpath, jvm_opts_list):
   """
@@ -131,7 +147,10 @@ def java(classname, args, classpath, jvm_opts_list):
   """
   # split the JVM opts by space
   # java = "/usr/bin/java"
-  commandline = ["java"]
+  prg="java"
+  if which("java")==None:
+    prg=os.environ["JAVA_HOME"]+"/bin/java"
+  commandline = [prg]
   commandline.extend(jvm_opts_list)
   commandline.append("-classpath")
   commandline.append(classpath)
