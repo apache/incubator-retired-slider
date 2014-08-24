@@ -16,13 +16,19 @@
  */
 package org.apache.slider.providers.agent.application.metadata;
 
+import org.apache.slider.providers.agent.AgentProviderService;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
+
+import static org.mockito.Mockito.doReturn;
 
 /**
  *
@@ -59,5 +65,6 @@ public class TestMetainfoParser {
       }
     }
     assert found;
+    Assert.assertEquals(0, application.getConfigFiles().size());
   }
 }

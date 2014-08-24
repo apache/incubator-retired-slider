@@ -813,7 +813,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   }
 
   private void startAgentWebApp(MapOperations appInformation,
-                                Configuration serviceConf) {
+                                Configuration serviceConf) throws IOException {
     URL[] urls = ((URLClassLoader) AgentWebApp.class.getClassLoader() ).getURLs();
     StringBuilder sb = new StringBuilder("AM classpath:");
     for (URL url : urls) {

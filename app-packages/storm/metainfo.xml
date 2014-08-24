@@ -155,5 +155,19 @@
         </packages>
       </osSpecific>
     </osSpecifics>
+
+    <configFiles>
+      <configFile>
+        <type>yaml</type>
+        <fileName>storm.yaml</fileName>
+        <dictionaryName>storm-site</dictionaryName>
+      </configFile>
+      <configFile>
+        <type>env</type>
+        <fileName>storm-env.sh</fileName>
+        <dictionaryName>storm-env</dictionaryName>
+      </configFile>
+    </configFiles>
+
   </application>
 </metainfo>

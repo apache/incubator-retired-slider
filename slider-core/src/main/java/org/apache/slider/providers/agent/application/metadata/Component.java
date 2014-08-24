@@ -124,4 +124,10 @@ public class Component {
     sb.append('}');
     return sb.toString();
   }
+
+  class AutoRestartSettings {
+    private boolean requiresAutoRestart;
+    private int maxFailures;
+    private int inThisManyMinutes;
+  }
 }

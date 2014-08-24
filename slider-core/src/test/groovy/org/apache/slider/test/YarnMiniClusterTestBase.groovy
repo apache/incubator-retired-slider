@@ -64,7 +64,7 @@ import static org.apache.slider.common.SliderXMLConfKeysForTesting.*;
  * Base class for mini cluster tests -creates a field for the
  * mini yarn cluster
  */
-@CompileStatic
+//@CompileStatic
 @Slf4j
 public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
   /**
@@ -327,6 +327,8 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
    */
   public void killJavaProcesses(String grepString, int signal) {
 
+    assume(!Shell.WINDOWS, "failed to kill -$signal $grepString - no windows support ")
+    
     GString bashCommand = "jps -l| grep ${grepString} | awk '{print \$1}' | xargs kill $signal"
     log.info("Bash command = $bashCommand" )
     Process bash = ["bash", "-c", bashCommand].execute()

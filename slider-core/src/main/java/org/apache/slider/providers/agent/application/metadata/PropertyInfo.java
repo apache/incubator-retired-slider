@@ -14,24 +14,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.slider.server.appmaster.web;
-
-import org.apache.slider.server.appmaster.web.rest.agent.AgentWebApp;
-import org.apache.slider.server.services.workflow.ClosingService;
-import org.apache.slider.server.services.workflow.WorkflowCompositeService;
+package org.apache.slider.providers.agent.application.metadata;
 
 /**
- * agent service gives the agent webapp lifecycle integration
+ * Application config property info
  */
-public class AgentService extends ClosingService<AgentWebApp> {
+public class PropertyInfo {
+  String name;
+  String value;
+  String description;
 
-
-  public AgentService(String name) {
-    super(name);
+  public PropertyInfo() {
   }
 
-  public AgentService(String name, AgentWebApp app) {
-    super(name, app);
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public String getValue() {
+    return value;
+  }
+
+  public void setValue(String value) {
+    this.value = value;
+  }
+
+  public String getDescription() {
+    return description;
+  }
+
+  public void setDescription(String description) {
+    this.description = description;
   }
 
 }

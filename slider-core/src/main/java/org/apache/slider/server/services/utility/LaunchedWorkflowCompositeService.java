@@ -28,6 +28,10 @@ import org.apache.slider.server.services.workflow.WorkflowCompositeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * This is a workflow compositoe service which can be launched from the CLI
+ * ... catches the arguments and implements a stub runService operation.
+ */
 public class LaunchedWorkflowCompositeService extends WorkflowCompositeService
     implements RunService {
   private static final Logger log = LoggerFactory.getLogger(

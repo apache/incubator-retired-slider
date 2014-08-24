@@ -345,6 +345,7 @@
             <exclude>**/rat.txt</exclude>
             <exclude>DISCLAIMER</exclude>
             <exclude>app-packages/hbase/target/**</exclude>
+            <exclude>target/*</exclude>
           </excludes>
         </configuration>
       </plugin>

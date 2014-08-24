@@ -27,6 +27,7 @@ import com.sun.jersey.api.json.JSONConfiguration;
 import junit.framework.Assert;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.tools.SliderUtils;
@@ -152,7 +153,7 @@ public class TestAMAgentWebServices {
 
   @After
   public void tearDown () throws Exception {
-    webApp.stop();
+    IOUtils.closeStream(webApp);
     webApp = null;
   }
 

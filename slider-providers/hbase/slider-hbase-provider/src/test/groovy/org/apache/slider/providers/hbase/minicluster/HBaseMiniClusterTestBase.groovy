@@ -30,6 +30,7 @@ import org.apache.slider.client.SliderClient
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.providers.hbase.HBaseTestUtils
 import org.apache.slider.test.YarnZKMiniClusterTestBase
+import org.junit.internal.AssumptionViolatedException
 
 import static org.apache.slider.common.params.Arguments.*
 import static org.apache.slider.test.SliderTestUtils.*
@@ -76,8 +77,12 @@ public abstract class HBaseMiniClusterTestBase extends YarnZKMiniClusterTestBase
   void teardown() {
     super.teardown();
     if (teardownKillall) {
-      killAllRegionServers();
-      killAllMasterServers();
+      try {
+        killAllRegionServers();
+        killAllMasterServers();
+      } catch (AssumptionViolatedException e) {
+        log.info e.toString();
+      }
     }
   }
 
