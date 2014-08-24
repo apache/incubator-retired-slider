@@ -50,14 +50,14 @@ class Registry:
       # the port needs to be utf-8 encoded
       amSecuredPort = amSecuredPort.encode('utf8', 'ignore')
       amUnsecuredPort = amUnsecuredPort.encode('utf8', 'ignore')
-    except Exception:
+    except Exception, e:
       # log and let empty strings be returned
-      logger.error("Could not connect to zk registry at %s in quorum %s" % 
-                   (self.zk_reg_path, self.zk_quorum))
+      logger.error("Could not connect to zk registry at %s in quorum %s. Error: %s" %
+                   (self.zk_reg_path, self.zk_quorum, str(e)))
       pass
     finally:
       if not zk == None:
         zk.stop()
         zk.close()
-    logger.info("AM Host = %s, AM Secured Port = %s" % (amHost, amSecuredPort))
+    logger.info("AM Host = %s, AM Secured Port = %s, ping port = %s" % (amHost, amSecuredPort, amUnsecuredPort))
     return amHost, amUnsecuredPort, amSecuredPort

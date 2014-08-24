@@ -323,6 +323,9 @@ public class AgentProviderService extends AbstractProviderService implements
       operation.add(debugCmd);
     }
 
+    String outfile = new File(logDir, "agent.out").toString();
+    operation.add("> " + outfile + " 2>&1");
+
     launcher.addCommand(operation.build());
 
     // initialize the component instance state

@@ -46,8 +46,8 @@
         <osType>any</osType>
         <packages>
           <package>
-            <type>zip</type>
-            <name>files/jmemcached-1.0.0.zip</name>
+            <type>folder</type>
+            <name>files\\jmemcached-1.0.0</name>
           </package>
         </packages>
       </osSpecific>

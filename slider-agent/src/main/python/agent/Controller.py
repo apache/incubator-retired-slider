@@ -331,7 +331,6 @@ class Controller(threading.Thread):
           zk_reg_path = self.config.get(AgentConfig.SERVER_SECTION, Constants.ZK_REG_PATH)
           registry = Registry(zk_quorum, zk_reg_path)
           amHost, amUnsecuredPort, amSecuredPort = registry.readAMHostPort()
-          logger.info("Read from ZK registry: AM host = %s, AM secured port = %s" % (amHost, amSecuredPort))
           self.hostname = amHost
           self.secured_port = amSecuredPort
           self.config.set(AgentConfig.SERVER_SECTION, "hostname", self.hostname)
