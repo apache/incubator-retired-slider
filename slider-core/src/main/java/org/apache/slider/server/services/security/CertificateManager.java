@@ -19,10 +19,9 @@ package org.apache.slider.server.services.security;
 
 import com.google.inject.Singleton;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.RandomStringUtils;
-import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.core.conf.MapOperations;
+import org.apache.slider.core.exceptions.SliderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,7 +91,8 @@ public class CertificateManager {
    *
    * @return command execution exit code
    */
-  private int runCommand(String command) {
+  private int runCommand(String command) throws SliderException {
+    int exitCode = -1;
     String line = null;
     Process process = null;
     BufferedReader br= null;
@@ -108,7 +108,10 @@ public class CertificateManager {
       try {
         process.waitFor();
         SecurityUtils.logOpenSslExitCode(command, process.exitValue());
-        return process.exitValue(); //command is executed
+        exitCode = process.exitValue();
+        if (exitCode != 0) {
+          throw new SliderException(exitCode, "Error running command {}", command);
+        }
       } catch (InterruptedException e) {
         e.printStackTrace();
       }
@@ -124,11 +127,11 @@ public class CertificateManager {
       }
     }
 
-    return -1;//some exception occurred
+    return exitCode;//some exception occurred
 
   }
 
-  private void generateServerCertificate() {
+  private void generateServerCertificate(){
     LOG.info("Generation of server certificate");
 
     String srvrKstrDir = SecurityUtils.getSecurityDir();
@@ -141,17 +144,21 @@ public class CertificateManager {
     Object[] scriptArgs = {srvrCrtPass, srvrKstrDir, srvrKeyName,
         srvrCrtName, kstrName, srvrCsrName};
 
-    String command = MessageFormat.format(GEN_SRVR_KEY,scriptArgs);
-    runCommand(command);
+    try {
+      String command = MessageFormat.format(GEN_SRVR_KEY,scriptArgs);
+      runCommand(command);
 
-    command = MessageFormat.format(GEN_SRVR_REQ,scriptArgs);
-    runCommand(command);
+      command = MessageFormat.format(GEN_SRVR_REQ,scriptArgs);
+      runCommand(command);
 
-    command = MessageFormat.format(SIGN_SRVR_CRT,scriptArgs);
-    runCommand(command);
+      command = MessageFormat.format(SIGN_SRVR_CRT,scriptArgs);
+      runCommand(command);
 
-    command = MessageFormat.format(EXPRT_KSTR,scriptArgs);
-    runCommand(command);
+      command = MessageFormat.format(EXPRT_KSTR,scriptArgs);
+      runCommand(command);
+    } catch (SliderException e) {
+      LOG.error("Error generating the server certificate", e);
+    }
 
   }
 
@@ -205,11 +212,14 @@ public class CertificateManager {
     //Revoke previous agent certificate if exists
     File agentCrtFile = new File(srvrKstrDir + File.separator + agentCrtName);
 
+    String command = null;
     if (agentCrtFile.exists()) {
       LOG.info("Revoking of " + agentHostname + " certificate.");
-      String command = MessageFormat.format(REVOKE_AGENT_CRT, scriptArgs);
-      int commandExitCode = runCommand(command);
-      if (commandExitCode != 0) {
+      command = MessageFormat.format(REVOKE_AGENT_CRT, scriptArgs);
+      try {
+        runCommand(command);
+      } catch (SliderException e) {
+        int commandExitCode = e.getExitCode();
         response.setResult(SignCertResponse.ERROR_STATUS);
         response.setMessage(
             SecurityUtils.getOpenSslCommandResult(command, commandExitCode));
@@ -226,16 +236,16 @@ public class CertificateManager {
       e1.printStackTrace();
     }
 
-    String command = MessageFormat.format(SIGN_AGENT_CRT, scriptArgs);
+    command = MessageFormat.format(SIGN_AGENT_CRT, scriptArgs);
 
     LOG.debug(SecurityUtils.hideOpenSslPassword(command));
-
-    int commandExitCode = runCommand(command); // ssl command execution
-    if (commandExitCode != 0) {
+    try {
+      runCommand(command);
+    } catch (SliderException e) {
+      int commandExitCode = e.getExitCode();
       response.setResult(SignCertResponse.ERROR_STATUS);
       response.setMessage(
           SecurityUtils.getOpenSslCommandResult(command, commandExitCode));
-      //LOG.warn(ShellCommandUtil.getOpenSslCommandResult(command, commandExitCode));
       return response;
     }
 
