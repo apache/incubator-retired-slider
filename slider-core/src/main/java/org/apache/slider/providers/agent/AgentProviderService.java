@@ -1380,6 +1380,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
     List<ConfigFile> configFiles = getMetainfo().getApplication().getConfigFiles();
     for(ConfigFile configFile : configFiles) {
+      log.info("Expecting config type {}.", configFile.getDictionaryName());
       configList.add(configFile.getDictionaryName());
     }
 
@@ -1419,6 +1420,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
     //apply defaults only if the key is not present and value is not empty
     if(getDefaultConfigs().containsKey(configName)) {
+      log.info("Adding default configs for type {}.", configName);
       for(PropertyInfo defaultConfigProp : getDefaultConfigs().get(configName).getPropertyInfos()) {
         if(!config.containsKey(defaultConfigProp.getName())){
           if(!defaultConfigProp.getName().isEmpty() &&

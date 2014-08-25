@@ -28,13 +28,59 @@ import time
 import os
 import subprocess
 import shutil
+from resource_management.libraries.script import Script
+import win32con
+from win32security import *
+from win32api import *
+from winerror import ERROR_INVALID_HANDLE
+from win32profile import CreateEnvironmentBlock
+from win32process import GetExitCodeProcess, STARTF_USESTDHANDLES, STARTUPINFO, CreateProcessAsUser
+from win32event import WaitForSingleObject, INFINITE
+import msvcrt
+import tempfile
 
 
-def _call_command(command, logoutput=False, cwd=None, env=None, wait_for_finish=True, timeout=None, pid_file_name=None):
-  # TODO implement logoutput
+def _merge_env(env1, env2, merge_keys=['PYTHONPATH']):
+  """
+  Merge env2 into env1. Also current python instance variables from merge_keys list taken into account and they will be
+  merged with equivalent keys from env1 and env2 using system path separator.
+  :param env1: first environment, usually returned by CreateEnvironmentBlock
+  :param env2: custom environment
+  :param merge_keys: env variables to merge as PATH
+  :return: merged environment
+  """
+  env1 = dict(env1)  # copy to new dict in case env1 is os.environ
+  if env2:
+    for key, value in env2.iteritems():
+      if not key in merge_keys:
+        env1[key] = value
+  # strnsform keys and values to str(windows can not accept unicode)
+  result_env = {}
+  for key, value in env1.iteritems():
+    if not key in merge_keys:
+      result_env[str(key)] = str(value)
+  #merge keys from merge_keys
+  def put_values(key, env, result):
+    if env and key in env:
+      result.extend(env[key].split(os.pathsep))
+
+  for key in merge_keys:
+    all_values = []
+    for env in [env1, env2, os.environ]:
+      put_values(key, env, all_values)
+    result_env[str(key)] = str(os.pathsep.join(set(all_values)))
+  return result_env
+
+# Execute command. As windows stack heavily relies on proper environment it is better to reload fresh environment
+# on every execution. env variable will me merged with fresh environment for user.
+def _call_command(command, logoutput=False, cwd=None, env=None, wait_for_finish=True, timeout=None, user=None, pid_file_name=None):
+  # TODO implement user
   Logger.info("Executing %s" % (command))
+  cur_token = OpenProcessToken(GetCurrentProcess(), TOKEN_ALL_ACCESS)
+  current_env = CreateEnvironmentBlock(cur_token, False)
+  current_env = _merge_env(current_env, env)
   proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                          cwd=cwd, env=env, shell=False)
+                          cwd=cwd, env=current_env, shell=False)
   if not wait_for_finish:
     if pid_file_name:
       pidfile = open(pid_file_name, 'w')
@@ -47,20 +93,22 @@ def _call_command(command, logoutput=False, cwd=None, env=None, wait_for_finish=
     t = threading.Timer( timeout, on_timeout, [proc, q] )
     t.start()
 
-  out = proc.communicate()[0].strip()
-  code = proc.returncode
+    out, err = proc.communicate()
+    code = proc.returncode
   if logoutput and out:
     Logger.info(out)
-  return code, out
+  if logoutput and err:
+    Logger.info(err)
+  return code, out, err
 
 # see msdn Icacls doc for rights
 def _set_file_acl(file, user, rights):
   acls_modify_cmd = "icacls {0} /grant {1}:{2}".format(file, user, rights)
   acls_remove_cmd = "icacls {0} /remove {1}".format(file, user)
-  code, out = _call_command(acls_remove_cmd)
+  code, out, err = _call_command(acls_remove_cmd)
   if code != 0:
     raise Fail("Can not remove rights for path {0} and user {1}".format(file, user))
-  code, out = _call_command(acls_modify_cmd)
+  code, out, err = _call_command(acls_modify_cmd)
   if code != 0:
     raise Fail("Can not set rights {0} for path {1} and user {2}".format(file, user))
   else:
@@ -137,10 +185,13 @@ class ExecuteProvider(Provider):
 
     for i in range(0, self.resource.tries):
       try:
-        _call_command(self.resource.command, logoutput=self.resource.logoutput,
-                      cwd=self.resource.cwd, env=self.resource.environment,
-                      wait_for_finish=self.resource.wait_for_finish, timeout=self.resource.timeout,
-                      pid_file_name=self.resource.pid_file)
+        code, _, _  = _call_command(self.resource.command, logoutput=self.resource.logoutput,
+                                    cwd=self.resource.cwd, env=self.resource.environment,
+                                    wait_for_finish=self.resource.wait_for_finish,
+                                    timeout=self.resource.timeout, user=self.resource.user,
+                                    pid_file_name=self.resource.pid_file)
+        if code != 0 and not self.resource.ignore_failures:
+          raise Fail("Failed to execute " + self.resource.command)
         break
       except Fail as ex:
         if i == self.resource.tries - 1:  # last try

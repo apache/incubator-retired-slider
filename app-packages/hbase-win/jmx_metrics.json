@@ -1,0 +1,56 @@
+{
+    "Component": {
+        "HBASE_MASTER": {
+            "MetricAverageLoad": {
+                "metric": "Hadoop:service=HBase,name=Master,sub=Server.averageLoad",
+                "pointInTime": true,
+                "temporal": false
+            },
+            "DeadRegionServers": {
+                "metric": "Hadoop:service=HBase,name=Master,sub=Server.numDeadRegionServers",
+                "pointInTime": true,
+                "temporal": false
+            },
+            "ClusterId": {
+                "metric": "Hadoop:service=HBase,name=Master,sub=Server.tag.clusterId",
+                "pointInTime": true,
+                "temporal": false
+            },
+            "IsActiveMaster": {
+                "metric": "Hadoop:service=HBase,name=Master,sub=Server.tag.isActiveMaster",
+                "pointInTime": true,
+                "temporal": false
+            },
+            "MasterActiveTime": {
+                "metric": "Hadoop:service=HBase,name=Master,sub=Server.masterActiveTime",
+                "pointInTime": true,
+                "temporal": false
+            },
+            "MasterStartTime": {
+                "metric": "Hadoop:service=HBase,name=Master,sub=Server.masterStartTime",
+                "pointInTime": true,
+                "temporal": false
+            },
+            "RegionServers": {
+                "metric": "Hadoop:service=HBase,name=Master,sub=Server.numRegionServers",
+                "pointInTime": true,
+                "temporal": false
+            },
+            "ServerName": {
+                "metric": "Hadoop:service=HBase,name=Master,sub=Server.tag.serverName",
+                "pointInTime": true,
+                "temporal": false
+            },
+            "ZookeeperQuorum": {
+                "metric": "Hadoop:service=HBase,name=Master,sub=Server.tag.zookeeperQuorum",
+                "pointInTime": true,
+                "temporal": false
+            },
+            "ClusterRequests": {
+                "metric": "Hadoop:service=HBase,name=Master,sub=Server.clusterRequests",
+                "pointInTime": true,
+                "temporal": false
+            }
+        }
+    }
+}
