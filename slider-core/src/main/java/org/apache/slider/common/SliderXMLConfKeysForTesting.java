@@ -53,8 +53,12 @@ public interface SliderXMLConfKeysForTesting {
 
   String KEY_ACCUMULO_LAUNCH_TIME =
     "slider.test.accumulo.launch.wait.seconds";
-
   int DEFAULT_ACCUMULO_LAUNCH_TIME_SECONDS = 60 * 3;
+
+  String KEY_ACCUMULO_GO_LIVE_TIME =
+      "slider.test.accumulo.live.wait.seconds";
+  int DEFAULT_ACCUMULO_LIVE_TIME_SECONDS = 90;
+
   String KEY_TEST_AGENT_ENABLED = "slider.test.agent.enabled";
 
   int DEFAULT_AGENT_LAUNCH_TIME_SECONDS = 60 * 3;

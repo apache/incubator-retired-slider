@@ -118,10 +118,10 @@
     <!--
     core artifacts
     -->
-    <hadoop.version>2.4.1</hadoop.version>
+    <hadoop.version>2.6.0-SNAPSHOT</hadoop.version>
 
     <hbase.version>0.98.4-hadoop2</hbase.version>
-    <accumulo.version>1.6.0</accumulo.version>
+    <accumulo.version>1.6.1-SNAPSHOT</accumulo.version>
     
     <!--
      artifact versions
@@ -212,6 +212,16 @@
     <repository>
       <id>ASF Staging</id>
       <url>https://repository.apache.org/content/groups/staging/</url>
+    </repository>
+    <repository>
+      <id>ASF Snapshots</id>
+      <url>https://repository.apache.org/content/repositories/snapshots/</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
     </repository>
   </repositories>
 
@@ -1296,7 +1306,7 @@
     </profile>
     
     <profile>
-      <!-- hadoop branch-2 builds  -->
+      <!-- hadoop trunk builds  -->
       <id>hadoop-trunk</id>
       <properties>
         <hadoop.version>3.0.0-SNAPSHOT</hadoop.version>

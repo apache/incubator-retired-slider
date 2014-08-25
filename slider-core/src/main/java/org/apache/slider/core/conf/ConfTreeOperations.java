@@ -275,6 +275,7 @@ public class ConfTreeOperations {
 
     getGlobalOptions().mergeWithoutOverwrite(that.global);
     confTree.metadata.putAll(that.metadata);
+    confTree.credentials.putAll(that.credentials);
 
     for (Map.Entry<String, Map<String, String>> entry : that.components.entrySet()) {
       MapOperations comp = getOrAddComponent(entry.getKey());
@@ -290,7 +291,8 @@ public class ConfTreeOperations {
 
     getGlobalOptions().putAll(that.global);
     confTree.metadata.putAll(that.metadata);
-    
+    confTree.credentials.putAll(that.credentials);
+
     for (Map.Entry<String, Map<String, String>> entry : that.components.entrySet()) {
       MapOperations comp = getOrAddComponent(entry.getKey());
       comp.putAll(entry.getValue());

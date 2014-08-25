@@ -26,6 +26,9 @@ import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.alias.CredentialProvider;
+import org.apache.hadoop.security.alias.CredentialProviderFactory;
+import org.apache.hadoop.security.alias.CredentialShell;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
@@ -107,9 +110,6 @@ import org.apache.slider.server.appmaster.rpc.RpcBinder;
 import org.apache.slider.server.services.curator.CuratorServiceInstance;
 import org.apache.slider.server.services.registry.SliderRegistryService;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
-
-import static org.apache.slider.common.params.SliderActions.*;
-
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
@@ -125,11 +125,16 @@ import java.io.Writer;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Pattern;
+
+import static org.apache.slider.common.params.SliderActions.*;
 
 /**
  * Client service for Slider
@@ -512,7 +517,51 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
                                                IOException {
 
     actionBuild(clustername, createArgs);
+    Path clusterDirectory = sliderFileSystem.buildClusterDirPath(clustername);
+    AggregateConf instanceDefinition = loadInstanceDefinitionUnresolved(
+        clustername, clusterDirectory);
+    try {
+      checkForCredentials(getConfig(), instanceDefinition.getAppConf());
+    } catch (Exception e) {
+      throw new IOException("problem setting credentials", e);
+    }
     return startCluster(clustername, createArgs);
+  }
+
+  private void checkForCredentials(Configuration conf,
+      ConfTree tree) throws Exception {
+    if (tree.credentials == null || tree.credentials.size()==0) {
+      log.info("No credentials requested");
+      return;
+    }
+    CredentialShell credentialShell = null;
+    for (Entry<String, List<String>> cred : tree.credentials.entrySet()) {
+      String provider = cred.getKey();
+      List<String> aliases = cred.getValue();
+      if (aliases == null || aliases.size()==0) {
+        continue;
+      }
+      if (credentialShell == null) {
+        credentialShell = new CredentialShell();
+        credentialShell.setConf(conf);
+      }
+      Configuration c = new Configuration(conf);
+      c.set(CredentialProviderFactory.CREDENTIAL_PROVIDER_PATH, provider);
+      CredentialProvider credentialProvider =
+          CredentialProviderFactory.getProviders(c).get(0);
+      Set<String> existingAliases = new HashSet<String>(credentialProvider.getAliases());
+      for (String alias : aliases) {
+        if (existingAliases.contains(alias.toLowerCase())) {
+          log.warn("Skipping creation of credentials for {}, " +
+              "alias already exists in {}", alias, provider);
+          continue;
+        }
+        String[] csarg = new String[]{
+            "create", alias, "-provider", provider};
+        log.info("Creating credentials for {} in {}", alias, provider);
+        credentialShell.run(csarg);
+      }
+    }
   }
 
   /**
@@ -702,6 +751,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       appConf.set(AgentKeys.PACKAGE_PATH, buildInfo.packageURI);
     }
 
+    // make any substitutions needed at this stage
+    replaceTokens(appConf.getConfTree(), getUsername(), clustername);
+
     // provider to validate what there is
     try {
       sliderAM.validateInstanceDefinition(builder.getInstanceDescription());
@@ -721,7 +773,36 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
                                          + ": " + e);
     }
   }
-  
+
+  @VisibleForTesting
+  public static void replaceTokens(ConfTree conf,
+      String userName, String clusterName) throws IOException {
+    Map<String,String> newglobal = new HashMap<String,String>();
+    for (Entry<String,String> entry : conf.global.entrySet()) {
+      newglobal.put(entry.getKey(), replaceTokens(entry.getValue(),
+          userName, clusterName));
+    }
+    conf.global.putAll(newglobal);
+
+    Map<String,List<String>> newcred = new HashMap<String,List<String>>();
+    for (Entry<String,List<String>> entry : conf.credentials.entrySet()) {
+      List<String> resultList = new ArrayList<String>();
+      for (String v : entry.getValue()) {
+        resultList.add(replaceTokens(v, userName, clusterName));
+      }
+      newcred.put(replaceTokens(entry.getKey(), userName, clusterName),
+          resultList);
+    }
+    conf.credentials.clear();
+    conf.credentials.putAll(newcred);
+  }
+
+  private static String replaceTokens(String s, String userName,
+      String clusterName) throws IOException {
+    return s.replaceAll(Pattern.quote("${USER}"), userName)
+        .replaceAll(Pattern.quote("${CLUSTER_NAME}"), clusterName);
+  }
+
   public FsPermission getClusterDirectoryPermissions(Configuration conf) {
     String clusterDirPermsOct =
       conf.get(CLUSTER_DIRECTORY_PERMISSIONS,
