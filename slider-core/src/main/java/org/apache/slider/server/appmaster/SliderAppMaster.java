@@ -365,6 +365,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private final QueueService actionQueues = new QueueService();
   private String agentOpsUrl;
   private String agentStatusUrl;
+  private YarnRegistryViewForProviders yarnRegistryView;
 
   /**
    * Service Constructor
@@ -895,11 +896,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     //Give the provider restricted access to the state, registry
     setupInitialRegistryPaths();
-    YarnRegistryViewForProviders yarnRegistryView =
-        new YarnRegistryViewForProviders(
-            registryOperations, service_user_name,
-            SliderKeys.APP_TYPE,
-            instanceName);
+    yarnRegistryView = new YarnRegistryViewForProviders(
+        registryOperations, service_user_name,
+        SliderKeys.APP_TYPE,
+        instanceName);
     providerService.bindToYarnRegistry(yarnRegistryView);
     sliderAMProvider.bindToYarnRegistry(yarnRegistryView);
 
@@ -978,15 +978,26 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * Handler for {@link RegisterComponentInstance action}
    * Register/re-register a component (that is already in the app state
    * @param id the component
+   * @param description
    */
-  public boolean registerComponent(ContainerId id) {
+  public boolean registerComponent(ContainerId id, String description) throws
+      IOException {
     RoleInstance instance = appState.getOwnedContainer(id);
     if (instance == null) {
       return false;
     }
     // this is where component registrations will go
     log.info("Registering component {}", id);
-
+    String cid = RegistryTypeUtils.yarnIdToDnsId(id.toString());
+    ServiceRecord container = new ServiceRecord(
+        cid,
+        description);
+    try {
+      yarnRegistryView.putComponent(cid, container, true);
+    } catch (IOException e) {
+      log.warn("Failed to register container {}/{}: {}",
+          id, description, e, e);
+    }
     return true;
   }
   
@@ -1000,6 +1011,12 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   public void unregisterComponent(ContainerId id) {
     log.info("Unregistering component {}", id);
+    String cid = RegistryTypeUtils.yarnIdToDnsId(id.toString());
+    try {
+      yarnRegistryView.rmComponent(cid);
+    } catch (IOException e) {
+      log.warn("Failed to delete container {} : {}", id, e, e);
+    }
   }
 
   /**
@@ -1763,7 +1780,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       nmClientAsync.getContainerStatusAsync(containerId,
                                             cinfo.container.getNodeId());
       // push out a registration
-      queue(new RegisterComponentInstance(containerId, 0, TimeUnit.MILLISECONDS));
+      queue(new RegisterComponentInstance(containerId, cinfo.role,
+          0, TimeUnit.MILLISECONDS));
       
     } else {
       //this is a hypothetical path not seen. We react by warning

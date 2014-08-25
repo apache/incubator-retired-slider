@@ -95,7 +95,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -583,8 +582,8 @@ public class AgentProviderService extends AbstractProviderService implements
     
     // and update registration entries
     if (instance != null) {
-      queueAccess.put(new RegisterComponentInstance(instance.getId(), 0,
-          TimeUnit.MILLISECONDS));
+      queueAccess.put(new RegisterComponentInstance(instance.getId(),
+          roleName, 0, TimeUnit.MILLISECONDS));
     }
   }
 

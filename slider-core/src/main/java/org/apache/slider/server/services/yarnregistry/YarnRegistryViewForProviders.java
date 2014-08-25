@@ -117,4 +117,10 @@ public class YarnRegistryViewForProviders {
   }
 
 
+  public void rmComponent(String componentName) throws IOException {
+    String path = BindingUtils.componentPath(
+        user, sliderServiceclass, instanceName,
+        componentName);
+    registryOperations.delete(path, false);
+  }
 }
