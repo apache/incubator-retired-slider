@@ -743,17 +743,27 @@ class SliderTestUtils extends Assert {
    * Kill any java process with the given grep pattern
    * @param grepString string to grep for
    */
-  public void killJavaProcesses(String grepString, int signal) {
+  public int killJavaProcesses(String grepString, int signal) {
 
-//    assume(!Shell.WINDOWS, "failed to kill -$signal $grepString - no windows support ")
-    
-    GString bashCommand = "jps -l| grep ${grepString} | awk '{print \$1}' | xargs kill $signal"
-    log.info("Bash command = $bashCommand" )
-    Process bash = ["bash", "-c", bashCommand].execute()
-    bash.waitFor()
+    def commandString
+    if (!Shell.WINDOWS) {
+      GString killCommand = "jps -l| grep ${grepString} | awk '{print \$1}' | xargs kill $signal"
+      log.info("Command command = $killCommand" )
 
-    log.info(bash.in.text)
-    log.error(bash.err.text)
+      commandString = ["bash", "-c", killCommand]
+    } else {
+      /*
+      "jps -l | grep "String" | awk "{print $1}" | xargs -n 1 taskkill /PID"
+       */
+      GString killCommand = "\"jps -l | grep \"${grepString}\" | awk \"{print \$1}\" | xargs -n 1 taskkill /PID\""
+      commandString = ["CMD", "/C", killCommand]
+    }
+    Process command = commandString.execute()
+    def exitCode = command.waitFor()
+
+    log.info(command.in.text)
+    log.error(command.err.text)
+    return exitCode
   }
 
   /**
