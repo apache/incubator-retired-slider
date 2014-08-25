@@ -745,7 +745,7 @@ class SliderTestUtils extends Assert {
    */
   public void killJavaProcesses(String grepString, int signal) {
 
-    assume(!Shell.WINDOWS, "failed to kill -$signal $grepString - no windows support ")
+//    assume(!Shell.WINDOWS, "failed to kill -$signal $grepString - no windows support ")
     
     GString bashCommand = "jps -l| grep ${grepString} | awk '{print \$1}' | xargs kill $signal"
     log.info("Bash command = $bashCommand" )
