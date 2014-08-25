@@ -483,7 +483,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       c.set(CredentialProviderFactory.CREDENTIAL_PROVIDER_PATH, provider);
       CredentialProvider credentialProvider =
           CredentialProviderFactory.getProviders(c).get(0);
-      Set<String> existingAliases = new HashSet<>(credentialProvider.getAliases());
+      Set<String> existingAliases = new HashSet<String>(credentialProvider.getAliases());
       for (String alias : aliases) {
         if (existingAliases.contains(alias.toLowerCase())) {
           log.warn("Skipping creation of credentials for {}, " +
@@ -710,16 +710,16 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   @VisibleForTesting
   public static void replaceTokens(ConfTree conf,
       String userName, String clusterName) throws IOException {
-    Map<String,String> newglobal = new HashMap<>();
+    Map<String,String> newglobal = new HashMap<String,String>();
     for (Entry<String,String> entry : conf.global.entrySet()) {
       newglobal.put(entry.getKey(), replaceTokens(entry.getValue(),
           userName, clusterName));
     }
     conf.global.putAll(newglobal);
 
-    Map<String,List<String>> newcred = new HashMap<>();
+    Map<String,List<String>> newcred = new HashMap<String,List<String>>();
     for (Entry<String,List<String>> entry : conf.credentials.entrySet()) {
-      List<String> resultList = new ArrayList<>();
+      List<String> resultList = new ArrayList<String>();
       for (String v : entry.getValue()) {
         resultList.add(replaceTokens(v, userName, clusterName));
       }

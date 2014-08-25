@@ -70,7 +70,7 @@ public final class ConfTree {
    * Credentials
    */
   public Map<String, List<String>> credentials =
-      new HashMap<>(INITAL_MAP_CAPACITY);
+      new HashMap<String, List<String>>(INITAL_MAP_CAPACITY);
 
   /**
    * Role options, 
