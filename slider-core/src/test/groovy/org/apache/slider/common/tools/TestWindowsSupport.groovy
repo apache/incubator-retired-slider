@@ -103,4 +103,10 @@ class TestWindowsSupport extends SliderTestUtils {
     }
     
   }
+
+  @Test
+  public void testEmitKillCommand() throws Throwable {
+    killJavaProcesses("regionserver", 9)
+
+  }
 }

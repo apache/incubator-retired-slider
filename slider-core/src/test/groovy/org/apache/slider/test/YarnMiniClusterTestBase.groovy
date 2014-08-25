@@ -322,29 +322,6 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
   }
 
   /**
-   * Kill any java process with the given grep pattern
-   * @param grepString string to grep for
-   */
-  public void killJavaProcesses(String grepString, int signal) {
-
-    assume(!Shell.WINDOWS, "failed to kill -$signal $grepString - no windows support ")
-    
-    GString bashCommand = "jps -l| grep ${grepString} | awk '{print \$1}' | xargs kill $signal"
-    log.info("Bash command = $bashCommand" )
-    Process bash = ["bash", "-c", bashCommand].execute()
-    bash.waitFor()
-
-    log.info(bash.in.text)
-    log.error(bash.err.text)
-  }
-
-  public void killJavaProcesses(List<String> greps, int signal) {
-    for (String grep : greps) {
-      killJavaProcesses(grep,signal)
-    }
-  }
-
-  /**
    * List any java process with the given grep pattern
    * @param grepString string to grep for
    */

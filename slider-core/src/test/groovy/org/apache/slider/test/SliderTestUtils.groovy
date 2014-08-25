@@ -28,6 +28,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileStatus
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.util.Shell
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.api.ClusterDescription
@@ -735,6 +736,44 @@ class SliderTestUtils extends Assert {
     confSet.keys().each { String key ->
       def config = confSet.get(key)
       log.info "$key -- ${config.description}"
+    }
+  }
+
+  /**
+   * Kill any java process with the given grep pattern
+   * @param grepString string to grep for
+   */
+  public int killJavaProcesses(String grepString, int signal) {
+
+    def commandString
+    if (!Shell.WINDOWS) {
+      GString killCommand = "jps -l| grep ${grepString} | awk '{print \$1}' | xargs kill $signal"
+      log.info("Command command = $killCommand" )
+
+      commandString = ["bash", "-c", killCommand]
+    } else {
+      /*
+      "jps -l | grep "String" | awk "{print $1}" | xargs -n 1 taskkill /PID"
+       */
+      GString killCommand = "\"jps -l | grep \"${grepString}\" | awk \"{print \$1}\" | xargs -n 1 taskkill /PID\""
+      commandString = ["CMD", "/C", killCommand]
+    }
+    Process command = commandString.execute()
+    def exitCode = command.waitFor()
+
+    log.info(command.in.text)
+    log.error(command.err.text)
+    return exitCode
+  }
+
+  /**
+   * Kill all processes which match one of the list of grepstrings
+   * @param greps
+   * @param signal
+   */
+  public void killJavaProcesses(List<String> greps, int signal) {
+    for (String grep : greps) {
+      killJavaProcesses(grep,signal)
     }
   }
 }
