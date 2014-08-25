@@ -33,6 +33,9 @@ public class ClosingService<C extends Closeable> extends AbstractService {
 
   private C closeable;
 
+  public ClosingService(String name) {
+    super(name);
+  }
 
   /**
    * Construct an instance of the service

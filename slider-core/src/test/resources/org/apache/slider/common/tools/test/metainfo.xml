@@ -87,9 +87,12 @@
       </osSpecific>
     </osSpecifics>
 
-    <configuration-dependencies>
-      <config-type>storm-site</config-type>
-      <config-type>global</config-type>
-    </configuration-dependencies>
+    <configFiles>
+      <configFile>
+        <type>xml</type>
+        <fileName>storm-site.xml</fileName>
+        <dictionaryName>storm-site</dictionaryName>
+      </configFile>
+    </configFiles>
   </application>
 </metainfo>

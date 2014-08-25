@@ -43,7 +43,12 @@ def storm():
                owner = params.storm_user,
                group = params.user_group
   )
-  
+
+  File(format("{conf_dir}/storm-env.sh"),
+    owner=params.storm_user,
+    content=InlineTemplate(params.storm_env_sh_template)
+  )
+
   if params.security_enabled:
     TemplateConfig( format("{conf_dir}/storm_jaas.conf"),
       owner = params.storm_user

@@ -64,7 +64,7 @@ import static org.apache.slider.common.SliderXMLConfKeysForTesting.*;
  * Base class for mini cluster tests -creates a field for the
  * mini yarn cluster
  */
-@CompileStatic
+//@CompileStatic
 @Slf4j
 public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
   /**
@@ -320,27 +320,6 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
    */
   public void killAM(int signal) {
     killJavaProcesses(SliderAppMaster.SERVICE_CLASSNAME_SHORT, signal)
-  }
-
-  /**
-   * Kill any java process with the given grep pattern
-   * @param grepString string to grep for
-   */
-  public void killJavaProcesses(String grepString, int signal) {
-
-    GString bashCommand = "jps -l| grep ${grepString} | awk '{print \$1}' | xargs kill $signal"
-    log.info("Bash command = $bashCommand" )
-    Process bash = ["bash", "-c", bashCommand].execute()
-    bash.waitFor()
-
-    log.info(bash.in.text)
-    log.error(bash.err.text)
-  }
-
-  public void killJavaProcesses(List<String> greps, int signal) {
-    for (String grep : greps) {
-      killJavaProcesses(grep,signal)
-    }
   }
 
   /**

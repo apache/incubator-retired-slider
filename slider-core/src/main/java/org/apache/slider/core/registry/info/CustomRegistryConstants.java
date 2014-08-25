@@ -30,9 +30,12 @@ public class CustomRegistryConstants {
   
   public static final String PUBLISHER_REST_API =
       "org.apache.slider.publisher";
-  
-  public static final String AGENT_REST_API =
-      "org.apache.slider.agents";
+
+  public static final String AGENT_SECURE_REST_API =
+      "org.apache.slider.agents.secure";
+
+  public static final String AGENT_ONEWAY_REST_API =
+      "org.apache.slider.agents.oneway";
 
   public static final String AM_IPC_PROTOCOL =
       "org.apache.slider.appmaster";

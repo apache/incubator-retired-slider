@@ -36,13 +36,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.ext.Provider;
+import java.io.Closeable;
 import java.io.File;
+import java.io.IOException;
 import java.util.Set;
 
 /**
  *
  */
-public class AgentWebApp {
+public class AgentWebApp implements Closeable {
   protected static final Logger LOG = LoggerFactory.getLogger(AgentWebApp.class);
   private int port;
   private int securedPort;
@@ -66,7 +68,7 @@ public class AgentWebApp {
       return this;
     }
 
-    public AgentWebApp start() {
+    public AgentWebApp start() throws IOException {
       if (configsMap == null) {
         throw new IllegalStateException("No SSL Configuration Available");
       }
@@ -100,8 +102,12 @@ public class AgentWebApp {
 
       try {
         agentServer.start();
+      } catch (IOException e) {
+        LOG.error("Unable to start agent server", e);
+        throw e;
       } catch (Exception e) {
         LOG.error("Unable to start agent server", e);
+        throw new IOException("Unable to start agent server: " + e, e);
       }
 
       AgentWebApp webApp = new AgentWebApp();
@@ -191,12 +197,14 @@ public class AgentWebApp {
     return securedPort;
   }
 
-  public void stop() {
+  public void close() throws IOException{
     //need to stop server and reset injector
     try {
       agentServer.stop();
+    } catch (IOException e) {
+      throw e;
     } catch (Exception e) {
-      LOG.warn("Unable to stop agent server", e);
+      throw new IOException(e.toString(), e);
     }
   }
 

@@ -18,7 +18,10 @@ package org.apache.slider.server.services.security;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.RandomStringUtils;
-import org.apache.commons.lang.SystemUtils;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.RawLocalFileSystem;
+import org.apache.hadoop.fs.permission.FsAction;
+import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.core.conf.MapOperations;
 import org.slf4j.Logger;
@@ -26,11 +29,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
+//import java.nio.file.Files;
+//import java.nio.file.Path;
+//import java.nio.file.Paths;
+//import java.nio.file.attribute.PosixFilePermission;
+//import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Set;
 
 /**
@@ -90,8 +93,11 @@ public class SecurityUtils {
   }
 
   public static String getOpenSslCommandResult(String command, int exitCode) {
-    return new StringBuilder().append("Command ").append(hideOpenSslPassword(command)).append(" was finished with exit code: ")
-        .append(exitCode).append(" - ").append(getOpenSslExitCodeDescription(exitCode)).toString();
+    return new StringBuilder().append("Command ")
+        .append(hideOpenSslPassword(command))
+        .append(" was finished with exit code: ")
+        .append(exitCode).append(" - ")
+        .append(getOpenSslExitCodeDescription(exitCode)).toString();
   }
 
   private static String getOpenSslExitCodeDescription(int exitCode) {
@@ -142,17 +148,14 @@ public class SecurityUtils {
       File newCertsDir = new File(dbDir, "newcerts");
       newCertsDir.mkdirs();
       try {
-        if(SystemUtils.IS_OS_WINDOWS) {
-          setFilePermissionForWindows(Paths.get(secDirFile.toURI()));
-          setFilePermissionForWindows(Paths.get(dbDir.toURI()));
-          setFilePermissionForWindows(Paths.get(newCertsDir.toURI()));
-        } else {
-        Set<PosixFilePermission> perms =
-            PosixFilePermissions.fromString("rwx------");
-          Files.setPosixFilePermissions(Paths.get(secDirFile.toURI()), perms);
-          Files.setPosixFilePermissions(Paths.get(dbDir.toURI()), perms);
-          Files.setPosixFilePermissions(Paths.get(newCertsDir.toURI()), perms);
-        }
+        RawLocalFileSystem fileSystem = new RawLocalFileSystem();
+        FsPermission permissions = new FsPermission(FsAction.ALL, FsAction.NONE,
+                                                    FsAction.NONE);
+        fileSystem.setPermission(new Path(dbDir.getAbsolutePath()),
+                                 permissions);
+        fileSystem.setPermission(new Path(dbDir.getAbsolutePath()), permissions);
+        fileSystem.setPermission(new Path(newCertsDir.getAbsolutePath()),
+                                 permissions);
         File indexFile = new File(dbDir, "index.txt");
         indexFile.createNewFile();
 
@@ -165,15 +168,6 @@ public class SecurityUtils {
     }
     keystorePass = getKeystorePassword(secDirFile);
     securityDir = secDirFile.getAbsolutePath();
-  }
-
-  private static void setFilePermissionForWindows(Path secDirFilePath) {
-    secDirFilePath.toFile().setReadable(false, false);
-    secDirFilePath.toFile().setExecutable(false, false);
-    secDirFilePath.toFile().setWritable(false, false);
-    secDirFilePath.toFile().setReadable(true, true);
-    secDirFilePath.toFile().setExecutable(true, true);
-    secDirFilePath.toFile().setWritable(true, true);
   }
 
   private static String getKeystorePassword(File secDirFile) {
@@ -207,15 +201,19 @@ public class SecurityUtils {
   }
 
   private static String getDefaultKeystoreLocation() {
-    Path workDir = null;
+    File workDir = null;
     try {
-      workDir = Files.createTempDirectory("sec");
+      workDir =  new File(FileUtils.getTempDirectory().getAbsolutePath()
+                          + "/sec" + System.currentTimeMillis());
+      if (!workDir.mkdirs()) {
+        throw new IOException("Unable to create temporary security directory");
+      }
     } catch (IOException e) {
       LOG.warn("Unable to create security directory");
       return null;
     }
 
-    return new StringBuilder().append(workDir.toAbsolutePath())
+    return new StringBuilder().append(workDir.getAbsolutePath())
         .append(File.separator)
         .append(SliderKeys.SECURITY_DIR)
         .append(File.separator)

@@ -72,14 +72,7 @@ PROVIDERS = dict(
 
 def find_provider(env, resource, class_path=None):
   if not class_path:
-    providers = [PROVIDERS, LIBRARY_PROVIDERS]
-    for provider in providers:
-      if resource in provider[env.system.os_family]:
-        class_path = provider[env.system.os_family][resource]
-        break
-      if resource in provider["default"]:
-        class_path = provider["default"][resource]
-        break
+    class_path = get_class_path(env.system.os_family, resource)
 
   try:
     mod_path, class_name = class_path.rsplit('.', 1)
@@ -87,3 +80,13 @@ def find_provider(env, resource, class_path=None):
     raise Fail("Unable to find provider for %s as %s" % (resource, class_path))
   mod = __import__(mod_path, {}, {}, [class_name])
   return getattr(mod, class_name)
+
+def get_class_path(os, resource):
+  providers = [PROVIDERS, LIBRARY_PROVIDERS]
+  for provider in providers:
+    if os in provider:
+      if resource in provider[os]:
+        return provider[os][resource]
+    if resource in provider["default"]:
+      return provider["default"][resource]
+  return None

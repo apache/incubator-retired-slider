@@ -22,11 +22,34 @@
 -->
 <configuration>
   <property>
+    <name>yarn.resourcemanager.address</name>
+    <value>@RM-ADDR</value>
+  </property>
+
+  <property>
+    <name>yarn.resourcemanager.scheduler.address</name>
+    <value>@RM-SCHEDULER-ADDR</value>
+  </property>
+
+  <property>
+    <name>fs.defaultFS</name>
+    <value>@FILESYSTEM</value>
+  </property>
+
+  <property>
+    <name>slider.zookeeper.quorum</name>
+    <value>@ZK-QUORUM</value>
+  </property>
+  <property>
     <name>slider.client.resource.origin</name>
     <value>conf/slider-client.xml</value>
     <description>This is just for diagnostics</description>
   </property>
 
+  <property>
+    <name>yarn.application.classpath</name>
+    <value>/etc/hadoop/conf,/usr/lib/hadoop/*,/usr/lib/hadoop/lib/*,/usr/lib/hadoop-hdfs/*,/usr/lib/hadoop-hdfs/lib/*,/usr/lib/hadoop-yarn/*,/usr/lib/hadoop-yarn/lib/*,/usr/lib/hadoop-mapreduce/*,/usr/lib/hadoop-mapreduce/lib/*</value>
+  </property>
 
   <property>
     <name>yarn.log-aggregation-enable</name>
@@ -42,15 +65,6 @@
   
 <!--
 
-  <property>
-    <name>yarn.resourcemanager.address</name>
-    <value>master:8032</value>
-  </property>
-
-  <property>
-    <name>fs.defaultFS</name>
-    <value>hdfs://master:9090</value>
-  </property>
 
   <property>
     <name>yarn.resourcemanager.principal</name>

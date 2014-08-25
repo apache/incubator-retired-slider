@@ -245,10 +245,11 @@ class MockProviderService implements ProviderService {
 
   @Override
   void applyInitialRegistryDefinitions(
-      URL unsecureWebAPI,
-      URL secureWebAPI,
+      URL amWebURI,
+      URL agentOpsURI,
+      URL agentStatusURI,
       ServiceInstanceData registryInstanceData,
-      ServiceRecord serviceEntry) throws IOException {
+      ServiceRecord serviceRecord) throws IOException {
 
   }
 

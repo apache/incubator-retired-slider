@@ -22,7 +22,6 @@ package org.apache.slider.providers.hbase;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.Container;
-import org.apache.hadoop.yarn.registry.client.draft1.RegistryWriter;
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
 import org.apache.slider.api.InternalKeys;
 import org.apache.slider.common.SliderKeys;
@@ -247,15 +246,6 @@ public class HBaseProviderService extends AbstractProviderService
   }
 
   @Override
-  public void applyInitialRegistryDefinitions(URL web,
-      URL secureWebAPI,
-      ServiceInstanceData instanceData, ServiceRecord serviceRecord) throws
-      IOException {
-    super.applyInitialRegistryDefinitions(web, secureWebAPI, instanceData,
-        serviceRecord);
-  }
-
-  @Override
   protected void serviceStart() throws Exception {
     registerHBaseServiceEntry();
     super.serviceStart();
@@ -278,23 +268,6 @@ public class HBaseProviderService extends AbstractProviderService
 
     registry.registerServiceInstance(instanceData, null);
     
-    ServiceRecord yse = new ServiceRecord();
-
-
-    RegistryWriter registryWriter = yarnRegistry.getRegistryWriter();
-    registryWriter.putServiceEntry(
-        yarnRegistry.getUser(),
-        HBASE_SERVICE_TYPE,
-        yarnRegistry.getInstanceName(),
-        yse);
-
-    registryWriter.putServiceLiveness(
-        yarnRegistry.getUser(),
-        HBASE_SERVICE_TYPE,
-        yarnRegistry.getInstanceName(),
-        true, true);
-
-
   }
 
   /**

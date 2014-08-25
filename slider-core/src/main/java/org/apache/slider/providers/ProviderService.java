@@ -184,15 +184,18 @@ public interface ProviderService extends ProviderCore,
 
   /**
    * Prior to going live -register the initial service registry data
-   * @param unsecureWebAPI
-   * @param secureWebAPI
+   * @param amWebURI
+   * @param agentOpsURI
+   * @param agentStatusURI
    * @param registryInstanceData
    * @param serviceRecord
    */
-  void applyInitialRegistryDefinitions(URL unsecureWebAPI,
-      URL secureWebAPI,
-      ServiceInstanceData registryInstanceData,
-      ServiceRecord serviceRecord) throws IOException;
+  void applyInitialRegistryDefinitions(URL amWebURI,
+                                       URL agentOpsURI,
+                                       URL agentStatusURI,
+                                       ServiceInstanceData registryInstanceData,
+                                       ServiceRecord serviceRecord)
+      throws IOException;
 
   /**
    * Create the container release selector for this provider...any policy

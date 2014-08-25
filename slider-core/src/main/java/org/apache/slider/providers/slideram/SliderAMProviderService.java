@@ -112,15 +112,17 @@ public class SliderAMProviderService extends AbstractProviderService implements
   }
 
   @Override
-  public void applyInitialRegistryDefinitions(URL unsecureWebAPI,
-      URL secureWebAPI,
+  public void applyInitialRegistryDefinitions(URL amWebURI,
+      URL agentOpsURI,
+      URL agentStatusURI,
       ServiceInstanceData instanceData,
-      ServiceRecord serviceRecord) throws IOException {
-    super.applyInitialRegistryDefinitions(unsecureWebAPI,
-                                          secureWebAPI,
-                                          instanceData,
+      ServiceRecord serviceRecord)
+      throws IOException {
+    super.applyInitialRegistryDefinitions(amWebURI,
+        agentOpsURI,
+        agentStatusURI,
+        instanceData,
         serviceRecord);
-
     // now publish site.xml files
     YarnConfiguration defaultYarnConfig = new YarnConfiguration();
     amState.getPublishedSliderConfigurations().put(
@@ -152,12 +154,11 @@ public class SliderAMProviderService extends AbstractProviderService implements
 
     try {
       RegisteredEndpoint webUI =
-          new RegisteredEndpoint(unsecureWebAPI, "Application Master Web UI");
+          new RegisteredEndpoint(amWebURI, "Application Master Web UI");
 
-      URL managementAPI = new URL(unsecureWebAPI, SLIDER_PATH_MANAGEMENT);
-      URL registryREST = new URL(unsecureWebAPI, RestPaths.SLIDER_PATH_REGISTRY + "/" +
+      URL managementAPI = new URL(amWebURI, SLIDER_PATH_MANAGEMENT);
+      URL registryREST = new URL(amWebURI, RestPaths.SLIDER_PATH_REGISTRY + "/" +
                                                  RestPaths.REGISTRY_SERVICE);
-      URL publisherURL = new URL(unsecureWebAPI, SLIDER_PATH_PUBLISHER);
 
       RegistryView externalView = instanceData.externalView;
       externalView.endpoints.put(CommonRegistryConstants.WEB_UI, webUI);
@@ -174,6 +175,7 @@ public class SliderAMProviderService extends AbstractProviderService implements
               registryREST,
               "Registry Web Service" ) );
 
+      URL publisherURL = new URL(amWebURI, SLIDER_PATH_PUBLISHER);
       externalView.endpoints.put(
           CustomRegistryConstants.PUBLISHER_REST_API,
           new RegisteredEndpoint(
@@ -187,7 +189,7 @@ public class SliderAMProviderService extends AbstractProviderService implements
 
       serviceRecord.addExternalEndpoint(
           RegistryTypeUtils.webEndpoint(
-              CommonRegistryConstants.WEB_UI, unsecureWebAPI.toURI()));
+              CommonRegistryConstants.WEB_UI, amWebURI.toURI()));
       serviceRecord.addExternalEndpoint(
           RegistryTypeUtils.restEndpoint(
               CustomRegistryConstants.MANAGEMENT_REST_API,
@@ -196,8 +198,6 @@ public class SliderAMProviderService extends AbstractProviderService implements
           RegistryTypeUtils.restEndpoint(
               CustomRegistryConstants.PUBLISHER_REST_API,
               publisherURL.toURI()));
-      
-      
 
     } catch (URISyntaxException e) {
       throw new IOException(e);

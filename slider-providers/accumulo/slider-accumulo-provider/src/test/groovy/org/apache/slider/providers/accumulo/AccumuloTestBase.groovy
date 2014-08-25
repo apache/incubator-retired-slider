@@ -27,6 +27,7 @@ import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.ResourceKeys
 import org.apache.slider.client.SliderClient
 import org.apache.slider.test.YarnZKMiniClusterTestBase
+import org.junit.internal.AssumptionViolatedException
 
 import static org.apache.slider.common.SliderXMLConfKeysForTesting.*
 import static org.apache.slider.providers.accumulo.AccumuloKeys.*
@@ -71,7 +72,11 @@ public abstract class AccumuloTestBase extends YarnZKMiniClusterTestBase {
   void teardown() {
     super.teardown();
     if (teardownKillall) {
-      killAllAccumuloProcesses();
+      try {
+        killAllAccumuloProcesses();
+      } catch (AssumptionViolatedException e) {
+        log.info e.toString();
+      }
     }
   }
 

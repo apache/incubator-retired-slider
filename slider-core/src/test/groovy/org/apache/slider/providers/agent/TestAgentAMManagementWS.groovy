@@ -131,7 +131,7 @@ class TestAgentAMManagementWS extends AgentTestBase {
 
     
     def status = dumpClusterStatus(sliderClient, "agent AM")
-    def liveURL = status.getInfo(StatusKeys.INFO_AM_AGENT_URL)
+    def liveURL = status.getInfo(StatusKeys.INFO_AM_AGENT_OPS_URL)
     if (liveURL) {
       agent_url = liveURL + AGENT_URI
     }

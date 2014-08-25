@@ -19,7 +19,7 @@
   <groupId>org.apache.slider</groupId>
   <artifactId>slider</artifactId>
   <name>Slider</name>
-  <version>0.41.0-incubating-SNAPSHOT</version>
+  <version>0.51.0-incubating-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <description>
@@ -343,9 +343,9 @@
             <exclude>**/dfs.exclude</exclude>
             <exclude>**/*.iml</exclude>
             <exclude>**/rat.txt</exclude>
-            <exclude>**/get-hbase-site.sh</exclude>
             <exclude>DISCLAIMER</exclude>
             <exclude>app-packages/hbase/target/**</exclude>
+            <exclude>target/*</exclude>
           </excludes>
         </configuration>
       </plugin>
