@@ -35,7 +35,7 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.registry.client.api.RegistryConstants;
 import org.apache.hadoop.yarn.registry.client.binding.ZKPathDumper;
-import org.apache.hadoop.yarn.registry.client.draft1.RegistryWriterService;
+import org.apache.hadoop.yarn.registry.client.services.RegistryOperationsService;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterNode;
 import org.apache.slider.api.InternalKeys;
@@ -166,7 +166,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   /**
    * The YARN registry service
    */
-  private RegistryWriterService yarnRegistry;
+  private RegistryOperationsService registryOperations;
 
   /**
    * Constructor
@@ -1090,7 +1090,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     addMandatoryConfOptionToCLI(commandLine, config, RegistryConstants.REGISTRY_ZK_QUORUM);
     addMandatoryConfOptionToCLI(commandLine, config, REGISTRY_ZK_QUORUM);
     define(commandLine, RegistryConstants.REGISTRY_ZK_QUORUM,
-        getYarnRegistry().getCurrentZookeeperQuorum());
+        getRegistryOperations().getCurrentZookeeperQuorum());
 
 
     if (clusterSecure) {
@@ -2484,23 +2484,21 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @throws SliderException
    * @throws IOException
    */
-  private synchronized RegistryWriterService maybeStartYarnRegistry() throws
-      SliderException,
-      IOException {
+  private synchronized RegistryOperationsService maybeStartYarnRegistry()
+      throws SliderException, IOException {
 
-    if (yarnRegistry == null) {
-      yarnRegistry = startYarnRegistryService();
+    if (registryOperations == null) {
+      registryOperations = startRegistryOperationsService();
     }
-    return yarnRegistry;
+    return registryOperations;
   }
 
   /**
    * Get the YARN registry
    * @return the registry 
    */
-  public RegistryWriterService getYarnRegistry() throws
-      SliderException,
-      IOException {
+  public RegistryOperationsService getRegistryOperations()
+      throws SliderException, IOException {
     return maybeStartYarnRegistry();
   }
 
@@ -2510,8 +2508,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @return a class that can dump the contents of the registry
    */
   @VisibleForTesting
-  public ZKPathDumper dumpYarnRegistry(boolean verbose) throws SliderException, IOException {
-    return getYarnRegistry().dumpPath();
+  public ZKPathDumper dumpYarnRegistry(boolean verbose)
+      throws SliderException, IOException {
+    return getRegistryOperations().dumpPath();
   }
 
 

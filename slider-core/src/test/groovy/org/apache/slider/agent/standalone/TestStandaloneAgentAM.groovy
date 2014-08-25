@@ -114,7 +114,7 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     describe "end list service registry slider instances"
 
     describe "Yarn registry"
-    def yarnRegistry = client.yarnRegistry
+    def yarnRegistry = client.registryOperations
     
     describe "teardown of cluster instance #1"
     //now kill that cluster

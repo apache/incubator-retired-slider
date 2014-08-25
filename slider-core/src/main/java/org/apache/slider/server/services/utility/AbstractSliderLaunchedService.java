@@ -22,7 +22,7 @@ package org.apache.slider.server.services.utility;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.registry.client.api.RegistryConstants;
-import org.apache.hadoop.yarn.registry.client.draft1.RegistryWriterService;
+import org.apache.hadoop.yarn.registry.client.services.RegistryOperationsService;
 import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
@@ -114,17 +114,25 @@ public abstract class AbstractSliderLaunchedService extends
    * @param zkPath
    * @return
    */
-  public RegistryWriterService startYarnRegistryService()
+  public RegistryOperationsService startRegistryOperationsService()
       throws BadConfigException {
 
-    Configuration conf = getConfig();
     // push back the slider registry entry if needed
     String quorum = lookupZKQuorum();
-    conf.set(RegistryConstants.REGISTRY_ZK_QUORUM, quorum);
-    RegistryWriterService registryWriterService =
-        new RegistryWriterService("YarnRegistry");
+    getConfig().set(RegistryConstants.REGISTRY_ZK_QUORUM, quorum);
+    RegistryOperationsService registryWriterService =
+        createRegistryOperationsInstance();
     deployChildService(registryWriterService);
     return registryWriterService;
+  }
+
+  /**
+   * Create the registry operations instance. This is to allow
+   * subclasses to instantiate a subclass service
+   * @return an instance to match to the lifecycle of this service
+   */
+  protected RegistryOperationsService createRegistryOperationsInstance() {
+    return new RegistryOperationsService("YarnRegistry");
   }
 
   /**

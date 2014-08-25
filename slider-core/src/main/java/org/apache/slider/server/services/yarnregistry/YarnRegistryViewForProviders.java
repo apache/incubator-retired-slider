@@ -18,23 +18,26 @@
 
 package org.apache.slider.server.services.yarnregistry;
 
-import org.apache.hadoop.yarn.registry.client.draft1.RegistryWriter;
+import org.apache.hadoop.yarn.registry.client.binding.BindingUtils;
+import org.apache.hadoop.yarn.registry.client.binding.RegistryZKUtils;
+import org.apache.hadoop.yarn.registry.client.services.RegistryOperationsService;
+import org.apache.hadoop.yarn.registry.client.types.CreateFlags;
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
 
 import java.io.IOException;
 
 public class YarnRegistryViewForProviders {
 
-  private final RegistryWriter registryWriter;
+  private final RegistryOperationsService registryOperations;
 
   private final String user;
 
   private final String sliderServiceclass;
   private final String instanceName;
 
-  public YarnRegistryViewForProviders(RegistryWriter registryWriter,
+  public YarnRegistryViewForProviders(RegistryOperationsService registryOperations,
       String user, String sliderServiceclass, String instanceName) {
-    this.registryWriter = registryWriter;
+    this.registryOperations = registryOperations;
     this.user = user;
     this.sliderServiceclass = sliderServiceclass;
     this.instanceName = instanceName;
@@ -52,8 +55,8 @@ public class YarnRegistryViewForProviders {
     return instanceName;
   }
 
-  public RegistryWriter getRegistryWriter() {
-    return registryWriter;
+  public RegistryOperationsService getRegistryOperationsService() {
+    return registryOperations;
   }
 
   /**
@@ -67,26 +70,50 @@ public class YarnRegistryViewForProviders {
       ServiceRecord entry,
       boolean ephemeral) throws
       IOException {
-    registryWriter.putComponent(user, sliderServiceclass, instanceName,
+    putComponent(sliderServiceclass, instanceName,
         componentName,
         entry,
         ephemeral);
   }
 
   /**
-   * Add a component under the slider name/entry
+   * Add a component 
    * @param componentName
-   * @param entry
+   * @param record
    * @param ephemeral
    * @throws IOException
    */
   public void putComponent(String serviceClass,
       String serviceName,
-      String componentName, ServiceRecord entry, boolean ephemeral) throws
-      IOException {
-    registryWriter.putComponent(user, serviceClass, serviceName, componentName,
-        entry,
-        ephemeral);
+      String componentName,
+      ServiceRecord record,
+      boolean ephemeral) throws IOException {
+    String path = BindingUtils.componentPath(
+        user, serviceClass, serviceName, componentName);
+    registryOperations.mkdir(RegistryZKUtils.parentOf(path), true);
+    registryOperations.create(path, record,
+        CreateFlags.OVERWRITE
+        + (ephemeral ? CreateFlags.EPHEMERAL : 0));
+  }
+
+
+  /**
+   * Add a service under
+   * @param componentName
+   * @param record
+   * @param ephemeral
+   * @throws IOException
+   */
+  public void putService(String username,
+      String serviceClass,
+      String serviceName,
+      ServiceRecord record) throws IOException {
+
+    String path = BindingUtils.servicePath(
+        username, serviceClass, serviceName);
+    registryOperations.mkdir(RegistryZKUtils.parentOf(path), true);
+    registryOperations.create(path, record, CreateFlags.OVERWRITE);
+
   }
 
 

@@ -52,9 +52,10 @@ import org.apache.hadoop.yarn.client.api.async.impl.NMClientAsyncImpl;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.ipc.YarnRPC;
+import org.apache.hadoop.yarn.registry.client.services.RegistryOperationsService;
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
-import org.apache.hadoop.yarn.registry.client.draft1.RegistryWriterService;
 import org.apache.hadoop.yarn.registry.client.binding.RegistryTypeUtils;
+import org.apache.hadoop.yarn.registry.server.services.ResourceManagerRegistryService;
 import org.apache.hadoop.yarn.security.AMRMTokenIdentifier;
 import org.apache.hadoop.yarn.security.client.ClientToAMTokenSecretManager;
 import org.apache.hadoop.yarn.util.ConverterUtils;
@@ -331,7 +332,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * The YARN registry service
    */
   @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
-  private RegistryWriterService yarnRegistry;
+  private RegistryOperationsService registryOperations;
 
 
   /**
@@ -668,8 +669,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       log.info(registry.toString());
 
       log.info("Starting Yarn registry");
-      yarnRegistry = startYarnRegistryService();
-      log.info(yarnRegistry.toString());
+      registryOperations = startRegistryOperationsService();
+      log.info(registryOperations.toString());
 
       //build the role map
       List<ProviderRole> providerRoles =
@@ -684,7 +685,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       startAgentWebApp(appInformation, serviceConf);
 
-      webApp = new SliderAMWebApp(registry, yarnRegistry);
+      webApp = new SliderAMWebApp(registry, registryOperations);
       WebApps.$for(SliderAMWebApp.BASE_PATH, WebAppApi.class,
                    new WebAppApiImpl(this,
                                      stateForProviders,
@@ -875,6 +876,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   private void registerServiceInstance(String instanceName,
       ApplicationId appid) throws Exception {
+    
+    
     // the registry is running, so register services
     URL amWebURI = new URL(appMasterTrackingUrl);
     URL agentOpsURI = new URL(agentOpsUrl);
@@ -891,9 +894,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
 
     //Give the provider restricted access to the state, registry
+    setupInitialRegistryPaths();
     YarnRegistryViewForProviders yarnRegistryView =
         new YarnRegistryViewForProviders(
-            yarnRegistry, service_user_name,
+            registryOperations, service_user_name,
             SliderKeys.APP_TYPE,
             instanceName);
     providerService.bindToYarnRegistry(yarnRegistryView);
@@ -945,26 +949,33 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     registry.registerSelf(
         instanceData, amWebURI
     );
-    yarnRegistry.putServiceEntry(service_user_name,
-        SliderKeys.APP_TYPE, 
-        instanceName,
-        serviceRecord );
-    yarnRegistry.putServiceLiveness(service_user_name,
+    yarnRegistryView.putService(service_user_name,
         SliderKeys.APP_TYPE,
         instanceName,
-        true,
-        true);
+        serviceRecord);
+
     // and an ephemeral binding to the app
-    yarnRegistry.putComponent(service_user_name,
-        SliderKeys.APP_TYPE,
-        instanceName,
+    yarnRegistryView.putComponent(
         "appmaster",
         serviceRecord,
         true);
 
   }
 
+
+  @Override
+  protected RegistryOperationsService createRegistryOperationsInstance() {
+    return new ResourceManagerRegistryService("YarnRegistry");
+  }
+  
+  protected void setupInitialRegistryPaths() throws IOException {
+    ResourceManagerRegistryService rmRegOperations =
+        (ResourceManagerRegistryService) registryOperations;
+    rmRegOperations.createUserPath(service_user_name);
+  }
+
   /**
+   * Handler for {@link RegisterComponentInstance action}
    * Register/re-register a component (that is already in the app state
    * @param id the component
    */
@@ -980,6 +991,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   }
   
   /**
+   * Handler for {@link UnregisterComponentInstance}
+   * 
    * unregister a component. At the time this message is received,
    * the component may already been deleted from/never added to
    * the app state
@@ -988,7 +1001,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public void unregisterComponent(ContainerId id) {
     log.info("Unregistering component {}", id);
   }
-  
+
   /**
    * looks for a specific case where a token file is provided as an environment
    * variable, yet the file is not there.

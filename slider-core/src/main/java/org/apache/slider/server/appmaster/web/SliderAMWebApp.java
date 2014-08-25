@@ -22,7 +22,7 @@ import com.sun.jersey.api.core.ResourceConfig;
 import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 import com.sun.jersey.spi.container.servlet.ServletContainer;
 import org.apache.curator.x.discovery.ServiceDiscovery;
-import org.apache.hadoop.yarn.registry.client.draft1.RegistryWriterService;
+import org.apache.hadoop.yarn.registry.client.services.RegistryOperationsService;
 import org.apache.hadoop.yarn.webapp.Dispatcher;
 import org.apache.hadoop.yarn.webapp.GenericExceptionHandler;
 import org.apache.hadoop.yarn.webapp.WebApp;
@@ -49,11 +49,11 @@ public class SliderAMWebApp extends WebApp {
   public static final String CLUSTER_SPEC = "/spec";
 
   public final SliderRegistryService registry;
-  private final RegistryWriterService yarnRegistry;
+  private final RegistryOperationsService yarnRegistry;
 
 
   public SliderAMWebApp(SliderRegistryService registry,
-      RegistryWriterService yarnRegistry) {
+      RegistryOperationsService yarnRegistry) {
     this.yarnRegistry = yarnRegistry;
     Preconditions.checkArgument(registry != null, "registry null");
     this.registry = registry;
