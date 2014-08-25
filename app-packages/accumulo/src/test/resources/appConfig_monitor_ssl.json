@@ -4,14 +4,11 @@
   },
   "global": {
     "application.def": "${app.package.name}.zip",
-    "config_types": "accumulo-site",
     "java_home": "/usr/lib/jvm/java",
-    "package_list": "files/accumulo-${accumulo.version}-bin.tar.gz",
     "site.global.app_user": "yarn",
     "site.global.app_log_dir": "${AGENT_LOG_ROOT}",
     "site.global.app_pid_dir": "${AGENT_WORK_ROOT}/app/run",
     "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/accumulo-${accumulo.version}",
-    "site.global.app_install_dir": "${AGENT_WORK_ROOT}/app/install",
     "site.global.tserver_heapsize": "128m",
     "site.global.master_heapsize": "128m",
     "site.global.monitor_heapsize": "64m",
@@ -48,18 +45,8 @@
     "jceks://hdfs/user/${USER}/accumulo-${CLUSTER_NAME}.jceks": ["root.initial.password", "instance.secret", "trace.token.property.password", "monitor.ssl.keyStorePassword", "monitor.ssl.trustStorePassword"]
   },
   "components": {
-    "ACCUMULO_MASTER": {
-    },
     "slider-appmaster": {
       "jvm.heapsize": "256M"
-    },
-    "ACCUMULO_TSERVER": {
-    },
-    "ACCUMULO_MONITOR": {
-    },
-    "ACCUMULO_GC": {
-    },
-    "ACCUMULO_TRACER": {
     }
   }
 }
