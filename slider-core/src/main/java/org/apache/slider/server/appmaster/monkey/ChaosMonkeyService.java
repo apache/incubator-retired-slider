@@ -47,7 +47,7 @@ public class ChaosMonkeyService extends AbstractService {
   private final QueueAccess queues;
   private final Random random = new Random();
 
-  private static final List<ChaosEntry> chaosEntries =
+  private final List<ChaosEntry> chaosEntries =
       new ArrayList<ChaosEntry>();
 
   public ChaosMonkeyService(MetricRegistry metrics, QueueAccess queues) {
