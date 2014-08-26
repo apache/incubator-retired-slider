@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 
-How to create a Slider package for Accumulo?
+# How to create a Slider package for Accumulo?
 
   mvn clean package -DskipTests -Paccumulo-app-package
 
@@ -46,7 +46,29 @@ which is an HDFS URI).
 A less descriptive file name can be specified with
 -Dapp.package.name=accumulo_160 which would create a file accumulo_160.zip.
 
-Export Control
+# Building Native Libraries
+
+Accumulo works better with its native libraries, and these must be built
+manually for Accumulo releases 1.6.0 and greater.  They should be built on a
+machine Accumulo will be deployed on, or an equivalent.  The procedure below
+illustrates the steps for extracting and rebuilding the Accumulo app package
+with native libraries, in the case of Accumulo version 1.6.0.  You will need a
+C++ compiler/toolchain installed to build this library, and JAVA_HOME must be
+set.
+
+  unzip ${app.package.name}.zip package/files/accumulo*gz
+  cd package/files/
+  gunzip accumulo-1.6.0-bin.tar.gz
+  tar xvf accumulo-1.6.0-bin.tar
+  accumulo-1.6.0/bin/build_native_library.sh
+  tar uvf accumulo-1.6.0-bin.tar accumulo-1.6.0
+  rm -rf accumulo-1.6.0
+  gzip accumulo-1.6.0-bin.tar
+  cd ../../
+  zip ${app.package.name}.zip -r package
+  rm -rf package
+
+# Export Control
 
 This distribution includes cryptographic software. The country in which you
 currently reside may have restrictions on the import, possession, use, and/or
@@ -67,7 +89,7 @@ source code.
 
 The following provides more details on the included cryptographic software:
 
-Apache Slider uses the built-in java cryptography libraries. See Oracle's 
+Apache Slider uses the built-in java cryptography libraries. See Oracle's
 information regarding Java cryptographic export regulations for more details:
 http://www.oracle.com/us/products/export/export-regulations-345813.html
 

@@ -35,6 +35,8 @@ import org.apache.slider.server.appmaster.state.RoleInstance
 import org.junit.Before
 import org.junit.Test
 
+import java.util.concurrent.TimeUnit
+
 @CompileStatic
 @Slf4j
 class TestMockMonkey extends BaseMockAppStateTest {
@@ -43,14 +45,15 @@ class TestMockMonkey extends BaseMockAppStateTest {
    * This queue service is NOT started; tests need to poll the queue
    * rather than expect them to execute
    */
-  QueueService queues = new QueueService();
-  ChaosMonkeyService monkey = new ChaosMonkeyService(metricRegistry,
-  queues)
+  QueueService queues
+  ChaosMonkeyService monkey
 
   @Before
   public void init() {
     def configuration = new YarnConfiguration()
+    queues = new QueueService();
     queues.init(configuration)
+    monkey = new ChaosMonkeyService(metricRegistry, queues)
     monkey.init(configuration)
   }
   
@@ -60,15 +63,43 @@ class TestMockMonkey extends BaseMockAppStateTest {
     monkey.stop()
   }
 
-
   @Test
   public void testMonkeyPlay() throws Throwable {
     ChaosCounter counter = new ChaosCounter()
     monkey.addTarget("target", counter, ChaosMonkeyService.PERCENT_100)
-    
+    assert 1 == monkey.targetCount;
     monkey.play()
     assert counter.count == 1
   }
+
+  @Test
+  public void testMonkeySchedule() throws Throwable {
+    ChaosCounter counter = new ChaosCounter()
+    assert 0 == monkey.targetCount;
+    monkey.addTarget("target", counter, ChaosMonkeyService.PERCENT_100)
+    assert 1 == monkey.targetCount;
+    assert monkey.schedule(1, TimeUnit.SECONDS)
+    assert 1 == queues.scheduledActions.size()
+  }
+
+  @Test
+  public void testMonkeyDoesntAddProb0Actions() throws Throwable {
+    ChaosCounter counter = new ChaosCounter()
+    monkey.addTarget("target", counter, 0)
+    assert 0 == monkey.targetCount;
+    monkey.play()
+    assert counter.count == 0
+  }
+
+
+  @Test
+  public void testMonkeyScheduleProb0Actions() throws Throwable {
+    ChaosCounter counter = new ChaosCounter()
+    monkey.addTarget("target", counter, 0)
+    assert !monkey.schedule(1, TimeUnit.SECONDS)
+    assert 0 == queues.scheduledActions.size()
+  }
+
 
   @Test
   public void testMonkeyPlaySometimes() throws Throwable {
