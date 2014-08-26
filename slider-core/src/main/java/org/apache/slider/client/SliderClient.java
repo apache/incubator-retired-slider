@@ -19,6 +19,7 @@
 package org.apache.slider.client;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
@@ -1168,11 +1169,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     
     addConfOptionToCLI(commandLine, config, REGISTRY_PATH,
         DEFAULT_REGISTRY_PATH);
-    addMandatoryConfOptionToCLI(commandLine, config, RegistryConstants.REGISTRY_ZK_QUORUM);
+    addMandatoryConfOptionToCLI(commandLine, config, RegistryConstants.KEY_REGISTRY_ZK_QUORUM);
     addMandatoryConfOptionToCLI(commandLine, config, REGISTRY_ZK_QUORUM);
-    define(commandLine, RegistryConstants.REGISTRY_ZK_QUORUM,
-        getRegistryOperations().getCurrentZookeeperQuorum());
-
 
     if (clusterSecure) {
       // if the cluster is secure, make sure that
@@ -1291,12 +1289,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       Configuration conf,
       String key) {
     String val = conf.get(key);
-    if (val != null) {
-      define(cmdLine, key, val);
-      return true;
-    } else {
-      return false;
-    }
+    return defineIfSet(cmdLine, key, val);
   }
 
   private String addConfOptionToCLI(CommandLineBuilder cmdLine,
@@ -1309,13 +1302,32 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
   /**
-   * Add a define command to the CLI
-   * @param cmdLine
-   * @param key
-   * @param val
+   * Add a <code>-D key=val</code> command to the CLI
+   * @param cmdLine command line
+   * @param key key
+   * @param val value
    */
   private void define(CommandLineBuilder cmdLine, String key, String val) {
+    Preconditions.checkArgument(key != null, "null key");
+    Preconditions.checkArgument(val != null, "null value");
     cmdLine.add(Arguments.ARG_DEFINE, key + "=" + val);
+  }
+
+  /**
+   * Add a <code>-D key=val</code> command to the CLI if <code>val</code>
+   * is not null
+   * @param cmdLine command line
+   * @param key key
+   * @param val value
+   */
+  private boolean defineIfSet(CommandLineBuilder cmdLine, String key, String val) {
+    Preconditions.checkArgument(key != null, "null key");
+    if (val != null) {
+      define(cmdLine, key, val);
+      return true;
+    } else {
+      return false;
+    }
   }
 
   private void addMandatoryConfOptionToCLI(CommandLineBuilder cmdLine,

@@ -18,7 +18,6 @@
 
 package org.apache.slider.server.services.utility;
 
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.registry.client.api.RegistryConstants;
@@ -50,7 +49,7 @@ public abstract class AbstractSliderLaunchedService extends
   @Override
   protected void serviceInit(Configuration conf) throws Exception {
     String quorum = lookupZKQuorum();
-    conf.set(RegistryConstants.REGISTRY_ZK_QUORUM, quorum);
+    conf.set(RegistryConstants.KEY_REGISTRY_ZK_QUORUM, quorum);
     super.serviceInit(conf);
   }
 
@@ -75,14 +74,19 @@ public abstract class AbstractSliderLaunchedService extends
    * @throws BadConfigException if it is not there or invalid
    */
   public String lookupZKQuorum() throws BadConfigException {
-    String registryQuorum = getConfig().get(RegistryConstants.REGISTRY_ZK_QUORUM);
+    // YARN registry first
+    String registryQuorum = getConfig().get(RegistryConstants.KEY_REGISTRY_ZK_QUORUM);
+    
+    // slider value can overrride it
     registryQuorum = getConfig().get(
         SliderXmlConfKeys.REGISTRY_ZK_QUORUM,
         registryQuorum);
+    
+    // though if neither is set: trouble
     if (SliderUtils.isUnset(registryQuorum)) {
       throw new BadConfigException(
           "No Zookeeper quorum provided in the"
-          + " configuration property " + RegistryConstants.REGISTRY_ZK_QUORUM
+          + " configuration property " + RegistryConstants.KEY_REGISTRY_ZK_QUORUM
       );
     }
     ZookeeperUtils.splitToHostsAndPortsStrictly(registryQuorum);
@@ -119,7 +123,7 @@ public abstract class AbstractSliderLaunchedService extends
 
     // push back the slider registry entry if needed
     String quorum = lookupZKQuorum();
-    getConfig().set(RegistryConstants.REGISTRY_ZK_QUORUM, quorum);
+    getConfig().set(RegistryConstants.KEY_REGISTRY_ZK_QUORUM, quorum);
     RegistryOperationsService registryWriterService =
         createRegistryOperationsInstance();
     deployChildService(registryWriterService);
