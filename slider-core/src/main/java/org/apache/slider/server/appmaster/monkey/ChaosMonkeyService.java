@@ -56,13 +56,30 @@ public class ChaosMonkeyService extends AbstractService {
     this.queues = queues;
   }
 
-
+  /**
+   * Add a target ... it is only added if <code>probability &gt; 0</code>
+   * @param name name
+   * @param target chaos target
+   * @param probability probability
+   */
   public synchronized void addTarget(String name,
       ChaosTarget target, long probability) {
-    log.info("Adding {} with probability {}", name, probability / PERCENT_1);
-    chaosEntries.add(new ChaosEntry(name, target, probability, metrics));
+    if (probability > 0) {
+      log.info("Adding {} with probability {}", name, probability / PERCENT_1);
+      chaosEntries.add(new ChaosEntry(name, target, probability, metrics));
+    } else {
+      log.debug("Action {} not enabled", name);
+    }
   }
 
+  /**
+   * Get the number of targets in the list
+   * @return the count of added targets
+   */
+  public int getTargetCount() {
+    return chaosEntries.size();
+  }
+  
   /**
    * Iterate through all the entries and invoke chaos on those wanted
    */
@@ -73,6 +90,27 @@ public class ChaosMonkeyService extends AbstractService {
     }
   }
 
+  /**
+   * Schedule the monkey
+   * @param time interval
+   * @param timeUnit time unit
+   * @return true if it was scheduled (i.e. 1+ action)
+   */
+  public boolean schedule(long time, TimeUnit timeUnit) {
+    if (!chaosEntries.isEmpty()) {
+      queues.schedule(getChaosAction(time, timeUnit));
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  /**
+   * Get the chaos action
+   * @param time interval
+   * @param timeUnit time unit
+   * @return the action to schedule
+   */
   public RenewingAction<MonkeyPlayAction> getChaosAction(long time, TimeUnit timeUnit) {
     RenewingAction<MonkeyPlayAction> action = new RenewingAction<MonkeyPlayAction>(
         new MonkeyPlayAction(this, 0, TimeUnit.MILLISECONDS),
