@@ -92,7 +92,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
       File zipFileName = new File(TEST_APP_PKG_DIR, TEST_APP_PKG_FILE).canonicalFile
       agentUploads.uploader.copyIfOutOfDate(zipFileName, appPkgPath, false)
-      assume(clusterFS.exists(appPkgPath), "App pkg not uploaded to $appPkgPath")
+      assert clusterFS.exists(appPkgPath), "App pkg not uploaded to $appPkgPath"
       log.info "App pkg uploaded at $appPkgPath"
     } catch (Exception e) {
       setup_failed = true
@@ -103,6 +103,9 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
   public static void logShell(SliderShell shell) {
     for (String str in shell.out) {
       log.info str
+    }
+    for (String str in shell.err) {
+      log.error str
     }
   }
 

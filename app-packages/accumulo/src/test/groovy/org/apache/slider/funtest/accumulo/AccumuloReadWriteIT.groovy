@@ -51,7 +51,8 @@ class AccumuloReadWriteIT extends AccumuloBasicIT {
       String zookeepers = SLIDER_CONFIG.get(SliderXmlConfKeys.REGISTRY_ZK_QUORUM,
         FuntestProperties.DEFAULT_SLIDER_ZK_HOSTS)
 
-      ZooKeeperInstance instance = new ZooKeeperInstance(INSTANCE_NAME, zookeepers)
+      ZooKeeperInstance instance = new ZooKeeperInstance(
+        tree.global.get("site.global.accumulo_instance_name"), zookeepers)
       Connector connector = instance.getConnector(USER, new PasswordToken(PASSWORD))
 
       ingest(connector, 200000, 1, 50, 0);
@@ -77,7 +78,7 @@ class AccumuloReadWriteIT extends AccumuloBasicIT {
     TestIngest.ingest(connector, opts, new BatchWriterOpts());
   }
 
-  private static void verify(Connector connector, int rows, int cols, int width, int offset) throws Exception {
+  public static void verify(Connector connector, int rows, int cols, int width, int offset) throws Exception {
     ScannerOpts scannerOpts = new ScannerOpts();
     VerifyIngest.Opts opts = new VerifyIngest.Opts();
     opts.rows = rows;
@@ -88,7 +89,7 @@ class AccumuloReadWriteIT extends AccumuloBasicIT {
     VerifyIngest.verifyIngest(connector, opts, scannerOpts);
   }
 
-  static void interleaveTest(final Connector connector) throws Exception {
+  public static void interleaveTest(final Connector connector) throws Exception {
     final int ROWS = 200000;
     final AtomicBoolean fail = new AtomicBoolean(false);
     final int CHUNKSIZE = ROWS / 10;

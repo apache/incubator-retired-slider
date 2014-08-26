@@ -36,7 +36,7 @@ export ACCUMULO_TSERVER_OPTS="-Xmx{{tserver_heapsize}} -Xms{{tserver_heapsize}}"
 export ACCUMULO_MASTER_OPTS="-Xmx{{master_heapsize}} -Xms{{master_heapsize}}"
 export ACCUMULO_MONITOR_OPTS="-Xmx{{monitor_heapsize}} -Xms{{monitor_heapsize}}"
 export ACCUMULO_GC_OPTS="-Xmx{{gc_heapsize}} -Xms{{gc_heapsize}}"
-export ACCUMULO_GENERAL_OPTS="-XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=75"
+export ACCUMULO_GENERAL_OPTS="-XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=75 -Djava.net.preferIPv4Stack=true"
 export ACCUMULO_OTHER_OPTS="-Xmx{{other_heapsize}} -Xms{{other_heapsize}}"
 # what do when the JVM runs out of heap memory
 export ACCUMULO_KILL_CMD='kill -9 %p'

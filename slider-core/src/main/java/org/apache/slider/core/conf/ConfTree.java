@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -64,6 +65,12 @@ public final class ConfTree {
   public Map<String, String> global =
     new HashMap<String, String>(INITAL_MAP_CAPACITY);
 
+
+  /**
+   * Credentials
+   */
+  public Map<String, List<String>> credentials =
+      new HashMap<String, List<String>>(INITAL_MAP_CAPACITY);
 
   /**
    * Role options, 

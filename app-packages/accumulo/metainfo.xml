@@ -69,6 +69,14 @@
         <command>ACCUMULO_TRACER-START</command>
         <requires>ACCUMULO_MASTER-STARTED</requires>
       </commandOrder>
+      <commandOrder>
+        <command>ACCUMULO_GC-START</command>
+        <requires>ACCUMULO_TSERVER-STARTED</requires>
+      </commandOrder>
+      <commandOrder>
+        <command>ACCUMULO_TRACER-START</command>
+        <requires>ACCUMULO_TSERVER-STARTED</requires>
+      </commandOrder>
     </commandOrders>
     <components>
       <component>
@@ -143,6 +151,14 @@
         </packages>
       </osSpecific>
     </osSpecifics>
+
+    <configFiles>
+      <configFile>
+        <type>xml</type>
+        <fileName>accumulo-site.xml</fileName>
+        <dictionaryName>accumulo-site</dictionaryName>
+      </configFile>
+    </configFiles>
 
   </application>
 </metainfo>

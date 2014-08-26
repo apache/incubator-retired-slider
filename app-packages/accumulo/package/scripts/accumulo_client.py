@@ -36,7 +36,7 @@ class AccumuloClient(Script):
     setup_conf_dir(name='client')
 
   def status(self, env):
-    raise ClientComponentHasNoStatus()
+    pass
 
 
 if __name__ == "__main__":

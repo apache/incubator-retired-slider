@@ -41,6 +41,19 @@
       <filtered>true</filtered>
       <fileMode>0755</fileMode>
     </file>
+    <file>
+      <source>${project.build.directory}/${work.dir}/accumulo-${accumulo.version}-bin.tar.gz</source>
+      <outputDirectory>package/files</outputDirectory>
+      <filtered>false</filtered>
+      <fileMode>0755</fileMode>
+    </file>
+    <file>
+      <source>${project.build.directory}/slider-accumulo-app-package-${project.version}.jar</source>
+      <outputDirectory>package/files</outputDirectory>
+      <destName>SliderAccumuloUtils.jar</destName>
+      <filtered>false</filtered>
+      <fileMode>0755</fileMode>
+    </file>
   </files>
 
   <fileSets>
@@ -57,16 +70,5 @@
       <fileMode>0755</fileMode>
       <directoryMode>0755</directoryMode>
     </fileSet>
-
-    <fileSet>
-      <directory>${project.build.directory}/${work.dir}</directory>
-      <outputDirectory>package/files</outputDirectory>
-      <includes>
-        <include>accumulo-${accumulo.version}-bin.tar.gz</include>
-      </includes>
-      <fileMode>0755</fileMode>
-      <directoryMode>0755</directoryMode>
-    </fileSet>
-
   </fileSets>
 </assembly>

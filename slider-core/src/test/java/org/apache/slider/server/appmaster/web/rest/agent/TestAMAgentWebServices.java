@@ -25,6 +25,7 @@ import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.api.json.JSONConfiguration;
 import junit.framework.Assert;
+import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.IOUtils;
@@ -55,12 +56,12 @@ import javax.ws.rs.core.MediaType;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
+//import java.nio.file.FileVisitResult;
+//import java.nio.file.Files;
+//import java.nio.file.Path;
+//import java.nio.file.Paths;
+//import java.nio.file.SimpleFileVisitor;
+//import java.nio.file.attribute.BasicFileAttributes;
 
 import static org.junit.Assert.assertEquals;
 
@@ -219,22 +220,23 @@ public class TestAMAgentWebServices {
 
   @AfterClass
   public static void tearDownClass() throws Exception{
-    Path directory = Paths.get(SecurityUtils.getSecurityDir());
-    Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
-      @Override
-      public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-          throws IOException {
-        Files.delete(file);
-        return FileVisitResult.CONTINUE;
-      }
-
-      @Override
-      public FileVisitResult postVisitDirectory(Path dir, IOException exc)
-          throws IOException {
-        Files.delete(dir);
-        return FileVisitResult.CONTINUE;
-      }
-
-    });
+    FileUtils.deleteDirectory(new File(SecurityUtils.getSecurityDir()));
+//    Path directory = Paths.get(SecurityUtils.getSecurityDir());
+//    Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
+//      @Override
+//      public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+//          throws IOException {
+//        Files.delete(file);
+//        return FileVisitResult.CONTINUE;
+//      }
+//
+//      @Override
+//      public FileVisitResult postVisitDirectory(Path dir, IOException exc)
+//          throws IOException {
+//        Files.delete(dir);
+//        return FileVisitResult.CONTINUE;
+//      }
+//
+//    });
   }
 }
