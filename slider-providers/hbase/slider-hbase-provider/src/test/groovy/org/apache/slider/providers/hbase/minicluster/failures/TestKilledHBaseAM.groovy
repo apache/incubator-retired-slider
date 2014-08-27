@@ -47,7 +47,6 @@ class TestKilledHBaseAM extends HBaseMiniClusterTestBase {
 
   @Test
   public void testKilledHBaseAM() throws Throwable {
-    skip("SLIDER-66: AM Restart Failing -YARN issues")
     
     int regionServerCount = 1
 

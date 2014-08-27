@@ -29,7 +29,7 @@ import org.apache.accumulo.server.security.handler.PermissionHandler;
 import org.apache.accumulo.server.security.handler.ZKAuthenticator;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 import java.util.Set;
 
 public final class CustomAuthenticator implements Authenticator {
@@ -68,7 +68,7 @@ public final class CustomAuthenticator implements Authenticator {
           ROOT_INITIAL_PASSWORD_PROPERTY + " from " + jksFile, ioe);
     }
     zkAuthenticator.initializeSecurity(credentials, principal,
-        pass.getBytes(StandardCharsets.UTF_8));
+        pass.getBytes(Charset.forName("UTF-8")));
   }
 
   @Override

@@ -1824,27 +1824,24 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     log.info("Adding Chaos Monkey scheduled every {} seconds ({} hours)",
         monkeyInterval, monkeyInterval/(60*60));
     monkey = new ChaosMonkeyService(metrics, actionQueues);
+    initAndAddService(monkey);
+    
+    // configure the targets
     int amKillProbability = internals.getOptionInt(
         InternalKeys.CHAOS_MONKEY_PROBABILITY_AM_FAILURE,
         InternalKeys.DEFAULT_CHAOS_MONKEY_PROBABILITY_AM_FAILURE);
-    if (amKillProbability > 0) {
-      monkey.addTarget("AM killer",
-          new ChaosKillAM(actionQueues, -1), amKillProbability
-      );
-    }
+    monkey.addTarget("AM killer",
+        new ChaosKillAM(actionQueues, -1), amKillProbability);
     int containerKillProbability = internals.getOptionInt(
         InternalKeys.CHAOS_MONKEY_PROBABILITY_CONTAINER_FAILURE,
         InternalKeys.DEFAULT_CHAOS_MONKEY_PROBABILITY_CONTAINER_FAILURE);
-    if (containerKillProbability > 0) {
-      monkey.addTarget("Container killer",
-          new ChaosKillContainer(appState, actionQueues, rmOperationHandler),
-          containerKillProbability
-      );
-    }
-    initAndAddService(monkey);
+    monkey.addTarget("Container killer",
+        new ChaosKillContainer(appState, actionQueues, rmOperationHandler),
+        containerKillProbability);
+    
     // and schedule it
-    if (enabled) {
-      schedule(monkey.getChaosAction(monkeyInterval, TimeUnit.SECONDS));
+    if (monkey.schedule(monkeyInterval, TimeUnit.SECONDS)) {
+      log.info("Chaos Monkey is running");
     }
     return true;
   }

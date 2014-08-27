@@ -170,7 +170,7 @@ class Script(object):
         for package in package_list:
           name = package['name']
           type = package['type']
-          if type.lower() == "tarball":
+          if type.lower() == "tarball" or type.lower() == "zip":
             if name.startswith(os.path.sep):
               tarball = name
             else:

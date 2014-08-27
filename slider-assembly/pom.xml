@@ -231,8 +231,8 @@
               <mappings>
                 <mapping>
                   <directory>${rpm.basedir}</directory>
-                  <!-- RW.R..R.. -->
-                  <filemode>644</filemode>
+                  <!-- RWXR.XR.X -->
+                  <filemode>755</filemode>
 
                   <username>${rpm.username}</username>
                   <groupname>${rpm.groupname}</groupname>
@@ -258,8 +258,8 @@
                 <!-- library -->
                 <mapping>
                   <directory>${rpm.libdir}</directory>
-                  <!-- RW.R..R.. -->
-                  <filemode>644</filemode>
+                  <!-- RWXR.XR.X -->
+                  <filemode>755</filemode>
 
                   <username>${rpm.username}</username>
                   <groupname>${rpm.groupname}</groupname>

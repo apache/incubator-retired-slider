@@ -36,6 +36,11 @@
   <profiles>
     <profile>
       <id>accumulo-app-package</id>
+      <activation>
+        <property>
+          <name>!skipAccumulo</name>
+        </property>
+      </activation>
       <build>
         <plugins>
           <plugin>
