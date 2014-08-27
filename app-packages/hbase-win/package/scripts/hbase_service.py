@@ -20,32 +20,29 @@ limitations under the License.
 
 from resource_management import *
 
-def hbase_service(
-  name,
-  action = 'start'): # 'start' or 'stop' or 'status'
-    
-    import params
-  
-    role = name
-    cmd = format("{daemon_script} --config {conf_dir}")
-    pid_file = format("{pid_dir}/hbase-{hbase_user}-{role}.pid")
-    
-    daemon_cmd = None
-    no_op_test = None
-    
-    if action == 'start':
-      daemon_cmd = format("{cmd} start {role}")
-      if name == 'rest':
-        daemon_cmd = format("{daemon_cmd} -p {rest_port}")
-      elif name == 'thrift':
-        daemon_cmd = format("{daemon_cmd} -p {thrift_port}")
-      elif name == 'thrift2':
-        daemon_cmd = format("{daemon_cmd} -p {thrift2_port}")
-      no_op_test = format("ls {pid_file} >/dev/null 2>&1 && ps `cat {pid_file}` >/dev/null 2>&1")
-    elif action == 'stop':
-      daemon_cmd = format("{cmd} stop {role} && rm -f {pid_file}")
 
-    if daemon_cmd is not None:
-      Execute ( daemon_cmd,
-        not_if = no_op_test
-      )
+def hbase_service(
+    name,
+    action='start'):  # 'start' or 'stop' or 'status'
+
+  import params
+
+  pid_file = format("{pid_dir}/hbase-{hbase_user}-{name}.pid")
+  heap_size = params.master_heapsize
+  main_class = "org.apache.hadoop.hbase.master.HMaster"
+  if name == "regionserver":
+    heap_size = params.regionserver_heapsize
+    main_class = "org.apache.hadoop.hbase.regionserver.HRegionServer"
+
+  role_user = format("{hbase_user}-{name}")
+
+  rest_of_the_command = InlineTemplate(params.hbase_env_sh_template, [], heap_size=heap_size, role_user=role_user)()
+
+  process_cmd = format("{java64_home}\\bin\\java {rest_of_the_command} {main_class} {action}")
+
+  Execute(process_cmd,
+          user=params.hbase_user,
+          logoutput=False,
+          wait_for_finish=False,
+          pid_file=pid_file
+  )

@@ -21,15 +21,15 @@
     "site.global.hbase_thrift_port": "${HBASE_THRIFT.ALLOCATED_PORT}",
     "site.global.hbase_thrift2_port": "${HBASE_THRIFT2.ALLOCATED_PORT}",
     "site.global.hbase_rest_port": "${HBASE_REST.ALLOCATED_PORT}",
+    "site.global.hbase_additional_cp": "c:\\java\\lib\\tools.jar;",
+    "site.global.java_library_path": "c:\\hdp\\hadoop-2.4.0.2.1.3.0-1990\\bin",
 
     "site.hbase-env.hbase_master_heapsize": "1024m",
     "site.hbase-env.hbase_regionserver_heapsize": "1024m",
 
-    "site.hbase-site.hbase.rootdir": "${DEFAULT_DATA_DIR}/data",
-    "site.hbase-site.hbase.stagingdir": "${DEFAULT_DATA_DIR}/staging",
+    "site.hbase-site.hbase.rootdir": "${DEFAULT_DATA_DIR}",
     "site.hbase-site.hbase.superuser": "yarn",
     "site.hbase-site.hbase.tmp.dir": "${AGENT_WORK_ROOT}/work/app/tmp",
-    "site.hbase-site.hbase.local.dir": "${hbase.tmp.dir}/local",
     "site.hbase-site.hbase.zookeeper.quorum": "${ZK_HOST}",
     "site.hbase-site.zookeeper.znode.parent": "${DEF_ZK_PATH}",
     "site.hbase-site.hbase.regionserver.info.port": "0",

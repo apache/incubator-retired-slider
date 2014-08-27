@@ -23,19 +23,9 @@ from resource_management import *
 import sys
 import shutil
 
-def hbase(name=None # 'master' or 'regionserver' or 'client'
+def hbase(name=None # 'master' or 'regionserver'
               ):
   import params
-
-  if name in ["master","regionserver"]:
-    params.HdfsDirectory(params.hbase_hdfs_root_dir,
-                         action="create_delayed"
-    )
-    params.HdfsDirectory(params.hbase_staging_dir,
-                         action="create_delayed",
-                         mode=0711
-    )
-    params.HdfsDirectory(None, action="create")
 
   Directory( params.conf_dir,
       owner = params.hbase_user,
@@ -52,7 +42,6 @@ def hbase(name=None # 'master' or 'regionserver' or 'client'
   Directory (os.path.join(params.local_dir, "jars"),
              owner = params.hbase_user,
              group = params.user_group,
-             mode=0775,
              recursive = True
   )
 
@@ -66,14 +55,12 @@ def hbase(name=None # 'master' or 'regionserver' or 'client'
  
   if (params.log4j_props != None):
     File(format("{params.conf_dir}/log4j.properties"),
-         mode=0644,
          group=params.user_group,
          owner=params.hbase_user,
          content=params.log4j_props
     )
   elif (os.path.exists(format("{conf_dir}/log4j.properties"))):
     File(format("{params.conf_dir}/log4j.properties"),
-      mode=0644,
       group=params.user_group,
       owner=params.hbase_user
     )

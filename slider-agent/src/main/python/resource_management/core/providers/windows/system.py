@@ -29,15 +29,6 @@ import os
 import subprocess
 import shutil
 from resource_management.libraries.script import Script
-import win32con
-from win32security import *
-from win32api import *
-from winerror import ERROR_INVALID_HANDLE
-from win32profile import CreateEnvironmentBlock
-from win32process import GetExitCodeProcess, STARTF_USESTDHANDLES, STARTUPINFO, CreateProcessAsUser
-from win32event import WaitForSingleObject, INFINITE
-import msvcrt
-import tempfile
 
 
 def _merge_env(env1, env2, merge_keys=['PYTHONPATH']):
@@ -76,25 +67,28 @@ def _merge_env(env1, env2, merge_keys=['PYTHONPATH']):
 def _call_command(command, logoutput=False, cwd=None, env=None, wait_for_finish=True, timeout=None, user=None, pid_file_name=None):
   # TODO implement user
   Logger.info("Executing %s" % (command))
-  cur_token = OpenProcessToken(GetCurrentProcess(), TOKEN_ALL_ACCESS)
-  current_env = CreateEnvironmentBlock(cur_token, False)
-  current_env = _merge_env(current_env, env)
   proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                          cwd=cwd, env=current_env, shell=False)
+                          cwd=cwd, env=env, shell=False)
+  code = None
   if not wait_for_finish:
+    Logger.debug("No need to wait for the process to exit. Will leave the process running ...")
+    code = 0
     if pid_file_name:
+      Logger.debug("Writing the process id %s to file %s" % (str(proc.pid), pid_file_name))
       pidfile = open(pid_file_name, 'w')
       pidfile.write(str(proc.pid))
       pidfile.close()
-    return None, None
+      Logger.info("Wrote the process id to file %s" % pid_file_name)
+    return code, None, None
 
   if timeout:
     q = Queue()
     t = threading.Timer( timeout, on_timeout, [proc, q] )
     t.start()
 
-    out, err = proc.communicate()
-    code = proc.returncode
+  out, err = proc.communicate()
+  code = proc.returncode
+
   if logoutput and out:
     Logger.info(out)
   if logoutput and err:
@@ -110,7 +104,7 @@ def _set_file_acl(file, user, rights):
     raise Fail("Can not remove rights for path {0} and user {1}".format(file, user))
   code, out, err = _call_command(acls_modify_cmd)
   if code != 0:
-    raise Fail("Can not set rights {0} for path {1} and user {2}".format(file, user))
+    raise Fail("Can not set rights {0} for path {1} and user {2}".format(rights, file, user))
   else:
     return
 
@@ -194,6 +188,7 @@ class ExecuteProvider(Provider):
           raise Fail("Failed to execute " + self.resource.command)
         break
       except Fail as ex:
+        Logger.info("Error raised: %s" % str(ex))
         if i == self.resource.tries - 1:  # last try
           raise ex
         else:

@@ -40,9 +40,9 @@ class HbaseRegionServer(Script):
     env.set_params(params)
     self.configure(env) # for security
 
-    ##hbase_service( 'regionserver',
-    ##  action = 'start'
-    ##)
+    hbase_service( 'regionserver',
+      action = 'start'
+    )
     
   def stop(self, env):
     import params
@@ -56,7 +56,7 @@ class HbaseRegionServer(Script):
     import status_params
     env.set_params(status_params)
     pid_file = format("{pid_dir}/hbase-{hbase_user}-regionserver.pid")
-    ##check_process_status(pid_file)
+    check_process_status(pid_file)
     
 
 if __name__ == "__main__":

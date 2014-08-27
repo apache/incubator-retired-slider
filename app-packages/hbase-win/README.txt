@@ -22,6 +22,7 @@ Download the tarball for HBase:
 
 Copy the hbase tarball to package/files
   cp ~/Downloads/hbase-0.98.0.2.1.5.0-2047-hadoop2.zip package/files
+  rm -rf package/files/hbase-0.98.0.2.1.5.0-2047-hadoop2.zip.REPLACEME
 
 Edit appConfig.json/metainfo.xml and replace all occurances of 
 0.98.0.2.1.5.0-2047-hadoop2 with the correct value.

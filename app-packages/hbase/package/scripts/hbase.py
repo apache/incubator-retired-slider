@@ -27,6 +27,7 @@ def hbase(name=None # 'master' or 'regionserver' or 'client'
               ):
   import params
 
+  """
   if name in ["master","regionserver"]:
     params.HdfsDirectory(params.hbase_hdfs_root_dir,
                          action="create_delayed"
@@ -36,6 +37,7 @@ def hbase(name=None # 'master' or 'regionserver' or 'client'
                          mode=0711
     )
     params.HdfsDirectory(None, action="create")
+  """
 
   Directory( params.conf_dir,
       owner = params.hbase_user,

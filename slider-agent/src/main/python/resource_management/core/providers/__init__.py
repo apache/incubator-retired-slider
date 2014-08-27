@@ -54,6 +54,7 @@ PROVIDERS = dict(
     Service="resource_management.core.providers.windows.service.ServiceProvider",
     Execute="resource_management.core.providers.windows.system.ExecuteProvider",
     File="resource_management.core.providers.windows.system.FileProvider",
+    Directory="resource_management.core.providers.windows.system.DirectoryProvider",
     Tarball="resource_management.core.providers.windows.tarball.TarballProvider"
   ),
   default=dict(

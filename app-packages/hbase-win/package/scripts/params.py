@@ -25,83 +25,57 @@ import status_params
 # server configurations
 config = Script.get_config()
 
+java64_home = config['hostLevelParams']['java_home']
 hbase_root = config['configurations']['global']['app_root']
-conf_dir = format("{hbase_root}/conf")
-daemon_script = format("{hbase_root}/bin/hbase-daemon.sh")
-
+hbase_instance_name = config['configurations']['global']['hbase_instance_name']
 hbase_user = status_params.hbase_user
-_authentication = config['configurations']['core-site']['hadoop.security.authentication']
-security_enabled = ( not is_empty(_authentication) and _authentication == 'kerberos')
 user_group = config['configurations']['global']['user_group']
 
-# this is "hadoop-metrics.properties" for 1.x stacks
-metric_prop_file_name = "hadoop-metrics2-hbase.properties"
-
-# not supporting 32 bit jdk.
-java64_home = config['hostLevelParams']['java_home']
-
+pid_dir = status_params.pid_dir
+tmp_dir = config['configurations']['hbase-site']['hbase.tmp.dir']
+local_dir = substitute_vars(config['configurations']['hbase-site']['hbase.local.dir'],
+                            config['configurations']['hbase-site'])
+conf_dir = format("{hbase_root}/conf")
 log_dir = config['configurations']['global']['app_log_dir']
-master_heapsize = config['configurations']['hbase-env']['hbase_master_heapsize']
+input_conf_files_dir = config['configurations']['global']['app_input_conf_dir']
 
+hbase_hdfs_root_dir = config['configurations']['hbase-site']['hbase.rootdir']
+rest_port = config['configurations']['global']['hbase_rest_port']
+thrift_port = config['configurations']['global']['hbase_thrift_port']
+thrift2_port = config['configurations']['global']['hbase_thrift2_port']
+
+master_heapsize = config['configurations']['hbase-env']['hbase_master_heapsize']
 regionserver_heapsize = config['configurations']['hbase-env']['hbase_regionserver_heapsize']
 regionserver_xmn_max = config['configurations']['hbase-env']['hbase_regionserver_xmn_max']
 regionserver_xmn_percent = config['configurations']['hbase-env']['hbase_regionserver_xmn_ratio']
 regionserver_xmn_size = calc_xmn_from_xms(regionserver_heapsize, regionserver_xmn_percent, regionserver_xmn_max)
 
-pid_dir = status_params.pid_dir
-tmp_dir = config['configurations']['hbase-site']['hbase.tmp.dir']
-local_dir = substitute_vars(config['configurations']['hbase-site']['hbase.local.dir'], config['configurations']['hbase-site'])
-input_conf_files_dir = config['configurations']['global']['app_input_conf_dir']
+hbase_env_sh_template = config['configurations']['hbase-env']['content']
+java_library_path = config['configurations']['global']['java_library_path']
+hbase_additional_cp = config['configurations']['global']['hbase_additional_cp']
 
-client_jaas_config_file = default('hbase_client_jaas_config_file', format("{conf_dir}/hbase_client_jaas.conf"))
 master_jaas_config_file = default('hbase_master_jaas_config_file', format("{conf_dir}/hbase_master_jaas.conf"))
-regionserver_jaas_config_file = default('hbase_regionserver_jaas_config_file', format("{conf_dir}/hbase_regionserver_jaas.conf"))
-
-ganglia_server_host = default('/configurations/global/ganglia_server_host', '')
-ganglia_server_port = default('/configurations/global/ganglia_server_port', '8663')
-
-rest_port = config['configurations']['global']['hbase_rest_port']
-thrift_port = config['configurations']['global']['hbase_thrift_port']
-thrift2_port = config['configurations']['global']['hbase_thrift2_port']
-
-if security_enabled:
-  _hostname_lowercase = config['hostname'].lower()
-  master_jaas_princ = config['configurations']['hbase-site']['hbase.master.kerberos.principal'].replace('_HOST',_hostname_lowercase)
-  regionserver_jaas_princ = config['configurations']['hbase-site']['hbase.regionserver.kerberos.principal'].replace('_HOST',_hostname_lowercase)
-
-    
+regionserver_jaas_config_file = default('hbase_regionserver_jaas_config_file',
+                                        format("{conf_dir}/hbase_regionserver_jaas.conf"))
 master_keytab_path = config['configurations']['hbase-site']['hbase.master.keytab.file']
 regionserver_keytab_path = config['configurations']['hbase-site']['hbase.regionserver.keytab.file']
-kinit_path_local = functions.get_kinit_path([default("kinit_path_local",None), "/usr/bin", "/usr/kerberos/bin", "/usr/sbin"])
+
+_authentication = config['configurations']['core-site']['hadoop.security.authentication']
+security_enabled = ( not is_empty(_authentication) and _authentication == 'kerberos')
+if security_enabled:
+  _hostname_lowercase = config['hostname'].lower()
+  master_jaas_princ = config['configurations']['hbase-site']['hbase.master.kerberos.principal'].replace('_HOST', hostname_lowercase)
+  regionserver_jaas_princ = config['configurations']['hbase-site']['hbase.regionserver.kerberos.principal'].replace('_HOST', hostname_lowercase)
+
+kinit_path_local = functions.get_kinit_path(
+  [default("kinit_path_local", None), "/usr/bin", "/usr/kerberos/bin", "/usr/sbin"])
 if security_enabled:
   kinit_cmd = format("{kinit_path_local} -kt {hbase_user_keytab} {hbase_user};")
 else:
   kinit_cmd = ""
 
-#log4j.properties
+# log4j.properties
 if (('hbase-log4j' in config['configurations']) and ('content' in config['configurations']['hbase-log4j'])):
   log4j_props = config['configurations']['hbase-log4j']['content']
 else:
   log4j_props = None
-
-hbase_env_sh_template = config['configurations']['hbase-env']['content']
-
-hbase_hdfs_root_dir = config['configurations']['hbase-site']['hbase.rootdir']
-hbase_staging_dir = config['configurations']['hbase-site']['hbase.stagingdir']
-#for create_hdfs_directory
-hostname = config["hostname"]
-hadoop_conf_dir = "/etc/hadoop/conf"
-hdfs_user_keytab = config['configurations']['global']['hdfs_user_keytab']
-hdfs_user = config['configurations']['global']['hdfs_user']
-kinit_path_local = functions.get_kinit_path([default("kinit_path_local",None), "/usr/bin", "/usr/kerberos/bin", "/usr/sbin"])
-import functools
-#create partial functions with common arguments for every HdfsDirectory call
-#to create hdfs directory we need to call params.HdfsDirectory in code
-HdfsDirectory = functools.partial(
-  HdfsDirectory,
-  conf_dir=hadoop_conf_dir,
-  hdfs_user=hdfs_user,
-  security_enabled = security_enabled,
-  keytab = hdfs_user_keytab,
-  kinit_path_local = kinit_path_local
-)
