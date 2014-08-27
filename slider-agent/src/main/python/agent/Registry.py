@@ -30,6 +30,7 @@ class Registry:
     self.zk_reg_path = zk_reg_path
 
   def readAMHostPort(self):
+    logger.debug("Trying to connect to ZK...")
     amHost = ""
     amSecuredPort = ""
     amUnsecuredPort = ""

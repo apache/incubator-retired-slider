@@ -271,11 +271,12 @@ def main():
       # Wait until server is reachable and continue to query ZK
       netutil = NetUtil()
       retries = netutil.try_to_connect(server_url, 3, logger)
-      zk_lookup_tries += 1
       if retries < 3:
         break;
       pass
     pass
+    zk_lookup_tries += 1
+  pass
 
   # Launch Controller communication
   controller = Controller(agentConfig)
