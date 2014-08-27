@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-
-'''
+"""
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
 distributed with this work for additional information
@@ -16,21 +15,12 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-'''
 
 """
-Constants used by Slider Agent
-"""
 
-EXIT_CODE = "exitcode"
-ALLOCATED_PORTS = "allocated_ports"
-FOLDERS = "folders"
-AGENT_WORK_ROOT = "AGENT_WORK_ROOT"
-AGENT_LOG_ROOT = "AGENT_LOG_ROOT"
-DO_NOT_REGISTER = "DO_NOT_REGISTER"
-DO_NOT_HEARTBEAT = "DO_NOT_HEARTBEAT"
-DO_NOT_HEARTBEAT_AFTER_ = "DO_NOT_HEARTBEAT_AFTER_"
-ZK_QUORUM="zk_quorum"
-ZK_REG_PATH="zk_reg_path"
-AUTO_GENERATED="auto_generated"
-MAX_AM_CONNECT_RETRIES = 10
+from resource_management import *
+
+config = Script.get_config()
+
+pid_dir = config['configurations']['global']['app_pid_dir']
+hbase_user = config['configurations']['global']['app_user']

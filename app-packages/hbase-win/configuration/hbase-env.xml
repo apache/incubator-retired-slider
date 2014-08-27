@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!--
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+-->
+
+<configuration>
+  <property>
+    <name>hbase_regionserver_heapsize</name>
+    <value>1024</value>
+    <description>HBase RegionServer Heap Size.</description>
+  </property>
+  <property>
+    <name>hbase_regionserver_xmn_max</name>
+    <value>512</value>
+    <description>HBase RegionServer maximum value for minimum heap size.</description>
+  </property>
+  <property>
+    <name>hbase_regionserver_xmn_ratio</name>
+    <value>0.2</value>
+    <description>HBase RegionServer minimum heap size is calculated as a percentage of max heap size.</description>
+  </property>
+  <property>
+    <name>hbase_master_heapsize</name>
+    <value>1024</value>
+    <description>HBase Master Heap Size</description>
+  </property>
+
+  <!-- hbase-env.sh -->
+  <property>
+    <name>content</name>
+    <description>This is the jinja template for start command</description>
+    <value>
+     -Xmx{{heap_size}} "-XX:+UseConcMarkSweepGC" "-XX:CMSInitiatingOccupancyFraction=70" "-Djava.net.preferIPv4Stack=true" "-XX:+ForceTimeHighResolution" "-verbose:gc" "-XX:+PrintGCDetails" "-XX:+PrintGCDateStamps"  -Xloggc:"{{log_dir}}\hbase-{{role_user}}.gc" -Dhbase.log.dir="{{log_dir}}" -Dhbase.log.file="hbase-{{role_user}}.log" -Dhbase.home.dir="{{hbase_root}}" -Dhbase.id.str="{{hbase_instance_name}}" -XX:OnOutOfMemoryError="taskkill /F /PID p" -Dhbase.root.logger="INFO,DRFA" -Djava.library.path="{{java_library_path}}" -Dhbase.security.logger="INFO,DRFAS" -classpath "{{conf_dir}};{{hbase_root}}\lib\*;{{hbase_additional_cp}}"
+    </value>
+  </property>
+
+</configuration>

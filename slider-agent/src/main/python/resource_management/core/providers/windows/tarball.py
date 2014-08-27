@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-
-'''
+"""
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
 distributed with this work for additional information
@@ -16,21 +15,32 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-'''
+
+Slider Agent
 
 """
-Constants used by Slider Agent
-"""
 
-EXIT_CODE = "exitcode"
-ALLOCATED_PORTS = "allocated_ports"
-FOLDERS = "folders"
-AGENT_WORK_ROOT = "AGENT_WORK_ROOT"
-AGENT_LOG_ROOT = "AGENT_LOG_ROOT"
-DO_NOT_REGISTER = "DO_NOT_REGISTER"
-DO_NOT_HEARTBEAT = "DO_NOT_HEARTBEAT"
-DO_NOT_HEARTBEAT_AFTER_ = "DO_NOT_HEARTBEAT_AFTER_"
-ZK_QUORUM="zk_quorum"
-ZK_REG_PATH="zk_reg_path"
-AUTO_GENERATED="auto_generated"
-MAX_AM_CONNECT_RETRIES = 10
+from __future__ import with_statement
+
+from resource_management.core import shell
+from resource_management.core.providers import Provider
+from resource_management.core.logger import Logger
+import os
+import zipfile
+
+class TarballProvider(Provider):
+  def action_install(self):
+    package_name = self.resource.package_name
+    location = self.resource.location
+    if package_name.lower().endswith("zip"):
+      if not self._check_existence(package_name, location):
+        zf = zipfile.ZipFile(package_name)
+        path = location
+        for member in zf.infolist():
+          zf.extract(member, path)
+    else:
+      Logger.info("Unsupported archive %s" % (package_name,))
+
+  def _check_existence(self, name, location):
+    return False
+

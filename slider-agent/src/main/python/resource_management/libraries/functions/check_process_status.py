@@ -25,6 +25,11 @@ from resource_management.core.logger import Logger
 __all__ = ["check_process_status"]
 
 import os
+import subprocess
+import platform
+
+IS_WINDOWS = platform.system() == "Windows"
+
 
 def check_process_status(pid_file):
   """
@@ -43,15 +48,32 @@ def check_process_status(pid_file):
     except:
       Logger.debug("Pid file {0} does not exist".format(pid_file))
       raise ComponentIsNotRunning()
-    try:
-      # Kill will not actually kill the process
-      # From the doc:
-      # If sig is 0, then no signal is sent, but error checking is still
-      # performed; this can be used to check for the existence of a
-      # process ID or process group ID.
-      os.kill(pid, 0)
-    except OSError:
-      Logger.debug("Process with pid {0} is not running. Stale pid file"
-                " at {1}".format(pid, pid_file))
-      raise ComponentIsNotRunning()
+
+    if IS_WINDOWS:
+      not_running = True
+      try:
+        ps = subprocess.Popen(r'tasklist.exe /NH /FI "PID eq %d"' % (pid),
+                              shell=True, stdout=subprocess.PIPE)
+        output = ps.stdout.read()
+        ps.stdout.close()
+        ps.wait()
+        not_running = str(pid) not in output
+      except OSError, e:
+        Logger.debug("Error {0}".format(str(e)))
+        Logger.info("Process with pid {0} is not running. Stale pid file"
+                     " at {1}".format(pid, pid_file))
+      if not_running:
+        raise ComponentIsNotRunning()
+    else:
+      try:
+        # Kill will not actually kill the process
+        # From the doc:
+        # If sig is 0, then no signal is sent, but error checking is still
+        # performed; this can be used to check for the existence of a
+        # process ID or process group ID.
+        os.kill(pid, 0)
+      except OSError:
+        Logger.info("Process with pid {0} is not running. Stale pid file"
+                  " at {1}".format(pid, pid_file))
+        raise ComponentIsNotRunning()
   pass

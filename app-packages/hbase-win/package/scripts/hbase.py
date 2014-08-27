@@ -23,21 +23,9 @@ from resource_management import *
 import sys
 import shutil
 
-def hbase(name=None # 'master' or 'regionserver' or 'client'
+def hbase(name=None # 'master' or 'regionserver'
               ):
   import params
-
-  """
-  if name in ["master","regionserver"]:
-    params.HdfsDirectory(params.hbase_hdfs_root_dir,
-                         action="create_delayed"
-    )
-    params.HdfsDirectory(params.hbase_staging_dir,
-                         action="create_delayed",
-                         mode=0711
-    )
-    params.HdfsDirectory(None, action="create")
-  """
 
   Directory( params.conf_dir,
       owner = params.hbase_user,
@@ -54,7 +42,6 @@ def hbase(name=None # 'master' or 'regionserver' or 'client'
   Directory (os.path.join(params.local_dir, "jars"),
              owner = params.hbase_user,
              group = params.user_group,
-             mode=0775,
              recursive = True
   )
 
@@ -66,62 +53,14 @@ def hbase(name=None # 'master' or 'regionserver' or 'client'
   )
 
  
-  if 'hbase-policy' in params.config['configurations']:
-    XmlConfig( "hbase-policy.xml",
-            conf_dir = params.conf_dir,
-            configurations = params.config['configurations']['hbase-policy'],
-            owner = params.hbase_user,
-            group = params.user_group
-    )
-  # Manually overriding ownership of file installed by hadoop package
-  else: 
-    File( format("{conf_dir}/hbase-policy.xml"),
-      owner = params.hbase_user,
-      group = params.user_group
-    )
-  
-  File(format("{conf_dir}/hbase-env.sh"),
-       owner = params.hbase_user,
-       content=InlineTemplate(params.hbase_env_sh_template)
-  )     
-  hbase_TemplateConfig( params.metric_prop_file_name,
-                        tag = 'GANGLIA-MASTER' if name == 'master' else 'GANGLIA-RS'
-  )
-       
-  if params.security_enabled:
-    hbase_TemplateConfig( format("hbase_{name}_jaas.conf"))
-  
-  if name != "client":
-    Directory( params.pid_dir,
-      owner = params.hbase_user,
-      recursive = True
-    )
-  
-    Directory (params.log_dir,
-      owner = params.hbase_user,
-      recursive = True
-    )
-
   if (params.log4j_props != None):
     File(format("{params.conf_dir}/log4j.properties"),
-         mode=0644,
          group=params.user_group,
          owner=params.hbase_user,
          content=params.log4j_props
     )
   elif (os.path.exists(format("{conf_dir}/log4j.properties"))):
     File(format("{params.conf_dir}/log4j.properties"),
-      mode=0644,
       group=params.user_group,
       owner=params.hbase_user
     )
-
-def hbase_TemplateConfig(name, 
-                         tag=None
-                         ):
-  import params
-
-  TemplateConfig( format("{conf_dir}/{name}"),
-      owner = params.hbase_user,
-      template_tag = tag
-  )
