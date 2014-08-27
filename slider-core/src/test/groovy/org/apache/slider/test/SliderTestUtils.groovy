@@ -51,6 +51,8 @@ import org.apache.slider.server.services.curator.CuratorServiceInstance
 import org.junit.Assert
 import org.junit.Assume
 
+import java.lang.reflect.Array
+
 import static Arguments.ARG_OPTION
 
 /**
@@ -708,11 +710,15 @@ class SliderTestUtils extends Assert {
     dumpCollection(entries)
   }
 
-  def static void dumpCollection(Collection<String> entries) {
+  def static void dumpCollection(Collection entries) {
     log.info("number of entries: ${entries.size()}")
-    entries.each { String it -> log.info(it) }
+    entries.each {  log.info(it.toString()) }
   }
 
+  def static void dumpArray(Object[] entries) {
+    log.info("number of entries: ${entries.length}")
+    entries.each { log.info(it.toString()) }
+  }
   /**
    * Get a time option in seconds if set, otherwise the default value (also in seconds).
    * This operation picks up the time value as a system property if set -that

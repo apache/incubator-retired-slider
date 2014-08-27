@@ -49,16 +49,12 @@ import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.main.ServiceLauncherBaseTest
 import org.apache.slider.server.appmaster.SliderAppMaster
 import org.junit.After
-import org.junit.Assert
-import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Rule
-import org.junit.rules.TestName
 import org.junit.rules.Timeout
 
 import static org.apache.slider.test.KeysForTests.*
 
-import static org.apache.slider.common.SliderKeys.*;
 import static org.apache.slider.common.SliderXMLConfKeysForTesting.*;
 /**
  * Base class for mini cluster tests -creates a field for the
@@ -245,7 +241,8 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     conf.set(YarnConfiguration.RM_SCHEDULER, FIFO_SCHEDULER);
     SliderUtils.patchConfiguration(conf)
     name = buildClustername(name)
-    miniCluster = new MiniYARNCluster(name, noOfNodeManagers, numLocalDirs, numLogDirs)
+    miniCluster = 
+        new MiniYARNCluster(name, noOfNodeManagers, numLocalDirs, numLogDirs, 1, false, false)
     miniCluster.init(conf)
     miniCluster.start();
     if (startHDFS) {

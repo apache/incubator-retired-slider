@@ -21,18 +21,20 @@ package org.apache.slider.test
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.yarn.registry.client.api.RegistryOperations
+import org.apache.hadoop.yarn.registry.client.services.RegistryOperationsService
+import org.apache.hadoop.yarn.registry.server.services.MicroZookeeperService
 import org.apache.slider.common.tools.SliderUtils
-import org.apache.slider.core.zk.MiniZooKeeperCluster
 
 @Slf4j
 @CompileStatic
 class MicroZKCluster implements Closeable {
 
   public static final String HOSTS = "127.0.0.1"
-  MiniZooKeeperCluster zkCluster
+  MicroZookeeperService zkService
   String zkBindingString
-  Configuration conf
-  int port
+  final Configuration conf
+  public RegistryOperations registryOperations
 
   MicroZKCluster() {
     this(SliderUtils.createConfiguration())
@@ -43,20 +45,29 @@ class MicroZKCluster implements Closeable {
   }
 
   void createCluster() {
-    zkCluster = new MiniZooKeeperCluster(1)
-    zkCluster.init(conf)
-    zkCluster.start()
-    zkBindingString = zkCluster.zkQuorum
+    zkService = new MicroZookeeperService("zookeeper")
+    
+    zkService.init(conf)
+    zkService.start()
+    zkBindingString = zkService.connectionString
     log.info("Created $this")
+    registryOperations = new RegistryOperationsService(
+        "registry",
+        zkService)
+    registryOperations.init(conf)
+    registryOperations.start()
   }
 
   @Override
   void close() throws IOException {
-    zkCluster?.stop()
+    registryOperations?.stop()
+    zkService?.stop()
   }
 
   @Override
   String toString() {
     return "Micro ZK cluster as $zkBindingString"
   }
+  
+
 }

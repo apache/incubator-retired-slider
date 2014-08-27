@@ -18,7 +18,6 @@
 
 package org.apache.slider.server.services.utility;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.registry.client.api.RegistryConstants;
 import org.apache.hadoop.yarn.registry.client.services.RegistryOperationsService;
@@ -44,13 +43,6 @@ public abstract class AbstractSliderLaunchedService extends
     super(name);
     // make sure all the yarn configs get loaded
     new YarnConfiguration();
-  }
-
-  @Override
-  protected void serviceInit(Configuration conf) throws Exception {
-    String quorum = lookupZKQuorum();
-    conf.set(RegistryConstants.KEY_REGISTRY_ZK_QUORUM, quorum);
-    super.serviceInit(conf);
   }
 
   /**
@@ -113,10 +105,9 @@ public abstract class AbstractSliderLaunchedService extends
   }
 
   /**
-   * Start the YARN registration service
-   * @param zkConnection
-   * @param zkPath
-   * @return
+   * Create, adopt ,and start the YARN registration service
+   * @return the registry operations service, already deployed as a child
+   * of the AbstractSliderLaunchedService instance.
    */
   public RegistryOperationsService startRegistryOperationsService()
       throws BadConfigException {

@@ -357,7 +357,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private SliderAMWebApp webApp;
   @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private InetSocketAddress rpcServiceAddress;
-  private ProviderService sliderAMProvider;
+  private SliderAMProviderService sliderAMProvider;
   private CertificateManager certificateManager;
 
   private WorkflowExecutorService<ExecutorService> executorService;
@@ -365,7 +365,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private final QueueService actionQueues = new QueueService();
   private String agentOpsUrl;
   private String agentStatusUrl;
-  private YarnRegistryViewForProviders yarnRegistryView;
+  private YarnRegistryViewForProviders yarnRegistryOperations;
 
   /**
    * Service Constructor
@@ -896,12 +896,12 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     //Give the provider restricted access to the state, registry
     setupInitialRegistryPaths();
-    yarnRegistryView = new YarnRegistryViewForProviders(
+    yarnRegistryOperations = new YarnRegistryViewForProviders(
         registryOperations, service_user_name,
         SliderKeys.APP_TYPE,
         instanceName);
-    providerService.bindToYarnRegistry(yarnRegistryView);
-    sliderAMProvider.bindToYarnRegistry(yarnRegistryView);
+    providerService.bindToYarnRegistry(yarnRegistryOperations);
+    sliderAMProvider.bindToYarnRegistry(yarnRegistryOperations);
 
     List<String> serviceInstancesRunning = registry.instanceIDs(serviceName);
     log.info("service instances already running: {}", serviceInstancesRunning);
@@ -921,6 +921,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     // Yarn registry
     ServiceRecord serviceRecord = new ServiceRecord();
+    String serviceID = appid.toString();
+    serviceRecord.id = serviceID;
+    serviceRecord.description = "Slider Application Master";
 
     serviceRecord.addExternalEndpoint(
         RegistryTypeUtils.ipcEndpoint(
@@ -949,29 +952,35 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     registry.registerSelf(
         instanceData, amWebURI
     );
-    yarnRegistryView.putService(service_user_name,
+
+    log.info("Service Record \n{}", serviceRecord);
+    yarnRegistryOperations.putService(service_user_name,
         SliderKeys.APP_TYPE,
         instanceName,
         serviceRecord);
 
     // and an ephemeral binding to the app
-    yarnRegistryView.putComponent(
-        "appmaster",
+    yarnRegistryOperations.putComponent(
+        RegistryTypeUtils.yarnIdToDnsId(appAttemptID.toString()),
         serviceRecord,
-        true);
+        false);
 
   }
 
+/*
 
   @Override
   protected RegistryOperationsService createRegistryOperationsInstance() {
     return new ResourceManagerRegistryService("YarnRegistry");
   }
+*/
   
   protected void setupInitialRegistryPaths() throws IOException {
-    ResourceManagerRegistryService rmRegOperations =
-        (ResourceManagerRegistryService) registryOperations;
-    rmRegOperations.createUserPath(service_user_name);
+    if (registryOperations instanceof ResourceManagerRegistryService) {
+      ResourceManagerRegistryService rmRegOperations =
+          (ResourceManagerRegistryService) registryOperations;
+      rmRegOperations.createUserPath(service_user_name);
+    }
   }
 
   /**
@@ -993,7 +1002,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         cid,
         description);
     try {
-      yarnRegistryView.putComponent(cid, container, true);
+      yarnRegistryOperations.putComponent(cid, container, true);
     } catch (IOException e) {
       log.warn("Failed to register container {}/{}: {}",
           id, description, e, e);
@@ -1013,7 +1022,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     log.info("Unregistering component {}", id);
     String cid = RegistryTypeUtils.yarnIdToDnsId(id.toString());
     try {
-      yarnRegistryView.rmComponent(cid);
+      yarnRegistryOperations.rmComponent(cid);
     } catch (IOException e) {
       log.warn("Failed to delete container {} : {}", id, e, e);
     }

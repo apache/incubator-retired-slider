@@ -20,8 +20,10 @@ package org.apache.slider.client;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.PathNotFoundException;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
@@ -38,8 +40,13 @@ import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.registry.client.api.RegistryConstants;
+import org.apache.hadoop.yarn.registry.client.binding.BindingUtils;
+import org.apache.hadoop.yarn.registry.client.binding.RecordOperations;
 import org.apache.hadoop.yarn.registry.client.binding.ZKPathDumper;
 import org.apache.hadoop.yarn.registry.client.services.RegistryOperationsService;
+import org.apache.hadoop.yarn.registry.client.types.Endpoint;
+import org.apache.hadoop.yarn.registry.client.types.RegistryPathStatus;
+import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterNode;
 import org.apache.slider.api.InternalKeys;
@@ -2290,14 +2297,14 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     registryArgs.validate();
     try {
       if (registryArgs.list) {
-        actionRegistryList(registryArgs);
+        actionRegistryListYarn(registryArgs);
       } else if (registryArgs.listConf) {
         // list the configurations
-        actionRegistryListConfigs(registryArgs);
+        actionRegistryListConfigsYarn(registryArgs);
       } else if (SliderUtils.isSet(registryArgs.getConf)) {
         // get a configuration
         PublishedConfiguration publishedConfiguration =
-            actionRegistryGetConfig(registryArgs);
+            actionRegistryGetConfigYarn(registryArgs);
         outputConfig(publishedConfiguration, registryArgs);
       } else {
         // it's an unknown command
@@ -2305,9 +2312,14 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
             "Bad command arguments for " + ACTION_REGISTRY + " " +
             registryArgs);
       }
+//      JDK7
     } catch (FileNotFoundException e) {
       log.info("{}", e.toString());
-      log.debug("{}",e, e);
+      log.debug("{}", e, e);
+      return EXIT_NOT_FOUND;
+    } catch (PathNotFoundException e) {
+      log.info("{}", e.toString());
+      log.debug("{}", e, e);
       return EXIT_NOT_FOUND;
     }
     return EXIT_SUCCESS;
@@ -2322,6 +2334,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @throws IOException Network or other problems
    */
   @VisibleForTesting
+  @Deprecated
   public List<ServiceInstanceData> actionRegistryList(
       ActionRegistryArgs registryArgs)
       throws YarnException, IOException {
@@ -2343,6 +2356,72 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       sids.add(payload);
     }
     return sids;
+  }
+
+  /**
+   * Registry operation
+   *
+   * @param registryArgs registry Arguments
+   * @return the instances (for tests)
+   * @throws YarnException YARN problems
+   * @throws IOException Network or other problems
+   */
+  @VisibleForTesting
+  public List<ServiceRecord> actionRegistryListYarn(
+      ActionRegistryArgs registryArgs)
+      throws YarnException, IOException {
+    String serviceType = registryArgs.serviceType;
+    String name = registryArgs.name;
+    RegistryOperationsService operations = getRegistryOperations();
+    List<ServiceRecord> serviceRecords;
+    if (StringUtils.isEmpty(name)) {
+      String serviceclassPath =
+          BindingUtils.serviceclassPath(BindingUtils.currentUser(),
+              serviceType);
+      RegistryPathStatus[] listDir;
+      listDir = operations.listDir(serviceclassPath);
+      if (listDir.length == 0) {
+        throw new PathNotFoundException("records under "
+                                        + serviceclassPath);
+      }
+      serviceRecords =
+          RecordOperations.extractServiceRecords(operations, listDir);
+    } else {
+      ServiceRecord instance = lookupServiceRecord(registryArgs);
+      serviceRecords = new ArrayList<ServiceRecord>(1);
+      serviceRecords.add(instance);
+    }
+
+    for (ServiceRecord serviceRecord : serviceRecords) {
+      logInstance(serviceRecord, registryArgs.verbose);
+    }
+    return serviceRecords;
+  }
+
+  /**
+   * Log a service record instance
+   * @param instance record
+   * @param verbose verbose logging of all external endpoints
+   */
+  private void logInstance(ServiceRecord instance,
+      boolean verbose) {
+    if (!verbose) {
+      log.info("{}", instance.id);
+    } else {
+      log.info("{}: ", instance.id);
+      logEndpoints(instance);
+    }
+  }
+
+  /**
+   * Log the external endpoints of a service record
+   * @param instance service record instance
+   */
+  private void logEndpoints(ServiceRecord instance) {
+    List<Endpoint> endpoints = instance.external;
+    for (Endpoint endpoint : endpoints) {
+      log.info(endpoint.toString());
+    }
   }
 
   private void logInstance(ServiceInstanceData instance,
@@ -2392,6 +2471,34 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       }
     }
   }
+ /**
+   * list configs available for an instance
+   *
+   * @param registryArgs registry Arguments
+   * @throws YarnException YARN problems
+   * @throws IOException Network or other problems
+   */
+  public void actionRegistryListConfigsYarn(ActionRegistryArgs registryArgs)
+      throws YarnException, IOException {
+
+    ServiceRecord instance = lookupServiceRecord(registryArgs);
+
+    RegistryRetriever retriever = new RegistryRetriever(instance);
+    PublishedConfigSet configurations =
+        retriever.getConfigurations(!registryArgs.internal);
+
+    for (String configName : configurations.keys()) {
+      if (!registryArgs.verbose) {
+        log.info("{}", configName);
+      } else {
+        PublishedConfiguration published =
+            configurations.get(configName);
+        log.info("{} : {}",
+            configName,
+            published.description);
+      }
+    }
+  }
 
   /**
    * list configs available for an instance
@@ -2402,9 +2509,34 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @throws FileNotFoundException if the config is not found
    */
   @VisibleForTesting
+  @Deprecated
   public PublishedConfiguration actionRegistryGetConfig(ActionRegistryArgs registryArgs)
       throws YarnException, IOException {
     ServiceInstanceData instance = lookupInstance(registryArgs);
+
+    RegistryRetriever retriever = new RegistryRetriever(instance);
+    boolean external = !registryArgs.internal;
+    PublishedConfigSet configurations =
+        retriever.getConfigurations(external);
+
+    PublishedConfiguration published = retriever.retrieveConfiguration(configurations,
+            registryArgs.getConf,
+            external);
+    return published;
+  }
+
+  /**
+   * list configs available for an instance
+   *
+   * @param registryArgs registry Arguments
+   * @throws YarnException YARN problems
+   * @throws IOException Network or other problems
+   * @throws FileNotFoundException if the config is not found
+   */
+  @VisibleForTesting
+  public PublishedConfiguration actionRegistryGetConfigYarn(ActionRegistryArgs registryArgs)
+      throws YarnException, IOException {
+    ServiceRecord instance = lookupServiceRecord(registryArgs);
 
     RegistryRetriever retriever = new RegistryRetriever(instance);
     boolean external = !registryArgs.internal;
@@ -2495,7 +2627,39 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     } catch (Exception e) {
       throw new IOException(e);
     }
+  }
+
+
+  /**
+   * Look up an instance
+   * @return instance data
+   * @throws SliderException other failures
+   * @throws IOException IO problems or wrapped exceptions
+   */
+  private ServiceRecord lookupServiceRecord(ActionRegistryArgs registryArgs) throws
+      SliderException,
+      IOException {
+    return lookupServiceRecord(registryArgs.name, registryArgs.serviceType);
+  }
+
+  /**
+   * Look up an instance
+   * @param id instance ID
+   * @param serviceType service type
+   * @return instance data
+   * @throws UnknownApplicationInstanceException no match
+   * @throws SliderException other failures
+   * @throws IOException IO problems or wrapped exceptions
+   */
+  private ServiceRecord lookupServiceRecord(String id,
+      String serviceType) throws
+      IOException, SliderException {
+    return getRegistryOperations().resolve(
+        BindingUtils.servicePath(BindingUtils.currentUser(),
+            serviceType, id));
   } 
+  
+  
   
   /**
    * List instances in the registry

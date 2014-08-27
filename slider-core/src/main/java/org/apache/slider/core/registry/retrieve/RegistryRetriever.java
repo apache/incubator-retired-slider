@@ -25,11 +25,15 @@ import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.api.json.JSONConfiguration;
+import org.apache.hadoop.yarn.registry.client.binding.RegistryTypeUtils;
+import org.apache.hadoop.yarn.registry.client.exceptions.InvalidRecordException;
+import org.apache.hadoop.yarn.registry.client.types.Endpoint;
+import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.ExceptionConverter;
 import org.apache.slider.core.registry.docstore.PublishedConfigSet;
 import org.apache.slider.core.registry.docstore.PublishedConfiguration;
-import org.apache.slider.core.registry.info.RegistryView;
+import org.apache.slider.core.registry.info.CustomRegistryConstants;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +50,8 @@ import java.io.IOException;
 public class RegistryRetriever {
   private static final Logger log = LoggerFactory.getLogger(RegistryRetriever.class);
 
-  private final ServiceInstanceData instance;
+  private final String externalConfigurationURL;
+  private final String internalConfigurationURL;
   private static final Client jerseyClient;
   
   static {
@@ -60,21 +65,29 @@ public class RegistryRetriever {
 
 
   public RegistryRetriever(ServiceInstanceData instance) {
-    this.instance = instance;
+    externalConfigurationURL =  instance.externalView.configurationsURL;    
+    internalConfigurationURL =  instance.internalView.configurationsURL;    
   }
 
-  /**
-   * Get the appropriate view for the flag
-   * @param external
-   * @return
-   */
-  private RegistryView getRegistryView(boolean external) {
-    return external ? instance.externalView : instance.internalView;
+  
+  public RegistryRetriever(String externalConfigurationURL, String internalConfigurationURL) {
+    this.externalConfigurationURL = externalConfigurationURL; 
+    this.internalConfigurationURL = internalConfigurationURL; 
   }
 
-  private String destination(boolean external) {
-    return external ? "external" : "internal";
+  public RegistryRetriever(ServiceRecord record) throws InvalidRecordException {
+    Endpoint internal = record.getInternalEndpoint(
+        CustomRegistryConstants.PUBLISHER_CONFIGURATIONS_API);
+    
+    internalConfigurationURL = RegistryTypeUtils.retrieveAddressUriType(
+        internal);
+    Endpoint external = record.getExternalEndpoint(
+        CustomRegistryConstants.PUBLISHER_CONFIGURATIONS_API);
+
+    externalConfigurationURL = RegistryTypeUtils.retrieveAddressUriType(
+        external);
   }
+
 
   /**
    * Does a bonded registry retriever have a configuration?
@@ -82,8 +95,8 @@ public class RegistryRetriever {
    * @return true if there is a URL to the configurations defined
    */
   public boolean hasConfigurations(boolean external) {
-    String confURL = getRegistryView(external).configurationsURL;
-    return !Strings.isStringEmpty(confURL);
+    return !Strings.isStringEmpty(
+        external ? externalConfigurationURL : internalConfigurationURL);
   }
   
   /**
@@ -94,11 +107,7 @@ public class RegistryRetriever {
   public PublishedConfigSet getConfigurations(boolean external) throws
       FileNotFoundException, IOException {
 
-    String confURL = getRegistryView(external).configurationsURL;
-    if (Strings.isStringEmpty(confURL)) {
-      throw new FileNotFoundException("No configuration URL at "
-                                      + destination(external) + " view");
-    }
+    String confURL = getConfigurationURL(external);
     try {
       WebResource webResource = jsonResource(confURL);
       log.debug("GET {}", confURL);
@@ -107,6 +116,14 @@ public class RegistryRetriever {
     } catch (UniformInterfaceException e) {
       throw ExceptionConverter.convertJerseyException(confURL, e);
     }
+  }
+
+  protected String getConfigurationURL(boolean external) throws FileNotFoundException {
+    String confURL = external ? externalConfigurationURL: internalConfigurationURL;
+    if (Strings.isStringEmpty(confURL)) {
+      throw new FileNotFoundException("No configuration URL");
+    }
+    return confURL;
   }
 
   private WebResource resource(String url) {
@@ -122,7 +139,7 @@ public class RegistryRetriever {
 
   /**
    * Get a complete configuration, with all values
-   * @param configSet
+   * @param configSet config set to ask for
    * @param name name of the configuration
    * @param external flag to indicate that it is an external configuration
    * @return the retrieved config
@@ -131,10 +148,10 @@ public class RegistryRetriever {
   public PublishedConfiguration retrieveConfiguration(PublishedConfigSet configSet,
       String name,
       boolean external) throws IOException {
+    String confURL = getConfigurationURL(external);
     if (!configSet.contains(name)) {
       throw new FileNotFoundException("Unknown configuration " + name);
     }
-    String confURL = getRegistryView(external).configurationsURL;
     confURL = SliderUtils.appendToURL(confURL, name);
     try {
       WebResource webResource = jsonResource(confURL);
@@ -148,7 +165,8 @@ public class RegistryRetriever {
   
   @Override
   public String toString() {
-    return super.toString() + " - " + instance;
+    return super.toString() 
+           + " - external " + externalConfigurationURL;
   }
   
   

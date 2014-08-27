@@ -19,7 +19,7 @@
 package org.apache.slider.server.services.yarnregistry;
 
 import org.apache.hadoop.yarn.registry.client.binding.BindingUtils;
-import org.apache.hadoop.yarn.registry.client.binding.RegistryZKUtils;
+import org.apache.hadoop.yarn.registry.client.binding.RegistryPathUtils;
 import org.apache.hadoop.yarn.registry.client.services.RegistryOperationsService;
 import org.apache.hadoop.yarn.registry.client.types.CreateFlags;
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
@@ -90,7 +90,7 @@ public class YarnRegistryViewForProviders {
       boolean ephemeral) throws IOException {
     String path = BindingUtils.componentPath(
         user, serviceClass, serviceName, componentName);
-    registryOperations.mkdir(RegistryZKUtils.parentOf(path), true);
+    registryOperations.mkdir(RegistryPathUtils.parentOf(path), true);
     registryOperations.create(path, record,
         CreateFlags.OVERWRITE
         + (ephemeral ? CreateFlags.EPHEMERAL : 0));
@@ -109,9 +109,10 @@ public class YarnRegistryViewForProviders {
       String serviceName,
       ServiceRecord record) throws IOException {
 
+    
     String path = BindingUtils.servicePath(
         username, serviceClass, serviceName);
-    registryOperations.mkdir(RegistryZKUtils.parentOf(path), true);
+    registryOperations.mkdir(RegistryPathUtils.parentOf(path), true);
     registryOperations.create(path, record, CreateFlags.OVERWRITE);
 
   }
