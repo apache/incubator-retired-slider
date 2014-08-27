@@ -3,7 +3,7 @@
   "metadata": {
   },
   "global": {
-    "application.def": "package/jmemcached-1.0.0.zip",
+    "application.def": "jmemcached-1.0.0.zip",
     "java_home": "C:\\java",
 
     "site.global.app_user": "hadoop",
