@@ -126,8 +126,6 @@ import org.apache.slider.server.appmaster.state.SimpleReleaseSelector;
 import org.apache.slider.server.appmaster.web.AgentService;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentWebApp;
 import org.apache.slider.server.appmaster.web.SliderAMWebApp;
-import org.apache.slider.server.appmaster.web.SliderAmFilterInitializer;
-import org.apache.slider.server.appmaster.web.SliderAmIpFilter;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.WebAppApiImpl;
 import org.apache.slider.server.appmaster.web.rest.RestPaths;
@@ -536,10 +534,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
 
     Configuration serviceConf = getConfig();
-    // Try to get the proper filtering of static resources through the yarn proxy working
-    serviceConf.set(HADOOP_HTTP_FILTER_INITIALIZERS,
-                    SliderAmFilterInitializer.NAME);
-    serviceConf.set(SliderAmIpFilter.WS_CONTEXT_ROOT, WS_CONTEXT_ROOT + "|" + WS_AGENT_CONTEXT_ROOT);
+    // IP filtering 
+    serviceConf.set(HADOOP_HTTP_FILTER_INITIALIZERS, AM_FILTER_NAME);
     
     //get our provider
     MapOperations globalInternalOptions = getGlobalInternalOptions();

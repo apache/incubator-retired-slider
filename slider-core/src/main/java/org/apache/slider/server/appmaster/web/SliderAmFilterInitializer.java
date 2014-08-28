@@ -30,6 +30,7 @@ import org.apache.hadoop.yarn.webapp.util.WebAppUtils;
 import java.util.HashMap;
 import java.util.Map;
 
+@Deprecated
 public class SliderAmFilterInitializer extends FilterInitializer {
   private static final String FILTER_NAME = "AM_PROXY_FILTER";
   private static final String FILTER_CLASS = SliderAmIpFilter.class.getCanonicalName();

@@ -41,6 +41,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * IP-based filter derived from
+ * {@link org.apache.hadoop.yarn.server.webproxy.amfilter.AmFilterInitializer};
+ * with the ability to open up a section for unauthed access from everywhere.
+ */
+@Deprecated
 public class SliderAmIpFilter implements Filter {
   protected static final Logger log =
       LoggerFactory.getLogger(SliderAmIpFilter.class);

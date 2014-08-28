@@ -53,6 +53,7 @@ import static junit.framework.Assert.fail;
  * proxy. Another requests can be filtered with (without) user name.
  * 
  */
+@Deprecated
 public class TestSliderAmFilter {
 
   private String proxyHost = "localhost";
