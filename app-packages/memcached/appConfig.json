@@ -19,8 +19,6 @@
   "components": {
     "slider-appmaster": {
       "jvm.heapsize": "256M"
-    },
-    "MEMCACHED": {
     }
   }
 }
