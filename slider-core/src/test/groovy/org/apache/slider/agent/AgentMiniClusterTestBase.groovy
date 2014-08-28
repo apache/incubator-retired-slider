@@ -85,7 +85,7 @@ extends YarnZKMiniClusterTestBase {
       try {
         FileUtils.deleteDirectory(tempRoot);
       } catch (IOException e) {
-        log.warn("Failed to delete $tempRoot :$e", e)
+        log.info("Failed to delete $tempRoot :$e", e)
       }
     }
   }

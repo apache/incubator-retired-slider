@@ -1460,35 +1460,40 @@ public final class SliderUtils {
                                                               String entry)
       throws IOException {
     InputStream is = null;
-    FSDataInputStream appStream = fs.open(appPath);
-    ZipArchiveInputStream zis = new ZipArchiveInputStream(appStream);
-    ZipArchiveEntry zipEntry;
-    boolean done = false;
-    while (!done && (zipEntry = zis.getNextZipEntry()) != null) {
-      if (entry.equals(zipEntry.getName())) {
-        int size = (int) zipEntry.getSize();
-        if (size != -1) {
-          log.info("Reading {} of size {}", zipEntry.getName(), zipEntry.getSize());
-          byte[] content = new byte[size];
-          int offset = 0;
-          while (offset < size) {
-            offset += zis.read(content, offset, size - offset);
-          }
-          is = new ByteArrayInputStream(content);
-        } else {
-          log.debug("Size unknown. Reading {}", zipEntry.getName());
-          ByteArrayOutputStream baos = new ByteArrayOutputStream();
-          while (true) {
-            int byteRead = zis.read();
-            if (byteRead == -1) {
-              break;
+    FSDataInputStream appStream = null;
+    try {
+      appStream = fs.open(appPath);
+      ZipArchiveInputStream zis = new ZipArchiveInputStream(appStream);
+      ZipArchiveEntry zipEntry;
+      boolean done = false;
+      while (!done && (zipEntry = zis.getNextZipEntry()) != null) {
+        if (entry.equals(zipEntry.getName())) {
+          int size = (int) zipEntry.getSize();
+          if (size != -1) {
+            log.info("Reading {} of size {}", zipEntry.getName(), zipEntry.getSize());
+            byte[] content = new byte[size];
+            int offset = 0;
+            while (offset < size) {
+              offset += zis.read(content, offset, size - offset);
             }
-            baos.write(byteRead);
+            is = new ByteArrayInputStream(content);
+          } else {
+            log.debug("Size unknown. Reading {}", zipEntry.getName());
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            while (true) {
+              int byteRead = zis.read();
+              if (byteRead == -1) {
+                break;
+              }
+              baos.write(byteRead);
+            }
+            is = new ByteArrayInputStream(baos.toByteArray());
           }
-          is = new ByteArrayInputStream(baos.toByteArray());
+          done = true;
         }
-        done = true;
       }
+    } finally {
+      IOUtils.closeStream(appStream);
     }
 
     return is;
