@@ -79,7 +79,7 @@ Tear Down
 ---------
 
 * slider_destroy will do the following
-  1. Freeze the slider application based on provided name
+  1. Stop the slider application based on provided name
   2. Destory the slider application based on provided name
 
 * The following args are required

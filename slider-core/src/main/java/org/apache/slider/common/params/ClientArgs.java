@@ -192,10 +192,10 @@ public class ClientArgs extends CommonArgs {
     } else if (SliderActions.ACTION_UPDATE.equals(action)) {
       bindCoreAction(actionUpdateArgs);
 
-    } else if (SliderActions.ACTION_FREEZE.equals(action)) {
+    } else if (SliderActions.ACTION_STOP.equals(action)) {
       bindCoreAction(actionFreezeArgs);
 
-    } else if (SliderActions.ACTION_THAW.equals(action)) {
+    } else if (SliderActions.ACTION_START.equals(action)) {
       bindCoreAction(actionThawArgs);
 
     } else if (SliderActions.ACTION_AM_SUICIDE.equals(action)) {

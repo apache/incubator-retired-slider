@@ -110,7 +110,7 @@ class TestActionExists extends AgentMiniClusterTestBase {
 
     assert 0 == sliderClient.actionExists(clustername, true)
     
-    // freeze the cluster
+    // stop the cluster
     clusterActionFreeze(sliderClient, clustername)
 
     //verify that exists(live) is now false

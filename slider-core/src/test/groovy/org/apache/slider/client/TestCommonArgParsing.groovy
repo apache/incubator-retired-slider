@@ -154,13 +154,13 @@ class TestCommonArgParsing implements SliderActions, Arguments {
   }
 
   /**
-   * Test a thaw command
+   * Test a start command
    * @throws Throwable
    */
   @Test
   public void testComplexThaw() throws Throwable {
     ClientArgs ca = createClientArgs([
-        ACTION_THAW,
+        ACTION_START,
         "--manager", "rhel:8032", "--filesystem", "hdfs://rhel:9090",
         "-S","java.security.krb5.realm=LOCAL","-S", "java.security.krb5.kdc=rhel",
         "-D","yarn.resourcemanager.principal=yarn/rhel@LOCAL",
@@ -197,14 +197,14 @@ class TestCommonArgParsing implements SliderActions, Arguments {
   @Test
   public void testFreezeFailsNoArg() throws Throwable {
     assertParseFails([
-        ACTION_FREEZE,
+        ACTION_STOP,
     ])
   }
   
   @Test
   public void testFreezeWorks1Arg() throws Throwable {
     ClientArgs ca = createClientArgs([
-        ACTION_FREEZE,
+        ACTION_STOP,
         CLUSTERNAME,
     ])
     assert ca.clusterName == CLUSTERNAME
@@ -214,14 +214,14 @@ class TestCommonArgParsing implements SliderActions, Arguments {
   @Test
   public void testFreezeFails2Arg() throws Throwable {
     assertParseFails([
-        ACTION_FREEZE, "cluster", "cluster2"
+        ACTION_STOP, "cluster", "cluster2"
     ])
   }
 
   @Test
   public void testFreezeForceWaitAndMessage() throws Throwable {
     ClientArgs ca = createClientArgs([
-        ACTION_FREEZE, CLUSTERNAME,
+        ACTION_STOP, CLUSTERNAME,
         ARG_FORCE,
         ARG_WAIT, "0",
         ARG_MESSAGE, "explanation"

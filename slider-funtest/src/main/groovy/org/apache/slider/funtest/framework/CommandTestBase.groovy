@@ -61,8 +61,8 @@ abstract class CommandTestBase extends SliderTestUtils {
   public static final File SLIDER_CONF_XML = new File(SLIDER_CONF_DIRECTORY,
       CLIENT_CONFIG_FILENAME).canonicalFile
   public static final YarnConfiguration SLIDER_CONFIG
-  public static final int THAW_WAIT_TIME
-  public static final int FREEZE_WAIT_TIME
+  public static final int START_WAIT_TIME
+  public static final int STOP_WAIT_TIME
 
   public static final int SLIDER_TEST_TIMEOUT
 
@@ -72,12 +72,12 @@ abstract class CommandTestBase extends SliderTestUtils {
 
   static {
     SLIDER_CONFIG = ConfLoader.loadSliderConf(SLIDER_CONF_XML);
-    THAW_WAIT_TIME = getTimeOptionMillis(SLIDER_CONFIG,
-        KEY_TEST_THAW_WAIT_TIME,
-        1000 * DEFAULT_THAW_WAIT_TIME_SECONDS)
-    FREEZE_WAIT_TIME = getTimeOptionMillis(SLIDER_CONFIG,
-        KEY_TEST_FREEZE_WAIT_TIME,
-        1000 * DEFAULT_TEST_FREEZE_WAIT_TIME_SECONDS)
+    START_WAIT_TIME = getTimeOptionMillis(SLIDER_CONFIG,
+        KEY_TEST_START_WAIT_TIME,
+        1000 * DEFAULT_START_WAIT_TIME_SECONDS)
+    STOP_WAIT_TIME = getTimeOptionMillis(SLIDER_CONFIG,
+        KEY_TEST_STOP_WAIT_TIME,
+        1000 * DEFAULT_TEST_STOP_WAIT_TIME_SECONDS)
     SLIDER_TEST_TIMEOUT = getTimeOptionMillis(SLIDER_CONFIG,
         KEY_TEST_TIMEOUT,
         1000 * DEFAULT_TEST_TIMEOUT_SECONDS)
@@ -205,32 +205,32 @@ abstract class CommandTestBase extends SliderTestUtils {
     slider(result, args)
   }
 
-  static SliderShell freeze(String name) {
+  static SliderShell stop(String name) {
     slider([
-        ACTION_FREEZE, name
+        ACTION_STOP, name
     ])
   }
 
 
-  static SliderShell freeze(
+  static SliderShell stop(
       int exitCode,
       String name,
       Collection<String> args) {
-    slider(exitCode, [ACTION_FREEZE, name] + args)
+    slider(exitCode, [ACTION_STOP, name] + args)
   }
 
   /**
-   * Freeze cluster: no exit code checking
+   * Stop cluster: no exit code checking
    * @param name
    * @param args
    * @return
    */
-  static SliderShell freeze(String name, Collection<String> args) {
-    slider([ACTION_FREEZE, name] + args)
+  static SliderShell stop(String name, Collection<String> args) {
+    slider([ACTION_STOP, name] + args)
   }
 
   static SliderShell freezeForce(String name) {
-    freeze(name, [ARG_FORCE])
+    stop(name, [ARG_FORCE])
   }
 
   static SliderShell getConf(String name) {
@@ -288,21 +288,21 @@ abstract class CommandTestBase extends SliderTestUtils {
         ])
   }
 
-  static SliderShell thaw(String name) {
+  static SliderShell start(String name) {
     slider([
-        ACTION_THAW, name
+        ACTION_START, name
     ])
   }
 
-  static SliderShell thaw(int result, String name) {
+  static SliderShell start(int result, String name) {
     slider(result,
         [
-            ACTION_THAW, name
+            ACTION_START, name
         ])
   }
 
-  static SliderShell thaw(String name, Collection<String> args) {
-    slider(0, [ACTION_THAW, name] + args)
+  static SliderShell start(String name, Collection<String> args) {
+    slider(0, [ACTION_START, name] + args)
   }
 
   static SliderShell registry(int result, Collection<String> commands) {
@@ -427,7 +427,7 @@ abstract class CommandTestBase extends SliderTestUtils {
 
 
     if (blockUntilRunning) {
-      argsList << ARG_WAIT << Integer.toString(THAW_WAIT_TIME)
+      argsList << ARG_WAIT << Integer.toString(START_WAIT_TIME)
     }
 
     List<String> roleList = [];

@@ -19,7 +19,7 @@
 package org.apache.slider.common.params;
 
 /**
- * Launch args for create and thaw and anything else that can start something
+ * Launch args for create and start and anything else that can start something
  */
 public interface LaunchArgsAccessor extends WaitTimeAccessor {
   String getRmAddress();

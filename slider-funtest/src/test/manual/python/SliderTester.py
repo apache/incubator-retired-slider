@@ -235,7 +235,7 @@ class SliderTester:
     pass
 
   def clean_up(self):
-    (retcode, out, err) = self.run_slider_command(" ".join([self.slider_exec, "freeze", self.cluster_name]),
+    (retcode, out, err) = self.run_slider_command(" ".join([self.slider_exec, "stop", self.cluster_name]),
                                                   self.slider_user)
     if retcode != 0:
       raise Exception("Could not clean cluster. Out: " + out + " Err: " + err)
@@ -352,7 +352,7 @@ def main():
   # Finalize resources and appConf json files
   # Call create
   # Validate existence of the app
-  # Call freeze
+  # Call stop
 
 
 if __name__ == "__main__":

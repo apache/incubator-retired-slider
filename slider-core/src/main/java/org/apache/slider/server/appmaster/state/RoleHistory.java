@@ -334,7 +334,7 @@ public class RoleHistory {
    * Start up
    * @param fs filesystem 
    * @param historyDir path in FS for history
-   * @return true if the history was thawed
+   * @return true if the history was started
    */
   public boolean onStart(FileSystem fs, Path historyDir) throws
                                                          BadConfigException {
@@ -342,8 +342,8 @@ public class RoleHistory {
     filesystem = fs;
     historyPath = historyDir;
     startTime = now();
-    //assume the history is being thawed; this will downgrade as appropriate
-    return onThaw();
+    //assume the history is being started; this will downgrade as appropriate
+    return onSart();
     }
   
   /**
@@ -354,11 +354,11 @@ public class RoleHistory {
   }
 
   /**
-   * Handle the thaw process <i>after the history has been rebuilt</i>,
+   * Handle the start process <i>after the history has been rebuilt</i>,
    * and after any gc/purge
    */
   @VisibleForTesting
-  public synchronized boolean onThaw() throws BadConfigException {
+  public synchronized boolean onSart() throws BadConfigException {
     assert filesystem != null;
     assert historyPath != null;
     boolean thawSuccessful = false;
@@ -381,7 +381,7 @@ public class RoleHistory {
                  e);
       }
 
-      //thaw is then completed
+      //start is then completed
       buildAvailableNodeLists();
     } else {
       //fallback to bootstrap procedure
@@ -392,7 +392,7 @@ public class RoleHistory {
 
 
   /**
-   * (After the thaw), rebuild the availability datastructures
+   * (After the start), rebuild the availability data structures
    */
   @VisibleForTesting
   public synchronized void buildAvailableNodeLists() {

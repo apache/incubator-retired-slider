@@ -109,8 +109,8 @@ class TestTwoLiveClusters extends HBaseMiniClusterTestBase {
         HBaseKeys.HBASE_SERVICE_TYPE, clustername2).payload
     assert !(hbase1ServiceData == hbase2ServiceData)
 
-    clusterActionFreeze(cluster2Client, clustername2,"freeze cluster 2")
-    clusterActionFreeze(sliderClient, clustername1,"Freeze cluster 1")
+    clusterActionFreeze(cluster2Client, clustername2,"stop cluster 2")
+    clusterActionFreeze(sliderClient, clustername1,"Stop cluster 1")
 
   }
 

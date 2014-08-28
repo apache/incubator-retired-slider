@@ -43,12 +43,12 @@ public class FunctionalAccumuloM1T1GC1Mon1IT extends FunctionalAccumuloClusterIT
       ClusterDescription cd) {
 
     slider(0, [
-      SliderActions.ACTION_FREEZE,
+      SliderActions.ACTION_STOP,
       getClusterName(),
       Arguments.ARG_WAIT,
-      Integer.toString(FREEZE_WAIT_TIME),
+      Integer.toString(STOP_WAIT_TIME),
       Arguments.ARG_MESSAGE,
-      "freeze-in-test-AccumuloCluster"
+      "stop-in-test-AccumuloCluster"
     ])
     
     //destroy the cluster. This only works if the permissions allow it

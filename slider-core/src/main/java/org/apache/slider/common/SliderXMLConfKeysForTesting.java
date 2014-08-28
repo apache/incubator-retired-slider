@@ -30,14 +30,14 @@ public interface SliderXMLConfKeysForTesting {
   String KEY_TEST_ACCUMULO_TAR = "slider.test.accumulo.tar";
   String KEY_TEST_ACCUMULO_APPCONF = "slider.test.accumulo.appconf";
 
-  String KEY_TEST_THAW_WAIT_TIME = "slider.test.thaw.wait.seconds";
+  String KEY_TEST_START_WAIT_TIME = "slider.test.start.wait.seconds";
 
-  int DEFAULT_THAW_WAIT_TIME_SECONDS = 60;
+  int DEFAULT_START_WAIT_TIME_SECONDS = 60;
 
 
-  String KEY_TEST_FREEZE_WAIT_TIME = "slider.test.freeze.wait.seconds";
+  String KEY_TEST_STOP_WAIT_TIME = "slider.test.stop.wait.seconds";
 
-  int DEFAULT_TEST_FREEZE_WAIT_TIME_SECONDS = 60;
+  int DEFAULT_TEST_STOP_WAIT_TIME_SECONDS = 60;
 
   String KEY_TEST_TIMEOUT = "slider.test.timeout.seconds";
 

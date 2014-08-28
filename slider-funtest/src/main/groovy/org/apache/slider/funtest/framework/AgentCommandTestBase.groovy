@@ -178,7 +178,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     log.info "Cleaning app instance, if exists, by name " + applicationName
     teardown(applicationName)
 
-    // sleep till the instance is frozen
+    // sleep till the instance is stopped
     sleep(1000 * 3)
 
     SliderShell shell = slider([
