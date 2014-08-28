@@ -35,7 +35,7 @@ _STOP = object()
 log = logging.getLogger(__name__)
 
 
-class TimeoutError(Exception):
+class KazooTimeoutError(Exception):
     pass
 
 
@@ -104,7 +104,7 @@ class AsyncResult(object):
                     raise self._exception
 
             # if we get to this point we timeout
-            raise TimeoutError()
+            raise KazooTimeoutError()
 
     def get_nowait(self):
         """Return the value or raise the exception without blocking.
@@ -174,7 +174,7 @@ class SequentialThreadingHandler(object):
 
     """
     name = "sequential_threading_handler"
-    timeout_exception = TimeoutError
+    timeout_exception = KazooTimeoutError
     sleep_func = staticmethod(time.sleep)
     queue_impl = Queue.Queue
     queue_empty = Queue.Empty

@@ -31,6 +31,7 @@ import ConfigParser
 import os
 import tempfile
 from Controller import Controller
+from Registry import Registry
 from optparse import OptionParser
 
 logger = logging.getLogger()
@@ -45,7 +46,6 @@ class TestMain(unittest.TestCase):
   def tearDown(self):
     # enable stdout
     sys.stdout = sys.__stdout__
-
 
   @patch("os._exit")
   @patch("os.getpid")
@@ -218,7 +218,7 @@ class TestMain(unittest.TestCase):
     ProcessHelper.pidfile = oldpid
     os.remove(tmpoutfile)
 
-
+  @patch.object(Registry, "readAMHostPort")
   @patch.object(main, "setup_logging")
   @patch.object(main, "bind_signal_handlers")
   @patch.object(main, "update_config_from_file")
@@ -236,17 +236,20 @@ class TestMain(unittest.TestCase):
                 update_log_level_mock, write_pid_mock,
                 perform_prestart_checks_mock,
                 update_config_from_file_mock,
-                bind_signal_handlers_mock, setup_logging_mock):
+                bind_signal_handlers_mock, setup_logging_mock,
+                readAMHostPort_mock):
     Controller_init_mock.return_value = None
     isAlive_mock.return_value = False
     options = MagicMock()
     parse_args_mock.return_value = (options, MagicMock)
+    readAMHostPort_mock.return_value = ("host1", 101, 100)
 
     tmpdir = tempfile.gettempdir()
 
     #testing call without command-line arguments
     os.environ["AGENT_WORK_ROOT"] = os.path.join(tmpdir, "work")
     os.environ["AGENT_LOG_ROOT"] = ",".join([os.path.join(tmpdir, "log"),os.path.join(tmpdir, "log2")])
+    try_to_connect_mock.return_value = 1
     main.main()
 
     self.assertTrue(setup_logging_mock.called)
@@ -256,7 +259,7 @@ class TestMain(unittest.TestCase):
     self.assertTrue(write_pid_mock.called)
     self.assertTrue(update_log_level_mock.called)
     self.assertTrue(options.log_folder == os.path.join(tmpdir, "log"))
-    try_to_connect_mock.assert_called_once_with(ANY, -1, ANY)
+    try_to_connect_mock.assert_called_once_with('https://host1:101/ws/v1/slider/agents/', 3, ANY)
     self.assertTrue(start_mock.called)
 
   class AgentOptions:
@@ -267,6 +270,8 @@ class TestMain(unittest.TestCase):
           self.verbose = verbose
           self.debug = debug
 
+  @patch.object(Registry, "readAMHostPort")
+  @patch("time.sleep")
   @patch.object(main, "setup_logging")
   @patch.object(main, "bind_signal_handlers")
   @patch.object(main, "stop_agent")
@@ -287,18 +292,22 @@ class TestMain(unittest.TestCase):
                 update_log_level_mock, write_pid_mock,
                 perform_prestart_checks_mock,
                 update_config_from_file_mock, stop_mock,
-                bind_signal_handlers_mock, setup_logging_mock):
+                bind_signal_handlers_mock, setup_logging_mock,
+                time_sleep_mock, readAMHostPort_mock):
       Controller_init_mock.return_value = None
       isAlive_mock.return_value = False
       parse_args_mock.return_value = (
           TestMain.AgentOptions("agent", "host1:2181", "/registry/org-apache-slider/cl1", True, ""), [])
       tmpdir = tempfile.gettempdir()
+      time_sleep_mock.return_value = None
+      readAMHostPort_mock.return_value = (None, None, None)
 
       #testing call without command-line arguments
       os.environ["AGENT_WORK_ROOT"] = os.path.join(tmpdir, "work")
       os.environ["AGENT_LOG_ROOT"] = os.path.join(tmpdir, "log")
       main.main()
       self.assertTrue(AgentConfig_set_mock.call_count == 3)
+      self.assertTrue(readAMHostPort_mock.call_count == 10)
       AgentConfig_set_mock.assert_any_call("server", "zk_quorum", "host1:2181")
       AgentConfig_set_mock.assert_any_call("server", "zk_reg_path", "/registry/org-apache-slider/cl1")
 
