@@ -29,7 +29,7 @@
   <description>Slider HBase App Package</description>
   <properties>
     <work.dir>package-tmp</work.dir>
-    <app.package.name>apache-slider-hbase-${hbase.version}-app-package-${project.version}</app.package.name>
+    <app.package.name>${project.artifactId}-${project.version}</app.package.name>
   </properties>
 
   <profiles>
