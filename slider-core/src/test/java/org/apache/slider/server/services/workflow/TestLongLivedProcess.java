@@ -33,11 +33,9 @@ import java.util.List;
  */
 public class TestLongLivedProcess extends WorkflowServiceTestBase implements
     LongLivedProcessLifecycleEvent {
-  private static final Logger
-      log = LoggerFactory.getLogger(TestLongLivedProcess.class);
+  private static final Logger log = LoggerFactory.getLogger(TestLongLivedProcess.class);
 
-  private static final Logger
-      processLog =
+  private static final Logger processLog =
       LoggerFactory.getLogger("org.apache.hadoop.services.workflow.Process");
 
 
