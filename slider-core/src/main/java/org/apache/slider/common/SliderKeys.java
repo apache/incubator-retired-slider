@@ -172,4 +172,11 @@ public interface SliderKeys extends SliderXmlConfKeys {
    * Python specific
    */
   String PYTHONPATH = "PYTHONPATH";
+
+
+  /**
+   * Name of the AM filter to use: {@value}
+   */
+  String AM_FILTER_NAME =
+      "org.apache.hadoop.yarn.server.webproxy.amfilter.AmFilterInitializer";
 }
