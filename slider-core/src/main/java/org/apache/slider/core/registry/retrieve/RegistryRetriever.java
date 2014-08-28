@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import javax.ws.rs.core.MediaType;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Registry retriever. 
@@ -78,14 +79,23 @@ public class RegistryRetriever {
   public RegistryRetriever(ServiceRecord record) throws InvalidRecordException {
     Endpoint internal = record.getInternalEndpoint(
         CustomRegistryConstants.PUBLISHER_CONFIGURATIONS_API);
-    
-    internalConfigurationURL = RegistryTypeUtils.retrieveAddressesUriType(
-        internal).get(0);
+    List<String> addresses = RegistryTypeUtils.retrieveAddressesUriType(
+        internal);
+    if (addresses != null && !addresses.isEmpty()) {
+      internalConfigurationURL = addresses.get(0);
+    } else {
+      internalConfigurationURL = "";
+    }
     Endpoint external = record.getExternalEndpoint(
         CustomRegistryConstants.PUBLISHER_CONFIGURATIONS_API);
 
-    externalConfigurationURL = RegistryTypeUtils.retrieveAddressesUriType(
-        external).get(0);
+    addresses = RegistryTypeUtils.retrieveAddressesUriType(external);
+    if (addresses != null && !addresses.isEmpty()) {
+      externalConfigurationURL = addresses.get(0);
+    } else {
+      externalConfigurationURL = "";
+    }
+
   }
 
 

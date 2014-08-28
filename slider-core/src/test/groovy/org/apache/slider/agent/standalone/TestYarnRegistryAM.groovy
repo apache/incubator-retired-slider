@@ -125,8 +125,11 @@ class TestYarnRegistryAM extends AgentMiniClusterTestBase {
     logReport(instance)
     assert instance != null
 
-    //switch to the ZK-based registry
+    // sleep to allow registration to complete
+    sleep(5000)
+    
 
+    
 
     try {
       def yarnRegistryDump = client.dumpYarnRegistry(true).toString()
