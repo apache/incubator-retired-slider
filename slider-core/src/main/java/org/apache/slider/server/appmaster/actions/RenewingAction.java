@@ -26,6 +26,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * This action executes then reschedules an inner action; a limit
@@ -36,9 +38,12 @@ public class RenewingAction<A extends AsyncAction> extends AsyncAction {
   private static final Logger log =
       LoggerFactory.getLogger(RenewingAction.class);
   private final A action;
-  private final long interval;
-  private final TimeUnit timeUnit;
+  private long interval;
+  private TimeUnit timeUnit;
   public final AtomicInteger executionCount = new AtomicInteger();
+  private final ReentrantReadWriteLock intervalLock = new ReentrantReadWriteLock();
+  private final Lock intervalReadLock = intervalLock.readLock();
+  private final Lock intervalWriteLock = intervalLock.writeLock();
   public final int limit;
 
 
@@ -85,7 +90,7 @@ public class RenewingAction<A extends AsyncAction> extends AsyncAction {
       reschedule = limit > exCount;
     }
     if (reschedule) {
-      this.setNanos(convertAndOffset(interval, timeUnit));
+      this.setNanos(convertAndOffset(getInterval(), getTimeUnit()));
       log.debug("{}: rescheduling, new offset {} mS ", this,
           getDelay(TimeUnit.MILLISECONDS));
       queueService.schedule(this);
@@ -101,11 +106,31 @@ public class RenewingAction<A extends AsyncAction> extends AsyncAction {
   }
 
   public long getInterval() {
-    return interval;
+    intervalReadLock.lock();
+    try {
+      return interval;
+    } finally {
+      intervalReadLock.unlock();
+    }
+  }
+
+  public void updateInterval(long delay, TimeUnit timeUnit) {
+    intervalWriteLock.lock();
+    try {
+      interval = delay;
+      this.timeUnit = timeUnit;
+    } finally {
+      intervalWriteLock.unlock();
+    }
   }
 
   public TimeUnit getTimeUnit() {
-    return timeUnit;
+    intervalReadLock.lock();
+    try {
+      return timeUnit;
+    } finally {
+      intervalReadLock.unlock();
+    }
   }
 
   public int getExecutionCount() {
