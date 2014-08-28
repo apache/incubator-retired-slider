@@ -79,13 +79,13 @@ public class RegistryRetriever {
     Endpoint internal = record.getInternalEndpoint(
         CustomRegistryConstants.PUBLISHER_CONFIGURATIONS_API);
     
-    internalConfigurationURL = RegistryTypeUtils.retrieveAddressUriType(
-        internal);
+    internalConfigurationURL = RegistryTypeUtils.retrieveAddressesUriType(
+        internal).get(0);
     Endpoint external = record.getExternalEndpoint(
         CustomRegistryConstants.PUBLISHER_CONFIGURATIONS_API);
 
-    externalConfigurationURL = RegistryTypeUtils.retrieveAddressUriType(
-        external);
+    externalConfigurationURL = RegistryTypeUtils.retrieveAddressesUriType(
+        external).get(0);
   }
 
 

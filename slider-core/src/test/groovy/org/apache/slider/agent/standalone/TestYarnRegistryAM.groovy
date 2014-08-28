@@ -160,13 +160,13 @@ class TestYarnRegistryAM extends AgentMiniClusterTestBase {
     def registryEndpoint = serviceInstance.getExternalEndpoint(
         CustomRegistryConstants.REGISTRY_REST_API)
     assert registryEndpoint != null
-    def registryURL = RegistryTypeUtils.retrieveAddressURL(registryEndpoint)
+    def registryURL = RegistryTypeUtils.retrieveAddressURLs(registryEndpoint)[0]
     describe("Registry WADL @ $registryURL")
     
     def publisherEndpoint = serviceInstance.getExternalEndpoint(
         CustomRegistryConstants.PUBLISHER_REST_API)
 
-    def publisherURL = RegistryTypeUtils.retrieveAddressURL(publisherEndpoint)
+    def publisherURL = RegistryTypeUtils.retrieveAddressURLs(publisherEndpoint)[0]
     def publisher = publisherURL.toString()
     describe("Publisher")
 
