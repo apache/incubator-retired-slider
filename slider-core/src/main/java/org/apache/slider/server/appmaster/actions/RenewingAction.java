@@ -64,6 +64,7 @@ public class RenewingAction<A extends AsyncAction> extends AsyncAction {
     // slightly superfluous as the super init above checks these values...retained
     // in case that code is ever changed
     Preconditions.checkArgument(action != null, "null actions");
+    Preconditions.checkArgument(interval > 0, "invalid interval: " + interval);
     this.action = action;
     this.interval = interval;
     this.timeUnit = timeUnit;

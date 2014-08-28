@@ -1817,6 +1817,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         InternalKeys.DEFAULT_CHAOS_MONKEY_INTERVAL_HOURS,
         InternalKeys.DEFAULT_CHAOS_MONKEY_INTERVAL_MINUTES,
         0);
+    if (monkeyInterval == 0) {
+      log.debug(
+          "Chaos monkey not configured with a time interval...not enabling");
+      return false;
+    }
     log.info("Adding Chaos Monkey scheduled every {} seconds ({} hours)",
         monkeyInterval, monkeyInterval/(60*60));
     monkey = new ChaosMonkeyService(metrics, actionQueues);
@@ -1838,8 +1843,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // and schedule it
     if (monkey.schedule(monkeyInterval, TimeUnit.SECONDS)) {
       log.info("Chaos Monkey is running");
+      return true;
+    } else {
+      log.info("Chaos monkey not started");
+      return false;
     }
-    return true;
   }
   
   /**
