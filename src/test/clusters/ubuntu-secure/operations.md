@@ -198,21 +198,21 @@
      
      
                
-    bin/slider  start cl1 \
+    bin/slider  thaw cl1 \
     --manager ubuntu:8032 --filesystem hdfs://ubuntu:9090 \
     \
      -S java.security.krb5.realm=COTHAM -S java.security.krb5.kdc=ubuntu \
      -D yarn.resourcemanager.principal=yarn/ubuntu@COTHAM \
      -D dfs.namenode.kerberos.principal=hdfs/ubuntu@COTHAM 
                    
-    bin/slider  stop cl1 \
+    bin/slider  freeze cl1 \
     --manager ubuntu:8032 --filesystem hdfs://ubuntu:9090 \
     \
     -S java.security.krb5.realm=COTHAM -S java.security.krb5.kdc=ubuntu \
      -D yarn.resourcemanager.principal=yarn/ubuntu@COTHAM \
      -D dfs.namenode.kerberos.principal=hdfs/ubuntu@COTHAM   
                       
-    bin/slider  stop cluster3 \
+    bin/slider  freeze cluster3 \
     --manager ubuntu:8032 --filesystem hdfs://ubuntu:9090 \
     \
     -S java.security.krb5.realm=COTHAM -S java.security.krb5.kdc=ubuntu \
@@ -259,13 +259,13 @@
       --role master 1 \
       --role worker 2 
     
-# stop
+# freeze
 
-    bin/slider  stop cl1
+    bin/slider  freeze cl1 
     
-# start
+# thaw
 
-    bin/slider  start cl1
+    bin/slider  thaw cl1
      
 # monitor
 

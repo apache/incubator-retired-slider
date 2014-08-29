@@ -32,7 +32,7 @@ public interface SliderActions {
   String ACTION_ECHO = "echo";
   String ACTION_EXISTS = "exists";
   String ACTION_FLEX = "flex";
-  String ACTION_STOP = "stop";
+  String ACTION_FREEZE = "freeze";
   String ACTION_GETCONF = "getconf";
   String ACTION_HELP = "help";
   String ACTION_KILL_CONTAINER = "kill-container";
@@ -41,7 +41,7 @@ public interface SliderActions {
   String ACTION_RECONFIGURE = "reconfigure";
   String ACTION_REGISTRY = "registry";
   String ACTION_STATUS = "status";
-  String ACTION_START = "start";
+  String ACTION_THAW = "thaw";
   String ACTION_USAGE = "usage";
   String ACTION_VERSION = "version";
   String DESCRIBE_ACTION_AM_SUICIDE =
@@ -53,12 +53,12 @@ public interface SliderActions {
   String DESCRIBE_ACTION_UPDATE =
       "Update template for a Slider application";
   String DESCRIBE_ACTION_DESTROY =
-        "Destroy a stopped Slider application)";
+        "Destroy a frozen Slider application)";
   String DESCRIBE_ACTION_EXISTS =
             "Probe for an application running";
   String DESCRIBE_ACTION_FLEX = "Flex a Slider application";
-  String DESCRIBE_ACTION_STOP =
-              "Stop a running application";
+  String DESCRIBE_ACTION_FREEZE =
+              "Freeze/suspend a running application";
   String DESCRIBE_ACTION_GETCONF =
                 "Get the configuration of an application";
   String DESCRIBE_ACTION_KILL_CONTAINER =
@@ -72,8 +72,8 @@ public interface SliderActions {
                       "Query the registry of a YARN application";
   String DESCRIBE_ACTION_STATUS =
                       "Get the status of an application";
-  String DESCRIBE_ACTION_START =
-                        "Start a stopped application";
+  String DESCRIBE_ACTION_THAW =
+                        "Thaw a frozen application";
   String DESCRIBE_ACTION_VERSION =
                         "Print the Slider version information";
 }

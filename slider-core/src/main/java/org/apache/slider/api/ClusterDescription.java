@@ -132,7 +132,7 @@ public class ClusterDescription implements Cloneable {
   
   /**
    * When was the cluster specification created?
-   * This is not the time a cluster was started; that will
+   * This is not the time a cluster was thawed; that will
    * be in the <code>info</code> section.
    */
   public long createTime;

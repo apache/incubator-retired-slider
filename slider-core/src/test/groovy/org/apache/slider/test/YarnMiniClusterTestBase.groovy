@@ -18,6 +18,7 @@
 
 package org.apache.slider.test
 
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
@@ -48,11 +49,16 @@ import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.main.ServiceLauncherBaseTest
 import org.apache.slider.server.appmaster.SliderAppMaster
 import org.junit.After
+import org.junit.Assert
+import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Rule
+import org.junit.rules.TestName
 import org.junit.rules.Timeout
 
 import static org.apache.slider.test.KeysForTests.*
+
+import static org.apache.slider.common.SliderKeys.*;
 import static org.apache.slider.common.SliderXMLConfKeysForTesting.*;
 /**
  * Base class for mini cluster tests -creates a field for the
@@ -91,8 +97,8 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
   }
 
 
-  public int thawWaitTime = DEFAULT_START_WAIT_TIME_SECONDS * 1000
-  public int freezeWaitTime = DEFAULT_TEST_STOP_WAIT_TIME_SECONDS * 1000
+  public int thawWaitTime = DEFAULT_THAW_WAIT_TIME_SECONDS * 1000
+  public int freezeWaitTime = DEFAULT_TEST_FREEZE_WAIT_TIME_SECONDS * 1000
   public int sliderTestTimeout = DEFAULT_TEST_TIMEOUT_SECONDS * 1000
   public boolean teardownKillall = DEFAULT_TEARDOWN_KILLALL
   
@@ -158,10 +164,10 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     super.setup()
     def testConf = testConfiguration;
     thawWaitTime = getTimeOptionMillis(testConf,
-        KEY_TEST_START_WAIT_TIME,
+        KEY_TEST_THAW_WAIT_TIME,
         thawWaitTime)
     freezeWaitTime = getTimeOptionMillis(testConf,
-        KEY_TEST_STOP_WAIT_TIME,
+        KEY_TEST_FREEZE_WAIT_TIME,
         freezeWaitTime)
     sliderTestTimeout = getTimeOptionMillis(testConf,
         KEY_TEST_TIMEOUT,
@@ -596,7 +602,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     assert miniCluster != null
 
     List<String> argsList = [
-        SliderActions.ACTION_START, clustername,
+        SliderActions.ACTION_THAW, clustername,
         Arguments.ARG_MANAGER, RMAddr,
         Arguments.ARG_WAIT, WAIT_TIME_ARG,
         Arguments.ARG_FILESYSTEM, fsDefaultName,
@@ -704,7 +710,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
    * @return the exit code
    */
   public int clusterActionFreeze(SliderClient sliderClient, String clustername,
-                                 String message = "action stop") {
+                                 String message = "action freeze") {
     log.info("Freezing cluster $clustername: $message")
     ActionFreezeArgs freezeArgs  = new ActionFreezeArgs();
     freezeArgs.waittime = CLUSTER_STOP_TIME
@@ -712,7 +718,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     int exitCode = sliderClient.actionFreeze(clustername,
         freezeArgs);
     if (exitCode != 0) {
-      log.warn("Cluster stop failed with error code $exitCode")
+      log.warn("Cluster freeze failed with error code $exitCode")
     }
     return exitCode
   }

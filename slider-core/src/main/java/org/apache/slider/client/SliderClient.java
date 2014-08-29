@@ -298,10 +298,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       exitCode = actionBuild(clusterName, serviceArgs.getActionBuildArgs());
     } else if (ACTION_CREATE.equals(action)) {
       exitCode = actionCreate(clusterName, serviceArgs.getActionCreateArgs());
-    } else if (ACTION_STOP.equals(action)) {
+    } else if (ACTION_FREEZE.equals(action)) {
       exitCode = actionFreeze(clusterName,
-                            serviceArgs.getActionFreezeArgs());
-    } else if (ACTION_START.equals(action)) {
+          serviceArgs.getActionFreezeArgs());
+    } else if (ACTION_THAW.equals(action)) {
       exitCode = actionThaw(clusterName, serviceArgs.getActionThawArgs());
     } else if (ACTION_DESTROY.equals(action)) {
       exitCode = actionDestroy(clusterName);
@@ -1746,10 +1746,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
   /**
-   * Stop the cluster
+   * Freeze the cluster
    *
    * @param clustername cluster name
-   * @param freezeArgs arguments to the stop
+   * @param freezeArgs arguments to the freeze
    * @return EXIT_SUCCESS if the cluster was not running by the end of the operation
    */
   public int actionFreeze(String clustername,
@@ -1772,10 +1772,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     if (app == null) {
       // exit early
       log.info("Cluster {} not running", clustername);
-      // not an error to stop a stopped cluster
+      // not an error to freeze a frozen cluster
       return EXIT_SUCCESS;
     }
-    log.debug("App to stop was found: {}:\n{}", clustername,
+    log.debug("App to freeze was found: {}:\n{}", clustername,
               new SliderUtils.OnDemandReportStringifier(app));
     if (app.getYarnApplicationState().ordinal() >=
         YarnApplicationState.FINISHED.ordinal()) {
@@ -1789,7 +1789,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     if (forcekill) {
       //escalating to forced kill
-      application.kill("Forced stop of " + clustername +
+      application.kill("Forced freeze of " + clustername +
                        ": " + text);
     } else {
       try {
@@ -1935,7 +1935,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   /**
    * Restore a cluster
    */
-  public int actionThaw(String clustername, ActionThawArgs start) throws YarnException, IOException {
+  public int actionThaw(String clustername, ActionThawArgs thaw) throws YarnException, IOException {
     SliderUtils.validateClusterName(clustername);
     // see if it is actually running and bail out;
     verifyBindingsDefined();
@@ -1943,7 +1943,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
 
     //start the cluster
-    return startCluster(clustername, start);
+    return startCluster(clustername, thaw);
   }
 
   /**

@@ -54,7 +54,7 @@ source $config
 # Main
 #
 echo -e "\n## Freezing app $app_name"
-sudo -u yarn $SLIDER_INST_DIR/bin/slider stop $app_name --manager $RM_ADDRESS || exit 1
+sudo -u yarn $SLIDER_INST_DIR/bin/slider freeze $app_name --manager $RM_ADDRESS || exit 1
 echo "SUCCESS"
 
 echo -e "\n## Destroying app $app_name"

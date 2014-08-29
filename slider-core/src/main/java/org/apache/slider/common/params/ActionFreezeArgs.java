@@ -22,17 +22,17 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
 
-@Parameters(commandNames = {SliderActions.ACTION_STOP},
-            commandDescription = SliderActions.DESCRIBE_ACTION_STOP)
+@Parameters(commandNames = {SliderActions.ACTION_FREEZE},
+            commandDescription = SliderActions.DESCRIBE_ACTION_FREEZE)
 
 public class ActionFreezeArgs extends AbstractActionArgs implements
                                                          WaitTimeAccessor {
   @Override
   public String getActionName() {
-    return SliderActions.ACTION_STOP;
+    return SliderActions.ACTION_FREEZE;
   }
   
-  public static final String STOP_COMMAND_ISSUED = "stop command issued";
+  public static final String FREEZE_COMMAND_ISSUED = "freeze command issued";
   @ParametersDelegate
   public WaitArgsDelegate waitDelegate = new WaitArgsDelegate();
 
@@ -48,7 +48,7 @@ public class ActionFreezeArgs extends AbstractActionArgs implements
 
   @Parameter(names={ARG_MESSAGE},
              description = "reason for the operation")
-  public String message = STOP_COMMAND_ISSUED;
+  public String message = FREEZE_COMMAND_ISSUED;
 
   @Parameter(names = {ARG_FORCE},
              description = "force the operation")

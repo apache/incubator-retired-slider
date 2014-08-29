@@ -22,9 +22,9 @@ Slider is a YARN application to deploy existing distributed applications on YARN
 monitor them and make them larger or smaller as desired -even while 
 the cluster is running.
 
-Clusters can be stopped and restarted later; the distribution
+Clusters can be stopped, "frozen" and restarted, "thawed" later; the distribution
 of the deployed application across the YARN cluster is persisted -enabling
-a best-effort placement close to the previous locations on a cluster start.
+a best-effort placement close to the previous locations on a cluster thaw.
 Applications which remember the previous placement of data (such as HBase)
 can exhibit fast start-up times from this feature.
 

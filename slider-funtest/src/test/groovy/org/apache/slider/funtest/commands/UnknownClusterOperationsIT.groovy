@@ -26,6 +26,7 @@ import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
 import org.apache.slider.funtest.framework.CommandTestBase
 import org.apache.slider.funtest.framework.SliderShell
+import org.junit.BeforeClass
 import org.junit.Test
 
 /**
@@ -40,7 +41,7 @@ public class UnknownClusterOperationsIT extends CommandTestBase {
 
   @Test
   public void testFreezeUnknownCluster() throws Throwable {
-    SliderShell shell = stop(UNKNOWN)
+    SliderShell shell = freeze(UNKNOWN)
     assertUnknownCluster(shell)
   }
 
@@ -48,8 +49,8 @@ public class UnknownClusterOperationsIT extends CommandTestBase {
   public void testFreezeUnknownClusterWithMessage() throws Throwable {
       slider(SliderExitCodes.EXIT_UNKNOWN_INSTANCE,
          [
-        SliderActions.ACTION_STOP, UNKNOWN,
-        Arguments.ARG_WAIT, Integer.toString(STOP_WAIT_TIME),
+        SliderActions.ACTION_FREEZE, UNKNOWN,
+        Arguments.ARG_WAIT, Integer.toString(FREEZE_WAIT_TIME),
         Arguments.ARG_MESSAGE, "testFreezeUnknownClusterWithMessage"
         ])
   }
@@ -83,7 +84,7 @@ public class UnknownClusterOperationsIT extends CommandTestBase {
 
   @Test
   public void testThawUnknownCluster() throws Throwable {
-    assertUnknownCluster(start(UNKNOWN))
+    assertUnknownCluster(thaw(UNKNOWN))
   }
 
   @Test

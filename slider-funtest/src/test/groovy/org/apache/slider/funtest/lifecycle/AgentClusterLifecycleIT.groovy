@@ -88,8 +88,8 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
     //destroy will fail in use
     destroy(EXIT_APPLICATION_IN_USE, CLUSTER)
 
-    //start will fail as cluster is in use
-    start(EXIT_APPLICATION_IN_USE, CLUSTER)
+    //thaw will fail as cluster is in use
+    thaw(EXIT_APPLICATION_IN_USE, CLUSTER)
 
     //it's still there
     exists(0, CLUSTER)
@@ -125,34 +125,34 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
 
       log.info("Connected via Client {}", sliderClient.toString())
 
-      //stop
-      stop(0, CLUSTER, [
-          ARG_WAIT, Integer.toString(STOP_WAIT_TIME),
-          ARG_MESSAGE, "stop-in-test-cluster-lifecycle"
+      //freeze
+      freeze(0, CLUSTER, [
+          ARG_WAIT, Integer.toString(FREEZE_WAIT_TIME),
+          ARG_MESSAGE, "freeze-in-test-cluster-lifecycle"
       ])
-      describe " >>> Cluster is now stopped."
+      describe " >>> Cluster is now frozen."
 
       //cluster exists if you don't want it to be live
       exists(0, CLUSTER, false)
       //condition returns false if it is required to be live
       exists(EXIT_FALSE, CLUSTER, true)
 
-      //start then stop the cluster
-      start(CLUSTER,
+      //thaw then freeze the cluster
+      thaw(CLUSTER,
           [
-              ARG_WAIT, Integer.toString(START_WAIT_TIME),
+              ARG_WAIT, Integer.toString(THAW_WAIT_TIME),
           ])
       exists(0, CLUSTER)
-      describe " >>> Cluster is now started."
+      describe " >>> Cluster is now thawed."
 
-      stop(0, CLUSTER,
+      freeze(0, CLUSTER,
           [
               ARG_FORCE,
-              ARG_WAIT, Integer.toString(STOP_WAIT_TIME),
-              ARG_MESSAGE, "forced-stop-in-test"
+              ARG_WAIT, Integer.toString(FREEZE_WAIT_TIME),
+              ARG_MESSAGE, "forced-freeze-in-test"
           ])
 
-      describe " >>> Cluster is now stopped - 2nd time."
+      describe " >>> Cluster is now frozen - 2nd time."
 
       //cluster is no longer live
       exists(0, CLUSTER, false)
@@ -160,15 +160,15 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
       //condition returns false if it is required to be live
       exists(EXIT_FALSE, CLUSTER, true)
 
-      //start with a restart count set to enable restart
+      //thaw with a restart count set to enable restart
       describe "the kill/restart phase may fail if yarn.resourcemanager.am.max-attempts is too low"
-      start(CLUSTER,
+      thaw(CLUSTER,
           [
-              ARG_WAIT, Integer.toString(START_WAIT_TIME),
+              ARG_WAIT, Integer.toString(THAW_WAIT_TIME),
               ARG_DEFINE, SliderXmlConfKeys.KEY_AM_RESTART_LIMIT + "=3"
           ])
 
-      describe " >>> Cluster is now started - 2nd time."
+      describe " >>> Cluster is now thawed - 2nd time."
 
       ClusterDescription status = killAmAndWaitForRestart(sliderClient, CLUSTER)
 
@@ -178,10 +178,10 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
           StatusKeys.INFO_CONTAINERS_AM_RESTART)
       assert restarted != null
       assert Integer.parseInt(restarted) == 0
-      stop(0, CLUSTER,
+      freeze(0, CLUSTER,
           [
               ARG_FORCE,
-              ARG_WAIT, Integer.toString(STOP_WAIT_TIME),
+              ARG_WAIT, Integer.toString(FREEZE_WAIT_TIME),
               ARG_MESSAGE, "final-shutdown"
           ])
 

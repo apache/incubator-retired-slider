@@ -54,8 +54,8 @@ class TestFreezeReconfigureThawLiveRegionService
     conf.setInt("yarn.nodemanager.resource.cpu-vcores", 1)
     String clustername = createMiniCluster("", conf, nodemanagers, true)
     describe(
-        "Create a $regionServerCount node cluster, stop it, patch the configuration files," +
-        " start it and verify that it came back with the new settings")
+        "Create a $regionServerCount node cluster, freeze it, patch the configuration files," +
+        " thaw it and verify that it came back with the new settings")
 
     ServiceLauncher<SliderClient> launcher = createHBaseCluster(
         clustername,
@@ -103,18 +103,18 @@ class TestFreezeReconfigureThawLiveRegionService
         hbaseSiteXML,
         "");
     //patch
-    String patchedText = "patched-after-stop"
+    String patchedText = "patched-after-freeze"
     originalConf.setBoolean(patchedText, true);
     //save
     ConfigHelper.saveConfig(dfs, hbaseSiteXML, originalConf);
 
     //now let's start the cluster up again
     ServiceLauncher<SliderClient> launcher2 = thawCluster(clustername, [], true);
-    SliderClient started = launcher2.service
-    clustat = basicHBaseClusterStartupSequence(started)
+    SliderClient thawed = launcher2.service
+    clustat = basicHBaseClusterStartupSequence(thawed)
 
     //get the options
-    ClusterDescription stat = started.clusterDescription
+    ClusterDescription stat = thawed.clusterDescription
     Map<String, String> properties = stat.clientProperties
     log.info("Cluster properties: \n" + SliderUtils.stringifyMap(properties));
     assert properties[patchedText] == "true";

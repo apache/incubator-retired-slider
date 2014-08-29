@@ -31,7 +31,7 @@ import org.apache.slider.core.main.ServiceLauncher
 import org.junit.Test
 
 /**
- * stop and start an AM
+ * freeze and thaw an AM
  */
 @CompileStatic
 @Slf4j
@@ -52,7 +52,7 @@ class TestFreezeThawMasterlessAM extends AgentMiniClusterTestBase {
     YarnConfiguration conf = configuration
     String clustername = createMiniCluster("", conf, 1, 1, 1, true, false)
     
-    describe "create a masterless AM, stop it, start it"
+    describe "create a masterless AM, freeze it, thaw it"
     //copy the confdir somewhere
     Path resConfPath = new Path(resourceConfDirURI)
     Path tempConfPath = new Path(confDir)
@@ -81,10 +81,10 @@ class TestFreezeThawMasterlessAM extends AgentMiniClusterTestBase {
 
 //    ApplicationReport report = waitForClusterLive(newCluster)
     newCluster.getClusterDescription(clustername);
-    //stop
+    //freeze
     assert 0 == clusterActionFreeze(sliderClient, clustername)
 
-    //stop again
+    //freeze again
     assert 0 == clusterActionFreeze(sliderClient, clustername)
 
   }

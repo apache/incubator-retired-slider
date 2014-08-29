@@ -69,7 +69,7 @@ class TestAccFreezeThaw extends AccumuloTestBase {
     log.info(page);
 
     log.info("Freezing")
-    clusterActionFreeze(sliderClient, clustername, "stop");
+    clusterActionFreeze(sliderClient, clustername, "freeze");
     waitForAppToFinish(sliderClient)
     
     //make sure the fetch fails

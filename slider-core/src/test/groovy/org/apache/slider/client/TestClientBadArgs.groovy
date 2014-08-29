@@ -53,7 +53,7 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
     launchExpectingException(SliderClient,
                              new Configuration(),
                              ErrorStrings.ERROR_NOT_ENOUGH_ARGUMENTS,
-                             [SliderActions.ACTION_START])
+                             [SliderActions.ACTION_THAW])
   }
 
   @Test

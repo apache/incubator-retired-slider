@@ -21,8 +21,8 @@ package org.apache.slider.common.params;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
 
-@Parameters(commandNames = {SliderActions.ACTION_START},
-            commandDescription = SliderActions.DESCRIBE_ACTION_START)
+@Parameters(commandNames = {SliderActions.ACTION_THAW},
+            commandDescription = SliderActions.DESCRIBE_ACTION_THAW)
 public class ActionThawArgs extends AbstractActionArgs implements
                                                        WaitTimeAccessor,
                                                        LaunchArgsAccessor {
@@ -30,7 +30,7 @@ public class ActionThawArgs extends AbstractActionArgs implements
 
   @Override
   public String getActionName() {
-    return SliderActions.ACTION_START;
+    return SliderActions.ACTION_THAW;
   }
 
   @Override

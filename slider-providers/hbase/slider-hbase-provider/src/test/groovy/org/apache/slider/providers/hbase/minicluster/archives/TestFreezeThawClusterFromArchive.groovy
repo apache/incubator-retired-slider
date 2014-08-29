@@ -51,7 +51,7 @@ class TestFreezeThawClusterFromArchive extends HBaseMiniClusterTestBase {
                             hbaseClusterStartupToLiveTime)
 
 
-    clusterActionFreeze(sliderClient, clustername, "test stop")
+    clusterActionFreeze(sliderClient, clustername, "test freeze")
     describe("Restarting cluster")
     killAllRegionServers();
 

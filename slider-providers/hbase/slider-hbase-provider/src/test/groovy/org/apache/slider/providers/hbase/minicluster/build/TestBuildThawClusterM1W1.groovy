@@ -40,7 +40,7 @@ class TestBuildThawClusterM1W1 extends HBaseMiniClusterTestBase {
   public void test_build_thaw_cluster_m1_w1() throws Throwable {
     String clustername = createMiniCluster("", configuration, 1, true)
 
-    describe "verify that a built cluster can be started"
+    describe "verify that a built cluster can be thawed"
 
     ServiceLauncher<SliderClient> launcher = createOrBuildCluster(
         SliderActions.ACTION_BUILD,
@@ -61,11 +61,11 @@ class TestBuildThawClusterM1W1 extends HBaseMiniClusterTestBase {
     ApplicationReport report = serviceRegistryClient.findInstance(clustername)
     assert report == null;
 
-    //start time
+    //thaw time
     ServiceLauncher<SliderClient> l2 = thawCluster(clustername, [], true)
-    SliderClient started = l2.service
-    addToTeardown(started);
-    waitForClusterLive(started)
+    SliderClient thawed = l2.service
+    addToTeardown(thawed);
+    waitForClusterLive(thawed)
   }
 
 }

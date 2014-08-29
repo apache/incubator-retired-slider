@@ -45,7 +45,7 @@ class TestFreezeCommands extends AgentMiniClusterTestBase {
     YarnConfiguration conf = configuration
     String clustername = createMiniCluster("", conf, 1, 1, 1, true, false)
 
-    describe "create a masterless AM, stop it, try to stop again"
+    describe "create a masterless AM, freeze it, try to freeze again"
 
     ServiceLauncher<SliderClient> launcher = createStandaloneAM(
         clustername
@@ -59,19 +59,19 @@ class TestFreezeCommands extends AgentMiniClusterTestBase {
     assertSucceeded(execSliderCommand(conf,
         [SliderActions.ACTION_LIST, clustername]))
 
-    log.info("First Stop command");
+    log.info("First Freeze command");
     ServiceLauncher freezeCommand = execSliderCommand(conf,
         [
-            SliderActions.ACTION_STOP, clustername,
+            SliderActions.ACTION_FREEZE, clustername,
             Arguments.ARG_WAIT, waitTimeArg
         ]);
     assertSucceeded(freezeCommand)
 
-    log.info("Second Stop command");
+    log.info("Second Freeze command");
 
     ServiceLauncher<SliderClient> freeze2 = execSliderCommand(conf,
         [
-            SliderActions.ACTION_STOP, clustername,
+            SliderActions.ACTION_FREEZE, clustername,
             Arguments.ARG_WAIT, waitTimeArg
         ]);
     assertSucceeded(freeze2)
@@ -94,11 +94,11 @@ class TestFreezeCommands extends AgentMiniClusterTestBase {
       assert e.exitCode == LauncherExitCodes.EXIT_FALSE;
     }
 
-    log.info("First Start");
+    log.info("First Thaw");
 
 
     def commands = [
-        SliderActions.ACTION_START, clustername,
+        SliderActions.ACTION_THAW, clustername,
         Arguments.ARG_WAIT, waitTimeArg,
         Arguments.ARG_FILESYSTEM, fsDefaultName
     ]
@@ -111,11 +111,11 @@ class TestFreezeCommands extends AgentMiniClusterTestBase {
     assertSucceeded(execSliderCommand(conf,
         [SliderActions.ACTION_EXISTS, clustername]))
 
-    log.info("Stop 3");
+    log.info("Freeze 3");
 
     ServiceLauncher<SliderClient> freeze3 = execSliderCommand(conf,
         [
-            SliderActions.ACTION_STOP, clustername,
+            SliderActions.ACTION_FREEZE, clustername,
             Arguments.ARG_WAIT, waitTimeArg
         ]);
     assertSucceeded(freeze3)
@@ -157,7 +157,7 @@ class TestFreezeCommands extends AgentMiniClusterTestBase {
 
     ServiceLauncher<SliderClient> freeze4 = execSliderCommand(conf,
         [
-            SliderActions.ACTION_STOP, clustername,
+            SliderActions.ACTION_FREEZE, clustername,
             Arguments.ARG_FORCE,
             Arguments.ARG_WAIT, waitTimeArg,
         ]);
