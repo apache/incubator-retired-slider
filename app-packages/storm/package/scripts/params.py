@@ -53,6 +53,11 @@ security_enabled = ( not is_empty(_authentication) and _authentication == 'kerbe
 if security_enabled:
   _hostname_lowercase = config['hostname'].lower()
   _kerberos_domain = config['configurations']['storm-env']['kerberos_domain']
-  _storm_principal_name = config['configurations']['storm-env']['storm_principal_name']
-  storm_jaas_principal = _storm_principal_name.replace('_HOST', _hostname_lowercase)
-  storm_keytab_path = config['configurations']['storm-env']['storm_keytab']
+  _storm_client_principal_name = config['configurations']['storm-env']['storm_client_principal_name']
+  _storm_server_principal_name = config['configurations']['storm-env']['storm_server_principal_name']
+
+  storm_jaas_client_principal = _storm_client_principal_name.replace('_HOST', _hostname_lowercase)
+  storm_client_keytab_path = config['configurations']['storm-env']['storm_client_keytab']
+  storm_jaas_server_principal = _storm_server_principal_name.replace('_HOST', _hostname_lowercase)
+  storm_server_keytab_path = config['configurations']['storm-env']['storm_server_keytab']
+  kinit_path_local = functions.get_kinit_path(["/usr/bin", "/usr/kerberos/bin", "/usr/sbin"])

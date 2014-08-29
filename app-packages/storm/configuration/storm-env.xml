@@ -22,6 +22,31 @@
 
 <configuration>
 
+  <property>
+    <name>kerberos_domain</name>
+    <value></value>
+    <description>The kerberos domain to be used for this Storm cluster</description>
+  </property>
+  <property>
+    <name>storm_client_principal_name</name>
+    <value></value>
+    <description>The principal name for the Storm client to be used to communicate with Nimbus and Zookeeper</description>
+  </property>
+  <property>
+    <name>storm_server_principal_name</name>
+    <value></value>
+    <description>The principal name for the Storm server to be used by Nimbus</description>
+  </property>
+  <property>
+    <name>storm_client_keytab</name>
+    <value></value>
+    <description>The keytab file path for Storm client</description>
+  </property>
+  <property>
+    <name>storm_server_keytab</name>
+    <value></value>
+    <description>The keytab file path for Storm server</description>
+  </property>
   <!-- storm-env.sh -->
   <property>
     <name>content</name>
