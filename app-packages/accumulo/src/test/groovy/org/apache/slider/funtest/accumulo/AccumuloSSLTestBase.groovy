@@ -59,9 +59,11 @@ class AccumuloSSLTestBase extends AccumuloBasicIT {
     System.out.println("provider after "+provider)
     File rootKeyStoreFile = new File(TEST_APP_PKG_DIR, "root.jks")
 
-    CertUtil.createRootKeyPair(rootKeyStoreFile.toString(),
-      Property.INSTANCE_SECRET.toString(), trustStoreFile.toString(),
-      Property.RPC_SSL_TRUSTSTORE_PASSWORD.toString(), provider);
+    if (!rootKeyStoreFile.exists() && !trustStoreFile.exists()) {
+      CertUtil.createRootKeyPair(rootKeyStoreFile.toString(),
+        Property.INSTANCE_SECRET.toString(), trustStoreFile.toString(),
+        Property.RPC_SSL_TRUSTSTORE_PASSWORD.toString(), provider);
+    }
 
     AgentUploads agentUploads = new AgentUploads(SLIDER_CONFIG)
     agentUploads.uploader.copyIfOutOfDate(trustStoreFile, new Path(certDir,
@@ -69,18 +71,22 @@ class AccumuloSSLTestBase extends AccumuloBasicIT {
 
     for (node in getNodeList(conf)) {
       File keyStoreFile = new File(TEST_APP_PKG_DIR, node + ".jks")
-      CertUtil.createServerKeyPair(keyStoreFile.toString(),
-        Property.RPC_SSL_KEYSTORE_PASSWORD.toString(),
-        rootKeyStoreFile.toString(), Property.INSTANCE_SECRET.toString(),
-        provider, node);
+      if (!keyStoreFile.exists()) {
+        CertUtil.createServerKeyPair(keyStoreFile.toString(),
+          Property.RPC_SSL_KEYSTORE_PASSWORD.toString(),
+          rootKeyStoreFile.toString(), Property.INSTANCE_SECRET.toString(),
+          provider, node);
+      }
       agentUploads.uploader.copyIfOutOfDate(keyStoreFile, new Path(certDir,
         node + ".jks"), false)
     }
 
-    CertUtil.createServerKeyPair(clientKeyStoreFile.toString(),
-      Property.RPC_SSL_KEYSTORE_PASSWORD.toString(),
-      rootKeyStoreFile.toString(), Property.INSTANCE_SECRET.toString(),
-      provider, InetAddress.getLocalHost().getHostName());
+    if (!clientKeyStoreFile.exists()) {
+      CertUtil.createServerKeyPair(clientKeyStoreFile.toString(),
+        Property.RPC_SSL_KEYSTORE_PASSWORD.toString(),
+        rootKeyStoreFile.toString(), Property.INSTANCE_SECRET.toString(),
+        provider, InetAddress.getLocalHost().getHostName());
+    }
   }
 
   def getNodeList(Configuration conf) {

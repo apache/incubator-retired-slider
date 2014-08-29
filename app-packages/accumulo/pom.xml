@@ -30,7 +30,7 @@
 
   <properties>
     <work.dir>package-tmp</work.dir>
-    <app.package.name>apache-slider-accumulo-${accumulo.version}-app-package-${project.version}</app.package.name>
+    <app.package.name>${project.artifactId}-${project.version}</app.package.name>
   </properties>
 
   <profiles>

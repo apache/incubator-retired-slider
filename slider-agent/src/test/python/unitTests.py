@@ -56,6 +56,7 @@ def all_tests_suite():
       files_list += os.listdir(src_dir + os.sep + directory)
   ## temporarily deleting to add more predictability
   ## shuffle(files_list)
+  files_list.sort()
   tests_list = []
 
   logger.info('------------------------TESTS LIST:-------------------------------------')

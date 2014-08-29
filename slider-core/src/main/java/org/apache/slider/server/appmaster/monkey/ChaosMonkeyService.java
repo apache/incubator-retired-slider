@@ -94,10 +94,10 @@ public class ChaosMonkeyService extends AbstractService {
    * Schedule the monkey
    * @param time interval
    * @param timeUnit time unit
-   * @return true if it was scheduled (i.e. 1+ action)
+   * @return true if it was scheduled (i.e. 1+ action) and interval > 0
    */
   public boolean schedule(long time, TimeUnit timeUnit) {
-    if (!chaosEntries.isEmpty()) {
+    if (time > 0 && !chaosEntries.isEmpty()) {
       queues.schedule(getChaosAction(time, timeUnit));
       return true;
     } else {

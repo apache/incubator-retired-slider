@@ -135,6 +135,7 @@ import org.apache.slider.server.appmaster.web.WebAppApiImpl;
 import org.apache.slider.server.appmaster.web.rest.RestPaths;
 import org.apache.slider.server.services.registry.SliderRegistryService;
 import org.apache.slider.server.services.security.CertificateManager;
+import org.apache.slider.server.services.security.FsDelegationTokenManager;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
 import org.apache.slider.server.services.utility.WebAppService;
 import org.apache.slider.server.services.workflow.ServiceThreadFactory;
@@ -364,6 +365,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private String agentOpsUrl;
   private String agentStatusUrl;
   private YarnRegistryViewForProviders yarnRegistryOperations;
+  private FsDelegationTokenManager fsDelegationTokenManager;
 
   /**
    * Service Constructor
@@ -430,8 +432,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   @Override
   protected void serviceStart() throws Exception {
     super.serviceStart();
-    executorService.execute(new QueueExecutor(this, actionQueues));
     executorService.execute(actionQueues);
+    executorService.execute(new QueueExecutor(this, actionQueues));
   }
   
   /* =================================================================== */
@@ -594,36 +596,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     appInformation.put(StatusKeys.INFO_AM_ATTEMPT_ID,
                        appAttemptID.toString());
 
-    UserGroupInformation currentUser = UserGroupInformation.getCurrentUser();
-    Credentials credentials =
-      currentUser.getCredentials();
-    DataOutputBuffer dob = new DataOutputBuffer();
-    credentials.writeTokenStorageToStream(dob);
-    dob.close();
-    // Now remove the AM->RM token so that containers cannot access it.
-    Iterator<Token<?>> iter = credentials.getAllTokens().iterator();
-    while (iter.hasNext()) {
-      Token<?> token = iter.next();
-      log.info("Token {}", token.getKind());
-      if (token.getKind().equals(AMRMTokenIdentifier.KIND_NAME)) {
-        iter.remove();
-      }
-    }
-    allTokens = ByteBuffer.wrap(dob.getData(), 0, dob.getLength());
-
-    // set up secret manager
-    secretManager = new ClientToAMTokenSecretManager(appAttemptID, null);
-
-    // if not a secure cluster, extract the username -it will be
-    // propagated to workers
-    if (!UserGroupInformation.isSecurityEnabled()) {
-      hadoop_user_name = System.getenv(HADOOP_USER_NAME);
-      service_user_name = hadoop_user_name;
-      log.info(HADOOP_USER_NAME + "='{}'", hadoop_user_name);
-    } else {
-      service_user_name = UserGroupInformation.getCurrentUser().getUserName();
-    }
-
     Map<String, String> envVars;
     List<Container> liveContainers;
     /**
@@ -646,6 +618,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       //nmclient relays callbacks back to this class
       nmClientAsync = new NMClientAsyncImpl("nmclient", this);
       deployChildService(nmClientAsync);
+
+      // set up secret manager
+      secretManager = new ClientToAMTokenSecretManager(appAttemptID, null);
 
       //bring up the Slider RPC service
       startSliderRPCServer();
@@ -805,11 +780,44 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     sliderAMProvider.bind(stateForProviders, registry, actionQueues,
         liveContainers);
 
-    // now do the registration
-    registerServiceInstance(clustername, appid);
-
     // chaos monkey
     maybeStartMonkey();
+
+    // setup token renewal and expiry handling for long lived apps
+    if (SliderUtils.isHadoopClusterSecure(getConfig())) {
+      fsDelegationTokenManager = new FsDelegationTokenManager(actionQueues);
+      fsDelegationTokenManager.acquireDelegationToken(getConfig());
+    }
+
+    UserGroupInformation currentUser = UserGroupInformation.getCurrentUser();
+    Credentials credentials =
+        currentUser.getCredentials();
+    DataOutputBuffer dob = new DataOutputBuffer();
+    credentials.writeTokenStorageToStream(dob);
+    dob.close();
+    // Now remove the AM->RM token so that containers cannot access it.
+    Iterator<Token<?>> iter = credentials.getAllTokens().iterator();
+    while (iter.hasNext()) {
+      Token<?> token = iter.next();
+      log.info("Token {}", token.getKind());
+      if (token.getKind().equals(AMRMTokenIdentifier.KIND_NAME)) {
+        iter.remove();
+      }
+    }
+    allTokens = ByteBuffer.wrap(dob.getData(), 0, dob.getLength());
+
+    // if not a secure cluster, extract the username -it will be
+    // propagated to workers
+    if (!UserGroupInformation.isSecurityEnabled()) {
+      hadoop_user_name = System.getenv(HADOOP_USER_NAME);
+      service_user_name = hadoop_user_name;
+      log.info(HADOOP_USER_NAME + "='{}'", hadoop_user_name);
+    } else {
+      service_user_name = UserGroupInformation.getCurrentUser().getUserName();
+    }
+
+    // now do the registration
+    registerServiceInstance(clustername, appid);
 
     // Start the Slider AM provider
     sliderAMProvider.start();
@@ -1156,6 +1164,14 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       //stopped the forked process but don't worry about its exit code
       exitCode = stopForkedProcess();
       log.debug("Stopped forked process: exit code={}", exitCode);
+    }
+
+    if (fsDelegationTokenManager != null) {
+      try {
+        fsDelegationTokenManager.cancelDelegationToken(getConfig());
+      } catch (Exception e) {
+        log.info("Error cancelling HDFS delegation token", e);
+      }
     }
 
     //stop any launches in progress
@@ -1898,6 +1914,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         InternalKeys.DEFAULT_CHAOS_MONKEY_INTERVAL_HOURS,
         InternalKeys.DEFAULT_CHAOS_MONKEY_INTERVAL_MINUTES,
         0);
+    if (monkeyInterval == 0) {
+      log.debug(
+          "Chaos monkey not configured with a time interval...not enabling");
+      return false;
+    }
     log.info("Adding Chaos Monkey scheduled every {} seconds ({} hours)",
         monkeyInterval, monkeyInterval/(60*60));
     monkey = new ChaosMonkeyService(metrics, actionQueues);
@@ -1919,8 +1940,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // and schedule it
     if (monkey.schedule(monkeyInterval, TimeUnit.SECONDS)) {
       log.info("Chaos Monkey is running");
+      return true;
+    } else {
+      log.info("Chaos monkey not started");
+      return false;
     }
-    return true;
   }
   
   /**
