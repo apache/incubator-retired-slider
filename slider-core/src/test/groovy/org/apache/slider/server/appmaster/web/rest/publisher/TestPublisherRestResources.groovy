@@ -23,6 +23,7 @@ import com.sun.jersey.api.client.ClientResponse
 import com.sun.jersey.api.client.WebResource
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.util.Shell
 import org.apache.slider.api.StatusKeys
 import org.apache.slider.client.SliderClient
 import org.apache.slider.core.main.ServiceLauncher
@@ -134,13 +135,14 @@ class TestPublisherRestResources extends AgentTestBase {
     Set uris = webResource.type(MediaType.APPLICATION_JSON)
             .get(Set.class)
     assert uris.size() > 0
-    log.info("Classpath URIs: {}", uris)
-    // check for some expected classpath elements
-    assert uris.any {it =~ /curator-x-discovery/}
-    assert uris.any {it =~ /hadoop-yarn-api/}
-    assert uris.any {it =~ /hadoop-hdfs/}
-    // and a negative test...
-    assert !uris.any {it =~ /foo-bar/}
+    if (!Shell.WINDOWS) {
+      log.info("Classpath URIs: {}", uris)
+      // check for some expected classpath elements
+      assert uris.any {it =~ /hadoop-yarn-api/}
+      assert uris.any {it =~ /hadoop-hdfs/}
+      // and a negative test...
+      assert !uris.any {it =~ /foo-bar/}
+    }
   }
 
   public String toFileURI(File filename) {
