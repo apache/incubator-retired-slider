@@ -132,7 +132,12 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
   @BeforeClass
   public static void checkWindowsSupport() {
     if (Shell.WINDOWS) {
-      assertNotNull("winutils.exe not found", Shell.WINUTILS)
+//      assertNotNull("winutils.exe not found", Shell.WINUTILS)
+      if (!Shell.WINUTILS) {
+        log.error("winutils.exe not found")
+      }
+      def lib = System.getProperty("java.library.path")
+      log.debug("java.library.path = ${lib}")
     }
   } 
 
