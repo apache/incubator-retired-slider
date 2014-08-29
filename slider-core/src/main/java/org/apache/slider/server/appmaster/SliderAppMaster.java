@@ -53,6 +53,7 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.ipc.YarnRPC;
 import org.apache.hadoop.yarn.registry.client.services.RegistryOperationsService;
+import org.apache.hadoop.yarn.registry.client.types.PersistencePolicies;
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
 import org.apache.hadoop.yarn.registry.client.binding.RegistryTypeUtils;
 import org.apache.hadoop.yarn.registry.server.services.ResourceManagerRegistryService;
@@ -164,9 +165,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
-
-import static org.apache.slider.server.appmaster.web.rest.RestPaths.WS_AGENT_CONTEXT_ROOT;
-import static org.apache.slider.server.appmaster.web.rest.RestPaths.WS_CONTEXT_ROOT;
 
 /**
  * This is the AM, which directly implements the callbacks from the AM and NM
@@ -989,7 +987,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
   /**
    * Handler for {@link RegisterComponentInstance action}
-   * Register/re-register a component (that is already in the app state
+   * Register/re-register an ephemeral container that is already in the app state
    * @param id the component
    * @param description
    */
@@ -1004,7 +1002,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     String cid = RegistryTypeUtils.yarnIdToDnsId(id.toString());
     ServiceRecord container = new ServiceRecord(
         cid,
-        description);
+        description,
+        PersistencePolicies.EPHEMERAL);
     try {
       yarnRegistryOperations.putComponent(cid, container, true);
     } catch (IOException e) {
