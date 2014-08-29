@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.Callable;
 
 /**
@@ -122,7 +123,7 @@ public abstract class WorkflowServiceTestBase extends Assert {
     boolean found = false;
     StringBuilder builder = new StringBuilder();
     for (String s : output) {
-      builder.append(s).append('\n');
+      builder.append(s.toLowerCase(Locale.ENGLISH)).append('\n');
       if (s.contains(text)) {
         found = true;
         break;

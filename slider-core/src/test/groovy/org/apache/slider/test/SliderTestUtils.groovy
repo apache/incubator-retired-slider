@@ -776,4 +776,13 @@ class SliderTestUtils extends Assert {
       killJavaProcesses(grep,signal)
     }
   }
+
+  /**
+   * Convert a file to a URI suitable for use in an argument
+   * @param file file
+   * @return a URI string valid on all platforms
+   */
+  public String toURIArg(File file) {
+    file.absoluteFile.toURI().toString()
+  }
 }

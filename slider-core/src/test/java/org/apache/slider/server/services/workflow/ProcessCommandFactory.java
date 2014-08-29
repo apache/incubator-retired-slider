@@ -18,8 +18,11 @@
 
 package org.apache.slider.server.services.workflow;
 
+import org.apache.hadoop.util.Shell;
+
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -37,10 +40,12 @@ public class ProcessCommandFactory {
    * @return commands
    */
   public List<String> ls(File dir) {
-    List<String> commands = new ArrayList<String>(5);
-    commands.add("ls");
-    commands.add("-1");
-    commands.add(dir.getAbsolutePath());
+    List<String> commands;
+    if (!Shell.WINDOWS) {
+      commands = Arrays.asList("ls","-1", dir.getAbsolutePath());
+    } else {
+      commands = Arrays.asList("cmd", "/c", "dir", dir.getAbsolutePath());
+    }
     return commands;
   }
 
@@ -61,8 +66,12 @@ public class ProcessCommandFactory {
    * @return commands
    */
   public List<String> env() {
-    List<String> commands = new ArrayList<String>(1);
-    commands.add("env");
+    List<String> commands;
+    if (!Shell.WINDOWS) {
+      commands = Arrays.asList("env");
+    } else {
+      commands = Arrays.asList("cmd", "/c", "set");
+    }
     return commands;
   }
 
