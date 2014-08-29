@@ -22,8 +22,8 @@ Various configurations provided in this sample are customized for apache-storm-0
 So if you use a different version you may need to edit a few config values.
 
 Replace the placeholder tarball for Storm.
-  cp ~/Downloads/apache-storm-0.9.1.2.1.1.0-237.tar.gz package/files/
-  rm package/files/apache-storm-0.9.1.2.1.1.0-237.tar.gz.REPLACE
+  cp ~/Downloads/apache-storm-0.9.3.0.2.5.0-100.tar.gz package/files/
+  rm package/files/apache-storm-0.9.3.0.2.5.0-100.tar.gz.REPLACE
 
 Create a zip package at the root of the package (<slider enlistment>/app-packages/storm-v0_91/) 
   zip -r Apache_Storm_v_0_9_3.zip .
