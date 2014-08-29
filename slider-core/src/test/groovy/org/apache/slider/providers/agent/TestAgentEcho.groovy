@@ -72,9 +72,9 @@ class TestAgentEcho extends AgentTestBase {
         roles,
         [
             ARG_OPTION, PACKAGE_PATH, slider_core.absolutePath,
-            ARG_OPTION, APP_DEF, "file://" + app_def_path.absolutePath,
-            ARG_OPTION, AGENT_CONF, "file://" + agt_conf_path.absolutePath,
-            ARG_OPTION, AGENT_VERSION, "file://" + agt_ver_path.absolutePath,
+            ARG_OPTION, APP_DEF, toURIArg(app_def_path),
+            ARG_OPTION, AGENT_CONF, toURIArg(agt_conf_path),
+            ARG_OPTION, AGENT_VERSION, toURIArg(agt_ver_path),
             ARG_RES_COMP_OPT, role, ResourceKeys.COMPONENT_PRIORITY, "1",
             ARG_COMP_OPT, role, SCRIPT_PATH, echo_py,
             ARG_COMP_OPT, role, SERVICE_NAME, "Agent",

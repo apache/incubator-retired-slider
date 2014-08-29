@@ -72,9 +72,9 @@ class TestPublisherRestResources extends AgentTestBase {
         [
             ARG_PROVIDER, "org.apache.slider.server.appmaster.web.rest.publisher.TestSliderProviderFactory",
             ARG_OPTION, PACKAGE_PATH, slider_core.absolutePath,
-            ARG_OPTION, APP_DEF, toFileURI(app_def_path),
-            ARG_OPTION, AGENT_CONF, toFileURI(agt_conf_path),
-            ARG_OPTION, AGENT_VERSION, toFileURI(agt_ver_path)
+            ARG_OPTION, APP_DEF, toURIArg(app_def_path),
+            ARG_OPTION, AGENT_CONF, toURIArg(agt_conf_path),
+            ARG_OPTION, AGENT_VERSION, toURIArg(agt_ver_path)
         ],
         true, true,
         true)
@@ -143,10 +143,6 @@ class TestPublisherRestResources extends AgentTestBase {
       // and a negative test...
       assert !uris.any {it =~ /foo-bar/}
     }
-  }
-
-  public String toFileURI(File filename) {
-    filename.toURI().toString()
   }
 
 }

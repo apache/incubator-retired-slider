@@ -117,9 +117,9 @@ class TestAgentAMManagementWS extends AgentTestBase {
         roles,
         [
             ARG_OPTION, PACKAGE_PATH, slider_core.absolutePath,
-            ARG_OPTION, APP_DEF, app_def_path.absoluteFile.toURI().toString(),
-            ARG_OPTION, AGENT_CONF, agt_conf_path.absoluteFile.toURI().toString(),
-            ARG_OPTION, AGENT_VERSION, agt_ver_path.absoluteFile.toURI().toString(),
+            ARG_OPTION, APP_DEF, toURIArg(app_def_path),
+            ARG_OPTION, AGENT_CONF, toURIArg(agt_conf_path),
+            ARG_OPTION, AGENT_VERSION, toURIArg(agt_ver_path),
         ],
         true, true,
         true)
@@ -163,4 +163,6 @@ class TestAgentAMManagementWS extends AgentTestBase {
     assert RegistrationStatus.FAILED == response.getResponseStatus();
     
   }
+
+
 }
