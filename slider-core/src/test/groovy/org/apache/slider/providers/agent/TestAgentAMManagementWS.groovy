@@ -117,9 +117,9 @@ class TestAgentAMManagementWS extends AgentTestBase {
         roles,
         [
             ARG_OPTION, PACKAGE_PATH, slider_core.absolutePath,
-            ARG_OPTION, APP_DEF, "file://" + app_def_path.absolutePath,
-            ARG_OPTION, AGENT_CONF, "file://" + agt_conf_path.absolutePath,
-            ARG_OPTION, AGENT_VERSION, "file://" + agt_ver_path.absolutePath,
+            ARG_OPTION, APP_DEF, app_def_path.absoluteFile.toURI().toString(),
+            ARG_OPTION, AGENT_CONF, agt_conf_path.absoluteFile.toURI().toString(),
+            ARG_OPTION, AGENT_VERSION, agt_ver_path.absoluteFile.toURI().toString(),
         ],
         true, true,
         true)
