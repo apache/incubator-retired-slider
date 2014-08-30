@@ -6,6 +6,7 @@
     "application.def": "${app.package.name}.zip",
     "create.default.zookeeper.node": "true",
     "java_home": "/usr/jdk64/jdk1.7.0_45",
+    "system_configs": "core-site",
 
     "site.global.app_user": "yarn",
     "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/hbase-${hbase.version}",
@@ -33,7 +34,8 @@
     "site.hbase-site.zookeeper.znode.parent": "${DEF_ZK_PATH}",
     "site.hbase-site.hbase.regionserver.info.port": "0",
     "site.hbase-site.hbase.master.info.port": "${HBASE_MASTER.ALLOCATED_PORT}",
-    "site.hbase-site.hbase.regionserver.port": "0"
+      "site.hbase-site.hbase.regionserver.port": "0",
+      "site.hbase-site.hbase.master.port": "0"
   },
   "components": {
     "slider-appmaster": {

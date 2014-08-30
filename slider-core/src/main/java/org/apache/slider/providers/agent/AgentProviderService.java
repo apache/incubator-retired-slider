@@ -1348,9 +1348,10 @@ public class AgentProviderService extends AbstractProviderService implements
         new TreeMap<String, Map<String, String>>();
     Map<String, String> tokens = getStandardTokenMap(appConf);
 
-    List<String> configs = getApplicationConfigurationTypes();
+    Set<String> configs = new HashSet<String>();
+    configs.addAll(getApplicationConfigurationTypes());
+    configs.addAll(getSystemConfigurationsRequested(appConf));
 
-    //Add global
     for (String configType : configs) {
       addNamedConfiguration(configType, appConf.getGlobalOptions().options,
                             configurations, tokens, containerId);
@@ -1372,6 +1373,21 @@ public class AgentProviderService extends AbstractProviderService implements
         .getMandatoryOption(InternalKeys.INTERNAL_DATA_DIR_PATH));
     return tokens;
   }
+
+  @VisibleForTesting
+  protected List<String> getSystemConfigurationsRequested(ConfTreeOperations appConf) {
+    List<String> configList = new ArrayList<String>();
+
+    String configTypes = appConf.get(AgentKeys.SYSTEM_CONFIGS);
+    if (configTypes != null && configTypes.length() > 0) {
+      String[] configs = configTypes.split(",");
+      for(String config :configs)
+      configList.add(config.trim());
+    }
+
+    return new ArrayList<String>(new HashSet<String>(configList));
+  }
+
 
   @VisibleForTesting
   protected List<String> getApplicationConfigurationTypes() {

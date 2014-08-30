@@ -18,6 +18,7 @@
 
 package org.apache.slider.providers.agent;
 
+import com.sun.jersey.spi.container.servlet.WebConfig;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FilterFileSystem;
@@ -1057,7 +1058,10 @@ public class TestAgentProviderService {
     List<String> configurations = new ArrayList<String>();
     configurations.add("hbase-site");
     configurations.add("global");
+    List<String> sysConfigurations = new ArrayList<String>();
+    configurations.add("core-site");
     doReturn(configurations).when(mockAps).getApplicationConfigurationTypes();
+    doReturn(sysConfigurations).when(mockAps).getSystemConfigurationsRequested(any(ConfTreeOperations.class));
 
     Map<String, Map<String, ClusterNode>> roleClusterNodeMap = new HashMap<String, Map<String, ClusterNode>>();
     Map<String, ClusterNode> container = new HashMap<String, ClusterNode>();
@@ -1078,6 +1082,7 @@ public class TestAgentProviderService {
 
     mockAps.addStartCommand("HBASE_MASTER", "cid1", hbr, "", 0, Boolean.FALSE);
     Assert.assertTrue(hbr.getExecutionCommands().get(0).getConfigurations().containsKey("hbase-site"));
+    Assert.assertTrue(hbr.getExecutionCommands().get(0).getConfigurations().containsKey("core-site"));
     Map<String, String> hbaseSiteConf = hbr.getExecutionCommands().get(0).getConfigurations().get("hbase-site");
     Assert.assertTrue(hbaseSiteConf.containsKey("a.port"));
     Assert.assertEquals("10023", hbaseSiteConf.get("a.port"));
@@ -1093,6 +1098,18 @@ public class TestAgentProviderService {
     Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("app_container_id"));
     Assert.assertTrue(cmd.getConfigurations().get("hbase-site").containsKey("defaultA"));
     Assert.assertFalse(cmd.getConfigurations().get("hbase-site").containsKey("defaultB"));
+  }
+
+  @Test
+  public void testParameterParsing() {
+    AgentProviderService aps = new AgentProviderService();
+    AggregateConf aggConf = new AggregateConf();
+    ConfTreeOperations treeOps = aggConf.getAppConfOperations();
+    treeOps.getGlobalOptions().put(AgentKeys.SYSTEM_CONFIGS, "core-site,yarn-site, core-site ");
+    List<String> configs = aps.getSystemConfigurationsRequested(treeOps);
+    Assert.assertEquals(2, configs.size());
+    Assert.assertTrue(configs.contains("core-site"));
+    Assert.assertFalse(configs.contains("bore-site"));
   }
 
 }
