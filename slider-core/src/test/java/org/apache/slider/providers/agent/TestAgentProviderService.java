@@ -310,6 +310,12 @@ public class TestAgentProviderService {
         anyString(),
         anyMap()
     );
+
+    doNothing().when(mockAps).publishLogFolderPaths(anyMap(),
+                                                    anyString(),
+                                                    anyString(),
+                                                    anyString()
+    );
     expect(access.isApplicationLive()).andReturn(true).anyTimes();
     ClusterDescription desc = new ClusterDescription();
     desc.setOption(OptionKeys.ZOOKEEPER_QUORUM, "host1:2181");
@@ -344,9 +350,12 @@ public class TestAgentProviderService {
     Register reg = new Register();
     reg.setResponseId(0);
     reg.setHostname("mockcontainer_1___HBASE_MASTER");
-    Map<String,String> ports = new HashMap();
+    Map<String,String> ports = new HashMap<String, String>();
     ports.put("a","100");
     reg.setAllocatedPorts(ports);
+    Map<String, String> folders = new HashMap<String, String>();
+    folders.put("F1", "F2");
+    reg.setLogFolders(folders);
     RegistrationResponse resp = mockAps.handleRegistration(reg);
     Assert.assertEquals(0, resp.getResponseId());
     Assert.assertEquals(RegistrationStatus.OK, resp.getResponseStatus());
@@ -356,6 +365,13 @@ public class TestAgentProviderService {
         anyString(),
         anyString(),
         anyMap()
+    );
+
+    Mockito.verify(mockAps, Mockito.times(1)).publishLogFolderPaths(
+        anyMap(),
+        anyString(),
+        anyString(),
+        anyString()
     );
 
     HeartBeat hb = new HeartBeat();

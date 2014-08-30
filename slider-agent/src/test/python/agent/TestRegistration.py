@@ -39,7 +39,7 @@ class TestRegistration(TestCase):
     config.set('agent', 'current_ping_port', '33777')
 
     register = Register(config)
-    data = register.build(State.INIT, State.INIT, {}, 1)
+    data = register.build(State.INIT, State.INIT, {}, {}, 1)
     #print ("Register: " + pprint.pformat(data))
     self.assertEquals(data['hostname'] != "", True, "hostname should not be empty")
     self.assertEquals(data['publicHostname'] != "", True, "publicHostname should not be empty")
@@ -49,7 +49,8 @@ class TestRegistration(TestCase):
     self.assertEquals(data['actualState'], State.INIT, "actualState should not be empty")
     self.assertEquals(data['expectedState'], State.INIT, "expectedState should not be empty")
     self.assertEquals(data['allocatedPorts'], {}, "allocatedPorts should be empty")
-    self.assertEquals(len(data), 8)
+    self.assertEquals(data['logFolders'], {}, "allocated log should be empty")
+    self.assertEquals(len(data), 9)
 
     self.assertEquals(os.path.join(tmpdir, "app/definition"), config.getResolvedPath("app_pkg_dir"))
     self.assertEquals(os.path.join(tmpdir, "app/install"), config.getResolvedPath("app_install_dir"))
