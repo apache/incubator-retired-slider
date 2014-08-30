@@ -710,15 +710,15 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
    * @return the exit code
    */
   public int clusterActionFreeze(SliderClient sliderClient, String clustername,
-                                 String message = "action freeze") {
-    log.info("Freezing cluster $clustername: $message")
+                                 String message = "action stop") {
+    log.info("Stopping cluster $clustername: $message")
     ActionFreezeArgs freezeArgs  = new ActionFreezeArgs();
     freezeArgs.waittime = CLUSTER_STOP_TIME
     freezeArgs.message = message
     int exitCode = sliderClient.actionFreeze(clustername,
         freezeArgs);
     if (exitCode != 0) {
-      log.warn("Cluster freeze failed with error code $exitCode")
+      log.warn("Cluster stop failed with error code $exitCode")
     }
     return exitCode
   }

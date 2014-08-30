@@ -96,7 +96,7 @@ class TestBuildStandaloneAM extends AgentMiniClusterTestBase {
 
     
     
-    //thaw time
+    //start time
     ServiceLauncher<SliderClient> l2 = thawCluster(clustername, [], true)
     SliderClient thawed = l2.service
     addToTeardown(thawed);

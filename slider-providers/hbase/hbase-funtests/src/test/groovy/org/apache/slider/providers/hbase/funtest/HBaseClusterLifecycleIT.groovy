@@ -80,7 +80,7 @@ public class HBaseClusterLifecycleIT extends HBaseCommandTestBase
 
     destroy(EXIT_APPLICATION_IN_USE, CLUSTER)
 
-    //thaw will fail as cluster is in use
+    //start will fail as cluster is in use
     thaw(EXIT_APPLICATION_IN_USE, CLUSTER)
 
     //it's still there
@@ -117,7 +117,7 @@ public class HBaseClusterLifecycleIT extends HBaseCommandTestBase
 
       log.info("Connected via Client {}", sliderClient.toString())
 
-      //freeze
+      //stop
       def frozen = freeze(0, CLUSTER, [
           ARG_WAIT, Integer.toString(FREEZE_WAIT_TIME),
           ARG_MESSAGE, "freeze-in-test-cluster-lifecycle"
@@ -131,7 +131,7 @@ public class HBaseClusterLifecycleIT extends HBaseCommandTestBase
       exists(EXIT_FALSE, CLUSTER, true)
 
 
-      // thaw then freeze the cluster
+      // start then stop the cluster
 
       thaw(CLUSTER,
           [
@@ -151,7 +151,7 @@ public class HBaseClusterLifecycleIT extends HBaseCommandTestBase
       // condition returns false if it is required to be live
       exists(EXIT_FALSE, CLUSTER, true)
 
-      // thaw with a restart count set to enable restart
+      // start with a restart count set to enable restart
 
       describe "the kill/restart phase may fail if yarn.resourcemanager.am.max-attempts is too low"
       thaw(CLUSTER,

@@ -1746,10 +1746,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
   /**
-   * Freeze the cluster
+   * Stop the cluster
    *
    * @param clustername cluster name
-   * @param freezeArgs arguments to the freeze
+   * @param freezeArgs arguments to the stop
    * @return EXIT_SUCCESS if the cluster was not running by the end of the operation
    */
   public int actionFreeze(String clustername,
@@ -1772,10 +1772,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     if (app == null) {
       // exit early
       log.info("Cluster {} not running", clustername);
-      // not an error to freeze a frozen cluster
+      // not an error to stop a stopped cluster
       return EXIT_SUCCESS;
     }
-    log.debug("App to freeze was found: {}:\n{}", clustername,
+    log.debug("App to stop was found: {}:\n{}", clustername,
               new SliderUtils.OnDemandReportStringifier(app));
     if (app.getYarnApplicationState().ordinal() >=
         YarnApplicationState.FINISHED.ordinal()) {
@@ -1789,7 +1789,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     if (forcekill) {
       //escalating to forced kill
-      application.kill("Forced freeze of " + clustername +
+      application.kill("Forced stop of " + clustername +
                        ": " + text);
     } else {
       try {
