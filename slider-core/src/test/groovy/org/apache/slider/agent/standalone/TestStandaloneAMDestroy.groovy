@@ -102,8 +102,8 @@ class TestStandaloneAMDestroy extends AgentMiniClusterTestBase {
     describe "post destroy checks"
     sliderFileSystem.verifyDirectoryNonexistent(instanceDir)
 
-    describe "thaw expected to fail"
-    //expect thaw to now fail
+    describe "start expected to fail"
+    //expect start to now fail
     def ex = launchExpectingException(SliderClient,
         configuration,
         "",
@@ -115,7 +115,7 @@ class TestStandaloneAMDestroy extends AgentMiniClusterTestBase {
         ])
     assert ex instanceof UnknownApplicationInstanceException
 
-    describe "thaw completed, checking dir is still absent"
+    describe "start completed, checking dir is still absent"
     sliderFileSystem.verifyDirectoryNonexistent(instanceDir)
 
 

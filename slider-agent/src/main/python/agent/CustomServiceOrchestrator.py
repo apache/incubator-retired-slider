@@ -26,6 +26,7 @@ import sys
 import socket
 import posixpath
 import platform
+import copy
 from AgentConfig import AgentConfig
 from AgentException import AgentException
 from PythonExecutor import PythonExecutor
@@ -58,6 +59,7 @@ class CustomServiceOrchestrator():
     self.public_fqdn = hostname.public_hostname()
     self.stored_command = {}
     self.allocated_ports = {}
+    self.log_folders = {}
     # Clean up old status command files if any
     try:
       os.unlink(self.status_commands_stdout)
@@ -133,15 +135,17 @@ class CustomServiceOrchestrator():
       }
 
     if Constants.EXIT_CODE in ret and ret[Constants.EXIT_CODE] == 0:
-      ret[Constants.ALLOCATED_PORTS] = allocated_ports
-      self.allocated_ports = allocated_ports
+      ret[Constants.ALLOCATED_PORTS] = copy.deepcopy(allocated_ports)
+      ## Generally all ports are allocated at once but just in case
+      self.allocated_ports.update(allocated_ports)
 
     # Irrespective of the outcome report the folder paths
     if command_name == 'INSTALL':
-      ret[Constants.FOLDERS] = {
+      self.log_folders = {
         Constants.AGENT_LOG_ROOT: self.config.getLogPath(),
         Constants.AGENT_WORK_ROOT: self.config.getWorkRootPath()
       }
+      ret[Constants.FOLDERS] = copy.deepcopy(self.log_folders)
     return ret
 
 

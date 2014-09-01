@@ -129,7 +129,12 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
   @BeforeClass
   public static void checkWindowsSupport() {
     if (Shell.WINDOWS) {
-      assertNotNull("winutils.exe not found", Shell.WINUTILS)
+//      assertNotNull("winutils.exe not found", Shell.WINUTILS)
+      if (!Shell.WINUTILS) {
+        log.error("winutils.exe not found")
+      }
+      def lib = System.getProperty("java.library.path")
+      log.debug("java.library.path = ${lib}")
     }
   } 
 
@@ -703,15 +708,15 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
    * @return the exit code
    */
   public int clusterActionFreeze(SliderClient sliderClient, String clustername,
-                                 String message = "action freeze") {
-    log.info("Freezing cluster $clustername: $message")
+                                 String message = "action stop") {
+    log.info("Stopping cluster $clustername: $message")
     ActionFreezeArgs freezeArgs  = new ActionFreezeArgs();
     freezeArgs.waittime = CLUSTER_STOP_TIME
     freezeArgs.message = message
     int exitCode = sliderClient.actionFreeze(clustername,
         freezeArgs);
     if (exitCode != 0) {
-      log.warn("Cluster freeze failed with error code $exitCode")
+      log.warn("Cluster stop failed with error code $exitCode")
     }
     return exitCode
   }

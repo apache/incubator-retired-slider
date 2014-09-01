@@ -38,6 +38,7 @@ public class Register {
   private State actualState;
   private State expectedState;
   private Map<String, String> allocatedPorts;
+  private Map<String, String> logFolders;
 
   @JsonProperty("responseId")
   public int getResponseId() {
@@ -131,6 +132,18 @@ public class Register {
   @JsonProperty("allocatedPorts")
   public void setAllocatedPorts(Map<String, String> ports) {
     this.allocatedPorts = ports;
+  }
+
+  /** @return the log folders, or <code>null</code> if none are present */
+  @JsonProperty("logFolders")
+  public Map<String, String> getLogFolders() {
+    return logFolders;
+  }
+
+  /** @param logFolders assigned log folders */
+  @JsonProperty("logFolders")
+  public void setLogFolders(Map<String, String> logFolders) {
+    this.logFolders = logFolders;
   }
 
   @Override

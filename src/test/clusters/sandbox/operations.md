@@ -118,10 +118,10 @@
      
      
                
-    bin/slider  thaw cl1  
+    bin/slider  start cl1
                    
-    bin/slider  freeze cl1  
-    bin/slider  freeze cluster3  
+    bin/slider  stop cl1
+    bin/slider  stop cluster3
     bin/slider  destroy cl1  
     
     
@@ -149,20 +149,20 @@
       --component master 1 \
       --component worker 2 
     
-### freeze
+### stop
 
-    bin/slider  freeze cl1 
+    bin/slider  stop cl1
     
-    bin/slider  freeze cl1 --force 
+    bin/slider  stop cl1 --force
     
-### thaw
+### start
 
-    bin/slider  thaw cl1 -D slider.yarn.queue.priority=5 -D slider.yarn.queue=default
+    bin/slider  start cl1 -D slider.yarn.queue.priority=5 -D slider.yarn.queue=default
     
     
-### thaw with bad queue: _MUST_ fail
+### start with bad queue: _MUST_ fail
     
-    bin/slider  thaw cl1 -D slider.yarn.queue=unknown
+    bin/slider  start cl1 -D slider.yarn.queue=unknown
      
 ### monitor
 

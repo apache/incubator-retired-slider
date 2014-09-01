@@ -111,9 +111,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_AGENTS;
 
-/** This class implements the server-side logic for application deployment
- *  through Slider application package
- **/
+/**
+ * This class implements the server-side logic for application deployment through Slider application package
+ */
 public class AgentProviderService extends AbstractProviderService implements
     ProviderCore,
     AgentKeys,
@@ -196,7 +196,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
   // Reads the metainfo.xml in the application package and loads it
   private void buildMetainfo(AggregateConf instanceDefinition,
-      SliderFileSystem fileSystem) throws IOException, SliderException {
+                             SliderFileSystem fileSystem) throws IOException, SliderException {
     String appDef = instanceDefinition.getAppConfOperations()
         .getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
 
@@ -213,7 +213,7 @@ public class AgentProviderService extends AbstractProviderService implements
                 "metainfo.xml is required in app package.");
           }
           commandOrder = new ComponentCommandOrder(metainfo.getApplication()
-              .getCommandOrder());
+                                                       .getCommandOrder());
           defaultConfigs = initializeDefaultConfigs(fileSystem, appDef, metainfo);
           monitor = new HeartbeatMonitor(this, getHeartbeatMonitorInterval());
           monitor.start();
@@ -299,8 +299,8 @@ public class AgentProviderService extends AbstractProviderService implements
         getGlobalOptions().getOption(AgentKeys.AGENT_CONF, "");
     if (org.apache.commons.lang.StringUtils.isNotEmpty(agentConf)) {
       LocalResource agentConfRes = fileSystem.createAmResource(fileSystem
-          .getFileSystem().resolvePath(new Path(agentConf)),
-          LocalResourceType.FILE);
+                                                                   .getFileSystem().resolvePath(new Path(agentConf)),
+                                                               LocalResourceType.FILE);
       launcher.addLocalResource(AgentKeys.AGENT_CONFIG_FILE, agentConfRes);
     }
 
@@ -363,23 +363,23 @@ public class AgentProviderService extends AbstractProviderService implements
 
   @Override
   public void rebuildContainerDetails(List<Container> liveContainers,
-      String applicationId, Map<Integer, ProviderRole> providerRoleMap) {
+                                      String applicationId, Map<Integer, ProviderRole> providerRoleMap) {
     for (Container container : liveContainers) {
       // get the role name and label
       ProviderRole role = providerRoleMap.get(ContainerPriority
-          .extractRole(container));
+                                                  .extractRole(container));
       if (role != null) {
         String roleName = role.name;
         String label = getContainerLabel(container, roleName);
         log.info("Rebuilding in-memory: container {} in role {} in cluster {}",
-            container.getId(), roleName, applicationId);
+                 container.getId(), roleName, applicationId);
         getComponentStatuses().put(
             label,
             new ComponentInstanceState(roleName, container.getId(),
-                applicationId));
+                                       applicationId));
       } else {
         log.warn("Role not found for container {} in cluster {}",
-            container.getId(), applicationId);
+                 container.getId(), applicationId);
       }
     }
   }
@@ -413,7 +413,9 @@ public class AgentProviderService extends AbstractProviderService implements
 
   /**
    * Handle registration calls from the agents
+   *
    * @param registration
+   *
    * @return
    */
   @Override
@@ -428,11 +430,17 @@ public class AgentProviderService extends AbstractProviderService implements
       componentStatus.heartbeat(System.currentTimeMillis());
       updateComponentStatusWithAgentState(componentStatus, agentState);
 
+      String roleName = getRoleName(label);
+      String containerId = getContainerId(label);
+      String hostFqdn = registration.getPublicHostname();
       Map<String, String> ports = registration.getAllocatedPorts();
       if (ports != null && !ports.isEmpty()) {
-        String roleName = getRoleName(label);
-        String containerId = getContainerId(label);
-        processAllocatedPorts(registration.getPublicHostname(), roleName, containerId, ports);
+        processAllocatedPorts(hostFqdn, roleName, containerId, ports);
+      }
+
+      Map<String, String> folders = registration.getLogFolders();
+      if (folders != null && folders.size() > 0) {
+        publishLogFolderPaths(folders, containerId, roleName, hostFqdn);
       }
     } else {
       response.setResponseStatus(RegistrationStatus.FAILED);
@@ -445,7 +453,9 @@ public class AgentProviderService extends AbstractProviderService implements
 
   /**
    * Handle heartbeat response from agents
+   *
    * @param heartBeat
+   *
    * @return
    */
   @Override
@@ -470,7 +480,7 @@ public class AgentProviderService extends AbstractProviderService implements
     String scriptPath = cmdScript.getScript();
     long timeout = cmdScript.getTimeout();
 
-    if(timeout == 0L) {
+    if (timeout == 0L) {
       timeout = 600L;
     }
 
@@ -497,7 +507,7 @@ public class AgentProviderService extends AbstractProviderService implements
       log.info("Component operation. Status: {}", result);
 
       if (command == Command.INSTALL && report.getFolders() != null && report.getFolders().size() > 0) {
-        publishLogFolderPaths(report.getFolders(), containerId, heartBeat.getFqdn());
+        publishLogFolderPaths(report.getFolders(), containerId, roleName, heartBeat.getFqdn());
       }
     }
 
@@ -555,9 +565,9 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   protected void processAllocatedPorts(String fqdn,
-                                     String roleName,
-                                     String containerId,
-                                     Map<String, String> ports) {
+                                       String roleName,
+                                       String containerId,
+                                       Map<String, String> ports) {
     RoleInstance instance;
     try {
       instance = getAmState().getOwnedContainer(containerId);
@@ -571,18 +581,18 @@ public class AgentProviderService extends AbstractProviderService implements
       log.info("Recording allocated port for {} as {}", portname, portNo);
       this.getAllocatedPorts().put(portname, portNo);
       this.getAllocatedPorts(containerId).put(portname, portNo);
-        if (instance!=null) {
-          try {
-            instance.registerPortEndpoint(Integer.valueOf(portNo), portname, "");
-          } catch (NumberFormatException e) {
-            log.warn("Failed to parse {}: {}", portNo, e);
-          }
+      if (instance != null) {
+        try {
+          instance.registerPortEndpoint(Integer.valueOf(portNo), portname, "");
+        } catch (NumberFormatException e) {
+          log.warn("Failed to parse {}: {}", portNo, e);
         }
+      }
     }
 
     // component specific publishes
     processAndPublishComponentSpecificData(ports, containerId, fqdn, roleName);
-    
+
     // and update registration entries
     if (instance != null) {
       queueAccess.put(new RegisterComponentInstance(instance.getId(),
@@ -670,6 +680,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
   /**
    * Reads and sets the heartbeat monitoring interval. If bad value is provided then log it and set to default.
+   *
    * @param instanceDefinition
    */
   private void readAndSetHeartbeatMonitoringInterval(AggregateConf instanceDefinition) {
@@ -678,7 +689,7 @@ public class AgentProviderService extends AbstractProviderService implements
                                      Integer.toString(DEFAULT_HEARTBEAT_MONITOR_INTERVAL));
     try {
       setHeartbeatMonitorInterval(Integer.parseInt(hbMonitorInterval));
-    }catch (NumberFormatException e) {
+    } catch (NumberFormatException e) {
       log.warn(
           "Bad value {} for {}. Defaulting to ",
           hbMonitorInterval,
@@ -689,6 +700,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
   /**
    * Reads and sets the heartbeat monitoring interval. If bad value is provided then log it and set to default.
+   *
    * @param instanceDefinition
    */
   private void initializeAgentDebugCommands(AggregateConf instanceDefinition) {
@@ -720,10 +732,13 @@ public class AgentProviderService extends AbstractProviderService implements
 
   /**
    * Read all default configs
+   *
    * @param fileSystem
    * @param appDef
    * @param metainfo
+   *
    * @return
+   *
    * @throws IOException
    */
   protected Map<String, DefaultConfig> initializeDefaultConfigs(SliderFileSystem fileSystem,
@@ -765,6 +780,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
   /**
    * Publish a named property bag that may contain name-value pairs for app configurations such as hbase-site
+   *
    * @param name
    * @param description
    * @param entries
@@ -780,6 +796,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
   /**
    * Get a list of all hosts for all role/container per role
+   *
    * @return
    */
   protected Map<String, Map<String, ClusterNode>> getRoleClusterNodeMapping() {
@@ -809,11 +826,10 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   /**
-   * Lost heartbeat from the container - release it and ask for a replacement
-   * (async operation)
-   *  @param label
-   * @param containerId
+   * Lost heartbeat from the container - release it and ask for a replacement (async operation)
    *
+   * @param label
+   * @param containerId
    */
   protected void lostContainer(
       String label,
@@ -835,17 +851,20 @@ public class AgentProviderService extends AbstractProviderService implements
 
   /**
    * Format the folder locations and publish in the registry service
+   *
    * @param folders
    * @param containerId
    * @param hostFqdn
+   * @param roleName
    */
-  private void publishLogFolderPaths(Map<String, String> folders, String containerId, String hostFqdn) {
+  protected void publishLogFolderPaths(
+      Map<String, String> folders, String containerId, String roleName, String hostFqdn) {
     for (String key : folders.keySet()) {
-      workFolders.put(String.format("%s-%s-%s", hostFqdn, containerId, key), folders.get(key));
+      workFolders.put(String.format("%s->%s->%s->%s", roleName, hostFqdn, key, containerId), folders.get(key));
     }
 
     publishApplicationInstanceData(LOG_FOLDERS_TAG, LOG_FOLDERS_TAG,
-        (new HashMap<String, String>(this.workFolders)).entrySet());
+                                   (new HashMap<String, String>(this.workFolders)).entrySet());
   }
 
 
@@ -957,16 +976,16 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   private boolean canBeExported(String exportGroupName, String name, Set<String> appExports) {
-    return  appExports.contains(String.format("%s-%s", exportGroupName, name));
+    return appExports.contains(String.format("%s-%s", exportGroupName, name));
   }
 
   protected Map<String, String> getCurrentExports(String groupName) {
-    if(!this.exportGroups.containsKey(groupName)) {
-       synchronized (this.exportGroups) {
-         if(!this.exportGroups.containsKey(groupName)) {
-           this.exportGroups.put(groupName, new ConcurrentHashMap<String, String>());
-         }
-       }
+    if (!this.exportGroups.containsKey(groupName)) {
+      synchronized (this.exportGroups) {
+        if (!this.exportGroups.containsKey(groupName)) {
+          this.exportGroups.put(groupName, new ConcurrentHashMap<String, String>());
+        }
+      }
     }
 
     return this.exportGroups.get(groupName);
@@ -974,7 +993,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
   private void publishModifiedExportGroups(Set<String> modifiedGroups) {
     synchronized (this.exportGroups) {
-      for(String groupName : modifiedGroups) {
+      for (String groupName : modifiedGroups) {
         publishApplicationInstanceData(groupName, groupName, this.exportGroups.get(groupName).entrySet());
       }
     }
@@ -1046,7 +1065,9 @@ public class AgentProviderService extends AbstractProviderService implements
 
   /**
    * Return Component based on name
+   *
    * @param roleName
+   *
    * @return
    */
   protected Component getApplicationComponent(String roleName) {
@@ -1127,6 +1148,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
   /**
    * Can any master publish config explicitly, if not a random master is used
+   *
    * @return
    */
   protected boolean canAnyMasterPublishConfig() {
@@ -1160,10 +1182,12 @@ public class AgentProviderService extends AbstractProviderService implements
 
   /**
    * Add install command to the heartbeat response
+   *
    * @param roleName
    * @param containerId
    * @param response
    * @param scriptPath
+   *
    * @throws SliderException
    */
   @VisibleForTesting
@@ -1350,7 +1374,7 @@ public class AgentProviderService extends AbstractProviderService implements
       synchronized (this.allocatedPorts) {
         if (!this.allocatedPorts.containsKey(containerId)) {
           this.allocatedPorts.put(containerId,
-              new ConcurrentHashMap<String, String>());
+                                  new ConcurrentHashMap<String, String>());
         }
       }
     }
@@ -1365,9 +1389,10 @@ public class AgentProviderService extends AbstractProviderService implements
         new TreeMap<String, Map<String, String>>();
     Map<String, String> tokens = getStandardTokenMap(appConf);
 
-    List<String> configs = getApplicationConfigurationTypes();
+    Set<String> configs = new HashSet<String>();
+    configs.addAll(getApplicationConfigurationTypes());
+    configs.addAll(getSystemConfigurationsRequested(appConf));
 
-    //Add global
     for (String configType : configs) {
       addNamedConfiguration(configType, appConf.getGlobalOptions().options,
                             configurations, tokens, containerId);
@@ -1391,12 +1416,28 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   @VisibleForTesting
+  protected List<String> getSystemConfigurationsRequested(ConfTreeOperations appConf) {
+    List<String> configList = new ArrayList<String>();
+
+    String configTypes = appConf.get(AgentKeys.SYSTEM_CONFIGS);
+    if (configTypes != null && configTypes.length() > 0) {
+      String[] configs = configTypes.split(",");
+      for (String config : configs) {
+        configList.add(config.trim());
+      }
+    }
+
+    return new ArrayList<String>(new HashSet<String>(configList));
+  }
+
+
+  @VisibleForTesting
   protected List<String> getApplicationConfigurationTypes() {
     List<String> configList = new ArrayList<String>();
     configList.add(GLOBAL_CONFIG_TAG);
 
     List<ConfigFile> configFiles = getMetainfo().getApplication().getConfigFiles();
-    for(ConfigFile configFile : configFiles) {
+    for (ConfigFile configFile : configFiles) {
       log.info("Expecting config type {}.", configFile.getDictionaryName());
       configList.add(configFile.getDictionaryName());
     }
@@ -1421,7 +1462,7 @@ public class AgentProviderService extends AbstractProviderService implements
       for (String key : config.keySet()) {
         String value = config.get(key);
         String lookupKey = configName + "." + key;
-        if(!value.contains(DO_NOT_PROPAGATE_TAG)) {
+        if (!value.contains(DO_NOT_PROPAGATE_TAG)) {
           // If the config property is shared then pass on the already allocated value
           // from any container
           if (this.getAllocatedPorts().containsKey(lookupKey)) {
@@ -1436,12 +1477,12 @@ public class AgentProviderService extends AbstractProviderService implements
     }
 
     //apply defaults only if the key is not present and value is not empty
-    if(getDefaultConfigs().containsKey(configName)) {
+    if (getDefaultConfigs().containsKey(configName)) {
       log.info("Adding default configs for type {}.", configName);
-      for(PropertyInfo defaultConfigProp : getDefaultConfigs().get(configName).getPropertyInfos()) {
-        if(!config.containsKey(defaultConfigProp.getName())){
-          if(!defaultConfigProp.getName().isEmpty() &&
-             defaultConfigProp.getValue() != null &&
+      for (PropertyInfo defaultConfigProp : getDefaultConfigs().get(configName).getPropertyInfos()) {
+        if (!config.containsKey(defaultConfigProp.getName())) {
+          if (!defaultConfigProp.getName().isEmpty() &&
+              defaultConfigProp.getValue() != null &&
               !defaultConfigProp.getValue().isEmpty()) {
             config.put(defaultConfigProp.getName(), defaultConfigProp.getValue());
           }

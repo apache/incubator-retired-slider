@@ -61,7 +61,7 @@ class TestBuildThawClusterM1W1 extends HBaseMiniClusterTestBase {
     ApplicationReport report = serviceRegistryClient.findInstance(clustername)
     assert report == null;
 
-    //thaw time
+    //start time
     ServiceLauncher<SliderClient> l2 = thawCluster(clustername, [], true)
     SliderClient thawed = l2.service
     addToTeardown(thawed);

@@ -40,13 +40,13 @@
 
   <property>
     <name>slider.test.thaw.wait.seconds</name>
-    <description>Time to wait for a thaw to work</description>
+    <description>Time to wait for a start to work</description>
     <value>60</value>
   </property>
 
   <property>
     <name>slider.test.freeze.wait.seconds</name>
-    <description>Time to wait for a freeze to work</description>
+    <description>Time to wait for a stop to work</description>
     <value>60</value>
   </property>
 

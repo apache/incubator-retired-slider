@@ -122,6 +122,7 @@ class Controller(threading.Thread):
           self.componentActualState,
           self.componentExpectedState,
           self.actionQueue.customServiceOrchestrator.allocated_ports,
+          self.actionQueue.customServiceOrchestrator.log_folders,
           id))
         logger.info("Registering with the server at " + self.registerUrl +
                     " with data " + pprint.pformat(data))

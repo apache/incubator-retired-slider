@@ -32,7 +32,7 @@ public class ActionFreezeArgs extends AbstractActionArgs implements
     return SliderActions.ACTION_FREEZE;
   }
   
-  public static final String FREEZE_COMMAND_ISSUED = "freeze command issued";
+  public static final String FREEZE_COMMAND_ISSUED = "stop command issued";
   @ParametersDelegate
   public WaitArgsDelegate waitDelegate = new WaitArgsDelegate();
 

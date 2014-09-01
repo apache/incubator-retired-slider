@@ -354,7 +354,7 @@ public class RoleHistory {
   }
 
   /**
-   * Handle the thaw process <i>after the history has been rebuilt</i>,
+   * Handle the start process <i>after the history has been rebuilt</i>,
    * and after any gc/purge
    */
   @VisibleForTesting
@@ -381,7 +381,7 @@ public class RoleHistory {
                  e);
       }
 
-      //thaw is then completed
+      //start is then completed
       buildAvailableNodeLists();
     } else {
       //fallback to bootstrap procedure
@@ -392,7 +392,7 @@ public class RoleHistory {
 
 
   /**
-   * (After the thaw), rebuild the availability datastructures
+   * (After the start), rebuild the availability data structures
    */
   @VisibleForTesting
   public synchronized void buildAvailableNodeLists() {
