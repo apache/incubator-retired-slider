@@ -19,7 +19,6 @@
 package org.apache.slider.server.appmaster.actions;
 
 
-import com.google.common.annotations.VisibleForTesting;
 import org.apache.slider.server.services.workflow.ServiceThreadFactory;
 import org.apache.slider.server.services.workflow.WorkflowExecutorService;
 import org.slf4j.Logger;
@@ -148,6 +147,16 @@ implements Runnable, QueueAccess {
         iterator.remove();
       }
     }
+  }
+
+  @Override
+  public boolean hasQueuedActionWithAttribute(int attr) {
+    for (AsyncAction action : actionQueue) {
+      if (action.hasAttr(attr)) {
+        return true;
+      }
+    }
+    return false;
   }
   
   /**

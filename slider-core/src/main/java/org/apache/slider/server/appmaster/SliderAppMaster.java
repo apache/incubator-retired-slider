@@ -106,6 +106,7 @@ import org.apache.slider.server.appmaster.actions.ActionStopSlider;
 import org.apache.slider.server.appmaster.actions.AsyncAction;
 import org.apache.slider.server.appmaster.actions.RenewingAction;
 import org.apache.slider.server.appmaster.actions.ResetFailureWindow;
+import org.apache.slider.server.appmaster.actions.ReviewAndFlexApplicationSize;
 import org.apache.slider.server.appmaster.actions.UnregisterComponentInstance;
 import org.apache.slider.server.appmaster.monkey.ChaosKillAM;
 import org.apache.slider.server.appmaster.monkey.ChaosKillContainer;
@@ -159,9 +160,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
-
-import static org.apache.slider.server.appmaster.web.rest.RestPaths.WS_AGENT_CONTEXT_ROOT;
-import static org.apache.slider.server.appmaster.web.rest.RestPaths.WS_CONTEXT_ROOT;
 
 /**
  * This is the AM, which directly implements the callbacks from the AM and NM
@@ -1211,11 +1209,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       queue(new UnregisterComponentInstance(containerId, 0, TimeUnit.MILLISECONDS));
     }
 
-    try {
-      reviewRequestAndReleaseNodes();
-    } catch (SliderInternalStateException e) {
-      log.warn("Exception while flexing nodes", e);
-    }
+    reviewRequestAndReleaseNodes("onContainersCompleted");
   }
 
   /**
@@ -1223,10 +1217,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * It should be the only way that anything -even the AM itself on startup-
    * asks for nodes. 
    * @param resources the resource tree
-   * @return true if the any requests were made
    * @throws IOException
    */
-  private boolean flexCluster(ConfTree resources)
+  private void flexCluster(ConfTree resources)
     throws IOException, SliderInternalStateException, BadConfigException {
 
     appState.updateResourceDefinitions(resources);
@@ -1238,7 +1231,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
 
     // ask for more containers if needed
-    return reviewRequestAndReleaseNodes();
+    reviewRequestAndReleaseNodes("flexCluster");
   }
 
   /**
@@ -1269,13 +1262,47 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   
   /**
    * Look at where the current node state is -and whether it should be changed
+   * @param reason
    */
-  private synchronized boolean reviewRequestAndReleaseNodes()
+  private synchronized void reviewRequestAndReleaseNodes(String reason) {
+    log.debug("reviewRequestAndReleaseNodes({})", reason);
+    queue(new ReviewAndFlexApplicationSize(reason, 0, TimeUnit.SECONDS));
+  }
+
+  /**
+   * Handle the event requesting a review ... look at the queue and decide
+   * whether to act or not
+   * @param action action triggering the event. It may be put
+   * back into the queue
+   * @throws SliderInternalStateException
+   */
+  public void handleReviewAndFlexApplicationSize(ReviewAndFlexApplicationSize action)
       throws SliderInternalStateException {
-    log.debug("in reviewRequestAndReleaseNodes()");
+
+    if ( actionQueues.hasQueuedActionWithAttribute(
+        AsyncAction.ATTR_REVIEWS_APP_SIZE | AsyncAction.ATTR_HALTS_APP)) {
+      // this operation isn't needed at all -existing duplicate or shutdown due
+      return;
+    }
+    // if there is an action which changes cluster size, wait
+    if (actionQueues.hasQueuedActionWithAttribute(
+        AsyncAction.ATTR_CHANGES_APP_SIZE)) {
+      // place the action at the back of the queue
+      actionQueues.put(action);
+    }
+    
+    executeNodeReview(action.name);
+  }
+  
+  /**
+   * Look at where the current node state is -and whether it should be changed
+   */
+  public synchronized void executeNodeReview(String reason)
+      throws SliderInternalStateException {
+    
+    log.debug("in executeNodeReview({})", reason);
     if (amCompletionFlag.get()) {
       log.info("Ignoring node review operation: shutdown in progress");
-      return false;
     }
     try {
       List<AbstractRMOperation> allOperations = appState.reviewRequestAndReleaseNodes();
@@ -1283,15 +1310,16 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       providerRMOperationHandler.execute(allOperations);
       //now apply the operations
       executeRMOperations(allOperations);
-      return !allOperations.isEmpty();
     } catch (TriggerClusterTeardownException e) {
 
       //App state has decided that it is time to exit
       log.error("Cluster teardown triggered %s", e);
       signalAMComplete(e.getExitCode(), e.toString());
-      return false;
     }
   }
+  
+  
+  
   
   /**
    * Shutdown operation: release all containers
@@ -1383,8 +1411,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     String payload = request.getClusterSpec();
     ConfTreeSerDeser confTreeSerDeser = new ConfTreeSerDeser();
     ConfTree updatedResources = confTreeSerDeser.fromJson(payload);
-    boolean flexed = flexCluster(updatedResources);
-    return Messages.FlexClusterResponseProto.newBuilder().setResponse(flexed).build();
+    flexCluster(updatedResources);
+    return Messages.FlexClusterResponseProto.newBuilder().setResponse(true).build();
   }
 
   @Override //SliderClusterProtocol
@@ -1609,7 +1637,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       executeRMOperations(appState.releaseContainer(containerId));
       // ask for more containers if needed
       log.info("Container released; triggering review");
-      reviewRequestAndReleaseNodes();
+      reviewRequestAndReleaseNodes("Loss of container");
     } else {
       log.info("Container not in active set - ignoring");
     }

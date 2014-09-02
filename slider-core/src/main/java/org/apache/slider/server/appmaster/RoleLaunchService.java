@@ -29,7 +29,6 @@ import org.apache.slider.core.launch.ContainerLauncher;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderService;
 import org.apache.slider.server.appmaster.actions.ActionStartContainer;
-import org.apache.slider.server.appmaster.actions.AsyncAction;
 import org.apache.slider.server.appmaster.actions.QueueAccess;
 import org.apache.slider.server.appmaster.state.RoleInstance;
 import org.apache.slider.server.appmaster.state.RoleStatus;
@@ -39,9 +38,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A service for launching containers
@@ -215,9 +214,8 @@ public class RoleLaunchService
         instance.roleId = role.id;
         instance.environment = envDescription;
         actionQueue.put(new ActionStartContainer("starting " + containerRole,
-            0, container,
-            containerLauncher.completeContainerLaunch(),
-            instance));
+            container, containerLauncher.completeContainerLaunch(), instance, 0,
+            TimeUnit.MILLISECONDS));
       } catch (Exception e) {
         log.error("Exception thrown while trying to start {}: {}",
             containerRole, e);

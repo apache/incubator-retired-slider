@@ -2002,12 +2002,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       log.info("Flexing running cluster");
       SliderClusterProtocol appMaster = connect(instance);
       SliderClusterOperations clusterOps = new SliderClusterOperations(appMaster);
-      if (clusterOps.flex(instanceDefinition.getResources())) {
-        log.info("Cluster size updated");
-        exitCode = EXIT_SUCCESS;
-      } else {
-        log.info("Requested size is the same as current size: no change");
-      }
+      clusterOps.flex(instanceDefinition.getResources());
+      log.info("application instance size updated");
+      exitCode = EXIT_SUCCESS;
     } else {
       log.info("No running instance to update");
     }

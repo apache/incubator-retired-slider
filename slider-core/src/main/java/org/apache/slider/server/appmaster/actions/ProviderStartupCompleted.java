@@ -27,10 +27,6 @@ public class ProviderStartupCompleted extends AsyncAction {
     super("ProviderStartupCompleted");
   }
 
-  public ProviderStartupCompleted(long delayMillis) {
-    super("ProviderStartupCompleted", delayMillis);
-  }
-
   @Override
   public void execute(SliderAppMaster appMaster,
       QueueAccess queueService,

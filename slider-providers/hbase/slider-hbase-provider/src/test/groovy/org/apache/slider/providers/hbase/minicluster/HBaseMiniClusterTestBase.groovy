@@ -353,7 +353,6 @@ public abstract class HBaseMiniClusterTestBase extends YarnZKMiniClusterTestBase
       int masterFlexTarget,
       int workerFlexTarget,
       boolean testHBaseAfter) {
-    int flexTarget
     describe(
         "Flexing  masters -> $masterFlexTarget ; workers -> ${workerFlexTarget}");
     boolean flexed;

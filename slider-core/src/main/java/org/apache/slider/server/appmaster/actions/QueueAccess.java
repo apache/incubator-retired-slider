@@ -64,4 +64,9 @@ public interface QueueAccess {
    * @return true if the action was found and removed.
    */
   boolean removeRenewingAction(String name);
+
+  /**
+   * Look in the immediate queue for any actions of a specific attribute
+   */
+  boolean hasQueuedActionWithAttribute(int attr);
 }
