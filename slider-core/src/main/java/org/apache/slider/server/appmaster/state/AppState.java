@@ -1559,7 +1559,7 @@ public class AppState {
     ConfTreeOperations resources =
         instanceDefinition.getResourceOperations();
     return resources.getComponentOptInt(roleStatus.getName(),
-        ResourceKeys.CONTAINER_FAILURE_SHORTLIFE,
+        ResourceKeys.CONTAINER_FAILURE_THRESHOLD,
         failureThreshold);
   }
   
