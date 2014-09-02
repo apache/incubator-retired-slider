@@ -24,12 +24,17 @@ import org.apache.slider.server.appmaster.state.AppState;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Tell AM to unregister this component instance
+ * {@link SliderAppMaster#unregisterComponent(ContainerId)}
+ */
 public class UnregisterComponentInstance extends AsyncAction {
   
 
   public final ContainerId containerId;
 
-  public UnregisterComponentInstance(ContainerId containerId, long delay,
+  public UnregisterComponentInstance(ContainerId containerId,
+      long delay,
       TimeUnit timeUnit) {
     super("UnregisterComponentInstance :" + containerId.toString(),
         delay, timeUnit);

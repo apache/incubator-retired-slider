@@ -18,45 +18,26 @@
 
 package org.apache.slider.server.appmaster.actions;
 
-import org.apache.hadoop.yarn.api.records.Container;
-import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
 import org.apache.slider.server.appmaster.SliderAppMaster;
 import org.apache.slider.server.appmaster.state.AppState;
-import org.apache.slider.server.appmaster.state.RoleInstance;
 
-import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Start a container
- * @see SliderAppMaster#startContainer(Container, ContainerLaunchContext, RoleInstance) 
+ * Tell the AM to execute the full flex review operation
  */
-public class ActionStartContainer extends AsyncAction {
+public class ReviewAndFlexApplicationSize extends AsyncAction{
 
-  private final Container container;
-  private final ContainerLaunchContext ctx;
-  private final RoleInstance instance;
-
-  public ActionStartContainer(String name,
-      Container container,
-      ContainerLaunchContext ctx,
-      RoleInstance instance,
-      long delay, TimeUnit timeUnit) {
-    super(
-        String.format(Locale.ENGLISH,
-            "%s %s: /",
-            name , container.getId().toString()), 
-        delay, 
-        timeUnit);
-    this.container = container;
-    this.ctx = ctx;
-    this.instance = instance;
+  public ReviewAndFlexApplicationSize(String name,
+      long delay,
+      TimeUnit timeUnit) {
+    super(name, delay, timeUnit, ATTR_REVIEWS_APP_SIZE);
   }
 
   @Override
   public void execute(SliderAppMaster appMaster,
       QueueAccess queueService,
       AppState appState) throws Exception {
-    appMaster.startContainer(container, ctx, instance);
+    appMaster.handleReviewAndFlexApplicationSize(this);
   }
 }

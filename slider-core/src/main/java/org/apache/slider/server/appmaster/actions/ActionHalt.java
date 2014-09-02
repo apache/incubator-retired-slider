@@ -25,7 +25,7 @@ import org.apache.slider.server.appmaster.state.AppState;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Exit a JVM halt.
+ * Exit an emergency JVM halt.
  * @see ExitUtil#halt(int, String) 
  */
 public class ActionHalt extends AsyncAction {
@@ -37,7 +37,9 @@ public class ActionHalt extends AsyncAction {
       int status,
       String text,
       long delay, TimeUnit timeUnit) {
-    super("Halt", delay, ActionAttributes.HALTS_CLUSTER);
+    
+    // do not declare that this action halts the cluster ... keep it a surprise
+    super("Halt", delay, timeUnit);
     this.status = status;
     this.text = text;
   }

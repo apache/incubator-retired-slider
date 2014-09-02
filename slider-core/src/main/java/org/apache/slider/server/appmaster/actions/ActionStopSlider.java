@@ -25,15 +25,11 @@ import org.apache.slider.server.appmaster.state.AppState;
 import java.util.concurrent.TimeUnit;
 
 public class ActionStopSlider extends AsyncAction {
-  public ActionStopSlider(String message,
-      long delay) {
-    super(message, delay, ActionAttributes.HALTS_CLUSTER);
-  }
 
   public ActionStopSlider(String name,
       long delay,
       TimeUnit timeUnit) {
-    super(name, delay, timeUnit, ActionAttributes.HALTS_CLUSTER);
+    super(name, delay, timeUnit, ATTR_HALTS_APP);
   }
 
   @Override
