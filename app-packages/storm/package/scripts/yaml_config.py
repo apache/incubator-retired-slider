@@ -19,9 +19,13 @@ limitations under the License.
 """
 
 import re
+import socket
 from resource_management import *
 
 def escape_yaml_propetry(value):
+  # pre-process value for any "_HOST" tokens
+  value = value.replace('_HOST', socket.getfqdn())
+
   unquouted = False
   unquouted_values = ["null","Null","NULL","true","True","TRUE","false","False","FALSE","YES","Yes","yes","NO","No","no","ON","On","on","OFF","Off","off"]
   
@@ -31,7 +35,11 @@ def escape_yaml_propetry(value):
   # if is list [a,b,c]
   if re.match('^\w*\[.+\]\w*$', value):
     unquouted = True
-    
+
+  # if is map {'a':'b'}
+  if re.match('^\w*\{.+\}\w*$', value):
+      unquouted = True
+
   try:
     int(value)
     unquouted = True
