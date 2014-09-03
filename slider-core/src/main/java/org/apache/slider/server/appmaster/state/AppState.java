@@ -36,6 +36,7 @@ import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterDescriptionKeys;
 import org.apache.slider.api.ClusterDescriptionOperations;
 import org.apache.slider.api.ClusterNode;
+import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.RoleKeys;
 import org.apache.slider.api.StatusKeys;
@@ -520,8 +521,8 @@ public class AppState {
         instanceDefinition.getResourceOperations().getGlobalOptions();
     
     startTimeThreshold = globalResOpts.getOptionInt(
-        ResourceKeys.CONTAINER_FAILURE_SHORTLIFE,
-        ResourceKeys.DEFAULT_CONTAINER_FAILURE_SHORTLIFE);
+        InternalKeys.INTERNAL_CONTAINER_FAILURE_SHORTLIFE,
+        InternalKeys.DEFAULT_INTERNAL_CONTAINER_FAILURE_SHORTLIFE);
 
     failureThreshold = globalResOpts.getOptionInt(
         ResourceKeys.CONTAINER_FAILURE_THRESHOLD,
@@ -1227,7 +1228,7 @@ public class AppState {
   /**
    * Is a role short lived by the threshold set for this application
    * @param instance instance
-   * @return true if the instance is considered short live
+   * @return true if the instance is considered short lived
    */
   @VisibleForTesting
   public boolean isShortLived(RoleInstance instance) {
@@ -1236,7 +1237,7 @@ public class AppState {
     boolean shortlived;
     if (started > 0) {
       long duration = time - started;
-      shortlived = duration < startTimeThreshold;
+      shortlived = duration < (startTimeThreshold * 1000);
     } else {
       // never even saw a start event
       shortlived = true;
