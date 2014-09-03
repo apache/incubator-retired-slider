@@ -92,19 +92,6 @@ public interface ResourceKeys {
   
 
   /**
-   * Time in seconds before a container is considered long-lived.
-   * Shortlived containers are interpreted as a problem with the role
-   * and/or the host: {@value}
-   */
-  String CONTAINER_FAILURE_SHORTLIFE =
-      "container.failure.shortlife";
-
-  /**
-   * Default short life threshold: {@value}
-   */
-  int DEFAULT_CONTAINER_FAILURE_SHORTLIFE = 60;
-
-  /**
    * maximum number of failed containers (in a single role)
    * before the cluster is deemed to have failed {@value}
    */
