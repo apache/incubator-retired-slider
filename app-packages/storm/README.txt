@@ -17,19 +17,16 @@
 
 How to create a Slider app package for Storm?
 
-To create the app package you will need the Storm tarball copied to a specific location.
-Various configurations provided in this sample are customized for apache-storm-0.9.3.2.2.0.0-578.tar.gz.
-So if you use a different version you may need to edit a few config values.
+To create the app package you will need the Storm tarball and invoke mvn command 
+with appropriate parameters.
 
-Replace the placeholder tarball for Storm.
-  cp ~/Downloads/apache-storm-0.9.3.2.2.0.0-578.tar.gz package/files/
-  rm package/files/apache-storm-0.9.3.2.2.0.0-578.tar.gz.REPLACE
+Command:
+mvn clean package -Pstorm-app-package -Dpkg.version=<version> 
+   -Dpkg.name=<file name of app tarball> -Dpkg.src=<folder location where the pkg is available>
 
-Create a zip package at the root of the package (<slider enlistment>/app-packages/storm/) 
-  zip -r apache-storm-0.9.3.zip .
-
-Verify the content using  
-  unzip -l "$@" apache-storm-0.9.3.zip
+Example:
+mvn clean package -Pstorm-app-package -Dpkg.version=0.9.3.2.2.0.0-578 
+   -Dpkg.name=apache-storm-0.9.3.2.2.0.0-578.tar.gz -Dpkg.src=/Users/user1/Downloads
 
 While appConfig.json and resources.json are not required for the package they work
 well as the default configuration for Slider apps. So its advisable that when you
