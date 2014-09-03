@@ -1227,7 +1227,7 @@ public class AppState {
   /**
    * Is a role short lived by the threshold set for this application
    * @param instance instance
-   * @return true if the instance is considered short live
+   * @return true if the instance is considered short lived
    */
   @VisibleForTesting
   public boolean isShortLived(RoleInstance instance) {
@@ -1236,7 +1236,7 @@ public class AppState {
     boolean shortlived;
     if (started > 0) {
       long duration = time - started;
-      shortlived = duration < startTimeThreshold;
+      shortlived = duration < (startTimeThreshold * 1000);
     } else {
       // never even saw a start event
       shortlived = true;
