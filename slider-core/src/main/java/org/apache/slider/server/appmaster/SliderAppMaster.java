@@ -400,6 +400,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     //look at settings of Hadoop Auth, to pick up a problem seen once
     checkAndWarnForAuthTokenProblems();
+    
+    // validate server env
+    SliderUtils.validateSliderServerEnvironment(log);
 
     executorService = new WorkflowExecutorService<ExecutorService>("AmExecutor",
         Executors.newCachedThreadPool(

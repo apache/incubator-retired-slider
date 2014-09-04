@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -292,7 +293,20 @@ public class LongLivedProcess implements Runnable {
     if (LOG.isDebugEnabled()) {
       LOG.debug("Spawning process:\n " + describeBuilder());
     }
-    process = processBuilder.start();
+    try {
+      process = processBuilder.start();
+    } catch (IOException e) {
+      // on windows, upconvert DOS error 2 from ::CreateProcess()
+      // to its real meaning: FileNotFound
+      if (e.toString().contains("CreateProcess error=2")) {
+        FileNotFoundException fnfe =
+            new FileNotFoundException(e.toString());
+        fnfe.initCause(e);
+        throw fnfe;
+      } else {
+        throw e;
+      }
+    }
     return process;
   }
 
