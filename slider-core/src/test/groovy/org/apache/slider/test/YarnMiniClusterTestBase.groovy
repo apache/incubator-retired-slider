@@ -318,10 +318,10 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
 
 
   /**
-   * Kill all Slider Services. That i
+   * Kill all Slider Services. 
    * @param signal
    */
-  public void killAM(int signal) {
+  public int killAM(int signal) {
     killJavaProcesses(SliderAppMaster.SERVICE_CLASSNAME_SHORT, signal)
   }
 
