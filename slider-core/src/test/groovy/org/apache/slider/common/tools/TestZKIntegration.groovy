@@ -48,7 +48,8 @@ class TestZKIntegration extends YarnZKMiniClusterTestBase implements KeysForTest
   @Test
   public void testIntegrationCreate() throws Throwable {
     assertHasZKCluster()
-    ZKIntegration zki = createZKIntegrationInstance(ZKBinding, "cluster1", true, false, 5000)
+    ZKIntegration zki = createZKIntegrationInstance(
+        getZKBinding(), "cluster1", true, false, 5000)
     String userPath = ZKIntegration.mkSliderUserPath(USER)
     Stat stat = zki.stat(userPath)
     assert stat != null
@@ -59,7 +60,8 @@ class TestZKIntegration extends YarnZKMiniClusterTestBase implements KeysForTest
   public void testListUserClustersWithoutAnyClusters() throws Throwable {
     assertHasZKCluster()
 
-    ZKIntegration zki = createZKIntegrationInstance(ZKBinding, "", true, false, 5000)
+    ZKIntegration zki = createZKIntegrationInstance(
+        getZKBinding(), "", true, false, 5000)
     String userPath = ZKIntegration.mkSliderUserPath(USER)
     List<String> clusters = zki.clusters
     assert clusters.empty
@@ -69,7 +71,8 @@ class TestZKIntegration extends YarnZKMiniClusterTestBase implements KeysForTest
   public void testListUserClustersWithOneCluster() throws Throwable {
     assertHasZKCluster()
 
-    ZKIntegration zki = createZKIntegrationInstance(ZKBinding, "", true, false, 5000)
+    ZKIntegration zki = createZKIntegrationInstance(
+        getZKBinding(), "", true, false, 5000)
     String userPath = ZKIntegration.mkSliderUserPath(USER)
     String fullPath = zki.createPath(userPath, "/cluster-",
                                      ZooDefs.Ids.OPEN_ACL_UNSAFE,
@@ -82,7 +85,8 @@ class TestZKIntegration extends YarnZKMiniClusterTestBase implements KeysForTest
 
   @Test
   public void testListUserClustersWithTwoCluster() throws Throwable {
-    ZKIntegration zki = createZKIntegrationInstance(ZKBinding, "", true, false, 5000)
+    ZKIntegration zki = createZKIntegrationInstance(
+        getZKBinding(), "", true, false, 5000)
     String userPath = ZKIntegration.mkSliderUserPath(USER)
     String c1 = createEphemeralChild(zki, userPath)
     log.info("Ephemeral path $c1")
@@ -110,6 +114,7 @@ class TestZKIntegration extends YarnZKMiniClusterTestBase implements KeysForTest
 
     path = client.createZookeeperNode("cl1", false)
     zki = client.lastZKIntegration
+    assert zki 
     assert zkPath == "/services/slider/users/" + USER + "/cl1", "zkPath must be as expected"
     assert path == zkPath
     assert zki.exists(zkPath)
@@ -135,7 +140,8 @@ class TestZKIntegration extends YarnZKMiniClusterTestBase implements KeysForTest
 
     @Override
     protected ZKIntegration getZkClient(String clusterName, String user) {
-      createZKIntegrationInstance(ZKBinding, "cl1", true, false, 5000)
+      zki = createZKIntegrationInstance(getZKBinding(), "cl1", true, false, 5000)
+      return zki;
     }
 
     @Override
