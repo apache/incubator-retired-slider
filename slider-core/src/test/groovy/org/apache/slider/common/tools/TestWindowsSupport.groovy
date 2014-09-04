@@ -105,11 +105,32 @@ class TestWindowsSupport extends SliderTestBase {
     
   }
 
+
+  @Test
+  public void testHasGawkInstalled() throws Throwable {
+    assume(Shell.WINDOWS, "not windows")
+    assert 0 == exec(["gawk", "--version"])
+  }
+
+  @Test
+  public void testHasXargsInstalled() throws Throwable {
+    assume(Shell.WINDOWS, "not windows")
+    assert 0 == exec(["xargs", "--version"])
+  }
+
+  
   @Test
   public void testEmitKillCommand() throws Throwable {
     killJavaProcesses("regionserver", 9)
   }
 
+  @Test
+  public void testHadoopHomeDefined() throws Throwable {
+    assume(Shell.WINDOWS, "not windows")
+    def hadoopHome = Shell.hadoopHome
+    log.info("HADOOP_HOME=$hadoopHome")
+  }
+  
   @Test
   public void testHasWinutils() throws Throwable {
     assume(Shell.WINDOWS, "not windows")
@@ -123,14 +144,27 @@ class TestWindowsSupport extends SliderTestBase {
     assert winUtilsPath
     File winUtils = new File(winUtilsPath)
     log.debug("Winutils is at $winUtils)")
+
+    ForkedProcessService process = exec([winUtilsPath, "systeminfo"])
+    assert 0 == process.exitCode
+  }
+
+
+  /**
+   * Exec a set of commands, wait a few seconds for it to finish.
+   * @param commands
+   * @return
+   */
+  public ForkedProcessService exec(ArrayList<String> commands) {
     ForkedProcessService process;
     process = new ForkedProcessService(
-        methodName.methodName, 
+        methodName.methodName,
         [:],
-        [winUtilsPath, "systeminfo"]);
+        commands);
     process.init(new Configuration());
     EndOfServiceWaiter waiter = new EndOfServiceWaiter(process);
     process.start();
     waiter.waitForServiceToStop(5000);
+    process
   }
 }
