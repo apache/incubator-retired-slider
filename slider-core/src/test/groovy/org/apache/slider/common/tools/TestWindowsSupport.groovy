@@ -27,7 +27,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.util.Shell
 import org.apache.slider.providers.agent.AgentUtils
-import org.apache.slider.server.services.workflow.EndOfServiceWaiter
+import org.apache.slider.server.services.utility.EndOfServiceWaiter
 import org.apache.slider.server.services.workflow.ForkedProcessService
 import org.apache.slider.test.SliderTestBase
 import org.junit.Test
@@ -134,7 +134,7 @@ class TestWindowsSupport extends SliderTestBase {
   @Test
   public void testHasWinutils() throws Throwable {
     assume(Shell.WINDOWS, "not windows")
-    SliderUtils.verifyWinUtilsValid()
+    SliderUtils.maybeVerifyWinUtilsValid(log)
   }
 
   @Test
