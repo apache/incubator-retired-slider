@@ -30,8 +30,6 @@ import org.apache.slider.providers.hbase.minicluster.HBaseMiniClusterTestBase
 import org.apache.slider.core.main.ServiceLauncher
 import org.junit.Test
 
-import static HBaseKeys.PROVIDER_HBASE
-import static Arguments.ARG_PROVIDER
 
 @CompileStatic
 @Slf4j
@@ -54,7 +52,7 @@ class TestRoleOptPropagation extends HBaseMiniClusterTestBase {
                    ],
                    [
                        Arguments.ARG_COMP_OPT, HBaseKeys.ROLE_MASTER, ENV, "4",
-                       ARG_PROVIDER, PROVIDER_HBASE
+                       Arguments.ARG_PROVIDER, HBaseKeys.PROVIDER_HBASE
                    ],
                    true,
                    true,

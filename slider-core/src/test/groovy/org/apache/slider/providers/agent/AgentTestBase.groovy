@@ -26,9 +26,11 @@ import org.apache.commons.compress.utils.IOUtils
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.params.SliderActions
+import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.test.YarnZKMiniClusterTestBase
 import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 
@@ -47,6 +49,14 @@ public abstract class AgentTestBase extends YarnZKMiniClusterTestBase {
   @Rule
   public TemporaryFolder folder = new TemporaryFolder();
 
+  /**
+   * Server side test: validate system env before launch
+   */
+  @BeforeClass
+  public static void checkSystem() {
+    SliderUtils.validateSliderServerEnvironment(null)
+  }
+  
   public String app_def_pkg_path;
 
   @Before
