@@ -109,13 +109,13 @@ class TestWindowsSupport extends SliderTestBase {
   @Test
   public void testHasGawkInstalled() throws Throwable {
     assume(Shell.WINDOWS, "not windows")
-    assert 0 == exec(["gawk", "--version"])
+    exec(0, ["gawk", "--version"])
   }
 
   @Test
   public void testHasXargsInstalled() throws Throwable {
     assume(Shell.WINDOWS, "not windows")
-    assert 0 == exec(["xargs", "--version"])
+    exec(0, ["xargs", "--version"])
   }
 
   
@@ -145,16 +145,28 @@ class TestWindowsSupport extends SliderTestBase {
     File winUtils = new File(winUtilsPath)
     log.debug("Winutils is at $winUtils)")
 
-    ForkedProcessService process = exec([winUtilsPath, "systeminfo"])
-    assert 0 == process.exitCode
+    exec(0, [winUtilsPath, "systeminfo"])
   }
 
 
   /**
    * Exec a set of commands, wait a few seconds for it to finish.
+   * @param status code
    * @param commands
-   * @return
+   * @return the process
    */
+  public ForkedProcessService exec(int status, List<String> commands) {
+    ForkedProcessService process = exec(commands)
+    assert status == process.exitCode
+    return process
+  }
+  
+  /**
+     * Exec a set of commands, wait a few seconds for it to finish.
+     * @param commands
+     * @return
+     */
+  
   public ForkedProcessService exec(List<String> commands) {
     ForkedProcessService process;
     process = new ForkedProcessService(
