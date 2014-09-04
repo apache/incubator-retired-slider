@@ -49,11 +49,8 @@ import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.main.ServiceLauncherBaseTest
 import org.apache.slider.server.appmaster.SliderAppMaster
 import org.junit.After
-import org.junit.Assert
-import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Rule
-import org.junit.rules.TestName
 import org.junit.rules.Timeout
 
 import static org.apache.slider.test.KeysForTests.*
@@ -129,17 +126,14 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
           KEY_TEST_TIMEOUT,
           DEFAULT_TEST_TIMEOUT_SECONDS * 1000)
   )
+
+  /**
+   * Clent side test: validate system env before launch
+   */
   @BeforeClass
-  public static void checkWindowsSupport() {
-    if (Shell.WINDOWS) {
-//      assertNotNull("winutils.exe not found", Shell.WINUTILS)
-      if (!Shell.WINUTILS) {
-        log.error("winutils.exe not found")
-      }
-      def lib = System.getProperty("java.library.path")
-      log.debug("java.library.path = ${lib}")
-    }
-  } 
+  public static void checkClientEnv() {
+    SliderUtils.validateSliderClientEnvironment(null)
+  }
 
   protected String buildClustername(String clustername) {
     return clustername ?: createClusterName()
@@ -245,11 +239,16 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
                                    int numLocalDirs,
                                    int numLogDirs,
                                    boolean startHDFS) {
+   
     conf.setInt(YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_MB, 64);
     conf.set(YarnConfiguration.RM_SCHEDULER, FIFO_SCHEDULER);
     SliderUtils.patchConfiguration(conf)
     name = buildClustername(name)
-    miniCluster = new MiniYARNCluster(name, noOfNodeManagers, numLocalDirs, numLogDirs)
+    miniCluster = new MiniYARNCluster(
+        name,
+        noOfNodeManagers,
+        numLocalDirs,
+        numLogDirs)
     miniCluster.init(conf)
     miniCluster.start();
     if (startHDFS) {

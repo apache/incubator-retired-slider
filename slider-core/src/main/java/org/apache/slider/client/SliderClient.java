@@ -355,7 +355,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   /**
    * Delete the zookeeper node associated with the calling user and the cluster
    **/
-  protected boolean deleteZookeeperNode(String clusterName) throws YarnException, IOException {
+  @VisibleForTesting
+  public boolean deleteZookeeperNode(String clusterName) throws YarnException, IOException {
     String user = getUsername();
     String zkPath = ZKIntegration.mkClusterPath(user, clusterName);
     Exception e = null;
@@ -391,7 +392,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   /**
    * Create the zookeeper node associated with the calling user and the cluster
    */
-  protected String createZookeeperNode(String clusterName, Boolean nameOnly) throws YarnException, IOException {
+  @VisibleForTesting
+  public String createZookeeperNode(String clusterName, Boolean nameOnly) throws YarnException, IOException {
     String user = getUsername();
     String zkPath = ZKIntegration.mkClusterPath(user, clusterName);
     if(nameOnly) {

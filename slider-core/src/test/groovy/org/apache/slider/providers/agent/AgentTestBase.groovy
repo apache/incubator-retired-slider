@@ -53,7 +53,7 @@ public abstract class AgentTestBase extends YarnZKMiniClusterTestBase {
    * Server side test: validate system env before launch
    */
   @BeforeClass
-  public static void checkSystem() {
+  public static void checkServerEnv() {
     SliderUtils.validateSliderServerEnvironment(null)
   }
   
