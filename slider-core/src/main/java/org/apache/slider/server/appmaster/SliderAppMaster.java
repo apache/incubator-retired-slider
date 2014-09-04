@@ -390,7 +390,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       UserGroupInformation ugi = UserGroupInformation.getCurrentUser();
       log.debug("Authenticating as {}", ugi);
       SliderUtils.verifyPrincipalSet(conf,
-          DFSConfigKeys.DFS_NAMENODE_USER_NAME_KEY);
+          DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY);
       // always enforce protocol to be token-based.
       conf.set(
         CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHENTICATION,
@@ -400,6 +400,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     //look at settings of Hadoop Auth, to pick up a problem seen once
     checkAndWarnForAuthTokenProblems();
+    
+    // validate server env
+    SliderUtils.validateSliderServerEnvironment(log);
 
     executorService = new WorkflowExecutorService<ExecutorService>("AmExecutor",
         Executors.newCachedThreadPool(

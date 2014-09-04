@@ -16,31 +16,27 @@
  * limitations under the License.
  */
 
-package org.apache.slider.common.params;
+package org.apache.slider.common.tools
 
-import com.beust.jcommander.Parameters;
+import groovy.transform.CompileStatic
+import groovy.util.logging.Slf4j
+import org.apache.slider.test.SliderTestBase
+import org.junit.Test
 
-/**
- * The version command
- */
-@Parameters(commandNames = {SliderActions.ACTION_VERSION},
-            commandDescription = SliderActions.DESCRIBE_ACTION_VERSION)
-public class ActionVersionArgs extends AbstractActionArgs {
-  @Override
-  public String getActionName() {
-    return SliderActions.ACTION_VERSION;
+@CompileStatic
+@Slf4j
+class TestExecutionEnvironment extends SliderTestBase {
+  
+  @Test
+  public void testClientEnv() throws Throwable {
+    SliderUtils.validateSliderClientEnvironment(log)
   }
-
-  public int getMinParams() {
-    return 0;
+  
+  
+  @Test
+  public void testServerEnv() throws Throwable {
+    SliderUtils.validateSliderServerEnvironment(log)
   }
-
-  /**
-   * This action does not need hadoop services
-   * @return false
-   */
-  @Override
-  public boolean getHadoopServicesRequired() {
-    return false;
-  }
+  
+  
 }

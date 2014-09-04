@@ -148,4 +148,15 @@ public abstract class AbstractActionArgs extends ArgOps implements Arguments {
   public String toString() {
     return super.toString() + ": " + getActionName();
   }
+
+  /**
+   * Override point: 
+   * Flag to indicate that core hadoop API services are needed (HDFS, YARN, etc)
+   * —and that validation of the client state should take place.
+   * 
+   * @return a flag to indicate that the core hadoop services will be needed.
+   */
+  public boolean getHadoopServicesRequired() {
+    return true;
+  }
 }

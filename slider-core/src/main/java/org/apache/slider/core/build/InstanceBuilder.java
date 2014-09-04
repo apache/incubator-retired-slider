@@ -181,10 +181,11 @@ public class InstanceBuilder {
    * Propagate any critical principals from the current site config down to the HBase one.
    */
   public void propagatePrincipals() {
-    String dfsPrincipal = conf.get(DFSConfigKeys.DFS_NAMENODE_USER_NAME_KEY);
+    String dfsPrincipal = conf.get(
+        DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY);
     if (dfsPrincipal != null) {
       String siteDfsPrincipal = OptionKeys.SITE_XML_PREFIX +
-                                DFSConfigKeys.DFS_NAMENODE_USER_NAME_KEY;
+                                DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY;
       instanceDescription.getAppConfOperations().set(siteDfsPrincipal, dfsPrincipal);
     }
   }
