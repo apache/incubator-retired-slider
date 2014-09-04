@@ -747,7 +747,7 @@ class SliderTestUtils extends Assert {
 
     def commandString
     if (!Shell.WINDOWS) {
-      GString killCommand = "jps -l| grep ${grepString} | awk '{print \$1}' | xargs kill $signal"
+      GString killCommand = "jps -l| grep ${grepString} | awk '{print \$1}' | xargs kill /f $signal"
       log.info("Command command = $killCommand" )
 
       commandString = ["bash", "-c", killCommand]
@@ -755,7 +755,7 @@ class SliderTestUtils extends Assert {
       /*
       "jps -l | grep "String" | awk "{print $1}" | xargs -n 1 taskkill /PID"
        */
-      GString killCommand = "\"jps -l | grep \"${grepString}\" | gawk \"{print \$1}\" | xargs -n 1 taskkill /PID\""
+      GString killCommand = "\"jps -l | grep \"${grepString}\" | gawk \"{print \$1}\" | xargs -n 1 taskkill /f /PID "
       commandString = ["CMD", "/C", killCommand]
     }
     Process command = commandString.execute()
