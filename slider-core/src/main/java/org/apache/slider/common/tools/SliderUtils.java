@@ -37,6 +37,7 @@ import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.ExitUtil;
+import org.apache.hadoop.util.Shell;
 import org.apache.hadoop.util.VersionInfo;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.Container;
@@ -63,6 +64,7 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -104,8 +106,9 @@ public final class SliderUtils {
   public static final String JAVA_SECURITY_KRB5_REALM =
       "java.security.krb5.realm";
   public static final String JAVA_SECURITY_KRB5_KDC = "java.security.krb5.kdc";
+  public static final String WINUTILS = "WINUTILS.EXE";
 
-  
+
   private SliderUtils() {
   }
 
@@ -1499,4 +1502,49 @@ public final class SliderUtils {
     return is;
   }
 
+
+  /**
+   * Strictly verify that windows utils is present.
+   * Checks go as far as opening the file and looking for
+   * the headers. 
+   * @throws IOException on any problem reading the file
+   * @throws FileNotFoundException if the file is not considered valid
+   */
+  public static void verifyWinUtilsValid() throws IOException {
+    if (!Shell.WINDOWS) {
+      return;
+    }
+    String winUtilsPath = Shell.getWinUtilsPath();
+    if (winUtilsPath == null) {
+      throw new FileNotFoundException(WINUTILS + " not found on Path : " +
+                                      System.getenv("Path"));
+    }
+    File winUtils = new File(winUtilsPath);
+    if (!winUtils.isFile()) {
+      throw new FileNotFoundException(WINUTILS
+                  + " at " + winUtilsPath
+                  + " is not a file");
+
+    }
+    if (winUtils.length() < 0x100) {
+      throw new FileNotFoundException(WINUTILS
+                    + " at " + winUtilsPath
+                    + " is too short to be an executable");
+    }
+    // now read two bytes and verify the header.
+    FileReader reader = null;
+    try {
+      int[] header = new int[2];
+      reader = new FileReader(winUtilsPath);
+      header[0] = reader.read();
+      header[1] = reader.read();
+      if (header[0] != 'M' || header[1] != 'Z') {
+        throw new FileNotFoundException(WINUTILS
+                  + " at " + winUtilsPath
+                  + " is not a windows executable file");
+      }
+    } finally {
+      IOUtils.closeStream(reader);
+    }
+  }
 }
