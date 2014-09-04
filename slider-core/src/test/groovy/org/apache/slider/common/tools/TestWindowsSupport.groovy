@@ -155,7 +155,7 @@ class TestWindowsSupport extends SliderTestBase {
    * @param commands
    * @return
    */
-  public ForkedProcessService exec(ArrayList<String> commands) {
+  public ForkedProcessService exec(List<String> commands) {
     ForkedProcessService process;
     process = new ForkedProcessService(
         methodName.methodName,
