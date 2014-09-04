@@ -1026,7 +1026,7 @@ public final class SliderUtils {
 
     SliderUtils.verifyPrincipalSet(conf, YarnConfiguration.RM_PRINCIPAL);
     SliderUtils.verifyPrincipalSet(conf,
-        DFSConfigKeys.DFS_NAMENODE_USER_NAME_KEY);
+        DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY);
     return true;
   }
 

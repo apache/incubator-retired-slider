@@ -390,7 +390,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       UserGroupInformation ugi = UserGroupInformation.getCurrentUser();
       log.debug("Authenticating as {}", ugi);
       SliderUtils.verifyPrincipalSet(conf,
-          DFSConfigKeys.DFS_NAMENODE_USER_NAME_KEY);
+          DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY);
       // always enforce protocol to be token-based.
       conf.set(
         CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHENTICATION,

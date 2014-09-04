@@ -20,9 +20,11 @@ package org.apache.slider.common.params;
 
 import com.beust.jcommander.Parameters;
 
+/**
+ * The Help command
+ */
 @Parameters(commandNames = {SliderActions.ACTION_HELP, SliderActions.ACTION_USAGE},
-            commandDescription = SliderActions.DESCRIBE_ACTION_LIST)
-
+            commandDescription = SliderActions.DESCRIBE_ACTION_HELP)
 public class ActionHelpArgs extends AbstractActionArgs {
   @Override
   public String getActionName() {
@@ -38,4 +40,12 @@ public class ActionHelpArgs extends AbstractActionArgs {
     return 0;
   }
 
+  /**
+   * This action does not need hadoop services
+   * @return false
+   */
+  @Override
+  public boolean getHadoopServicesRequired() {
+    return false;
+  }
 }

@@ -46,6 +46,7 @@ import org.apache.slider.api.proto.Messages;
 import org.apache.slider.common.Constants;
 import org.apache.slider.common.SliderExitCodes;
 import org.apache.slider.common.SliderKeys;
+import org.apache.slider.common.params.AbstractActionArgs;
 import org.apache.slider.common.params.AbstractClusterBuildingActionArgs;
 import org.apache.slider.common.params.ActionAMSuicideArgs;
 import org.apache.slider.common.params.ActionCreateArgs;
@@ -291,6 +292,12 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     // choose the action
     String action = serviceArgs.getAction();
+    
+    AbstractActionArgs coreAction = serviceArgs.getCoreAction();
+    if (coreAction.getHadoopServicesRequired()) {
+      // validate the client
+      SliderUtils.validateSliderClientEnvironment(null);
+    }
     int exitCode = EXIT_SUCCESS;
     String clusterName = serviceArgs.getClusterName();
     // actions
@@ -613,7 +620,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // verify that a live cluster isn't there
     SliderUtils.validateClusterName(clustername);
     verifyBindingsDefined();
-    if (!liveClusterAllowed) verifyNoLiveClusters(clustername);
+    if (!liveClusterAllowed) {
+      verifyNoLiveClusters(clustername);
+    }
 
     Configuration conf = getConfig();
     String registryQuorum = lookupZKQuorum();
@@ -1169,7 +1178,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 */
       addConfOptionToCLI(commandLine,
           config,
-          DFSConfigKeys.DFS_NAMENODE_USER_NAME_KEY);
+          DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY);
     }
     // write out the path output
     commandLine.addOutAndErrFiles(STDOUT_AM, STDERR_AM);
@@ -1263,10 +1272,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    */
   private void propagatePrincipals(Configuration config,
                                    AggregateConf clusterSpec) {
-    String dfsPrincipal = config.get(DFSConfigKeys.DFS_NAMENODE_USER_NAME_KEY);
+    String dfsPrincipal = config.get(
+        DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY);
     if (dfsPrincipal != null) {
       String siteDfsPrincipal = OptionKeys.SITE_XML_PREFIX +
-                                DFSConfigKeys.DFS_NAMENODE_USER_NAME_KEY;
+                                DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY;
       clusterSpec.getAppConfOperations().getGlobalOptions().putIfUnset(
         siteDfsPrincipal,
         dfsPrincipal);

@@ -284,7 +284,8 @@ public class LongLivedProcess implements Runnable {
   /**
    * Exec the process
    * @return the process
-   * @throws IOException
+   * @throws IOException on aany failure to start the process
+   * @throws FileNotFoundException if the process could not be found
    */
   private Process spawnChildProcess() throws IOException {
     if (process != null) {
