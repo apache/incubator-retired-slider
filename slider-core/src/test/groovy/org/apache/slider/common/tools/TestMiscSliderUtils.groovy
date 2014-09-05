@@ -18,11 +18,14 @@
 
 package org.apache.slider.common.tools
 
+import groovy.transform.CompileStatic
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
 import org.apache.slider.test.SliderTestBase
 import org.junit.Test
+
+@CompileStatic
 
 class TestMiscSliderUtils extends SliderTestBase {
 

@@ -18,12 +18,15 @@
 
 package org.apache.slider.common.tools
 
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.junit.Test
 
 @Slf4j
+@CompileStatic
+
 class TestClientResourceRegistration {
 
   /**

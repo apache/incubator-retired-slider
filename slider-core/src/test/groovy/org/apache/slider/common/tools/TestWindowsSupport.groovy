@@ -27,14 +27,16 @@ import org.apache.hadoop.fs.Path
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.util.Shell
 import org.apache.slider.providers.agent.AgentUtils
-import org.apache.slider.test.SliderTestUtils
+import org.apache.slider.server.services.utility.EndOfServiceWaiter
+import org.apache.slider.server.services.workflow.ForkedProcessService
+import org.apache.slider.test.SliderTestBase
 import org.junit.Test
 
 import java.util.regex.Pattern
 
 @CompileStatic
 @Slf4j
-class TestWindowsSupport extends SliderTestUtils {
+class TestWindowsSupport extends SliderTestBase {
 
   private static final Pattern hasDriveLetterSpecifier =
       Pattern.compile("^/?[a-zA-Z]:");
@@ -94,7 +96,6 @@ class TestWindowsSupport extends SliderTestUtils {
   @Test
   public void testSliderFS() throws Throwable {
     assume(Shell.WINDOWS, "not windows")
-
     SliderFileSystem sfs = new SliderFileSystem(new Configuration())
     try {
       def metainfo = AgentUtils.getApplicationMetainfo(sfs, windowsFile)
@@ -104,9 +105,78 @@ class TestWindowsSupport extends SliderTestUtils {
     
   }
 
+
+  @Test
+  public void testHasGawkInstalled() throws Throwable {
+    assume(Shell.WINDOWS, "not windows")
+    exec(0, ["gawk", "--version"])
+  }
+
+  @Test
+  public void testHasXargsInstalled() throws Throwable {
+    assume(Shell.WINDOWS, "not windows")
+    exec(0, ["xargs", "--version"])
+  }
+
+  
   @Test
   public void testEmitKillCommand() throws Throwable {
     killJavaProcesses("regionserver", 9)
+  }
 
+  @Test
+  public void testHadoopHomeDefined() throws Throwable {
+    assume(Shell.WINDOWS, "not windows")
+    def hadoopHome = Shell.hadoopHome
+    log.info("HADOOP_HOME=$hadoopHome")
+  }
+  
+  @Test
+  public void testHasWinutils() throws Throwable {
+    assume(Shell.WINDOWS, "not windows")
+    SliderUtils.maybeVerifyWinUtilsValid(log)
+  }
+
+  @Test
+  public void testExecWinutils() throws Throwable {
+    assume(Shell.WINDOWS, "not windows")
+    def winUtilsPath = Shell.winUtilsPath
+    assert winUtilsPath
+    File winUtils = new File(winUtilsPath)
+    log.debug("Winutils is at $winUtils)")
+
+    exec(0, [winUtilsPath, "systeminfo"])
+  }
+
+
+  /**
+   * Exec a set of commands, wait a few seconds for it to finish.
+   * @param status code
+   * @param commands
+   * @return the process
+   */
+  public ForkedProcessService exec(int status, List<String> commands) {
+    ForkedProcessService process = exec(commands)
+    assert status == process.exitCode
+    return process
+  }
+  
+  /**
+     * Exec a set of commands, wait a few seconds for it to finish.
+     * @param commands
+     * @return
+     */
+  
+  public ForkedProcessService exec(List<String> commands) {
+    ForkedProcessService process;
+    process = new ForkedProcessService(
+        methodName.methodName,
+        [:],
+        commands);
+    process.init(new Configuration());
+    EndOfServiceWaiter waiter = new EndOfServiceWaiter(process);
+    process.start();
+    waiter.waitForServiceToStop(5000);
+    process
   }
 }

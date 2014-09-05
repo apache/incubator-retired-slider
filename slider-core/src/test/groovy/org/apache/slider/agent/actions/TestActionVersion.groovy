@@ -20,10 +20,9 @@ package org.apache.slider.agent.actions
 
 import groovy.util.logging.Slf4j
 import org.apache.slider.common.params.SliderActions
-import org.apache.slider.test.YarnMiniClusterTestBase
+import org.apache.slider.test.SliderTestBase
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.core.main.ServiceLauncher
-import org.junit.Before
 import org.junit.Test
 
 /**
@@ -31,7 +30,7 @@ import org.junit.Test
  */
 @Slf4j
 
-class TestActionVersion extends YarnMiniClusterTestBase {
+class TestActionVersion extends SliderTestBase {
 
   @Test
   public void testVersion() throws Throwable {

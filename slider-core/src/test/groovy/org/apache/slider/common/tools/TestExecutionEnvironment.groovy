@@ -16,31 +16,27 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster.actions;
+package org.apache.slider.common.tools
 
-import org.apache.slider.core.main.LauncherExitCodes;
-import org.apache.slider.server.appmaster.SliderAppMaster;
-import org.apache.slider.server.appmaster.state.AppState;
+import groovy.transform.CompileStatic
+import groovy.util.logging.Slf4j
+import org.apache.slider.test.SliderTestBase
+import org.junit.Test
 
-import java.util.concurrent.TimeUnit;
-
-public class ActionStopSlider extends AsyncAction {
-
-  public ActionStopSlider(String name,
-      long delay,
-      TimeUnit timeUnit) {
-    super(name, delay, timeUnit, ATTR_HALTS_APP);
+@CompileStatic
+@Slf4j
+class TestExecutionEnvironment extends SliderTestBase {
+  
+  @Test
+  public void testClientEnv() throws Throwable {
+    SliderUtils.validateSliderClientEnvironment(log)
   }
-
-  @Override
-  public void execute(SliderAppMaster appMaster,
-      QueueAccess queueService,
-      AppState appState) throws Exception {
-    String message = name;
-    SliderAppMaster.getLog().info("SliderAppMasterApi.stopCluster: {}",
-        message);
-    appMaster.signalAMComplete(
-        LauncherExitCodes.EXIT_CLIENT_INITIATED_SHUTDOWN,
-        message);
+  
+  
+  @Test
+  public void testServerEnv() throws Throwable {
+    SliderUtils.validateSliderServerEnvironment(log)
   }
+  
+  
 }

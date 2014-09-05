@@ -20,6 +20,7 @@ package org.apache.slider.server.services.workflow;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.ServiceOperations;
+import org.apache.slider.server.services.utility.EndOfServiceWaiter;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,6 +32,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Test the long lived process by executing a command that works and a command
@@ -131,7 +133,7 @@ public class TestWorkflowForkedProcessService extends WorkflowServiceTestBase {
     return process;
   }
 
-  public void exec() throws InterruptedException {
+  public void exec() throws InterruptedException, TimeoutException {
     assertNotNull(process);
     EndOfServiceWaiter waiter = new EndOfServiceWaiter(process);
     process.start();

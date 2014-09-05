@@ -15,12 +15,33 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+StormServer {
+   com.sun.security.auth.module.Krb5LoginModule required
+   useKeyTab=true
+   keyTab="{{storm_server_keytab_path}}"
+   storeKey=true
+   useTicketCache=true
+   renewTGT=true
+   principal="{{storm_jaas_server_principal}}";
+};
+StormClient {
+   com.sun.security.auth.module.Krb5LoginModule required
+   useKeyTab=true
+   keyTab="{{storm_client_keytab_path}}"
+   storeKey=true
+   useTicketCache=true
+   renewTGT=true
+   serviceName="nimbus"
+   debug=true
+   principal="{{storm_jaas_client_principal}}";
+};
 Client {
    com.sun.security.auth.module.Krb5LoginModule required
    useKeyTab=true
-   keyTab="{{storm_keytab_path}}"
+   keyTab="{{storm_client_keytab_path}}"
    storeKey=true
-   useTicketCache=false
+   useTicketCache=true
+   renewTGT=true
    serviceName="zookeeper"
-   principal="{{storm_jaas_principal}}";
+   principal="{{storm_jaas_client_principal}}";
 };

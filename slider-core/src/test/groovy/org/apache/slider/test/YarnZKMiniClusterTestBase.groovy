@@ -148,7 +148,7 @@ public abstract class YarnZKMiniClusterTestBase extends YarnMiniClusterTestBase 
     assert microZKCluster != null
   }
 
-  protected String getZKBinding() {
+  public String getZKBinding() {
     if (!microZKCluster) {
       return "localhost:1"
     } else {

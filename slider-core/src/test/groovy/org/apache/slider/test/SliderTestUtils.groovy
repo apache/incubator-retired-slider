@@ -761,7 +761,7 @@ class SliderTestUtils extends Assert {
       /*
       "jps -l | grep "String" | awk "{print $1}" | xargs -n 1 taskkill /PID"
        */
-      GString killCommand = "\"jps -l | grep \"${grepString}\" | awk \"{print \$1}\" | xargs -n 1 taskkill /PID\""
+      GString killCommand = "\"jps -l | grep \"${grepString}\" | gawk \"{print \$1}\" | xargs -n 1 taskkill /f /PID\""
       commandString = ["CMD", "/C", killCommand]
     }
     Process command = commandString.execute()

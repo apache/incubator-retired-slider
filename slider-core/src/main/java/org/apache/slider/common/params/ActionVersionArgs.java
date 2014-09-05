@@ -20,9 +20,11 @@ package org.apache.slider.common.params;
 
 import com.beust.jcommander.Parameters;
 
+/**
+ * The version command
+ */
 @Parameters(commandNames = {SliderActions.ACTION_VERSION},
             commandDescription = SliderActions.DESCRIBE_ACTION_VERSION)
-
 public class ActionVersionArgs extends AbstractActionArgs {
   @Override
   public String getActionName() {
@@ -33,4 +35,12 @@ public class ActionVersionArgs extends AbstractActionArgs {
     return 0;
   }
 
+  /**
+   * This action does not need hadoop services
+   * @return false
+   */
+  @Override
+  public boolean getHadoopServicesRequired() {
+    return false;
+  }
 }

@@ -52,7 +52,7 @@ public class ChaosEntry {
     Preconditions.checkArgument(target != null, "null target");
     Preconditions.checkArgument(probability > 0, "negative probability");
     Preconditions.checkArgument(probability <= ChaosMonkeyService.PERCENT_100,
-        "probability over 100%");
+        "probability over 100%: "+ probability);
     this.name = name;
     this.target = target;
     this.probability = probability;
