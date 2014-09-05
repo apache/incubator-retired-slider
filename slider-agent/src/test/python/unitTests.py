@@ -70,8 +70,9 @@ def all_tests_suite():
   else:
     for file_name in files_list:
       if file_name.endswith(PY_EXT) and not file_name == __file__:
-        logger.info(file_name)
-        tests_list.append(file_name.replace(PY_EXT, ''))
+        replaced = file_name.replace(PY_EXT, '')
+        logger.info(replaced)
+        tests_list.append(replaced)
   logger.info('------------------------------------------------------------------------')
 
   suite = unittest.TestLoader().loadTestsFromNames(tests_list)
