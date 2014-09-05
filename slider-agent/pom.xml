@@ -59,11 +59,11 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>1.2</version>
+        <version>${maven-exec-plugin.version}</version>
         <executions>
           <execution>
             <configuration>
-              <executable>${project.basedir}/src/test/python/python-wrap</executable>
+              <executable>python</executable>
               <workingDirectory>src/test/python</workingDirectory>
               <arguments>
                 <argument>unitTests.py</argument>
