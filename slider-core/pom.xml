@@ -538,7 +538,7 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>exec-maven-plugin</artifactId>
-            <version>1.2.1</version>
+            <version>${maven-exec-plugin.version}</version>
             <configuration>
               <executable>java</executable>
               <arguments>
@@ -562,7 +562,7 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>exec-maven-plugin</artifactId>
-            <version>1.2.1</version>
+            <version>${maven-exec-plugin.version}</version>
             <executions>
               <execution>
                 <goals>
