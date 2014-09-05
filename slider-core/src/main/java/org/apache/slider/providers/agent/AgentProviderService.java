@@ -333,8 +333,7 @@ public class AgentProviderService extends AbstractProviderService implements
       operation.add(debugCmd);
     }
 
-    String outfile = new File(logDir, "agent.out").toString();
-    operation.add("> " + outfile + " 2>&1");
+    operation.add("> " + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/" + AgentKeys.AGENT_OUT_FILE + " 2>&1");
 
     launcher.addCommand(operation.build());
 
@@ -1196,7 +1195,8 @@ public class AgentProviderService extends AbstractProviderService implements
     hostLevelParams.put(CONTAINER_ID, containerId);
     cmd.setHostLevelParams(hostLevelParams);
 
-    setInstallCommandConfigurations(cmd, containerId);
+    Map<String, Map<String, String>> configurations = buildCommandConfigurations(appConf, containerId);
+    cmd.setConfigurations(configurations);
 
     cmd.setCommandParams(setCommandParameters(scriptPath, timeout, false));
 
@@ -1244,12 +1244,6 @@ public class AgentProviderService extends AbstractProviderService implements
     cmdParams.put("script_type", "PYTHON");
     cmdParams.put("record_config", Boolean.toString(recordConfig));
     return cmdParams;
-  }
-
-  private void setInstallCommandConfigurations(ExecutionCommand cmd, String containerId) throws SliderException {
-    ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
-    Map<String, Map<String, String>> configurations = buildCommandConfigurations(appConf, containerId);
-    cmd.setConfigurations(configurations);
   }
 
   @VisibleForTesting
@@ -1380,7 +1374,33 @@ public class AgentProviderService extends AbstractProviderService implements
                             configurations, tokens, containerId);
     }
 
+    //do a final replacement of re-used configs
+    dereferenceAllConfigs(configurations);
+
     return configurations;
+  }
+
+  protected void dereferenceAllConfigs(Map<String, Map<String, String>> configurations) {
+    Map<String, String> allConfigs = new HashMap<String, String>();
+    String lookupFormat = "${site.%s.%s}";
+    for (String configType : configurations.keySet()) {
+      Map<String, String> configBucket = configurations.get(configType);
+      for (String configName : configBucket.keySet()) {
+        allConfigs.put(String.format(lookupFormat, configType, configName), configBucket.get(configName));
+      }
+    }
+
+    for (String configType : configurations.keySet()) {
+      Map<String, String> configBucket = configurations.get(configType);
+      for (String configName : configBucket.keySet()) {
+        String configValue = configBucket.get(configName);
+        for (String lookUpKey : allConfigs.keySet()) {
+          if (configValue != null && configValue.contains(lookUpKey)) {
+            configBucket.put(configName, configValue.replace(lookUpKey, allConfigs.get(lookUpKey)));
+          }
+        }
+      }
+    }
   }
 
   private Map<String, String> getStandardTokenMap(ConfTreeOperations appConf) throws SliderException {
