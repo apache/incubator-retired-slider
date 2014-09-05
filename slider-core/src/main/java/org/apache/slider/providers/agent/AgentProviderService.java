@@ -333,8 +333,7 @@ public class AgentProviderService extends AbstractProviderService implements
       operation.add(debugCmd);
     }
 
-    String outfile = new File(logDir, "agent.out").toString();
-    operation.add("> " + outfile + " 2>&1");
+    operation.add("> " + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/" + AgentKeys.AGENT_OUT_FILE + " 2>&1");
 
     launcher.addCommand(operation.build());
 
