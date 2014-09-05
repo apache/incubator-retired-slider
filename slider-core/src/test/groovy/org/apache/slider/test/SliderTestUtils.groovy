@@ -747,7 +747,7 @@ class SliderTestUtils extends Assert {
 
     def commandString
     if (!Shell.WINDOWS) {
-      GString killCommand = "jps -l| grep ${grepString} | awk '{print \$1}' | xargs kill /f $signal"
+      GString killCommand = "jps -l| grep ${grepString} | awk '{print \$1}' | xargs kill $signal"
       log.info("Command command = $killCommand" )
 
       commandString = ["bash", "-c", killCommand]
