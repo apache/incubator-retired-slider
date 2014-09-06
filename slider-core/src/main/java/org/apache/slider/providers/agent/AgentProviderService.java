@@ -1382,7 +1382,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
   protected void dereferenceAllConfigs(Map<String, Map<String, String>> configurations) {
     Map<String, String> allConfigs = new HashMap<String, String>();
-    String lookupFormat = "${site.%s.%s}";
+    String lookupFormat = "${@//site/%s/%s}";
     for (String configType : configurations.keySet()) {
       Map<String, String> configBucket = configurations.get(configType);
       for (String configName : configBucket.keySet()) {
@@ -1396,9 +1396,10 @@ public class AgentProviderService extends AbstractProviderService implements
         String configValue = configBucket.get(configName);
         for (String lookUpKey : allConfigs.keySet()) {
           if (configValue != null && configValue.contains(lookUpKey)) {
-            configBucket.put(configName, configValue.replace(lookUpKey, allConfigs.get(lookUpKey)));
+            configValue = configValue.replace(lookUpKey, allConfigs.get(lookUpKey));
           }
         }
+        configBucket.put(configName, configValue);
       }
     }
   }

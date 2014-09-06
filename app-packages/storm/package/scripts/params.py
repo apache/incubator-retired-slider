@@ -34,7 +34,7 @@ user_group = config['configurations']['global']['user_group']
 java64_home = config['hostLevelParams']['java_home']
 nimbus_host = config['configurations']['storm-site']['nimbus.host']
 nimbus_port = config['configurations']['storm-site']['nimbus.thrift.port']
-storm_bin = format("{app_root}/bin/storm")
+storm_bin = format("{app_root}/bin/storm.py")
 storm_env_sh_template = config['configurations']['storm-env']['content']
 
 ganglia_installed = config['configurations']['global']['ganglia_enabled']
