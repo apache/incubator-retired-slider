@@ -33,7 +33,7 @@
     <rpm.bindir>${rpm.basedir}/bin</rpm.bindir>
     <rpm.libdir>${rpm.basedir}/lib</rpm.libdir>
     <rpm.agentdir>${rpm.basedir}/agent</rpm.agentdir>
-    <rpm.username>mapred</rpm.username>
+    <rpm.username>root</rpm.username>
     <rpm.groupname>hadoop</rpm.groupname>
     <src.confdir>src/conf-hdp</src.confdir>
     <src.libdir>${project.build.directory}/lib</src.libdir>
@@ -287,10 +287,10 @@
                 <!-- agent -->
                 <mapping>
                   <directory>${rpm.agentdir}</directory>
-                  <configuration>true</configuration>
                   <filemode>0755</filemode>
                   <username>${rpm.username}</username>
                   <groupname>${rpm.groupname}</groupname>
+                  <directoryIncluded>false</directoryIncluded>
                   <sources>
                     <source>
                       <location>${project.build.directory}/agent</location>
@@ -308,6 +308,7 @@
                   <filemode>0755</filemode>
                   <username>${rpm.username}</username>
                   <groupname>${rpm.groupname}</groupname>
+                  <directoryIncluded>false</directoryIncluded>
                   <sources>
                     <source>
                       <location>${src.agent.ini.dir}</location>
@@ -318,6 +319,24 @@
                     </source>
                   </sources>
                 </mapping>
+
+                <!-- needed to apply attribute to directory -->
+                <mapping>
+                  <directory>${rpm.agentdir}</directory>
+                  <filemode>0755</filemode>
+                  <username>${rpm.username}</username>
+                  <groupname>${rpm.groupname}</groupname>
+                  <directoryIncluded>true</directoryIncluded>
+                </mapping>
+
+                <mapping>
+                  <directory>${rpm.agentdir}/conf</directory>
+                  <filemode>0755</filemode>
+                  <username>${rpm.username}</username>
+                  <groupname>${rpm.groupname}</groupname>
+                  <directoryIncluded>true</directoryIncluded>
+                </mapping>
+
               </mappings>
               <!--
               Scripts. Very dangerous in RPMs unless you know exactly what you are doing.
