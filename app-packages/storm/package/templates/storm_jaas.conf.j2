@@ -20,8 +20,7 @@ StormServer {
    useKeyTab=true
    keyTab="{{storm_server_keytab_path}}"
    storeKey=true
-   useTicketCache=true
-   renewTGT=true
+   useTicketCache=false
    principal="{{storm_jaas_server_principal}}";
 };
 StormClient {
@@ -29,9 +28,8 @@ StormClient {
    useKeyTab=true
    keyTab="{{storm_client_keytab_path}}"
    storeKey=true
-   useTicketCache=true
-   renewTGT=true
-   serviceName="nimbus"
+   useTicketCache=false
+   serviceName="{{storm_jaas_stormclient_servicename}}"
    debug=true
    principal="{{storm_jaas_client_principal}}";
 };
@@ -40,8 +38,7 @@ Client {
    useKeyTab=true
    keyTab="{{storm_client_keytab_path}}"
    storeKey=true
-   useTicketCache=true
-   renewTGT=true
+   useTicketCache=false
    serviceName="zookeeper"
    principal="{{storm_jaas_client_principal}}";
 };

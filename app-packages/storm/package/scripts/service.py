@@ -50,7 +50,7 @@ def service(
     if name == "rest_api":
       cmd = format("{rest_process_cmd} {rest_api_conf_file} > {log_dir}/restapi.log")
     else:
-      cmd = format("env JAVA_HOME={java64_home} PATH=$PATH:{java64_home}/bin STORM_BASE_DIR={app_root} STORM_CONF_DIR={conf_dir} {storm_bin} {name} > {log_dir}/{name}.out 2>&1")
+      cmd = format("env JAVA_HOME={java64_home} PATH={java64_home}/bin:$PATH STORM_BASE_DIR={app_root} STORM_CONF_DIR={conf_dir} {storm_bin} {name} > {log_dir}/{name}.out 2>&1")
 
     if params.security_enabled:
       if name == "nimbus":

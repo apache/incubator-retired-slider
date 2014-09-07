@@ -38,7 +38,7 @@ def escape_yaml_propetry(value):
 
   # if is map {'a':'b'}
   if re.match('^\w*\{.+\}\w*$', value):
-      unquouted = True
+    unquouted = True
 
   try:
     int(value)
