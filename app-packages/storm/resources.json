@@ -13,7 +13,7 @@
     },
     "STORM_UI_SERVER": {
       "yarn.role.priority": "2",
-      "yarn.component.instances": "0"
+      "yarn.component.instances": "1"
     },
     "DRPC_SERVER": {
       "yarn.role.priority": "3",
