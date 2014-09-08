@@ -1311,13 +1311,6 @@
 
     <profile>
       <!-- hadoop branch-2 builds  -->
-      <id>hadoop-2.4.1</id>
-      <properties>
-        <hadoop.version>2.4.1</hadoop.version>
-      </properties>
-    </profile>
-    <profile>
-      <!-- hadoop branch-2 builds  -->
       <id>branch-2</id>
       <properties>
         <hadoop.version>2.6.0-SNAPSHOT</hadoop.version>
