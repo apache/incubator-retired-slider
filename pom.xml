@@ -1303,8 +1303,8 @@
       <!-- local builds of everything -->
       <id>local</id>
       <properties>
-        <hadoop.version>2.4.1-SNAPSHOT</hadoop.version>
-        <hbase.version>0.98.4-SNAPSHOT</hbase.version>
+        <hadoop.version>2.6.0-SNAPSHOT</hadoop.version>
+        <hbase.version>0.98.5-SNAPSHOT</hbase.version>
         <accumulo.version>1.6.0-SNAPSHOT</accumulo.version>
       </properties>
     </profile>
