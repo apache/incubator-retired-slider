@@ -43,8 +43,7 @@ if ganglia_installed:
   ganglia_server = config['configurations']['global']['ganglia_server_host']
   ganglia_port = config['configurations']['global']['ganglia_server_port']
 
-_authentication = config['configurations']['core-site']['hadoop.security.authentication']
-security_enabled = ( not is_empty(_authentication) and _authentication == 'kerberos')
+security_enabled = config['configurations']['global']['security_enabled']
 
 if security_enabled:
   _hostname_lowercase = config['hostname'].lower()
@@ -54,6 +53,7 @@ if security_enabled:
 
   storm_jaas_client_principal = _storm_client_principal_name.replace('_HOST', _hostname_lowercase)
   storm_client_keytab_path = config['configurations']['storm-env']['storm_client_keytab']
-  storm_jaas_server_principal = _storm_server_principal_name.replace('_HOST', _hostname_lowercase)
+  storm_jaas_server_principal = _storm_server_principal_name.replace('_HOST',nimbus_host.lower())
+  storm_jaas_stormclient_servicename = storm_jaas_server_principal.split("/")[0]
   storm_server_keytab_path = config['configurations']['storm-env']['storm_server_keytab']
   kinit_path_local = functions.get_kinit_path(["/usr/bin", "/usr/kerberos/bin", "/usr/sbin"])

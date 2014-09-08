@@ -47,14 +47,14 @@ def service(
     crt_pid_cmd = format("{jps_path} -vl | grep \"^[0-9 ]*backtype.storm.daemon.{name}\" {grep_and_awk}  > {pid_file}")
 
   if action == "start":
-    cmd = format("env JAVA_HOME={java64_home} PATH=$PATH:{java64_home}/bin STORM_BASE_DIR={app_root} STORM_CONF_DIR={conf_dir} {python_binary} {storm_bin} {name} > {log_dir}/{name}.out 2>&1")
+    cmd = format("env JAVA_HOME={java64_home} PATH={java64_home}/bin:$PATH STORM_BASE_DIR={app_root} STORM_CONF_DIR={conf_dir} {python_binary} {storm_bin} {name} > {log_dir}/{name}.out 2>&1")
 
     if params.security_enabled:
       if name == "nimbus":
-        Execute(format("{kinit_path_local} -kt {storm_server_keytab_path} {storm_user}"),
+        Execute(format("{kinit_path_local} -kt {storm_server_keytab_path} {storm_jaas_server_principal}"),
                 user=params.storm_user)
       else:
-        Execute(format("{kinit_path_local} -kt {storm_client_keytab_path} {storm_user}"),
+        Execute(format("{kinit_path_local} -kt {storm_client_keytab_path} {storm_jaas_client_principal}"),
                 user=params.storm_user)
 
     Execute(cmd,
