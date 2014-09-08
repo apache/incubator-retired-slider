@@ -46,6 +46,7 @@ public class ClientArgs extends CommonArgs {
   private AbstractClusterBuildingActionArgs buildingActionArgs;
   private final ActionAMSuicideArgs actionAMSuicideArgs = new ActionAMSuicideArgs();
   private final ActionBuildArgs actionBuildArgs = new ActionBuildArgs();
+  private final ActionInstallPackageArgs actionInstallPackageArgs = new ActionInstallPackageArgs();
   private final ActionUpdateArgs actionUpdateArgs = new ActionUpdateArgs();
   private final ActionCreateArgs actionCreateArgs = new ActionCreateArgs();
   private final ActionDestroyArgs actionDestroyArgs = new ActionDestroyArgs();
@@ -90,7 +91,8 @@ public class ClientArgs extends CommonArgs {
       actionStatusArgs,
       actionThawArgs,
       actionHelpArgs,
-      actionVersionArgs
+      actionVersionArgs,
+      actionInstallPackageArgs
               );
   }
 
@@ -121,6 +123,9 @@ public class ClientArgs extends CommonArgs {
   public ActionBuildArgs getActionBuildArgs() {
     return actionBuildArgs;
   }
+
+  public ActionInstallPackageArgs getActionInstallPackageArgs() {
+    return actionInstallPackageArgs; }
 
   public ActionUpdateArgs getActionUpdateArgs() {
     return actionUpdateArgs;
@@ -192,7 +197,10 @@ public class ClientArgs extends CommonArgs {
     } else if (SliderActions.ACTION_UPDATE.equals(action)) {
       bindCoreAction(actionUpdateArgs);
 
-    } else if (SliderActions.ACTION_FREEZE.equals(action)) {
+    } else if (SliderActions.ACTION_INSTALL_PACKAGE.equals(action)) {
+      bindCoreAction(actionInstallPackageArgs);
+
+    }else if (SliderActions.ACTION_FREEZE.equals(action)) {
       bindCoreAction(actionFreezeArgs);
 
     } else if (SliderActions.ACTION_THAW.equals(action)) {

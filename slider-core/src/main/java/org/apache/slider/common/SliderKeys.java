@@ -112,6 +112,8 @@ public interface SliderKeys extends SliderXmlConfKeys {
 
   String CLUSTER_DIRECTORY = "cluster";
 
+  String PACKAGE_DIRECTORY = "package";
+
   /**
    * JVM property to define the slider configuration directory;
    * this is set by the slider script: {@value}
