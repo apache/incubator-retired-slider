@@ -755,7 +755,7 @@ class SliderTestUtils extends Assert {
       /*
       "jps -l | grep "String" | awk "{print $1}" | xargs -n 1 taskkill /PID"
        */
-      GString killCommand = "\"jps -l | grep \"${grepString}\" | awk \"{print \$1}\" | xargs -n 1 taskkill /PID\""
+      GString killCommand = "\"jps -l | grep \"${grepString}\" | gawk \"{print \$1}\" | xargs -n 1 taskkill /f /PID\""
       commandString = ["CMD", "/C", killCommand]
     }
     Process command = commandString.execute()
@@ -775,5 +775,14 @@ class SliderTestUtils extends Assert {
     for (String grep : greps) {
       killJavaProcesses(grep,signal)
     }
+  }
+
+  /**
+   * Convert a file to a URI suitable for use in an argument
+   * @param file file
+   * @return a URI string valid on all platforms
+   */
+  public String toURIArg(File file) {
+    file.absoluteFile.toURI().toString()
   }
 }

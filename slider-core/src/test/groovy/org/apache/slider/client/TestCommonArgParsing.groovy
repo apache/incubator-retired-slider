@@ -154,7 +154,7 @@ class TestCommonArgParsing implements SliderActions, Arguments {
   }
 
   /**
-   * Test a thaw command
+   * Test a start command
    * @throws Throwable
    */
   @Test

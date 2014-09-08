@@ -46,6 +46,7 @@ import org.apache.slider.api.proto.Messages;
 import org.apache.slider.common.Constants;
 import org.apache.slider.common.SliderExitCodes;
 import org.apache.slider.common.SliderKeys;
+import org.apache.slider.common.params.AbstractActionArgs;
 import org.apache.slider.common.params.AbstractClusterBuildingActionArgs;
 import org.apache.slider.common.params.ActionAMSuicideArgs;
 import org.apache.slider.common.params.ActionCreateArgs;
@@ -291,6 +292,12 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     // choose the action
     String action = serviceArgs.getAction();
+    
+    AbstractActionArgs coreAction = serviceArgs.getCoreAction();
+    if (coreAction.getHadoopServicesRequired()) {
+      // validate the client
+      SliderUtils.validateSliderClientEnvironment(null);
+    }
     int exitCode = EXIT_SUCCESS;
     String clusterName = serviceArgs.getClusterName();
     // actions
@@ -348,7 +355,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   /**
    * Delete the zookeeper node associated with the calling user and the cluster
    **/
-  protected boolean deleteZookeeperNode(String clusterName) throws YarnException, IOException {
+  @VisibleForTesting
+  public boolean deleteZookeeperNode(String clusterName) throws YarnException, IOException {
     String user = getUsername();
     String zkPath = ZKIntegration.mkClusterPath(user, clusterName);
     Exception e = null;
@@ -384,7 +392,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   /**
    * Create the zookeeper node associated with the calling user and the cluster
    */
-  protected String createZookeeperNode(String clusterName, Boolean nameOnly) throws YarnException, IOException {
+  @VisibleForTesting
+  public String createZookeeperNode(String clusterName, Boolean nameOnly) throws YarnException, IOException {
     String user = getUsername();
     String zkPath = ZKIntegration.mkClusterPath(user, clusterName);
     if(nameOnly) {
@@ -613,7 +622,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // verify that a live cluster isn't there
     SliderUtils.validateClusterName(clustername);
     verifyBindingsDefined();
-    if (!liveClusterAllowed) verifyNoLiveClusters(clustername);
+    if (!liveClusterAllowed) {
+      verifyNoLiveClusters(clustername);
+    }
 
     Configuration conf = getConfig();
     String registryQuorum = lookupZKQuorum();
@@ -1169,7 +1180,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 */
       addConfOptionToCLI(commandLine,
           config,
-          DFSConfigKeys.DFS_NAMENODE_USER_NAME_KEY);
+          DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY);
     }
     // write out the path output
     commandLine.addOutAndErrFiles(STDOUT_AM, STDERR_AM);
@@ -1263,10 +1274,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    */
   private void propagatePrincipals(Configuration config,
                                    AggregateConf clusterSpec) {
-    String dfsPrincipal = config.get(DFSConfigKeys.DFS_NAMENODE_USER_NAME_KEY);
+    String dfsPrincipal = config.get(
+        DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY);
     if (dfsPrincipal != null) {
       String siteDfsPrincipal = OptionKeys.SITE_XML_PREFIX +
-                                DFSConfigKeys.DFS_NAMENODE_USER_NAME_KEY;
+                                DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY;
       clusterSpec.getAppConfOperations().getGlobalOptions().putIfUnset(
         siteDfsPrincipal,
         dfsPrincipal);
@@ -1746,10 +1758,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
   /**
-   * Freeze the cluster
+   * Stop the cluster
    *
    * @param clustername cluster name
-   * @param freezeArgs arguments to the freeze
+   * @param freezeArgs arguments to the stop
    * @return EXIT_SUCCESS if the cluster was not running by the end of the operation
    */
   public int actionFreeze(String clustername,
@@ -1772,10 +1784,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     if (app == null) {
       // exit early
       log.info("Cluster {} not running", clustername);
-      // not an error to freeze a frozen cluster
+      // not an error to stop a stopped cluster
       return EXIT_SUCCESS;
     }
-    log.debug("App to freeze was found: {}:\n{}", clustername,
+    log.debug("App to stop was found: {}:\n{}", clustername,
               new SliderUtils.OnDemandReportStringifier(app));
     if (app.getYarnApplicationState().ordinal() >=
         YarnApplicationState.FINISHED.ordinal()) {
@@ -1789,7 +1801,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     if (forcekill) {
       //escalating to forced kill
-      application.kill("Forced freeze of " + clustername +
+      application.kill("Forced stop of " + clustername +
                        ": " + text);
     } else {
       try {
@@ -2002,12 +2014,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       log.info("Flexing running cluster");
       SliderClusterProtocol appMaster = connect(instance);
       SliderClusterOperations clusterOps = new SliderClusterOperations(appMaster);
-      if (clusterOps.flex(instanceDefinition.getResources())) {
-        log.info("Cluster size updated");
-        exitCode = EXIT_SUCCESS;
-      } else {
-        log.info("Requested size is the same as current size: no change");
-      }
+      clusterOps.flex(instanceDefinition.getResources());
+      log.info("application instance size updated");
+      exitCode = EXIT_SUCCESS;
     } else {
       log.info("No running instance to update");
     }

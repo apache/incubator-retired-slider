@@ -85,11 +85,13 @@ public interface AgentKeys {
 
   String JAVA_HOME = "java_home";
   String PACKAGE_LIST = "package_list";
+  String SYSTEM_CONFIGS = "system_configs";
   String WAIT_HEARTBEAT = "wait.heartbeat";
   String PYTHON_EXE = "python";
   String CREATE_DEF_ZK_NODE = "create.default.zookeeper.node";
   String HEARTBEAT_MONITOR_INTERVAL = "heartbeat.monitor.interval";
   String AGENT_INSTANCE_DEBUG_DATA = "agent.instance.debug.data";
+  String AGENT_OUT_FILE = "agent.out";
 }
 
 

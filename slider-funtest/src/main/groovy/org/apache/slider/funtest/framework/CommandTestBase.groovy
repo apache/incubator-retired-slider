@@ -220,7 +220,7 @@ abstract class CommandTestBase extends SliderTestUtils {
   }
 
   /**
-   * Freeze cluster: no exit code checking
+   * Stop cluster: no exit code checking
    * @param name
    * @param args
    * @return

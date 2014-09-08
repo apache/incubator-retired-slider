@@ -23,6 +23,7 @@ CONF = "conf"
 
 LIB = "lib"
 
+JAVA_HOME = None
 SLIDER_CONF_DIR = "SLIDER_CONF_DIR"
 SLIDER_JVM_OPTS = "SLIDER_JVM_OPTS"
 SLIDER_CLASSPATH_EXTRA = "SLIDER_CLASSPATH_EXTRA"
@@ -147,9 +148,12 @@ def java(classname, args, classpath, jvm_opts_list):
   """
   # split the JVM opts by space
   # java = "/usr/bin/java"
-  prg="java"
-  if which("java")==None:
-    prg=os.environ["JAVA_HOME"]+"/bin/java"
+  prg = "java"
+  if JAVA_HOME:
+    prg = os.path.join(JAVA_HOME, "bin", "java")
+  else:
+    if which("java") is None:
+      prg = os.path.join(os.environ["JAVA_HOME"], "bin", "java")
   commandline = [prg]
   commandline.extend(jvm_opts_list)
   commandline.append("-classpath")
@@ -203,7 +207,7 @@ if __name__ == '__main__':
   try:
     returncode = main()
   except Exception as e:
-    print "Exception: %s " % e.message
+    print "Exception: %s " % str(e)
     returncode = -1
   
   sys.exit(returncode)

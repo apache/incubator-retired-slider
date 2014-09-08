@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ZookeeperUtils {
+  public static final int DEFAULT_PORT = 2181;
 
   public static String buildConnectionString(String zkHosts, int port) {
     String zkPort = Integer.toString(port);
@@ -73,7 +74,7 @@ public class ZookeeperUtils {
     List<HostAndPort> list = new ArrayList<HostAndPort>(len);
     if (strings != null) {
       for (String s : strings) {
-        list.add(HostAndPort.fromString(s.trim()));
+        list.add(HostAndPort.fromString(s.trim()).withDefaultPort(DEFAULT_PORT));
       }
     }
     return list;

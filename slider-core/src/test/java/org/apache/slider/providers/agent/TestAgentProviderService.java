@@ -18,6 +18,7 @@
 
 package org.apache.slider.providers.agent;
 
+import com.sun.jersey.spi.container.servlet.WebConfig;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FilterFileSystem;
@@ -309,6 +310,12 @@ public class TestAgentProviderService {
         anyString(),
         anyMap()
     );
+
+    doNothing().when(mockAps).publishLogFolderPaths(anyMap(),
+                                                    anyString(),
+                                                    anyString(),
+                                                    anyString()
+    );
     expect(access.isApplicationLive()).andReturn(true).anyTimes();
     ClusterDescription desc = new ClusterDescription();
     desc.setOption(OptionKeys.ZOOKEEPER_QUORUM, "host1:2181");
@@ -343,9 +350,12 @@ public class TestAgentProviderService {
     Register reg = new Register();
     reg.setResponseId(0);
     reg.setHostname("mockcontainer_1___HBASE_MASTER");
-    Map<String,String> ports = new HashMap();
+    Map<String,String> ports = new HashMap<String, String>();
     ports.put("a","100");
     reg.setAllocatedPorts(ports);
+    Map<String, String> folders = new HashMap<String, String>();
+    folders.put("F1", "F2");
+    reg.setLogFolders(folders);
     RegistrationResponse resp = mockAps.handleRegistration(reg);
     Assert.assertEquals(0, resp.getResponseId());
     Assert.assertEquals(RegistrationStatus.OK, resp.getResponseStatus());
@@ -355,6 +365,13 @@ public class TestAgentProviderService {
         anyString(),
         anyString(),
         anyMap()
+    );
+
+    Mockito.verify(mockAps, Mockito.times(1)).publishLogFolderPaths(
+        anyMap(),
+        anyString(),
+        anyString(),
+        anyString()
     );
 
     HeartBeat hb = new HeartBeat();
@@ -1057,7 +1074,10 @@ public class TestAgentProviderService {
     List<String> configurations = new ArrayList<String>();
     configurations.add("hbase-site");
     configurations.add("global");
+    List<String> sysConfigurations = new ArrayList<String>();
+    configurations.add("core-site");
     doReturn(configurations).when(mockAps).getApplicationConfigurationTypes();
+    doReturn(sysConfigurations).when(mockAps).getSystemConfigurationsRequested(any(ConfTreeOperations.class));
 
     Map<String, Map<String, ClusterNode>> roleClusterNodeMap = new HashMap<String, Map<String, ClusterNode>>();
     Map<String, ClusterNode> container = new HashMap<String, ClusterNode>();
@@ -1078,6 +1098,7 @@ public class TestAgentProviderService {
 
     mockAps.addStartCommand("HBASE_MASTER", "cid1", hbr, "", 0, Boolean.FALSE);
     Assert.assertTrue(hbr.getExecutionCommands().get(0).getConfigurations().containsKey("hbase-site"));
+    Assert.assertTrue(hbr.getExecutionCommands().get(0).getConfigurations().containsKey("core-site"));
     Map<String, String> hbaseSiteConf = hbr.getExecutionCommands().get(0).getConfigurations().get("hbase-site");
     Assert.assertTrue(hbaseSiteConf.containsKey("a.port"));
     Assert.assertEquals("10023", hbaseSiteConf.get("a.port"));
@@ -1093,6 +1114,47 @@ public class TestAgentProviderService {
     Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("app_container_id"));
     Assert.assertTrue(cmd.getConfigurations().get("hbase-site").containsKey("defaultA"));
     Assert.assertFalse(cmd.getConfigurations().get("hbase-site").containsKey("defaultB"));
+  }
+
+  @Test
+  public void testParameterParsing() {
+    AgentProviderService aps = new AgentProviderService();
+    AggregateConf aggConf = new AggregateConf();
+    ConfTreeOperations treeOps = aggConf.getAppConfOperations();
+    treeOps.getGlobalOptions().put(AgentKeys.SYSTEM_CONFIGS, "core-site,yarn-site, core-site ");
+    List<String> configs = aps.getSystemConfigurationsRequested(treeOps);
+    Assert.assertEquals(2, configs.size());
+    Assert.assertTrue(configs.contains("core-site"));
+    Assert.assertFalse(configs.contains("bore-site"));
+  }
+
+  @Test
+  public void testDereferenceAllConfig() {
+    AgentProviderService aps = new AgentProviderService();
+    Map<String, Map<String, String>> allConfigs = new HashMap<String, Map<String, String>>();
+    Map<String, String> cfg1 = new HashMap<String, String>();
+    cfg1.put("a1", "${@//site/cfg-2/A1}");
+    cfg1.put("b1", "22");
+    cfg1.put("c1", "33");
+    cfg1.put("d1", "${@//site/cfg1/c1}AA");
+    Map<String, String> cfg2 = new HashMap<String, String>();
+    cfg2.put("A1", "11");
+    cfg2.put("B1", "${@//site/cfg-2/A1},${@//site/cfg-2/A1},AA,${@//site/cfg1/c1}");
+    cfg2.put("C1", "DD${@//site/cfg1/c1}");
+    cfg2.put("D1", "${14}");
+
+    allConfigs.put("cfg1", cfg1);
+    allConfigs.put("cfg-2", cfg2);
+    aps.dereferenceAllConfigs(allConfigs);
+    Assert.assertEquals("11", cfg1.get("a1"));
+    Assert.assertEquals("22", cfg1.get("b1"));
+    Assert.assertEquals("33", cfg1.get("c1"));
+    Assert.assertEquals("33AA", cfg1.get("d1"));
+
+    Assert.assertEquals("11", cfg2.get("A1"));
+    Assert.assertEquals("11,11,AA,33", cfg2.get("B1"));
+    Assert.assertEquals("DD33", cfg2.get("C1"));
+    Assert.assertEquals("${14}", cfg2.get("D1"));
   }
 
 }

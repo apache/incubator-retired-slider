@@ -342,7 +342,7 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     registryArgs.getConf = unknownFilename
     assert SliderExitCodes.EXIT_NOT_FOUND == client.actionRegistry(registryArgs)
 
-    describe "freeze cluster"
+    describe "stop cluster"
     //now kill that cluster
     assert 0 == clusterActionFreeze(client, clustername)
     //list it & See if it is still there

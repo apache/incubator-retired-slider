@@ -37,6 +37,7 @@ import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.ExitUtil;
+import org.apache.hadoop.util.Shell;
 import org.apache.hadoop.util.VersionInfo;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.Container;
@@ -55,7 +56,10 @@ import org.apache.slider.core.exceptions.ErrorStrings;
 import org.apache.slider.core.exceptions.MissingArgException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.ClasspathConstructor;
+import org.apache.slider.core.main.LauncherExitCodes;
+import org.apache.slider.server.services.utility.EndOfServiceWaiter;
 import org.apache.slider.server.services.utility.PatternValidator;
+import org.apache.slider.server.services.workflow.ForkedProcessService;
 import org.apache.zookeeper.server.util.KerberosUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,8 +67,10 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.InetSocketAddress;
@@ -86,6 +92,7 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeSet;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -100,12 +107,25 @@ public final class SliderUtils {
    * turned on (prevents re-entrancy)
    */
   private static final AtomicBoolean processSecurityAlreadyInitialized =
-    new AtomicBoolean(false);
+      new AtomicBoolean(false);
   public static final String JAVA_SECURITY_KRB5_REALM =
       "java.security.krb5.realm";
   public static final String JAVA_SECURITY_KRB5_KDC = "java.security.krb5.kdc";
 
-  
+  /**
+   * Winutils
+   */
+  public static final String WINUTILS = "WINUTILS.EXE";
+  /**
+   * name of openssl program
+   */
+  public static final String OPENSSL = "openssl";
+
+  /**
+   * name of python program
+   */
+  public static final String PYTHON = "python";
+
   private SliderUtils() {
   }
 
@@ -128,7 +148,8 @@ public final class SliderUtils {
    * @param msg the message to be shown in exception
    */
   @SuppressWarnings("ResultOfMethodCallIgnored")
-  private static void validateNumber(String num, String msg)  throws BadConfigException {
+  private static void validateNumber(String num, String msg) throws
+      BadConfigException {
     try {
       Integer.parseInt(num);
     } catch (NumberFormatException nfe) {
@@ -142,15 +163,16 @@ public final class SliderUtils {
    * @param heapsize
    * @return heapsize in MB
    */
-  public static String translateTrailingHeapUnit(String heapsize) throws BadConfigException {
+  public static String translateTrailingHeapUnit(String heapsize) throws
+      BadConfigException {
     String errMsg = "Bad heapsize: ";
     if (heapsize.endsWith("m") || heapsize.endsWith("M")) {
-      String num = heapsize.substring(0, heapsize.length()-1);
+      String num = heapsize.substring(0, heapsize.length() - 1);
       validateNumber(num, errMsg);
       return num;
     }
     if (heapsize.endsWith("g") || heapsize.endsWith("G")) {
-      String num = heapsize.substring(0, heapsize.length()-1)+"000";
+      String num = heapsize.substring(0, heapsize.length() - 1) + "000";
       validateNumber(num, errMsg);
       return num;
     }
@@ -219,7 +241,7 @@ public final class SliderUtils {
     ClassLoader loader = my_class.getClassLoader();
     if (loader == null) {
       throw new IOException(
-        "Class " + my_class + " does not have a classloader!");
+          "Class " + my_class + " does not have a classloader!");
     }
     String class_file = my_class.getName().replaceAll("\\.", "/") + ".class";
     Enumeration<URL> urlEnumeration = loader.getResources(class_file);
@@ -252,16 +274,16 @@ public final class SliderUtils {
   }
 
   public static void checkPort(String hostname, int port, int connectTimeout)
-    throws IOException {
+      throws IOException {
     InetSocketAddress addr = new InetSocketAddress(hostname, port);
     checkPort(hostname, addr, connectTimeout);
   }
 
   @SuppressWarnings("SocketOpenedButNotSafelyClosed")
   public static void checkPort(String name,
-                               InetSocketAddress address,
-                               int connectTimeout)
-    throws IOException {
+      InetSocketAddress address,
+      int connectTimeout)
+      throws IOException {
     Socket socket = null;
     try {
       socket = new Socket();
@@ -271,14 +293,14 @@ public final class SliderUtils {
                             + " at " + address
                             + " after " + connectTimeout + "millisconds"
                             + ": " + e,
-                            e);
+          e);
     } finally {
       IOUtils.closeSocket(socket);
     }
   }
 
   public static void checkURL(String name, String url, int timeout) throws
-                                                                    IOException {
+      IOException {
     InetSocketAddress address = NetUtils.createSocketAddr(url);
     checkPort(name, address, timeout);
   }
@@ -291,22 +313,22 @@ public final class SliderUtils {
    * @return the file
    */
   public static File requiredFile(String filename, String role) throws
-                                                                IOException {
+      IOException {
     if (filename.isEmpty()) {
       throw new ExitUtil.ExitException(-1, role + " file not defined");
     }
     File file = new File(filename);
     if (!file.exists()) {
       throw new ExitUtil.ExitException(-1,
-                                       role + " file not found: " +
-                                       file.getCanonicalPath());
+          role + " file not found: " +
+          file.getCanonicalPath());
     }
     return file;
   }
 
   private static final PatternValidator clusternamePattern
       = new PatternValidator("[a-z][a-z0-9_-]*");
-      
+
   /**
    * Normalize a cluster name then verify that it is valid
    * @param name proposed cluster name
@@ -315,12 +337,13 @@ public final class SliderUtils {
   public static boolean isClusternameValid(String name) {
     return name != null && clusternamePattern.matches(name);
   }
+
   public static boolean oldIsClusternameValid(String name) {
     if (name == null || name.isEmpty()) {
       return false;
     }
     int first = name.charAt(0);
-    if (0 == (Character.getType(first)  & Character.LOWERCASE_LETTER)) {
+    if (0 == (Character.getType(first) & Character.LOWERCASE_LETTER)) {
       return false;
     }
 
@@ -351,11 +374,11 @@ public final class SliderUtils {
    * @return # of files copies
    */
   public static int copyDirectory(Configuration conf,
-                                  Path srcDirPath,
-                                  Path destDirPath,
-                                  FsPermission permission) throws
-                                                           IOException,
-                                                           BadClusterStateException {
+      Path srcDirPath,
+      Path destDirPath,
+      FsPermission permission) throws
+      IOException,
+      BadClusterStateException {
     FileSystem srcFS = FileSystem.get(srcDirPath.toUri(), conf);
     FileSystem destFS = FileSystem.get(destDirPath.toUri(), conf);
     //list all paths in the src.
@@ -363,7 +386,8 @@ public final class SliderUtils {
       throw new FileNotFoundException("Source dir not found " + srcDirPath);
     }
     if (!srcFS.isDirectory(srcDirPath)) {
-      throw new FileNotFoundException("Source dir not a directory " + srcDirPath);
+      throw new FileNotFoundException(
+          "Source dir not a directory " + srcDirPath);
     }
     GlobFilter dotFilter = new GlobFilter("[!.]*");
     FileStatus[] entries = srcFS.listStatus(srcDirPath, dotFilter);
@@ -375,7 +399,8 @@ public final class SliderUtils {
       permission = FsPermission.getDirDefault();
     }
     if (!destFS.exists(destDirPath)) {
-      new SliderFileSystem(destFS, conf).createWithPermissions(destDirPath, permission);
+      new SliderFileSystem(destFS, conf).createWithPermissions(destDirPath,
+          permission);
     }
     Path[] sourcePaths = new Path[srcFileCount];
     for (int i = 0; i < srcFileCount; i++) {
@@ -391,8 +416,8 @@ public final class SliderUtils {
       sourcePaths[i] = srcFile;
     }
     log.debug("Copying {} files from {} to dest {}", srcFileCount,
-              srcDirPath,
-              destDirPath);
+        srcDirPath,
+        destDirPath);
     FileUtil.copy(srcFS, sourcePaths, destFS, destDirPath, false, true, conf);
     return srcFileCount;
   }
@@ -427,7 +452,8 @@ public final class SliderUtils {
 
     //if the fallback option is NOT set, enable it.
     //if it is explicitly set to anything -leave alone
-    if (conf.get(SliderXmlConfKeys.IPC_CLIENT_FALLBACK_TO_SIMPLE_AUTH) == null) {
+    if (conf.get(SliderXmlConfKeys.IPC_CLIENT_FALLBACK_TO_SIMPLE_AUTH) ==
+        null) {
       conf.set(SliderXmlConfKeys.IPC_CLIENT_FALLBACK_TO_SIMPLE_AUTH, "true");
     }
     return conf;
@@ -466,7 +492,9 @@ public final class SliderUtils {
    * @param trailing add a trailing entry or not
    * @return the joined entries
    */
-  public static String join(Collection collection, String separator, boolean trailing) {
+  public static String join(Collection collection,
+      String separator,
+      boolean trailing) {
     StringBuilder b = new StringBuilder();
     // fast return on empty collection
     if (collection.isEmpty()) {
@@ -478,9 +506,9 @@ public final class SliderUtils {
     }
     int length = separator.length();
     String s = b.toString();
-    return (trailing || s.isEmpty())?
+    return (trailing || s.isEmpty()) ?
            s
-           : (b.substring(0, b.length() - length));
+                                     : (b.substring(0, b.length() - length));
   }
 
   /**
@@ -492,9 +520,10 @@ public final class SliderUtils {
    */
   public static String join(String[] collection, String separator) {
     return join(collection, separator, true);
-    
-    
+
+
   }
+
   /**
    * Join an array of strings with a separator that appears after every
    * instance in the list -optionally at the end
@@ -504,7 +533,7 @@ public final class SliderUtils {
    * @return the joined entries
    */
   public static String join(String[] collection, String separator,
-                            boolean trailing) {
+      boolean trailing) {
     return join(Arrays.asList(collection), separator, trailing);
   }
 
@@ -516,7 +545,7 @@ public final class SliderUtils {
    * @return the list
    */
   public static String joinWithInnerSeparator(String separator,
-                                              Object... collection) {
+      Object... collection) {
     StringBuilder b = new StringBuilder();
     boolean first = true;
 
@@ -540,10 +569,15 @@ public final class SliderUtils {
     return v;
   }
 
-  public static String appReportToString(ApplicationReport r, String separator) {
+  public static String appReportToString(ApplicationReport r,
+      String separator) {
     StringBuilder builder = new StringBuilder(512);
-    builder.append("application ").append(
-        r.getName()).append("/").append(r.getApplicationType()).append(separator);
+    builder.append("application ")
+           .append(
+               r.getName())
+           .append("/")
+           .append(r.getApplicationType())
+           .append(separator);
     Set<String> tags = r.getApplicationTags();
     if (!tags.isEmpty()) {
       for (String tag : tags) {
@@ -552,12 +586,20 @@ public final class SliderUtils {
     }
     builder.append("state: ").append(r.getYarnApplicationState());
     builder.append(separator).append("URL: ").append(r.getTrackingUrl());
-    builder.append(separator).append("Started ").append(new Date(r.getStartTime()).toGMTString());
+    builder.append(separator)
+           .append("Started ")
+           .append(new Date(r.getStartTime()).toGMTString());
     long finishTime = r.getFinishTime();
-    if (finishTime>0) {
-      builder.append(separator).append("Finished ").append(new Date(finishTime).toGMTString());
+    if (finishTime > 0) {
+      builder.append(separator)
+             .append("Finished ")
+             .append(new Date(finishTime).toGMTString());
     }
-    builder.append(separator).append("RPC :").append(r.getHost()).append(':').append(r.getRpcPort());
+    builder.append(separator)
+           .append("RPC :")
+           .append(r.getHost())
+           .append(':')
+           .append(r.getRpcPort());
     String diagnostics = r.getDiagnostics();
     if (!diagnostics.isEmpty()) {
       builder.append(separator).append("Diagnostics :").append(diagnostics);
@@ -572,8 +614,8 @@ public final class SliderUtils {
    * @param second the map that is merged in
    * @return the first map
    */
-  public static Map<String, String>  mergeMap(Map<String, String> first,
-           Map<String, String> second) {
+  public static Map<String, String> mergeMap(Map<String, String> first,
+      Map<String, String> second) {
     first.putAll(second);
     return first;
   }
@@ -586,8 +628,8 @@ public final class SliderUtils {
    * @return dest -with the entries merged in
    */
   public static Map<String, String> mergeEntries(Map<String, String> dest,
-                                                 Iterable<Map.Entry<String, String>> entries) {
-    for (Map.Entry<String, String> entry: entries) {
+      Iterable<Map.Entry<String, String>> entries) {
+    for (Map.Entry<String, String> entry : entries) {
       dest.put(entry.getKey(), entry.getValue());
     }
     return dest;
@@ -601,8 +643,8 @@ public final class SliderUtils {
    * @param <T2> value type
    * @return 'first' merged with the second
    */
-  public static <T1, T2> Map<T1, T2>  mergeMaps(Map<T1, T2> first,
-           Map<T1, T2> second) {
+  public static <T1, T2> Map<T1, T2> mergeMaps(Map<T1, T2> first,
+      Map<T1, T2> second) {
     first.putAll(second);
     return first;
   }
@@ -616,7 +658,7 @@ public final class SliderUtils {
    * @return 'first' merged with the second
    */
   public static <T1, T2> Map<T1, T2> mergeMapsIgnoreDuplicateKeys(Map<T1, T2> first,
-                                                                  Map<T1, T2> second) {
+      Map<T1, T2> second) {
     Preconditions.checkArgument(first != null, "Null 'first' value");
     Preconditions.checkArgument(second != null, "Null 'second' value");
     for (Map.Entry<T1, T2> entry : second.entrySet()) {
@@ -634,8 +676,8 @@ public final class SliderUtils {
    * @return a string representation of the map
    */
   public static String stringifyMap(Map<String, String> map) {
-    StringBuilder builder =new StringBuilder();
-    for (Map.Entry<String, String> entry: map.entrySet()) {
+    StringBuilder builder = new StringBuilder();
+    for (Map.Entry<String, String> entry : map.entrySet()) {
       builder.append(entry.getKey())
              .append("=\"")
              .append(entry.getValue())
@@ -656,11 +698,11 @@ public final class SliderUtils {
    * @throws BadConfigException if the value could not be parsed
    */
   public static int getIntValue(Map<String, String> roleMap,
-                         String key,
-                         int defVal,
-                         int min,
-                         int max
-                        ) throws BadConfigException {
+      String key,
+      int defVal,
+      int min,
+      int max
+  ) throws BadConfigException {
     String valS = roleMap.get(key);
     return parseAndValidate(key, valS, defVal, min, max);
 
@@ -676,10 +718,10 @@ public final class SliderUtils {
    * @throws BadConfigException if the value could not be parsed
    */
   public static int parseAndValidate(String errorKey,
-                                     String valS,
-                                     int defVal,
-                                     int min, int max) throws
-                                                       BadConfigException {
+      String valS,
+      int defVal,
+      int min, int max) throws
+      BadConfigException {
     if (valS == null) {
       valS = Integer.toString(defVal);
     }
@@ -706,14 +748,14 @@ public final class SliderUtils {
 
   public static InetSocketAddress getRmAddress(Configuration conf) {
     return conf.getSocketAddr(YarnConfiguration.RM_ADDRESS,
-                              YarnConfiguration.DEFAULT_RM_ADDRESS,
-                              YarnConfiguration.DEFAULT_RM_PORT);
+        YarnConfiguration.DEFAULT_RM_ADDRESS,
+        YarnConfiguration.DEFAULT_RM_PORT);
   }
 
   public static InetSocketAddress getRmSchedulerAddress(Configuration conf) {
     return conf.getSocketAddr(YarnConfiguration.RM_SCHEDULER_ADDRESS,
-                              YarnConfiguration.DEFAULT_RM_SCHEDULER_ADDRESS,
-                              YarnConfiguration.DEFAULT_RM_SCHEDULER_PORT);
+        YarnConfiguration.DEFAULT_RM_SCHEDULER_ADDRESS,
+        YarnConfiguration.DEFAULT_RM_SCHEDULER_PORT);
   }
 
   /**
@@ -756,11 +798,11 @@ public final class SliderUtils {
       return "null container";
     }
     return String.format(Locale.ENGLISH,
-                         "ContainerID=%s nodeID=%s http=%s priority=%s",
-                         container.getId(),
-                         container.getNodeId(),
-                         container.getNodeHttpAddress(),
-                         container.getPriority());
+        "ContainerID=%s nodeID=%s http=%s priority=%s",
+        container.getId(),
+        container.getNodeId(),
+        container.getNodeHttpAddress(),
+        container.getPriority());
   }
 
   /**
@@ -841,12 +883,12 @@ public final class SliderUtils {
   public static Map<String, String> buildEnvMap(Map<String, String> roleOpts) {
     Map<String, String> env = new HashMap<String, String>();
     if (roleOpts != null) {
-      for (Map.Entry<String, String> entry: roleOpts.entrySet()) {
+      for (Map.Entry<String, String> entry : roleOpts.entrySet()) {
         String key = entry.getKey();
         if (key.startsWith(RoleKeys.ENV_PREFIX)) {
           String envName = key.substring(RoleKeys.ENV_PREFIX.length());
           if (!envName.isEmpty()) {
-            env.put(envName,entry.getValue());
+            env.put(envName, entry.getValue());
           }
         }
       }
@@ -860,8 +902,8 @@ public final class SliderUtils {
    * @param commandOptions command opts
    */
   public static void applyCommandLineRoleOptsToRoleMap(Map<String, Map<String, String>> clusterRoleMap,
-                                                       Map<String, Map<String, String>> commandOptions) {
-    for (Map.Entry<String, Map<String, String>> entry: commandOptions.entrySet()) {
+      Map<String, Map<String, String>> commandOptions) {
+    for (Map.Entry<String, Map<String, String>> entry : commandOptions.entrySet()) {
       String key = entry.getKey();
       Map<String, String> optionMap = entry.getValue();
       Map<String, String> existingMap = clusterRoleMap.get(key);
@@ -869,7 +911,7 @@ public final class SliderUtils {
         existingMap = new HashMap<String, String>();
       }
       log.debug("Overwriting role options with command line values {}",
-                stringifyMap(optionMap));
+          stringifyMap(optionMap));
       mergeMap(existingMap, optionMap);
       //set or overwrite the role
       clusterRoleMap.put(key, existingMap);
@@ -882,10 +924,10 @@ public final class SliderUtils {
    * @throws BadCommandArgumentsException if it is invalid
    */
   public static void validateClusterName(String clustername) throws
-                                                         BadCommandArgumentsException {
+      BadCommandArgumentsException {
     if (!isClusternameValid(clustername)) {
       throw new BadCommandArgumentsException(
-        "Illegal cluster name: " + clustername);
+          "Illegal cluster name: " + clustername);
     }
   }
 
@@ -897,12 +939,12 @@ public final class SliderUtils {
    * @throws BadConfigException if the key is not set
    */
   public static void verifyPrincipalSet(Configuration conf,
-                                        String principal) throws
-                                                           BadConfigException {
+      String principal) throws
+      BadConfigException {
     String principalName = conf.get(principal);
     if (principalName == null) {
       throw new BadConfigException("Unset Kerberos principal : %s",
-                                   principal);
+          principal);
     }
     log.debug("Kerberos princial {}={}", principal, principalName);
   }
@@ -925,8 +967,8 @@ public final class SliderUtils {
    * @throws BadConfigException the configuration/process is invalid
    */
   public static boolean maybeInitSecurity(Configuration conf) throws
-                                                              IOException,
-                                                              BadConfigException {
+      IOException,
+      BadConfigException {
     boolean clusterSecure = isHadoopClusterSecure(conf);
     if (clusterSecure) {
       log.debug("Enabling security");
@@ -943,8 +985,8 @@ public final class SliderUtils {
    * @throws BadConfigException the configuration and system state are inconsistent
    */
   public static boolean initProcessSecurity(Configuration conf) throws
-                                                                IOException,
-                                                                BadConfigException {
+      IOException,
+      BadConfigException {
 
     if (processSecurityAlreadyInitialized.compareAndSet(true, true)) {
       //security is already inited
@@ -956,9 +998,9 @@ public final class SliderUtils {
     //this gets UGI to reset its previous world view (i.e simple auth)
     //security
     log.debug("java.security.krb5.realm={}",
-              System.getProperty(JAVA_SECURITY_KRB5_REALM, ""));
+        System.getProperty(JAVA_SECURITY_KRB5_REALM, ""));
     log.debug("java.security.krb5.kdc={}",
-              System.getProperty(JAVA_SECURITY_KRB5_KDC, ""));
+        System.getProperty(JAVA_SECURITY_KRB5_KDC, ""));
     log.debug("hadoop.security.authentication={}",
         conf.get(CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHENTICATION));
     log.debug("hadoop.security.authorization={}",
@@ -971,20 +1013,20 @@ public final class SliderUtils {
     log.debug("Login user is {}", UserGroupInformation.getLoginUser());
     if (!UserGroupInformation.isSecurityEnabled()) {
       throw new BadConfigException("Although secure mode is enabled," +
-               "the application has already set up its user as an insecure entity %s",
-               authUser);
+                                   "the application has already set up its user as an insecure entity %s",
+          authUser);
     }
     if (authUser.getAuthenticationMethod() ==
         UserGroupInformation.AuthenticationMethod.SIMPLE) {
       throw new BadConfigException("Auth User is not Kerberized %s" +
-       " -security has already been set up with the wrong authentication method",
-                       authUser);
+                                   " -security has already been set up with the wrong authentication method",
+          authUser);
 
     }
 
     SliderUtils.verifyPrincipalSet(conf, YarnConfiguration.RM_PRINCIPAL);
     SliderUtils.verifyPrincipalSet(conf,
-        DFSConfigKeys.DFS_NAMENODE_USER_NAME_KEY);
+        DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY);
     return true;
   }
 
@@ -1014,24 +1056,25 @@ public final class SliderUtils {
    * @throws IOException trouble copying to HDFS
    */
   public static LocalResource putJar(Map<String, LocalResource> providerResources,
-                              SliderFileSystem sliderFileSystem,
-                              Class clazz,
-                              Path tempPath,
-                              String libdir,
-                              String jarName
-                             )
-    throws IOException, SliderException {
+      SliderFileSystem sliderFileSystem,
+      Class clazz,
+      Path tempPath,
+      String libdir,
+      String jarName
+  )
+      throws IOException, SliderException {
     LocalResource res = sliderFileSystem.submitJarWithClass(
-            clazz,
-            tempPath,
-            libdir,
-            jarName);
-    providerResources.put(libdir + "/"+ jarName, res);
+        clazz,
+        tempPath,
+        libdir,
+        jarName);
+    providerResources.put(libdir + "/" + jarName, res);
     return res;
   }
 
-    public static Map<String, Map<String, String>> deepClone(Map<String, Map<String, String>> src) {
-    Map<String, Map<String, String>> dest = new HashMap<String, Map<String, String>>();
+  public static Map<String, Map<String, String>> deepClone(Map<String, Map<String, String>> src) {
+    Map<String, Map<String, String>> dest =
+        new HashMap<String, Map<String, String>>();
     for (Map.Entry<String, Map<String, String>> entry : src.entrySet()) {
       dest.put(entry.getKey(), stringMapClone(entry.getValue()));
     }
@@ -1039,7 +1082,7 @@ public final class SliderUtils {
   }
 
   public static Map<String, String> stringMapClone(Map<String, String> src) {
-    Map<String, String> dest =  new HashMap<String, String>();
+    Map<String, String> dest = new HashMap<String, String>();
     return mergeEntries(dest, src.entrySet());
   }
 
@@ -1143,12 +1186,12 @@ public final class SliderUtils {
    * @return a classpath
    */
   public static ClasspathConstructor buildClasspath(String sliderConfDir,
-                                                    String libdir,
-                                                    Configuration config,
-                                                    boolean usingMiniMRCluster) {
+      String libdir,
+      Configuration config,
+      boolean usingMiniMRCluster) {
 
     ClasspathConstructor classpath = new ClasspathConstructor();
-    
+
     // add the runtime classpath needed for tests to work
     if (usingMiniMRCluster) {
       // for mini cluster we pass down the java CP properties
@@ -1172,17 +1215,18 @@ public final class SliderUtils {
    * @param errorlog log for output on an error
    * @throws FileNotFoundException if it is not a directory
    */
-  public static void verifyIsDir(File dir, Logger errorlog) throws FileNotFoundException {
+  public static void verifyIsDir(File dir, Logger errorlog) throws
+      FileNotFoundException {
     if (!dir.exists()) {
       errorlog.warn("contents of {}: {}", dir,
-                    listDir(dir.getParentFile()));
+          listDir(dir.getParentFile()));
       throw new FileNotFoundException(dir.toString());
     }
     if (!dir.isDirectory()) {
       errorlog.info("contents of {}: {}", dir,
-                    listDir(dir.getParentFile()));
+          listDir(dir.getParentFile()));
       throw new FileNotFoundException(
-        "Not a directory: " + dir);
+          "Not a directory: " + dir);
     }
   }
 
@@ -1192,10 +1236,11 @@ public final class SliderUtils {
    * @param errorlog log for output on an error
    * @throws FileNotFoundException
    */
-  public static void verifyFileExists(File file, Logger errorlog) throws FileNotFoundException {
+  public static void verifyFileExists(File file, Logger errorlog) throws
+      FileNotFoundException {
     if (!file.exists()) {
       errorlog.warn("contents of {}: {}", file,
-                    listDir(file.getParentFile()));
+          listDir(file.getParentFile()));
       throw new FileNotFoundException(file.toString());
     }
     if (!file.isFile()) {
@@ -1211,15 +1256,15 @@ public final class SliderUtils {
    * @throws BadConfigException if the key is missing
    */
   public static String verifyOptionSet(Configuration configuration, String key,
-                                       boolean allowEmpty) throws BadConfigException {
+      boolean allowEmpty) throws BadConfigException {
     String val = configuration.get(key);
     if (val == null) {
       throw new BadConfigException(
-        "Required configuration option \"%s\" not defined ", key);
+          "Required configuration option \"%s\" not defined ", key);
     }
     if (!allowEmpty && val.isEmpty()) {
       throw new BadConfigException(
-        "Configuration option \"%s\" must not be empty", key);
+          "Configuration option \"%s\" must not be empty", key);
     }
     return val;
   }
@@ -1232,24 +1277,25 @@ public final class SliderUtils {
    * @return the file referenced
    * @throws BadConfigException on a failure
    */
-  public static File verifyKeytabExists(Configuration siteConf, String prop) throws
-                                                                      BadConfigException {
+  public static File verifyKeytabExists(Configuration siteConf,
+      String prop) throws
+      BadConfigException {
     String keytab = siteConf.get(prop);
     if (keytab == null) {
       throw new BadConfigException("Missing keytab property %s",
-                                   prop);
+          prop);
 
     }
     File keytabFile = new File(keytab);
     if (!keytabFile.exists()) {
       throw new BadConfigException("Missing keytab file %s defined in %s",
-                                   keytabFile,
-                                   prop);
+          keytabFile,
+          prop);
     }
     if (keytabFile.length() == 0 || !keytabFile.isFile()) {
       throw new BadConfigException("Invalid keytab file %s defined in %s",
-                                   keytabFile,
-                                   prop);
+          keytabFile,
+          prop);
     }
     return keytabFile;
   }
@@ -1275,12 +1321,12 @@ public final class SliderUtils {
 
     Properties props = SliderVersionInfo.loadVersionProperties();
     info.put(prefix + "." + SliderVersionInfo.APP_BUILD_INFO, props.getProperty(
-      SliderVersionInfo.APP_BUILD_INFO));
+        SliderVersionInfo.APP_BUILD_INFO));
     info.put(prefix + "." + SliderVersionInfo.HADOOP_BUILD_INFO,
-             props.getProperty(SliderVersionInfo.HADOOP_BUILD_INFO));
+        props.getProperty(SliderVersionInfo.HADOOP_BUILD_INFO));
 
     info.put(prefix + "." + SliderVersionInfo.HADOOP_DEPLOYED_INFO,
-             VersionInfo.getBranch() + " @" + VersionInfo.getSrcChecksum());
+        VersionInfo.getBranch() + " @" + VersionInfo.getSrcChecksum());
   }
 
   /**
@@ -1292,30 +1338,33 @@ public final class SliderUtils {
    * @param time timestamp
    */
   public static void setInfoTime(Map info,
-                                 String keyHumanTime,
-                          String keyMachineTime,
-                          long time) {
+      String keyHumanTime,
+      String keyMachineTime,
+      long time) {
     info.put(keyHumanTime, SliderUtils.toGMTString(time));
     info.put(keyMachineTime, Long.toString(time));
   }
 
-  public static Path extractImagePath(CoreFileSystem fs,  MapOperations internalOptions) throws
+  public static Path extractImagePath(CoreFileSystem fs,
+      MapOperations internalOptions) throws
       SliderException, IOException {
     Path imagePath;
     String imagePathOption =
         internalOptions.get(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH);
-    String appHomeOption = internalOptions.get(InternalKeys.INTERNAL_APPLICATION_HOME);
+    String appHomeOption =
+        internalOptions.get(InternalKeys.INTERNAL_APPLICATION_HOME);
     if (!isUnset(imagePathOption)) {
       imagePath = fs.createPathThatMustExist(imagePathOption);
     } else {
       imagePath = null;
       if (isUnset(appHomeOption)) {
-        throw new BadClusterStateException(ErrorStrings.E_NO_IMAGE_OR_HOME_DIR_SPECIFIED);
+        throw new BadClusterStateException(
+            ErrorStrings.E_NO_IMAGE_OR_HOME_DIR_SPECIFIED);
       }
     }
     return imagePath;
   }
-  
+
   /**
    * trigger a  JVM halt with no clean shutdown at all
    * @param status status code for exit
@@ -1370,7 +1419,7 @@ public final class SliderUtils {
    * @param paths subpaths
    * @return base+"/"+paths[0]+"/"+paths[1]...
    */
-  public static String appendToURL(String base, String...paths) {
+  public static String appendToURL(String base, String... paths) {
     String result = base;
     for (String path : paths) {
       result = appendToURL(result, path);
@@ -1387,19 +1436,19 @@ public final class SliderUtils {
    * @return
    */
   public static String truncate(String toTruncate, int maxSize) {
-    if(toTruncate == null || maxSize < 1
-       || toTruncate.length() <= maxSize) {
+    if (toTruncate == null || maxSize < 1
+        || toTruncate.length() <= maxSize) {
       return toTruncate;
     }
 
     String pad = "...";
-    if(maxSize < 10) {
+    if (maxSize < 10) {
       pad = "";
     }
     return toTruncate.substring(0, maxSize - pad.length()).concat(pad);
   }
-  
-  
+
+
   /**
    * Callable for async/scheduled halt
    */
@@ -1433,11 +1482,15 @@ public final class SliderUtils {
    */
   public static int compareTo(long left, long right) {
     long diff = left - right;
-    if (diff < 0) return -1;
-    if (diff > 0) return 1;
+    if (diff < 0) {
+      return -1;
+    }
+    if (diff > 0) {
+      return 1;
+    }
     return 0;
   }
-  
+
   /**
    * This wrapps ApplicationReports and generates a string version
    * iff the toString() operator is invoked
@@ -1456,8 +1509,8 @@ public final class SliderUtils {
   }
 
   public static InputStream getApplicationResourceInputStream(FileSystem fs,
-                                                              Path appPath,
-                                                              String entry)
+      Path appPath,
+      String entry)
       throws IOException {
     InputStream is = null;
     FSDataInputStream appStream = null;
@@ -1470,7 +1523,8 @@ public final class SliderUtils {
         if (entry.equals(zipEntry.getName())) {
           int size = (int) zipEntry.getSize();
           if (size != -1) {
-            log.info("Reading {} of size {}", zipEntry.getName(), zipEntry.getSize());
+            log.info("Reading {} of size {}", zipEntry.getName(),
+                zipEntry.getSize());
             byte[] content = new byte[size];
             int offset = 0;
             while (offset < size) {
@@ -1499,4 +1553,225 @@ public final class SliderUtils {
     return is;
   }
 
+
+  /**
+   * Strictly verify that windows utils is present.
+   * Checks go as far as opening the file and looking for
+   * the headers. 
+   * @throws IOException on any problem reading the file
+   * @throws FileNotFoundException if the file is not considered valid
+   * @param logger
+   */
+  public static void maybeVerifyWinUtilsValid(Logger logger) throws IOException, SliderException {
+    if (!Shell.WINDOWS) {
+      return;
+    }
+    String exePath = Shell.getWinUtilsPath();
+    String program = WINUTILS;
+    if (exePath == null) {
+      throw new FileNotFoundException(program + " not found on Path : " +
+                                      System.getenv("Path"));
+    }
+    File exe = new File(exePath);
+
+    verifyWindowsExe(program, exe);
+    execCommand(WINUTILS, 0, 5000, log, null, exePath, "systeminfo");
+
+  }
+
+  protected static void verifyIsFile(String program, File exe) throws
+      FileNotFoundException {
+    if (!exe.isFile()) {
+      throw new FileNotFoundException(program
+                                      + " at " + exe
+                                      + " is not a file");
+
+    }
+  }
+
+  protected static void verifyFileSize(String program,
+      File exe,
+      int minFileSize) throws FileNotFoundException {
+    if (exe.length() < minFileSize) {
+      throw new FileNotFoundException(program
+                                      + " at " + exe
+                                      + " is too short to be an executable");
+    }
+  }
+
+  /**
+   * Look for the windows executable and check it has the right headers.
+   * <code>File.canRead()</code> doesn't work on windows, so the reading
+   * is mandatory.
+   * 
+   * @param program program name for errors
+   * @param exe executable
+   * @throws IOException IOE
+   */
+  public static void verifyWindowsExe(String program, File exe) 
+      throws IOException {
+    verifyIsFile(program, exe);
+
+    verifyFileSize(program, exe, 0x100);
+
+    // now read two bytes and verify the header.
+    
+    FileReader reader = null;
+    try {
+      int[] header = new int[2];
+      reader = new FileReader(exe);
+      header[0] = reader.read();
+      header[1] = reader.read();
+      if ((header[0] != 'M' || header[1] != 'Z')) {
+        throw new FileNotFoundException(program
+                                        + " at " + exe
+                                        + " is not a windows executable file");
+      }
+    } finally {
+      IOUtils.closeStream(reader);
+    }
+  }
+
+  /**
+   * Verify that a Unix exe works
+   * @param program program name for errors
+   * @param exe executable
+   * @throws IOException IOE
+
+   */
+  public static void verifyUnixExe(String program, File exe)
+      throws IOException {
+    verifyIsFile(program, exe);
+
+    // read flag
+    if (!exe.canRead()) {
+      throw new IOException("Cannot read " + program + " at " + exe);
+    }
+    // exe flag
+    if (!exe.canExecute()) {
+      throw new IOException("Cannot execute " + program + " at " + exe);
+    }
+  }
+
+  /**
+   * Validate an executable
+   * @param program
+   * @param exe
+   * @throws IOException
+   */
+  public static void validateExe(String program, File exe) throws IOException {
+    if (!Shell.WINDOWS) {
+      verifyWindowsExe(program, exe);
+    } else {
+      verifyUnixExe(program, exe);
+    }
+  }
+
+
+  /**
+   * Execute a command for a test operation
+   * @param name name in error
+   * @param status status code expected
+   * @param timeoutMillis timeout in millis for process to finish
+   * @param logger
+   *@param outputString optional string to grep for (must not span a line)
+   * @param commands commands   @return the process
+   * @throws IOException on any failure.
+   */
+  public static ForkedProcessService execCommand(String name,
+      int status,
+      long timeoutMillis,
+      Logger logger,
+      String outputString,
+      String... commands) throws IOException, SliderException {
+    Preconditions.checkArgument(isSet(name), "no name");
+    Preconditions.checkArgument(commands.length > 0, "no commands");
+    Preconditions.checkArgument(isSet(commands[0]), "empty command");
+
+    ForkedProcessService process;
+
+
+    process = new ForkedProcessService(
+        name,
+        new HashMap<String, String>(),
+        Arrays.asList(commands));
+    process.setProcessLog(logger);
+    process.init(new Configuration());
+    String errorText = null;
+    EndOfServiceWaiter waiter = new EndOfServiceWaiter(process);
+    process.start();
+    try {
+      waiter.waitForServiceToStop(timeoutMillis);
+      int exitCode = process.getExitCode();
+      List<String> recentOutput = process.getRecentOutput();
+      if (status != exitCode) {
+        // error condition
+        errorText = "Expected exit code={" + status + "}, "
+                    + "actual exit code={" + exitCode + "}";
+      } else {
+        if (isSet(outputString)) {
+          boolean found = false;
+          for (String line : recentOutput) {
+            if (line.contains(outputString)) {
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            errorText = "Did not find \"" + outputString + "\""
+                        + " in output";
+          }
+        }
+      }
+      if (errorText== null) {
+        return process;
+      }
+
+    } catch (InterruptedException e) {
+      throw new InterruptedIOException(e.toString());
+    } catch (TimeoutException e) {
+      log.debug("");
+      errorText = e.toString();
+    }
+    // error text: non null ==> operation failed
+    log.warn(errorText);
+    List<String> recentOutput = process.getRecentOutput();
+    for (String line : recentOutput) {
+      log.info(line);
+    }
+    throw new SliderException(LauncherExitCodes.EXIT_OTHER_FAILURE,
+        "Process %s failed: %s", name, errorText);
+
+  }
+
+
+  /**
+   * Validate the slider client-side execution environment.
+   * This looks for everything felt to be critical for execution, including
+   * native binaries and other essential dependencies.
+   * @param logger logger to log to on normal execution
+   * @throws IOException on IO failures
+   * @throws SliderException on validation failures
+   */
+  public static void validateSliderClientEnvironment(Logger logger) throws
+      IOException,
+      SliderException {
+    maybeVerifyWinUtilsValid(logger);
+  }
+
+  /**
+   * Validate the slider server-side execution environment.
+   * This looks for everything felt to be critical for execution, including
+   * native binaries and other essential dependencies.
+   * @param logger logger to log to on normal execution
+   * @throws IOException on IO failures
+   * @throws SliderException on validation failures
+   */
+  public static void validateSliderServerEnvironment(Logger logger) throws
+      IOException,
+      SliderException {
+    maybeVerifyWinUtilsValid(logger);
+    execCommand(OPENSSL, 0, 5000, logger, "OpenSSL", OPENSSL, "version");
+    execCommand(PYTHON, 0, 5000, logger, "Python", PYTHON, "--version");
+  }
 }

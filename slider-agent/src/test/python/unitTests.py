@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-'''
+"""
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
 distributed with this work for additional information
@@ -16,14 +16,13 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-'''
+"""
 
 import unittest
-import doctest
-from os.path import dirname, split, isdir
-import logging.handlers
+from os.path import isdir
 import logging
-from random import shuffle
+import os
+import sys
 
 LOG_FILE_NAME='tests.log'
 SELECTED_PREFIX = "_"
@@ -31,9 +30,9 @@ PY_EXT='.py'
 ignoredDirs = ["mock"]
 
 class TestAgent(unittest.TestSuite):
-  def run(self, result):
+  def run(self, result, debug=False):
     run = unittest.TestSuite.run
-    run(self, result)
+    run(self, result, debug)
     return result
 
 
@@ -41,19 +40,19 @@ def parent_dir(path):
   if isdir(path):
     if path.endswith(os.sep):
       path = os.path.dirname(path)
-    parent_dir = os.path.dirname(path)
+    parent = os.path.dirname(path)
   else:
-    parent_dir = os.path.dirname(os.path.dirname(path))
+    parent = os.path.dirname(os.path.dirname(path))
 
-  return parent_dir
+  return parent
 
 
 def all_tests_suite():
-  src_dir = os.getcwd()
+  root_dir = os.getcwd()
   files_list = []
-  for directory in os.listdir(src_dir):
+  for directory in os.listdir(root_dir):
     if os.path.isdir(directory) and not directory in ignoredDirs:
-      files_list += os.listdir(src_dir + os.sep + directory)
+      files_list += os.listdir(root_dir + os.sep + directory)
   ## temporarily deleting to add more predictability
   ## shuffle(files_list)
   files_list.sort()
@@ -71,8 +70,9 @@ def all_tests_suite():
   else:
     for file_name in files_list:
       if file_name.endswith(PY_EXT) and not file_name == __file__:
-        logger.info(file_name)
-        tests_list.append(file_name.replace(PY_EXT, ''))
+        replaced = file_name.replace(PY_EXT, '')
+        logger.info(replaced)
+        tests_list.append(replaced)
   logger.info('------------------------------------------------------------------------')
 
   suite = unittest.TestLoader().loadTestsFromNames(tests_list)
@@ -99,9 +99,7 @@ def main():
     logger.info('------------------------------------------------------------------------')
 
 if __name__ == '__main__':
-  import os
-  import sys
-  import io
+
   sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
   sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) + os.sep + 'main' + os.sep + 'python')
   sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) + os.sep + 'main' + os.sep + 'python' + os.sep + 'agent')

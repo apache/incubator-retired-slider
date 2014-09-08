@@ -58,7 +58,7 @@ class TestStandaloneAMKill extends AgentMiniClusterTestBase {
     describe("listing Java processes")
     lsJavaProcesses();
     describe("killing AM")
-    killAM(SIGTERM);
+    assert 0 == killAM(SIGTERM);
     waitWhileClusterLive(sliderClient);
     //give yarn some time to notice
     sleep(10000)

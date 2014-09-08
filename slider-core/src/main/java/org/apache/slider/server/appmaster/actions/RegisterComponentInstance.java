@@ -25,6 +25,11 @@ import org.apache.slider.server.appmaster.state.AppState;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Notify the app master that it should register a component instance
+ * in the registry
+ * {@link SliderAppMaster#registerComponent(ContainerId)}
+ */
 public class RegisterComponentInstance extends AsyncAction {
   
 

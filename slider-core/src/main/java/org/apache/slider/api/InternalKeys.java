@@ -75,6 +75,17 @@ public interface InternalKeys {
    */
   int DEFAULT_INTERNAL_CONTAINER_STARTUP_DELAY = 5000;
   /**
+   * Time in seconds before a container is considered long-lived.
+   * Shortlived containers are interpreted as a problem with the role
+   * and/or the host: {@value}
+   */
+  String INTERNAL_CONTAINER_FAILURE_SHORTLIFE =
+      "internal.container.failure.shortlife";
+  /**
+   * Default short life threshold: {@value}
+   */
+  int DEFAULT_INTERNAL_CONTAINER_FAILURE_SHORTLIFE = 60;
+  /**
    * Version of the app: {@value}
    */
   String KEYTAB_LOCATION = "internal.keytab.location";

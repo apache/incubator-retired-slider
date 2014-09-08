@@ -22,6 +22,8 @@
 # The env variable SLIDER_JVM_OPTS can be used to override
 # the default JVM opts
 
+export JAVA_HOME=${JAVA_HOME}
+
 function usage
 {
   echo "Usage: slider <action> <arguments>"

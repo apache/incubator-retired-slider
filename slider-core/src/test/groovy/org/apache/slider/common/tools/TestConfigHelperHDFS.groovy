@@ -18,6 +18,7 @@
 
 package org.apache.slider.common.tools
 
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem as HadoopFS
@@ -27,6 +28,8 @@ import org.apache.slider.test.YarnMiniClusterTestBase
 import org.junit.Test
 
 @Slf4j
+@CompileStatic
+
 class TestConfigHelperHDFS extends YarnMiniClusterTestBase {
 
   //diabled for now; 

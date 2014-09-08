@@ -11,20 +11,16 @@
       "yarn.role.priority": "1",
       "yarn.component.instances": "1"
     },
-    "STORM_REST_API": {
+    "STORM_UI_SERVER": {
       "yarn.role.priority": "2",
       "yarn.component.instances": "0"
     },
-    "STORM_UI_SERVER": {
+    "DRPC_SERVER": {
       "yarn.role.priority": "3",
       "yarn.component.instances": "1"
     },
-    "DRPC_SERVER": {
-      "yarn.role.priority": "4",
-      "yarn.component.instances": "1"
-    },
     "SUPERVISOR": {
-      "yarn.role.priority": "5",
+      "yarn.role.priority": "4",
       "yarn.component.instances": "1"
     }
   }

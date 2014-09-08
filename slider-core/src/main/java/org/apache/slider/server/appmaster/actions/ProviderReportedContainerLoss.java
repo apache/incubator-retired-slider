@@ -22,6 +22,8 @@ import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.slider.server.appmaster.SliderAppMaster;
 import org.apache.slider.server.appmaster.state.AppState;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Report container loss to the AM
  * {@link SliderAppMaster#providerLostContainer(ContainerId)}
@@ -31,13 +33,14 @@ public class ProviderReportedContainerLoss extends AsyncAction {
   private final ContainerId containerId;
   
   public ProviderReportedContainerLoss(ContainerId containerId) {
-    super("lost container " + containerId);
-    this.containerId = containerId;
+    this("lost container", 0, TimeUnit.MILLISECONDS, containerId);
   }
 
-  public ProviderReportedContainerLoss(
-      ContainerId containerId, long delayMillis) {
-    super("lost container " + containerId, delayMillis);
+  public ProviderReportedContainerLoss(String name,
+      long delay,
+      TimeUnit timeUnit,
+      ContainerId containerId) {
+    super(name, delay, timeUnit);
     this.containerId = containerId;
   }
 

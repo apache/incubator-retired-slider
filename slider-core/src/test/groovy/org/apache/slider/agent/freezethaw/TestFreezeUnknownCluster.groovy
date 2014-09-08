@@ -42,7 +42,7 @@ class TestFreezeUnknownCluster extends AgentMiniClusterTestBase {
     YarnConfiguration conf = configuration
     String clustername = createMiniCluster("", conf, 1, true)
 
-    describe "try to freeze a cluster that isn't defined"
+    describe "try to stop a cluster that isn't defined"
 
     try {
       ServiceLauncher<SliderClient>  command = execSliderCommand(conf,

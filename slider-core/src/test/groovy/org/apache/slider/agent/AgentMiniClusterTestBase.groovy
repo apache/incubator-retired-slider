@@ -27,6 +27,7 @@ import org.apache.commons.io.FileUtils
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderXMLConfKeysForTesting
 import org.apache.slider.common.params.Arguments
+import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.providers.agent.AgentKeys
 import org.apache.slider.test.YarnZKMiniClusterTestBase
@@ -47,6 +48,14 @@ extends YarnZKMiniClusterTestBase {
   protected static Map<String, String> agentDefOptions
   private static TemporaryFolder tempFolder = new TemporaryFolder();
 
+  /**
+   * Server side test: validate system env before launch
+   */
+  @BeforeClass
+  public static void checkSystem() {
+    SliderUtils.validateSliderServerEnvironment(null)
+  }
+  
   @BeforeClass
   public static void createSubConfFiles() {
 
