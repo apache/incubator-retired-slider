@@ -628,7 +628,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     if (sliderFileSystem.getFileSystem().exists(fileInFs) && !installPkgInfo.replacePkg) {
       throw new BadCommandArgumentsException("Pkg exists at " +
                                              fileInFs.toUri().toString() +
-                                             ". Use --replacePkg true to overwrite.");
+                                             ". Use --replacePkg to overwrite.");
     }
 
     sliderFileSystem.getFileSystem().copyFromLocalFile(false, installPkgInfo.replacePkg, srcFile, fileInFs);

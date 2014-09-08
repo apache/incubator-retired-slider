@@ -103,7 +103,7 @@ class TestActionInstallPackage extends AgentMiniClusterTestBase {
       )
       fail("expected an exception, got a status code " + launcher.serviceExitCode)
     } catch (BadCommandArgumentsException e) {
-      assert e.message.contains("Use --replacePkg true to overwrite")
+      assert e.message.contains("Use --replacePkg to overwrite")
     }
   }
 
@@ -147,12 +147,11 @@ class TestActionInstallPackage extends AgentMiniClusterTestBase {
               SliderActions.ACTION_INSTALL_PACKAGE,
               Arguments.ARG_NAME, "hbase",
               Arguments.ARG_PACKAGE, "src/test/resources/log4j.properties",
-              Arguments.ARG_REPLACE_PKG, true
+              Arguments.ARG_REPLACE_PKG
           ],
       )
     } catch (BadCommandArgumentsException e) {
       log.info(e.message)
-      assert e.message.contains("Use --replacePkg true to overwrite")
     }
   }
 }
