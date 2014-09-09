@@ -840,8 +840,9 @@ public class AgentProviderService extends AbstractProviderService implements
    */
   protected void publishLogFolderPaths(
       Map<String, String> folders, String containerId, String roleName, String hostFqdn) {
-    for (String key : folders.keySet()) {
-      workFolders.put(String.format("%s->%s->%s->%s", roleName, hostFqdn, key, containerId), folders.get(key));
+    for (Map.Entry<String, String> entry: folders.entrySet()) {
+      workFolders.put(String.format("%s->%s->%s->%s", roleName, hostFqdn, entry.getKey(), containerId), 
+        entry.getValue());
     }
 
     publishApplicationInstanceData(LOG_FOLDERS_TAG, LOG_FOLDERS_TAG,
@@ -1392,8 +1393,9 @@ public class AgentProviderService extends AbstractProviderService implements
 
     for (String configType : configurations.keySet()) {
       Map<String, String> configBucket = configurations.get(configType);
-      for (String configName : configBucket.keySet()) {
-        String configValue = configBucket.get(configName);
+      for (Map.Entry<String, String> entry: configBucket.entrySet()) {
+        String configName = entry.getKey();
+        String configValue = entry.getValue();
         for (String lookUpKey : allConfigs.keySet()) {
           if (configValue != null && configValue.contains(lookUpKey)) {
             configValue = configValue.replace(lookUpKey, allConfigs.get(lookUpKey));

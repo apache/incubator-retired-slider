@@ -215,6 +215,7 @@ public class FsDelegationTokenManager {
           throw new IOException("addDelegationTokens returned no tokens");
         }
         token = findMatchingToken(service, tokens);
+        if (token == null) throw new IOException("Can't get new delegation token ");
         currentUser.addToken(token.getService(), token);
 
         log.info("Expired HDFS delegation token replaced and added as credential to current user");
