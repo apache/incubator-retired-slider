@@ -109,6 +109,12 @@
 
           <trimStackTrace>false</trimStackTrace>
           <redirectTestOutputToFile>${build.redirect.test.output.to.file}</redirectTestOutputToFile>
+          <systemProperties>
+            <property>
+              <name>slider.bin.dir</name>
+              <value>../slider-assembly/target/slider-${project.version}-all/slider-${project.version}</value>
+            </property>
+          </systemProperties>
           <systemPropertyVariables>
             <java.net.preferIPv4Stack>true</java.net.preferIPv4Stack>
             <java.awt.headless>true</java.awt.headless>
