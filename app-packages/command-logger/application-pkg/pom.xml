@@ -54,20 +54,8 @@
         </executions>
       </plugin>
 
-      <plugin>
-        <groupId>org.apache.rat</groupId>
-        <artifactId>apache-rat-plugin</artifactId>
-        <version>${apache-rat-plugin.version}</version>
-        <executions>
-          <execution>
-            <id>check-licenses</id>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
     </plugins>
+    
     <extensions>
       <extension>
         <groupId>org.apache.maven.wagon</groupId>
@@ -75,4 +63,28 @@
       </extension>
     </extensions>
   </build>
+
+  <profiles>
+    <profile>
+      <id>rat</id>
+      <build>
+        <plugins>
+
+          <plugin>
+            <groupId>org.apache.rat</groupId>
+            <artifactId>apache-rat-plugin</artifactId>
+            <version>${apache-rat-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>check-licenses</id>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>
