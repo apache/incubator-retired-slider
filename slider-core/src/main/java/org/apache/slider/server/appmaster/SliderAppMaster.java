@@ -52,11 +52,12 @@ import org.apache.hadoop.yarn.client.api.async.impl.NMClientAsyncImpl;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.ipc.YarnRPC;
+import org.apache.hadoop.yarn.registry.client.binding.RegistryPathUtils;
 import org.apache.hadoop.yarn.registry.client.services.RegistryOperationsService;
 import org.apache.hadoop.yarn.registry.client.types.PersistencePolicies;
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
 import org.apache.hadoop.yarn.registry.client.binding.RegistryTypeUtils;
-import org.apache.hadoop.yarn.registry.server.services.ResourceManagerRegistryService;
+import org.apache.hadoop.yarn.registry.server.services.RMRegistryOperationsService;
 import org.apache.hadoop.yarn.security.AMRMTokenIdentifier;
 import org.apache.hadoop.yarn.security.client.ClientToAMTokenSecretManager;
 import org.apache.hadoop.yarn.util.ConverterUtils;
@@ -929,6 +930,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     ServiceRecord serviceRecord = new ServiceRecord();
     String serviceID = appid.toString();
     serviceRecord.id = serviceID;
+    serviceRecord.persistence = PersistencePolicies.APPLICATION;
     serviceRecord.description = "Slider Application Master";
 
     serviceRecord.addExternalEndpoint(
@@ -967,7 +969,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     // and an ephemeral binding to the app
     yarnRegistryOperations.putComponent(
-        RegistryTypeUtils.yarnIdToDnsId(appAttemptID.toString()),
+        RegistryPathUtils.encodeYarnID(appAttemptID.toString()),
         serviceRecord,
         false);
 
@@ -982,10 +984,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 */
   
   protected void setupInitialRegistryPaths() throws IOException {
-    if (registryOperations instanceof ResourceManagerRegistryService) {
-      ResourceManagerRegistryService rmRegOperations =
-          (ResourceManagerRegistryService) registryOperations;
-      rmRegOperations.createUserPath(service_user_name);
+    if (registryOperations instanceof RMRegistryOperationsService) {
+      RMRegistryOperationsService rmRegOperations =
+          (RMRegistryOperationsService) registryOperations;
+      rmRegOperations.createHomeDirectory(service_user_name);
     }
   }
 
@@ -1003,7 +1005,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
     // this is where component registrations will go
     log.info("Registering component {}", id);
-    String cid = RegistryTypeUtils.yarnIdToDnsId(id.toString());
+    String cid = RegistryPathUtils.encodeYarnID(id.toString());
     ServiceRecord container = new ServiceRecord(
         cid,
         description,
@@ -1027,7 +1029,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   public void unregisterComponent(ContainerId id) {
     log.info("Unregistering component {}", id);
-    String cid = RegistryTypeUtils.yarnIdToDnsId(id.toString());
+    String cid = RegistryPathUtils.encodeYarnID(id.toString());
     try {
       yarnRegistryOperations.rmComponent(cid);
     } catch (IOException e) {

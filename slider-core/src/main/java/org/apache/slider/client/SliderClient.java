@@ -136,6 +136,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -2376,13 +2377,13 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @throws IOException Network or other problems
    */
   @VisibleForTesting
-  public List<ServiceRecord> actionRegistryListYarn(
+  public Collection<ServiceRecord> actionRegistryListYarn(
       ActionRegistryArgs registryArgs)
       throws YarnException, IOException {
     String serviceType = registryArgs.serviceType;
     String name = registryArgs.name;
     RegistryOperationsService operations = getRegistryOperations();
-    List<ServiceRecord> serviceRecords;
+    Collection<ServiceRecord> serviceRecords;
     if (StringUtils.isEmpty(name)) {
       String serviceclassPath =
           BindingUtils.serviceclassPath(BindingUtils.currentUser(),
@@ -2394,7 +2395,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
                                         + serviceclassPath);
       }
       serviceRecords =
-          RecordOperations.extractServiceRecords(operations, listDir);
+          RecordOperations.extractServiceRecords(operations, listDir).values();
     } else {
       ServiceRecord instance = lookupServiceRecord(registryArgs);
       serviceRecords = new ArrayList<ServiceRecord>(1);

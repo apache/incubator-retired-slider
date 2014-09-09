@@ -28,6 +28,7 @@ import org.apache.hadoop.yarn.registry.client.api.RegistryConstants
 import org.apache.hadoop.yarn.registry.client.binding.RecordOperations
 import org.apache.hadoop.yarn.registry.client.binding.RegistryTypeUtils
 import org.apache.hadoop.yarn.registry.client.types.RegistryPathStatus
+import org.apache.hadoop.yarn.registry.client.types.ServiceRecord
 
 import static org.apache.hadoop.yarn.registry.client.binding.BindingUtils.*
 import org.apache.slider.agent.AgentMiniClusterTestBase
@@ -53,7 +54,7 @@ import org.junit.Test
 @CompileStatic
 @Slf4j
 
-class TestYarnRegistryAM extends AgentMiniClusterTestBase {
+class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
 
 
   public static final String ARTIFACT_NAME = PublishedArtifacts.COMPLETE_CONFIG
@@ -74,10 +75,6 @@ class TestYarnRegistryAM extends AgentMiniClusterTestBase {
     // verify the cluster has the YARN reg service live
     def rmRegistryService = miniCluster.getResourceManager(0).getRMContext().registry
     assert rmRegistryService
-    
-    
-    
-    
     
     ServiceLauncher<SliderClient> launcher
     launcher = createStandaloneAM(clustername, true, false)
@@ -148,8 +145,10 @@ class TestYarnRegistryAM extends AgentMiniClusterTestBase {
 
     def recordsPath = serviceclassPath(self, SliderKeys.APP_TYPE)
 
-    def serviceRecords = RecordOperations.extractServiceRecords(registryService,
+    Map < String, ServiceRecord > recordMap = RecordOperations.extractServiceRecords(
+        registryService,
         registryService.listDir(recordsPath))
+    def serviceRecords = recordMap.values();
     dumpCollection(serviceRecords)
     assert serviceRecords.size() == 1
 
