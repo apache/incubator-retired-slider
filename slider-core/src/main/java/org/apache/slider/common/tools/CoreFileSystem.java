@@ -122,6 +122,18 @@ public class CoreFileSystem {
   }
 
   /**
+   * Build up the path string for package install location -no attempt to
+   * create the directory is made
+   *
+   * @return the path for persistent app package
+   */
+  public Path buildPackageDirPath(String packageName) {
+    Preconditions.checkNotNull(packageName);
+    Path path = getBaseApplicationPath();
+    return new Path(path, SliderKeys.PACKAGE_DIRECTORY + "/" + packageName);
+  }
+
+  /**
    * Create the Slider cluster path for a named cluster and all its subdirs
    * This is a directory; a mkdirs() operation is executed
    * to ensure that it is there.
