@@ -30,17 +30,20 @@
 
   <properties>
     <work.dir>package-tmp</work.dir>
-    <app.package.name>${project.artifactId}-${project.version}</app.package.name>
+    <app.package.name>${project.artifactId}-${pkg.version}</app.package.name>
+    <pkg.src>${project.build.directory}/${work.dir}</pkg.src>
+    <pkg.version>${project.version}</pkg.version>
+    <pkg.name>accumulo-${accumulo.version}-bin.tar.gz</pkg.name>
+    <!-- the following properties are used for testing -->
+    <app.user>yarn</app.user>
+    <app.user.group>hadoop</app.user.group>
+    <accumulo.keytab></accumulo.keytab>
+    <accumulo.principal></accumulo.principal>
   </properties>
 
   <profiles>
     <profile>
       <id>accumulo-app-package</id>
-      <activation>
-        <property>
-          <name>!skipAccumulo</name>
-        </property>
-      </activation>
       <build>
         <plugins>
           <plugin>
@@ -50,6 +53,79 @@
               <descriptor>src/assembly/accumulo.xml</descriptor>
               <appendAssemblyId>false</appendAssemblyId>
               <finalName>${app.package.name}</finalName>
+            </configuration>
+            <executions>
+              <execution>
+                <id>build-app-package</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>single</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <version>1.7</version>
+            <executions>
+              <execution>
+                <id>copy</id>
+                <phase>validate</phase>
+                <configuration>
+                  <target name="copy and rename file">
+                    <copy file="${pkg.src}/${pkg.name}" tofile="${project.build.directory}/${work.dir}/${pkg.name}" />
+                  </target>
+                </configuration>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <version>${maven-failsafe-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>run-integration-tests</id>
+                <goals>
+                  <goal>integration-test</goal>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <systemPropertyVariables>
+                <java.net.preferIPv4Stack>true</java.net.preferIPv4Stack>
+                <java.awt.headless>true</java.awt.headless>
+                <!-- this property must be supplied-->
+                <slider.conf.dir>${slider.conf.dir}</slider.conf.dir>
+                <slider.bin.dir>../../slider-assembly/target/slider-${project.version}-all/slider-${project.version}</slider.bin.dir>
+                <test.app.pkg.dir>target</test.app.pkg.dir>
+                <test.app.pkg.file>${app.package.name}.zip</test.app.pkg.file>
+                <test.app.resource>target/test-config/resources.json</test.app.resource>
+                <test.app.template>target/test-config/appConfig.json</test.app.template>
+              </systemPropertyVariables>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>accumulo-app-package-maven</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <configuration>
+              <descriptor>src/assembly/accumulo.xml</descriptor>
+              <appendAssemblyId>false</appendAssemblyId>
+              <finalName>${project.artifactId}-${pkg.version}</finalName>
             </configuration>
             <executions>
               <execution>
@@ -106,7 +182,7 @@
                 <test.app.pkg.dir>target</test.app.pkg.dir>
                 <test.app.pkg.file>${app.package.name}.zip</test.app.pkg.file>
                 <test.app.resource>target/test-config/resources.json</test.app.resource>
-                <test.app.template>target/${app.package.name}/appConfig.json</test.app.template>
+                <test.app.template>target/test-config/appConfig.json</test.app.template>
               </systemPropertyVariables>
             </configuration>
           </plugin>

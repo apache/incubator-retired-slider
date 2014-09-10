@@ -22,6 +22,7 @@ import org.apache.accumulo.core.conf.Property
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.yarn.conf.YarnConfiguration
+import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.funtest.framework.AgentUploads
 import org.junit.Before
 
@@ -30,7 +31,11 @@ class AccumuloSSLTestBase extends AccumuloBasicIT {
   File clientKeyStoreFile = new File(TEST_APP_PKG_DIR, "keystore.jks")
 
   AccumuloSSLTestBase() {
-    APP_TEMPLATE = "target/test-config/appConfig_ssl.json"
+    if (SliderUtils.isHadoopClusterSecure(SLIDER_CONFIG)) {
+      APP_TEMPLATE = "target/test-config/appConfig_ssl_kerberos.json"
+    } else {
+      APP_TEMPLATE = "target/test-config/appConfig_ssl.json"
+    }
   }
 
   @Override
