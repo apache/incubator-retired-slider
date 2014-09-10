@@ -17,21 +17,28 @@
 
 # How to create a Slider package for Accumulo?
 
-  mvn clean package -DskipTests -Paccumulo-app-package
+  mvn clean package -DskipTests -Paccumulo-app-package-maven
+  OR
+  mvn clean package -DskipTests -Paccumulo-app-package -Dpkg.version=1.6.1 \
+    -Dpkg.name=accumulo-1.6.1-bin.tar.gz -Dpkg.src=/local/path/to/tarball
 
 App package can be found in
-  app-packages/accumulo/target/apache-slider-accumulo-${accumulo.version}-app-package-${slider.version}.zip
+  app-packages/accumulo/target/slider-accumulo-app-package-*.zip
+
+In the first case, the version number of the app package will match the
+slider version, and in the second case it will match the pkg.version
+(intended to be the accumulo version).
 
 Verify the content using
-  zip -Tv apache-slider-accumulo-*.zip
+  zip -Tv slider-accumulo-app-package*.zip
 
 While appConfig.json and resources.json are not required for the package they
 work well as the default configuration for Slider apps. So it is advisable that
 when you create an application package for Slider, include sample/default
 resources.json and appConfig.json for a minimal Yarn cluster.
 
-The version of Accumulo used for the app package can be adjusted by adding a
-flag such as
+In the maven packaging case, the version of Accumulo used for the app package
+can be adjusted by adding a flag such as
   -Daccumulo.version=1.5.1
 
 **Note that the LICENSE.txt and NOTICE.txt that are bundled with the app
