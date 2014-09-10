@@ -20,8 +20,11 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.Token;
+import org.apache.hadoop.security.token.TokenIdentifier;
+import org.apache.hadoop.security.token.delegation.AbstractDelegationTokenIdentifier;
 import org.apache.hadoop.util.Time;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.server.appmaster.SliderAppMaster;
@@ -33,7 +36,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.security.PrivilegedExceptionAction;
+import java.text.DateFormat;
+import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -63,7 +69,9 @@ public class FsDelegationTokenManager {
     // using HDFS principal...
     this.remoteUser = UserGroupInformation
         .loginUserFromKeytabAndReturnUGI(
-            loginConfig.get(DFSConfigKeys.DFS_NAMENODE_USER_NAME_KEY),
+            SecurityUtil.getServerPrincipal(
+                loginConfig.get(DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY),
+                InetAddress.getLocalHost().getCanonicalHostName()),
             loginConfig.get(DFSConfigKeys.DFS_NAMENODE_KEYTAB_FILE_KEY));
     log.info("Created remote user {}.  UGI reports current user is {}",
              this.remoteUser, UserGroupInformation.getCurrentUser());
@@ -129,6 +137,7 @@ public class FsDelegationTokenManager {
   class RenewAction extends AsyncAction {
     Configuration configuration;
     Token<?> token;
+    private long tokenExpiryTime;
     private final FileSystem fs;
 
     RenewAction(String name,
@@ -145,12 +154,21 @@ public class FsDelegationTokenManager {
           public Token<?> run() throws Exception {
             log.info("Obtaining HDFS delgation token with user {}",
                      remoteUser.getShortUserName());
-            return fs.getDelegationToken(
+            Token token = fs.getDelegationToken(
                 remoteUser.getShortUserName());
+            tokenExpiryTime = getTokenExpiryTime(token);
+            log.info("Initial delegation token obtained with expiry time of {}", getPrintableExirationTime(tokenExpiryTime));
+            return token;
           }
         });
       }
       log.info("Initial request returned delegation token {}", token);
+    }
+
+    private long getTokenExpiryTime(Token token) throws IOException {
+      AbstractDelegationTokenIdentifier id =
+          (AbstractDelegationTokenIdentifier)token.decodeIdentifier();
+      return id.getMaxDate();
     }
 
     protected FileSystem getFileSystem()
@@ -177,11 +195,12 @@ public class FsDelegationTokenManager {
               @Override
               public Long run() throws Exception {
                 long expires = token.renew(fs.getConf());
-                log.info("HDFS delegation token renewed");
+                log.info("HDFS delegation token renewed.  Renewal cycle ends at {}",
+                         getPrintableExirationTime(expires));
                 return expires;
               }
             });
-            long calculatedInterval = expires - Time.now();
+            long calculatedInterval = tokenExpiryTime - Time.now();
             if ( calculatedInterval < renewInterval ) {
               // time to get a new token since the token will expire before
               // next renewal interval.  Could modify this to be closer to expiry
@@ -201,6 +220,11 @@ public class FsDelegationTokenManager {
       }
     }
 
+    private String getPrintableExirationTime(long expires) {
+      Date d = new Date(expires);
+      return DateFormat.getDateTimeInstance().format(d);
+    }
+
     private void getNewToken()
         throws InterruptedException, IOException {
       try {
@@ -217,7 +241,11 @@ public class FsDelegationTokenManager {
         token = findMatchingToken(service, tokens);
         currentUser.addToken(token.getService(), token);
 
-        log.info("Expired HDFS delegation token replaced and added as credential to current user");
+        tokenExpiryTime = getTokenExpiryTime(token);
+
+        log.info("Expired HDFS delegation token replaced and added as credential"
+                 + " to current user.  Token expires at {}",
+                 getPrintableExirationTime(tokenExpiryTime));
         updateRenewalTime(renewInterval);
       } catch (IOException ie2) {
         throw new IOException("Can't get new delegation token ", ie2);

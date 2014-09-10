@@ -22,10 +22,26 @@ work well as the default configuration for Slider apps. So it is advisable that
 when you create an application package for Slider, include sample/default
 resources.json and appConfig.json for a minimal Yarn cluster.
 
-OPTION-I: Use mvn command
-OPTION-II: Manual
+OPTION-I: Use a downloaded tarball
+OPTION-II: Use the tarball from the local repository
 
-****** OPTION - I (use mvn command) **
+****** OPTION - I **
+To create the app package you will need the HBase tarball and invoke mvn command
+with appropriate parameters.
+
+Command:
+mvn clean package -Phbase-app-package -Dpkg.version=<version>
+   -Dpkg.name=<file name of app tarball> -Dpkg.src=<folder location where the pkg is available>
+
+Example:
+mvn clean package -Phbase-app-package -Dpkg.version=0.98.5-hadoop2
+  -Dpkg.name=hbase-0.98.5-hadoop2-bin.tar.gz
+  -Dpkg.src=/Users/user1/Downloads/0.98.5-hadoop2
+
+App package can be found in
+  app-packages/hbase/target/slider-hbase-app-package-${pkg.version}.zip
+
+****** OPTION - II **
 You need the HBase version available on local maven repo to create the Slider App Package for HBase.
 
 Download the tarball for HBase:
@@ -47,29 +63,12 @@ After HBase tarball is published locally in maven repository, you can use the fo
 App package can be found in
   app-packages/hbase/target/apache-slider-hbase-${hbase.version}-app-package-${slider.version}.zip
 
-Verify the content using
-  zip -Tv apache-slider-hbase-*.zip
-
 If an HBase version older than 0.98.3 is desired, it must be installed in the local maven repo.
 
 A less descriptive file name can be specified with
   -Dapp.package.name=HBase_98dot3 which would create a file HBase_98dot3.zip.
 
-****** OPTION - II (manual) **
-The Slider App Package for HBase can also be created manually.
-
-Download the tarball for HBase:
-  e.g. path to tarball ~/Downloads/hbase-0.98.3-hadoop2-bin.tar.gz
-
-Copy the hbase tarball to package/files
-  cp ~/Downloads/hbase-0.98.3-hadoop2-bin.tar.gz package/files
-
-Edit appConfig.json/metainfo.xml
-  Replace 4 occurrences of "${hbase.version}" with the hbase version values such as "0.98.3-hadoop2"
-  Replace 1 occurrence of "${app.package.name}" with the desired app package name, e.g. "hbase-v098"
-
-Create a zip package at the root of the package (<slider enlistment>/app-packages/hbase/)
-  zip -r hbase-v098.zip .
+****** Verifying the content **
 
 Verify the content using
-  zip -Tv hbase-v098.zip
+  zip -Tv apache-slider-hbase-*.zip

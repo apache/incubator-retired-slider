@@ -27,9 +27,10 @@ import org.slf4j.LoggerFactory
 
 class SliderShell extends Shell {
   private static final Logger log = LoggerFactory.getLogger(SliderShell.class);
-
+  private static final Logger LOG = log;
 
   public static final String BASH = '/bin/bash -s'
+  public static final String CMD = 'cmd'
   
   /**
    * Configuration directory, shared across all instances. Not marked as volatile,
@@ -37,7 +38,7 @@ class SliderShell extends Shell {
    */
   public static File confDir;
   
-  public static File script;
+  public static File scriptFile;
   
   public static final List<String> slider_classpath_extra = []
 
@@ -48,10 +49,10 @@ class SliderShell extends Shell {
    * @param commands
    */
   SliderShell(Collection<String> commands) {
-    super(BASH)
+    super(org.apache.hadoop.util.Shell.WINDOWS? CMD : BASH)
     assert confDir != null;
-    assert script != null;
-    command = script.absolutePath + " " + commands.join(" ")
+    assert scriptFile != null;
+    command = scriptFile.absolutePath + " " + commands.join(" ")
   }
 
   /**
@@ -66,7 +67,9 @@ class SliderShell extends Shell {
     ]
     if (!slider_classpath_extra.empty) {
       commandLine << env(FuntestProperties.ENV_SLIDER_CLASSPATH_EXTRA,
-          SliderUtils.join(slider_classpath_extra, ":", false))
+          SliderUtils.join(slider_classpath_extra, 
+              (org.apache.hadoop.util.Shell.WINDOWS? ";" : ":"),
+               false))
     }
     commandLine << command
     String script = commandLine.join("\n")
@@ -76,8 +79,18 @@ class SliderShell extends Shell {
     return ret;
   }
 
+  /**
+   * Add an environment variable
+   * @param var variable
+   * @param val value (which will be stringified)
+   * @return an env variable command
+   */
   String env(String var, Object val) {
-    return "export " + var + "=${val.toString()};"
+    if (org.apache.hadoop.util.Shell.WINDOWS) {
+      return "set " + var + "=${val.toString()}"
+    } else {
+      return "export " + var + "=${val.toString()};"
+    }
   }
 
   /**
@@ -151,6 +164,62 @@ class SliderShell extends Shell {
       
     }
   }
-  
 
+  /**
+   * Execute shell script consisting of as many Strings as we have arguments,
+   * possibly under an explicit username (requires sudoers privileges).
+   * NOTE: individual strings are concatenated into a single script as though
+   * they were delimited with new line character. All quoting rules are exactly
+   * what one would expect in standalone shell script.
+   *
+   * After executing the script its return code can be accessed as getRet(),
+   * stdout as getOut() and stderr as getErr(). The script itself can be accessed
+   * as getScript()
+   * WARNING: it isn't thread safe
+   * @param args shell script split into multiple Strings
+   * @return Shell object for chaining
+   */
+  Shell exec(Object... args) {
+    def proc = "$shell".execute()
+    script = args.join("\n")
+    LOG.debug("${shell} << __EOT__\n${script}\n__EOT__");
+
+    Thread.start {
+      def writer = new PrintWriter(new BufferedOutputStream(proc.out))
+      writer.println(script)
+      writer.close()
+    }
+    ByteArrayOutputStream baosErr = new ByteArrayOutputStream(4096);
+    proc.consumeProcessErrorStream(baosErr);
+    out = proc.in.readLines()
+
+    // Possibly a bug in String.split as it generates a 1-element array on an
+    // empty String
+    
+    if (baosErr.size() != 0) {
+      err = baosErr.toString().split('\n');
+    } else {
+      err = [];
+    }
+
+    proc.waitFor()
+    ret = proc.exitValue()
+
+    if (LOG.isTraceEnabled()) {
+      if (ret != 0) {
+        LOG.trace("return: $ret");
+      }
+      if (out.size() != 0) {
+        LOG.trace("\n<stdout>\n${out.join('\n')}\n</stdout>");
+      }
+
+      def stderror = super.err
+      if (stderror.size() != 0) {
+        LOG.trace("\n<stderr>\n${stderror.join('\n')}\n</stderr>");
+      }
+    }
+
+    return this
   }
+
+}

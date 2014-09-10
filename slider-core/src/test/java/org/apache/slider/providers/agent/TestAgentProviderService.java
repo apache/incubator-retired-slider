@@ -1133,14 +1133,14 @@ public class TestAgentProviderService {
     AgentProviderService aps = new AgentProviderService();
     Map<String, Map<String, String>> allConfigs = new HashMap<String, Map<String, String>>();
     Map<String, String> cfg1 = new HashMap<String, String>();
-    cfg1.put("a1", "${site.cfg-2.A1}");
+    cfg1.put("a1", "${@//site/cfg-2/A1}");
     cfg1.put("b1", "22");
     cfg1.put("c1", "33");
-    cfg1.put("d1", "${site.cfg1.c1}AA");
+    cfg1.put("d1", "${@//site/cfg1/c1}AA");
     Map<String, String> cfg2 = new HashMap<String, String>();
     cfg2.put("A1", "11");
-    cfg2.put("B1", "${site.cfg-2.A1},${site.cfg-2.A1}");
-    cfg2.put("C1", "DD${site.cfg1.c1}");
+    cfg2.put("B1", "${@//site/cfg-2/A1},${@//site/cfg-2/A1},AA,${@//site/cfg1/c1}");
+    cfg2.put("C1", "DD${@//site/cfg1/c1}");
     cfg2.put("D1", "${14}");
 
     allConfigs.put("cfg1", cfg1);
@@ -1152,7 +1152,7 @@ public class TestAgentProviderService {
     Assert.assertEquals("33AA", cfg1.get("d1"));
 
     Assert.assertEquals("11", cfg2.get("A1"));
-    Assert.assertEquals("11,11", cfg2.get("B1"));
+    Assert.assertEquals("11,11,AA,33", cfg2.get("B1"));
     Assert.assertEquals("DD33", cfg2.get("C1"));
     Assert.assertEquals("${14}", cfg2.get("D1"));
   }

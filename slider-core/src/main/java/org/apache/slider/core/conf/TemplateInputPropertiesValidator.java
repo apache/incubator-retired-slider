@@ -27,7 +27,7 @@ public class TemplateInputPropertiesValidator
   void validatePropertyNamePrefix(String key) throws BadConfigException {
     if (key.startsWith("yarn.")) {
       throw new BadConfigException(
-          "argument %s does not have 'yarn.' prefix", key);
+          "argument %s has 'yarn.' prefix - this is not allowed in templates", key);
     }
   }
 

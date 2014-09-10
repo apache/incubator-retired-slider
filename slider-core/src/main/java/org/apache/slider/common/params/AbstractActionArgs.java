@@ -124,7 +124,8 @@ public abstract class AbstractActionArgs extends ArgOps implements Arguments {
     int actionArgSize = parameters.size();
     if (minArgs > actionArgSize) {
       throw new BadCommandArgumentsException(
-        ErrorStrings.ERROR_NOT_ENOUGH_ARGUMENTS + getActionName());
+        ErrorStrings.ERROR_NOT_ENOUGH_ARGUMENTS + getActionName() +
+        " Expected minimum " + minArgs + " but got " + actionArgSize);
     }
     int maxArgs = getMaxParams();
     if (maxArgs == -1) {

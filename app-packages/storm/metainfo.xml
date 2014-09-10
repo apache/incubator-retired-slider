@@ -130,7 +130,7 @@
         <packages>
           <package>
             <type>tarball</type>
-            <name>files/${pkg.name}</name>
+            <name>files/apache-storm-${pkg.version}.tar.gz</name>
           </package>
         </packages>
       </osSpecific>

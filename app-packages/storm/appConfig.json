@@ -11,7 +11,7 @@
     "site.global.app_user": "yarn",
     "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/apache-storm-${pkg.version}",
     "site.global.user_group": "hadoop",
-
+    "site.global.security_enabled": "false",
     "site.global.ganglia_server_host": "${NN_HOST}",
     "site.global.ganglia_server_id": "Application2",
     "site.global.ganglia_enabled":"true",
@@ -23,8 +23,8 @@
     "site.storm-site.storm.local.dir": "${AGENT_WORK_ROOT}/app/tmp/storm",
     "site.storm-site.transactional.zookeeper.root": "/transactional",
     "site.storm-site.storm.zookeeper.port": "2181",
-    "site.storm-site.nimbus.childopts": "-Xmx1024m -javaagent:${AGENT_WORK_ROOT}/app/install/apache-storm-${pkg.version}/external/storm-jmxetric/lib/jmxetric-1.0.4.jar=host=${site.global.ganglia_server_host},port=${site.global.ganglia_server_port},wireformat31x=true,mode=multicast,config=${AGENT_WORK_ROOT}/app/install/apache-storm-${pkg.version}/external/storm-jmxetric/conf/jmxetric-conf.xml,process=Nimbus_JVM",
-    "site.storm-site.worker.childopts": "-Xmx768m -javaagent:${AGENT_WORK_ROOT}/app/install/apache-storm-${pkg.version}/external/storm-jmxetric/lib/jmxetric-1.0.4.jar=host=${site.global.ganglia_server_host},port=${site.global.ganglia_server_port},wireformat31x=true,mode=multicast,config=${AGENT_WORK_ROOT}/app/install/apache-storm-${pkg.version}/external/storm-jmxetric/conf/jmxetric-conf.xml,process=Worker_%ID%_JVM",
+    "site.storm-site.nimbus.childopts": "-Xmx1024m -javaagent:${AGENT_WORK_ROOT}/app/install/apache-storm-${pkg.version}/external/storm-jmxetric/lib/jmxetric-1.0.4.jar=host=${@//site/global/ganglia_server_host},port=${@//site/global/ganglia_server_port},wireformat31x=true,mode=multicast,config=${AGENT_WORK_ROOT}/app/install/apache-storm-${pkg.version}/external/storm-jmxetric/conf/jmxetric-conf.xml,process=Nimbus_JVM",
+    "site.storm-site.worker.childopts": "-Xmx768m -javaagent:${AGENT_WORK_ROOT}/app/install/apache-storm-${pkg.version}/external/storm-jmxetric/lib/jmxetric-1.0.4.jar=host=${@//site/global/ganglia_server_host},port=${@//site/global/ganglia_server_port},wireformat31x=true,mode=multicast,config=${AGENT_WORK_ROOT}/app/install/apache-storm-${pkg.version}/external/storm-jmxetric/conf/jmxetric-conf.xml,process=Worker_%ID%_JVM",
     "site.storm-site.dev.zookeeper.path": "${AGENT_WORK_ROOT}/app/tmp/dev-storm-zookeeper",
     "site.storm-site.drpc.invocations.port": "0",
     "site.storm-site.storm.zookeeper.root": "${DEF_ZK_PATH}",
@@ -32,7 +32,7 @@
     "site.storm-site.nimbus.host": "${NIMBUS_HOST}",
     "site.storm-site.ui.port": "${STORM_UI_SERVER.ALLOCATED_PORT}",
     "site.storm-site.supervisor.slots.ports": "[${SUPERVISOR.ALLOCATED_PORT}{DO_NOT_PROPAGATE},${SUPERVISOR.ALLOCATED_PORT}{DO_NOT_PROPAGATE}]",
-    "site.storm-site.supervisor.childopts": "-Xmx256m -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.port=0 -javaagent:${AGENT_WORK_ROOT}/app/install/apache-storm-${pkg.version}/external/storm-jmxetric/lib/jmxetric-1.0.4.jar=host=${site.global.ganglia_server_host},port=${site.global.ganglia_server_port},wireformat31x=true,mode=multicast,config=${AGENT_WORK_ROOT}/app/install/apache-storm-${pkg.version}/external/storm-jmxetric/conf/jmxetric-conf.xml,process=Supervisor_JVM",
+    "site.storm-site.supervisor.childopts": "-Xmx256m -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.port=0 -javaagent:${AGENT_WORK_ROOT}/app/install/apache-storm-${pkg.version}/external/storm-jmxetric/lib/jmxetric-1.0.4.jar=host=${NN_HOST},port=8668,wireformat31x=true,mode=multicast,config=${AGENT_WORK_ROOT}/app/install/apache-storm-${pkg.version}/external/storm-jmxetric/conf/jmxetric-conf.xml,process=Supervisor_JVM",
     "site.storm-site.drpc.port": "0",
     "site.storm-site.logviewer.port": "${SUPERVISOR.ALLOCATED_PORT}{DO_NOT_PROPAGATE}"
   },

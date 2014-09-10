@@ -41,6 +41,12 @@
       <filtered>true</filtered>
       <fileMode>0755</fileMode>
     </file>
+    <file>
+      <source>${pkg.src}/${pkg.name}</source>
+      <outputDirectory>package/files</outputDirectory>
+      <filtered>false</filtered>
+      <fileMode>0755</fileMode>
+    </file>
   </files>
 
   <fileSets>
@@ -54,16 +60,6 @@
         <exclude>appConfig.json</exclude>
         <exclude>metainfo.xml</exclude>
       </excludes>
-      <fileMode>0755</fileMode>
-      <directoryMode>0755</directoryMode>
-    </fileSet>
-
-    <fileSet>
-      <directory>${project.build.directory}/${work.dir}</directory>
-      <outputDirectory>package/files</outputDirectory>
-      <includes>
-        <include>hbase-${hbase.version}-bin.tar.gz</include>
-      </includes>
       <fileMode>0755</fileMode>
       <directoryMode>0755</directoryMode>
     </fileSet>

@@ -17,16 +17,19 @@
 
 How to create a Slider app package for Storm?
 
-To create the app package you will need the Storm tarball and invoke mvn command 
+To create the app package you will need the Storm tarball and invoke mvn command
 with appropriate parameters.
 
 Command:
-mvn clean package -Pstorm-app-package -Dpkg.version=<version> 
+mvn clean package -Pstorm-app-package -Dpkg.version=<version>
    -Dpkg.name=<file name of app tarball> -Dpkg.src=<folder location where the pkg is available>
 
 Example:
-mvn clean package -Pstorm-app-package -Dpkg.version=0.9.3.2.2.0.0-578 
+mvn clean package -Pstorm-app-package -Dpkg.version=0.9.3.2.2.0.0-578
    -Dpkg.name=apache-storm-0.9.3.2.2.0.0-578.tar.gz -Dpkg.src=/Users/user1/Downloads
+
+App package can be found in
+  app-packages/storm/target/slider-storm-app-package-${pkg.version}.zip
 
 While appConfig.json and resources.json are not required for the package they work
 well as the default configuration for Slider apps. So its advisable that when you

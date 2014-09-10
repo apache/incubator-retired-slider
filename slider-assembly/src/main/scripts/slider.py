@@ -18,11 +18,14 @@
 import sys
 import os
 import subprocess
+import time
+from threading import Thread
 
 CONF = "conf"
 
 LIB = "lib"
 
+JAVA_HOME = None
 SLIDER_CONF_DIR = "SLIDER_CONF_DIR"
 SLIDER_JVM_OPTS = "SLIDER_JVM_OPTS"
 SLIDER_CLASSPATH_EXTRA = "SLIDER_CLASSPATH_EXTRA"
@@ -30,8 +33,17 @@ SLIDER_CLASSPATH_EXTRA = "SLIDER_CLASSPATH_EXTRA"
 SLIDER_CLASSNAME = "org.apache.slider.Slider"
 DEFAULT_JVM__OPTS = "-Djava.net.preferIPv4Stack=true -Djava.awt.headless=true -Xmx256m -Djava.confdir=%s"
 
+ON_POSIX = 'posix' in sys.builtin_module_names
+
+finished = False
+DEBUG = True
+
 """
 Launches slider
+
+Nonblocking IO on windows is "tricky" ... see
+http://stackoverflow.com/questions/375427/non-blocking-read-on-a-subprocess-pipe-in-python
+to explain the code here
 
 
 """
@@ -65,6 +77,20 @@ def dirMustExist(dirname):
     raise Exception("Directory does not exist: %s " % dirname)
   return dirname
 
+
+def debug(text):
+  if DEBUG: print '[DEBUG] ' + text
+
+
+def error(text):
+  print '[ERROR] ' + text
+  sys.stdout.flush()
+
+def info(text):
+  print text
+  sys.stdout.flush()
+
+
 def read(pipe, line):
   """
   read a char, append to the listing if there is a char that is not \n
@@ -85,55 +111,73 @@ def read(pipe, line):
     return line, False
 
 
+def print_output(name, src):
+  """
+  Relay the output stream to stdout line by line 
+  :param name: 
+  :param src: source stream
+  :return:
+  """
+
+  debug ("starting printer for %s" % name )
+  line = ""
+  while not finished:
+    (line, done) = read(src, line)
+    if done:
+      info(name +': ' + line)
+      line = ""
+  src.close()
+
+
 def runProcess(commandline):
   """
   Run a process
   :param commandline: command line 
   :return:the return code
   """
-  print "ready to exec : %s" % commandline
+  global finished
+  debug ("Executing : %s" % commandline)
   exe = subprocess.Popen(commandline,
                          stdin=None,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
-                         shell=False)
-  stdout = exe.stdout
-  stderr = exe.stderr
-  outline = ""
-  errline = ""
+                         shell=False,
+                         bufsize=1, 
+                         close_fds=ON_POSIX)
+
+  t = Thread(target=print_output, args=("stdout", exe.stdout))
+  t.daemon = True 
+  t.start()
+  t2 = Thread(target=print_output, args=("stderr", exe.stderr,))
+  t2.daemon = True 
+  t2.start()
+
+  debug("Waiting for completion")
   while exe.poll() is None:
     # process is running; grab output and echo every line
-    outline, done = read(stdout, outline)
-    if done:
-      print outline
-      outline = ""
-    errline, done = read(stderr, errline)
-    if done:
-      print errline
-      errline = ""
-
-  # get tail
-  out, err = exe.communicate()
-  print outline + out.decode()
-  print errline + err.decode()
+    time.sleep(1)
+  debug("completed with exit code : %d" % exe.returncode)
+  finished = True
   return exe.returncode
 
+
+def is_exe(fpath):
+  return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
 def which(program):
-    def is_exe(fpath):
-        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+  
+  fpath, fname = os.path.split(program)
+  if fpath:
+    if is_exe(program):
+      return program
+  else:
+    for path in os.environ["PATH"].split(os.pathsep):
+      path = path.strip('"')
+      exe_file = os.path.join(path, program)
+      if is_exe(exe_file):
+        return exe_file
 
-    fpath, fname = os.path.split(program)
-    if fpath:
-        if is_exe(program):
-            return program
-    else:
-        for path in os.environ["PATH"].split(os.pathsep):
-            path = path.strip('"')
-            exe_file = os.path.join(path, program)
-            if is_exe(exe_file):
-                return exe_file
-
-    return None
+  return None
 
 def java(classname, args, classpath, jvm_opts_list):
   """
@@ -148,8 +192,11 @@ def java(classname, args, classpath, jvm_opts_list):
   # split the JVM opts by space
   # java = "/usr/bin/java"
   prg = "java"
-  if which("java") is None:
-    prg = os.environ["JAVA_HOME"] + "/bin/java"
+  if JAVA_HOME:
+    prg = os.path.join(JAVA_HOME, "bin", "java")
+  else:
+    if which("java") is None:
+      prg = os.path.join(os.environ["JAVA_HOME"], "bin", "java")
   commandline = [prg]
   commandline.extend(jvm_opts_list)
   commandline.append("-classpath")
@@ -203,7 +250,7 @@ if __name__ == '__main__':
   try:
     returncode = main()
   except Exception as e:
-    print "Exception: %s " % e.message
+    print "Exception: %s " % str(e)
     returncode = -1
   
   sys.exit(returncode)

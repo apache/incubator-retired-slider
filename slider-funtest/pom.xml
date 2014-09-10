@@ -126,27 +126,6 @@
       </plugin>
   
       <plugin>
-        <groupId>org.apache.rat</groupId>
-        <artifactId>apache-rat-plugin</artifactId>
-        <version>${apache-rat-plugin.version}</version>
-        <executions>
-          <execution>
-            <id>check-licenses</id>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <excludes>
-            <exclude>**/*.json</exclude>
-            <exclude>**/httpfs-signature.secret</exclude>
-            <exclude>**/regionservers</exclude>
-          </excludes>
-        </configuration>
-      </plugin>
-
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
         <version>${maven-dependency-plugin.version}</version>
@@ -345,7 +324,34 @@
         <maven.test.skip>true</maven.test.skip>
       </properties>
     </profile>
+      <profile>
+        <id>rat</id>
+        <build>
+          <plugins>
+            <plugin>
+              <groupId>org.apache.rat</groupId>
+              <artifactId>apache-rat-plugin</artifactId>
+              <version>${apache-rat-plugin.version}</version>
+              <executions>
+                <execution>
+                  <id>check-licenses</id>
+                  <goals>
+                    <goal>check</goal>
+                  </goals>
+                </execution>
+              </executions>
+              <configuration>
+                <excludes>
+                  <exclude>**/*.json</exclude>
+                  <exclude>**/httpfs-signature.secret</exclude>
+                  <exclude>**/regionservers</exclude>
+                </excludes>
+              </configuration>
+            </plugin>
 
+          </plugins>
+        </build>
+      </profile>
   </profiles>
 
 </project>

@@ -50,6 +50,9 @@ def storm():
   )
 
   if params.security_enabled:
-    TemplateConfig( format("{conf_dir}/storm_jaas.conf"),
-      owner = params.storm_user
+    File(format("{conf_dir}/storm_jaas.conf"),
+              content=Template("storm_jaas.conf.j2"),
+              owner = params.storm_user,
+              group = params.user_group
     )
+

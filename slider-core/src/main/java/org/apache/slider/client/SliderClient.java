@@ -59,6 +59,7 @@ import org.apache.slider.common.SliderExitCodes;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.params.AbstractActionArgs;
 import org.apache.slider.common.params.AbstractClusterBuildingActionArgs;
+import org.apache.slider.common.params.ActionInstallPackageArgs;
 import org.apache.slider.common.params.ActionAMSuicideArgs;
 import org.apache.slider.common.params.ActionCreateArgs;
 import org.apache.slider.common.params.ActionEchoArgs;
@@ -213,9 +214,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       SliderUtils.forceLogin();
       SliderUtils.initProcessSecurity(conf);
     }
-    //create the YARN client
-    yarnClient = new SliderYarnClientImpl();
-    addService(yarnClient);
 
     super.serviceInit(conf);
     
@@ -313,26 +311,27 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     
     AbstractActionArgs coreAction = serviceArgs.getCoreAction();
     if (coreAction.getHadoopServicesRequired()) {
-      // validate the client
-      SliderUtils.validateSliderClientEnvironment(null);
+      initHadoopBinding();
     }
     int exitCode = EXIT_SUCCESS;
     String clusterName = serviceArgs.getClusterName();
     // actions
-    if (ACTION_BUILD.equals(action)) {
+    if (ACTION_INSTALL_PACKAGE.equals(action)) {
+      exitCode = actionInstallPkg(serviceArgs.getActionInstallPackageArgs());
+    } else if (ACTION_BUILD.equals(action)) {
       exitCode = actionBuild(clusterName, serviceArgs.getActionBuildArgs());
     } else if (ACTION_CREATE.equals(action)) {
       exitCode = actionCreate(clusterName, serviceArgs.getActionCreateArgs());
     } else if (ACTION_FREEZE.equals(action)) {
       exitCode = actionFreeze(clusterName,
-          serviceArgs.getActionFreezeArgs());
+            serviceArgs.getActionFreezeArgs());
     } else if (ACTION_THAW.equals(action)) {
       exitCode = actionThaw(clusterName, serviceArgs.getActionThawArgs());
     } else if (ACTION_DESTROY.equals(action)) {
       exitCode = actionDestroy(clusterName);
     } else if (ACTION_EXISTS.equals(action)) {
       exitCode = actionExists(clusterName,
-          serviceArgs.getActionExistsArgs().live);
+           serviceArgs.getActionExistsArgs().live);
     } else if (ACTION_FLEX.equals(action)) {
       exitCode = actionFlex(clusterName, serviceArgs.getActionFlexArgs());
     } else if (ACTION_GETCONF.equals(action)) {
@@ -340,15 +339,12 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     } else if (ACTION_HELP.equals(action) ||
                ACTION_USAGE.equals(action)) {
       log.info(serviceArgs.usage());
-
     } else if (ACTION_KILL_CONTAINER.equals(action)) {
       exitCode = actionKillContainer(clusterName,
           serviceArgs.getActionKillContainerArgs());
-
     } else if (ACTION_AM_SUICIDE.equals(action)) {
       exitCode = actionAmSuicide(clusterName,
           serviceArgs.getActionAMSuicideArgs());
-
     } else if (ACTION_LIST.equals(action)) {
       exitCode = actionList(clusterName);
     } else if (ACTION_REGISTRY.equals(action)) {
@@ -370,6 +366,34 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     return exitCode;
   }
+
+  /**
+   * Perform everything needed to init the hadoop binding.
+   * This assumes that the service is already  in inited or started state
+   * @throws IOException
+   * @throws SliderException
+   */
+  protected void initHadoopBinding() throws IOException, SliderException {
+    // validate the client
+    SliderUtils.validateSliderClientEnvironment(null);
+    //create the YARN client
+    yarnClient = new SliderYarnClientImpl();
+    yarnClient.init(getConfig());
+    if (getServiceState() == STATE.STARTED) {
+      yarnClient.start();
+    }
+    addService(yarnClient);
+    // create the filesystem
+    sliderFileSystem = new SliderFileSystem(getConfig());
+
+    // and the registry
+/*
+    YARNRegistryClient =
+        new YARNRegistryClient(yarnClient, getUsername(), getConfig());
+*/
+    
+  }
+
   /**
    * Delete the zookeeper node associated with the calling user and the cluster
    **/
@@ -607,6 +631,50 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     buildInstanceDefinition(clustername, buildInfo, false, false);
     return EXIT_SUCCESS; 
+  }
+
+  /**
+   * Upload application package to user home directory
+   *
+   * @param installPkgInfo the arguments needed to build the cluster
+   * @throws YarnException Yarn problems
+   * @throws IOException other problems
+   * @throws BadCommandArgumentsException bad arguments.
+   */
+  public int actionInstallPkg(ActionInstallPackageArgs installPkgInfo) throws
+      YarnException,
+      IOException {
+
+    Path srcFile = null;
+    if (null == installPkgInfo.name || installPkgInfo.name.length() == 0) {
+      throw new BadCommandArgumentsException("A valid application name is required.");
+    }
+
+    if (null == installPkgInfo.packageURI || installPkgInfo.packageURI.length() == 0) {
+      throw new BadCommandArgumentsException("A valid application package is required.");
+    } else {
+      File pkgFile = new File(installPkgInfo.packageURI);
+      if (!pkgFile.exists() || pkgFile.isDirectory()) {
+        throw new BadCommandArgumentsException("Unable to access supplied pkg file at " +
+                                               pkgFile.getAbsolutePath());
+      } else {
+        srcFile = new Path(pkgFile.toURI());
+      }
+    }
+
+    Path pkgPath = sliderFileSystem.buildPackageDirPath(installPkgInfo.name);
+    sliderFileSystem.getFileSystem().mkdirs(pkgPath);
+
+    Path fileInFs = new Path(pkgPath, srcFile.getName());
+    log.info("Installing package {} at {} and overwrite is {}.", srcFile, fileInFs, installPkgInfo.replacePkg);
+    if (sliderFileSystem.getFileSystem().exists(fileInFs) && !installPkgInfo.replacePkg) {
+      throw new BadCommandArgumentsException("Pkg exists at " +
+                                             fileInFs.toUri().toString() +
+                                             ". Use --replacePkg to overwrite.");
+    }
+
+    sliderFileSystem.getFileSystem().copyFromLocalFile(false, installPkgInfo.replacePkg, srcFile, fileInFs);
+    return EXIT_SUCCESS;
   }
 
   /**
@@ -1074,8 +1142,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         clusterPerms);
 
 
-    // add AM and provider specific artifacts to the resource map
-    Map<String, LocalResource> providerResources;
     // standard AM resources
     sliderAM.prepareAMAndConfigForLaunch(sliderFileSystem,
                                        config,

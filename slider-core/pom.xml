@@ -188,43 +188,6 @@
           <shortRevisionLength>10</shortRevisionLength>
         </configuration>
       </plugin>
-
-      <plugin>
-        <groupId>org.apache.rat</groupId>
-        <artifactId>apache-rat-plugin</artifactId>
-        <version>${apache-rat-plugin.version}</version>
-        <executions>
-          <execution>
-            <id>check-licenses</id>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <excludes>
-            <exclude>**/*.json</exclude>
-            <exclude>src/test/python/agent.ini</exclude>
-            <exclude>src/test/python/version</exclude>
-            <exclude>src/main/resources/webapps/slideram/.keep</exclude>
-            <exclude>src/main/resources/webapps/slideragent/.keep</exclude>
-            <exclude>src/main/resources/webapps/static/yarn.dt.plugins.js</exclude>
-            <!-- jQuery DataTables files (BSD license) -->
-            <exclude>src/main/resources/webapps/static/dt-1.9.4/**</exclude>
-            <!-- jQuery (MIT license) -->
-            <exclude>src/main/resources/webapps/static/jquery/jquery-1.8.2.min.js</exclude>
-            <!-- jQuery UI (MIT license) -->
-            <exclude>src/main/resources/webapps/static/jquery/jquery-ui-1.9.1.custom.min.js</exclude>
-            <exclude>src/main/resources/webapps/static/jquery/themes-1.9.1/base/jquery-ui.css</exclude>
-            <!-- jQuery jsTree (MIT license) -->
-            <exclude>src/main/resources/webapps/static/jt/jquery.jstree.js</exclude>
-            <!-- protobuf generated classes -->
-            <exclude>src/main/java/org/apache/slider/api/proto/Messages.java</exclude>
-            <exclude>src/main/java/org/apache/slider/api/proto/SliderClusterAPI.java</exclude>
-          </excludes>
-        </configuration>
-      </plugin>
-      
     </plugins>
   </build>
 
@@ -533,54 +496,45 @@
       </build>
     </profile>
 
-    <!--
-    a test run, currently hard-coded for stevel's secure
-    VM cluster
-    -->
+
     <profile>
-      <id>testrun</id>
+      <id>rat</id>
       <build>
         <plugins>
+
           <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <version>${maven-exec-plugin.version}</version>
-            <configuration>
-              <executable>java</executable>
-              <arguments>
-                <argument>-Xms512m</argument>
-                <argument>-Xmx512m</argument>
-                <argument>-classpath</argument>
-                <classpath/>
-                <argument>org.apache.slider.Slider</argument>
-                <argument>list</argument>
-              </arguments>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    
-    <profile>
-      <id>list</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <version>${maven-exec-plugin.version}</version>
+            <groupId>org.apache.rat</groupId>
+            <artifactId>apache-rat-plugin</artifactId>
+            <version>${apache-rat-plugin.version}</version>
             <executions>
               <execution>
+                <id>check-licenses</id>
                 <goals>
-                  <goal>java</goal>
+                  <goal>check</goal>
                 </goals>
               </execution>
             </executions>
             <configuration>
-              <mainClass>org.apache.slider.Slider</mainClass>
-              <arguments>
-                <argument>list</argument>
-              </arguments>
+              <excludes>
+                <exclude>**/*.json</exclude>
+                <exclude>src/test/python/agent.ini</exclude>
+                <exclude>src/test/python/version</exclude>
+                <exclude>src/main/resources/webapps/slideram/.keep</exclude>
+                <exclude>src/main/resources/webapps/slideragent/.keep</exclude>
+                <exclude>src/main/resources/webapps/static/yarn.dt.plugins.js</exclude>
+                <!-- jQuery DataTables files (BSD license) -->
+                <exclude>src/main/resources/webapps/static/dt-1.9.4/**</exclude>
+                <!-- jQuery (MIT license) -->
+                <exclude>src/main/resources/webapps/static/jquery/jquery-1.8.2.min.js</exclude>
+                <!-- jQuery UI (MIT license) -->
+                <exclude>src/main/resources/webapps/static/jquery/jquery-ui-1.9.1.custom.min.js</exclude>
+                <exclude>src/main/resources/webapps/static/jquery/themes-1.9.1/base/jquery-ui.css</exclude>
+                <!-- jQuery jsTree (MIT license) -->
+                <exclude>src/main/resources/webapps/static/jt/jquery.jstree.js</exclude>
+                <!-- protobuf generated classes -->
+                <exclude>src/main/java/org/apache/slider/api/proto/Messages.java</exclude>
+                <exclude>src/main/java/org/apache/slider/api/proto/SliderClusterAPI.java</exclude>
+              </excludes>
             </configuration>
           </plugin>
         </plugins>

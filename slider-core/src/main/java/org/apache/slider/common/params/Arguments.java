@@ -77,6 +77,7 @@ public interface Arguments {
   String ARG_ZKPATH = "--zkpath";
   String ARG_ZKPORT = "--zkport";
   String ARG_ZKHOSTS = "--zkhosts";
+  String ARG_REPLACE_PKG = "--replacepkg";
 
 
   /**
