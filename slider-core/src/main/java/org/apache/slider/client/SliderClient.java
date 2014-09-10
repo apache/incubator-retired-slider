@@ -1623,10 +1623,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @return exit code
    */
   @VisibleForTesting
-  public int actionExists(String name, boolean live) throws YarnException, IOException {
+  public int actionExists(String name, boolean checkLive) throws YarnException, IOException {
     verifyBindingsDefined();
     SliderUtils.validateClusterName(name);
-    log.debug("actionExists({}, {})", name, live);
+    log.debug("actionExists({}, {})", name, checkLive);
 
     //initial probe for a cluster in the filesystem
     Path clusterDirectory = sliderFileSystem.buildClusterDirPath(name);
@@ -1636,10 +1636,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     
     //test for liveness if desired
 
-    if (live) {
+    if (checkLive) {
       ApplicationReport instance = findInstance(name);
       if (instance == null) {
-        log.info("cluster {} not running", name);
+        log.info("Cluster {} not running", name);
         return EXIT_FALSE;
       } else {
         // the app exists, but it may be in a terminated state
@@ -1653,11 +1653,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
           log.debug("State {}", report);
           return EXIT_FALSE;
         }
-        log.info("Cluster {} is running:\n{}", name, report);
+        log.info("Cluster {} is live:\n{}", name, report);
       }
     } else {
-      log.info("Cluster {} exists but is not running", name);
-
+      log.info("Cluster {} exists", name);
     }
     return EXIT_SUCCESS;
   }
