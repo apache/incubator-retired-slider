@@ -135,6 +135,7 @@ def runProcess(commandline):
   :param commandline: command line 
   :return:the return code
   """
+  global finished
   debug ("Executing : %s" % commandline)
   exe = subprocess.Popen(commandline,
                          stdin=None,
@@ -156,6 +157,7 @@ def runProcess(commandline):
     # process is running; grab output and echo every line
     time.sleep(1)
   debug("completed with exit code : %d" % exe.returncode)
+  finished = True
   return exe.returncode
 
 
