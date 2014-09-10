@@ -201,11 +201,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     addService(yarnClient);
 
     super.serviceInit(conf);
-    
-    //here the superclass is inited; getConfig returns a non-null value
-    sliderFileSystem = new SliderFileSystem(getConfig());
-    YARNRegistryClient =
-      new YARNRegistryClient(yarnClient, getUsername(), getConfig());
+
   }
 
   /**
@@ -298,6 +294,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     if (coreAction.getHadoopServicesRequired()) {
       // validate the client
       SliderUtils.validateSliderClientEnvironment(null);
+
+      //here the superclass is inited; getConfig returns a non-null value
+      sliderFileSystem = new SliderFileSystem(getConfig());
+      YARNRegistryClient =
+          new YARNRegistryClient(yarnClient, getUsername(), getConfig());
     }
     int exitCode = EXIT_SUCCESS;
     String clusterName = serviceArgs.getClusterName();
