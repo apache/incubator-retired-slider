@@ -106,7 +106,7 @@ abstract class CommandTestBase extends SliderTestUtils {
       log.info "Security is off"
     }
     SliderShell.confDir = SLIDER_CONF_DIRECTORY
-    SliderShell.script = Shell.WINDOWS ? SLIDER_SCRIPT_PYTHON : SLIDER_SCRIPT
+    SliderShell.scriptFile = Shell.WINDOWS ? SLIDER_SCRIPT_PYTHON : SLIDER_SCRIPT
     
     log.info("Test using ${HadoopFS.getDefaultUri(SLIDER_CONFIG)} " +
              "and YARN RM @ ${SLIDER_CONFIG.get(YarnConfiguration.RM_ADDRESS)}")
