@@ -30,6 +30,7 @@ class SliderShell extends Shell {
 
 
   public static final String BASH = '/bin/bash -s'
+  public static final String CMD = 'cmd /c'
   
   /**
    * Configuration directory, shared across all instances. Not marked as volatile,
@@ -48,7 +49,7 @@ class SliderShell extends Shell {
    * @param commands
    */
   SliderShell(Collection<String> commands) {
-    super(BASH)
+    super(org.apache.hadoop.util.Shell.WINDOWS? CMD : BASH)
     assert confDir != null;
     assert script != null;
     command = script.absolutePath + " " + commands.join(" ")

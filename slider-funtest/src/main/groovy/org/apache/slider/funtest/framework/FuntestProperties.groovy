@@ -57,6 +57,7 @@ public interface FuntestProperties extends SliderXMLConfKeysForTesting {
   String KEY_TEST_CONF_XML = "slider.test.conf.xml"
   String KEY_TEST_CONF_DIR = "slider.test.conf.dir"
   String BIN_SLIDER = "bin/slider"
+  String BIN_SLIDER_PYTHON = "bin/slider.py"
   String AGENT_INI = "agent.ini"
   String AGENT_INI_IN_SLIDER_TAR = "agent/conf/" + AGENT_INI
 
