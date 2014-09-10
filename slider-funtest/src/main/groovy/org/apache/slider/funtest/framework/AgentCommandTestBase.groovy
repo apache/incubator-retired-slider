@@ -96,7 +96,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
       log.info "App pkg uploaded at $appPkgPath"
     } catch (Exception e) {
       setup_failed = true
-      fail("Setup failed "+e)
+      throw e;
     }
   }
 
