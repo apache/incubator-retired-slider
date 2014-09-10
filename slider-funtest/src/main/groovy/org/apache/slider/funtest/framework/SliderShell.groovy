@@ -87,7 +87,7 @@ class SliderShell extends Shell {
    */
   String env(String var, Object val) {
     if (org.apache.hadoop.util.Shell.WINDOWS) {
-      return "set " + var + "=${val.toString()};"
+      return "set " + var + "=${val.toString()}"
     } else {
       return "export " + var + "=${val.toString()};"
     }
