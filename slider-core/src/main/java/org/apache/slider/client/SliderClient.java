@@ -196,9 +196,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       SliderUtils.forceLogin();
       SliderUtils.initProcessSecurity(conf);
     }
-    //create the YARN client
-    yarnClient = new SliderYarnClientImpl();
-    addService(yarnClient);
+
 
     super.serviceInit(conf);
 
@@ -292,13 +290,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     
     AbstractActionArgs coreAction = serviceArgs.getCoreAction();
     if (coreAction.getHadoopServicesRequired()) {
-      // validate the client
-      SliderUtils.validateSliderClientEnvironment(null);
-
-      //here the superclass is inited; getConfig returns a non-null value
-      sliderFileSystem = new SliderFileSystem(getConfig());
-      YARNRegistryClient =
-          new YARNRegistryClient(yarnClient, getUsername(), getConfig());
+      initHadoopBinding();
     }
     int exitCode = EXIT_SUCCESS;
     String clusterName = serviceArgs.getClusterName();
@@ -353,6 +345,31 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     return exitCode;
   }
+
+  /**
+   * Perform everything needed to init the hadoop binding.
+   * This assumes that the service is already  in inited or started state
+   * @throws IOException
+   * @throws SliderException
+   */
+  protected void initHadoopBinding() throws IOException, SliderException {
+    // validate the client
+    SliderUtils.validateSliderClientEnvironment(null);
+    //create the YARN client
+    yarnClient = new SliderYarnClientImpl();
+    yarnClient.init(getConfig());
+    if (getServiceState() == STATE.STARTED) {
+      yarnClient.start();
+    }
+    addService(yarnClient);
+    // create the filesystem
+    sliderFileSystem = new SliderFileSystem(getConfig());
+
+    // and the registry
+    YARNRegistryClient =
+        new YARNRegistryClient(yarnClient, getUsername(), getConfig());
+  }
+
   /**
    * Delete the zookeeper node associated with the calling user and the cluster
    **/
