@@ -20,6 +20,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenIdentifier;
@@ -35,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.security.PrivilegedExceptionAction;
 import java.text.DateFormat;
 import java.util.Date;
@@ -67,7 +69,9 @@ public class FsDelegationTokenManager {
     // using HDFS principal...
     this.remoteUser = UserGroupInformation
         .loginUserFromKeytabAndReturnUGI(
-            loginConfig.get(DFSConfigKeys.DFS_NAMENODE_USER_NAME_KEY),
+            SecurityUtil.getServerPrincipal(
+                loginConfig.get(DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY),
+                InetAddress.getLocalHost().getCanonicalHostName()),
             loginConfig.get(DFSConfigKeys.DFS_NAMENODE_KEYTAB_FILE_KEY));
     log.info("Created remote user {}.  UGI reports current user is {}",
              this.remoteUser, UserGroupInformation.getCurrentUser());
