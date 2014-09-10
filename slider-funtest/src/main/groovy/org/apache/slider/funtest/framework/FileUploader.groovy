@@ -145,6 +145,7 @@ class FileUploader {
 
   public void attemptToCreateHomeDir(String username, Path home) {
     def privilegedFS = getFileSystemAsUserName(username)
+    log.info "Creating home dir $home as user ${user.userName} group ${user.primaryGroupName}"
     privilegedFS.mkdirs(home, new FsPermission((short) 00755))
     privilegedFS.setOwner(home, user.userName, user.primaryGroupName)
   }
