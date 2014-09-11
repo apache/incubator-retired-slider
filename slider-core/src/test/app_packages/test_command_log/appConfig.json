@@ -12,7 +12,7 @@
         "site.global.app_pid_dir": "${AGENT_WORK_ROOT}/app/run",
         "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/command-logger",
         "site.global.app_install_dir": "${AGENT_WORK_ROOT}/app/install",
-        "site.cl-site.logfile.location": "${AGENT_LOG_ROOT}/app/log/operations.log",
+        "site.cl-site.logfile.location": "${AGENT_WORK_ROOT}/app/install/command-logger-app/operations.log",
         "site.cl-site.datetime.format": "%A, %d. %B %Y %I:%M%p"
     },
     "components": {
