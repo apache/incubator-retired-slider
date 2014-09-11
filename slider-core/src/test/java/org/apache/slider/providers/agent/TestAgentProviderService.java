@@ -272,9 +272,10 @@ public class TestAgentProviderService {
     MapOperations resourceComponent = new MapOperations();
     MapOperations appComponent = new MapOperations();
     Path containerTmpDirPath = new Path(".", "test");
-    FileSystem mockFs = new MockFileSystem();
+    FileSystem mockFs = createNiceMock(FileSystem.class);
+    expect(mockFs.exists(anyObject(Path.class))).andReturn(true);
     expect(sliderFileSystem.getFileSystem())
-        .andReturn(new FilterFileSystem(mockFs)).anyTimes();
+        .andReturn(mockFs).anyTimes();
     expect(sliderFileSystem.createAmResource(anyObject(Path.class),
                                              anyObject(LocalResourceType.class)))
         .andReturn(createNiceMock(LocalResource.class)).anyTimes();
@@ -331,7 +332,7 @@ public class TestAgentProviderService {
     treeOps.set(OptionKeys.APPLICATION_NAME, "HBASE");
     expect(access.getInstanceDefinitionSnapshot()).andReturn(aggConf);
     expect(access.getInternalsSnapshot()).andReturn(treeOps).anyTimes();
-    replay(access, ctx, container, sliderFileSystem);
+    replay(access, ctx, container, sliderFileSystem, mockFs);
 
     try {
       mockAps.buildContainerLaunchContext(launcher,
@@ -423,7 +424,9 @@ public class TestAgentProviderService {
     AgentProviderService mockAps = Mockito.spy(aps);
 
     doReturn(access).when(mockAps).getAmState();
-    doReturn("scripts/hbase_master.py").when(mockAps)
+    CommandScript cs = new CommandScript();
+    cs.setScript("scripts/hbase_master.py");
+    doReturn(cs).when(mockAps)
         .getScriptPathFromMetainfo(anyString());
     Metainfo metainfo = new Metainfo();
     Application application = new Application();
@@ -922,9 +925,10 @@ public class TestAgentProviderService {
     MapOperations resourceComponent = new MapOperations();
     MapOperations appComponent = new MapOperations();
     Path containerTmpDirPath = new Path(".", "test");
-    FileSystem mockFs = new MockFileSystem();
+    FilterFileSystem mockFs = createNiceMock(FilterFileSystem.class);
     expect(sliderFileSystem.getFileSystem())
-        .andReturn(new FilterFileSystem(mockFs)).anyTimes();
+        .andReturn(mockFs).anyTimes();
+    expect(mockFs.exists(anyObject(Path.class))).andReturn(true);
     expect(sliderFileSystem.createAmResource(anyObject(Path.class),
                                              anyObject(LocalResourceType.class)))
         .andReturn(createNiceMock(LocalResource.class)).anyTimes();
@@ -982,7 +986,7 @@ public class TestAgentProviderService {
     treeOps.set(OptionKeys.APPLICATION_NAME, "HBASE");
     expect(access.getInstanceDefinitionSnapshot()).andReturn(aggConf).anyTimes();
     expect(access.getInternalsSnapshot()).andReturn(treeOps).anyTimes();
-    replay(access, ctx, container, sliderFileSystem);
+    replay(access, ctx, container, sliderFileSystem, mockFs);
 
     // build two containers
     try {
