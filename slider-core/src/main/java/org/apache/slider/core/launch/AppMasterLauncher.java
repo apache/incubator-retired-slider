@@ -20,6 +20,7 @@ package org.apache.slider.core.launch;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationSubmissionContext;
 import org.apache.hadoop.yarn.api.records.Priority;
@@ -35,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.Map;
 import java.util.Set;
 
@@ -196,7 +198,9 @@ public class AppMasterLauncher extends AbstractLauncher {
    */
   private void addSecurityTokens() throws IOException {
 
-    String tokenRenewer = getConf().get(YarnConfiguration.RM_PRINCIPAL);
+    String tokenRenewer = SecurityUtil.getServerPrincipal(
+        getConf().get(YarnConfiguration.RM_PRINCIPAL),
+        InetAddress.getLocalHost().getCanonicalHostName());
     if (SliderUtils.isUnset(tokenRenewer)) {
       throw new IOException(
         "Can't get Master Kerberos principal for the RM to use as renewer: "

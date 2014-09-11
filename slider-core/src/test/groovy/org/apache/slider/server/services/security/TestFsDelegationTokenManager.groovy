@@ -138,6 +138,7 @@ class TestFsDelegationTokenManager {
           def user = new Text(currentUser.getUserName())
           def id = new DelegationTokenIdentifier(user, user, user)
           id.setSequenceNumber(sequenceNum++)
+          id.setMaxDate(Time.now() + 10000)
 
           return id
       }
@@ -169,7 +170,7 @@ class TestFsDelegationTokenManager {
           }
 
 
-          return Time.now() + 10000;
+          return Time.now() + 1000;
       }
 
       @Override

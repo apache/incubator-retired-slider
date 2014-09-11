@@ -29,6 +29,8 @@
     "site.accumulo-site.instance.rpc.ssl.enabled": "true",
     "site.accumulo-site.instance.rpc.ssl.clientAuth": "true",
     "site.accumulo-site.general.security.credential.provider.paths": "jceks://hdfs/user/${USER}/accumulo-${CLUSTER_NAME}.jceks",
+    "site.accumulo-site.general.kerberos.keytab": "${accumulo.keytab}",
+    "site.accumulo-site.general.kerberos.principal": "${accumulo.principal}",
     "site.accumulo-site.tserver.memory.maps.native.enabled": "false",
     "site.accumulo-site.tserver.memory.maps.max": "80M",
     "site.accumulo-site.tserver.cache.data.size": "7M",

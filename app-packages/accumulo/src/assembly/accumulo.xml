@@ -42,7 +42,7 @@
       <fileMode>0755</fileMode>
     </file>
     <file>
-      <source>${project.build.directory}/${work.dir}/accumulo-${accumulo.version}-bin.tar.gz</source>
+      <source>${project.build.directory}/${work.dir}/${pkg.name}</source>
       <outputDirectory>package/files</outputDirectory>
       <filtered>false</filtered>
       <fileMode>0755</fileMode>

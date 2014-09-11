@@ -28,6 +28,7 @@ import org.apache.slider.accumulo.CustomAuthenticator
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderKeys
+import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.core.persist.ConfTreeSerDeser
 import org.apache.slider.core.registry.docstore.PublishedConfiguration
@@ -45,6 +46,12 @@ class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
   protected static final String KEY_PASS = "keypass"
   protected static final String TRUST_PASS = "trustpass"
   protected ConfTree tree
+
+  AccumuloBasicIT() {
+    if (SliderUtils.isHadoopClusterSecure(SLIDER_CONFIG)) {
+      APP_TEMPLATE = "target/test-config/appConfig_kerberos.json"
+    }
+  }
 
   @Before
   public void createKeyStore() {

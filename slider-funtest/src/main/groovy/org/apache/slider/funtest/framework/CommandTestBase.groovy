@@ -23,6 +23,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.util.ExitUtil
+import org.apache.hadoop.util.Shell
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.common.SliderKeys
@@ -56,6 +57,9 @@ abstract class CommandTestBase extends SliderTestUtils {
   public static final File SLIDER_SCRIPT = new File(
       SLIDER_TAR_DIRECTORY,
       BIN_SLIDER).canonicalFile
+  public static final File SLIDER_SCRIPT_PYTHON = new File(
+      SLIDER_TAR_DIRECTORY,
+      BIN_SLIDER_PYTHON).canonicalFile
   public static final File SLIDER_CONF_DIRECTORY = new File(
       SLIDER_CONF_DIR).canonicalFile
   public static final File SLIDER_CONF_XML = new File(SLIDER_CONF_DIRECTORY,
@@ -102,7 +106,8 @@ abstract class CommandTestBase extends SliderTestUtils {
       log.info "Security is off"
     }
     SliderShell.confDir = SLIDER_CONF_DIRECTORY
-    SliderShell.script = SLIDER_SCRIPT
+    SliderShell.scriptFile = Shell.WINDOWS ? SLIDER_SCRIPT_PYTHON : SLIDER_SCRIPT
+    
     log.info("Test using ${HadoopFS.getDefaultUri(SLIDER_CONFIG)} " +
              "and YARN RM @ ${SLIDER_CONFIG.get(YarnConfiguration.RM_ADDRESS)}")
 

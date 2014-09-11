@@ -160,6 +160,9 @@ abstract class AbstractTestBuildSetup extends SliderTestUtils implements Funtest
   @Test
   public void testSecuritySettingsValid() throws Throwable {
     Configuration conf = loadSliderConf();
+    if (SliderUtils.isHadoopClusterSecure(conf)) {
+      UserGroupInformation.setLoginUser(null)
+    }
     if (SliderUtils.maybeInitSecurity(conf)) {
       log.info("Security enabled")
       SliderUtils.forceLogin()

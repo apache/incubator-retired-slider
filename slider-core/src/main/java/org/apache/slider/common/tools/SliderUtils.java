@@ -1019,7 +1019,9 @@ public final class SliderUtils {
     if (authUser.getAuthenticationMethod() ==
         UserGroupInformation.AuthenticationMethod.SIMPLE) {
       throw new BadConfigException("Auth User is not Kerberized %s" +
-                                   " -security has already been set up with the wrong authentication method",
+                                   " -security has already been set up with the wrong authentication method. "
+                                   + "This can occur if a file system has already been created prior to the loading of "
+                                   + "the security configuration.",
           authUser);
 
     }

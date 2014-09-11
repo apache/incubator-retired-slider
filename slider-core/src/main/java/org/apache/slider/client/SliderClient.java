@@ -196,16 +196,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       SliderUtils.forceLogin();
       SliderUtils.initProcessSecurity(conf);
     }
-    //create the YARN client
-    yarnClient = new SliderYarnClientImpl();
-    addService(yarnClient);
+
 
     super.serviceInit(conf);
-    
-    //here the superclass is inited; getConfig returns a non-null value
-    sliderFileSystem = new SliderFileSystem(getConfig());
-    YARNRegistryClient =
-      new YARNRegistryClient(yarnClient, getUsername(), getConfig());
+
   }
 
   /**
@@ -296,8 +290,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     
     AbstractActionArgs coreAction = serviceArgs.getCoreAction();
     if (coreAction.getHadoopServicesRequired()) {
-      // validate the client
-      SliderUtils.validateSliderClientEnvironment(null);
+      initHadoopBinding();
     }
     int exitCode = EXIT_SUCCESS;
     String clusterName = serviceArgs.getClusterName();
@@ -352,6 +345,31 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     return exitCode;
   }
+
+  /**
+   * Perform everything needed to init the hadoop binding.
+   * This assumes that the service is already  in inited or started state
+   * @throws IOException
+   * @throws SliderException
+   */
+  protected void initHadoopBinding() throws IOException, SliderException {
+    // validate the client
+    SliderUtils.validateSliderClientEnvironment(null);
+    //create the YARN client
+    yarnClient = new SliderYarnClientImpl();
+    yarnClient.init(getConfig());
+    if (getServiceState() == STATE.STARTED) {
+      yarnClient.start();
+    }
+    addService(yarnClient);
+    // create the filesystem
+    sliderFileSystem = new SliderFileSystem(getConfig());
+
+    // and the registry
+    YARNRegistryClient =
+        new YARNRegistryClient(yarnClient, getUsername(), getConfig());
+  }
+
   /**
    * Delete the zookeeper node associated with the calling user and the cluster
    **/
@@ -1601,10 +1619,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @return exit code
    */
   @VisibleForTesting
-  public int actionExists(String name, boolean live) throws YarnException, IOException {
+  public int actionExists(String name, boolean checkLive) throws YarnException, IOException {
     verifyBindingsDefined();
     SliderUtils.validateClusterName(name);
-    log.debug("actionExists({}, {})", name, live);
+    log.debug("actionExists({}, {})", name, checkLive);
 
     //initial probe for a cluster in the filesystem
     Path clusterDirectory = sliderFileSystem.buildClusterDirPath(name);
@@ -1614,10 +1632,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     
     //test for liveness if desired
 
-    if (live) {
+    if (checkLive) {
       ApplicationReport instance = findInstance(name);
       if (instance == null) {
-        log.info("cluster {} not running", name);
+        log.info("Cluster {} not running", name);
         return EXIT_FALSE;
       } else {
         // the app exists, but it may be in a terminated state
@@ -1631,11 +1649,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
           log.debug("State {}", report);
           return EXIT_FALSE;
         }
-        log.info("Cluster {} is running:\n{}", name, report);
+        log.info("Cluster {} is live:\n{}", name, report);
       }
     } else {
-      log.info("Cluster {} exists but is not running", name);
-
+      log.info("Cluster {} exists", name);
     }
     return EXIT_SUCCESS;
   }

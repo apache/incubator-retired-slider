@@ -82,32 +82,9 @@
         </executions>
       </plugin>
       
-      <plugin>
-        <groupId>org.apache.rat</groupId>
-        <artifactId>apache-rat-plugin</artifactId>
-        <version>${apache-rat-plugin.version}</version>
-        <executions>
-          <execution>
-            <id>check-licenses</id>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <excludes>
-            <exclude>src/test/python/agent/dummy_output_error.txt</exclude>
-            <exclude>src/test/python/agent/dummy_output_good.txt</exclude>
-            <!-- jinja2 files (BSD license) -->
-            <exclude>src/main/python/jinja2/**</exclude>
-            <!-- mock files (BSD license) -->
-            <exclude>src/test/python/mock/**</exclude>
-            <!-- kazoo files (Apache License, Version 2.0) -->
-            <exclude>src/main/python/kazoo/**</exclude>
-          </excludes>
-        </configuration>
-      </plugin>
+  
     </plugins>
+    
     <extensions>
       <extension>
         <groupId>org.apache.maven.wagon</groupId>
@@ -115,4 +92,39 @@
       </extension>
     </extensions>
   </build>
+  
+  <profiles>
+    <profile>
+      <id>rat</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.rat</groupId>
+            <artifactId>apache-rat-plugin</artifactId>
+            <version>${apache-rat-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>check-licenses</id>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <excludes>
+                <exclude>src/test/python/agent/dummy_output_error.txt</exclude>
+                <exclude>src/test/python/agent/dummy_output_good.txt</exclude>
+                <!-- jinja2 files (BSD license) -->
+                <exclude>src/main/python/jinja2/**</exclude>
+                <!-- mock files (BSD license) -->
+                <exclude>src/test/python/mock/**</exclude>
+                <!-- kazoo files (Apache License, Version 2.0) -->
+                <exclude>src/main/python/kazoo/**</exclude>
+              </excludes>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>
