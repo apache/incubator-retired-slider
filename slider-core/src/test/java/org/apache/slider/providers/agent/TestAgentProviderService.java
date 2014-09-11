@@ -440,7 +440,7 @@ public class TestAgentProviderService {
       doReturn(true).when(mockAps).isMaster(anyString());
       doNothing().when(mockAps).addInstallCommand(eq("HBASE_MASTER"),
           eq("mockcontainer_1"), any(HeartBeatResponse.class),
-          eq("scripts/hbase_master.py"));
+          eq("scripts/hbase_master.py"), eq(600L));
       doReturn(conf).when(mockAps).getConfig();
     } catch (SliderException e) {
     }
