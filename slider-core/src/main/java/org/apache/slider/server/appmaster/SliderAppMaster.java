@@ -1009,7 +1009,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     ServiceRecord container = new ServiceRecord(
         cid,
         description,
-        PersistencePolicies.CONTAINER);
+        PersistencePolicies.CONTAINER, null);
     try {
       yarnRegistryOperations.putComponent(cid, container);
     } catch (IOException e) {

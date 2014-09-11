@@ -21,7 +21,7 @@ package org.apache.slider.server.services.yarnregistry;
 import org.apache.hadoop.yarn.registry.client.binding.BindingUtils;
 import org.apache.hadoop.yarn.registry.client.binding.RegistryPathUtils;
 import org.apache.hadoop.yarn.registry.client.services.RegistryOperationsService;
-import org.apache.hadoop.yarn.registry.client.types.CreateFlags;
+import org.apache.hadoop.yarn.registry.client.api.CreateFlags;
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
 
 import java.io.IOException;
