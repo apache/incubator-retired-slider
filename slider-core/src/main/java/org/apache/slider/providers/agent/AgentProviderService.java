@@ -279,11 +279,26 @@ public class AgentProviderService extends AbstractProviderService implements
     launcher.setEnv(PYTHONPATH, pythonPath);
     log.info("PYTHONPATH set to {}", pythonPath);
 
+    Path agentImagePath = null;
     String agentImage = instanceDefinition.getInternalOperations().
         get(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH);
-    if (agentImage != null) {
-      LocalResource agentImageRes = fileSystem.createAmResource(new Path(agentImage), LocalResourceType.ARCHIVE);
+    if (SliderUtils.isUnset(agentImage)) {
+      agentImagePath =
+          new Path(new Path(new Path(instanceDefinition.getInternalOperations().get(InternalKeys.INTERNAL_TMP_DIR),
+                                     container.getId().getApplicationAttemptId().getApplicationId().toString()),
+                            AgentKeys.PROVIDER_AGENT),
+                   SliderKeys.AGENT_TAR);
+    } else {
+       agentImagePath = new Path(agentImage);
+    }
+
+    // TODO: throw exception when agent tarball is not available
+
+    if (fileSystem.getFileSystem().exists(agentImagePath)) {
+      LocalResource agentImageRes = fileSystem.createAmResource(agentImagePath, LocalResourceType.ARCHIVE);
       launcher.addLocalResource(AgentKeys.AGENT_INSTALL_DIR, agentImageRes);
+    } else {
+      log.error("Required agent image slider-agent.tar.gz is unavailable.");
     }
 
     log.info("Using {} for agent.", scriptPath);

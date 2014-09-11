@@ -164,32 +164,33 @@ public class AgentClientProvider extends AbstractClientProvider
     if (!"zip".equalsIgnoreCase(extension)) {
       throw new BadConfigException("App definition must be packaged as a .zip file. File provided is " + appDef);
     }
-
-    String appHome = instanceDefinition.getAppConfOperations().
-        getGlobalOptions().get(AgentKeys.PACKAGE_PATH);
-    String agentImage = instanceDefinition.getInternalOperations().
-        get(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH);
-
-    if (SliderUtils.isUnset(appHome) && SliderUtils.isUnset(agentImage)) {
-      throw new BadConfigException("Either agent package path " +
-                                   AgentKeys.PACKAGE_PATH + " or image root " +
-                                   InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH
-                                   + " must be provided.");
-    }
   }
 
   @Override
   public void prepareAMAndConfigForLaunch(SliderFileSystem fileSystem,
-      Configuration serviceConf,
-      AbstractLauncher launcher,
-      AggregateConf instanceDescription,
-      Path snapshotConfDirPath,
-      Path generatedConfDirPath,
-      Configuration clientConfExtras,
-      String libdir,
-      Path tempPath, boolean miniClusterTestRun) throws
+                                          Configuration serviceConf,
+                                          AbstractLauncher launcher,
+                                          AggregateConf instanceDefinition,
+                                          Path snapshotConfDirPath,
+                                          Path generatedConfDirPath,
+                                          Configuration clientConfExtras,
+                                          String libdir,
+                                          Path tempPath,
+                                          boolean miniClusterTestRun) throws
       IOException,
       SliderException {
+    String agentImage = instanceDefinition.getInternalOperations().
+        get(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH);
+    if (SliderUtils.isUnset(agentImage)) {
+      Path agentPath = new Path(tempPath.getParent(), AgentKeys.PROVIDER_AGENT);
+      log.info("Automatically uploading the agent tarball at {}", agentPath);
+      fileSystem.getFileSystem().mkdirs(agentPath);
+      if(ProviderUtils.addAgentTar(this, AGENT_TAR, fileSystem, agentPath)) {
+        instanceDefinition.getInternalOperations().set(
+            InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH,
+            new Path(agentPath, AGENT_TAR).toUri());
+      }
+    }
   }
 
   @Override
