@@ -61,39 +61,35 @@ public class YarnRegistryViewForProviders {
 
   /**
    * Add a component under the slider name/entry
-   * @param componentName
-   * @param entry
-   * @param ephemeral
+   * @param componentName component name
+   * @param record record to put
    * @throws IOException
    */
   public void putComponent(String componentName,
-      ServiceRecord entry,
-      boolean ephemeral) throws
+      ServiceRecord record) throws
       IOException {
     putComponent(sliderServiceclass, instanceName,
         componentName,
-        entry,
-        ephemeral);
+        record
+    );
   }
 
   /**
    * Add a component 
-   * @param componentName
-   * @param record
-   * @param ephemeral
+   * @param serviceClass service class to use under ~user
+   * @param componentName component name
+   * @param record record to put
    * @throws IOException
    */
   public void putComponent(String serviceClass,
       String serviceName,
       String componentName,
-      ServiceRecord record,
-      boolean ephemeral) throws IOException {
+      ServiceRecord record) throws IOException {
     String path = BindingUtils.componentPath(
         user, serviceClass, serviceName, componentName);
     registryOperations.mkdir(RegistryPathUtils.parentOf(path), true);
     registryOperations.create(path, record,
-        CreateFlags.OVERWRITE
-        + (ephemeral ? CreateFlags.EPHEMERAL : 0));
+        CreateFlags.OVERWRITE);
   }
 
 

@@ -970,8 +970,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // and an ephemeral binding to the app
     yarnRegistryOperations.putComponent(
         RegistryPathUtils.encodeYarnID(appAttemptID.toString()),
-        serviceRecord,
-        false);
+        serviceRecord
+    );
 
   }
 
@@ -987,7 +987,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     if (registryOperations instanceof RMRegistryOperationsService) {
       RMRegistryOperationsService rmRegOperations =
           (RMRegistryOperationsService) registryOperations;
-      rmRegOperations.createHomeDirectory(service_user_name);
+      rmRegOperations.initUserRegistryAsync(service_user_name);
     }
   }
 
@@ -1009,9 +1009,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     ServiceRecord container = new ServiceRecord(
         cid,
         description,
-        PersistencePolicies.EPHEMERAL);
+        PersistencePolicies.CONTAINER);
     try {
-      yarnRegistryOperations.putComponent(cid, container, true);
+      yarnRegistryOperations.putComponent(cid, container);
     } catch (IOException e) {
       log.warn("Failed to register container {}/{}: {}",
           id, description, e, e);
