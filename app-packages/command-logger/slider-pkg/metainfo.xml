@@ -42,7 +42,7 @@
         <packages>
           <package>
             <type>tarball</type>
-            <name>files/command_log.tar</name>
+            <name>files/command-logger.tar</name>
           </package>
         </packages>
       </osSpecific>

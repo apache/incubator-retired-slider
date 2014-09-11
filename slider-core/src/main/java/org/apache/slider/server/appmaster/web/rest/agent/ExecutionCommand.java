@@ -179,4 +179,20 @@ public class ExecutionCommand {
   public void setComponentName(String componentName) {
     this.componentName = componentName;
   }
+
+  @Override
+  public String toString() {
+    StringBuilder builder = new StringBuilder();
+    builder.append("ExecutionCommand [commandType=").append(commandType)
+        .append(", clusterName=").append(clusterName).append(", taskId=")
+        .append(taskId).append(", commandId=").append(commandId)
+        .append(", hostname=").append(hostname).append(", role=").append(role)
+        .append(", hostLevelParams=").append(hostLevelParams)
+        .append(", roleParams=").append(roleParams).append(", roleCommand=")
+        .append(roleCommand).append(", configurations=").append(configurations)
+        .append(", commandParams=").append(commandParams)
+        .append(", serviceName=").append(serviceName)
+        .append(", componentName=").append(componentName).append("]");
+    return builder.toString();
+  }
 }

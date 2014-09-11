@@ -28,6 +28,7 @@ import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.LocalResourceType;
+import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterDescriptionKeys;
 import org.apache.slider.api.ClusterNode;
@@ -41,6 +42,7 @@ import org.apache.slider.core.conf.ConfTreeOperations;
 import org.apache.slider.core.conf.MapOperations;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.ContainerLauncher;
+import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.agent.application.metadata.Application;
 import org.apache.slider.providers.agent.application.metadata.CommandOrder;
 import org.apache.slider.providers.agent.application.metadata.CommandScript;
@@ -58,6 +60,7 @@ import org.apache.slider.server.appmaster.model.mock.MockFileSystem;
 import org.apache.slider.server.appmaster.model.mock.MockNodeId;
 import org.apache.slider.server.appmaster.state.ProviderAppState;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
+import org.apache.slider.server.appmaster.web.rest.agent.AgentCommandType;
 import org.apache.slider.server.appmaster.web.rest.agent.CommandReport;
 import org.apache.slider.server.appmaster.web.rest.agent.ComponentStatus;
 import org.apache.slider.server.appmaster.web.rest.agent.ExecutionCommand;
@@ -379,6 +382,217 @@ public class TestAgentProviderService {
     hb.setHostname("mockcontainer_1___HBASE_MASTER");
     HeartBeatResponse hbr = mockAps.handleHeartBeat(hb);
     Assert.assertEquals(2, hbr.getResponseId());
+  }
+
+  private AggregateConf prepareConfForAgentStateTests() {
+    ConfTree tree = new ConfTree();
+    tree.global.put(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH, ".");
+
+    AggregateConf instanceDefinition = new AggregateConf();
+    instanceDefinition.setInternal(tree);
+    instanceDefinition.setAppConf(tree);
+    instanceDefinition.getAppConfOperations().getGlobalOptions()
+        .put(AgentKeys.APP_DEF, ".");
+    instanceDefinition.getAppConfOperations().getGlobalOptions()
+        .put(AgentKeys.AGENT_CONF, ".");
+    instanceDefinition.getAppConfOperations().getGlobalOptions()
+        .put(AgentKeys.AGENT_VERSION, ".");
+    return instanceDefinition;
+  }
+
+  private AgentProviderService prepareProviderServiceForAgentStateTests()
+      throws IOException {
+    ContainerLaunchContext ctx = createNiceMock(ContainerLaunchContext.class);
+    Container container = createNiceMock(Container.class);
+    String role = "HBASE_MASTER";
+    SliderFileSystem sliderFileSystem = createNiceMock(SliderFileSystem.class);
+    FileSystem mockFs = new MockFileSystem();
+    expect(sliderFileSystem.getFileSystem()).andReturn(
+        new FilterFileSystem(mockFs)).anyTimes();
+    expect(
+        sliderFileSystem.createAmResource(anyObject(Path.class),
+            anyObject(LocalResourceType.class))).andReturn(
+        createNiceMock(LocalResource.class)).anyTimes();
+    expect(container.getId()).andReturn(new MockContainerId(1)).anyTimes();
+    expect(container.getNodeId()).andReturn(new MockNodeId("localhost"))
+        .anyTimes();
+    expect(container.getPriority()).andReturn(Priority.newInstance(1));
+
+    StateAccessForProviders access = createNiceMock(StateAccessForProviders.class);
+    AgentProviderService aps = new AgentProviderService();
+    AgentProviderService mockAps = Mockito.spy(aps);
+
+    doReturn(access).when(mockAps).getAmState();
+    doReturn("scripts/hbase_master.py").when(mockAps)
+        .getScriptPathFromMetainfo(anyString());
+    Metainfo metainfo = new Metainfo();
+    Application application = new Application();
+    metainfo.setApplication(application);
+    doReturn(metainfo).when(mockAps).getApplicationMetainfo(
+        any(SliderFileSystem.class), anyString());
+    doReturn(metainfo).when(mockAps).getMetainfo();
+
+    Configuration conf = new Configuration();
+    conf.set(SliderXmlConfKeys.REGISTRY_PATH,
+        SliderXmlConfKeys.DEFAULT_REGISTRY_PATH);
+
+    try {
+      doReturn(true).when(mockAps).isMaster(anyString());
+      doNothing().when(mockAps).addInstallCommand(eq("HBASE_MASTER"),
+          eq("mockcontainer_1"), any(HeartBeatResponse.class),
+          eq("scripts/hbase_master.py"), eq(600L));
+      doReturn(conf).when(mockAps).getConfig();
+    } catch (SliderException e) {
+    }
+
+    doNothing().when(mockAps).processAllocatedPorts(anyString(), anyString(),
+        anyString(), anyMap());
+    expect(access.isApplicationLive()).andReturn(true).anyTimes();
+    ClusterDescription desc = new ClusterDescription();
+    desc.setOption(OptionKeys.ZOOKEEPER_QUORUM, "host1:2181");
+    desc.setInfo(OptionKeys.APPLICATION_NAME, "HBASE");
+    expect(access.getClusterStatus()).andReturn(desc).anyTimes();
+
+    AggregateConf aggConf = new AggregateConf();
+    ConfTreeOperations treeOps = aggConf.getAppConfOperations();
+    treeOps.getOrAddComponent("HBASE_MASTER")
+        .put(AgentKeys.WAIT_HEARTBEAT, "0");
+    treeOps.set(OptionKeys.APPLICATION_NAME, "HBASE");
+    treeOps.set("java_home", "/usr/jdk7/");
+    treeOps.set("site.fs.defaultFS", "hdfs://c6409.ambari.apache.org:8020");
+    treeOps.set(InternalKeys.INTERNAL_DATA_DIR_PATH, "hdfs://c6409.ambari.apache.org:8020/user/yarn/.slider/cluster/cl1/data");
+    expect(access.getInstanceDefinitionSnapshot()).andReturn(aggConf);
+    expect(access.getInternalsSnapshot()).andReturn(treeOps).anyTimes();
+    expect(access.getAppConfSnapshot()).andReturn(treeOps).anyTimes();
+    replay(access, ctx, container, sliderFileSystem);
+
+    List<Container> containers = new ArrayList<Container>();
+    containers.add(container);
+    Map<Integer, ProviderRole> providerRoleMap = new HashMap<Integer, ProviderRole>();
+    ProviderRole providerRole = new ProviderRole(role, 1);
+    providerRoleMap.put(1, providerRole);
+    mockAps.rebuildContainerDetails(containers, "mockcontainer_1",
+        providerRoleMap);
+    return mockAps;
+  }
+
+  @Test
+  public void testAgentStateStarted() throws IOException, SliderException {
+    AggregateConf instanceDefinition = prepareConfForAgentStateTests();
+    AgentProviderService mockAps = prepareProviderServiceForAgentStateTests();
+    Register reg = new Register();
+    reg.setResponseId(0);
+    reg.setHostname("mockcontainer_1___HBASE_MASTER");
+    Map<String,String> ports = new HashMap<String,String>();
+    ports.put("a","100");
+    reg.setAllocatedPorts(ports);
+
+    // Simulating agent in STARTED state
+    reg.setActualState(State.STARTED);
+
+    mockAps.initializeApplicationConfiguration(instanceDefinition,
+        null);
+
+    RegistrationResponse resp = mockAps.handleRegistration(reg);
+    Assert.assertEquals(0, resp.getResponseId());
+    Assert.assertEquals(RegistrationStatus.OK, resp.getResponseStatus());
+
+    Mockito.verify(mockAps, Mockito.times(1)).processAllocatedPorts(
+        anyString(),
+        anyString(),
+        anyString(),
+        anyMap()
+    );
+
+    HeartBeat hb = new HeartBeat();
+    hb.setResponseId(1);
+    hb.setHostname("mockcontainer_1___HBASE_MASTER");
+    HeartBeatResponse hbr = mockAps.handleHeartBeat(hb);
+    Assert.assertEquals(2, hbr.getResponseId());
+    Assert.assertNotNull(
+        "Status command from AM cannot be null when agent's actualState "
+            + "is set to STARTED during registration", hbr.getStatusCommands());
+    Assert.assertTrue(
+        "Status command from AM cannot be empty when agent's actualState "
+            + "is set to STARTED during registration", hbr.getStatusCommands()
+            .size() > 0);
+    Assert.assertEquals(
+        "AM should directly send a STATUS request if agent's actualState is "
+            + "set to STARTED during registration",
+        AgentCommandType.STATUS_COMMAND, hbr.getStatusCommands().get(0)
+            .getCommandType());
+    Assert.assertEquals(
+        "AM should directly request for CONFIG if agent's actualState is "
+            + "set to STARTED during registration",
+        "GET_CONFIG", hbr.getStatusCommands().get(0)
+            .getRoleCommand());
+    Assert.assertFalse("AM cannot ask agent to restart", hbr.isRestartAgent());
+  }
+
+  @Test
+  public void testAgentStateInstalled() throws IOException, SliderException {
+    AggregateConf instanceDefinition = prepareConfForAgentStateTests();
+    AgentProviderService mockAps = prepareProviderServiceForAgentStateTests();
+
+    Metainfo metainfo = new Metainfo();
+    Application application = new Application();
+    CommandOrder cmdOrder = new CommandOrder();
+    cmdOrder.setCommand("HBASE_MASTER-START");
+    cmdOrder.setRequires("HBASE_MASTER-INSTALLED");
+    application.addCommandOrder(cmdOrder);
+    metainfo.setApplication(application);
+    doReturn(metainfo).when(mockAps).getApplicationMetainfo(
+        any(SliderFileSystem.class), anyString());
+    doReturn(metainfo).when(mockAps).getMetainfo();
+    doNothing().when(mockAps).addRoleRelatedTokens(anyMap());
+
+    Register reg = new Register();
+    reg.setResponseId(0);
+    reg.setHostname("mockcontainer_1___HBASE_MASTER");
+    Map<String,String> ports = new HashMap<String,String>();
+    ports.put("a","100");
+    reg.setAllocatedPorts(ports);
+
+    // Simulating agent in INSTALLED state
+    reg.setActualState(State.INSTALLED);
+
+    mockAps.initializeApplicationConfiguration(instanceDefinition,
+        null);
+
+    RegistrationResponse resp = mockAps.handleRegistration(reg);
+    Assert.assertEquals(0, resp.getResponseId());
+    Assert.assertEquals(RegistrationStatus.OK, resp.getResponseStatus());
+
+    Mockito.verify(mockAps, Mockito.times(1)).processAllocatedPorts(
+        anyString(),
+        anyString(),
+        anyString(),
+        anyMap()
+    );
+
+    HeartBeat hb = new HeartBeat();
+    hb.setResponseId(1);
+    hb.setHostname("mockcontainer_1___HBASE_MASTER");
+    HeartBeatResponse hbr = mockAps.handleHeartBeat(hb);
+    Assert.assertEquals(2, hbr.getResponseId());
+    Assert.assertNotNull(
+        "Execution command from AM cannot be null when agent's actualState "
+            + "is set to INSTALLED during registration", hbr.getExecutionCommands());
+    Assert.assertTrue(
+        "Execution command from AM cannot be empty when agent's actualState "
+            + "is set to INSTALLED during registration", hbr.getExecutionCommands()
+            .size() > 0);
+    Assert.assertEquals(
+        "AM should send an EXECUTION command if agent's actualState is "
+            + "set to INSTALLED during registration",
+        AgentCommandType.EXECUTION_COMMAND, hbr.getExecutionCommands().get(0)
+            .getCommandType());
+    Assert.assertEquals(
+        "AM should request for START if agent's actualState is "
+            + "set to INSTALLED during registration",
+        "START", hbr.getExecutionCommands().get(0)
+            .getRoleCommand());
+    Assert.assertFalse("AM cannot ask agent to restart", hbr.isRestartAgent());
   }
 
   @Test
