@@ -23,13 +23,17 @@ import org.apache.hadoop.yarn.api.records.ContainerId
 
 class MockContainerId extends ContainerId implements Cloneable {
 
-  int id;
+  long id;
   ApplicationAttemptId applicationAttemptId;
 
   MockContainerId() {
   }
   
   MockContainerId(int id) {
+    setId(id);
+  }
+  
+  MockContainerId(long id) {
     setId(id);
   }
   
@@ -40,10 +44,18 @@ class MockContainerId extends ContainerId implements Cloneable {
   
 
   int getId() {
-    return id
+    return (int) id
+  }
+
+  long getContainerId() {
+    return this.id;
   }
 
   void setId(int id) {
+    this.id = id
+  }
+
+  void setContainerId(long id) {
     this.id = id
   }
 
