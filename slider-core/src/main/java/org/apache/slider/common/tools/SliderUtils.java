@@ -1356,6 +1356,10 @@ public final class SliderUtils {
     String appHomeOption =
         internalOptions.get(InternalKeys.INTERNAL_APPLICATION_HOME);
     if (!isUnset(imagePathOption)) {
+      if(!isUnset(appHomeOption)) {
+        throw new BadClusterStateException(
+            ErrorStrings.E_BOTH_IMAGE_AND_HOME_DIR_SPECIFIED);
+      }
       imagePath = fs.createPathThatMustExist(imagePathOption);
     } else {
       imagePath = null;

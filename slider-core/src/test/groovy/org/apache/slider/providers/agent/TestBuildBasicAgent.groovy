@@ -367,25 +367,6 @@ class TestBuildBasicAgent extends AgentTestBase {
         false)
 
     try {
-      def badArgs1 = "test_bad_agent_args-1"
-      buildAgentCluster(badArgs1,
-          [:],
-          [
-              ARG_OPTION, CONTROLLER_URL, "http://localhost",
-              ARG_OPTION, APP_DEF, "file://" + getAppDef().absolutePath,
-              ARG_OPTION, AGENT_CONF, "file://" + getAgentConf().absolutePath,
-              ARG_RESOURCES, TEST_FILES + "good/resources.json",
-              ARG_TEMPLATE, TEST_FILES + "good/appconf.json"
-          ],
-          true, false,
-          false)
-      failWithBuildSucceeding(badArgs1, "missing package home or image path")
-    } catch (BadConfigException expected) {
-      log.info("Expected failure.", expected)
-      assert expected.message.contains("Either agent package path agent.package.root or image root internal.application.image.path must be provided")
-    }
-
-    try {
       def badArgs1 = "test_bad_agent_args-2"
       buildAgentCluster(badArgs1,
           [:],

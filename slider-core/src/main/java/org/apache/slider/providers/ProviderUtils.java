@@ -106,6 +106,30 @@ public class ProviderUtils implements RoleKeys {
       }
     }
   }
+
+  /**
+   * Add/overwrite the agent tarball (overwritten every time application is restarted)
+   * @param provider
+   * @param tarName
+   * @param sliderFileSystem
+   * @param agentDir
+   * @return
+   * @throws IOException
+   */
+  public static boolean addAgentTar(Object provider,
+                                    String tarName,
+                                    SliderFileSystem sliderFileSystem,
+                                    Path agentDir) throws
+  IOException {
+    File localFile = SliderUtils.findContainingJar(provider.getClass());
+    if(localFile != null) {
+      String parentDir = localFile.getParent();
+      Path agentTarPath = new Path(parentDir, tarName);
+      sliderFileSystem.getFileSystem().copyFromLocalFile(false, true, agentTarPath, agentDir);
+      return true;
+    }
+    return false;
+  }
   
   /**
    * Add a set of dependencies to the provider resources being built up,
@@ -252,7 +276,7 @@ public class ProviderUtils implements RoleKeys {
   /**
    * Propagate an option from the cluster specification option map
    * to the site XML map, using the site key for the name
-   * @param clusterSpec cluster specification
+   * @param global global config spec
    * @param optionKey key in the option map
    * @param sitexml  map for XML file to build up
    * @param siteKey key to assign the value to in the site XML
@@ -268,14 +292,13 @@ public class ProviderUtils implements RoleKeys {
 
   /**
    * Build the image dir. This path is relative and only valid at the far end
-   * @param clusterSpec cluster spec
+   * @param instanceDefinition instance definition
    * @param bindir bin subdir
    * @param script script in bin subdir
    * @return the path to the script
    * @throws FileNotFoundException if a file is not found, or it is not a directory* 
    */
-  public String buildPathToHomeDir(AggregateConf instanceDefinition
-                                   ,
+  public String buildPathToHomeDir(AggregateConf instanceDefinition,
                                   String bindir,
                                   String script) throws
                                                  FileNotFoundException,
@@ -327,7 +350,7 @@ public class ProviderUtils implements RoleKeys {
   
   /**
    * Build the image dir. This path is relative and only valid at the far end
-   * @param internal internal options
+   * @param instance instance options
    * @param bindir bin subdir
    * @param script script in bin subdir
    * @return the path to the script

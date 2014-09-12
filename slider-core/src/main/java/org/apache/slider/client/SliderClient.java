@@ -806,8 +806,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     builder.init(providerName, instanceDefinition);
     builder.propagateFilename();
     builder.propagatePrincipals();
-    builder.setImageDetails(buildInfo.getImage(), buildInfo.getAppHomeDir());
-
+    builder.setImageDetailsIfAvailable(buildInfo.getImage(), buildInfo.getAppHomeDir());
 
     String quorum = buildInfo.getZKhosts();
     if (SliderUtils.isUnset(quorum)) {
@@ -1051,10 +1050,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         InternalKeys.INTERNAL_PROVIDER_NAME));
     // make sure the conf dir is valid;
     
-    // now build up the image path
-    // TODO: consider supporting apps that don't have an image path
-    Path imagePath =
-      SliderUtils.extractImagePath(sliderFileSystem, internalOptions);
     if (log.isDebugEnabled()) {
       log.debug(instanceDefinition.toString());
     }
@@ -1189,11 +1184,12 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
                                                   );
 
 
-    // now add the image if it was set
+    // TODO: consider supporting apps that don't have an image path
+    Path imagePath =
+        SliderUtils.extractImagePath(sliderFileSystem, internalOptions);
     if (sliderFileSystem.maybeAddImagePath(localResources, imagePath)) {
       log.debug("Registered image path {}", imagePath);
     }
-
 
     // build the environment
     amLauncher.putEnv(

@@ -117,6 +117,33 @@
     </profile>
     <profile>
       <id>accumulo-app-package-maven</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.apache.accumulo</groupId>
+          <artifactId>accumulo</artifactId>
+          <version>${accumulo.version}</version>
+          <classifier>bin</classifier>
+          <type>tar.gz</type>
+          <exclusions>
+            <exclusion>
+              <groupId>org.apache.accumulo</groupId>
+              <artifactId>accumulo-fate</artifactId>
+            </exclusion>
+            <exclusion>
+              <groupId>org.apache.accumulo</groupId>
+              <artifactId>accumulo-gc</artifactId>
+            </exclusion>
+            <exclusion>
+              <groupId>org.apache.accumulo</groupId>
+              <artifactId>accumulo-master</artifactId>
+            </exclusion>
+            <exclusion>
+              <groupId>org.apache.accumulo</groupId>
+              <artifactId>accumulo-minicluster</artifactId>
+            </exclusion>
+          </exclusions>
+        </dependency>
+      </dependencies>
       <build>
         <plugins>
           <plugin>
@@ -221,31 +248,6 @@
   </build>
 
   <dependencies>
-    <dependency>
-      <groupId>org.apache.accumulo</groupId>
-      <artifactId>accumulo</artifactId>
-      <version>${accumulo.version}</version>
-      <classifier>bin</classifier>
-      <type>tar.gz</type>
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.accumulo</groupId>
-          <artifactId>accumulo-fate</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.accumulo</groupId>
-          <artifactId>accumulo-gc</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.accumulo</groupId>
-          <artifactId>accumulo-master</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.accumulo</groupId>
-          <artifactId>accumulo-minicluster</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
     <dependency>
       <groupId>org.apache.accumulo</groupId>
       <artifactId>accumulo-server-base</artifactId>

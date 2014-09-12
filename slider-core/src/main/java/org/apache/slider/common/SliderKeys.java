@@ -144,6 +144,7 @@ public interface SliderKeys extends SliderXmlConfKeys {
   String SLIDER_JAR = "slider.jar";
   String JCOMMANDER_JAR = "jcommander.jar";
   String GSON_JAR = "gson.jar";
+  String AGENT_TAR = "slider-agent.tar.gz";
 
   String DEFAULT_JVM_HEAP = "256M";
   int DEFAULT_YARN_MEMORY = 256;

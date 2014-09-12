@@ -47,7 +47,11 @@ public interface InternalKeys {
   /**
    * internal temp directory: {@value}
    */
-  String INTERNAL_AM_TMP_DIR = "internal.tmp.dir";
+  String INTERNAL_AM_TMP_DIR = "internal.am.tmp.dir";
+  /**
+   * internal temp directory: {@value}
+   */
+  String INTERNAL_TMP_DIR = "internal.tmp.dir";
   /**
    * where a snapshot of the original conf dir is: {@value}
    */

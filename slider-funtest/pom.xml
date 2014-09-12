@@ -121,6 +121,7 @@
             <test.app.pkg.file>apache-slider-command-logger.zip</test.app.pkg.file>
             <test.app.resource>../slider-core/src/test/app_packages/test_command_log/resources.json</test.app.resource>
             <test.app.template>../slider-core/src/test/app_packages/test_command_log/appConfig.json</test.app.template>
+            <vagrant.current.working.dir>/Users/gsaha/work/workspace/ambari-vagrant/centos6.4</vagrant.current.working.dir>
           </systemPropertyVariables>
         </configuration>
       </plugin>
@@ -288,7 +289,11 @@
         <groupId>org.codehaus.groovy</groupId>
         <artifactId>groovy-all</artifactId>
       </dependency>
-
+    <dependency>
+      <groupId>com.jcraft</groupId>
+      <artifactId>jsch</artifactId>
+      <version>0.1.51</version>
+    </dependency>
 
   </dependencies>
 

@@ -59,6 +59,14 @@
 
     <fileSet>
       <directory>${project.build.directory}/agent</directory>
+      <outputDirectory>lib</outputDirectory>
+      <includes>
+        <include>slider-agent.tar.gz</include>
+      </includes>
+    </fileSet>
+
+    <fileSet>
+      <directory>${project.build.directory}/agent</directory>
       <outputDirectory>agent</outputDirectory>
       <includes>
         <include>slider-agent.tar.gz</include>

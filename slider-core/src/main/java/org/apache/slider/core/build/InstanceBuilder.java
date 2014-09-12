@@ -50,6 +50,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import static org.apache.slider.api.OptionKeys.INTERNAL_AM_TMP_DIR;
+import static org.apache.slider.api.OptionKeys.INTERNAL_TMP_DIR;
 import static org.apache.slider.api.OptionKeys.INTERNAL_APPLICATION_HOME;
 import static org.apache.slider.api.OptionKeys.INTERNAL_APPLICATION_IMAGE_PATH;
 import static org.apache.slider.api.OptionKeys.INTERNAL_DATA_DIR_PATH;
@@ -132,6 +133,8 @@ public class InstanceBuilder {
 
     internalOps.set(INTERNAL_AM_TMP_DIR,
                     instancePaths.tmpPathAM.toUri());
+    internalOps.set(INTERNAL_TMP_DIR,
+                    instancePaths.tmpPath.toUri());
     internalOps.set(INTERNAL_SNAPSHOT_CONF_PATH,
                     instancePaths.snapshotConfPath.toUri());
     internalOps.set(INTERNAL_GENERATED_CONF_PATH,
@@ -147,35 +150,32 @@ public class InstanceBuilder {
 
   /**
    * Set up the image/app home path
-   * @param appImage path in the DFS to the tar file
+   * @param appImage   path in the DFS to the tar file
    * @param appHomeDir other strategy: home dir
-   * @throws BadConfigException if both or neither are found (its an xor)
+   * @throws BadConfigException if both are found
    */
-  public void setImageDetails(
-    Path appImage,
-    String appHomeDir) throws BadConfigException {
+  public void setImageDetailsIfAvailable(
+      Path appImage,
+      String appHomeDir) throws BadConfigException {
     boolean appHomeUnset = SliderUtils.isUnset(appHomeDir);
     // App home or image
     if (appImage != null) {
       if (!appHomeUnset) {
         // both args have been set
         throw new BadConfigException(
-          ErrorStrings.E_BOTH_IMAGE_AND_HOME_DIR_SPECIFIED);
+            ErrorStrings.E_BOTH_IMAGE_AND_HOME_DIR_SPECIFIED);
       }
       instanceDescription.getInternalOperations().set(INTERNAL_APPLICATION_IMAGE_PATH,
-                                               appImage.toUri());
+                                                      appImage.toUri());
     } else {
       // the alternative is app home, which now MUST be set
-      if (appHomeUnset) {
-        // both args have been set
-        throw new BadConfigException(ErrorStrings.E_NO_IMAGE_OR_HOME_DIR_SPECIFIED);
-          
+      if (!appHomeUnset) {
+        instanceDescription.getInternalOperations().set(INTERNAL_APPLICATION_HOME,
+                                                        appHomeDir);
       }
-      instanceDescription.getInternalOperations().set(INTERNAL_APPLICATION_HOME,
-                                               appHomeDir);
-
     }
   }
+
 
   /**
    * Propagate any critical principals from the current site config down to the HBase one.
