@@ -56,6 +56,7 @@ import org.apache.hadoop.yarn.security.AMRMTokenIdentifier;
 import org.apache.hadoop.yarn.security.client.ClientToAMTokenSecretManager;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.webapp.WebApps;
+import org.apache.hadoop.yarn.webapp.util.WebAppUtils;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.ResourceKeys;
@@ -646,7 +647,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
                    RestPaths.WS_CONTEXT)
                       .with(serviceConf)
                       .start(webApp);
-      appMasterTrackingUrl = "http://" + appMasterHostname + ":" + webApp.port();
+      String scheme = WebAppUtils.getHttpSchemePrefix(serviceConf);
+      appMasterTrackingUrl = scheme  + appMasterHostname + ":" + webApp.port();
       WebAppService<SliderAMWebApp> webAppService =
         new WebAppService<SliderAMWebApp>("slider", webApp);
 
