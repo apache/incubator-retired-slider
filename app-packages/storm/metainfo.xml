@@ -21,7 +21,7 @@
   <application>
     <name>STORM</name>
     <comment>Apache Hadoop Stream processing framework</comment>
-    <version>0.9.3</version>
+    <version>${pkg.version}</version>
     <exportedConfigs>storm-site</exportedConfigs>
 
     <exportGroups>
