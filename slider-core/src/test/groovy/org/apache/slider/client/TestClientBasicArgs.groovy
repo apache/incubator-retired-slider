@@ -58,7 +58,7 @@ class TestClientBasicArgs extends ServiceLauncherBaseTest {
   }
 
   @Test
-  public void testListUnknownHost() throws Throwable {
+  public void testListUnknownRM() throws Throwable {
     try {
       ServiceLauncher launcher = launch(SliderClient,
                                         SliderUtils.createConfiguration(),

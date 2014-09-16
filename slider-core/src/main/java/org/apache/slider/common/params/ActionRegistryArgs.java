@@ -29,7 +29,6 @@ import static org.apache.slider.common.params.SliderActions.ACTION_REGISTRY;
 import static org.apache.slider.common.params.SliderActions.DESCRIBE_ACTION_REGISTRY;
 import java.io.File;
 
-
 /**
  * Registry actions
  * 
@@ -86,12 +85,10 @@ public class ActionRegistryArgs extends AbstractActionArgs {
       description = "get files")
   public String getFiles;
 
-
   //--format 
   @Parameter(names = ARG_FORMAT,
       description = "Format for a response: [xml|json|properties]")
   public String format = ConfigFormat.XML.toString() ;
-
 
   @Parameter(names = {ARG_DEST},
       description = "Output destination")
