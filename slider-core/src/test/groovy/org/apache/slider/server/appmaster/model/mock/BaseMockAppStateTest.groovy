@@ -33,6 +33,7 @@ import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
+import org.apache.slider.server.appmaster.operations.ContainerRequestOperation
 import org.apache.slider.server.appmaster.state.*
 import org.apache.slider.test.SliderTestBase
 import org.junit.Before
@@ -49,6 +50,8 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
   protected SliderFileSystem sliderFileSystem
   protected File historyWorkDir
   protected Path historyPath;
+  protected MockApplicationId applicationId;
+  protected MockApplicationAttemptId applicationAttemptId;
 
   @Override
   void setup() {
@@ -75,6 +78,10 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
 
 
     YarnConfiguration conf = SliderUtils.createConfiguration()
+    applicationId = new MockApplicationId(id: 1, clusterTimestamp: 0)
+    applicationAttemptId = new MockApplicationAttemptId(
+        applicationId: applicationId,
+        attemptId: 1)
 
     fs = HadoopFS.get(new URI("file:///"), conf)
     historyWorkDir = new File("target/history", historyDirName)
@@ -187,6 +194,7 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
     return createStartAndStopNodes([])
   }
 
+
   /**
    * Create, Start and stop nodes
    * @param completionResults List filled in with the status on all completed nodes
@@ -264,6 +272,17 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
     return instances
   }
 
+  /**
+   * Add the AM to the app state
+   */
+  protected void addAppMastertoAppState() {
+    appState.buildAppMasterNode(
+        new MockContainerId(applicationAttemptId, 999999L),
+        "appmaster",
+        0,
+        null)
+  }
+  
   /**
    * Extract the list of container IDs from the list of role instances
    * @param instances instance list

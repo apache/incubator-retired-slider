@@ -142,6 +142,20 @@ class TestMockMonkey extends BaseMockAppStateTest {
     assert queues.scheduledActions.size() == 0
   }
   
+     
+  @Test
+  public void testContainerKillerIgnoresAM() throws Throwable {
+
+    addAppMastertoAppState()
+    assert 1 == appState.liveNodes.size()
+    
+    def chaos = new ChaosKillContainer(appState,
+        queues,
+        new MockRMOperationHandler())
+    chaos.chaosAction();
+    assert queues.scheduledActions.size() == 0
+  }
+  
    
   
   @Test

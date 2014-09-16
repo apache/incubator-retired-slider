@@ -25,6 +25,7 @@ import org.apache.slider.core.registry.retrieve.RegistryRetriever
 import org.apache.slider.server.services.curator.CuratorHelper
 import org.apache.slider.server.services.curator.RegistryBinderService
 import org.apache.slider.core.registry.info.RegistryNaming
+import org.apache.slider.server.services.registry.SliderRegistryService
 import org.apache.slider.test.MicroZKCluster
 import org.apache.slider.test.SliderTestUtils
 import org.junit.After
@@ -33,7 +34,7 @@ import org.junit.Test
 
 class TestLocalRegistry {
   MicroZKCluster miniZK
-  RegistryBinderService<ServiceInstanceData> registryBinder
+  SliderRegistryService registryBinder
 
   @Before
   void setup() {
@@ -43,13 +44,12 @@ class TestLocalRegistry {
     registryBinder = createRegistry()
   }
 
-  def RegistryBinderService<ServiceInstanceData> createRegistry(
-                                                               ) {
+  def SliderRegistryService createRegistry( ) {
     def conf = new YarnConfiguration()
     CuratorHelper curatorHelper =
         new CuratorHelper(conf, miniZK.zkBindingString);
 
-    def registry
+    SliderRegistryService registry
     registry = curatorHelper.createRegistryBinderService("/services");
     registry.init(conf)
     registry.start()
@@ -98,8 +98,8 @@ class TestLocalRegistry {
     registryBinder.register(SliderKeys.APP_TYPE, "instance2",
         new URL("http", "localhost", 8090, "/"),
         null)
-    RegistryBinderService<ServiceInstanceData> registry2 = createRegistry()
-    RegistryBinderService<ServiceInstanceData> registry3 = createRegistry()
+    SliderRegistryService registry2 = createRegistry()
+    SliderRegistryService registry3 = createRegistry()
     try {
       def instances = registry3.instanceIDs(SliderKeys.APP_TYPE)
       assert instances.size() == 2
@@ -111,7 +111,6 @@ class TestLocalRegistry {
     } finally {
       registry3.stop()
       registry2.stop()
-      
     }
   }
 
@@ -154,9 +153,11 @@ class TestLocalRegistry {
     def instances = registryBinder.listInstances(SliderKeys.APP_TYPE);
     SliderTestUtils.dumpRegistryInstances(instances)
     assert instances.size() == 2
+    def instance1 = instances[0]
+    def payload1 = instance1.payload
     
     // now set up a registry retriever
-    RegistryRetriever retriever = new RegistryRetriever()
+    RegistryRetriever retriever = new RegistryRetriever(payload1)
     
   }
 

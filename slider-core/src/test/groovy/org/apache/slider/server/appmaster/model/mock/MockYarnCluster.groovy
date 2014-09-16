@@ -159,11 +159,16 @@ public class MockYarnCluster {
       containers = new MockYarnClusterContainer[size];
       for (int i = 0; i < size; i++) {
         int cid = makeCid(index, i);
-        MockContainerId mci = new MockContainerId(id: cid)
+        MockContainerId mci = new MockContainerId(containerId: cid)
         containers[i] = new MockYarnClusterContainer(mci)
       }
     }
 
+    /**
+     * Look up a container
+     * @param containerId
+     * @return
+     */
     public MockYarnClusterContainer lookup(int containerId) {
       return containers[extractContainer(containerId)]
     }

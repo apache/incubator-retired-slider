@@ -725,8 +725,9 @@ public class AppState {
    * build up the special master node, which lives
    * in the live node set but has a lifecycle bonded to the AM
    * @param containerId the AM master
-   * @param host
-   * @param nodeHttpAddress
+   * @param host hostname
+   * @param amPort port
+   * @param nodeHttpAddress http address: may be null
    */
   public void buildAppMasterNode(ContainerId containerId,
                                  String host,

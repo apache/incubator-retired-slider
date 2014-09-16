@@ -27,6 +27,7 @@ import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.ErrorStrings;
 import org.apache.slider.core.exceptions.SliderException;
+import org.apache.slider.core.exceptions.UsageException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -193,9 +194,9 @@ public abstract class CommonArgs extends ArgOps implements SliderActions,
   /**
    * Validate the arguments against the action requested
    */
-  public void validate() throws BadCommandArgumentsException {
+  public void validate() throws BadCommandArgumentsException, UsageException {
     if (coreAction == null) {
-      throw new BadCommandArgumentsException(ErrorStrings.ERROR_NO_ACTION
+      throw new UsageException(ErrorStrings.ERROR_NO_ACTION
                                              + usage());
     }
     log.debug("action={}", getAction());

@@ -25,6 +25,13 @@ class MockApplicationId extends ApplicationId {
   private int id;
   private long clusterTimestamp
 
+  MockApplicationId() {
+  }
+
+  MockApplicationId(int id) {
+    this.id = id
+  }
+
   @Override
   int getId() {
     return id;
@@ -41,7 +48,7 @@ class MockApplicationId extends ApplicationId {
   }
 
   @Override
-  public  void setClusterTimestamp(long clusterTimestamp) {
+  public void setClusterTimestamp(long clusterTimestamp) {
     this.clusterTimestamp = clusterTimestamp
   }
 

@@ -19,6 +19,7 @@
 package org.apache.slider.server.appmaster.monkey;
 
 import com.google.common.base.Preconditions;
+import org.apache.slider.common.SliderKeys;
 import org.apache.slider.server.appmaster.actions.ActionKillContainer;
 import org.apache.slider.server.appmaster.actions.QueueAccess;
 import org.apache.slider.server.appmaster.operations.RMOperationHandler;
@@ -28,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -60,8 +62,17 @@ public class ChaosKillContainer implements ChaosTarget {
   public void chaosAction() {
     List<RoleInstance> liveContainers =
         appState.cloneLiveContainerInfoList();
+    // purge any and all components which declare that they are an AM
+    ListIterator<RoleInstance> containers =
+        liveContainers.listIterator();
+    while (containers.hasNext()) {
+      RoleInstance instance = containers.next();
+      if (SliderKeys.COMPONENT_AM.equals(instance.role)) {
+        containers.remove();
+      }
+    }
     int size = liveContainers.size();
-    if (size == 0) {
+    if (size <= 0) {
       log.info("No containers to kill");
       return;
     }

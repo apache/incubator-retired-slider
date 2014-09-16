@@ -22,6 +22,7 @@ import com.beust.jcommander.Parameter;
 import org.apache.hadoop.fs.Path;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.ErrorStrings;
+import org.apache.slider.core.exceptions.UsageException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -118,7 +119,7 @@ public abstract class AbstractActionArgs extends ArgOps implements Arguments {
     return getMinParams();
   }
 
-  public void validate() throws BadCommandArgumentsException {
+  public void validate() throws BadCommandArgumentsException, UsageException {
     
     int minArgs = getMinParams();
     int actionArgSize = parameters.size();

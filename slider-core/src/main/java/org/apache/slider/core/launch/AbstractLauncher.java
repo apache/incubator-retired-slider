@@ -23,6 +23,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DataOutputBuffer;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
@@ -68,7 +69,7 @@ public abstract class AbstractLauncher extends Configured {
   private final Map<String, ByteBuffer> serviceData =
     new HashMap<String, ByteBuffer>();
   // security
-  Credentials credentials = new Credentials();
+  protected final Credentials credentials = new Credentials();
 
 
   protected AbstractLauncher(Configuration conf,
@@ -122,6 +123,13 @@ public abstract class AbstractLauncher extends Configured {
     return serviceData;
   }
 
+  /**
+   * Accessor to the credentials
+   * @return the credentials associated with this launcher
+   */
+  public Credentials getCredentials() {
+    return credentials;
+  }
 
   /**
    * Add a command line. It is converted to a single command before being
@@ -138,7 +146,7 @@ public abstract class AbstractLauncher extends Configured {
 
   /**
    * Add a list of commands. Each element in the list becomes a single command
-   * @param commandList
+   * @param commandList list of commands
    */
   public void addCommands(List<String> commandList) {
     commands.addAll(commandList);
@@ -157,19 +165,39 @@ public abstract class AbstractLauncher extends Configured {
    * @return the container to launch
    */
   public ContainerLaunchContext completeContainerLaunch() throws IOException {
-    dumpLocalResources();
+    
 
     String cmdStr = SliderUtils.join(commands, " ", false);
     log.debug("Completed setting up container command {}", cmdStr);
     containerLaunchContext.setCommands(commands);
 
-    //fix the env variables
+    //env variables
+    if (log.isDebugEnabled()) {
+      log.debug("Environment variables");
+      for (Map.Entry<String, String> envPair : envVars.entrySet()) {
+        log.debug("    \"{}\"=\"{}\"", envPair.getKey(), envPair.getValue());
+      }
+    }
     containerLaunchContext.setEnvironment(env);
+    
     //service data
+    if (log.isDebugEnabled()) {
+      log.debug("Service Data size");
+      for (Map.Entry<String, ByteBuffer> entry : serviceData.entrySet()) {
+        log.debug("\"{}\"=> {} bytes of data", entry.getKey(),
+            entry.getValue().array().length);
+      }
+    }
     containerLaunchContext.setServiceData(serviceData);
+
+    // resources
+    dumpLocalResources();
     containerLaunchContext.setLocalResources(localResources);
 
 
+
+    //tokens
+    log.debug("{} tokens", credentials.numberOfTokens());
     DataOutputBuffer dob = new DataOutputBuffer();
     credentials.writeTokenStorageToStream(dob);
     ByteBuffer tokenBuffer = ByteBuffer.wrap(dob.getData(), 0, dob.getLength());
