@@ -36,7 +36,7 @@ import org.junit.Test
 
 @Slf4j
 @CompileStatic
-public class TestIndexBlock {
+public class TestIndexBlock extends BaseMockAppStateTest {
 
   private IndexBlock indexBlock;
 
@@ -44,8 +44,9 @@ public class TestIndexBlock {
 
   @Before
   public void setup() {
+    super.setup()
+    assert appState
     SliderClusterProtocol clusterProto = new MockSliderClusterProtocol();
-    AppState appState = new MockAppState(new MockRecordFactory());
     ProviderService providerService = new MockProviderService();
     ProviderAppState providerAppState = new ProviderAppState(
         "undefined",
@@ -63,15 +64,13 @@ public class TestIndexBlock {
     indexBlock = injector.getInstance(IndexBlock.class);
 
     cont1 = new MockContainer();
-    cont1.id = new MockContainerId();
-    ((MockContainerId) cont1.id).setId(0);
+    cont1.id = new MockContainerId(applicationAttemptId, 0);
     cont1.nodeId = new MockNodeId();
     cont1.priority = Priority.newInstance(1);
     cont1.resource = new MockResource();
 
     cont2 = new MockContainer();
-    cont2.id = new MockContainerId();
-    ((MockContainerId) cont2.id).setId(1);
+    cont2.id = new MockContainerId(applicationAttemptId, 1);
     cont2.nodeId = new MockNodeId();
     cont2.priority = Priority.newInstance(1);
     cont2.resource = new MockResource();

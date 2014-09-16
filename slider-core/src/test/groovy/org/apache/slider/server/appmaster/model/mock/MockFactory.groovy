@@ -70,7 +70,7 @@ class MockFactory implements  MockRoles {
 
   MockContainerId newContainerId(ApplicationAttemptId attemptId) {
     MockContainerId cid = new MockContainerId()
-    cid.id = containerIdCount++
+    cid.containerId = containerIdCount++
     cid.applicationAttemptId = attemptId;
     return cid;
   }
