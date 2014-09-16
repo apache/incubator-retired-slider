@@ -26,8 +26,11 @@ import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.api.ClusterNode
 import org.apache.slider.client.SliderClient
+import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.SliderKeys
+import org.apache.slider.common.params.ActionRegistryArgs
 import org.apache.slider.core.exceptions.SliderException
+import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.registry.info.ServiceInstanceData
 import org.apache.slider.server.services.curator.CuratorServiceInstance
@@ -106,8 +109,8 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     instanceIds.each { String it -> log.info(it) }
 
     describe "service registry slider instances"
-    List<CuratorServiceInstance<ServiceInstanceData>> instances = client.listRegistryInstances(
-    )
+    List<CuratorServiceInstance<ServiceInstanceData>> instances =
+        client.listRegistryInstances()
     instances.each { CuratorServiceInstance<ServiceInstanceData> svc ->
       log.info svc.toString()
     }
@@ -146,8 +149,13 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
       assertFailureClusterInUse(e);
     }
 
-    describe("Stopping instance #2")
+    // do a quick registry listing here expecting a usage failure.
+    ActionRegistryArgs registryArgs = new ActionRegistryArgs()
+    registryArgs.name=clustername;
+    def exitCode = client.actionRegistry(registryArgs)
+    assert LauncherExitCodes.EXIT_USAGE == exitCode 
 
+    describe("Stopping instance #2")
     //now stop that cluster
     assert 0 == clusterActionFreeze(client, clustername)
 
