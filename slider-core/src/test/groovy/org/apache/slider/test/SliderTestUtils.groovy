@@ -516,6 +516,8 @@ class SliderTestUtils extends Assert {
     } catch (Throwable thrown) {
       if (expectedText && !thrown.toString().contains(expectedText)) {
         //not the right exception -rethrow
+        log.warn("Caught Exception did not contain expected text" +
+                 "\""+ expectedText +"\"")
         throw thrown;
       }
       return thrown;
