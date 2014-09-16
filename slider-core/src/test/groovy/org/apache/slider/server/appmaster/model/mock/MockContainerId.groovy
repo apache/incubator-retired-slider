@@ -57,6 +57,11 @@ class MockContainerId extends ContainerId implements Cloneable {
     return (int) containerId
   }
 
+  // TODO: Temporarily adding it back
+  void setId(int id) {
+    containerId = (long) id;
+  }
+
   long getContainerId() {
     return this.containerId;
   }
