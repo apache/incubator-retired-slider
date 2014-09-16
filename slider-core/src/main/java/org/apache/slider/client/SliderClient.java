@@ -2328,17 +2328,12 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         outputConfig(publishedConfiguration, registryArgs);
       } else {
         // it's an unknown command
-        log.info(
-            "Unknown registry operation." +
-            "Supported operations:"  
-            + Arguments.ARG_LIST +" ,"
-            + Arguments.ARG_LISTCONF +" ,"
-            + Arguments.ARG_GETCONF );
+        log.info(ActionRegistryArgs.USAGE);
         return EXIT_USAGE;
       }
     } catch (FileNotFoundException e) {
       log.info("{}", e.toString());
-      log.debug("{}",e, e);
+      log.debug("{}", e, e);
       return EXIT_NOT_FOUND;
     }
     return EXIT_SUCCESS;

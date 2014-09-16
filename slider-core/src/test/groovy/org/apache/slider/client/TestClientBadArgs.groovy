@@ -19,10 +19,13 @@
 package org.apache.slider.client
 
 import groovy.transform.CompileStatic
+import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
+import org.apache.slider.common.params.ActionRegistryArgs
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
 import org.apache.slider.core.exceptions.ErrorStrings
+import org.apache.slider.core.exceptions.UsageException
 import org.apache.slider.core.main.ServiceLauncherBaseTest
 import org.junit.Test
 
@@ -30,6 +33,7 @@ import org.junit.Test
  * Test the argument parsing/validation logic
  */
 @CompileStatic
+@Slf4j
 class TestClientBadArgs extends ServiceLauncherBaseTest {
   @Test
   public void testNoAction() throws Throwable {
@@ -72,6 +76,16 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
                              "Unknown option: --image",
                             [SliderActions.ACTION_HELP,
                              Arguments.ARG_IMAGE])
+  }
+  
+  @Test
+  public void testRegistryUsage() throws Throwable {
+    def exception = launchExpectingException(SliderClient,
+        new Configuration(),
+        ActionRegistryArgs.USAGE,
+        [SliderActions.ACTION_REGISTRY])
+    assert exception instanceof UsageException
+    log.info(exception.toString())
   }
 
 }
