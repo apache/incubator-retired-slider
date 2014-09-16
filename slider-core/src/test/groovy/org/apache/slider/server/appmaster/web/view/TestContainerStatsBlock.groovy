@@ -32,7 +32,6 @@ import org.apache.slider.api.ClusterNode
 import org.apache.slider.api.SliderClusterProtocol
 import org.apache.slider.providers.ProviderService
 import org.apache.slider.server.appmaster.model.mock.*
-import org.apache.slider.server.appmaster.state.AppState
 import org.apache.slider.server.appmaster.state.ProviderAppState
 import org.apache.slider.server.appmaster.state.RoleInstance
 import org.apache.slider.server.appmaster.web.WebAppApi
@@ -45,7 +44,7 @@ import org.junit.Test
 
 @Slf4j
 @CompileStatic
-public class TestContainerStatsBlock {
+public class TestContainerStatsBlock extends BaseMockAppStateTest {
 
   private ContainerStatsBlock statsBlock;
 
@@ -55,7 +54,6 @@ public class TestContainerStatsBlock {
   @Before
   public void setup() {
     SliderClusterProtocol clusterProto = new MockSliderClusterProtocol();
-    AppState appState = new MockAppState(new MockRecordFactory());
     ProviderService providerService = new MockProviderService();
     ProviderAppState providerAppState = new ProviderAppState(
         "undefined",
@@ -73,18 +71,21 @@ public class TestContainerStatsBlock {
     statsBlock = injector.getInstance(ContainerStatsBlock.class);
 
     cont1 = new MockContainer();
-    cont1.id = new MockContainerId();
-    ((MockContainerId) cont1.id).setId(0);
+
+    cont1.id = mockContainerId(0);
     cont1.nodeId = new MockNodeId();
     cont1.priority = Priority.newInstance(1);
     cont1.resource = new MockResource();
 
     cont2 = new MockContainer();
-    cont2.id = new MockContainerId();
-    ((MockContainerId) cont2.id).setId(1);
+    cont2.id = mockContainerId(1);
     cont2.nodeId = new MockNodeId();
     cont2.priority = Priority.newInstance(1);
     cont2.resource = new MockResource();
+  }
+
+  public MockContainerId mockContainerId(int count) {
+    new MockContainerId(applicationAttemptId, count)
   }
 
   @Test
@@ -179,9 +180,9 @@ public class TestContainerStatsBlock {
   
   @Test
   public void testClusterNodeNameComparator() {
-    ClusterNode n1 = new ClusterNode(new MockContainerId(1)),
-      n2 = new ClusterNode(new MockContainerId(2)),
-      n3 = new ClusterNode(new MockContainerId(3));
+    ClusterNode n1 = new ClusterNode(mockContainerId(1)),
+      n2 = new ClusterNode(mockContainerId(2)),
+      n3 = new ClusterNode(mockContainerId(3));
     
     List<ClusterNode> nodes = new ArrayList<ClusterNode>();
     nodes.add(n2);
