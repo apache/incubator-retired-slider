@@ -26,6 +26,14 @@ class MockApplicationAttemptId extends ApplicationAttemptId {
   ApplicationId applicationId
   int attemptId
 
+  MockApplicationAttemptId() {
+  }
+
+  MockApplicationAttemptId(ApplicationId applicationId, int attemptId) {
+    this.applicationId = applicationId
+    this.attemptId = attemptId
+  }
+
   @Override
   ApplicationId getApplicationId() {
     return applicationId
