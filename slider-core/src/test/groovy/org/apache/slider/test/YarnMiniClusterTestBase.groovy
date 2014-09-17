@@ -248,6 +248,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
         noOfNodeManagers,
         numLocalDirs,
         numLogDirs)
+    miniCluster.init(conf)
     miniCluster.start();
     if (startHDFS) {
       createMiniHDFSCluster(name, conf)
