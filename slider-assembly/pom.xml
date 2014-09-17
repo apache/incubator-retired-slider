@@ -34,7 +34,7 @@
     <rpm.libdir>${rpm.basedir}/lib</rpm.libdir>
     <rpm.agentdir>${rpm.basedir}/agent</rpm.agentdir>
     <rpm.username>root</rpm.username>
-    <rpm.groupname>hadoop</rpm.groupname>
+    <rpm.groupname>root</rpm.groupname>
     <src.confdir>src/conf-hdp</src.confdir>
     <src.libdir>${project.build.directory}/lib</src.libdir>
     <src.agent.ini.dir>${project.build.directory}/../../slider-agent/conf</src.agent.ini.dir>
