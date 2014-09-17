@@ -18,6 +18,7 @@
 
 package org.apache.slider.core.registry;
 
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.exceptions.YarnException;
@@ -40,6 +41,13 @@ public class YarnAppListClient {
   public YarnAppListClient(SliderYarnClientImpl yarnClient,
       String username,
       Configuration conf) {
+
+    Preconditions.checkArgument(yarnClient != null,
+        "yarn client is null: is app inited?");
+    Preconditions.checkArgument(username != null,
+        "username is null");
+    Preconditions.checkArgument(conf != null,
+        "conf parameter is null");
     this.yarnClient = yarnClient;
     this.username = username;
     this.conf = conf;
@@ -54,7 +62,6 @@ public class YarnAppListClient {
    */
   public List<ApplicationReport> findAllLiveInstances(String appname)
     throws YarnException, IOException {
-
     return yarnClient.findAllLiveInstances(username, appname);
   }
 

@@ -217,10 +217,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     super.serviceInit(conf);
     
-    //here the superclass is inited; getConfig returns a non-null value
-    sliderFileSystem = new SliderFileSystem(getConfig());
-    YarnAppListClient =
-      new YarnAppListClient(yarnClient, getUsername(), getConfig());
   }
 
   /**
@@ -383,6 +379,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       yarnClient.start();
     }
     addService(yarnClient);
+    YarnAppListClient =
+        new YarnAppListClient(yarnClient, getUsername(), getConfig());
     // create the filesystem
     sliderFileSystem = new SliderFileSystem(getConfig());
 
