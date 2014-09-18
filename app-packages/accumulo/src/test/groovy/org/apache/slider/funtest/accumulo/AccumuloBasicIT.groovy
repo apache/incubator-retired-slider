@@ -47,9 +47,15 @@ class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
   protected static final String TRUST_PASS = "trustpass"
   protected ConfTree tree
 
-  AccumuloBasicIT() {
+  protected String getAppResource() {
+    return sysprop("test.app.resources.dir") + "/resources.json"
+  }
+
+  protected String getAppTemplate() {
     if (SliderUtils.isHadoopClusterSecure(SLIDER_CONFIG)) {
-      APP_TEMPLATE = "target/test-config/appConfig_kerberos.json"
+      return sysprop("test.app.resources.dir") + "/appConfig_kerberos.json"
+    } else {
+      return sysprop("test.app.resources.dir") + "/appConfig.json"
     }
   }
 

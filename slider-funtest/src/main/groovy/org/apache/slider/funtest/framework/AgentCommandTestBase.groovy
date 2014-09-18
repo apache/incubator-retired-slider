@@ -41,8 +41,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
   private static String TEST_APP_TEMPLATE = "test.app.template"
 
 
-  protected String APP_RESOURCE = sysprop(TEST_APP_RESOURCE)
-  protected String APP_TEMPLATE = sysprop(TEST_APP_TEMPLATE)
+  protected String APP_RESOURCE = getAppResource()
+  protected String APP_TEMPLATE = getAppTemplate()
   public static final String TEST_APP_PKG_DIR = sysprop(TEST_APP_PKG_DIR_PROP)
   public static final String TEST_APP_PKG_FILE = sysprop(TEST_APP_PKG_FILE_PROP)
 
@@ -55,6 +55,14 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   static {
     AGENTTESTS_ENABLED = SLIDER_CONFIG.getBoolean(KEY_TEST_AGENT_ENABLED, false)
+  }
+
+  protected String getAppResource() {
+    return sysprop(TEST_APP_RESOURCE)
+  }
+
+  protected String getAppTemplate() {
+    return sysprop(TEST_APP_TEMPLATE)
   }
 
   @Rule

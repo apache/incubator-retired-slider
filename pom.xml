@@ -1436,6 +1436,29 @@
         </plugins>
       </build>
     </profile>
+
+    <profile>
+      <id>private-repo</id>
+      <!-- this profile is for pulling custom app versions from a private maven repo -->
+      <activation>
+        <property>
+          <name>private.repo.url</name>
+        </property>
+      </activation>
+      <repositories>
+        <repository>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+          <id>private-repo</id>
+          <name>Private Repo</name>
+          <url>${private.repo.url}</url>
+        </repository>
+      </repositories>
+    </profile>
   </profiles>
 
 

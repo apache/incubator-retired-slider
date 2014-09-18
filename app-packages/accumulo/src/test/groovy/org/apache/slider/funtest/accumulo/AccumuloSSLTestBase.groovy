@@ -30,11 +30,11 @@ class AccumuloSSLTestBase extends AccumuloBasicIT {
   File trustStoreFile = new File(TEST_APP_PKG_DIR, "truststore.jks")
   File clientKeyStoreFile = new File(TEST_APP_PKG_DIR, "keystore.jks")
 
-  AccumuloSSLTestBase() {
+  protected String getAppTemplate() {
     if (SliderUtils.isHadoopClusterSecure(SLIDER_CONFIG)) {
-      APP_TEMPLATE = "target/test-config/appConfig_ssl_kerberos.json"
+      return sysprop("test.app.resources.dir") + "/appConfig_ssl_kerberos.json"
     } else {
-      APP_TEMPLATE = "target/test-config/appConfig_ssl.json"
+      return sysprop("test.app.resources.dir") + "/appConfig_ssl.json"
     }
   }
 

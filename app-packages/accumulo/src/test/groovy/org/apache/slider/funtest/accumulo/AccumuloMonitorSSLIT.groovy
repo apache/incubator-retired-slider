@@ -32,11 +32,11 @@ import java.security.cert.X509Certificate
 
 @Slf4j
 class AccumuloMonitorSSLIT extends AccumuloSSLTestBase {
-  AccumuloMonitorSSLIT() {
-    if (SliderUtils.isHadoopClusterSecure(SLIDER_CONFIG)) {
-      APP_TEMPLATE = "target/test-config/appConfig_monitor_ssl_kerberos.json"
+  protected String getAppTemplate() {
+   if (SliderUtils.isHadoopClusterSecure(SLIDER_CONFIG)) {
+      return sysprop("test.app.resources.dir") + "/appConfig_monitor_ssl_kerberos.json"
     } else {
-      APP_TEMPLATE = "target/test-config/appConfig_monitor_ssl.json"
+      return sysprop("test.app.resources.dir") + "/appConfig_monitor_ssl.json"
     }
   }
 
