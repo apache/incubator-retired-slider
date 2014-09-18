@@ -35,6 +35,9 @@
     <pkg.version>${project.version}</pkg.version>
     <pkg.name>accumulo-${accumulo.version}-bin.tar.gz</pkg.name>
     <!-- the following properties are used for testing -->
+    <slider.bin.dir>../../slider-assembly/target/slider-${project.version}-all/slider-${project.version}</slider.bin.dir>
+    <test.app.pkg.dir>${project.build.directory}</test.app.pkg.dir>
+    <test.app.resources.dir>${project.build.directory}/test-config</test.app.resources.dir>
     <app.user>yarn</app.user>
     <app.user.group>hadoop</app.user.group>
     <accumulo.keytab></accumulo.keytab>
@@ -83,34 +86,6 @@
                 </goals>
               </execution>
             </executions>
-          </plugin>
-
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-failsafe-plugin</artifactId>
-            <version>${maven-failsafe-plugin.version}</version>
-            <executions>
-              <execution>
-                <id>run-integration-tests</id>
-                <goals>
-                  <goal>integration-test</goal>
-                  <goal>verify</goal>
-                </goals>
-              </execution>
-            </executions>
-            <configuration>
-              <systemPropertyVariables>
-                <java.net.preferIPv4Stack>true</java.net.preferIPv4Stack>
-                <java.awt.headless>true</java.awt.headless>
-                <!-- this property must be supplied-->
-                <slider.conf.dir>${slider.conf.dir}</slider.conf.dir>
-                <slider.bin.dir>../../slider-assembly/target/slider-${project.version}-all/slider-${project.version}</slider.bin.dir>
-                <test.app.pkg.dir>target</test.app.pkg.dir>
-                <test.app.pkg.file>${app.package.name}.zip</test.app.pkg.file>
-                <test.app.resource>target/test-config/resources.json</test.app.resource>
-                <test.app.template>target/test-config/appConfig.json</test.app.template>
-              </systemPropertyVariables>
-            </configuration>
           </plugin>
         </plugins>
       </build>
@@ -185,7 +160,13 @@
               </execution>
             </executions>
           </plugin>
-
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>accumulo-funtest</id>
+      <build>
+        <plugins>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
@@ -205,11 +186,10 @@
                 <java.awt.headless>true</java.awt.headless>
                 <!-- this property must be supplied-->
                 <slider.conf.dir>${slider.conf.dir}</slider.conf.dir>
-                <slider.bin.dir>../../slider-assembly/target/slider-${project.version}-all/slider-${project.version}</slider.bin.dir>
-                <test.app.pkg.dir>target</test.app.pkg.dir>
+                <slider.bin.dir>${slider.bin.dir}</slider.bin.dir>
+                <test.app.pkg.dir>${test.app.pkg.dir}</test.app.pkg.dir>
                 <test.app.pkg.file>${app.package.name}.zip</test.app.pkg.file>
-                <test.app.resource>target/test-config/resources.json</test.app.resource>
-                <test.app.template>target/test-config/appConfig.json</test.app.template>
+                <test.app.resources.dir>${test.app.resources.dir}</test.app.resources.dir>
               </systemPropertyVariables>
             </configuration>
           </plugin>
@@ -224,7 +204,7 @@
       <resource>
         <directory>src/test/resources</directory>
         <filtering>true</filtering>
-        <targetPath>${project.build.directory}/test-config</targetPath>
+        <targetPath>${test.app.resources.dir}</targetPath>
       </resource>
     </resources>
 

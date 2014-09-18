@@ -26,32 +26,11 @@ import java.io.IOException;
 import java.util.List;
 
 public class ProviderUtil {
-  public static CredentialProvider getProvider(String credentialProvider)
+  public static char[] getPassword(String credentialProvider, String alias)
       throws IOException {
     Configuration conf = new Configuration();
     conf.set(CredentialProviderFactory.CREDENTIAL_PROVIDER_PATH,
         credentialProvider);
-    List<CredentialProvider> providers =
-        CredentialProviderFactory.getProviders(conf);
-
-    if (providers == null || providers.size() != 1) {
-      throw new IOException("Found unexpected number of providers");
-    }
-    return providers.get(0);
-  }
-
-  public static char[] getPassword(String credentialProvider, String alias)
-      throws IOException {
-    return getPassword(getProvider(credentialProvider), alias);
-  }
-
-  public static char[] getPassword(CredentialProvider provider, String alias)
-      throws IOException {
-    CredentialEntry entry = provider.getCredentialEntry(alias);
-    if (entry != null) {
-      return entry.getCredential();
-    }
-    throw new IOException("Can't get key " + alias + " from " +
-        provider.toString());
+    return conf.getPassword(alias);
   }
 }
