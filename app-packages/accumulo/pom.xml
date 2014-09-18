@@ -38,6 +38,7 @@
     <slider.bin.dir>../../slider-assembly/target/slider-${project.version}-all/slider-${project.version}</slider.bin.dir>
     <test.app.pkg.dir>${project.build.directory}</test.app.pkg.dir>
     <test.app.resources.dir>${project.build.directory}/test-config</test.app.resources.dir>
+    <!-- these properties are used in the default and the test appConfigs -->
     <app.user>yarn</app.user>
     <app.user.group>hadoop</app.user.group>
     <accumulo.keytab></accumulo.keytab>
