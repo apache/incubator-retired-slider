@@ -25,10 +25,11 @@ CONF = "conf"
 
 LIB = "lib"
 
-JAVA_HOME = None
+ENV_KEYS = ["JAVA_HOME", "HADOOP_CONF_DIR"]
 SLIDER_CONF_DIR = "SLIDER_CONF_DIR"
 SLIDER_JVM_OPTS = "SLIDER_JVM_OPTS"
 SLIDER_CLASSPATH_EXTRA = "SLIDER_CLASSPATH_EXTRA"
+HADOOP_CONF_DIR = "HADOOP_CONF_DIR"
 
 SLIDER_CLASSNAME = "org.apache.slider.Slider"
 DEFAULT_JVM__OPTS = "-Djava.net.preferIPv4Stack=true -Djava.awt.headless=true -Xmx256m -Djava.confdir=%s"
@@ -36,7 +37,7 @@ DEFAULT_JVM__OPTS = "-Djava.net.preferIPv4Stack=true -Djava.awt.headless=true -X
 ON_POSIX = 'posix' in sys.builtin_module_names
 
 finished = False
-DEBUG = True
+DEBUG = False
 
 """
 Launches slider
@@ -48,6 +49,18 @@ to explain the code here
 
 """
 
+def executeEnvSh(confDir):
+  envCmd = 'source %s/slider-env.sh && env' % confDir
+  command = ['bash', '-c', envCmd]
+
+  proc = subprocess.Popen(command, stdout = subprocess.PIPE)
+
+  for line in proc.stdout:
+    (key, _, value) = line.strip().partition("=")
+    if key in ENV_KEYS:
+      os.environ[key] = value
+
+  proc.communicate()
 
 
 def scriptDir():
@@ -70,7 +83,7 @@ def confDir(sliderdir):
   override the relative path
   """
   localconf = os.path.join(sliderdir, CONF)
-  return os.environ.get(SLIDER_CONF_DIR,localconf) 
+  return os.environ.get(SLIDER_CONF_DIR, localconf)
 
 def dirMustExist(dirname):
   if not os.path.exists(dirname):
@@ -124,7 +137,10 @@ def print_output(name, src):
   while not finished:
     (line, done) = read(src, line)
     if done:
-      info(name +': ' + line)
+      if DEBUG:
+        info(name +': ' + line)
+      else:
+        info(line)
       line = ""
   src.close()
 
@@ -158,6 +174,8 @@ def runProcess(commandline):
     time.sleep(1)
   debug("completed with exit code : %d" % exe.returncode)
   finished = True
+  t.join()
+  t2.join()
   return exe.returncode
 
 
@@ -192,11 +210,8 @@ def java(classname, args, classpath, jvm_opts_list):
   # split the JVM opts by space
   # java = "/usr/bin/java"
   prg = "java"
-  if JAVA_HOME:
-    prg = os.path.join(JAVA_HOME, "bin", "java")
-  else:
-    if which("java") is None:
-      prg = os.path.join(os.environ["JAVA_HOME"], "bin", "java")
+  if which("java") is None:
+    prg = os.path.join(os.environ["JAVA_HOME"], "bin", "java")
   commandline = [prg]
   commandline.extend(jvm_opts_list)
   commandline.append("-classpath")
@@ -223,16 +238,19 @@ def main():
   slider_home = sliderDir()
   libdir = dirMustExist(libDir(slider_home))
   confdir = dirMustExist(confDir(slider_home))
+  executeEnvSh(confdir)
   default_jvm_opts = DEFAULT_JVM__OPTS % confdir
   slider_jvm_opts = os.environ.get(SLIDER_JVM_OPTS, default_jvm_opts)
   jvm_opts_split = slider_jvm_opts.split()
   slider_classpath_extra = os.environ.get(SLIDER_CLASSPATH_EXTRA, "")
+  hadoop_conf_dir = os.environ.get(HADOOP_CONF_DIR, "")
   p = os.pathsep    # path separator
   d = os.sep        # dir separator
   slider_classpath = libdir + d + "*" + p \
                      + confdir + p \
-                     + slider_classpath_extra 
-                     
+                     + slider_classpath_extra  + p \
+                     + hadoop_conf_dir
+
 
   print "slider_home = \"%s\"" % slider_home
   print "slider_jvm_opts = \"%s\"" % slider_jvm_opts

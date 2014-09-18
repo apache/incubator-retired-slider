@@ -22,8 +22,6 @@
 # The env variable SLIDER_JVM_OPTS can be used to override
 # the default JVM opts
 
-export JAVA_HOME=${JAVA_HOME}
-
 function usage
 {
   echo "Usage: slider <action> <arguments>"
@@ -53,13 +51,18 @@ confdir=`cd -P "${confdir}" && pwd -P`
 confdir=${SLIDER_CONF_DIR:-$confdir}
 
 
+if [ -f "${confdir}/slider-env.sh" ]; then
+  . "${confdir}/slider-env.sh"
+fi
+
 slider_jvm_opts="-Djava.net.preferIPv4Stack=true -Djava.awt.headless=true -Xmx256m -Djava.confdir=${confdir}"
 slider_jvm_opts=${SLIDER_JVM_OPTS:-$slider_jvm_opts}
 
 # allow for an extra classpath
 slider_classpath_extra=${SLIDER_CLASSPATH_EXTRA:-""}
+hadoop_conf_dir=${HADOOP_CONF_DIR:-""}
 
-slider_classpath="${libdir}/*:${confdir}:${slider_classpath_extra}"
+slider_classpath="${libdir}/*:${confdir}:${slider_classpath_extra}:${hadoop_conf_dir}"
 
 launcher=org.apache.slider.Slider
 
