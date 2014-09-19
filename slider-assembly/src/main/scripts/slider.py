@@ -19,10 +19,11 @@ import sys
 import os
 import subprocess
 import time
+import platform
 from threading import Thread
 
 CONF = "conf"
-
+IS_WINDOWS = platform.system() == "Windows"
 LIB = "lib"
 
 ENV_KEYS = ["JAVA_HOME", "HADOOP_CONF_DIR"]
@@ -50,17 +51,18 @@ to explain the code here
 """
 
 def executeEnvSh(confDir):
-  envCmd = 'source %s/slider-env.sh && env' % confDir
-  command = ['bash', '-c', envCmd]
+  if not IS_WINDOWS:
+    envCmd = 'source %s/slider-env.sh && env' % confDir
+    command = ['bash', '-c', envCmd]
 
-  proc = subprocess.Popen(command, stdout = subprocess.PIPE)
+    proc = subprocess.Popen(command, stdout = subprocess.PIPE)
 
-  for line in proc.stdout:
-    (key, _, value) = line.strip().partition("=")
-    if key in ENV_KEYS:
-      os.environ[key] = value
+    for line in proc.stdout:
+      (key, _, value) = line.strip().partition("=")
+      if key in ENV_KEYS:
+        os.environ[key] = value
 
-  proc.communicate()
+    proc.communicate()
 
 
 def scriptDir():
