@@ -22,6 +22,10 @@
     "SUPERVISOR": {
       "yarn.role.priority": "4",
       "yarn.component.instances": "1"
+    },
+    "STORM_REST_API": {
+      "yarn.role.priority": "5",
+      "yarn.component.instances": "0"
     }
   }
 }

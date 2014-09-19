@@ -21,6 +21,35 @@
   Properties set here are picked up in the client.
 -->
 <configuration>
+
+  <property>
+    <name>slider.zookeeper.quorum</name>
+    <value>@ZK-QUORUM</value>
+  </property>
+
+  <property>
+    <name>slider.yarn.queue</name>
+    <value>default</value>
+    <description>YARN queue for the Application Master</description>
+  </property>
+  
+  <property>
+    <name>slider.client.resource.origin</name>
+    <value>conf/slider-client.xml</value>
+    <description>This is just for diagnostics</description>
+  </property>
+
+  <property>
+    <name>yarn.log-aggregation-enable</name>
+    <value>true</value>
+  </property>
+
+<!--
+  <property>
+    <name>yarn.application.classpath</name>
+    <value>/etc/hadoop/conf,/usr/lib/hadoop/*,/usr/lib/hadoop/lib/*,/usr/lib/hadoop-hdfs/*,/usr/lib/hadoop-hdfs/lib/*,/usr/lib/hadoop-yarn/*,/usr/lib/hadoop-yarn/lib/*,/usr/lib/hadoop-mapreduce/*,/usr/lib/hadoop-mapreduce/lib/*</value>
+  </property>
+
   <property>
     <name>yarn.resourcemanager.address</name>
     <value>@RM-ADDR</value>
@@ -35,37 +64,9 @@
     <name>fs.defaultFS</name>
     <value>@FILESYSTEM</value>
   </property>
+-->
 
-  <property>
-    <name>slider.zookeeper.quorum</name>
-    <value>@ZK-QUORUM</value>
-  </property>
-  <property>
-    <name>slider.client.resource.origin</name>
-    <value>conf/slider-client.xml</value>
-    <description>This is just for diagnostics</description>
-  </property>
-
-  <property>
-    <name>yarn.application.classpath</name>
-    <value>/etc/hadoop/conf,/usr/lib/hadoop/*,/usr/lib/hadoop/lib/*,/usr/lib/hadoop-hdfs/*,/usr/lib/hadoop-hdfs/lib/*,/usr/lib/hadoop-yarn/*,/usr/lib/hadoop-yarn/lib/*,/usr/lib/hadoop-mapreduce/*,/usr/lib/hadoop-mapreduce/lib/*</value>
-  </property>
-
-  <property>
-    <name>yarn.log-aggregation-enable</name>
-    <value>true</value>
-  </property>
-  
-
-  <property>
-    <name>slider.yarn.queue</name>
-    <value>default</value>
-    <description>YARN queue for the Application Master</description>
-  </property>
-  
 <!--
-
-
   <property>
     <name>yarn.resourcemanager.principal</name>
     <value>yarn/master@MINICLUSTER</value>
@@ -81,6 +82,5 @@
     <value>hdfs/master@MINICLUSTER</value>
   </property>
 -->
-
 
 </configuration>

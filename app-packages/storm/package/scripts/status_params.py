@@ -28,8 +28,10 @@ pid_supervisor = format("{pid_dir}/supervisor.pid")
 pid_drpc = format("{pid_dir}/drpc.pid")
 pid_ui = format("{pid_dir}/ui.pid")
 pid_logviewer = format("{pid_dir}/logviewer.pid")
+pid_rest_api = format("{pid_dir}/restapi.pid")
 pid_files = {"logviewer":pid_logviewer,
              "ui": pid_ui,
              "nimbus": pid_nimbus,
              "supervisor": pid_supervisor,
+             "rest_api": pid_rest_api,
              "drpc": pid_drpc}
