@@ -29,6 +29,10 @@
         <name>QuickLinks</name>
         <exports>
           <export>
+            <name>app.jmx</name>
+            <value>http://${STORM_REST_API_HOST}:${site.global.rest_api_port}/api/cluster/summary</value>
+          </export>
+          <export>
             <name>app.monitor</name>
             <value>http://${STORM_UI_SERVER_HOST}:${site.storm-site.ui.port}</value>
           </export>
@@ -51,7 +55,7 @@
     <commandOrders>
       <commandOrder>
         <command>NIMBUS-START</command>
-        <requires>SUPERVISOR-INSTALLED,STORM_UI_SERVER-INSTALLED,DRPC_SERVER-INSTALLED
+        <requires>SUPERVISOR-INSTALLED,STORM_UI_SERVER-INSTALLED,DRPC_SERVER-INSTALLED,STORM_REST_API-INSTALLED
         </requires>
       </commandOrder>
       <commandOrder>
@@ -65,6 +69,10 @@
       <commandOrder>
         <command>STORM_UI_SERVER-START</command>
         <requires>NIMBUS-STARTED</requires>
+      </commandOrder>
+      <commandOrder>
+        <command>STORM_REST_API-START</command>
+        <requires>NIMBUS-STARTED,DRPC_SERVER-STARTED,STORM_UI_SERVER-STARTED</requires>
       </commandOrder>
     </commandOrders>
 
@@ -118,6 +126,18 @@
         <autoStartOnFailure>true</autoStartOnFailure>
         <commandScript>
           <script>scripts/drpc_server.py</script>
+          <scriptType>PYTHON</scriptType>
+          <timeout>600</timeout>
+        </commandScript>
+      </component>
+
+      <component>
+        <name>STORM_REST_API</name>
+        <category>MASTER</category>
+        <autoStartOnFailure>true</autoStartOnFailure>
+        <appExports>QuickLinks-app.jmx</appExports>
+        <commandScript>
+          <script>scripts/rest_api.py</script>
           <scriptType>PYTHON</scriptType>
           <timeout>600</timeout>
         </commandScript>
