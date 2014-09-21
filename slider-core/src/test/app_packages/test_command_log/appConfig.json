@@ -3,15 +3,13 @@
     "metadata": {
     },
     "global": {
-        "agent.conf": "agent.ini",
-        "application.def": "apache-slider-command-logger.zip",
+        "application.def": ".slider/package/CMD_LOGGER/apache-slider-command-logger.zip",
         "java_home": "/usr/jdk64/jdk1.7.0_45",
         "site.global.app_user": "yarn",
         "site.global.application_id": "CommandLogger",
         "site.global.app_log_dir": "${AGENT_LOG_ROOT}/app/log",
         "site.global.app_pid_dir": "${AGENT_WORK_ROOT}/app/run",
         "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/command-logger",
-        "site.global.app_install_dir": "${AGENT_WORK_ROOT}/app/install",
         "site.cl-site.logfile.location": "${AGENT_WORK_ROOT}/app/install/command-logger-app/operations.log",
         "site.cl-site.datetime.format": "%A, %d. %B %Y %I:%M%p"
     },

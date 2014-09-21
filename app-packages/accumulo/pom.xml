@@ -190,6 +190,7 @@
                 <slider.bin.dir>${slider.bin.dir}</slider.bin.dir>
                 <test.app.pkg.dir>${test.app.pkg.dir}</test.app.pkg.dir>
                 <test.app.pkg.file>${app.package.name}.zip</test.app.pkg.file>
+                <test.app.pkg.name>ACCUMULO</test.app.pkg.name>
                 <test.app.resources.dir>${test.app.resources.dir}</test.app.resources.dir>
               </systemPropertyVariables>
             </configuration>
