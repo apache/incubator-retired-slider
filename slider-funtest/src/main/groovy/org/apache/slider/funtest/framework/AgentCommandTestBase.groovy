@@ -37,6 +37,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
   public static final boolean AGENTTESTS_ENABLED
   private static String TEST_APP_PKG_DIR_PROP = "test.app.pkg.dir"
   private static String TEST_APP_PKG_FILE_PROP = "test.app.pkg.file"
+  private static String TEST_APP_PKG_NAME_PROP = "test.app.pkg.name"
   private static String TEST_APP_RESOURCE = "test.app.resource"
   private static String TEST_APP_TEMPLATE = "test.app.template"
 
@@ -45,6 +46,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
   protected String APP_TEMPLATE = getAppTemplate()
   public static final String TEST_APP_PKG_DIR = sysprop(TEST_APP_PKG_DIR_PROP)
   public static final String TEST_APP_PKG_FILE = sysprop(TEST_APP_PKG_FILE_PROP)
+  public static final String TEST_APP_PKG_NAME = sysprop(TEST_APP_PKG_NAME_PROP)
 
 
   protected static Path agentTarballPath;
@@ -79,29 +81,18 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
   }
 
   @Before
-  public void uploadAgentTarball() {
-    def agentUploads = new AgentUploads(SLIDER_CONFIG)
-    (agentTarballPath, agtIniPath) =
-        agentUploads.uploadAgentFiles(SLIDER_TAR_DIRECTORY, false)
-  }
-
-
-  @Before
   public void setupApplicationPackage() {
     try {
-      AgentUploads agentUploads = new AgentUploads(SLIDER_CONFIG)
-      agentUploads.uploader.mkHomeDir()
-
-      appPkgPath = new Path(clusterFS.homeDirectory, TEST_APP_PKG_FILE)
-      if (clusterFS.exists(appPkgPath)) {
-        clusterFS.delete(appPkgPath, false)
-        log.info "Existing app pkg deleted from $appPkgPath"
-      }
-
       File zipFileName = new File(TEST_APP_PKG_DIR, TEST_APP_PKG_FILE).canonicalFile
-      agentUploads.uploader.copyIfOutOfDate(zipFileName, appPkgPath, false)
-      assert clusterFS.exists(appPkgPath), "App pkg not uploaded to $appPkgPath"
-      log.info "App pkg uploaded at $appPkgPath"
+      SliderShell shell = slider(EXIT_SUCCESS,
+          [
+              ACTION_INSTALL_PACKAGE,
+              Arguments.ARG_NAME, TEST_APP_PKG_NAME,
+              Arguments.ARG_PACKAGE, zipFileName,
+              Arguments.ARG_REPLACE_PKG
+          ])
+      logShell(shell)
+      log.info "App pkg uploaded at home directory .slider/package/$TEST_APP_PKG_NAME/$TEST_APP_PKG_FILE"
     } catch (Exception e) {
       setup_failed = true
       throw e;

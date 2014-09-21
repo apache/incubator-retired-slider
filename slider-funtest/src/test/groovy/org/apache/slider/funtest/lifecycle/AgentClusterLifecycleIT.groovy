@@ -68,7 +68,6 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
     SliderShell shell = slider(EXIT_SUCCESS,
         [
             ACTION_CREATE, CLUSTER,
-            ARG_IMAGE, agentTarballPath.toString(),
             ARG_TEMPLATE, APP_TEMPLATE,
             ARG_RESOURCES, APP_RESOURCE2
         ])

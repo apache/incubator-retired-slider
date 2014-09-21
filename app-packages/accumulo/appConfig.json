@@ -3,7 +3,7 @@
   "metadata": {
   },
   "global": {
-    "application.def": "${app.package.name}.zip",
+    "application.def": ".slider/package/ACCUMULO/${app.package.name}.zip",
     "java_home": "/usr/lib/jvm/java",
     "site.global.app_user": "${app.user}",
     "site.global.app_log_dir": "${AGENT_LOG_ROOT}",

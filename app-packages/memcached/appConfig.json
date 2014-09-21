@@ -3,7 +3,7 @@
   "metadata": {
   },
   "global": {
-    "application.def": "jmemcached-1.0.0.zip",
+    "application.def": ".slider/package/MEMCACHED/jmemcached-1.0.0.zip",
     "java_home": "/usr/jdk64/jdk1.7.0_45",
 
     "site.global.app_user": "yarn",
