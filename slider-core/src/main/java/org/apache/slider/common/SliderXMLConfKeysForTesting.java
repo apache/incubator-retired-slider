@@ -60,6 +60,8 @@ public interface SliderXMLConfKeysForTesting {
   int DEFAULT_ACCUMULO_LIVE_TIME_SECONDS = 90;
 
   String KEY_TEST_AGENT_ENABLED = "slider.test.agent.enabled";
+  String KEY_AGENTTESTS_QUEUE_LABELED_DEFINED = "slider.test.agent.labeled.queue.enabled";
+  String KEY_AGENTTESTS_LABELS_RED_BLUE_DEFINED = "slider.test.agent.labels.defined";
 
   int DEFAULT_AGENT_LAUNCH_TIME_SECONDS = 60 * 3;
 

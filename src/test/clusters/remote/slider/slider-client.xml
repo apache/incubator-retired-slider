@@ -53,7 +53,19 @@
     <name>slider.test.agent.enabled</name>
     <value>true</value>
   </property>
-  
+
+  <property>
+    <name>slider.test.agent.labeled.queue.enabled</name>
+    <value>false</value>
+    <description>Add a queue named labeled</description>
+  </property>
+
+  <property>
+    <name>slider.test.agent.labels.defined</name>
+    <value>false</value>
+    <description>Add node labels red and blue and ensure enough capacities are allocated</description>
+  </property>
+
   <property>
     <name>slider.test.agent.tar</name>
     <value>hdfs://c6403.ambari.apache.org:8020/slider/agent/slider-agent.tar.gz</value>

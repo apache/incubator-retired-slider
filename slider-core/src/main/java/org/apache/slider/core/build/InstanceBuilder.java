@@ -49,6 +49,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Map;
 
+import static org.apache.slider.api.InternalKeys.INTERNAL_QUEUE;
 import static org.apache.slider.api.OptionKeys.INTERNAL_AM_TMP_DIR;
 import static org.apache.slider.api.OptionKeys.INTERNAL_TMP_DIR;
 import static org.apache.slider.api.OptionKeys.INTERNAL_APPLICATION_HOME;
@@ -146,6 +147,21 @@ public class InstanceBuilder {
     internalOps.set(InternalKeys.INTERNAL_PROVIDER_NAME, provider);
     internalOps.set(OptionKeys.APPLICATION_NAME, clustername);
 
+  }
+
+  /**
+   * Set the queue used to start the application
+   * @param queue
+   * @throws BadConfigException
+   */
+  public void setQueue(String queue) throws BadConfigException {
+    if(queue != null) {
+      if(SliderUtils.isUnset(queue)) {
+        throw new BadConfigException("Queue value cannot be empty.");
+      }
+
+      instanceDescription.getInternalOperations().set(INTERNAL_QUEUE, queue);
+    }
   }
 
   /**
