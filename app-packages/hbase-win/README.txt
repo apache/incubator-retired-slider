@@ -17,18 +17,25 @@
 
 Create Slider App Package for HBase on Windows
 
-Download the tarball for HBase:
-  e.g. path to tarball ~/Downloads/hbase-0.98.0.2.1.5.0-2047-hadoop2.zip
+While appConfig.json and resources.json are not required for the package they
+work well as the default configuration for Slider apps. So it is advisable that
+when you create an application package for Slider, include sample/default
+resources.json and appConfig.json for a minimal Yarn cluster.
 
-Copy the hbase tarball to package/files
-  cp ~/Downloads/hbase-0.98.0.2.1.5.0-2047-hadoop2.zip package/files
-  rm -rf package/files/hbase-0.98.0.2.1.5.0-2047-hadoop2.zip.REPLACEME
+OPTION-I: Use a downloaded hbase tarball fro Windows
 
-Edit appConfig.json/metainfo.xml and replace all occurances of 
-0.98.0.2.1.5.0-2047-hadoop2 with the correct value.
+****** OPTION - I **
+To create the app package you will need the HBase tarball and invoke mvn command
+with appropriate parameters.
 
-Create a zip package at the root of the package (<slider enlistment>/app-packages/hbase-win/)
-  zip -r hbase-win-v098.zip .
+Command:
+mvn clean package -Phbase-app-package-win -Dpkg.version=<version>
+   -Dpkg.name=<file name of app tarball> -Dpkg.src=<folder location where the pkg is available>
 
-Verify the content using
-  zip -Tv hbase-win-v098.zip
+Example:
+mvn clean package -Phbase-app-package -Dpkg.version=0.98.5-hadoop2
+  -Dpkg.name=hbase-0.98.5-hadoop2-bin.zip
+  -Dpkg.src=/Users/user1/Downloads
+
+App package can be found in
+  app-packages/hbase/target/slider-hbase-app-win-package-${pkg.version}.zip
