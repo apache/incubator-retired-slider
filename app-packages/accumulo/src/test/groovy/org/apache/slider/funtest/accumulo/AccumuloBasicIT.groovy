@@ -129,7 +129,6 @@ class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
     SliderShell shell = slider(EXIT_SUCCESS,
       [
         ACTION_CREATE, getClusterName(),
-        ARG_IMAGE, agentTarballPath.toString(),
         ARG_TEMPLATE, APP_TEMPLATE,
         ARG_RESOURCES, APP_RESOURCE
       ])
