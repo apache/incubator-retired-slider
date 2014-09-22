@@ -21,6 +21,7 @@ package org.apache.slider.providers.agent
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.conf.YarnConfiguration
+import org.apache.slider.api.InternalKeys
 import org.apache.slider.api.ResourceKeys
 import org.apache.slider.api.RoleKeys
 import org.apache.slider.client.SliderClient
@@ -354,7 +355,43 @@ class TestBuildBasicAgent extends AgentTestBase {
       fail("Build operation should not fail")
     }
   }
-  
+
+  @Test
+  public void testSubmitToSpecificQueue() throws Throwable {
+    String clustername = createMiniCluster(
+        "",
+        configuration,
+        1,
+        1,
+        1,
+        true,
+        false)
+
+    try {
+      buildAgentCluster(clustername,
+          [:],
+          [
+              ARG_OPTION, CONTROLLER_URL, "http://localhost",
+              ARG_PACKAGE, ".",
+              ARG_OPTION, APP_DEF, "file://" + appDef.absolutePath,
+              ARG_RESOURCES, TEST_FILES + "good/resources.json",
+              ARG_TEMPLATE, TEST_FILES + "good/appconf.json",
+              ARG_QUEUE, "labeled"
+          ],
+          true, false,
+          false)
+    } catch (BadConfigException exception) {
+      log.error(
+          "Build operation should not have failed with exception : \n$exception")
+      fail("Build operation should not fail")
+    }
+
+    AggregateConf instanceDefinition = loadInstanceDefinition(clustername)
+    def label = instanceDefinition.getInternalOperations().get(
+        InternalKeys.INTERNAL_QUEUE)
+    assert label == "labeled", "Expect labeled as the queue"
+  }
+
   @Test
   public void testBadAgentArgs() throws Throwable {
     String clustername = createMiniCluster(

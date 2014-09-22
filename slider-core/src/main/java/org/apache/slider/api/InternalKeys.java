@@ -94,6 +94,10 @@ public interface InternalKeys {
    */
   String KEYTAB_LOCATION = "internal.keytab.location";
 
+  /**
+   * Queue used to deploy the app: {@value}
+   */
+  String INTERNAL_QUEUE = "internal.queue";
 
   /**
    * Flag to indicate whether or not the chaos monkey is enabled:

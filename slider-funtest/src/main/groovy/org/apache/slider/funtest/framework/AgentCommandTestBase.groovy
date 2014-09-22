@@ -21,8 +21,10 @@ package org.apache.slider.funtest.framework
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.Path
 import org.apache.slider.common.SliderExitCodes
+import org.apache.slider.common.SliderXMLConfKeysForTesting
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
+import org.apache.slider.common.tools.SliderUtils
 import org.apache.tools.zip.ZipEntry
 import org.apache.tools.zip.ZipOutputStream
 import org.junit.Before
@@ -35,6 +37,8 @@ class AgentCommandTestBase extends CommandTestBase
 implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   public static final boolean AGENTTESTS_ENABLED
+  public static final boolean AGENTTESTS_QUEUE_LABELED_DEFINED
+  public static final boolean AGENTTESTS_LABELS_RED_BLUE_DEFINED
   private static String TEST_APP_PKG_DIR_PROP = "test.app.pkg.dir"
   private static String TEST_APP_PKG_FILE_PROP = "test.app.pkg.file"
   private static String TEST_APP_PKG_NAME_PROP = "test.app.pkg.name"
@@ -57,6 +61,10 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   static {
     AGENTTESTS_ENABLED = SLIDER_CONFIG.getBoolean(KEY_TEST_AGENT_ENABLED, false)
+    AGENTTESTS_QUEUE_LABELED_DEFINED =
+        SLIDER_CONFIG.getBoolean(KEY_AGENTTESTS_QUEUE_LABELED_DEFINED, false)
+    AGENTTESTS_LABELS_RED_BLUE_DEFINED =
+        SLIDER_CONFIG.getBoolean(KEY_AGENTTESTS_LABELS_RED_BLUE_DEFINED, false)
   }
 
   protected String getAppResource() {
@@ -72,6 +80,14 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   public static void assumeAgentTestsEnabled() {
     assume(AGENTTESTS_ENABLED, "Agent tests disabled")
+  }
+
+  public static void assumeQueueNamedLabelDefined() {
+    assume(AGENTTESTS_QUEUE_LABELED_DEFINED, "Custom queue named labeled is not defined")
+  }
+
+  public static void assumeLabelsRedAndBlueAdded() {
+    assume(AGENTTESTS_LABELS_RED_BLUE_DEFINED, "Custom node labels not defined")
   }
 
   @BeforeClass
@@ -110,17 +126,23 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   public static void assertComponentCount(String component, int count, SliderShell shell) {
     log.info("Asserting component count.")
+    int instanceCount = getComponentCount(component, shell)
+    assert count == instanceCount, 'Instance count for component did not match expected.'
+  }
+
+  public static int getComponentCount(String component, SliderShell shell) {
     String entry = findLineEntry(shell, ["instances", component] as String[])
-    log.info(entry)
-    assert entry != null
     int instanceCount = 0
-    int index = entry.indexOf("container_")
-    while (index != -1) {
-      instanceCount++;
-      index = entry.indexOf("container_", index + 1)
+    if (!SliderUtils.isUnset(entry)) {
+      log.info(entry)
+      int index = entry.indexOf("container_")
+      while (index != -1) {
+        instanceCount++;
+        index = entry.indexOf("container_", index + 1)
+      }
     }
 
-    assert instanceCount == count, 'Instance count for component did not match expected. Parsed: ' + entry
+    return instanceCount
   }
 
   public static String findLineEntry(SliderShell shell, String[] locaters) {
