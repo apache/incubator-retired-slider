@@ -63,11 +63,11 @@
         <appExports>QuickLinks-org.apache.slider.jmx,QuickLinks-org.apache.slider.monitor</appExports>
         <componentExports>
           <componentExport>
-            <name>app.jmx</name>
+            <name>org.apache.slider.jmx</name>
             <value>${THIS_HOST}:${site.hbase-site.hbase.master.info.port}/jmx</value>
           </componentExport>
           <componentExport>
-            <name>app.monitor</name>
+            <name>org.apache.slider.monitor</name>
             <value>${THIS_HOST}:${site.hbase-site.hbase.master.info.port}/master-status</value>
           </componentExport>
         </componentExports>
