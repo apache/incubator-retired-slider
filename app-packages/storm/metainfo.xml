@@ -29,19 +29,19 @@
         <name>QuickLinks</name>
         <exports>
           <export>
-            <name>app.jmx</name>
+            <name>org.apache.slider.jmx</name>
             <value>http://${STORM_REST_API_HOST}:${site.global.rest_api_port}/api/cluster/summary</value>
           </export>
           <export>
-            <name>app.monitor</name>
+            <name>org.apache.slider.monitor</name>
             <value>http://${STORM_UI_SERVER_HOST}:${site.storm-site.ui.port}</value>
           </export>
           <export>
-            <name>app.metrics</name>
+            <name>org.apache.slider.metrics</name>
             <value>http://${site.global.ganglia_server_host}/cgi-bin/rrd.py?c=${site.global.ganglia_server_id}</value>
           </export>
           <export>
-            <name>ganglia.ui</name>
+            <name>org.apache.slider.metrics.ui</name>
             <value>http://${site.global.ganglia_server_host}/ganglia?c=${site.global.ganglia_server_id}</value>
           </export>
           <export>
@@ -82,7 +82,7 @@
         <name>NIMBUS</name>
         <category>MASTER</category>
         <autoStartOnFailure>true</autoStartOnFailure>
-        <appExports>QuickLinks-nimbus.host_port,QuickLinks-ganglia.ui,QuickLinks-app.metrics</appExports>
+        <appExports>QuickLinks-nimbus.host_port,QuickLinks-org.apache.slider.metrics.ui,QuickLinks-org.apache.slider.metrics</appExports>
         <commandScript>
           <script>scripts/nimbus.py</script>
           <scriptType>PYTHON</scriptType>
@@ -111,7 +111,7 @@
         <name>STORM_UI_SERVER</name>
         <category>MASTER</category>
         <publishConfig>true</publishConfig>
-        <appExports>QuickLinks-app.monitor</appExports>
+        <appExports>QuickLinks-org.apache.slider.monitor</appExports>
         <autoStartOnFailure>true</autoStartOnFailure>
         <commandScript>
           <script>scripts/ui_server.py</script>
@@ -135,7 +135,7 @@
         <name>STORM_REST_API</name>
         <category>MASTER</category>
         <autoStartOnFailure>true</autoStartOnFailure>
-        <appExports>QuickLinks-app.jmx</appExports>
+        <appExports>QuickLinks-org.apache.slider.jmx</appExports>
         <commandScript>
           <script>scripts/rest_api.py</script>
           <scriptType>PYTHON</scriptType>

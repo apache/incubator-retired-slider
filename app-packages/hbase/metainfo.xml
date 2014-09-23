@@ -54,11 +54,11 @@
             <value>http://${HBASE_THRIFT_HOST}:${site.global.hbase_thrift_port}</value>
           </export>
           <export>
-            <name>app.metrics</name>
+            <name>org.apache.slider.metrics</name>
             <value>http://${site.global.ganglia_server_host}/cgi-bin/rrd.py?c=${site.global.ganglia_server_id}</value>
           </export>
           <export>
-            <name>app.ganglia</name>
+            <name>org.apache.slider.metrics.ui</name>
             <value>http://${site.global.ganglia_server_host}/ganglia?c=${site.global.ganglia_server_id}</value>
           </export>
         </exports>
@@ -82,14 +82,14 @@
         <category>MASTER</category>
         <minInstanceCount>1</minInstanceCount>
         <maxInstanceCount>2</maxInstanceCount>
-        <appExports>QuickLinks-org.apache.slider.jmx,QuickLinks-org.apache.slider.monitor,QuickLinks-app.metrics,QuickLinks-app.ganglia</appExports>
+        <appExports>QuickLinks-org.apache.slider.jmx,QuickLinks-org.apache.slider.monitor,QuickLinks-org.apache.slider.metrics,QuickLinks-org.apache.slider.metrics.ui</appExports>
         <componentExports>
           <componentExport>
-            <name>app.jmx</name>
+            <name>org.apache.slider.jmx</name>
             <value>${THIS_HOST}:${site.hbase-site.hbase.master.info.port}/jmx</value>
           </componentExport>
           <componentExport>
-            <name>app.monitor</name>
+            <name>org.apache.slider.monitor</name>
             <value>${THIS_HOST}:${site.hbase-site.hbase.master.info.port}/master-status</value>
           </componentExport>
         </componentExports>
