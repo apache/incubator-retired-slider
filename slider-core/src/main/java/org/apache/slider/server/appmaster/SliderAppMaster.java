@@ -1047,12 +1047,15 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * Handler for {@link UnregisterComponentInstance}
    * 
    * unregister a component. At the time this message is received,
-   * the component may already been deleted from/never added to
-   * the app state
+   * the component may not have been registered
    * @param id the component
    */
   public void unregisterComponent(ContainerId id) {
     log.info("Unregistering component {}", id);
+    if (yarnRegistryOperations== null) {
+      log.warn("Processing unregister component event before initialization " +
+               "completed; init flag =" + initCompleted);
+    }
     String cid = RegistryPathUtils.encodeYarnID(id.toString());
     try {
       yarnRegistryOperations.rmComponent(cid);
