@@ -56,7 +56,7 @@ public class JsonSerDeser<T> {
 
   /**
    * Create an instance bound to a specific type
-   * @param classType
+   * @param classType class type
    */
   public JsonSerDeser(Class<T> classType) {
     this.classType = classType;
