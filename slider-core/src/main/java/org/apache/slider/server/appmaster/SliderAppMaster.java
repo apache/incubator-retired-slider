@@ -283,6 +283,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   private final AtomicBoolean amCompletionFlag = new AtomicBoolean(false);
 
+  /**
+   * Flag set during the init process
+   */
+  private final AtomicBoolean initCompleted = new AtomicBoolean(false);
+  
   private volatile boolean success = true;
 
   /**
@@ -419,11 +424,18 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   @Override
   protected void serviceStart() throws Exception {
     super.serviceStart();
+  }
+
+  /**
+   * Start the queue processing
+   */
+  private void startQueueProcessing() {
+    log.info("Queue Processing started");
     executorService.execute(actionQueues);
     executorService.execute(new QueueExecutor(this, actionQueues));
   }
   
-  /* =================================================================== */
+/* =================================================================== */
 /* RunService methods called from ServiceLauncher */
 /* =================================================================== */
 
@@ -801,7 +813,15 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // now do the registration
     registerServiceInstance(clustername, appid);
 
+    // declare the cluster initialized
+    log.info("Application Master Initialization Completed");
+    initCompleted.set(true);
+
+    // start handling any scheduled events
+    
+    startQueueProcessing();
     // Start the Slider AM provider
+    
     sliderAMProvider.start();
 
     // launch the real provider; this is expected to trigger a callback that
@@ -1210,8 +1230,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         log.error("Role instance {} failed ", ri);
       }
 
-      getProviderService().notifyContainerCompleted(containerId);
-      queue(new UnregisterComponentInstance(containerId, 0, TimeUnit.MILLISECONDS));
+      //  known nodes trigger notifications
+      if(!result.unknownNode) {
+        getProviderService().notifyContainerCompleted(containerId);
+        queue(new UnregisterComponentInstance(containerId, 0, TimeUnit.MILLISECONDS));
+      }
     }
 
     reviewRequestAndReleaseNodes("onContainersCompleted");
