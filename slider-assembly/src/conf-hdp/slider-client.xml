@@ -19,42 +19,46 @@
 
 <!--
   Properties set here are picked up in the client.
-  They are not passed to the AM -though the filesystem
-  binding details (URL And principal) are added to the
-  hbase-site.xml file when a cluster is created.
 -->
 <configuration>
 
   <property>
-    <name>yarn.log-aggregation-enable</name>
-    <value>true</value>
+    <name>slider.zookeeper.quorum</name>
+    <value>localhost:2181</value>
   </property>
-  
 
   <property>
     <name>slider.yarn.queue</name>
     <value>default</value>
     <description>YARN queue for the Application Master</description>
   </property>
-
-
+  
+  <property>
+    <name>yarn.log-aggregation-enable</name>
+    <value>true</value>
+  </property>
+    
+<!--
   <property>
     <name>yarn.application.classpath</name>
     <value>
       /etc/hadoop/conf,/usr/lib/hadoop/*,/usr/lib/hadoop/lib/*,/usr/lib/hadoop-hdfs/*,/usr/lib/hadoop-hdfs/lib/*,/usr/lib/hadoop-yarn/*,/usr/lib/hadoop-yarn/lib/*,/usr/lib/hadoop-mapreduce/*,/usr/lib/hadoop-mapreduce/lib/*
     </value>
   </property>
-  
-<!--
 
   <property>
     <name>yarn.resourcemanager.address</name>
-    <value>master:8032</value>
+    <value>@RM-ADDR</value>
   </property>
 
   <property>
+    <name>yarn.resourcemanager.scheduler.address</name>
+    <value>@RM-SCHEDULER-ADDR</value>
+  </property>
+  
+  <property>
     <name>fs.defaultFS</name>
-    <value>hdfs://master:9090</value>
+    <value>@FILESYSTEM</value>
   </property>
 
   <property>
