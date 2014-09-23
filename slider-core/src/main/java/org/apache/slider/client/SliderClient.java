@@ -2447,7 +2447,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
           BindingUtils.serviceclassPath(BindingUtils.currentUser(),
               serviceType);
       RegistryPathStatus[] listDir;
-      listDir = operations.listDir(serviceclassPath);
+      listDir = operations.list(serviceclassPath);
       if (listDir.length == 0) {
         throw new PathNotFoundException("records under "
                                         + serviceclassPath);

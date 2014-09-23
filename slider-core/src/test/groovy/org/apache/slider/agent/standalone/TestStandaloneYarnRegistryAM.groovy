@@ -140,14 +140,14 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     def registryService = client.registryOperations
 
     def self = currentUser()
-    RegistryPathStatus[] serviceTypes = registryService.listDir(userPath(self))
+    RegistryPathStatus[] serviceTypes = registryService.list(userPath(self))
     dumpArray(serviceTypes)
 
     def recordsPath = serviceclassPath(self, SliderKeys.APP_TYPE)
 
     Map < String, ServiceRecord > recordMap = RecordOperations.extractServiceRecords(
         registryService,
-        registryService.listDir(recordsPath))
+        registryService.list(recordsPath))
     def serviceRecords = recordMap.values();
     dumpCollection(serviceRecords)
     assert serviceRecords.size() == 1
