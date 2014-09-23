@@ -76,8 +76,10 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.apache.slider.api.ResourceKeys.DEF_YARN_CORES;
+import static org.apache.slider.api.ResourceKeys.DEF_YARN_LABEL_EXPRESSION;
 import static org.apache.slider.api.ResourceKeys.DEF_YARN_MEMORY;
 import static org.apache.slider.api.ResourceKeys.YARN_CORES;
+import static org.apache.slider.api.ResourceKeys.YARN_LABEL_EXPRESSION;
 import static org.apache.slider.api.ResourceKeys.YARN_MEMORY;
 import static org.apache.slider.api.RoleKeys.ROLE_FAILED_INSTANCES;
 import static org.apache.slider.api.RoleKeys.ROLE_FAILED_STARTING_INSTANCES;
@@ -1050,9 +1052,10 @@ public class AppState {
         RoleStatus role,
         Resource capability) {
     buildResourceRequirements(role, capability);
+    String labelExpression = getLabelExpression(role);
     //get the role history to select a suitable node, if available
     AMRMClient.ContainerRequest containerRequest =
-    createContainerRequest(role, capability);
+      createContainerRequest(role, capability, labelExpression);
     return  containerRequest;
   }
 
@@ -1062,15 +1065,16 @@ public class AppState {
    * This is where role history information will be used for placement decisions -
    * @param role role
    * @param resource requirements
+   * @param labelExpression label expression to satisfy
    * @return the container request to submit
    */
   public AMRMClient.ContainerRequest createContainerRequest(RoleStatus role,
-                                                            Resource resource) {
+                                                            Resource resource,
+                                                            String labelExpression) {
     
     
     AMRMClient.ContainerRequest request;
-    int key = role.getKey();
-    request = roleHistory.requestNode(role, resource);
+    request = roleHistory.requestNode(role, resource, labelExpression);
     role.incRequested();
 
     return request;
@@ -1105,6 +1109,7 @@ public class AppState {
     }
     return intVal;
   }
+
   
   /**
    * Build up the resource requirements for this role from the
@@ -1128,6 +1133,17 @@ public class AppState {
                                      DEF_YARN_MEMORY,
                                      containerMaxMemory);
     capability.setMemory(ram);
+  }
+
+  /**
+   * Extract the label expression for this role.
+   * @param role role
+   */
+  public String getLabelExpression(RoleStatus role) {
+    // Set up resource requirements from role values
+    String name = role.getName();
+    ConfTreeOperations resources = getResourcesSnapshot();
+    return resources.getComponentOpt(name, YARN_LABEL_EXPRESSION, DEF_YARN_LABEL_EXPRESSION);
   }
 
   /**
@@ -1610,7 +1626,7 @@ public class AppState {
         Resource capability = recordFactory.newResource();
         AMRMClient.ContainerRequest containerAsk =
           buildContainerResourceAndRequest(role, capability);
-        log.info("Container ask is {}", containerAsk);
+        log.info("Container ask is {} and label = {}", containerAsk, containerAsk.getLabelExpression());
         if (containerAsk.getCapability().getMemory() >
             this.containerMaxMemory) {
           log.warn(

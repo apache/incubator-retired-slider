@@ -77,7 +77,8 @@ class TestRoleHistoryRequestTracking extends BaseMockAppStateTest {
     assert age3Active0 == ni
     AMRMClient.ContainerRequest req = roleHistory.requestInstanceOnNode(ni,
                                                                         roleStatus,
-                                                                        resource)
+                                                                        resource,
+                                                                        "")
     List<NodeInstance> a2 = roleHistory.cloneAvailableList(0)
     assertListEquals([age2Active0], a2)
   }
