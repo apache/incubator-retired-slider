@@ -1256,13 +1256,14 @@ public class AppState {
   }
 
   /**
-   * This is a very small class to send a triple result back from 
+   * This is a very small class to send a multiple result back from 
    * the completion operation
    */
   public static class NodeCompletionResult {
     public boolean surplusNode = false;
     public RoleInstance roleInstance;
     public boolean containerFailed;
+    public boolean unknownNode = false;
 
   
     public String toString() {
@@ -1271,6 +1272,7 @@ public class AppState {
       sb.append("surplusNode=").append(surplusNode);
       sb.append(", roleInstance=").append(roleInstance);
       sb.append(", containerFailed=").append(containerFailed);
+      sb.append(", unknownNode=").append(unknownNode);
       sb.append('}');
       return sb.toString();
     }
@@ -1354,6 +1356,7 @@ public class AppState {
         log.error("Notified of completed container {} that is not in the list" +
                   " of active or failed containers", containerId);
         completionOfUnknownContainerEvent.incrementAndGet();
+        result.unknownNode = true;
       }
     }
 
