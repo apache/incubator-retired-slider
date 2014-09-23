@@ -57,7 +57,7 @@ import org.apache.hadoop.yarn.registry.client.services.RegistryOperationsService
 import org.apache.hadoop.yarn.registry.client.types.PersistencePolicies;
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
 import org.apache.hadoop.yarn.registry.client.binding.RegistryTypeUtils;
-import org.apache.hadoop.yarn.registry.server.services.RMRegistryOperationsService;
+import org.apache.hadoop.yarn.registry.server.integration.RMRegistryOperationsService;
 import org.apache.hadoop.yarn.security.AMRMTokenIdentifier;
 import org.apache.hadoop.yarn.security.client.ClientToAMTokenSecretManager;
 import org.apache.hadoop.yarn.util.ConverterUtils;
@@ -984,7 +984,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     return new ResourceManagerRegistryService("YarnRegistry");
   }
 */
-  
+
+  /**
+   * TODO: purge this once RM is doing the work
+   * @throws IOException
+   */
   protected void setupInitialRegistryPaths() throws IOException {
     if (registryOperations instanceof RMRegistryOperationsService) {
       RMRegistryOperationsService rmRegOperations =
