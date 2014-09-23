@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -13,5 +15,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-Replace with the actual HBase package for Windows.
 
+# this is the shell script to start Slider deploying an application
+# Usage: slider <action> <commands>
+
+# The env variable SLIDER_JVM_OPTS can be used to override
+# the default JVM opts
+
+export JAVA_HOME=${JAVA_HOME}
+export HADOOP_CONF_DIR=${HADOOP_CONF_DIR}

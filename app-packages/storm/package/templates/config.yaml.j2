@@ -16,6 +16,15 @@
 nimbusHost: {{nimbus_host}}
 nimbusPort: {{nimbus_port}}
 
+# HTTP-specific options.
+http:
+
+  # The port on which the HTTP server listens for service requests.
+  port: {{rest_api_port}}
+
+  # The port on which the HTTP server listens for administrative requests.
+  adminPort: {{rest_api_admin_port}}
+
 {% if ganglia_installed %}
 enableGanglia: {{ganglia_installed}}
 

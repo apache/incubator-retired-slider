@@ -19,6 +19,7 @@ package org.apache.slider.funtest.accumulo
 import groovy.util.logging.Slf4j
 import org.apache.accumulo.core.conf.Property
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.security.ProviderUtils
 import org.apache.hadoop.security.UserGroupInformation
@@ -47,10 +48,30 @@ class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
   protected static final String TRUST_PASS = "trustpass"
   protected ConfTree tree
 
-  AccumuloBasicIT() {
-    if (SliderUtils.isHadoopClusterSecure(SLIDER_CONFIG)) {
-      APP_TEMPLATE = "target/test-config/appConfig_kerberos.json"
-    }
+  protected String getAppResource() {
+    return sysprop("test.app.resources.dir") + "/resources.json"
+  }
+
+  protected String getAppTemplate() {
+    String appTemplateFile = templateName()
+    Configuration conf = new Configuration()
+    FileSystem fs = FileSystem.getLocal(conf)
+    InputStream stream = SliderUtils.getApplicationResourceInputStream(
+      fs, new Path(TEST_APP_PKG_DIR, TEST_APP_PKG_FILE), "appConfig.json");
+    assert stream!=null, "Couldn't pull appConfig.json from app pkg"
+    ConfTreeSerDeser c = new ConfTreeSerDeser()
+    ConfTree t = c.fromStream(stream)
+    t = modifyTemplate(t)
+    c.save(fs, new Path(appTemplateFile), t, true)
+    return appTemplateFile
+  }
+
+  protected String templateName() {
+    return sysprop("test.app.resources.dir") + "/appConfig.json"
+  }
+
+  protected ConfTree modifyTemplate(ConfTree original) {
+    return original
   }
 
   @Before
@@ -108,7 +129,6 @@ class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
     SliderShell shell = slider(EXIT_SUCCESS,
       [
         ACTION_CREATE, getClusterName(),
-        ARG_IMAGE, agentTarballPath.toString(),
         ARG_TEMPLATE, APP_TEMPLATE,
         ARG_RESOURCES, APP_RESOURCE
       ])

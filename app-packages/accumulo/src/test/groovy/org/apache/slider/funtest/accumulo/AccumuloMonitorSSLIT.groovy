@@ -21,6 +21,7 @@ import groovy.util.logging.Slf4j
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.tools.SliderUtils
+import org.apache.slider.core.conf.ConfTree
 
 import javax.net.ssl.KeyManager
 import javax.net.ssl.SSLContext
@@ -32,12 +33,17 @@ import java.security.cert.X509Certificate
 
 @Slf4j
 class AccumuloMonitorSSLIT extends AccumuloSSLTestBase {
-  AccumuloMonitorSSLIT() {
-    if (SliderUtils.isHadoopClusterSecure(SLIDER_CONFIG)) {
-      APP_TEMPLATE = "target/test-config/appConfig_monitor_ssl_kerberos.json"
-    } else {
-      APP_TEMPLATE = "target/test-config/appConfig_monitor_ssl.json"
-    }
+  protected String templateName() {
+    return sysprop("test.app.resources.dir") + "/appConfig_monitor_ssl.json"
+  }
+
+  protected ConfTree modifyTemplate(ConfTree confTree) {
+    confTree.global.put("site.global.monitor_protocol", "https")
+    String jks = confTree.global.get(PROVIDER_PROPERTY)
+    def keys = confTree.credentials.get(jks)
+    keys.add("monitor.ssl.keyStorePassword")
+    keys.add("monitor.ssl.trustStorePassword")
+    return confTree
   }
 
   @Override

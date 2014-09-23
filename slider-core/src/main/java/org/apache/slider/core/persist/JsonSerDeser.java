@@ -144,6 +144,23 @@ public class JsonSerDeser<T> {
   }
 
   /**
+   * Convert from an input stream, closing the stream afterwards.
+   * @param stream
+   * @return the parsed JSON
+   * @throws IOException IO problems
+   */
+  public T fromStream(InputStream stream) throws IOException {
+    try {
+      return (T) (mapper.readValue(stream, classType));
+    } catch (IOException e) {
+      log.error("Exception while parsing json input stream: {}", e);
+      throw e;
+    } finally {
+      IOUtils.closeStream(stream);
+    }
+  }
+
+  /**
    * clone by converting to JSON and back again.
    * This is much less efficient than any Java clone process.
    * @param instance instance to duplicate

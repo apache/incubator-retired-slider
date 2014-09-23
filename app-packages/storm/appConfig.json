@@ -3,7 +3,7 @@
   "metadata": {
   },
   "global": {
-    "application.def": "slider-storm-app-package-${pkg.version}.zip",
+    "application.def": ".slider/package/STORM/slider-storm-app-package-${pkg.version}.zip",
     "java_home": "/usr/jdk64/jdk1.7.0_45",
     "create.default.zookeeper.node": "true",
     "system_configs": "core-site",
@@ -16,6 +16,8 @@
     "site.global.ganglia_server_id": "Application2",
     "site.global.ganglia_enabled":"true",
     "site.global.ganglia_server_port": "8668",
+    "site.global.rest_api_port": "${STORM_REST_API.ALLOCATED_PORT}",
+    "site.global.rest_api_admin_port": "${STORM_REST_API.ALLOCATED_PORT}",
 
     "site.storm-site.storm.log.dir" : "${AGENT_LOG_ROOT}",
     "site.storm-site.storm.zookeeper.servers": "['${ZK_HOST}']",

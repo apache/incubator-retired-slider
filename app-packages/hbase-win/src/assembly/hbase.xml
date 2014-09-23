@@ -21,9 +21,10 @@
   xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0 http://maven.apache.org/xsd/assembly-1.1.0.xsd">
-  <id>accumulo_v${accumulo.version}</id>
+  <id>hbase_v${hbase.version}</id>
   <formats>
     <format>zip</format>
+    <format>dir</format>
   </formats>
   <includeBaseDirectory>false</includeBaseDirectory>
 
@@ -41,15 +42,8 @@
       <fileMode>0755</fileMode>
     </file>
     <file>
-      <source>${project.build.directory}/${work.dir}/${pkg.name}</source>
+      <source>${pkg.src}/${pkg.name}</source>
       <outputDirectory>package/files</outputDirectory>
-      <filtered>false</filtered>
-      <fileMode>0755</fileMode>
-    </file>
-    <file>
-      <source>${project.build.directory}/slider-accumulo-app-package-${project.version}.jar</source>
-      <outputDirectory>package/files</outputDirectory>
-      <destName>SliderAccumuloUtils.jar</destName>
       <filtered>false</filtered>
       <fileMode>0755</fileMode>
     </file>
@@ -69,5 +63,6 @@
       <fileMode>0755</fileMode>
       <directoryMode>0755</directoryMode>
     </fileSet>
+
   </fileSets>
 </assembly>

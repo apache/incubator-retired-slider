@@ -31,11 +31,14 @@ import org.junit.Test
 
 @CompileStatic
 @Slf4j
-public class AppsThroughAgentIT extends AgentCommandTestBase
+public class AppsThroughAgentQueueAndLabelsIT extends AgentCommandTestBase
 implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   private static String COMMAND_LOGGER = "COMMAND_LOGGER"
-  private static String APPLICATION_NAME = "happy-path-with-flex"
+  private static String APPLICATION_NAME = "happy-path-with-queue-labels"
+  private static String TARGET_QUEUE = "labeled"
+  private static String APP_RESOURCE4 =
+      "../slider-core/src/test/app_packages/test_command_log/resources_queue_labels.json"
 
   @After
   public void destroyCluster() {
@@ -43,20 +46,31 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
   }
 
   @Test
-  public void testCreateFlex() throws Throwable {
+  public void testCreateWithQueueAndLabels() throws Throwable {
     assumeAgentTestsEnabled()
+    assumeQueueNamedLabelDefined()
+    assumeLabelsRedAndBlueAdded()
 
     cleanup(APPLICATION_NAME)
     SliderShell shell = slider(EXIT_SUCCESS,
         [
             ACTION_CREATE, APPLICATION_NAME,
+            ARG_QUEUE, TARGET_QUEUE,
             ARG_TEMPLATE, APP_TEMPLATE,
-            ARG_RESOURCES, APP_RESOURCE
+            ARG_RESOURCES, APP_RESOURCE4
         ])
 
     logShell(shell)
 
     ensureApplicationIsUp(APPLICATION_NAME)
+
+    repeatUntilTrue(this.&hasContainerCountExceeded, 15, 1000 * 10, ['arg1': '1']);
+
+    shell = slider(EXIT_SUCCESS,
+        [
+            ACTION_STATUS,
+            APPLICATION_NAME])
+    assertComponentCount(COMMAND_LOGGER, 1, shell)
 
     //flex
     slider(EXIT_SUCCESS,
@@ -68,16 +82,32 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
             "2"])
 
     // sleep till the new instance starts
-    sleep(1000 * 10)
+    repeatUntilTrue(this.&hasContainerCountExceeded, 15, 1000 * 10, ['arg1': '2']);
 
     shell = slider(EXIT_SUCCESS,
         [
             ACTION_STATUS,
             APPLICATION_NAME])
-
     assertComponentCount(COMMAND_LOGGER, 2, shell)
 
     assertSuccess(shell)
     assert isApplicationInState("RUNNING", APPLICATION_NAME), 'App is not running.'
+  }
+
+  boolean hasContainerCountExceeded(Map<String, String> args) {
+    int expectedCount = args['arg1'].toInteger();
+    SliderShell shell = slider(EXIT_SUCCESS,
+        [
+            ACTION_STATUS,
+            APPLICATION_NAME])
+
+    //logShell(shell)
+    int instanceCount = getComponentCount(COMMAND_LOGGER, shell)
+    log.info("Noticed instance count - " + instanceCount + " for " + COMMAND_LOGGER)
+    if (instanceCount >= expectedCount) {
+      return true
+    }
+
+    return false
   }
 }

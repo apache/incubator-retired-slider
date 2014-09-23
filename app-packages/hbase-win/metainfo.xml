@@ -25,7 +25,7 @@
       1. Ensure parent dir for path (hbase-site/hbase.rootdir) is accessible to the App owner.
       2. Ensure ZK root (hbase-site/zookeeper.znode.parent) is unique for the App instance.
     </comment>
-    <version>${hbase.version}</version>
+    <version>${pkg.version}</version>
     <type>YARN-APP</type>
     <minHadoopVersion>2.1.0</minHadoopVersion>
     <exportedConfigs>hbase-site</exportedConfigs>
@@ -63,11 +63,11 @@
         <appExports>QuickLinks-org.apache.slider.jmx,QuickLinks-org.apache.slider.monitor</appExports>
         <componentExports>
           <componentExport>
-            <name>app.jmx</name>
+            <name>org.apache.slider.jmx</name>
             <value>${THIS_HOST}:${site.hbase-site.hbase.master.info.port}/jmx</value>
           </componentExport>
           <componentExport>
-            <name>app.monitor</name>
+            <name>org.apache.slider.monitor</name>
             <value>${THIS_HOST}:${site.hbase-site.hbase.master.info.port}/master-status</value>
           </componentExport>
         </componentExports>
@@ -96,7 +96,7 @@
         <packages>
           <package>
             <type>zip</type>
-            <name>files/hbase-0.98.0.2.1.5.0-2047-hadoop2.zip</name>
+            <name>files/${pkg.name}</name>
           </package>
         </packages>
       </osSpecific>

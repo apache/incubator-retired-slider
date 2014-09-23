@@ -21,8 +21,10 @@ package org.apache.slider.funtest.framework
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.Path
 import org.apache.slider.common.SliderExitCodes
+import org.apache.slider.common.SliderXMLConfKeysForTesting
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
+import org.apache.slider.common.tools.SliderUtils
 import org.apache.tools.zip.ZipEntry
 import org.apache.tools.zip.ZipOutputStream
 import org.junit.Before
@@ -35,16 +37,20 @@ class AgentCommandTestBase extends CommandTestBase
 implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   public static final boolean AGENTTESTS_ENABLED
+  public static final boolean AGENTTESTS_QUEUE_LABELED_DEFINED
+  public static final boolean AGENTTESTS_LABELS_RED_BLUE_DEFINED
   private static String TEST_APP_PKG_DIR_PROP = "test.app.pkg.dir"
   private static String TEST_APP_PKG_FILE_PROP = "test.app.pkg.file"
+  private static String TEST_APP_PKG_NAME_PROP = "test.app.pkg.name"
   private static String TEST_APP_RESOURCE = "test.app.resource"
   private static String TEST_APP_TEMPLATE = "test.app.template"
 
 
-  protected String APP_RESOURCE = sysprop(TEST_APP_RESOURCE)
-  protected String APP_TEMPLATE = sysprop(TEST_APP_TEMPLATE)
+  protected String APP_RESOURCE = getAppResource()
+  protected String APP_TEMPLATE = getAppTemplate()
   public static final String TEST_APP_PKG_DIR = sysprop(TEST_APP_PKG_DIR_PROP)
   public static final String TEST_APP_PKG_FILE = sysprop(TEST_APP_PKG_FILE_PROP)
+  public static final String TEST_APP_PKG_NAME = sysprop(TEST_APP_PKG_NAME_PROP)
 
 
   protected static Path agentTarballPath;
@@ -55,6 +61,18 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   static {
     AGENTTESTS_ENABLED = SLIDER_CONFIG.getBoolean(KEY_TEST_AGENT_ENABLED, false)
+    AGENTTESTS_QUEUE_LABELED_DEFINED =
+        SLIDER_CONFIG.getBoolean(KEY_AGENTTESTS_QUEUE_LABELED_DEFINED, false)
+    AGENTTESTS_LABELS_RED_BLUE_DEFINED =
+        SLIDER_CONFIG.getBoolean(KEY_AGENTTESTS_LABELS_RED_BLUE_DEFINED, false)
+  }
+
+  protected String getAppResource() {
+    return sysprop(TEST_APP_RESOURCE)
+  }
+
+  protected String getAppTemplate() {
+    return sysprop(TEST_APP_TEMPLATE)
   }
 
   @Rule
@@ -64,6 +82,14 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     assume(AGENTTESTS_ENABLED, "Agent tests disabled")
   }
 
+  public static void assumeQueueNamedLabelDefined() {
+    assume(AGENTTESTS_QUEUE_LABELED_DEFINED, "Custom queue named labeled is not defined")
+  }
+
+  public static void assumeLabelsRedAndBlueAdded() {
+    assume(AGENTTESTS_LABELS_RED_BLUE_DEFINED, "Custom node labels not defined")
+  }
+
   @BeforeClass
   public static void setupAgent() {
     assumeAgentTestsEnabled()
@@ -71,29 +97,18 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
   }
 
   @Before
-  public void uploadAgentTarball() {
-    def agentUploads = new AgentUploads(SLIDER_CONFIG)
-    (agentTarballPath, agtIniPath) =
-        agentUploads.uploadAgentFiles(SLIDER_TAR_DIRECTORY, false)
-  }
-
-
-  @Before
   public void setupApplicationPackage() {
     try {
-      AgentUploads agentUploads = new AgentUploads(SLIDER_CONFIG)
-      agentUploads.uploader.mkHomeDir()
-
-      appPkgPath = new Path(clusterFS.homeDirectory, TEST_APP_PKG_FILE)
-      if (clusterFS.exists(appPkgPath)) {
-        clusterFS.delete(appPkgPath, false)
-        log.info "Existing app pkg deleted from $appPkgPath"
-      }
-
       File zipFileName = new File(TEST_APP_PKG_DIR, TEST_APP_PKG_FILE).canonicalFile
-      agentUploads.uploader.copyIfOutOfDate(zipFileName, appPkgPath, false)
-      assert clusterFS.exists(appPkgPath), "App pkg not uploaded to $appPkgPath"
-      log.info "App pkg uploaded at $appPkgPath"
+      SliderShell shell = slider(EXIT_SUCCESS,
+          [
+              ACTION_INSTALL_PACKAGE,
+              Arguments.ARG_NAME, TEST_APP_PKG_NAME,
+              Arguments.ARG_PACKAGE, zipFileName,
+              Arguments.ARG_REPLACE_PKG
+          ])
+      logShell(shell)
+      log.info "App pkg uploaded at home directory .slider/package/$TEST_APP_PKG_NAME/$TEST_APP_PKG_FILE"
     } catch (Exception e) {
       setup_failed = true
       throw e;
@@ -111,17 +126,23 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   public static void assertComponentCount(String component, int count, SliderShell shell) {
     log.info("Asserting component count.")
+    int instanceCount = getComponentCount(component, shell)
+    assert count == instanceCount, 'Instance count for component did not match expected.'
+  }
+
+  public static int getComponentCount(String component, SliderShell shell) {
     String entry = findLineEntry(shell, ["instances", component] as String[])
-    log.info(entry)
-    assert entry != null
     int instanceCount = 0
-    int index = entry.indexOf("container_")
-    while (index != -1) {
-      instanceCount++;
-      index = entry.indexOf("container_", index + 1)
+    if (!SliderUtils.isUnset(entry)) {
+      log.info(entry)
+      int index = entry.indexOf("container_")
+      while (index != -1) {
+        instanceCount++;
+        index = entry.indexOf("container_", index + 1)
+      }
     }
 
-    assert instanceCount == count, 'Instance count for component did not match expected. Parsed: ' + entry
+    return instanceCount
   }
 
   public static String findLineEntry(SliderShell shell, String[] locaters) {

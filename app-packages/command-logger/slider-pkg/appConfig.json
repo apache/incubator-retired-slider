@@ -3,7 +3,7 @@
     "metadata": {
     },
     "global": {
-        "application.def": "apache-slider-command-logger.zip",
+        "application.def": ".slider/package/CMD_LOGGER/apache-slider-command-logger.zip",
         "java_home": "/usr/jdk64/jdk1.7.0_45",
         "site.global.app_user": "yarn",
         "site.global.application_id": "CommandLogger",

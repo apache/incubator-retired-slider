@@ -570,8 +570,8 @@ public class AgentProviderService extends AbstractProviderService implements
         response.setRestartEnabled(true);
       }
     } catch (SliderException e) {
-      componentStatus.applyCommandResult(CommandResult.FAILED, command);
       log.warn("Component instance failed operation.", e);
+      componentStatus.applyCommandResult(CommandResult.FAILED, command);
     }
 
     log.debug("Heartbeat response: " + response);

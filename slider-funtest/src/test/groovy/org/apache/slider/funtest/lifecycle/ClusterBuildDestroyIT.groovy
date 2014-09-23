@@ -61,7 +61,6 @@ public class ClusterBuildDestroyIT extends AgentCommandTestBase
         [
             ACTION_BUILD,
             CLUSTER,
-            ARG_IMAGE, agentTarballPath.toString(),
             ARG_ZKHOSTS,
             SLIDER_CONFIG.get(SliderXmlConfKeys.REGISTRY_ZK_QUORUM, DEFAULT_SLIDER_ZK_HOSTS),
             ARG_TEMPLATE, APP_TEMPLATE,

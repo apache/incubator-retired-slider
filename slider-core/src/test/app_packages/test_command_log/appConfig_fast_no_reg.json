@@ -5,8 +5,7 @@
     "global": {
         "heartbeat.monitor.interval": "20000",
         "agent.instance.debug.data": "ANY:DO_NOT_REGISTER:NONE",
-        "agent.conf": "agent.ini",
-        "application.def": "apache-slider-command-logger.zip",
+        "application.def": ".slider/package/CMD_LOGGER/apache-slider-command-logger.zip",
         "java_home": "/usr/jdk64/jdk1.7.0_45",
         "site.global.app_user": "yarn",
         "site.global.application_id": "CommandLogger",

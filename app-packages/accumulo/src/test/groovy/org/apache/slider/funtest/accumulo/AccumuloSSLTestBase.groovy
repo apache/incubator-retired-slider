@@ -23,6 +23,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.common.tools.SliderUtils
+import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.funtest.framework.AgentUploads
 import org.junit.Before
 
@@ -30,12 +31,18 @@ class AccumuloSSLTestBase extends AccumuloBasicIT {
   File trustStoreFile = new File(TEST_APP_PKG_DIR, "truststore.jks")
   File clientKeyStoreFile = new File(TEST_APP_PKG_DIR, "keystore.jks")
 
-  AccumuloSSLTestBase() {
-    if (SliderUtils.isHadoopClusterSecure(SLIDER_CONFIG)) {
-      APP_TEMPLATE = "target/test-config/appConfig_ssl_kerberos.json"
-    } else {
-      APP_TEMPLATE = "target/test-config/appConfig_ssl.json"
-    }
+  protected String templateName() {
+    return sysprop("test.app.resources.dir") + "/appConfig_ssl.json"
+  }
+
+  protected ConfTree modifyTemplate(ConfTree confTree) {
+    confTree.global.put("site.accumulo-site.instance.rpc.ssl.enabled", "true")
+    confTree.global.put("site.accumulo-site.instance.rpc.ssl.clientAuth", "true")
+    String jks = confTree.global.get(PROVIDER_PROPERTY)
+    def keys = confTree.credentials.get(jks)
+    keys.add("rpc.javax.net.ssl.keyStorePassword")
+    keys.add("rpc.javax.net.ssl.trustStorePassword")
+    return confTree
   }
 
   @Override

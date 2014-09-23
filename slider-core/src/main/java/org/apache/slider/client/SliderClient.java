@@ -805,6 +805,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     builder.propagateFilename();
     builder.propagatePrincipals();
     builder.setImageDetailsIfAvailable(buildInfo.getImage(), buildInfo.getAppHomeDir());
+    builder.setQueue(buildInfo.queue);
 
     String quorum = buildInfo.getZKhosts();
     if (SliderUtils.isUnset(quorum)) {
@@ -1285,7 +1286,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // Set the queue to which this application is to be submitted in the RM
     // Queue for App master
     String amQueue = config.get(KEY_YARN_QUEUE, DEFAULT_YARN_QUEUE);
-
+    String suppliedQueue = internalOperations.getGlobalOptions().get(InternalKeys.INTERNAL_QUEUE);
+    if(!SliderUtils.isUnset(suppliedQueue)) {
+      amQueue = suppliedQueue;
+      log.info("Using queue {} for the application instance.", amQueue);
+    }
     amLauncher.setQueue(amQueue);
 
     // Submit the application to the applications manager
