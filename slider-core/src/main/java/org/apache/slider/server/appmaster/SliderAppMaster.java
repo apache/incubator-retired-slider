@@ -327,13 +327,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private SliderRegistryService registry;
   
-  
   /**
    * The YARN registry service
    */
   @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private RegistryOperationsService registryOperations;
-
 
   /**
    * Record of the max no. of cores allowed in this cluster
