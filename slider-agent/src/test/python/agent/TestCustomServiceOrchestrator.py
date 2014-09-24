@@ -310,9 +310,9 @@ class TestCustomServiceOrchestrator(TestCase):
     self.assertEqual(ret, "102,103")
     ret = orchestrator.allocate_ports("${A.ALLOCATED_PORT}{DEFAULT_0}", "${A.ALLOCATED_PORT}")
     self.assertEqual(ret, "104")
-    ret = orchestrator.allocate_ports("${A.ALLOCATED_PORT}{DEFAULT_0}{DO_NOT_PROPAGATE}", "${A.ALLOCATED_PORT}")
+    ret = orchestrator.allocate_ports("${A.ALLOCATED_PORT}{DEFAULT_0}{PER_CONTAINER}", "${A.ALLOCATED_PORT}")
     self.assertEqual(ret, "105")
-    ret = orchestrator.allocate_ports("${A.ALLOCATED_PORT}{DO_NOT_PROPAGATE}", "${A.ALLOCATED_PORT}")
+    ret = orchestrator.allocate_ports("${A.ALLOCATED_PORT}{PER_CONTAINER}", "${A.ALLOCATED_PORT}")
     self.assertEqual(ret, "106")
 
 
@@ -336,7 +336,7 @@ class TestCustomServiceOrchestrator(TestCase):
                                       "${A.ALLOCATED_PORT}")
     self.assertEqual(ret, "1005-1006")
 
-    ret = orchestrator.allocate_ports("${A.ALLOCATED_PORT}{DEFAULT_1006}{DO_NOT_PROPAGATE}",
+    ret = orchestrator.allocate_ports("${A.ALLOCATED_PORT}{DEFAULT_1006}{PER_CONTAINER}",
                                       "${A.ALLOCATED_PORT}")
     self.assertEqual(ret, "1006")
 
@@ -489,8 +489,8 @@ class TestCustomServiceOrchestrator(TestCase):
     command['configurations']['oozie-site']['log_root'] = "${AGENT_LOG_ROOT}"
     command['configurations']['oozie-site']['a_port'] = "${HBASE_MASTER.ALLOCATED_PORT}"
     command['configurations']['oozie-site']['ignore_port1'] = "[${HBASE_RS.ALLOCATED_PORT}]"
-    command['configurations']['oozie-site']['ignore_port2'] = "[${HBASE_RS.ALLOCATED_PORT},${HBASE_REST.ALLOCATED_PORT}{DO_NOT_PROPAGATE}]"
-    command['configurations']['oozie-site']['ignore_port3'] = "[${HBASE_RS.ALLOCATED_PORT}{a}{b}{c},${A.ALLOCATED_PORT}{DO_NOT_PROPAGATE},${A.ALLOCATED_PORT}{DEFAULT_3}{DO_NOT_PROPAGATE}]"
+    command['configurations']['oozie-site']['ignore_port2'] = "[${HBASE_RS.ALLOCATED_PORT},${HBASE_REST.ALLOCATED_PORT}{PER_CONTAINER}]"
+    command['configurations']['oozie-site']['ignore_port3'] = "[${HBASE_RS.ALLOCATED_PORT}{a}{b}{c},${A.ALLOCATED_PORT}{PER_CONTAINER},${A.ALLOCATED_PORT}{DEFAULT_3}{PER_CONTAINER}]"
     command['configurations']['oozie-site']['ignore_port4'] = "${HBASE_RS}{a}{b}{c}"
 
     allocated_ports = {}

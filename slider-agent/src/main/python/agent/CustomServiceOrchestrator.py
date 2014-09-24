@@ -246,7 +246,7 @@ class CustomServiceOrchestrator():
   ${AGENT_WORK_ROOT} -> AgentConfig.getWorkRootPath()
   ${AGENT_LOG_ROOT} -> AgentConfig.getLogPath()
   ALLOCATED_PORT is a hint to allocate port. It works as follows:
-  Its of the form {component_name.ALLOCATED_PORT}[{DEFAULT_default_port}][{DO_NOT_PROPAGATE}]
+  Its of the form {component_name.ALLOCATED_PORT}[{DEFAULT_default_port}][{PER_CONTAINER}]
   Either a port gets allocated or if not then just set the value to "0"
   """
 
@@ -289,7 +289,7 @@ class CustomServiceOrchestrator():
   All unallocated ports should be set to 0
   Look for "${SOME_COMPONENT_NAME.ALLOCATED_PORT}"
         or "${component.ALLOCATED_PORT}{DEFAULT_port}"
-        or "${component.ALLOCATED_PORT}{DEFAULT_port}{DO_NOT_PROPAGATE}"
+        or "${component.ALLOCATED_PORT}{DEFAULT_port}{PER_CONTAINER}"
   """
 
   def set_all_unallocated_ports(self, value):
@@ -318,11 +318,11 @@ class CustomServiceOrchestrator():
   Port allocation can asks for multiple dynamic ports
   port_req_pattern is of type ${component_name.ALLOCATED_PORT}
     append {DEFAULT_ and find the default value
-    append {DO_NOT_PROPAGATE} if it exists
+    append {PER_CONTAINER} if it exists
   """
   def allocate_ports(self, value, port_req_pattern):
     default_port_pattern = "{DEFAULT_"
-    do_not_propagate_pattern = "{DO_NOT_PROPAGATE}"
+    do_not_propagate_pattern = "{PER_CONTAINER}"
     index = value.find(port_req_pattern)
     while index != -1:
       replaced_pattern = port_req_pattern
