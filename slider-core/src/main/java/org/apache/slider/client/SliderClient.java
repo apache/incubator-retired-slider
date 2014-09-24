@@ -1032,6 +1032,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     }
     MapOperations sliderAMResourceComponent =
       resourceOperations.getOrAddComponent(SliderKeys.COMPONENT_AM);
+    MapOperations resourceGlobalOptions = resourceOperations.getGlobalOptions();
 
     // add the tags if available
     Set<String> applicationTags = provider.getApplicationTags(sliderFileSystem,
@@ -1043,6 +1044,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         yarnClient,
         clusterSecure,
         sliderAMResourceComponent,
+        resourceGlobalOptions,
         applicationTags);
 
     ApplicationId appId = amLauncher.getApplicationId();

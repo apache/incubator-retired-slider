@@ -19,6 +19,8 @@
 package org.apache.slider.core.launch;
 
 import com.google.common.base.Preconditions;
+
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
@@ -28,6 +30,7 @@ import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
 import org.apache.hadoop.yarn.api.records.LocalResource;
+import org.apache.hadoop.yarn.api.records.LogAggregationContext;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.util.Records;
 import org.apache.slider.api.ResourceKeys;
@@ -70,6 +73,7 @@ public abstract class AbstractLauncher extends Configured {
     new HashMap<String, ByteBuffer>();
   // security
   protected final Credentials credentials = new Credentials();
+  protected LogAggregationContext logAggregationContext;
 
 
   protected AbstractLauncher(Configuration conf,
@@ -258,6 +262,53 @@ public abstract class AbstractLauncher extends Configured {
     }
   }
 
+  public void extractLogAggregationContext(Map<String, String> map) {
+    if (map != null) {
+      String logPatternSepStr = "\\|";
+      String logPatternJoinStr = "|";
+      MapOperations options = new MapOperations("", map);
+
+      List<String> logIncludePatterns = new ArrayList<String>();
+      String includePatternExpression = options.getOption(
+          ResourceKeys.YARN_LOG_INCLUDE_PATTERNS, "").trim();
+      if (!includePatternExpression.isEmpty()) {
+        String[] includePatterns = includePatternExpression
+            .split(logPatternSepStr);
+        for (String includePattern : includePatterns) {
+          String trimmedIncludePattern = includePattern.trim();
+          if (!trimmedIncludePattern.isEmpty()) {
+            logIncludePatterns.add(trimmedIncludePattern);
+          }
+        }
+      }
+      String logIncludePattern = StringUtils.join(logIncludePatterns,
+          logPatternJoinStr);
+      log.info("Log include patterns: {}", logIncludePattern);
+
+      List<String> logExcludePatterns = new ArrayList<String>();
+      String excludePatternExpression = options.getOption(
+          ResourceKeys.YARN_LOG_EXCLUDE_PATTERNS, "").trim();
+      if (!excludePatternExpression.isEmpty()) {
+        String[] excludePatterns = excludePatternExpression
+            .split(logPatternSepStr);
+        for (String excludePattern : excludePatterns) {
+          String trimmedExcludePattern = excludePattern.trim();
+          if (!trimmedExcludePattern.isEmpty()) {
+            logExcludePatterns.add(trimmedExcludePattern);
+          }
+        }
+      }
+      String logExcludePattern = StringUtils.join(logExcludePatterns,
+          logPatternJoinStr);
+      log.info("Log exclude patterns: {}", logExcludePattern);
+
+      long logInterval = options
+          .getOptionInt(ResourceKeys.YARN_LOG_INTERVAL, 0);
+      log.info("Log interval: {}", logInterval);
+      logAggregationContext = LogAggregationContext.newInstance(
+          logIncludePattern, logExcludePattern, logInterval);
+    }
+  }
 
   /**
    * Utility method to set up the classpath
