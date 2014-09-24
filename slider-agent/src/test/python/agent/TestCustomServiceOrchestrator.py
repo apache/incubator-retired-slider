@@ -55,6 +55,7 @@ class TestCustomServiceOrchestrator(TestCase):
     hostname_mock.return_value = "test.hst"
     command = {
       'commandType': 'EXECUTION_COMMAND',
+      'hostname' : 'host1',
       'componentName': 'NAMENODE',
       'role': u'DATANODE',
       'roleCommand': u'INSTALL',
@@ -80,6 +81,7 @@ class TestCustomServiceOrchestrator(TestCase):
     dummy_controller = MagicMock()
     orchestrator = CustomServiceOrchestrator(config, dummy_controller)
     isfile_mock.return_value = True
+    self.assertEquals(command['hostname'], "host1")
     # Test dumping EXECUTION_COMMAND
     json_file = orchestrator.dump_command_to_json(command, {})
     self.assertTrue(os.path.exists(json_file))
@@ -87,6 +89,12 @@ class TestCustomServiceOrchestrator(TestCase):
     self.assertEqual(oct(os.stat(json_file).st_mode & 0777), '0600')
     self.assertTrue(json_file.endswith("command-3.json"))
     os.unlink(json_file)
+
+    # Testing side effect of dump_command_to_json
+    self.assertEquals(command['public_hostname'], "test.hst")
+    self.assertEquals(command['hostname'], "test.hst")
+    self.assertEquals(command['appmaster_hostname'], "host1")
+
     # Test dumping STATUS_COMMAND
     command['commandType'] = 'STATUS_COMMAND'
     json_file = orchestrator.dump_command_to_json(command, {})
@@ -97,6 +105,8 @@ class TestCustomServiceOrchestrator(TestCase):
     os.unlink(json_file)
     # Testing side effect of dump_command_to_json
     self.assertEquals(command['public_hostname'], "test.hst")
+    self.assertEquals(command['hostname'], "test.hst")
+    self.assertEquals(command['appmaster_hostname'], "test.hst")
     self.assertTrue(unlink_mock.called)
 
 

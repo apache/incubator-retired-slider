@@ -36,6 +36,7 @@ public class ExecutionCommand {
   private String clusterName;
   private long taskId;
   private String commandId;
+  //TODO Remove hostname from being set in the command
   private String hostname;
   private String role;
   private Map<String, String> hostLevelParams = new HashMap<String, String>();
