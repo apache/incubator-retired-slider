@@ -56,7 +56,7 @@ class TestActionInstallPackage extends AgentMiniClusterTestBase {
       )
       fail("expected an exception, got a status code " + launcher.serviceExitCode)
     } catch (BadCommandArgumentsException e) {
-      assert e.message.contains("A valid application name is required")
+      assert e.message.contains("A valid application type name is required (e.g. HBASE)")
     }
   }
 
@@ -74,7 +74,7 @@ class TestActionInstallPackage extends AgentMiniClusterTestBase {
       )
       fail("expected an exception, got a status code " + launcher.serviceExitCode)
     } catch (BadCommandArgumentsException e) {
-      assert e.message.contains("A valid application package is required.")
+      assert e.message.contains("A valid application package location required")
     }
   }
 
@@ -103,7 +103,7 @@ class TestActionInstallPackage extends AgentMiniClusterTestBase {
       )
       fail("expected an exception, got a status code " + launcher.serviceExitCode)
     } catch (BadCommandArgumentsException e) {
-      assert e.message.contains("Use --replacePkg to overwrite")
+      assert e.message.contains("Use --replacepkg to overwrite")
     }
   }
 
