@@ -13,7 +13,7 @@
     "site.global.xmx_val": "256m",
     "site.global.xms_val": "128m",
     "site.global.memory_val": "200M",
-    "site.global.listen_port": "${MEMCACHED.ALLOCATED_PORT}{DO_NOT_PROPAGATE}"
+    "site.global.listen_port": "${MEMCACHED.ALLOCATED_PORT}{PER_CONTAINER}"
 
   },
   "components": {

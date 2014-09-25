@@ -126,7 +126,7 @@ public class AgentProviderService extends AbstractProviderService implements
   private static final String LOG_FOLDERS_TAG = "LogFolders";
   private static final String COMPONENT_DATA_TAG = "ComponentInstanceData";
   private static final String SHARED_PORT_TAG = "SHARED";
-  private static final String DO_NOT_PROPAGATE_TAG = "{DO_NOT_PROPAGATE}";
+  private static final String PER_CONTAINER_TAG = "{PER_CONTAINER}";
   private static final int MAX_LOG_ENTRIES = 20;
   private static final int DEFAULT_HEARTBEAT_MONITOR_INTERVAL = 60 * 1000;
 
@@ -1482,7 +1482,7 @@ public class AgentProviderService extends AbstractProviderService implements
       for (String key : config.keySet()) {
         String value = config.get(key);
         String lookupKey = configName + "." + key;
-        if (!value.contains(DO_NOT_PROPAGATE_TAG)) {
+        if (!value.contains(PER_CONTAINER_TAG)) {
           // If the config property is shared then pass on the already allocated value
           // from any container
           if (this.getAllocatedPorts().containsKey(lookupKey)) {
