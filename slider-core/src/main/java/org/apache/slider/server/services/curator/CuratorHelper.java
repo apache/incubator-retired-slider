@@ -75,17 +75,6 @@ public class CuratorHelper extends Configured {
   }
 
   /**
-   * Create an (united) curator client service
-   * @param connectionString ZK binding
-   * @return the service
-   */
-  public CuratorService createCuratorClientService() {
-    CuratorService curatorService =
-      new CuratorService("Curator ", curator, connectionString);
-    return curatorService;
-  }
-
-  /**
    * Create a discovery builder bonded to this curator
    * @return
    */

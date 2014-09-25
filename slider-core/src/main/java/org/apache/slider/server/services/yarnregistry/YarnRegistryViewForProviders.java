@@ -18,9 +18,10 @@
 
 package org.apache.slider.server.services.yarnregistry;
 
-import org.apache.hadoop.yarn.registry.client.binding.BindingUtils;
+import org.apache.hadoop.yarn.registry.client.api.RegistryOperations;
+import org.apache.hadoop.yarn.registry.client.binding.RegistryOperationUtils;
 import org.apache.hadoop.yarn.registry.client.binding.RegistryPathUtils;
-import org.apache.hadoop.yarn.registry.client.services.RegistryOperationsService;
+
 import org.apache.hadoop.yarn.registry.client.api.CreateFlags;
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
 
@@ -28,14 +29,15 @@ import java.io.IOException;
 
 public class YarnRegistryViewForProviders {
 
-  private final RegistryOperationsService registryOperations;
+  private final RegistryOperations registryOperations;
 
   private final String user;
 
   private final String sliderServiceclass;
   private final String instanceName;
+  private ServiceRecord selfRegistration;
 
-  public YarnRegistryViewForProviders(RegistryOperationsService registryOperations,
+  public YarnRegistryViewForProviders(RegistryOperations registryOperations,
       String user, String sliderServiceclass, String instanceName) {
     this.registryOperations = registryOperations;
     this.user = user;
@@ -55,8 +57,16 @@ public class YarnRegistryViewForProviders {
     return instanceName;
   }
 
-  public RegistryOperationsService getRegistryOperationsService() {
+  public RegistryOperations getRegistryOperations() {
     return registryOperations;
+  }
+
+  public ServiceRecord getSelfRegistration() {
+    return selfRegistration;
+  }
+
+  public void setSelfRegistration(ServiceRecord selfRegistration) {
+    this.selfRegistration = selfRegistration;
   }
 
   /**
@@ -70,8 +80,7 @@ public class YarnRegistryViewForProviders {
       IOException {
     putComponent(sliderServiceclass, instanceName,
         componentName,
-        record
-    );
+        record);
   }
 
   /**
@@ -85,11 +94,10 @@ public class YarnRegistryViewForProviders {
       String serviceName,
       String componentName,
       ServiceRecord record) throws IOException {
-    String path = BindingUtils.componentPath(
+    String path = RegistryOperationUtils.componentPath(
         user, serviceClass, serviceName, componentName);
     registryOperations.mknode(RegistryPathUtils.parentOf(path), true);
-    registryOperations.create(path, record,
-        CreateFlags.OVERWRITE);
+    registryOperations.create(path, record, CreateFlags.OVERWRITE);
   }
 
 
@@ -106,7 +114,7 @@ public class YarnRegistryViewForProviders {
       ServiceRecord record) throws IOException {
 
     
-    String path = BindingUtils.servicePath(
+    String path = RegistryOperationUtils.servicePath(
         username, serviceClass, serviceName);
     registryOperations.mknode(RegistryPathUtils.parentOf(path), true);
     registryOperations.create(path, record, CreateFlags.OVERWRITE);
@@ -115,7 +123,7 @@ public class YarnRegistryViewForProviders {
 
 
   public void rmComponent(String componentName) throws IOException {
-    String path = BindingUtils.componentPath(
+    String path = RegistryOperationUtils.componentPath(
         user, sliderServiceclass, instanceName,
         componentName);
     registryOperations.delete(path, false);

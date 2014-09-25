@@ -24,6 +24,7 @@ import java.util.List;
 /**
  *
  */
+@Deprecated
 public class CuratorServiceInstances<T> {
   private final List<CuratorServiceInstance<T>> services;
 

@@ -25,6 +25,7 @@ public class CustomRegistryConstants {
 
   public static final String MANAGEMENT_REST_API =
       "org.apache.slider.management";
+  
   public static final String REGISTRY_REST_API =
       "org.apache.slider.registry";
   

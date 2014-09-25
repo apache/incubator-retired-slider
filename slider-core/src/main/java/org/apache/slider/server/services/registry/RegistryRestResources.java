@@ -48,6 +48,7 @@ import java.util.Random;
 
 @Singleton
 @Path(RestPaths.SLIDER_PATH_REGISTRY)
+@Deprecated
 public class RegistryRestResources extends DiscoveryResource<ServiceInstanceData> {
   public static final String SERVICE_NAME = RestPaths.REGISTRY_SERVICE +"/{name}";
   public static final String SERVICE_NAME_ID = SERVICE_NAME + "/{id}";

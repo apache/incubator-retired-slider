@@ -20,14 +20,16 @@ package org.apache.slider.providers.hbase.minicluster.live
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.yarn.registry.client.api.RegistryConstants
+import org.apache.hadoop.yarn.registry.client.api.RegistryOperations
+import org.apache.hadoop.yarn.registry.client.binding.RegistryOperationUtils
+import org.apache.hadoop.yarn.registry.client.binding.RegistryPathUtils
+import org.apache.hadoop.yarn.registry.client.types.ServiceRecord
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.client.SliderClient
 import org.apache.slider.providers.hbase.HBaseKeys
 import org.apache.slider.providers.hbase.minicluster.HBaseMiniClusterTestBase
 import org.apache.slider.core.main.ServiceLauncher
-import org.apache.slider.core.registry.info.ServiceInstanceData
-import org.apache.slider.server.services.curator.CuratorServiceInstance
-import org.apache.slider.server.services.registry.SliderRegistryService
 import org.junit.Test
 
 @CompileStatic
@@ -83,10 +85,15 @@ class TestTwoLiveClusters extends HBaseMiniClusterTestBase {
 
     // registry instances    def names = client.listRegistryNames(clustername)
     describe "service registry names"
-    SliderRegistryService registry = cluster2Client.registry
-    def names = registry.getServiceTypes();
-    dumpRegistryServiceTypes(names)
+    RegistryOperations registry = cluster2Client.registryOperations
+    def home = RegistryOperationUtils.homePathForCurrentUser()
+    def names = RegistryOperationUtils.listServiceRecords(registry,
+        RegistryPathUtils.join(home, RegistryConstants.PATH_USER_SERVICES))
 
+    def stats = registry.listFull(
+        RegistryPathUtils.join(home, RegistryConstants.PATH_USER_SERVICES))
+    
+    dumpCollection(stats)
     List<String> instanceIds = sliderClient.listRegisteredSliderInstances()
 
 
@@ -95,18 +102,20 @@ class TestTwoLiveClusters extends HBaseMiniClusterTestBase {
     assert instanceIds.size() == 2
 
 
-    List<CuratorServiceInstance<ServiceInstanceData>> instances =
+    Map<String, ServiceRecord> instances =
         sliderClient.listRegistryInstances()
     dumpRegistryInstances(instances)
     assert instances.size() == 2
 
-    def hbaseInstances = registry.findInstances(
-        HBaseKeys.HBASE_SERVICE_TYPE, null)
+    Map<String, ServiceRecord> hbaseInstances =
+        RegistryOperationUtils.listServiceRecords(registry,
+        RegistryOperationUtils.serviceclassPath(
+            RegistryOperationUtils.currentUser(),
+            HBaseKeys.HBASE_SERVICE_TYPE));
+        
     assert hbaseInstances.size() == 2
-    def hbase1ServiceData = registry.findInstance(
-        HBaseKeys.HBASE_SERVICE_TYPE, clustername1).payload
-    def hbase2ServiceData = registry.findInstance(
-        HBaseKeys.HBASE_SERVICE_TYPE, clustername2).payload
+    def hbase1ServiceData = hbaseInstances[clustername1]
+    def hbase2ServiceData = hbaseInstances[clustername2]
     assert !(hbase1ServiceData == hbase2ServiceData)
 
     clusterActionFreeze(cluster2Client, clustername2, "stop cluster 2")

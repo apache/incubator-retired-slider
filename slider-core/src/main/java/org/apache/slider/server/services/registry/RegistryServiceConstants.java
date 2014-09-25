@@ -21,6 +21,7 @@ package org.apache.slider.server.services.registry;
 /**
  * These constants are unique to the slider registry service itself
  */
+@Deprecated
 public class RegistryServiceConstants {
   public static final int INSTANCE_REFRESH_MS = 1000;
 }

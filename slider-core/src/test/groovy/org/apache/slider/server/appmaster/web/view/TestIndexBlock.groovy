@@ -27,7 +27,6 @@ import org.apache.hadoop.yarn.webapp.hamlet.Hamlet
 import org.apache.slider.api.SliderClusterProtocol
 import org.apache.slider.providers.ProviderService
 import org.apache.slider.server.appmaster.model.mock.*
-import org.apache.slider.server.appmaster.state.AppState
 import org.apache.slider.server.appmaster.state.ProviderAppState
 import org.apache.slider.server.appmaster.web.WebAppApi
 import org.apache.slider.server.appmaster.web.WebAppApiImpl
@@ -52,7 +51,12 @@ public class TestIndexBlock extends BaseMockAppStateTest {
         "undefined",
         appState)
 
-    WebAppApiImpl inst = new WebAppApiImpl(clusterProto, providerAppState, providerService, null);
+    WebAppApiImpl inst = new WebAppApiImpl(
+        clusterProto,
+        providerAppState,
+        providerService,
+        null,
+        null);
 
     Injector injector = Guice.createInjector(new AbstractModule() {
           @Override

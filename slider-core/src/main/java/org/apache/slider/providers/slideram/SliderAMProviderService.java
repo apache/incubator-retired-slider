@@ -36,9 +36,6 @@ import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.ContainerLauncher;
 import org.apache.slider.core.registry.docstore.PublishedConfiguration;
 import org.apache.slider.core.registry.info.CustomRegistryConstants;
-import org.apache.slider.core.registry.info.RegisteredEndpoint;
-import org.apache.slider.core.registry.info.RegistryView;
-import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.providers.AbstractProviderService;
 import org.apache.slider.providers.ProviderCompleted;
 import org.apache.slider.providers.ProviderCore;
@@ -56,8 +53,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_MANAGEMENT;
-import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_PUBLISHER;
+import static org.apache.slider.server.appmaster.web.rest.RestPaths.*;
 
 /**
  * Exists just to move some functionality out of AppMaster into a peer class
@@ -115,13 +111,11 @@ public class SliderAMProviderService extends AbstractProviderService implements
   public void applyInitialRegistryDefinitions(URL amWebURI,
       URL agentOpsURI,
       URL agentStatusURI,
-      ServiceInstanceData instanceData,
       ServiceRecord serviceRecord)
       throws IOException {
     super.applyInitialRegistryDefinitions(amWebURI,
         agentOpsURI,
         agentStatusURI,
-        instanceData,
         serviceRecord);
     // now publish site.xml files
     YarnConfiguration defaultYarnConfig = new YarnConfiguration();
@@ -129,8 +123,7 @@ public class SliderAMProviderService extends AbstractProviderService implements
         PublishedArtifacts.COMPLETE_CONFIG,
         new PublishedConfiguration(
             "Complete slider application settings",
-            getConfig(), getConfig())
-    );
+            getConfig(), getConfig()));
     amState.getPublishedSliderConfigurations().put(
         PublishedArtifacts.YARN_SITE_CONFIG,
         new PublishedConfiguration(
@@ -153,40 +146,16 @@ public class SliderAMProviderService extends AbstractProviderService implements
 
 
     try {
-      RegisteredEndpoint webUI =
-          new RegisteredEndpoint(amWebURI, "Application Master Web UI");
 
       URL managementAPI = new URL(amWebURI, SLIDER_PATH_MANAGEMENT);
-      URL registryREST = new URL(amWebURI, RestPaths.SLIDER_PATH_REGISTRY + "/" +
-                                                 RestPaths.REGISTRY_SERVICE);
-
-      RegistryView externalView = instanceData.externalView;
-      externalView.endpoints.put(CustomRegistryConstants.WEB_UI, webUI);
-
-      externalView.endpoints.put(
-          CustomRegistryConstants.MANAGEMENT_REST_API,
-          new RegisteredEndpoint(
-              managementAPI,
-              "Management REST API") );
-
-      externalView.endpoints.put(
-          CustomRegistryConstants.REGISTRY_REST_API,
-          new RegisteredEndpoint(
-              registryREST,
-              "Registry Web Service" ) );
+      URL registryREST = new URL(amWebURI, SLIDER_PATH_REGISTRY );
 
       URL publisherURL = new URL(amWebURI, SLIDER_PATH_PUBLISHER);
-      externalView.endpoints.put(
-          CustomRegistryConstants.PUBLISHER_REST_API,
-          new RegisteredEndpoint(
-              publisherURL,
-              "Publisher Service") );
 
       // Set the configurations URL.
 
       String configurationsURL = SliderUtils.appendToURL(
           publisherURL.toExternalForm(), RestPaths.SLIDER_CONFIGSET);
-      externalView.configurationsURL = configurationsURL;
 
       serviceRecord.addExternalEndpoint(
           RegistryTypeUtils.webEndpoint(

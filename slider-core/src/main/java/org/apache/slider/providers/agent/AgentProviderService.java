@@ -51,8 +51,6 @@ import org.apache.slider.core.launch.CommandLineBuilder;
 import org.apache.slider.core.launch.ContainerLauncher;
 import org.apache.slider.core.registry.docstore.PublishedConfiguration;
 import org.apache.slider.core.registry.info.CustomRegistryConstants;
-import org.apache.slider.core.registry.info.RegisteredEndpoint;
-import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.providers.AbstractProviderService;
 import org.apache.slider.providers.ProviderCompleted;
 import org.apache.slider.providers.ProviderCore;
@@ -629,31 +627,19 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   @Override
-  public void applyInitialRegistryDefinitions (URL amWebURI,
-        URL agentOpsURI,
-        URL agentStatusURI,
-        ServiceInstanceData instanceData,
-        ServiceRecord serviceRecord)
+  public void applyInitialRegistryDefinitions(URL amWebURI,
+      URL agentOpsURI,
+      URL agentStatusURI,
+      ServiceRecord serviceRecord)
     throws IOException {
     super.applyInitialRegistryDefinitions(amWebURI,
                                           agentOpsURI,
                                           agentStatusURI,
-                                          instanceData,
                                           serviceRecord);
 
     try {
       URL restURL = new URL(agentOpsURI, SLIDER_PATH_AGENTS);
-
-      instanceData.internalView.endpoints.put(
-          CustomRegistryConstants.AGENT_SECURE_REST_API,
-          new RegisteredEndpoint(restURL,
-              "Agent Secure REST API"));
       URL agentStatusURL = new URL(agentStatusURI, SLIDER_PATH_AGENTS);
-      instanceData.internalView.endpoints.put(
-          CustomRegistryConstants.AGENT_ONEWAY_REST_API,
-          new RegisteredEndpoint(
-              agentStatusURL,
-              "Agent Oneway REST API"));
 
       serviceRecord.addInternalEndpoint(
           new Endpoint(CustomRegistryConstants.AGENT_SECURE_REST_API,

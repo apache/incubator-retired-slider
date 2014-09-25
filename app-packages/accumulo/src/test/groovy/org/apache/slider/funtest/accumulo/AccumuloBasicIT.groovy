@@ -25,6 +25,7 @@ import org.apache.hadoop.security.ProviderUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.security.alias.CredentialProvider
 import org.apache.hadoop.security.alias.CredentialProviderFactory
+import org.apache.hadoop.yarn.registry.client.types.ServiceRecord
 import org.apache.slider.accumulo.CustomAuthenticator
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.client.SliderClient
@@ -170,10 +171,9 @@ class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
     int tries = 5
     while (true) {
       try {
-        CuratorServiceInstance<ServiceInstanceData> instance =
-          sliderClient.getRegistry().queryForInstance(SliderKeys.APP_TYPE, clusterName)
-        ServiceInstanceData serviceInstanceData = instance.payload
-        RegistryRetriever retriever = new RegistryRetriever(serviceInstanceData)
+        ServiceRecord instance =
+          sliderClient.lookupServiceRecord(SliderKeys.APP_TYPE, clusterName)
+        RegistryRetriever retriever = new RegistryRetriever(instance)
         PublishedConfiguration configuration = retriever.retrieveConfiguration(
           retriever.getConfigurations(true), "quicklinks", true)
 

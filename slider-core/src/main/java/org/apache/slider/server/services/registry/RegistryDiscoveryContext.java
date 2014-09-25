@@ -23,6 +23,7 @@ import org.apache.curator.x.discovery.ServiceDiscovery;
 import org.apache.curator.x.discovery.server.contexts.GenericDiscoveryContext;
 import org.apache.slider.core.registry.info.ServiceInstanceData;
 
+@Deprecated
 public class RegistryDiscoveryContext extends GenericDiscoveryContext<ServiceInstanceData> {
 
   public RegistryDiscoveryContext(ServiceDiscovery<ServiceInstanceData> serviceDiscovery,

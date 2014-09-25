@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 
+@Deprecated
 public class CuratorService extends AbstractService {
   private static final Logger log =
     LoggerFactory.getLogger(CuratorService.class);

@@ -96,25 +96,12 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     assert instance != null
 
     //switch to the slider ZK-based registry
-
-    describe "service registry names"
-    SliderRegistryService registry = client.registry
-    def names = registry.getServiceTypes();
-    dumpRegistryServiceTypes(names)
     describe "service registry instance IDs"
 
     def instanceIds = client.listRegisteredSliderInstances()
 
     log.info("number of instanceIds: ${instanceIds.size()}")
     instanceIds.each { String it -> log.info(it) }
-
-    describe "service registry slider instances"
-    List<CuratorServiceInstance<ServiceInstanceData>> instances =
-        client.listRegistryInstances()
-    instances.each { CuratorServiceInstance<ServiceInstanceData> svc ->
-      log.info svc.toString()
-    }
-    describe "end list service registry slider instances"
 
     describe "Yarn registry"
     def yarnRegistry = client.registryOperations

@@ -24,6 +24,7 @@ import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.annotate.JsonTypeInfo;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Deprecated
 public class CuratorServiceInstance<T> {
 
   public String name;

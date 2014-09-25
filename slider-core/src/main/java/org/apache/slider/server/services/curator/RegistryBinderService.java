@@ -46,6 +46,7 @@ import java.util.Map;
  * start/close methods are tied to the lifecycle of this service
  * @param <Payload> the payload of the operation
  */
+@Deprecated
 public class RegistryBinderService<Payload> extends CuratorService {
   private static final Logger log =
     LoggerFactory.getLogger(RegistryBinderService.class);

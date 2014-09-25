@@ -31,6 +31,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.hadoop.util.Shell
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.conf.YarnConfiguration
+import org.apache.hadoop.yarn.registry.client.types.ServiceRecord
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.ClusterNode
 import org.apache.slider.api.RoleKeys
@@ -689,19 +690,15 @@ class SliderTestUtils extends Assert {
   }
 
   public static void dumpRegistryInstances(
-      List<CuratorServiceInstance<ServiceInstanceData>> instances) {
+      Map<String, ServiceRecord> instances) {
     describe "service registry slider instances"
-    JsonSerDeser<ServiceInstanceData> serDeser = new JsonSerDeser<>(
-        ServiceInstanceData)
-
-    instances.each { CuratorServiceInstance<ServiceInstanceData> svc ->
-      ServiceInstanceData payload = svc.payload
-      def json = serDeser.toJson(payload)
-      log.info("service $svc payload=\n$json")
+    instances.each { Map.Entry<String, ServiceRecord> it ->
+      log.info(" $it.key : $it.value")
     }
     describe "end list service registry slider instances"
   }
 
+  
   public static void dumpRegistryInstanceIDs(List<String> instanceIds) {
     describe "service registry instance IDs"
     dumpCollection(instanceIds)

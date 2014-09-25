@@ -35,6 +35,7 @@ import java.util.Map;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
+@Deprecated
 public class ServiceInstanceData implements Serializable {
 
   public String serviceType;

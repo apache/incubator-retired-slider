@@ -40,10 +40,10 @@ import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.registry.client.api.RegistryConstants;
-import org.apache.hadoop.yarn.registry.client.binding.BindingUtils;
-import org.apache.hadoop.yarn.registry.client.binding.RecordOperations;
-import org.apache.hadoop.yarn.registry.client.binding.ZKPathDumper;
-import org.apache.hadoop.yarn.registry.client.services.RegistryOperationsService;
+import org.apache.hadoop.yarn.registry.client.api.RegistryOperations;
+import static org.apache.hadoop.yarn.registry.client.binding.RegistryOperationUtils.*;
+
+import org.apache.hadoop.yarn.registry.client.binding.RegistryOperationUtils;
 import org.apache.hadoop.yarn.registry.client.types.Endpoint;
 import org.apache.hadoop.yarn.registry.client.types.RegistryPathStatus;
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
@@ -120,8 +120,6 @@ import org.apache.slider.providers.agent.AgentKeys;
 import org.apache.slider.providers.slideram.SliderAMClientProvider;
 import org.apache.slider.server.appmaster.SliderAppMaster;
 import org.apache.slider.server.appmaster.rpc.RpcBinder;
-import org.apache.slider.server.services.curator.CuratorServiceInstance;
-import org.apache.slider.server.services.registry.SliderRegistryService;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -176,13 +174,13 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   private SliderYarnClientImpl yarnClient;
   private YarnAppListClient YarnAppListClient;
   private AggregateConf launchedInstanceDefinition;
-  private SliderRegistryService registry;
+//  private SliderRegistryService registry;
 
 
   /**
    * The YARN registry service
    */
-  private RegistryOperationsService registryOperations;
+  private RegistryOperations registryOperations;
 
   /**
    * Constructor
@@ -394,7 +392,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
   /**
    * Delete the zookeeper node associated with the calling user and the cluster
+   * TODO: YARN registry operations
    **/
+  @Deprecated
   @VisibleForTesting
   public boolean deleteZookeeperNode(String clusterName) throws YarnException, IOException {
     String user = getUsername();
@@ -1454,7 +1454,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
   public String getUsername() throws IOException {
-    return UserGroupInformation.getCurrentUser().getShortUserName();
+    return RegistryOperationUtils.currentUser();
   }
 
   /**
@@ -2407,58 +2407,32 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @throws IOException Network or other problems
    */
   @VisibleForTesting
-  @Deprecated
-  public List<ServiceInstanceData> actionRegistryList(
-      ActionRegistryArgs registryArgs)
-      throws YarnException, IOException {
-    SliderRegistryService registryService = getRegistry();
-    String serviceType = registryArgs.serviceType;
-    String name = registryArgs.name;
-    List<CuratorServiceInstance<ServiceInstanceData>> instances =
-        registryService.findInstances(serviceType, name);
-    int size = instances.size();
-    if (size == 0) {
-      throw new FileNotFoundException("No entries for servicetype "
-                                      + serviceType
-                                      + " name " + name);
-    }
-    List<ServiceInstanceData> sids = new ArrayList<ServiceInstanceData>(size);
-    for (CuratorServiceInstance<ServiceInstanceData> instance : instances) {
-      ServiceInstanceData payload = instance.payload;
-      logInstance(payload, registryArgs.verbose);
-      sids.add(payload);
-    }
-    return sids;
-  }
-
-  /**
-   * Registry operation
-   *
-   * @param registryArgs registry Arguments
-   * @return the instances (for tests)
-   * @throws YarnException YARN problems
-   * @throws IOException Network or other problems
-   */
-  @VisibleForTesting
   public Collection<ServiceRecord> actionRegistryListYarn(
       ActionRegistryArgs registryArgs)
       throws YarnException, IOException {
     String serviceType = registryArgs.serviceType;
     String name = registryArgs.name;
-    RegistryOperationsService operations = getRegistryOperations();
+    RegistryOperations operations = getRegistryOperations();
     Collection<ServiceRecord> serviceRecords;
     if (StringUtils.isEmpty(name)) {
       String serviceclassPath =
-          BindingUtils.serviceclassPath(BindingUtils.currentUser(),
+          serviceclassPath(
+              currentUser(),
               serviceType);
-      RegistryPathStatus[] listDir;
-      listDir = operations.list(serviceclassPath);
-      if (listDir.length == 0) {
-        throw new PathNotFoundException("records under "
-                                        + serviceclassPath);
+
+      try {
+        Map<String, ServiceRecord> recordMap =
+            listServiceRecords(operations, serviceclassPath);
+        RegistryPathStatus[] listDir;
+        if (recordMap.isEmpty()) {
+          throw new UnknownApplicationInstanceException(
+              "No applications registered under " + serviceclassPath);
+        }
+        serviceRecords = recordMap.values();
+      } catch (PathNotFoundException e) {
+        throw new UnknownApplicationInstanceException(e.getPath().toString(),
+            e);
       }
-      serviceRecords =
-          RecordOperations.extractServiceRecords(operations, listDir).values();
     } else {
       ServiceRecord instance = lookupServiceRecord(registryArgs);
       serviceRecords = new ArrayList<ServiceRecord>(1);
@@ -2517,33 +2491,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     }
   }
 
-  /**
-   * list configs available for an instance
-   *
-   * @param registryArgs registry Arguments
-   * @throws YarnException YARN problems
-   * @throws IOException Network or other problems
-   */
-  public void actionRegistryListConfigs(ActionRegistryArgs registryArgs)
-      throws YarnException, IOException {
-    ServiceInstanceData instance = lookupInstance(registryArgs);
-
-    RegistryRetriever retriever = new RegistryRetriever(instance);
-    PublishedConfigSet configurations =
-        retriever.getConfigurations(!registryArgs.internal);
-
-    for (String configName : configurations.keys()) {
-      if (!registryArgs.verbose) {
-        log.info("{}", configName);
-      } else {
-        PublishedConfiguration published =
-            configurations.get(configName);
-        log.info("{} : {}",
-            configName,
-            published.description);
-      }
-    }
-  }
  /**
    * list configs available for an instance
    *
@@ -2571,31 +2518,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
             published.description);
       }
     }
-  }
-
-  /**
-   * list configs available for an instance
-   *
-   * @param registryArgs registry Arguments
-   * @throws YarnException YARN problems
-   * @throws IOException Network or other problems
-   * @throws FileNotFoundException if the config is not found
-   */
-  @VisibleForTesting
-  @Deprecated
-  public PublishedConfiguration actionRegistryGetConfig(ActionRegistryArgs registryArgs)
-      throws YarnException, IOException {
-    ServiceInstanceData instance = lookupInstance(registryArgs);
-
-    RegistryRetriever retriever = new RegistryRetriever(instance);
-    boolean external = !registryArgs.internal;
-    PublishedConfigSet configurations =
-        retriever.getConfigurations(external);
-
-    PublishedConfiguration published = retriever.retrieveConfiguration(configurations,
-            registryArgs.getConf,
-            external);
-    return published;
   }
 
   /**
@@ -2663,96 +2585,49 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   /**
    * Look up an instance
    * @return instance data
-   * @throws UnknownApplicationInstanceException no match
-   * @throws SliderException other failures
-   * @throws IOException IO problems or wrapped exceptions
-   */
-  private ServiceInstanceData lookupInstance(ActionRegistryArgs registryArgs) throws
-      UnknownApplicationInstanceException,
-      SliderException,
-      IOException {
-    return lookupInstance(registryArgs.name, registryArgs.serviceType);
-  }
-
-  /**
-   * Look up an instance
-   * @param id instance ID
-   * @param serviceType service type
-   * @return instance data
-   * @throws UnknownApplicationInstanceException no match
-   * @throws SliderException other failures
-   * @throws IOException IO problems or wrapped exceptions
-   */
-  private ServiceInstanceData lookupInstance(String id,
-      String serviceType) throws
-      IOException {
-    try {
-      CuratorServiceInstance<ServiceInstanceData> csi =
-          getRegistry().queryForInstance(serviceType, id);
-      if (csi == null) {
-        throw new FileNotFoundException(
-            String.format("instance %s of type %s not found",
-            id, serviceType));
-      }
-      return csi.getPayload();
-    } catch (IOException e) {
-      throw e;
-    } catch (Exception e) {
-      throw new IOException(e);
-    }
-  }
-
-
-  /**
-   * Look up an instance
-   * @return instance data
    * @throws SliderException other failures
    * @throws IOException IO problems or wrapped exceptions
    */
   private ServiceRecord lookupServiceRecord(ActionRegistryArgs registryArgs) throws
       SliderException,
       IOException {
-    return lookupServiceRecord(registryArgs.name, registryArgs.serviceType);
+    return lookupServiceRecord(registryArgs.serviceType, registryArgs.name);
   }
 
   /**
    * Look up an instance
-   * @param id instance ID
    * @param serviceType service type
+   * @param id instance ID
    * @return instance data
    * @throws UnknownApplicationInstanceException no match
    * @throws SliderException other failures
    * @throws IOException IO problems or wrapped exceptions
    */
-  private ServiceRecord lookupServiceRecord(String id,
-      String serviceType) throws
-      IOException, SliderException {
-    return getRegistryOperations().resolve(
-        BindingUtils.servicePath(BindingUtils.currentUser(),
-            serviceType, id));
+  public ServiceRecord lookupServiceRecord(String serviceType, String id)
+      throws IOException, SliderException {
+    try {
+      return getRegistryOperations().resolve(
+          servicePath(currentUser(),
+              serviceType, id));
+    } catch (PathNotFoundException e) {
+      throw new UnknownApplicationInstanceException(e.getPath().toString(), e);
+    }
   } 
   
-  
-  
   /**
-   * List instances in the registry
-   * @return
-   * @throws IOException
+   * List instances in the registry for the current user
+   * @return a list of slider registry instances
+   * @throws IOException Any IO problem ... including no path in the registry
+   * to slider service classes for this user
    * @throws YarnException
    */
-  public List<CuratorServiceInstance<ServiceInstanceData>> listRegistryInstances()
+
+  public Map<String, ServiceRecord> listRegistryInstances()
       throws IOException, YarnException {
-    return getRegistry().listInstances(SliderKeys.APP_TYPE);
-  }
-
-
-  /**
-   * Get an on-demand path jumper
-   * @return a class that can dump the contents of the registry
-   */
-  @VisibleForTesting
-  public ZKPathDumper dumpSliderRegistry(boolean verbose) throws SliderException, IOException {
-    return getRegistry().dumpPath(verbose);
+    Map<String, ServiceRecord> recordMap = listServiceRecords(
+        getRegistryOperations(),
+        serviceclassPath(currentUser(), SliderKeys.APP_TYPE));
+    return recordMap;
   }
   
   /**
@@ -2765,7 +2640,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       IOException,
       YarnException {
     try {
-      return getRegistry().instanceIDs(SliderKeys.APP_TYPE);
+      Map<String, ServiceRecord> recordMap = listServiceRecords(
+          getRegistryOperations(),
+          serviceclassPath(currentUser(), SliderKeys.APP_TYPE));
+      return new ArrayList<String>(recordMap.keySet());
 /// JDK7    } catch (YarnException | IOException e) {
     } catch (IOException e) {
       throw e;
@@ -2782,39 +2660,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @throws SliderException
    * @throws IOException
    */
-  private synchronized SliderRegistryService maybeStartRegistry() throws
-      SliderException,
-      IOException {
-
-    if (registry == null) {
-      registry = startRegistrationService();
-    }
-    return registry;
-  }
-
-  /**
-   * Get the registry binding. As this may start the registry, it can take time
-   * and fail
-   * @return registry the registry service
-   * @throws SliderException slider-specific failures
-   * @throws IOException other failures
-   */
-  @VisibleForTesting
-
-  public SliderRegistryService getRegistry() throws
-      SliderException,
-      IOException {
-    return maybeStartRegistry();
-  }
-
-
-  /**
-   * Start the registry if it is not there yet
-   * @return the registry service
-   * @throws SliderException
-   * @throws IOException
-   */
-  private synchronized RegistryOperationsService maybeStartYarnRegistry()
+  private synchronized RegistryOperations maybeStartYarnRegistry()
       throws SliderException, IOException {
 
     if (registryOperations == null) {
@@ -2824,25 +2670,14 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
   /**
-   * Get the YARN registry
+   * Get the registry binding. As this may start the registry, it can take time
+   * and fail
    * @return the registry 
    */
-  public RegistryOperationsService getRegistryOperations()
+  public RegistryOperations getRegistryOperations()
       throws SliderException, IOException {
     return maybeStartYarnRegistry();
   }
-
-
-  /**
-   * Get an on-demand path jumper
-   * @return a class that can dump the contents of the registry
-   */
-  @VisibleForTesting
-  public ZKPathDumper dumpYarnRegistry(boolean verbose)
-      throws SliderException, IOException {
-    return getRegistryOperations().dumpPath();
-  }
-
 
   /**
    * Output to standard out/stderr (implementation specific detail)

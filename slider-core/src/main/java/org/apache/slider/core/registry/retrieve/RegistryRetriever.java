@@ -34,7 +34,6 @@ import org.apache.slider.core.exceptions.ExceptionConverter;
 import org.apache.slider.core.registry.docstore.PublishedConfigSet;
 import org.apache.slider.core.registry.docstore.PublishedConfiguration;
 import org.apache.slider.core.registry.info.CustomRegistryConstants;
-import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,13 +62,6 @@ public class RegistryRetriever {
     jerseyClient = Client.create(clientConfig);
     jerseyClient.setFollowRedirects(true);
   }
-
-
-  public RegistryRetriever(ServiceInstanceData instance) {
-    externalConfigurationURL =  instance.externalView.configurationsURL;    
-    internalConfigurationURL =  instance.internalView.configurationsURL;    
-  }
-
   
   public RegistryRetriever(String externalConfigurationURL, String internalConfigurationURL) {
     this.externalConfigurationURL = externalConfigurationURL; 
@@ -95,9 +87,7 @@ public class RegistryRetriever {
     } else {
       externalConfigurationURL = "";
     }
-
   }
-
 
   /**
    * Does a bonded registry retriever have a configuration?

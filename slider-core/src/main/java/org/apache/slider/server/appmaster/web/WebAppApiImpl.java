@@ -16,6 +16,7 @@
  */
 package org.apache.slider.server.appmaster.web;
 
+import org.apache.hadoop.yarn.registry.client.api.RegistryOperations;
 import org.apache.slider.api.SliderClusterProtocol;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.providers.ProviderRole;
@@ -47,11 +48,14 @@ public class WebAppApiImpl implements WebAppApi {
   protected final StateAccessForProviders appState;
   protected final ProviderService provider;
   protected final CertificateManager certificateManager;
-  
+  private final RegistryOperations registryOperations;
+
   public WebAppApiImpl(SliderClusterProtocol clusterProto,
-                       StateAccessForProviders appState,
-                       ProviderService provider,
-                       CertificateManager certificateManager) {
+      StateAccessForProviders appState,
+      ProviderService provider,
+      CertificateManager certificateManager,
+      RegistryOperations registryOperations) {
+    this.registryOperations = registryOperations;
     checkNotNull(clusterProto);
     checkNotNull(appState);
     checkNotNull(provider);
@@ -144,5 +148,10 @@ public class WebAppApiImpl implements WebAppApi {
   @Override
   public AgentRestOperations getAgentRestOperations() {
     return provider.getAgentRestOperations();
+  }
+
+  @Override
+  public RegistryOperations getRegistryOperations() {
+    return registryOperations;
   }
 }

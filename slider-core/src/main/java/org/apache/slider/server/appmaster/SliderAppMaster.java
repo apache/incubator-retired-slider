@@ -52,8 +52,8 @@ import org.apache.hadoop.yarn.client.api.async.impl.NMClientAsyncImpl;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.ipc.YarnRPC;
+import org.apache.hadoop.yarn.registry.client.api.RegistryOperations;
 import org.apache.hadoop.yarn.registry.client.binding.RegistryPathUtils;
-import org.apache.hadoop.yarn.registry.client.services.RegistryOperationsService;
 import org.apache.hadoop.yarn.registry.client.types.PersistencePolicies;
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
 import org.apache.hadoop.yarn.registry.client.binding.RegistryTypeUtils;
@@ -95,9 +95,7 @@ import org.apache.slider.core.main.RunService;
 import org.apache.slider.core.main.ServiceLauncher;
 import org.apache.slider.core.persist.ConfTreeSerDeser;
 import org.apache.slider.core.registry.info.CustomRegistryConstants;
-import org.apache.slider.core.registry.info.RegisteredEndpoint;
 import org.apache.slider.core.registry.info.RegistryNaming;
-import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.providers.ProviderCompleted;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderService;
@@ -137,7 +135,6 @@ import org.apache.slider.server.appmaster.web.SliderAMWebApp;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.WebAppApiImpl;
 import org.apache.slider.server.appmaster.web.rest.RestPaths;
-import org.apache.slider.server.services.registry.SliderRegistryService;
 import org.apache.slider.server.services.security.CertificateManager;
 import org.apache.slider.server.services.security.FsDelegationTokenManager;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
@@ -182,6 +179,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     ServiceStateChangeListener,
     RoleKeys,
     ProviderCompleted {
+  
   protected static final Logger log =
     LoggerFactory.getLogger(SliderAppMaster.class);
 
@@ -204,8 +202,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
   public static final int HEARTBEAT_INTERVAL = 1000;
   public static final int NUM_RPC_HANDLERS = 5;
-  public static final String SLIDER_AM_RPC = "Slider AM RPC";
-  public static final int SCHEDULED_EXECUTOR_POOL_SIZE = 1;
 
   /**
    * Singleton of metrics registry
@@ -327,16 +323,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private ProviderService providerService;
 
   /**
-   * The registry service
-   */
-  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
-  private SliderRegistryService registry;
-  
-  /**
    * The YARN registry service
    */
   @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
-  private RegistryOperationsService registryOperations;
+  private RegistryOperations registryOperations;
 
   /**
    * Record of the max no. of cores allowed in this cluster
@@ -648,12 +638,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       appInformation.put(StatusKeys.INFO_AM_HOSTNAME, appMasterHostname);
       appInformation.set(StatusKeys.INFO_AM_RPC_PORT, appMasterRpcPort);
 
-      
-      //registry
-      log.info("Starting slider registry");
-      registry = startRegistrationService();
-      log.info(registry.toString());
-
       log.info("Starting Yarn registry");
       registryOperations = startRegistryOperationsService();
       log.info(registryOperations.toString());
@@ -671,12 +655,12 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       startAgentWebApp(appInformation, serviceConf);
 
-      webApp = new SliderAMWebApp(registry, registryOperations);
+      webApp = new SliderAMWebApp(registryOperations);
       WebApps.$for(SliderAMWebApp.BASE_PATH, WebAppApi.class,
                    new WebAppApiImpl(this,
                                      stateForProviders,
                                      providerService,
-                                     certificateManager),
+                                     certificateManager, registryOperations),
                    RestPaths.WS_CONTEXT)
                       .with(serviceConf)
                       .start(webApp);
@@ -790,9 +774,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
 
     //Give the provider restricted access to the state, registry
-    providerService.bind(stateForProviders, registry, actionQueues,
+    providerService.bind(stateForProviders, actionQueues,
         liveContainers);
-    sliderAMProvider.bind(stateForProviders, registry, actionQueues,
+    sliderAMProvider.bind(stateForProviders, actionQueues,
         liveContainers);
 
     // chaos monkey
@@ -873,7 +857,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
                      new WebAppApiImpl(this,
                                        stateForProviders,
                                        providerService,
-                                       certificateManager),
+                                       certificateManager, registryOperations),
                      RestPaths.AGENT_WS_CONTEXT)
         .withComponentConfig(getInstanceDefinition().getAppConfOperations()
                                  .getComponent(SliderKeys.COMPONENT_AM))
@@ -930,22 +914,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     providerService.bindToYarnRegistry(yarnRegistryOperations);
     sliderAMProvider.bindToYarnRegistry(yarnRegistryOperations);
 
-    List<String> serviceInstancesRunning = registry.instanceIDs(serviceName);
-    log.info("service instances already running: {}", serviceInstancesRunning);
-
-
-    // slider instance data
-    ServiceInstanceData instanceData = new ServiceInstanceData(registryId,
-        serviceType);
-
-
-    // IPC services
-    instanceData.externalView.endpoints.put(
-        CustomRegistryConstants.AM_IPC_PROTOCOL,
-        new RegisteredEndpoint(rpcServiceAddress,
-            RegisteredEndpoint.PROTOCOL_HADOOP_PROTOBUF,
-            SLIDER_AM_RPC) );
-
     // Yarn registry
     ServiceRecord serviceRecord = new ServiceRecord();
     String serviceID = appid.toString();
@@ -960,38 +928,34 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
             RegistryTypeUtils.marshall(rpcServiceAddress)));
     
     // internal services
-
-
     sliderAMProvider.applyInitialRegistryDefinitions(amWebURI,
-                                                     agentOpsURI,
-                                                     agentStatusURI,
-                                                     instanceData,
-                                                     serviceRecord);
+        agentOpsURI,
+        agentStatusURI,
+        serviceRecord);
 
     // provider service dynamic definitions.
     providerService.applyInitialRegistryDefinitions(amWebURI,
-                                                    agentOpsURI,
-                                                    agentStatusURI,
-                                                    instanceData,
-                                                    serviceRecord);
+        agentOpsURI,
+        agentStatusURI,
+        serviceRecord);
 
 
-    // push the registration info to ZK
-    registry.registerSelf(
-        instanceData, amWebURI
-    );
-
+    // store for clients
     log.info("Service Record \n{}", serviceRecord);
     yarnRegistryOperations.putService(service_user_name,
         SliderKeys.APP_TYPE,
         instanceName,
         serviceRecord);
+    yarnRegistryOperations.setSelfRegistration(serviceRecord);
 
-    // and an ephemeral binding to the app
+    // and a shorter lived binding to the app
+    String attempt = appAttemptID.toString();
+    ServiceRecord attemptRecord = new ServiceRecord(serviceRecord);
+    attemptRecord.id = attempt;
+    attemptRecord.persistence = PersistencePolicies.APPLICATION_ATTEMPT;
     yarnRegistryOperations.putComponent(
-        RegistryPathUtils.encodeYarnID(appAttemptID.toString()),
-        serviceRecord
-    );
+        RegistryPathUtils.encodeYarnID(attempt),
+        serviceRecord);
 
   }
 

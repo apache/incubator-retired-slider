@@ -34,10 +34,9 @@ import java.util.List;
  * This is the registry service, which tries to hide exactly how the
  * registry is implemented
  */
-
+@Deprecated
 public class SliderRegistryService
-    extends RegistryBinderService<ServiceInstanceData>
-    implements RegistryViewForProviders {
+    extends RegistryBinderService<ServiceInstanceData> {
 
   private ServiceInstanceData selfRegistration;
 
@@ -48,7 +47,6 @@ public class SliderRegistryService
   }
 
 
-  @Override
   public List<ServiceInstanceData> listInstancesByType(String serviceType) throws
       IOException {
     List<CuratorServiceInstance<ServiceInstanceData>> services =
@@ -60,7 +58,6 @@ public class SliderRegistryService
     return payloads;
   }
 
-  @Override
   public ServiceInstanceData getSelfRegistration() {
     return selfRegistration;
   }
@@ -81,7 +78,6 @@ public class SliderRegistryService
     setSelfRegistration(instanceData);
   }
 
-  @Override
   public void registerServiceInstance(
       ServiceInstanceData instanceData, URL url) throws IOException {
     Preconditions.checkNotNull(instanceData);

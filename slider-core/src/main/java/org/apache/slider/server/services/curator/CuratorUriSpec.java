@@ -26,6 +26,7 @@ import java.util.List;
  *
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Deprecated
 public class CuratorUriSpec extends UriSpec{
 
   private final List<Part> parts = Lists.newArrayList();

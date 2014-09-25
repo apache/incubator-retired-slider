@@ -20,14 +20,13 @@ package org.apache.slider.server.services.utility;
 
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.registry.client.api.RegistryConstants;
-import org.apache.hadoop.yarn.registry.client.services.RegistryOperationsService;
+import org.apache.hadoop.yarn.registry.client.api.RegistryOperations;
+import org.apache.hadoop.yarn.registry.client.api.RegistryOperationsFactory;
 import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.core.zk.ZookeeperUtils;
-import org.apache.slider.server.services.curator.CuratorHelper;
-import org.apache.slider.server.services.registry.SliderRegistryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,21 +42,6 @@ public abstract class AbstractSliderLaunchedService extends
     super(name);
     // make sure all the yarn configs get loaded
     new YarnConfiguration();
-  }
-
-  /**
-   * Start the registration service
-   * @return the instance
-   * @throws BadConfigException
-   */
-  protected SliderRegistryService startRegistrationService()
-      throws BadConfigException {
-
-    String registryQuorum = lookupZKQuorum();
-    String zkPath = getConfig().get(
-        SliderXmlConfKeys.REGISTRY_PATH,
-        SliderXmlConfKeys.DEFAULT_REGISTRY_PATH);
-    return startSliderRegistrationService(registryQuorum, zkPath);
   }
 
   /**
@@ -86,36 +70,17 @@ public abstract class AbstractSliderLaunchedService extends
   }
 
   /**
-   * Start the registration service
-   * @param zkConnection
-   * @param zkPath
-   * @return
-   */
-  public SliderRegistryService startSliderRegistrationService(
-      String zkConnection,
-      String zkPath) {
-    CuratorHelper curatorHelper =
-      new CuratorHelper(getConfig(), zkConnection);
-
-    //registry will start curator as well as the binder, in the correct order
-    SliderRegistryService registryBinderService =
-      curatorHelper.createRegistryBinderService(zkPath);
-    deployChildService(registryBinderService);
-    return registryBinderService;
-  }
-
-  /**
    * Create, adopt ,and start the YARN registration service
    * @return the registry operations service, already deployed as a child
    * of the AbstractSliderLaunchedService instance.
    */
-  public RegistryOperationsService startRegistryOperationsService()
+  public RegistryOperations startRegistryOperationsService()
       throws BadConfigException {
 
     // push back the slider registry entry if needed
     String quorum = lookupZKQuorum();
     getConfig().set(RegistryConstants.KEY_REGISTRY_ZK_QUORUM, quorum);
-    RegistryOperationsService registryWriterService =
+    RegistryOperations registryWriterService =
         createRegistryOperationsInstance();
     deployChildService(registryWriterService);
     return registryWriterService;
@@ -126,8 +91,8 @@ public abstract class AbstractSliderLaunchedService extends
    * subclasses to instantiate a subclass service
    * @return an instance to match to the lifecycle of this service
    */
-  protected RegistryOperationsService createRegistryOperationsInstance() {
-    return new RegistryOperationsService("YarnRegistry");
+  protected RegistryOperations createRegistryOperationsInstance() {
+    return RegistryOperationsFactory.createInstance("YarnRegistry", getConfig());
   }
 
   /**
@@ -139,9 +104,8 @@ public abstract class AbstractSliderLaunchedService extends
   protected static void requireArgumentSet(String argname, String value)
       throws BadCommandArgumentsException {
     if (isUnset(value)) {
-      throw new BadCommandArgumentsException("Required argument "
-                                             + argname
-                                             + " missing");
+      throw new BadCommandArgumentsException(
+          "Required argument " + argname + " missing");
     }
   }
 

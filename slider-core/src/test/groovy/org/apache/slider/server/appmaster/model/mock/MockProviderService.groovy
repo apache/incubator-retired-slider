@@ -33,7 +33,6 @@ import org.apache.slider.core.conf.MapOperations
 import org.apache.slider.core.exceptions.BadCommandArgumentsException
 import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.launch.ContainerLauncher
-import org.apache.slider.core.registry.info.ServiceInstanceData
 import org.apache.slider.providers.ProviderRole
 import org.apache.slider.providers.ProviderService
 import org.apache.slider.server.appmaster.actions.QueueAccess
@@ -46,7 +45,6 @@ import org.apache.slider.server.appmaster.web.rest.agent.HeartBeatResponse
 import org.apache.slider.server.appmaster.web.rest.agent.Register
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationResponse
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationStatus
-import org.apache.slider.server.services.registry.RegistryViewForProviders
 import org.apache.slider.providers.ProviderCompleted
 import org.apache.hadoop.service.Service.STATE
 import org.apache.slider.server.services.yarnregistry.YarnRegistryViewForProviders
@@ -208,7 +206,6 @@ class MockProviderService implements ProviderService {
   @Override
   void bind(
       StateAccessForProviders stateAccessor,
-      RegistryViewForProviders registry,
       QueueAccess queueAccess,
       List<Container> liveContainers) {
 
@@ -248,7 +245,6 @@ class MockProviderService implements ProviderService {
       URL amWebURI,
       URL agentOpsURI,
       URL agentStatusURI,
-      ServiceInstanceData registryInstanceData,
       ServiceRecord serviceRecord) throws IOException {
 
   }
