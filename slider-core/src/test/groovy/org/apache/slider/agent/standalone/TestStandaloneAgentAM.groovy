@@ -26,15 +26,11 @@ import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.api.ClusterNode
 import org.apache.slider.client.SliderClient
-import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.params.ActionRegistryArgs
 import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.core.main.ServiceLauncher
-import org.apache.slider.core.registry.info.ServiceInstanceData
-import org.apache.slider.server.services.curator.CuratorServiceInstance
-import org.apache.slider.server.services.registry.SliderRegistryService
 import org.junit.Test
 
 @CompileStatic

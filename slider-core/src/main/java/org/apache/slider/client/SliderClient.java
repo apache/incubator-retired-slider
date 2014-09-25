@@ -109,8 +109,6 @@ import org.apache.slider.core.registry.docstore.ConfigFormat;
 import org.apache.slider.core.registry.docstore.PublishedConfigSet;
 import org.apache.slider.core.registry.docstore.PublishedConfiguration;
 import org.apache.slider.core.registry.docstore.PublishedConfigurationOutputter;
-import org.apache.slider.core.registry.info.RegisteredEndpoint;
-import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.core.registry.retrieve.RegistryRetriever;
 import org.apache.slider.core.zk.BlockingZKWatcher;
 import org.apache.slider.core.zk.ZKIntegration;
@@ -2469,26 +2467,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     List<Endpoint> endpoints = instance.external;
     for (Endpoint endpoint : endpoints) {
       log.info(endpoint.toString());
-    }
-  }
-
-  private void logInstance(ServiceInstanceData instance,
-      boolean verbose) {
-    if (!verbose) {
-      log.info("{}", instance.id);
-    } else {
-      log.info("{}: ", instance.id);
-      logEndpoints(instance);
-    }
-  }
-  
-  private void logEndpoints(ServiceInstanceData instance) {
-      Map<String, RegisteredEndpoint> endpoints =
-          instance.listEndpoints(true);
-      for (Map.Entry<String, RegisteredEndpoint> entry : endpoints.entrySet()) {
-        String name = entry.getKey();
-        RegisteredEndpoint endpoint = entry.getValue();
-        log.info("  {}", endpoint);
     }
   }
 

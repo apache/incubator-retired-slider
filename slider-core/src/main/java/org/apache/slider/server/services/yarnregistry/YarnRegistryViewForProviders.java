@@ -102,20 +102,38 @@ public class YarnRegistryViewForProviders {
 
 
   /**
-   * Add a service under
-   * @param componentName
-   * @param record
-   * @param ephemeral
+   * Add a service under a path
+   * @param username user
+   * @param serviceClass service class to use under ~user
+   * @param serviceName name of the service
+   * @param record service record
    * @throws IOException
    */
   public void putService(String username,
       String serviceClass,
       String serviceName,
       ServiceRecord record) throws IOException {
-
-    
     String path = RegistryOperationUtils.servicePath(
         username, serviceClass, serviceName);
+    registryOperations.mknode(RegistryPathUtils.parentOf(path), true);
+    registryOperations.create(path, record, CreateFlags.OVERWRITE);
+
+  }
+
+
+  /**
+   * Add a service under a path for the current user
+   * @param serviceClass service class to use under ~user
+   * @param serviceName name of the service
+   * @param record service record
+   * @throws IOException
+   */
+  public void putService(
+      String serviceClass,
+      String serviceName,
+      ServiceRecord record) throws IOException {
+    String path = RegistryOperationUtils.servicePath(
+        user, serviceClass, serviceName);
     registryOperations.mknode(RegistryPathUtils.parentOf(path), true);
     registryOperations.create(path, record, CreateFlags.OVERWRITE);
 

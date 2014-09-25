@@ -34,10 +34,9 @@ import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.core.persist.ConfTreeSerDeser
 import org.apache.slider.core.registry.docstore.PublishedConfiguration
-import org.apache.slider.core.registry.info.ServiceInstanceData
 import org.apache.slider.core.registry.retrieve.RegistryRetriever
 import org.apache.slider.funtest.framework.SliderShell
-import org.apache.slider.server.services.curator.CuratorServiceInstance
+
 import org.junit.Before
 import org.junit.Test
 

@@ -45,14 +45,9 @@ import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.exceptions.WaitTimeoutException
 import org.apache.slider.core.main.ServiceLaunchException
 import org.apache.slider.core.main.ServiceLauncher
-import org.apache.slider.core.persist.JsonSerDeser
 import org.apache.slider.core.registry.docstore.PublishedConfigSet
-import org.apache.slider.core.registry.info.ServiceInstanceData
-import org.apache.slider.server.services.curator.CuratorServiceInstance
 import org.junit.Assert
 import org.junit.Assume
-
-import java.lang.reflect.Array
 
 import static Arguments.ARG_OPTION
 
