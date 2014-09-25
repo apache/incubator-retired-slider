@@ -44,6 +44,7 @@ import org.apache.hadoop.yarn.registry.client.api.RegistryOperations;
 import static org.apache.hadoop.yarn.registry.client.binding.RegistryOperationUtils.*;
 
 import org.apache.hadoop.yarn.registry.client.binding.RegistryOperationUtils;
+import org.apache.hadoop.yarn.registry.client.exceptions.NoRecordException;
 import org.apache.hadoop.yarn.registry.client.types.Endpoint;
 import org.apache.hadoop.yarn.registry.client.types.RegistryPathStatus;
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
@@ -2453,9 +2454,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   private void logInstance(ServiceRecord instance,
       boolean verbose) {
     if (!verbose) {
-      log.info("{}", instance.id);
+      log.info("{}", instance.yarn_id);
     } else {
-      log.info("{}: ", instance.id);
+      log.info("{}: ", instance.yarn_id);
       logEndpoints(instance);
     }
   }
@@ -2599,7 +2600,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @param serviceType service type
    * @param id instance ID
    * @return instance data
-   * @throws UnknownApplicationInstanceException no match
+   * @throws UnknownApplicationInstanceException no path or service record
+   * at the end of the path
    * @throws SliderException other failures
    * @throws IOException IO problems or wrapped exceptions
    */
@@ -2609,7 +2611,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       return getRegistryOperations().resolve(
           servicePath(currentUser(),
               serviceType, id));
+      // TODO JDK7 SWITCH
     } catch (PathNotFoundException e) {
+      throw new UnknownApplicationInstanceException(e.getPath().toString(), e);
+    } catch (NoRecordException e) {
       throw new UnknownApplicationInstanceException(e.getPath().toString(), e);
     }
   } 

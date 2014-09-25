@@ -23,9 +23,12 @@ import org.apache.hadoop.fs.PathAccessDeniedException;
 import org.apache.hadoop.fs.PathNotFoundException;
 import org.apache.hadoop.yarn.registry.client.api.RegistryOperations;
 import org.apache.hadoop.yarn.registry.client.exceptions.AuthenticationFailedException;
+import org.apache.hadoop.yarn.registry.client.exceptions.InvalidRecordException;
+import org.apache.hadoop.yarn.registry.client.exceptions.NoRecordException;
 import org.apache.hadoop.yarn.registry.client.types.RegistryPathStatus;
 import org.apache.hadoop.yarn.webapp.ForbiddenException;
 import org.apache.hadoop.yarn.webapp.NotFoundException;
+import org.apache.hadoop.yarn.webapp.WebAppException;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,10 +39,12 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -53,7 +58,6 @@ import java.util.List;
  * 
  */
 @Singleton
-//@Path(RestPaths.SLIDER_PATH_REGISTRY)
 public class RegistryResource {
   protected static final Logger log =
       LoggerFactory.getLogger(RegistryResource.class);
@@ -80,51 +84,80 @@ public class RegistryResource {
   }
 
   @GET
-  public Response getRoot(@Context HttpServletRequest request) {
-    return Response.ok("registry root").build();
+  @Produces({MediaType.APPLICATION_JSON})
+  public PathEntryResource getRoot(@Context HttpServletRequest request,
+      @Context UriInfo uriInfo) {
+    return lookup("/", request, uriInfo);
   }
-
 
 //   {path:.*}
 
   @Path(SERVICE_PATH)
   @GET
   @Produces({MediaType.APPLICATION_JSON})
-  public Response lookup(
+  public PathEntryResource lookup(
       @PathParam("path") String path,
       @Context HttpServletRequest request,
       @Context UriInfo uriInfo) {
-    try {
       init(request, uriInfo);
-      List<RegistryPathStatus> list = registry.listFull(path);
-      return Response.ok("found").build();
+      return resolvePath(path);
+  }
+
+  /**
+   * Do the actual processing of requests to responses; can be directly
+   * invoked for testing.
+   * @param path path to query
+   * @return the entry
+   * @throws WebApplicationException on any failure.
+   */
+  public PathEntryResource resolvePath(String path) throws
+      WebApplicationException {
+    try {
+      PathEntryResource pathEntry =
+          fromRegistry(path);
+      if (log.isDebugEnabled()) {
+        log.debug("Resolved:\n{}", pathEntry);
+      }
+      return pathEntry;
+    } catch (WebApplicationException e) {
+      // rethrow direct
+      throw e;
     } catch (PathNotFoundException e) {
-      throw new NotFoundException(path);
+      throw new NotFoundException("Not found: " + path);
     } catch (AuthenticationFailedException e) {
       throw new ForbiddenException(path);
     } catch (PathAccessDeniedException e) {
       throw new ForbiddenException(path);
     } catch (Exception e) {
-      return fromException(e);
+      log.error("Error during generation of response: {}", e, e);
+      throw new WebApplicationException(e);
     }
   }
 
+
   /**
-   * Handle an exception
-   * @param e exception
-   * @return a response to return
+   * Build from the registry, filling up the children and service records.
+   * If there is no service record at the end of the path, that entry is 
+   * null
+   * @param registry registry operations
+   * @param path path to query
+   * @return the built up record
+   * @throws IOException problems
+   *
    */
-  Response fromException(Exception e) {
-    log.error("Error during generation of response: {}", e, e);
-    if (e instanceof PathNotFoundException) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+  private PathEntryResource fromRegistry(String path) throws IOException {
+    PathEntryResource entry = new PathEntryResource();
+    try {
+      entry.service = registry.resolve(path);
+    } catch (NoRecordException e) {
+      // ignoring
+      log.debug("No record at {}", path);
+    } catch (InvalidRecordException e) {
+      // swallowing this exception, the sign of "no entry present"
+      // "nothing parseable"
+        log.warn("Failed to resolve {}: {}", path, e, e);
     }
-    if (e instanceof AuthenticationFailedException
-        || e instanceof PathAccessDeniedException) {
-      return Response.status(Response.Status.FORBIDDEN).build();
-    }
-    return Response.serverError().build();
+    entry.nodes = registry.list(path);
+    return entry;
   }
-  
-  
 }

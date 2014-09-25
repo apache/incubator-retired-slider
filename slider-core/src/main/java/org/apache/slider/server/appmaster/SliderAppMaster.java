@@ -95,7 +95,6 @@ import org.apache.slider.core.main.RunService;
 import org.apache.slider.core.main.ServiceLauncher;
 import org.apache.slider.core.persist.ConfTreeSerDeser;
 import org.apache.slider.core.registry.info.CustomRegistryConstants;
-import org.apache.slider.core.registry.info.RegistryNaming;
 import org.apache.slider.providers.ProviderCompleted;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderService;
@@ -887,7 +886,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * @throws Exception
    */
   private void registerServiceInstance(String instanceName,
-      ApplicationId appid) throws Exception {
+      ApplicationId appid) throws IOException {
     
     
     // the registry is running, so register services
@@ -896,14 +895,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     URL agentStatusURI = new URL(agentStatusUrl);
     String serviceName = SliderKeys.APP_TYPE;
     int id = appid.getId();
-    String serviceType = RegistryNaming.createRegistryServiceType(
-        instanceName,
-        service_user_name,
-        serviceName);
-    String registryId =
-      RegistryNaming.createRegistryName(instanceName, service_user_name,
-          serviceName, id);
-
 
     //Give the provider restricted access to the state, registry
     setupInitialRegistryPaths();
@@ -916,9 +907,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     // Yarn registry
     ServiceRecord serviceRecord = new ServiceRecord();
-    String serviceID = appid.toString();
-    serviceRecord.id = serviceID;
-    serviceRecord.persistence = PersistencePolicies.APPLICATION;
+    serviceRecord.yarn_id = appid.toString();
+    serviceRecord.yarn_persistence = PersistencePolicies.APPLICATION;
     serviceRecord.description = "Slider Application Master";
 
     serviceRecord.addExternalEndpoint(
@@ -939,7 +929,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         agentStatusURI,
         serviceRecord);
 
-
     // store for clients
     log.info("Service Record \n{}", serviceRecord);
     yarnRegistryOperations.putService(service_user_name,
@@ -951,8 +940,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // and a shorter lived binding to the app
     String attempt = appAttemptID.toString();
     ServiceRecord attemptRecord = new ServiceRecord(serviceRecord);
-    attemptRecord.id = attempt;
-    attemptRecord.persistence = PersistencePolicies.APPLICATION_ATTEMPT;
+    attemptRecord.yarn_id = attempt;
+    attemptRecord.yarn_persistence = PersistencePolicies.APPLICATION_ATTEMPT;
     yarnRegistryOperations.putComponent(
         RegistryPathUtils.encodeYarnID(attempt),
         serviceRecord);

@@ -16,19 +16,13 @@
  * limitations under the License.
  */
 
-package org.apache.slider.core.registry.info;
+package org.apache.slider.server.appmaster.web.rest.registry
 
-/**
- * Fieldnames in registry entries
- */
-public class RegistryFields {
+import org.apache.hadoop.yarn.registry.client.binding.JsonSerDeser
 
-  public static final String ENDPOINTS = "endpoints";
-  public static final String INTERNAL_VIEW = "internalView";
-  public static final String EXTERNAL_VIEW = "externalView";
-  
-  public static final String PROTOCOL = "protocol";
-  public static final String VALUE = "value";
-  public static final String DESCRIPTION = "description";
-
+class PathEntryMarshalling
+    extends JsonSerDeser<PathEntryResource> {
+  public PathEntryMarshalling() {
+    super(PathEntryResource.class, new byte[0]);
+  }
 }

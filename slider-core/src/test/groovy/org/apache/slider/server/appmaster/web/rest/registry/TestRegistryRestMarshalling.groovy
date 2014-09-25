@@ -16,36 +16,32 @@
  * limitations under the License.
  */
 
-package org.apache.slider.core.registry.info;
+package org.apache.slider.server.appmaster.web.rest.registry
 
-import java.util.Locale;
+import groovy.transform.CompileStatic
+import org.junit.Test
 
 /**
- * Logic for greating names from registry entries; lets the policy be changed
- * later
+ * This test exists because Jersey appears to behave "oddly" 
+ * when it comes to marshalling JSON, and some of the REST resources
+ * appear to have trouble.
+ * 
+ * This test tries to isolate it
  */
-public class RegistryNaming {
+@CompileStatic
+class TestRegistryRestMarshalling {
 
-  public static String SLIDER_INSTANCE_NAME_FORMAT = "%2$s";
+  @Test
+  public void testDeser() throws Throwable {
+    PathEntryMarshalling pem = new PathEntryMarshalling();
+    def unmarshalled = pem.fromResource(
+        "/org/apache/slider/server/appmaster/web/rest/registry/sample.json")
 
-  public static String createRegistryServiceType(String instanceName,
-      String userName,
-      String serviceName) {
-    return serviceName;
+    def serviceRecord = unmarshalled.service
+    assert serviceRecord
+    assert serviceRecord.yarn_id !=null
+    assert serviceRecord.yarn_persistence != 0
   }
 
-  public static String createRegistryName(String instanceName,
-      String userName,
-      String serviceName,
-      int appId) {
-    return String.format(Locale.ENGLISH,
-        SLIDER_INSTANCE_NAME_FORMAT,
-        userName,
-        instanceName,
-        serviceName,
-        appId);
-    
-  }
-
-
+  
 }

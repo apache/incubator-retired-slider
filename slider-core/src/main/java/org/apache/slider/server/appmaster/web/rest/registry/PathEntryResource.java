@@ -16,18 +16,36 @@
  * limitations under the License.
  */
 
-package org.apache.slider.core.registry.info;
+package org.apache.slider.server.appmaster.web.rest.registry;
 
+import org.apache.commons.logging.Log;
+import org.apache.hadoop.yarn.registry.client.api.RegistryOperations;
+import org.apache.hadoop.yarn.registry.client.exceptions.InvalidRecordException;
+import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.List;
 
 /**
- * A registry document
+ * Representation of a path entry
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
-public class RegisteredDocument {
-  public String contentType;
-  public String url;
-  public String description;
+public class PathEntryResource {
+
+  /**
+   * Child nodes: as the full path to each element
+   */
+  public List<String> nodes;
+
+  /**
+   * Service record: if null —there is no resolvable service
+   * record at this node.
+   */
+  public ServiceRecord service;
+
 }

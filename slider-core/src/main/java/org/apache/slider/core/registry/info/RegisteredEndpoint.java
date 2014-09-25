@@ -32,6 +32,7 @@ import java.net.URL;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
+@Deprecated
 public class RegisteredEndpoint {
 
   // standard types

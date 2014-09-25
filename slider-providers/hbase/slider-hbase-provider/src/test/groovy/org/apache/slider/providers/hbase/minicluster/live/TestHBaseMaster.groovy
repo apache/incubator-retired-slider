@@ -93,7 +93,7 @@ class TestHBaseMaster extends HBaseMiniClusterTestBase {
     assert hbaseInstances.size() == 1
     ServiceRecord hbaseServiceData = hbaseInstances[0]
     log.info "HBase service 0 == $hbaseServiceData"
-    assert hbaseServiceData.id 
+    assert hbaseServiceData.yarn_id 
 
     RegistryRetriever retriever = new RegistryRetriever(hbaseServiceData)
     log.info retriever.toString()

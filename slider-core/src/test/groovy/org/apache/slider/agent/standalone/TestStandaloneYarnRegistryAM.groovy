@@ -49,6 +49,12 @@ import org.apache.slider.server.appmaster.PublishedArtifacts
 import org.apache.slider.server.appmaster.web.rest.RestPaths
 import org.junit.Test
 
+import static org.apache.slider.core.registry.info.CustomRegistryConstants.AGENT_ONEWAY_REST_API
+import static org.apache.slider.core.registry.info.CustomRegistryConstants.AGENT_SECURE_REST_API
+import static org.apache.slider.core.registry.info.CustomRegistryConstants.AM_IPC_PROTOCOL
+import static org.apache.slider.core.registry.info.CustomRegistryConstants.MANAGEMENT_REST_API
+import static org.apache.slider.core.registry.info.CustomRegistryConstants.PUBLISHER_REST_API
+
 /**
  *  work with a YARN registry
  */
@@ -61,7 +67,7 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
   public static final String ARTIFACT_NAME = PublishedArtifacts.COMPLETE_CONFIG
 
   @Test
-  public void testYarnRegistryAM() throws Throwable {
+  public void testStandaloneYarnRegistryAM() throws Throwable {
     
 
     describe "create a masterless AM then perform YARN registry operations on it"
@@ -156,7 +162,19 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     def serviceRecord = serviceRecords[0]
     log.info(serviceRecord.toString())
 
-    assert 2 <= serviceRecord.external.size()
+    assert serviceRecord.yarn_id != null;
+    def externalEndpoints = serviceRecord.external;
+    assert externalEndpoints.size() > 0
+
+    def am_ipc_protocol = AM_IPC_PROTOCOL
+    serviceRecord.getExternalEndpoint(am_ipc_protocol)
+    assert null != am_ipc_protocol;
+
+    assert null != serviceRecord.getExternalEndpoint(MANAGEMENT_REST_API)
+    assert null != serviceRecord.getExternalEndpoint(PUBLISHER_REST_API)
+    // internals
+    assert null != serviceRecord.getInternalEndpoint(AGENT_ONEWAY_REST_API)
+    assert null != serviceRecord.getInternalEndpoint(AGENT_SECURE_REST_API)
 
     // hit the registry web page
     def registryEndpoint = serviceRecord.getExternalEndpoint(
@@ -311,7 +329,7 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     describe registryArgs.toString()
 
     def listedInstance = client.actionRegistryListYarn(registryArgs)
-    assert listedInstance[0].id == serviceRecord.id
+    assert listedInstance[0].yarn_id == serviceRecord.yarn_id
     
 
     // listconf 

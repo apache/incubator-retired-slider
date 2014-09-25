@@ -37,6 +37,7 @@ import org.apache.slider.server.services.registry.SliderRegistryService;
  * This class creates a curator -but does not start or close it. That
  * is the responsbility of the owner
  */
+@Deprecated
 public class CuratorHelper extends Configured {
 
   private final CuratorFramework curator;

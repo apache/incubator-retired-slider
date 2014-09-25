@@ -30,7 +30,7 @@ import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.tools.ConfigHelper
-import org.apache.slider.core.registry.info.RegistryNaming
+
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.providers.hbase.HBaseConfigFileOptions
 import org.apache.slider.providers.hbase.HBaseTestUtils
@@ -184,10 +184,7 @@ public class FunctionalHBaseClusterIT extends HBaseCommandTestBase
         [ARG_LIST, ARG_NAME, "cluster-with-no-name"])
 
     // how to work out the current service name?
-    def name = RegistryNaming.createRegistryName(clustername,
-        System.getProperty("user.name"),
-        SliderKeys.APP_TYPE,
-        1)
+    def name = clustername
     registry([ARG_LIST, ARG_VERBOSE, ARG_NAME, name])
     
     registry([ARG_LISTCONF, ARG_NAME, name])
