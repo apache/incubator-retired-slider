@@ -43,7 +43,7 @@ formatstr = "%(levelname)s %(asctime)s %(filename)s:%(lineno)d - %(message)s"
 agentPid = os.getpid()
 
 configFileRelPath = "infra/conf/agent.ini"
-logFileName = "agent.log"
+logFileName = "slider-agent.log"
 
 SERVER_STATUS_URL="https://{0}:{1}{2}"
 
@@ -185,9 +185,14 @@ def main():
   parser.add_option("--debug", dest="debug", help="Agent debug hint", default="")
   (options, args) = parser.parse_args()
 
-  if not 'AGENT_WORK_ROOT' in os.environ:
-    parser.error("AGENT_WORK_ROOT environment variable must be set.")
-  options.root_folder = os.environ['AGENT_WORK_ROOT']
+  if not Constants.AGENT_WORK_ROOT in os.environ and not 'PWD' in os.environ:
+    parser.error("AGENT_WORK_ROOT environment variable or PWD must be set.")
+  if Constants.AGENT_WORK_ROOT in os.environ:
+    options.root_folder = os.environ[Constants.AGENT_WORK_ROOT]
+  else:
+    # some launch environments do not end up setting all environment variables
+    options.root_folder = os.environ['PWD']
+
   if not 'AGENT_LOG_ROOT' in os.environ:
     parser.error("AGENT_LOG_ROOT environment variable must be set.")
   options.log_folder = os.environ['AGENT_LOG_ROOT']
