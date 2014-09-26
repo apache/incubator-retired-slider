@@ -77,6 +77,7 @@ public class AppMasterLauncher extends AbstractLauncher {
                            SliderYarnClientImpl yarnClient,
                            boolean secureCluster,
                            Map<String, String> options,
+                           Map<String, String> resourceGlobalOptions,
                            Set<String> applicationTags
                           ) throws IOException, YarnException {
     super(conf, fs);
@@ -96,7 +97,7 @@ public class AppMasterLauncher extends AbstractLauncher {
       submissionContext.setApplicationTags(applicationTags);
     }
     extractResourceRequirements(resource, options);
-
+    extractLogAggregationContext(resourceGlobalOptions);
   }
 
   public void setMaxAppAttempts(int maxAppAttempts) {
@@ -170,6 +171,7 @@ public class AppMasterLauncher extends AbstractLauncher {
 
     //container requirements
     submissionContext.setResource(resource);
+    submissionContext.setLogAggregationContext(logAggregationContext);
 
     if (keepContainersOverRestarts) {
       log.debug("Requesting cluster stays running over AM failure");

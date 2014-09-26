@@ -162,8 +162,8 @@
                 </slider.bin.dir>
                 <test.app.pkg.dir>target</test.app.pkg.dir>
                 <test.app.pkg.file>${app.package.name}.zip</test.app.pkg.file>
-                <test.app.resource>target/test-config/resources.json</test.app.resource>
-                <test.app.template>target/${app.package.name}/appConfig.json</test.app.template>
+                <test.app.resource>target/test-config/resources-default.json</test.app.resource>
+                <test.app.template>target/${app.package.name}/appConfig-default.json</test.app.template>
               </systemPropertyVariables>
             </configuration>
           </plugin>

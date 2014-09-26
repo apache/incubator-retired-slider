@@ -3,6 +3,9 @@
   "metadata": {
   },
   "global": {
+    "yarn.log.include.patterns": "",
+    "yarn.log.exclude.patterns": "",
+    "yarn.log.interval": "0"
   },
   "components": {
     "ACCUMULO_MASTER": {

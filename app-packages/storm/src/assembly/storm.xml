@@ -30,7 +30,7 @@
 
   <files>
     <file>
-      <source>appConfig.json</source>
+      <source>appConfig-default.json</source>
       <outputDirectory>/</outputDirectory>
       <filtered>true</filtered>
       <fileMode>0755</fileMode>
@@ -57,7 +57,7 @@
         <exclude>pom.xml</exclude>
         <exclude>src/**</exclude>
         <exclude>target/**</exclude>
-        <exclude>appConfig.json</exclude>
+        <exclude>appConfig-default.json</exclude>
         <exclude>metainfo.xml</exclude>
       </excludes>
       <fileMode>0755</fileMode>
