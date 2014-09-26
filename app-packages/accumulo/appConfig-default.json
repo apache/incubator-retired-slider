@@ -14,9 +14,9 @@
     "site.global.monitor_heapsize": "64m",
     "site.global.gc_heapsize": "64m",
     "site.global.other_heapsize": "128m",
-    "site.global.hadoop_prefix": "/usr/lib/hadoop",
+    "site.global.hadoop_prefix": "${hadoop.dir}/hadoop",
     "site.global.hadoop_conf_dir": "/etc/hadoop/conf",
-    "site.global.zookeeper_home": "/usr/lib/zookeeper",
+    "site.global.zookeeper_home": "${zk.dir}/zookeeper",
     "site.global.accumulo_instance_name": "${USER}-${CLUSTER_NAME}",
     "site.global.accumulo_root_password": "NOT_USED",
     "site.global.user_group": "${app.user.group}",
@@ -44,7 +44,7 @@
     "site.accumulo-site.monitor.port.log4j": "0",
     "site.accumulo-site.master.replication.coordinator.port": "0",
     "site.accumulo-site.replication.receipt.service.port": "0",
-    "site.accumulo-site.general.classpaths": "$ACCUMULO_HOME/lib/accumulo-server.jar,\n$ACCUMULO_HOME/lib/accumulo-core.jar,\n$ACCUMULO_HOME/lib/accumulo-start.jar,\n$ACCUMULO_HOME/lib/accumulo-fate.jar,\n$ACCUMULO_HOME/lib/accumulo-proxy.jar,\n$ACCUMULO_HOME/lib/[^.].*.jar,\n$ZOOKEEPER_HOME/zookeeper[^.].*.jar,\n$HADOOP_CONF_DIR,\n$HADOOP_PREFIX/[^.].*.jar,\n$HADOOP_PREFIX/lib/[^.].*.jar,\n$HADOOP_PREFIX/share/hadoop/common/.*.jar,\n$HADOOP_PREFIX/share/hadoop/common/lib/.*.jar,\n$HADOOP_PREFIX/share/hadoop/hdfs/.*.jar,\n$HADOOP_PREFIX/share/hadoop/mapreduce/.*.jar,\n$HADOOP_PREFIX/share/hadoop/yarn/.*.jar,\n/usr/lib/hadoop/.*.jar,\n/usr/lib/hadoop/lib/.*.jar,\n/usr/lib/hadoop-hdfs/.*.jar,\n/usr/lib/hadoop-mapreduce/.*.jar,\n/usr/lib/hadoop-yarn/.*.jar,"
+    "site.accumulo-site.general.classpaths": "$ACCUMULO_HOME/lib/accumulo-server.jar,\n$ACCUMULO_HOME/lib/accumulo-core.jar,\n$ACCUMULO_HOME/lib/accumulo-start.jar,\n$ACCUMULO_HOME/lib/accumulo-fate.jar,\n$ACCUMULO_HOME/lib/accumulo-proxy.jar,\n$ACCUMULO_HOME/lib/[^.].*.jar,\n$ZOOKEEPER_HOME/zookeeper[^.].*.jar,\n$HADOOP_CONF_DIR,\n$HADOOP_PREFIX/[^.].*.jar,\n$HADOOP_PREFIX/lib/[^.].*.jar,\n$HADOOP_PREFIX/share/hadoop/common/.*.jar,\n$HADOOP_PREFIX/share/hadoop/common/lib/.*.jar,\n$HADOOP_PREFIX/share/hadoop/hdfs/.*.jar,\n$HADOOP_PREFIX/share/hadoop/mapreduce/.*.jar,\n$HADOOP_PREFIX/share/hadoop/yarn/.*.jar,\n${hadoop.dir}/hadoop/.*.jar,\n${hadoop.dir}/hadoop/lib/.*.jar,\n${hadoop.dir}/hadoop-hdfs/.*.jar,\n${hadoop.dir}/hadoop-mapreduce/.*.jar,\n${hadoop.dir}/hadoop-yarn/.*.jar,"
   },
   "credentials": {
     "jceks://hdfs/user/${USER}/accumulo-${CLUSTER_NAME}.jceks": ["root.initial.password", "instance.secret", "trace.token.property.password"]

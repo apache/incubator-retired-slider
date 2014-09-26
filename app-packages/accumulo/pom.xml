@@ -39,6 +39,8 @@
     <test.app.pkg.dir>${project.build.directory}</test.app.pkg.dir>
     <test.app.resources.dir>${project.build.directory}/test-config</test.app.resources.dir>
     <!-- these properties are used in the default and the test appConfigs -->
+    <hadoop.dir>/usr/lib</hadoop.dir> <!-- hadoop expected to be found at ${hadoop.dir}/hadoop -->
+    <zk.dir>${hadoop.dir}</zk.dir> <!-- zookeeper expected to be found at ${zk.dir}/zookeeper -->
     <app.user>yarn</app.user>
     <app.user.group>hadoop</app.user.group>
     <accumulo.keytab></accumulo.keytab>
