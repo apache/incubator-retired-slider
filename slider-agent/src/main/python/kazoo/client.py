@@ -20,7 +20,7 @@ from kazoo.exceptions import (
     WriterNotClosedException,
 )
 from kazoo.handlers.threading import SequentialThreadingHandler
-from kazoo.handlers.utils import capture_exceptions, wrap, pipe_or_sock_write
+from kazoo.handlers.utils import capture_exceptions, wrap
 from kazoo.hosts import collect_hosts
 from kazoo.loggingsupport import BLATHER
 from kazoo.protocol.connection import ConnectionHandler
@@ -220,7 +220,6 @@ class KazooClient(object):
         elif type(command_retry) is KazooRetry:
             self.retry = command_retry
 
-
         if type(self._conn_retry) is KazooRetry:
             if self.handler.sleep_func != self._conn_retry.sleep_func:
                 raise ConfigurationError("Retry handler and event handler "
@@ -228,19 +227,21 @@ class KazooClient(object):
 
         if type(self.retry) is KazooRetry:
             if self.handler.sleep_func != self.retry.sleep_func:
-                raise ConfigurationError("Command retry handler and event "
-                                         "handler must use the same sleep func")
+                raise ConfigurationError(
+                    "Command retry handler and event handler "
+                    "must use the same sleep func")
 
         if self.retry is None or self._conn_retry is None:
             old_retry_keys = dict(_RETRY_COMPAT_DEFAULTS)
             for key in old_retry_keys:
                 try:
                     old_retry_keys[key] = kwargs.pop(key)
-                    warnings.warn('Passing retry configuration param %s to the'
-                            ' client directly is deprecated, please pass a'
-                            ' configured retry object (using param %s)' % (
-                                key, _RETRY_COMPAT_MAPPING[key]),
-                            DeprecationWarning, stacklevel=2)
+                    warnings.warn(
+                        'Passing retry configuration param %s to the '
+                        'client directly is deprecated, please pass a '
+                        'configured retry object (using param %s)' % (
+                            key, _RETRY_COMPAT_MAPPING[key]),
+                        DeprecationWarning, stacklevel=2)
                 except KeyError:
                     pass
 
@@ -258,12 +259,13 @@ class KazooClient(object):
                     **retry_keys)
 
         self._conn_retry.interrupt = lambda: self._stopped.is_set()
-        self._connection = ConnectionHandler(self, self._conn_retry.copy(),
-            logger=self.logger)
+        self._connection = ConnectionHandler(
+            self, self._conn_retry.copy(), logger=self.logger)
 
         # Every retry call should have its own copy of the retry helper
         # to avoid shared retry counts
         self._retry = self.retry
+
         def _retry(*args, **kwargs):
             return self._retry.copy()(*args, **kwargs)
         self.retry = _retry
@@ -282,7 +284,7 @@ class KazooClient(object):
         self.Semaphore = partial(Semaphore, self)
         self.ShallowParty = partial(ShallowParty, self)
 
-         # If we got any unhandled keywords, complain like python would
+        # If we got any unhandled keywords, complain like Python would
         if kwargs:
             raise TypeError('__init__() got unexpected keyword arguments: %s'
                             % (kwargs.keys(),))
@@ -433,7 +435,8 @@ class KazooClient(object):
             return
 
         if state in (KeeperState.CONNECTED, KeeperState.CONNECTED_RO):
-            self.logger.info("Zookeeper connection established, state: %s", state)
+            self.logger.info("Zookeeper connection established, "
+                             "state: %s", state)
             self._live.set()
             self._make_state_change(KazooState.CONNECTED)
         elif state in LOST_STATES:
@@ -510,12 +513,12 @@ class KazooClient(object):
         self._queue.append((request, async_object))
 
         # wake the connection, guarding against a race with close()
-        write_pipe = self._connection._write_pipe
-        if write_pipe is None:
+        write_sock = self._connection._write_sock
+        if write_sock is None:
             async_object.set_exception(ConnectionClosedError(
                 "Connection has been closed"))
         try:
-            pipe_or_sock_write(write_pipe, b'\0')
+            write_sock.send(b'\0')
         except:
             async_object.set_exception(ConnectionClosedError(
                 "Connection has been closed"))
@@ -585,7 +588,7 @@ class KazooClient(object):
 
         self._stopped.set()
         self._queue.append((CloseInstance, None))
-        pipe_or_sock_write(self._connection._write_pipe, b'\0')
+        self._connection._write_sock.send(b'\0')
         self._safe_close()
 
     def restart(self):
@@ -622,7 +625,7 @@ class KazooClient(object):
         if not self._live.is_set():
             raise ConnectionLoss("No connection to server")
 
-        peer = self._connection._socket.getpeername()
+        peer = self._connection._socket.getpeername()[:2]
         sock = self.handler.create_connection(
             peer, timeout=self._session_timeout / 1000.0)
         sock.sendall(cmd)
@@ -786,7 +789,7 @@ class KazooClient(object):
         """
         acl = acl or self.default_acl
         return self.create_async(path, value, acl=acl, ephemeral=ephemeral,
-            sequence=sequence, makepath=makepath).get()
+                                 sequence=sequence, makepath=makepath).get()
 
     def create_async(self, path, value=b"", acl=None, ephemeral=False,
                      sequence=False, makepath=False):
@@ -828,7 +831,8 @@ class KazooClient(object):
 
         @capture_exceptions(async_result)
         def do_create():
-            result = self._create_async_inner(path, value, acl, flags, trailing=sequence)
+            result = self._create_async_inner(
+                path, value, acl, flags, trailing=sequence)
             result.rawlink(create_completion)
 
         @capture_exceptions(async_result)
@@ -867,10 +871,13 @@ class KazooClient(object):
         return async_result
 
     def ensure_path(self, path, acl=None):
-        """Recursively create a path if it doesn't exist.
+        """Recursively create a path if it doesn't exist. Also return value indicates
+        if path already existed or had to be created.
 
         :param path: Path of node.
         :param acl: Permissions for node.
+        :returns `True` if path existed, `False` otherwise.
+        :rtype: bool
 
         """
         return self.ensure_path_async(path, acl).get()
@@ -1290,6 +1297,13 @@ class TransactionRequest(object):
 
     Transactions are not thread-safe and should not be accessed from
     multiple threads at once.
+
+    .. note::
+
+        The ``committed`` attribute only indicates whether this
+        transaction has been sent to Zookeeper and is used to prevent
+        duplicate commits of the same transaction. The result should be
+        checked to determine if the transaction executed as desired.
 
     .. versionadded:: 0.6
         Requires Zookeeper 3.4+
