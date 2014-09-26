@@ -18,6 +18,7 @@
 
 package org.apache.slider.server.services.yarnregistry;
 
+import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.registry.client.api.RegistryOperations;
 import org.apache.hadoop.yarn.registry.client.binding.RegistryOperationUtils;
 import org.apache.hadoop.yarn.registry.client.binding.RegistryPathUtils;
@@ -35,14 +36,23 @@ public class YarnRegistryViewForProviders {
 
   private final String sliderServiceclass;
   private final String instanceName;
+  private final ApplicationAttemptId applicationAttemptId;
   private ServiceRecord selfRegistration;
 
   public YarnRegistryViewForProviders(RegistryOperations registryOperations,
-      String user, String sliderServiceclass, String instanceName) {
+      String user,
+      String sliderServiceclass,
+      String instanceName,
+      ApplicationAttemptId applicationAttemptId) {
     this.registryOperations = registryOperations;
     this.user = user;
     this.sliderServiceclass = sliderServiceclass;
     this.instanceName = instanceName;
+    this.applicationAttemptId = applicationAttemptId;
+  }
+
+  public ApplicationAttemptId getApplicationAttemptId() {
+    return applicationAttemptId;
   }
 
   public String getUser() {
@@ -100,7 +110,6 @@ public class YarnRegistryViewForProviders {
     registryOperations.create(path, record, CreateFlags.OVERWRITE);
   }
 
-
   /**
    * Add a service under a path
    * @param username user
@@ -117,9 +126,7 @@ public class YarnRegistryViewForProviders {
         username, serviceClass, serviceName);
     registryOperations.mknode(RegistryPathUtils.parentOf(path), true);
     registryOperations.create(path, record, CreateFlags.OVERWRITE);
-
   }
-
 
   /**
    * Add a service under a path for the current user
@@ -136,9 +143,7 @@ public class YarnRegistryViewForProviders {
         user, serviceClass, serviceName);
     registryOperations.mknode(RegistryPathUtils.parentOf(path), true);
     registryOperations.create(path, record, CreateFlags.OVERWRITE);
-
   }
-
 
   public void rmComponent(String componentName) throws IOException {
     String path = RegistryOperationUtils.componentPath(

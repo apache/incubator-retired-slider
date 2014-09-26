@@ -901,7 +901,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     yarnRegistryOperations = new YarnRegistryViewForProviders(
         registryOperations, service_user_name,
         SliderKeys.APP_TYPE,
-        instanceName);
+        instanceName,
+        appAttemptID);
     providerService.bindToYarnRegistry(yarnRegistryOperations);
     sliderAMProvider.bindToYarnRegistry(yarnRegistryOperations);
 

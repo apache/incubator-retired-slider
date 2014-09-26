@@ -139,7 +139,7 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     RegistryOperationsClient registryOperationsClient =
         registryService as RegistryOperationsClient
     try {
-      def yarnRegistryDump = registryOperationsClient.dumpPath() 
+      def yarnRegistryDump = registryOperationsClient.dumpPath(false) 
       log.info("yarn service registry: \n${yarnRegistryDump}\n")
     } catch (IOException ignored) {
 

@@ -25,8 +25,10 @@ import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.api.json.JSONConfiguration;
+import org.apache.hadoop.fs.PathNotFoundException;
 import org.apache.hadoop.yarn.registry.client.binding.RegistryTypeUtils;
 import org.apache.hadoop.yarn.registry.client.exceptions.InvalidRecordException;
+import org.apache.hadoop.yarn.registry.client.exceptions.RegistryIOException;
 import org.apache.hadoop.yarn.registry.client.types.Endpoint;
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
 import org.apache.slider.common.tools.SliderUtils;
@@ -68,25 +70,37 @@ public class RegistryRetriever {
     this.internalConfigurationURL = internalConfigurationURL; 
   }
 
-  public RegistryRetriever(ServiceRecord record) throws InvalidRecordException {
+  /**
+   * Retrieve from a service by locating the
+   * exported {@link CustomRegistryConstants#PUBLISHER_CONFIGURATIONS_API}
+   * and working off it.
+   * @param record service record
+   * @throws RegistryIOException the address type of the endpoint does
+   * not match that expected (i.e. not a list of URLs), missing endpoint...
+   */
+  public RegistryRetriever(ServiceRecord record) throws RegistryIOException {
     Endpoint internal = record.getInternalEndpoint(
         CustomRegistryConstants.PUBLISHER_CONFIGURATIONS_API);
-    List<String> addresses = RegistryTypeUtils.retrieveAddressesUriType(
-        internal);
-    if (addresses != null && !addresses.isEmpty()) {
-      internalConfigurationURL = addresses.get(0);
-    } else {
-      internalConfigurationURL = "";
+    String url = null;
+    if (internal != null) {
+      List<String> addresses = RegistryTypeUtils.retrieveAddressesUriType(
+          internal);
+      if (addresses != null && !addresses.isEmpty()) {
+        url = addresses.get(0);
+      }
     }
+    internalConfigurationURL = url;
     Endpoint external = record.getExternalEndpoint(
         CustomRegistryConstants.PUBLISHER_CONFIGURATIONS_API);
-
-    addresses = RegistryTypeUtils.retrieveAddressesUriType(external);
-    if (addresses != null && !addresses.isEmpty()) {
-      externalConfigurationURL = addresses.get(0);
-    } else {
-      externalConfigurationURL = "";
+    url = null;
+    if (external != null) {
+      List<String> addresses =
+          RegistryTypeUtils.retrieveAddressesUriType(external);
+      if (addresses != null && !addresses.isEmpty()) {
+        url = addresses.get(0);
+      }
     }
+    externalConfigurationURL = url;
   }
 
   /**
@@ -166,7 +180,8 @@ public class RegistryRetriever {
   @Override
   public String toString() {
     return super.toString() 
-           + " - external " + externalConfigurationURL;
+           + ":  internal URL: \"" + internalConfigurationURL
+           + "\";  external \"" + externalConfigurationURL +"\"";
   }
   
   

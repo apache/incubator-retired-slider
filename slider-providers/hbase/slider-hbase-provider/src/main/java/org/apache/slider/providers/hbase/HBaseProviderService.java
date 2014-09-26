@@ -22,6 +22,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.registry.client.binding.RegistryTypeUtils;
+import org.apache.hadoop.yarn.registry.client.types.PersistencePolicies;
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
 import org.apache.slider.api.InternalKeys;
 import org.apache.slider.common.SliderKeys;
@@ -254,16 +255,19 @@ public class HBaseProviderService extends AbstractProviderService
 
   private void registerHBaseServiceEntry() throws IOException {
 
-    
     String name = amState.getApplicationName() ;
     ServiceRecord serviceRecord = new ServiceRecord();
-
+    // bond lifespan to the application
+    serviceRecord.yarn_id  = yarnRegistry.getApplicationAttemptId()
+                                         .getApplicationId().toString();
+    serviceRecord.yarn_persistence = PersistencePolicies.APPLICATION;
     try {
-      URL configURL = new URL(amWebAPI, SLIDER_PATH_PUBLISHER + "/" + HBASE_SERVICE_TYPE);
+      URL configURL = new URL(amWebAPI,
+          SLIDER_PATH_PUBLISHER + "/" + HBASE_SERVICE_TYPE);
 
       serviceRecord.addExternalEndpoint(
           RegistryTypeUtils.restEndpoint(
-              CustomRegistryConstants.PUBLISHER_REST_API,
+              CustomRegistryConstants.PUBLISHER_CONFIGURATIONS_API,
               configURL.toURI()));
     } catch (URISyntaxException e) {
       log.warn("failed to create config URL: {}", e, e);
