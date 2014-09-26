@@ -22,11 +22,19 @@ import com.sun.jersey.api.client.Client
 import com.sun.jersey.api.client.WebResource
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.fs.Path
+import org.apache.hadoop.yarn.exceptions.YarnException
 import org.apache.slider.api.StatusKeys
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderKeys
+import org.apache.slider.common.params.AbstractClusterBuildingActionArgs
+import org.apache.slider.core.build.InstanceBuilder
+import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.conf.MapOperations
+import org.apache.slider.core.exceptions.SliderException
+import org.apache.slider.core.launch.LaunchedApplication
 import org.apache.slider.core.main.ServiceLauncher
+import org.apache.slider.core.persist.LockAcquireFailedException
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationResponse
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationStatus
 import org.apache.slider.server.services.security.CertificateManager
@@ -113,55 +121,86 @@ class TestAgentAMManagementWS extends AgentTestBase {
     assert app_def_path.exists()
     assert agt_ver_path.exists()
     assert agt_conf_path.exists()
-    ServiceLauncher<SliderClient> launcher = buildAgentCluster(clustername,
-        roles,
-        [
-            ARG_OPTION, PACKAGE_PATH, slider_core.absolutePath,
-            ARG_OPTION, APP_DEF, toURIArg(app_def_path),
-            ARG_OPTION, AGENT_CONF, toURIArg(agt_conf_path),
-            ARG_OPTION, AGENT_VERSION, toURIArg(agt_ver_path),
-        ],
-        true, true,
-        true)
-    SliderClient sliderClient = launcher.service
-    def report = waitForClusterLive(sliderClient)
-    def trackingUrl = report.trackingUrl
-    log.info("tracking URL is $trackingUrl")
-    def agent_url = trackingUrl + AGENT_URI
+    try {
+        setSliderClientClassName(TestSliderClient.name)
+        ServiceLauncher<SliderClient> launcher = buildAgentCluster(clustername,
+            roles,
+            [
+                ARG_OPTION, PACKAGE_PATH, slider_core.absolutePath,
+                ARG_OPTION, APP_DEF, toURIArg(app_def_path),
+                ARG_OPTION, AGENT_CONF, toURIArg(agt_conf_path),
+                ARG_OPTION, AGENT_VERSION, toURIArg(agt_ver_path),
+            ],
+            true, true,
+            true)
+        SliderClient sliderClient = launcher.service
+        def report = waitForClusterLive(sliderClient)
+        def trackingUrl = report.trackingUrl
+        log.info("tracking URL is $trackingUrl")
+        def agent_url = trackingUrl + AGENT_URI
 
-    
-    def status = dumpClusterStatus(sliderClient, "agent AM")
-    def liveURL = status.getInfo(StatusKeys.INFO_AM_AGENT_OPS_URL)
-    if (liveURL) {
-      agent_url = liveURL + AGENT_URI
+
+        def status = dumpClusterStatus(sliderClient, "agent AM")
+        def liveURL = status.getInfo(StatusKeys.INFO_AM_AGENT_OPS_URL)
+        if (liveURL) {
+          agent_url = liveURL + AGENT_URI
+        }
+
+        log.info("Agent  is $agent_url")
+        log.info("stacks is ${liveURL}stacks")
+        log.info("conf   is ${liveURL}conf")
+
+
+        def sleeptime = 10
+        log.info "sleeping for $sleeptime seconds"
+        Thread.sleep(sleeptime * 1000)
+
+
+        String page = fetchWebPageWithoutError(agent_url);
+        log.info(page);
+
+        //WS get
+        Client client = createTestClient();
+
+
+        WebResource webResource = client.resource(agent_url + "test/register");
+        RegistrationResponse response = webResource.type(MediaType.APPLICATION_JSON)
+                              .post(
+            RegistrationResponse.class,
+            createDummyJSONRegister());
+
+        //TODO: assert failure as actual agent is not started. This test only starts the AM.
+        assert RegistrationStatus.FAILED == response.getResponseStatus();
+    } finally {
+        setSliderClientClassName(SliderClient.name)
     }
     
-    log.info("Agent  is $agent_url")
-    log.info("stacks is ${liveURL}stacks")
-    log.info("conf   is ${liveURL}conf")
+  }
 
+  static class TestSliderClient extends SliderClient {
+      @Override
+      protected void persistInstanceDefinition(boolean overwrite,
+                                               Path appconfdir,
+                                               InstanceBuilder builder)
+      throws IOException, SliderException, LockAcquireFailedException {
+          AggregateConf conf = builder.getInstanceDescription()
+          conf.getAppConfOperations().getComponent("slider-appmaster").put(
+                  "ssl.server.keystore.location",
+                  "/tmp/work/security/keystore.p12")
+          super.persistInstanceDefinition(overwrite, appconfdir, builder)
+      }
 
-    def sleeptime = 10
-    log.info "sleeping for $sleeptime seconds"
-    Thread.sleep(sleeptime * 1000)
-    
-
-    String page = fetchWebPageWithoutError(agent_url);
-    log.info(page);
-    
-    //WS get
-    Client client = createTestClient();
-
-
-    WebResource webResource = client.resource(agent_url + "test/register");
-    RegistrationResponse response = webResource.type(MediaType.APPLICATION_JSON)
-                          .post(
-        RegistrationResponse.class,
-        createDummyJSONRegister());
-
-    //TODO: assert failure as actual agent is not started. This test only starts the AM.
-    assert RegistrationStatus.FAILED == response.getResponseStatus();
-    
+      @Override
+      LaunchedApplication launchApplication(String clustername,
+                                            Path clusterDirectory,
+                                            AggregateConf instanceDefinition,
+                                            boolean debugAM)
+      throws YarnException, IOException {
+          instanceDefinition.getAppConfOperations().getComponent("slider-appmaster").put(
+                  "ssl.server.keystore.location",
+                  "/tmp/work/security/keystore.p12")
+          return super.launchApplication(clustername, clusterDirectory, instanceDefinition, debugAM)
+      }
   }
 
 

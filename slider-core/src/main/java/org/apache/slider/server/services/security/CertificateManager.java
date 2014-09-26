@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.text.MessageFormat;
@@ -86,6 +87,42 @@ public class CertificateManager {
     return certFile.exists();
   }
 
+  class StreamConsumer extends Thread
+  {
+    InputStream is;
+    boolean logOutput;
+
+    StreamConsumer(InputStream is, boolean logOutput)
+    {
+      this.is = is;
+      this.logOutput = logOutput;
+    }
+
+    StreamConsumer(InputStream is)
+    {
+      this(is, false);
+    }
+
+    public void run()
+    {
+      try
+      {
+        InputStreamReader isr = new InputStreamReader(is,
+                                                      Charset.forName("UTF8"));
+        BufferedReader br = new BufferedReader(isr);
+        String line;
+        while ( (line = br.readLine()) != null)
+          if (logOutput) {
+            LOG.info(line);
+          }
+      } catch (IOException e)
+      {
+        LOG.error("Error during processing of process stream", e);
+      }
+    }
+  }
+
+
   /**
    * Runs os command
    *
@@ -98,12 +135,13 @@ public class CertificateManager {
     BufferedReader br= null;
     try {
       process = Runtime.getRuntime().exec(command);
-      br = new BufferedReader(new InputStreamReader(
-          process.getInputStream(), Charset.forName("UTF8")));
+      StreamConsumer outputConsumer =
+          new StreamConsumer(process.getInputStream(), true);
+      StreamConsumer errorConsumer =
+          new StreamConsumer(process.getErrorStream());
 
-      while ((line = br.readLine()) != null) {
-        LOG.info(line);
-      }
+      outputConsumer.start();
+      errorConsumer.start();
 
       try {
         process.waitFor();
