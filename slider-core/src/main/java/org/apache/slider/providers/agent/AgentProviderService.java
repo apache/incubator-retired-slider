@@ -253,7 +253,7 @@ public class AgentProviderService extends AbstractProviderService implements
     String workDir = ApplicationConstants.Environment.PWD.$();
     launcher.setEnv("AGENT_WORK_ROOT", workDir);
     log.info("AGENT_WORK_ROOT set to {}", workDir);
-    String logDir = ApplicationConstants.Environment.LOG_DIRS.$();
+    String logDir = ApplicationConstants.LOG_DIR_EXPANSION_VAR;
     launcher.setEnv("AGENT_LOG_ROOT", logDir);
     log.info("AGENT_LOG_ROOT set to {}", logDir);
     if (System.getenv(HADOOP_USER_NAME) != null) {

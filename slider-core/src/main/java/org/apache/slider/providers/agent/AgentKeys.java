@@ -91,7 +91,7 @@ public interface AgentKeys {
   String CREATE_DEF_ZK_NODE = "create.default.zookeeper.node";
   String HEARTBEAT_MONITOR_INTERVAL = "heartbeat.monitor.interval";
   String AGENT_INSTANCE_DEBUG_DATA = "agent.instance.debug.data";
-  String AGENT_OUT_FILE = "agent.out";
+  String AGENT_OUT_FILE = "slider-agent.out";
 }
 
 
