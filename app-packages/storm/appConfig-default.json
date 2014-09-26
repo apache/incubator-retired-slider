@@ -29,7 +29,7 @@
     "site.storm-site.worker.childopts": "-Xmx768m -javaagent:${AGENT_WORK_ROOT}/app/install/apache-storm-${pkg.version}/external/storm-jmxetric/lib/jmxetric-1.0.4.jar=host=${@//site/global/ganglia_server_host},port=${@//site/global/ganglia_server_port},wireformat31x=true,mode=multicast,config=${AGENT_WORK_ROOT}/app/install/apache-storm-${pkg.version}/external/storm-jmxetric/conf/jmxetric-conf.xml,process=Worker_%ID%_JVM",
     "site.storm-site.dev.zookeeper.path": "${AGENT_WORK_ROOT}/app/tmp/dev-storm-zookeeper",
     "site.storm-site.drpc.invocations.port": "0",
-    "site.storm-site.storm.zookeeper.root": "${DEF_ZK_PATH}",
+    "site.storm-site.storm.zookeeper.root": "${DEFAULT_ZK_PATH}",
     "site.storm-site.transactional.zookeeper.port": "null",
     "site.storm-site.nimbus.host": "${NIMBUS_HOST}",
     "site.storm-site.ui.port": "${STORM_UI_SERVER.ALLOCATED_PORT}",
