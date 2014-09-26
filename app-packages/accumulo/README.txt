@@ -32,10 +32,9 @@ slider version, and in the second case it will match the pkg.version
 Verify the content using
   zip -Tv slider-accumulo-app-package*.zip
 
-While appConfig.json and resources.json are not required for the package they
-work well as the default configuration for Slider apps. So it is advisable that
-when you create an application package for Slider, include sample/default
-resources.json and appConfig.json for a minimal Yarn cluster.
+appConfig-default.json and resources-default.json are not required to be packaged.
+These files are included as reference configuration for Slider apps and are suitable
+for a one-node cluster.
 
 In the maven packaging case, the version of Accumulo used for the app package
 can be adjusted by adding a flag such as
@@ -45,7 +44,7 @@ can be adjusted by adding a flag such as
 package are designed for Accumulo 1.6.0 only and may need to be modified to be
 applicable for other versions of the app package.
 
-Note also that the sample appConfig.json provided only works with Accumulo 1.6,
+Note also that the sample appConfig-default.json provided only works with Accumulo 1.6,
 while for Accumulo 1.5 the instance.volumes property must be replaced with
 instance.dfs.dir (and it cannot use the provided variable ${DEFAULT_DATA_DIR}
 which is an HDFS URI).
