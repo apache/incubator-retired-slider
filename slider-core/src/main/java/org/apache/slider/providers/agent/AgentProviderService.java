@@ -595,7 +595,7 @@ public class AgentProviderService extends AbstractProviderService implements
       this.getAllocatedPorts(containerId).put(portname, portNo);
       if (instance != null) {
         try {
-          instance.registerPortEndpoint(Integer.valueOf(portNo), portname, "");
+          instance.registerPortEndpoint(Integer.valueOf(portNo), portname);
         } catch (NumberFormatException e) {
           log.warn("Failed to parse {}: {}", portNo, e);
         }
