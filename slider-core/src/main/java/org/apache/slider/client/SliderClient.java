@@ -782,7 +782,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     builder.init(providerName, instanceDefinition);
     builder.propagateFilename();
     builder.propagatePrincipals();
-    builder.setImageDetailsIfAvailable(buildInfo.getImage(), buildInfo.getAppHomeDir());
+    builder.setImageDetailsIfAvailable(buildInfo.getImage(),
+                                       buildInfo.getAppHomeDir());
     builder.setQueue(buildInfo.queue);
 
     String quorum = buildInfo.getZKhosts();
@@ -839,12 +840,19 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       throw e;
     }
     try {
-      builder.persist(appconfdir, overwrite);
+      persistInstanceDefinition(overwrite, appconfdir, builder);
     } catch (LockAcquireFailedException e) {
       log.warn("Failed to get a Lock on {} : {}", builder, e);
       throw new BadClusterStateException("Failed to save " + clustername
                                          + ": " + e);
     }
+  }
+
+  protected void persistInstanceDefinition(boolean overwrite,
+                                         Path appconfdir,
+                                         InstanceBuilder builder)
+      throws IOException, SliderException, LockAcquireFailedException {
+    builder.persist(appconfdir, overwrite);
   }
 
   @VisibleForTesting
