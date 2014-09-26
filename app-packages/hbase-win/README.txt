@@ -17,10 +17,10 @@
 
 Create Slider App Package for HBase on Windows
 
-While appConfig.json and resources.json are not required for the package they
-work well as the default configuration for Slider apps. So it is advisable that
-when you create an application package for Slider, include sample/default
-resources.json and appConfig.json for a minimal Yarn cluster.
+appConfig-default.json and resources-default.json are not required to be packaged.
+These files are included as reference configuration for Slider apps and are suitable
+for a one-node cluster.
+
 
 OPTION-I: Use a downloaded hbase tarball fro Windows
 
