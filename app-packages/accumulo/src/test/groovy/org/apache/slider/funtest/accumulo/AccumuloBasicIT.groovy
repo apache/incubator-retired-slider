@@ -56,9 +56,7 @@ class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
     String appTemplateFile = templateName()
     Configuration conf = new Configuration()
     FileSystem fs = FileSystem.getLocal(conf)
-    InputStream stream = SliderUtils.getApplicationResourceInputStream(
-      fs, new Path(TEST_APP_PKG_DIR, TEST_APP_PKG_FILE),
-      "appConfig-default.json");
+    InputStream stream = new FileInputStream(sysprop("test.app.resources.dir") + "/appConfig-default.json")
     assert stream!=null, "Couldn't pull appConfig.json from app pkg"
     ConfTreeSerDeser c = new ConfTreeSerDeser()
     ConfTree t = c.fromStream(stream)
