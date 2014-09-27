@@ -62,6 +62,7 @@ public class ClientArgs extends CommonArgs {
   private final ActionThawArgs actionThawArgs = new ActionThawArgs();
   private final ActionVersionArgs actionVersionArgs = new ActionVersionArgs();
   private final ActionHelpArgs actionHelpArgs = new ActionHelpArgs();
+  private final ActionDiagnosticArgs actionDiagnosticArgs = new ActionDiagnosticArgs();
 
 
   public ClientArgs(String[] args) {
@@ -92,7 +93,8 @@ public class ClientArgs extends CommonArgs {
       actionThawArgs,
       actionHelpArgs,
       actionVersionArgs,
-      actionInstallPackageArgs
+      actionInstallPackageArgs,
+      actionDiagnosticArgs
               );
   }
 
@@ -110,6 +112,10 @@ public class ClientArgs extends CommonArgs {
       conf.set(SliderXmlConfKeys.KEY_SLIDER_BASE_PATH,
           getBasePath().toString());
     }
+  }
+
+  public ActionDiagnosticArgs getActionDiagnosticArgs() {
+	return actionDiagnosticArgs;
   }
 
   public AbstractClusterBuildingActionArgs getBuildingActionArgs() {
@@ -239,6 +245,9 @@ public class ClientArgs extends CommonArgs {
 
     } else if (SliderActions.ACTION_VERSION.equals(action)) {
       bindCoreAction(actionVersionArgs);
+
+    } else if (SliderActions.ACTION_DIAGNOSTIC.equals(action)) {
+        bindCoreAction(actionDiagnosticArgs);
 
     } else if (action == null || action.isEmpty()) {
       throw new BadCommandArgumentsException(ErrorStrings.ERROR_NO_ACTION);
