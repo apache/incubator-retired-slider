@@ -78,6 +78,13 @@ public interface Arguments {
   String ARG_ZKPORT = "--zkport";
   String ARG_ZKHOSTS = "--zkhosts";
   String ARG_REPLACE_PKG = "--replacepkg";
+  String ARG_CLIENT = "--client";
+  String ARG_SLIDER = "--slider";
+  String ARG_APPLICATION = "--application";
+  String ARG_YARN = "--yarn";
+  String ARG_CREDENTIALS = "--credentials";
+  String ARG_ALL = "--all";
+  String ARG_LEVEL = "--level";
   String ARG_QUEUE = "--queue";
 
 

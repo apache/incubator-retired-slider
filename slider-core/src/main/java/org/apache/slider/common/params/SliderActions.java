@@ -44,6 +44,7 @@ public interface SliderActions {
   String ACTION_THAW = "start";
   String ACTION_USAGE = "usage";
   String ACTION_VERSION = "version";
+  String ACTION_DIAGNOSTIC = "diagnostic";
   String ACTION_INSTALL_PACKAGE = "install-package";
   String DESCRIBE_ACTION_AM_SUICIDE =
     "Tell the Slider Application Master to simulate a process failure by terminating itself";
@@ -78,4 +79,7 @@ public interface SliderActions {
   String DESCRIBE_ACTION_VERSION =
                         "Print the Slider version information";
   String DESCRIBE_ACTION_INSTALL_PACKAGE = "Install the application package in the home directory under sub-folder packages";
+  String DESCRIBE_ACTION_DIAGNOSTIC = "Diagnose the configuration of the running slider application and slider client";
+  
 }
+
