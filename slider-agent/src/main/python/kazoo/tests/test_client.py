@@ -72,7 +72,8 @@ class TestClientConstructor(unittest.TestCase):
 
     def test_invalid_handler(self):
         from kazoo.handlers.threading import SequentialThreadingHandler
-        self.assertRaises(ConfigurationError,
+        self.assertRaises(
+            ConfigurationError,
             self._makeOne, handler=SequentialThreadingHandler)
 
     def test_chroot(self):
@@ -91,7 +92,7 @@ class TestClientConstructor(unittest.TestCase):
 
     def test_ordered_host_selection(self):
         client = self._makeOne(hosts='127.0.0.1:9,127.0.0.2:9/a',
-            randomize_hosts=False)
+                               randomize_hosts=False)
         hosts = [h for h in client.hosts]
         eq_(hosts, [('127.0.0.1', 9), ('127.0.0.2', 9)])
 
@@ -371,29 +372,29 @@ class TestConnection(KazooTestCase):
         client = self.client
         client.stop()
 
-        write_pipe = client._connection._write_pipe
+        write_sock = client._connection._write_sock
 
-        # close the connection to free the pipe
+        # close the connection to free the socket
         client.close()
-        eq_(client._connection._write_pipe, None)
+        eq_(client._connection._write_sock, None)
 
         # sneak in and patch client to simulate race between a thread
         # calling stop(); close() and one running a command
         oldstate = client._state
         client._state = KeeperState.CONNECTED
-        client._connection._write_pipe = write_pipe
+        client._connection._write_sock = write_sock
         try:
-            # simulate call made after write pipe is closed
+            # simulate call made after write socket is closed
             self.assertRaises(ConnectionClosedError, client.exists, '/')
 
-            # simualte call made after write pipe is set to None
-            client._connection._write_pipe = None
+            # simulate call made after write socket is set to None
+            client._connection._write_sock = None
             self.assertRaises(ConnectionClosedError, client.exists, '/')
 
         finally:
             # reset for teardown
             client._state = oldstate
-            client._connection._write_pipe = None
+            client._connection._write_sock = None
 
 
 class TestClient(KazooTestCase):
@@ -544,9 +545,9 @@ class TestClient(KazooTestCase):
         client = self.client
         client.create("/1", b"ephemeral", ephemeral=True)
         self.assertRaises(NoChildrenForEphemeralsError,
-            client.create, "/1/2", b"val1")
+                          client.create, "/1/2", b"val1")
         self.assertRaises(NoChildrenForEphemeralsError,
-            client.create, "/1/2", b"val1", ephemeral=True)
+                          client.create, "/1/2", b"val1", ephemeral=True)
 
     def test_create_sequence(self):
         client = self.client
@@ -560,8 +561,8 @@ class TestClient(KazooTestCase):
 
     def test_create_ephemeral_sequence(self):
         basepath = "/" + uuid.uuid4().hex
-        realpath = self.client.create(basepath, b"sandwich", sequence=True,
-            ephemeral=True)
+        realpath = self.client.create(basepath, b"sandwich",
+                                      sequence=True, ephemeral=True)
         self.assertTrue(basepath != realpath and realpath.startswith(basepath))
         data, stat = self.client.get(realpath)
         eq_(data, b"sandwich")
@@ -575,33 +576,35 @@ class TestClient(KazooTestCase):
         data, stat = self.client.get("/1/2/3/4/5")
         eq_(data, b"val2")
 
-        self.assertRaises(NodeExistsError, self.client.create, "/1/2/3/4/5",
-            b"val2", makepath=True)
+        self.assertRaises(NodeExistsError, self.client.create,
+                          "/1/2/3/4/5", b"val2", makepath=True)
 
     def test_create_makepath_incompatible_acls(self):
         from kazoo.client import KazooClient
         from kazoo.security import make_digest_acl_credential, CREATOR_ALL_ACL
         credential = make_digest_acl_credential("username", "password")
-        alt_client = KazooClient(self.cluster[0].address + self.client.chroot,
+        alt_client = KazooClient(
+            self.cluster[0].address + self.client.chroot,
             max_retries=5, auth_data=[("digest", credential)])
         alt_client.start()
         alt_client.create("/1/2", b"val2", makepath=True, acl=CREATOR_ALL_ACL)
 
         try:
-            self.assertRaises(NoAuthError, self.client.create, "/1/2/3/4/5",
-                b"val2", makepath=True)
+            self.assertRaises(NoAuthError, self.client.create,
+                              "/1/2/3/4/5", b"val2", makepath=True)
         finally:
             alt_client.delete('/', recursive=True)
             alt_client.stop()
 
     def test_create_no_makepath(self):
-        self.assertRaises(NoNodeError, self.client.create, "/1/2", b"val1")
-        self.assertRaises(NoNodeError, self.client.create, "/1/2", b"val1",
-            makepath=False)
+        self.assertRaises(NoNodeError, self.client.create,
+                          "/1/2", b"val1")
+        self.assertRaises(NoNodeError, self.client.create,
+                          "/1/2", b"val1", makepath=False)
 
         self.client.create("/1/2", b"val1", makepath=True)
-        self.assertRaises(NoNodeError, self.client.create, "/1/2/3/4", b"val1",
-            makepath=False)
+        self.assertRaises(NoNodeError, self.client.create,
+                          "/1/2/3/4", b"val1", makepath=False)
 
     def test_create_exists(self):
         from kazoo.exceptions import NodeExistsError
@@ -844,7 +847,7 @@ class TestClient(KazooTestCase):
         client = self.client
         self.assertRaises(NoNodeError, client.get_children, '/none')
         self.assertRaises(NoNodeError, client.get_children,
-            '/none', include_data=True)
+                          '/none', include_data=True)
 
     def test_get_children_invalid_path(self):
         client = self.client
@@ -855,7 +858,7 @@ class TestClient(KazooTestCase):
         self.assertRaises(TypeError, client.get_children, ('a', 'b'))
         self.assertRaises(TypeError, client.get_children, 'a', watch=True)
         self.assertRaises(TypeError, client.get_children,
-            'a', include_data='yes')
+                          'a', include_data='yes')
 
     def test_invalid_auth(self):
         from kazoo.exceptions import AuthFailedError

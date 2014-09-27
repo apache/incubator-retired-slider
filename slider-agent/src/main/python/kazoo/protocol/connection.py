@@ -17,7 +17,7 @@ from kazoo.exceptions import (
     SessionExpiredError,
     NoNodeError
 )
-from kazoo.handlers.utils import create_pipe_or_sock, pipe_or_sock_read, pipe_or_sock_write, pipe_or_sock_close
+from kazoo.handlers.utils import create_socket_pair
 from kazoo.loggingsupport import BLATHER
 from kazoo.protocol.serialization import (
     Auth,
@@ -146,8 +146,8 @@ class ConnectionHandler(object):
         self.connection_stopped.set()
         self.ping_outstanding = client.handler.event_object()
 
-        self._read_pipe = None
-        self._write_pipe = None
+        self._read_sock = None
+        self._write_sock = None
 
         self._socket = None
         self._xid = None
@@ -169,7 +169,7 @@ class ConnectionHandler(object):
     def start(self):
         """Start the connection up"""
         if self.connection_closed.is_set():
-            self._read_pipe, self._write_pipe = create_pipe_or_sock()
+            self._read_sock, self._write_sock = create_socket_pair()
             self.connection_closed.clear()
         if self._connection_routine:
             raise Exception("Unable to start, connection routine already "
@@ -192,12 +192,12 @@ class ConnectionHandler(object):
         if not self.connection_stopped.is_set():
             raise Exception("Cannot close connection until it is stopped")
         self.connection_closed.set()
-        wp, rp = self._write_pipe, self._read_pipe
-        self._write_pipe = self._read_pipe = None
-        if wp is not None:
-            pipe_or_sock_close(wp)
-        if rp is not None:
-            pipe_or_sock_close(rp)
+        ws, rs = self._write_sock, self._read_sock
+        self._write_sock = self._read_sock = None
+        if ws is not None:
+            ws.close()
+        if rs is not None:
+            rs.close()
 
     def _server_pinger(self):
         """Returns a server pinger iterable, that will ping the next
@@ -238,8 +238,8 @@ class ConnectionHandler(object):
         if xid:
             header, buffer, offset = self._read_header(timeout)
             if header.xid != xid:
-                raise RuntimeError('xids do not match, expected %r received %r',
-                                   xid, header.xid)
+                raise RuntimeError('xids do not match, expected %r '
+                                   'received %r', xid, header.xid)
             if header.zxid > 0:
                 zxid = header.zxid
             if header.err:
@@ -257,8 +257,9 @@ class ConnectionHandler(object):
             try:
                 obj, _ = request.deserialize(msg, 0)
             except Exception:
-                self.logger.exception("Exception raised during deserialization"
-                                      " of request: %s", request)
+                self.logger.exception(
+                    "Exception raised during deserialization "
+                    "of request: %s", request)
 
                 # raise ConnectionDropped so connect loop will retry
                 raise ConnectionDropped('invalid server response')
@@ -276,8 +277,9 @@ class ConnectionHandler(object):
         if request.type:
             b.extend(int_struct.pack(request.type))
         b += request.serialize()
-        self.logger.log((BLATHER if isinstance(request, Ping) else logging.DEBUG),
-                        "Sending request(xid=%s): %s", xid, request)
+        self.logger.log(
+            (BLATHER if isinstance(request, Ping) else logging.DEBUG),
+            "Sending request(xid=%s): %s", xid, request)
         self._write(int_struct.pack(len(b)) + b, timeout)
 
     def _write(self, msg, timeout):
@@ -358,8 +360,9 @@ class ConnectionHandler(object):
                 try:
                     response = request.deserialize(buffer, offset)
                 except Exception as exc:
-                    self.logger.exception("Exception raised during deserialization"
-                                          " of request: %s", request)
+                    self.logger.exception(
+                        "Exception raised during deserialization "
+                        "of request: %s", request)
                     async_object.set_exception(exc)
                     return
                 self.logger.debug(
@@ -415,11 +418,11 @@ class ConnectionHandler(object):
         except IndexError:
             # Not actually something on the queue, this can occur if
             # something happens to cancel the request such that we
-            # don't clear the pipe below after sending
+            # don't clear the socket below after sending
             try:
                 # Clear possible inconsistence (no request in the queue
-                # but have data in the read pipe), which causes cpu to spin.
-                pipe_or_sock_read(self._read_pipe, 1)
+                # but have data in the read socket), which causes cpu to spin.
+                self._read_sock.recv(1)
             except OSError:
                 pass
             return
@@ -440,7 +443,7 @@ class ConnectionHandler(object):
 
         self._submit(request, connect_timeout, xid)
         client._queue.popleft()
-        pipe_or_sock_read(self._read_pipe, 1)
+        self._read_sock.recv(1)
         client._pending.append((request, async_object, xid))
 
     def _send_ping(self, connect_timeout):
@@ -519,7 +522,7 @@ class ConnectionHandler(object):
                 jitter_time = random.randint(0, 40) / 100.0
                 # Ensure our timeout is positive
                 timeout = max([read_timeout / 2.0 - jitter_time, jitter_time])
-                s = self.handler.select([self._socket, self._read_pipe],
+                s = self.handler.select([self._socket, self._read_sock],
                                         [], [], timeout)[0]
 
                 if not s:
@@ -570,9 +573,9 @@ class ConnectionHandler(object):
         self.logger.info('Connecting to %s:%s', host, port)
 
         self.logger.log(BLATHER,
-                          '    Using session_id: %r session_passwd: %s',
-                          client._session_id,
-                          hexlify(client._session_passwd))
+                        '    Using session_id: %r session_passwd: %s',
+                        client._session_id,
+                        hexlify(client._session_passwd))
 
         with self._socket_error_handling():
             self._socket = self.handler.create_connection(
@@ -584,7 +587,8 @@ class ConnectionHandler(object):
                           client._session_id or 0, client._session_passwd,
                           client.read_only)
 
-        connect_result, zxid = self._invoke(client._session_timeout, connect)
+        connect_result, zxid = self._invoke(
+            client._session_timeout / 1000.0, connect)
 
         if connect_result.time_out <= 0:
             raise SessionExpiredError("Session has expired")
@@ -601,13 +605,13 @@ class ConnectionHandler(object):
         client._session_passwd = connect_result.passwd
 
         self.logger.log(BLATHER,
-                          'Session created, session_id: %r session_passwd: %s\n'
-                          '    negotiated session timeout: %s\n'
-                          '    connect timeout: %s\n'
-                          '    read timeout: %s', client._session_id,
-                          hexlify(client._session_passwd),
-                          negotiated_session_timeout, connect_timeout,
-                          read_timeout)
+                        'Session created, session_id: %r session_passwd: %s\n'
+                        '    negotiated session timeout: %s\n'
+                        '    connect timeout: %s\n'
+                        '    read timeout: %s', client._session_id,
+                        hexlify(client._session_passwd),
+                        negotiated_session_timeout, connect_timeout,
+                        read_timeout)
 
         if connect_result.read_only:
             client._session_callback(KeeperState.CONNECTED_RO)
@@ -618,7 +622,7 @@ class ConnectionHandler(object):
 
         for scheme, auth in client.auth_data:
             ap = Auth(0, scheme, auth)
-            zxid = self._invoke(connect_timeout, ap, xid=AUTH_XID)
+            zxid = self._invoke(connect_timeout / 1000.0, ap, xid=AUTH_XID)
             if zxid:
                 client.last_zxid = zxid
         return read_timeout, connect_timeout
