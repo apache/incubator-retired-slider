@@ -210,6 +210,14 @@
         <filtering>true</filtering>
         <targetPath>${test.app.resources.dir}</targetPath>
       </resource>
+      <resource>
+        <directory>.</directory>
+        <filtering>true</filtering>
+        <targetPath>${test.app.resources.dir}</targetPath>
+        <includes>
+          <include>appConfig-default.json</include>
+        </includes>
+      </resource>
     </resources>
 
     <plugins>
