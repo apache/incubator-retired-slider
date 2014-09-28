@@ -18,16 +18,10 @@
 
 package org.apache.slider.server.appmaster.web.rest.registry;
 
-import org.apache.commons.logging.Log;
-import org.apache.hadoop.yarn.registry.client.api.RegistryOperations;
-import org.apache.hadoop.yarn.registry.client.exceptions.InvalidRecordException;
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -38,7 +32,7 @@ import java.util.List;
 public class PathEntryResource {
 
   /**
-   * Child nodes: as the full path to each element
+   * Child nodes: as the short path to each element
    */
   public List<String> nodes;
 

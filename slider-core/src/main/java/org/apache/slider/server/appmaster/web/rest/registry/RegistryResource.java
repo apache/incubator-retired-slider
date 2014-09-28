@@ -19,22 +19,19 @@
 package org.apache.slider.server.appmaster.web.rest.registry;
 
 import com.google.inject.Singleton;
-import org.apache.hadoop.fs.PathAccessDeniedException;
 import org.apache.hadoop.fs.PathNotFoundException;
 import org.apache.hadoop.yarn.registry.client.api.RegistryOperations;
 import org.apache.hadoop.yarn.registry.client.exceptions.AuthenticationFailedException;
 import org.apache.hadoop.yarn.registry.client.exceptions.InvalidRecordException;
+import org.apache.hadoop.yarn.registry.client.exceptions.NoPathPermissionsException;
 import org.apache.hadoop.yarn.registry.client.exceptions.NoRecordException;
-import org.apache.hadoop.yarn.registry.client.types.RegistryPathStatus;
 import org.apache.hadoop.yarn.webapp.ForbiddenException;
 import org.apache.hadoop.yarn.webapp.NotFoundException;
-import org.apache.hadoop.yarn.webapp.WebAppException;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -42,13 +39,11 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
-import java.util.List;
 
 /**
- * This is the read-only view of the slider YARN registry
+ * This is the read-only view of the YARN registry.
  * 
  * Model:
  * <ol>
@@ -126,7 +121,7 @@ public class RegistryResource {
       throw new NotFoundException("Not found: " + path);
     } catch (AuthenticationFailedException e) {
       throw new ForbiddenException(path);
-    } catch (PathAccessDeniedException e) {
+    } catch (NoPathPermissionsException e) {
       throw new ForbiddenException(path);
     } catch (Exception e) {
       log.error("Error during generation of response: {}", e, e);
@@ -139,7 +134,6 @@ public class RegistryResource {
    * Build from the registry, filling up the children and service records.
    * If there is no service record at the end of the path, that entry is 
    * null
-   * @param registry registry operations
    * @param path path to query
    * @return the built up record
    * @throws IOException problems

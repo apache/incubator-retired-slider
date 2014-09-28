@@ -125,7 +125,7 @@ class TestRegistryRestResources extends AgentTestBase {
     def responseStr = processResponse(userServicesURL, response)
 
     assert responseStr.contains("\"nodes\"")
-    assert responseStr.contains("/${SliderKeys.APP_TYPE}")
+    assert responseStr.contains(SliderKeys.APP_TYPE)
 
     entryResource = jsonBuilder.get(PathEntryResource.class)
     assert entryResource.nodes.size() == 1;
