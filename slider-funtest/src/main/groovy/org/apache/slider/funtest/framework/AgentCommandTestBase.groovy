@@ -39,6 +39,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
   public static final boolean AGENTTESTS_ENABLED
   public static final boolean AGENTTESTS_QUEUE_LABELED_DEFINED
   public static final boolean AGENTTESTS_LABELS_RED_BLUE_DEFINED
+  public static final boolean AGENTTESTS_AM_FAILURES_ENABLED
   private static String TEST_APP_PKG_DIR_PROP = "test.app.pkg.dir"
   private static String TEST_APP_PKG_FILE_PROP = "test.app.pkg.file"
   private static String TEST_APP_PKG_NAME_PROP = "test.app.pkg.name"
@@ -65,6 +66,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
         SLIDER_CONFIG.getBoolean(KEY_AGENTTESTS_QUEUE_LABELED_DEFINED, false)
     AGENTTESTS_LABELS_RED_BLUE_DEFINED =
         SLIDER_CONFIG.getBoolean(KEY_AGENTTESTS_LABELS_RED_BLUE_DEFINED, false)
+    AGENTTESTS_AM_FAILURES_ENABLED = 
+        SLIDER_CONFIG.getBoolean(KEY_AGENTTESTS_AM_FAILURES_ENABLED, false)
   }
 
   protected String getAppResource() {
@@ -88,6 +91,10 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   public static void assumeLabelsRedAndBlueAdded() {
     assume(AGENTTESTS_LABELS_RED_BLUE_DEFINED, "Custom node labels not defined")
+  }
+
+  public static void assumeAmFailureTestsEnabled() {
+    assume(AGENTTESTS_AM_FAILURES_ENABLED, "AM failure tests are disabled")
   }
 
   @BeforeClass

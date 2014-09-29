@@ -67,6 +67,12 @@
   </property>
 
   <property>
+    <name>slider.test.agent.am.failures.enabled</name>
+    <value>false</value>
+    <description>AM failure test scenarios - if enabled vagrant.current.working.dir needs to be set as well</description>
+  </property>
+
+  <property>
     <name>slider.test.agent.tar</name>
     <value>hdfs://c6403.ambari.apache.org:8020/slider/agent/slider-agent.tar.gz</value>
   </property>
