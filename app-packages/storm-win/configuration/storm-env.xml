@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!--
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+-->
+
+<configuration>
+
+  <property>
+    <name>kerberos_domain</name>
+    <value></value>
+    <description>The kerberos domain to be used for this Storm cluster</description>
+  </property>
+  <property>
+    <name>storm_client_principal_name</name>
+    <value></value>
+    <description>The principal name for the Storm client to be used to communicate with Nimbus and Zookeeper</description>
+  </property>
+  <property>
+    <name>storm_server_principal_name</name>
+    <value></value>
+    <description>The principal name for the Storm server to be used by Nimbus</description>
+  </property>
+  <property>
+    <name>storm_client_keytab</name>
+    <value></value>
+    <description>The keytab file path for Storm client</description>
+  </property>
+  <property>
+    <name>storm_server_keytab</name>
+    <value></value>
+    <description>The keytab file path for Storm server</description>
+  </property>
+  <!-- storm-env.sh -->
+  <property>
+    <name>content</name>
+    <description>This is the jinja template for storm-env.sh file</description>
+    <value>
+#!/bin/bash
+
+# Set Storm specific environment variables here.
+
+# The java implementation to use.
+export JAVA_HOME={{java_home}}
+
+# export STORM_CONF_DIR=""
+    </value>
+  </property>
+</configuration>
