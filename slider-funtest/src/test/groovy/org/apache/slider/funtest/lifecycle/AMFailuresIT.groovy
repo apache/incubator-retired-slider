@@ -33,6 +33,7 @@ import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
 import org.junit.After
+import org.junit.BeforeClass;
 import org.junit.Test
 
 @CompileStatic
@@ -45,6 +46,11 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
   public static final String TEST_REMOTE_SSH_KEY = "test.remote.ssh.key"
   public static final String VAGRANT_CWD = "vagrant.current.working.dir"
   File sshkey
+
+  @BeforeClass
+  public static void setupAMTests() {
+    assumeAmFailureTestsEnabled()
+  }
 
   @After
   public void destroyCluster() {
