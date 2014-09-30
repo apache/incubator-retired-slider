@@ -713,6 +713,13 @@ class SliderTestUtils extends Assert {
     log.info("number of entries: ${entries.length}")
     entries.each { log.info(it.toString()) }
   }
+
+  public static void dumpMap(Map map) {
+    map.entrySet().each { Map.Entry it ->
+      log.info("\"${it.key.toString()}\": \"${it.value.toString()}\"")
+    }
+  }
+  
   /**
    * Get a time option in seconds if set, otherwise the default value (also in seconds).
    * This operation picks up the time value as a system property if set -that

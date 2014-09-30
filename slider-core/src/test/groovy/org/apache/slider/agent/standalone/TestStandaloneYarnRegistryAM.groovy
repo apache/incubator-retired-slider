@@ -154,6 +154,7 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
 
     Map < String, ServiceRecord > recordMap = RecordOperations.extractServiceRecords(
         registryService,
+        recordsPath,
         registryService.listFull(recordsPath))
     def serviceRecords = recordMap.values();
     dumpCollection(serviceRecords)
