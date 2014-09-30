@@ -1,0 +1,41 @@
+{
+  "schema": "http://example.org/specification/v2.0.0",
+  "metadata": {
+  },
+  "global": {
+    "application.def": ".slider/package/STORM/slider-storm-app-win-package-${pkg.version}.zip",
+    "java_home": "C:\\java",
+    "create.default.zookeeper.node": "true",
+
+    "site.global.app_user": "hadoop",
+    "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/storm-${pkg.version}",
+    "site.global.user_group": "hadoop",
+    "site.global.security_enabled": "false",
+    "site.global.rest_api_port": "${STORM_REST_API.ALLOCATED_PORT}",
+    "site.global.rest_api_admin_port": "${STORM_REST_API.ALLOCATED_PORT}",
+
+    "site.storm-site.storm.log.dir" : "${AGENT_LOG_ROOT}",
+    "site.storm-site.storm.zookeeper.servers": "['${ZK_HOST}']",
+    "site.storm-site.nimbus.thrift.port": "${NIMBUS.ALLOCATED_PORT}",
+    "site.storm-site.storm.local.dir": "${AGENT_WORK_ROOT}/app/tmp/storm",
+    "site.storm-site.transactional.zookeeper.root": "/transactional",
+    "site.storm-site.storm.zookeeper.port": "2181",
+    "site.storm-site.nimbus.childopts": "-Xmx1024m",
+    "site.storm-site.worker.childopts": "-Xmx768m",
+    "site.storm-site.dev.zookeeper.path": "${AGENT_WORK_ROOT}/app/tmp/dev-storm-zookeeper",
+    "site.storm-site.drpc.invocations.port": "0",
+    "site.storm-site.storm.zookeeper.root": "${DEFAULT_ZK_PATH}",
+    "site.storm-site.transactional.zookeeper.port": "null",
+    "site.storm-site.nimbus.host": "${NIMBUS_HOST}",
+    "site.storm-site.ui.port": "${STORM_UI_SERVER.ALLOCATED_PORT}",
+    "site.storm-site.supervisor.slots.ports": "[${SUPERVISOR.ALLOCATED_PORT}{PER_CONTAINER},${SUPERVISOR.ALLOCATED_PORT}{PER_CONTAINER}]",
+    "site.storm-site.supervisor.childopts": "-Xmx256m",
+    "site.storm-site.drpc.port": "0",
+    "site.storm-site.logviewer.port": "${SUPERVISOR.ALLOCATED_PORT}{PER_CONTAINER}"
+  },
+  "components": {
+    "slider-appmaster": {
+      "jvm.heapsize": "256M"
+    }
+  }
+}

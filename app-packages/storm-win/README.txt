@@ -15,24 +15,22 @@
    limitations under the License.
 -->
 
-Create Slider App Package for HBase on Windows
+How to create a Slider app package for Storm?
+
+To create the app package you will need the Storm tarball and invoke mvn command
+with appropriate parameters.
+
+Command:
+mvn clean package -Pstorm-app-package-win -Dpkg.version=<version>
+   -Dpkg.name=<file name of app tarball> -Dpkg.src=<folder location where the pkg is available>
+
+Example:
+mvn clean package -Pstorm-app-package-win -Dpkg.version=0.9.3
+   -Dpkg.name=storm-0.9.3.zip -Dpkg.src=/Users/user1/Downloads
+
+App package can be found in
+  app-packages/storm-win/target/slider-storm-app-win-package-${pkg.version}.zip
 
 appConfig-default.json and resources-default.json are not required to be packaged.
 These files are included as reference configuration for Slider apps and are suitable
 for a one-node cluster.
-
-
-To create the app package you will need the HBase tarball and invoke mvn command
-with appropriate parameters.
-
-Command:
-mvn clean package -Phbase-app-package-win -Dpkg.version=<version>
-   -Dpkg.name=<file name of app tarball> -Dpkg.src=<folder location where the pkg is available>
-
-Example:
-mvn clean package -Phbase-app-package -Dpkg.version=0.98.5-hadoop2
-  -Dpkg.name=hbase-0.98.5-hadoop2-bin.zip
-  -Dpkg.src=/Users/user1/Downloads
-
-App package can be found in
-  app-packages/hbase/target/slider-hbase-app-win-package-${pkg.version}.zip
