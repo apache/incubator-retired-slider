@@ -24,14 +24,13 @@ import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.yarn.registry.client.api.RegistryConstants
-import org.apache.hadoop.yarn.registry.client.binding.RecordOperations
 import org.apache.hadoop.yarn.registry.client.binding.RegistryTypeUtils
 import org.apache.hadoop.yarn.registry.client.services.RegistryOperationsClient
 import org.apache.hadoop.yarn.registry.client.types.RegistryPathStatus
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord
 import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
 
-import static org.apache.hadoop.yarn.registry.client.binding.RegistryOperationUtils.*
+import static org.apache.hadoop.yarn.registry.client.binding.RegistryUtils.*
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.api.ClusterNode
 import org.apache.slider.client.SliderClient
@@ -49,11 +48,7 @@ import org.apache.slider.server.appmaster.PublishedArtifacts
 import org.apache.slider.server.appmaster.web.rest.RestPaths
 import org.junit.Test
 
-import static org.apache.slider.core.registry.info.CustomRegistryConstants.AGENT_ONEWAY_REST_API
-import static org.apache.slider.core.registry.info.CustomRegistryConstants.AGENT_SECURE_REST_API
-import static org.apache.slider.core.registry.info.CustomRegistryConstants.AM_IPC_PROTOCOL
-import static org.apache.slider.core.registry.info.CustomRegistryConstants.MANAGEMENT_REST_API
-import static org.apache.slider.core.registry.info.CustomRegistryConstants.PUBLISHER_REST_API
+import static org.apache.slider.core.registry.info.CustomRegistryConstants.*
 
 /**
  *  work with a YARN registry
@@ -147,15 +142,15 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
         
 
     def self = currentUser()
-    List<RegistryPathStatus> serviceTypes = registryService.listFull(homePathForUser(self))
+    def children = statChildren(registryService, homePathForUser(self));
+    Collection<RegistryPathStatus> serviceTypes = children.values()
     dumpCollection(serviceTypes)
 
     def recordsPath = serviceclassPath(self, SliderKeys.APP_TYPE)
 
-    Map < String, ServiceRecord > recordMap = RecordOperations.extractServiceRecords(
+    Map<String, ServiceRecord> recordMap = extractServiceRecords(
         registryService,
-        recordsPath,
-        registryService.listFull(recordsPath))
+        recordsPath);
     def serviceRecords = recordMap.values();
     dumpCollection(serviceRecords)
     assert serviceRecords.size() == 1

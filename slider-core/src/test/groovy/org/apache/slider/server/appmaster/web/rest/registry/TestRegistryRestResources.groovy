@@ -25,7 +25,7 @@ import com.sun.jersey.api.client.WebResource
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.registry.client.api.RegistryConstants
-import org.apache.hadoop.yarn.registry.client.binding.RegistryOperationUtils
+import org.apache.hadoop.yarn.registry.client.binding.RegistryUtils
 import org.apache.slider.api.StatusKeys
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderKeys
@@ -113,7 +113,7 @@ class TestRegistryRestResources extends AgentTestBase {
     assert entryResource.service == null;
 
     // test the available GET URIs
-    def userhome = RegistryOperationUtils.homePathForCurrentUser()
+    def userhome = RegistryUtils.homePathForCurrentUser()
 
     def userServicesURL = appendToURL(registry_url,
         userhome + RegistryConstants.PATH_USER_SERVICES)

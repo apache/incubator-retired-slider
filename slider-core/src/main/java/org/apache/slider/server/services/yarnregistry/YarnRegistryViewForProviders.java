@@ -20,7 +20,7 @@ package org.apache.slider.server.services.yarnregistry;
 
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.registry.client.api.RegistryOperations;
-import org.apache.hadoop.yarn.registry.client.binding.RegistryOperationUtils;
+import org.apache.hadoop.yarn.registry.client.binding.RegistryUtils;
 import org.apache.hadoop.yarn.registry.client.binding.RegistryPathUtils;
 
 import org.apache.hadoop.yarn.registry.client.api.CreateFlags;
@@ -104,7 +104,7 @@ public class YarnRegistryViewForProviders {
       String serviceName,
       String componentName,
       ServiceRecord record) throws IOException {
-    String path = RegistryOperationUtils.componentPath(
+    String path = RegistryUtils.componentPath(
         user, serviceClass, serviceName, componentName);
     registryOperations.mknode(RegistryPathUtils.parentOf(path), true);
     registryOperations.create(path, record, CreateFlags.OVERWRITE);
@@ -122,7 +122,7 @@ public class YarnRegistryViewForProviders {
       String serviceClass,
       String serviceName,
       ServiceRecord record) throws IOException {
-    String path = RegistryOperationUtils.servicePath(
+    String path = RegistryUtils.servicePath(
         username, serviceClass, serviceName);
     registryOperations.mknode(RegistryPathUtils.parentOf(path), true);
     registryOperations.create(path, record, CreateFlags.OVERWRITE);
@@ -139,14 +139,14 @@ public class YarnRegistryViewForProviders {
       String serviceClass,
       String serviceName,
       ServiceRecord record) throws IOException {
-    String path = RegistryOperationUtils.servicePath(
+    String path = RegistryUtils.servicePath(
         user, serviceClass, serviceName);
     registryOperations.mknode(RegistryPathUtils.parentOf(path), true);
     registryOperations.create(path, record, CreateFlags.OVERWRITE);
   }
 
   public void rmComponent(String componentName) throws IOException {
-    String path = RegistryOperationUtils.componentPath(
+    String path = RegistryUtils.componentPath(
         user, sliderServiceclass, instanceName,
         componentName);
     registryOperations.delete(path, false);

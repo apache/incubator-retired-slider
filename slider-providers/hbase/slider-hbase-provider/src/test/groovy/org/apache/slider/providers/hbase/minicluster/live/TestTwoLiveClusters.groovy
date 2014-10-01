@@ -21,7 +21,7 @@ package org.apache.slider.providers.hbase.minicluster.live
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.registry.client.api.RegistryOperations
-import org.apache.hadoop.yarn.registry.client.binding.RegistryOperationUtils
+import org.apache.hadoop.yarn.registry.client.binding.RegistryUtils
 import org.apache.hadoop.yarn.registry.client.binding.RegistryPathUtils
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord
 import org.apache.slider.common.SliderKeys
@@ -86,19 +86,17 @@ class TestTwoLiveClusters extends HBaseMiniClusterTestBase {
     // registry instances    def names = client.listRegistryNames(clustername)
     describe "service registry names"
     RegistryOperations registry = cluster2Client.registryOperations
-    def home = RegistryOperationUtils.homePathForCurrentUser()
+    def home = RegistryUtils.homePathForCurrentUser()
 
-    def userSliderInstancesPath = RegistryOperationUtils.serviceclassPath(
-        RegistryOperationUtils.currentUser(), SliderKeys.APP_TYPE)
+    def userSliderInstancesPath = RegistryUtils.serviceclassPath(
+        RegistryUtils.currentUser(), SliderKeys.APP_TYPE)
     
    
-    def names = RegistryOperationUtils.listServiceRecords(registry,
+    def names = RegistryUtils.listServiceRecords(registry,
         userSliderInstancesPath)
     dumpMap(names)
-    
-    def stats = registry.listFull(userSliderInstancesPath)
-    
-    dumpCollection(stats)
+    def statMap = RegistryUtils.statChildren(registry, userSliderInstancesPath)
+    assert statMap.size() == 2
     List<String> instanceIds = sliderClient.listRegisteredSliderInstances()
 
     dumpRegistryInstanceIDs(instanceIds)
@@ -112,11 +110,11 @@ class TestTwoLiveClusters extends HBaseMiniClusterTestBase {
     assert instances.size() == 2
 
 
-    def hbaseServicePath = RegistryOperationUtils.serviceclassPath(
-        RegistryOperationUtils.currentUser(),
+    def hbaseServicePath = RegistryUtils.serviceclassPath(
+        RegistryUtils.currentUser(),
         HBaseKeys.HBASE_SERVICE_TYPE)
     Map<String, ServiceRecord> hbaseInstances =
-        RegistryOperationUtils.listServiceRecords(registry,
+        RegistryUtils.listServiceRecords(registry,
             hbaseServicePath);
         
     assert hbaseInstances.size() == 2

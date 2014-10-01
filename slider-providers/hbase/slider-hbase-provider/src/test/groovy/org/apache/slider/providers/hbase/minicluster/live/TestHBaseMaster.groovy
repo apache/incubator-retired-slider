@@ -20,7 +20,7 @@ package org.apache.slider.providers.hbase.minicluster.live
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.hadoop.yarn.registry.client.binding.RegistryOperationUtils
+import org.apache.hadoop.yarn.registry.client.binding.RegistryUtils
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.api.ClusterDescription
@@ -76,10 +76,10 @@ class TestHBaseMaster extends HBaseMiniClusterTestBase {
     
     // look up the registry entries for HBase 
     describe "service registry names"
-    Map<String, ServiceRecord> records = RegistryOperationUtils.listServiceRecords(
+    Map<String, ServiceRecord> records = RegistryUtils.listServiceRecords(
         client.registryOperations,
-        RegistryOperationUtils.serviceclassPath(
-            RegistryOperationUtils.homePathForCurrentUser(),
+        RegistryUtils.serviceclassPath(
+            RegistryUtils.homePathForCurrentUser(),
             HBaseKeys.HBASE_SERVICE_TYPE
         )
     )

@@ -41,9 +41,9 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.registry.client.api.RegistryConstants;
 import org.apache.hadoop.yarn.registry.client.api.RegistryOperations;
-import static org.apache.hadoop.yarn.registry.client.binding.RegistryOperationUtils.*;
+import static org.apache.hadoop.yarn.registry.client.binding.RegistryUtils.*;
 
-import org.apache.hadoop.yarn.registry.client.binding.RegistryOperationUtils;
+import org.apache.hadoop.yarn.registry.client.binding.RegistryUtils;
 import org.apache.hadoop.yarn.registry.client.exceptions.NoRecordException;
 import org.apache.hadoop.yarn.registry.client.types.Endpoint;
 import org.apache.hadoop.yarn.registry.client.types.RegistryPathStatus;
@@ -1455,7 +1455,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
   public String getUsername() throws IOException {
-    return RegistryOperationUtils.currentUser();
+    return RegistryUtils.currentUser();
   }
 
   /**
