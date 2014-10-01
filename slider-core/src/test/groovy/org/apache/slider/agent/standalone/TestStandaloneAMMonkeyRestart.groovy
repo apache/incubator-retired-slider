@@ -59,13 +59,11 @@ class TestStandaloneAMMonkeyRestart extends AgentMiniClusterTestBase {
     ApplicationReport report
     report = waitForClusterLive(sliderClient, 30000)
     describe "Waiting for the cluster to fail"
-    sleep(40000)
-    // end of process
-    report = sliderClient.applicationReport
-    log.info(report.diagnostics)
-    assert report.currentApplicationAttemptId.attemptId == threshold
-    assert YarnApplicationState.FAILED == report.yarnApplicationState  
-    assert FinalApplicationStatus.FAILED == report.finalApplicationStatus
+    def finishedReport = waitForAppToFinish(sliderClient, 90000)
+    log.info(finishedReport.diagnostics)
+    assert finishedReport.currentApplicationAttemptId.attemptId == threshold
+    assert YarnApplicationState.FAILED == finishedReport.yarnApplicationState  
+    assert FinalApplicationStatus.FAILED == finishedReport.finalApplicationStatus
   }
 
   /**
