@@ -36,6 +36,8 @@ import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.hadoop.yarn.api.records.LocalResource;
+import org.apache.hadoop.yarn.api.records.NodeReport;
+import org.apache.hadoop.yarn.api.records.NodeState;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
@@ -60,6 +62,7 @@ import org.apache.slider.common.SliderExitCodes;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.params.AbstractActionArgs;
 import org.apache.slider.common.params.AbstractClusterBuildingActionArgs;
+import org.apache.slider.common.params.ActionDiagnosticArgs;
 import org.apache.slider.common.params.ActionInstallPackageArgs;
 import org.apache.slider.common.params.ActionAMSuicideArgs;
 import org.apache.slider.common.params.ActionCreateArgs;
@@ -123,9 +126,15 @@ import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
+import org.codehaus.jackson.map.DeserializationConfig;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
@@ -133,6 +142,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.net.InetSocketAddress;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -352,6 +362,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     } else if (ACTION_VERSION.equals(action)) {
 
       exitCode = actionVersion();
+    } else if (ACTION_DIAGNOSTIC.equals(action)) {
+        exitCode = actionDiagnostic(serviceArgs.getActionDiagnosticArgs());
     } else {
       throw new SliderException(EXIT_UNIMPLEMENTED,
           "Unimplemented: " + action);
@@ -360,7 +372,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     return exitCode;
   }
 
-  /**
+/**
    * Perform everything needed to init the hadoop binding.
    * This assumes that the service is already  in inited or started state
    * @throws IOException
@@ -803,7 +815,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     builder.init(providerName, instanceDefinition);
     builder.propagateFilename();
     builder.propagatePrincipals();
-    builder.setImageDetailsIfAvailable(buildInfo.getImage(), buildInfo.getAppHomeDir());
+    builder.setImageDetailsIfAvailable(buildInfo.getImage(),
+                                       buildInfo.getAppHomeDir());
     builder.setQueue(buildInfo.queue);
 
     String quorum = buildInfo.getZKhosts();
@@ -860,12 +873,19 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       throw e;
     }
     try {
-      builder.persist(appconfdir, overwrite);
+      persistInstanceDefinition(overwrite, appconfdir, builder);
     } catch (LockAcquireFailedException e) {
       log.warn("Failed to get a Lock on {} : {}", builder, e);
       throw new BadClusterStateException("Failed to save " + clustername
                                          + ": " + e);
     }
+  }
+
+  protected void persistInstanceDefinition(boolean overwrite,
+                                         Path appconfdir,
+                                         InstanceBuilder builder)
+      throws IOException, SliderException, LockAcquireFailedException {
+    builder.persist(appconfdir, overwrite);
   }
 
   @VisibleForTesting
@@ -2446,6 +2466,269 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     return serviceRecords;
   }
 
+	/**
+	 * diagnostic operation
+	 *
+	 * @param clusterName
+	 *            application name
+	 * @param diagosticArgs
+	 *            diagnostic Arguments
+	 * @return 0 for success, -1 for some issues that aren't errors, just
+	 *         failures to retrieve information (e.g. no application name
+	 *         specified)
+	 * @throws YarnException
+	 *             YARN problems
+	 * @throws IOException
+	 *             Network or other problems
+	 */
+	private int actionDiagnostic(ActionDiagnosticArgs diagnosticArgs) {
+		try {
+			if (diagnosticArgs.client) {
+				actionDiagnosticClient();
+			} else if (SliderUtils.isSet(diagnosticArgs.application)) {
+				actionDiagnosticApplication(diagnosticArgs);
+			} else if (SliderUtils.isSet(diagnosticArgs.slider)) {
+				actionDiagnosticSlider(diagnosticArgs);
+			} else if (diagnosticArgs.yarn) {
+				actionDiagnosticYarn(diagnosticArgs);
+			} else if (diagnosticArgs.credentials) {
+				actionDiagnosticCredentials();
+			} else if (SliderUtils.isSet(diagnosticArgs.all)) {
+				actionDiagnosticAll(diagnosticArgs);
+			} else if (SliderUtils.isSet(diagnosticArgs.level)) {
+				actionDiagnosticIntelligent(diagnosticArgs);
+			} else {
+				// it's an unknown command
+		        log.info(ActionDiagnosticArgs.USAGE);
+		        return EXIT_USAGE;
+			}
+		} catch (Exception e) {
+			log.error(e.toString());
+			return EXIT_FALSE;
+		}
+		return EXIT_SUCCESS;
+	}
+
+	private void actionDiagnosticIntelligent(ActionDiagnosticArgs diagnosticArgs)
+			throws YarnException, IOException, URISyntaxException {
+		// not using member variable clustername because we want to place
+		// application name after --application option and member variable
+		// cluster name has to be put behind action
+		String clusterName = diagnosticArgs.level;
+
+		try {
+			SliderUtils.validateClientConfigFile();
+			log.info("Slider-client.xml is accessible");
+		} catch (IOException e) {
+			// we are catching exceptions here because those are indication of
+			// validation result, and we need to print them here
+			log.error("validation of slider-client.xml fails because: "
+					+ e.toString());
+			return;
+		}
+		SliderClusterOperations clusterOperations = createClusterOperations(clusterName);
+		// cluster not found exceptions will be thrown upstream
+		ClusterDescription clusterDescription = clusterOperations
+				.getClusterDescription();
+		log.info("Slider AppMaster is accessible");
+		
+		if (clusterDescription.state == ClusterDescription.STATE_LIVE) {
+			AggregateConf instanceDefinition = clusterOperations
+					.getInstanceDefinition();
+			String imagePath = instanceDefinition.getInternalOperations().get(
+					InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH);
+			//if null, that means slider uploaded the agent tarball for the user
+			//and we need to use where slider has put
+			if(imagePath == null){
+				ApplicationReport appReport = findInstance(clusterName);
+				Path path1 = sliderFileSystem.getTempPathForCluster(clusterName);
+				Path subPath = new Path(path1, appReport.getApplicationId().toString() + "/am");
+				imagePath = subPath.toString();
+			}
+			try {
+				SliderUtils.validateHDFSFile(sliderFileSystem, imagePath);
+				log.info("Slider agent tarball is properly installed");
+			} catch (IOException e) {
+				log.error("can not find or open agent tar ball: " + e.toString());
+				return;
+			}
+			String pkgTarballPath = instanceDefinition.getAppConfOperations()
+					.getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
+			try {
+				SliderUtils.validateHDFSFile(sliderFileSystem, pkgTarballPath);
+				log.info("Application tarball is properly installed");
+			} catch (IOException e) {
+				log.error("can not find or open application tar ball: "
+						+ e.toString());
+				return;
+			}
+		}
+	}
+
+	private void actionDiagnosticAll(ActionDiagnosticArgs diagnosticArgs)
+			throws IOException, YarnException {
+		//assign application name from param to each sub diagnostic function
+		diagnosticArgs.application = diagnosticArgs.all;
+		diagnosticArgs.slider = diagnosticArgs.all;
+		actionDiagnosticClient();
+		actionDiagnosticApplication(diagnosticArgs);
+		actionDiagnosticSlider(diagnosticArgs);
+		actionDiagnosticYarn(diagnosticArgs);
+		actionDiagnosticCredentials();
+	}
+
+	private void actionDiagnosticCredentials() throws BadConfigException, IOException
+			 {
+		if (SliderUtils.isHadoopClusterSecure(SliderUtils
+				.loadClientConfigurationResource())) {
+			String credentialCacheFileDescription = null;
+			try {
+				credentialCacheFileDescription = SliderUtils
+						.checkCredentialCacheFile();
+			} catch (BadConfigException e) {
+				log.error("The credential config is not valid: " + e.toString());
+				throw e;
+			} catch (IOException e) {
+				log.error("Unable to read the credential file: " + e.toString());
+				throw e;
+			}
+			log.info("Credential cache file for the current user: "
+					+ credentialCacheFileDescription);
+		} else {
+			log.info("the cluster is not in secure mode");
+		}
+	}
+
+	private void actionDiagnosticYarn(ActionDiagnosticArgs diagnosticArgs) throws IOException, YarnException {
+		JSONObject converter = null;
+		log.info("the node in the YARN cluster has below state: ");
+		List<NodeReport> yarnClusterInfo;
+		try {
+			yarnClusterInfo = yarnClient.getNodeReports(NodeState.RUNNING);
+		} catch (YarnException e1) {
+			log.error("Exception happened when fetching node report from the YARN cluster: " + e1.toString());
+			throw e1;
+		} catch (IOException e1) {
+			log.error("Network problem happened when fetching node report YARN cluster: " + e1.toString());
+			throw e1;
+		}
+		for(NodeReport nodeReport : yarnClusterInfo){
+			log.info(nodeReport.toString());
+		}
+		
+		if (diagnosticArgs.verbose) {
+			Writer configWriter = new StringWriter();
+			try {
+				Configuration.dumpConfiguration(yarnClient.getConfig(), configWriter);
+			} catch (IOException e1) {
+				log.error("Network problem happened when retrieving YARN config from YARN: " + e1.toString());
+				throw e1;
+			}
+			try {
+				converter = new JSONObject(configWriter.toString());
+				log.info("the configuration of the YARN cluster is: "
+						+ converter.toString(2));
+				
+			} catch (JSONException e) {
+				log.error("JSONException happened during parsing response from YARN: " + e.toString());
+			}
+		}
+	}
+
+	private void actionDiagnosticSlider(ActionDiagnosticArgs diagnosticArgs) throws YarnException, IOException
+			{
+		// not using member variable clustername because we want to place
+		// application name after --application option and member variable
+		// cluster name has to be put behind action
+		String clusterName = diagnosticArgs.slider;
+		SliderClusterOperations clusterOperations;
+		AggregateConf instanceDefinition = null;
+		try {
+			clusterOperations = createClusterOperations(clusterName);
+			instanceDefinition = clusterOperations
+					.getInstanceDefinition();
+		} catch (YarnException e) {
+			log.error("Exception happened when retrieving instance definition from YARN: " + e.toString());
+			throw e;
+		} catch (IOException e) {
+			log.error("Network problem happened when retrieving instance definition from YARN: " + e.toString());
+			throw e;
+		}
+		String imagePath = instanceDefinition.getInternalOperations().get(
+				InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH);
+		//if null, it will be uploaded by Slider and thus at slider's path
+		if(imagePath == null){
+			ApplicationReport appReport = findInstance(clusterName);
+			Path path1 = sliderFileSystem.getTempPathForCluster(clusterName);
+			Path subPath = new Path(path1, appReport.getApplicationId().toString() + "/am");
+			imagePath = subPath.toString();
+		}
+		log.info("The path of slider agent tarball on HDFS is: " + imagePath);
+	}
+
+	private void actionDiagnosticApplication(ActionDiagnosticArgs diagnosticArgs) throws YarnException, IOException
+			{
+		// not using member variable clustername because we want to place
+		// application name after --application option and member variable
+		// cluster name has to be put behind action
+		String clusterName = diagnosticArgs.application;
+		SliderClusterOperations clusterOperations;
+		AggregateConf instanceDefinition = null;
+		try {
+			clusterOperations = createClusterOperations(clusterName);
+			instanceDefinition = clusterOperations
+					.getInstanceDefinition();
+		} catch (YarnException e) {
+			log.error("Exception happened when retrieving instance definition from YARN: " + e.toString());
+			throw e;
+		} catch (IOException e) {
+			log.error("Network problem happened when retrieving instance definition from YARN: " + e.toString());
+			throw e;
+		}
+		String clusterDir = instanceDefinition.getAppConfOperations()
+				.getGlobalOptions().get(AgentKeys.APP_ROOT);
+		String pkgTarball = instanceDefinition.getAppConfOperations()
+				.getGlobalOptions().get(AgentKeys.APP_DEF);
+		String runAsUser = instanceDefinition.getAppConfOperations()
+				.getGlobalOptions().get(AgentKeys.RUNAS_USER);
+
+		log.info("The location of the cluster instance directory in HDFS is: "
+				+ clusterDir);
+		log.info("The name of the application package tarball on HDFS is: "
+				+ pkgTarball);
+		log.info("The runas user of the application in the cluster is: "
+				+ runAsUser);
+
+		if (diagnosticArgs.verbose) {
+			log.info("App config of the application: "
+					+ instanceDefinition.getAppConf().toJson());
+			log.info("Resource config of the application: "
+					+ instanceDefinition.getResources().toJson());
+		}
+	}
+
+	private void actionDiagnosticClient() throws SliderException, IOException {
+		String currentCommandPath = SliderUtils.getCurrentCommandPath();
+		SliderVersionInfo.loadAndPrintVersionInfo(log);
+		String clientConfigPath = SliderUtils.getClientConfigPath();
+		String jdkInfo = SliderUtils.getJDKInfo();
+		log.info("The slider command path: " + currentCommandPath);
+		log.info("The slider-client.xml used by current running command path: "
+				+ clientConfigPath);
+		log.info(jdkInfo);
+
+		try {
+			SliderUtils.validateSliderClientEnvironment(log);
+		} catch (SliderException e) {
+			log.error(e.toString());
+			throw e;
+		} catch (IOException e) {
+			log.error(e.toString());
+			throw e;
+		}
+	}
+
+
   /**
    * Log a service record instance
    * @param instance record
@@ -2673,3 +2956,5 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     System.out.append(src);
   }
 }
+
+

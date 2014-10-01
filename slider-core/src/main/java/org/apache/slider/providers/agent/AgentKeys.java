@@ -60,6 +60,11 @@ public interface AgentKeys {
    * Execution home for the agent.
    */
   String APP_HOME = "app.home";
+  String APP_ROOT = "site.global.app_root";
+  /**
+   * Runas user of the application
+   */
+  String RUNAS_USER = "site.global.app_user";
   /**
    * Name of the service.
    */

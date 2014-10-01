@@ -64,6 +64,7 @@ import static Arguments.ARG_OPTION
 @Slf4j
 @CompileStatic
 class SliderTestUtils extends Assert {
+  static String sliderClientClassName = SliderClient.class.name
 
   public static void describe(String s) {
     log.info("");
@@ -478,7 +479,7 @@ class SliderTestUtils extends Assert {
       Configuration conf,
       List args) {
     ServiceLauncher<SliderClient> serviceLauncher =
-        new ServiceLauncher<SliderClient>(SliderClient.name);
+        new ServiceLauncher<SliderClient>(sliderClientClassName);
 
     log.debug("slider ${SliderUtils.join(args, " ", false)}")
     serviceLauncher.launchService(conf,

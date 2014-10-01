@@ -19,6 +19,7 @@
 package org.apache.slider.common.tools;
 
 import com.google.common.base.Preconditions;
+
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.io.output.ByteArrayOutputStream;
@@ -44,6 +45,7 @@ import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.apache.slider.Slider;
 import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.RoleKeys;
 import org.apache.slider.common.SliderKeys;
@@ -76,6 +78,8 @@ import java.io.StringWriter;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -1780,4 +1784,108 @@ public final class SliderUtils {
     execCommand(OPENSSL, 0, 5000, logger, "OpenSSL", OPENSSL, "version");
     execCommand(PYTHON, 0, 5000, logger, "Python", PYTHON, "--version");
   }
+
+	/**
+	 * return the path to the currently running slider command
+	 * 
+	 * @throws NullPointerException
+	 *             - If the pathname argument is null
+	 * @throws SecurityException
+	 *             - if a security manager exists and its checkPermission method
+	 *             doesn't allow getting the ProtectionDomain
+	 */
+	public static String getCurrentCommandPath() {
+		File f = new File(Slider.class.getProtectionDomain().getCodeSource()
+				.getLocation().getPath());
+		return f.getAbsolutePath();
+	}
+
+	/**
+	 * return the path to the slider-client.xml used by the current running
+	 * slider command
+	 * 
+	 * @throws SecurityException
+	 *             - if a security manager exists and its checkPermission method
+	 *             denies access to the class loader for the class
+	 */
+	public static String getClientConfigPath() {
+		URL path = ConfigHelper.class.getClassLoader().getResource(
+				SliderKeys.CLIENT_RESOURCE);
+		return path.toString();
+	}
+
+	/**
+	 * validate if slider-client.xml under the path can be opened
+	 * 
+	 * @throws IOException
+	 *             : the file can't be found or open
+	 */
+	public static void validateClientConfigFile() throws IOException {
+		URL resURL = SliderVersionInfo.class.getClassLoader().getResource(
+				SliderKeys.CLIENT_RESOURCE);
+		if (resURL == null) {
+			throw new IOException(
+					"slider-client.xml doesn't exist on the path: "
+							+ getClientConfigPath());
+		}
+
+		try {
+			InputStream inStream = resURL.openStream();
+			if (inStream == null) {
+				throw new IOException("slider-client.xml can't be opened");
+			}
+		} catch (IOException e) {
+			throw new IOException("slider-client.xml can't be opened: "
+					+ e.toString());
+		}
+	}
+
+	/**
+	 * validate if a file on HDFS can be open
+	 * 
+	 * @throws IOException
+	 *             : the file can't be found or open
+	 * @throws URISyntaxException
+	 */
+	public static void validateHDFSFile(SliderFileSystem sliderFileSystem, String pathStr) throws IOException, URISyntaxException{
+	  URI pathURI = new URI(pathStr);
+	  InputStream inputStream = sliderFileSystem.getFileSystem().open(new Path(pathURI));
+	  if(inputStream == null){
+		  throw new IOException("HDFS file " + pathStr + " can't be opened");
+	  }
+  }
+
+	/**
+	 * return the version and path of the JDK invoking the current running
+	 * slider command
+	 * 
+	 * @throws SecurityException
+	 *             - if a security manager exists and its checkPropertyAccess
+	 *             method doesn't allow access to the specified system property.
+	 */
+	public static String getJDKInfo() {
+		String version = System.getProperty("java.version");
+		String javaHome = System.getProperty("java.home");
+		return "The version of the JDK invoking the current running slider command: "
+				+ version + "; The path to it is: " + javaHome;
+	}
+
+	/**
+	 * return a description of whether the current user has created credential
+	 * cache files from kerberos servers
+	 * 
+	 * @throws IOException
+	 * @throws BadConfigException
+	 * @throws SecurityException
+	 *             - if a security manager exists and its checkPropertyAccess
+	 *             method doesn't allow access to the specified system property.
+	 */
+	public static String checkCredentialCacheFile() throws IOException,
+			BadConfigException {
+		String result = null;
+		if (!Shell.WINDOWS) {
+			result = Shell.execCommand("klist");
+		}
+		return result;
+	}
 }
