@@ -450,7 +450,7 @@ public class AgentProviderService extends AbstractProviderService implements
       }
 
       Map<String, String> folders = registration.getLogFolders();
-      if (folders != null && folders.size() > 0) {
+      if (folders != null && !folders.isEmpty()) {
         publishLogFolderPaths(folders, containerId, roleName, hostFqdn);
       }
     } else {
@@ -465,9 +465,9 @@ public class AgentProviderService extends AbstractProviderService implements
   /**
    * Handle heartbeat response from agents
    *
-   * @param heartBeat
+   * @param heartBeat incoming heartbeat from Agent
    *
-   * @return
+   * @return response to send back
    */
   @Override
   public HeartBeatResponse handleHeartBeat(HeartBeat heartBeat) {
