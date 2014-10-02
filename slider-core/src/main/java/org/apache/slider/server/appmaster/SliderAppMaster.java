@@ -409,7 +409,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     SliderUtils.validateSliderServerEnvironment(log);
 
     executorService = new WorkflowExecutorService<ExecutorService>("AmExecutor",
-        Executors.newCachedThreadPool(
+        Executors.newFixedThreadPool(2, 
         new ServiceThreadFactory("AmExecutor", true)));
     addService(executorService);
 
