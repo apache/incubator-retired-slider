@@ -197,7 +197,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
   public static final int HEARTBEAT_INTERVAL = 1000;
   public static final int NUM_RPC_HANDLERS = 5;
-  public static final int SCHEDULED_EXECUTOR_POOL_SIZE = 1;
 
   /**
    * Singleton of metrics registry
@@ -212,7 +211,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private AMRMClientAsync asyncRMClient;
 
   @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
-
   private RMOperationHandler rmOperationHandler;
   
   private RMOperationHandler providerRMOperationHandler;
@@ -411,10 +409,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     SliderUtils.validateSliderServerEnvironment(log);
 
     executorService = new WorkflowExecutorService<ExecutorService>("AmExecutor",
-        Executors.newCachedThreadPool(
+        Executors.newSingleThreadExecutor(
         new ServiceThreadFactory("AmExecutor", true)));
     addService(executorService);
-
 
     addService(actionQueues);
     //init all child services
