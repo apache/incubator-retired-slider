@@ -68,6 +68,8 @@ public class QueueExecutor implements Runnable {
         log.debug("Executing {}", take);
         
         take.execute(appMaster, actionQueues, appState);
+        log.debug("Completed {}", take);
+
       } while (!(take instanceof ActionStopQueue));
       log.info("Queue Executor run() stopped");
     } catch (Exception e) {

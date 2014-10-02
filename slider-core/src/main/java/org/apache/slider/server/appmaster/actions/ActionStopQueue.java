@@ -20,6 +20,8 @@ package org.apache.slider.server.appmaster.actions;
 
 import org.apache.slider.server.appmaster.SliderAppMaster;
 import org.apache.slider.server.appmaster.state.AppState;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
 
@@ -27,7 +29,9 @@ import java.util.concurrent.TimeUnit;
  * Action to tell a queue executor to stop -after handing this on/executing it
  */
 public class ActionStopQueue extends AsyncAction {
-
+  private static final Logger log =
+      LoggerFactory.getLogger(ActionStopQueue.class);
+  
   public ActionStopQueue(long delay) {
     super("stop queue", delay);
   }
@@ -47,6 +51,6 @@ public class ActionStopQueue extends AsyncAction {
   public void execute(SliderAppMaster appMaster,
       QueueAccess queueService,
       AppState appState) throws Exception {
-    // no-op
+    log.warn("STOP");
   }
 }

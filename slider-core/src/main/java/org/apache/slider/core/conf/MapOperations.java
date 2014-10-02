@@ -53,13 +53,23 @@ public class MapOperations implements Map<String, String> {
 
   /**
    * Create an instance
-   * @param name
-   * @param options
+   * @param name name
+   * @param options source of options
    */
   public MapOperations(String name, Map<String, String> options) {
-    assert options != null : "null map";
+    Preconditions.checkArgument(options != null, "null map");
     this.options = options;
     this.name = name;
+  }
+
+  /**
+   * Create an instance from an iterative map entry
+   * @param entry entry to work with
+   */
+  public MapOperations(Map.Entry<String, Map<String, String>> entry) {
+    Preconditions.checkArgument(entry != null, "null entry");
+    this.name = entry.getKey();
+    this.options = entry.getValue();
   }
 
   /**
