@@ -2053,29 +2053,24 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     AggregateConf instanceDefinition = loadInstanceDefinitionUnresolved(
       clustername,
       clusterDirectory);
-    SliderAMClientProvider sliderAM = new SliderAMClientProvider(getConfig());
-    // provider to validate what there is
-    SliderAMClientProvider provider = sliderAM;
-    validateInstanceDefinition(provider, instanceDefinition);
 
     ConfTreeOperations resources =
       instanceDefinition.getResourceOperations();
     for (Map.Entry<String, Integer> entry : roleInstances.entrySet()) {
       String role = entry.getKey();
       int count = entry.getValue();
-      if (count < 0) {
-        throw new BadCommandArgumentsException("Requested number of " + role
-            + " instances is out of range");
-      }
       resources.getOrAddComponent(role).put(ResourceKeys.COMPONENT_INSTANCES,
                                             Integer.toString(count));
-
 
       log.debug("Flexed cluster specification ( {} -> {}) : \n{}",
                 role,
                 count,
                 resources);
     }
+    SliderAMClientProvider sliderAM = new SliderAMClientProvider(getConfig());
+    // slider provider to validate what there is
+    validateInstanceDefinition(sliderAM, instanceDefinition);
+    
     int exitCode = EXIT_FALSE;
     // save the specification
     try {
@@ -2083,10 +2078,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     } catch (LockAcquireFailedException e) {
       // lock failure
       log.debug("Failed to lock dir {}", clusterDirectory, e);
-      log.warn("Failed to save new resource definition to {} : {}", clusterDirectory,
-               e.toString());
-      
-
+      log.warn("Failed to save new resource definition to {} : {}", clusterDirectory, e);
     }
 
     // now see if it is actually running and tell it about the update if it is
