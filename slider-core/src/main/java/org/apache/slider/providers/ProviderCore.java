@@ -31,6 +31,11 @@ public interface ProviderCore {
   
   Configuration getConf();
 
+  /**
+   * Verify that an instance definition is considered valid by the provider
+   * @param instanceDefinition instance definition
+   * @throws SliderException if the configuration is not valid
+   */
   void validateInstanceDefinition(AggregateConf instanceDefinition) throws
       SliderException;
 }

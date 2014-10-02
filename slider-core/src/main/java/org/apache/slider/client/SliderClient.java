@@ -842,17 +842,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // make any substitutions needed at this stage
     replaceTokens(appConf.getConfTree(), getUsername(), clustername);
 
-    // provider to validate what there is
-    try {
-      sliderAM.validateInstanceDefinition(builder.getInstanceDescription());
-      provider.validateInstanceDefinition(builder.getInstanceDescription());
-    } catch (SliderException e) {
-      //problem, reject it
-      log.info("Error {} validating application instance definition ", e.toString());
-      log.debug("Error validating application instance definition ", e);
-      log.info(instanceDefinition.toString());
-      throw e;
-    }
+    // providers to validate what there is
+    AggregateConf instanceDescription = builder.getInstanceDescription();
+    validateInstanceDefinition(sliderAM, instanceDescription);
+    validateInstanceDefinition(provider, instanceDescription);
     try {
       persistInstanceDefinition(overwrite, appconfdir, builder);
     } catch (LockAcquireFailedException e) {
@@ -2060,6 +2053,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     AggregateConf instanceDefinition = loadInstanceDefinitionUnresolved(
       clustername,
       clusterDirectory);
+    SliderAMClientProvider sliderAM = new SliderAMClientProvider(getConfig());
+    // provider to validate what there is
+    SliderAMClientProvider provider = sliderAM;
+    validateInstanceDefinition(provider, instanceDefinition);
 
     ConfTreeOperations resources =
       instanceDefinition.getResourceOperations();
@@ -2105,6 +2102,25 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       log.info("No running instance to update");
     }
     return exitCode;
+  }
+
+  /**
+   * Validate an instance definition against a provider.
+   * @param provider the provider performing the validation
+   * @param instanceDefinition the instance definition
+   * @throws SliderException if invalid.
+   */
+  protected void validateInstanceDefinition(AbstractClientProvider provider,
+      AggregateConf instanceDefinition) throws SliderException {
+    try {
+      provider.validateInstanceDefinition(instanceDefinition);
+    } catch (SliderException e) {
+      //problem, reject it
+      log.info("Error {} validating application instance definition ", e);
+      log.debug("Error validating application instance definition ", e);
+      log.info(instanceDefinition.toString());
+      throw e;
+    }
   }
 
 

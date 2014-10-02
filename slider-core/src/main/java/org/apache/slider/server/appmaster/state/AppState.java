@@ -640,9 +640,8 @@ public class AppState {
    * The resource configuration is updated -review and update state.
    * @param resources updated resources specification
    */
-  public synchronized void updateResourceDefinitions(ConfTree resources) throws
-                                                                         BadConfigException,
-                                                                         IOException {
+  public synchronized void updateResourceDefinitions(ConfTree resources)
+      throws BadConfigException, IOException {
     log.debug("Updating resources to {}", resources);
     
     instanceDefinition.setResources(resources);

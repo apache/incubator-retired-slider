@@ -65,14 +65,13 @@ class TestBuildStandaloneAM extends AgentMiniClusterTestBase {
 
     //but the cluster is still there for the default
     assert 0 == sliderClient.actionExists(clustername, false)
-    
-    
-    
+
+
     // verify the YARN registry doesn't know of it
     def serviceRegistryClient = sliderClient.YARNRegistryClient
     ApplicationReport report = serviceRegistryClient.findInstance(clustername)
     assert report == null;
-    
+
     // verify that global resource options propagate from the CLI
     def aggregateConf = sliderClient.loadPersistedClusterDescription(clustername)
     def windowDays = aggregateConf.resourceOperations.globalOptions.getMandatoryOptionInt(
@@ -94,13 +93,27 @@ class TestBuildStandaloneAM extends AgentMiniClusterTestBase {
       assertExceptionDetails(e, SliderExitCodes.EXIT_INSTANCE_EXISTS, "")
     }
 
-    
-    
     //start time
     ServiceLauncher<SliderClient> l2 = thawCluster(clustername, [], true)
     SliderClient thawed = l2.service
     addToTeardown(thawed);
     waitForClusterLive(thawed)
+
+    // in the same code (for speed), create an illegal cluster
+    try {
+      ServiceLauncher<SliderClient> cluster3 = createOrBuildCluster(
+          SliderActions.ACTION_BUILD,
+          "illegalcluster",
+          ["role1": -1],
+          [],
+          false,
+          false,
+          agentDefOptions)
+      fail("expected an exception, got $cluster3.service")
+    } catch (SliderException e) {
+      assertExceptionDetails(e, SliderExitCodes.EXIT_BAD_STATE, "role1")
+    } 
+
   }
 
   @Test
