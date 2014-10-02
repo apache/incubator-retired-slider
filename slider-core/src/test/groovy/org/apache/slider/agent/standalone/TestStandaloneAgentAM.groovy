@@ -44,7 +44,7 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
   @Test
   public void testStandaloneAgentAM() throws Throwable {
 
-    describe "create a masterless AM then get the service and look it up via the AM"
+    describe "create a masterless AM then perform actions on it"
 
     //launch fake master
     String clustername = createMiniCluster("", configuration, 1, true)

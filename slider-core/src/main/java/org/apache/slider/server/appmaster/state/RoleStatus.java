@@ -47,6 +47,23 @@ public final class RoleStatus implements Cloneable {
   private int desired, actual, requested, releasing;
   private volatile int failed, started, startFailed, completed, totalRequested;
 
+  /**
+   * value to use when specifiying "no limit" for instances: {@value}
+   */
+  public static final int UNLIMITED_INSTANCES = 1;
+
+  /**
+   * minimum number of instances of a role permitted in a valid
+   * configuration. Default: 0.
+   */
+  private int minimum = 0;
+
+  /**
+   * maximum number of instances of a role permitted in a valid
+   * configuration. Default: unlimited.
+   */
+  private int maximum = UNLIMITED_INSTANCES;
+  
   private String failureMessage = "";
 
   public RoleStatus(ProviderRole providerRole) {
@@ -208,6 +225,7 @@ public final class RoleStatus implements Cloneable {
     return totalRequested;
   }
 
+  
   /**
    * Get the number of roles we are short of.
    * nodes released are ignored.
@@ -233,6 +251,8 @@ public final class RoleStatus implements Cloneable {
     return "RoleStatus{" +
            "name='" + name + '\'' +
            ", key=" + key +
+           ", minimum=" + minimum +
+           ", maximum=" + maximum +
            ", desired=" + desired +
            ", actual=" + actual +
            ", requested=" + requested +

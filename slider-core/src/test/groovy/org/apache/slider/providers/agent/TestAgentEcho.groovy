@@ -23,6 +23,8 @@ import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.api.ResourceKeys
 import org.apache.slider.client.SliderClient
+import org.apache.slider.common.SliderExitCodes
+import org.apache.slider.core.exceptions.BadClusterStateException
 import org.apache.slider.core.main.ServiceLauncher
 import org.junit.Test
 
@@ -85,9 +87,23 @@ class TestAgentEcho extends AgentTestBase {
 
     waitForRoleCount(sliderClient, roles, AGENT_CLUSTER_STARTUP_TIME)
     //sleep a bit
-    sleep(20000)
+    sleep(5000)
     //expect the role count to be the same
     waitForRoleCount(sliderClient, roles, 1000)
+
+    // flex size
+    // while running, flex it with no changes
+    sliderClient.flex(clustername, [(role): 2]);
+    sleep(1000)
+    waitForRoleCount(sliderClient, roles, 1000)
+    
+    // flex to an illegal value
+    try {
+      sliderClient.flex(clustername, [(role): -1]);
+      fail("expected an exception")
+    } catch (BadClusterStateException e) {
+      assertExceptionDetails(e, SliderExitCodes.EXIT_BAD_STATE, "")
+    }
 
   }
 }
