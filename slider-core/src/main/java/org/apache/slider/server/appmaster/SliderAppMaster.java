@@ -409,7 +409,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     SliderUtils.validateSliderServerEnvironment(log);
 
     executorService = new WorkflowExecutorService<ExecutorService>("AmExecutor",
-        Executors.newSingleThreadExecutor(
+        Executors.newCachedThreadPool(
         new ServiceThreadFactory("AmExecutor", true)));
     addService(executorService);
 
@@ -1242,18 +1242,24 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * It should be the only way that anything -even the AM itself on startup-
    * asks for nodes. 
    * @param resources the resource tree
-   * @throws IOException
+   * @throws SliderException slider problems, including invalid configs
+   * @throws IOException IO problems
    */
   private void flexCluster(ConfTree resources)
-    throws IOException, SliderInternalStateException, BadConfigException {
+      throws IOException, SliderException {
+
+    AggregateConf newConf =
+        new AggregateConf(appState.getInstanceDefinitionSnapshot());
+    newConf.setResources(resources);
+    // verify the new definition is valid
+    sliderAMProvider.validateInstanceDefinition(newConf);
+    providerService.validateInstanceDefinition(newConf);
 
     appState.updateResourceDefinitions(resources);
 
     // reset the scheduled windows...the values
     // may have changed
     appState.resetFailureCounts();
-    
-
 
     // ask for more containers if needed
     reviewRequestAndReleaseNodes("flexCluster");
@@ -1416,11 +1422,23 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 /* SliderClusterProtocol */
 /* =================================================================== */
 
+  /**
+   * General actions to perform on a slider RPC call coming in
+   * @param operation operation to log
+   * @throws IOException problems
+   */
+  protected void onRpcCall(String operation) throws IOException {
+    // it's not clear why this is here —it has been present since the
+    // code -> git change. Leaving it in
+    SliderUtils.getCurrentUser();
+    log.debug("Received call to {}", operation);
+  }
+
   @Override //SliderClusterProtocol
   public Messages.StopClusterResponseProto stopCluster(Messages.StopClusterRequestProto request) throws
                                                                                                  IOException,
                                                                                                  YarnException {
-    SliderUtils.getCurrentUser();
+    onRpcCall("stopCluster()");
     String message = request.getMessage();
     log.info("SliderAppMasterApi.stopCluster: {}", message);
     schedule(new ActionStopSlider(message, 1000, TimeUnit.MILLISECONDS));
@@ -1431,8 +1449,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public Messages.FlexClusterResponseProto flexCluster(Messages.FlexClusterRequestProto request) throws
                                                                                                  IOException,
                                                                                                  YarnException {
-    SliderUtils.getCurrentUser();
-
+    onRpcCall("flexCluster()");
     String payload = request.getClusterSpec();
     ConfTreeSerDeser confTreeSerDeser = new ConfTreeSerDeser();
     ConfTree updatedResources = confTreeSerDeser.fromJson(payload);
@@ -1445,7 +1462,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     Messages.GetJSONClusterStatusRequestProto request) throws
                                                        IOException,
                                                        YarnException {
-    SliderUtils.getCurrentUser();
+    onRpcCall("getJSONClusterStatus()");
     String result;
     //quick update
     //query and json-ify
@@ -1457,14 +1474,13 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       .build();
   }
 
-
   @Override
   public Messages.GetInstanceDefinitionResponseProto getInstanceDefinition(
     Messages.GetInstanceDefinitionRequestProto request) throws
                                                         IOException,
                                                         YarnException {
 
-    log.info("Received call to getInstanceDefinition()");
+    onRpcCall("getInstanceDefinition()");
     String internal;
     String resources;
     String app;
@@ -1477,7 +1493,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     assert internal != null;
     assert resources != null;
     assert app != null;
-    log.info("Generating getInstanceDefinition Response");
+    log.debug("Generating getInstanceDefinition Response");
     Messages.GetInstanceDefinitionResponseProto.Builder builder =
       Messages.GetInstanceDefinitionResponseProto.newBuilder();
     builder.setInternal(internal);
@@ -1486,12 +1502,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     return builder.build();
   }
 
-
   @Override //SliderClusterProtocol
   public Messages.ListNodeUUIDsByRoleResponseProto listNodeUUIDsByRole(Messages.ListNodeUUIDsByRoleRequestProto request) throws
                                                                                                                          IOException,
                                                                                                                          YarnException {
-    SliderUtils.getCurrentUser();
+    onRpcCall("listNodeUUIDsByRole()");
     String role = request.getRole();
     Messages.ListNodeUUIDsByRoleResponseProto.Builder builder =
       Messages.ListNodeUUIDsByRoleResponseProto.newBuilder();
@@ -1506,7 +1521,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public Messages.GetNodeResponseProto getNode(Messages.GetNodeRequestProto request) throws
                                                                                      IOException,
                                                                                      YarnException {
-    SliderUtils.getCurrentUser();
+    onRpcCall("getNode()");
     RoleInstance instance = appState.getLiveInstanceByContainerID(
       request.getUuid());
     return Messages.GetNodeResponseProto.newBuilder()
@@ -1518,7 +1533,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public Messages.GetClusterNodesResponseProto getClusterNodes(Messages.GetClusterNodesRequestProto request) throws
                                                                                                              IOException,
                                                                                                              YarnException {
-    SliderUtils.getCurrentUser();
+    onRpcCall("getClusterNodes()");
     List<RoleInstance>
       clusterNodes = appState.getLiveInstancesByContainerIDs(
       request.getUuidList());
@@ -1536,6 +1551,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public Messages.EchoResponseProto echo(Messages.EchoRequestProto request) throws
                                                                             IOException,
                                                                             YarnException {
+    onRpcCall("echo()");
     Messages.EchoResponseProto.Builder builder =
       Messages.EchoResponseProto.newBuilder();
     String text = request.getText();
@@ -1550,6 +1566,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public Messages.KillContainerResponseProto killContainer(Messages.KillContainerRequestProto request) throws
                                                                                                        IOException,
                                                                                                        YarnException {
+    onRpcCall("killContainer()");
     String containerID = request.getId();
     log.info("Kill Container {}", containerID);
     //throws NoSuchNodeException if it is missing

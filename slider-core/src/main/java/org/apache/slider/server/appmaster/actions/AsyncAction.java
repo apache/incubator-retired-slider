@@ -93,7 +93,7 @@ public abstract class AsyncAction implements Delayed {
     final StringBuilder sb =
         new StringBuilder(super.toString());
     sb.append(" name='").append(name).append('\'');
-    sb.append(", nanos=").append(getNanos());
+    sb.append(", delay=").append(getDelay(TimeUnit.SECONDS));
     sb.append(", attrs=").append(attrs);
     sb.append(", sequenceNumber=").append(sequenceNumber);
     sb.append('}');
