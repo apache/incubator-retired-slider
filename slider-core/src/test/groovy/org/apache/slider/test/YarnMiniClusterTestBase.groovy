@@ -28,7 +28,6 @@ import org.apache.hadoop.fs.FileUtil
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.hdfs.MiniDFSCluster
 import org.apache.hadoop.service.ServiceOperations
-import org.apache.hadoop.util.Shell
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
@@ -651,12 +650,18 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     return resourceConfDir.absoluteFile.toURI().toString()
   }
 
-
+  /**
+   * Log an application report
+   * @param report
+   */
   public void logReport(ApplicationReport report) {
     log.info(SliderUtils.reportToString(report));
   }
 
-
+  /**
+   * Log a list of application reports
+   * @param apps
+   */
   public void logApplications(List<ApplicationReport> apps) {
     apps.each { ApplicationReport r -> logReport(r) }
   }
@@ -674,6 +679,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
    * force kill the application after waiting for
    * it to shut down cleanly
    * @param client client to talk to
+   * @return the final application report
    */
   public ApplicationReport waitForAppToFinish(SliderClient client) {
 
@@ -681,6 +687,13 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     return waitForAppToFinish(client, waitTime)
   }
 
+  /**
+   * force kill the application after waiting for
+   * it to shut down cleanly
+   * @param client client to talk to 
+   * @param waitTime time in milliseconds to wait
+   * @return the final application report
+   */
   public static ApplicationReport waitForAppToFinish(
       SliderClient client,
       int waitTime) {
@@ -697,6 +710,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
       }
       nodes.each { ClusterNode node -> log.info(node.toString())}
       client.forceKillApplication("timed out waiting for application to complete");
+      report = client.applicationReport
     }
     return report;
   }
@@ -709,11 +723,13 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
    * @return the exit code
    */
   public int clusterActionFreeze(SliderClient sliderClient, String clustername,
-                                 String message = "action stop") {
+                                String message = "action stop",
+                                boolean force = false) {
     log.info("Stopping cluster $clustername: $message")
     ActionFreezeArgs freezeArgs  = new ActionFreezeArgs();
     freezeArgs.waittime = CLUSTER_STOP_TIME
     freezeArgs.message = message
+    freezeArgs.force = force
     int exitCode = sliderClient.actionFreeze(clustername,
         freezeArgs);
     if (exitCode != 0) {

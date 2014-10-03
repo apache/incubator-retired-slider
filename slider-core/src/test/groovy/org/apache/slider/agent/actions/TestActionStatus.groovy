@@ -20,6 +20,7 @@ package org.apache.slider.agent.actions
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.yarn.api.records.FinalApplicationStatus
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.api.ClusterDescription
@@ -136,12 +137,13 @@ class TestActionStatus extends AgentMiniClusterTestBase {
         ]
     )
     assert statusLauncher.serviceExitCode == 0
-    tfile = new File(path)
     ClusterDescription cd2 = new ClusterDescription();
     cd2.fromJson(text)
     
     clusterActionFreeze(sliderClient, clustername, "stopping first cluster")
-    waitForAppToFinish(sliderClient)
+    def finishedAppReport = waitForAppToFinish(sliderClient)
+    assert finishedAppReport.finalApplicationStatus ==
+           FinalApplicationStatus.SUCCEEDED
 
     //now expect the status to fail
     try {
@@ -151,6 +153,7 @@ class TestActionStatus extends AgentMiniClusterTestBase {
       assertExceptionDetails(e, SliderExitCodes.EXIT_BAD_STATE,
           ErrorStrings.E_APPLICATION_NOT_RUNNING)
     }
+    
   }
 
 

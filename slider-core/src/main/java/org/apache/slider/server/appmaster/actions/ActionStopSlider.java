@@ -18,29 +18,115 @@
 
 package org.apache.slider.server.appmaster.actions;
 
-import org.apache.slider.core.main.LauncherExitCodes;
+import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
+import org.apache.slider.core.exceptions.TriggerClusterTeardownException;
 import org.apache.slider.server.appmaster.SliderAppMaster;
 import org.apache.slider.server.appmaster.state.AppState;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Trigger an AM exit. This is used to build the exit status message for YARN
+ */
 public class ActionStopSlider extends AsyncAction {
 
+  private int exitCode;
+  private FinalApplicationStatus finalApplicationStatus;
+  private String message;
+
+  /**
+   * Simple constructor
+   * @param name action name
+   */
+  public ActionStopSlider(String name) {
+    super(name);
+  }
+ 
+
+  /**
+   * Stop slider
+   * @param name action name
+   * @param delay execution delay
+   * @param timeUnit delay time unit
+   * @param exitCode process exit code
+   * @param finalApplicationStatus yarn status
+   * @param message message for AM
+   */
   public ActionStopSlider(String name,
       long delay,
-      TimeUnit timeUnit) {
+      TimeUnit timeUnit,
+      int exitCode,
+      FinalApplicationStatus finalApplicationStatus,
+      String message) {
     super(name, delay, timeUnit, ATTR_HALTS_APP);
+    this.exitCode = exitCode;
+    this.finalApplicationStatus = finalApplicationStatus;
+    this.message = message;
   }
 
+  /**
+   * Stop slider
+   * @param name action name
+   * @param exitCode process exit code
+   * @param finalApplicationStatus yarn status
+   * @param message message for AM
+   */
+  public ActionStopSlider(String name,
+      int exitCode,
+      FinalApplicationStatus finalApplicationStatus, String message) {
+    super(name);
+    this.exitCode = exitCode;
+    this.finalApplicationStatus = finalApplicationStatus;
+    this.message = message;
+  }
+
+  /**
+   * Simple constructor
+   * @param name action name
+   */
+  public ActionStopSlider(TriggerClusterTeardownException ex) {
+    this("stop",
+        ex.getExitCode(),
+        ex.getFinalApplicationStatus(),
+        ex.getMessage());
+  }
+  
   @Override
   public void execute(SliderAppMaster appMaster,
       QueueAccess queueService,
       AppState appState) throws Exception {
-    String message = name;
     SliderAppMaster.getLog().info("SliderAppMasterApi.stopCluster: {}",
         message);
-    appMaster.signalAMComplete(
-        LauncherExitCodes.EXIT_CLIENT_INITIATED_SHUTDOWN,
-        message);
+    appMaster.onAMStop(this);
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s:  exit code = %d, %s: %s;",
+        name, exitCode, finalApplicationStatus, message) ;
+  }
+
+  public int getExitCode() {
+    return exitCode;
+  }
+
+  public void setExitCode(int exitCode) {
+    this.exitCode = exitCode;
+  }
+
+  public FinalApplicationStatus getFinalApplicationStatus() {
+    return finalApplicationStatus;
+  }
+
+  public void setFinalApplicationStatus(FinalApplicationStatus finalApplicationStatus) {
+    this.finalApplicationStatus = finalApplicationStatus;
+  }
+
+  public String getMessage() {
+    return message;
+  }
+
+  public void setMessage(String message) {
+    this.message = message;
   }
 }

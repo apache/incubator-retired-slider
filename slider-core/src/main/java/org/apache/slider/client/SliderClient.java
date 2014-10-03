@@ -1545,7 +1545,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
   /**
-   * Kill the submitted application by sending a call to the ASM
+   * Kill the submitted application via YARN
    * @throws YarnException
    * @throws IOException
    */
@@ -1875,7 +1875,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     LaunchedApplication application = new LaunchedApplication(yarnClient, app);
     applicationId = application.getApplicationId();
     
-
     if (forcekill) {
       //escalating to forced kill
       application.kill("Forced stop of " + clustername +
@@ -2423,7 +2422,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 	 * @throws IOException
 	 *             Network or other problems
 	 */
-	private int actionDiagnostic(ActionDiagnosticArgs diagnosticArgs) {
+	public int actionDiagnostic(ActionDiagnosticArgs diagnosticArgs) {
 		try {
 			if (diagnosticArgs.client) {
 				actionDiagnosticClient();
@@ -2465,7 +2464,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 			// we are catching exceptions here because those are indication of
 			// validation result, and we need to print them here
 			log.error("validation of slider-client.xml fails because: "
-					+ e.toString());
+					+ e.toString(), e);
 			return;
 		}
 		SliderClusterOperations clusterOperations = createClusterOperations(clusterName);
@@ -2489,19 +2488,24 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 			}
 			try {
 				SliderUtils.validateHDFSFile(sliderFileSystem, imagePath);
-				log.info("Slider agent tarball is properly installed");
+				log.info("Slider agent package is properly installed");
+			} catch (FileNotFoundException e) {
+				log.error("can not find agent package: {}", e);
+				return;
 			} catch (IOException e) {
-				log.error("can not find or open agent tar ball: " + e.toString());
+				log.error("can not open agent package: {}", e, e);
 				return;
 			}
 			String pkgTarballPath = instanceDefinition.getAppConfOperations()
 					.getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
 			try {
 				SliderUtils.validateHDFSFile(sliderFileSystem, pkgTarballPath);
-				log.info("Application tarball is properly installed");
-			} catch (IOException e) {
-				log.error("can not find or open application tar ball: "
-						+ e.toString());
+				log.info("Application package is properly installed");
+      } catch (FileNotFoundException e) {
+        log.error("can not find application package: {}", e);
+        return;
+ 			} catch (IOException e) {
+				log.error("can not open application package: {} ", e);
 				return;
 			}
 		}

@@ -285,8 +285,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * Flag set during the init process
    */
   private final AtomicBoolean initCompleted = new AtomicBoolean(false);
-  
-  private volatile boolean success = true;
 
   /**
    * Flag to set if the process exit code was set before shutdown started
@@ -331,7 +329,12 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * limit container memory
    */
   private int containerMaxMemory;
-  private String amCompletionReason;
+
+  /**
+   * The stop request received...the exit details are extracted
+   * from this
+   */
+  private ActionStopSlider stopAction;
 
   @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private RoleLaunchService launchService;
@@ -409,8 +412,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     SliderUtils.validateSliderServerEnvironment(log);
 
     executorService = new WorkflowExecutorService<ExecutorService>("AmExecutor",
-        Executors.newFixedThreadPool(2, 
-        new ServiceThreadFactory("AmExecutor", true)));
+        Executors.newFixedThreadPool(2,
+            new ServiceThreadFactory("AmExecutor", true)));
     addService(executorService);
 
     addService(actionQueues);
@@ -421,6 +424,19 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   @Override
   protected void serviceStart() throws Exception {
     super.serviceStart();
+  }
+
+  @Override
+  protected void serviceStop() throws Exception {
+    super.serviceStop();
+
+    if (fsDelegationTokenManager != null) {
+      try {
+        fsDelegationTokenManager.cancelDelegationToken(getConfig());
+      } catch (Exception e) {
+        log.info("Error cancelling HDFS delegation token", e);
+      }
+    }
   }
 
   /**
@@ -810,22 +826,27 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // now do the registration
     registerServiceInstance(clustername, appid);
 
+    // log the YARN and web UIs
+    log.info("RM Webapp address {}", serviceConf.get(YarnConfiguration.RM_WEBAPP_ADDRESS));
+    log.info("slider Webapp address {}", appMasterTrackingUrl);
+    
     // declare the cluster initialized
     log.info("Application Master Initialization Completed");
     initCompleted.set(true);
 
-    // start handling any scheduled events
-    
-    startQueueProcessing();
-    // Start the Slider AM provider
-    
-    sliderAMProvider.start();
-
-    // launch the real provider; this is expected to trigger a callback that
-    // starts the node review process
-    launchProviderService(instanceDefinition, confDir);
 
     try {
+      // start handling any scheduled events
+
+      startQueueProcessing();
+      // Start the Slider AM provider
+
+      sliderAMProvider.start();
+
+      // launch the real provider; this is expected to trigger a callback that
+      // starts the node review process
+      launchProviderService(instanceDefinition, confDir);
+      
       //now block waiting to be told to exit the process
       waitForAMCompletionSignal();
       //shutdown time
@@ -1054,48 +1075,51 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   }
 
   /**
-   * Declare that the AM is complete
-   * @param exitCode exit code for the aM
-   * @param reason reason for termination
+   * Signal that the AM is complete .. queues it in a separate thread
+   *
+   * @param stopActionRequest request containing shutdown details
    */
-  public synchronized void signalAMComplete(int exitCode, String reason) {
-    amCompletionReason = reason;
+  public synchronized void signalAMComplete(ActionStopSlider stopActionRequest) {
+    // this is a queued action: schedule it through the queues
+    schedule(stopActionRequest);
+  }
+  /**
+   * Signal that the AM is complete
+   *
+   * @param stopActionRequest request containing shutdown details
+   */
+  public synchronized void onAMStop(ActionStopSlider stopActionRequest) {
+
     AMExecutionStateLock.lock();
     try {
-      amCompletionFlag.set(true);
-      amExitCode = exitCode;
-      isAMCompleted.signal();
+      if (amCompletionFlag.compareAndSet(false, true)) {
+        // first stop request received
+        this.stopAction = stopActionRequest;
+        isAMCompleted.signal();
+      }
     } finally {
       AMExecutionStateLock.unlock();
     }
   }
 
+  
   /**
-   * shut down the cluster 
+   * trigger the YARN cluster termination process
    */
   private synchronized void finish() {
     FinalApplicationStatus appStatus;
-    log.info("Triggering shutdown of the AM: {}", amCompletionReason);
+    log.info("Triggering shutdown of the AM: {}", stopAction);
 
-    String appMessage = amCompletionReason;
+    String appMessage = stopAction.getMessage();
     //stop the daemon & grab its exit code
-    int exitCode = amExitCode;
-    success = exitCode == 0 || exitCode == 3;
+    int exitCode = stopAction.getExitCode();
+    amExitCode = exitCode;
 
-    appStatus = success ? FinalApplicationStatus.SUCCEEDED:
-                FinalApplicationStatus.FAILED;
+    appStatus = stopAction.getFinalApplicationStatus();
     if (!spawnedProcessExitedBeforeShutdownTriggered) {
       //stopped the forked process but don't worry about its exit code
       exitCode = stopForkedProcess();
       log.debug("Stopped forked process: exit code={}", exitCode);
-    }
-
-    if (fsDelegationTokenManager != null) {
-      try {
-        fsDelegationTokenManager.cancelDelegationToken(getConfig());
-      } catch (Exception e) {
-        log.info("Error cancelling HDFS delegation token", e);
-      }
     }
 
     //stop any launches in progress
@@ -1108,17 +1132,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // signal to the RM
     log.info("Application completed. Signalling finish to RM");
 
-    //if there were failed containers and the app isn't already down as failing, it is now
-/*
-    int failedContainerCount = appState.getFailedCountainerCount();
-    if (failedContainerCount != 0 &&
-        appStatus == FinalApplicationStatus.SUCCEEDED) {
-      appStatus = FinalApplicationStatus.FAILED;
-      appMessage =
-        "Completed with exit code =  " + exitCode + " - " + getContainerDiagnosticInfo();
-      success = false;
-    }
-*/
     try {
       log.info("Unregistering AM status={} message={}", appStatus, appMessage);
       asyncRMClient.unregisterApplicationMaster(appStatus, appMessage, null);
@@ -1134,11 +1147,12 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
   }
 
-  /**
-   * Get diagnostics info about containers
-   */
+    /**
+     * Get diagnostics info about containers
+     */
   private String getContainerDiagnosticInfo() {
-   return appState.getContainerDiagnosticInfo();
+
+    return appState.getContainerDiagnosticInfo();
   }
 
   public Object getProxy(Class protocol, InetSocketAddress addr) {
@@ -1342,15 +1356,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       //now apply the operations
       executeRMOperations(allOperations);
     } catch (TriggerClusterTeardownException e) {
-
       //App state has decided that it is time to exit
-      log.error("Cluster teardown triggered %s", e);
-      signalAMComplete(e.getExitCode(), e.toString());
+      log.error("Cluster teardown triggered {}", e, e);
+      queue(new ActionStopSlider(e));
     }
   }
-  
-  
-  
   
   /**
    * Shutdown operation: release all containers
@@ -1366,7 +1376,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   @Override //AMRMClientAsync
   public void onShutdownRequest() {
     LOG_YARN.info("Shutdown Request received");
-    signalAMComplete(EXIT_CLIENT_INITIATED_SHUTDOWN, "Shutdown requested from RM");
+    signalAMComplete(new ActionStopSlider("stop",
+        EXIT_CLIENT_INITIATED_SHUTDOWN,
+        FinalApplicationStatus.SUCCEEDED,
+        "Shutdown requested from RM"));
   }
 
   /**
@@ -1392,8 +1405,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public void onError(Throwable e) {
     //callback says it's time to finish
     LOG_YARN.error("AMRMClientAsync.onError() received " + e, e);
-    signalAMComplete(EXIT_EXCEPTION_THROWN,
-        "AMRMClientAsync.onError() received " + e);
+    signalAMComplete(new ActionStopSlider("stop",
+        EXIT_EXCEPTION_THROWN,
+        FinalApplicationStatus.FAILED,
+        "AMRMClientAsync.onError() received " + e));
   }
   
 /* =================================================================== */
@@ -1440,8 +1455,14 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
                                                                                                  YarnException {
     onRpcCall("stopCluster()");
     String message = request.getMessage();
-    log.info("SliderAppMasterApi.stopCluster: {}", message);
-    schedule(new ActionStopSlider(message, 1000, TimeUnit.MILLISECONDS));
+    ActionStopSlider stopSlider =
+        new ActionStopSlider(message,
+            1000, TimeUnit.MILLISECONDS,
+            0,
+            FinalApplicationStatus.SUCCEEDED,
+            message);
+    log.info("SliderAppMasterApi.stopCluster: {}", stopSlider);
+    schedule(stopSlider);
     return Messages.StopClusterResponseProto.getDefaultInstance();
   }
 
@@ -1657,9 +1678,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       flexCluster(getInstanceDefinition().getResources());
     } catch (Exception e) {
       //this may happen in a separate thread, so the ability to act is limited
-      log.error("Failed to flex cluster nodes", e);
+      log.error("Failed to flex cluster nodes: {}", e, e);
       //declare a failure
-      finish();
+      queue(new ActionStopSlider("stop",
+          EXIT_DEPLOYMENT_FAILED, FinalApplicationStatus.FAILED,
+          "Failed to create application:" + e.toString()));
     }
   }
 
@@ -1698,12 +1721,19 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     if (service == providerService && service.isInState(STATE.STOPPED)) {
       //its the current master process in play
       int exitCode = providerService.getExitCode();
-      int mappedProcessExitCode =
-        AMUtils.mapProcessExitCodeToYarnExitCode(exitCode);
+      int mappedProcessExitCode = exitCode;
+
       boolean shouldTriggerFailure = !amCompletionFlag.get()
-         && (AMUtils.isMappedExitAFailure(mappedProcessExitCode));
-      
+         && (mappedProcessExitCode != 0);
+
       if (shouldTriggerFailure) {
+        String reason =
+            "Spawned master exited with raw " + exitCode + " mapped to " +
+            mappedProcessExitCode;
+        ActionStopSlider stop = new ActionStopSlider("stop",
+            mappedProcessExitCode,
+            FinalApplicationStatus.FAILED,
+            reason);
         //this wasn't expected: the process finished early
         spawnedProcessExitedBeforeShutdownTriggered = true;
         log.info(
@@ -1712,9 +1742,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
           mappedProcessExitCode);
 
         //tell the AM the cluster is complete 
-        signalAMComplete(mappedProcessExitCode,
-                         "Spawned master exited with raw " + exitCode + " mapped to " +
-          mappedProcessExitCode);
+        signalAMComplete(stop);
       } else {
         //we don't care
         log.info(
@@ -1860,11 +1888,20 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   public void onExceptionInThread(Thread thread, Exception exception) {
     log.error("Exception in {}: {}", thread.getName(), exception, exception);
-    int exitCode = EXIT_EXCEPTION_THROWN;
-    if (exception instanceof ExitCodeProvider) {
-      exitCode = ((ExitCodeProvider) exception).getExitCode();
+    
+    // if there is a teardown in progress, ignore it
+    if (amCompletionFlag.get()) {
+      log.info("Ignoring exception: shutdown in progress");
+    } else {
+      int exitCode = EXIT_EXCEPTION_THROWN;
+      if (exception instanceof ExitCodeProvider) {
+        exitCode = ((ExitCodeProvider) exception).getExitCode();
+      }
+      signalAMComplete(new ActionStopSlider("stop",
+          exitCode,
+          FinalApplicationStatus.FAILED,
+          exception.toString()));
     }
-    signalAMComplete(exitCode, exception.toString());
   }
 
   /**

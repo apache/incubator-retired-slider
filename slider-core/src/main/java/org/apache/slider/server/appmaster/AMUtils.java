@@ -40,8 +40,7 @@ public class AMUtils {
   }
 
   public static boolean isMappedExitAFailure(int mappedExitCode) {
-    return mappedExitCode!=LauncherExitCodes.EXIT_SUCCESS
-      && mappedExitCode!= LauncherExitCodes.EXIT_CLIENT_INITIATED_SHUTDOWN;
+    return mappedExitCode != 0;
   }
 
 }
