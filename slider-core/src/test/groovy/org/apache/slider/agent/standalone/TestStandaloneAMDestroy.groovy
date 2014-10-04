@@ -94,7 +94,6 @@ class TestStandaloneAMDestroy extends AgentMiniClusterTestBase {
 
     describe "END EXPECTED WARNINGS"
 
-
     describe "destroying $clustername"
     //now: destroy it
     
@@ -153,6 +152,8 @@ class TestStandaloneAMDestroy extends AgentMiniClusterTestBase {
     
     //and try to destroy a completely different cluster just for the fun of it
     assert 0 == sliderClient.actionDestroy("no-cluster-of-this-name")
+
+    maybeStopCluster(cluster2, "", "Teardown at end of test case", false);
   }
 
 

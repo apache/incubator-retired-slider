@@ -33,7 +33,7 @@ public class AMUtils {
         return LauncherExitCodes.EXIT_SUCCESS;
       //remap from a planned shutdown to a failure
       case LauncherExitCodes.EXIT_CLIENT_INITIATED_SHUTDOWN:
-        return SliderExitCodes.EXIT_PROCESS_FAILED;
+        return SliderExitCodes.EXIT_SUCCESS;
       default:
         return exitCode;
     }

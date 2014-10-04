@@ -77,6 +77,7 @@ public abstract class AbstractProviderService
 
   public AbstractProviderService(String name) {
     super(name);
+    setStopIfNoChildServicesAtStartup(false);
   }
 
   @Override
@@ -184,7 +185,25 @@ public abstract class AbstractProviderService
     }
     return false;
   }
-  
+
+  /**
+   * override point to allow a process to start executing in this container
+   * @param instanceDefinition cluster description
+   * @param confDir configuration directory
+   * @param env environment
+   * @param execInProgress the callback for the exec events
+   * @return false
+   * @throws IOException
+   * @throws SliderException
+   */
+  @Override
+  public boolean exec(AggregateConf instanceDefinition,
+      File confDir,
+      Map<String, String> env,
+      ProviderCompleted execInProgress) throws IOException, SliderException {
+    return false;
+  }
+
   @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
   @Override // ExitCodeProvider
   public int getExitCode() {

@@ -20,6 +20,8 @@ package org.apache.slider.server.appmaster.actions;
 
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.slider.core.exceptions.TriggerClusterTeardownException;
+import org.apache.slider.core.main.ExitCodeProvider;
+import org.apache.slider.core.main.LauncherExitCodes;
 import org.apache.slider.server.appmaster.SliderAppMaster;
 import org.apache.slider.server.appmaster.state.AppState;
 
@@ -89,6 +91,24 @@ public class ActionStopSlider extends AsyncAction {
         ex.getExitCode(),
         ex.getFinalApplicationStatus(),
         ex.getMessage());
+  }
+  
+  /**
+   * Build from an exception.
+   * <p>
+   * If the exception implements
+   * {@link ExitCodeProvider} then the exit code is extracted from that
+   * @param ex exception.
+   */
+  public ActionStopSlider(Exception ex) {
+    super("stop");
+    if (ex instanceof ExitCodeProvider) {
+      setExitCode(((ExitCodeProvider)ex).getExitCode());
+    } else {
+      setExitCode(LauncherExitCodes.EXIT_EXCEPTION_THROWN);
+    }
+    setFinalApplicationStatus(FinalApplicationStatus.FAILED);
+    setMessage(ex.getMessage());
   }
   
   @Override

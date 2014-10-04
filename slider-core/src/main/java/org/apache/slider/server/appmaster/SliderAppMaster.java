@@ -20,6 +20,7 @@ package org.apache.slider.server.appmaster;
 
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import com.google.protobuf.BlockingService;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
@@ -846,15 +847,14 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       // launch the real provider; this is expected to trigger a callback that
       // starts the node review process
       launchProviderService(instanceDefinition, confDir);
-      
+
       //now block waiting to be told to exit the process
       waitForAMCompletionSignal();
-      //shutdown time
-    } finally {
-      finish();
+    } catch(Exception e) {
+      stopAction = new ActionStopSlider(e);
     }
-
-    return amExitCode;
+    //shutdown time
+    return finish();
   }
 
   private void startAgentWebApp(MapOperations appInformation,
@@ -1064,14 +1064,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     } finally {
       AMExecutionStateLock.unlock();
     }
-    //add a sleep here for about a second. Why? it
-    //stops RPC calls breaking so dramatically when the cluster
-    //is torn down mid-RPC
-    try {
-      Thread.sleep(TERMINATION_SIGNAL_PROPAGATION_DELAY);
-    } catch (InterruptedException ignored) {
-      //ignored
-    }
   }
 
   /**
@@ -1083,6 +1075,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // this is a queued action: schedule it through the queues
     schedule(stopActionRequest);
   }
+
   /**
    * Signal that the AM is complete
    *
@@ -1105,8 +1098,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   
   /**
    * trigger the YARN cluster termination process
+   * @return the exit code
    */
-  private synchronized void finish() {
+  private synchronized int finish() {
+    Preconditions.checkNotNull(stopAction, "null stop action");
     FinalApplicationStatus appStatus;
     log.info("Triggering shutdown of the AM: {}", stopAction);
 
@@ -1145,6 +1140,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     } catch (YarnException e) {
       log.info("Failed to unregister application: " + e, e);
     }
+    return exitCode;
   }
 
     /**
@@ -1377,7 +1373,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public void onShutdownRequest() {
     LOG_YARN.info("Shutdown Request received");
     signalAMComplete(new ActionStopSlider("stop",
-        EXIT_CLIENT_INITIATED_SHUTDOWN,
+        EXIT_SUCCESS,
         FinalApplicationStatus.SUCCEEDED,
         "Shutdown requested from RM"));
   }
@@ -1627,7 +1623,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     return Messages.AMSuicideResponseProto.getDefaultInstance();
   }
 
-  /* =================================================================== */
+/* =================================================================== */
 /* END */
 /* =================================================================== */
 
@@ -1664,7 +1660,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
   }
 
-
   /* =================================================================== */
   /* EventCallback  from the child or ourselves directly */
   /* =================================================================== */
@@ -1680,9 +1675,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       //this may happen in a separate thread, so the ability to act is limited
       log.error("Failed to flex cluster nodes: {}", e, e);
       //declare a failure
-      queue(new ActionStopSlider("stop",
-          EXIT_DEPLOYMENT_FAILED, FinalApplicationStatus.FAILED,
-          "Failed to create application:" + e.toString()));
+      queue(new ActionStopSlider(e));
     }
   }
 
@@ -1728,7 +1721,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       if (shouldTriggerFailure) {
         String reason =
-            "Spawned master exited with raw " + exitCode + " mapped to " +
+            "Spawned process failed with raw " + exitCode + " mapped to " +
             mappedProcessExitCode;
         ActionStopSlider stop = new ActionStopSlider("stop",
             mappedProcessExitCode,
@@ -1916,6 +1909,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
             InternalKeys.DEFAULT_CHAOS_MONKEY_ENABLED);
     if (!enabled) {
       log.info("Chaos monkey disabled");
+      return false;
     }
     
     long monkeyInterval = internals.getTimeRange(

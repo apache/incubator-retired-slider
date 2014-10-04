@@ -193,8 +193,10 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     clustersToTeardown << client;
   }
   protected void addToTeardown(ServiceLauncher<SliderClient> launcher) {
-    SliderClient sliderClient = launcher.service
-    if (sliderClient) addToTeardown(sliderClient)
+    SliderClient sliderClient = launcher?.service
+    if (sliderClient) {
+      addToTeardown(sliderClient)
+    }
   }
 
 
@@ -208,7 +210,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
   public void stopRunningClusters() {
     clustersToTeardown.each { SliderClient client ->
       try {
-        maybeStopCluster(client, "", "Teardown at end of test case");
+        maybeStopCluster(client, "", "Teardown at end of test case", true);
       } catch (Exception e) {
         log.warn("While stopping cluster " + e, e);
       }
@@ -748,14 +750,15 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
   public int maybeStopCluster(
       SliderClient sliderClient,
       String clustername,
-      String message) {
+      String message,
+      boolean force = false) {
     if (sliderClient != null) {
       if (!clustername) {
         clustername = sliderClient.deployedClusterName;
       }
       //only stop a cluster that exists
       if (clustername) {
-        return clusterActionFreeze(sliderClient, clustername, message);
+        return clusterActionFreeze(sliderClient, clustername, message, force);
       }
     }
     return 0;
