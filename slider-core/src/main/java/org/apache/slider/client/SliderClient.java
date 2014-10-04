@@ -1285,7 +1285,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       amQueue = suppliedQueue;
       log.info("Using queue {} for the application instance.", amQueue);
     }
-    amLauncher.setQueue(amQueue);
+
+    if (amQueue != null) {
+      amLauncher.setQueue(amQueue);
+    }
 
     // Submit the application to the applications manager
     // SubmitApplicationResponse submitResp = applicationsManager.submitApplication(appRequest);

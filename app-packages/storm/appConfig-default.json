@@ -4,7 +4,7 @@
   },
   "global": {
     "application.def": ".slider/package/STORM/slider-storm-app-package-${pkg.version}.zip",
-    "java_home": "/usr/jdk64/jdk1.7.0_45",
+    "java_home": "/usr/jdk64/jdk1.7.0_67",
     "create.default.zookeeper.node": "true",
     "system_configs": "core-site",
 

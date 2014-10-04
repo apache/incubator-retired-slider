@@ -4,7 +4,7 @@
     },
     "global": {
         "application.def": ".slider/package/CMD_LOGGER/apache-slider-command-logger.zip",
-        "java_home": "/usr/jdk64/jdk1.7.0_45",
+        "java_home": "/usr/jdk64/jdk1.7.0_67",
         "site.global.app_user": "yarn",
         "site.global.application_id": "CommandLogger",
         "site.global.app_log_dir": "${AGENT_LOG_ROOT}/app/log",
