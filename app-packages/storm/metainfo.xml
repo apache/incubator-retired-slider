@@ -30,7 +30,7 @@
         <exports>
           <export>
             <name>org.apache.slider.jmx</name>
-            <value>http://${STORM_REST_API_HOST}:${site.global.rest_api_port}/api/cluster/summary</value>
+            <value>http://${STORM_UI_SERVER_HOST}:${site.storm-site.ui.port}/api/cluster/summary</value>
           </export>
           <export>
             <name>org.apache.slider.monitor</name>
@@ -55,8 +55,7 @@
     <commandOrders>
       <commandOrder>
         <command>NIMBUS-START</command>
-        <requires>SUPERVISOR-INSTALLED,STORM_UI_SERVER-INSTALLED,DRPC_SERVER-INSTALLED,STORM_REST_API-INSTALLED
-        </requires>
+        <requires>SUPERVISOR-INSTALLED,STORM_UI_SERVER-INSTALLED,DRPC_SERVER-INSTALLED</requires>
       </commandOrder>
       <commandOrder>
         <command>SUPERVISOR-START</command>
@@ -69,10 +68,6 @@
       <commandOrder>
         <command>STORM_UI_SERVER-START</command>
         <requires>NIMBUS-STARTED</requires>
-      </commandOrder>
-      <commandOrder>
-        <command>STORM_REST_API-START</command>
-        <requires>NIMBUS-STARTED,DRPC_SERVER-STARTED,STORM_UI_SERVER-STARTED</requires>
       </commandOrder>
     </commandOrders>
 
@@ -111,7 +106,7 @@
         <name>STORM_UI_SERVER</name>
         <category>MASTER</category>
         <publishConfig>true</publishConfig>
-        <appExports>QuickLinks-org.apache.slider.monitor</appExports>
+        <appExports>QuickLinks-org.apache.slider.monitor,QuickLinks-org.apache.slider.jmx</appExports>
         <autoStartOnFailure>true</autoStartOnFailure>
         <commandScript>
           <script>scripts/ui_server.py</script>
@@ -126,18 +121,6 @@
         <autoStartOnFailure>true</autoStartOnFailure>
         <commandScript>
           <script>scripts/drpc_server.py</script>
-          <scriptType>PYTHON</scriptType>
-          <timeout>600</timeout>
-        </commandScript>
-      </component>
-
-      <component>
-        <name>STORM_REST_API</name>
-        <category>MASTER</category>
-        <autoStartOnFailure>true</autoStartOnFailure>
-        <appExports>QuickLinks-org.apache.slider.jmx</appExports>
-        <commandScript>
-          <script>scripts/rest_api.py</script>
           <scriptType>PYTHON</scriptType>
           <timeout>600</timeout>
         </commandScript>
