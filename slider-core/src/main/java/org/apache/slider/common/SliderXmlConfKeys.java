@@ -84,10 +84,10 @@ public interface SliderXmlConfKeys {
   String KEY_AM_RESTART_LIMIT = "slider.yarn.restart.limit";
 
   /**
-   * queue name
+   * queue name, by default let YARN pick the queue
    */
   String KEY_YARN_QUEUE = "slider.yarn.queue";
-  String DEFAULT_YARN_QUEUE = YarnConfiguration.DEFAULT_QUEUE_NAME;
+  String DEFAULT_YARN_QUEUE = null;
 
   /**
    * default priority
