@@ -73,7 +73,7 @@ echo "classpath = \"${slider_classpath}\""
 export CLASSPATH="${slider_classpath}"
 echo ""
 
-echo "command is java ${slider_jvm_opts} --classpath \"${slider_classpath}\" ${launcher} $@"
+echo "command is java ${slider_jvm_opts} -classpath \"${slider_classpath}\" ${launcher} $@"
 echo ""
 echo ""
 type java >/dev/null 2>&1 || javabin=${JAVA_HOME}/bin/
