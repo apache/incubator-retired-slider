@@ -29,6 +29,10 @@
         <name>QuickLinks</name>
         <exports>
           <export>
+            <name>org.apache.slider.jmx</name>
+            <value>http://${STORM_UI_SERVER_HOST}:${site.storm-site.ui.port}/api/v1/cluster/summary</value>
+          </export>
+          <export>
             <name>org.apache.slider.monitor</name>
             <value>http://${STORM_UI_SERVER_HOST}:${site.storm-site.ui.port}</value>
           </export>
@@ -43,7 +47,7 @@
     <commandOrders>
       <commandOrder>
         <command>NIMBUS-START</command>
-        <requires>SUPERVISOR-INSTALLED,STORM_UI_SERVER-INSTALLED,DRPC_SERVER-INSTALLED,STORM_REST_API-INSTALLED
+        <requires>SUPERVISOR-INSTALLED,STORM_UI_SERVER-INSTALLED,DRPC_SERVER-INSTALLED
         </requires>
       </commandOrder>
       <commandOrder>
@@ -57,10 +61,6 @@
       <commandOrder>
         <command>STORM_UI_SERVER-START</command>
         <requires>NIMBUS-STARTED</requires>
-      </commandOrder>
-      <commandOrder>
-        <command>STORM_REST_API-START</command>
-        <requires>NIMBUS-STARTED,DRPC_SERVER-STARTED,STORM_UI_SERVER-STARTED</requires>
       </commandOrder>
     </commandOrders>
 
@@ -99,7 +99,7 @@
         <name>STORM_UI_SERVER</name>
         <category>MASTER</category>
         <publishConfig>true</publishConfig>
-        <appExports>QuickLinks-org.apache.slider.monitor</appExports>
+        <appExports>QuickLinks-org.apache.slider.monitor,QuickLinks-org.apache.slider.jmx</appExports>
         <autoStartOnFailure>true</autoStartOnFailure>
         <commandScript>
           <script>scripts/ui_server.py</script>

@@ -37,6 +37,7 @@ def service(
   backtype = format("backtype.storm.daemon.{name}")
 
   if action == "start":
+    os.environ['STORM_LOG_DIR'] = params.log_dir
     cmd = format("{storm_bin} {name} > {log_dir}/{name}.out 2>&1")
 
     Execute(cmd,
