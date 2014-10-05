@@ -51,6 +51,7 @@ import org.apache.hadoop.yarn.client.api.async.AMRMClientAsync;
 import org.apache.hadoop.yarn.client.api.async.NMClientAsync;
 import org.apache.hadoop.yarn.client.api.async.impl.NMClientAsyncImpl;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.apache.hadoop.yarn.exceptions.InvalidApplicationMasterRequestException;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.ipc.YarnRPC;
 import org.apache.hadoop.yarn.security.AMRMTokenIdentifier;
@@ -86,6 +87,7 @@ import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.exceptions.SliderInternalStateException;
 import org.apache.slider.core.exceptions.TriggerClusterTeardownException;
 import org.apache.slider.core.main.ExitCodeProvider;
+import org.apache.slider.core.main.LauncherExitCodes;
 import org.apache.slider.core.main.RunService;
 import org.apache.slider.core.main.ServiceLauncher;
 import org.apache.slider.core.persist.ConfTreeSerDeser;
@@ -335,7 +337,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * The stop request received...the exit details are extracted
    * from this
    */
-  private ActionStopSlider stopAction;
+  private volatile ActionStopSlider stopAction;
 
   @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private RoleLaunchService launchService;
@@ -357,6 +359,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private String agentOpsUrl;
   private String agentStatusUrl;
   private FsDelegationTokenManager fsDelegationTokenManager;
+  private RegisterApplicationMasterResponse amRegistrationData;
 
   /**
    * Service Constructor
@@ -690,12 +693,12 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       // address = SliderUtils.getRmSchedulerAddress(asyncRMClient.getConfig());
       log.info("Connecting to RM at {},address tracking URL={}",
                appMasterRpcPort, appMasterTrackingUrl);
-      RegisterApplicationMasterResponse response = asyncRMClient
+      amRegistrationData = asyncRMClient
         .registerApplicationMaster(appMasterHostname,
                                    appMasterRpcPort,
                                    appMasterTrackingUrl);
       Resource maxResources =
-        response.getMaximumResourceCapability();
+        amRegistrationData.getMaximumResourceCapability();
       containerMaxMemory = maxResources.getMemory();
       containerMaxCores = maxResources.getVirtualCores();
       appState.setContainerLimits(maxResources.getMemory(),
@@ -707,8 +710,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       boolean securityEnabled = UserGroupInformation.isSecurityEnabled();
       if (securityEnabled) {
         secretManager.setMasterKey(
-          response.getClientToAMTokenMasterKey().array());
-        applicationACLs = response.getApplicationACLs();
+            amRegistrationData.getClientToAMTokenMasterKey().array());
+        applicationACLs = amRegistrationData.getApplicationACLs();
 
         //tell the server what the ACLs are 
         rpcService.getServer().refreshServiceAcl(serviceConf,
@@ -717,7 +720,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       // extract container list
 
-      liveContainers = response.getContainersFromPreviousAttempts();
+      liveContainers = amRegistrationData.getContainersFromPreviousAttempts();
 
       //now validate the installation
       Configuration providerConf =
@@ -851,7 +854,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       //now block waiting to be told to exit the process
       waitForAMCompletionSignal();
     } catch(Exception e) {
-      stopAction = new ActionStopSlider(e);
+      log.error("Exception : {}", e, e);
+      onAMStop(new ActionStopSlider(e));
     }
     //shutdown time
     return finish();
@@ -1117,6 +1121,13 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       log.debug("Stopped forked process: exit code={}", exitCode);
     }
 
+    // make sure the AM is actually registered. If not, there's no point
+    // trying to unregister it
+    if (amRegistrationData == null) {
+      log.info("Application attempt not yet registered; skipping unregistration");
+      return exitCode;
+    }
+    
     //stop any launches in progress
     launchService.stop();
 
@@ -1137,6 +1148,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 */
     } catch (IOException e) {
       log.info("Failed to unregister application: " + e, e);
+    } catch (InvalidApplicationMasterRequestException e) {
+      log.info("Application not found in YARN application list;" +
+               " it may have been terminated/YARN shutdown in progress: " + e, e);
     } catch (YarnException e) {
       log.info("Failed to unregister application: " + e, e);
     }
@@ -1451,10 +1465,13 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
                                                                                                  YarnException {
     onRpcCall("stopCluster()");
     String message = request.getMessage();
+    if (message == null) {
+      message = "application frozen by client";
+    }
     ActionStopSlider stopSlider =
         new ActionStopSlider(message,
             1000, TimeUnit.MILLISECONDS,
-            0,
+            LauncherExitCodes.EXIT_SUCCESS,
             FinalApplicationStatus.SUCCEEDED,
             message);
     log.info("SliderAppMasterApi.stopCluster: {}", stopSlider);
@@ -1471,7 +1488,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     ConfTreeSerDeser confTreeSerDeser = new ConfTreeSerDeser();
     ConfTree updatedResources = confTreeSerDeser.fromJson(payload);
     flexCluster(updatedResources);
-    return Messages.FlexClusterResponseProto.newBuilder().setResponse(true).build();
+    return Messages.FlexClusterResponseProto.newBuilder().setResponse(
+        true).build();
   }
 
   @Override //SliderClusterProtocol
@@ -1672,9 +1690,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     try {
       flexCluster(getInstanceDefinition().getResources());
     } catch (Exception e) {
-      //this may happen in a separate thread, so the ability to act is limited
+      // cluster flex failure: log
       log.error("Failed to flex cluster nodes: {}", e, e);
-      //declare a failure
+      // then what? exit
       queue(new ActionStopSlider(e));
     }
   }

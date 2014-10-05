@@ -52,8 +52,8 @@ class TestStandaloneAMRestart extends AgentMiniClusterTestBase {
     ServiceLauncher<SliderClient> launcher =
         createStandaloneAMWithArgs(clustername,
             [
-                Arguments.ARG_OPTION, SliderXmlConfKeys.KEY_AM_RESTART_LIMIT, 
-                "$restartLimit".toString()
+                Arguments.ARG_DEFINE,
+                SliderXmlConfKeys.KEY_AM_RESTART_LIMIT + "=" + restartLimit
             ],
             true,
             false)
@@ -71,15 +71,16 @@ class TestStandaloneAMRestart extends AgentMiniClusterTestBase {
     sliderClient.actionDiagnostic(diagnosticArgs)
 
     int iteration = 1;
-    killAM(iteration, sliderClient, clustername)
+    killAMAndWaitForRestart(sliderClient, iteration, clustername)
 
 
-    killAM(iteration++, sliderClient, clustername)
+    killAMAndWaitForRestart(sliderClient, iteration++, clustername)
     // app should be running here
     assert 0 == sliderClient.actionExists(clustername, true)
 
     // kill again & expect it to be considered a failure
-    killAM(iteration++, sliderClient, clustername)
+    killAmAndWaitForDeath(sliderClient, iteration++, clustername)
+    sleep(20000)
 
     report = sliderClient.applicationReport
     assert report.finalApplicationStatus == FinalApplicationStatus.FAILED
@@ -93,9 +94,29 @@ class TestStandaloneAMRestart extends AgentMiniClusterTestBase {
     assert 0 == clusterActionFreeze(sliderClient, clustername, "force", true)
   }
 
-  public ActionAMSuicideArgs killAM(
-      int iteration,
+  /**
+   * Kill an AM. take an iteration count for the message sent to the 
+   * AM (hence its logs)
+   * @param iteration
+   * @param sliderClient
+   * @param clustername
+   * @return
+   */
+  public ActionAMSuicideArgs killAMAndWaitForRestart(
+      SliderClient sliderClient, int iteration, String clustername) {
+    ActionAMSuicideArgs args = killAmAndWaitForDeath(
+        sliderClient,
+        iteration,
+        clustername)
+    //give yarn some time to notice
+    sleep(20000)
+    waitUntilClusterLive(sliderClient, 20000)
+    return args
+  }
+
+  public ActionAMSuicideArgs killAmAndWaitForDeath(
       SliderClient sliderClient,
+      int iteration,
       String clustername) {
     ActionAMSuicideArgs args = new ActionAMSuicideArgs()
     args.waittime = 100
@@ -103,9 +124,6 @@ class TestStandaloneAMRestart extends AgentMiniClusterTestBase {
     args.message = "kill AM iteration #$iteration"
     sliderClient.actionAmSuicide(clustername, args)
     waitWhileClusterLive(sliderClient);
-    //give yarn some time to notice
-    sleep(20000)
-    waitUntilClusterLive(sliderClient, 20000)
     return args
   }
 
