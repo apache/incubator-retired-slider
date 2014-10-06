@@ -18,21 +18,25 @@
 
 package org.apache.slider.core.exceptions;
 
+import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
+
 /**
  * An Exception to be thrown for an explicit "shut down the cluster" operation
  * raised by the application state or other parts of the AM
  */
 public class TriggerClusterTeardownException extends SliderException {
 
+  private final FinalApplicationStatus finalApplicationStatus;
+  
   public TriggerClusterTeardownException(int code,
-                                         String message,
-                                         Object... args) {
+      String message,
+      FinalApplicationStatus finalApplicationStatus,
+      Object... args) {
     super(code, message, args);
+    this.finalApplicationStatus = finalApplicationStatus;
   }
 
-  public TriggerClusterTeardownException(int code,
-                                         Throwable throwable,
-                                         String message, Object... args) {
-    super(code, throwable, message, args);
+  public FinalApplicationStatus getFinalApplicationStatus() {
+    return finalApplicationStatus;
   }
 }

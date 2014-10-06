@@ -22,6 +22,7 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.yarn.api.records.FinalApplicationStatus
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.client.SliderClient
@@ -66,7 +67,8 @@ class TestFreezeThawFlexStandaloneAM extends AgentMiniClusterTestBase {
     addToTeardown(sliderClient);
 
     assert 0 == clusterActionFreeze(sliderClient, clustername)
-    
+    def report = sliderClient.applicationReport
+    assert report.finalApplicationStatus == FinalApplicationStatus.SUCCEEDED
 
     // here we do something devious: delete our copy of the configuration
     // this makes sure the remote config gets picked up
@@ -83,11 +85,14 @@ class TestFreezeThawFlexStandaloneAM extends AgentMiniClusterTestBase {
     // while running, flex it with no changes
     newCluster.flex(clustername, [:]);
 
-    //stop
-    assert 0 == clusterActionFreeze(sliderClient, clustername)
+    // force freeze now
+    
+    assert 0 == clusterActionFreeze(newCluster, clustername, "forced", true)
+    report = newCluster.applicationReport
+    assert report.finalApplicationStatus == FinalApplicationStatus.KILLED
 
     //stop again
-    assert 0 == clusterActionFreeze(sliderClient, clustername)
+    assert 0 == clusterActionFreeze(newCluster, clustername)
 
   }
 

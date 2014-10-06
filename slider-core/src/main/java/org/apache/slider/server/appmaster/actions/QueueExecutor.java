@@ -25,6 +25,8 @@ import org.apache.slider.server.appmaster.state.AppState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * Executor for async actions - hands them off to the AM as 
  * appropriate
@@ -36,6 +38,7 @@ public class QueueExecutor implements Runnable {
   private final SliderAppMaster appMaster;
   private final QueueService actionQueues;
   private final AppState appState;
+
 
   public QueueExecutor(SliderAppMaster appMaster,
       QueueService actionQueues) {
@@ -72,11 +75,16 @@ public class QueueExecutor implements Runnable {
 
       } while (!(take instanceof ActionStopQueue));
       log.info("Queue Executor run() stopped");
+    } catch (InterruptedException e) {
+      // interrupted: exit
     } catch (Exception e) {
       log.error("Exception processing {}: {}", take, e, e);
       if (appMaster != null) {
         appMaster.onExceptionInThread(Thread.currentThread(), e);
       }
     }
+    // tag completed
+    actionQueues.complete();
   }
+
 }
