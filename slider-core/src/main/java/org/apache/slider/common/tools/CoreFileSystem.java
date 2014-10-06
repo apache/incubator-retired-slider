@@ -134,6 +134,21 @@ public class CoreFileSystem {
   }
 
   /**
+   * Build up the path string for keytab install location -no attempt to
+   * create the directory is made
+   *
+   * @return the path for keytab installation location
+   */
+  public Path buildKeytabPath(String keytabName, String applicationName) {
+    Preconditions.checkNotNull(applicationName);
+    Path basePath = getBaseApplicationPath();
+    Path baseKeytabDir = new Path(basePath, SliderKeys.KEYTAB_DIR);
+    Path appKeytabDir = new Path(baseKeytabDir, applicationName);
+    return keytabName == null ? appKeytabDir :
+        new Path(appKeytabDir, keytabName);
+  }
+
+  /**
    * Create the Slider cluster path for a named cluster and all its subdirs
    * This is a directory; a mkdirs() operation is executed
    * to ensure that it is there.

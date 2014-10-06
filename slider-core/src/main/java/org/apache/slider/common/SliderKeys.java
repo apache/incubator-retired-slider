@@ -86,6 +86,7 @@ public interface SliderKeys extends SliderXmlConfKeys {
   String HISTORY_DIR_NAME = "history";
   String HISTORY_FILENAME_SUFFIX = "json";
   String HISTORY_FILENAME_PREFIX = "rolehistory-";
+  String KEYTAB_DIR = "keytabs";
   
   /**
    * Filename pattern is required to save in strict temporal order.
@@ -170,6 +171,9 @@ public interface SliderKeys extends SliderXmlConfKeys {
   String PASSPHRASE = "DEV";
   String PASS_LEN = "50";
   String KEYSTORE_LOCATION = "ssl.server.keystore.location";
+  String AM_LOGIN_KEYTAB_NAME = "slider.am.login.keytab.name";
+  String AM_KEYTAB_LOCAL_PATH = "slider.am.keytab.local.path";
+  String KEYTAB_PRINCIPAL = "slider.keytab.principal.name";
 
   /**
    * Python specific
