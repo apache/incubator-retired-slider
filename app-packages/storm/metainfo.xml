@@ -30,7 +30,7 @@
         <exports>
           <export>
             <name>org.apache.slider.jmx</name>
-            <value>http://${STORM_UI_SERVER_HOST}:${site.storm-site.ui.port}/api/cluster/summary</value>
+            <value>http://${STORM_UI_SERVER_HOST}:${site.storm-site.ui.port}/api/v1/cluster/summary</value>
           </export>
           <export>
             <name>org.apache.slider.monitor</name>
