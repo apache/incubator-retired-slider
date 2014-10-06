@@ -20,6 +20,7 @@ package org.apache.slider.providers.accumulo.live
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.yarn.api.records.FinalApplicationStatus
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.providers.accumulo.AccumuloConfigFileOptions
 import org.apache.slider.providers.accumulo.AccumuloKeys
@@ -70,8 +71,10 @@ class TestAccFreezeThaw extends AccumuloTestBase {
 
     log.info("Stopping")
     clusterActionFreeze(sliderClient, clustername, "stop");
-    waitForAppToFinish(sliderClient)
-    
+    def finishedAppReport = waitForAppToFinish(sliderClient)
+    assert finishedAppReport.finalApplicationStatus ==
+           FinalApplicationStatus.SUCCEEDED
+
     //make sure the fetch fails
     try {
       page = fetchLocalPage(AccumuloConfigFileOptions.MONITOR_PORT_CLIENT_INT,

@@ -20,6 +20,7 @@ package org.apache.slider.agent.standalone
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.yarn.api.records.FinalApplicationStatus
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderExitCodes
@@ -42,8 +43,8 @@ import org.junit.Test
 class TestStandaloneAMDestroy extends AgentMiniClusterTestBase {
 
   @Test
-  public void testDestroyStandaloneAM() throws Throwable {
-    String clustername = createMiniCluster("", configuration, 1, false)
+  public void testStandaloneAMDestroy() throws Throwable {
+    String clustername = createMiniCluster("", configuration, 1, true)
 
     describe "create a Standalone AM, stop it, try to create" +
              "a second cluster with the same name, destroy it, try a third time"
@@ -74,16 +75,17 @@ class TestStandaloneAMDestroy extends AgentMiniClusterTestBase {
         instanceDir)
 
     sliderFileSystem.locateInstanceDefinition(clustername)
-    clusterActionFreeze(sliderClient, clustername,"stopping first cluster")
-    waitForAppToFinish(sliderClient)
+    clusterActionFreeze(sliderClient, clustername, "stopping first cluster")
+    def finishedAppReport = waitForAppToFinish(sliderClient)
+    assert finishedAppReport.finalApplicationStatus == FinalApplicationStatus.SUCCEEDED
 
     
     describe "Warnings below are expected"
     
     //now try to create instance #2, and expect an in-use failure
     try {
-      createStandaloneAM(clustername, false, false)
-      fail("expected a failure, got an AM")
+      SliderClient am = createStandaloneAM(clustername, false, false).service
+      fail("expected a failure, got an AM: $am")
     } catch (SliderException e) {
       assertExceptionDetails(e,
                              SliderExitCodes.EXIT_INSTANCE_EXISTS,
@@ -91,7 +93,6 @@ class TestStandaloneAMDestroy extends AgentMiniClusterTestBase {
     }
 
     describe "END EXPECTED WARNINGS"
-
 
     describe "destroying $clustername"
     //now: destroy it
@@ -102,6 +103,9 @@ class TestStandaloneAMDestroy extends AgentMiniClusterTestBase {
     describe "post destroy checks"
     sliderFileSystem.verifyDirectoryNonexistent(instanceDir)
 
+    // look up app report and verify exit code is good
+    
+    
     describe "start expected to fail"
     //expect start to now fail
     def ex = launchExpectingException(SliderClient,
@@ -148,6 +152,8 @@ class TestStandaloneAMDestroy extends AgentMiniClusterTestBase {
     
     //and try to destroy a completely different cluster just for the fun of it
     assert 0 == sliderClient.actionDestroy("no-cluster-of-this-name")
+
+    maybeStopCluster(cluster2, "", "Teardown at end of test case", false);
   }
 
 

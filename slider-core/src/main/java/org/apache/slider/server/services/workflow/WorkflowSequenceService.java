@@ -79,6 +79,8 @@ public class WorkflowSequenceService extends AbstractService implements
   null if one did not finish yet
    */
   private volatile Service previousService;
+  
+  private boolean stopIfNoChildServicesAtStartup = true;
 
   /**
    * Construct an instance
@@ -133,13 +135,17 @@ public class WorkflowSequenceService extends AbstractService implements
     return previousService;
   }
 
+  protected void setStopIfNoChildServicesAtStartup(boolean stopIfNoChildServicesAtStartup) {
+    this.stopIfNoChildServicesAtStartup = stopIfNoChildServicesAtStartup;
+  }
+
   /**
    * When started
    * @throws Exception
    */
   @Override
   protected void serviceStart() throws Exception {
-    if (!startNextService()) {
+    if (!startNextService() && stopIfNoChildServicesAtStartup) {
         //nothing to start -so stop
         stop();
     }

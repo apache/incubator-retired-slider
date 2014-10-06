@@ -204,11 +204,13 @@ public class ProviderUtils implements RoleKeys {
   
   /**
    * Validate the node count and heap size values of a node class 
-   *
+   * <p>
+   * If max &lt;= 0:  min &lt;= count
+   * If max &gt; 0:  min &lt;= count &lt;= max
    * @param name node class name
    * @param count requested node count
    * @param min requested heap size
-   * @param max
+   * @param max maximum value. 
    * @throws BadCommandArgumentsException if the values are out of range
    */
   public void validateNodeCount(String name,
