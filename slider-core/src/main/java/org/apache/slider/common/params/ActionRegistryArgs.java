@@ -42,16 +42,17 @@ import java.io.File;
 
 public class ActionRegistryArgs extends AbstractActionArgs {
 
-
   public static final String USAGE =
       "Usage: " + SliderActions.ACTION_REGISTRY
-      + " <"
+      + " ("
       + Arguments.ARG_LIST + "|"
       + Arguments.ARG_LISTCONF + "|"
       + Arguments.ARG_LISTFILES + "|"
       + Arguments.ARG_GETCONF + "> "
       + Arguments.ARG_NAME + " <name> "
+      + " )"
       + "[" + Arguments.ARG_VERBOSE + "] "
+      + "[" + Arguments.ARG_OUTPUT + " <filename> ] "
       + "[" + Arguments.ARG_SERVICETYPE + " <servicetype> ] "
       + "[" + Arguments.ARG_FORMAT + " <xml|json|properties>] "
       ;
@@ -66,7 +67,6 @@ public class ActionRegistryArgs extends AbstractActionArgs {
   public String getActionName() {
     return ACTION_REGISTRY;
   }
-
 
   /**
    * Get the min #of params expected
@@ -89,7 +89,6 @@ public class ActionRegistryArgs extends AbstractActionArgs {
       description = "get configuration")
   public String getConf;
 
-
   @Parameter(names = {ARG_LISTFILES}, 
       description = "list files")
   public String listFiles;
@@ -103,7 +102,7 @@ public class ActionRegistryArgs extends AbstractActionArgs {
       description = "Format for a response: <xml|json|properties>")
   public String format = ConfigFormat.XML.toString() ;
 
-  @Parameter(names = {ARG_DEST},
+  @Parameter(names = {ARG_OUTPUT, ARG_OUTPUT_SHORT, ARG_DEST},
       description = "Output destination")
   public File dest;
 

@@ -72,6 +72,7 @@ import org.apache.slider.common.params.ActionFreezeArgs;
 import org.apache.slider.common.params.ActionGetConfArgs;
 import org.apache.slider.common.params.ActionKillContainerArgs;
 import org.apache.slider.common.params.ActionRegistryArgs;
+import org.apache.slider.common.params.ActionResolveArgs;
 import org.apache.slider.common.params.ActionStatusArgs;
 import org.apache.slider.common.params.ActionThawArgs;
 import org.apache.slider.common.params.Arguments;
@@ -332,9 +333,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       exitCode = actionThaw(clusterName, serviceArgs.getActionThawArgs());
     } else if (ACTION_DESTROY.equals(action)) {
       exitCode = actionDestroy(clusterName);
+    } else if (ACTION_DIAGNOSTIC.equals(action)) {
+      exitCode = actionDiagnostic(serviceArgs.getActionDiagnosticArgs());
     } else if (ACTION_EXISTS.equals(action)) {
       exitCode = actionExists(clusterName,
-           serviceArgs.getActionExistsArgs().live);
+          serviceArgs.getActionExistsArgs().live);
     } else if (ACTION_FLEX.equals(action)) {
       exitCode = actionFlex(clusterName, serviceArgs.getActionFlexArgs());
     } else if (ACTION_GETCONF.equals(action)) {
@@ -351,8 +354,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     } else if (ACTION_LIST.equals(action)) {
       exitCode = actionList(clusterName);
     } else if (ACTION_REGISTRY.equals(action)) {
-      exitCode = actionRegistry(
-          serviceArgs.getActionRegistryArgs());
+      exitCode = actionRegistry(serviceArgs.getActionRegistryArgs());
+    } else if (ACTION_RESOLVE.equals(action)) {
+      exitCode = actionResolve(serviceArgs.getActionResolveArgs());
     } else if (ACTION_STATUS.equals(action)) {
       exitCode = actionStatus(clusterName,
           serviceArgs.getActionStatusArgs());
@@ -362,8 +366,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     } else if (ACTION_VERSION.equals(action)) {
 
       exitCode = actionVersion();
-    } else if (ACTION_DIAGNOSTIC.equals(action)) {
-        exitCode = actionDiagnostic(serviceArgs.getActionDiagnosticArgs());
     } else {
       throw new SliderException(EXIT_UNIMPLEMENTED,
           "Unimplemented: " + action);
@@ -2387,13 +2389,51 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   /**
    * Registry operation
    *
+   * @param args registry Arguments
+   * @return 0 for success, -1 for some issues that aren't errors, just failures
+   * to retrieve information (e.g. no configurations for that entry)
+   * @throws YarnException YARN problems
+   * @throws IOException Network or other problems
+   */
+  public int actionResolve(ActionResolveArgs args) throws
+      YarnException,
+      IOException {
+    // as this is also a test entry point, validate
+    // the arguments
+    args.validate();
+    RegistryOperations operations = getRegistryOperations();
+    String serviceclassPath = args.path;
+    Collection<ServiceRecord> serviceRecords;
+    try {
+      if (args.list) {
+        actionRegistryListYarn(args);
+      } else  {
+        ServiceRecord instance = lookupServiceRecord(registryArgs);
+        serviceRecords = new ArrayList<ServiceRecord>(1);
+        serviceRecords.add(instance);
+      }
+//      JDK7
+    } catch (FileNotFoundException e) {
+      log.info("{}", e);
+      log.debug("{}", e, e);
+      return EXIT_NOT_FOUND;
+    } catch (PathNotFoundException e) {
+      log.info("{}", e);
+      log.debug("{}", e, e);
+      return EXIT_NOT_FOUND;
+    }
+    return EXIT_SUCCESS;
+  }
+
+  /**
+   * Registry operation
+   *
    * @param registryArgs registry Arguments
    * @return 0 for success, -1 for some issues that aren't errors, just failures
    * to retrieve information (e.g. no configurations for that entry)
    * @throws YarnException YARN problems
    * @throws IOException Network or other problems
    */
-  @VisibleForTesting
   public int actionRegistry(ActionRegistryArgs registryArgs) throws
       YarnException,
       IOException {
@@ -2418,11 +2458,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       }
 //      JDK7
     } catch (FileNotFoundException e) {
-      log.info("{}", e.toString());
+      log.info("{}", e);
       log.debug("{}", e, e);
       return EXIT_NOT_FOUND;
     } catch (PathNotFoundException e) {
-      log.info("{}", e.toString());
+      log.info("{}", e);
       log.debug("{}", e, e);
       return EXIT_NOT_FOUND;
     }

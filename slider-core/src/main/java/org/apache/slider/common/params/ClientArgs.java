@@ -58,6 +58,7 @@ public class ClientArgs extends CommonArgs {
     new ActionKillContainerArgs();
   private final ActionListArgs actionListArgs = new ActionListArgs();
   private final ActionRegistryArgs actionRegistryArgs = new ActionRegistryArgs();
+  private final ActionResolveArgs actionResolveArgs = new ActionResolveArgs();
   private final ActionStatusArgs actionStatusArgs = new ActionStatusArgs();
   private final ActionThawArgs actionThawArgs = new ActionThawArgs();
   private final ActionVersionArgs actionVersionArgs = new ActionVersionArgs();
@@ -77,25 +78,26 @@ public class ClientArgs extends CommonArgs {
   protected void addActionArguments() {
 
     addActions(
-      actionAMSuicideArgs,
-      actionBuildArgs,
-      actionCreateArgs,
-      actionUpdateArgs,
-      actionDestroyArgs,
-      actionExistsArgs,
-      actionFlexArgs,
-      actionFreezeArgs,
-      actionGetConfArgs,
-      actionKillContainerArgs,
-      actionListArgs,
-      actionRegistryArgs,
-      actionStatusArgs,
-      actionThawArgs,
-      actionHelpArgs,
-      actionVersionArgs,
-      actionInstallPackageArgs,
-      actionDiagnosticArgs
-              );
+        actionAMSuicideArgs,
+        actionBuildArgs,
+        actionCreateArgs,
+        actionUpdateArgs,
+        actionDestroyArgs,
+        actionDiagnosticArgs,
+        actionExistsArgs,
+        actionFlexArgs,
+        actionFreezeArgs,
+        actionGetConfArgs,
+        actionHelpArgs,
+        actionInstallPackageArgs,
+        actionKillContainerArgs,
+        actionListArgs,
+        actionRegistryArgs,
+        actionResolveArgs,
+        actionStatusArgs,
+        actionThawArgs,
+        actionVersionArgs
+    );
   }
 
   @Override
@@ -173,6 +175,10 @@ public class ClientArgs extends CommonArgs {
     return actionRegistryArgs;
   }
 
+  public ActionResolveArgs getActionResolveArgs() {
+    return actionResolveArgs;
+  }
+
   public ActionStatusArgs getActionStatusArgs() {
     return actionStatusArgs;
   }
@@ -200,12 +206,6 @@ public class ClientArgs extends CommonArgs {
       //its a builder, so set those actions too
       buildingActionArgs = actionCreateArgs;
 
-    } else if (SliderActions.ACTION_UPDATE.equals(action)) {
-      bindCoreAction(actionUpdateArgs);
-
-    } else if (SliderActions.ACTION_INSTALL_PACKAGE.equals(action)) {
-      bindCoreAction(actionInstallPackageArgs);
-
     }else if (SliderActions.ACTION_FREEZE.equals(action)) {
       bindCoreAction(actionFreezeArgs);
 
@@ -217,6 +217,9 @@ public class ClientArgs extends CommonArgs {
 
     } else if (SliderActions.ACTION_DESTROY.equals(action)) {
       bindCoreAction(actionDestroyArgs);
+
+    } else if (SliderActions.ACTION_DIAGNOSTIC.equals(action)) {
+      bindCoreAction(actionDiagnosticArgs);
 
     } else if (SliderActions.ACTION_EXISTS.equals(action)) {
       bindCoreAction(actionExistsArgs);
@@ -231,6 +234,9 @@ public class ClientArgs extends CommonArgs {
                SliderActions.ACTION_USAGE.equals(action)) {
       bindCoreAction(actionHelpArgs);
 
+    } else if (SliderActions.ACTION_INSTALL_PACKAGE.equals(action)) {
+      bindCoreAction(actionInstallPackageArgs);
+
     } else if (SliderActions.ACTION_KILL_CONTAINER.equals(action)) {
       bindCoreAction(actionKillContainerArgs);
 
@@ -240,14 +246,17 @@ public class ClientArgs extends CommonArgs {
     } else if (SliderActions.ACTION_REGISTRY.equals(action)) {
       bindCoreAction(actionRegistryArgs);
 
+    } else if (SliderActions.ACTION_RESOLVE.equals(action)) {
+      bindCoreAction(actionRegistryArgs);
+
     } else if (SliderActions.ACTION_STATUS.equals(action)) {
       bindCoreAction(actionStatusArgs);
 
+    } else if (SliderActions.ACTION_UPDATE.equals(action)) {
+      bindCoreAction(actionUpdateArgs);
+
     } else if (SliderActions.ACTION_VERSION.equals(action)) {
       bindCoreAction(actionVersionArgs);
-
-    } else if (SliderActions.ACTION_DIAGNOSTIC.equals(action)) {
-        bindCoreAction(actionDiagnosticArgs);
 
     } else if (action == null || action.isEmpty()) {
       throw new BadCommandArgumentsException(ErrorStrings.ERROR_NO_ACTION);
