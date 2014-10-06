@@ -41,9 +41,9 @@ public class SliderException extends ServiceLaunchException implements
 
   /**
    * Format the exception as you create it
-   * @param code
-   * @param message
-   * @param args
+   * @param code exit code
+   * @param message exception message -sprintf formatted
+   * @param args arguments for the formatting
    */
   public SliderException(int code, String message, Object... args) {
     super(code, String.format(message, args));

@@ -167,6 +167,7 @@ class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
 
   public static String getMonitorUrl(SliderClient sliderClient, String clusterName) {
     int tries = 5
+    Exception caught;
     while (true) {
       try {
         ServiceRecord instance =
@@ -180,6 +181,7 @@ class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
         assertNotNull monitorUrl
         return monitorUrl
       } catch (Exception e) {
+        caught = e;
         log.info("Got exception trying to read quicklinks")
         if (tries-- == 0) {
           break
@@ -187,7 +189,7 @@ class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
         sleep(20000)
       }
     }
-    fail("Couldn't retrieve quicklinks")
+    throw caught;
   }
 
   public static void checkMonitorPage(String monitorUrl) {

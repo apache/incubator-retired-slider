@@ -39,6 +39,7 @@
     <module>slider-core</module>
     <module>slider-agent</module>
     <module>app-packages/accumulo</module>
+    <module>app-packages/hbase</module>
     <module>slider-assembly</module>
     <module>slider-funtest</module>
     <module>slider-providers/hbase/slider-hbase-provider</module>
@@ -193,6 +194,7 @@
     
     <maven.version.range>[3.0.0,)</maven.version.range>
     
+    <maven-antrun-plugin.version>1.7</maven-antrun-plugin.version>
     <maven-assembly-plugin.version>2.4</maven-assembly-plugin.version>
     <maven.cobertura.version>2.5.2</maven.cobertura.version>
     <maven-compiler-plugin.version>3.1</maven-compiler-plugin.version>

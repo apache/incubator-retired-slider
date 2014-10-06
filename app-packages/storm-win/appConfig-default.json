@@ -11,8 +11,6 @@
     "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/storm-${pkg.version}",
     "site.global.user_group": "hadoop",
     "site.global.security_enabled": "false",
-    "site.global.rest_api_port": "${STORM_REST_API.ALLOCATED_PORT}",
-    "site.global.rest_api_admin_port": "${STORM_REST_API.ALLOCATED_PORT}",
 
     "site.storm-site.storm.log.dir" : "${AGENT_LOG_ROOT}",
     "site.storm-site.storm.zookeeper.servers": "['${ZK_HOST}']",

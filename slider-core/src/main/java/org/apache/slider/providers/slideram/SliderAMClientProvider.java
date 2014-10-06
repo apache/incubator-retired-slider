@@ -35,6 +35,7 @@ import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.MapOperations;
+import org.apache.slider.core.exceptions.BadClusterStateException;
 import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.AbstractLauncher;
@@ -52,6 +53,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.apache.slider.api.ResourceKeys.COMPONENT_INSTANCES;
 
 /**
  * handles the setup of the Slider AM.
@@ -129,6 +132,31 @@ public class SliderAMClientProvider extends AbstractClientProvider
     sliderFileSystem.verifyDirectoryWriteAccess(historyPath);
   }
 
+  /**
+   * Verify that an instance definition is considered valid by the provider
+   * @param instanceDefinition instance definition
+   * @throws SliderException if the configuration is not valid
+   */
+  public void validateInstanceDefinition(AggregateConf instanceDefinition) throws
+      SliderException {
+
+    super.validateInstanceDefinition(instanceDefinition);
+    
+    // make sure there is no negative entry in the instance count
+    Map<String, Map<String, String>> instanceMap =
+        instanceDefinition.getResources().components;
+    for (Map.Entry<String, Map<String, String>> entry : instanceMap.entrySet()) {
+      MapOperations mapOperations = new MapOperations(entry);
+      int instances = mapOperations.getOptionInt(COMPONENT_INSTANCES, 0);
+      if (instances < 0) {
+        throw new BadClusterStateException(
+            "Component %s has invalid instance count: %d",
+            mapOperations.name,
+            instances);
+      }
+    }
+  }
+  
   /**
    * The Slider AM sets up all the dependency JARs above slider.jar itself
    * {@inheritDoc}

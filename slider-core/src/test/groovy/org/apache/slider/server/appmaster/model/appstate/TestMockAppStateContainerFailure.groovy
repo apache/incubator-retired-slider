@@ -23,7 +23,6 @@ import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.ContainerId
 import org.apache.slider.api.ResourceKeys
 import org.apache.slider.core.conf.AggregateConf
-import org.apache.slider.core.conf.MapOperations
 import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.exceptions.TriggerClusterTeardownException
 import org.apache.slider.server.appmaster.actions.ResetFailureWindow

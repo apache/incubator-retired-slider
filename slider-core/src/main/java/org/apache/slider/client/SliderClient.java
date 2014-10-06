@@ -861,17 +861,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // make any substitutions needed at this stage
     replaceTokens(appConf.getConfTree(), getUsername(), clustername);
 
-    // provider to validate what there is
-    try {
-      sliderAM.validateInstanceDefinition(builder.getInstanceDescription());
-      provider.validateInstanceDefinition(builder.getInstanceDescription());
-    } catch (SliderException e) {
-      //problem, reject it
-      log.info("Error {} validating application instance definition ", e.toString());
-      log.debug("Error validating application instance definition ", e);
-      log.info(instanceDefinition.toString());
-      throw e;
-    }
+    // providers to validate what there is
+    AggregateConf instanceDescription = builder.getInstanceDescription();
+    validateInstanceDefinition(sliderAM, instanceDescription);
+    validateInstanceDefinition(provider, instanceDescription);
     try {
       persistInstanceDefinition(overwrite, appconfdir, builder);
     } catch (LockAcquireFailedException e) {
@@ -1312,7 +1305,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       amQueue = suppliedQueue;
       log.info("Using queue {} for the application instance.", amQueue);
     }
-    amLauncher.setQueue(amQueue);
+
+    if (amQueue != null) {
+      amLauncher.setQueue(amQueue);
+    }
 
     // Submit the application to the applications manager
     // SubmitApplicationResponse submitResp = applicationsManager.submitApplication(appRequest);
@@ -1598,7 +1594,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
   /**
-   * Kill the submitted application by sending a call to the ASM
+   * Kill the submitted application via YARN
    * @throws YarnException
    * @throws IOException
    */
@@ -1928,7 +1924,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     LaunchedApplication application = new LaunchedApplication(yarnClient, app);
     applicationId = application.getApplicationId();
     
-
     if (forcekill) {
       //escalating to forced kill
       application.kill("Forced stop of " + clustername +
@@ -2112,19 +2107,18 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     for (Map.Entry<String, Integer> entry : roleInstances.entrySet()) {
       String role = entry.getKey();
       int count = entry.getValue();
-      if (count < 0) {
-        throw new BadCommandArgumentsException("Requested number of " + role
-            + " instances is out of range");
-      }
       resources.getOrAddComponent(role).put(ResourceKeys.COMPONENT_INSTANCES,
                                             Integer.toString(count));
-
 
       log.debug("Flexed cluster specification ( {} -> {}) : \n{}",
                 role,
                 count,
                 resources);
     }
+    SliderAMClientProvider sliderAM = new SliderAMClientProvider(getConfig());
+    // slider provider to validate what there is
+    validateInstanceDefinition(sliderAM, instanceDefinition);
+    
     int exitCode = EXIT_FALSE;
     // save the specification
     try {
@@ -2132,10 +2126,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     } catch (LockAcquireFailedException e) {
       // lock failure
       log.debug("Failed to lock dir {}", clusterDirectory, e);
-      log.warn("Failed to save new resource definition to {} : {}", clusterDirectory,
-               e.toString());
-      
-
+      log.warn("Failed to save new resource definition to {} : {}", clusterDirectory, e);
     }
 
     // now see if it is actually running and tell it about the update if it is
@@ -2151,6 +2142,25 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       log.info("No running instance to update");
     }
     return exitCode;
+  }
+
+  /**
+   * Validate an instance definition against a provider.
+   * @param provider the provider performing the validation
+   * @param instanceDefinition the instance definition
+   * @throws SliderException if invalid.
+   */
+  protected void validateInstanceDefinition(AbstractClientProvider provider,
+      AggregateConf instanceDefinition) throws SliderException {
+    try {
+      provider.validateInstanceDefinition(instanceDefinition);
+    } catch (SliderException e) {
+      //problem, reject it
+      log.info("Error {} validating application instance definition ", e);
+      log.debug("Error validating application instance definition ", e);
+      log.info(instanceDefinition.toString());
+      throw e;
+    }
   }
 
 
@@ -2481,7 +2491,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 	 * @throws IOException
 	 *             Network or other problems
 	 */
-	private int actionDiagnostic(ActionDiagnosticArgs diagnosticArgs) {
+	public int actionDiagnostic(ActionDiagnosticArgs diagnosticArgs) {
 		try {
 			if (diagnosticArgs.client) {
 				actionDiagnosticClient();
@@ -2523,7 +2533,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 			// we are catching exceptions here because those are indication of
 			// validation result, and we need to print them here
 			log.error("validation of slider-client.xml fails because: "
-					+ e.toString());
+					+ e.toString(), e);
 			return;
 		}
 		SliderClusterOperations clusterOperations = createClusterOperations(clusterName);
@@ -2547,19 +2557,24 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 			}
 			try {
 				SliderUtils.validateHDFSFile(sliderFileSystem, imagePath);
-				log.info("Slider agent tarball is properly installed");
+				log.info("Slider agent package is properly installed");
+			} catch (FileNotFoundException e) {
+				log.error("can not find agent package: {}", e);
+				return;
 			} catch (IOException e) {
-				log.error("can not find or open agent tar ball: " + e.toString());
+				log.error("can not open agent package: {}", e, e);
 				return;
 			}
 			String pkgTarballPath = instanceDefinition.getAppConfOperations()
 					.getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
 			try {
 				SliderUtils.validateHDFSFile(sliderFileSystem, pkgTarballPath);
-				log.info("Application tarball is properly installed");
-			} catch (IOException e) {
-				log.error("can not find or open application tar ball: "
-						+ e.toString());
+				log.info("Application package is properly installed");
+      } catch (FileNotFoundException e) {
+        log.error("can not find application package: {}", e);
+        return;
+ 			} catch (IOException e) {
+				log.error("can not open application package: {} ", e);
 				return;
 			}
 		}

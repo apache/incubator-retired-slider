@@ -58,13 +58,8 @@
   </property>
   <property>
     <name>accumulo_hdfs_root_dir</name>
-    <value>/apps/accumulo/data</value>
+    <value>${DEFAULT_DATA_DIR}</value>
     <description>Accumulo Relative Path to HDFS.</description>
-  </property>
-  <property>
-    <name>accumulo_conf_dir</name>
-    <value>/etc/accumulo</value>
-    <description>Config Directory for Accumulo.</description>
   </property>
   <property>
     <name>app_user</name>

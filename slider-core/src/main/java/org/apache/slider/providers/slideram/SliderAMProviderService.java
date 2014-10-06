@@ -89,14 +89,6 @@ public class SliderAMProviderService extends AbstractProviderService implements
   }
 
   @Override
-  public boolean exec(AggregateConf instanceDefinition,
-      File confDir,
-      Map<String, String> env,
-      ProviderCompleted execInProgress) throws IOException, SliderException {
-    return false;
-  }
-
-  @Override
   public List<ProviderRole> getRoles() {
     return new ArrayList<ProviderRole>(0);
   }

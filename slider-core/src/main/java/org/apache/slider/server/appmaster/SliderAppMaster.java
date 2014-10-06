@@ -20,6 +20,7 @@ package org.apache.slider.server.appmaster;
 
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import com.google.protobuf.BlockingService;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
@@ -50,6 +51,7 @@ import org.apache.hadoop.yarn.client.api.async.AMRMClientAsync;
 import org.apache.hadoop.yarn.client.api.async.NMClientAsync;
 import org.apache.hadoop.yarn.client.api.async.impl.NMClientAsyncImpl;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.apache.hadoop.yarn.exceptions.InvalidApplicationMasterRequestException;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.ipc.YarnRPC;
 import org.apache.hadoop.yarn.registry.client.api.RegistryOperations;
@@ -91,6 +93,7 @@ import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.exceptions.SliderInternalStateException;
 import org.apache.slider.core.exceptions.TriggerClusterTeardownException;
 import org.apache.slider.core.main.ExitCodeProvider;
+import org.apache.slider.core.main.LauncherExitCodes;
 import org.apache.slider.core.main.RunService;
 import org.apache.slider.core.main.ServiceLauncher;
 import org.apache.slider.core.persist.ConfTreeSerDeser;
@@ -215,7 +218,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private AMRMClientAsync asyncRMClient;
 
   @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
-
   private RMOperationHandler rmOperationHandler;
   
   private RMOperationHandler providerRMOperationHandler;
@@ -290,8 +292,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * Flag set during the init process
    */
   private final AtomicBoolean initCompleted = new AtomicBoolean(false);
-  
-  private volatile boolean success = true;
 
   /**
    * Flag to set if the process exit code was set before shutdown started
@@ -336,7 +336,12 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * limit container memory
    */
   private int containerMaxMemory;
-  private String amCompletionReason;
+
+  /**
+   * The stop request received...the exit details are extracted
+   * from this
+   */
+  private volatile ActionStopSlider stopAction;
 
   @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private RoleLaunchService launchService;
@@ -359,6 +364,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private String agentStatusUrl;
   private YarnRegistryViewForProviders yarnRegistryOperations;
   private FsDelegationTokenManager fsDelegationTokenManager;
+  private RegisterApplicationMasterResponse amRegistrationData;
 
   /**
    * Service Constructor
@@ -415,10 +421,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     SliderUtils.validateSliderServerEnvironment(log);
 
     executorService = new WorkflowExecutorService<ExecutorService>("AmExecutor",
-        Executors.newCachedThreadPool(
-        new ServiceThreadFactory("AmExecutor", true)));
+        Executors.newFixedThreadPool(2,
+            new ServiceThreadFactory("AmExecutor", true)));
     addService(executorService);
-
 
     addService(actionQueues);
     //init all child services
@@ -428,6 +433,19 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   @Override
   protected void serviceStart() throws Exception {
     super.serviceStart();
+  }
+
+  @Override
+  protected void serviceStop() throws Exception {
+    super.serviceStop();
+
+    if (fsDelegationTokenManager != null) {
+      try {
+        fsDelegationTokenManager.cancelDelegationToken(getConfig());
+      } catch (Exception e) {
+        log.info("Error cancelling HDFS delegation token", e);
+      }
+    }
   }
 
   /**
@@ -680,12 +698,12 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       // address = SliderUtils.getRmSchedulerAddress(asyncRMClient.getConfig());
       log.info("Connecting to RM at {},address tracking URL={}",
                appMasterRpcPort, appMasterTrackingUrl);
-      RegisterApplicationMasterResponse response = asyncRMClient
+      amRegistrationData = asyncRMClient
         .registerApplicationMaster(appMasterHostname,
                                    appMasterRpcPort,
                                    appMasterTrackingUrl);
       Resource maxResources =
-        response.getMaximumResourceCapability();
+        amRegistrationData.getMaximumResourceCapability();
       containerMaxMemory = maxResources.getMemory();
       containerMaxCores = maxResources.getVirtualCores();
       appState.setContainerLimits(maxResources.getMemory(),
@@ -697,8 +715,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       boolean securityEnabled = UserGroupInformation.isSecurityEnabled();
       if (securityEnabled) {
         secretManager.setMasterKey(
-          response.getClientToAMTokenMasterKey().array());
-        applicationACLs = response.getApplicationACLs();
+            amRegistrationData.getClientToAMTokenMasterKey().array());
+        applicationACLs = amRegistrationData.getApplicationACLs();
 
         //tell the server what the ACLs are 
         rpcService.getServer().refreshServiceAcl(serviceConf,
@@ -707,7 +725,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       // extract container list
 
-      liveContainers = response.getContainersFromPreviousAttempts();
+      liveContainers = amRegistrationData.getContainersFromPreviousAttempts();
 
       //now validate the installation
       Configuration providerConf =
@@ -817,30 +835,35 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // now do the registration
     registerServiceInstance(clustername, appid);
 
+    // log the YARN and web UIs
+    log.info("RM Webapp address {}", serviceConf.get(YarnConfiguration.RM_WEBAPP_ADDRESS));
+    log.info("slider Webapp address {}", appMasterTrackingUrl);
+    
     // declare the cluster initialized
     log.info("Application Master Initialization Completed");
     initCompleted.set(true);
 
-    // start handling any scheduled events
-    
-    startQueueProcessing();
-    // Start the Slider AM provider
-    
-    sliderAMProvider.start();
-
-    // launch the real provider; this is expected to trigger a callback that
-    // starts the node review process
-    launchProviderService(instanceDefinition, confDir);
 
     try {
+      // start handling any scheduled events
+
+      startQueueProcessing();
+      // Start the Slider AM provider
+
+      sliderAMProvider.start();
+
+      // launch the real provider; this is expected to trigger a callback that
+      // starts the node review process
+      launchProviderService(instanceDefinition, confDir);
+
       //now block waiting to be told to exit the process
       waitForAMCompletionSignal();
-      //shutdown time
-    } finally {
-      finish();
+    } catch(Exception e) {
+      log.error("Exception : {}", e, e);
+      onAMStop(new ActionStopSlider(e));
     }
-
-    return amExitCode;
+    //shutdown time
+    return finish();
   }
 
   private void startAgentWebApp(MapOperations appInformation,
@@ -1105,61 +1128,66 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     } finally {
       AMExecutionStateLock.unlock();
     }
-    //add a sleep here for about a second. Why? it
-    //stops RPC calls breaking so dramatically when the cluster
-    //is torn down mid-RPC
-    try {
-      Thread.sleep(TERMINATION_SIGNAL_PROPAGATION_DELAY);
-    } catch (InterruptedException ignored) {
-      //ignored
-    }
   }
 
   /**
-   * Declare that the AM is complete
-   * @param exitCode exit code for the aM
-   * @param reason reason for termination
+   * Signal that the AM is complete .. queues it in a separate thread
+   *
+   * @param stopActionRequest request containing shutdown details
    */
-  public synchronized void signalAMComplete(int exitCode, String reason) {
-    amCompletionReason = reason;
+  public synchronized void signalAMComplete(ActionStopSlider stopActionRequest) {
+    // this is a queued action: schedule it through the queues
+    schedule(stopActionRequest);
+  }
+
+  /**
+   * Signal that the AM is complete
+   *
+   * @param stopActionRequest request containing shutdown details
+   */
+  public synchronized void onAMStop(ActionStopSlider stopActionRequest) {
+
     AMExecutionStateLock.lock();
     try {
-      amCompletionFlag.set(true);
-      amExitCode = exitCode;
-      isAMCompleted.signal();
+      if (amCompletionFlag.compareAndSet(false, true)) {
+        // first stop request received
+        this.stopAction = stopActionRequest;
+        isAMCompleted.signal();
+      }
     } finally {
       AMExecutionStateLock.unlock();
     }
   }
 
+  
   /**
-   * shut down the cluster 
+   * trigger the YARN cluster termination process
+   * @return the exit code
    */
-  private synchronized void finish() {
+  private synchronized int finish() {
+    Preconditions.checkNotNull(stopAction, "null stop action");
     FinalApplicationStatus appStatus;
-    log.info("Triggering shutdown of the AM: {}", amCompletionReason);
+    log.info("Triggering shutdown of the AM: {}", stopAction);
 
-    String appMessage = amCompletionReason;
+    String appMessage = stopAction.getMessage();
     //stop the daemon & grab its exit code
-    int exitCode = amExitCode;
-    success = exitCode == 0 || exitCode == 3;
+    int exitCode = stopAction.getExitCode();
+    amExitCode = exitCode;
 
-    appStatus = success ? FinalApplicationStatus.SUCCEEDED:
-                FinalApplicationStatus.FAILED;
+    appStatus = stopAction.getFinalApplicationStatus();
     if (!spawnedProcessExitedBeforeShutdownTriggered) {
       //stopped the forked process but don't worry about its exit code
       exitCode = stopForkedProcess();
       log.debug("Stopped forked process: exit code={}", exitCode);
     }
 
-    if (fsDelegationTokenManager != null) {
-      try {
-        fsDelegationTokenManager.cancelDelegationToken(getConfig());
-      } catch (Exception e) {
-        log.info("Error cancelling HDFS delegation token", e);
-      }
+    // make sure the AM is actually registered. If not, there's no point
+    // trying to unregister it
+    if (amRegistrationData == null) {
+      log.info("Application attempt not yet registered; skipping unregistration");
+      return exitCode;
     }
-
+    
     //stop any launches in progress
     launchService.stop();
 
@@ -1170,17 +1198,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // signal to the RM
     log.info("Application completed. Signalling finish to RM");
 
-    //if there were failed containers and the app isn't already down as failing, it is now
-/*
-    int failedContainerCount = appState.getFailedCountainerCount();
-    if (failedContainerCount != 0 &&
-        appStatus == FinalApplicationStatus.SUCCEEDED) {
-      appStatus = FinalApplicationStatus.FAILED;
-      appMessage =
-        "Completed with exit code =  " + exitCode + " - " + getContainerDiagnosticInfo();
-      success = false;
-    }
-*/
     try {
       log.info("Unregistering AM status={} message={}", appStatus, appMessage);
       asyncRMClient.unregisterApplicationMaster(appStatus, appMessage, null);
@@ -1191,16 +1208,21 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 */
     } catch (IOException e) {
       log.info("Failed to unregister application: " + e, e);
+    } catch (InvalidApplicationMasterRequestException e) {
+      log.info("Application not found in YARN application list;" +
+               " it may have been terminated/YARN shutdown in progress: " + e, e);
     } catch (YarnException e) {
       log.info("Failed to unregister application: " + e, e);
     }
+    return exitCode;
   }
 
-  /**
-   * Get diagnostics info about containers
-   */
+    /**
+     * Get diagnostics info about containers
+     */
   private String getContainerDiagnosticInfo() {
-   return appState.getContainerDiagnosticInfo();
+
+    return appState.getContainerDiagnosticInfo();
   }
 
   public Object getProxy(Class protocol, InetSocketAddress addr) {
@@ -1304,18 +1326,24 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * It should be the only way that anything -even the AM itself on startup-
    * asks for nodes. 
    * @param resources the resource tree
-   * @throws IOException
+   * @throws SliderException slider problems, including invalid configs
+   * @throws IOException IO problems
    */
   private void flexCluster(ConfTree resources)
-    throws IOException, SliderInternalStateException, BadConfigException {
+      throws IOException, SliderException {
+
+    AggregateConf newConf =
+        new AggregateConf(appState.getInstanceDefinitionSnapshot());
+    newConf.setResources(resources);
+    // verify the new definition is valid
+    sliderAMProvider.validateInstanceDefinition(newConf);
+    providerService.validateInstanceDefinition(newConf);
 
     appState.updateResourceDefinitions(resources);
 
     // reset the scheduled windows...the values
     // may have changed
     appState.resetFailureCounts();
-    
-
 
     // ask for more containers if needed
     reviewRequestAndReleaseNodes("flexCluster");
@@ -1398,15 +1426,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       //now apply the operations
       executeRMOperations(allOperations);
     } catch (TriggerClusterTeardownException e) {
-
       //App state has decided that it is time to exit
-      log.error("Cluster teardown triggered %s", e);
-      signalAMComplete(e.getExitCode(), e.toString());
+      log.error("Cluster teardown triggered {}", e, e);
+      queue(new ActionStopSlider(e));
     }
   }
-  
-  
-  
   
   /**
    * Shutdown operation: release all containers
@@ -1422,7 +1446,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   @Override //AMRMClientAsync
   public void onShutdownRequest() {
     LOG_YARN.info("Shutdown Request received");
-    signalAMComplete(EXIT_CLIENT_INITIATED_SHUTDOWN, "Shutdown requested from RM");
+    signalAMComplete(new ActionStopSlider("stop",
+        EXIT_SUCCESS,
+        FinalApplicationStatus.SUCCEEDED,
+        "Shutdown requested from RM"));
   }
 
   /**
@@ -1448,8 +1475,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public void onError(Throwable e) {
     //callback says it's time to finish
     LOG_YARN.error("AMRMClientAsync.onError() received " + e, e);
-    signalAMComplete(EXIT_EXCEPTION_THROWN,
-        "AMRMClientAsync.onError() received " + e);
+    signalAMComplete(new ActionStopSlider("stop",
+        EXIT_EXCEPTION_THROWN,
+        FinalApplicationStatus.FAILED,
+        "AMRMClientAsync.onError() received " + e));
   }
   
 /* =================================================================== */
@@ -1478,14 +1507,35 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 /* SliderClusterProtocol */
 /* =================================================================== */
 
+  /**
+   * General actions to perform on a slider RPC call coming in
+   * @param operation operation to log
+   * @throws IOException problems
+   */
+  protected void onRpcCall(String operation) throws IOException {
+    // it's not clear why this is here —it has been present since the
+    // code -> git change. Leaving it in
+    SliderUtils.getCurrentUser();
+    log.debug("Received call to {}", operation);
+  }
+
   @Override //SliderClusterProtocol
   public Messages.StopClusterResponseProto stopCluster(Messages.StopClusterRequestProto request) throws
                                                                                                  IOException,
                                                                                                  YarnException {
-    SliderUtils.getCurrentUser();
+    onRpcCall("stopCluster()");
     String message = request.getMessage();
-    log.info("SliderAppMasterApi.stopCluster: {}", message);
-    schedule(new ActionStopSlider(message, 1000, TimeUnit.MILLISECONDS));
+    if (message == null) {
+      message = "application frozen by client";
+    }
+    ActionStopSlider stopSlider =
+        new ActionStopSlider(message,
+            1000, TimeUnit.MILLISECONDS,
+            LauncherExitCodes.EXIT_SUCCESS,
+            FinalApplicationStatus.SUCCEEDED,
+            message);
+    log.info("SliderAppMasterApi.stopCluster: {}", stopSlider);
+    schedule(stopSlider);
     return Messages.StopClusterResponseProto.getDefaultInstance();
   }
 
@@ -1493,13 +1543,13 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public Messages.FlexClusterResponseProto flexCluster(Messages.FlexClusterRequestProto request) throws
                                                                                                  IOException,
                                                                                                  YarnException {
-    SliderUtils.getCurrentUser();
-
+    onRpcCall("flexCluster()");
     String payload = request.getClusterSpec();
     ConfTreeSerDeser confTreeSerDeser = new ConfTreeSerDeser();
     ConfTree updatedResources = confTreeSerDeser.fromJson(payload);
     flexCluster(updatedResources);
-    return Messages.FlexClusterResponseProto.newBuilder().setResponse(true).build();
+    return Messages.FlexClusterResponseProto.newBuilder().setResponse(
+        true).build();
   }
 
   @Override //SliderClusterProtocol
@@ -1507,7 +1557,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     Messages.GetJSONClusterStatusRequestProto request) throws
                                                        IOException,
                                                        YarnException {
-    SliderUtils.getCurrentUser();
+    onRpcCall("getJSONClusterStatus()");
     String result;
     //quick update
     //query and json-ify
@@ -1519,14 +1569,13 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       .build();
   }
 
-
   @Override
   public Messages.GetInstanceDefinitionResponseProto getInstanceDefinition(
     Messages.GetInstanceDefinitionRequestProto request) throws
                                                         IOException,
                                                         YarnException {
 
-    log.info("Received call to getInstanceDefinition()");
+    onRpcCall("getInstanceDefinition()");
     String internal;
     String resources;
     String app;
@@ -1539,7 +1588,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     assert internal != null;
     assert resources != null;
     assert app != null;
-    log.info("Generating getInstanceDefinition Response");
+    log.debug("Generating getInstanceDefinition Response");
     Messages.GetInstanceDefinitionResponseProto.Builder builder =
       Messages.GetInstanceDefinitionResponseProto.newBuilder();
     builder.setInternal(internal);
@@ -1548,12 +1597,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     return builder.build();
   }
 
-
   @Override //SliderClusterProtocol
   public Messages.ListNodeUUIDsByRoleResponseProto listNodeUUIDsByRole(Messages.ListNodeUUIDsByRoleRequestProto request) throws
                                                                                                                          IOException,
                                                                                                                          YarnException {
-    SliderUtils.getCurrentUser();
+    onRpcCall("listNodeUUIDsByRole()");
     String role = request.getRole();
     Messages.ListNodeUUIDsByRoleResponseProto.Builder builder =
       Messages.ListNodeUUIDsByRoleResponseProto.newBuilder();
@@ -1568,7 +1616,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public Messages.GetNodeResponseProto getNode(Messages.GetNodeRequestProto request) throws
                                                                                      IOException,
                                                                                      YarnException {
-    SliderUtils.getCurrentUser();
+    onRpcCall("getNode()");
     RoleInstance instance = appState.getLiveInstanceByContainerID(
       request.getUuid());
     return Messages.GetNodeResponseProto.newBuilder()
@@ -1580,7 +1628,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public Messages.GetClusterNodesResponseProto getClusterNodes(Messages.GetClusterNodesRequestProto request) throws
                                                                                                              IOException,
                                                                                                              YarnException {
-    SliderUtils.getCurrentUser();
+    onRpcCall("getClusterNodes()");
     List<RoleInstance>
       clusterNodes = appState.getLiveInstancesByContainerIDs(
       request.getUuidList());
@@ -1598,6 +1646,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public Messages.EchoResponseProto echo(Messages.EchoRequestProto request) throws
                                                                             IOException,
                                                                             YarnException {
+    onRpcCall("echo()");
     Messages.EchoResponseProto.Builder builder =
       Messages.EchoResponseProto.newBuilder();
     String text = request.getText();
@@ -1612,6 +1661,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public Messages.KillContainerResponseProto killContainer(Messages.KillContainerRequestProto request) throws
                                                                                                        IOException,
                                                                                                        YarnException {
+    onRpcCall("killContainer()");
     String containerID = request.getId();
     log.info("Kill Container {}", containerID);
     //throws NoSuchNodeException if it is missing
@@ -1651,7 +1701,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     return Messages.AMSuicideResponseProto.getDefaultInstance();
   }
 
-  /* =================================================================== */
+/* =================================================================== */
 /* END */
 /* =================================================================== */
 
@@ -1688,7 +1738,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
   }
 
-
   /* =================================================================== */
   /* EventCallback  from the child or ourselves directly */
   /* =================================================================== */
@@ -1701,10 +1750,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     try {
       flexCluster(getInstanceDefinition().getResources());
     } catch (Exception e) {
-      //this may happen in a separate thread, so the ability to act is limited
-      log.error("Failed to flex cluster nodes", e);
-      //declare a failure
-      finish();
+      // cluster flex failure: log
+      log.error("Failed to flex cluster nodes: {}", e, e);
+      // then what? exit
+      queue(new ActionStopSlider(e));
     }
   }
 
@@ -1743,12 +1792,19 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     if (service == providerService && service.isInState(STATE.STOPPED)) {
       //its the current master process in play
       int exitCode = providerService.getExitCode();
-      int mappedProcessExitCode =
-        AMUtils.mapProcessExitCodeToYarnExitCode(exitCode);
+      int mappedProcessExitCode = exitCode;
+
       boolean shouldTriggerFailure = !amCompletionFlag.get()
-         && (AMUtils.isMappedExitAFailure(mappedProcessExitCode));
-      
+         && (mappedProcessExitCode != 0);
+
       if (shouldTriggerFailure) {
+        String reason =
+            "Spawned process failed with raw " + exitCode + " mapped to " +
+            mappedProcessExitCode;
+        ActionStopSlider stop = new ActionStopSlider("stop",
+            mappedProcessExitCode,
+            FinalApplicationStatus.FAILED,
+            reason);
         //this wasn't expected: the process finished early
         spawnedProcessExitedBeforeShutdownTriggered = true;
         log.info(
@@ -1757,9 +1813,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
           mappedProcessExitCode);
 
         //tell the AM the cluster is complete 
-        signalAMComplete(mappedProcessExitCode,
-                         "Spawned master exited with raw " + exitCode + " mapped to " +
-          mappedProcessExitCode);
+        signalAMComplete(stop);
       } else {
         //we don't care
         log.info(
@@ -1906,11 +1960,20 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   public void onExceptionInThread(Thread thread, Exception exception) {
     log.error("Exception in {}: {}", thread.getName(), exception, exception);
-    int exitCode = EXIT_EXCEPTION_THROWN;
-    if (exception instanceof ExitCodeProvider) {
-      exitCode = ((ExitCodeProvider) exception).getExitCode();
+    
+    // if there is a teardown in progress, ignore it
+    if (amCompletionFlag.get()) {
+      log.info("Ignoring exception: shutdown in progress");
+    } else {
+      int exitCode = EXIT_EXCEPTION_THROWN;
+      if (exception instanceof ExitCodeProvider) {
+        exitCode = ((ExitCodeProvider) exception).getExitCode();
+      }
+      signalAMComplete(new ActionStopSlider("stop",
+          exitCode,
+          FinalApplicationStatus.FAILED,
+          exception.toString()));
     }
-    signalAMComplete(exitCode, exception.toString());
   }
 
   /**
@@ -1925,6 +1988,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
             InternalKeys.DEFAULT_CHAOS_MONKEY_ENABLED);
     if (!enabled) {
       log.info("Chaos monkey disabled");
+      return false;
     }
     
     long monkeyInterval = internals.getTimeRange(

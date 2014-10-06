@@ -20,6 +20,7 @@ package org.apache.slider.agent.actions
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.yarn.api.records.FinalApplicationStatus
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.api.ClusterDescription
@@ -43,11 +44,6 @@ import org.junit.Test
 @Slf4j
 class TestActionStatus extends AgentMiniClusterTestBase {
 
-  @Before
-  public void setup() {
-    super.setup()
-    createMiniCluster("", configuration, 1, false)
-  }
 
   /**
    * This is a test suite to run the tests against a single cluster instance
@@ -57,6 +53,8 @@ class TestActionStatus extends AgentMiniClusterTestBase {
 
   @Test
   public void testSuite() throws Throwable {
+    super.setup()
+    createMiniCluster("testactionstatus", configuration, 1, true)
     testStatusLiveCluster()
     testStatusMissingCluster()
   }
@@ -115,7 +113,7 @@ class TestActionStatus extends AgentMiniClusterTestBase {
     assert statusLauncher.serviceExitCode == 0
 
     //status to a file
-    File tfile = new File("target/" + clustername + "/status.json")
+    File tfile = new File("target/$clustername-status.json")
     statusArgs.output = tfile.absolutePath
     sliderClient.actionStatus(clustername, statusArgs)
     def text = tfile.text
@@ -136,12 +134,13 @@ class TestActionStatus extends AgentMiniClusterTestBase {
         ]
     )
     assert statusLauncher.serviceExitCode == 0
-    tfile = new File(path)
     ClusterDescription cd2 = new ClusterDescription();
     cd2.fromJson(text)
     
     clusterActionFreeze(sliderClient, clustername, "stopping first cluster")
-    waitForAppToFinish(sliderClient)
+    def finishedAppReport = waitForAppToFinish(sliderClient)
+    assert finishedAppReport.finalApplicationStatus ==
+           FinalApplicationStatus.SUCCEEDED
 
     //now expect the status to fail
     try {
@@ -151,6 +150,7 @@ class TestActionStatus extends AgentMiniClusterTestBase {
       assertExceptionDetails(e, SliderExitCodes.EXIT_BAD_STATE,
           ErrorStrings.E_APPLICATION_NOT_RUNNING)
     }
+    
   }
 
 

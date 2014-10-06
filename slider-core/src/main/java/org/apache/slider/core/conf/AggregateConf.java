@@ -23,6 +23,8 @@ import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 
+import java.io.IOException;
+
 /**
  * Aggregate Configuration.
  *
@@ -58,6 +60,24 @@ public final class AggregateConf {
     setInternal(internal);
   }
 
+  /**
+   * Take a snapshot of the configuration
+   * @param instanceDefinition source
+   * @throws IOException marshalling/copying problems
+   */
+  public AggregateConf(AggregateConf instanceDefinition) throws IOException {
+    ConfTreeOperations resourcesSnapshot =
+        ConfTreeOperations.fromInstance(instanceDefinition.getResources());
+    ConfTreeOperations appConfSnapshot =
+        ConfTreeOperations.fromInstance(instanceDefinition.getAppConf());
+    ConfTreeOperations internalsSnapshot =
+        ConfTreeOperations.fromInstance(instanceDefinition.getInternal());
+    //build a new aggregate from the snapshots
+    setResources(resourcesSnapshot.confTree);
+    setAppConf(appConfSnapshot.confTree);
+    setInternal(internalsSnapshot.confTree);
+  }
+  
   public void setResources(ConfTree resources) {
     this.resources = resources;
     resourceOperations = new ConfTreeOperations(resources);

@@ -26,6 +26,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.ContainerStatus;
+import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.api.records.impl.pb.ContainerPBImpl;
@@ -640,9 +641,8 @@ public class AppState {
    * The resource configuration is updated -review and update state.
    * @param resources updated resources specification
    */
-  public synchronized void updateResourceDefinitions(ConfTree resources) throws
-                                                                         BadConfigException,
-                                                                         IOException {
+  public synchronized void updateResourceDefinitions(ConfTree resources)
+      throws BadConfigException, IOException {
     log.debug("Updating resources to {}", resources);
     
     instanceDefinition.setResources(resources);
@@ -1537,16 +1537,17 @@ public class AppState {
       throws TriggerClusterTeardownException {
     int failures = role.getFailed();
     int threshold = getFailureThresholdForRole(role);
-    log.debug("Failure count of role: {}: {}, threshold={}",
+    log.debug("Failure count of component: {}: {}, threshold={}",
         role.getName(), failures, threshold);
 
     if (failures > threshold) {
       throw new TriggerClusterTeardownException(
         SliderExitCodes.EXIT_DEPLOYMENT_FAILED,
         ErrorStrings.E_UNSTABLE_CLUSTER +
-        " - failed with role %s failing %d times (%d in startup);" +
+        " - failed with component %s failing %d times (%d in startup);" +
         " threshold is %d - last failure: %s",
-        role.getName(),
+          FinalApplicationStatus.FAILED,
+          role.getName(),
         role.getFailed(),
         role.getStartFailed(),
           threshold,
