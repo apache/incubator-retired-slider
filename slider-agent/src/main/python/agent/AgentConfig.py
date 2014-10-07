@@ -61,6 +61,7 @@ log_level=INFO
 [command]
 max_retries=2
 sleep_between_retries=1
+auto_restart=5,5
 
 [security]
 keysdir=security/keys
@@ -108,6 +109,8 @@ class AgentConfig:
   RUN_DIR = "run_dir"
   # agent version file
   VERSION_FILE = "version_file"
+
+  AUTO_RESTART = "auto_restart"
 
   FOLDER_MAPPING = {
     APP_PACKAGE_DIR: "WORK",
@@ -163,6 +166,17 @@ class AgentConfig:
     if command == None:
       return ""
     return command
+
+  # return max, window - max failures within window minutes
+  def getErrorWindow(self):
+    window = config.get(AgentConfig.COMMAND_SECTION, AgentConfig.AUTO_RESTART)
+    if window != None:
+      parts = window.split(',')
+      if len(parts) == 2:
+        if parts[0].isdigit() and parts[1].isdigit():
+          return (int(parts[0]), int(parts[1]))
+      pass
+    return (0, 0)
 
   def set(self, category, name, value):
     global config

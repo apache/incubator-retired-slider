@@ -312,6 +312,43 @@ class TestMain(unittest.TestCase):
       AgentConfig_set_mock.assert_any_call("server", "zk_reg_path", "/registry/org-apache-slider/cl1")
 
 
+  def test_config1(self):
+    config = AgentConfig("", "")
+    (max, window) = config.getErrorWindow()
+    self.assertEqual(max, 5)
+    self.assertEqual(window, 5)
+
+    config.set(AgentConfig.COMMAND_SECTION, AgentConfig.AUTO_RESTART, '')
+    (max, window) = config.getErrorWindow()
+    self.assertEqual(max, 0)
+    self.assertEqual(window, 0)
+
+    config.set(AgentConfig.COMMAND_SECTION, AgentConfig.AUTO_RESTART, '33')
+    (max, window) = config.getErrorWindow()
+    self.assertEqual(max, 0)
+    self.assertEqual(window, 0)
+
+    config.set(AgentConfig.COMMAND_SECTION, AgentConfig.AUTO_RESTART, '-4,-6')
+    (max, window) = config.getErrorWindow()
+    self.assertEqual(max, 0)
+    self.assertEqual(window, 0)
+
+    config.set(AgentConfig.COMMAND_SECTION, AgentConfig.AUTO_RESTART, 'wd,er')
+    (max, window) = config.getErrorWindow()
+    self.assertEqual(max, 0)
+    self.assertEqual(window, 0)
+
+    config.set(AgentConfig.COMMAND_SECTION, AgentConfig.AUTO_RESTART, '2,20')
+    (max, window) = config.getErrorWindow()
+    self.assertEqual(max, 2)
+    self.assertEqual(window, 20)
+
+    config.set(AgentConfig.COMMAND_SECTION, AgentConfig.AUTO_RESTART, ' 2, 30')
+    (max, window) = config.getErrorWindow()
+    self.assertEqual(max, 0)
+    self.assertEqual(window, 0)
+
+
 if __name__ == "__main__":
   logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
   unittest.main()
