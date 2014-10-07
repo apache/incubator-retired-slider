@@ -329,9 +329,10 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     def listedInstance = client.actionRegistryList(registryArgs)
 
     def resolvedRecord = listedInstance[0]
-    assert resolvedRecord[YarnRegistryAttributes.YARN_ID] == serviceRecord.getYarn_id()
-    assert resolvedRecord[YarnRegistryAttributes.YARN_PERSISTENCE] == serviceRecord.getYarn_persistence()
-   
+    assert resolvedRecord[YarnRegistryAttributes.YARN_ID] == 
+           serviceRecord[YarnRegistryAttributes.YARN_ID]
+    assert resolvedRecord[YarnRegistryAttributes.YARN_PERSISTENCE] == 
+           serviceRecord[YarnRegistryAttributes.YARN_PERSISTENCE]
 
     // listconf 
     registryArgs.list = false;

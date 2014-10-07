@@ -24,6 +24,7 @@ import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.registry.client.binding.RegistryTypeUtils;
 import org.apache.hadoop.yarn.registry.client.types.yarn.PersistencePolicies;
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
+import org.apache.hadoop.yarn.registry.client.types.yarn.YarnRegistryAttributes;
 import org.apache.slider.api.InternalKeys;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.api.ClusterDescription;
@@ -257,9 +258,11 @@ public class HBaseProviderService extends AbstractProviderService
     String name = amState.getApplicationName() ;
     ServiceRecord serviceRecord = new ServiceRecord();
     // bond lifespan to the application
-    serviceRecord.putYarn_id(yarnRegistry.getApplicationAttemptId()
-                                         .getApplicationId().toString());
-    serviceRecord.putYarn_persistence(PersistencePolicies.APPLICATION);
+    serviceRecord.set(YarnRegistryAttributes.YARN_ID,
+        yarnRegistry.getApplicationAttemptId()
+                    .getApplicationId().toString());
+    serviceRecord.set(YarnRegistryAttributes.YARN_PERSISTENCE,
+        PersistencePolicies.APPLICATION);
     try {
       URL configURL = new URL(amWebAPI,
           SLIDER_PATH_PUBLISHER + "/" + HBASE_SERVICE_TYPE);

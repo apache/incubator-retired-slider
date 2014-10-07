@@ -59,6 +59,7 @@ import org.apache.hadoop.yarn.registry.client.binding.RegistryPathUtils;
 import org.apache.hadoop.yarn.registry.client.types.yarn.PersistencePolicies;
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
 import org.apache.hadoop.yarn.registry.client.binding.RegistryTypeUtils;
+import org.apache.hadoop.yarn.registry.client.types.yarn.YarnRegistryAttributes;
 import org.apache.hadoop.yarn.registry.server.integration.RMRegistryOperationsService;
 import org.apache.hadoop.yarn.security.AMRMTokenIdentifier;
 import org.apache.hadoop.yarn.security.client.ClientToAMTokenSecretManager;
@@ -931,8 +932,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     // Yarn registry
     ServiceRecord serviceRecord = new ServiceRecord();
-    serviceRecord.putYarn_id(appid.toString());
-    serviceRecord.putYarn_persistence(PersistencePolicies.APPLICATION);
+    serviceRecord.set(YarnRegistryAttributes.YARN_ID, appid.toString());
+    serviceRecord.set(YarnRegistryAttributes.YARN_PERSISTENCE,
+        PersistencePolicies.APPLICATION);
     serviceRecord.description = "Slider Application Master";
 
     serviceRecord.addExternalEndpoint(
@@ -964,8 +966,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // and a shorter lived binding to the app
     String attempt = appAttemptID.toString();
     ServiceRecord attemptRecord = new ServiceRecord(serviceRecord);
-    attemptRecord.putYarn_id(attempt);
-    attemptRecord.putYarn_persistence(PersistencePolicies.APPLICATION_ATTEMPT);
+    attemptRecord.set(YarnRegistryAttributes.YARN_ID, attempt);
+    attemptRecord.set(YarnRegistryAttributes.YARN_PERSISTENCE,
+        PersistencePolicies.APPLICATION_ATTEMPT);
     yarnRegistryOperations.putComponent(
         RegistryPathUtils.encodeYarnID(attempt),
         serviceRecord);
@@ -1008,9 +1011,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     log.info("Registering component {}", id);
     String cid = RegistryPathUtils.encodeYarnID(id.toString());
     ServiceRecord container = new ServiceRecord();
-    container.putYarn_id(cid);
+    container.set(YarnRegistryAttributes.YARN_ID, cid);
     container.description = description;
-    container.putYarn_persistence(PersistencePolicies.CONTAINER);
+    container.set(YarnRegistryAttributes.YARN_PERSISTENCE,
+        PersistencePolicies.CONTAINER);
     try {
       yarnRegistryOperations.putComponent(cid, container);
     } catch (IOException e) {

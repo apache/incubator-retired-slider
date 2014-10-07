@@ -49,6 +49,7 @@ import org.apache.hadoop.yarn.registry.client.binding.RegistryUtils;
 import org.apache.hadoop.yarn.registry.client.exceptions.NoRecordException;
 import org.apache.hadoop.yarn.registry.client.types.Endpoint;
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
+import org.apache.hadoop.yarn.registry.client.types.yarn.YarnRegistryAttributes;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterNode;
 import org.apache.slider.api.InternalKeys;
@@ -2789,9 +2790,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   private void logInstance(ServiceRecord instance,
       boolean verbose) {
     if (!verbose) {
-      log.info("{}", instance.getYarn_id());
+      log.info("{}", instance.get(YarnRegistryAttributes.YARN_ID, ""));
     } else {
-      log.info("{}: ", instance.getYarn_id());
+      log.info("{}: ", instance.get(YarnRegistryAttributes.YARN_ID, ""));
       logEndpoints(instance);
     }
   }
