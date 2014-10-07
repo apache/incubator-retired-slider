@@ -21,6 +21,7 @@ package org.apache.slider.providers.agent;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.curator.utils.ZKPaths;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
@@ -323,6 +324,32 @@ public class AgentProviderService extends AbstractProviderService implements
           fileSystem.getFileSystem().resolvePath(new Path(agentVer)),
           LocalResourceType.FILE);
       launcher.addLocalResource(AgentKeys.AGENT_VERSION_FILE, agentVerRes);
+    }
+
+    if (SliderUtils.isHadoopClusterSecure(getConfig())) {
+      String keytabFullPath = instanceDefinition.getAppConfOperations()
+          .getComponent(SliderKeys.COMPONENT_AM).get(
+              SliderKeys.AM_KEYTAB_LOCAL_PATH);
+      String amKeytabName = instanceDefinition.getAppConfOperations()
+          .getComponent(SliderKeys.COMPONENT_AM).get(
+              SliderKeys.AM_LOGIN_KEYTAB_NAME);
+      if (SliderUtils.isUnset(keytabFullPath)) {
+        // we need to localize the keytab files in the directory
+        Path keytabDir = fileSystem.buildKeytabPath(null,
+          getAmState().getApplicationName());
+        FileStatus[] keytabs = fileSystem.getFileSystem().listStatus(keytabDir);
+        LocalResource keytabRes;
+        for (FileStatus keytab : keytabs) {
+          if (!amKeytabName.equals(keytab.getPath().getName())) {
+            log.info("Localizing keytab {}", keytab.getPath().getName());
+            keytabRes = fileSystem.createAmResource(keytab.getPath(),
+              LocalResourceType.FILE);
+            launcher.addLocalResource(SliderKeys.KEYTAB_DIR + "/" +
+                                    keytab.getPath().getName(),
+                                    keytabRes);
+          }
+        }
+      }
     }
 
     //add the configuration resources

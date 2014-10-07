@@ -4,7 +4,7 @@
   },
   "global": {
     "application.def": ".slider/package/ACCUMULO/${app.package.name}.zip",
-    "java_home": "/usr/lib/jvm/java",
+    "java_home": "${app.java.home}",
     "site.global.app_user": "${app.user}",
     "site.global.app_log_dir": "${AGENT_LOG_ROOT}",
     "site.global.app_pid_dir": "${AGENT_WORK_ROOT}/app/run",

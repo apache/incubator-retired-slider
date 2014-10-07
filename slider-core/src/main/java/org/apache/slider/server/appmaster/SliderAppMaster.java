@@ -26,6 +26,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
+import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenIdentifier;
 import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.ipc.ProtocolSignature;
 import org.apache.hadoop.security.Credentials;
@@ -125,6 +126,7 @@ import org.apache.slider.server.appmaster.rpc.RpcBinder;
 import org.apache.slider.server.appmaster.rpc.SliderAMPolicyProvider;
 import org.apache.slider.server.appmaster.rpc.SliderClusterProtocolPBImpl;
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
+import org.apache.slider.server.appmaster.security.SecurityConfiguration;
 import org.apache.slider.server.appmaster.state.AppState;
 import org.apache.slider.server.appmaster.state.ContainerAssignment;
 import org.apache.slider.server.appmaster.state.ProviderAppState;
@@ -231,7 +233,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   /**
    * token blob
    */
-  private ByteBuffer allTokens;
+  private Credentials containerTokens;
 
   private WorkflowRpcService rpcService;
 
@@ -436,19 +438,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     super.serviceStart();
   }
 
-  @Override
-  protected void serviceStop() throws Exception {
-    super.serviceStop();
-
-    if (fsDelegationTokenManager != null) {
-      try {
-        fsDelegationTokenManager.cancelDelegationToken(getConfig());
-      } catch (Exception e) {
-        log.info("Error cancelling HDFS delegation token", e);
-      }
-    }
-  }
-
   /**
    * Start the queue processing
    */
@@ -565,6 +554,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     
     // triggers resolution and snapshotting in agent
     appState.updateInstanceDefinition(instanceDefinition);
+
+    Configuration serviceConf = getConfig();
+
     File confDir = getLocalConfDir();
     if (!confDir.exists() || !confDir.isDirectory()) {
       log.info("Conf dir {} does not exist.", confDir);
@@ -572,8 +564,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       log.info("Parent dir {}:\n{}", parentFile, SliderUtils.listDir(parentFile));
     }
 
-    Configuration serviceConf = getConfig();
-    // IP filtering 
+    // IP filtering
     serviceConf.set(HADOOP_HTTP_FILTER_INITIALIZERS, AM_FILTER_NAME);
     
     //get our provider
@@ -712,16 +703,49 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       // set the RM-defined maximum cluster values
       appInformation.put(ResourceKeys.YARN_CORES, Integer.toString(containerMaxCores));
       appInformation.put(ResourceKeys.YARN_MEMORY, Integer.toString(containerMaxMemory));
-      
-      boolean securityEnabled = UserGroupInformation.isSecurityEnabled();
+
+      // process the initial user to obtain the set of user
+      // supplied credentials (tokens were passed in by client). Remove AMRM
+      // token and HDFS delegation token, the latter because we will provide an
+      // up to date token for container launches (getContainerTokens()).
+      UserGroupInformation currentUser = UserGroupInformation.getCurrentUser();
+      Credentials credentials = currentUser.getCredentials();
+      Iterator<Token<?>> iter = credentials.getAllTokens().iterator();
+      while (iter.hasNext()) {
+        Token<?> token = iter.next();
+        log.info("Token {}", token.getKind());
+        if (token.getKind().equals(AMRMTokenIdentifier.KIND_NAME)  ||
+            token.getKind().equals(DelegationTokenIdentifier.HDFS_DELEGATION_KIND)) {
+          iter.remove();
+        }
+      }
+      // at this point this credentials map is probably clear, but leaving this
+      // code to allow for future tokens...
+      containerTokens = credentials;
+
+      SecurityConfiguration securityConfiguration = new SecurityConfiguration(
+          serviceConf, instanceDefinition, clustername);
+      // obtain security state
+      boolean securityEnabled = securityConfiguration.isSecurityEnabled();
       if (securityEnabled) {
         secretManager.setMasterKey(
             amRegistrationData.getClientToAMTokenMasterKey().array());
         applicationACLs = amRegistrationData.getApplicationACLs();
 
-        //tell the server what the ACLs are 
+        //tell the server what the ACLs are
         rpcService.getServer().refreshServiceAcl(serviceConf,
             new SliderAMPolicyProvider());
+        // perform keytab based login to establish kerberos authenticated
+        // principal.  Can do so now since AM registration with RM above required
+        // tokens associated to principal
+        String principal = securityConfiguration.getPrincipal();
+        File localKeytabFile = securityConfiguration.getKeytabFile(
+            fs, instanceDefinition, principal);
+        // Now log in...
+        login(principal, localKeytabFile);
+        // obtain new FS reference that should be kerberos based and different
+        // than the previously cached reference
+        fs = getClusterFS();
       }
 
       // extract container list
@@ -801,27 +825,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     maybeStartMonkey();
 
     // setup token renewal and expiry handling for long lived apps
-    if (SliderUtils.isHadoopClusterSecure(getConfig())) {
-      fsDelegationTokenManager = new FsDelegationTokenManager(actionQueues);
-      fsDelegationTokenManager.acquireDelegationToken(getConfig());
-    }
-
-    UserGroupInformation currentUser = UserGroupInformation.getCurrentUser();
-    Credentials credentials =
-        currentUser.getCredentials();
-    DataOutputBuffer dob = new DataOutputBuffer();
-    credentials.writeTokenStorageToStream(dob);
-    dob.close();
-    // Now remove the AM->RM token so that containers cannot access it.
-    Iterator<Token<?>> iter = credentials.getAllTokens().iterator();
-    while (iter.hasNext()) {
-      Token<?> token = iter.next();
-      log.info("Token {}", token.getKind());
-      if (token.getKind().equals(AMRMTokenIdentifier.KIND_NAME)) {
-        iter.remove();
-      }
-    }
-    allTokens = ByteBuffer.wrap(dob.getData(), 0, dob.getLength());
+//    if (SliderUtils.isHadoopClusterSecure(getConfig())) {
+//      fsDelegationTokenManager = new FsDelegationTokenManager(actionQueues);
+//      fsDelegationTokenManager.acquireDelegationToken(getConfig());
+//    }
 
     // if not a secure cluster, extract the username -it will be
     // propagated to workers
@@ -865,6 +872,40 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
     //shutdown time
     return finish();
+  }
+
+  protected void login(String principal, File localKeytabFile)
+      throws IOException, SliderException {
+    UserGroupInformation.loginUserFromKeytab(principal,
+                                             localKeytabFile.getAbsolutePath());
+    validateLoginUser(UserGroupInformation.getLoginUser());
+  }
+
+  /**
+   * Ensure that the user is generated from a keytab and has no HDFS delegation
+   * tokens.
+   *
+   * @param user
+   * @throws SliderException
+   */
+  protected void validateLoginUser(UserGroupInformation user)
+      throws SliderException {
+    if (!user.isFromKeytab()) {
+      throw new SliderException(SliderExitCodes.EXIT_BAD_STATE, "User is "
+        + "not based on a keytab in a secure deployment.");
+    }
+    Credentials credentials =
+        user.getCredentials();
+    Iterator<Token<?>> iter = credentials.getAllTokens().iterator();
+    while (iter.hasNext()) {
+      Token<?> token = iter.next();
+      log.info("Token {}", token.getKind());
+      if (token.getKind().equals(
+          DelegationTokenIdentifier.HDFS_DELEGATION_KIND)) {
+        log.info("Unexpected HDFS delegation token.  Removing...");
+        iter.remove();
+      }
+    }
   }
 
   private void startAgentWebApp(MapOperations appInformation,
@@ -1451,9 +1492,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public void onShutdownRequest() {
     LOG_YARN.info("Shutdown Request received");
     signalAMComplete(new ActionStopSlider("stop",
-        EXIT_SUCCESS,
-        FinalApplicationStatus.SUCCEEDED,
-        "Shutdown requested from RM"));
+                                          EXIT_SUCCESS,
+                                          FinalApplicationStatus.SUCCEEDED,
+                                          "Shutdown requested from RM"));
   }
 
   /**
@@ -1622,7 +1663,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
                                                                                      YarnException {
     onRpcCall("getNode()");
     RoleInstance instance = appState.getLiveInstanceByContainerID(
-      request.getUuid());
+        request.getUuid());
     return Messages.GetNodeResponseProto.newBuilder()
                    .setClusterNode(instance.toProtobuf())
                    .build();
@@ -1635,7 +1676,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     onRpcCall("getClusterNodes()");
     List<RoleInstance>
       clusterNodes = appState.getLiveInstancesByContainerIDs(
-      request.getUuidList());
+        request.getUuidList());
 
     Messages.GetClusterNodesResponseProto.Builder builder =
       Messages.GetClusterNodesResponseProto.newBuilder();
@@ -1847,16 +1888,42 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   public void startContainer(Container container,
                              ContainerLaunchContext ctx,
-                             RoleInstance instance) {
+                             RoleInstance instance) throws IOException {
     // Set up tokens for the container too. Today, for normal shell commands,
     // the container in distribute-shell doesn't need any tokens. We are
     // populating them mainly for NodeManagers to be able to download any
     // files in the distributed file-system. The tokens are otherwise also
     // useful in cases, for e.g., when one is running a "hadoop dfs" command
     // inside the distributed shell.
-    ctx.setTokens(allTokens.duplicate());
+
+    // add current HDFS delegation token with an up to date token
+    ByteBuffer tokens = getContainerTokens();
+
+    if (tokens != null) {
+      ctx.setTokens(tokens);
+    } else {
+      log.warn("No delegation tokens obtained and set for launch context");
+    }
     appState.containerStartSubmitted(container, instance);
     nmClientAsync.startContainerAsync(container, ctx);
+  }
+
+  private ByteBuffer getContainerTokens() throws IOException {
+    // a delegation token can be retrieved from filesystem since
+    // the login is via a keytab (see above)
+    ByteBuffer tokens = null;
+    Token hdfsToken = getClusterFS().getFileSystem().getDelegationToken
+        (UserGroupInformation.getLoginUser().getShortUserName());
+    if (hdfsToken != null) {
+      Credentials credentials = new Credentials(containerTokens);
+      credentials.addToken(hdfsToken.getKind(), hdfsToken);
+      DataOutputBuffer dob = new DataOutputBuffer();
+      credentials.writeTokenStorageToStream(dob);
+      dob.close();
+      tokens = ByteBuffer.wrap(dob.getData(), 0, dob.getLength());
+    }
+
+    return tokens;
   }
 
   @Override //  NMClientAsync.CallbackHandler 
