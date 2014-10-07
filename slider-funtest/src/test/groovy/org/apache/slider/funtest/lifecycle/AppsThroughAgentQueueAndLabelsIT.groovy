@@ -29,6 +29,32 @@ import org.apache.slider.funtest.framework.SliderShell
 import org.junit.After
 import org.junit.Test
 
+/**
+ * SETUP FOR THE TEST
+ * Create valid labels, red and blue [yarn rmadmin -addLabels red,blue]
+ * Add nodes with label [yarn rmadmin -setNodeToLabels host1:blue]
+ * Perform refresh queue [yarn rmadmin -refreshQueues]
+ *
+ * Create a queue with access to labels - these are changes to capacity scheduler configuration
+ *   Add a queue in addition to default
+ *       yarn.scheduler.capacity.root.queues=default,labeled
+ *   Provide capacity, take out from default
+ *       yarn.scheduler.capacity.root.labeled.capacity=80
+ *       yarn.scheduler.capacity.root.default.capacity=20
+ *   Provide standard queue specs
+ *       yarn.scheduler.capacity.root.labeled.state=RUNNING
+ *       yarn.scheduler.capacity.root.labeled.maximum-capacity=80
+ *   Have queue access the label
+ *       yarn.scheduler.capacity.root.labeled.labels=red,blue
+ *
+ * After specifying the new configuration call refresh [yarn rmadmin -refreshQueues]
+ *
+ * See resources_queue_labels.json for label configuration required for the test
+ *   Label expression for slider-appmaster is also the default for all containers
+ *   if they do not specify own label expressions
+ *       "yarn.label.expression":"red"
+ *
+ */
 @CompileStatic
 @Slf4j
 public class AppsThroughAgentQueueAndLabelsIT extends AgentCommandTestBase
