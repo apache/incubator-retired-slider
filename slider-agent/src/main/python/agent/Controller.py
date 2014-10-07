@@ -27,6 +27,7 @@ import time
 import threading
 import urllib2
 import pprint
+import math
 from random import randint
 
 from AgentConfig import AgentConfig
@@ -86,7 +87,8 @@ class Controller(threading.Thread):
     self.statusCommand = None
     self.failureCount = 0
     self.heartBeatRetryCount = 0
-    self.autoRestart = False
+    self.autoRestartFailures = 0
+    self.autoRestartTrackingSince = 0
 
 
   def __del__(self):
@@ -275,7 +277,7 @@ class Controller(threading.Thread):
           stored_command = self.actionQueue.customServiceOrchestrator.stored_command
           if len(stored_command) > 0:
             auto_start_command = self.create_start_command(stored_command)
-            if auto_start_command:
+            if auto_start_command and self.shouldAutoRestart():
               logger.info("Automatically adding a start command.")
               logger.debug("Auto start command: " + pprint.pformat(auto_start_command))
               self.updateStateBasedOnCommand([auto_start_command], False)
@@ -484,6 +486,35 @@ class Controller(threading.Thread):
                        + '; Response: ' + str(response))
             logger.warn(err_msg)
             return {'exitstatus': 1, 'log': err_msg}
+
+
+  # Basic window that only counts failures till the window duration expires
+  def shouldAutoRestart(self):
+    max, window = self.config.getErrorWindow()
+    if max <= 0 or window <= 0:
+      return True
+
+    seconds_now = time.time()
+    if self.autoRestartTrackingSince == 0:
+      self.autoRestartTrackingSince = seconds_now
+      self.autoRestartFailures = 1
+      return True
+
+    self.autoRestartFailures += 1
+    minutes = math.floor((seconds_now - self.autoRestartTrackingSince) / 60)
+    if self.autoRestartFailures > max:
+      logger.info("Auto restart not allowed due to " + str(self.autoRestartFailures) + " failures in " + str(minutes) +
+                  " minutes. Max restarts allowed is " + str(max) + " in " + str(window) + " minutes.")
+      return False
+
+    if minutes > window:
+      logger.info("Resetting window as number of minutes passed is " + str(minutes))
+      self.autoRestartTrackingSince = seconds_now
+      self.autoRestartFailures = 1
+      return True
+    return True
+
+    pass
 
 
 def main(argv=None):

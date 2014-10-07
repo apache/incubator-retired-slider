@@ -25,6 +25,7 @@ import unittest, threading
 from agent import Controller, ActionQueue
 from agent import hostname
 import sys
+import time
 from Controller import AGENT_AUTO_RESTART_EXIT_CODE
 from Controller import State
 from AgentConfig import AgentConfig
@@ -253,6 +254,68 @@ class TestController(unittest.TestCase):
     self.controller.restartAgent()
     self.assertTrue(os_exit_mock.called)
     self.assertTrue(os_exit_mock.call_args[0][0] == AGENT_AUTO_RESTART_EXIT_CODE)
+
+
+  @patch("time.time")
+  def test_failure_window(self, mock_time):
+    config = AgentConfig("", "")
+    original_config = config.get(AgentConfig.COMMAND_SECTION, AgentConfig.AUTO_RESTART)
+    config.set(AgentConfig.COMMAND_SECTION, AgentConfig.AUTO_RESTART, '2,1')
+    ## The behavior of side_effect is different when you run tests in command line and when you do it through IDE
+    ## So few extra items are there in the list
+    mock_time.side_effect = [200, 500, 500]
+    controller5 = Controller.Controller(config)
+
+    try:
+      self.assertTrue(controller5.shouldAutoRestart())
+      self.assertTrue(controller5.shouldAutoRestart())
+    finally:
+      config.set(AgentConfig.COMMAND_SECTION, AgentConfig.AUTO_RESTART, original_config)
+
+
+  @patch("time.time")
+  def test_failure_window(self, mock_time):
+    config = AgentConfig("", "")
+    original_config = config.get(AgentConfig.COMMAND_SECTION, AgentConfig.AUTO_RESTART)
+    config.set(AgentConfig.COMMAND_SECTION, AgentConfig.AUTO_RESTART, '3,1')
+    ## The behavior of side_effect is different when you run tests in command line and when you do it through IDE
+    ## So few extra items are there in the list
+    mock_time.side_effect = [200, 210, 220, 230, 240, 250]
+    controller5 = Controller.Controller(config)
+
+    try:
+      self.assertTrue(controller5.shouldAutoRestart())
+      self.assertTrue(controller5.shouldAutoRestart())
+      self.assertTrue(controller5.shouldAutoRestart())
+      self.assertFalse(controller5.shouldAutoRestart())
+    finally:
+      config.set(AgentConfig.COMMAND_SECTION, AgentConfig.AUTO_RESTART, original_config)
+
+
+  def test_failure_window2(self):
+    config = MagicMock()
+    config.getErrorWindow.return_value = (0, 0)
+    controller = Controller.Controller(config)
+
+    self.assertTrue(controller.shouldAutoRestart())
+
+    config.getErrorWindow.return_value = (0, 1)
+    self.assertTrue(controller.shouldAutoRestart())
+
+    config.getErrorWindow.return_value = (1, 0)
+    self.assertTrue(controller.shouldAutoRestart())
+
+    config.getErrorWindow.return_value = (-1, -1)
+    self.assertTrue(controller.shouldAutoRestart())
+
+    config.getErrorWindow.return_value = (1, 1)
+    self.assertTrue(controller.shouldAutoRestart())
+
+    #second failure within a minute
+    self.assertFalse(controller.shouldAutoRestart())
+
+    #do not reset unless window expires
+    self.assertFalse(controller.shouldAutoRestart())
 
 
   @patch("urllib2.urlopen")
