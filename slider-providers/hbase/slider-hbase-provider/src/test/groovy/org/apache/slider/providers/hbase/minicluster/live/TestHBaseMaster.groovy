@@ -22,6 +22,7 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.registry.client.binding.RegistryUtils
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord
+import org.apache.hadoop.yarn.registry.client.types.yarn.YarnRegistryAttributes
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.RoleKeys
@@ -93,7 +94,7 @@ class TestHBaseMaster extends HBaseMiniClusterTestBase {
     assert hbaseInstances.size() == 1
     ServiceRecord hbaseServiceData = hbaseInstances[0]
     log.info "HBase service 0 == $hbaseServiceData"
-    assert hbaseServiceData.yarn_id 
+    assert hbaseServiceData[YarnRegistryAttributes.YARN_ID] 
 
     RegistryRetriever retriever = new RegistryRetriever(hbaseServiceData)
     log.info retriever.toString()

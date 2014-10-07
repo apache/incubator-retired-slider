@@ -22,7 +22,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.registry.client.binding.RegistryTypeUtils;
-import org.apache.hadoop.yarn.registry.client.types.PersistencePolicies;
+import org.apache.hadoop.yarn.registry.client.types.yarn.PersistencePolicies;
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
 import org.apache.slider.api.InternalKeys;
 import org.apache.slider.common.SliderKeys;
@@ -40,7 +40,6 @@ import org.apache.slider.core.registry.docstore.PublishedConfigSet;
 import org.apache.slider.core.registry.docstore.PublishedConfiguration;
 import org.apache.slider.core.registry.info.CustomRegistryConstants;
 import org.apache.slider.providers.AbstractProviderService;
-import org.apache.slider.providers.ProviderCompleted;
 import org.apache.slider.providers.ProviderCore;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
@@ -258,9 +257,9 @@ public class HBaseProviderService extends AbstractProviderService
     String name = amState.getApplicationName() ;
     ServiceRecord serviceRecord = new ServiceRecord();
     // bond lifespan to the application
-    serviceRecord.yarn_id  = yarnRegistry.getApplicationAttemptId()
-                                         .getApplicationId().toString();
-    serviceRecord.yarn_persistence = PersistencePolicies.APPLICATION;
+    serviceRecord.putYarn_id(yarnRegistry.getApplicationAttemptId()
+                                         .getApplicationId().toString());
+    serviceRecord.putYarn_persistence(PersistencePolicies.APPLICATION);
     try {
       URL configURL = new URL(amWebAPI,
           SLIDER_PATH_PUBLISHER + "/" + HBASE_SERVICE_TYPE);

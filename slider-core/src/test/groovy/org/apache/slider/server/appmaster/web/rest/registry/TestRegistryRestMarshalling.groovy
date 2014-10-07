@@ -19,6 +19,7 @@
 package org.apache.slider.server.appmaster.web.rest.registry
 
 import groovy.transform.CompileStatic
+import org.apache.hadoop.yarn.registry.client.types.yarn.YarnRegistryAttributes
 import org.junit.Test
 
 /**
@@ -39,8 +40,8 @@ class TestRegistryRestMarshalling {
 
     def serviceRecord = unmarshalled.service
     assert serviceRecord
-    assert serviceRecord.yarn_id !=null
-    assert serviceRecord.yarn_persistence != 0
+    assert serviceRecord[YarnRegistryAttributes.YARN_ID] != null
+    assert serviceRecord[YarnRegistryAttributes.YARN_PERSISTENCE] != ""
   }
 
   

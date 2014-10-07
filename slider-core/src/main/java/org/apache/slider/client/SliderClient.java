@@ -48,7 +48,6 @@ import static org.apache.hadoop.yarn.registry.client.binding.RegistryUtils.*;
 import org.apache.hadoop.yarn.registry.client.binding.RegistryUtils;
 import org.apache.hadoop.yarn.registry.client.exceptions.NoRecordException;
 import org.apache.hadoop.yarn.registry.client.types.Endpoint;
-import org.apache.hadoop.yarn.registry.client.types.RegistryPathStatus;
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterNode;
@@ -127,15 +126,11 @@ import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
-import org.codehaus.jackson.map.DeserializationConfig;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
@@ -2402,15 +2397,19 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // the arguments
     args.validate();
     RegistryOperations operations = getRegistryOperations();
-    String serviceclassPath = args.path;
+    String path = args.path;
     Collection<ServiceRecord> serviceRecords;
     try {
       if (args.list) {
-        actionRegistryListYarn(args);
+        Map<String, ServiceRecord> recordMap =
+            listServiceRecords(operations, path);
+        serviceRecords = recordMap.values();
+        // list records out
       } else  {
-        ServiceRecord instance = lookupServiceRecord(registryArgs);
+        ServiceRecord instance = resolve(path);
         serviceRecords = new ArrayList<ServiceRecord>(1);
         serviceRecords.add(instance);
+        // list or save records
       }
 //      JDK7
     } catch (FileNotFoundException e) {
@@ -2442,14 +2441,14 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     registryArgs.validate();
     try {
       if (registryArgs.list) {
-        actionRegistryListYarn(registryArgs);
+        actionRegistryList(registryArgs);
       } else if (registryArgs.listConf) {
         // list the configurations
         actionRegistryListConfigsYarn(registryArgs);
       } else if (SliderUtils.isSet(registryArgs.getConf)) {
         // get a configuration
         PublishedConfiguration publishedConfiguration =
-            actionRegistryGetConfigYarn(registryArgs);
+            actionRegistryGetConfig(registryArgs);
         outputConfig(publishedConfiguration, registryArgs);
       } else {
         // it's an unknown command
@@ -2478,7 +2477,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @throws IOException Network or other problems
    */
   @VisibleForTesting
-  public Collection<ServiceRecord> actionRegistryListYarn(
+  public Collection<ServiceRecord> actionRegistryList(
       ActionRegistryArgs registryArgs)
       throws YarnException, IOException {
     String serviceType = registryArgs.serviceType;
@@ -2486,23 +2485,21 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     RegistryOperations operations = getRegistryOperations();
     Collection<ServiceRecord> serviceRecords;
     if (StringUtils.isEmpty(name)) {
-      String serviceclassPath =
+      String path =
           serviceclassPath(
               currentUser(),
               serviceType);
 
       try {
         Map<String, ServiceRecord> recordMap =
-            listServiceRecords(operations, serviceclassPath);
-        RegistryPathStatus[] listDir;
+            listServiceRecords(operations, path);
         if (recordMap.isEmpty()) {
           throw new UnknownApplicationInstanceException(
-              "No applications registered under " + serviceclassPath);
+              "No applications registered under " + path);
         }
         serviceRecords = recordMap.values();
       } catch (PathNotFoundException e) {
-        throw new UnknownApplicationInstanceException(e.getPath().toString(),
-            e);
+        throw new UnknownApplicationInstanceException(path, e);
       }
     } else {
       ServiceRecord instance = lookupServiceRecord(registryArgs);
@@ -2792,9 +2789,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   private void logInstance(ServiceRecord instance,
       boolean verbose) {
     if (!verbose) {
-      log.info("{}", instance.yarn_id);
+      log.info("{}", instance.getYarn_id());
     } else {
-      log.info("{}: ", instance.yarn_id);
+      log.info("{}: ", instance.getYarn_id());
       logEndpoints(instance);
     }
   }
@@ -2848,7 +2845,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @throws FileNotFoundException if the config is not found
    */
   @VisibleForTesting
-  public PublishedConfiguration actionRegistryGetConfigYarn(ActionRegistryArgs registryArgs)
+  public PublishedConfiguration actionRegistryGetConfig(ActionRegistryArgs registryArgs)
       throws YarnException, IOException {
     ServiceRecord instance = lookupServiceRecord(registryArgs);
 
@@ -2910,7 +2907,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   private ServiceRecord lookupServiceRecord(ActionRegistryArgs registryArgs) throws
       SliderException,
       IOException {
-    return lookupServiceRecord(registryArgs.serviceType, registryArgs.name);
+    String path = servicePath(currentUser(), registryArgs.serviceType,
+        registryArgs.name);
+    return resolve(path);
   }
 
   /**
@@ -2925,18 +2924,33 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    */
   public ServiceRecord lookupServiceRecord(String serviceType, String id)
       throws IOException, SliderException {
+    String path = servicePath(currentUser(), serviceType, id);
+    return resolve(path);
+  }
+
+  /**
+   * 
+   * Look up an instance
+   * @param path path
+   * @return instance data
+   * @throws UnknownApplicationInstanceException no path or service record
+   * at the end of the path
+   * @throws SliderException other failures
+   * @throws IOException IO problems or wrapped exceptions
+   */
+  public ServiceRecord resolve(String path)
+      throws IOException, SliderException {
     try {
       return getRegistryOperations().resolve(
-          servicePath(currentUser(),
-              serviceType, id));
+          path);
       // TODO JDK7 SWITCH
     } catch (PathNotFoundException e) {
       throw new UnknownApplicationInstanceException(e.getPath().toString(), e);
     } catch (NoRecordException e) {
       throw new UnknownApplicationInstanceException(e.getPath().toString(), e);
     }
-  } 
-  
+  }
+
   /**
    * List instances in the registry for the current user
    * @return a list of slider registry instances

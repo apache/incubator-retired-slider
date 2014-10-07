@@ -30,7 +30,6 @@ import org.apache.slider.accumulo.CustomAuthenticator
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderKeys
-import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.core.persist.ConfTreeSerDeser
 import org.apache.slider.core.registry.docstore.PublishedConfiguration
@@ -39,6 +38,9 @@ import org.apache.slider.funtest.framework.SliderShell
 
 import org.junit.Before
 import org.junit.Test
+
+import static org.apache.hadoop.yarn.registry.client.binding.RegistryUtils.currentUser
+import static org.apache.hadoop.yarn.registry.client.binding.RegistryUtils.servicePath
 
 @Slf4j
 class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
@@ -170,8 +172,10 @@ class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
     Exception caught;
     while (true) {
       try {
-        ServiceRecord instance =
-          sliderClient.lookupServiceRecord(SliderKeys.APP_TYPE, clusterName)
+        String path = servicePath(currentUser(),
+            SliderKeys.APP_TYPE,
+            clusterName);
+        ServiceRecord instance = sliderClient.resolve(path)
         RegistryRetriever retriever = new RegistryRetriever(instance)
         PublishedConfiguration configuration = retriever.retrieveConfiguration(
           retriever.getConfigurations(true), "quicklinks", true)

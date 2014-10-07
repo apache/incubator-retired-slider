@@ -26,6 +26,7 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.registry.client.api.RegistryConstants
 import org.apache.hadoop.yarn.registry.client.binding.RegistryUtils
+import org.apache.hadoop.yarn.registry.client.types.yarn.YarnRegistryAttributes
 import org.apache.slider.api.StatusKeys
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderKeys
@@ -157,8 +158,9 @@ class TestRegistryRestResources extends AgentTestBase {
     def unmarshalled = pem.fromJson(responseStr)
     def r1 = unmarshalled.service
     assert r1
-    assert r1.yarn_id != null
-    assert r1.yarn_persistence != 0
+    assert r1[YarnRegistryAttributes.YARN_ID] != null
+    assert r1[YarnRegistryAttributes.YARN_PERSISTENCE] != ""
+
 
     // and via the web resource AP
     jsonBuilder = webResource.type(MediaType.APPLICATION_JSON);
@@ -166,7 +168,7 @@ class TestRegistryRestResources extends AgentTestBase {
 
     def serviceRecord = entryResource.service
     assert serviceRecord != null;
-    assert serviceRecord.yarn_id != null;
+    assert serviceRecord[YarnRegistryAttributes.YARN_ID] != null
     def externalEndpoints = serviceRecord.external;
     assert externalEndpoints.size() > 0
 

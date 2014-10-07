@@ -25,9 +25,10 @@ import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.yarn.registry.client.api.RegistryConstants
 import org.apache.hadoop.yarn.registry.client.binding.RegistryTypeUtils
-import org.apache.hadoop.yarn.registry.client.services.RegistryOperationsClient
+import org.apache.hadoop.yarn.registry.client.impl.RegistryOperationsClient
 import org.apache.hadoop.yarn.registry.client.types.RegistryPathStatus
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord
+import org.apache.hadoop.yarn.registry.client.types.yarn.YarnRegistryAttributes
 import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
 
 import static org.apache.hadoop.yarn.registry.client.binding.RegistryUtils.*
@@ -158,7 +159,8 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     def serviceRecord = serviceRecords[0]
     log.info(serviceRecord.toString())
 
-    assert serviceRecord.yarn_id != null;
+    assert serviceRecord[YarnRegistryAttributes.YARN_ID] != null
+    assert serviceRecord[YarnRegistryAttributes.YARN_PERSISTENCE] != ""
     def externalEndpoints = serviceRecord.external;
     assert externalEndpoints.size() > 0
 
@@ -299,7 +301,7 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     registryArgs.list = true;
     registryArgs.name = "unknown"
     try {
-      client.actionRegistryListYarn(registryArgs)
+      client.actionRegistryList(registryArgs)
     } catch (UnknownApplicationInstanceException expected) {
       // expected 
     }
@@ -309,7 +311,7 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     registryArgs.name = null
     registryArgs.serviceType = "org-apache-hadoop"
     try {
-      client.actionRegistryListYarn(registryArgs)
+      client.actionRegistryList(registryArgs)
     } catch (UnknownApplicationInstanceException expected) {
       // expected 
     }
@@ -324,9 +326,12 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     //now expect list to work
     describe registryArgs.toString()
 
-    def listedInstance = client.actionRegistryListYarn(registryArgs)
-    assert listedInstance[0].yarn_id == serviceRecord.yarn_id
-    
+    def listedInstance = client.actionRegistryList(registryArgs)
+
+    def resolvedRecord = listedInstance[0]
+    assert resolvedRecord[YarnRegistryAttributes.YARN_ID] == serviceRecord.getYarn_id()
+    assert resolvedRecord[YarnRegistryAttributes.YARN_PERSISTENCE] == serviceRecord.getYarn_persistence()
+   
 
     // listconf 
     registryArgs.list = false;

@@ -19,11 +19,11 @@
 package org.apache.slider.server.services.yarnregistry;
 
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
+import org.apache.hadoop.yarn.registry.client.api.BindFlags;
 import org.apache.hadoop.yarn.registry.client.api.RegistryOperations;
 import org.apache.hadoop.yarn.registry.client.binding.RegistryUtils;
 import org.apache.hadoop.yarn.registry.client.binding.RegistryPathUtils;
 
-import org.apache.hadoop.yarn.registry.client.api.CreateFlags;
 import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
 
 import java.io.IOException;
@@ -107,7 +107,7 @@ public class YarnRegistryViewForProviders {
     String path = RegistryUtils.componentPath(
         user, serviceClass, serviceName, componentName);
     registryOperations.mknode(RegistryPathUtils.parentOf(path), true);
-    registryOperations.create(path, record, CreateFlags.OVERWRITE);
+    registryOperations.bind(path, record, BindFlags.OVERWRITE);
   }
 
   /**
@@ -125,7 +125,7 @@ public class YarnRegistryViewForProviders {
     String path = RegistryUtils.servicePath(
         username, serviceClass, serviceName);
     registryOperations.mknode(RegistryPathUtils.parentOf(path), true);
-    registryOperations.create(path, record, CreateFlags.OVERWRITE);
+    registryOperations.bind(path, record, BindFlags.OVERWRITE);
   }
 
   /**
@@ -142,7 +142,7 @@ public class YarnRegistryViewForProviders {
     String path = RegistryUtils.servicePath(
         user, serviceClass, serviceName);
     registryOperations.mknode(RegistryPathUtils.parentOf(path), true);
-    registryOperations.create(path, record, CreateFlags.OVERWRITE);
+    registryOperations.bind(path, record, BindFlags.OVERWRITE);
   }
 
   public void rmComponent(String componentName) throws IOException {
