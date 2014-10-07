@@ -20,11 +20,11 @@ package org.apache.slider.server.appmaster.web.rest.registry;
 
 import com.google.inject.Singleton;
 import org.apache.hadoop.fs.PathNotFoundException;
-import org.apache.hadoop.yarn.registry.client.api.RegistryOperations;
-import org.apache.hadoop.yarn.registry.client.exceptions.AuthenticationFailedException;
-import org.apache.hadoop.yarn.registry.client.exceptions.InvalidRecordException;
-import org.apache.hadoop.yarn.registry.client.exceptions.NoPathPermissionsException;
-import org.apache.hadoop.yarn.registry.client.exceptions.NoRecordException;
+import org.apache.hadoop.registry.client.api.RegistryOperations;
+import org.apache.hadoop.registry.client.exceptions.AuthenticationFailedException;
+import org.apache.hadoop.registry.client.exceptions.InvalidRecordException;
+import org.apache.hadoop.registry.client.exceptions.NoPathPermissionsException;
+import org.apache.hadoop.registry.client.exceptions.NoRecordException;
 import org.apache.hadoop.yarn.webapp.ForbiddenException;
 import org.apache.hadoop.yarn.webapp.NotFoundException;
 import org.apache.slider.server.appmaster.web.WebAppApi;

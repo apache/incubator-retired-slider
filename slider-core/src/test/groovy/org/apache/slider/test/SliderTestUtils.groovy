@@ -31,7 +31,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.hadoop.util.Shell
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.conf.YarnConfiguration
-import org.apache.hadoop.yarn.registry.client.types.ServiceRecord
+import org.apache.hadoop.registry.client.types.ServiceRecord
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.ClusterNode
 import org.apache.slider.api.RoleKeys

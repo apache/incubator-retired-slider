@@ -25,7 +25,7 @@ import org.apache.hadoop.security.ProviderUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.security.alias.CredentialProvider
 import org.apache.hadoop.security.alias.CredentialProviderFactory
-import org.apache.hadoop.yarn.registry.client.types.ServiceRecord
+import org.apache.hadoop.registry.client.types.ServiceRecord
 import org.apache.slider.accumulo.CustomAuthenticator
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.client.SliderClient
@@ -39,8 +39,8 @@ import org.apache.slider.funtest.framework.SliderShell
 import org.junit.Before
 import org.junit.Test
 
-import static org.apache.hadoop.yarn.registry.client.binding.RegistryUtils.currentUser
-import static org.apache.hadoop.yarn.registry.client.binding.RegistryUtils.servicePath
+import static org.apache.hadoop.registry.client.binding.RegistryUtils.currentUser
+import static org.apache.hadoop.registry.client.binding.RegistryUtils.servicePath
 
 @Slf4j
 class AccumuloBasicIT extends AccumuloAgentCommandTestBase {

@@ -24,9 +24,9 @@ import com.sun.jersey.api.client.UniformInterfaceException
 import com.sun.jersey.api.client.WebResource
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.hadoop.yarn.registry.client.api.RegistryConstants
-import org.apache.hadoop.yarn.registry.client.binding.RegistryUtils
-import org.apache.hadoop.yarn.registry.client.types.yarn.YarnRegistryAttributes
+import org.apache.hadoop.registry.client.api.RegistryConstants
+import org.apache.hadoop.registry.client.binding.RegistryUtils
+import org.apache.hadoop.registry.client.types.yarn.YarnRegistryAttributes
 import org.apache.slider.api.StatusKeys
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderKeys

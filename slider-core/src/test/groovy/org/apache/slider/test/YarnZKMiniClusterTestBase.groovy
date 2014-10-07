@@ -23,15 +23,13 @@ import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.io.IOUtils
 import org.apache.hadoop.yarn.conf.YarnConfiguration
-import org.apache.hadoop.yarn.registry.client.api.RegistryConstants
+import org.apache.hadoop.registry.client.api.RegistryConstants
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.core.zk.BlockingZKWatcher
 import org.apache.slider.core.zk.ZKIntegration
 
 import java.util.concurrent.atomic.AtomicBoolean
 
-import static org.apache.slider.common.SliderKeys.*;
-import static org.apache.slider.common.SliderXMLConfKeysForTesting.*;
 import static org.apache.slider.test.KeysForTests.*;
 
 /**

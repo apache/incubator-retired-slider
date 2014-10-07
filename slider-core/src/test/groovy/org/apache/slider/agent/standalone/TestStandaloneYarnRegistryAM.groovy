@@ -23,15 +23,15 @@ import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
-import org.apache.hadoop.yarn.registry.client.api.RegistryConstants
-import org.apache.hadoop.yarn.registry.client.binding.RegistryTypeUtils
-import org.apache.hadoop.yarn.registry.client.impl.RegistryOperationsClient
-import org.apache.hadoop.yarn.registry.client.types.RegistryPathStatus
-import org.apache.hadoop.yarn.registry.client.types.ServiceRecord
-import org.apache.hadoop.yarn.registry.client.types.yarn.YarnRegistryAttributes
+import org.apache.hadoop.registry.client.api.RegistryConstants
+import org.apache.hadoop.registry.client.binding.RegistryTypeUtils
+import org.apache.hadoop.registry.client.impl.RegistryOperationsClient
+import org.apache.hadoop.registry.client.types.RegistryPathStatus
+import org.apache.hadoop.registry.client.types.ServiceRecord
+import org.apache.hadoop.registry.client.types.yarn.YarnRegistryAttributes
 import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
 
-import static org.apache.hadoop.yarn.registry.client.binding.RegistryUtils.*
+import static org.apache.hadoop.registry.client.binding.RegistryUtils.*
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.api.ClusterNode
 import org.apache.slider.client.SliderClient

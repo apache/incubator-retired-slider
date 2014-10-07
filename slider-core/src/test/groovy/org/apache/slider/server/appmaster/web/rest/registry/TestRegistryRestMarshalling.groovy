@@ -19,7 +19,7 @@
 package org.apache.slider.server.appmaster.web.rest.registry
 
 import groovy.transform.CompileStatic
-import org.apache.hadoop.yarn.registry.client.types.yarn.YarnRegistryAttributes
+import org.apache.hadoop.registry.client.types.yarn.YarnRegistryAttributes
 import org.junit.Test
 
 /**

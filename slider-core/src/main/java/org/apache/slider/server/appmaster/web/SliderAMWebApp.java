@@ -21,7 +21,7 @@ import com.sun.jersey.api.container.filter.GZIPContentEncodingFilter;
 import com.sun.jersey.api.core.ResourceConfig;
 import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 import com.sun.jersey.spi.container.servlet.ServletContainer;
-import org.apache.hadoop.yarn.registry.client.api.RegistryOperations;
+import org.apache.hadoop.registry.client.api.RegistryOperations;
 import org.apache.hadoop.yarn.webapp.Dispatcher;
 import org.apache.hadoop.yarn.webapp.GenericExceptionHandler;
 import org.apache.hadoop.yarn.webapp.WebApp;

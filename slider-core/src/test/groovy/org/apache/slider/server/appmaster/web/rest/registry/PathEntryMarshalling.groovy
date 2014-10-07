@@ -18,7 +18,7 @@
 
 package org.apache.slider.server.appmaster.web.rest.registry
 
-import org.apache.hadoop.yarn.registry.client.binding.JsonSerDeser
+import org.apache.hadoop.registry.client.binding.JsonSerDeser
 
 class PathEntryMarshalling
     extends JsonSerDeser<PathEntryResource> {

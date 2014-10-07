@@ -20,9 +20,9 @@ package org.apache.slider.providers.hbase.minicluster.live
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.hadoop.yarn.registry.client.binding.RegistryUtils
-import org.apache.hadoop.yarn.registry.client.types.ServiceRecord
-import org.apache.hadoop.yarn.registry.client.types.yarn.YarnRegistryAttributes
+import org.apache.hadoop.registry.client.binding.RegistryUtils
+import org.apache.hadoop.registry.client.types.ServiceRecord
+import org.apache.hadoop.registry.client.types.yarn.YarnRegistryAttributes
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.RoleKeys

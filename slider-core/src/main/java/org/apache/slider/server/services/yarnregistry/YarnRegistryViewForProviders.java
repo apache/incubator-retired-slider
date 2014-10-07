@@ -19,12 +19,12 @@
 package org.apache.slider.server.services.yarnregistry;
 
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
-import org.apache.hadoop.yarn.registry.client.api.BindFlags;
-import org.apache.hadoop.yarn.registry.client.api.RegistryOperations;
-import org.apache.hadoop.yarn.registry.client.binding.RegistryUtils;
-import org.apache.hadoop.yarn.registry.client.binding.RegistryPathUtils;
+import org.apache.hadoop.registry.client.api.BindFlags;
+import org.apache.hadoop.registry.client.api.RegistryOperations;
+import org.apache.hadoop.registry.client.binding.RegistryUtils;
+import org.apache.hadoop.registry.client.binding.RegistryPathUtils;
 
-import org.apache.hadoop.yarn.registry.client.types.ServiceRecord;
+import org.apache.hadoop.registry.client.types.ServiceRecord;
 
 import java.io.IOException;
 

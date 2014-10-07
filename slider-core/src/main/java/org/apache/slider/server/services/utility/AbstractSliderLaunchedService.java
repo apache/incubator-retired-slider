@@ -19,9 +19,9 @@
 package org.apache.slider.server.services.utility;
 
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
-import org.apache.hadoop.yarn.registry.client.api.RegistryConstants;
-import org.apache.hadoop.yarn.registry.client.api.RegistryOperations;
-import org.apache.hadoop.yarn.registry.client.api.RegistryOperationsFactory;
+import org.apache.hadoop.registry.client.api.RegistryConstants;
+import org.apache.hadoop.registry.client.api.RegistryOperations;
+import org.apache.hadoop.registry.client.api.RegistryOperationsFactory;
 import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;

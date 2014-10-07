@@ -21,9 +21,9 @@ package org.apache.slider.test
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.yarn.registry.client.api.RegistryOperations
-import org.apache.hadoop.yarn.registry.client.impl.zk.RegistryOperationsService
-import org.apache.hadoop.yarn.registry.server.services.MicroZookeeperService
+import org.apache.hadoop.registry.client.api.RegistryOperations
+import org.apache.hadoop.registry.client.impl.zk.RegistryOperationsService
+import org.apache.hadoop.registry.server.services.MicroZookeeperService
 import org.apache.slider.common.tools.SliderUtils
 
 @Slf4j
