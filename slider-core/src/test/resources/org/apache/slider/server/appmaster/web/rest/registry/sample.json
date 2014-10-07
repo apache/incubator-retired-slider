@@ -1,9 +1,8 @@
 {
   "nodes": ["/users/example/services/org-apache-slider/test-registry-rest-resources/components"], "service": {
-  "registrationTime": 0,
   "description": "Slider Application Master",
-  "yarn_id": "application_1411664296263_0001",
-  "yarn_persistence": 1,
+  "yarn:id": "application_1411664296263_0001",
+  "yarn:persistence": 1,
   "external": [
     {
       "api": "org.apache.slider.appmaster",
