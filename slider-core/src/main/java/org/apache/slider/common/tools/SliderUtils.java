@@ -511,8 +511,7 @@ public final class SliderUtils {
     int length = separator.length();
     String s = b.toString();
     return (trailing || s.isEmpty()) ?
-           s
-                                     : (b.substring(0, b.length() - length));
+           s  : (b.substring(0, b.length() - length));
   }
 
   /**
@@ -1589,7 +1588,7 @@ public final class SliderUtils {
 
   }
 
-  protected static void verifyIsFile(String program, File exe) throws
+  public static void verifyIsFile(String program, File exe) throws
       FileNotFoundException {
     if (!exe.isFile()) {
       throw new FileNotFoundException(program
@@ -1599,7 +1598,7 @@ public final class SliderUtils {
     }
   }
 
-  protected static void verifyFileSize(String program,
+  public static void verifyFileSize(String program,
       File exe,
       int minFileSize) throws FileNotFoundException {
     if (exe.length() < minFileSize) {
@@ -1740,7 +1739,6 @@ public final class SliderUtils {
     } catch (InterruptedException e) {
       throw new InterruptedIOException(e.toString());
     } catch (TimeoutException e) {
-      log.debug("");
       errorText = e.toString();
     }
     // error text: non null ==> operation failed
@@ -1843,11 +1841,11 @@ public final class SliderUtils {
 	/**
 	 * validate if a file on HDFS can be open
 	 * 
-	 * @throws IOException
-	 *             : the file can't be found or open
+	 * @throws IOException the file can't be found or opened
 	 * @throws URISyntaxException
 	 */
-	public static void validateHDFSFile(SliderFileSystem sliderFileSystem, String pathStr) throws IOException, URISyntaxException{
+	public static void validateHDFSFile(SliderFileSystem sliderFileSystem, String pathStr)
+      throws IOException, URISyntaxException{
 	  URI pathURI = new URI(pathStr);
 	  InputStream inputStream = sliderFileSystem.getFileSystem().open(new Path(pathURI));
 	  if(inputStream == null){
