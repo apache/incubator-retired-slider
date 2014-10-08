@@ -83,10 +83,5 @@ public class ActionResolveArgs extends AbstractActionArgs {
  @Parameter(names = {ARG_VERBOSE},
       description = "verbose output")
   public boolean verbose;
-
-  @Parameter(names = {ARG_INTERNAL},
-      description = "fetch internal registry entries")
-  public boolean internal;
-
   
 }

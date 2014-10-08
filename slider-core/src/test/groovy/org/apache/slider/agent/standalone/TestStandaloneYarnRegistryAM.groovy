@@ -29,6 +29,7 @@ import org.apache.hadoop.registry.client.impl.RegistryOperationsClient
 import org.apache.hadoop.registry.client.types.RegistryPathStatus
 import org.apache.hadoop.registry.client.types.ServiceRecord
 import org.apache.hadoop.registry.client.types.yarn.YarnRegistryAttributes
+import org.apache.slider.common.params.ActionResolveArgs
 import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
 
 import static org.apache.hadoop.registry.client.binding.RegistryUtils.*
@@ -109,9 +110,6 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     ClusterNode master = nodes[0]
     assert master.role == SliderKeys.COMPONENT_AM
 
-
-
-
     String username = client.username
     def yarnRegistryClient = client.yarnAppListClient
     describe("list of all applications")
@@ -174,12 +172,47 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     assert null != serviceRecord.getInternalEndpoint(AGENT_ONEWAY_REST_API)
     assert null != serviceRecord.getInternalEndpoint(AGENT_SECURE_REST_API)
 
+    // use the resolve operation
+    describe "resolve CLI action"
+    ActionResolveArgs resolveArgs = new ActionResolveArgs()
+    resolveArgs.path = recordsPath;
+    resolveArgs.list = true;
+    // to stdout
+    client.actionResolve(resolveArgs)
+    // to a file
+    File destFile = new File("target/resolve.json")
+    destFile.delete()
+    resolveArgs.out = destFile
+    client.actionResolve(resolveArgs)
+    assert destFile.exists()
+    destFile.delete()
+    
+    // look at a single record
+    resolveArgs.out = null;
+    resolveArgs.list = false;
+    resolveArgs.path = recordsPath +"/"+ clustername
+    // to stdout
+    client.actionResolve(resolveArgs)
+    resolveArgs.out = destFile
+    client.actionResolve(resolveArgs)
+    assert destFile.exists()
+    ServiceRecordMarshal serviceRecordMarshal = new ServiceRecordMarshal()
+    def recordFromFile = serviceRecordMarshal.fromFile(destFile)
+    assert recordFromFile[YarnRegistryAttributes.YARN_ID] ==
+           serviceRecord[YarnRegistryAttributes.YARN_ID]
+    assert recordFromFile[YarnRegistryAttributes.YARN_PERSISTENCE] ==
+           serviceRecord[YarnRegistryAttributes.YARN_PERSISTENCE]
+    
+    
+
     // hit the registry web page
     def registryEndpoint = serviceRecord.getExternalEndpoint(
         CustomRegistryConstants.REGISTRY_REST_API)
     assert registryEndpoint != null
     def registryURL = RegistryTypeUtils.retrieveAddressURLs(registryEndpoint)[0]
     
+    
+    // Look at the Registry WADL
     describe("Registry WADL @ $registryURL")
     def publisherEndpoint = serviceRecord.getExternalEndpoint(
         CustomRegistryConstants.PUBLISHER_REST_API)
@@ -391,7 +424,6 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
         clustername)
     assert oldInstance != null
     assert oldInstance.yarnApplicationState >= YarnApplicationState.FINISHED
-
 
 
   }

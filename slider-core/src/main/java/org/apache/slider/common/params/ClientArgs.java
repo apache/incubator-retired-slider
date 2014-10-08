@@ -191,7 +191,7 @@ public class ClientArgs extends CommonArgs {
    * Look at the chosen action and bind it as the core action for the operation.
    * In theory this could be done by introspecting on the list of actions and 
    * choosing it without the switch statement. In practise this switch, while
-   * verbose, is easier to debug.
+   * verbose, is easier to debug. And in JDK7, much simpler.
    * @throws SliderException bad argument or similar
    */
   @Override
@@ -206,7 +206,7 @@ public class ClientArgs extends CommonArgs {
       //its a builder, so set those actions too
       buildingActionArgs = actionCreateArgs;
 
-    }else if (SliderActions.ACTION_FREEZE.equals(action)) {
+    } else if (SliderActions.ACTION_FREEZE.equals(action)) {
       bindCoreAction(actionFreezeArgs);
 
     } else if (SliderActions.ACTION_THAW.equals(action)) {

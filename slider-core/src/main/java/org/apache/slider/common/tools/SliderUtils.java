@@ -69,6 +69,7 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -1664,8 +1665,8 @@ public final class SliderUtils {
 
   /**
    * Validate an executable
-   * @param program
-   * @param exe
+   * @param program program name for errors
+   * @param exe program to look at
    * @throws IOException
    */
   public static void validateExe(String program, File exe) throws IOException {
@@ -1676,6 +1677,29 @@ public final class SliderUtils {
     }
   }
 
+  /**
+   * Write bytes to a file
+   * @param outfile output file
+   * @param data data to write
+   * @param createParent flag to indicate that the parent dir should
+   * be created
+   * @throws IOException on any IO problem
+   */
+  public static void write(File outfile, byte[] data, boolean createParent)
+      throws IOException {
+    File parentDir = outfile.getParentFile();
+    if (createParent) {
+      parentDir.mkdirs();
+    }
+    SliderUtils.verifyIsDir(parentDir, log);
+    FileOutputStream out = new FileOutputStream(outfile);
+    try {
+      out.write(data);
+    } finally {
+      IOUtils.closeStream(out);
+    }
+
+  }
 
   /**
    * Execute a command for a test operation
@@ -1683,7 +1707,7 @@ public final class SliderUtils {
    * @param status status code expected
    * @param timeoutMillis timeout in millis for process to finish
    * @param logger
-   *@param outputString optional string to grep for (must not span a line)
+   * @param outputString optional string to grep for (must not span a line)
    * @param commands commands   @return the process
    * @throws IOException on any failure.
    */
