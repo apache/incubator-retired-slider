@@ -49,6 +49,7 @@
     <app.user.group>hadoop</app.user.group>
     <accumulo.keytab></accumulo.keytab>
     <accumulo.principal></accumulo.principal>
+    <accumulo.headless.keytab>${accumulo.keytab}</accumulo.headless.keytab>
   </properties>
 
   <profiles>
