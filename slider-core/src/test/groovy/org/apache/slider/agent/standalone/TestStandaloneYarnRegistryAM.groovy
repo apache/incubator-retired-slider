@@ -76,10 +76,6 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     def registryOperations = microZKCluster.registryOperations
     registryOperations.stat(RegistryConstants.PATH_SYSTEM_SERVICES)
     
-    // verify the cluster has the YARN reg service live
-    def rmRegistryService = miniCluster.getResourceManager(0).RMContext.registry
-    assert rmRegistryService
-    
     ServiceLauncher<SliderClient> launcher
     launcher = createStandaloneAM(clustername, true, false)
     SliderClient client = launcher.service
