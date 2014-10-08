@@ -23,6 +23,11 @@ import org.apache.hadoop.service.Service;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
+import org.apache.hadoop.registry.client.binding.RegistryTypeUtils;
+import org.apache.hadoop.registry.client.exceptions.InvalidRecordException;
+import org.apache.hadoop.registry.client.types.AddressTypes;
+import org.apache.hadoop.registry.client.types.Endpoint;
+import org.apache.hadoop.registry.client.types.ServiceRecord;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.tools.ConfigHelper;
@@ -32,22 +37,21 @@ import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.main.ExitCodeProvider;
-import org.apache.slider.core.registry.info.RegisteredEndpoint;
-import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.server.appmaster.actions.QueueAccess;
 import org.apache.slider.server.appmaster.state.ContainerReleaseSelector;
 import org.apache.slider.server.appmaster.state.MostRecentContainerReleaseSelector;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
-import org.apache.slider.server.services.registry.RegistryViewForProviders;
 import org.apache.slider.server.services.workflow.ForkedProcessService;
 import org.apache.slider.server.services.workflow.ServiceParent;
 import org.apache.slider.server.services.workflow.WorkflowSequenceService;
+import org.apache.slider.server.services.yarnregistry.YarnRegistryViewForProviders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.HashMap;
@@ -70,9 +74,8 @@ public abstract class AbstractProviderService
     LoggerFactory.getLogger(AbstractProviderService.class);
   protected StateAccessForProviders amState;
   protected AgentRestOperations restOps;
-  protected RegistryViewForProviders registry;
-  protected ServiceInstanceData registryInstanceData;
   protected URL amWebAPI;
+  protected YarnRegistryViewForProviders yarnRegistry;
   protected QueueAccess queueAccess;
 
   public AbstractProviderService(String name) {
@@ -97,14 +100,18 @@ public abstract class AbstractProviderService
     this.amState = amState;
   }
 
+  
   @Override
   public void bind(StateAccessForProviders stateAccessor,
-      RegistryViewForProviders reg,
       QueueAccess queueAccess,
       List<Container> liveContainers) {
     this.amState = stateAccessor;
-    this.registry = reg;
     this.queueAccess = queueAccess;
+  }
+
+  @Override
+  public void bindToYarnRegistry(YarnRegistryViewForProviders yarnRegistry) {
+    this.yarnRegistry = yarnRegistry;
   }
 
   @Override
@@ -335,29 +342,35 @@ public abstract class AbstractProviderService
 
   @Override
   public void buildEndpointDetails(Map<String, String> details) {
-      ServiceInstanceData self = registry.getSelfRegistration();
-    buildEndpointDetails(details, self);
-  }
+    ServiceRecord self = yarnRegistry.getSelfRegistration();
 
-  public static void buildEndpointDetails(Map<String, String> details,
-      ServiceInstanceData self) {
-    Map<String, RegisteredEndpoint> endpoints =
-        self.getRegistryView(true).endpoints;
-    for (Map.Entry<String, RegisteredEndpoint> endpoint : endpoints.entrySet()) {
-      RegisteredEndpoint val = endpoint.getValue();
-      if (val.type.equals(RegisteredEndpoint.TYPE_URL)) {
-          details.put(val.description, val.address);
+    List<Endpoint> externals = self.external;
+    for (Endpoint endpoint : externals) {
+      String addressType = endpoint.addressType;
+      if (AddressTypes.ADDRESS_URI.equals(addressType)) {
+        try {
+          List<URL> urls = RegistryTypeUtils.retrieveAddressURLs(endpoint);
+          if (!urls.isEmpty()) {
+            details.put(endpoint.api, urls.get(0).toString());
+          }
+        } catch (InvalidRecordException ignored) {
+          // Ignored
+        } catch (MalformedURLException ignored) {
+          // ignored
+        }
+
       }
+
     }
   }
+
   @Override
   public void applyInitialRegistryDefinitions(URL amWebURI,
-                                              URL agentOpsURI,
-                                              URL agentStatusURI,
-                                              ServiceInstanceData registryInstanceData) throws IOException {
-
+      URL agentOpsURI,
+      URL agentStatusURI,
+      ServiceRecord serviceRecord)
+    throws IOException {
       this.amWebAPI = amWebURI;
-    this.registryInstanceData = registryInstanceData;
   }
 
   /**

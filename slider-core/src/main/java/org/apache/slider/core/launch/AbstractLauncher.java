@@ -55,6 +55,7 @@ import java.util.Map;
 public abstract class AbstractLauncher extends Configured {
   private static final Logger log =
     LoggerFactory.getLogger(AbstractLauncher.class);
+  public static final String CLASSPATH = "CLASSPATH";
   /**
    * Filesystem to use for the launch
    */
@@ -198,15 +199,12 @@ public abstract class AbstractLauncher extends Configured {
     dumpLocalResources();
     containerLaunchContext.setLocalResources(localResources);
 
-
-
     //tokens
     log.debug("{} tokens", credentials.numberOfTokens());
     DataOutputBuffer dob = new DataOutputBuffer();
     credentials.writeTokenStorageToStream(dob);
     ByteBuffer tokenBuffer = ByteBuffer.wrap(dob.getData(), 0, dob.getLength());
     containerLaunchContext.setTokens(tokenBuffer);
-
 
     return containerLaunchContext;
   }
@@ -251,7 +249,6 @@ public abstract class AbstractLauncher extends Configured {
    */
   public void extractResourceRequirements(Resource resource,
                                           Map<String, String> map) {
-
 
     if (map != null) {
       MapOperations options = new MapOperations("", map);
@@ -315,7 +312,7 @@ public abstract class AbstractLauncher extends Configured {
    * @param classpath classpath to use
    */
   public void setClasspath(ClasspathConstructor classpath) {
-    setEnv("CLASSPATH", classpath.buildClasspath());
+    setEnv(CLASSPATH, classpath.buildClasspath());
   }
   public void setEnv(String var, String value) {
     Preconditions.checkArgument(var != null, "null variable name");

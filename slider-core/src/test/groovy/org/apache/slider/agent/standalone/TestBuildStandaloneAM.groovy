@@ -30,6 +30,7 @@ import org.apache.slider.common.params.SliderActions
 import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.core.main.ServiceLauncher
+import org.apache.slider.core.registry.YarnAppListClient
 import org.junit.Test
 
 import static org.apache.slider.common.params.Arguments.ARG_COMP_OPT
@@ -66,9 +67,8 @@ class TestBuildStandaloneAM extends AgentMiniClusterTestBase {
     //but the cluster is still there for the default
     assert 0 == sliderClient.actionExists(clustername, false)
 
-
     // verify the YARN registry doesn't know of it
-    def serviceRegistryClient = sliderClient.YARNRegistryClient
+    YarnAppListClient serviceRegistryClient = sliderClient.yarnAppListClient
     ApplicationReport report = serviceRegistryClient.findInstance(clustername)
     assert report == null;
 
@@ -140,7 +140,7 @@ class TestBuildStandaloneAM extends AgentMiniClusterTestBase {
     //but the cluster is still there for the default
     assert 0 == sliderClient.actionExists(clustername, false)
 
-    def serviceRegistryClient = sliderClient.YARNRegistryClient
+    def serviceRegistryClient = sliderClient.yarnAppListClient
     ApplicationReport report = serviceRegistryClient.findInstance(clustername)
     assert report == null;
 

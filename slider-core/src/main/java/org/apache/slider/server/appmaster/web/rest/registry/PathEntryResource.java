@@ -16,33 +16,30 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.services.registry;
+package org.apache.slider.server.appmaster.web.rest.registry;
 
-import org.apache.slider.core.registry.info.ServiceInstanceData;
+import org.apache.hadoop.registry.client.types.ServiceRecord;
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import org.codehaus.jackson.map.annotate.JsonSerialize;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.List;
 
 /**
- * This offers restricted access to the registry for providers
+ * Representation of a path entry
  */
-public interface RegistryViewForProviders {
-  List<ServiceInstanceData> listInstancesByType(String serviceType) throws
-      IOException;
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
+public class PathEntryResource {
 
   /**
-   * Get the registration of slider itself
-   * @return the registration of slider
+   * Child nodes: as the short path to each element
    */
-  ServiceInstanceData getSelfRegistration();
+  public List<String> nodes;
 
   /**
-   * Register the service, raising IOExceptions when anything fails
-   * @param instanceData instance data
-   * @param url URL to register
-   * @throws IOException on registration problems
+   * Service record: if null —there is no resolvable service
+   * record at this node.
    */
-  void registerServiceInstance(
-      ServiceInstanceData instanceData, URL url) throws IOException;
+  public ServiceRecord service;
+
 }

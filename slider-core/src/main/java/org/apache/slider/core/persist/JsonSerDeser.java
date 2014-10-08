@@ -51,14 +51,14 @@ public class JsonSerDeser<T> {
   private static final Logger log = LoggerFactory.getLogger(JsonSerDeser.class);
   private static final String UTF_8 = "UTF-8";
 
-  private final Class classType;
+  private final Class<T> classType;
   private final ObjectMapper mapper;
 
   /**
    * Create an instance bound to a specific type
-   * @param classType
+   * @param classType class type
    */
-  public JsonSerDeser(Class classType) {
+  public JsonSerDeser(Class<T> classType) {
     this.classType = classType;
     this.mapper = new ObjectMapper();
     mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -74,7 +74,7 @@ public class JsonSerDeser<T> {
   public T fromJson(String json)
     throws IOException, JsonParseException, JsonMappingException {
     try {
-      return (T) (mapper.readValue(json, classType));
+      return mapper.readValue(json, classType);
     } catch (IOException e) {
       log.error("Exception while parsing json : " + e + "\n" + json, e);
       throw e;
@@ -91,7 +91,7 @@ public class JsonSerDeser<T> {
   public T fromFile(File jsonFile)
     throws IOException, JsonParseException, JsonMappingException {
     try {
-      return (T) (mapper.readValue(jsonFile, classType));
+      return mapper.readValue(jsonFile, classType);
     } catch (IOException e) {
       log.error("Exception while parsing json file {}: {}", jsonFile, e);
       throw e;
@@ -239,7 +239,7 @@ public class JsonSerDeser<T> {
 
   /**
    * Convert an object to a JSON string
-   * @param o object to convert
+   * @param instance instance to convert
    * @return a JSON string description
    * @throws JsonParseException parse problems
    * @throws JsonMappingException O/J mapping problems

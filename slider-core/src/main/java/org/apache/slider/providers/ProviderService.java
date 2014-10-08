@@ -23,6 +23,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.service.Service;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.hadoop.registry.client.types.ServiceRecord;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.core.conf.AggregateConf;
@@ -31,13 +32,12 @@ import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.ContainerLauncher;
 import org.apache.slider.core.main.ExitCodeProvider;
-import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.server.appmaster.actions.QueueAccess;
-import org.apache.slider.server.appmaster.state.ContainerReleaseSelector;
 import org.apache.slider.server.appmaster.operations.RMOperationHandlerActions;
+import org.apache.slider.server.appmaster.state.ContainerReleaseSelector;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
-import org.apache.slider.server.services.registry.RegistryViewForProviders;
+import org.apache.slider.server.services.yarnregistry.YarnRegistryViewForProviders;
 
 import java.io.File;
 import java.io.IOException;
@@ -158,9 +158,14 @@ public interface ProviderService extends ProviderCore,
   Map<String, String> buildMonitorDetails(ClusterDescription clusterSpec);
 
   public void bind(StateAccessForProviders stateAccessor,
-      RegistryViewForProviders reg,
       QueueAccess queueAccess,
       List<Container> liveContainers);
+
+  /**
+   * Bind to the YARN registry
+   * @param yarnRegistry YARN registry
+   */
+  void bindToYarnRegistry(YarnRegistryViewForProviders yarnRegistry);
 
   /**
    * Returns the agent rest operations interface.
@@ -179,12 +184,12 @@ public interface ProviderService extends ProviderCore,
    * @param amWebURI
    * @param agentOpsURI
    * @param agentStatusURI
-   * @param registryInstanceData
+   * @param serviceRecord
    */
   void applyInitialRegistryDefinitions(URL amWebURI,
-                                       URL agentOpsURI,
-                                       URL agentStatusURI,
-                                       ServiceInstanceData registryInstanceData)
+      URL agentOpsURI,
+      URL agentStatusURI,
+      ServiceRecord serviceRecord)
       throws IOException;
 
   /**

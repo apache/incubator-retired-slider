@@ -32,7 +32,6 @@ public class JavaCommandLineBuilder extends CommandLineBuilder {
     add(getJavaBinary());
   }
 
-
   /**
    * Get the java binary. This is called in the constructor so don't try and
    * do anything other than return a constant.
@@ -53,6 +52,9 @@ public class JavaCommandLineBuilder extends CommandLineBuilder {
     }
   }
 
+  /**
+   * Turn Java assertions on
+   */
   public void enableJavaAssertions() {
     add("-ea");
     add("-esa");

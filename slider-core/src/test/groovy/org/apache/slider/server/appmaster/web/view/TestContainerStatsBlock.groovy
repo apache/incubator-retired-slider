@@ -59,7 +59,12 @@ public class TestContainerStatsBlock extends BaseMockAppStateTest {
         "undefined",
         appState)
 
-    WebAppApiImpl inst = new WebAppApiImpl(clusterProto, providerAppState, providerService, null);
+    WebAppApiImpl inst = new WebAppApiImpl(
+        clusterProto,
+        providerAppState,
+        providerService,
+        null,
+        null);
 
     Injector injector = Guice.createInjector(new AbstractModule() {
           @Override

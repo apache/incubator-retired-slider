@@ -23,8 +23,6 @@ import com.codahale.metrics.MetricRegistry;
 import com.google.gson.GsonBuilder;
 import org.apache.curator.CuratorZookeeperClient;
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.x.discovery.ServiceInstance;
-import org.apache.curator.x.discovery.server.entity.ServiceNames;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.LocalResource;
@@ -193,8 +191,6 @@ public class SliderAMClientProvider extends AbstractClientProvider
 
       CuratorFramework.class,
       CuratorZookeeperClient.class,
-      ServiceInstance.class,
-      ServiceNames.class,
       MetricRegistry.class
     };
     String[] jars =
@@ -205,8 +201,6 @@ public class SliderAMClientProvider extends AbstractClientProvider
 
         "curator-framework.jar",
         "curator-client.jar",
-        "curator-x-discovery.jar",
-        "curator-x-discovery-service.jar",
         "metrics-core.jar"
       };
     ProviderUtils.addDependencyJars(providerResources, fileSystem, tempPath,

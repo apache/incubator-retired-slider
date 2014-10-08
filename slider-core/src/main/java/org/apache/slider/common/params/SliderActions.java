@@ -39,6 +39,7 @@ public interface SliderActions {
   String ACTION_PREFLIGHT = "preflight";
   String ACTION_RECONFIGURE = "reconfigure";
   String ACTION_REGISTRY = "registry";
+  String ACTION_RESOLVE = "resolve";
   String ACTION_STATUS = "status";
   String ACTION_THAW = "start";
   String ACTION_USAGE = "usage";

@@ -55,6 +55,13 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.InvalidApplicationMasterRequestException;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.ipc.YarnRPC;
+import org.apache.hadoop.registry.client.api.RegistryOperations;
+import org.apache.hadoop.registry.client.binding.RegistryPathUtils;
+import org.apache.hadoop.registry.client.types.yarn.PersistencePolicies;
+import org.apache.hadoop.registry.client.types.ServiceRecord;
+import org.apache.hadoop.registry.client.binding.RegistryTypeUtils;
+import org.apache.hadoop.registry.client.types.yarn.YarnRegistryAttributes;
+import org.apache.hadoop.registry.server.integration.RMRegistryOperationsService;
 import org.apache.hadoop.yarn.security.AMRMTokenIdentifier;
 import org.apache.hadoop.yarn.security.client.ClientToAMTokenSecretManager;
 import org.apache.hadoop.yarn.util.ConverterUtils;
@@ -93,9 +100,6 @@ import org.apache.slider.core.main.RunService;
 import org.apache.slider.core.main.ServiceLauncher;
 import org.apache.slider.core.persist.ConfTreeSerDeser;
 import org.apache.slider.core.registry.info.CustomRegistryConstants;
-import org.apache.slider.core.registry.info.RegisteredEndpoint;
-import org.apache.slider.core.registry.info.RegistryNaming;
-import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.providers.ProviderCompleted;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderService;
@@ -136,7 +140,6 @@ import org.apache.slider.server.appmaster.web.SliderAMWebApp;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.WebAppApiImpl;
 import org.apache.slider.server.appmaster.web.rest.RestPaths;
-import org.apache.slider.server.services.registry.SliderRegistryService;
 import org.apache.slider.server.services.security.CertificateManager;
 import org.apache.slider.server.services.security.FsDelegationTokenManager;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
@@ -144,6 +147,7 @@ import org.apache.slider.server.services.utility.WebAppService;
 import org.apache.slider.server.services.workflow.ServiceThreadFactory;
 import org.apache.slider.server.services.workflow.WorkflowExecutorService;
 import org.apache.slider.server.services.workflow.WorkflowRpcService;
+import org.apache.slider.server.services.yarnregistry.YarnRegistryViewForProviders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -180,6 +184,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     ServiceStateChangeListener,
     RoleKeys,
     ProviderCompleted {
+  
   protected static final Logger log =
     LoggerFactory.getLogger(SliderAppMaster.class);
 
@@ -320,11 +325,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private ProviderService providerService;
 
   /**
-   * The registry service
+   * The YARN registry service
    */
   @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
-  private SliderRegistryService registry;
-  
+  private RegistryOperations registryOperations;
+
   /**
    * Record of the max no. of cores allowed in this cluster
    */
@@ -352,7 +357,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private SliderAMWebApp webApp;
   @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   private InetSocketAddress rpcServiceAddress;
-  private ProviderService sliderAMProvider;
+  private SliderAMProviderService sliderAMProvider;
   private CertificateManager certificateManager;
 
   private WorkflowExecutorService<ExecutorService> executorService;
@@ -360,6 +365,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private final QueueService actionQueues = new QueueService();
   private String agentOpsUrl;
   private String agentStatusUrl;
+  private YarnRegistryViewForProviders yarnRegistryOperations;
   private FsDelegationTokenManager fsDelegationTokenManager;
   private RegisterApplicationMasterResponse amRegistrationData;
 
@@ -641,9 +647,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       appInformation.put(StatusKeys.INFO_AM_HOSTNAME, appMasterHostname);
       appInformation.set(StatusKeys.INFO_AM_RPC_PORT, appMasterRpcPort);
 
-      
-      //registry
-      registry = startRegistrationService();
+      log.info("Starting Yarn registry");
+      registryOperations = startRegistryOperationsService();
+      log.info(registryOperations.toString());
 
       //build the role map
       List<ProviderRole> providerRoles =
@@ -658,12 +664,12 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       startAgentWebApp(appInformation, serviceConf);
 
-      webApp = new SliderAMWebApp(registry);
+      webApp = new SliderAMWebApp(registryOperations);
       WebApps.$for(SliderAMWebApp.BASE_PATH, WebAppApi.class,
                    new WebAppApiImpl(this,
                                      stateForProviders,
                                      providerService,
-                                     certificateManager),
+                                     certificateManager, registryOperations),
                    RestPaths.WS_CONTEXT)
                       .with(serviceConf)
                       .start(webApp);
@@ -809,11 +815,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     appState.noteAMLaunched();
 
 
-    //Give the provider restricted access to the state, registry
-    providerService.bind(stateForProviders, registry, actionQueues,
-                         liveContainers);
-    sliderAMProvider.bind(stateForProviders, registry, actionQueues,
-                          liveContainers);
+    //Give the provider access to the state, and AM
+    providerService.bind(stateForProviders, actionQueues, liveContainers);
+    sliderAMProvider.bind(stateForProviders, actionQueues, liveContainers);
 
     // chaos monkey
     maybeStartMonkey();
@@ -879,7 +883,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * Ensure that the user is generated from a keytab and has no HDFS delegation
    * tokens.
    *
-   * @param user
+   * @param user user to validate
    * @throws SliderException
    */
   protected void validateLoginUser(UserGroupInformation user)
@@ -915,7 +919,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
                      new WebAppApiImpl(this,
                                        stateForProviders,
                                        providerService,
-                                       certificateManager),
+                                       certificateManager, registryOperations),
                      RestPaths.AGENT_WS_CONTEXT)
         .withComponentConfig(getInstanceDefinition().getAppConfOperations()
                                  .getComponent(SliderKeys.COMPONENT_AM))
@@ -933,95 +937,158 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     appInformation.put(StatusKeys.INFO_AM_AGENT_OPS_URL, agentOpsUrl + "/");
     appInformation.put(StatusKeys.INFO_AM_AGENT_STATUS_URL, agentStatusUrl + "/");
-    appInformation.set(StatusKeys.INFO_AM_AGENT_STATUS_PORT, agentWebApp.getPort());
+    appInformation.set(StatusKeys.INFO_AM_AGENT_STATUS_PORT,
+        agentWebApp.getPort());
     appInformation.set(StatusKeys.INFO_AM_AGENT_OPS_PORT,
-                       agentWebApp.getSecuredPort());
+        agentWebApp.getSecuredPort());
   }
 
   /**
    * This registers the service instance and its external values
    * @param instanceName name of this instance
    * @param appid application ID
-   * @throws Exception
+   * @throws IOException
    */
   private void registerServiceInstance(String instanceName,
-      ApplicationId appid) throws Exception {
+      ApplicationId appid) throws IOException {
+    
+    
     // the registry is running, so register services
     URL amWebURI = new URL(appMasterTrackingUrl);
     URL agentOpsURI = new URL(agentOpsUrl);
     URL agentStatusURI = new URL(agentStatusUrl);
-    String serviceName = SliderKeys.APP_TYPE;
-    int id = appid.getId();
-    String appServiceType = RegistryNaming.createRegistryServiceType(
+
+    //Give the provider restricted access to the state, registry
+    setupInitialRegistryPaths();
+    yarnRegistryOperations = new YarnRegistryViewForProviders(
+        registryOperations, service_user_name,
+        SliderKeys.APP_TYPE,
         instanceName,
-        service_user_name,
-        serviceName);
-    String registryId =
-      RegistryNaming.createRegistryName(instanceName, service_user_name,
-          serviceName, id);
+        appAttemptID);
+    providerService.bindToYarnRegistry(yarnRegistryOperations);
+    sliderAMProvider.bindToYarnRegistry(yarnRegistryOperations);
 
-    List<String> serviceInstancesRunning = registry.instanceIDs(serviceName);
-    log.info("service instances already running: {}", serviceInstancesRunning);
+    // Yarn registry
+    ServiceRecord serviceRecord = new ServiceRecord();
+    serviceRecord.set(YarnRegistryAttributes.YARN_ID, appid.toString());
+    serviceRecord.set(YarnRegistryAttributes.YARN_PERSISTENCE,
+        PersistencePolicies.APPLICATION);
+    serviceRecord.description = "Slider Application Master";
 
-
-    ServiceInstanceData instanceData = new ServiceInstanceData(registryId,
-        appServiceType);
-
-
-    // IPC services
-    instanceData.externalView.endpoints.put(
-        CustomRegistryConstants.AM_IPC_PROTOCOL,
-        new RegisteredEndpoint(rpcServiceAddress,
-            RegisteredEndpoint.PROTOCOL_HADOOP_PROTOBUF,
-            "Slider AM RPC") );
-
-
+    serviceRecord.addExternalEndpoint(
+        RegistryTypeUtils.ipcEndpoint(
+            CustomRegistryConstants.AM_IPC_PROTOCOL,
+            true,
+            RegistryTypeUtils.marshall(rpcServiceAddress)));
+    
     // internal services
-   
     sliderAMProvider.applyInitialRegistryDefinitions(amWebURI,
-                                                     agentOpsURI,
-                                                     agentStatusURI,
-                                                     instanceData);
+        agentOpsURI,
+        agentStatusURI,
+        serviceRecord);
 
     // provider service dynamic definitions.
     providerService.applyInitialRegistryDefinitions(amWebURI,
-                                                    agentOpsURI,
-                                                    agentStatusURI,
-                                                    instanceData);
+        agentOpsURI,
+        agentStatusURI,
+        serviceRecord);
 
+    // store for clients
+    log.info("Service Record \n{}", serviceRecord);
+    String sliderServicePath = yarnRegistryOperations.putService(service_user_name,
+        SliderKeys.APP_TYPE,
+        instanceName,
+        serviceRecord, true);
+    boolean isFirstAttempt = 1 == appAttemptID.getAttemptId();
+    // delete the children in case there are any and this is an AM startup.
+    // just to make sure everything underneath is purged
+    if (isFirstAttempt) {
+      yarnRegistryOperations.deleteChildren(sliderServicePath, true);
+    }
+    yarnRegistryOperations.setSelfRegistration(serviceRecord);
 
-    // push the registration info to ZK
+    // and a shorter lived binding to the app
+    String attempt = appAttemptID.toString();
+    ServiceRecord attemptRecord = new ServiceRecord(serviceRecord);
+    attemptRecord.set(YarnRegistryAttributes.YARN_ID, attempt);
+    attemptRecord.set(YarnRegistryAttributes.YARN_PERSISTENCE,
+        PersistencePolicies.APPLICATION_ATTEMPT);
+    yarnRegistryOperations.putComponent(
+        RegistryPathUtils.encodeYarnID(attempt),
+        serviceRecord);
 
-    registry.registerSelf(
-        instanceData, amWebURI
-    );
+  }
+
+/*
+
+  @Override
+  protected RegistryOperationsService createRegistryOperationsInstance() {
+    return new ResourceManagerRegistryService("YarnRegistry");
+  }
+*/
+
+  /**
+   * TODO: purge this once RM is doing the work
+   * @throws IOException
+   */
+  protected void setupInitialRegistryPaths() throws IOException {
+    if (registryOperations instanceof RMRegistryOperationsService) {
+      RMRegistryOperationsService rmRegOperations =
+          (RMRegistryOperationsService) registryOperations;
+      rmRegOperations.initUserRegistryAsync(service_user_name);
+    }
   }
 
   /**
-   * Register/re-register a component (that is already in the app state
+   * Handler for {@link RegisterComponentInstance action}
+   * Register/re-register an ephemeral container that is already in the app state
    * @param id the component
+   * @param description
    */
-  public boolean registerComponent(ContainerId id) {
+  public boolean registerComponent(ContainerId id, String description) throws
+      IOException {
     RoleInstance instance = appState.getOwnedContainer(id);
     if (instance == null) {
       return false;
     }
     // this is where component registrations will go
     log.info("Registering component {}", id);
-
+    String cid = RegistryPathUtils.encodeYarnID(id.toString());
+    ServiceRecord container = new ServiceRecord();
+    container.set(YarnRegistryAttributes.YARN_ID, cid);
+    container.description = description;
+    container.set(YarnRegistryAttributes.YARN_PERSISTENCE,
+        PersistencePolicies.CONTAINER);
+    try {
+      yarnRegistryOperations.putComponent(cid, container);
+    } catch (IOException e) {
+      log.warn("Failed to register container {}/{}: {}",
+          id, description, e, e);
+    }
     return true;
   }
   
   /**
+   * Handler for {@link UnregisterComponentInstance}
+   * 
    * unregister a component. At the time this message is received,
-   * the component may already been deleted from/never added to
-   * the app state
+   * the component may not have been registered
    * @param id the component
    */
   public void unregisterComponent(ContainerId id) {
     log.info("Unregistering component {}", id);
+    if (yarnRegistryOperations== null) {
+      log.warn("Processing unregister component event before initialization " +
+               "completed; init flag =" + initCompleted);
+    }
+    String cid = RegistryPathUtils.encodeYarnID(id.toString());
+    try {
+      yarnRegistryOperations.deleteComponent(cid);
+    } catch (IOException e) {
+      log.warn("Failed to delete container {} : {}", id, e, e);
+    }
   }
-  
+
   /**
    * looks for a specific case where a token file is provided as an environment
    * variable, yet the file is not there.
@@ -1428,9 +1495,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public void onShutdownRequest() {
     LOG_YARN.info("Shutdown Request received");
     signalAMComplete(new ActionStopSlider("stop",
-                                          EXIT_SUCCESS,
-                                          FinalApplicationStatus.SUCCEEDED,
-                                          "Shutdown requested from RM"));
+        EXIT_SUCCESS,
+        FinalApplicationStatus.SUCCEEDED,
+        "Shutdown requested from RM"));
   }
 
   /**
@@ -1881,7 +1948,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       nmClientAsync.getContainerStatusAsync(containerId,
                                             cinfo.container.getNodeId());
       // push out a registration
-      queue(new RegisterComponentInstance(containerId, 0, TimeUnit.MILLISECONDS));
+      queue(new RegisterComponentInstance(containerId, cinfo.role,
+          0, TimeUnit.MILLISECONDS));
       
     } else {
       //this is a hypothetical path not seen. We react by warning
