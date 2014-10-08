@@ -70,7 +70,6 @@ import org.apache.slider.common.params.ActionCreateArgs;
 import org.apache.slider.common.params.ActionEchoArgs;
 import org.apache.slider.common.params.ActionFlexArgs;
 import org.apache.slider.common.params.ActionFreezeArgs;
-import org.apache.slider.common.params.ActionGetConfArgs;
 import org.apache.slider.common.params.ActionKillContainerArgs;
 import org.apache.slider.common.params.ActionRegistryArgs;
 import org.apache.slider.common.params.ActionResolveArgs;
@@ -346,8 +345,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
           serviceArgs.getActionExistsArgs().live);
     } else if (ACTION_FLEX.equals(action)) {
       exitCode = actionFlex(clusterName, serviceArgs.getActionFlexArgs());
-    } else if (ACTION_GETCONF.equals(action)) {
-      exitCode = actionGetConf(clusterName, serviceArgs.getActionGetConfArgs());
     } else if (ACTION_HELP.equals(action) ||
                ACTION_USAGE.equals(action)) {
       log.info(serviceArgs.usage());
@@ -1888,100 +1885,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
                clustername, e);
     }
 
-    return EXIT_SUCCESS;
-  }
-
-  /*
-   * Creates a site conf with entries from clientProperties of ClusterStatus
-   * @param desc ClusterDescription, can be null
-   * @param clustername, can be null
-   * @return site conf
-   */
-  public Configuration getSiteConf(ClusterDescription desc, String clustername)
-      throws YarnException, IOException {
-    if (desc == null) {
-      desc = getClusterDescription();
-    }
-    if (clustername == null) {
-      clustername = getDeployedClusterName();
-    }
-    String description = "Slider Application Instance " + clustername;
-    
-    Configuration siteConf = new Configuration(false);
-    for (String key : desc.clientProperties.keySet()) {
-      siteConf.set(key, desc.clientProperties.get(key), description);
-    }
-    return siteConf;
-  }
-
-
-  /**
-   * get the cluster configuration
-   * @param clustername cluster name
-   * @return the cluster name
-   */
-
-  @SuppressWarnings(
-    {"UseOfSystemOutOrSystemErr", "IOResourceOpenedButNotSafelyClosed"})
-  public int actionGetConf(String clustername, ActionGetConfArgs confArgs)
-      throws YarnException, IOException {
-    File outfile = null;
-    
-    if (confArgs.getOutput() != null) {
-      outfile = new File(confArgs.getOutput());
-    }
-
-    String format = confArgs.getFormat();
-    verifyBindingsDefined();
-    SliderUtils.validateClusterName(clustername);
-    ClusterDescription status = getClusterDescription(clustername);
-    Writer writer;
-    boolean toPrint;
-    if (outfile != null) {
-      writer = new FileWriter(outfile);
-      toPrint = false;
-    } else {
-      writer = new StringWriter();
-      toPrint = true;
-    }
-    try {
-      String description = "Slider Application Instance " + clustername;
-// JDK7      
-/*
-      switch (format) {
-        case Arguments.FORMAT_XML:
-          Configuration siteConf = getSiteConf(status, clustername);
-          siteConf.writeXml(writer);
-          break;
-        case Arguments.FORMAT_PROPERTIES:
-          Properties props = new Properties();
-          props.putAll(status.clientProperties);
-          props.store(writer, description);
-          break;
-        default:
-          throw new BadCommandArgumentsException("Unknown format: " + format);
-      }
-*/
-      if (Arguments.FORMAT_XML.equals(format)) {
-        Configuration siteConf = getSiteConf(status, clustername);
-        siteConf.writeXml(writer);
-      } else if (Arguments.FORMAT_PROPERTIES.equals(format)) {
-        Properties props = new Properties();
-        props.putAll(status.clientProperties);
-        props.store(writer, description);
-      } else {
-          throw new BadCommandArgumentsException("Unknown format: " + format);
-      }
-    } finally {
-      // data is written.
-      // close the file
-      writer.close();
-    }
-    // then, if this is not a file write, print it
-    if (toPrint) {
-      // not logged
-      System.err.println(writer.toString());
-    }
     return EXIT_SUCCESS;
   }
 

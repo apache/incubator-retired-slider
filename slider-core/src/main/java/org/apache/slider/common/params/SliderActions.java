@@ -33,7 +33,6 @@ public interface SliderActions {
   String ACTION_EXISTS = "exists";
   String ACTION_FLEX = "flex";
   String ACTION_FREEZE = "stop";
-  String ACTION_GETCONF = "getconf";
   String ACTION_HELP = "help";
   String ACTION_KILL_CONTAINER = "kill-container";
   String ACTION_LIST = "list";

@@ -53,7 +53,6 @@ public class ClientArgs extends CommonArgs {
   private final ActionExistsArgs actionExistsArgs = new ActionExistsArgs();
   private final ActionFlexArgs actionFlexArgs = new ActionFlexArgs();
   private final ActionFreezeArgs actionFreezeArgs = new ActionFreezeArgs();
-  private final ActionGetConfArgs actionGetConfArgs = new ActionGetConfArgs();
   private final ActionKillContainerArgs actionKillContainerArgs =
     new ActionKillContainerArgs();
   private final ActionListArgs actionListArgs = new ActionListArgs();
@@ -87,7 +86,6 @@ public class ClientArgs extends CommonArgs {
         actionExistsArgs,
         actionFlexArgs,
         actionFreezeArgs,
-        actionGetConfArgs,
         actionHelpArgs,
         actionInstallPackageArgs,
         actionKillContainerArgs,
@@ -159,10 +157,6 @@ public class ClientArgs extends CommonArgs {
     return actionFreezeArgs;
   }
 
-  public ActionGetConfArgs getActionGetConfArgs() {
-    return actionGetConfArgs;
-  }
-
   public ActionKillContainerArgs getActionKillContainerArgs() {
     return actionKillContainerArgs;
   }
@@ -226,9 +220,6 @@ public class ClientArgs extends CommonArgs {
 
     } else if (SliderActions.ACTION_FLEX.equals(action)) {
       bindCoreAction(actionFlexArgs);
-
-    } else if (SliderActions.ACTION_GETCONF.equals(action)) {
-      bindCoreAction(actionGetConfArgs);
 
     } else if (SliderActions.ACTION_HELP.equals(action) ||
                SliderActions.ACTION_USAGE.equals(action)) {
