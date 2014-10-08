@@ -115,8 +115,6 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
 
       log.info(cd.toJsonString())
 
-      getConf(0, CLUSTER)
-
       //get a slider client against the cluster
       SliderClient sliderClient = bondToCluster(SLIDER_CONFIG, CLUSTER)
       ClusterDescription cd2 = sliderClient.clusterDescription

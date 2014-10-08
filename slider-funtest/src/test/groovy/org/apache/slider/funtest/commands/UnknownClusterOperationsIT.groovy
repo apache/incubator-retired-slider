@@ -26,7 +26,6 @@ import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
 import org.apache.slider.funtest.framework.CommandTestBase
 import org.apache.slider.funtest.framework.SliderShell
-import org.junit.BeforeClass
 import org.junit.Test
 
 /**
@@ -90,11 +89,6 @@ public class UnknownClusterOperationsIT extends CommandTestBase {
   @Test
   public void testStatusUnknownCluster() throws Throwable {
     assertUnknownCluster(status(UNKNOWN))
-  }
-
-  @Test
-  public void testGetConfUnknownCluster() throws Throwable {
-    assertUnknownCluster(getConf(UNKNOWN))
   }
 
 }

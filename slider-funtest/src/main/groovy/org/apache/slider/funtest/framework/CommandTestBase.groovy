@@ -238,19 +238,6 @@ abstract class CommandTestBase extends SliderTestUtils {
     freeze(name, [ARG_FORCE])
   }
 
-  static SliderShell getConf(String name) {
-    slider([
-        ACTION_GETCONF, name
-    ])
-  }
-
-  static SliderShell getConf(int result, String name) {
-    slider(result,
-        [
-            ACTION_GETCONF, name
-        ])
-  }
-
   static SliderShell killContainer(String name, String containerID) {
     slider(0,
         [
