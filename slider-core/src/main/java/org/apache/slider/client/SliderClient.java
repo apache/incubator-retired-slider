@@ -841,8 +841,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     // providers to validate what there is
     AggregateConf instanceDescription = builder.getInstanceDescription();
-    validateInstanceDefinition(sliderAM, instanceDescription);
-    validateInstanceDefinition(provider, instanceDescription);
+    validateInstanceDefinition(sliderAM, instanceDescription, sliderFileSystem);
+    validateInstanceDefinition(provider, instanceDescription, sliderFileSystem);
     try {
       persistInstanceDefinition(overwrite, appconfdir, builder);
     } catch (LockAcquireFailedException e) {
@@ -1973,13 +1973,17 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
                 resources);
     }
     SliderAMClientProvider sliderAM = new SliderAMClientProvider(getConfig());
+    AbstractClientProvider provider = createClientProvider(
+        instanceDefinition.getInternalOperations().getGlobalOptions().getMandatoryOption(
+            InternalKeys.INTERNAL_PROVIDER_NAME));
     // slider provider to validate what there is
-    validateInstanceDefinition(sliderAM, instanceDefinition);
-    
+    validateInstanceDefinition(sliderAM, instanceDefinition, sliderFileSystem);
+    validateInstanceDefinition(provider, instanceDefinition, sliderFileSystem);
+
     int exitCode = EXIT_FALSE;
     // save the specification
     try {
-      InstanceIO.updateInstanceDefinition(sliderFileSystem, clusterDirectory,instanceDefinition);
+      InstanceIO.updateInstanceDefinition(sliderFileSystem, clusterDirectory, instanceDefinition);
     } catch (LockAcquireFailedException e) {
       // lock failure
       log.debug("Failed to lock dir {}", clusterDirectory, e);
@@ -2008,12 +2012,12 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @throws SliderException if invalid.
    */
   protected void validateInstanceDefinition(AbstractClientProvider provider,
-      AggregateConf instanceDefinition) throws SliderException {
+      AggregateConf instanceDefinition, SliderFileSystem fs) throws SliderException {
     try {
-      provider.validateInstanceDefinition(instanceDefinition);
+      provider.validateInstanceDefinition(instanceDefinition, fs);
     } catch (SliderException e) {
       //problem, reject it
-      log.info("Error {} validating application instance definition ", e);
+      log.info("Error {} validating application instance definition ", e.getMessage());
       log.debug("Error validating application instance definition ", e);
       log.info(instanceDefinition.toString());
       throw e;

@@ -811,9 +811,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     //Give the provider restricted access to the state, registry
     providerService.bind(stateForProviders, registry, actionQueues,
-        liveContainers);
+                         liveContainers);
     sliderAMProvider.bind(stateForProviders, registry, actionQueues,
-        liveContainers);
+                          liveContainers);
 
     // chaos monkey
     maybeStartMonkey();

@@ -27,6 +27,27 @@
     <minHadoopVersion>2.1.0</minHadoopVersion>
     <components>
       <component>
+        <name>hbase-rs</name>
+        <category>MASTER</category>
+        <minInstanceCount>0</minInstanceCount>
+        <commandScript>
+          <script>echo.py</script>
+          <scriptType>PYTHON</scriptType>
+          <timeout>600</timeout>
+        </commandScript>
+      </component>
+      <component>
+        <name>hbase-master</name>
+        <category>MASTER</category>
+        <minInstanceCount>0</minInstanceCount>
+        <maxInstanceCount>2</maxInstanceCount>
+        <commandScript>
+          <script>echo.py</script>
+          <scriptType>PYTHON</scriptType>
+          <timeout>600</timeout>
+        </commandScript>
+      </component>
+      <component>
         <name>echo</name>
         <category>MASTER</category>
         <minInstanceCount>1</minInstanceCount>

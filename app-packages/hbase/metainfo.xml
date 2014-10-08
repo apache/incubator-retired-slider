@@ -81,7 +81,6 @@
         <name>HBASE_MASTER</name>
         <category>MASTER</category>
         <minInstanceCount>1</minInstanceCount>
-        <maxInstanceCount>2</maxInstanceCount>
         <appExports>QuickLinks-org.apache.slider.jmx,QuickLinks-org.apache.slider.monitor,QuickLinks-org.apache.slider.metrics,QuickLinks-org.apache.slider.metrics.ui</appExports>
         <componentExports>
           <componentExport>
@@ -113,7 +112,6 @@
       <component>
         <name>HBASE_REST</name>
         <category>MASTER</category>
-        <minInstanceCount>0</minInstanceCount>
         <appExports>QuickLinks-org.apache.slider.hbase.rest</appExports>
         <commandScript>
           <script>scripts/hbase_rest.py</script>
@@ -124,7 +122,6 @@
       <component>
         <name>HBASE_THRIFT</name>
         <category>MASTER</category>
-        <minInstanceCount>0</minInstanceCount>
         <appExports>QuickLinks-org.apache.slider.hbase.thrift</appExports>
         <commandScript>
           <script>scripts/hbase_thrift.py</script>
@@ -146,7 +143,6 @@
       <component>
         <name>HBASE_CLIENT</name>
         <category>CLIENT</category>
-        <minInstanceCount>0</minInstanceCount>
         <commandScript>
           <script>scripts/hbase_client.py</script>
           <scriptType>PYTHON</scriptType>

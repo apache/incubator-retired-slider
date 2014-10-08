@@ -36,6 +36,7 @@ import org.apache.slider.providers.AbstractClientProvider;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
 import org.apache.slider.providers.agent.application.metadata.Application;
+import org.apache.slider.providers.agent.application.metadata.Component;
 import org.apache.slider.providers.agent.application.metadata.Metainfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -109,25 +110,55 @@ public class AgentClientProvider extends AbstractClientProvider
   }
 
   @Override
-  public void validateInstanceDefinition(AggregateConf instanceDefinition) throws
+  public void validateInstanceDefinition(AggregateConf instanceDefinition, SliderFileSystem fs) throws
       SliderException {
-    super.validateInstanceDefinition(instanceDefinition);
+    super.validateInstanceDefinition(instanceDefinition, fs);
     log.debug("Validating conf {}", instanceDefinition);
     ConfTreeOperations resources =
         instanceDefinition.getResourceOperations();
-    ConfTreeOperations appConf =
-        instanceDefinition.getAppConfOperations();
 
     providerUtils.validateNodeCount(instanceDefinition, ROLE_NODE,
                                     0, -1);
 
+    try {
+      // Validate the app definition
+      instanceDefinition.getAppConfOperations().
+          getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
+    } catch (BadConfigException bce) {
+      throw new BadConfigException("Application definition must be provided. " + bce.getMessage());
+    }
+    String appDef = instanceDefinition.getAppConfOperations().
+        getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
+    log.info("Validating app definition {}", appDef);
+    String extension = appDef.substring(appDef.lastIndexOf(".") + 1, appDef.length());
+    if (!"zip".equalsIgnoreCase(extension)) {
+      throw new BadConfigException("App definition must be packaged as a .zip file. File provided is " + appDef);
+    }
+
     Set<String> names = resources.getComponentNames();
     names.remove(SliderKeys.COMPONENT_AM);
     Map<Integer, String> priorityMap = new HashMap<Integer, String>();
+
+    Metainfo metaInfo = null;
+    if (fs != null) {
+      try {
+        metaInfo = AgentUtils.getApplicationMetainfo(fs, appDef);
+      } catch (IOException ioe) {
+        // Ignore missing metainfo file for now
+        log.info("Missing metainfo.xml {}", ioe.getMessage());
+      }
+    }
+
     for (String name : names) {
       MapOperations component = resources.getMandatoryComponent(name);
 
-      // Validate count against the metainfo.xml
+      if (metaInfo != null) {
+        Component componentDef = metaInfo.getApplicationComponent(name);
+        if (componentDef == null) {
+          throw new BadConfigException(
+              "Component %s is not a member of application.", name);
+        }
+      }
 
       int priority =
           component.getMandatoryOptionInt(ResourceKeys.COMPONENT_PRIORITY);
@@ -150,21 +181,33 @@ public class AgentClientProvider extends AbstractClientProvider
       priorityMap.put(priority, name);
     }
 
-    try {
-      // Validate the app definition
-      instanceDefinition.getAppConfOperations().
-          getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
-    } catch (BadConfigException bce) {
-      throw new BadConfigException("Application definition must be provided. " + bce.getMessage());
-    }
-    String appDef = instanceDefinition.getAppConfOperations().
-        getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
-    log.info("Validating app definition {}", appDef);
-    String extension = appDef.substring(appDef.lastIndexOf(".") + 1, appDef.length());
-    if (!"zip".equalsIgnoreCase(extension)) {
-      throw new BadConfigException("App definition must be packaged as a .zip file. File provided is " + appDef);
+    // fileSystem may be null for tests
+    if (metaInfo != null) {
+      for (String name : names) {
+        Component componentDef = metaInfo.getApplicationComponent(name);
+        if (componentDef == null) {
+          throw new BadConfigException(
+              "Component %s is not a member of application.", name);
+        }
+
+        MapOperations componentConfig = resources.getMandatoryComponent(name);
+        int count =
+            componentConfig.getMandatoryOptionInt(ResourceKeys.COMPONENT_INSTANCES);
+        int definedMinCount = componentDef.getMinInstanceCountInt();
+        int definedMaxCount = componentDef.getMaxInstanceCountInt();
+        if (count < definedMinCount || count > definedMaxCount) {
+          throw new BadConfigException("Component %s, %s value %d out of range. "
+                                       + "Expected minimum is %d and maximum is %d",
+                                       name,
+                                       ResourceKeys.COMPONENT_INSTANCES,
+                                       count,
+                                       definedMinCount,
+                                       definedMaxCount);
+        }
+      }
     }
   }
+
 
   @Override
   public void prepareAMAndConfigForLaunch(SliderFileSystem fileSystem,
