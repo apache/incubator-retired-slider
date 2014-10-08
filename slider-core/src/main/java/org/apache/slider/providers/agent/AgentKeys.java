@@ -24,7 +24,7 @@ package org.apache.slider.providers.agent;
 public interface AgentKeys {
 
   String PROVIDER_AGENT = "agent";
-  String ROLE_NODE = "node";
+  String ROLE_NODE = "echo";
   /**
    * {@value}
    */

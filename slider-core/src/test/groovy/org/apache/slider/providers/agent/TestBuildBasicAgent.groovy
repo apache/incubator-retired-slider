@@ -79,7 +79,7 @@ class TestBuildBasicAgent extends AgentTestBase {
         true,
         false)
     buildAgentCluster("test_build_basic_agent_node_only",
-        [(ROLE_NODE): 5],
+        [(ROLE_NODE): 1],
         [
             ARG_OPTION, CONTROLLER_URL, "http://localhost",
             ARG_PACKAGE, ".",
@@ -96,7 +96,7 @@ class TestBuildBasicAgent extends AgentTestBase {
     def rs = "hbase-rs"
     ServiceLauncher<SliderClient> launcher = buildAgentCluster(clustername,
         [
-            (ROLE_NODE): 5,
+            (ROLE_NODE): 1,
             (master): 1,
             (rs): 5
         ],
@@ -138,7 +138,7 @@ class TestBuildBasicAgent extends AgentTestBase {
       def name2 = clustername + "-2"
       buildAgentCluster(name2,
           [
-              (ROLE_NODE): 5,
+              (ROLE_NODE): 2,
               "role3": 1,
               "newnode": 5
           ],
@@ -154,6 +154,26 @@ class TestBuildBasicAgent extends AgentTestBase {
     } catch (BadConfigException expected) {
     }
 
+    try {
+      launcher = buildAgentCluster(clustername,
+          [
+              (ROLE_NODE): 4,
+          ],
+          [
+              ARG_OPTION, CONTROLLER_URL, "http://localhost",
+              ARG_OPTION, PACKAGE_PATH, ".",
+              ARG_OPTION, APP_DEF, "file://" + getAppDef().absolutePath,
+              ARG_OPTION, AGENT_CONF, "file://" + getAgentConf().absolutePath,
+              ARG_COMP_OPT, ROLE_NODE, SCRIPT_PATH, "agent/scripts/agent.py",
+              ARG_RES_COMP_OPT, ROLE_NODE, ResourceKeys.COMPONENT_PRIORITY, "1",
+          ],
+          true, false,
+          false)
+      failWithBuildSucceeding(ROLE_NODE, "too many instances")
+    } catch (BadConfigException expected) {
+      assert expected.message.contains("Expected minimum is 1 and maximum is 2")
+      assert expected.message.contains("Component echo, yarn.component.instances value 4 out of range.")
+    }
     //duplicate priorities
     try {
       def name3 = clustername + "-3"
@@ -212,13 +232,13 @@ class TestBuildBasicAgent extends AgentTestBase {
     def name5 = clustername + "-5"
     buildAgentCluster(name5,
         [
-            "role": 1,
+            "hbase-rs": 1,
         ],
         [
             ARG_OPTION, APP_DEF, "file://" + getAppDef().absolutePath,
             ARG_OPTION, AGENT_CONF, "file://" + getAgentConf().absolutePath,
             ARG_PACKAGE, ".",
-            ARG_RES_COMP_OPT, "role", ResourceKeys.COMPONENT_PRIORITY, "3",
+            ARG_RES_COMP_OPT, "hbase-rs", ResourceKeys.COMPONENT_PRIORITY, "3",
         ],
         true, false,
         false)
@@ -293,7 +313,7 @@ class TestBuildBasicAgent extends AgentTestBase {
     def rs = "hbase-rs"
     ServiceLauncher<SliderClient> launcher = buildAgentCluster(clustername,
         [
-            (ROLE_NODE): 5,
+            (ROLE_NODE): 2,
             (master): 1,
             (rs): 5
         ],
@@ -332,7 +352,7 @@ class TestBuildBasicAgent extends AgentTestBase {
     // change master priority and rs instances through update action
     ServiceLauncher<SliderClient> launcher2 = updateAgentCluster(clustername,
         [
-            (ROLE_NODE): 5,
+            (ROLE_NODE): 2,
             (master): 1,
             (rs): 6
         ],
@@ -406,6 +426,37 @@ class TestBuildBasicAgent extends AgentTestBase {
       log.error(
           "Build operation should not have failed with exception : \n$exception")
       fail("Build operation should not fail")
+    }
+  }
+
+  @Test
+  public void testBadAgentArgs_Unknown_Component() throws Throwable {
+    String clustername = createMiniCluster(
+        "",
+        configuration,
+        1,
+        1,
+        1,
+        true,
+        false)
+
+    try {
+      def badArgs1 = "test_bad_agent_unk_comp"
+      buildAgentCluster(clustername,
+          [:],
+          [
+              ARG_OPTION, CONTROLLER_URL, "http://localhost",
+              ARG_PACKAGE, ".",
+              ARG_OPTION, APP_DEF, "file://" + appDef.absolutePath,
+              ARG_RESOURCES, TEST_FILES + "bad/resources-3.json",
+              ARG_TEMPLATE, TEST_FILES + "good/appconf.json"
+          ],
+          true, false,
+          false)
+      failWithBuildSucceeding(badArgs1, "bad component type node")
+    } catch (BadConfigException expected) {
+      log.info("Expected failure.", expected)
+      assert expected.message.contains("Component node is not a member of application")
     }
   }
 

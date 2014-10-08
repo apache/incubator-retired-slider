@@ -34,6 +34,7 @@ import org.apache.slider.api.ClusterDescriptionKeys;
 import org.apache.slider.api.ClusterNode;
 import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.OptionKeys;
+import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.tools.SliderFileSystem;
@@ -189,7 +190,35 @@ public class AgentProviderService extends AbstractProviderService implements
   public void validateInstanceDefinition(AggregateConf instanceDefinition)
       throws
       SliderException {
-    clientProvider.validateInstanceDefinition(instanceDefinition);
+    clientProvider.validateInstanceDefinition(instanceDefinition, null);
+
+    ConfTreeOperations resources =
+        instanceDefinition.getResourceOperations();
+
+    Set<String> names = resources.getComponentNames();
+    names.remove(SliderKeys.COMPONENT_AM);
+    for (String name : names) {
+      Component componentDef = getMetainfo().getApplicationComponent(name);
+      if (componentDef == null) {
+        throw new BadConfigException(
+            "Component %s is not a member of application.", name);
+      }
+
+      MapOperations componentConfig = resources.getMandatoryComponent(name);
+      int count =
+          componentConfig.getMandatoryOptionInt(ResourceKeys.COMPONENT_INSTANCES);
+      int definedMinCount = componentDef.getMinInstanceCountInt();
+      int definedMaxCount = componentDef.getMaxInstanceCountInt();
+      if (count < definedMinCount || count > definedMaxCount) {
+        throw new BadConfigException("Component %s, %s value %d out of range. "
+                                     + "Expected minimum is %d and maximum is %d",
+                                     name,
+                                     ResourceKeys.COMPONENT_INSTANCES,
+                                     count,
+                                     definedMinCount,
+                                     definedMaxCount);
+      }
+    }
   }
 
   // Reads the metainfo.xml in the application package and loads it
@@ -1073,17 +1102,7 @@ public class AgentProviderService extends AbstractProviderService implements
    * @return
    */
   protected Component getApplicationComponent(String roleName) {
-    Application application = getMetainfo().getApplication();
-    if (application == null) {
-      log.error("Malformed app definition: Expect application as the top level element for metainfo.xml");
-    } else {
-      for (Component component : application.getComponents()) {
-        if (component.getName().equals(roleName)) {
-          return component;
-        }
-      }
-    }
-    return null;
+    return getMetainfo().getApplicationComponent(roleName);
   }
 
   /**

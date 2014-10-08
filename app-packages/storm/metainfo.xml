@@ -78,6 +78,7 @@
         <category>MASTER</category>
         <autoStartOnFailure>true</autoStartOnFailure>
         <appExports>QuickLinks-nimbus.host_port,QuickLinks-org.apache.slider.metrics.ui,QuickLinks-org.apache.slider.metrics</appExports>
+        <maxInstanceCount>1</maxInstanceCount>
         <commandScript>
           <script>scripts/nimbus.py</script>
           <scriptType>PYTHON</scriptType>
@@ -107,6 +108,7 @@
         <category>MASTER</category>
         <publishConfig>true</publishConfig>
         <appExports>QuickLinks-org.apache.slider.monitor,QuickLinks-org.apache.slider.jmx</appExports>
+        <maxInstanceCount>1</maxInstanceCount>
         <autoStartOnFailure>true</autoStartOnFailure>
         <commandScript>
           <script>scripts/ui_server.py</script>
@@ -119,6 +121,7 @@
         <name>DRPC_SERVER</name>
         <category>MASTER</category>
         <autoStartOnFailure>true</autoStartOnFailure>
+        <maxInstanceCount>1</maxInstanceCount>
         <commandScript>
           <script>scripts/drpc_server.py</script>
           <scriptType>PYTHON</scriptType>

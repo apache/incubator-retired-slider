@@ -16,6 +16,10 @@
  */
 package org.apache.slider.providers.agent.application.metadata;
 
+import org.apache.slider.common.tools.SliderUtils;
+import org.apache.slider.core.exceptions.BadConfigException;
+import org.apache.slider.core.exceptions.SliderException;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -80,6 +84,30 @@ public class Component {
 
   public String getMinInstanceCount() {
     return minInstanceCount;
+  }
+
+  public int getMinInstanceCountInt() throws BadConfigException {
+    if (SliderUtils.isUnset(minInstanceCount)) {
+      return 0;
+    }
+
+    try {
+      return Integer.parseInt(minInstanceCount);
+    } catch (NumberFormatException nfe) {
+      throw new BadConfigException(nfe, "Invalid value for minInstanceCount for %s", name);
+    }
+  }
+
+  public int getMaxInstanceCountInt() throws BadConfigException {
+    if (SliderUtils.isUnset(maxInstanceCount)) {
+      return Integer.MAX_VALUE;
+    }
+
+    try {
+      return Integer.parseInt(maxInstanceCount);
+    } catch (NumberFormatException nfe) {
+      throw new BadConfigException(nfe, "Invalid value for maxInstanceCount for %s", name);
+    }
   }
 
   public void setMinInstanceCount(String minInstanceCount) {

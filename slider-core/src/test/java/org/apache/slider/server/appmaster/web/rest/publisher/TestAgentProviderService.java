@@ -17,6 +17,7 @@
 package org.apache.slider.server.appmaster.web.rest.publisher;
 
 import org.apache.hadoop.yarn.api.records.Container;
+import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.providers.agent.AgentProviderService;
 import org.apache.slider.server.appmaster.actions.QueueAccess;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;

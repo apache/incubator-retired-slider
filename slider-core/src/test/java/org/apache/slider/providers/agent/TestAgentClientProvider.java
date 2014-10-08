@@ -67,7 +67,7 @@ public class TestAgentClientProvider {
     AggregateConf instanceDefinition = new AggregateConf();
 
     try {
-      provider.validateInstanceDefinition(instanceDefinition);
+      provider.validateInstanceDefinition(instanceDefinition, null);
       Assert.assertFalse("Should fail with BadConfigException", true);
     } catch (BadConfigException e) {
       log.info(e.toString());

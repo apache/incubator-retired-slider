@@ -4,7 +4,7 @@
   "global": {
   },
   "components": {
-    "echo": {
+    "node": {
       "yarn.memory": "256",
       "yarn.component.instances": "2",
       "yarn.role.priority":"1"

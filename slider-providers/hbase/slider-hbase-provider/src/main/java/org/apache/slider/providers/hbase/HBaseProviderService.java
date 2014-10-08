@@ -106,9 +106,9 @@ public class HBaseProviderService extends AbstractProviderService
    * @param instanceDefinition the instance definition to validate
    */
   @Override // Client and Server
-  public void validateInstanceDefinition(AggregateConf instanceDefinition) 
+  public void validateInstanceDefinition(AggregateConf instanceDefinition)
       throws SliderException {
-    clientProvider.validateInstanceDefinition(instanceDefinition);
+    clientProvider.validateInstanceDefinition(instanceDefinition, null);
   }
 
   @Override

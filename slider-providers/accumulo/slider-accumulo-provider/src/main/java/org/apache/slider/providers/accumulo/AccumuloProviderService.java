@@ -100,7 +100,7 @@ public class AccumuloProviderService extends AbstractProviderService implements
   @Override
   public void validateInstanceDefinition(AggregateConf instanceDefinition) throws
       SliderException {
-    clientProvider.validateInstanceDefinition(instanceDefinition);
+    clientProvider.validateInstanceDefinition(instanceDefinition, null);
   }
 
   @Override
