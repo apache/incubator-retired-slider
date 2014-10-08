@@ -20,6 +20,7 @@ package org.apache.slider.agent.standalone
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.fs.PathNotFoundException
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
@@ -74,7 +75,11 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     
     // get local binding
     def registryOperations = microZKCluster.registryOperations
-    registryOperations.stat(RegistryConstants.PATH_SYSTEM_SERVICES)
+    try {
+      registryOperations.stat(RegistryConstants.PATH_SYSTEM_SERVICES)
+    } catch (PathNotFoundException e) {
+      log.warn(" RM is not apparently running registry services: {}", e, e)
+    }
     
     ServiceLauncher<SliderClient> launcher
     launcher = createStandaloneAM(clustername, true, false)
