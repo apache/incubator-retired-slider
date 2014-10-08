@@ -234,37 +234,6 @@ class TestCommonArgParsing implements SliderActions, Arguments {
   }
 
   @Test
-  public void testGetConfFailsNoArg() throws Throwable {
-    assertParseFails([
-        ACTION_GETCONF,
-    ])
-  }
-
-  @Test
-  public void testGetConfWorks1Arg() throws Throwable {
-    ClientArgs ca = createClientArgs([
-        ACTION_GETCONF,
-        CLUSTERNAME,
-    ])
-    assert ca.clusterName == CLUSTERNAME
-    assert ca.coreAction instanceof ActionGetConfArgs
-  }
-  
-  @Test
-  public void testGetConfWorksOut() throws Throwable {
-    ClientArgs ca = createClientArgs([
-        ACTION_GETCONF,
-        CLUSTERNAME,
-        ARG_FORMAT,"xml",
-        ARG_OUTPUT,"file.xml"
-    ])
-    assert ca.clusterName == CLUSTERNAME
-    assert ca.coreAction instanceof ActionGetConfArgs
-    assert ca.actionGetConfArgs.format == "xml"
-    assert ca.actionGetConfArgs.output == "file.xml"
-  }
-
-  @Test
   public void testGetStatusWorks1Arg() throws Throwable {
     ClientArgs ca = createClientArgs([
         ACTION_STATUS,

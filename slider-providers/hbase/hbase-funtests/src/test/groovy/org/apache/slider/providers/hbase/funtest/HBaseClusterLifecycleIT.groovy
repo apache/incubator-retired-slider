@@ -20,6 +20,7 @@ package org.apache.slider.providers.hbase.funtest
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.slider.server.appmaster.PublishedArtifacts
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.StatusKeys
 import org.apache.slider.client.SliderClient
@@ -108,7 +109,9 @@ public class HBaseClusterLifecycleIT extends HBaseCommandTestBase
 
       log.info(cd.toJsonString())
 
-      getConf(0, CLUSTER)
+      def yarn_site_config = PublishedArtifacts.COMPLETE_CONFIG
+	  registry([ARG_GETCONF, yarn_site_config,
+				ARG_NAME, CLUSTER])
 
       //get a slider client against the cluster
       SliderClient sliderClient = bondToCluster(SLIDER_CONFIG, CLUSTER)
