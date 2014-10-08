@@ -16,10 +16,16 @@
  */
 package org.apache.slider.providers.agent.application.metadata;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Application metainfo uber class
  */
 public class Metainfo {
+  protected static final Logger log =
+      LoggerFactory.getLogger(Metainfo.class);
+
   String schemaVersion;
   Application application;
 
@@ -40,5 +46,18 @@ public class Metainfo {
 
   public void setApplication(Application application) {
     this.application = application;
+  }
+
+  public Component getApplicationComponent(String roleName) {
+    if (application == null) {
+      log.error("Malformed app definition: Expect application as the top level element for metainfo.xml");
+    } else {
+      for (Component component : application.getComponents()) {
+        if (component.getName().equals(roleName)) {
+          return component;
+        }
+      }
+    }
+    return null;
   }
 }

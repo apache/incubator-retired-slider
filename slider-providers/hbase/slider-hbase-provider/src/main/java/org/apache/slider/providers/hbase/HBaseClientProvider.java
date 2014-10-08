@@ -224,9 +224,9 @@ public class HBaseClientProvider extends AbstractClientProvider implements
    * @param instanceDefinition instance definition
    */
   @Override
-  public void validateInstanceDefinition(AggregateConf instanceDefinition) throws
+  public void validateInstanceDefinition(AggregateConf instanceDefinition, SliderFileSystem fs) throws
       SliderException {
-    super.validateInstanceDefinition(instanceDefinition);
+    super.validateInstanceDefinition(instanceDefinition, fs);
     ConfTreeOperations resources =
       instanceDefinition.getResourceOperations();
     Set<String> unknownRoles = resources.getComponentNames();

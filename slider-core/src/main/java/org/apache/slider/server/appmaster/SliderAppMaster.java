@@ -815,7 +815,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     appState.noteAMLaunched();
 
 
-    //Give the provider restricted access to the state, registry
+    //Give the provider access to the state, and AM
     providerService.bind(stateForProviders, actionQueues, liveContainers);
     sliderAMProvider.bind(stateForProviders, actionQueues, liveContainers);
 

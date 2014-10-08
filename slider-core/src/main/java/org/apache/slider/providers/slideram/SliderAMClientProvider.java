@@ -137,10 +137,10 @@ public class SliderAMClientProvider extends AbstractClientProvider
    * @param instanceDefinition instance definition
    * @throws SliderException if the configuration is not valid
    */
-  public void validateInstanceDefinition(AggregateConf instanceDefinition) throws
+  public void validateInstanceDefinition(AggregateConf instanceDefinition, SliderFileSystem fs) throws
       SliderException {
 
-    super.validateInstanceDefinition(instanceDefinition);
+    super.validateInstanceDefinition(instanceDefinition, fs);
     
     // make sure there is no negative entry in the instance count
     Map<String, Map<String, String>> instanceMap =

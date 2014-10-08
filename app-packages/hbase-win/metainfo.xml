@@ -59,7 +59,6 @@
         <name>HBASE_MASTER</name>
         <category>MASTER</category>
         <minInstanceCount>1</minInstanceCount>
-        <maxInstanceCount>2</maxInstanceCount>
         <appExports>QuickLinks-org.apache.slider.jmx,QuickLinks-org.apache.slider.monitor</appExports>
         <componentExports>
           <componentExport>
@@ -81,7 +80,6 @@
       <component>
         <name>HBASE_REGIONSERVER</name>
         <category>SLAVE</category>
-        <minInstanceCount>1</minInstanceCount>
         <commandScript>
           <script>scripts/hbase_regionserver.py</script>
           <scriptType>PYTHON</scriptType>
