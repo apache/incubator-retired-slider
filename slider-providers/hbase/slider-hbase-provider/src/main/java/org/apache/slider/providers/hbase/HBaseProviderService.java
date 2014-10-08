@@ -275,7 +275,7 @@ public class HBaseProviderService extends AbstractProviderService
       log.warn("failed to create config URL: {}", e, e);
     }
     log.info("registering {}/{}", name, HBASE_SERVICE_TYPE);
-    yarnRegistry.putService(HBASE_SERVICE_TYPE, name, serviceRecord);
+    yarnRegistry.putService(HBASE_SERVICE_TYPE, name, serviceRecord, true);
 
     PublishedConfiguration publishedSite =
         new PublishedConfiguration("HBase site", siteConf);

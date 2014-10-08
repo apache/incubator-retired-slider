@@ -816,10 +816,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
 
     //Give the provider restricted access to the state, registry
-    providerService.bind(stateForProviders, actionQueues,
-        liveContainers);
-    sliderAMProvider.bind(stateForProviders, actionQueues,
-        liveContainers);
+    providerService.bind(stateForProviders, actionQueues, liveContainers);
+    sliderAMProvider.bind(stateForProviders, actionQueues, liveContainers);
 
     // chaos monkey
     maybeStartMonkey();
@@ -885,7 +883,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * Ensure that the user is generated from a keytab and has no HDFS delegation
    * tokens.
    *
-   * @param user
+   * @param user user to validate
    * @throws SliderException
    */
   protected void validateLoginUser(UserGroupInformation user)
@@ -939,16 +937,17 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     appInformation.put(StatusKeys.INFO_AM_AGENT_OPS_URL, agentOpsUrl + "/");
     appInformation.put(StatusKeys.INFO_AM_AGENT_STATUS_URL, agentStatusUrl + "/");
-    appInformation.set(StatusKeys.INFO_AM_AGENT_STATUS_PORT, agentWebApp.getPort());
+    appInformation.set(StatusKeys.INFO_AM_AGENT_STATUS_PORT,
+        agentWebApp.getPort());
     appInformation.set(StatusKeys.INFO_AM_AGENT_OPS_PORT,
-                       agentWebApp.getSecuredPort());
+        agentWebApp.getSecuredPort());
   }
 
   /**
    * This registers the service instance and its external values
    * @param instanceName name of this instance
    * @param appid application ID
-   * @throws Exception
+   * @throws IOException
    */
   private void registerServiceInstance(String instanceName,
       ApplicationId appid) throws IOException {
@@ -958,8 +957,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     URL amWebURI = new URL(appMasterTrackingUrl);
     URL agentOpsURI = new URL(agentOpsUrl);
     URL agentStatusURI = new URL(agentStatusUrl);
-    String serviceName = SliderKeys.APP_TYPE;
-    int id = appid.getId();
 
     //Give the provider restricted access to the state, registry
     setupInitialRegistryPaths();
@@ -998,10 +995,16 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     // store for clients
     log.info("Service Record \n{}", serviceRecord);
-    yarnRegistryOperations.putService(service_user_name,
+    String sliderServicePath = yarnRegistryOperations.putService(service_user_name,
         SliderKeys.APP_TYPE,
         instanceName,
-        serviceRecord);
+        serviceRecord, true);
+    boolean isFirstAttempt = 1 == appAttemptID.getAttemptId();
+    // delete the children in case there are any and this is an AM startup.
+    // just to make sure everything underneath is purged
+    if (isFirstAttempt) {
+      yarnRegistryOperations.deleteChildren(sliderServicePath, true);
+    }
     yarnRegistryOperations.setSelfRegistration(serviceRecord);
 
     // and a shorter lived binding to the app
@@ -1080,7 +1083,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
     String cid = RegistryPathUtils.encodeYarnID(id.toString());
     try {
-      yarnRegistryOperations.rmComponent(cid);
+      yarnRegistryOperations.deleteComponent(cid);
     } catch (IOException e) {
       log.warn("Failed to delete container {} : {}", id, e, e);
     }
@@ -1492,9 +1495,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public void onShutdownRequest() {
     LOG_YARN.info("Shutdown Request received");
     signalAMComplete(new ActionStopSlider("stop",
-                                          EXIT_SUCCESS,
-                                          FinalApplicationStatus.SUCCEEDED,
-                                          "Shutdown requested from RM"));
+        EXIT_SUCCESS,
+        FinalApplicationStatus.SUCCEEDED,
+        "Shutdown requested from RM"));
   }
 
   /**

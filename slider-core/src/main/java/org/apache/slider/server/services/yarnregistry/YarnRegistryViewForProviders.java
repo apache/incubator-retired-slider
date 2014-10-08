@@ -18,6 +18,8 @@
 
 package org.apache.slider.server.services.yarnregistry;
 
+import org.apache.hadoop.fs.PathNotFoundException;
+import org.apache.hadoop.registry.client.types.RegistryPathStatus;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.registry.client.api.BindFlags;
 import org.apache.hadoop.registry.client.api.RegistryOperations;
@@ -27,6 +29,11 @@ import org.apache.hadoop.registry.client.binding.RegistryPathUtils;
 import org.apache.hadoop.registry.client.types.ServiceRecord;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.apache.hadoop.registry.client.binding.RegistryPathUtils.join;
 
 public class YarnRegistryViewForProviders {
 
@@ -111,21 +118,28 @@ public class YarnRegistryViewForProviders {
   }
 
   /**
-   * Add a service under a path
+   * Add a service under a path, optionally purging any history
    * @param username user
    * @param serviceClass service class to use under ~user
    * @param serviceName name of the service
    * @param record service record
+   * @param deleteTreeFirst perform recursive delete of the path first.
+   * @return the path the service was created at
    * @throws IOException
    */
-  public void putService(String username,
+  public String putService(String username,
       String serviceClass,
       String serviceName,
-      ServiceRecord record) throws IOException {
+      ServiceRecord record,
+      boolean deleteTreeFirst) throws IOException {
     String path = RegistryUtils.servicePath(
         username, serviceClass, serviceName);
+    if (deleteTreeFirst) {
+      registryOperations.delete(path, true);
+    }
     registryOperations.mknode(RegistryPathUtils.parentOf(path), true);
     registryOperations.bind(path, record, BindFlags.OVERWRITE);
+    return path;
   }
 
   /**
@@ -133,22 +147,50 @@ public class YarnRegistryViewForProviders {
    * @param serviceClass service class to use under ~user
    * @param serviceName name of the service
    * @param record service record
+   * @param deleteTreeFirst perform recursive delete of the path first
+   * @return the path the service was created at
    * @throws IOException
    */
-  public void putService(
+  public String putService(
       String serviceClass,
       String serviceName,
-      ServiceRecord record) throws IOException {
-    String path = RegistryUtils.servicePath(
-        user, serviceClass, serviceName);
-    registryOperations.mknode(RegistryPathUtils.parentOf(path), true);
-    registryOperations.bind(path, record, BindFlags.OVERWRITE);
+      ServiceRecord record,
+      boolean deleteTreeFirst) throws IOException {
+    return putService(user, serviceClass, serviceName, record, deleteTreeFirst);
   }
 
-  public void rmComponent(String componentName) throws IOException {
+  /**
+   * Delete a component
+   * @param componentName component name
+   * @throws IOException
+   */
+  public void deleteComponent(String componentName) throws IOException {
     String path = RegistryUtils.componentPath(
         user, sliderServiceclass, instanceName,
         componentName);
     registryOperations.delete(path, false);
   }
+
+  /**
+   * Delete the children of a path -but not the path itself.
+   * It is not an error if the path does not exist
+   * @param path path to delete
+   * @param recursive flag to request recursive deletes
+   * @throws IOException IO problems
+   */
+  public void deleteChildren(String path, boolean recursive) throws IOException {
+    List<String> childNames = null;
+    try {
+      childNames = registryOperations.list(path);
+    } catch (PathNotFoundException e) {
+      //ignored
+    }
+    Map<String, RegistryPathStatus> results =
+        new HashMap<String, RegistryPathStatus>();
+    for (String childName : childNames) {
+      String child = join(path, childName);
+      registryOperations.delete(child, recursive);
+    }
+  }
+  
 }
