@@ -25,20 +25,22 @@ import org.apache.hadoop.security.ProviderUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.security.alias.CredentialProvider
 import org.apache.hadoop.security.alias.CredentialProviderFactory
+import org.apache.hadoop.registry.client.types.ServiceRecord
 import org.apache.slider.accumulo.CustomAuthenticator
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderKeys
-import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.core.persist.ConfTreeSerDeser
 import org.apache.slider.core.registry.docstore.PublishedConfiguration
-import org.apache.slider.core.registry.info.ServiceInstanceData
 import org.apache.slider.core.registry.retrieve.RegistryRetriever
 import org.apache.slider.funtest.framework.SliderShell
-import org.apache.slider.server.services.curator.CuratorServiceInstance
+
 import org.junit.Before
 import org.junit.Test
+
+import static org.apache.hadoop.registry.client.binding.RegistryUtils.currentUser
+import static org.apache.hadoop.registry.client.binding.RegistryUtils.servicePath
 
 @Slf4j
 class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
@@ -170,10 +172,11 @@ class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
     Exception caught;
     while (true) {
       try {
-        CuratorServiceInstance<ServiceInstanceData> instance =
-          sliderClient.getRegistry().queryForInstance(SliderKeys.APP_TYPE, clusterName)
-        ServiceInstanceData serviceInstanceData = instance.payload
-        RegistryRetriever retriever = new RegistryRetriever(serviceInstanceData)
+        String path = servicePath(currentUser(),
+            SliderKeys.APP_TYPE,
+            clusterName);
+        ServiceRecord instance = sliderClient.resolve(path)
+        RegistryRetriever retriever = new RegistryRetriever(instance)
         PublishedConfiguration configuration = retriever.retrieveConfiguration(
           retriever.getConfigurations(true), "quicklinks", true)
 

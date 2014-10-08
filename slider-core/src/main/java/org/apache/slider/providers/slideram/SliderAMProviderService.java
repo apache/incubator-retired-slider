@@ -23,6 +23,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.apache.hadoop.registry.client.binding.RegistryTypeUtils;
+import org.apache.hadoop.registry.client.types.ServiceRecord;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.tools.ConfigHelper;
 import org.apache.slider.common.tools.SliderFileSystem;
@@ -33,13 +35,8 @@ import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.ContainerLauncher;
 import org.apache.slider.core.registry.docstore.PublishedConfiguration;
-import org.apache.slider.core.registry.info.CommonRegistryConstants;
 import org.apache.slider.core.registry.info.CustomRegistryConstants;
-import org.apache.slider.core.registry.info.RegisteredEndpoint;
-import org.apache.slider.core.registry.info.RegistryView;
-import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.providers.AbstractProviderService;
-import org.apache.slider.providers.ProviderCompleted;
 import org.apache.slider.providers.ProviderCore;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.agent.AgentKeys;
@@ -48,14 +45,13 @@ import org.apache.slider.server.appmaster.web.rest.RestPaths;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_MANAGEMENT;
-import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_PUBLISHER;
+import static org.apache.slider.server.appmaster.web.rest.RestPaths.*;
 
 /**
  * Exists just to move some functionality out of AppMaster into a peer class
@@ -103,22 +99,21 @@ public class SliderAMProviderService extends AbstractProviderService implements
 
   @Override
   public void applyInitialRegistryDefinitions(URL amWebURI,
-                                              URL agentOpsURI,
-                                              URL agentStatusURI,
-                                              ServiceInstanceData instanceData) throws IOException {
+      URL agentOpsURI,
+      URL agentStatusURI,
+      ServiceRecord serviceRecord)
+      throws IOException {
     super.applyInitialRegistryDefinitions(amWebURI,
-                                          agentOpsURI,
-                                          agentStatusURI, instanceData
-    );
-
+        agentOpsURI,
+        agentStatusURI,
+        serviceRecord);
     // now publish site.xml files
     YarnConfiguration defaultYarnConfig = new YarnConfiguration();
     amState.getPublishedSliderConfigurations().put(
         PublishedArtifacts.COMPLETE_CONFIG,
         new PublishedConfiguration(
             "Complete slider application settings",
-            getConfig(), getConfig())
-    );
+            getConfig(), getConfig()));
     amState.getPublishedSliderConfigurations().put(
         PublishedArtifacts.YARN_SITE_CONFIG,
         new PublishedConfiguration(
@@ -141,37 +136,36 @@ public class SliderAMProviderService extends AbstractProviderService implements
 
 
     try {
-      RegistryView externalView = instanceData.externalView;
-      RegisteredEndpoint webUI =
-          new RegisteredEndpoint(amWebURI, "Application Master Web UI");
 
-      externalView.endpoints.put(CommonRegistryConstants.WEB_UI, webUI);
-
-      externalView.endpoints.put(
-          CustomRegistryConstants.MANAGEMENT_REST_API,
-          new RegisteredEndpoint(
-              new URL(amWebURI, SLIDER_PATH_MANAGEMENT),
-              "Management REST API") );
-
-      externalView.endpoints.put(
-          CustomRegistryConstants.REGISTRY_REST_API,
-          new RegisteredEndpoint(
-              new URL(amWebURI, RestPaths.SLIDER_PATH_REGISTRY + "/" +
-                                RestPaths.REGISTRY_SERVICE),
-              "Registry Web Service" ) );
+      URL managementAPI = new URL(amWebURI, SLIDER_PATH_MANAGEMENT);
+      URL registryREST = new URL(amWebURI, SLIDER_PATH_REGISTRY );
 
       URL publisherURL = new URL(amWebURI, SLIDER_PATH_PUBLISHER);
-      externalView.endpoints.put(
-          CustomRegistryConstants.PUBLISHER_REST_API,
-          new RegisteredEndpoint(
-              publisherURL,
-              "Publisher Service") );
-      
-    /*
-     * Set the configurations URL.
-     */
-      externalView.configurationsURL = SliderUtils.appendToURL(
+
+      // Set the configurations URL.
+
+      String configurationsURL = SliderUtils.appendToURL(
           publisherURL.toExternalForm(), RestPaths.SLIDER_CONFIGSET);
+
+      serviceRecord.addExternalEndpoint(
+          RegistryTypeUtils.webEndpoint(
+              CustomRegistryConstants.WEB_UI, amWebURI.toURI()));
+      serviceRecord.addExternalEndpoint(
+          RegistryTypeUtils.restEndpoint(
+              CustomRegistryConstants.MANAGEMENT_REST_API,
+              managementAPI.toURI()));
+      serviceRecord.addExternalEndpoint(
+          RegistryTypeUtils.restEndpoint(
+              CustomRegistryConstants.PUBLISHER_REST_API,
+              publisherURL.toURI()));
+      serviceRecord.addExternalEndpoint(
+          RegistryTypeUtils.restEndpoint(
+              CustomRegistryConstants.REGISTRY_REST_API,
+              registryREST.toURI()));
+      serviceRecord.addExternalEndpoint(
+          RegistryTypeUtils.restEndpoint(
+              CustomRegistryConstants.PUBLISHER_CONFIGURATIONS_API,
+              new URI(configurationsURL)));
 
     } catch (URISyntaxException e) {
       throw new IOException(e);

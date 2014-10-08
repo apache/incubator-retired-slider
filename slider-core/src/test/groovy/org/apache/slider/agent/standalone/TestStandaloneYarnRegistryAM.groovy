@@ -20,9 +20,20 @@ package org.apache.slider.agent.standalone
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.fs.PathNotFoundException
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
+import org.apache.hadoop.registry.client.api.RegistryConstants
+import org.apache.hadoop.registry.client.binding.RegistryTypeUtils
+import org.apache.hadoop.registry.client.impl.RegistryOperationsClient
+import org.apache.hadoop.registry.client.types.RegistryPathStatus
+import org.apache.hadoop.registry.client.types.ServiceRecord
+import org.apache.hadoop.registry.client.types.yarn.YarnRegistryAttributes
+import org.apache.slider.common.params.ActionResolveArgs
+import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
+
+import static org.apache.hadoop.registry.client.binding.RegistryUtils.*
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.api.ClusterNode
 import org.apache.slider.client.SliderClient
@@ -35,34 +46,41 @@ import org.apache.slider.core.registry.docstore.PublishedConfigSet
 import org.apache.slider.core.registry.docstore.PublishedConfiguration
 import org.apache.slider.core.registry.docstore.UriMap
 import org.apache.slider.core.registry.info.CustomRegistryConstants
-import org.apache.slider.core.registry.info.ServiceInstanceData
 import org.apache.slider.core.registry.retrieve.RegistryRetriever
 import org.apache.slider.server.appmaster.PublishedArtifacts
 import org.apache.slider.server.appmaster.web.rest.RestPaths
-import org.apache.slider.server.services.curator.CuratorServiceInstance
-import org.apache.slider.server.services.registry.SliderRegistryService
 import org.junit.Test
 
+import static org.apache.slider.core.registry.info.CustomRegistryConstants.*
+
 /**
- * create masterless AMs and work with them. This is faster than
- * bringing up full clusters
+ *  work with a YARN registry
  */
 @CompileStatic
 @Slf4j
 
-class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
+class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
 
 
   public static final String ARTIFACT_NAME = PublishedArtifacts.COMPLETE_CONFIG
 
   @Test
-  public void testRegistryAM() throws Throwable {
+  public void testStandaloneYarnRegistryAM() throws Throwable {
     
 
-    describe "create a masterless AM then perform registry operations on it"
+    describe "create a masterless AM then perform YARN registry operations on it"
 
-    //launch fake master
+    
     String clustername = createMiniCluster(configuration, 1, true)
+    
+    // get local binding
+    def registryOperations = microZKCluster.registryOperations
+    try {
+      registryOperations.stat(RegistryConstants.PATH_SYSTEM_SERVICES)
+    } catch (PathNotFoundException e) {
+      log.warn(" RM is not apparently running registry services: {}", e, e)
+    }
+    
     ServiceLauncher<SliderClient> launcher
     launcher = createStandaloneAM(clustername, true, false)
     SliderClient client = launcher.service
@@ -93,11 +111,8 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     ClusterNode master = nodes[0]
     assert master.role == SliderKeys.COMPONENT_AM
 
-
-
-
     String username = client.username
-    def yarnRegistryClient = client.YARNRegistryClient
+    def yarnRegistryClient = client.yarnAppListClient
     describe("list of all applications")
     logApplications(apps)
     describe("apps of user $username")
@@ -109,41 +124,101 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     logReport(instance)
     assert instance != null
 
-    //switch to the ZK-based registry
+    // sleep to allow registration to complete
+    sleep(5000)
+
 
     describe "service registry names"
-    SliderRegistryService registryService = client.registry
-    def serviceTypes = registryService.serviceTypes;
-    dumpRegistryServiceTypes(serviceTypes)
+    def registryService = client.registryOperations
 
-    List<String> instanceIds = client.listRegisteredSliderInstances()
+    RegistryOperationsClient registryOperationsClient =
+        registryService as RegistryOperationsClient
+    try {
+      def yarnRegistryDump = registryOperationsClient.dumpPath(false) 
+      log.info("yarn service registry: \n${yarnRegistryDump}\n")
+    } catch (IOException ignored) {
 
+    }
+        
 
-    dumpRegistryInstanceIDs(instanceIds)
-    assert instanceIds.size() == 1
+    def self = currentUser()
+    def children = statChildren(registryService, homePathForUser(self));
+    Collection<RegistryPathStatus> serviceTypes = children.values()
+    dumpCollection(serviceTypes)
 
-    List<CuratorServiceInstance<ServiceInstanceData>> instances =
-        client.listRegistryInstances()
-    dumpRegistryInstances(instances)
+    def recordsPath = serviceclassPath(self, SliderKeys.APP_TYPE)
 
-    assert instances.size() == 1
+    Map<String, ServiceRecord> recordMap = extractServiceRecords(
+        registryService,
+        recordsPath);
+    def serviceRecords = recordMap.values();
+    dumpCollection(serviceRecords)
+    assert serviceRecords.size() == 1
 
-    def amInstance = instances[0]
-    def serviceInstanceData = amInstance.payload
+    def serviceRecord = serviceRecords[0]
+    log.info(serviceRecord.toString())
 
-    def externalEndpoints = serviceInstanceData.externalView.endpoints
+    assert serviceRecord[YarnRegistryAttributes.YARN_ID] != null
+    assert serviceRecord[YarnRegistryAttributes.YARN_PERSISTENCE] != ""
+    def externalEndpoints = serviceRecord.external;
+    assert externalEndpoints.size() > 0
+
+    def am_ipc_protocol = AM_IPC_PROTOCOL
+    serviceRecord.getExternalEndpoint(am_ipc_protocol)
+    assert null != am_ipc_protocol;
+
+    assert null != serviceRecord.getExternalEndpoint(MANAGEMENT_REST_API)
+    assert null != serviceRecord.getExternalEndpoint(PUBLISHER_REST_API)
+    // internals
+    assert null != serviceRecord.getInternalEndpoint(AGENT_ONEWAY_REST_API)
+    assert null != serviceRecord.getInternalEndpoint(AGENT_SECURE_REST_API)
+
+    // use the resolve operation
+    describe "resolve CLI action"
+    ActionResolveArgs resolveArgs = new ActionResolveArgs()
+    resolveArgs.path = recordsPath;
+    resolveArgs.list = true;
+    // to stdout
+    client.actionResolve(resolveArgs)
+    // to a file
+    File destFile = new File("target/resolve.json")
+    destFile.delete()
+    resolveArgs.out = destFile
+    client.actionResolve(resolveArgs)
+    assert destFile.exists()
+    destFile.delete()
+    
+    // look at a single record
+    resolveArgs.out = null;
+    resolveArgs.list = false;
+    resolveArgs.path = recordsPath +"/"+ clustername
+    // to stdout
+    client.actionResolve(resolveArgs)
+    resolveArgs.out = destFile
+    client.actionResolve(resolveArgs)
+    assert destFile.exists()
+    ServiceRecordMarshal serviceRecordMarshal = new ServiceRecordMarshal()
+    def recordFromFile = serviceRecordMarshal.fromFile(destFile)
+    assert recordFromFile[YarnRegistryAttributes.YARN_ID] ==
+           serviceRecord[YarnRegistryAttributes.YARN_ID]
+    assert recordFromFile[YarnRegistryAttributes.YARN_PERSISTENCE] ==
+           serviceRecord[YarnRegistryAttributes.YARN_PERSISTENCE]
+    
+    
 
     // hit the registry web page
-
-    def registryEndpoint = externalEndpoints.get(
+    def registryEndpoint = serviceRecord.getExternalEndpoint(
         CustomRegistryConstants.REGISTRY_REST_API)
     assert registryEndpoint != null
-    def registryURL = registryEndpoint.asURL()
-    describe("Registry WADL @ $registryURL")
+    def registryURL = RegistryTypeUtils.retrieveAddressURLs(registryEndpoint)[0]
     
-    def publisherEndpoint = externalEndpoints.get(CustomRegistryConstants.PUBLISHER_REST_API)
-    assert publisherEndpoint != null
-    def publisherURL = publisherEndpoint.asURL()
+    
+    // Look at the Registry WADL
+    describe("Registry WADL @ $registryURL")
+    def publisherEndpoint = serviceRecord.getExternalEndpoint(
+        CustomRegistryConstants.PUBLISHER_REST_API)
+
+    def publisherURL = RegistryTypeUtils.retrieveAddressURLs(publisherEndpoint)[0]
     def publisher = publisherURL.toString()
     describe("Publisher")
 
@@ -206,7 +281,7 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     describe "Registry Retrieval Class"
     // retrieval
 
-    RegistryRetriever retriever = new RegistryRetriever(serviceInstanceData)
+    RegistryRetriever retriever = new RegistryRetriever(serviceRecord)
     log.info retriever.toString()
     
     assert retriever.hasConfigurations(true)
@@ -261,28 +336,24 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     registryArgs.name = "unknown"
     try {
       client.actionRegistryList(registryArgs)
-    } catch (FileNotFoundException expected) {
+    } catch (UnknownApplicationInstanceException expected) {
       // expected 
     }
 
     // list all instances of an alternate type and expect failure
     registryArgs.list = true;
     registryArgs.name = null
-    registryArgs.serviceType = "org.apache.hadoop"
+    registryArgs.serviceType = "org-apache-hadoop"
     try {
       client.actionRegistryList(registryArgs)
-    } catch (FileNotFoundException expected) {
+    } catch (UnknownApplicationInstanceException expected) {
       // expected 
     }
 
     registryArgs.serviceType = ""
-    try {
-      client.actionRegistryList(registryArgs)
-    } catch (FileNotFoundException expected) {
-      // expected 
-    }
+
     //set the name
-    registryArgs.name = serviceInstanceData.id;
+    registryArgs.name = clustername;
     registryArgs.serviceType = SliderKeys.APP_TYPE
     
 
@@ -290,8 +361,12 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     describe registryArgs.toString()
 
     def listedInstance = client.actionRegistryList(registryArgs)
-    assert listedInstance[0].id == serviceInstanceData.id
-    
+
+    def resolvedRecord = listedInstance[0]
+    assert resolvedRecord[YarnRegistryAttributes.YARN_ID] == 
+           serviceRecord[YarnRegistryAttributes.YARN_ID]
+    assert resolvedRecord[YarnRegistryAttributes.YARN_PERSISTENCE] == 
+           serviceRecord[YarnRegistryAttributes.YARN_PERSISTENCE]
 
     // listconf 
     registryArgs.list = false;
@@ -325,7 +400,7 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     outputDir.mkdirs()
 
     // create a new registry args with the defaults back in
-    registryArgs = new ActionRegistryArgs(serviceInstanceData.id)
+    registryArgs = new ActionRegistryArgs(clustername)
     registryArgs.getConf = yarn_site_config
     registryArgs.dest = outputDir
     describe registryArgs.toString()
@@ -351,12 +426,6 @@ class TestStandaloneRegistryAM extends AgentMiniClusterTestBase {
     assert oldInstance != null
     assert oldInstance.yarnApplicationState >= YarnApplicationState.FINISHED
 
-
-    sleep(20000)
-
-    // now verify that the service is not in the registry 
-    instances = client.listRegistryInstances()
-    assert instances.size() == 0
 
   }
 }

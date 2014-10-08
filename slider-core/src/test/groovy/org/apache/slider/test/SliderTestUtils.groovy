@@ -31,6 +31,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.hadoop.util.Shell
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.conf.YarnConfiguration
+import org.apache.hadoop.registry.client.types.ServiceRecord
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.ClusterNode
 import org.apache.slider.api.RoleKeys
@@ -44,10 +45,7 @@ import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.exceptions.WaitTimeoutException
 import org.apache.slider.core.main.ServiceLaunchException
 import org.apache.slider.core.main.ServiceLauncher
-import org.apache.slider.core.persist.JsonSerDeser
 import org.apache.slider.core.registry.docstore.PublishedConfigSet
-import org.apache.slider.core.registry.info.ServiceInstanceData
-import org.apache.slider.server.services.curator.CuratorServiceInstance
 import org.junit.Assert
 import org.junit.Assume
 
@@ -688,19 +686,15 @@ class SliderTestUtils extends Assert {
   }
 
   public static void dumpRegistryInstances(
-      List<CuratorServiceInstance<ServiceInstanceData>> instances) {
+      Map<String, ServiceRecord> instances) {
     describe "service registry slider instances"
-    JsonSerDeser<ServiceInstanceData> serDeser = new JsonSerDeser<>(
-        ServiceInstanceData)
-
-    instances.each { CuratorServiceInstance<ServiceInstanceData> svc ->
-      ServiceInstanceData payload = svc.payload
-      def json = serDeser.toJson(payload)
-      log.info("service $svc payload=\n$json")
+    instances.each { Map.Entry<String, ServiceRecord> it ->
+      log.info(" $it.key : $it.value")
     }
     describe "end list service registry slider instances"
   }
 
+  
   public static void dumpRegistryInstanceIDs(List<String> instanceIds) {
     describe "service registry instance IDs"
     dumpCollection(instanceIds)
@@ -711,11 +705,22 @@ class SliderTestUtils extends Assert {
     dumpCollection(entries)
   }
 
-  def static void dumpCollection(Collection<String> entries) {
+  def static void dumpCollection(Collection entries) {
     log.info("number of entries: ${entries.size()}")
-    entries.each { String it -> log.info(it) }
+    entries.each {  log.info(it.toString()) }
   }
 
+  def static void dumpArray(Object[] entries) {
+    log.info("number of entries: ${entries.length}")
+    entries.each { log.info(it.toString()) }
+  }
+
+  public static void dumpMap(Map map) {
+    map.entrySet().each { Map.Entry it ->
+      log.info("\"${it.key.toString()}\": \"${it.value.toString()}\"")
+    }
+  }
+  
   /**
    * Get a time option in seconds if set, otherwise the default value (also in seconds).
    * This operation picks up the time value as a system property if set -that

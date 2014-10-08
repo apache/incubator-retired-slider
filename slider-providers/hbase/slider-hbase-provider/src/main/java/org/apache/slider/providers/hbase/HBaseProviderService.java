@@ -18,10 +18,13 @@
 
 package org.apache.slider.providers.hbase;
 
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.Container;
+import org.apache.hadoop.registry.client.binding.RegistryTypeUtils;
+import org.apache.hadoop.registry.client.types.yarn.PersistencePolicies;
+import org.apache.hadoop.registry.client.types.ServiceRecord;
+import org.apache.hadoop.registry.client.types.yarn.YarnRegistryAttributes;
 import org.apache.slider.api.InternalKeys;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.api.ClusterDescription;
@@ -36,9 +39,8 @@ import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.exceptions.SliderInternalStateException;
 import org.apache.slider.core.registry.docstore.PublishedConfigSet;
 import org.apache.slider.core.registry.docstore.PublishedConfiguration;
-import org.apache.slider.core.registry.info.ServiceInstanceData;
+import org.apache.slider.core.registry.info.CustomRegistryConstants;
 import org.apache.slider.providers.AbstractProviderService;
-import org.apache.slider.providers.ProviderCompleted;
 import org.apache.slider.providers.ProviderCore;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
@@ -56,6 +58,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
@@ -245,18 +248,6 @@ public class HBaseProviderService extends AbstractProviderService
   }
 
   @Override
-  public void applyInitialRegistryDefinitions(URL amWebURI,
-                                              URL agentOpsURI,
-                                              URL agentStatusURI,
-                                              ServiceInstanceData instanceData) throws
-      IOException {
-    super.applyInitialRegistryDefinitions(amWebURI, agentOpsURI,
-                                          agentStatusURI,
-                                          instanceData
-    );
-  }
-
-  @Override
   protected void serviceStart() throws Exception {
     registerHBaseServiceEntry();
     super.serviceStart();
@@ -264,20 +255,34 @@ public class HBaseProviderService extends AbstractProviderService
 
   private void registerHBaseServiceEntry() throws IOException {
 
-    String name = amState.getApplicationName() ; 
-//    name += ".hbase";
-    ServiceInstanceData instanceData = new ServiceInstanceData(name,
-        HBASE_SERVICE_TYPE);
-    log.info("registering {}/{}", name, HBASE_SERVICE_TYPE );
+    String name = amState.getApplicationName() ;
+    ServiceRecord serviceRecord = new ServiceRecord();
+    // bond lifespan to the application
+    serviceRecord.set(YarnRegistryAttributes.YARN_ID,
+        yarnRegistry.getApplicationAttemptId()
+                    .getApplicationId().toString());
+    serviceRecord.set(YarnRegistryAttributes.YARN_PERSISTENCE,
+        PersistencePolicies.APPLICATION);
+    try {
+      URL configURL = new URL(amWebAPI,
+          SLIDER_PATH_PUBLISHER + "/" + HBASE_SERVICE_TYPE);
+
+      serviceRecord.addExternalEndpoint(
+          RegistryTypeUtils.restEndpoint(
+              CustomRegistryConstants.PUBLISHER_CONFIGURATIONS_API,
+              configURL.toURI()));
+    } catch (URISyntaxException e) {
+      log.warn("failed to create config URL: {}", e, e);
+    }
+    log.info("registering {}/{}", name, HBASE_SERVICE_TYPE);
+    yarnRegistry.putService(HBASE_SERVICE_TYPE, name, serviceRecord, true);
+
     PublishedConfiguration publishedSite =
         new PublishedConfiguration("HBase site", siteConf);
     PublishedConfigSet configSet =
         amState.getOrCreatePublishedConfigSet(HBASE_SERVICE_TYPE);
-    instanceData.externalView.configurationsURL = SliderUtils.appendToURL(
-        amWebAPI.toExternalForm(), SLIDER_PATH_PUBLISHER, HBASE_SERVICE_TYPE);
-    configSet.put(HBASE_SITE_PUBLISHED_CONFIG, publishedSite);
 
-    registry.registerServiceInstance(instanceData, null);
+    configSet.put(HBASE_SITE_PUBLISHED_CONFIG, publishedSite);    
   }
 
   /**

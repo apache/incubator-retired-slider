@@ -23,14 +23,13 @@ import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.io.IOUtils
 import org.apache.hadoop.yarn.conf.YarnConfiguration
+import org.apache.hadoop.registry.client.api.RegistryConstants
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.core.zk.BlockingZKWatcher
 import org.apache.slider.core.zk.ZKIntegration
 
 import java.util.concurrent.atomic.AtomicBoolean
 
-import static org.apache.slider.common.SliderKeys.*;
-import static org.apache.slider.common.SliderXMLConfKeysForTesting.*;
 import static org.apache.slider.test.KeysForTests.*;
 
 /**
@@ -86,13 +85,13 @@ public abstract class YarnZKMiniClusterTestBase extends YarnMiniClusterTestBase 
   }
 
   /**
-   * Create and start a minicluster
+   * Create and start a minicluster with ZK
    * @param name cluster/test name
    * @param conf configuration to use
    * @param noOfNodeManagers #of NMs
    * @param numLocalDirs #of local dirs
    * @param numLogDirs #of log dirs
-   * @param startZK create a ZK micro cluster
+   * @param startZK create a ZK micro cluster *THIS IS IGNORED*
    * @param startHDFS create an HDFS mini cluster
    */
   protected String createMiniCluster(String name,
@@ -102,12 +101,12 @@ public abstract class YarnZKMiniClusterTestBase extends YarnMiniClusterTestBase 
                                    int numLogDirs,
                                    boolean startZK,
                                    boolean startHDFS) {
-    name = createMiniCluster(name, conf, noOfNodeManagers, numLocalDirs, numLogDirs,
+    createMicroZKCluster(conf)
+    conf.setBoolean(RegistryConstants.KEY_REGISTRY_ENABLED, true)
+    conf.set(RegistryConstants.KEY_REGISTRY_ZK_QUORUM, ZKBinding)
+    name = super.createMiniCluster(name, conf, noOfNodeManagers, numLocalDirs, numLogDirs,
         startHDFS)
 
-    if (startZK) {
-      createMicroZKCluster(conf)
-    }
     return name
   }
 
@@ -153,14 +152,6 @@ public abstract class YarnZKMiniClusterTestBase extends YarnMiniClusterTestBase 
     } else {
       return microZKCluster.zkBindingString
     }
-  }
-
-  protected int getZKPort() {
-    return microZKCluster ? microZKCluster.port : 2181;
-  }
-
-  protected String getZKHosts() {
-    return MicroZKCluster.HOSTS;
   }
 
   /**

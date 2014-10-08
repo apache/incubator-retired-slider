@@ -29,6 +29,9 @@ import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.LocalResourceType;
+import org.apache.hadoop.registry.client.types.Endpoint;
+import org.apache.hadoop.registry.client.types.ProtocolTypes;
+import org.apache.hadoop.registry.client.types.ServiceRecord;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterDescriptionKeys;
 import org.apache.slider.api.ClusterNode;
@@ -50,10 +53,7 @@ import org.apache.slider.core.launch.CommandLineBuilder;
 import org.apache.slider.core.launch.ContainerLauncher;
 import org.apache.slider.core.registry.docstore.PublishedConfiguration;
 import org.apache.slider.core.registry.info.CustomRegistryConstants;
-import org.apache.slider.core.registry.info.RegisteredEndpoint;
-import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.providers.AbstractProviderService;
-import org.apache.slider.providers.ProviderCompleted;
 import org.apache.slider.providers.ProviderCore;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
@@ -628,7 +628,7 @@ public class AgentProviderService extends AbstractProviderService implements
       this.getAllocatedPorts(containerId).put(portname, portNo);
       if (instance != null) {
         try {
-          instance.registerPortEndpoint(Integer.valueOf(portNo), portname, "");
+          instance.registerPortEndpoint(Integer.valueOf(portNo), portname);
         } catch (NumberFormatException e) {
           log.warn("Failed to parse {}: {}", portNo, e);
         }
@@ -640,8 +640,8 @@ public class AgentProviderService extends AbstractProviderService implements
 
     // and update registration entries
     if (instance != null) {
-      queueAccess.put(new RegisterComponentInstance(instance.getId(), 0,
-                                                    TimeUnit.MILLISECONDS));
+      queueAccess.put(new RegisterComponentInstance(instance.getId(),
+          roleName, 0, TimeUnit.MILLISECONDS));
     }
   }
 
@@ -661,29 +661,32 @@ public class AgentProviderService extends AbstractProviderService implements
 
   @Override
   public void applyInitialRegistryDefinitions(URL amWebURI,
-                                              URL agentOpsURI,
-                                              URL agentStatusURI,
-                                              ServiceInstanceData instanceData) throws IOException {
+      URL agentOpsURI,
+      URL agentStatusURI,
+      ServiceRecord serviceRecord)
+    throws IOException {
     super.applyInitialRegistryDefinitions(amWebURI,
                                           agentOpsURI,
-                                          agentStatusURI, instanceData);
+                                          agentStatusURI,
+                                          serviceRecord);
 
     try {
-      instanceData.internalView.endpoints.put(
-          CustomRegistryConstants.AGENT_SECURE_REST_API,
-          new RegisteredEndpoint(
-              new URL(agentOpsURI, SLIDER_PATH_AGENTS),
-              "Agent Secure REST API"));
-      instanceData.internalView.endpoints.put(
-          CustomRegistryConstants.AGENT_ONEWAY_REST_API,
-          new RegisteredEndpoint(
-              new URL(agentStatusURI, SLIDER_PATH_AGENTS),
-              "Agent Oneway REST API"));
+      URL restURL = new URL(agentOpsURI, SLIDER_PATH_AGENTS);
+      URL agentStatusURL = new URL(agentStatusURI, SLIDER_PATH_AGENTS);
+
+      serviceRecord.addInternalEndpoint(
+          new Endpoint(CustomRegistryConstants.AGENT_SECURE_REST_API,
+              ProtocolTypes.PROTOCOL_REST,
+              restURL.toURI()));
+      serviceRecord.addInternalEndpoint(
+          new Endpoint(CustomRegistryConstants.AGENT_ONEWAY_REST_API,
+              ProtocolTypes.PROTOCOL_REST,
+              agentStatusURL.toURI()));
     } catch (URISyntaxException e) {
       throw new IOException(e);
     }
   }
-
+  
   @Override
   public void notifyContainerCompleted(ContainerId containerId) {
     if (containerId != null) {
@@ -1571,4 +1574,5 @@ public class AgentProviderService extends AbstractProviderService implements
                   "");
     }
   }
+
 }

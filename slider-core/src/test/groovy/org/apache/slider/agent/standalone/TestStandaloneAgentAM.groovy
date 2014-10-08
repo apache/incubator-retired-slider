@@ -26,15 +26,11 @@ import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.api.ClusterNode
 import org.apache.slider.client.SliderClient
-import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.params.ActionRegistryArgs
 import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.core.main.ServiceLauncher
-import org.apache.slider.core.registry.info.ServiceInstanceData
-import org.apache.slider.server.services.curator.CuratorServiceInstance
-import org.apache.slider.server.services.registry.SliderRegistryService
 import org.junit.Test
 
 @CompileStatic
@@ -83,7 +79,7 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
 
 
     String username = client.username
-    def serviceRegistryClient = client.YARNRegistryClient
+    def serviceRegistryClient = client.yarnAppListClient
     describe("list of all applications")
     logApplications(apps)
     describe("apps of user $username")
@@ -95,12 +91,7 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     logReport(instance)
     assert instance != null
 
-    //switch to the ZK-based registry
-
-    describe "service registry names"
-    SliderRegistryService registry = client.registry
-    def names = registry.getServiceTypes();
-    dumpRegistryServiceTypes(names)
+    //switch to the slider ZK-based registry
     describe "service registry instance IDs"
 
     def instanceIds = client.listRegisteredSliderInstances()
@@ -108,14 +99,9 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     log.info("number of instanceIds: ${instanceIds.size()}")
     instanceIds.each { String it -> log.info(it) }
 
-    describe "service registry slider instances"
-    List<CuratorServiceInstance<ServiceInstanceData>> instances =
-        client.listRegistryInstances()
-    instances.each { CuratorServiceInstance<ServiceInstanceData> svc ->
-      log.info svc.toString()
-    }
-    describe "end list service registry slider instances"
-
+    describe "Yarn registry"
+    def yarnRegistry = client.registryOperations
+    
     describe "teardown of cluster instance #1"
     //now kill that cluster
     assert 0 == clusterActionFreeze(client, clustername)

@@ -22,12 +22,13 @@ import com.google.common.base.Preconditions;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.NodeId;
+import org.apache.hadoop.registry.client.binding.RegistryTypeUtils;
+import org.apache.hadoop.registry.client.types.Endpoint;
+import org.apache.hadoop.registry.client.types.ProtocolTypes;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.proto.Messages;
 import org.apache.slider.common.tools.SliderUtils;
-import org.apache.slider.core.registry.info.RegisteredEndpoint;
 
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -90,8 +91,8 @@ public final class RoleInstance implements Cloneable {
   /**
    * A list of registered endpoints.
    */
-  private List<RegisteredEndpoint> endpoints =
-      new ArrayList<RegisteredEndpoint>(2);
+  private List<Endpoint> endpoints =
+      new ArrayList<Endpoint>(2);
 
   public RoleInstance(Container container) {
     Preconditions.checkNotNull(container, "Null container");
@@ -194,7 +195,7 @@ public final class RoleInstance implements Cloneable {
   public Object clone() throws CloneNotSupportedException {
     RoleInstance cloned = (RoleInstance) super.clone();
     // clone the endpoint list, but not the values
-    cloned.endpoints = new ArrayList<RegisteredEndpoint>(this.endpoints);
+    cloned.endpoints = new ArrayList<Endpoint>(this.endpoints);
     return cloned;
   }
 
@@ -202,15 +203,15 @@ public final class RoleInstance implements Cloneable {
    * Get the list of endpoints. 
    * @return the endpoint list.
    */
-  public List<RegisteredEndpoint> getEndpoints() {
+  public List<Endpoint> getEndpoints() {
     return endpoints;
   }
 
   /**
    * Add an endpoint registration
-   * @param endpoint
+   * @param endpoint endpoint (non-null)
    */
-  public void addEndpoint(RegisteredEndpoint endpoint) {
+  public void addEndpoint(Endpoint endpoint) {
     Preconditions.checkArgument(endpoint != null);
     endpoints.add(endpoint);
   }
@@ -218,13 +219,13 @@ public final class RoleInstance implements Cloneable {
   /**
    * Register a port endpoint as an inet-addr formatted endpoint, using the
    * hostname as the first part of the address
-   * @param port
-   * @param protocol
-   * @param text
+   * @param port port port
+   * @param api  API API name
    */
-  public void registerPortEndpoint(int port, String protocol, String text) {
-    InetSocketAddress addr = new InetSocketAddress(host, port);
-    RegisteredEndpoint epr = new RegisteredEndpoint(addr, protocol, text);
+  public void registerPortEndpoint(int port, String api) {
+    Endpoint epr =
+        RegistryTypeUtils.inetAddrEndpoint(api,
+            ProtocolTypes.PROTOCOL_TCP, host, port);
     addEndpoint(epr);
   }
   

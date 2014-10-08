@@ -54,7 +54,6 @@ import org.junit.rules.Timeout
 
 import static org.apache.slider.test.KeysForTests.*
 
-import static org.apache.slider.common.SliderKeys.*;
 import static org.apache.slider.common.SliderXMLConfKeysForTesting.*;
 /**
  * Base class for mini cluster tests -creates a field for the

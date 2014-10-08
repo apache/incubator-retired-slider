@@ -150,8 +150,8 @@ public class PublishedConfiguration {
 
   /**
    * Return the values as json string
-   * @return
-   * @throws IOException
+   * @return the JSON representation
+   * @throws IOException marshalling failure
    */
   public String asJson() throws IOException {
     ObjectMapper mapper = new ObjectMapper();

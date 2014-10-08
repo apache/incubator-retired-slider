@@ -158,11 +158,10 @@ public class CoreFileSystem {
    * @throws java.io.IOException                      trouble
    * @throws SliderException slider-specific exceptions
    */
-  public Path createClusterDirectories(String clustername, Configuration conf) throws
-                                                                               IOException,
-      SliderException {
-    
-    
+  public Path createClusterDirectories(String clustername, Configuration conf)
+      throws IOException, SliderException {
+
+
     Path clusterDirectory = buildClusterDirPath(clustername);
     InstancePaths instancePaths = new InstancePaths(clusterDirectory);
     createClusterDirectories(instancePaths);
@@ -204,8 +203,8 @@ public class CoreFileSystem {
    *
    * @param dir          directory
    * @param clusterPerms cluster permissions
-   * @throws IOException                                 IO problem
-   * @throws org.apache.slider.core.exceptions.BadClusterStateException any cluster state problem
+   * @throws IOException  IO problem
+   * @throws BadClusterStateException any cluster state problem
    */
   public void createWithPermissions(Path dir, FsPermission clusterPerms) throws
           IOException,
@@ -572,7 +571,7 @@ public class CoreFileSystem {
    *
    * @param clustername name of the cluster
    * @return the path to the spec.
-   * @throws IOException                      IO problems
+   * @throws IOException IO problems
    * @throws SliderException if the path isn't there
    */
   public Path locateInstanceDefinition(String clustername) throws IOException,
@@ -591,23 +590,15 @@ public class CoreFileSystem {
    * @throws IOException IO problems
    * @throws SliderException if the cluster specification is not present
    */
-  public void verifyClusterSpecExists(String clustername,
-                                             Path clusterSpecPath) throws
-                                                                   IOException,
+  public void verifyClusterSpecExists(String clustername, Path clusterSpecPath)
+      throws IOException,
       SliderException {
     if (!fileSystem.isFile(clusterSpecPath)) {
       log.debug("Missing specification file {}", clusterSpecPath);
-      throw UnknownApplicationInstanceException.unknownInstance(clustername
-                                                                +
-                                                                "\n (definition not found at "
-                                                                +
-                                                                clusterSpecPath);
+      throw UnknownApplicationInstanceException.unknownInstance(
+          clustername + "\n (definition not found at " + clusterSpecPath);
     }
   }
-  
-  public Path fileToPath(File file) {
-    return new Path(file.getAbsoluteFile().toURI());
 
-  }
   
 }

@@ -21,18 +21,13 @@ import com.sun.jersey.api.container.filter.GZIPContentEncodingFilter;
 import com.sun.jersey.api.core.ResourceConfig;
 import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 import com.sun.jersey.spi.container.servlet.ServletContainer;
-import org.apache.curator.x.discovery.ServiceDiscovery;
+import org.apache.hadoop.registry.client.api.RegistryOperations;
 import org.apache.hadoop.yarn.webapp.Dispatcher;
 import org.apache.hadoop.yarn.webapp.GenericExceptionHandler;
 import org.apache.hadoop.yarn.webapp.WebApp;
-import org.apache.slider.core.registry.info.ServiceInstanceData;
 import org.apache.slider.server.appmaster.web.rest.AMWadlGeneratorConfig;
 import org.apache.slider.server.appmaster.web.rest.AMWebServices;
 import org.apache.slider.server.appmaster.web.rest.SliderJacksonJaxbJsonProvider;
-import org.apache.slider.server.services.curator.CuratorHelper;
-import org.apache.slider.server.services.registry.RegistryDiscoveryContext;
-import org.apache.slider.server.services.registry.RegistryRestResources;
-import org.apache.slider.server.services.registry.SliderRegistryService;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -47,9 +42,9 @@ public class SliderAMWebApp extends WebApp {
   public static final String CONTAINER_STATS = "/stats";
   public static final String CLUSTER_SPEC = "/spec";
 
-  public final SliderRegistryService registry;
+  private final RegistryOperations registry;
 
-  public SliderAMWebApp(SliderRegistryService registry) {
+  public SliderAMWebApp(RegistryOperations registry) {
     Preconditions.checkArgument(registry != null, "registry null");
     this.registry = registry;
   }
@@ -66,18 +61,6 @@ public class SliderAMWebApp extends WebApp {
     // bind the REST interface
     bind(AMWebServices.class);
     //bind(AMAgentWebServices.class);
-
-    CuratorHelper curatorHelper = registry.getCuratorHelper();
-    ServiceDiscovery<ServiceInstanceData> discovery = registry.getDiscovery();
-    RegistryDiscoveryContext discoveryContext = curatorHelper
-                                                        .createDiscoveryContext(
-                                                          discovery);
-
-    bind(RegistryDiscoveryContext.class).toInstance(discoveryContext);
-    RegistryRestResources registryRestResources =
-      new RegistryRestResources(discoveryContext, registry);
-    bind(RegistryRestResources.class).toInstance(registryRestResources);
-
     route("/", SliderAMController.class);
     route(CONTAINER_STATS, SliderAMController.class, "containerStats");
     route(CLUSTER_SPEC, SliderAMController.class, "specification");

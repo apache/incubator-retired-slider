@@ -52,7 +52,12 @@ public class TestClusterSpecificationBlock {
         appState)
     ProviderService providerService = new MockProviderService();
 
-    WebAppApiImpl inst = new WebAppApiImpl(clusterProto, providerAppState, providerService, null);
+    WebAppApiImpl inst = new WebAppApiImpl(
+        clusterProto,
+        providerAppState,
+        providerService,
+        null,
+        null);
 
     Injector injector = Guice.createInjector(new AbstractModule() {
           @Override

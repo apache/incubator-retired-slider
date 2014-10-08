@@ -54,7 +54,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.MediaType;
 import java.io.File;
-import java.io.IOException;
 import java.net.URI;
 //import java.nio.file.FileVisitResult;
 //import java.nio.file.Files;
@@ -139,7 +138,7 @@ public class TestAMAgentWebServices {
                                                              appState);
 
     slider = new WebAppApiImpl(new MockSliderClusterProtocol(), providerAppState,
-                               new MockProviderService(), null);
+                               new MockProviderService(), null, null);
 
     MapOperations compOperations = new MapOperations();
 

@@ -69,6 +69,7 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -511,8 +512,7 @@ public final class SliderUtils {
     int length = separator.length();
     String s = b.toString();
     return (trailing || s.isEmpty()) ?
-           s
-                                     : (b.substring(0, b.length() - length));
+           s  : (b.substring(0, b.length() - length));
   }
 
   /**
@@ -1589,7 +1589,7 @@ public final class SliderUtils {
 
   }
 
-  protected static void verifyIsFile(String program, File exe) throws
+  public static void verifyIsFile(String program, File exe) throws
       FileNotFoundException {
     if (!exe.isFile()) {
       throw new FileNotFoundException(program
@@ -1599,7 +1599,7 @@ public final class SliderUtils {
     }
   }
 
-  protected static void verifyFileSize(String program,
+  public static void verifyFileSize(String program,
       File exe,
       int minFileSize) throws FileNotFoundException {
     if (exe.length() < minFileSize) {
@@ -1665,8 +1665,8 @@ public final class SliderUtils {
 
   /**
    * Validate an executable
-   * @param program
-   * @param exe
+   * @param program program name for errors
+   * @param exe program to look at
    * @throws IOException
    */
   public static void validateExe(String program, File exe) throws IOException {
@@ -1677,6 +1677,29 @@ public final class SliderUtils {
     }
   }
 
+  /**
+   * Write bytes to a file
+   * @param outfile output file
+   * @param data data to write
+   * @param createParent flag to indicate that the parent dir should
+   * be created
+   * @throws IOException on any IO problem
+   */
+  public static void write(File outfile, byte[] data, boolean createParent)
+      throws IOException {
+    File parentDir = outfile.getParentFile();
+    if (createParent) {
+      parentDir.mkdirs();
+    }
+    SliderUtils.verifyIsDir(parentDir, log);
+    FileOutputStream out = new FileOutputStream(outfile);
+    try {
+      out.write(data);
+    } finally {
+      IOUtils.closeStream(out);
+    }
+
+  }
 
   /**
    * Execute a command for a test operation
@@ -1684,7 +1707,7 @@ public final class SliderUtils {
    * @param status status code expected
    * @param timeoutMillis timeout in millis for process to finish
    * @param logger
-   *@param outputString optional string to grep for (must not span a line)
+   * @param outputString optional string to grep for (must not span a line)
    * @param commands commands   @return the process
    * @throws IOException on any failure.
    */
@@ -1740,7 +1763,6 @@ public final class SliderUtils {
     } catch (InterruptedException e) {
       throw new InterruptedIOException(e.toString());
     } catch (TimeoutException e) {
-      log.debug("");
       errorText = e.toString();
     }
     // error text: non null ==> operation failed
@@ -1843,11 +1865,11 @@ public final class SliderUtils {
 	/**
 	 * validate if a file on HDFS can be open
 	 * 
-	 * @throws IOException
-	 *             : the file can't be found or open
+	 * @throws IOException the file can't be found or opened
 	 * @throws URISyntaxException
 	 */
-	public static void validateHDFSFile(SliderFileSystem sliderFileSystem, String pathStr) throws IOException, URISyntaxException{
+	public static void validateHDFSFile(SliderFileSystem sliderFileSystem, String pathStr)
+      throws IOException, URISyntaxException{
 	  URI pathURI = new URI(pathStr);
 	  InputStream inputStream = sliderFileSystem.getFileSystem().open(new Path(pathURI));
 	  if(inputStream == null){
