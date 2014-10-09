@@ -51,7 +51,10 @@ public class TestAgentProviderService extends AgentProviderService {
     log.info("publishing dummy-site.xml with values {}", dummyProps);
     publishApplicationInstanceData("dummy-site", "dummy configuration",
                                    dummyProps.entrySet());
-
+    // publishing global config for testing purposes
+    publishApplicationInstanceData("global", "global configuration",
+                                   stateAccessor.getAppConfSnapshot()
+                                       .getGlobalOptions().entrySet());
   }
 
 }

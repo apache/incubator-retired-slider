@@ -118,7 +118,13 @@ class TestPublisherRestResources extends AgentTestBase {
     Map<String,String> val = webResource.type(MediaType.APPLICATION_JSON).get(Map.class);
     assert "val1".equals(val.get("prop1"))
 
-    // some negative tests...
+    // testing security_enabled auto-setting feature (SLIDER-392)
+    webResource = client.resource(sliderConfigset +
+                                  "global/site.global.security_enabled");
+    val = webResource.type(MediaType.APPLICATION_JSON).get(Map.class);
+    assert "false".equals(val.get("site.global.security_enabled"))
+
+      // some negative tests...
     webResource = client.resource(appendToURL(sliderConfigset,
         "foobar-site"));
 

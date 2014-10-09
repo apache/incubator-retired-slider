@@ -56,7 +56,6 @@
     },
     "global": {
       "hbase_root": "/share/hbase/hbase-0.96.1-hadoop2",
-      "security_enabled": "false",
       "hbase_pid_dir": "/var/run/hbase",
       "proxyuser_group": "users",
       "syncLimit": "5",
