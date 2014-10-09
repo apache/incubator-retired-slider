@@ -51,7 +51,8 @@
   "components": {
     "slider-appmaster": {
       "jvm.heapsize": "256M",
-      "slider.am.keytab.local.path": "${accumulo.headless.keytab}"
+      "slider.am.keytab.local.path": "${accumulo.headless.keytab}",
+      "slider.keytab.principal.name": "${accumulo.headless.principal}"
     }
   }
 }
