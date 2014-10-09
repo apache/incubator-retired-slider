@@ -183,10 +183,8 @@ public class YarnRegistryViewForProviders {
     try {
       childNames = registryOperations.list(path);
     } catch (PathNotFoundException e) {
-      //ignored
+      return;
     }
-    Map<String, RegistryPathStatus> results =
-        new HashMap<String, RegistryPathStatus>();
     for (String childName : childNames) {
       String child = join(path, childName);
       registryOperations.delete(child, recursive);
