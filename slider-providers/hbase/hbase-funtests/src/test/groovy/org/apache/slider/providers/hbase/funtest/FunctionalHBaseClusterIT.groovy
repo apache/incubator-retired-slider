@@ -210,7 +210,7 @@ public class FunctionalHBaseClusterIT extends HBaseCommandTestBase
     getConfDir.mkdirs();
     registry([ARG_GETCONF, yarn_site_config,
               ARG_NAME, name,
-              ARG_DEST, getConfDir.absolutePath])
+              ARG_OUTPUT, getConfDir.absolutePath])
     File retrieved = new File(getConfDir, yarn_site_config +".xml")
     def confFromFile = ConfigHelper.loadConfFromFile(retrieved)
     assert confFromFile.get(YarnConfiguration.RM_ADDRESS)

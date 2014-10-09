@@ -104,7 +104,7 @@ public class ActionRegistryArgs extends AbstractActionArgs {
 
   @Parameter(names = {ARG_OUTPUT, ARG_OUTPUT_SHORT, ARG_DEST},
       description = "Output destination")
-  public File dest;
+  public File out;
 
   @Parameter(names = {ARG_NAME},
       description = "name of an instance")
@@ -137,8 +137,8 @@ public class ActionRegistryArgs extends AbstractActionArgs {
     if (set > 1) {
       throw new UsageException(USAGE);
     }
-    if (dest != null && (lists > 0 || set == 0)) {
-      throw new UsageException("Argument " + ARG_DEST
+    if (out != null && (lists > 0 || set == 0)) {
+      throw new UsageException("output path"
            + " is only supported on 'get' operations: " + USAGE);
     }
     if (!list && !is(name)) {
@@ -190,8 +190,8 @@ public class ActionRegistryArgs extends AbstractActionArgs {
     sb.append(ifdef(ARG_VERBOSE, verbose));
     sb.append(ifdef(ARG_INTERNAL, internal));
 
-    if (dest != null) {
-      sb.append(ifdef(ARG_DEST, dest.toString()));
+    if (out != null) {
+      sb.append(ifdef(ARG_OUTPUT, out.toString()));
     }
     sb.append(ifdef(ARG_FORMAT, format));
 

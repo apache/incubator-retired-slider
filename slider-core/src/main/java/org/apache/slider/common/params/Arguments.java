@@ -32,8 +32,10 @@ public interface Arguments {
   String ARG_COMP_OPT_SHORT = "--co";
   
   String ARG_DEBUG = "--debug";
-  String ARG_DEST = "--dest";
   String ARG_DEFINE = "-D";
+  String ARG_DEST = "--dest";
+  String ARG_DESTDIR = "--destdir";
+  String ARG_DESTFILE = "--destfile";
   String ARG_EXITCODE = "--exitcode";
   /**
    filesystem-uri: {@value}
