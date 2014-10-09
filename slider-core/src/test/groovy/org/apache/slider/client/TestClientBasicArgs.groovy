@@ -18,6 +18,8 @@
 
 package org.apache.slider.client
 
+import org.apache.hadoop.yarn.conf.YarnConfiguration
+
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.ClientArgs
@@ -59,11 +61,14 @@ class TestClientBasicArgs extends ServiceLauncherBaseTest {
 
   // removed due to retry policy dicating 15 minutes of retries for the
   // generated UnknownHostExceptionj
-  //@Test
+  @Test
   public void testListUnknownRM() throws Throwable {
     try {
+      YarnConfiguration conf = SliderUtils.createConfiguration()
+      conf.setLong(YarnConfiguration.RESOURCEMANAGER_CONNECT_MAX_WAIT_MS, 1000)
+      conf.setLong(YarnConfiguration.RESOURCEMANAGER_CONNECT_RETRY_INTERVAL_MS, 1000)
       ServiceLauncher launcher = launch(SliderClient,
-                                        SliderUtils.createConfiguration(),
+                                        conf,
                                         [
                                         ClientArgs.ACTION_LIST,
                                         "cluster",
