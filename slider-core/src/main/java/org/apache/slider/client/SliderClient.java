@@ -22,6 +22,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathNotFoundException;
 import org.apache.hadoop.fs.permission.FsPermission;
@@ -2206,6 +2207,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     try {
       if (args.list) {
         File destDir = args.destdir;
+        if (destDir != null) {
+          destDir.mkdirs();
+        }
 
         Map<String, ServiceRecord> recordMap =
             listServiceRecords(operations, path);
@@ -2237,11 +2241,13 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
           print(serviceRecordMarshal.toJson(instance));
         }
       }
-//      JDK7
+//      TODO JDK7
     } catch (PathNotFoundException e) {
       // no record at this path
       return EXIT_NOT_FOUND;
     } catch (NoRecordException e) {
+      return EXIT_NOT_FOUND;
+    } catch (UnknownApplicationInstanceException e) {
       return EXIT_NOT_FOUND;
     } catch (InvalidRecordException e) {
       // it is not a record

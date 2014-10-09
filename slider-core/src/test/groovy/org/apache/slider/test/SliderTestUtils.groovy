@@ -807,7 +807,7 @@ class SliderTestUtils extends Assert {
       StringBuilder builder = new StringBuilder()
       builder.append("${parent.absolutePath}:\n")
       files.each { String name-> builder.append("  $name\n")}
-      throw new FileNotFoundException("$text: file $file not found in $builder")
+      throw new FileNotFoundException("$text: $file not found in $builder")
     }
   }
 }

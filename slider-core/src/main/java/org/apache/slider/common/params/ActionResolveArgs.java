@@ -38,7 +38,7 @@ import static org.apache.slider.common.params.SliderActions.DESCRIBE_ACTION_REGI
  * --verbose
  * --list
  */
-@Parameters(commandNames = {ACTION_REGISTRY},
+@Parameters(commandNames = {ACTION_RESOLVE},
             commandDescription = DESCRIBE_ACTION_REGISTRY)
 public class ActionResolveArgs extends AbstractActionArgs {
 
@@ -47,7 +47,6 @@ public class ActionResolveArgs extends AbstractActionArgs {
       + " "
       + ARG_PATH + " <path> "
       + "[" + ARG_LIST + "] "
-      + "[" + ARG_VERBOSE + "] "
       + "[" + ARG_OUTPUT + " <filename> ] "
       + "[" + ARG_DESTDIR + " <directory> ] "
       ;
@@ -83,10 +82,6 @@ public class ActionResolveArgs extends AbstractActionArgs {
   @Parameter(names = {ARG_OUTPUT, ARG_OUTPUT_SHORT},
       description = "dest file")
   public File out;
-
- @Parameter(names = {ARG_VERBOSE},
-      description = "verbose output")
-  public boolean verbose;
 
   @Override
   public String toString() {
@@ -156,11 +151,4 @@ public class ActionResolveArgs extends AbstractActionArgs {
     this.out = out;
   }
 
-  public boolean isVerbose() {
-    return verbose;
-  }
-
-  public void setVerbose(boolean verbose) {
-    this.verbose = verbose;
-  }
 }

@@ -20,9 +20,9 @@ package org.apache.slider.agent.standalone
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.commons.io.IOUtils
 import org.apache.hadoop.fs.FileUtil
 import org.apache.hadoop.fs.PathNotFoundException
+import org.apache.hadoop.registry.client.binding.RegistryPathUtils
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
@@ -187,11 +187,10 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     File resolveListDir= new File(destDir, "list")
     ActionResolveArgs resolveList = new ActionResolveArgs(
         path:recordsPath,
-        list:true,
-        verbose:true)
+        list:true)
 
     // to stdout
-    client.actionResolve(resolveList)
+    assert 0 == client.actionResolve(resolveList)
     // to a file
     resolveList.out = resolveListDir;
     try {
@@ -200,16 +199,47 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
       assertExceptionDetails(ex, LauncherExitCodes.EXIT_COMMAND_ARGUMENT_ERROR,
           Arguments.ARG_OUTPUT)
     }
+    
+    // list to a destination dir
     resolveList.out = null
     resolveList.destdir = resolveListDir
-    client.actionResolve(resolveList)
-    File resolvedFile = new File(resolveListDir, clustername+".json")
+    assert 0 == client.actionResolve(resolveList)
+    File resolvedFile = new File(resolveListDir, clustername + ".json")
     assertFileExists("resolved file", resolvedFile)
-    def recordFromList = serviceRecordMarshal.fromFile(resolvedFile)
+    serviceRecordMarshal.fromFile(resolvedFile)
+
+    // list the parent path, expect success and no entries
+    File listParentDir = new File(destDir, "listParent")
+    String parentPath = RegistryPathUtils.parentOf(recordsPath)
+    assert 0 == client.actionResolve(new ActionResolveArgs(
+        path: parentPath,
+        list: true,
+        destdir: listParentDir))
+    assertFileExists("output dir", listParentDir)
+    assert null != listParentDir.list()
+    assert 0 == listParentDir.list().length
+
+    // look for a record a path not in the registry expect failure
+    ActionResolveArgs listUnknownPath = new ActionResolveArgs(
+        path: recordsPath +"/unknown",
+        list: true)
+    // the record is not there, even if the path is
+    assert SliderExitCodes.EXIT_NOT_FOUND == client.actionResolve(
+        listUnknownPath)
     
+    
+    // look for a record at the same path as the listing; expect failure
+    ActionResolveArgs resolveRecordAtListPath = new ActionResolveArgs(
+        path: recordsPath,
+        list: false)
+    // the record is not there, even if the path is
+    assert SliderExitCodes.EXIT_NOT_FOUND == client.actionResolve(
+        resolveRecordAtListPath)
+
     // look at a single record
+    def instanceRecordPath = recordsPath + "/" + clustername
     ActionResolveArgs resolveRecordCommand = new ActionResolveArgs(
-        path: recordsPath + "/" + clustername)
+        path: instanceRecordPath)
     // to stdout
     client.actionResolve(resolveRecordCommand)
     
@@ -218,7 +248,7 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     File singleFile = new File(destDir, "singlefile.json")
     singleFile.delete()
     resolveRecordCommand.out = singleFile
-    client.actionResolve(resolveRecordCommand)
+    assert 0 == client.actionResolve(resolveRecordCommand)
     assertFileExists("\"slider $resolveRecordCommand\"", singleFile)
     def recordFromFile = serviceRecordMarshal.fromFile(singleFile)
     assert recordFromFile[YarnRegistryAttributes.YARN_ID] ==
@@ -231,9 +261,18 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
         CustomRegistryConstants.REGISTRY_REST_API)
     assert registryEndpoint != null
     def registryURL = RegistryTypeUtils.retrieveAddressURLs(registryEndpoint)[0]
-    
-    
-    // Look at the Registry WADL
+
+    // list the path at the record, expect success and no entries
+    File listUnderRecordDir = new File(destDir, "listUnderRecord")
+    ActionResolveArgs listUnderRecordCommand = new ActionResolveArgs(
+        path: instanceRecordPath,
+        list:true,
+        destdir: listUnderRecordDir)
+    assert 0 == client.actionResolve(listUnderRecordCommand)
+    assert 0 == listUnderRecordDir.list().length
+
+
+           // Look at the Registry WADL
     describe("Registry WADL @ $registryURL")
     def publisherEndpoint = serviceRecord.getExternalEndpoint(
         CustomRegistryConstants.PUBLISHER_REST_API)
