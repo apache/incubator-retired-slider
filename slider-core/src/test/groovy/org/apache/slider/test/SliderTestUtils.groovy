@@ -79,13 +79,13 @@ class SliderTestUtils extends Assert {
   }
 
   public static void skip(String message) {
-    log.warn("Skipping test: " + message)
+    log.warn("Skipping test: {}", message)
     Assume.assumeTrue(message, false);
   }
 
   public static void assume(boolean condition, String message) {
     if (!condition) {
-      log.warn("Skipping test: " + message)
+      log.warn("Skipping test: {}",  message)
       Assume.assumeTrue(message, false);
     }
   }
@@ -792,5 +792,22 @@ class SliderTestUtils extends Assert {
    */
   public String toURIArg(File file) {
     file.absoluteFile.toURI().toString()
+  }
+
+  /**
+   * Assert a file exists; fails with a listing of the parent dir
+   * @param text text for front of message
+   * @param file file to look for
+   * @throws FileNotFoundException
+   */
+  public void assertFileExists(String text, File file) {
+    if (!file.exists()) {
+      def parent = file.parentFile
+      def files = parent.list()
+      StringBuilder builder = new StringBuilder()
+      builder.append("${parent.absolutePath}:\n")
+      files.each { String name-> builder.append("  $name\n")}
+      throw new FileNotFoundException("$text: file $file not found in $builder")
+    }
   }
 }

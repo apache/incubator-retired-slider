@@ -20,6 +20,8 @@ package org.apache.slider.agent.standalone
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.commons.io.IOUtils
+import org.apache.hadoop.fs.FileUtil
 import org.apache.hadoop.fs.PathNotFoundException
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
@@ -31,7 +33,10 @@ import org.apache.hadoop.registry.client.types.RegistryPathStatus
 import org.apache.hadoop.registry.client.types.ServiceRecord
 import org.apache.hadoop.registry.client.types.yarn.YarnRegistryAttributes
 import org.apache.slider.common.params.ActionResolveArgs
+import org.apache.slider.common.params.Arguments
+import org.apache.slider.core.exceptions.BadCommandArgumentsException
 import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
+import org.apache.slider.core.main.LauncherExitCodes
 
 import static org.apache.hadoop.registry.client.binding.RegistryUtils.*
 import org.apache.slider.agent.AgentMiniClusterTestBase
@@ -174,37 +179,52 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     assert null != serviceRecord.getInternalEndpoint(AGENT_SECURE_REST_API)
 
     // use the resolve operation
+
     describe "resolve CLI action"
-    ActionResolveArgs resolveArgs = new ActionResolveArgs()
-    resolveArgs.path = recordsPath;
-    resolveArgs.list = true;
+    File destDir= new File("target/resolve")
+    ServiceRecordMarshal serviceRecordMarshal = new ServiceRecordMarshal()
+    FileUtil.fullyDelete(destDir)
+    File resolveListDir= new File(destDir, "list")
+    ActionResolveArgs resolveList = new ActionResolveArgs(
+        path:recordsPath,
+        list:true,
+        verbose:true)
+
     // to stdout
-    client.actionResolve(resolveArgs)
+    client.actionResolve(resolveList)
     // to a file
-    File destFile = new File("target/resolve.json")
-    destFile.delete()
-    resolveArgs.out = destFile
-    client.actionResolve(resolveArgs)
-    assert destFile.exists()
-    destFile.delete()
+    resolveList.out = resolveListDir;
+    try {
+      client.actionResolve(resolveList)
+    } catch (BadCommandArgumentsException ex) {
+      assertExceptionDetails(ex, LauncherExitCodes.EXIT_COMMAND_ARGUMENT_ERROR,
+          Arguments.ARG_OUTPUT)
+    }
+    resolveList.out = null
+    resolveList.destdir = resolveListDir
+    client.actionResolve(resolveList)
+    File resolvedFile = new File(resolveListDir, clustername+".json")
+    assertFileExists("resolved file", resolvedFile)
+    def recordFromList = serviceRecordMarshal.fromFile(resolvedFile)
     
     // look at a single record
-    resolveArgs.out = null;
-    resolveArgs.list = false;
-    resolveArgs.path = recordsPath +"/"+ clustername
+    ActionResolveArgs resolveRecordCommand = new ActionResolveArgs(
+        path: recordsPath + "/" + clustername)
     // to stdout
-    client.actionResolve(resolveArgs)
-    resolveArgs.out = destFile
-    client.actionResolve(resolveArgs)
-    assert destFile.exists()
-    ServiceRecordMarshal serviceRecordMarshal = new ServiceRecordMarshal()
-    def recordFromFile = serviceRecordMarshal.fromFile(destFile)
+    client.actionResolve(resolveRecordCommand)
+    
+    // then to a file
+    FileUtil.fullyDelete(destDir)
+    File singleFile = new File(destDir, "singlefile.json")
+    singleFile.delete()
+    resolveRecordCommand.out = singleFile
+    client.actionResolve(resolveRecordCommand)
+    assertFileExists("\"slider $resolveRecordCommand\"", singleFile)
+    def recordFromFile = serviceRecordMarshal.fromFile(singleFile)
     assert recordFromFile[YarnRegistryAttributes.YARN_ID] ==
            serviceRecord[YarnRegistryAttributes.YARN_ID]
     assert recordFromFile[YarnRegistryAttributes.YARN_PERSISTENCE] ==
            serviceRecord[YarnRegistryAttributes.YARN_PERSISTENCE]
-    
-    
 
     // hit the registry web page
     def registryEndpoint = serviceRecord.getExternalEndpoint(
@@ -402,7 +422,7 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     // create a new registry args with the defaults back in
     registryArgs = new ActionRegistryArgs(clustername)
     registryArgs.getConf = yarn_site_config
-    registryArgs.dest = outputDir
+    registryArgs.out = outputDir
     describe registryArgs.toString()
     client.actionRegistry(registryArgs)
     assert new File(outputDir, yarn_site_config + ".xml").exists()

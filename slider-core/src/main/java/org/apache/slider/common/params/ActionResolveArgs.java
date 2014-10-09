@@ -20,7 +20,7 @@ package org.apache.slider.common.params;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import org.apache.slider.common.SliderKeys;
+import org.apache.commons.lang.StringUtils;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.UsageException;
 
@@ -45,10 +45,11 @@ public class ActionResolveArgs extends AbstractActionArgs {
   public static final String USAGE =
       "Usage: " + SliderActions.ACTION_RESOLVE
       + " "
-      + Arguments.ARG_PATH + " <path> "
-      + "[" + Arguments.ARG_LIST + "] "
-      + "[" + Arguments.ARG_VERBOSE + "] "
-      + "[" + Arguments.ARG_OUTPUT + " <filename> ] "
+      + ARG_PATH + " <path> "
+      + "[" + ARG_LIST + "] "
+      + "[" + ARG_VERBOSE + "] "
+      + "[" + ARG_OUTPUT + " <filename> ] "
+      + "[" + ARG_DESTDIR + " <directory> ] "
       ;
   public ActionResolveArgs() {
   }
@@ -71,17 +72,95 @@ public class ActionResolveArgs extends AbstractActionArgs {
       description = "list services")
   public boolean list;
 
-
   @Parameter(names = {ARG_PATH},
       description = "resolve a path")
   public String path;
 
+  @Parameter(names = {ARG_DESTDIR},
+      description = "destination directory for operations")
+  public File destdir;
+
   @Parameter(names = {ARG_OUTPUT, ARG_OUTPUT_SHORT},
-      description = "Output destination")
+      description = "dest file")
   public File out;
 
  @Parameter(names = {ARG_VERBOSE},
       description = "verbose output")
   public boolean verbose;
-  
+
+  @Override
+  public String toString() {
+    final StringBuilder sb =
+        new StringBuilder(ACTION_RESOLVE).append(" ");
+    sb.append(ARG_PATH).append(" ").append(path).append(" ");
+    if (list) {
+      sb.append(ARG_LIST).append(" ");
+    }
+    if (destdir != null) {
+      sb.append(ARG_DESTDIR).append(" ").append(destdir).append(" ");
+    }
+    if (out != null) {
+      sb.append(ARG_OUTPUT).append(" ").append(out).append(" ");
+    }
+    return sb.toString();
+  }
+
+  @Override
+  public void validate() throws BadCommandArgumentsException, UsageException {
+    super.validate();
+    if (StringUtils.isEmpty(path)) {
+      throw new BadCommandArgumentsException("Missing mandatory argument "
+                                             + ARG_PATH);
+    }
+    if (list && out != null) {
+      throw new BadCommandArgumentsException("Argument "
+                                             + ARG_OUTPUT +
+                                             " not supported for " + ARG_LIST);
+    }
+    if (out != null && destdir != null) {
+      throw new BadCommandArgumentsException(
+          ARG_OUTPUT + " and " + ARG_DESTDIR + " cannot be used together"
+      );
+    }
+  }
+
+  public String getPath() {
+    return path;
+  }
+
+  public void setPath(String path) {
+    this.path = path;
+  }
+
+  public boolean isList() {
+    return list;
+  }
+
+  public void setList(boolean list) {
+    this.list = list;
+  }
+
+  public File getDestdir() {
+    return destdir;
+  }
+
+  public void setDestdir(File destdir) {
+    this.destdir = destdir;
+  }
+
+  public File getOut() {
+    return out;
+  }
+
+  public void setOut(File out) {
+    this.out = out;
+  }
+
+  public boolean isVerbose() {
+    return verbose;
+  }
+
+  public void setVerbose(boolean verbose) {
+    this.verbose = verbose;
+  }
 }
