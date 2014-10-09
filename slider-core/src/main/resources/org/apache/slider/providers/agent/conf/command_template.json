@@ -56,7 +56,6 @@
     },
     "global": {
       "hbase_root": "{{HBASE_HOME}}",
-      "security_enabled": "false",
       "hbase_pid_dir": "{{PID_DIR}}",
       "proxyuser_group": "users",
       "syncLimit": "5",

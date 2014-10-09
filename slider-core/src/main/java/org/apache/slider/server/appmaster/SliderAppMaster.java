@@ -551,11 +551,19 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     log.info("Deploying cluster {}:", instanceDefinition);
 
     stateForProviders.setApplicationName(clustername);
-    
-    // triggers resolution and snapshotting in agent
-    appState.updateInstanceDefinition(instanceDefinition);
 
     Configuration serviceConf = getConfig();
+
+    SecurityConfiguration securityConfiguration = new SecurityConfiguration(
+        serviceConf, instanceDefinition, clustername);
+    // obtain security state
+    boolean securityEnabled = securityConfiguration.isSecurityEnabled();
+    // set the global security flag for the instance definition
+    instanceDefinition.getAppConfOperations().set(
+        SECURITY_ENABLED, securityEnabled);
+
+    // triggers resolution and snapshotting in agent
+    appState.updateInstanceDefinition(instanceDefinition);
 
     File confDir = getLocalConfDir();
     if (!confDir.exists() || !confDir.isDirectory()) {
@@ -723,10 +731,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       // code to allow for future tokens...
       containerTokens = credentials;
 
-      SecurityConfiguration securityConfiguration = new SecurityConfiguration(
-          serviceConf, instanceDefinition, clustername);
-      // obtain security state
-      boolean securityEnabled = securityConfiguration.isSecurityEnabled();
       if (securityEnabled) {
         secretManager.setMasterKey(
             amRegistrationData.getClientToAMTokenMasterKey().array());
@@ -938,9 +942,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     appInformation.put(StatusKeys.INFO_AM_AGENT_OPS_URL, agentOpsUrl + "/");
     appInformation.put(StatusKeys.INFO_AM_AGENT_STATUS_URL, agentStatusUrl + "/");
     appInformation.set(StatusKeys.INFO_AM_AGENT_STATUS_PORT,
-        agentWebApp.getPort());
+                       agentWebApp.getPort());
     appInformation.set(StatusKeys.INFO_AM_AGENT_OPS_PORT,
-        agentWebApp.getSecuredPort());
+                       agentWebApp.getSecuredPort());
   }
 
   /**

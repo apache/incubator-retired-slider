@@ -19,7 +19,6 @@
         "site.global.hbase_instance_name": "instancename",
         "site.global.hbase_root_password": "secret",
         "site.global.user_group": "hadoop",
-        "site.global.security_enabled": "false",
         "site.global.monitor_protocol": "http",
         "site.global.hbase_thrift_port": "${HBASE_THRIFT.ALLOCATED_PORT}",
         "site.global.hbase_thrift2_port": "${HBASE_THRIFT2.ALLOCATED_PORT}",

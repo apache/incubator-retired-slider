@@ -20,7 +20,6 @@
     "site.global.accumulo_instance_name": "${USER}-${CLUSTER_NAME}",
     "site.global.accumulo_root_password": "NOT_USED",
     "site.global.user_group": "${app.user.group}",
-    "site.global.security_enabled": "false",
     "site.global.ssl_cert_dir": "ssl",
     "site.global.monitor_protocol": "http",
     "site.accumulo-site.instance.volumes": "${DEFAULT_DATA_DIR}/data",
