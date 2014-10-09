@@ -72,6 +72,8 @@ public interface SliderActions {
                     "Monitor a running application";
   String DESCRIBE_ACTION_REGISTRY =
                       "Query the registry of a YARN application";
+  String DESCRIBE_ACTION_RESOLVE =
+                      "Resolve or list records in the YARN registry";
   String DESCRIBE_ACTION_STATUS =
                       "Get the status of an application";
   String DESCRIBE_ACTION_THAW =

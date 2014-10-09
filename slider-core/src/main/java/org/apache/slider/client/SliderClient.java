@@ -22,12 +22,14 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathNotFoundException;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.net.NetUtils;
+import org.apache.hadoop.registry.client.binding.RegistryPathUtils;
 import org.apache.hadoop.registry.client.exceptions.InvalidRecordException;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.alias.CredentialProvider;
@@ -134,13 +136,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -149,7 +149,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -394,14 +393,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     YarnAppListClient =
         new YarnAppListClient(yarnClient, getUsername(), getConfig());
     // create the filesystem
-    sliderFileSystem = new SliderFileSystem(getConfig());
-
-    // and the registry
-/*
-    YARNRegistryClient =
-        new YARNRegistryClient(yarnClient, getUsername(), getConfig());
-*/
-    
+    sliderFileSystem = new SliderFileSystem(getConfig());    
   }
 
   /**
@@ -2211,48 +2203,51 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     args.validate();
     RegistryOperations operations = getRegistryOperations();
     String path = args.path;
-    Collection<ServiceRecord> serviceRecords;
     ServiceRecordMarshal serviceRecordMarshal = new ServiceRecordMarshal();
-    File outputPath = args.out;
     try {
       if (args.list) {
+        File destDir = args.destdir;
+        if (destDir != null) {
+          destDir.mkdirs();
+        }
+
         Map<String, ServiceRecord> recordMap =
             listServiceRecords(operations, path);
-        serviceRecords = recordMap.values();
-        // list records out
-        StringBuilder builder = new StringBuilder(1024);
-        for (Entry<String, ServiceRecord> recordEntry : recordMap
-            .entrySet()) {
+
+        for (Entry<String, ServiceRecord> recordEntry : recordMap.entrySet()) {
+          String name = recordEntry.getKey();
           ServiceRecord instance = recordEntry.getValue();
-          builder.append("\"").append(recordEntry.getKey()).append("\":\n");
-          builder.append(serviceRecordMarshal.toJson(instance));
-          builder.append("}\n");
-        }
-        String records = builder.toString();
-        if (outputPath == null) {
-          print(records);
-        } else {
-          SliderUtils.write(outputPath, records.getBytes("UTF-8"), false);
+          String json = serviceRecordMarshal.toJson(instance);
+          if (destDir == null) {
+            print(name);
+            print(json);
+          } else {
+            String filename = RegistryPathUtils.lastPathEntry(name) + ".json";
+            File jsonFile = new File(destDir, filename);
+            SliderUtils.write(jsonFile,
+                serviceRecordMarshal.toBytes(instance), true);
+          }
         }
       } else  {
         // resolve single entry
         ServiceRecord instance = resolve(path);
-        serviceRecords = new ArrayList<ServiceRecord>(1);
-        serviceRecords.add(instance);
-        // write out JSON content
-        if (outputPath != null) {
-          byte[] data = serviceRecordMarshal.toBytes(instance);
-          SliderUtils.write(outputPath, data, false);
+        File outFile = args.out;
+        if (args.destdir != null) {
+          outFile = new File(args.destdir, RegistryPathUtils.lastPathEntry(path));
+        }
+        if (outFile != null) {
+          SliderUtils.write(outFile, serviceRecordMarshal.toBytes(instance), true);
         } else {
-          // print to the console
           print(serviceRecordMarshal.toJson(instance));
         }
       }
-//      JDK7
+//      TODO JDK7
     } catch (PathNotFoundException e) {
       // no record at this path
       return EXIT_NOT_FOUND;
     } catch (NoRecordException e) {
+      return EXIT_NOT_FOUND;
+    } catch (UnknownApplicationInstanceException e) {
       return EXIT_NOT_FOUND;
     } catch (InvalidRecordException e) {
       // it is not a record
@@ -2701,16 +2696,15 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     PublishedConfigurationOutputter outputter =
         PublishedConfigurationOutputter.createOutputter(configFormat,
             published);
-    boolean print = registryArgs.dest == null;
+    boolean print = registryArgs.out == null;
     if (!print) {
-      File destFile;
-      destFile = registryArgs.dest;
-      if (destFile.isDirectory()) {
+      File outputPath = registryArgs.out;
+      if (outputPath.isDirectory()) {
         // creating it under a directory
-        destFile = new File(destFile, entry + "." + format);
+        outputPath = new File(outputPath, entry + "." + format);
       }
-      log.info("Destination path: {}", destFile);
-      outputter.save(destFile);
+      log.debug("Destination path: {}", outputPath);
+      outputter.save(outputPath);
     } else {
       print(outputter.asString());
     }
