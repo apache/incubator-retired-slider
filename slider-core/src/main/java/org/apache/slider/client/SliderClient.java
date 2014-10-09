@@ -2701,16 +2701,15 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     PublishedConfigurationOutputter outputter =
         PublishedConfigurationOutputter.createOutputter(configFormat,
             published);
-    boolean print = registryArgs.dest == null;
+    boolean print = registryArgs.out == null;
     if (!print) {
-      File destFile;
-      destFile = registryArgs.dest;
-      if (destFile.isDirectory()) {
+      File outputPath = registryArgs.out;
+      if (outputPath.isDirectory()) {
         // creating it under a directory
-        destFile = new File(destFile, entry + "." + format);
+        outputPath = new File(outputPath, entry + "." + format);
       }
-      log.info("Destination path: {}", destFile);
-      outputter.save(destFile);
+      log.debug("Destination path: {}", outputPath);
+      outputter.save(outputPath);
     } else {
       print(outputter.asString());
     }
