@@ -25,6 +25,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.hadoop.util.ExitUtil
 import org.apache.hadoop.util.Shell
 import org.apache.hadoop.yarn.conf.YarnConfiguration
+import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.SliderXmlConfKeys
@@ -71,7 +72,12 @@ abstract class CommandTestBase extends SliderTestUtils {
   public static final int SLIDER_TEST_TIMEOUT
 
   public static final String YARN_RAM_REQUEST
-  
+
+  /**
+   * Keytab for secure cluster
+   */
+  public static final String TEST_AM_KEYTAB
+  static File keytabFile
 
 
   static {
@@ -86,10 +92,13 @@ abstract class CommandTestBase extends SliderTestUtils {
         KEY_TEST_TIMEOUT,
         1000 * DEFAULT_TEST_TIMEOUT_SECONDS)
 
-    YARN_RAM_REQUEST = SLIDER_CONFIG.get(
+    YARN_RAM_REQUEST = SLIDER_CONFIG.getTrimmed(
         KEY_TEST_YARN_RAM_REQUEST,
         DEFAULT_YARN_RAM_REQUEST)
-    
+
+    TEST_AM_KEYTAB = SLIDER_CONFIG.getTrimmed(
+        KEY_TEST_AM_KEYTAB)
+
   }
 
   @Rule
@@ -102,6 +111,18 @@ abstract class CommandTestBase extends SliderTestUtils {
     if (SliderUtils.maybeInitSecurity(conf)) {
       log.debug("Security enabled")
       SliderUtils.forceLogin()
+      // now look for the security key
+/*
+      if (!TEST_AM_KEYTAB) {
+        fail("Security keytab is not defined in $KEY_TEST_AM_KEYTAB")
+      }
+      keytabFile = new File(TEST_AM_KEYTAB)
+      if (!keytabFile.exists()) {
+        throw new FileNotFoundException("Security keytab ${keytabFile} " +
+                    " defined in $KEY_TEST_AM_KEYTAB")
+      }
+*/
+
     } else {
       log.info "Security is off"
     }
@@ -463,6 +484,54 @@ abstract class CommandTestBase extends SliderTestUtils {
         extraArgs,
         blockUntilRunning,
         clusterOps)
+  }
+
+  /**
+   * Create a templated slider app
+   * @param name name
+   * @param appTemplate application template
+   * @param resourceTemplate resource template
+   * @return the shell
+   */
+  public SliderShell createTemplatedSliderApplication(
+      String name,
+      String appTemplate,
+      String resourceTemplate,
+      List<String> extraArgs=[]) {
+    List<String> commands = [
+        ACTION_CREATE, name,
+        ARG_TEMPLATE, appTemplate,
+        ARG_RESOURCES, resourceTemplate
+    ]
+    
+    maybeAddCommandOption(commands,
+        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM],
+        SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME));
+    maybeAddCommandOption(commands,
+        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM],
+        SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH));
+    maybeAddCommandOption(commands,
+        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM],
+        SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL));
+    commands.addAll(extraArgs)
+    SliderShell shell = slider(LauncherExitCodes.EXIT_SUCCESS, commands)
+    return shell
+  }
+
+  /**
+   * If the option is not null/empty, add the command and the option
+   * @param args arg list being built up
+   * @param command command to add option
+   * @param option option to probe and use
+   * @return the (possibly extended) list
+   */
+  public List<String> maybeAddCommandOption(
+      List<String> args, List<String> commands, String option) {
+    if ( SliderUtils.isSet(option)) {
+      args.addAll(commands)
+      args << option
+    }
+    return args
   }
 
   public Path buildClusterPath(String clustername) {

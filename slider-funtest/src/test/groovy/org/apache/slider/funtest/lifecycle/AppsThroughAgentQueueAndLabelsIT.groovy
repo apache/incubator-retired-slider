@@ -78,13 +78,11 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     assumeLabelsRedAndBlueAdded()
 
     cleanup(APPLICATION_NAME)
-    SliderShell shell = slider(EXIT_SUCCESS,
-        [
-            ACTION_CREATE, APPLICATION_NAME,
-            ARG_QUEUE, TARGET_QUEUE,
-            ARG_TEMPLATE, APP_TEMPLATE,
-            ARG_RESOURCES, APP_RESOURCE4
-        ])
+    SliderShell shell = createTemplatedSliderApplication(APPLICATION_NAME,
+        APP_TEMPLATE,
+        APP_RESOURCE4,
+        [ARG_QUEUE, TARGET_QUEUE]
+    )
 
     logShell(shell)
 

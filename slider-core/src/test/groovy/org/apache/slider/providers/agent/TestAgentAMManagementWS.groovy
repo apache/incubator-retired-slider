@@ -27,7 +27,7 @@ import org.apache.hadoop.yarn.exceptions.YarnException
 import org.apache.slider.api.StatusKeys
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderKeys
-import org.apache.slider.common.params.AbstractClusterBuildingActionArgs
+import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.core.build.InstanceBuilder
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.conf.MapOperations
@@ -90,7 +90,7 @@ class TestAgentAMManagementWS extends AgentTestBase {
     void setup() {
         super.setup()
         MapOperations compOperations = new MapOperations();
-        compOperations.put(SliderKeys.KEYSTORE_LOCATION, "/tmp/work/security/keystore.p12");
+        compOperations.put(SliderXmlConfKeys.KEY_KEYSTORE_LOCATION, "/tmp/work/security/keystore.p12");
         SecurityUtils.initializeSecurityParameters(compOperations);
         CertificateManager certificateManager = new CertificateManager();
         certificateManager.initRootCert(compOperations);

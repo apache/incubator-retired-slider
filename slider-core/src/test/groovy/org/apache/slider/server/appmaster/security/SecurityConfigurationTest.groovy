@@ -20,6 +20,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.slider.common.SliderKeys
+import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.conf.MapOperations
 import org.apache.slider.core.exceptions.SliderException;
@@ -38,8 +39,8 @@ public class SecurityConfigurationTest {
       AggregateConf aggregateConf = new AggregateConf();
       MapOperations compOps =
           aggregateConf.appConfOperations.getOrAddComponent(SliderKeys.COMPONENT_AM)
-      compOps.put(SliderKeys.KEYTAB_PRINCIPAL, "test")
-      compOps.put(SliderKeys.AM_KEYTAB_LOCAL_PATH, "/some/local/path")
+      compOps.put(SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL, "test")
+      compOps.put(SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH, "/some/local/path")
 
       SecurityConfiguration securityConfiguration =
           new SecurityConfiguration(config, aggregateConf, "testCluster")
@@ -52,8 +53,8 @@ public class SecurityConfigurationTest {
         AggregateConf aggregateConf = new AggregateConf();
         MapOperations compOps =
             aggregateConf.appConfOperations.getOrAddComponent(SliderKeys.COMPONENT_AM)
-        compOps.put(SliderKeys.KEYTAB_PRINCIPAL, "test")
-        compOps.put(SliderKeys.AM_LOGIN_KEYTAB_NAME, "some.keytab")
+        compOps.put(SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL, "test")
+        compOps.put(SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME, "some.keytab")
 
         SecurityConfiguration securityConfiguration =
             new SecurityConfiguration(config, aggregateConf, "testCluster")
@@ -66,7 +67,7 @@ public class SecurityConfigurationTest {
         AggregateConf aggregateConf = new AggregateConf();
         MapOperations compOps =
             aggregateConf.appConfOperations.getOrAddComponent(SliderKeys.COMPONENT_AM)
-        compOps.put(SliderKeys.AM_LOGIN_KEYTAB_NAME, "some.keytab")
+        compOps.put(SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME, "some.keytab")
 
         shouldFail(SliderException) {
             SecurityConfiguration securityConfiguration =
@@ -86,7 +87,7 @@ public class SecurityConfigurationTest {
         AggregateConf aggregateConf = new AggregateConf();
         MapOperations compOps =
             aggregateConf.appConfOperations.getOrAddComponent(SliderKeys.COMPONENT_AM)
-        compOps.put(SliderKeys.AM_KEYTAB_LOCAL_PATH, "/some/local/path")
+        compOps.put(SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH, "/some/local/path")
 
         shouldFail(SliderException) {
             SecurityConfiguration securityConfiguration =
@@ -106,9 +107,9 @@ public class SecurityConfigurationTest {
         AggregateConf aggregateConf = new AggregateConf();
         MapOperations compOps =
             aggregateConf.appConfOperations.getOrAddComponent(SliderKeys.COMPONENT_AM)
-        compOps.put(SliderKeys.KEYTAB_PRINCIPAL, "test")
-        compOps.put(SliderKeys.AM_KEYTAB_LOCAL_PATH, "/some/local/path")
-        compOps.put(SliderKeys.AM_LOGIN_KEYTAB_NAME, "some.keytab")
+        compOps.put(SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL, "test")
+        compOps.put(SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH, "/some/local/path")
+        compOps.put(SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME, "some.keytab")
 
         shouldFail(SliderException) {
             SecurityConfiguration securityConfiguration =
@@ -123,7 +124,7 @@ public class SecurityConfigurationTest {
         AggregateConf aggregateConf = new AggregateConf();
         MapOperations compOps =
             aggregateConf.appConfOperations.getOrAddComponent(SliderKeys.COMPONENT_AM)
-        compOps.put(SliderKeys.KEYTAB_PRINCIPAL, "test")
+        compOps.put(SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL, "test")
 
         shouldFail(SliderException) {
             SecurityConfiguration securityConfiguration =
@@ -138,7 +139,7 @@ public class SecurityConfigurationTest {
         AggregateConf aggregateConf = new AggregateConf();
         MapOperations compOps =
             aggregateConf.appConfOperations.getOrAddComponent(SliderKeys.COMPONENT_AM)
-        compOps.put(SliderKeys.AM_LOGIN_KEYTAB_NAME, "some.keytab")
+        compOps.put(SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME, "some.keytab")
 
         SecurityConfiguration securityConfiguration =
             new SecurityConfiguration(config, aggregateConf, "testCluster")
@@ -151,7 +152,7 @@ public class SecurityConfigurationTest {
         AggregateConf aggregateConf = new AggregateConf();
         MapOperations compOps =
             aggregateConf.appConfOperations.getOrAddComponent(SliderKeys.COMPONENT_AM)
-        compOps.put(SliderKeys.AM_KEYTAB_LOCAL_PATH, "/some/local/path")
+        compOps.put(SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH, "/some/local/path")
 
         SecurityConfiguration securityConfiguration =
             new SecurityConfiguration(config, aggregateConf, "testCluster")

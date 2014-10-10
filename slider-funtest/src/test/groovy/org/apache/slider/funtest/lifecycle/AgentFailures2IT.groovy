@@ -53,12 +53,9 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     }
 
     cleanup(APPLICATION_NAME)
-    SliderShell shell = slider(EXIT_SUCCESS,
-        [
-            ACTION_CREATE, APPLICATION_NAME,
-            ARG_TEMPLATE, APP_TEMPLATE3,
-            ARG_RESOURCES, APP_RESOURCE
-        ])
+    SliderShell shell = createTemplatedSliderApplication(APP_TEMPLATE3,
+        ARG_RESOURCES,
+        APP_RESOURCE)
 
     logShell(shell)
 
@@ -74,7 +71,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
             APPLICATION_NAME])
 
     assertComponentCount(COMMAND_LOGGER, 1, shell)
-    String requested = findLineEntryValue(shell, ["statistics", COMMAND_LOGGER, "containers.requested"] as String[])
+    String requested = findLineEntryValue(shell,
+        ["statistics", COMMAND_LOGGER, "containers.requested"] as String[])
     assert requested != null && requested.isInteger() && requested.toInteger() >= 3,
         'At least 2 containers must be requested'
 

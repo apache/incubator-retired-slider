@@ -27,6 +27,7 @@ import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.slider.common.SliderExitCodes;
 import org.apache.slider.common.SliderKeys;
+import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.conf.AggregateConf;
@@ -63,7 +64,7 @@ public class SecurityConfiguration {
   private void validate() throws SliderException {
     if (isSecurityEnabled()) {
       String principal = instanceDefinition.getAppConfOperations()
-          .getComponent(SliderKeys.COMPONENT_AM).get(SliderKeys.KEYTAB_PRINCIPAL);
+          .getComponent(SliderKeys.COMPONENT_AM).get(SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL);
       if(SliderUtils.isUnset(principal)) {
         // if no login identity is available, fail
         UserGroupInformation loginUser = null;
@@ -71,13 +72,13 @@ public class SecurityConfiguration {
           loginUser = getLoginUser();
         } catch (IOException e) {
           throw new SliderException(SliderExitCodes.EXIT_BAD_STATE, e,
-                                    "No principal configured for the application and"
+                                    "No principal configured for the application and "
                                     + "exception raised during retrieval of login user. "
                                     + "Unable to proceed with application "
                                     + "initialization.  Please ensure a value "
                                     + "for %s exists in the application "
                                     + "configuration or the login issue is addressed",
-                                    SliderKeys.KEYTAB_PRINCIPAL);
+                                    SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL);
         }
         if (loginUser == null) {
           throw new SliderException(SliderExitCodes.EXIT_BAD_CONFIGURATION,
@@ -87,25 +88,25 @@ public class SecurityConfiguration {
                                     + "initialization.  Please ensure a value "
                                     + "for %s exists in the application "
                                     + "configuration or the login issue is addressed",
-                                    SliderKeys.KEYTAB_PRINCIPAL);
+                                    SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL);
         }
       }
       // ensure that either local or distributed keytab mechanism is enabled,
       // but not both
       String keytabFullPath = instanceDefinition.getAppConfOperations()
           .getComponent(SliderKeys.COMPONENT_AM)
-          .get(SliderKeys.AM_KEYTAB_LOCAL_PATH);
+          .get(SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH);
       String keytabName = instanceDefinition.getAppConfOperations()
           .getComponent(SliderKeys.COMPONENT_AM)
-          .get(SliderKeys.AM_LOGIN_KEYTAB_NAME);
+          .get(SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME);
       if (SliderUtils.isUnset(keytabFullPath) && SliderUtils.isUnset(keytabName)) {
         throw new SliderException(SliderExitCodes.EXIT_BAD_CONFIGURATION,
                                   "Either a keytab path on the cluster host (%s) or a"
                                   + " keytab to be retrieved from HDFS (%s) are"
                                   + " required.  Please configure one of the keytab"
                                   + " retrieval mechanisms.",
-                                  SliderKeys.AM_KEYTAB_LOCAL_PATH,
-                                  SliderKeys.AM_LOGIN_KEYTAB_NAME);
+                                  SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH,
+                                  SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME);
       }
       if (SliderUtils.isSet(keytabFullPath) && SliderUtils.isSet(keytabName)) {
         throw new SliderException(SliderExitCodes.EXIT_BAD_CONFIGURATION,
@@ -113,8 +114,8 @@ public class SecurityConfiguration {
                                   + " keytab to be retrieved from HDFS (%s) are"
                                   + " specified.  Please configure only one keytab"
                                   + " retrieval mechanism.",
-                                  SliderKeys.AM_KEYTAB_LOCAL_PATH,
-                                  SliderKeys.AM_LOGIN_KEYTAB_NAME);
+                                  SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH,
+                                  SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME);
 
       }
     }
@@ -130,7 +131,7 @@ public class SecurityConfiguration {
 
   public String getPrincipal () throws IOException {
     String principal = instanceDefinition.getAppConfOperations()
-        .getComponent(SliderKeys.COMPONENT_AM).get(SliderKeys.KEYTAB_PRINCIPAL);
+        .getComponent(SliderKeys.COMPONENT_AM).get(SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL);
     if (SliderUtils.isUnset(principal)) {
       principal = UserGroupInformation.getLoginUser().getShortUserName();
       log.info("No principal set in the slider configuration.  Will use AM login"
@@ -145,12 +146,12 @@ public class SecurityConfiguration {
       throws SliderException, IOException {
     String keytabFullPath = instanceDefinition.getAppConfOperations()
         .getComponent(SliderKeys.COMPONENT_AM)
-        .get(SliderKeys.AM_KEYTAB_LOCAL_PATH);
+        .get(SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH);
     File localKeytabFile;
     if (SliderUtils.isUnset(keytabFullPath)) {
       // get the keytab
       String keytabName = instanceDefinition.getAppConfOperations()
-          .getComponent(SliderKeys.COMPONENT_AM).get(SliderKeys.AM_LOGIN_KEYTAB_NAME);
+          .getComponent(SliderKeys.COMPONENT_AM).get(SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME);
       log.info("No host keytab file path specified. Downloading keytab {}"
                + " from HDFS to perform login of using principal {}",
                keytabName, principal);

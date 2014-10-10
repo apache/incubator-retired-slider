@@ -560,7 +560,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     boolean securityEnabled = securityConfiguration.isSecurityEnabled();
     // set the global security flag for the instance definition
     instanceDefinition.getAppConfOperations().set(
-        SECURITY_ENABLED, securityEnabled);
+        KEY_SECURITY_ENABLED, securityEnabled);
 
     // triggers resolution and snapshotting in agent
     appState.updateInstanceDefinition(instanceDefinition);

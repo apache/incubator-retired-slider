@@ -40,6 +40,7 @@ import org.apache.slider.api.OptionKeys;
 import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.common.SliderKeys;
+import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.conf.AggregateConf;
@@ -358,10 +359,10 @@ public class AgentProviderService extends AbstractProviderService implements
     if (SliderUtils.isHadoopClusterSecure(getConfig())) {
       String keytabFullPath = instanceDefinition.getAppConfOperations()
           .getComponent(SliderKeys.COMPONENT_AM).get(
-              SliderKeys.AM_KEYTAB_LOCAL_PATH);
+              SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH);
       String amKeytabName = instanceDefinition.getAppConfOperations()
           .getComponent(SliderKeys.COMPONENT_AM).get(
-              SliderKeys.AM_LOGIN_KEYTAB_NAME);
+              SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME);
       if (SliderUtils.isUnset(keytabFullPath)) {
         // we need to localize the keytab files in the directory
         Path keytabDir = fileSystem.buildKeytabPath(null,

@@ -53,12 +53,9 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     }
 
     cleanup(APPLICATION_NAME)
-    SliderShell shell = slider(EXIT_SUCCESS,
-        [
-            ACTION_CREATE, APPLICATION_NAME,
-            ARG_TEMPLATE, APP_TEMPLATE2,
-            ARG_RESOURCES, APP_RESOURCE
-        ])
+    def shell = createTemplatedSliderApplication( APPLICATION_NAME,
+            APP_TEMPLATE2,
+            APP_RESOURCE)
 
     logShell(shell)
 

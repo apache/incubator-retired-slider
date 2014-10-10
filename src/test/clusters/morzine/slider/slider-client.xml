@@ -73,4 +73,21 @@
   </property>
 
 
+  <property>
+    <name>slider.am.login.keytab.name</name>
+    <value>Location of keytab in HDFS</value>
+  </property>
+
+  <property>
+    <name>slider.am.keytab.local.path</name>
+    <description>absolute path to keytab</description>
+    <value></value>
+  </property>
+
+  <property>
+    <name>slider.keytab.principal.name</name>
+    <value>Optional principal name in keytab</value>
+  </property>
+
+
 </configuration>
