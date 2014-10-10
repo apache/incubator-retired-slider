@@ -170,11 +170,6 @@ public interface SliderKeys extends SliderXmlConfKeys {
   String CRT_PASS_FILE_NAME = "pass.txt";
   String PASSPHRASE = "DEV";
   String PASS_LEN = "50";
-  String KEYSTORE_LOCATION = "ssl.server.keystore.location";
-  String AM_LOGIN_KEYTAB_NAME = "slider.am.login.keytab.name";
-  String AM_KEYTAB_LOCAL_PATH = "slider.am.keytab.local.path";
-  String KEYTAB_PRINCIPAL = "slider.keytab.principal.name";
-  String SECURITY_ENABLED = "site.global.security_enabled";
 
   /**
    * Python specific

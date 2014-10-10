@@ -142,4 +142,9 @@ public interface SliderXmlConfKeys {
       "ipc.client.fallback-to-simple-auth-allowed";
   String HADOOP_HTTP_FILTER_INITIALIZERS =
       "hadoop.http.filter.initializers";
+  String KEY_KEYSTORE_LOCATION = "ssl.server.keystore.location";
+  String KEY_AM_LOGIN_KEYTAB_NAME = "slider.am.login.keytab.name";
+  String KEY_AM_KEYTAB_LOCAL_PATH = "slider.am.keytab.local.path";
+  String KEY_KEYTAB_PRINCIPAL = "slider.keytab.principal.name";
+  String KEY_SECURITY_ENABLED = "site.global.security_enabled";
 }

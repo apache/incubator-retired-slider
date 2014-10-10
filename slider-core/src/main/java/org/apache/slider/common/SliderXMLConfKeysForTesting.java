@@ -83,4 +83,9 @@ public interface SliderXMLConfKeysForTesting {
    * security related keys
    */
   String TEST_SECURITY_DIR = "/tmp/work/security";
+
+  /**
+   * Local path to AM keytab: {@value}
+   */
+  String KEY_TEST_AM_KEYTAB = "slider.test.am.keytab.local";
 }

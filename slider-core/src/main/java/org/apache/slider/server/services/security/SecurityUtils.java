@@ -23,6 +23,7 @@ import org.apache.hadoop.fs.RawLocalFileSystem;
 import org.apache.hadoop.fs.permission.FsAction;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.slider.common.SliderKeys;
+import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.core.conf.MapOperations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +35,7 @@ import java.io.IOException;
 //import java.nio.file.Paths;
 //import java.nio.file.attribute.PosixFilePermission;
 //import java.nio.file.attribute.PosixFilePermissions;
-import java.util.Set;
+
 
 /**
  *
@@ -140,7 +141,7 @@ public class SecurityUtils {
 
   public static void initializeSecurityParameters(MapOperations configMap) {
     String keyStoreLocation = configMap.getOption(
-        SliderKeys.KEYSTORE_LOCATION, getDefaultKeystoreLocation());
+        SliderXmlConfKeys.KEY_KEYSTORE_LOCATION, getDefaultKeystoreLocation());
     File secDirFile = new File(keyStoreLocation).getParentFile();
     if (!secDirFile.exists()) {
       // create entire required directory structure

@@ -64,13 +64,9 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
 
     def clusterpath = buildClusterPath(CLUSTER)
     assert !clusterFS.exists(clusterpath)
-
-    SliderShell shell = slider(EXIT_SUCCESS,
-        [
-            ACTION_CREATE, CLUSTER,
-            ARG_TEMPLATE, APP_TEMPLATE,
-            ARG_RESOURCES, APP_RESOURCE2
-        ])
+    SliderShell shell = createTemplatedSliderApplication(CLUSTER,
+        APP_TEMPLATE,
+        APP_RESOURCE2)
 
     logShell(shell)
 

@@ -22,7 +22,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathNotFoundException;
 import org.apache.hadoop.fs.permission.FsPermission;
@@ -125,6 +124,7 @@ import org.apache.slider.providers.agent.AgentKeys;
 import org.apache.slider.providers.slideram.SliderAMClientProvider;
 import org.apache.slider.server.appmaster.SliderAppMaster;
 import org.apache.slider.server.appmaster.rpc.RpcBinder;
+import org.apache.slider.server.appmaster.security.SecurityConfiguration;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -1106,6 +1106,14 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // will be valid.
 
     propagatePrincipals(config, instanceDefinition);
+    // validate security data
+/*
+    // turned off until tested
+    SecurityConfiguration securityConfiguration =
+        new SecurityConfiguration(config,
+            instanceDefinition, clustername);
+    
+*/
     Configuration clientConfExtras = new Configuration(false);
     // then build up the generated path.
     FsPermission clusterPerms = getClusterDirectoryPermissions(config);

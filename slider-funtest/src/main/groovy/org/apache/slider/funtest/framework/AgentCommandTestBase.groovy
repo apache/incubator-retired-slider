@@ -21,7 +21,6 @@ package org.apache.slider.funtest.framework
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.Path
 import org.apache.slider.common.SliderExitCodes
-import org.apache.slider.common.SliderXMLConfKeysForTesting
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
 import org.apache.slider.common.tools.SliderUtils
@@ -111,7 +110,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
           [
               ACTION_INSTALL_PACKAGE,
               Arguments.ARG_NAME, TEST_APP_PKG_NAME,
-              Arguments.ARG_PACKAGE, zipFileName,
+              Arguments.ARG_PACKAGE, zipFileName.absolutePath,
               Arguments.ARG_REPLACE_PKG
           ])
       logShell(shell)
@@ -123,12 +122,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
   }
 
   public static void logShell(SliderShell shell) {
-    for (String str in shell.out) {
-      log.info str
-    }
-    for (String str in shell.err) {
-      log.error str
-    }
+    shell.dumpOutput();
   }
 
   public static void assertComponentCount(String component, int count, SliderShell shell) {
@@ -185,13 +179,14 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
   }
 
   public static void addDir(File dirObj, ZipOutputStream zipFile, String prefix) {
-    dirObj.eachFile() { file ->
+    dirObj.eachFile() {File file ->
       if (file.directory) {
         addDir(file, zipFile, prefix + file.name + File.separator)
       } else {
         log.info("Adding to zip - " + prefix + file.getName())
         zipFile.putNextEntry(new ZipEntry(prefix + file.getName()))
-        file.eachByte(1024) { buffer, len -> zipFile.write(buffer, 0, len) }
+        file.eachByte(1024) {
+          byte[] buffer, int len -> zipFile.write(buffer, 0, len) }
         zipFile.closeEntry()
       }
     }
