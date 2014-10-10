@@ -68,6 +68,7 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
 
 
   public static final String ARTIFACT_NAME = PublishedArtifacts.COMPLETE_CONFIG
+  public static final String HBASE = "hbase/localhost@HADOOP.APACHE.ORG"
 
   @Test
   public void testStandaloneYarnRegistryAM() throws Throwable {
@@ -485,6 +486,18 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     assert oldInstance != null
     assert oldInstance.yarnApplicationState >= YarnApplicationState.FINISHED
 
+    
+    // verify hbase to path generation filters things
+    def hbase = homePathForUser(HBASE)
+    def hbaseServices = serviceclassPath(hbase, SliderKeys.APP_TYPE)
+
+    
+    assert SliderExitCodes.EXIT_NOT_FOUND == client.actionResolve(
+        new ActionResolveArgs(
+            path: hbaseServices,
+            list: true))
+    assert SliderExitCodes.EXIT_NOT_FOUND == client.actionResolve(
+        new ActionResolveArgs(path: hbaseServices))
 
   }
 }
