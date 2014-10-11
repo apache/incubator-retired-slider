@@ -39,16 +39,21 @@ class Registry:
       zk = KazooClient(hosts=self.zk_quorum, read_only=True)
       zk.start()
       data, stat = zk.get(self.zk_reg_path)
+      data = data.lstrip("jsonservicerec")
       logger.debug("Registry Data: %s" % (data.decode("utf-8")))
       sliderRegistry = json.loads(data)
-      amUrl = sliderRegistry["payload"]["internalView"]["endpoints"]["org.apache.slider.agents.secure"]["address"]
-      amHost = amUrl.split("/")[2].split(":")[0]
-      amSecuredPort = amUrl.split(":")[2].split("/")[0]
+      internalAttr = sliderRegistry["internal"]
+      for internal in internalAttr:
+        if internal["api"] == "org.apache.slider.agents.secure":
+          amUrl = internal["addresses"][0][0]
+          amHost = amUrl.split("/")[2].split(":")[0]
+          amSecuredPort = amUrl.split(":")[2].split("/")[0]
+        if internal["api"] == "org.apache.slider.agents.oneway":
+          amUnsecureUrl = internal["addresses"][0][0]
+          amHost = amUnsecureUrl.split("/")[2].split(":")[0]
+          amUnsecuredPort = amUnsecureUrl.split(":")[2].split("/")[0]
 
-      amUnsecureUrl = sliderRegistry["payload"]["internalView"]["endpoints"]["org.apache.slider.agents.oneway"]["address"]
-      amUnsecuredPort = amUnsecureUrl.split(":")[2].split("/")[0]
-
-      # the port needs to be utf-8 encoded
+      # the ports needs to be utf-8 encoded
       amSecuredPort = amSecuredPort.encode('utf8', 'ignore')
       amUnsecuredPort = amUnsecuredPort.encode('utf8', 'ignore')
     except Exception, e:
