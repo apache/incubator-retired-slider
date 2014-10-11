@@ -29,6 +29,7 @@ import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenIdentifier;
 import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.ipc.ProtocolSignature;
+import org.apache.hadoop.registry.client.binding.RegistryUtils;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.SaslRpcServer;
 import org.apache.hadoop.security.UserGroupInformation;
@@ -836,11 +837,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // propagated to workers
     if (!UserGroupInformation.isSecurityEnabled()) {
       hadoop_user_name = System.getenv(HADOOP_USER_NAME);
-      service_user_name = hadoop_user_name;
       log.info(HADOOP_USER_NAME + "='{}'", hadoop_user_name);
-    } else {
-      service_user_name = UserGroupInformation.getCurrentUser().getUserName();
     }
+    service_user_name = RegistryUtils.currentUser();
+    log.info("Registry service username ={}", service_user_name);
 
     // now do the registration
     registerServiceInstance(clustername, appid);
@@ -965,7 +965,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     //Give the provider restricted access to the state, registry
     setupInitialRegistryPaths();
     yarnRegistryOperations = new YarnRegistryViewForProviders(
-        registryOperations, service_user_name,
+        registryOperations,
+        service_user_name,
         SliderKeys.APP_TYPE,
         instanceName,
         appAttemptID);
@@ -997,19 +998,21 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         agentStatusURI,
         serviceRecord);
 
-    // store for clients
+    // register the service's entry
     log.info("Service Record \n{}", serviceRecord);
-    String sliderServicePath = yarnRegistryOperations.putService(service_user_name,
-        SliderKeys.APP_TYPE,
-        instanceName,
-        serviceRecord, true);
+    yarnRegistryOperations.registerSelf(serviceRecord, true);
+    log.info("Registered service under {}; absolute path {}",
+        yarnRegistryOperations.getSelfRegistrationPath(),
+        yarnRegistryOperations.getAbsoluteSelfRegistrationPath());
+    
     boolean isFirstAttempt = 1 == appAttemptID.getAttemptId();
     // delete the children in case there are any and this is an AM startup.
     // just to make sure everything underneath is purged
     if (isFirstAttempt) {
-      yarnRegistryOperations.deleteChildren(sliderServicePath, true);
+      yarnRegistryOperations.deleteChildren(
+          yarnRegistryOperations.getSelfRegistrationPath(),
+          true);
     }
-    yarnRegistryOperations.setSelfRegistration(serviceRecord);
 
     // and a shorter lived binding to the app
     String attempt = appAttemptID.toString();
