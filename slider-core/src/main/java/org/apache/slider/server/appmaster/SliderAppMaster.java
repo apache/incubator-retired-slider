@@ -29,6 +29,7 @@ import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenIdentifier;
 import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.ipc.ProtocolSignature;
+import org.apache.hadoop.registry.client.binding.RegistryUtils;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.SaslRpcServer;
 import org.apache.hadoop.security.UserGroupInformation;
@@ -836,11 +837,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // propagated to workers
     if (!UserGroupInformation.isSecurityEnabled()) {
       hadoop_user_name = System.getenv(HADOOP_USER_NAME);
-      service_user_name = hadoop_user_name;
       log.info(HADOOP_USER_NAME + "='{}'", hadoop_user_name);
-    } else {
-      service_user_name = UserGroupInformation.getCurrentUser().getUserName();
     }
+    service_user_name = RegistryUtils.currentUser();
+    log.info("Registry service username ={}", service_user_name);
 
     // now do the registration
     registerServiceInstance(clustername, appid);
