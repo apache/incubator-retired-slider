@@ -157,4 +157,21 @@ public class SecurityConfigurationTest {
         SecurityConfiguration securityConfiguration =
             new SecurityConfiguration(config, aggregateConf, "testCluster")
     }
+
+    @Test
+    public void testKeypathLocationOnceLocalized() throws Throwable {
+        Configuration config = new Configuration()
+        config.set(CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHENTICATION, "kerberos")
+        AggregateConf aggregateConf = new AggregateConf();
+        MapOperations compOps =
+            aggregateConf.appConfOperations.getOrAddComponent(SliderKeys.COMPONENT_AM)
+        compOps.put(SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME, "some.keytab")
+
+        SecurityConfiguration securityConfiguration =
+            new SecurityConfiguration(config, aggregateConf, "testCluster")
+
+        assert new File(SliderKeys.KEYTAB_DIR, "some.keytab").getAbsolutePath() ==
+               securityConfiguration.getKeytabFile(aggregateConf).getAbsolutePath()
+    }
+
 }

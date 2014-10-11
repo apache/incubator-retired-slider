@@ -139,13 +139,17 @@ public class CoreFileSystem {
    *
    * @return the path for keytab installation location
    */
-  public Path buildKeytabPath(String keytabName, String applicationName) {
-    Preconditions.checkNotNull(applicationName);
-    Path basePath = getBaseApplicationPath();
-    Path baseKeytabDir = new Path(basePath, SliderKeys.KEYTAB_DIR);
-    Path appKeytabDir = new Path(baseKeytabDir, applicationName);
-    return keytabName == null ? appKeytabDir :
-        new Path(appKeytabDir, keytabName);
+  public Path buildKeytabPath(String keytabDir, String keytabName, String clusterName) {
+    Path homePath = getHomeDirectory();
+    Path baseKeytabDir;
+    if (keytabDir != null) {
+      baseKeytabDir = new Path(homePath, keytabDir);
+    } else {
+      baseKeytabDir = new Path(buildClusterDirPath(clusterName),
+                               SliderKeys.KEYTAB_DIR);
+    }
+    return keytabName == null ? baseKeytabDir :
+        new Path(baseKeytabDir, keytabName);
   }
 
   /**

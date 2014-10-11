@@ -357,20 +357,24 @@ public class AgentProviderService extends AbstractProviderService implements
     }
 
     if (SliderUtils.isHadoopClusterSecure(getConfig())) {
-      String keytabFullPath = instanceDefinition.getAppConfOperations()
+      String keytabPathOnHost = instanceDefinition.getAppConfOperations()
           .getComponent(SliderKeys.COMPONENT_AM).get(
               SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH);
-      String amKeytabName = instanceDefinition.getAppConfOperations()
-          .getComponent(SliderKeys.COMPONENT_AM).get(
-              SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME);
-      if (SliderUtils.isUnset(keytabFullPath)) {
+      if (SliderUtils.isUnset(keytabPathOnHost)) {
+        String amKeytabName = instanceDefinition.getAppConfOperations()
+            .getComponent(SliderKeys.COMPONENT_AM).get(
+                SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME);
+        String keytabDir = instanceDefinition.getAppConfOperations()
+            .getComponent(SliderKeys.COMPONENT_AM).get(
+                SliderXmlConfKeys.KEY_HDFS_KEYTAB_DIR);
         // we need to localize the keytab files in the directory
-        Path keytabDir = fileSystem.buildKeytabPath(null,
-          getAmState().getApplicationName());
-        FileStatus[] keytabs = fileSystem.getFileSystem().listStatus(keytabDir);
+        Path keytabDirPath = fileSystem.buildKeytabPath(keytabDir, null,
+                                                        clusterName);
+        FileStatus[] keytabs = fileSystem.getFileSystem().listStatus(keytabDirPath);
         LocalResource keytabRes;
         for (FileStatus keytab : keytabs) {
-          if (!amKeytabName.equals(keytab.getPath().getName())) {
+          if (!amKeytabName.equals(keytab.getPath().getName())
+              && keytab.getPath().getName().endsWith(".keytab")) {
             log.info("Localizing keytab {}", keytab.getPath().getName());
             keytabRes = fileSystem.createAmResource(keytab.getPath(),
               LocalResourceType.FILE);
@@ -678,12 +682,12 @@ public class AgentProviderService extends AbstractProviderService implements
 
       serviceRecord.addInternalEndpoint(
           new Endpoint(CustomRegistryConstants.AGENT_SECURE_REST_API,
-              ProtocolTypes.PROTOCOL_REST,
-              restURL.toURI()));
+                       ProtocolTypes.PROTOCOL_REST,
+                       restURL.toURI()));
       serviceRecord.addInternalEndpoint(
           new Endpoint(CustomRegistryConstants.AGENT_ONEWAY_REST_API,
-              ProtocolTypes.PROTOCOL_REST,
-              agentStatusURL.toURI()));
+                       ProtocolTypes.PROTOCOL_REST,
+                       agentStatusURL.toURI()));
     } catch (URISyntaxException e) {
       throw new IOException(e);
     }

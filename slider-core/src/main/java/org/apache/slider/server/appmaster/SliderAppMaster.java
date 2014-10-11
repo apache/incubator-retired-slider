@@ -34,6 +34,7 @@ import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.SaslRpcServer;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.Token;
+import org.apache.hadoop.security.token.TokenIdentifier;
 import org.apache.hadoop.service.Service;
 import org.apache.hadoop.service.ServiceStateChangeListener;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
@@ -234,7 +235,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   /**
    * token blob
    */
-  private Credentials containerTokens;
+  private Credentials containerCredentials;
 
   private WorkflowRpcService rpcService;
 
@@ -716,12 +717,13 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       // process the initial user to obtain the set of user
       // supplied credentials (tokens were passed in by client). Remove AMRM
       // token and HDFS delegation token, the latter because we will provide an
-      // up to date token for container launches (getContainerTokens()).
+      // up to date token for container launches (getContainerCredentials()).
       UserGroupInformation currentUser = UserGroupInformation.getCurrentUser();
       Credentials credentials = currentUser.getCredentials();
-      Iterator<Token<?>> iter = credentials.getAllTokens().iterator();
+      Iterator<Token<? extends TokenIdentifier>> iter =
+          credentials.getAllTokens().iterator();
       while (iter.hasNext()) {
-        Token<?> token = iter.next();
+        Token<? extends TokenIdentifier> token = iter.next();
         log.info("Token {}", token.getKind());
         if (token.getKind().equals(AMRMTokenIdentifier.KIND_NAME)  ||
             token.getKind().equals(DelegationTokenIdentifier.HDFS_DELEGATION_KIND)) {
@@ -730,7 +732,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       }
       // at this point this credentials map is probably clear, but leaving this
       // code to allow for future tokens...
-      containerTokens = credentials;
+      containerCredentials = credentials;
 
       if (securityEnabled) {
         secretManager.setMasterKey(
@@ -744,8 +746,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         // principal.  Can do so now since AM registration with RM above required
         // tokens associated to principal
         String principal = securityConfiguration.getPrincipal();
-        File localKeytabFile = securityConfiguration.getKeytabFile(
-            fs, instanceDefinition, principal);
+        File localKeytabFile =
+            securityConfiguration.getKeytabFile(instanceDefinition);
         // Now log in...
         login(principal, localKeytabFile);
         // obtain new FS reference that should be kerberos based and different
@@ -898,13 +900,14 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
     Credentials credentials =
         user.getCredentials();
-    Iterator<Token<?>> iter = credentials.getAllTokens().iterator();
+    Iterator<Token<? extends TokenIdentifier>> iter =
+        credentials.getAllTokens().iterator();
     while (iter.hasNext()) {
-      Token<?> token = iter.next();
+      Token<? extends TokenIdentifier> token = iter.next();
       log.info("Token {}", token.getKind());
       if (token.getKind().equals(
           DelegationTokenIdentifier.HDFS_DELEGATION_KIND)) {
-        log.info("Unexpected HDFS delegation token.  Removing...");
+        log.info("HDFS delegation token {}.  Removing...", token);
         iter.remove();
       }
     }
@@ -1907,7 +1910,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // inside the distributed shell.
 
     // add current HDFS delegation token with an up to date token
-    ByteBuffer tokens = getContainerTokens();
+    ByteBuffer tokens = getContainerCredentials();
 
     if (tokens != null) {
       ctx.setTokens(tokens);
@@ -1918,15 +1921,15 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     nmClientAsync.startContainerAsync(container, ctx);
   }
 
-  private ByteBuffer getContainerTokens() throws IOException {
+  private ByteBuffer getContainerCredentials() throws IOException {
     // a delegation token can be retrieved from filesystem since
     // the login is via a keytab (see above)
+    Credentials credentials = new Credentials(containerCredentials);
     ByteBuffer tokens = null;
-    Token hdfsToken = getClusterFS().getFileSystem().getDelegationToken
-        (UserGroupInformation.getLoginUser().getShortUserName());
-    if (hdfsToken != null) {
-      Credentials credentials = new Credentials(containerTokens);
-      credentials.addToken(hdfsToken.getKind(), hdfsToken);
+    Token<? extends TokenIdentifier> hdfsTokens[] =
+        getClusterFS().getFileSystem().addDelegationTokens(
+            UserGroupInformation.getLoginUser().getShortUserName(), credentials);
+    if (hdfsTokens.length > 0) {
       DataOutputBuffer dob = new DataOutputBuffer();
       credentials.writeTokenStorageToStream(dob);
       dob.close();
