@@ -491,13 +491,15 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     def hbase = homePathForUser(HBASE)
     def hbaseServices = serviceclassPath(hbase, SliderKeys.APP_TYPE)
 
-    
-    assert SliderExitCodes.EXIT_NOT_FOUND == client.actionResolve(
-        new ActionResolveArgs(
-            path: hbaseServices,
-            list: true))
-    assert SliderExitCodes.EXIT_NOT_FOUND == client.actionResolve(
-        new ActionResolveArgs(path: hbaseServices))
+    // only check this if the YARN registry renaming logic is in
+    if (!hbase.contains("@")) {
+      assert SliderExitCodes.EXIT_NOT_FOUND == client.actionResolve(
+          new ActionResolveArgs(
+              path: hbaseServices,
+              list: true))
+      assert SliderExitCodes.EXIT_NOT_FOUND == client.actionResolve(
+          new ActionResolveArgs(path: hbaseServices))
+    }
 
   }
 }
