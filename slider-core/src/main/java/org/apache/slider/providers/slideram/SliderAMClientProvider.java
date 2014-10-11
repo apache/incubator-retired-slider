@@ -25,12 +25,15 @@ import org.apache.curator.CuratorZookeeperClient;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.records.LocalResource;
+import org.apache.hadoop.yarn.api.records.LocalResourceType;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.RoleKeys;
 import org.apache.slider.common.SliderKeys;
+import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.conf.AggregateConf;
@@ -206,12 +209,54 @@ public class SliderAMClientProvider extends AbstractClientProvider
     ProviderUtils.addDependencyJars(providerResources, fileSystem, tempPath,
                                     libdir, jars,
                                     classes);
-    
-    launcher.addLocalResources(providerResources);
+
+    addKeytabResourceIfNecessary(fileSystem,
+                                 launcher,
+                                 instanceDescription,
+                                 providerResources);
+
     //also pick up all env variables from a map
     launcher.copyEnvVars(
       instanceDescription.getInternalOperations().getOrAddComponent(
         SliderKeys.COMPONENT_AM));
+  }
+
+  /**
+   * If the cluster is secure, and an HDFS installed keytab is available for AM
+   * authentication, add this keytab as a local resource for the AM launch.
+   *
+   * @param fileSystem
+   * @param launcher
+   * @param instanceDescription
+   * @param providerResources
+   * @throws IOException
+   */
+  protected void addKeytabResourceIfNecessary(SliderFileSystem fileSystem,
+                                              AbstractLauncher launcher,
+                                              AggregateConf instanceDescription,
+                                              Map<String, LocalResource> providerResources)
+      throws IOException {
+    if (UserGroupInformation.isSecurityEnabled()) {
+      String keytabPathOnHost = instanceDescription.getAppConfOperations()
+          .getComponent(SliderKeys.COMPONENT_AM).get(
+              SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH);
+      if (SliderUtils.isUnset(keytabPathOnHost)) {
+        String amKeytabName = instanceDescription.getAppConfOperations()
+            .getComponent(SliderKeys.COMPONENT_AM).get(
+                SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME);
+        String keytabDir = instanceDescription.getAppConfOperations()
+            .getComponent(SliderKeys.COMPONENT_AM).get(
+                SliderXmlConfKeys.KEY_HDFS_KEYTAB_DIR);
+        Path keytabPath = fileSystem.buildKeytabPath(keytabDir, amKeytabName,
+                                                     instanceDescription.getName());
+        LocalResource keytabRes = fileSystem.createAmResource(keytabPath,
+                                                LocalResourceType.FILE);
+
+         providerResources.put(SliderKeys.KEYTAB_DIR + "/" +
+                               amKeytabName, keytabRes);
+      }
+    }
+    launcher.addLocalResources(providerResources);
   }
 
   /**

@@ -141,8 +141,7 @@ public class SecurityConfiguration {
     return principal;
   }
 
-  public File getKeytabFile(SliderFileSystem fs,
-                             AggregateConf instanceDefinition, String principal)
+  public File getKeytabFile(AggregateConf instanceDefinition)
       throws SliderException, IOException {
     String keytabFullPath = instanceDefinition.getAppConfOperations()
         .getComponent(SliderKeys.COMPONENT_AM)
@@ -151,52 +150,19 @@ public class SecurityConfiguration {
     if (SliderUtils.isUnset(keytabFullPath)) {
       // get the keytab
       String keytabName = instanceDefinition.getAppConfOperations()
-          .getComponent(SliderKeys.COMPONENT_AM).get(SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME);
-      log.info("No host keytab file path specified. Downloading keytab {}"
-               + " from HDFS to perform login of using principal {}",
-               keytabName, principal);
+          .getComponent(SliderKeys.COMPONENT_AM).
+              get(SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME);
+      log.info("No host keytab file path specified. Will attempt to retrieve"
+               + " keytab file {} as a local resource for the container",
+               keytabName);
       // download keytab to local, protected directory
-      localKeytabFile = getFileFromFileSystem(fs, keytabName);
+      localKeytabFile = new File(SliderKeys.KEYTAB_DIR, keytabName);
     } else {
-      log.info("Leveraging host keytab file {} to login  principal {}",
-               keytabFullPath, principal);
+      log.info("Leveraging host keytab file {} for login",
+               keytabFullPath);
       localKeytabFile = new File(keytabFullPath);
     }
     return localKeytabFile;
   }
 
-  /**
-   * Download the keytab file from FileSystem to local file.
-   * @param fs
-   * @param keytabName
-   * @return
-   * @throws SliderException
-   * @throws IOException
-   */
-  protected File getFileFromFileSystem(SliderFileSystem fs, String keytabName)
-      throws SliderException, IOException {
-    File keytabDestinationDir = new File(
-        FileUtils.getTempDirectory().getAbsolutePath() +
-        "/keytab" + System.currentTimeMillis());
-    if (!keytabDestinationDir.mkdirs()) {
-      throw new SliderException("Unable to create local keytab directory");
-    }
-    RawLocalFileSystem fileSystem = new RawLocalFileSystem();
-    // allow app user to access local keytab dir
-    FsPermission permissions = new FsPermission(FsAction.ALL, FsAction.NONE,
-                                                FsAction.NONE);
-    fileSystem.setPermission(new Path(keytabDestinationDir.getAbsolutePath()),
-                             permissions);
-
-    Path keytabPath = fs.buildKeytabPath(keytabName, clusterName);
-    File localKeytabFile = new File(keytabDestinationDir, keytabName);
-    FileUtil.copy(fs.getFileSystem(), keytabPath,
-                  localKeytabFile,
-                  false, configuration);
-    // set permissions on actual keytab file to be read-only for user
-    permissions = new FsPermission(FsAction.READ, FsAction.NONE, FsAction.NONE);
-    fileSystem.setPermission(new Path(localKeytabFile.getAbsolutePath()),
-                             permissions);
-    return localKeytabFile;
-  }
 }
