@@ -19,7 +19,7 @@
 package org.apache.slider.providers.agent;
 
 import com.google.common.annotations.VisibleForTesting;
-import org.apache.curator.utils.ZKPaths;
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
@@ -340,7 +340,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
     String agentConf = instanceDefinition.getAppConfOperations().
         getGlobalOptions().getOption(AgentKeys.AGENT_CONF, "");
-    if (org.apache.commons.lang.StringUtils.isNotEmpty(agentConf)) {
+    if (SliderUtils.isSet(agentConf)) {
       LocalResource agentConfRes = fileSystem.createAmResource(fileSystem
                                                                    .getFileSystem().resolvePath(new Path(agentConf)),
                                                                LocalResourceType.FILE);
@@ -400,7 +400,7 @@ public class AgentProviderService extends AbstractProviderService implements
     operation.add(getZkRegistryPath());
 
     String debugCmd = agentLaunchParameter.getNextLaunchParameter(role);
-    if (debugCmd != null && debugCmd.length() != 0) {
+    if (SliderUtils.isSet(debugCmd)) {
       operation.add(ARG_DEBUG);
       operation.add(debugCmd);
     }
@@ -417,16 +417,17 @@ public class AgentProviderService extends AbstractProviderService implements
                                    getClusterInfoPropertyValue(OptionKeys.APPLICATION_NAME)));
   }
 
-  // build the zookeeper registry path
+  /**
+   * build the zookeeper registry path.
+   * 
+   * @return the path the service registered at
+   * @throws NullPointerException if the service has not yet registered
+   */
   private String getZkRegistryPath() {
-    String zkRegistryRoot = getConfig().get(REGISTRY_PATH,
-                                            DEFAULT_REGISTRY_PATH);
-    String appType = APP_TYPE;
-    String zkRegistryPath = ZKPaths.makePath(zkRegistryRoot, appType);
-    String clusterName = getAmState().getInternalsSnapshot().get(
-        OptionKeys.APPLICATION_NAME);
-    zkRegistryPath = ZKPaths.makePath(zkRegistryPath, clusterName);
-    return zkRegistryPath;
+    Preconditions.checkNotNull(yarnRegistry, "Yarn registry not bound");
+    String path = yarnRegistry.getAbsoluteSelfRegistrationPath();
+    Preconditions.checkNotNull(path, "Service record path not defined");
+    return path;
   }
 
   @Override

@@ -18,11 +18,12 @@
 
 package org.apache.slider.providers.agent;
 
-import com.sun.jersey.spi.container.servlet.WebConfig;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FilterFileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.registry.client.api.RegistryOperations;
+import org.apache.hadoop.registry.client.types.ServiceRecord;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
@@ -34,6 +35,7 @@ import org.apache.slider.api.ClusterDescriptionKeys;
 import org.apache.slider.api.ClusterNode;
 import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.OptionKeys;
+import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.core.conf.AggregateConf;
@@ -55,6 +57,9 @@ import org.apache.slider.providers.agent.application.metadata.ExportGroup;
 import org.apache.slider.providers.agent.application.metadata.Metainfo;
 import org.apache.slider.providers.agent.application.metadata.MetainfoParser;
 import org.apache.slider.providers.agent.application.metadata.PropertyInfo;
+import org.apache.slider.server.appmaster.model.mock.MockRegistryOperations;
+import org.apache.slider.server.appmaster.model.mock.MockApplicationAttemptId;
+import org.apache.slider.server.appmaster.model.mock.MockApplicationId;
 import org.apache.slider.server.appmaster.model.mock.MockContainerId;
 import org.apache.slider.server.appmaster.model.mock.MockFileSystem;
 import org.apache.slider.server.appmaster.model.mock.MockNodeId;
@@ -69,6 +74,7 @@ import org.apache.slider.server.appmaster.web.rest.agent.HeartBeatResponse;
 import org.apache.slider.server.appmaster.web.rest.agent.Register;
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationResponse;
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationStatus;
+import org.apache.slider.server.services.yarnregistry.YarnRegistryViewForProviders;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -88,12 +94,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.easymock.EasyMock.anyLong;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyCollection;
 import static org.mockito.Matchers.anyMap;
@@ -254,7 +260,7 @@ public class TestAgentProviderService {
     ConfTree tree = new ConfTree();
     tree.global.put(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH, ".");
 
-    AgentProviderService aps = new AgentProviderService();
+    AgentProviderService aps = createAgentProviderService(new Configuration());
     ContainerLaunchContext ctx = createNiceMock(ContainerLaunchContext.class);
     AggregateConf instanceDefinition = new AggregateConf();
 
@@ -385,6 +391,7 @@ public class TestAgentProviderService {
     Assert.assertEquals(2, hbr.getResponseId());
   }
 
+
   private AggregateConf prepareConfForAgentStateTests() {
     ConfTree tree = new ConfTree();
     tree.global.put(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH, ".");
@@ -420,7 +427,7 @@ public class TestAgentProviderService {
     expect(container.getPriority()).andReturn(Priority.newInstance(1));
 
     StateAccessForProviders access = createNiceMock(StateAccessForProviders.class);
-    AgentProviderService aps = new AgentProviderService();
+    AgentProviderService aps = createAgentProviderService(new Configuration());
     AgentProviderService mockAps = Mockito.spy(aps);
 
     doReturn(access).when(mockAps).getAmState();
@@ -600,7 +607,7 @@ public class TestAgentProviderService {
 
   @Test
   public void testRoleHostMapping() throws Exception {
-    AgentProviderService aps = new AgentProviderService();
+    AgentProviderService aps = createAgentProviderService(new Configuration());
     StateAccessForProviders appState = new ProviderAppState("undefined", null) {
       @Override
       public ClusterDescription getClusterStatus() {
@@ -651,7 +658,7 @@ public class TestAgentProviderService {
   public void testComponentSpecificPublishes() throws Exception {
     InputStream metainfo_1 = new ByteArrayInputStream(metainfo_1_str.getBytes());
     Metainfo metainfo = new MetainfoParser().parse(metainfo_1);
-    AgentProviderService aps = new AgentProviderService();
+    AgentProviderService aps = createAgentProviderService(new Configuration());
     AgentProviderService mockAps = Mockito.spy(aps);
     doNothing().when(mockAps).publishApplicationInstanceData(anyString(), anyString(), anyCollection());
     doReturn(metainfo).when(mockAps).getMetainfo();
@@ -691,7 +698,7 @@ public class TestAgentProviderService {
     InputStream metainfo_1 = new ByteArrayInputStream(metainfo_1_str.getBytes());
     Metainfo metainfo = new MetainfoParser().parse(metainfo_1);
     Assert.assertNotNull(metainfo.getApplication());
-    AgentProviderService aps = new AgentProviderService();
+    AgentProviderService aps = createAgentProviderService(new Configuration());
     HeartBeat hb = new HeartBeat();
     ComponentStatus status = new ComponentStatus();
     status.setClusterName("test");
@@ -848,7 +855,7 @@ public class TestAgentProviderService {
     }
     Assert.assertEquals("Two config dependencies must be found.", found, 2);
 
-    AgentProviderService aps = new AgentProviderService();
+    AgentProviderService aps = createAgentProviderService(new Configuration());
     AgentProviderService mockAps = Mockito.spy(aps);
     doReturn(metainfo).when(mockAps).getMetainfo();
     CommandScript script = mockAps.getScriptPathFromMetainfo("HBASE_MASTER");
@@ -877,7 +884,7 @@ public class TestAgentProviderService {
     String role_hm = "HBASE_MASTER";
     String role_hrs = "HBASE_REGIONSERVER";
 
-    AgentProviderService aps1 = new AgentProviderService();
+    AgentProviderService aps1 = createAgentProviderService(new Configuration());
     AgentProviderService mockAps = Mockito.spy(aps1);
     doReturn(metainfo).when(mockAps).getMetainfo();
 
@@ -906,7 +913,11 @@ public class TestAgentProviderService {
     ConfTree tree = new ConfTree();
     tree.global.put(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH, ".");
 
-    AgentProviderService aps = new AgentProviderService();
+    Configuration conf = new Configuration();
+    AgentProviderService aps = createAgentProviderService(conf);
+    YarnRegistryViewForProviders registryViewForProviders = aps.getYarnRegistry();
+    assertNotNull(registryViewForProviders);
+    
     ContainerLaunchContext ctx = createNiceMock(ContainerLaunchContext.class);
     AggregateConf instanceDefinition = new AggregateConf();
 
@@ -921,6 +932,7 @@ public class TestAgentProviderService {
     String role_hrs = "HBASE_REGIONSERVER";
     SliderFileSystem sliderFileSystem = createNiceMock(SliderFileSystem.class);
     ContainerLauncher launcher = createNiceMock(ContainerLauncher.class);
+    ContainerLauncher launcher2 = createNiceMock(ContainerLauncher.class);
     Path generatedConfPath = new Path(".", "test");
     MapOperations resourceComponent = new MapOperations();
     MapOperations appComponent = new MapOperations();
@@ -942,9 +954,6 @@ public class TestAgentProviderService {
     doReturn(new HashMap<String, DefaultConfig>()).when(mockAps).
         initializeDefaultConfigs(any(SliderFileSystem.class), anyString(), any(Metainfo.class));
 
-    Configuration conf = new Configuration();
-    conf.set(SliderXmlConfKeys.REGISTRY_PATH,
-        SliderXmlConfKeys.DEFAULT_REGISTRY_PATH);
 
     try {
       doReturn(true).when(mockAps).isMaster(anyString());
@@ -1000,7 +1009,7 @@ public class TestAgentProviderService {
                                           appComponent,
                                           containerTmpDirPath);
 
-      mockAps.buildContainerLaunchContext(launcher,
+      mockAps.buildContainerLaunchContext(launcher2,
                                           instanceDefinition,
                                           container,
                                           role_hrs,
@@ -1156,9 +1165,35 @@ public class TestAgentProviderService {
         anyCollection());
   }
 
-  @Test
-  public void testNotifyContainerCompleted() {
+  protected AgentProviderService createAgentProviderService(Configuration conf) throws
+      IOException {
     AgentProviderService aps = new AgentProviderService();
+    YarnRegistryViewForProviders registryViewForProviders =
+        createYarnRegistryViewForProviders(conf);
+    aps.bindToYarnRegistry(registryViewForProviders);
+    return aps;
+  }
+  
+  protected YarnRegistryViewForProviders createYarnRegistryViewForProviders(
+      Configuration conf) throws IOException {
+    conf.set(SliderXmlConfKeys.REGISTRY_PATH,
+        SliderXmlConfKeys.DEFAULT_REGISTRY_PATH);
+
+    RegistryOperations registryOperations = new MockRegistryOperations();
+    registryOperations.init(conf);
+    YarnRegistryViewForProviders registryViewForProviders =
+        new YarnRegistryViewForProviders(registryOperations,
+            "hbase",
+            SliderKeys.APP_TYPE,
+            "hbase1",
+            new MockApplicationAttemptId(new MockApplicationId(1), 1));
+    registryViewForProviders.registerSelf(new ServiceRecord(), true);
+    return registryViewForProviders;
+  }
+
+  @Test
+  public void testNotifyContainerCompleted() throws IOException {
+    AgentProviderService aps = createAgentProviderService(new Configuration());
     AgentProviderService mockAps = Mockito.spy(aps);
     doNothing().when(mockAps).publishApplicationInstanceData(anyString(), anyString(), anyCollection());
 
@@ -1203,7 +1238,7 @@ public class TestAgentProviderService {
   public void testAddInstallCommand() throws Exception {
     InputStream metainfo_1 = new ByteArrayInputStream(metainfo_1_str.getBytes());
     Metainfo metainfo = new MetainfoParser().parse(metainfo_1);
-    AgentProviderService aps = new AgentProviderService();
+    AgentProviderService aps = createAgentProviderService(new Configuration());
     HeartBeatResponse hbr = new HeartBeatResponse();
 
     StateAccessForProviders access = createNiceMock(StateAccessForProviders.class);
@@ -1252,7 +1287,7 @@ public class TestAgentProviderService {
 
   @Test
   public void testAddStartCommand() throws Exception {
-    AgentProviderService aps = new AgentProviderService();
+    AgentProviderService aps = createAgentProviderService(new Configuration());
     HeartBeatResponse hbr = new HeartBeatResponse();
 
     StateAccessForProviders access = createNiceMock(StateAccessForProviders.class);
@@ -1335,8 +1370,8 @@ public class TestAgentProviderService {
   }
 
   @Test
-  public void testParameterParsing() {
-    AgentProviderService aps = new AgentProviderService();
+  public void testParameterParsing() throws IOException {
+    AgentProviderService aps = createAgentProviderService(new Configuration());
     AggregateConf aggConf = new AggregateConf();
     ConfTreeOperations treeOps = aggConf.getAppConfOperations();
     treeOps.getGlobalOptions().put(AgentKeys.SYSTEM_CONFIGS, "core-site,yarn-site, core-site ");
@@ -1347,8 +1382,8 @@ public class TestAgentProviderService {
   }
 
   @Test
-  public void testDereferenceAllConfig() {
-    AgentProviderService aps = new AgentProviderService();
+  public void testDereferenceAllConfig() throws IOException {
+    AgentProviderService aps = createAgentProviderService(new Configuration());
     Map<String, Map<String, String>> allConfigs = new HashMap<String, Map<String, String>>();
     Map<String, String> cfg1 = new HashMap<String, String>();
     cfg1.put("a1", "${@//site/cfg-2/A1}");

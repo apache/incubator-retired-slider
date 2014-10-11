@@ -103,10 +103,18 @@ public abstract class AbstractLauncher extends Configured {
     return env;
   }
 
+  /**
+   * Get the launch commands.
+   * @return the live list of commands 
+   */
   public List<String> getCommands() {
     return commands;
   }
 
+  /**
+   * Get the map of local resources.
+   * @return the live map of local resources.
+   */
   public Map<String, LocalResource> getLocalResources() {
     return localResources;
   }

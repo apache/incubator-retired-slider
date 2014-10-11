@@ -19,6 +19,7 @@
 package org.apache.slider.common;
 
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
+import org.apache.hadoop.registry.client.api.RegistryConstants;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 
 /**
@@ -122,12 +123,12 @@ public interface SliderXmlConfKeys {
   String DEFAULT_DATA_DIRECTORY_PERMISSIONS = "750";
 
 
-  String REGISTRY_PATH = "slider.registry.path";
+  String REGISTRY_PATH = RegistryConstants.KEY_REGISTRY_ZK_ROOT;
 
   /**
    * Default value for the registry: {@value}
    */
-  String DEFAULT_REGISTRY_PATH = "/registry";
+  String DEFAULT_REGISTRY_PATH = RegistryConstants.DEFAULT_ZK_REGISTRY_ROOT;
 
 
   String REGISTRY_ZK_QUORUM = "slider.zookeeper.quorum";

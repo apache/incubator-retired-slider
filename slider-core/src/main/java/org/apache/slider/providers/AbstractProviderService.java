@@ -114,6 +114,10 @@ public abstract class AbstractProviderService
     this.yarnRegistry = yarnRegistry;
   }
 
+  public YarnRegistryViewForProviders getYarnRegistry() {
+    return yarnRegistry;
+  }
+
   @Override
   public AgentRestOperations getAgentRestOperations() {
     return restOps;
