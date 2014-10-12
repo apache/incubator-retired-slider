@@ -52,7 +52,9 @@ import org.apache.slider.core.exceptions.NoSuchNodeException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.CommandLineBuilder;
 import org.apache.slider.core.launch.ContainerLauncher;
+import org.apache.slider.core.registry.docstore.ExportEntry;
 import org.apache.slider.core.registry.docstore.PublishedConfiguration;
+import org.apache.slider.core.registry.docstore.PublishedExports;
 import org.apache.slider.core.registry.info.CustomRegistryConstants;
 import org.apache.slider.providers.AbstractProviderService;
 import org.apache.slider.providers.ProviderCore;
@@ -97,6 +99,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -127,10 +130,15 @@ public class AgentProviderService extends AbstractProviderService implements
   private static final String CONTAINER_ID = "container_id";
   private static final String GLOBAL_CONFIG_TAG = "global";
   private static final String LOG_FOLDERS_TAG = "LogFolders";
+  private static final String HOST_FOLDER_FORMAT = "%s:%s";
+  private static final String CONTAINER_LOGS_TAG = "container_log_dirs";
+  private static final String CONTAINER_PWDS_TAG = "container_work_dirs";
+  private static final String COMPONENT_TAG = "component";
+  private static final String APPLICATION_TAG = "application";
   private static final String COMPONENT_DATA_TAG = "ComponentInstanceData";
   private static final String SHARED_PORT_TAG = "SHARED";
   private static final String PER_CONTAINER_TAG = "{PER_CONTAINER}";
-  private static final int MAX_LOG_ENTRIES = 20;
+  private static final int MAX_LOG_ENTRIES = 40;
   private static final int DEFAULT_HEARTBEAT_MONITOR_INTERVAL = 60 * 1000;
 
   private final Object syncLock = new Object();
@@ -153,13 +161,19 @@ public class AgentProviderService extends AbstractProviderService implements
       new ConcurrentHashMap<String, Map<String, String>>();
   private final Map<String, Map<String, String>> allocatedPorts =
       new ConcurrentHashMap<String, Map<String, String>>();
-  private final Map<String, String> workFolders =
-      Collections.synchronizedMap(new LinkedHashMap<String, String>(MAX_LOG_ENTRIES, 0.75f, false) {
+
+  private final Map<String, ExportEntry> logFolderExports =
+      Collections.synchronizedMap(new LinkedHashMap<String, ExportEntry>(MAX_LOG_ENTRIES, 0.75f, false) {
         protected boolean removeEldestEntry(Map.Entry eldest) {
           return size() > MAX_LOG_ENTRIES;
         }
       });
-
+  private final Map<String, ExportEntry> workFolderExports =
+      Collections.synchronizedMap(new LinkedHashMap<String, ExportEntry>(MAX_LOG_ENTRIES, 0.75f, false) {
+        protected boolean removeEldestEntry(Map.Entry eldest) {
+          return size() > MAX_LOG_ENTRIES;
+        }
+      });
   /**
    * Create an instance of AgentProviderService
    */
@@ -749,6 +763,16 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   @VisibleForTesting
+  protected Map<String, ExportEntry> getLogFolderExports() {
+    return logFolderExports;
+  }
+
+  @VisibleForTesting
+  protected Map<String, ExportEntry> getWorkFolderExports() {
+    return workFolderExports;
+  }
+
+  @VisibleForTesting
   protected Metainfo getMetainfo() {
     return this.metainfo;
   }
@@ -898,13 +922,56 @@ public class AgentProviderService extends AbstractProviderService implements
    */
   protected void publishLogFolderPaths(
       Map<String, String> folders, String containerId, String roleName, String hostFqdn) {
-    for (Map.Entry<String, String> entry: folders.entrySet()) {
-      workFolders.put(String.format("%s->%s->%s->%s", roleName, hostFqdn, entry.getKey(), containerId), 
-        entry.getValue());
+    for (Map.Entry<String, String> entry : folders.entrySet()) {
+      ExportEntry exportEntry = new ExportEntry();
+      exportEntry.setValue(String.format(HOST_FOLDER_FORMAT, hostFqdn, entry.getValue()));
+      exportEntry.setContainerId(containerId);
+      exportEntry.setLevel(COMPONENT_TAG);
+      exportEntry.setTag(roleName);
+      if (entry.getKey().equals("AGENT_LOG_ROOT")) {
+        synchronized (logFolderExports) {
+          getLogFolderExports().put(containerId, exportEntry);
+        }
+      } else {
+        synchronized (workFolderExports) {
+          getWorkFolderExports().put(containerId, exportEntry);
+        }
+      }
+      log.info("Updating log and pwd folders for container {}", containerId);
     }
 
-    publishApplicationInstanceData(LOG_FOLDERS_TAG, LOG_FOLDERS_TAG,
-                                   (new HashMap<String, String>(this.workFolders)).entrySet());
+    Date now = new Date();
+    PublishedExports exports = new PublishedExports(CONTAINER_LOGS_TAG);
+    exports.setUpdated(now.getTime());
+    synchronized (logFolderExports) {
+      updateExportsFromList(exports, getLogFolderExports());
+    }
+    getAmState().getPublishedExportsSet().put(CONTAINER_LOGS_TAG, exports);
+
+    exports = new PublishedExports(CONTAINER_PWDS_TAG);
+    exports.setUpdated(now.getTime());
+    synchronized (workFolderExports) {
+      updateExportsFromList(exports, getWorkFolderExports());
+    }
+    getAmState().getPublishedExportsSet().put(CONTAINER_PWDS_TAG, exports);
+  }
+
+  /**
+   * Update the export data from the map
+   * @param exports
+   * @param folderExports
+   */
+  private void updateExportsFromList(PublishedExports exports, Map<String, ExportEntry> folderExports) {
+    Map<String, List<ExportEntry>> perComponentList = new HashMap<String, List<ExportEntry>>();
+    for(Map.Entry<String, ExportEntry> logEntry : folderExports.entrySet())
+    {
+      String componentName = logEntry.getValue().getTag();
+      if(!perComponentList.containsKey(componentName)) {
+        perComponentList.put(componentName, new ArrayList<ExportEntry>());
+      }
+      perComponentList.get(componentName).add(logEntry.getValue());
+    }
+    exports.putValues(perComponentList.entrySet());
   }
 
 
@@ -1101,6 +1168,8 @@ public class AgentProviderService extends AbstractProviderService implements
       }
     }
     publishApplicationInstanceData(COMPONENT_DATA_TAG, COMPONENT_DATA_TAG, dataToPublish.entrySet());
+
+    // add to the new exports
   }
 
   /**
