@@ -76,19 +76,21 @@ def _ensure_metadata(path, user, group, mode=None):
       path, existing_mode, mode))
       os.chmod(path, mode)
 
-  if user:
-    uid = _coerce_uid(user)
-    if stat.st_uid != uid:
-      Logger.info(
-        "Changing owner for %s from %d to %s" % (path, stat.st_uid, user))
-      os.chown(path, uid, -1)
+  ## Slider apps should have no need to chown the uid or gid
+  ## Keeping the code around as a reference
+  ## if user:
+  ##   uid = _coerce_uid(user)
+  ##   if stat.st_uid != uid:
+  ##     Logger.info(
+  ##       "Changing owner for %s from %d to %s" % (path, stat.st_uid, user))
+  ##     os.chown(path, uid, -1)
 
-  if group:
-    gid = _coerce_gid(group)
-    if stat.st_gid != gid:
-      Logger.info(
-        "Changing group for %s from %d to %s" % (path, stat.st_gid, group))
-      os.chown(path, -1, gid)
+  ## if group:
+  ##   gid = _coerce_gid(group)
+  ##   if stat.st_gid != gid:
+  ##     Logger.info(
+  ##       "Changing group for %s from %d to %s" % (path, stat.st_gid, group))
+  ##     os.chown(path, -1, gid)
 
 
 class FileProvider(Provider):

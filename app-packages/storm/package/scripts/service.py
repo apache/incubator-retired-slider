@@ -57,22 +57,18 @@ def service(
 
     if params.security_enabled:
       if name == "nimbus":
-        Execute(format("{kinit_path_local} -kt {storm_server_keytab_path} {storm_jaas_server_principal}"),
-                user=params.storm_user)
+        Execute(format("{kinit_path_local} -kt {storm_server_keytab_path} {storm_jaas_server_principal}"))
       else:
-        Execute(format("{kinit_path_local} -kt {storm_client_keytab_path} {storm_jaas_client_principal}"),
-                user=params.storm_user)
+        Execute(format("{kinit_path_local} -kt {storm_client_keytab_path} {storm_jaas_client_principal}"))
 
     Execute(cmd,
             not_if=no_op_test,
-            user=params.storm_user,
             logoutput=False,
             wait_for_finish=False
     )
 
     if name == "rest_api":
       Execute(crt_pid_cmd,
-              user=params.storm_user,
               logoutput=True,
               tries=6,
               try_sleep=10
@@ -81,7 +77,6 @@ def service(
       content = None
       for i in xrange(12):
         Execute(crt_pid_cmd,
-                user=params.storm_user,
                 logoutput=True
         )
         with open(pid_file) as f:
