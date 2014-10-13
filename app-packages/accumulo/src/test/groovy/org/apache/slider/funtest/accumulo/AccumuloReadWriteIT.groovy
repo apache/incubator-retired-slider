@@ -25,6 +25,7 @@ import org.apache.accumulo.core.client.ZooKeeperInstance
 import org.apache.accumulo.core.client.security.tokens.PasswordToken
 import org.apache.accumulo.test.TestIngest
 import org.apache.accumulo.test.VerifyIngest
+import org.apache.hadoop.registry.client.api.RegistryConstants
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderXmlConfKeys
@@ -48,7 +49,8 @@ class AccumuloReadWriteIT extends AccumuloBasicIT {
   @Override
   public void clusterLoadOperations(ClusterDescription cd, SliderClient sliderClient) {
     try {
-      String zookeepers = SLIDER_CONFIG.get(SliderXmlConfKeys.REGISTRY_ZK_QUORUM,
+      String zookeepers = SLIDER_CONFIG.get(
+          RegistryConstants.KEY_REGISTRY_ZK_QUORUM,
         FuntestProperties.DEFAULT_SLIDER_ZK_HOSTS)
 
       ZooKeeperInstance instance = new ZooKeeperInstance(
