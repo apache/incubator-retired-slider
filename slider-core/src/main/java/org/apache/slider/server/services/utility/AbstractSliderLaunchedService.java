@@ -18,11 +18,13 @@
 
 package org.apache.slider.server.services.utility;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.registry.client.api.RegistryConstants;
 import org.apache.hadoop.registry.client.api.RegistryOperations;
 import org.apache.hadoop.registry.client.api.RegistryOperationsFactory;
 import org.apache.slider.common.SliderXmlConfKeys;
+import org.apache.slider.common.tools.ConfigHelper;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.BadConfigException;
@@ -41,7 +43,8 @@ public abstract class AbstractSliderLaunchedService extends
   public AbstractSliderLaunchedService(String name) {
     super(name);
     // make sure all the yarn configs get loaded
-    new YarnConfiguration();
+    YarnConfiguration conf = new YarnConfiguration();
+    ConfigHelper.registerDeprecatedConfigItems();
   }
 
   /**
@@ -50,13 +53,8 @@ public abstract class AbstractSliderLaunchedService extends
    * @throws BadConfigException if it is not there or invalid
    */
   public String lookupZKQuorum() throws BadConfigException {
-    // YARN registry first
+ 
     String registryQuorum = getConfig().get(RegistryConstants.KEY_REGISTRY_ZK_QUORUM);
-    
-    // slider value can overrride it
-    registryQuorum = getConfig().get(
-        SliderXmlConfKeys.REGISTRY_ZK_QUORUM,
-        registryQuorum);
     
     // though if neither is set: trouble
     if (SliderUtils.isUnset(registryQuorum)) {
@@ -79,7 +77,6 @@ public abstract class AbstractSliderLaunchedService extends
 
     // push back the slider registry entry if needed
     String quorum = lookupZKQuorum();
-    getConfig().set(RegistryConstants.KEY_REGISTRY_ZK_QUORUM, quorum);
     RegistryOperations registryWriterService =
         createRegistryOperationsInstance();
     deployChildService(registryWriterService);
