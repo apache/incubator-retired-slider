@@ -24,10 +24,8 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.slider.common.params.ActionRegistryArgs
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
-import org.apache.slider.core.exceptions.BadCommandArgumentsException
 import org.apache.slider.core.exceptions.ErrorStrings
 import org.apache.slider.core.exceptions.UsageException
-import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.main.ServiceLauncherBaseTest
 import org.junit.Test
 
@@ -90,45 +88,4 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
     log.info(exception.toString())
   }
 
-  @Test
-  public void testRegistryExportBadUsage1() throws Throwable {
-    def exception = launchExpectingException(SliderClient,
-        new Configuration(),
-        "Expected a value after parameter --getexp",
-        [SliderActions.ACTION_REGISTRY,
-            Arguments.ARG_NAME,
-            "cl1",
-            Arguments.ARG_GETEXP])
-    assert exception instanceof BadCommandArgumentsException
-    log.info(exception.toString())
-  }
-
-  @Test
-  public void testRegistryExportBadUsage2() throws Throwable {
-    def exception = launchExpectingException(SliderClient,
-        new Configuration(),
-        "Expected a value after parameter --getexp",
-        [SliderActions.ACTION_REGISTRY,
-            Arguments.ARG_NAME,
-            "cl1",
-            Arguments.ARG_LISTEXP,
-        Arguments.ARG_GETEXP])
-    assert exception instanceof BadCommandArgumentsException
-    log.info(exception.toString())
-  }
-
-  @Test
-  public void testRegistryExportBadUsage3() throws Throwable {
-    def exception = launchExpectingException(SliderClient,
-        new Configuration(),
-        "Usage: registry",
-        [SliderActions.ACTION_REGISTRY,
-            Arguments.ARG_NAME,
-            "cl1",
-            Arguments.ARG_LISTEXP,
-            Arguments.ARG_GETEXP,
-            "export1"])
-    assert exception instanceof UsageException
-    log.info(exception.toString())
-  }
 }

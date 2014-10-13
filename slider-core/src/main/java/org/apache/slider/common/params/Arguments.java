@@ -46,7 +46,6 @@ public interface Arguments {
   String ARG_FORMAT = "--format";
   String ARG_FORCE = "--force";
   String ARG_GETCONF = "--getconf";
-  String ARG_GETEXP = "--getexp";
   String ARG_GETFILES = "--getfiles";
   String ARG_HELP = "--help";
   String ARG_ID = "--id";
@@ -55,7 +54,6 @@ public interface Arguments {
   String ARG_LIST = "--list";
   String ARG_LISTFILES = "--listfiles";
   String ARG_LISTCONF = "--listconf";
-  String ARG_LISTEXP = "--listexp";
   String ARG_LIVE = "--live";
   String ARG_MANAGER = "--manager";
   String ARG_MANAGER_SHORT = "--m";

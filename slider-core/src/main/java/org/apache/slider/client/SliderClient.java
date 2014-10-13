@@ -114,9 +114,6 @@ import org.apache.slider.core.registry.docstore.ConfigFormat;
 import org.apache.slider.core.registry.docstore.PublishedConfigSet;
 import org.apache.slider.core.registry.docstore.PublishedConfiguration;
 import org.apache.slider.core.registry.docstore.PublishedConfigurationOutputter;
-import org.apache.slider.core.registry.docstore.PublishedExports;
-import org.apache.slider.core.registry.docstore.PublishedExportsOutputter;
-import org.apache.slider.core.registry.docstore.PublishedExportsSet;
 import org.apache.slider.core.registry.retrieve.RegistryRetriever;
 import org.apache.slider.core.zk.BlockingZKWatcher;
 import org.apache.slider.core.zk.ZKIntegration;
@@ -2282,19 +2279,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       } else if (registryArgs.listConf) {
         // list the configurations
         actionRegistryListConfigsYarn(registryArgs);
-      } else if (registryArgs.listExports) {
-        // list the exports
-        actionRegistryListExports(registryArgs);
       } else if (SliderUtils.isSet(registryArgs.getConf)) {
         // get a configuration
         PublishedConfiguration publishedConfiguration =
             actionRegistryGetConfig(registryArgs);
         outputConfig(publishedConfiguration, registryArgs);
-      } else if (SliderUtils.isSet(registryArgs.getExport)) {
-        // get a export group
-        PublishedExports publishedExports =
-            actionRegistryGetExport(registryArgs);
-        outputExport(publishedExports, registryArgs);
       } else {
         // it's an unknown command
         log.info(ActionRegistryArgs.USAGE);
@@ -2668,34 +2657,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
   /**
-   * list exports available for an instance
-   *
-   * @param registryArgs registry Arguments
-   * @throws YarnException YARN problems
-   * @throws IOException Network or other problems
-   */
-  public void actionRegistryListExports(ActionRegistryArgs registryArgs)
-      throws YarnException, IOException {
-    ServiceRecord instance = lookupServiceRecord(registryArgs);
-
-    RegistryRetriever retriever = new RegistryRetriever(instance);
-    PublishedExportsSet exports =
-        retriever.getExports(!registryArgs.internal);
-
-    for (String exportName : exports.keys()) {
-      if (!registryArgs.verbose) {
-        log.info("{}", exportName);
-      } else {
-        PublishedExports published =
-            exports.get(exportName);
-        log.info("{} : {}",
-                 exportName,
-                 published.description);
-      }
-    }
-  }
-
-  /**
    * list configs available for an instance
    *
    * @param registryArgs registry Arguments
@@ -2716,31 +2677,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     PublishedConfiguration published = retriever.retrieveConfiguration(configurations,
             registryArgs.getConf,
             external);
-    return published;
-  }
-
-  /**
-   * get a specific export group
-   *
-   * @param registryArgs registry Arguments
-   *
-   * @throws YarnException         YARN problems
-   * @throws IOException           Network or other problems
-   * @throws FileNotFoundException if the config is not found
-   */
-  @VisibleForTesting
-  public PublishedExports actionRegistryGetExport(ActionRegistryArgs registryArgs)
-      throws YarnException, IOException {
-    ServiceRecord instance = lookupServiceRecord(registryArgs);
-
-    RegistryRetriever retriever = new RegistryRetriever(instance);
-    boolean external = !registryArgs.internal;
-    PublishedExportsSet exports =
-        retriever.getExports(external);
-
-    PublishedExports published = retriever.retrieveExports(exports,
-                                                           registryArgs.getExport,
-                                                           external);
     return published;
   }
 
@@ -2781,44 +2717,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       print(outputter.asString());
     }
     
-  }
-
-  /**
-   * write out the config
-   * @param published
-   * @param registryArgs
-   * @throws BadCommandArgumentsException
-   * @throws IOException
-   */
-  private void outputExport(PublishedExports published,
-                            ActionRegistryArgs registryArgs) throws
-      BadCommandArgumentsException,
-      IOException {
-    // decide whether or not to print
-    String entry = registryArgs.getExport;
-    String format = ConfigFormat.JSON.toString();
-    ConfigFormat configFormat = ConfigFormat.resolve(format);
-    if (configFormat == null || configFormat != ConfigFormat.JSON) {
-      throw new BadCommandArgumentsException(
-          "Unknown/Unsupported format %s . Only JSON is supported.", format);
-    }
-
-    PublishedExportsOutputter outputter =
-        PublishedExportsOutputter.createOutputter(configFormat,
-                                                  published);
-    boolean print = registryArgs.out == null;
-    if (!print) {
-      File destFile;
-      destFile = registryArgs.out;
-      if (destFile.isDirectory()) {
-        // creating it under a directory
-        destFile = new File(destFile, entry + "." + format);
-      }
-      log.info("Destination path: {}", destFile);
-      outputter.save(destFile);
-    } else {
-      print(outputter.asString());
-    }
   }
 
   /**

@@ -35,9 +35,6 @@ public class CustomRegistryConstants {
   public static final String PUBLISHER_CONFIGURATIONS_API =
       "org.apache.slider.publisher.configurations";
 
-  public static final String PUBLISHER_EXPORTS_API =
-      "org.apache.slider.publisher.exports";
-
   public static final String PUBLISHER_DOCUMENTS_API =
       "org.apache.slider.publisher.documents";
 

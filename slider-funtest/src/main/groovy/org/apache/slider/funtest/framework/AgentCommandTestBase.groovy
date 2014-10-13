@@ -161,33 +161,6 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     return null;
   }
 
-  public static boolean containsString(SliderShell shell, String lookThisUp, int n = 1) {
-    int count = 0
-    for (String str in shell.out) {
-      int subCount = countString(str, lookThisUp)
-      count = count + subCount
-      if (count == n) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  public static int countString(String str, String search) {
-    int count = 0
-    if (SliderUtils.isUnset(str) || SliderUtils.isUnset(search)) {
-      return count
-    }
-
-    int index = str.indexOf(search, 0)
-    while (index > 0) {
-      index = str.indexOf(search, index + 1)
-      ++count
-    }
-    return count
-  }
-
   public static String findLineEntryValue(SliderShell shell, String[] locaters) {
     String line = findLineEntry(shell, locaters);
 

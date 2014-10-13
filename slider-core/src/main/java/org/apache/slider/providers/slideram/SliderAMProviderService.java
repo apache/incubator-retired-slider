@@ -146,8 +146,6 @@ public class SliderAMProviderService extends AbstractProviderService implements
 
       String configurationsURL = SliderUtils.appendToURL(
           publisherURL.toExternalForm(), RestPaths.SLIDER_CONFIGSET);
-      String exportsURL = SliderUtils.appendToURL(
-          publisherURL.toExternalForm(), RestPaths.SLIDER_EXPORTS);
 
       serviceRecord.addExternalEndpoint(
           RegistryTypeUtils.webEndpoint(
@@ -168,10 +166,6 @@ public class SliderAMProviderService extends AbstractProviderService implements
           RegistryTypeUtils.restEndpoint(
               CustomRegistryConstants.PUBLISHER_CONFIGURATIONS_API,
               new URI(configurationsURL)));
-      serviceRecord.addExternalEndpoint(
-          RegistryTypeUtils.restEndpoint(
-              CustomRegistryConstants.PUBLISHER_EXPORTS_API,
-              new URI(exportsURL)));
 
     } catch (URISyntaxException e) {
       throw new IOException(e);
