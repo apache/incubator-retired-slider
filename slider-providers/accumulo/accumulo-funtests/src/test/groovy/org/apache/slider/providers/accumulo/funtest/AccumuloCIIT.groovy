@@ -25,6 +25,7 @@ import org.apache.accumulo.test.continuous.ContinuousIngest
 import org.apache.accumulo.test.continuous.ContinuousVerify
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.Text
+import org.apache.hadoop.registry.client.api.RegistryConstants
 import org.apache.hadoop.util.ToolRunner
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.common.SliderXmlConfKeys
@@ -59,7 +60,8 @@ class AccumuloCIIT extends FunctionalAccumuloClusterIT {
     assert clustername
 
     String currentUser = System.getProperty("user.name");
-    String zookeepers = SLIDER_CONFIG.get(SliderXmlConfKeys.REGISTRY_ZK_QUORUM,
+    String zookeepers = SLIDER_CONFIG.get(
+        RegistryConstants.KEY_REGISTRY_ZK_QUORUM,
         FuntestProperties.DEFAULT_SLIDER_ZK_HOSTS)
     ZooKeeperInstance inst = new ZooKeeperInstance(currentUser + "-" + clustername, zookeepers)
     Connector conn = inst.getConnector("root", new PasswordToken(getPassword()))

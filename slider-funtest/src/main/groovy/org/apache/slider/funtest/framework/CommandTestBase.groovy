@@ -22,9 +22,11 @@ import groovy.transform.CompileStatic
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.registry.client.api.RegistryConstants
 import org.apache.hadoop.util.ExitUtil
 import org.apache.hadoop.util.Shell
 import org.apache.hadoop.yarn.conf.YarnConfiguration
+import org.apache.slider.common.tools.ConfigHelper
 import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.common.SliderKeys
@@ -81,6 +83,7 @@ abstract class CommandTestBase extends SliderTestUtils {
 
 
   static {
+    ConfigHelper.registerDeprecatedConfigItems();
     SLIDER_CONFIG = ConfLoader.loadSliderConf(SLIDER_CONF_XML);
     THAW_WAIT_TIME = getTimeOptionMillis(SLIDER_CONFIG,
         KEY_TEST_THAW_WAIT_TIME,
@@ -436,7 +439,7 @@ abstract class CommandTestBase extends SliderTestUtils {
     List<String> argsList = [action, clustername]
 
     argsList << ARG_ZKHOSTS <<
-    SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.REGISTRY_ZK_QUORUM)
+    SLIDER_CONFIG.getTrimmed(RegistryConstants.KEY_REGISTRY_ZK_QUORUM)
 
 
     if (blockUntilRunning) {

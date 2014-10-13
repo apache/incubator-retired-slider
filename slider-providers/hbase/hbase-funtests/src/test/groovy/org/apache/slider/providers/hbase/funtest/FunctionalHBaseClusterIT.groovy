@@ -21,6 +21,7 @@ package org.apache.slider.providers.hbase.funtest
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.registry.client.api.RegistryConstants
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.RoleKeys
@@ -66,7 +67,8 @@ public class FunctionalHBaseClusterIT extends HBaseCommandTestBase
   @Before
   public void prepareCluster() {
 
-    String quorumServers = SLIDER_CONFIG.get(SliderXmlConfKeys.REGISTRY_ZK_QUORUM, DEFAULT_SLIDER_ZK_HOSTS)
+    String quorumServers = SLIDER_CONFIG.get(
+        RegistryConstants.KEY_REGISTRY_ZK_QUORUM, DEFAULT_SLIDER_ZK_HOSTS)
   
     ZooKeeper monitor = new ZooKeeper(quorumServers,
       1000, new Watcher(){

@@ -160,7 +160,7 @@ public abstract class YarnZKMiniClusterTestBase extends YarnMiniClusterTestBase 
    */
   protected List<String> getExtraCLIArgs() {
     [
-      "-D", define(SliderXmlConfKeys.REGISTRY_ZK_QUORUM, ZKBinding)
+      "-D", define(RegistryConstants.KEY_REGISTRY_ZK_QUORUM, ZKBinding)
     ]
   }
 }
