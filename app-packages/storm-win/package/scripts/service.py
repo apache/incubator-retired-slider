@@ -41,7 +41,6 @@ def service(
     cmd = format("{storm_bin} {name} > {log_dir}/{name}.out 2>&1")
 
     Execute(cmd,
-            user=params.storm_user,
             logoutput=False,
             wait_for_finish=False,
             pid_file = pid_file

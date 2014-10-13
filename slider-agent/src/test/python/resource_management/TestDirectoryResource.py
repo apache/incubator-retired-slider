@@ -57,8 +57,8 @@ class TestDirectoryResource(TestCase):
       
     os_makedirs_mock.assert_called_with('/a/b/c/d', 0777)
     os_chmod_mock.assert_called_with('/a/b/c/d', 0777)
-    os_chown_mock.assert_any_call('/a/b/c/d', 66, -1)
-    os_chown_mock.assert_any_call('/a/b/c/d', -1, 77)
+    ##os_chown_mock.assert_any_call('/a/b/c/d', 66, -1)
+    ##os_chown_mock.assert_any_call('/a/b/c/d', -1, 77)
   
   @patch.object(os.path, "exists")
   @patch.object(os.path, "dirname")
@@ -90,8 +90,8 @@ class TestDirectoryResource(TestCase):
       
     mkdir_mock.assert_called_with('/a/b/c/d', 0777)
     os_chmod_mock.assert_called_with('/a/b/c/d', 0777)
-    os_chown_mock.assert_any_call('/a/b/c/d', 66, -1)
-    os_chown_mock.assert_any_call('/a/b/c/d', -1, 77)
+    ##os_chown_mock.assert_any_call('/a/b/c/d', 66, -1)
+    ##os_chown_mock.assert_any_call('/a/b/c/d', -1, 77)
     
   @patch.object(os.path, "exists")
   @patch.object(os.path, "dirname")
