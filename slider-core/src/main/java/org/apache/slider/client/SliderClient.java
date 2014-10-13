@@ -1234,8 +1234,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     
     addConfOptionToCLI(commandLine, config, REGISTRY_PATH,
         DEFAULT_REGISTRY_PATH);
-    addMandatoryConfOptionToCLI(commandLine, config, RegistryConstants.KEY_REGISTRY_ZK_QUORUM);
-    addMandatoryConfOptionToCLI(commandLine, config, REGISTRY_ZK_QUORUM);
+    addMandatoryConfOptionToCLI(commandLine, config,
+        RegistryConstants.KEY_REGISTRY_ZK_QUORUM);
 
     if (clusterSecure) {
       // if the cluster is secure, make sure that

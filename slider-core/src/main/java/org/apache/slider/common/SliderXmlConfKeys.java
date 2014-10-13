@@ -123,7 +123,7 @@ public interface SliderXmlConfKeys {
   String DEFAULT_DATA_DIRECTORY_PERMISSIONS = "750";
 
 
-  String REGISTRY_PATH = RegistryConstants.KEY_REGISTRY_ZK_ROOT;
+  String REGISTRY_PATH = "slider.registry.path";
 
   /**
    * Default value for the registry: {@value}
