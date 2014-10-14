@@ -1087,9 +1087,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   public void unregisterComponent(ContainerId id) {
     log.info("Unregistering component {}", id);
-    if (yarnRegistryOperations== null) {
+    if (yarnRegistryOperations == null) {
       log.warn("Processing unregister component event before initialization " +
                "completed; init flag =" + initCompleted);
+      return;
     }
     String cid = RegistryPathUtils.encodeYarnID(id.toString());
     try {
