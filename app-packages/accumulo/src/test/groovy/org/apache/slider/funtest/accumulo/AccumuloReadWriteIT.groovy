@@ -54,7 +54,7 @@ class AccumuloReadWriteIT extends AccumuloBasicIT {
         FuntestProperties.DEFAULT_SLIDER_ZK_HOSTS)
 
       ZooKeeperInstance instance = new ZooKeeperInstance(
-        tree.global.get("site.global.accumulo_instance_name"), zookeepers)
+        tree.global.get("site.client.instance.name"), zookeepers)
       Connector connector = instance.getConnector(USER, new PasswordToken(PASSWORD))
 
       ingest(connector, 200000, 1, 50, 0);

@@ -5,7 +5,7 @@
   "global": {
     "yarn.log.include.patterns": "",
     "yarn.log.exclude.patterns": "",
-    "yarn.log.interval": "0"
+    "yarn.log.interval": "60"
   },
   "components": {
     "ACCUMULO_MASTER": {
@@ -18,7 +18,7 @@
     "ACCUMULO_TSERVER": {
       "yarn.role.priority": "2",
       "yarn.component.instances": "1",
-      "yarn.memory": "256"
+      "yarn.memory": "512"
     },
     "ACCUMULO_MONITOR": {
       "yarn.role.priority": "3",

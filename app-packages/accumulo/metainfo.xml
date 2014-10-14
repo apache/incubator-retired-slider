@@ -158,6 +158,16 @@
         <fileName>accumulo-site.xml</fileName>
         <dictionaryName>accumulo-site</dictionaryName>
       </configFile>
+      <configFile>
+        <type>env</type>
+        <fileName>accumulo-env.sh</fileName>
+        <dictionaryName>accumulo-env</dictionaryName>
+      </configFile>
+      <configFile>
+        <type>properties</type>
+        <fileName>client.conf</fileName>
+        <dictionaryName>client</dictionaryName>
+      </configFile>
     </configFiles>
 
   </application>

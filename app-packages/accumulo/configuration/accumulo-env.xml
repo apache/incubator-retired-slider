@@ -22,18 +22,8 @@
 
 <configuration>
   <property>
-    <name>app_log_dir</name>
-    <value>/var/log/accumulo</value>
-    <description>Log Directories for Accumulo.</description>
-  </property>
-  <property>
-    <name>app_pid_dir</name>
-    <value>/var/run/accumulo</value>
-    <description>Pid Directories for Accumulo.</description>
-  </property>
-  <property>
     <name>tserver_heapsize</name>
-    <value>128m</value>
+    <value>256m</value>
     <description>TServer heap size.</description>
   </property>
   <property>
@@ -57,16 +47,6 @@
     <description>Other Heap Size</description>
   </property>
   <property>
-    <name>accumulo_hdfs_root_dir</name>
-    <value>${DEFAULT_DATA_DIR}</value>
-    <description>Accumulo Relative Path to HDFS.</description>
-  </property>
-  <property>
-    <name>app_user</name>
-    <value>yarn</value>
-    <description>Accumulo User Name.</description>
-  </property>
-  <property>
     <name>hadoop_prefix</name>
     <value>/usr/lib/hadoop</value>
     <description>Hadoop directory.</description>
@@ -85,5 +65,25 @@
     <name>accumulo_instance_name</name>
     <value>accumulo-instance</value>
     <description>Accumulo Instance Name.</description>
+  </property>
+  <property>
+    <name>content</name>
+    <description>This is the template for a client accumulo-env.sh file</description>
+    <value>
+#! /usr/bin/env bash
+export HADOOP_PREFIX=${@//site/accumulo-env/hadoop_prefix}
+export HADOOP_CONF_DIR=${@//site/accumulo-env/hadoop_conf_dir}
+export JAVA_HOME=${@//site/accumulo-env/java_home}
+export ZOOKEEPER_HOME=${@//site/accumulo-env/zookeeper_home}
+export ACCUMULO_LOG_DIR=$ACCUMULO_HOME/logs
+export ACCUMULO_TSERVER_OPTS="-Xmx${@//site/accumulo-env/tserver_heapsize} -Xms${@//site/accumulo-env/tserver_heapsize}"
+export ACCUMULO_MASTER_OPTS="-Xmx${@//site/accumulo-env/master_heapsize} -Xms${@//site/accumulo-env/master_heapsize}"
+export ACCUMULO_MONITOR_OPTS="-Xmx${@//site/accumulo-env/monitor_heapsize} -Xms${@//site/accumulo-env/monitor_heapsize}"
+export ACCUMULO_GC_OPTS="-Xmx${@//site/accumulo-env/gc_heapsize} -Xms${@//site/accumulo-env/gc_heapsize}"
+export ACCUMULO_GENERAL_OPTS="-XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=75 -Djava.net.preferIPv4Stack=true"
+export ACCUMULO_OTHER_OPTS="-Xmx${@//site/accumulo-env/other_heapsize} -Xms${@//site/accumulo-env/other_heapsize}"
+# what do when the JVM runs out of heap memory
+export ACCUMULO_KILL_CMD='kill -9 %p'
+    </value>
   </property>
 </configuration>

@@ -47,14 +47,12 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   @Test
   public void testAgentFailHeartbeatingTwiceOnce() throws Throwable {
-    if (!AGENTTESTS_ENABLED) {
-      log.info "TESTS are not run."
-      return
-    }
-
+    assumeAgentTestsEnabled()
+    
     cleanup(APPLICATION_NAME)
-    SliderShell shell = createTemplatedSliderApplication(APP_TEMPLATE3,
-        ARG_RESOURCES,
+    SliderShell shell = createTemplatedSliderApplication(
+        APPLICATION_NAME,
+        APP_TEMPLATE3,
         APP_RESOURCE)
 
     logShell(shell)

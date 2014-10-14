@@ -20,7 +20,6 @@ package org.apache.slider.funtest.accumulo
 import groovy.util.logging.Slf4j
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.client.SliderClient
-import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.core.conf.ConfTree
 
 import javax.net.ssl.KeyManager
