@@ -19,6 +19,7 @@
 package org.apache.slider.registry
 
 import org.apache.hadoop.registry.client.binding.RegistryUtils
+import org.apache.slider.core.registry.SliderRegistryUtils
 import org.apache.slider.test.SliderTestUtils
 import org.junit.Assert
 import org.junit.Test
@@ -44,6 +45,20 @@ class TestRegistryPaths {
       SliderTestUtils.skip("homedir filtering not yet in hadoop registry module")
     }
   }
-  
+
+  @Test
+  public void testRegistryPathForInstance() throws Throwable {
+    def path = SliderRegistryUtils.registryPathForInstance("instance")
+    assert path.endsWith("/instance")
+  }
+
+  @Test
+  public void testPathResolution() throws Throwable {
+    def home = RegistryUtils.homePathForCurrentUser()
+    assert home == SliderRegistryUtils.resolvePath("~")
+    assert (home +"/") == SliderRegistryUtils.resolvePath("~/")
+    assert (home +"/something") == SliderRegistryUtils.resolvePath("~/something")
+    assert ("~unresolved") == SliderRegistryUtils.resolvePath("~unresolved")
+  }
   
 }

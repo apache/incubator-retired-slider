@@ -21,16 +21,22 @@ package org.apache.slider.common.params;
 /**
  * Here are all the arguments that may be parsed by the client or server
  * command lines. 
+ * 
+ * Important: Please keep the main list in alphabetical order
+ * so it is easier to see what arguments are there
  */
 public interface Arguments {
-
+  String ARG_ALL = "--all";
+  String ARG_APPLICATION = "--application";
   String ARG_APP_HOME = "--apphome";
+  String ARG_CLIENT = "--client";
   String ARG_CONFDIR = "--appconf";
   String ARG_COMPONENT = "--component";
   String ARG_COMPONENT_SHORT = "--comp";
   String ARG_COMP_OPT= "--compopt";
   String ARG_COMP_OPT_SHORT = "--co";
-  
+  String ARG_CREDENTIALS = "--credentials";
+
   String ARG_DEBUG = "--debug";
   String ARG_DEFINE = "-D";
   String ARG_DEST = "--dest";
@@ -51,6 +57,7 @@ public interface Arguments {
   String ARG_ID = "--id";
   String ARG_IMAGE = "--image";
   String ARG_INTERNAL = "--internal";
+  String ARG_LEVEL = "--level";
   String ARG_LIST = "--list";
   String ARG_LISTFILES = "--listfiles";
   String ARG_LISTCONF = "--listconf";
@@ -58,14 +65,15 @@ public interface Arguments {
   String ARG_MANAGER = "--manager";
   String ARG_MANAGER_SHORT = "--m";
   String ARG_MESSAGE = "--message";
+  String ARG_NAME = "--name";
   String ARG_OPTION = "--option";
   String ARG_OPTION_SHORT = "-O";
-  String ARG_NAME = "--name";
   String ARG_OUTPUT = "--out";
   String ARG_OUTPUT_SHORT = "-o";
   String ARG_PACKAGE = "--package";
   String ARG_PATH = "--path";
   String ARG_PROVIDER = "--provider";
+  String ARG_QUEUE = "--queue";
   String ARG_RESOURCES = "--resources";
   String ARG_RES_COMP_OPT = "--rescompopt";
   String ARG_RES_COMP_OPT_SHORT = "--rco";
@@ -73,6 +81,7 @@ public interface Arguments {
   String ARG_RESOURCE_OPT = "--resopt";
   String ARG_RESOURCE_OPT_SHORT = "-ro";
   String ARG_SERVICETYPE = "--servicetype";
+  String ARG_SLIDER = "--slider";
   String ARG_SYSPROP = "-S";
   String ARG_TEMPLATE = "--template";
   String ARG_VERBOSE = "--verbose";
@@ -81,14 +90,7 @@ public interface Arguments {
   String ARG_ZKPORT = "--zkport";
   String ARG_ZKHOSTS = "--zkhosts";
   String ARG_REPLACE_PKG = "--replacepkg";
-  String ARG_CLIENT = "--client";
-  String ARG_SLIDER = "--slider";
-  String ARG_APPLICATION = "--application";
   String ARG_YARN = "--yarn";
-  String ARG_CREDENTIALS = "--credentials";
-  String ARG_ALL = "--all";
-  String ARG_LEVEL = "--level";
-  String ARG_QUEUE = "--queue";
 
 
   /**

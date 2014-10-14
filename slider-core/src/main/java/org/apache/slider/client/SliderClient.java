@@ -109,6 +109,7 @@ import org.apache.slider.core.launch.RunningApplication;
 import org.apache.slider.core.main.RunService;
 import org.apache.slider.core.persist.ConfPersister;
 import org.apache.slider.core.persist.LockAcquireFailedException;
+import org.apache.slider.core.registry.SliderRegistryUtils;
 import org.apache.slider.core.registry.YarnAppListClient;
 import org.apache.slider.core.registry.docstore.ConfigFormat;
 import org.apache.slider.core.registry.docstore.PublishedConfigSet;
@@ -124,7 +125,6 @@ import org.apache.slider.providers.agent.AgentKeys;
 import org.apache.slider.providers.slideram.SliderAMClientProvider;
 import org.apache.slider.server.appmaster.SliderAppMaster;
 import org.apache.slider.server.appmaster.rpc.RpcBinder;
-import org.apache.slider.server.appmaster.security.SecurityConfiguration;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -439,6 +439,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * Create the zookeeper node associated with the calling user and the cluster
    */
   @VisibleForTesting
+  @Deprecated
   public String createZookeeperNode(String clusterName, Boolean nameOnly) throws YarnException, IOException {
     String user = getUsername();
     String zkPath = ZKIntegration.mkClusterPath(user, clusterName);
@@ -511,8 +512,15 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       log.warn("Filesystem returned false from delete() operation");
     }
 
-    if(!deleteZookeeperNode(clustername)) {
-      log.warn("Unable to perform node cleanup in Zookeeper.");
+    // rm the registry entry —do not let this block the destroy operations
+    String registryPath = SliderRegistryUtils.registryPathForInstance(
+        clustername);
+    try {
+      getRegistryOperations().delete(registryPath, true);
+    } catch (IOException e) {
+      log.warn("Error deleting {}: {} ", registryPath, e, e);
+    } catch (SliderException e) {
+      log.warn("Error binding to registry {} ", e, e);
     }
 
     List<ApplicationReport> instances = findAllLiveInstances(clustername);
@@ -531,9 +539,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   
   @Override
   public int actionAmSuicide(String clustername,
-      ActionAMSuicideArgs args) throws
-                                                              YarnException,
-                                                              IOException {
+      ActionAMSuicideArgs args) throws YarnException, IOException {
     SliderClusterOperations clusterOperations =
       createClusterOperations(clustername);
     clusterOperations.amSuicide(args.message, args.exitcode, args.waittime);
@@ -2210,7 +2216,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // the arguments
     args.validate();
     RegistryOperations operations = getRegistryOperations();
-    String path = args.path;
+    String path = SliderRegistryUtils.resolvePath(args.path);
     ServiceRecordMarshal serviceRecordMarshal = new ServiceRecordMarshal();
     try {
       if (args.list) {
@@ -2351,7 +2357,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   public int actionDiagnostic(ActionDiagnosticArgs diagnosticArgs) {
 		try {
 			if (diagnosticArgs.client) {
-				actionDiagnosticClient();
+				actionDiagnosticClient(diagnosticArgs);
 			} else if (SliderUtils.isSet(diagnosticArgs.application)) {
 				actionDiagnosticApplication(diagnosticArgs);
 			} else if (SliderUtils.isSet(diagnosticArgs.slider)) {
@@ -2442,7 +2448,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 		//assign application name from param to each sub diagnostic function
 		diagnosticArgs.application = diagnosticArgs.all;
 		diagnosticArgs.slider = diagnosticArgs.all;
-		actionDiagnosticClient();
+		actionDiagnosticClient(diagnosticArgs);
 		actionDiagnosticApplication(diagnosticArgs);
 		actionDiagnosticSlider(diagnosticArgs);
 		actionDiagnosticYarn(diagnosticArgs);
@@ -2579,7 +2585,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 		}
 	}
 
-	private void actionDiagnosticClient() throws SliderException, IOException {
+	private void actionDiagnosticClient(ActionDiagnosticArgs diagnosticArgs)
+      throws SliderException, IOException {
 		String currentCommandPath = SliderUtils.getCurrentCommandPath();
 		SliderVersionInfo.loadAndPrintVersionInfo(log);
 		String clientConfigPath = SliderUtils.getClientConfigPath();
@@ -2589,6 +2596,25 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 				+ clientConfigPath);
 		log.info(jdkInfo);
 
+    // verbose?
+    if (diagnosticArgs.verbose) {
+      // do the environment
+      Map<String, String> env = System.getenv();
+      Set<String> envList = ConfigHelper.sortedConfigKeys(env.entrySet());
+      StringBuilder builder = new StringBuilder("Environment variables:\n");
+      for (String key : envList) {
+        builder.append(key)
+               .append("=")
+               .append(env.get(key))
+               .append("\n");
+      }
+      log.info(builder.toString());
+      
+      // then the config
+      log.info("Slider client configuration:\n" +
+               ConfigHelper.dumpConfigToString(getConfig()));
+    }
+    
 		try {
 			SliderUtils.validateSliderClientEnvironment(log);
 		} catch (SliderException e) {
@@ -2598,6 +2624,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 			log.error(e.toString());
 			throw e;
 		}
+    
 	}
 
 
