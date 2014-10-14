@@ -2728,7 +2728,14 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   private ServiceRecord lookupServiceRecord(ActionRegistryArgs registryArgs) throws
       SliderException,
       IOException {
-    String path = servicePath(currentUser(), registryArgs.serviceType,
+    String user;
+    if (StringUtils.isNotEmpty(registryArgs.user)) {
+      user = RegistryPathUtils.encodeForRegistry(registryArgs.user);
+    } else {
+      user = currentUser();
+    }
+
+    String path = servicePath(user, registryArgs.serviceType,
         registryArgs.name);
     return resolve(path);
   }
