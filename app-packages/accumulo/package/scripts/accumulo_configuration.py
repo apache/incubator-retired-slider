@@ -121,11 +121,16 @@ def setup_conf_dir(name=None): # 'master' or 'tserver' or 'monitor' or 'gc' or '
             owner = params.accumulo_user,
             group = params.user_group
     )
-    if params.ssl_enabled:
-      accumulo_TemplateConfig( 'client.conf')
 
   # create env file
   accumulo_TemplateConfig( 'accumulo-env.sh')
+
+  # create client.conf file
+  PropertiesFile(format("{params.conf_dir}/client.conf"),
+       properties = params.config['configurations']['client'],
+       owner = params.accumulo_user,
+       group = params.user_group
+  )
 
   # create host files
   accumulo_StaticFile( 'masters')
