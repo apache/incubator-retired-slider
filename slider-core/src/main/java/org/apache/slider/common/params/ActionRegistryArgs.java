@@ -52,6 +52,7 @@ public class ActionRegistryArgs extends AbstractActionArgs {
       + Arguments.ARG_NAME + " <name> "
       + " )"
       + "[" + Arguments.ARG_VERBOSE + "] "
+      + "[" + Arguments.ARG_USER + "] "
       + "[" + Arguments.ARG_OUTPUT + " <filename> ] "
       + "[" + Arguments.ARG_SERVICETYPE + " <servicetype> ] "
       + "[" + Arguments.ARG_FORMAT + " <xml|json|properties>] "
@@ -121,7 +122,10 @@ public class ActionRegistryArgs extends AbstractActionArgs {
   @Parameter(names = {ARG_INTERNAL},
       description = "fetch internal registry entries")
   public boolean internal;
-  
+
+  @Parameter(names = {ARG_USER},
+      description = "the name of the user whose application is being resolved")
+  public String user;
   /**
    * validate health of all the different operations
    * @throws BadCommandArgumentsException

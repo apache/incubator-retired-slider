@@ -23,6 +23,7 @@ import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.FileUtil
 import org.apache.hadoop.fs.PathNotFoundException
 import org.apache.hadoop.registry.client.binding.RegistryPathUtils
+import org.apache.hadoop.registry.client.binding.RegistryUtils
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
@@ -61,7 +62,7 @@ import static org.apache.slider.core.registry.info.CustomRegistryConstants.*
 /**
  *  work with a YARN registry
  */
-@CompileStatic
+//@CompileStatic
 @Slf4j
 
 class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
@@ -448,6 +449,7 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
 
     def yarn_site_config = PublishedArtifacts.YARN_SITE_CONFIG
     registryArgs.getConf = yarn_site_config
+    registryArgs.user = currentUser()
 
     //properties format
     registryArgs.format = "properties"
@@ -463,6 +465,7 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     registryArgs = new ActionRegistryArgs(clustername)
     registryArgs.getConf = yarn_site_config
     registryArgs.out = outputDir
+    registryArgs.user = ""
     describe registryArgs.toString()
     client.actionRegistry(registryArgs)
     assert new File(outputDir, yarn_site_config + ".xml").exists()
@@ -477,6 +480,21 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     registryArgs.getConf = unknownFilename
     assert SliderExitCodes.EXIT_NOT_FOUND == client.actionRegistry(registryArgs)
 
+    //look for a different user
+    try {
+      def args = new ActionRegistryArgs(
+          name: clustername,
+          user: "unknown",
+          serviceType: SliderKeys.APP_TYPE,
+          listConf: true,
+          verbose: true
+      )
+      client.actionRegistry(args)
+      fail("registry operation succeeded unexpectedly on $args")
+    } catch (UnknownApplicationInstanceException expected) {
+      // expected
+    }
+    
     describe "stop cluster"
     //now kill that cluster
     assert 0 == clusterActionFreeze(client, clustername)
