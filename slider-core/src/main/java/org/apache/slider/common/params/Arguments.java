@@ -84,6 +84,7 @@ public interface Arguments {
   String ARG_SLIDER = "--slider";
   String ARG_SYSPROP = "-S";
   String ARG_TEMPLATE = "--template";
+  String ARG_USER = "--user";
   String ARG_VERBOSE = "--verbose";
   String ARG_WAIT = "--wait";
   String ARG_ZKPATH = "--zkpath";
