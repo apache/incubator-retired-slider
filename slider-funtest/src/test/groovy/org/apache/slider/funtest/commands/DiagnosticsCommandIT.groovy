@@ -20,8 +20,9 @@ package org.apache.slider.funtest.commands
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.slider.common.params.Arguments
+import org.apache.slider.common.params.SliderActions
 import org.apache.slider.funtest.framework.CommandTestBase
-import org.junit.BeforeClass
 import org.junit.Test
 
 @CompileStatic
@@ -29,8 +30,14 @@ import org.junit.Test
 public class DiagnosticsCommandIT extends CommandTestBase {
 
   @Test
-  public void testListAll() throws Throwable {
-    assertSuccess(list(null))
+  public void testClientDiagnostics() throws Throwable {
+    slider(0,
+        [
+            SliderActions.ACTION_DIAGNOSTIC,
+            Arguments.ARG_CLIENT,
+            Arguments.ARG_VERBOSE
+        ]
+    )
   }
 
 }
