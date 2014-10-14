@@ -24,7 +24,6 @@ import org.apache.hadoop.fs.Path
 import org.apache.hadoop.registry.client.api.RegistryConstants
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.SliderKeys
-import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
 import org.apache.slider.funtest.framework.AgentCommandTestBase
@@ -39,7 +38,7 @@ public class ClusterBuildDestroyIT extends AgentCommandTestBase
     implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
 
-  static String CLUSTER = "test_cluster_build_destroy"
+  static String CLUSTER = "test-cluster-build-destroy"
   
 
   @BeforeClass
