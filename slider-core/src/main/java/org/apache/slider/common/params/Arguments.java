@@ -29,6 +29,7 @@ public interface Arguments {
   String ARG_ALL = "--all";
   String ARG_APPLICATION = "--application";
   String ARG_APP_HOME = "--apphome";
+  String ARG_BASE_PATH = "--basepath";
   String ARG_CLIENT = "--client";
   String ARG_CONFDIR = "--appconf";
   String ARG_COMPONENT = "--component";
@@ -48,7 +49,6 @@ public interface Arguments {
    */
   String ARG_FILESYSTEM = "--fs";
   String ARG_FILESYSTEM_LONG = "--filesystem";
-  String ARG_BASE_PATH = "--basepath";
   String ARG_FORMAT = "--format";
   String ARG_FORCE = "--force";
   String ARG_GETCONF = "--getconf";
@@ -59,8 +59,8 @@ public interface Arguments {
   String ARG_INTERNAL = "--internal";
   String ARG_LEVEL = "--level";
   String ARG_LIST = "--list";
-  String ARG_LISTFILES = "--listfiles";
   String ARG_LISTCONF = "--listconf";
+  String ARG_LISTFILES = "--listfiles";
   String ARG_LIVE = "--live";
   String ARG_MANAGER = "--manager";
   String ARG_MANAGER_SHORT = "--m";
@@ -74,6 +74,7 @@ public interface Arguments {
   String ARG_PATH = "--path";
   String ARG_PROVIDER = "--provider";
   String ARG_QUEUE = "--queue";
+  String ARG_REPLACE_PKG = "--replacepkg";
   String ARG_RESOURCES = "--resources";
   String ARG_RES_COMP_OPT = "--rescompopt";
   String ARG_RES_COMP_OPT_SHORT = "--rco";
@@ -87,11 +88,10 @@ public interface Arguments {
   String ARG_USER = "--user";
   String ARG_VERBOSE = "--verbose";
   String ARG_WAIT = "--wait";
+  String ARG_YARN = "--yarn";
+  String ARG_ZKHOSTS = "--zkhosts";
   String ARG_ZKPATH = "--zkpath";
   String ARG_ZKPORT = "--zkport";
-  String ARG_ZKHOSTS = "--zkhosts";
-  String ARG_REPLACE_PKG = "--replacepkg";
-  String ARG_YARN = "--yarn";
 
 
   /**
