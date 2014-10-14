@@ -126,14 +126,12 @@ public interface SliderClientAPI extends Service {
    * Implement the list action: list all nodes
    * @return exit code of 0 if a list was created
    */
-  @VisibleForTesting
   int actionList(String clustername) throws IOException, YarnException;
 
   /**
    * Implement the islive action: probe for a cluster of the given name existing
    * @return exit code
    */
-  @VisibleForTesting
   int actionFlex(String name, ActionFlexArgs args) throws YarnException, IOException;
 
   /**
@@ -141,7 +139,6 @@ public interface SliderClientAPI extends Service {
    * in the filesystem. If the live param is set, it must be a live cluster
    * @return exit code
    */
-  @VisibleForTesting
   int actionExists(String name, boolean checkLive) throws YarnException, IOException;
 
   /**
@@ -175,7 +172,6 @@ public interface SliderClientAPI extends Service {
    * @throws YarnException
    * @throws IOException
    */
-  @VisibleForTesting
   int actionStatus(String clustername, ActionStatusArgs statusArgs)
       throws YarnException, IOException;
 
