@@ -2587,14 +2587,14 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
 	private void actionDiagnosticClient(ActionDiagnosticArgs diagnosticArgs)
       throws SliderException, IOException {
-		String currentCommandPath = SliderUtils.getCurrentCommandPath();
-		SliderVersionInfo.loadAndPrintVersionInfo(log);
-		String clientConfigPath = SliderUtils.getClientConfigPath();
-		String jdkInfo = SliderUtils.getJDKInfo();
-		log.info("The slider command path: " + currentCommandPath);
-		log.info("The slider-client.xml used by current running command path: "
-				+ clientConfigPath);
-		log.info(jdkInfo);
+    String currentCommandPath = SliderUtils.getCurrentCommandPath();
+    SliderVersionInfo.loadAndPrintVersionInfo(log);
+    String clientConfigPath = SliderUtils.getClientConfigPath();
+    String jdkInfo = SliderUtils.getJDKInfo();
+    println("The slider command path: " + currentCommandPath);
+    println("The slider-client.xml used by current running command path: "
+            + clientConfigPath);
+    println(jdkInfo);
 
     // verbose?
     if (diagnosticArgs.verbose) {
@@ -2608,11 +2608,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
                .append(env.get(key))
                .append("\n");
       }
-      log.info(builder.toString());
+      println(builder.toString());
       
       // then the config
-      log.info("Slider client configuration:\n" +
-               ConfigHelper.dumpConfigToString(getConfig()));
+      println("Slider client configuration:\n" +
+              ConfigHelper.dumpConfigToString(getConfig()));
     }
     
 		try {
@@ -2868,6 +2868,16 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   private static void print(CharSequence src) {
     System.out.append(src);
   }
+
+  /**
+   * Output to standard out/stderr with a newline after
+   * @param src source
+   */
+  private static void println(CharSequence src) {
+    print(src);
+    print("\n");
+  }
+  
 }
 
 
