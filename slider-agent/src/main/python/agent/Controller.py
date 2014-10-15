@@ -280,7 +280,6 @@ class Controller(threading.Thread):
           terminateAgent = response['terminateAgent']
           if terminateAgent:
             logger.error("Got terminateAgent command")
-            self.terminateAgent = True
             self.stopApp()
             # Continue will add some wait time
             continue

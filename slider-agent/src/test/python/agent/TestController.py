@@ -388,7 +388,7 @@ class TestController(unittest.TestCase):
     self.assertEqual(1, self.controller.DEBUG_SUCCESSFULL_HEARTBEATS)
 
     # retry registration
-    response["registrationCommand"] = "true"
+    response["registrationCommand"] = {"command": "register"}
     sendRequest.side_effect = one_heartbeat
     self.controller.DEBUG_STOP_HEARTBEATING = False
     self.controller.heartbeatWithServer()
@@ -396,7 +396,7 @@ class TestController(unittest.TestCase):
     self.assertTrue(self.controller.repeatRegistration)
 
     # components are not mapped
-    response["registrationCommand"] = "false"
+    response["registrationCommand"] = {"command": "register"}
     response["hasMappedComponents"] = False
     sendRequest.side_effect = one_heartbeat
     self.controller.DEBUG_STOP_HEARTBEATING = False
@@ -421,7 +421,7 @@ class TestController(unittest.TestCase):
     self.assertTrue(self.controller.hasMappedComponents)
 
     # wrong responseId => restart
-    response = {"responseId":"2", "restartAgent":"false"}
+    response = {"responseId":"2", "restartAgent": False}
     loadsMock.return_value = response
 
     restartAgent = MagicMock(name="restartAgent")
@@ -447,7 +447,7 @@ class TestController(unittest.TestCase):
 
     # just status command when state = STARTED
     self.controller.responseId = 1
-    response = {"responseId":"2", "restartAgent":"false"}
+    response = {"responseId":"2", "restartAgent": False}
     loadsMock.return_value = response
     addToQueue = MagicMock(name="addToQueue")
     self.controller.addToQueue = addToQueue
@@ -461,7 +461,7 @@ class TestController(unittest.TestCase):
 
     # just status command when state = FAILED
     self.controller.responseId = 1
-    response = {"responseId":"2", "restartAgent":"false"}
+    response = {"responseId":"2", "restartAgent": False}
     loadsMock.return_value = response
     addToQueue = MagicMock(name="addToQueue")
     self.controller.addToQueue = addToQueue
@@ -475,7 +475,7 @@ class TestController(unittest.TestCase):
 
     # no status command when state = STARTING
     self.controller.responseId = 1
-    response = {"responseId":"2", "restartAgent":"false"}
+    response = {"responseId":"2", "restartAgent": False}
     loadsMock.return_value = response
     addToQueue = MagicMock(name="addToQueue")
     self.controller.addToQueue = addToQueue
@@ -497,7 +497,7 @@ class TestController(unittest.TestCase):
     # restartAgent command
     self.controller.responseId = 1
     self.controller.DEBUG_STOP_HEARTBEATING = False
-    response["restartAgent"] = "true"
+    response["restartAgent"] = True
     restartAgent = MagicMock(name="restartAgent")
     self.controller.restartAgent = restartAgent
     self.controller.heartbeatWithServer()
@@ -508,7 +508,7 @@ class TestController(unittest.TestCase):
     self.controller.responseId = 1
     self.controller.DEBUG_STOP_HEARTBEATING = False
     actionQueue.isIdle.return_value = False
-    response["restartAgent"] = "false"
+    response["restartAgent"] = False
     self.controller.heartbeatWithServer()
 
     sleepMock.assert_called_with(
