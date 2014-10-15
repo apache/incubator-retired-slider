@@ -932,13 +932,14 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
   /**
-   * Verify that the Resource MAnager is configured, if not fail
+   * Verify that the Resource Manager is configured (on a non-HA cluster).
    * with a useful error message
    * @throws BadCommandArgumentsException the exception raised on an invalid config
    */
   public void verifyBindingsDefined() throws BadCommandArgumentsException {
     InetSocketAddress rmAddr = SliderUtils.getRmAddress(getConfig());
-    if (!SliderUtils.isAddressDefined(rmAddr)) {
+    if (!getConfig().getBoolean(YarnConfiguration.RM_HA_ENABLED, false)
+     && !SliderUtils.isAddressDefined(rmAddr)) {
       throw new BadCommandArgumentsException(
         "No valid Resource Manager address provided in the argument "
         + Arguments.ARG_MANAGER
@@ -946,7 +947,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         + YarnConfiguration.RM_ADDRESS 
         + " value :" + rmAddr);
     }
-
   }
 
   /**
