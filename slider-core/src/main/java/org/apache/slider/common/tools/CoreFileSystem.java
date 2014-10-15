@@ -137,6 +137,18 @@ public class CoreFileSystem {
    * Build up the path string for keytab install location -no attempt to
    * create the directory is made
    *
+   * @return the path for keytab
+   */
+  public Path buildKeytabInstallationDirPath(String keytabFolder) {
+    Preconditions.checkNotNull(keytabFolder);
+    Path path = getBaseApplicationPath();
+    return new Path(path, SliderKeys.KEYTAB_DIR + "/" + keytabFolder);
+  }
+
+  /**
+   * Build up the path string for keytab install location -no attempt to
+   * create the directory is made
+   *
    * @return the path for keytab installation location
    */
   public Path buildKeytabPath(String keytabDir, String keytabName, String clusterName) {

@@ -24,6 +24,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathNotFoundException;
+import org.apache.hadoop.fs.permission.FsAction;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
@@ -65,6 +66,7 @@ import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.params.AbstractActionArgs;
 import org.apache.slider.common.params.AbstractClusterBuildingActionArgs;
 import org.apache.slider.common.params.ActionDiagnosticArgs;
+import org.apache.slider.common.params.ActionInstallKeytabArgs;
 import org.apache.slider.common.params.ActionInstallPackageArgs;
 import org.apache.slider.common.params.ActionAMSuicideArgs;
 import org.apache.slider.common.params.ActionCreateArgs;
@@ -172,7 +174,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    */
   private SliderClusterOperations sliderClusterOperations;
 
-  private SliderFileSystem sliderFileSystem;
+  protected SliderFileSystem sliderFileSystem;
 
   /**
    * Yarn client service
@@ -326,6 +328,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // actions
     if (ACTION_INSTALL_PACKAGE.equals(action)) {
       exitCode = actionInstallPkg(serviceArgs.getActionInstallPackageArgs());
+    } else if (ACTION_INSTALL_KEYTAB.equals(action)) {
+      exitCode = actionInstallKeytab(serviceArgs.getActionInstallKeytabArgs());
     } else if (ACTION_BUILD.equals(action)) {
       exitCode = actionBuild(clusterName, serviceArgs.getActionBuildArgs());
     } else if (ACTION_CREATE.equals(action)) {
@@ -622,6 +626,47 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     buildInstanceDefinition(clustername, buildInfo, false, false);
     return EXIT_SUCCESS; 
+  }
+
+  @Override
+  public int actionInstallKeytab(ActionInstallKeytabArgs installKeytabInfo)
+      throws YarnException, IOException {
+
+    Path srcFile = null;
+    if (StringUtils.isEmpty(installKeytabInfo.folder )) {
+      throw new BadCommandArgumentsException("A valid destination keytab sub-folder name is required (e.g. 'security').");
+    }
+
+    if (StringUtils.isEmpty(installKeytabInfo.keytabUri)) {
+      throw new BadCommandArgumentsException("A valid local keytab location is required.");
+    } else {
+      File keytabFile = new File(installKeytabInfo.keytabUri);
+      if (!keytabFile.exists() || keytabFile.isDirectory()) {
+        throw new BadCommandArgumentsException("Unable to access supplied keytab file at " +
+                                               keytabFile.getAbsolutePath());
+      } else {
+        srcFile = new Path(keytabFile.toURI());
+      }
+    }
+
+    Path pkgPath = sliderFileSystem.buildKeytabInstallationDirPath(installKeytabInfo.folder);
+    sliderFileSystem.getFileSystem().mkdirs(pkgPath);
+    sliderFileSystem.getFileSystem().setPermission(pkgPath, new FsPermission(
+        FsAction.ALL, FsAction.NONE, FsAction.NONE));
+
+    Path fileInFs = new Path(pkgPath, srcFile.getName());
+    log.info("Installing keytab {} at {} and overwrite is {}.", srcFile, fileInFs, installKeytabInfo.overwrite);
+    if (sliderFileSystem.getFileSystem().exists(fileInFs) && !installKeytabInfo.overwrite) {
+      throw new BadCommandArgumentsException("Keytab exists at " +
+                                             fileInFs.toUri().toString() +
+                                             ". Use --overwrite to overwrite.");
+    }
+
+    sliderFileSystem.getFileSystem().copyFromLocalFile(false, installKeytabInfo.overwrite, srcFile, fileInFs);
+    sliderFileSystem.getFileSystem().setPermission(fileInFs, new FsPermission(
+        FsAction.READ_WRITE, FsAction.NONE, FsAction.NONE));
+
+    return EXIT_SUCCESS;
   }
 
   @Override
