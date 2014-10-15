@@ -25,6 +25,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.registry.client.api.RegistryConstants;
 import org.apache.hadoop.registry.client.api.RegistryOperations;
 import org.apache.hadoop.registry.client.types.ServiceRecord;
+import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
@@ -45,6 +46,9 @@ import org.apache.slider.core.conf.ConfTreeOperations;
 import org.apache.slider.core.conf.MapOperations;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.ContainerLauncher;
+import org.apache.slider.core.registry.docstore.ExportEntry;
+import org.apache.slider.core.registry.docstore.PublishedExports;
+import org.apache.slider.core.registry.docstore.PublishedExportsSet;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.agent.application.metadata.Application;
 import org.apache.slider.providers.agent.application.metadata.CommandOrder;
@@ -94,6 +98,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.createNiceMock;
@@ -136,6 +141,10 @@ public class TestAgentProviderService {
                                                + "              <name>Master_Status</name>\n"
                                                + "              <value>http://${HBASE_MASTER_HOST}:${site.hbase-site.hbase.master.info.port}/master-status</value>\n"
                                                + "            </export>\n"
+                                               + "            <export>\n"
+                                               + "              <name>Comp_Endpoint</name>\n"
+                                               + "              <value>http://${HBASE_REGIONSERVER_HOST}:${site.global.listen_port}</value>\n"
+                                               + "            </export>\n"
                                                + "          </exports>\n"
                                                + "        </exportGroup>\n"
                                                + "      </exportGroups>\n"
@@ -165,6 +174,7 @@ public class TestAgentProviderService {
                                                + "          <publishConfig>true</publishConfig>\n"
                                                + "          <autoStartOnFailure>true</autoStartOnFailure>\n"
                                                + "          <appExports>QuickLinks-JMX_Endpoint,QuickLinks-Master_Status</appExports>\n"
+                                               + "          <compExports>QuickLinks-Comp_Endpoint</compExports>\n"
                                                + "          <minInstanceCount>1</minInstanceCount>\n"
                                                + "          <maxInstanceCount>2</maxInstanceCount>\n"
                                                + "          <commandScript>\n"
@@ -182,6 +192,7 @@ public class TestAgentProviderService {
                                                + "            <script>scripts/hbase_regionserver.py</script>\n"
                                                + "            <scriptType>PYTHON</scriptType>\n"
                                                + "          </commandScript>\n"
+                                               + "          <compExports>QuickLinks-Comp_Endpoint</compExports>\n"
                                                + "          <componentExports>\n"
                                                + "            <componentExport>\n"
                                                + "              <name>PropertyA</name>\n"
@@ -322,10 +333,10 @@ public class TestAgentProviderService {
         anyMap()
     );
 
-    doNothing().when(mockAps).publishLogFolderPaths(anyMap(),
-                                                    anyString(),
-                                                    anyString(),
-                                                    anyString()
+    doNothing().when(mockAps).publishFolderPaths(anyMap(),
+                                                 anyString(),
+                                                 anyString(),
+                                                 anyString()
     );
     expect(access.isApplicationLive()).andReturn(true).anyTimes();
     ClusterDescription desc = new ClusterDescription();
@@ -378,7 +389,7 @@ public class TestAgentProviderService {
         anyMap()
     );
 
-    Mockito.verify(mockAps, Mockito.times(1)).publishLogFolderPaths(
+    Mockito.verify(mockAps, Mockito.times(1)).publishFolderPaths(
         anyMap(),
         anyString(),
         anyString(),
@@ -694,6 +705,92 @@ public class TestAgentProviderService {
     }
   }
 
+
+  @Test
+  public void testComponentSpecificPublishes2() throws Exception {
+    InputStream metainfo_1 = new ByteArrayInputStream(metainfo_1_str.getBytes());
+    Metainfo metainfo = new MetainfoParser().parse(metainfo_1);
+    AgentProviderService aps = createAgentProviderService(new Configuration());
+    AgentProviderService mockAps = Mockito.spy(aps);
+    doNothing().when(mockAps).publishApplicationInstanceData(anyString(), anyString(), anyCollection());
+    doReturn(metainfo).when(mockAps).getMetainfo();
+    StateAccessForProviders access = createNiceMock(StateAccessForProviders.class);
+    doReturn(access).when(mockAps).getAmState();
+    PublishedExportsSet pubExpSet = new PublishedExportsSet();
+    expect(access.getPublishedExportsSet()).andReturn(pubExpSet).anyTimes();
+    replay(access);
+
+    Map<String, String> ports = new HashMap<String, String>();
+    ports.put("global.listen_port", "10010");
+    mockAps.processAndPublishComponentSpecificExports(ports,
+                                                      "mockcontainer_1",
+                                                      "host1",
+                                                      "HBASE_REGIONSERVER");
+    ArgumentCaptor<Collection> entriesCaptor = ArgumentCaptor.
+        forClass(Collection.class);
+    ArgumentCaptor<String> publishNameCaptor = ArgumentCaptor.
+        forClass(String.class);
+    Mockito.verify(mockAps, Mockito.times(1)).publishApplicationInstanceData(
+        anyString(),
+        publishNameCaptor.capture(),
+        entriesCaptor.capture());
+
+    PublishedExports pubExports = pubExpSet.get("QuickLinks".toLowerCase());
+    Assert.assertEquals(1, pubExports.entries.size());
+    Assert.assertEquals("QuickLinks", pubExports.description);
+    List<ExportEntry> expEntries = pubExports.entries.get("Comp_Endpoint");
+    Assert.assertEquals(1, expEntries.size());
+    Assert.assertEquals("mockcontainer_1", expEntries.get(0).getContainerId());
+    Assert.assertEquals("component", expEntries.get(0).getLevel());
+    Assert.assertEquals(null, expEntries.get(0).getTag());
+    Assert.assertEquals("http://host1:10010", expEntries.get(0).getValue());
+    Assert.assertNotNull(expEntries.get(0).getUpdatedTime());
+    Assert.assertNull(expEntries.get(0).getValidUntil());
+
+    assert entriesCaptor.getAllValues().size() == 1;
+    for (Collection coll : entriesCaptor.getAllValues()) {
+      Set<Map.Entry<String, String>> entrySet = (Set<Map.Entry<String, String>>) coll;
+      for (Map.Entry entry : entrySet) {
+        log.info("{}:{}", entry.getKey(), entry.getValue().toString());
+        if (entry.getKey().equals("Comp_Endpoint")) {
+          assert entry.getValue().toString().equals("http://host1:10010");
+        }
+      }
+    }
+    assert publishNameCaptor.getAllValues().size() == 1;
+    for (String coll : publishNameCaptor.getAllValues()) {
+      assert coll.equals("QuickLinks");
+    }
+
+    mockAps.notifyContainerCompleted(new MockContainerId(1));
+    pubExports = pubExpSet.get("QuickLinks".toLowerCase());
+    Assert.assertEquals(1, pubExports.entries.size());
+    Assert.assertEquals("QuickLinks", pubExports.description);
+    expEntries = pubExports.entries.get("Comp_Endpoint");
+    Assert.assertEquals(0, expEntries.size());
+
+    mockAps.notifyContainerCompleted(new MockContainerId(1));
+    mockAps.notifyContainerCompleted(new MockContainerId(2));
+
+    mockAps.processAndPublishComponentSpecificExports(ports,
+                                                      "mockcontainer_1",
+                                                      "host1",
+                                                      "HBASE_REGIONSERVER");
+    mockAps.processAndPublishComponentSpecificExports(ports,
+                                                      "mockcontainer_2",
+                                                      "host1",
+                                                      "HBASE_REGIONSERVER");
+    pubExports = pubExpSet.get("QuickLinks".toLowerCase());
+    Assert.assertEquals(1, pubExports.entries.size());
+    Assert.assertEquals("QuickLinks", pubExports.description);
+    expEntries = pubExports.entries.get("Comp_Endpoint");
+    Assert.assertEquals(2, expEntries.size());
+
+    mockAps.notifyContainerCompleted(new MockContainerId(2));
+    expEntries = pubExports.entries.get("Comp_Endpoint");
+    Assert.assertEquals(1, expEntries.size());
+  }
+
   @Test
   public void testProcessConfig() throws Exception {
     InputStream metainfo_1 = new ByteArrayInputStream(metainfo_1_str.getBytes());
@@ -728,6 +825,11 @@ public class TestAgentProviderService {
     doNothing().when(mockAps).publishApplicationInstanceData(anyString(), anyString(), anyCollection());
     doReturn(metainfo).when(mockAps).getMetainfo();
     doReturn(roleClusterNodeMap).when(mockAps).getRoleClusterNodeMapping();
+    StateAccessForProviders access = createNiceMock(StateAccessForProviders.class);
+    doReturn(access).when(mockAps).getAmState();
+    PublishedExportsSet pubExpSet = new PublishedExportsSet();
+    expect(access.getPublishedExportsSet()).andReturn(pubExpSet).anyTimes();
+    replay(access);
 
     mockAps.publishConfigAndExportGroups(hb, componentStatus, "HBASE_MASTER");
     Assert.assertTrue(componentStatus.getConfigReported());
@@ -748,15 +850,30 @@ public class TestAgentProviderService {
       }
     }
 
-    Map<String, String> exports = mockAps.getCurrentExports("QuickLinks");
+    Map<String, List<ExportEntry>> exports = mockAps.getCurrentExports("QuickLinks");
     Assert.assertEquals(2, exports.size());
-    Assert.assertEquals(exports.get("JMX_Endpoint"), "http://HOST1:60012/jmx");
+    Assert.assertEquals(exports.get("JMX_Endpoint").get(0).getValue(), "http://HOST1:60012/jmx");
 
     mockAps.publishConfigAndExportGroups(hb, componentStatus, "HBASE_REST");
     Mockito.verify(mockAps, Mockito.times(3)).publishApplicationInstanceData(
         anyString(),
         anyString(),
         entriesCaptor.capture());
+    PublishedExports pubExports = pubExpSet.get("QuickLinks".toLowerCase());
+    Assert.assertEquals(2, pubExports.entries.size());
+    Assert.assertEquals("QuickLinks", pubExports.description);
+    List<ExportEntry> expEntries = pubExports.entries.get("JMX_Endpoint");
+    Assert.assertEquals(1, expEntries.size());
+    Assert.assertEquals(null, expEntries.get(0).getContainerId());
+    Assert.assertEquals("application", expEntries.get(0).getLevel());
+    Assert.assertEquals(null, expEntries.get(0).getTag());
+    Assert.assertEquals("http://HOST1:60012/jmx", expEntries.get(0).getValue());
+    Assert.assertNull(expEntries.get(0).getValidUntil());
+
+    expEntries = pubExports.entries.get("Master_Status");
+    Assert.assertEquals(1, expEntries.size());
+    expEntries = pubExports.entries.get("JMX_Endpoint");
+    Assert.assertEquals("http://HOST1:60012/jmx", expEntries.get(0).getValue());
   }
 
   @Test
@@ -781,6 +898,7 @@ public class TestAgentProviderService {
         Assert.assertEquals(component.getCategory(), "MASTER");
         Assert.assertEquals(component.getComponentExports().size(), 0);
         Assert.assertEquals(component.getAppExports(), "QuickLinks-JMX_Endpoint,QuickLinks-Master_Status");
+        Assert.assertEquals(component.getCompExports(), "QuickLinks-Comp_Endpoint");
         found++;
       }
       if (component.getName().equals("HBASE_REGIONSERVER")) {
@@ -807,7 +925,7 @@ public class TestAgentProviderService {
     List<ExportGroup> egs = application.getExportGroups();
     ExportGroup eg = egs.get(0);
     Assert.assertEquals(eg.getName(), "QuickLinks");
-    Assert.assertEquals(eg.getExports().size(), 2);
+    Assert.assertEquals(eg.getExports().size(), 3);
 
     found = 0;
     for (Export export : eg.getExports()) {
@@ -975,15 +1093,18 @@ public class TestAgentProviderService {
           anyString(),
           anyString(),
           any(HeartBeatResponse.class));
-      doNothing().when(mockAps).publishApplicationInstanceData(
+      doNothing().when(mockAps).publishFolderPaths(
+          anyMap(),
           anyString(),
           anyString(),
-          anyCollection());
+          anyString());
       doReturn(conf).when(mockAps).getConfig();
     } catch (SliderException e) {
     }
 
+    PublishedExportsSet pubExpSet = new PublishedExportsSet();
     expect(access.isApplicationLive()).andReturn(true).anyTimes();
+    expect(access.getPublishedExportsSet()).andReturn(pubExpSet).anyTimes();
     ClusterDescription desc = new ClusterDescription();
     desc.setOption(OptionKeys.ZOOKEEPER_QUORUM, "host1:2181");
     desc.setInfo(OptionKeys.APPLICATION_NAME, "HBASE");
@@ -996,6 +1117,7 @@ public class TestAgentProviderService {
     treeOps.set(OptionKeys.APPLICATION_NAME, "HBASE");
     expect(access.getInstanceDefinitionSnapshot()).andReturn(aggConf).anyTimes();
     expect(access.getInternalsSnapshot()).andReturn(treeOps).anyTimes();
+    doNothing().when(mockAps).publishApplicationInstanceData(anyString(), anyString(), anyCollection());
     replay(access, ctx, container, sliderFileSystem, mockFs);
 
     // build two containers
@@ -1094,6 +1216,7 @@ public class TestAgentProviderService {
       hb = new HeartBeat();
       hb.setResponseId(2);
       hb.setHostname("mockcontainer_1___HBASE_MASTER");
+      hb.setFqdn("host1");
       cr = new CommandReport();
       cr.setRole("HBASE_MASTER");
       cr.setRoleCommand("INSTALL");
@@ -1160,10 +1283,11 @@ public class TestAgentProviderService {
       log.warn(he.getMessage());
     }
 
-    Mockito.verify(mockAps, Mockito.times(1)).publishApplicationInstanceData(
+    Mockito.verify(mockAps, Mockito.times(1)).publishFolderPaths(
+        anyMap(),
         anyString(),
         anyString(),
-        anyCollection());
+        anyString());
   }
 
   protected AgentProviderService createAgentProviderService(Configuration conf) throws
@@ -1190,6 +1314,44 @@ public class TestAgentProviderService {
             new MockApplicationAttemptId(new MockApplicationId(1), 1));
     registryViewForProviders.registerSelf(new ServiceRecord(), true);
     return registryViewForProviders;
+  }
+
+  @Test
+  public void testPublishFolderPaths() throws IOException {
+    AgentProviderService aps = createAgentProviderService(new Configuration());
+    StateAccessForProviders access = createNiceMock(StateAccessForProviders.class);
+    AgentProviderService mockAps = Mockito.spy(aps);
+    doReturn(access).when(mockAps).getAmState();
+    PublishedExportsSet pubExpSet = new PublishedExportsSet();
+    expect(access.getPublishedExportsSet()).andReturn(pubExpSet).anyTimes();
+    replay(access);
+
+    Map<String, String> folders = new HashMap<String, String>();
+    folders.put("AGENT_LOG_ROOT", "aFolder");
+    folders.put("AGENT_WORK_ROOT", "folderB");
+    mockAps.publishFolderPaths(folders, "cid", "role", "fqdn");
+
+    PublishedExports exports = pubExpSet.get("container_log_dirs");
+    Assert.assertEquals(1, exports.entries.size());
+    List<ExportEntry> expEntries = exports.entries.get("role");
+    Assert.assertEquals(1, expEntries.size());
+    Assert.assertEquals("cid", expEntries.get(0).getContainerId());
+    Assert.assertEquals("component", expEntries.get(0).getLevel());
+    Assert.assertEquals("role", expEntries.get(0).getTag());
+    Assert.assertEquals("fqdn:aFolder", expEntries.get(0).getValue());
+    Assert.assertNull(expEntries.get(0).getValidUntil());
+    Assert.assertEquals(null, expEntries.get(0).getValidUntil());
+
+    exports = pubExpSet.get("container_work_dirs");
+    Assert.assertEquals(1, exports.entries.size());
+    expEntries = exports.entries.get("role");
+    Assert.assertEquals(1, expEntries.size());
+    Assert.assertEquals("cid", expEntries.get(0).getContainerId());
+    Assert.assertEquals("component", expEntries.get(0).getLevel());
+    Assert.assertEquals("role", expEntries.get(0).getTag());
+    Assert.assertEquals("fqdn:folderB", expEntries.get(0).getValue());
+    Assert.assertNull(expEntries.get(0).getValidUntil());
+    Assert.assertEquals(null, expEntries.get(0).getValidUntil());
   }
 
   @Test

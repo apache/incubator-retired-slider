@@ -23,6 +23,7 @@ import org.apache.slider.common.tools.ConfigHelper;
 import org.apache.slider.core.exceptions.BadConfigException;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 
 import java.io.IOException;
@@ -155,6 +156,7 @@ public class PublishedConfiguration {
    */
   public String asJson() throws IOException {
     ObjectMapper mapper = new ObjectMapper();
+    mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
     String json = mapper.writeValueAsString(entries);
     return json;
   }
