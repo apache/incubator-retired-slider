@@ -21,6 +21,7 @@ import org.apache.accumulo.core.client.ClientConfiguration
 import org.apache.accumulo.core.client.Connector
 import org.apache.accumulo.core.client.ZooKeeperInstance
 import org.apache.accumulo.core.client.security.tokens.PasswordToken
+import org.apache.hadoop.registry.client.api.RegistryConstants
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderXmlConfKeys
@@ -42,10 +43,11 @@ class AccumuloReadWriteSSLIT extends AccumuloSSLTestBase {
   }
 
   public ZooKeeperInstance getInstance() {
-    String zookeepers = SLIDER_CONFIG.get(SliderXmlConfKeys.REGISTRY_ZK_QUORUM,
+    String zookeepers = SLIDER_CONFIG.get(
+        RegistryConstants.KEY_REGISTRY_ZK_QUORUM,
       FuntestProperties.DEFAULT_SLIDER_ZK_HOSTS)
     ClientConfiguration conf = new ClientConfiguration()
-      .withInstance(tree.global.get("site.global.accumulo_instance_name"))
+      .withInstance(tree.global.get("site.client.instance.name"))
       .withZkHosts(zookeepers)
       .withSsl(true)
       .withKeystore(clientKeyStoreFile.toString(), KEY_PASS, null)

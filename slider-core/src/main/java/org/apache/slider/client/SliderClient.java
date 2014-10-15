@@ -109,6 +109,7 @@ import org.apache.slider.core.launch.RunningApplication;
 import org.apache.slider.core.main.RunService;
 import org.apache.slider.core.persist.ConfPersister;
 import org.apache.slider.core.persist.LockAcquireFailedException;
+import org.apache.slider.core.registry.SliderRegistryUtils;
 import org.apache.slider.core.registry.YarnAppListClient;
 import org.apache.slider.core.registry.docstore.ConfigFormat;
 import org.apache.slider.core.registry.docstore.PublishedConfigSet;
@@ -124,7 +125,6 @@ import org.apache.slider.providers.agent.AgentKeys;
 import org.apache.slider.providers.slideram.SliderAMClientProvider;
 import org.apache.slider.server.appmaster.SliderAppMaster;
 import org.apache.slider.server.appmaster.rpc.RpcBinder;
-import org.apache.slider.server.appmaster.security.SecurityConfiguration;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -439,6 +439,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * Create the zookeeper node associated with the calling user and the cluster
    */
   @VisibleForTesting
+  @Deprecated
   public String createZookeeperNode(String clusterName, Boolean nameOnly) throws YarnException, IOException {
     String user = getUsername();
     String zkPath = ZKIntegration.mkClusterPath(user, clusterName);
@@ -511,8 +512,15 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       log.warn("Filesystem returned false from delete() operation");
     }
 
-    if(!deleteZookeeperNode(clustername)) {
-      log.warn("Unable to perform node cleanup in Zookeeper.");
+    // rm the registry entry —do not let this block the destroy operations
+    String registryPath = SliderRegistryUtils.registryPathForInstance(
+        clustername);
+    try {
+      getRegistryOperations().delete(registryPath, true);
+    } catch (IOException e) {
+      log.warn("Error deleting {}: {} ", registryPath, e, e);
+    } catch (SliderException e) {
+      log.warn("Error binding to registry {} ", e, e);
     }
 
     List<ApplicationReport> instances = findAllLiveInstances(clustername);
@@ -531,9 +539,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   
   @Override
   public int actionAmSuicide(String clustername,
-      ActionAMSuicideArgs args) throws
-                                                              YarnException,
-                                                              IOException {
+      ActionAMSuicideArgs args) throws YarnException, IOException {
     SliderClusterOperations clusterOperations =
       createClusterOperations(clustername);
     clusterOperations.amSuicide(args.message, args.exitcode, args.waittime);
@@ -1234,8 +1240,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     
     addConfOptionToCLI(commandLine, config, REGISTRY_PATH,
         DEFAULT_REGISTRY_PATH);
-    addMandatoryConfOptionToCLI(commandLine, config, RegistryConstants.KEY_REGISTRY_ZK_QUORUM);
-    addMandatoryConfOptionToCLI(commandLine, config, REGISTRY_ZK_QUORUM);
+    addMandatoryConfOptionToCLI(commandLine, config,
+        RegistryConstants.KEY_REGISTRY_ZK_QUORUM);
 
     if (clusterSecure) {
       // if the cluster is secure, make sure that
@@ -2210,7 +2216,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // the arguments
     args.validate();
     RegistryOperations operations = getRegistryOperations();
-    String path = args.path;
+    String path = SliderRegistryUtils.resolvePath(args.path);
     ServiceRecordMarshal serviceRecordMarshal = new ServiceRecordMarshal();
     try {
       if (args.list) {
@@ -2351,7 +2357,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   public int actionDiagnostic(ActionDiagnosticArgs diagnosticArgs) {
 		try {
 			if (diagnosticArgs.client) {
-				actionDiagnosticClient();
+				actionDiagnosticClient(diagnosticArgs);
 			} else if (SliderUtils.isSet(diagnosticArgs.application)) {
 				actionDiagnosticApplication(diagnosticArgs);
 			} else if (SliderUtils.isSet(diagnosticArgs.slider)) {
@@ -2442,7 +2448,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 		//assign application name from param to each sub diagnostic function
 		diagnosticArgs.application = diagnosticArgs.all;
 		diagnosticArgs.slider = diagnosticArgs.all;
-		actionDiagnosticClient();
+		actionDiagnosticClient(diagnosticArgs);
 		actionDiagnosticApplication(diagnosticArgs);
 		actionDiagnosticSlider(diagnosticArgs);
 		actionDiagnosticYarn(diagnosticArgs);
@@ -2579,25 +2585,60 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 		}
 	}
 
-	private void actionDiagnosticClient() throws SliderException, IOException {
-		String currentCommandPath = SliderUtils.getCurrentCommandPath();
-		SliderVersionInfo.loadAndPrintVersionInfo(log);
-		String clientConfigPath = SliderUtils.getClientConfigPath();
-		String jdkInfo = SliderUtils.getJDKInfo();
-		log.info("The slider command path: " + currentCommandPath);
-		log.info("The slider-client.xml used by current running command path: "
-				+ clientConfigPath);
-		log.info(jdkInfo);
+  private void actionDiagnosticClient(ActionDiagnosticArgs diagnosticArgs)
+      throws SliderException, IOException {
+    try {
+      String currentCommandPath = SliderUtils.getCurrentCommandPath();
+      SliderVersionInfo.loadAndPrintVersionInfo(log);
+      String clientConfigPath = SliderUtils.getClientConfigPath();
+      String jdkInfo = SliderUtils.getJDKInfo();
+      println("The slider command path: %s", currentCommandPath);
+      println("The slider-client.xml used by current running command path: %s",
+          clientConfigPath);
+      println(jdkInfo);
 
-		try {
-			SliderUtils.validateSliderClientEnvironment(log);
-		} catch (SliderException e) {
-			log.error(e.toString());
-			throw e;
-		} catch (IOException e) {
-			log.error(e.toString());
-			throw e;
-		}
+      // security info
+      Configuration config = getConfig();
+      if (SliderUtils.isHadoopClusterSecure(config)) { 
+        println("Hadoop Cluster is secure");
+        println("Login user is %s", UserGroupInformation.getLoginUser());
+        println("Current user is %s", UserGroupInformation.getCurrentUser());
+
+
+      } else {
+        println("Hadoop Cluster is insecure");
+      }
+
+
+      // verbose?
+      if (diagnosticArgs.verbose) {
+        // do the environment
+        Map<String, String> env = System.getenv();
+        Set<String> envList = ConfigHelper.sortedConfigKeys(env.entrySet());
+        StringBuilder builder = new StringBuilder("Environment variables:\n");
+        for (String key : envList) {
+          builder.append(key)
+                 .append("=")
+                 .append(env.get(key))
+                 .append("\n");
+        }
+        println(builder.toString());
+
+        // then the config
+        println("Slider client configuration:\n" +
+                ConfigHelper.dumpConfigToString(config));
+      }
+
+
+      SliderUtils.validateSliderClientEnvironment(log);
+    } catch (SliderException e) {
+      log.error(e.toString());
+      throw e;
+    } catch (IOException e) {
+      log.error(e.toString());
+      throw e;
+    }
+    
 	}
 
 
@@ -2728,7 +2769,14 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   private ServiceRecord lookupServiceRecord(ActionRegistryArgs registryArgs) throws
       SliderException,
       IOException {
-    String path = servicePath(currentUser(), registryArgs.serviceType,
+    String user;
+    if (StringUtils.isNotEmpty(registryArgs.user)) {
+      user = RegistryPathUtils.encodeForRegistry(registryArgs.user);
+    } else {
+      user = currentUser();
+    }
+
+    String path = servicePath(user, registryArgs.serviceType,
         registryArgs.name);
     return resolve(path);
   }
@@ -2841,6 +2889,25 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   private static void print(CharSequence src) {
     System.out.append(src);
   }
+
+  /**
+   * Output to standard out/stderr with a newline after
+   * @param message message
+   */
+  private static void println(String message) {
+    print(message);
+    print("\n");
+  }
+  /**
+   * Output to standard out/stderr with a newline after, formatted
+   * @param message message
+   * @param args arguments for string formatting
+   */
+  private static void println(String message, Object ... args) {
+    print(String.format(message, args));
+    print("\n");
+  }
+
 }
 
 

@@ -22,9 +22,11 @@ import groovy.transform.CompileStatic
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.registry.client.api.RegistryConstants
 import org.apache.hadoop.util.ExitUtil
 import org.apache.hadoop.util.Shell
 import org.apache.hadoop.yarn.conf.YarnConfiguration
+import org.apache.slider.common.tools.ConfigHelper
 import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.common.SliderKeys
@@ -81,6 +83,7 @@ abstract class CommandTestBase extends SliderTestUtils {
 
 
   static {
+    ConfigHelper.registerDeprecatedConfigItems();
     SLIDER_CONFIG = ConfLoader.loadSliderConf(SLIDER_CONF_XML);
     THAW_WAIT_TIME = getTimeOptionMillis(SLIDER_CONFIG,
         KEY_TEST_THAW_WAIT_TIME,
@@ -163,6 +166,21 @@ abstract class CommandTestBase extends SliderTestUtils {
     return property
   }
 
+  /**
+   * Print to system out
+   * @param string
+   */
+  static void println(String s) {
+    System.out.println(s)
+  }
+  /**
+   * Print to system out
+   * @param string
+   */
+  static void println() {
+    System.out.println()
+  }
+  
   /**
    * Exec any slider command
    * @param conf
@@ -436,7 +454,7 @@ abstract class CommandTestBase extends SliderTestUtils {
     List<String> argsList = [action, clustername]
 
     argsList << ARG_ZKHOSTS <<
-    SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.REGISTRY_ZK_QUORUM)
+    SLIDER_CONFIG.getTrimmed(RegistryConstants.KEY_REGISTRY_ZK_QUORUM)
 
 
     if (blockUntilRunning) {
@@ -505,13 +523,13 @@ abstract class CommandTestBase extends SliderTestUtils {
     ]
     
     maybeAddCommandOption(commands,
-        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM],
+        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME],
         SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME));
     maybeAddCommandOption(commands,
-        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM],
+        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH],
         SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH));
     maybeAddCommandOption(commands,
-        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM],
+        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL],
         SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL));
     commands.addAll(extraArgs)
     SliderShell shell = slider(LauncherExitCodes.EXIT_SUCCESS, commands)
@@ -576,8 +594,13 @@ abstract class CommandTestBase extends SliderTestUtils {
   }
 
   protected void ensureApplicationIsUp(String clusterName) {
-    repeatUntilTrue(this.&isApplicationUp, 15, 1000 * 3, ['arg1': clusterName],
-      true, 'Application did not start, aborting test.')
+    repeatUntilTrue(this.&isApplicationUp,
+        SLIDER_CONFIG.getInt(KEY_TEST_INSTANCE_LAUNCH_TIME,
+            DEFAULT_INSTANCE_LAUNCH_TIME_SECONDS),
+        1000,
+        ['arg1': clusterName],
+        true,
+        'Application did not start, aborting test.')
   }
 
   protected boolean isApplicationUp(Map<String, String> args) {

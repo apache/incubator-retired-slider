@@ -39,8 +39,9 @@ def setup_conf_dir(name=None): # 'master' or 'tserver' or 'monitor' or 'gc' or '
     if os.path.exists(params.keystore_path) or os.path.exists(params.truststore_path):
       if os.path.exists(params.keystore_path) and os.path.exists(params.truststore_path):
         # assume keystores were already set up properly
-        return
-      self.fail_with_error("something went wrong when certs were created")
+        pass
+      else:
+        self.fail_with_error("something went wrong when certs were created")
 
     Directory( format("{params.conf_dir}/ssl"),
                owner = params.accumulo_user,
@@ -121,11 +122,16 @@ def setup_conf_dir(name=None): # 'master' or 'tserver' or 'monitor' or 'gc' or '
             owner = params.accumulo_user,
             group = params.user_group
     )
-    if params.ssl_enabled:
-      accumulo_TemplateConfig( 'client.conf')
 
   # create env file
   accumulo_TemplateConfig( 'accumulo-env.sh')
+
+  # create client.conf file
+  PropertiesFile(format("{params.conf_dir}/client.conf"),
+       properties = params.config['configurations']['client'],
+       owner = params.accumulo_user,
+       group = params.user_group
+  )
 
   # create host files
   accumulo_StaticFile( 'masters')

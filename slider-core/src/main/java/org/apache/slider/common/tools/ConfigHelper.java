@@ -25,6 +25,7 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;
+import org.apache.hadoop.registry.client.api.RegistryConstants;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.core.exceptions.BadConfigException;
@@ -48,6 +49,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 
 /**
@@ -65,14 +67,13 @@ public class ConfigHelper {
    * @param conf config
    * @return the sorted keyset
    */
-  public static TreeSet<String> dumpConf(Configuration conf) {
-    TreeSet<String> keys = sortedConfigKeys(conf);
+  public static Set<String> dumpConf(Configuration conf) {
+    Set<String> keys = sortedConfigKeys(conf);
     for (String key : keys) {
       log.info("{}={}", key, conf.get(key));
     }
     return keys;
   }
-
 
   /**
    * Take a configuration and return a sorted set
@@ -415,7 +416,7 @@ public class ConfigHelper {
    * @return listing in key=value style
    */
   public static String dumpConfigToString(Configuration conf) {
-    TreeSet<String> sorted = sortedConfigKeys(conf);
+    Set<String> sorted = sortedConfigKeys(conf);
 
     StringBuilder builder = new StringBuilder();
     for (String key : sorted) {
@@ -560,5 +561,18 @@ public class ConfigHelper {
       result.set(key, value);
     }
     return result;
+  }
+
+  /**
+   * Register anything we consider deprecated
+   */
+  public static void registerDeprecatedConfigItems() {
+    Configuration.addDeprecation(
+        SliderXmlConfKeys.REGISTRY_ZK_QUORUM,
+        RegistryConstants.KEY_REGISTRY_ZK_QUORUM);
+    Configuration.addDeprecation(
+        SliderXmlConfKeys.REGISTRY_PATH,
+        RegistryConstants.KEY_REGISTRY_ZK_ROOT);
+    
   }
 }

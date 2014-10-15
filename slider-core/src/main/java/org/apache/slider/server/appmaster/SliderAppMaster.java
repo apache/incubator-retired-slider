@@ -412,10 +412,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       log.debug("Authenticating as {}", ugi);
       SliderUtils.verifyPrincipalSet(conf,
           DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY);
-      // always enforce protocol to be token-based.
-      conf.set(
-        CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHENTICATION,
-        SaslRpcServer.AuthMethod.TOKEN.toString());
+    } else {
+      log.info("Cluster is insecure");
     }
     log.info("Login user is {}", UserGroupInformation.getLoginUser());
 
@@ -1087,9 +1085,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   public void unregisterComponent(ContainerId id) {
     log.info("Unregistering component {}", id);
-    if (yarnRegistryOperations== null) {
+    if (yarnRegistryOperations == null) {
       log.warn("Processing unregister component event before initialization " +
                "completed; init flag =" + initCompleted);
+      return;
     }
     String cid = RegistryPathUtils.encodeYarnID(id.toString());
     try {

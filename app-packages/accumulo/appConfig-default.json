@@ -5,36 +5,50 @@
   "global": {
     "application.def": ".slider/package/ACCUMULO/${app.package.name}.zip",
     "java_home": "${app.java.home}",
-    "site.global.app_user": "${app.user}",
-    "site.global.app_log_dir": "${AGENT_LOG_ROOT}",
-    "site.global.app_pid_dir": "${AGENT_WORK_ROOT}/app/run",
+
     "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/accumulo-${accumulo.version}",
-    "site.global.tserver_heapsize": "256m",
-    "site.global.master_heapsize": "128m",
-    "site.global.monitor_heapsize": "64m",
-    "site.global.gc_heapsize": "64m",
-    "site.global.other_heapsize": "128m",
-    "site.global.hadoop_prefix": "${hadoop.dir}",
-    "site.global.hadoop_conf_dir": "/etc/hadoop/conf",
-    "site.global.zookeeper_home": "${zk.dir}",
-    "site.global.accumulo_instance_name": "${USER}-${CLUSTER_NAME}",
-    "site.global.accumulo_root_password": "NOT_USED",
+    "site.global.app_user": "${app.user}",
     "site.global.user_group": "${app.user.group}",
+
+    "site.accumulo-env.java_home": "${app.java.home}",
+    "site.accumulo-env.tserver_heapsize": "256m",
+    "site.accumulo-env.master_heapsize": "128m",
+    "site.accumulo-env.monitor_heapsize": "64m",
+    "site.accumulo-env.gc_heapsize": "64m",
+    "site.accumulo-env.other_heapsize": "128m",
+    "site.accumulo-env.hadoop_prefix": "${hadoop.dir}",
+    "site.accumulo-env.hadoop_conf_dir": "/etc/hadoop/conf",
+    "site.accumulo-env.zookeeper_home": "${zk.dir}",
+
+    "site.client.instance.name": "${USER}-${CLUSTER_NAME}",
+    "site.client.instance.zookeeper.host": "${@//site/accumulo-site/instance.zookeeper.host}",
+    "site.client.instance.rpc.ssl.enabled": "${@//site/accumulo-site/instance.rpc.ssl.enabled}",
+    "site.client.instance.rpc.ssl.clientAuth": "${@//site/accumulo-site/instance.rpc.ssl.clientAuth}",
+    "site.client.general.security.credential.provider.paths": "${@//site/accumulo-site/general.security.credential.provider.paths}",
+
+    "site.global.accumulo_root_password": "NOT_USED",
     "site.global.ssl_cert_dir": "ssl",
     "site.global.monitor_protocol": "http",
+
     "site.accumulo-site.instance.volumes": "${DEFAULT_DATA_DIR}/data",
     "site.accumulo-site.instance.zookeeper.host": "${ZK_HOST}",
     "site.accumulo-site.instance.security.authenticator": "org.apache.slider.accumulo.CustomAuthenticator",
+
     "site.accumulo-site.general.security.credential.provider.paths": "jceks://hdfs/user/${USER}/accumulo-${CLUSTER_NAME}.jceks",
+    "site.accumulo-site.instance.rpc.ssl.enabled": "false",
+    "site.accumulo-site.instance.rpc.ssl.clientAuth": "false",
     "site.accumulo-site.general.kerberos.keytab": "${accumulo.keytab}",
     "site.accumulo-site.general.kerberos.principal": "${accumulo.principal}",
+
     "site.accumulo-site.tserver.memory.maps.native.enabled": "false",
     "site.accumulo-site.tserver.memory.maps.max": "80M",
     "site.accumulo-site.tserver.cache.data.size": "7M",
     "site.accumulo-site.tserver.cache.index.size": "20M",
-    "site.accumulo-site.trace.user": "root",
     "site.accumulo-site.tserver.sort.buffer.size": "50M",
     "site.accumulo-site.tserver.walog.max.size": "40M",
+
+    "site.accumulo-site.trace.user": "root",
+
     "site.accumulo-site.master.port.client": "0",
     "site.accumulo-site.trace.port.client": "0",
     "site.accumulo-site.tserver.port.client": "0",
@@ -43,6 +57,7 @@
     "site.accumulo-site.monitor.port.log4j": "0",
     "site.accumulo-site.master.replication.coordinator.port": "0",
     "site.accumulo-site.replication.receipt.service.port": "0",
+
     "site.accumulo-site.general.classpaths": "$ACCUMULO_HOME/lib/accumulo-server.jar,\n$ACCUMULO_HOME/lib/accumulo-core.jar,\n$ACCUMULO_HOME/lib/accumulo-start.jar,\n$ACCUMULO_HOME/lib/accumulo-fate.jar,\n$ACCUMULO_HOME/lib/accumulo-proxy.jar,\n$ACCUMULO_HOME/lib/[^.].*.jar,\n$ZOOKEEPER_HOME/zookeeper[^.].*.jar,\n$HADOOP_CONF_DIR,\n$HADOOP_PREFIX/[^.].*.jar,\n$HADOOP_PREFIX/lib/[^.].*.jar,\n$HADOOP_PREFIX/share/hadoop/common/.*.jar,\n$HADOOP_PREFIX/share/hadoop/common/lib/.*.jar,\n$HADOOP_PREFIX/share/hadoop/hdfs/.*.jar,\n$HADOOP_PREFIX/share/hadoop/mapreduce/.*.jar,\n$HADOOP_PREFIX/share/hadoop/yarn/.*.jar,\n${hadoop.dir}/.*.jar,\n${hadoop.dir}/lib/.*.jar,\n${hdfs.dir}/.*.jar,\n${mapred.dir}/.*.jar,\n${yarn.dir}/.*.jar,"
   },
   "credentials": {

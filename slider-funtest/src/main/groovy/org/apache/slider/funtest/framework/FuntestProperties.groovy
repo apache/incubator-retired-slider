@@ -63,4 +63,10 @@ public interface FuntestProperties extends SliderXMLConfKeysForTesting {
 
   String AGENT_TAR_FILENAME = "slider-agent.tar.gz"
   String AGENT_SLIDER_GZ_IN_SLIDER_TAR = "agent/" + AGENT_TAR_FILENAME
+
+
+  String KEY_TEST_INSTANCE_LAUNCH_TIME =
+          "slider.test.instance.launch.wait.seconds";
+  int DEFAULT_INSTANCE_LAUNCH_TIME_SECONDS = 60 * 3;
+
 }

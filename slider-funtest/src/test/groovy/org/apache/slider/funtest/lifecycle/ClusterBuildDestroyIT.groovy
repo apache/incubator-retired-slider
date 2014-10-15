@@ -21,9 +21,9 @@ package org.apache.slider.funtest.lifecycle
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.registry.client.api.RegistryConstants
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.SliderKeys
-import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
 import org.apache.slider.funtest.framework.AgentCommandTestBase
@@ -38,7 +38,7 @@ public class ClusterBuildDestroyIT extends AgentCommandTestBase
     implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
 
-  static String CLUSTER = "test_cluster_build_destroy"
+  static String CLUSTER = "test-cluster-build-destroy"
   
 
   @BeforeClass
@@ -62,7 +62,8 @@ public class ClusterBuildDestroyIT extends AgentCommandTestBase
             ACTION_BUILD,
             CLUSTER,
             ARG_ZKHOSTS,
-            SLIDER_CONFIG.get(SliderXmlConfKeys.REGISTRY_ZK_QUORUM, DEFAULT_SLIDER_ZK_HOSTS),
+            SLIDER_CONFIG.get(
+                RegistryConstants.KEY_REGISTRY_ZK_QUORUM, DEFAULT_SLIDER_ZK_HOSTS),
             ARG_TEMPLATE, APP_TEMPLATE,
             ARG_RESOURCES, APP_RESOURCE
         ])

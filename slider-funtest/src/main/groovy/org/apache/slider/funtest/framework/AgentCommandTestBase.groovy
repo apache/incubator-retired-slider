@@ -20,6 +20,7 @@ package org.apache.slider.funtest.framework
 
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.security.UserGroupInformation
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
@@ -99,7 +100,9 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
   @BeforeClass
   public static void setupAgent() {
     assumeAgentTestsEnabled()
-
+    def uploader = new FileUploader(SLIDER_CONFIG, 
+        UserGroupInformation.currentUser)
+    uploader.mkHomeDir();
   }
 
   @Before
@@ -210,7 +213,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     if (shell.ret != 0 && shell.ret != EXIT_UNKNOWN_INSTANCE) {
       logShell(shell)
-      assert fail("Old cluster either should not exist or should get destroyed.")
+      assert fail("Old cluster either should not exist or should get destroyed; destroy exit code = ${shell.ret}")
     }
   }
 }

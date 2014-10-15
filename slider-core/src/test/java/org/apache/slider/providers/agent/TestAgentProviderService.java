@@ -22,6 +22,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FilterFileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.registry.client.api.RegistryConstants;
 import org.apache.hadoop.registry.client.api.RegistryOperations;
 import org.apache.hadoop.registry.client.types.ServiceRecord;
 import org.apache.hadoop.yarn.api.records.Container;
@@ -299,8 +300,8 @@ public class TestAgentProviderService {
     doReturn(metainfo).when(mockAps).getApplicationMetainfo(any(SliderFileSystem.class), anyString());
 
     Configuration conf = new Configuration();
-    conf.set(SliderXmlConfKeys.REGISTRY_PATH,
-        SliderXmlConfKeys.DEFAULT_REGISTRY_PATH);
+    conf.set(RegistryConstants.KEY_REGISTRY_ZK_ROOT,
+        RegistryConstants.DEFAULT_ZK_REGISTRY_ROOT);
 
     try {
       doReturn(true).when(mockAps).isMaster(anyString());
@@ -427,7 +428,9 @@ public class TestAgentProviderService {
     expect(container.getPriority()).andReturn(Priority.newInstance(1));
 
     StateAccessForProviders access = createNiceMock(StateAccessForProviders.class);
-    AgentProviderService aps = createAgentProviderService(new Configuration());
+    Configuration conf = new Configuration();
+
+    AgentProviderService aps = createAgentProviderService(conf);
     AgentProviderService mockAps = Mockito.spy(aps);
 
     doReturn(access).when(mockAps).getAmState();
@@ -442,9 +445,7 @@ public class TestAgentProviderService {
         any(SliderFileSystem.class), anyString());
     doReturn(metainfo).when(mockAps).getMetainfo();
 
-    Configuration conf = new Configuration();
-    conf.set(SliderXmlConfKeys.REGISTRY_PATH,
-        SliderXmlConfKeys.DEFAULT_REGISTRY_PATH);
+
 
     try {
       doReturn(true).when(mockAps).isMaster(anyString());

@@ -144,13 +144,29 @@ class SliderShell extends Shell {
     log.error(toString())
     log.error("return code = ${signCorrectReturnCode()}")
     if (out.size() != 0) {
-      log.info("\n<stdout>\n${out.join('\n')}\n</stdout>");
+      log.info("\n<stdout>\n${stdoutHistory}\n</stdout>");
     }
     if (err.size() != 0) {
-      log.error("\n<stderr>\n${err.join('\n')}\n</stderr>");
+      log.error("\n<stderr>\n${stdErrHistory}\n</stderr>");
     }
   }
-  
+
+  /**
+   * Get the stderr history
+   * @return the history
+   */
+  public String getStdErrHistory() {
+    return err.join('\n')
+  }
+
+  /**
+   * Get the stdout history
+   * @return the history
+   */
+  public String getStdoutHistory() {
+    return out.join('\n')
+  }
+
   /**
    * Assert the shell exited with a given error code
    * if not the output is printed and an assertion is raised
@@ -161,7 +177,6 @@ class SliderShell extends Shell {
       dumpOutput()
       throw new SliderException(ret,
           "Expected exit code of command ${command} : ${errorCode} - actual=${ret}")
-      
     }
   }
 
