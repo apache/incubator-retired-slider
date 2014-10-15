@@ -953,6 +953,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       AggregateConf definition =
         InstanceIO.loadInstanceDefinitionUnresolved(sliderFileSystem,
                                                     clusterDirectory);
+      definition.setName(name);
       return definition;
     } catch (FileNotFoundException e) {
       throw UnknownApplicationInstanceException.unknownInstance(name, e);
