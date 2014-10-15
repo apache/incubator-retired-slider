@@ -523,13 +523,13 @@ abstract class CommandTestBase extends SliderTestUtils {
     ]
     
     maybeAddCommandOption(commands,
-        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM],
+        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME],
         SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME));
     maybeAddCommandOption(commands,
-        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM],
+        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH],
         SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH));
     maybeAddCommandOption(commands,
-        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM],
+        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL],
         SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL));
     commands.addAll(extraArgs)
     SliderShell shell = slider(LauncherExitCodes.EXIT_SUCCESS, commands)
