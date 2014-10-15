@@ -26,7 +26,6 @@ import org.apache.slider.core.exceptions.UsageException;
 
 import java.io.File;
 
-import static org.apache.slider.common.params.SliderActions.ACTION_REGISTRY;
 import static org.apache.slider.common.params.SliderActions.ACTION_RESOLVE;
 import static org.apache.slider.common.params.SliderActions.DESCRIBE_ACTION_REGISTRY;
 

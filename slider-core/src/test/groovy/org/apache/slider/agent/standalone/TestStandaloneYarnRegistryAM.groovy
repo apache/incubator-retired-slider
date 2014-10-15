@@ -258,6 +258,15 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     assert recordFromFile[YarnRegistryAttributes.YARN_PERSISTENCE] ==
            serviceRecord[YarnRegistryAttributes.YARN_PERSISTENCE]
 
+    //resolve to the home directory
+    assert 0 == client.actionResolve(new ActionResolveArgs(
+        path: "~", list:true))
+
+    //resolve to the instance
+    assert 0 == client.actionResolve(new ActionResolveArgs(
+        path: "~/services/org-apache-slider/$clustername",
+        list: true))
+
     // hit the registry web page
     def registryEndpoint = serviceRecord.getExternalEndpoint(
         CustomRegistryConstants.REGISTRY_REST_API)

@@ -40,7 +40,7 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
   implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
 
-  static String CLUSTER = "test_agent_cluster_lifecycle"
+  static String CLUSTER = "test-agent-cluster-lifecycle"
 
   static String APP_RESOURCE2 = "../slider-core/src/test/app_packages/test_command_log/resources_no_role.json"
 

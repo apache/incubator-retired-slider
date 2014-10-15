@@ -412,10 +412,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       log.debug("Authenticating as {}", ugi);
       SliderUtils.verifyPrincipalSet(conf,
           DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY);
-      // always enforce protocol to be token-based.
-      conf.set(
-        CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHENTICATION,
-        SaslRpcServer.AuthMethod.TOKEN.toString());
+    } else {
+      log.info("Cluster is insecure");
     }
     log.info("Login user is {}", UserGroupInformation.getLoginUser());
 
