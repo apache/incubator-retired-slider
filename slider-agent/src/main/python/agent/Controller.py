@@ -89,6 +89,10 @@ class Controller(threading.Thread):
     self.heartBeatRetryCount = 0
     self.autoRestartFailures = 0
     self.autoRestartTrackingSince = 0
+    self.terminateAgent = False
+    self.stopCommand = None
+    self.appGracefulStopQueued = False
+    self.appGracefulStopTriggered = False
 
 
   def __del__(self):
@@ -190,15 +194,48 @@ class Controller(threading.Thread):
 
   def shouldStopAgent(self):
     '''
-    If component has failed after start then stop the agent
+    Stop the agent if:
+      - Component has failed after start
+      - AM sent terminate agent command
     '''
+    shouldStopAgent = False
     if (self.componentActualState == State.FAILED) \
       and (self.componentExpectedState == State.STARTED) \
       and (self.failureCount >= Controller.MAX_FAILURE_COUNT_TO_STOP):
-      return True
-    else:
+      logger.info("Component instance has stopped, stopping the agent ...")
+      shouldStopAgent = True
+    if self.terminateAgent:
+      logger.info("Terminate agent command received from AM, stopping the agent ...")
+      shouldStopAgent = True
+    return shouldStopAgent
+
+  def isAppGracefullyStopped(self):
+    '''
+    If an app graceful stop command was queued then it is considered stopped if:
+      - app stop was triggered
+
+    Note: We should enhance this method by checking if the app is stopped
+          successfully and if not, then take alternate measures (like kill
+          processes). For now if stop is triggered it is considered stopped.
+    '''
+    if not self.appGracefulStopQueued:
       return False
-    pass
+    isAppStopped = False
+    if self.appGracefulStopTriggered:
+      isAppStopped = True
+    return isAppStopped
+
+  def stopApp(self):
+    '''
+    Stop the app if:
+      - the app is currently in STARTED state and
+        a valid stop command is provided
+    '''
+    if (self.componentActualState == State.STARTED) and (not self.stopCommand == None):
+      # Try to do graceful stop
+      self.addToQueue([self.stopCommand])
+      self.appGracefulStopQueued = True
+      logger.info("Attempting to gracefully stop the application ...")
 
   def heartbeatWithServer(self):
     self.DEBUG_HEARTBEAT_RETRIES = 0
@@ -210,12 +247,14 @@ class Controller(threading.Thread):
 
     while not self.DEBUG_STOP_HEARTBEATING:
 
-      if self.shouldStopAgent():
-        logger.info("Component instance has stopped, stopping the agent ...")
-        ProcessHelper.stopAgent()
-
       commandResult = {}
       try:
+        if self.appGracefulStopQueued and not self.isAppGracefullyStopped():
+          # Continue to wait until app is stopped
+          continue
+        if self.shouldStopAgent():
+          ProcessHelper.stopAgent()
+
         if not retry:
           data = json.dumps(
             self.heartbeat.build(commandResult,
@@ -231,6 +270,20 @@ class Controller(threading.Thread):
         logger.debug('Got server response: ' + pprint.pformat(response))
 
         serverId = int(response['responseId'])
+
+        if 'restartAgent' in response.keys():
+          restartAgent = response['restartAgent']
+          if restartAgent:
+            logger.error("Got restartAgent command")
+            self.restartAgent()
+        if 'terminateAgent' in response.keys():
+          terminateAgent = response['terminateAgent']
+          if terminateAgent:
+            logger.error("Got terminateAgent command")
+            self.terminateAgent = True
+            self.stopApp()
+            # Continue will add some wait time
+            continue
 
         restartEnabled = False
         if 'restartEnabled' in response:
@@ -257,17 +310,18 @@ class Controller(threading.Thread):
         else:
           self.responseId = serverId
 
+        commandSentFromAM = False
         if 'executionCommands' in response.keys():
           self.updateStateBasedOnCommand(response['executionCommands'])
           self.addToQueue(response['executionCommands'])
+          commandSentFromAM = True
           pass
         if 'statusCommands' in response.keys() and len(response['statusCommands']) > 0:
           self.addToQueue(response['statusCommands'])
+          commandSentFromAM = True
           pass
-        if "true" == response['restartAgent']:
-          logger.error("Got restartAgent command")
-          self.restartAgent()
-        else:
+
+        if not commandSentFromAM:
           logger.info("No commands sent from the Server.")
           pass
 
@@ -344,13 +398,14 @@ class Controller(threading.Thread):
           return
         self.cachedconnect = None # Previous connection is broken now
         retry = True
-      # Sleep for some time
-      timeout = self.netutil.HEARTBEAT_IDDLE_INTERVAL_SEC \
-                - self.netutil.MINIMUM_INTERVAL_BETWEEN_HEARTBEATS
-      self.heartbeat_wait_event.wait(timeout=timeout)
-      # Sleep a bit more to allow STATUS_COMMAND results to be collected
-      # and sent in one heartbeat. Also avoid server overload with heartbeats
-      time.sleep(self.netutil.MINIMUM_INTERVAL_BETWEEN_HEARTBEATS)
+      finally:
+        # Sleep for some time
+        timeout = self.netutil.HEARTBEAT_IDDLE_INTERVAL_SEC \
+                  - self.netutil.MINIMUM_INTERVAL_BETWEEN_HEARTBEATS
+        self.heartbeat_wait_event.wait(timeout=timeout)
+        # Sleep a bit more to allow STATUS_COMMAND results to be collected
+        # and sent in one heartbeat. Also avoid server overload with heartbeats
+        time.sleep(self.netutil.MINIMUM_INTERVAL_BETWEEN_HEARTBEATS)
     pass
     logger.info("Controller stopped heart-beating.")
 
@@ -366,6 +421,17 @@ class Controller(threading.Thread):
 
 
   def updateStateBasedOnCommand(self, commands, createStatus=True):
+    # A STOP command is paired with the START command to provide agents the
+    # capability to gracefully stop the app if possible. The STOP command needs
+    # to be stored since the AM might not be able to provide it since it could
+    # have lost the container state for whatever reasons. The STOP command has
+    # no other role to play in the Agent state transition so it is removed from
+    # the commands list.
+    index = 0
+    deleteIndex = 0
+    delete = False
+    # break only if an INSTALL command is found, since we might get a STOP
+    # command for a START command
     for command in commands:
       if command["roleCommand"] == "START":
         self.componentExpectedState = State.STARTED
@@ -374,12 +440,22 @@ class Controller(threading.Thread):
         if createStatus:
           self.statusCommand = self.createStatusCommand(command)
 
+      # The STOP command index is stored to be deleted
+      if command["roleCommand"] == "STOP":
+        self.stopCommand = command
+        delete = True
+        deleteIndex = index
+
       if command["roleCommand"] == "INSTALL":
         self.componentExpectedState = State.INSTALLED
         self.componentActualState = State.INSTALLING
         self.failureCount = 0
-      break;
+        break;
+      index += 1
 
+    # Delete the STOP command
+    if delete:
+      del commands[deleteIndex]
 
   def updateStateBasedOnResult(self, commandResult):
     if len(commandResult) > 0:
