@@ -167,6 +167,21 @@ abstract class CommandTestBase extends SliderTestUtils {
   }
 
   /**
+   * Print to system out
+   * @param string
+   */
+  static void println(String s) {
+    System.out.println(s)
+  }
+  /**
+   * Print to system out
+   * @param string
+   */
+  static void println() {
+    System.out.println()
+  }
+  
+  /**
    * Exec any slider command
    * @param conf
    * @param commands

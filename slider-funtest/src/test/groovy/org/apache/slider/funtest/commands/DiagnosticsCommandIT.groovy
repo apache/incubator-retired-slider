@@ -31,13 +31,17 @@ public class DiagnosticsCommandIT extends CommandTestBase {
 
   @Test
   public void testClientDiagnostics() throws Throwable {
-    slider(0,
+    def shell = slider(0,
         [
             SliderActions.ACTION_DIAGNOSTIC,
             Arguments.ARG_CLIENT,
             Arguments.ARG_VERBOSE
         ]
     )
+    println(shell.stdoutHistory)
+    println()
+    println(shell.stdErrHistory)
+    
   }
 
 }

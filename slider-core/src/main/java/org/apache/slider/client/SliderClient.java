@@ -2585,45 +2585,59 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 		}
 	}
 
-	private void actionDiagnosticClient(ActionDiagnosticArgs diagnosticArgs)
+  private void actionDiagnosticClient(ActionDiagnosticArgs diagnosticArgs)
       throws SliderException, IOException {
-    String currentCommandPath = SliderUtils.getCurrentCommandPath();
-    SliderVersionInfo.loadAndPrintVersionInfo(log);
-    String clientConfigPath = SliderUtils.getClientConfigPath();
-    String jdkInfo = SliderUtils.getJDKInfo();
-    println("The slider command path: " + currentCommandPath);
-    println("The slider-client.xml used by current running command path: "
-            + clientConfigPath);
-    println(jdkInfo);
+    try {
+      String currentCommandPath = SliderUtils.getCurrentCommandPath();
+      SliderVersionInfo.loadAndPrintVersionInfo(log);
+      String clientConfigPath = SliderUtils.getClientConfigPath();
+      String jdkInfo = SliderUtils.getJDKInfo();
+      println("The slider command path: %s", currentCommandPath);
+      println("The slider-client.xml used by current running command path: %s",
+          clientConfigPath);
+      println(jdkInfo);
 
-    // verbose?
-    if (diagnosticArgs.verbose) {
-      // do the environment
-      Map<String, String> env = System.getenv();
-      Set<String> envList = ConfigHelper.sortedConfigKeys(env.entrySet());
-      StringBuilder builder = new StringBuilder("Environment variables:\n");
-      for (String key : envList) {
-        builder.append(key)
-               .append("=")
-               .append(env.get(key))
-               .append("\n");
+      // security info
+      Configuration config = getConfig();
+      if (SliderUtils.isHadoopClusterSecure(config)) { 
+        println("Hadoop Cluster is secure");
+        println("Login user is %s", UserGroupInformation.getLoginUser());
+        println("Current user is %s", UserGroupInformation.getCurrentUser());
+
+
+      } else {
+        println("Hadoop Cluster is insecure");
       }
-      println(builder.toString());
-      
-      // then the config
-      println("Slider client configuration:\n" +
-              ConfigHelper.dumpConfigToString(getConfig()));
+
+
+      // verbose?
+      if (diagnosticArgs.verbose) {
+        // do the environment
+        Map<String, String> env = System.getenv();
+        Set<String> envList = ConfigHelper.sortedConfigKeys(env.entrySet());
+        StringBuilder builder = new StringBuilder("Environment variables:\n");
+        for (String key : envList) {
+          builder.append(key)
+                 .append("=")
+                 .append(env.get(key))
+                 .append("\n");
+        }
+        println(builder.toString());
+
+        // then the config
+        println("Slider client configuration:\n" +
+                ConfigHelper.dumpConfigToString(config));
+      }
+
+
+      SliderUtils.validateSliderClientEnvironment(log);
+    } catch (SliderException e) {
+      log.error(e.toString());
+      throw e;
+    } catch (IOException e) {
+      log.error(e.toString());
+      throw e;
     }
-    
-		try {
-			SliderUtils.validateSliderClientEnvironment(log);
-		} catch (SliderException e) {
-			log.error(e.toString());
-			throw e;
-		} catch (IOException e) {
-			log.error(e.toString());
-			throw e;
-		}
     
 	}
 
@@ -2878,13 +2892,22 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
   /**
    * Output to standard out/stderr with a newline after
-   * @param src source
+   * @param message message
    */
-  private static void println(CharSequence src) {
-    print(src);
+  private static void println(String message) {
+    print(message);
     print("\n");
   }
-  
+  /**
+   * Output to standard out/stderr with a newline after, formatted
+   * @param message message
+   * @param args arguments for string formatting
+   */
+  private static void println(String message, Object ... args) {
+    print(String.format(message, args));
+    print("\n");
+  }
+
 }
 
 
