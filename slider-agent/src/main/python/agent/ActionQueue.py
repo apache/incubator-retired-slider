@@ -154,6 +154,12 @@ class ActionQueue(threading.Thread):
                                                                 'tmperr'],
                                                               True,
                                                               store_config or store_command)
+    # If command is STOP then set flag to indicate stop has been triggered.
+    # In future we might check status of STOP command and take other measures
+    # if graceful STOP fails (like force kill the processes)
+    if command['roleCommand'] == 'STOP':
+      self.controller.appGracefulStopTriggered = True
+
     # dumping results
     status = self.COMPLETED_STATUS
     if commandresult[Constants.EXIT_CODE] != 0:

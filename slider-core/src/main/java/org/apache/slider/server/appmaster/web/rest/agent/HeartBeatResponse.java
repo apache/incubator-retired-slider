@@ -42,6 +42,7 @@ public class HeartBeatResponse {
   boolean restartAgent = false;
   boolean restartEnabled = true;
   boolean hasMappedComponents = false;
+  boolean terminateAgent = false;
 
   @JsonProperty("responseId")
   public long getResponseId() {
@@ -113,6 +114,16 @@ public class HeartBeatResponse {
     this.hasMappedComponents = hasMappedComponents;
   }
 
+  @JsonProperty("terminateAgent")
+  public boolean isTerminateAgent() {
+    return terminateAgent;
+  }
+
+  @JsonProperty("terminateAgent")
+  public void setTerminateAgent(boolean terminateAgent) {
+    this.terminateAgent = terminateAgent;
+  }
+
   public void addExecutionCommand(ExecutionCommand execCmd) {
     executionCommands.add(execCmd);
   }
@@ -129,6 +140,7 @@ public class HeartBeatResponse {
            ", statusCommands=" + statusCommands +
            ", registrationCommand=" + registrationCommand +
            ", restartAgent=" + restartAgent +
+           ", terminateAgent=" + terminateAgent +
            '}';
   }
 }

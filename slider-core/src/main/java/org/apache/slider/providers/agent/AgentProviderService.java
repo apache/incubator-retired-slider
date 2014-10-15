@@ -536,6 +536,11 @@ public class AgentProviderService extends AbstractProviderService implements
     }
 
     if (!getComponentStatuses().containsKey(label)) {
+      // container is completed but still heart-beating, send terminate signal
+      log.info(
+          "Sending terminate signal to completed container (still heartbeating): {}",
+          label);
+      response.setTerminateAgent(true);
       return response;
     }
 
@@ -1384,6 +1389,37 @@ public class AgentProviderService extends AbstractProviderService implements
 
     cmd.setConfigurations(configurations);
     response.addExecutionCommand(cmd);
+    
+    // With start command, the corresponding command for graceful stop needs to
+    // be sent. This will be used when a particular container is lost as per RM,
+    // but then the agent is still running and heart-beating to the Slider AM.
+    ExecutionCommand cmdStop = new ExecutionCommand(
+        AgentCommandType.EXECUTION_COMMAND);
+    cmdStop.setTaskId(taskId.get());
+    cmdStop.setCommandId(cmdStop.getTaskId() + "-1");
+    cmdStop.setHostname(hostName);
+    cmdStop.setClusterName(clusterName);
+    cmdStop.setRoleCommand(Command.STOP.toString());
+    cmdStop.setServiceName(clusterName);
+    cmdStop.setComponentName(roleName);
+    cmdStop.setRole(roleName);
+    Map<String, String> hostLevelParamsStop = new TreeMap<String, String>();
+    hostLevelParamsStop.put(JAVA_HOME, appConf.getGlobalOptions()
+        .getMandatoryOption(JAVA_HOME));
+    hostLevelParamsStop.put(CONTAINER_ID, containerId);
+    cmdStop.setHostLevelParams(hostLevelParamsStop);
+
+    Map<String, String> roleParamsStop = new TreeMap<String, String>();
+    cmdStop.setRoleParams(roleParamsStop);
+    cmdStop.getRoleParams().put("auto_restart",
+        Boolean.toString(isMarkedAutoRestart));
+
+    cmdStop.setCommandParams(setCommandParameters(scriptPath, timeout, true));
+
+    Map<String, Map<String, String>> configurationsStop = buildCommandConfigurations(
+        appConf, containerId);
+    cmdStop.setConfigurations(configurationsStop);
+    response.addExecutionCommand(cmdStop);
   }
 
   protected Map<String, String> getAllocatedPorts() {
