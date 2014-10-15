@@ -167,6 +167,21 @@ abstract class CommandTestBase extends SliderTestUtils {
   }
 
   /**
+   * Print to system out
+   * @param string
+   */
+  static void println(String s) {
+    System.out.println(s)
+  }
+  /**
+   * Print to system out
+   * @param string
+   */
+  static void println() {
+    System.out.println()
+  }
+  
+  /**
    * Exec any slider command
    * @param conf
    * @param commands
@@ -579,8 +594,13 @@ abstract class CommandTestBase extends SliderTestUtils {
   }
 
   protected void ensureApplicationIsUp(String clusterName) {
-    repeatUntilTrue(this.&isApplicationUp, 15, 1000 * 3, ['arg1': clusterName],
-      true, 'Application did not start, aborting test.')
+    repeatUntilTrue(this.&isApplicationUp,
+        SLIDER_CONFIG.getInt(KEY_TEST_INSTANCE_LAUNCH_TIME,
+            DEFAULT_INSTANCE_LAUNCH_TIME_SECONDS),
+        1000,
+        ['arg1': clusterName],
+        true,
+        'Application did not start, aborting test.')
   }
 
   protected boolean isApplicationUp(Map<String, String> args) {

@@ -416,7 +416,7 @@ public class ConfigHelper {
    * @return listing in key=value style
    */
   public static String dumpConfigToString(Configuration conf) {
-    TreeSet<String> sorted = sortedConfigKeys(conf);
+    Set<String> sorted = sortedConfigKeys(conf);
 
     StringBuilder builder = new StringBuilder();
     for (String key : sorted) {

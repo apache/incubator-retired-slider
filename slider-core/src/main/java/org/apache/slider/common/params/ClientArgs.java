@@ -238,7 +238,7 @@ public class ClientArgs extends CommonArgs {
       bindCoreAction(actionRegistryArgs);
 
     } else if (SliderActions.ACTION_RESOLVE.equals(action)) {
-      bindCoreAction(actionRegistryArgs);
+      bindCoreAction(actionResolveArgs);
 
     } else if (SliderActions.ACTION_STATUS.equals(action)) {
       bindCoreAction(actionStatusArgs);
