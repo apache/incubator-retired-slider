@@ -47,8 +47,10 @@ public class ActionRegistryArgs extends AbstractActionArgs {
       + " ("
       + Arguments.ARG_LIST + "|"
       + Arguments.ARG_LISTCONF + "|"
+      + Arguments.ARG_LISTEXP + "|"
       + Arguments.ARG_LISTFILES + "|"
-      + Arguments.ARG_GETCONF + "> "
+      + Arguments.ARG_GETCONF + "|"
+      + Arguments.ARG_GETEXP + "> "
       + Arguments.ARG_NAME + " <name> "
       + " )"
       + "[" + Arguments.ARG_VERBOSE + "] "
@@ -56,6 +58,8 @@ public class ActionRegistryArgs extends AbstractActionArgs {
       + "[" + Arguments.ARG_OUTPUT + " <filename> ] "
       + "[" + Arguments.ARG_SERVICETYPE + " <servicetype> ] "
       + "[" + Arguments.ARG_FORMAT + " <xml|json|properties>] "
+      + System.getProperty("line.separator")
+      + "Arguments.ARG_GETEXP only supports " + Arguments.ARG_FORMAT + " json"
       ;
   public ActionRegistryArgs() {
   }
@@ -90,7 +94,14 @@ public class ActionRegistryArgs extends AbstractActionArgs {
       description = "get configuration")
   public String getConf;
 
-  @Parameter(names = {ARG_LISTFILES}, 
+  @Parameter(names = {ARG_LISTEXP},
+             description = "list exports")
+  public boolean listExports;
+  @Parameter(names = {ARG_GETEXP},
+             description = "get export")
+  public String getExport;
+
+  @Parameter(names = {ARG_LISTFILES},
       description = "list files")
   public String listFiles;
 
@@ -135,8 +146,8 @@ public class ActionRegistryArgs extends AbstractActionArgs {
     super.validate();
 
     //verify that at most one of the operations is set
-    int gets = s(getConf) + s(getFiles);
-    int lists = s(list) + s(listConf) + s(listFiles);
+    int gets = s(getConf) + s(getFiles) + s(getExport);
+    int lists = s(list) + s(listConf) + s(listFiles) + s(listExports);
     int set = lists + gets;
     if (set > 1) {
       throw new UsageException(USAGE);

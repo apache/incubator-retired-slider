@@ -34,6 +34,7 @@ public class Component {
   String maxInstanceCount;
   String autoStartOnFailure;
   String appExports;
+  String compExports;
   CommandScript commandScript;
   List<ComponentExport> componentExports;
 
@@ -80,6 +81,14 @@ public class Component {
 
   public void setAppExports(String appExports) {
     this.appExports = appExports;
+  }
+
+  public String getCompExports() {
+    return compExports;
+  }
+
+  public void setCompExports(String compExports) {
+    this.compExports = compExports;
   }
 
   public String getMinInstanceCount() {
