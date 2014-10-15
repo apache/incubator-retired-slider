@@ -29,6 +29,7 @@ import org.apache.slider.common.params.ActionDiagnosticArgs;
 import org.apache.slider.common.params.ActionEchoArgs;
 import org.apache.slider.common.params.ActionFlexArgs;
 import org.apache.slider.common.params.ActionFreezeArgs;
+import org.apache.slider.common.params.ActionInstallKeytabArgs;
 import org.apache.slider.common.params.ActionInstallPackageArgs;
 import org.apache.slider.common.params.ActionKillContainerArgs;
 import org.apache.slider.common.params.ActionRegistryArgs;
@@ -84,9 +85,20 @@ public interface SliderClientAPI extends Service {
       AbstractClusterBuildingActionArgs buildInfo) throws YarnException, IOException;
 
   /**
+   * Upload keytab to a designated sub-directory of the user home directory
+   *
+   * @param installKeytabInfo the arguments needed to upload the keytab
+   * @throws YarnException Yarn problems
+   * @throws IOException other problems
+   * @throws BadCommandArgumentsException bad arguments.
+   */
+  int actionInstallKeytab(ActionInstallKeytabArgs installKeytabInfo)
+      throws YarnException, IOException;
+
+  /**
    * Upload application package to user home directory
    *
-   * @param installPkgInfo the arguments needed to build the cluster
+   * @param installPkgInfo the arguments needed to upload the package
    * @throws YarnException Yarn problems
    * @throws IOException other problems
    * @throws BadCommandArgumentsException bad arguments.
