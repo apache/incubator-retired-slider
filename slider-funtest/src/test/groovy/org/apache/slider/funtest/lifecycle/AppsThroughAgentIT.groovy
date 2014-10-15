@@ -75,6 +75,46 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     assertComponentCount(COMMAND_LOGGER, 2, shell)
 
     assertSuccess(shell)
+
+    // get log folders
+    shell = slider(EXIT_SUCCESS,
+        [
+            ACTION_REGISTRY,
+            ARG_NAME,
+            APPLICATION_NAME,
+            ARG_LISTEXP])
+    if(!containsString(shell, "container_log_dirs") ||
+       !containsString(shell, "container_work_dirs")) {
+      logShell(shell)
+      assert fail("Should list default exports container_log_dirs or container_work_dirs")
+    }
+
+    // get log folders
+    shell = slider(EXIT_SUCCESS,
+        [
+            ACTION_REGISTRY,
+            ARG_NAME,
+            APPLICATION_NAME,
+            ARG_GETEXP,
+            "container_log_dirs"])
+    if(!containsString(shell, "\"tag\":\"COMMAND_LOGGER\",\"level\":\"component\"", 2)) {
+      logShell(shell)
+      assert fail("Should list 2 entries for log folders")
+    }
+
+    // get log folders
+    shell = slider(EXIT_SUCCESS,
+        [
+            ACTION_REGISTRY,
+            ARG_NAME,
+            APPLICATION_NAME,
+            ARG_GETEXP,
+            "container_work_dirs"])
+    if(!containsString(shell, "\"tag\":\"COMMAND_LOGGER\",\"level\":\"component\"", 2)) {
+      logShell(shell)
+      assert fail("Should list 2 entries for work folder")
+    }
+
     assert isApplicationInState("RUNNING", APPLICATION_NAME), 'App is not running.'
   }
 }

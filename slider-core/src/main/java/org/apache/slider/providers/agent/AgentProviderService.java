@@ -52,7 +52,9 @@ import org.apache.slider.core.exceptions.NoSuchNodeException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.CommandLineBuilder;
 import org.apache.slider.core.launch.ContainerLauncher;
+import org.apache.slider.core.registry.docstore.ExportEntry;
 import org.apache.slider.core.registry.docstore.PublishedConfiguration;
+import org.apache.slider.core.registry.docstore.PublishedExports;
 import org.apache.slider.core.registry.info.CustomRegistryConstants;
 import org.apache.slider.providers.AbstractProviderService;
 import org.apache.slider.providers.ProviderCore;
@@ -95,10 +97,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -106,6 +111,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -127,10 +133,15 @@ public class AgentProviderService extends AbstractProviderService implements
   private static final String CONTAINER_ID = "container_id";
   private static final String GLOBAL_CONFIG_TAG = "global";
   private static final String LOG_FOLDERS_TAG = "LogFolders";
+  private static final String HOST_FOLDER_FORMAT = "%s:%s";
+  private static final String CONTAINER_LOGS_TAG = "container_log_dirs";
+  private static final String CONTAINER_PWDS_TAG = "container_work_dirs";
+  private static final String COMPONENT_TAG = "component";
+  private static final String APPLICATION_TAG = "application";
   private static final String COMPONENT_DATA_TAG = "ComponentInstanceData";
   private static final String SHARED_PORT_TAG = "SHARED";
   private static final String PER_CONTAINER_TAG = "{PER_CONTAINER}";
-  private static final int MAX_LOG_ENTRIES = 20;
+  private static final int MAX_LOG_ENTRIES = 40;
   private static final int DEFAULT_HEARTBEAT_MONITOR_INTERVAL = 60 * 1000;
 
   private final Object syncLock = new Object();
@@ -149,16 +160,25 @@ public class AgentProviderService extends AbstractProviderService implements
       new ConcurrentHashMap<String, ComponentInstanceState>();
   private final Map<String, Map<String, String>> componentInstanceData =
       new ConcurrentHashMap<String, Map<String, String>>();
-  private final Map<String, Map<String, String>> exportGroups =
-      new ConcurrentHashMap<String, Map<String, String>>();
+  private final Map<String, Map<String, List<ExportEntry>>> exportGroups =
+      new ConcurrentHashMap<String, Map<String, List<ExportEntry>>>();
   private final Map<String, Map<String, String>> allocatedPorts =
       new ConcurrentHashMap<String, Map<String, String>>();
-  private final Map<String, String> workFolders =
-      Collections.synchronizedMap(new LinkedHashMap<String, String>(MAX_LOG_ENTRIES, 0.75f, false) {
+
+  private final Map<String, ExportEntry> logFolderExports =
+      Collections.synchronizedMap(new LinkedHashMap<String, ExportEntry>(MAX_LOG_ENTRIES, 0.75f, false) {
         protected boolean removeEldestEntry(Map.Entry eldest) {
           return size() > MAX_LOG_ENTRIES;
         }
       });
+  private final Map<String, ExportEntry> workFolderExports =
+      Collections.synchronizedMap(new LinkedHashMap<String, ExportEntry>(MAX_LOG_ENTRIES, 0.75f, false) {
+        protected boolean removeEldestEntry(Map.Entry eldest) {
+          return size() > MAX_LOG_ENTRIES;
+        }
+      });
+  private final Map<String, Set<String>> containerExportsMap =
+      new HashMap<String, Set<String>>();
 
   /**
    * Create an instance of AgentProviderService
@@ -491,7 +511,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
       Map<String, String> folders = registration.getLogFolders();
       if (folders != null && !folders.isEmpty()) {
-        publishLogFolderPaths(folders, containerId, roleName, hostFqdn);
+        publishFolderPaths(folders, containerId, roleName, hostFqdn);
       }
     } else {
       response.setResponseStatus(RegistrationStatus.FAILED);
@@ -563,7 +583,7 @@ public class AgentProviderService extends AbstractProviderService implements
       log.info("Component operation. Status: {}", result);
 
       if (command == Command.INSTALL && report.getFolders() != null && report.getFolders().size() > 0) {
-        publishLogFolderPaths(report.getFolders(), containerId, roleName, heartBeat.getFqdn());
+        publishFolderPaths(report.getFolders(), containerId, roleName, heartBeat.getFqdn());
       }
     }
 
@@ -639,6 +659,10 @@ public class AgentProviderService extends AbstractProviderService implements
       this.getAllocatedPorts(containerId).put(portname, portNo);
       if (instance != null) {
         try {
+          // if the returned value is not a single port number then there are no
+          // meaningful way for Slider to use it during export
+          // No need to error out as it may not be the responsibility of the component
+          // to allocate port or the component may need an array of ports
           instance.registerPortEndpoint(Integer.valueOf(portNo), portname);
         } catch (NumberFormatException e) {
           log.warn("Failed to parse {}: {}", portNo, e);
@@ -648,6 +672,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
     // component specific publishes
     processAndPublishComponentSpecificData(ports, containerId, fqdn, roleName);
+    processAndPublishComponentSpecificExports(ports, containerId, fqdn, roleName);
 
     // and update registration entries
     if (instance != null) {
@@ -697,7 +722,7 @@ public class AgentProviderService extends AbstractProviderService implements
       throw new IOException(e);
     }
   }
-  
+
   @Override
   public void notifyContainerCompleted(ContainerId containerId) {
     if (containerId != null) {
@@ -717,6 +742,25 @@ public class AgentProviderService extends AbstractProviderService implements
           if (label.startsWith(containerIdStr)) {
             getComponentStatuses().remove(label);
           }
+        }
+      }
+
+      synchronized (this.containerExportsMap) {
+        Set<String> containerExportSets = containerExportsMap.get(containerIdStr);
+        if (containerExportSets != null) {
+          for (String containerExportStr : containerExportSets) {
+            String[] parts = containerExportStr.split(":");
+            Map<String, List<ExportEntry>> exportGroup = getCurrentExports(parts[0]);
+            List<ExportEntry> exports = exportGroup.get(parts[1]);
+            List<ExportEntry> exportToRemove = new ArrayList<ExportEntry>();
+            for (ExportEntry export : exports) {
+              if (containerIdStr.equals(export.getContainerId())) {
+                exportToRemove.add(export);
+              }
+            }
+            exports.removeAll(exportToRemove);
+          }
+          containerExportsMap.remove(containerIdStr);
         }
       }
     }
@@ -751,6 +795,16 @@ public class AgentProviderService extends AbstractProviderService implements
     String launchParameterStr = instanceDefinition.getAppConfOperations().
         getGlobalOptions().getOption(AgentKeys.AGENT_INSTANCE_DEBUG_DATA, "");
     agentLaunchParameter = new AgentLaunchParameter(launchParameterStr);
+  }
+
+  @VisibleForTesting
+  protected Map<String, ExportEntry> getLogFolderExports() {
+    return logFolderExports;
+  }
+
+  @VisibleForTesting
+  protected Map<String, ExportEntry> getWorkFolderExports() {
+    return workFolderExports;
   }
 
   @VisibleForTesting
@@ -901,15 +955,59 @@ public class AgentProviderService extends AbstractProviderService implements
    * @param hostFqdn
    * @param roleName
    */
-  protected void publishLogFolderPaths(
+  protected void publishFolderPaths(
       Map<String, String> folders, String containerId, String roleName, String hostFqdn) {
-    for (Map.Entry<String, String> entry: folders.entrySet()) {
-      workFolders.put(String.format("%s->%s->%s->%s", roleName, hostFqdn, entry.getKey(), containerId), 
-        entry.getValue());
+    Date now = new Date();
+    for (Map.Entry<String, String> entry : folders.entrySet()) {
+      ExportEntry exportEntry = new ExportEntry();
+      exportEntry.setValue(String.format(HOST_FOLDER_FORMAT, hostFqdn, entry.getValue()));
+      exportEntry.setContainerId(containerId);
+      exportEntry.setLevel(COMPONENT_TAG);
+      exportEntry.setTag(roleName);
+      exportEntry.setUpdatedTime(now.toString());
+      if (entry.getKey().equals("AGENT_LOG_ROOT")) {
+        synchronized (logFolderExports) {
+          getLogFolderExports().put(containerId, exportEntry);
+        }
+      } else {
+        synchronized (workFolderExports) {
+          getWorkFolderExports().put(containerId, exportEntry);
+        }
+      }
+      log.info("Updating log and pwd folders for container {}", containerId);
     }
 
-    publishApplicationInstanceData(LOG_FOLDERS_TAG, LOG_FOLDERS_TAG,
-                                   (new HashMap<String, String>(this.workFolders)).entrySet());
+    PublishedExports exports = new PublishedExports(CONTAINER_LOGS_TAG);
+    exports.setUpdated(now.getTime());
+    synchronized (logFolderExports) {
+      updateExportsFromList(exports, getLogFolderExports());
+    }
+    getAmState().getPublishedExportsSet().put(CONTAINER_LOGS_TAG, exports);
+
+    exports = new PublishedExports(CONTAINER_PWDS_TAG);
+    exports.setUpdated(now.getTime());
+    synchronized (workFolderExports) {
+      updateExportsFromList(exports, getWorkFolderExports());
+    }
+    getAmState().getPublishedExportsSet().put(CONTAINER_PWDS_TAG, exports);
+  }
+
+  /**
+   * Update the export data from the map
+   * @param exports
+   * @param folderExports
+   */
+  private void updateExportsFromList(PublishedExports exports, Map<String, ExportEntry> folderExports) {
+    Map<String, List<ExportEntry>> perComponentList = new HashMap<String, List<ExportEntry>>();
+    for(Map.Entry<String, ExportEntry> logEntry : folderExports.entrySet())
+    {
+      String componentName = logEntry.getValue().getTag();
+      if(!perComponentList.containsKey(componentName)) {
+        perComponentList.put(componentName, new ArrayList<ExportEntry>());
+      }
+      perComponentList.get(componentName).add(logEntry.getValue());
+    }
+    exports.putValues(perComponentList.entrySet());
   }
 
 
@@ -954,13 +1052,12 @@ public class AgentProviderService extends AbstractProviderService implements
             }
           }
 
-          List<ExportGroup> exportGroups = application.getExportGroups();
-          boolean hasExportGroups = exportGroups != null && !exportGroups.isEmpty();
+          List<ExportGroup> appExportGroups = application.getExportGroups();
+          boolean hasExportGroups = appExportGroups != null && !appExportGroups.isEmpty();
 
           Set<String> appExports = new HashSet();
           String appExportsStr = getApplicationComponent(roleName).getAppExports();
-          boolean hasNoAppExports = appExportsStr == null || appExportsStr.isEmpty();
-          if (!hasNoAppExports) {
+          if (SliderUtils.isSet(appExportsStr)) {
             for (String appExport : appExportsStr.split(",")) {
               if (appExport.trim().length() > 0) {
                 appExports.add(appExport.trim());
@@ -988,11 +1085,12 @@ public class AgentProviderService extends AbstractProviderService implements
             }
 
             Set<String> modifiedGroups = new HashSet<String>();
-            for (ExportGroup exportGroup : exportGroups) {
+            for (ExportGroup exportGroup : appExportGroups) {
               List<Export> exports = exportGroup.getExports();
               if (exports != null && !exports.isEmpty()) {
                 String exportGroupName = exportGroup.getName();
-                Map<String, String> map = getCurrentExports(exportGroupName);
+                ConcurrentHashMap<String, List<ExportEntry>> map =
+                    (ConcurrentHashMap<String, List<ExportEntry>>)getCurrentExports(exportGroupName);
                 for (Export export : exports) {
                   if (canBeExported(exportGroupName, export.getName(), appExports)) {
                     String value = export.getValue();
@@ -1002,7 +1100,12 @@ public class AgentProviderService extends AbstractProviderService implements
                         value = value.replace(token, replaceTokens.get(token));
                       }
                     }
-                    map.put(export.getName(), value);
+                    ExportEntry entry = new ExportEntry();
+                    entry.setLevel(APPLICATION_TAG);
+                    entry.setValue(value);
+                    entry.setUpdatedTime(new Date().toString());
+                    // over-write, app exports are singletons
+                    map.put(export.getName(), new ArrayList(Arrays.asList(entry)));
                     log.info("Preparing to publish. Key {} and Value {}", export.getName(), value);
                   }
                 }
@@ -1024,11 +1127,11 @@ public class AgentProviderService extends AbstractProviderService implements
     return appExports.contains(String.format("%s-%s", exportGroupName, name));
   }
 
-  protected Map<String, String> getCurrentExports(String groupName) {
+  protected Map<String, List<ExportEntry>> getCurrentExports(String groupName) {
     if (!this.exportGroups.containsKey(groupName)) {
       synchronized (this.exportGroups) {
         if (!this.exportGroups.containsKey(groupName)) {
-          this.exportGroups.put(groupName, new ConcurrentHashMap<String, String>());
+          this.exportGroups.put(groupName, new ConcurrentHashMap<String, List<ExportEntry>>());
         }
       }
     }
@@ -1037,10 +1140,24 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   private void publishModifiedExportGroups(Set<String> modifiedGroups) {
-    synchronized (this.exportGroups) {
-      for (String groupName : modifiedGroups) {
-        publishApplicationInstanceData(groupName, groupName, this.exportGroups.get(groupName).entrySet());
+    for (String groupName : modifiedGroups) {
+      Map<String, List<ExportEntry>> entries = this.exportGroups.get(groupName);
+
+      // Publish in old format for the time being
+      Map<String, String> simpleEntries = new HashMap<String, String>();
+      for (Map.Entry<String, List<ExportEntry>> entry : entries.entrySet()) {
+        List<ExportEntry> exports = entry.getValue();
+        if(exports != null && exports.size() > 0) {
+          // there is no support for multiple exports per name - so extract only the first one
+          simpleEntries.put(entry.getKey(), entry.getValue().get(0).getValue());
+        }
       }
+      publishApplicationInstanceData(groupName, groupName, simpleEntries.entrySet());
+
+      PublishedExports exports = new PublishedExports(groupName);
+      exports.setUpdated(new Date().getTime());
+      exports.putValues(entries.entrySet());
+      getAmState().getPublishedExportsSet().put(groupName, exports);
     }
   }
 
@@ -1095,14 +1212,102 @@ public class AgentProviderService extends AbstractProviderService implements
     }
   }
 
+  /** Publish component instance specific data if the component demands it */
+  protected void processAndPublishComponentSpecificExports(Map<String, String> ports,
+                                                           String containerId,
+                                                           String hostFqdn,
+                                                           String roleName) {
+    String portVarFormat = "${site.%s}";
+    String hostNamePattern = "${" + roleName + "_HOST}";
+
+    List<ExportGroup> appExportGroups = getMetainfo().getApplication().getExportGroups();
+    Component component = getMetainfo().getApplicationComponent(roleName);
+    if (component != null && SliderUtils.isSet(component.getCompExports())
+        && appExportGroups != null && appExportGroups.size() > 0) {
+
+      Set<String> compExports = new HashSet();
+      String compExportsStr = component.getCompExports();
+      for (String appExport : compExportsStr.split(",")) {
+        if (appExport.trim().length() > 0) {
+          compExports.add(appExport.trim());
+        }
+      }
+
+      Date now = new Date();
+      Set<String> modifiedGroups = new HashSet<String>();
+      for (ExportGroup exportGroup : appExportGroups) {
+        List<Export> exports = exportGroup.getExports();
+        if (exports != null && !exports.isEmpty()) {
+          String exportGroupName = exportGroup.getName();
+          ConcurrentHashMap<String, List<ExportEntry>> map =
+              (ConcurrentHashMap<String, List<ExportEntry>>) getCurrentExports(exportGroupName);
+          for (Export export : exports) {
+            if (canBeExported(exportGroupName, export.getName(), compExports)) {
+              log.info("Attempting to publish {} of group {} for component type {}",
+                       export.getName(), exportGroupName, roleName);
+              String templateToExport = export.getValue();
+              for (String portName : ports.keySet()) {
+                boolean publishData = false;
+                String portValPattern = String.format(portVarFormat, portName);
+                if (templateToExport.contains(portValPattern)) {
+                  templateToExport = templateToExport.replace(portValPattern, ports.get(portName));
+                  publishData = true;
+                }
+                if (templateToExport.contains(hostNamePattern)) {
+                  templateToExport = templateToExport.replace(hostNamePattern, hostFqdn);
+                  publishData = true;
+                }
+                if (publishData) {
+                  ExportEntry entryToAdd = new ExportEntry();
+                  entryToAdd.setLevel(COMPONENT_TAG);
+                  entryToAdd.setValue(templateToExport);
+                  entryToAdd.setUpdatedTime(now.toString());
+                  entryToAdd.setContainerId(containerId);
+
+                  List<ExportEntry> existingList =
+                      map.putIfAbsent(export.getName(), new CopyOnWriteArrayList(Arrays.asList(entryToAdd)));
+
+                  // in-place edit, no lock needed
+                  if (existingList != null) {
+                    boolean updatedInPlace = false;
+                    for (ExportEntry entry : existingList) {
+                      if (containerId.equalsIgnoreCase(entry.getContainerId())) {
+                        entryToAdd.setValue(templateToExport);
+                        entryToAdd.setUpdatedTime(now.toString());
+                        updatedInPlace = true;
+                      }
+                    }
+                    if (!updatedInPlace) {
+                      existingList.add(entryToAdd);
+                    }
+                  }
+
+                  log.info("Publishing {} for name {} and container {}",
+                           templateToExport, export.getName(), containerId);
+                  modifiedGroups.add(exportGroupName);
+                  synchronized (containerExportsMap) {
+                    if (!containerExportsMap.containsKey(containerId)) {
+                      containerExportsMap.put(containerId, new HashSet<String>());
+                    }
+                    Set<String> containerExportMaps = containerExportsMap.get(containerId);
+                    containerExportMaps.add(String.format("%s:%s", exportGroupName, export.getName()));
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      publishModifiedExportGroups(modifiedGroups);
+    }
+  }
+
   private void publishComponentInstanceData() {
     Map<String, String> dataToPublish = new HashMap<String, String>();
-    synchronized (this.componentInstanceData) {
-      for (String container : getComponentInstanceData().keySet()) {
-        for (String prop : getComponentInstanceData().get(container).keySet()) {
-          dataToPublish.put(
-              container + "." + prop, getComponentInstanceData().get(container).get(prop));
-        }
+    for (String container : getComponentInstanceData().keySet()) {
+      for (String prop : getComponentInstanceData().get(container).keySet()) {
+        dataToPublish.put(
+            container + "." + prop, getComponentInstanceData().get(container).get(prop));
       }
     }
     publishApplicationInstanceData(COMPONENT_DATA_TAG, COMPONENT_DATA_TAG, dataToPublish.entrySet());
@@ -1616,5 +1821,4 @@ public class AgentProviderService extends AbstractProviderService implements
                   "");
     }
   }
-
 }

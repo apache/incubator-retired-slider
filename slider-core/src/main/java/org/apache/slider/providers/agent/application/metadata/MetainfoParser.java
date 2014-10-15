@@ -61,6 +61,7 @@ public class MetainfoParser {
     digester.addBeanPropertySetter("*/component/maxInstanceCount");
     digester.addBeanPropertySetter("*/component/autoStartOnFailure");
     digester.addBeanPropertySetter("*/component/appExports");
+    digester.addBeanPropertySetter("*/component/compExports");
     digester.addObjectCreate("*/componentExport", ComponentExport.class);
     digester.addBeanPropertySetter("*/componentExport/name");
     digester.addBeanPropertySetter("*/componentExport/value");
