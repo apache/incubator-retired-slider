@@ -18,12 +18,10 @@
 
 package org.apache.slider.agent.standalone
 
-import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.FileUtil
 import org.apache.hadoop.fs.PathNotFoundException
 import org.apache.hadoop.registry.client.binding.RegistryPathUtils
-import org.apache.hadoop.registry.client.binding.RegistryUtils
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
@@ -43,7 +41,6 @@ import static org.apache.hadoop.registry.client.binding.RegistryUtils.*
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.api.ClusterNode
 import org.apache.slider.client.SliderClient
-import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.params.ActionRegistryArgs
 import org.apache.slider.core.main.ServiceLauncher
@@ -226,7 +223,7 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
         path: recordsPath +"/unknown",
         list: true)
     // the record is not there, even if the path is
-    assert SliderExitCodes.EXIT_NOT_FOUND == client.actionResolve(
+    assert LauncherExitCodes.EXIT_NOT_FOUND == client.actionResolve(
         listUnknownPath)
     
     
@@ -235,7 +232,7 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
         path: recordsPath,
         list: false)
     // the record is not there, even if the path is
-    assert SliderExitCodes.EXIT_NOT_FOUND == client.actionResolve(
+    assert LauncherExitCodes.EXIT_NOT_FOUND == client.actionResolve(
         resolveRecordAtListPath)
 
     // look at a single record
@@ -450,7 +447,7 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     registryArgs.listConf = true
     registryArgs.internal = true
     describe registryArgs.toString()
-    assert SliderExitCodes.EXIT_NOT_FOUND == client.actionRegistry(registryArgs)
+    assert LauncherExitCodes.EXIT_NOT_FOUND == client.actionRegistry(registryArgs)
 
     registryArgs.list = false;
     registryArgs.listConf = false
@@ -487,7 +484,7 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
 
     def unknownFilename = "undefined-file"
     registryArgs.getConf = unknownFilename
-    assert SliderExitCodes.EXIT_NOT_FOUND == client.actionRegistry(registryArgs)
+    assert LauncherExitCodes.EXIT_NOT_FOUND == client.actionRegistry(registryArgs)
 
     //look for a different user
     try {
@@ -520,11 +517,11 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
 
     // only check this if the YARN registry renaming logic is in
     if (!hbase.contains("@")) {
-      assert SliderExitCodes.EXIT_NOT_FOUND == client.actionResolve(
+      assert LauncherExitCodes.EXIT_NOT_FOUND == client.actionResolve(
           new ActionResolveArgs(
               path: hbaseServices,
               list: true))
-      assert SliderExitCodes.EXIT_NOT_FOUND == client.actionResolve(
+      assert LauncherExitCodes.EXIT_NOT_FOUND == client.actionResolve(
           new ActionResolveArgs(path: hbaseServices))
     }
 

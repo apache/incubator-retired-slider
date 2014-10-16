@@ -26,72 +26,63 @@ public interface SliderExitCodes extends LauncherExitCodes {
    * starting point for exit codes; not an exception itself
    */
   int _EXIT_CODE_BASE =           64;
-  
-  /**
-   * internal error: {@value}
-   */
-  int EXIT_INTERNAL_ERROR = _EXIT_CODE_BASE;
-  
-  /**
-   * Unimplemented feature: {@value}
-   */
-  int EXIT_UNIMPLEMENTED =        65;
 
   /**
    * service entered the failed state: {@value}
    */
-  int EXIT_YARN_SERVICE_FAILED =  66;
+  int EXIT_YARN_SERVICE_FAILED =  65;
 
   /**
    * service was killed: {@value}
    */
-  int EXIT_YARN_SERVICE_KILLED =  67;
+  int EXIT_YARN_SERVICE_KILLED =  66;
 
   /**
    * timeout on monitoring client: {@value}
    */
-  int EXIT_TIMED_OUT =            68;
+  int EXIT_TIMED_OUT =            67;
 
   /**
    * service finished with an error: {@value}
    */
-  int EXIT_YARN_SERVICE_FINISHED_WITH_ERROR = 69;
+  int EXIT_YARN_SERVICE_FINISHED_WITH_ERROR = 68;
 
   /**
    * the application instance is unknown: {@value}
    */
-  int EXIT_UNKNOWN_INSTANCE = 70;
+  int EXIT_UNKNOWN_INSTANCE =     69;
 
   /**
    * the application instance is in the wrong state for that operation: {@value}
    */
-  int EXIT_BAD_STATE =    71;
+  int EXIT_BAD_STATE =            70;
 
   /**
    * A spawned master process failed 
    */
-  int EXIT_PROCESS_FAILED = 72;
+  int EXIT_PROCESS_FAILED =       71;
 
   /**
    * The instance failed -too many containers were
    * failing or some other threshold was reached
    */
-  int EXIT_DEPLOYMENT_FAILED = 73;
+  int EXIT_DEPLOYMENT_FAILED =    72;
 
   /**
    * The application is live -and the requested operation
    * does not work if the cluster is running
    */
-  int EXIT_APPLICATION_IN_USE = 74;
+  int EXIT_APPLICATION_IN_USE =   73;
 
   /**
    * There already is an application instance of that name
    * when an attempt is made to create a new instance
    */
-  int EXIT_INSTANCE_EXISTS = 75;
+  int EXIT_INSTANCE_EXISTS =      75;
 
   /**
-   * The resource was not found
+   * Exit code when the configurations in valid/incomplete: {@value}
    */
-  int EXIT_NOT_FOUND = 77;
+  int EXIT_BAD_CONFIGURATION =    77;
+
 }
