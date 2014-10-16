@@ -66,15 +66,15 @@ slider_classpath="${libdir}/*:${confdir}:${slider_classpath_extra}:${hadoop_conf
 
 launcher=org.apache.slider.Slider
 
-
-echo "slider_home = \"${slider_home}\""
-echo "slider_jvm_opts = \"${slider_jvm_opts}\""
-echo "classpath = \"${slider_classpath}\""
 export CLASSPATH="${slider_classpath}"
-echo ""
 
-echo "command is java ${slider_jvm_opts} -classpath \"${slider_classpath}\" ${launcher} $@"
-echo ""
-echo ""
+#echo "slider_home = \"${slider_home}\""
+#echo "slider_jvm_opts = \"${slider_jvm_opts}\""
+#echo "classpath = \"${slider_classpath}\""
+#echo ""
+# echo "command is java ${slider_jvm_opts} -classpath \"${slider_classpath}\" ${launcher} $@"
+#echo ""
+#echo ""
+
 type java >/dev/null 2>&1 || javabin=${JAVA_HOME}/bin/
 exec ${javabin}java ${slider_jvm_opts}  ${launcher} $@
