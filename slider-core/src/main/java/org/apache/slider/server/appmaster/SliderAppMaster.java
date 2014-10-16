@@ -23,7 +23,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.BlockingService;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenIdentifier;
@@ -32,7 +31,6 @@ import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.ipc.ProtocolSignature;
 import org.apache.hadoop.registry.client.binding.RegistryUtils;
 import org.apache.hadoop.security.Credentials;
-import org.apache.hadoop.security.SaslRpcServer;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenIdentifier;
@@ -1926,7 +1924,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // the login is via a keytab (see above)
     Credentials credentials = new Credentials(containerCredentials);
     ByteBuffer tokens = null;
-    Token<? extends TokenIdentifier> hdfsTokens[] =
+    Token<? extends TokenIdentifier>[] hdfsTokens =
         getClusterFS().getFileSystem().addDelegationTokens(
             UserGroupInformation.getLoginUser().getShortUserName(), credentials);
     if (hdfsTokens.length > 0) {
