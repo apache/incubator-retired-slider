@@ -1,0 +1,25 @@
+{
+  "schema": "http://example.org/specification/v2.0.0",
+
+  "global": {
+  },
+  "components": {
+    "echo": {
+      "yarn.memory": "256",
+      "yarn.component.instances": "1",
+      "yarn.role.priority":"1"
+    },
+    "hbase-master": {
+      "yarn.memory": "257",
+      "yarn.component.instances": "1",
+      "yarn.role.priority":"2",
+      "yarn.label.expression":""
+    },
+    "hbase-rs": {
+      "yarn.memory": "258",
+      "yarn.component.instances": "0",
+      "yarn.role.priority":"4",
+      "yarn.label.expression":"coquelicot && amaranth"
+    }
+  }
+}

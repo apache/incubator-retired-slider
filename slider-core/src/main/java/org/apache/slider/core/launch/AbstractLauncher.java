@@ -384,5 +384,18 @@ public abstract class AbstractLauncher extends Configured {
     addLocalResources(confResources);
   }
 
+  /**
+   * Return the label expression and if not set null
+   * @param map
+   * @return
+   */
+  public String extractLabelExpression(Map<String, String> map) {
+    if (map != null) {
+      MapOperations options = new MapOperations("", map);
+      return options.getOption(ResourceKeys.YARN_LABEL_EXPRESSION, null);
+    }
+    return null;
+  }
+
 
 }
