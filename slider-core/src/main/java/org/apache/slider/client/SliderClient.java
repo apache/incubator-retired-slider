@@ -509,14 +509,14 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // delete the directory;
     boolean exists = sliderFileSystem.getFileSystem().exists(clusterDirectory);
     if (exists) {
-      log.info("Application Instance {} found at {}: destroying", clustername, clusterDirectory);
+      log.debug("Application Instance {} found at {}: destroying", clustername, clusterDirectory);
+      boolean deleted =
+          sliderFileSystem.getFileSystem().delete(clusterDirectory, true);
+      if (!deleted) {
+        log.warn("Filesystem returned false from delete() operation");
+      }
     } else {
-      log.info("Application Instance {} already destroyed", clustername);
-    }
-    boolean deleted =
-      sliderFileSystem.getFileSystem().delete(clusterDirectory, true);
-    if (!deleted) {
-      log.warn("Filesystem returned false from delete() operation");
+      log.debug("Application Instance {} already destroyed", clustername);
     }
 
     // rm the registry entry —do not let this block the destroy operations
@@ -525,7 +525,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     try {
       getRegistryOperations().delete(registryPath, true);
     } catch (IOException e) {
-      log.warn("Error deleting {}: {} ", registryPath, e, e);
+      log.warn("Error deleting registry entry {}: {} ", registryPath, e, e);
     } catch (SliderException e) {
       log.warn("Error binding to registry {} ", e, e);
     }
@@ -856,14 +856,14 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       String createDefaultZkNode = appConf.getGlobalOptions().getOption(AgentKeys.CREATE_DEF_ZK_NODE, "false");
       if (createDefaultZkNode.equals("true")) {
         String defaultZKPath = createZookeeperNode(clustername, false);
-        log.info("ZK node created for application instance: {}.", defaultZKPath);
+        log.debug("ZK node created for application instance: {}", defaultZKPath);
         if (defaultZKPath != null) {
           zkPaths.setAppPath(defaultZKPath);
         }
       } else {
         // create AppPath if default is being used
         String defaultZKPath = createZookeeperNode(clustername, true);
-        log.info("ZK node assigned to application instance: {}.", defaultZKPath);
+        log.debug("ZK node assigned to application instance: {}", defaultZKPath);
         zkPaths.setAppPath(defaultZKPath);
       }
     }
