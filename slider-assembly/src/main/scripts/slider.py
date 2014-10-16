@@ -212,8 +212,11 @@ def java(classname, args, classpath, jvm_opts_list):
   # split the JVM opts by space
   # java = "/usr/bin/java"
   prg = "java"
-  if which("java") is None:
+  if os.environ["JAVA_HOME"] is not None and os.environ["JAVA_HOME"]:
     prg = os.path.join(os.environ["JAVA_HOME"], "bin", "java")
+  else:
+    prg = which("java")
+  
   commandline = [prg]
   commandline.extend(jvm_opts_list)
   commandline.append("-classpath")
@@ -254,9 +257,9 @@ def main():
                      + hadoop_conf_dir
 
 
-  print "slider_home = \"%s\"" % slider_home
-  print "slider_jvm_opts = \"%s\"" % slider_jvm_opts
-  print "slider_classpath = \"%s\"" % slider_classpath
+  #print "slider_home = \"%s\"" % slider_home
+  #print "slider_jvm_opts = \"%s\"" % slider_jvm_opts
+  #print "slider_classpath = \"%s\"" % slider_classpath
 
   return java(SLIDER_CLASSNAME,
               args,
