@@ -97,10 +97,11 @@ public final class OutstandingRequest {
    * @param resource resource
    * @param role role
    * @param time: time to record
+   * @param labelExpression label to satisfy
    * @return the request to raise
    */
   public AMRMClient.ContainerRequest buildContainerRequest(Resource resource,
-      RoleStatus role, long time) {
+      RoleStatus role, long time, String labelExpression) {
     String[] hosts;
     boolean relaxLocality;
     requestedTime = time;
@@ -122,8 +123,9 @@ public final class OutstandingRequest {
                                       hosts,
                                       null,
                                       pri,
-                                      relaxLocality);
-    
+                                      relaxLocality,
+                                      labelExpression);
+
     return request;
   }
 
