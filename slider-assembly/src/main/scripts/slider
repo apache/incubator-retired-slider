@@ -76,5 +76,13 @@ export CLASSPATH="${slider_classpath}"
 #echo ""
 #echo ""
 
-type java >/dev/null 2>&1 || javabin=${JAVA_HOME}/bin/
+if [ -n "${JAVA_HOME}" ]; then
+  javabin=${JAVA_HOME}/bin/
+else
+  javabin=""
+fi
+
+#echo $javabin
+#type ${javabin}java 2>&1
+
 exec ${javabin}java ${slider_jvm_opts}  ${launcher} $@
