@@ -243,60 +243,7 @@ class TestBuildBasicAgent extends AgentTestBase {
         true, false,
         false)
   }
-
-  @Test
-  public void testLabelExpressionArgs() throws Throwable {
-    String clustername = createMiniCluster(
-        "",
-        configuration,
-        1,
-        1,
-        1,
-        true,
-        false)
-
-    try {
-      buildAgentCluster(clustername,
-          [:],
-          [
-              ARG_OPTION, CONTROLLER_URL, "http://localhost",
-              ARG_PACKAGE, ".",
-              ARG_OPTION, APP_DEF, "file://" + appDef.absolutePath,
-              ARG_RESOURCES, TEST_FILES + "good/resources_with_label.json",
-              ARG_TEMPLATE, TEST_FILES + "good/appconf.json"
-          ],
-          true, false,
-          false)
-    } catch (BadConfigException exception) {
-      log.error(
-          "Build operation should not have failed with exception : \n$exception")
-      fail("Build operation should not fail")
-    }
-
-    AggregateConf instanceDefinition = loadInstanceDefinition(clustername)
-    def opt = instanceDefinition.getResourceOperations().getComponentOpt(
-        "node1",
-        ResourceKeys.YARN_LABEL_EXPRESSION,
-        null)
-    assert opt == null, "Expect null"
-
-    opt = instanceDefinition.getResourceOperations().getComponentOpt(
-        "node2",
-        ResourceKeys.YARN_LABEL_EXPRESSION,
-        null)
-    assert opt == "", "Expect empty string"
-
-    opt = instanceDefinition.getResourceOperations().getComponentOpt(
-        "node3",
-        ResourceKeys.YARN_LABEL_EXPRESSION,
-        null)
-    assert opt == "coquelicot && amaranth", "Expect colors you have not heard of"
-
-    def label = instanceDefinition.getInternalOperations().get(
-        InternalKeys.INTERNAL_QUEUE)
-    assert label == null, "Default queue expected"
-  }
-
+  
   @Test
   public void testUpdateBasicAgent() throws Throwable {
 

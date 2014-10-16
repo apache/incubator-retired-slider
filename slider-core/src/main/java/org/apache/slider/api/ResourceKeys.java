@@ -65,21 +65,10 @@ public interface ResourceKeys {
    *  {@value}
    */
   String YARN_CORES = "yarn.vcores";
-
+  
   /** {@value} */
   int DEF_YARN_CORES = 1;
-
-
-  /**
-   * Label expression that this container must satisfy
-   *  {@value}
-   */
-  String YARN_LABEL_EXPRESSION = "yarn.label.expression";
-
-  /** {@value} */
-  String DEF_YARN_LABEL_EXPRESSION = null;
-
-
+  
   /**
    * Constant to indicate that the requirements of a YARN resource limit
    * (cores, memory, ...) should be set to the maximum allowed by

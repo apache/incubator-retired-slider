@@ -267,19 +267,6 @@ public abstract class AbstractLauncher extends Configured {
     }
   }
 
-  /**
-   * Return the label expression and if not set null
-   * @param map
-   * @return
-   */
-  public String extractLabelExpression(Map<String, String> map) {
-    if (map != null) {
-      MapOperations options = new MapOperations("", map);
-      return options.getOption(ResourceKeys.YARN_LABEL_EXPRESSION, null);
-    }
-    return null;
-  }
-
   public void extractLogAggregationContext(Map<String, String> map) {
     if (map != null) {
       String logPatternSepStr = "\\|";

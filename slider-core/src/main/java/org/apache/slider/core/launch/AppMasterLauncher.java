@@ -96,7 +96,6 @@ public class AppMasterLauncher extends AbstractLauncher {
     if (!applicationTags.isEmpty()) {
       submissionContext.setApplicationTags(applicationTags);
     }
-    submissionContext.setAppLabelExpression(extractLabelExpression(options));
     extractResourceRequirements(resource, options);
     extractLogAggregationContext(resourceGlobalOptions);
   }
