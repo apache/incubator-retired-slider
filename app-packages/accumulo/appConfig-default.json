@@ -21,10 +21,6 @@
     "site.accumulo-env.zookeeper_home": "${zk.dir}",
 
     "site.client.instance.name": "${USER}-${CLUSTER_NAME}",
-    "site.client.instance.zookeeper.host": "${@//site/accumulo-site/instance.zookeeper.host}",
-    "site.client.instance.rpc.ssl.enabled": "${@//site/accumulo-site/instance.rpc.ssl.enabled}",
-    "site.client.instance.rpc.ssl.clientAuth": "${@//site/accumulo-site/instance.rpc.ssl.clientAuth}",
-    "site.client.general.security.credential.provider.paths": "${@//site/accumulo-site/general.security.credential.provider.paths}",
 
     "site.global.accumulo_root_password": "NOT_USED",
     "site.global.ssl_cert_dir": "ssl",
