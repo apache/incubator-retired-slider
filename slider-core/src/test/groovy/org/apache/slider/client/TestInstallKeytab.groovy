@@ -54,7 +54,7 @@ class TestInstallKeytab extends ServiceLauncherBaseTest {
   public void testInstallKeytab() throws Throwable {
     // create a mock keytab file
     File localKeytab =
-      FileUtil.createLocalTempFile(FileUtils.getTempDirectory(), "test", true);
+      FileUtil.createLocalTempFile(tempLocation, "test", true);
     String contents = UUID.randomUUID().toString()
     FileUtils.write(localKeytab, contents);
     YarnConfiguration conf = SliderUtils.createConfiguration()
@@ -77,7 +77,7 @@ class TestInstallKeytab extends ServiceLauncherBaseTest {
   public void testInstallKeytabWithNoFolder() throws Throwable {
     // create a mock keytab file
     File localKeytab =
-      FileUtil.createLocalTempFile(FileUtils.getTempDirectory(), "test", true);
+      FileUtil.createLocalTempFile(tempLocation, "test", true);
     String contents = UUID.randomUUID().toString()
     FileUtils.write(localKeytab, contents);
     YarnConfiguration conf = SliderUtils.createConfiguration()
@@ -95,7 +95,7 @@ class TestInstallKeytab extends ServiceLauncherBaseTest {
   public void testInstallKeytabWithNoKeytab() throws Throwable {
     // create a mock keytab file
     File localKeytab =
-      FileUtil.createLocalTempFile(FileUtils.getTempDirectory(), "test", true);
+      FileUtil.createLocalTempFile(tempLocation, "test", true);
     String contents = UUID.randomUUID().toString()
     FileUtils.write(localKeytab, contents);
     YarnConfiguration conf = SliderUtils.createConfiguration()
@@ -113,7 +113,7 @@ class TestInstallKeytab extends ServiceLauncherBaseTest {
   public void testInstallKeytabAllowingOverwrite() throws Throwable {
     // create a mock keytab file
     File localKeytab =
-      FileUtil.createLocalTempFile(FileUtils.getTempDirectory(), "test", true);
+      FileUtil.createLocalTempFile(tempLocation, "test", true);
     String contents = UUID.randomUUID().toString()
     FileUtils.write(localKeytab, contents);
     YarnConfiguration conf = SliderUtils.createConfiguration()
@@ -148,7 +148,7 @@ class TestInstallKeytab extends ServiceLauncherBaseTest {
   public void testInstallKeytabNotAllowingOverwrite() throws Throwable {
     // create a mock keytab file
     File localKeytab =
-      FileUtil.createLocalTempFile(FileUtils.getTempDirectory(), "test", true);
+      FileUtil.createLocalTempFile(tempLocation, "test", true);
     String contents = UUID.randomUUID().toString()
     FileUtils.write(localKeytab, contents);
     YarnConfiguration conf = SliderUtils.createConfiguration()
@@ -190,6 +190,10 @@ class TestInstallKeytab extends ServiceLauncherBaseTest {
                                             Arguments.ARG_FOLDER,
                                             "testFolder"])
     }
+  }
+
+  private File getTempLocation () {
+    return new File(System.getProperty("user.dir") + "/target");
   }
 
   static class TestSliderClient extends SliderClient {
