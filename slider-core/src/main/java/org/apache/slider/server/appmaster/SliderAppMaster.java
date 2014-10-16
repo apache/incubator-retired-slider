@@ -27,6 +27,7 @@ import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenIdentifier;
+import org.apache.hadoop.http.HttpConfig;
 import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.ipc.ProtocolSignature;
 import org.apache.hadoop.registry.client.binding.RegistryUtils;
@@ -679,9 +680,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
                                      providerService,
                                      certificateManager, registryOperations),
                    RestPaths.WS_CONTEXT)
-                      .with(serviceConf)
+                      .withHttpPolicy(serviceConf, HttpConfig.Policy.HTTP_ONLY)
                       .start(webApp);
-      String scheme = WebAppUtils.getHttpSchemePrefix(serviceConf);
+      String scheme = WebAppUtils.HTTP_PREFIX;
       appMasterTrackingUrl = scheme  + appMasterHostname + ":" + webApp.port();
       WebAppService<SliderAMWebApp> webAppService =
         new WebAppService<SliderAMWebApp>("slider", webApp);
