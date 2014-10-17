@@ -7,18 +7,7 @@ import com.beust.jcommander.Parameters;
 commandDescription = SliderActions.DESCRIBE_ACTION_DIAGNOSTIC)
 public class ActionDiagnosticArgs extends AbstractActionArgs
 {
-	  public static final String USAGE =
-	      "Usage: " + SliderActions.ACTION_DIAGNOSTIC
-        + " "
-	      + Arguments.ARG_CLIENT + " | "
-	      + Arguments.ARG_SLIDER + " <appname> " + "| "
-	      + Arguments.ARG_APPLICATION + " <appname> " + "| "
-	      + Arguments.ARG_YARN + " | "
-	      + Arguments.ARG_CREDENTIALS + " | "
-	      + Arguments.ARG_ALL + " <appname> " + "| "
-	      + Arguments.ARG_LEVEL + " <appname> "
-	      + " [" + Arguments.ARG_VERBOSE + "] ";
-	  
+
 	@Override
 	public String getActionName() {
 		return SliderActions.ACTION_DIAGNOSTIC;

@@ -41,7 +41,7 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
   public void testNoAction() throws Throwable {
     launchExpectingException(SliderClient,
                              new Configuration(),
-                             ErrorStrings.ERROR_NO_ACTION,
+                             "Usage: slider COMMAND",
                              [])
 
   }
@@ -52,6 +52,14 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
                              new Configuration(),
                              "not-a-known-action",
                              ["not-a-known-action"])
+  }
+  
+  @Test
+  public void testActionWithoutOptions() throws Throwable {
+    launchExpectingException(SliderClient,
+                             new Configuration(),
+                             "Usage: build [options] Options:",
+                             [SliderActions.ACTION_BUILD])
   }
 
   @Test
@@ -84,7 +92,7 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
   public void testRegistryUsage() throws Throwable {
     def exception = launchExpectingException(SliderClient,
         new Configuration(),
-        ActionRegistryArgs.USAGE,
+        "org.apache.slider.core.exceptions.UsageException: Argument --name missing",
         [SliderActions.ACTION_REGISTRY])
     assert exception instanceof UsageException
     log.info(exception.toString())

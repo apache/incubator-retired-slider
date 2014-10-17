@@ -42,7 +42,6 @@ public interface SliderActions {
   String ACTION_RESOLVE = "resolve";
   String ACTION_STATUS = "status";
   String ACTION_THAW = "start";
-  String ACTION_USAGE = "usage";
   String ACTION_VERSION = "version";
   String ACTION_DIAGNOSTIC = "diagnostic";
   String ACTION_INSTALL_PACKAGE = "install-package";

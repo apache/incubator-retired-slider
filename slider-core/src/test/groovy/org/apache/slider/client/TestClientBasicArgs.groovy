@@ -49,14 +49,10 @@ class TestClientBasicArgs extends ServiceLauncherBaseTest {
   
   @Test
   public void testNoArgs() throws Throwable {
-    try {
-      ServiceLauncher launcher = launch(SliderClient,
+    launchExpectingException(SliderClient,
                                         SliderUtils.createConfiguration(),
+                                        "Usage: slider COMMAND",
                                         [])
-      assert SliderExitCodes.EXIT_COMMAND_ARGUMENT_ERROR == launcher.serviceExitCode
-    } catch (BadCommandArgumentsException ignored) {
-      // expected
-    }
   }
 
   // removed due to retry policy dicating 15 minutes of retries for the

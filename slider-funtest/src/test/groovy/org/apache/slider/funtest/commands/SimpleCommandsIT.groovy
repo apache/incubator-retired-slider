@@ -38,7 +38,7 @@ public class SimpleCommandsIT extends CommandTestBase {
 
   @Test
   public void testUsage() throws Throwable {
-    SliderShell shell = slider(0, [SliderActions.ACTION_USAGE])
+    SliderShell shell = slider(0, [SliderActions.ACTION_HELP])
     assertSuccess(shell)
   }
   
