@@ -226,8 +226,6 @@ class Controller(threading.Thread):
           successfully and if not, then take alternate measures (like kill
           processes). For now if stop is triggered it is considered stopped.
     '''
-    if not self.appGracefulStopQueued:
-      return False
     isAppStopped = False
     if self.appGracefulStopTriggered:
       isAppStopped = True
@@ -285,8 +283,8 @@ class Controller(threading.Thread):
             logger.error("Got restartAgent command")
             self.restartAgent()
         if 'terminateAgent' in response.keys():
-          terminateAgent = response['terminateAgent']
-          if terminateAgent:
+          self.terminateAgent = response['terminateAgent']
+          if self.terminateAgent:
             logger.error("Got terminateAgent command")
             self.stopApp()
             # Continue will add some wait time
