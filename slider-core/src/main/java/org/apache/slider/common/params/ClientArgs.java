@@ -21,6 +21,7 @@ package org.apache.slider.common.params;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.slider.common.SliderXmlConfKeys;
+import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.ErrorStrings;
 import org.apache.slider.core.exceptions.SliderException;
@@ -226,8 +227,7 @@ public class ClientArgs extends CommonArgs {
     } else if (SliderActions.ACTION_FLEX.equals(action)) {
       bindCoreAction(actionFlexArgs);
 
-    } else if (SliderActions.ACTION_HELP.equals(action) ||
-               SliderActions.ACTION_USAGE.equals(action)) {
+    } else if (SliderActions.ACTION_HELP.equals(action)) {
       bindCoreAction(actionHelpArgs);
 
     } else if (SliderActions.ACTION_INSTALL_PACKAGE.equals(action)) {
@@ -257,8 +257,8 @@ public class ClientArgs extends CommonArgs {
     } else if (SliderActions.ACTION_VERSION.equals(action)) {
       bindCoreAction(actionVersionArgs);
 
-    } else if (action == null || action.isEmpty()) {
-      throw new BadCommandArgumentsException(ErrorStrings.ERROR_NO_ACTION);
+    } else if (SliderUtils.isUnset(action)) {
+      bindCoreAction(actionHelpArgs);
 
     } else {
       throw new BadCommandArgumentsException(ErrorStrings.ERROR_UNKNOWN_ACTION

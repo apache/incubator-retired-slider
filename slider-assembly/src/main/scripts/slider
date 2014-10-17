@@ -72,7 +72,9 @@ export CLASSPATH="${slider_classpath}"
 #echo "slider_jvm_opts = \"${slider_jvm_opts}\""
 #echo "classpath = \"${slider_classpath}\""
 #echo ""
-# echo "command is java ${slider_jvm_opts} -classpath \"${slider_classpath}\" ${launcher} $@"
+
+#echo "command is java ${slider_jvm_opts} -classpath \"${slider_classpath}\" ${launcher} $@"
+
 #echo ""
 #echo ""
 

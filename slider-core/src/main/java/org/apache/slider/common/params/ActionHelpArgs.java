@@ -23,7 +23,7 @@ import com.beust.jcommander.Parameters;
 /**
  * The Help command
  */
-@Parameters(commandNames = {SliderActions.ACTION_HELP, SliderActions.ACTION_USAGE},
+@Parameters(commandNames = {SliderActions.ACTION_HELP},
             commandDescription = SliderActions.DESCRIBE_ACTION_HELP)
 public class ActionHelpArgs extends AbstractActionArgs {
   @Override

@@ -152,13 +152,14 @@ public class ActionRegistryArgs extends AbstractActionArgs {
     if (set > 1) {
       throw new UsageException(USAGE);
     }
+
     if (out != null && (lists > 0 || set == 0)) {
       throw new UsageException("output path"
-           + " is only supported on 'get' operations: " + USAGE);
+           + " is only supported on 'get' operations: ");
     }
     if (!list && !is(name)) {
       throw new UsageException("Argument " + ARG_NAME
-           +" missing: " + USAGE);
+           +" missing: ");
 
     }
   }

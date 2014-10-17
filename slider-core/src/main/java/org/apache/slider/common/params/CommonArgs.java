@@ -21,6 +21,7 @@ package org.apache.slider.common.params;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.slider.common.tools.SliderUtils;
@@ -47,6 +48,9 @@ public abstract class CommonArgs extends ArgOps implements SliderActions,
                                                            Arguments {
 
   protected static final Logger log = LoggerFactory.getLogger(CommonArgs.class);
+
+
+  private static final int DIFF_BETWEEN_DESCIPTION_AND_COMMAND_NAME = 20;
 
 
   @Parameter(names = ARG_HELP, help = true)
@@ -97,14 +101,45 @@ public abstract class CommonArgs extends ArgOps implements SliderActions,
     commander = new JCommander(this);
   }
 
-
   public String usage() {
-    StringBuilder builder = new StringBuilder("\n");
-    commander.usage(builder, "  ");
-    builder.append("\nactions: ");
-    return builder.toString();
+    return usage(this, null);
   }
 
+  public static String usage(CommonArgs serviceArgs, String commandOfInterest) {
+    String result = null;
+    StringBuilder helperMessage = new StringBuilder();
+    if (commandOfInterest == null) {
+      // JCommander.usage is too verbose for a command with many options like
+      // slider no short version of that is found Instead, we compose our msg by
+      helperMessage.append("\n");
+      helperMessage.append("Usage: slider COMMAND [options]\n");
+      helperMessage.append("where COMMAND is one of\n");
+      for (String jcommand : serviceArgs.commander.getCommands().keySet()) {
+        helperMessage.append(String.format("\t%-"
+            + DIFF_BETWEEN_DESCIPTION_AND_COMMAND_NAME + "s-%s", jcommand,
+            serviceArgs.commander.getCommandDescription(jcommand) + "\n"));
+      }
+      helperMessage
+          .append("Most commands print help when invoked without parameters");
+      result = helperMessage.toString();
+    } else {
+      // Jcommander framework doesn't provide a working API to fetch all options
+      // we have to compose options' helper message per action our own
+      serviceArgs.commander.usage(commandOfInterest, helperMessage);
+      // eliminate all linebreaks/tabs as there are too many
+      result = helperMessage.toString().replaceAll("\n|\t|\\s{3,}", " ");
+      // insert linebreak and indents
+      result = result.replaceAll("(--|-D|-S)", "\n\t$1");
+      // put options and their abbreviations on the same line
+      result = result.replaceAll(",\\s*\n\t--", ", --");
+      result = result.replaceAll("Usage:", "\nUsage:");
+    }
+    return result;
+  }
+
+  public static String usage(CommonArgs serviceArgs) {
+    return usage(serviceArgs, null);
+  }
 
   /**
    * Parse routine -includes registering the action-specific argument classes
@@ -196,12 +231,23 @@ public abstract class CommonArgs extends ArgOps implements SliderActions,
    */
   public void validate() throws BadCommandArgumentsException, UsageException {
     if (coreAction == null) {
-      throw new UsageException(ErrorStrings.ERROR_NO_ACTION
-                                             + usage());
+      throw new UsageException(ErrorStrings.ERROR_NO_ACTION + usage());
     }
     log.debug("action={}", getAction());
-    //let the action validate itself
-    coreAction.validate();
+    // let the action validate itself
+    try {
+      coreAction.validate();
+    } catch (BadCommandArgumentsException e) {
+      StringBuilder badArgMsgBuilder = new StringBuilder();
+      badArgMsgBuilder.append(e.toString() + "\n");
+      badArgMsgBuilder.append(usage(this, coreAction.getActionName()));
+      throw new BadCommandArgumentsException(badArgMsgBuilder.toString());
+    } catch (UsageException e) {
+      StringBuilder badArgMsgBuilder = new StringBuilder();
+      badArgMsgBuilder.append(e.toString() + "\n");
+      badArgMsgBuilder.append(usage(this, coreAction.getActionName()));
+      throw new UsageException(badArgMsgBuilder.toString());
+    }
   }
 
   /**
