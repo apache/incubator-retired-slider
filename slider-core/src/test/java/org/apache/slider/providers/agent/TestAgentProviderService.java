@@ -371,7 +371,7 @@ public class TestAgentProviderService {
 
     Register reg = new Register();
     reg.setResponseId(0);
-    reg.setHostname("mockcontainer_1___HBASE_MASTER");
+    reg.setLabel("mockcontainer_1___HBASE_MASTER");
     Map<String,String> ports = new HashMap<String, String>();
     ports.put("a","100");
     reg.setAllocatedPorts(ports);
@@ -504,7 +504,7 @@ public class TestAgentProviderService {
     AgentProviderService mockAps = prepareProviderServiceForAgentStateTests();
     Register reg = new Register();
     reg.setResponseId(0);
-    reg.setHostname("mockcontainer_1___HBASE_MASTER");
+    reg.setLabel("mockcontainer_1___HBASE_MASTER");
     Map<String,String> ports = new HashMap<String,String>();
     ports.put("a","100");
     reg.setAllocatedPorts(ports);
@@ -570,7 +570,7 @@ public class TestAgentProviderService {
 
     Register reg = new Register();
     reg.setResponseId(0);
-    reg.setHostname("mockcontainer_1___HBASE_MASTER");
+    reg.setLabel("mockcontainer_1___HBASE_MASTER");
     Map<String,String> ports = new HashMap<String,String>();
     ports.put("a","100");
     reg.setAllocatedPorts(ports);
@@ -742,7 +742,7 @@ public class TestAgentProviderService {
     Assert.assertEquals(1, expEntries.size());
     Assert.assertEquals("mockcontainer_1", expEntries.get(0).getContainerId());
     Assert.assertEquals("component", expEntries.get(0).getLevel());
-    Assert.assertEquals(null, expEntries.get(0).getTag());
+    Assert.assertEquals("1", expEntries.get(0).getTag());
     Assert.assertEquals("http://host1:10010", expEntries.get(0).getValue());
     Assert.assertNotNull(expEntries.get(0).getUpdatedTime());
     Assert.assertNull(expEntries.get(0).getValidUntil());
@@ -1145,14 +1145,14 @@ public class TestAgentProviderService {
       // Both containers register
       Register reg = new Register();
       reg.setResponseId(0);
-      reg.setHostname("mockcontainer_1___HBASE_MASTER");
+      reg.setLabel("mockcontainer_1___HBASE_MASTER");
       RegistrationResponse resp = mockAps.handleRegistration(reg);
       Assert.assertEquals(0, resp.getResponseId());
       Assert.assertEquals(RegistrationStatus.OK, resp.getResponseStatus());
 
       reg = new Register();
       reg.setResponseId(0);
-      reg.setHostname("mockcontainer_1___HBASE_REGIONSERVER");
+      reg.setLabel("mockcontainer_1___HBASE_REGIONSERVER");
       resp = mockAps.handleRegistration(reg);
       Assert.assertEquals(0, resp.getResponseId());
       Assert.assertEquals(RegistrationStatus.OK, resp.getResponseStatus());
