@@ -37,9 +37,13 @@ public class RegistrationResponse {
   @JsonProperty("exitstatus")
   private int exitstatus;
 
-  /** log - message, which will be printed to agents  log */
+  /** log - message, which will be printed to agents log */
   @JsonProperty("log")
   private String log;
+
+  /** tags - tags associated with the container */
+  @JsonProperty("tags")
+  private String tags;
 
   //Response id to start with, usually zero.
   @JsonProperty("responseId")
@@ -73,6 +77,14 @@ public class RegistrationResponse {
 
   public void setResponseId(long responseId) {
     this.responseId = responseId;
+  }
+
+  public String getTags() {
+    return tags;
+  }
+
+  public void setTags(String tags) {
+    this.tags = tags;
   }
 
   public void setExitstatus(int exitstatus) {

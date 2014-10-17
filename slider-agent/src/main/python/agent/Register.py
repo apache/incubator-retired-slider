@@ -29,20 +29,21 @@ class Register:
   def __init__(self, config):
     self.config = config
 
-  def build(self, actualState, expectedState, allocated_ports, log_folders, id='-1'):
+  def build(self, actualState, expectedState, allocated_ports, log_folders, tags="", id='-1'):
     timestamp = int(time.time() * 1000)
 
     version = self.read_agent_version()
 
     register = {'responseId': int(id),
                 'timestamp': timestamp,
-                'hostname': self.config.getLabel(),
+                'label': self.config.getLabel(),
                 'publicHostname': hostname.public_hostname(),
                 'agentVersion': version,
                 'actualState': actualState,
                 'expectedState': expectedState,
                 'allocatedPorts': allocated_ports,
-                'logFolders': log_folders
+                'logFolders': log_folders,
+                'tags': tags
     }
     return register
 

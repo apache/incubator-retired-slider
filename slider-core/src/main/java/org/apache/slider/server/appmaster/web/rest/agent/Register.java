@@ -29,10 +29,11 @@ import java.util.Map;
 public class Register {
   private int responseId = -1;
   private long timestamp;
-  private String hostname;
+  private String label;
   private int currentPingPort;
   private HostInfo hardwareProfile;
   private String publicHostname;
+  private String tags;
   private AgentEnv agentEnv;
   private String agentVersion;
   private State actualState;
@@ -58,12 +59,20 @@ public class Register {
     this.timestamp = timestamp;
   }
 
-  public String getHostname() {
-    return hostname;
+  public String getLabel() {
+    return label;
   }
 
-  public void setHostname(String hostname) {
-    this.hostname = hostname;
+  public void setLabel(String label) {
+    this.label = label;
+  }
+
+  public String getTags() {
+    return tags;
+  }
+
+  public void setTags(String tags) {
+    this.tags = tags;
   }
 
   public HostInfo getHardwareProfile() {
@@ -150,7 +159,8 @@ public class Register {
   public String toString() {
     String ret = "responseId=" + responseId + "\n" +
                  "timestamp=" + timestamp + "\n" +
-                 "hostname=" + hostname + "\n" +
+                 "label=" + label + "\n" +
+                 "hostname=" + publicHostname + "\n" +
                  "expectedState=" + expectedState + "\n" +
                  "actualState=" + actualState + "\n";
 

@@ -38,7 +38,7 @@ class AgentTestUtils {
     Register register = new Register();
     register.setResponseId(-1);
     register.setTimestamp(System.currentTimeMillis());
-    register.setHostname("dummyHost");
+    register.setLabel("dummyHost");
     return register;
   }
 }

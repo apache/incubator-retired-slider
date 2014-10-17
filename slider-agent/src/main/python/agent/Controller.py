@@ -93,6 +93,7 @@ class Controller(threading.Thread):
     self.stopCommand = None
     self.appGracefulStopQueued = False
     self.appGracefulStopTriggered = False
+    self.tags = ""
 
 
   def __del__(self):
@@ -129,34 +130,41 @@ class Controller(threading.Thread):
           self.componentExpectedState,
           self.actionQueue.customServiceOrchestrator.allocated_ports,
           self.actionQueue.customServiceOrchestrator.log_folders,
+          self.tags,
           id))
         logger.info("Registering with the server at " + self.registerUrl +
                     " with data " + pprint.pformat(data))
         response = self.sendRequest(self.registerUrl, data)
-        ret = json.loads(response)
+        regResp = json.loads(response)
         exitstatus = 0
-        # exitstatus is a code of error which was rised on server side.
+        # exitstatus is a code of error which was raised on server side.
         # exitstatus = 0 (OK - Default)
         # exitstatus = 1 (Registration failed because
         #                different version of agent and server)
-        if 'exitstatus' in ret.keys():
-          exitstatus = int(ret['exitstatus'])
-          # log - message, which will be printed to agents  log
-        if 'log' in ret.keys():
-          log = ret['log']
+        if 'exitstatus' in regResp.keys():
+          exitstatus = int(regResp['exitstatus'])
+
+        # log - message, which will be printed to agents  log
+        if 'log' in regResp.keys():
+          log = regResp['log']
+
+        # container may be associated with tags
+        if 'tags' in regResp.keys():
+          self.tags = regResp['tags']
+
         if exitstatus == 1:
           logger.error(log)
           self.isRegistered = False
           self.repeatRegistration = False
-          return ret
-        logger.info("Registered with the server with " + pprint.pformat(ret))
+          return regResp
+        logger.info("Registered with the server with " + pprint.pformat(regResp))
         print("Registered with the server")
-        self.responseId = int(ret['responseId'])
+        self.responseId = int(regResp['responseId'])
         self.isRegistered = True
-        if 'statusCommands' in ret.keys():
+        if 'statusCommands' in regResp.keys():
           logger.info("Got status commands on registration " + pprint.pformat(
-            ret['statusCommands']))
-          self.addToQueue(ret['statusCommands'])
+            regResp['statusCommands']))
+          self.addToQueue(regResp['statusCommands'])
           pass
         else:
           self.hasMappedComponents = False
@@ -173,7 +181,7 @@ class Controller(threading.Thread):
         time.sleep(delay)
         pass
       pass
-    return ret
+    return regResp
 
 
   def addToQueue(self, commands):
