@@ -19,21 +19,70 @@
 package org.apache.slider.server.appmaster.operations;
 
 import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.hadoop.yarn.api.records.Priority;
+import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.hadoop.yarn.client.api.async.AMRMClientAsync;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
+import java.util.List;
+
 /**
- * Hands off RM operations to the Resource Manager
+ * Hands off RM operations to the Resource Manager.
  */
 public class AsyncRMOperationHandler extends RMOperationHandler {
   protected static final Logger log =
     LoggerFactory.getLogger(AsyncRMOperationHandler.class);
   private final AMRMClientAsync client;
+  private final Resource maxResources;
 
-  public AsyncRMOperationHandler(AMRMClientAsync client) {
+  public AsyncRMOperationHandler(AMRMClientAsync client, Resource maxResources) {
     this.client = client;
+    this.maxResources = maxResources;
+  }
+
+  @Override
+  public int cancelContainerRequests(Priority priority1,
+      Priority priority2,
+      int count) {
+    // need to revoke a previously issued container request
+    // so enum the sets and pick some
+    int remaining = cancelSinglePriorityRequests(priority1, count);
+    remaining = cancelSinglePriorityRequests(priority2, remaining);
+    
+    return remaining;
+  }
+
+  /**
+   * Cancel just one of the priority levels
+   * @param priority priority to cancel
+   * @param count count to cancel
+   * @return number of requests cancelled
+   */
+  protected int cancelSinglePriorityRequests(Priority priority,
+      int count) {
+    List<Collection<AMRMClient.ContainerRequest>> requestSets =
+        client.getMatchingRequests(priority, "", maxResources);
+    if (count <= 0) {
+      return 0;
+    }
+    int remaining = count;
+    for (Collection<AMRMClient.ContainerRequest> requestSet : requestSets) {
+      if (remaining == 0) {
+        break;
+      }
+      for (AMRMClient.ContainerRequest request : requestSet) {
+        if (remaining == 0) {
+          break;
+        }
+        // a single release
+        client.removeContainerRequest(request);
+        remaining --;
+      }
+    }
+    return remaining;
   }
 
   @Override

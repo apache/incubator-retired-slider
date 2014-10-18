@@ -19,10 +19,19 @@
 package org.apache.slider.server.appmaster.operations;
 
 import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
 
 public interface RMOperationHandlerActions {
   void releaseAssignedContainer(ContainerId containerId);
 
   void addContainerRequest(AMRMClient.ContainerRequest req);
+
+  /**
+   * Remove a container request
+   * @param priority1 priority to remove at
+   * @param priority2 second priority to target
+   * @param count number to remove
+   */
+  int cancelContainerRequests(Priority priority1, Priority priority2, int count);
 }

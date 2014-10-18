@@ -22,6 +22,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.Service;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.hadoop.registry.client.binding.RegistryTypeUtils;
 import org.apache.hadoop.registry.client.exceptions.InvalidRecordException;
@@ -332,7 +333,7 @@ public abstract class AbstractProviderService
   public Map<String, String> buildMonitorDetails(ClusterDescription clusterDesc) {
     Map<String, String> details = new LinkedHashMap<String, String>();
 
-    // add in all the 
+    // add in all the endpoints
     buildEndpointDetails(details);
 
     return details;
@@ -396,6 +397,13 @@ public abstract class AbstractProviderService
   @Override
   public void addContainerRequest(AMRMClient.ContainerRequest req) {
     // no-op
+  }
+
+  @Override
+  public int cancelContainerRequests(Priority priority1,
+      Priority priority2,
+      int count) {
+    return 0;
   }
 
   /**

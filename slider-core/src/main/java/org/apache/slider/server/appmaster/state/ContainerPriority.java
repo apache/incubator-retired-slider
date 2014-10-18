@@ -18,9 +18,12 @@
 
 package org.apache.slider.server.appmaster.state;
 
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.util.Records;
+
+import java.util.Locale;
 
 /**
  * Class containing the logic to build/split container priorities into the
@@ -61,14 +64,12 @@ public final class ContainerPriority {
   }
 
   /**
-   * Map from a container to a role key by way of its priority
-   * @param container container
-   * @return role key
+   * Does the priority have location
+   * @param priority priority index
+   * @return true if the priority has the location marker
    */
-  public static int extractRole(Container container) {
-    Priority priority = container.getPriority();
-    assert priority != null;
-    return extractRole(priority.getPriority());
+  public static boolean hasLocation(int priority) {
+    return (priority ^ NOLOCATION ) != 0;
   }
   
   /**
@@ -76,8 +77,34 @@ public final class ContainerPriority {
    * @param container container
    * @return role key
    */
+  public static int extractRole(Container container) {
+    Priority priority = container.getPriority();
+    return extractRole(priority);
+  }
+  
+  /**
+   * Priority record to role mapper
+   * @param priorityRecord priority record
+   * @return the role #
+   */
   public static int extractRole(Priority priorityRecord) {
+    Preconditions.checkNotNull(priorityRecord);
     return extractRole(priorityRecord.getPriority());
   }
 
+  /**
+   * Convert a priority record to a string, extracting role and locality
+   * @param priorityRecord priority record. May be null
+   * @return a string value
+   */
+  public static String toString(Priority priorityRecord) {
+    if (priorityRecord==null) {
+      return "(null)";
+    } else {
+      return String.format(Locale.ENGLISH,
+          "role %d (locality=%b)",
+          extractRole(priorityRecord),
+          hasLocation(priorityRecord.getPriority()));
+    }
+  }
 }

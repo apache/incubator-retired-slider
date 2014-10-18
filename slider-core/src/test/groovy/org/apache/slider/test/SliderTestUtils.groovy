@@ -85,17 +85,44 @@ class SliderTestUtils extends Assert {
 
   public static void assume(boolean condition, String message) {
     if (!condition) {
-      log.warn("Skipping test: {}",  message)
-      Assume.assumeTrue(message, false);
+      skip(message)
     }
   }
 
-
+  /**
+   * Equality size for a list
+   * @param left
+   * @param right
+   */
   public static void assertListEquals(List left, List right) {
-    assert left.size() == right.size();
+    String lval = collectionToString(left)
+    String rval = collectionToString(right)
+    String text = "comparing $lval to $rval"
+    assertEquals(text, left.size(), right.size())
     for (int i = 0; i < left.size(); i++) {
-      assert left[0] == right[0]
+      assertEquals(text, left[i], right[i])
     }
+  }
+
+  
+  /**
+   * Assert a list has a given length
+   * @param list list
+   * @param size size to have
+   */
+  public static void assertListLength(List list, int size) {
+    String lval = collectionToString(list)
+    assertEquals(lval, size, list.size())
+  }
+
+  
+  /**
+   * Stringify a collection with [ ] at either end
+   * @param collection collection
+   * @return string value
+   */
+  public static String collectionToString(List collection) {
+    return "[" + SliderUtils.join(collection,", ", false) +"]"
   }
 
   /**
