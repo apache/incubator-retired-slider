@@ -1,4 +1,4 @@
-<!--
+  <!--
    Licensed to the Apache Software Foundation (ASF) under one or more
    contributor license agreements.  See the NOTICE file distributed with
    this work for additional information regarding copyright ownership.
@@ -38,8 +38,6 @@
     <module>app-packages/command-logger/slider-pkg</module>
     <module>slider-core</module>
     <module>slider-agent</module>
-    <module>app-packages/accumulo</module>
-    <module>app-packages/hbase</module>
     <module>slider-assembly</module>
     <module>slider-funtest</module>
     <module>slider-providers/hbase/slider-hbase-provider</module>
@@ -1278,6 +1276,32 @@
            </plugin>
        </plugins>
        </build>
+    </profile>
+    <profile>
+      <id>linux</id>
+      <activation>
+        <os>
+          <family>linux</family>
+        </os>
+      </activation>
+      <modules>
+        <module>app-packages/accumulo</module>
+        <module>app-packages/hbase</module>
+        <module>app-packages/storm</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>Windows</id>
+      <activation>
+        <os>
+          <name>Windows XP</name>
+          <family>Windows</family>
+        </os>
+      </activation>
+      <modules>
+        <module>app-packages/hbase-win</module>
+        <module>app-packages/storm-win</module>
+      </modules>
     </profile>
     <profile>
       <id>rat</id>

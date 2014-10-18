@@ -28,7 +28,7 @@
   <packaging>pom</packaging>
   <name>Slider HBase App Package</name>
   <description>Slider HBase App Package</description>
-  <version>${bld.version}</version>
+  <version>${pkg.version}</version>
   <properties>
     <work.dir>package-tmp</work.dir>
     <app.package.name>${project.artifactId}-${project.version}</app.package.name>
@@ -37,9 +37,6 @@
   <profiles>
     <profile>
       <id>hbase-app-package</id>
-      <properties>
-        <bld.version>${pkg.version}</bld.version>
-      </properties>
       <build>
         <plugins>
           <plugin>
@@ -87,7 +84,6 @@
       <id>hbase-app-package-it</id>
       <properties>
         <pkg.version>${hbase.version}</pkg.version>
-        <bld.version>0.51.0-incubating-SNAPSHOT</bld.version>
         <pkg.src>${project.build.directory}/${work.dir}</pkg.src>
         <pkg.name>hbase-${hbase.version}-bin.tar.gz</pkg.name>
       </properties>

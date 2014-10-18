@@ -24,10 +24,12 @@
       log file. When stopped it renames the file.
     </comment>
     <version>0.1.0</version>
+    <exportedConfigs>cl-site</exportedConfigs>
     <components>
       <component>
         <name>COMMAND_LOGGER</name>
         <category>MASTER</category>
+        <publishConfig>true</publishConfig>
         <commandScript>
           <script>scripts/cl.py</script>
           <scriptType>PYTHON</scriptType>
