@@ -11,7 +11,8 @@
         "site.global.app_pid_dir": "${AGENT_WORK_ROOT}/app/run",
         "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/command-logger",
         "site.cl-site.logfile.location": "${AGENT_WORK_ROOT}/app/install/command-logger-app/operations.log",
-        "site.cl-site.datetime.format": "%A, %d. %B %Y %I:%M%p"
+        "site.cl-site.datetime.format": "%A, %d. %B %Y %I:%M%p",
+        "site.cl-site.pattern.for.test.to.verify": "verify this pattern"
     },
     "components": {
         "COMMAND_LOGGER": {

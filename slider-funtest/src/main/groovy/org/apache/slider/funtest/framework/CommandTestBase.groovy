@@ -598,9 +598,9 @@ abstract class CommandTestBase extends SliderTestUtils {
 
   protected void ensureApplicationIsUp(String clusterName) {
     repeatUntilTrue(this.&isApplicationUp,
+        20,
         SLIDER_CONFIG.getInt(KEY_TEST_INSTANCE_LAUNCH_TIME,
             DEFAULT_INSTANCE_LAUNCH_TIME_SECONDS),
-        1000,
         ['arg1': clusterName],
         true,
         'Application did not start, aborting test.')
