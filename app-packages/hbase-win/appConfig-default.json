@@ -3,7 +3,7 @@
     "metadata": {
     },
     "global": {
-        "application.def": ".slider/package/HBASE/slider-hbase-app-win-package-${bld.version}.zip",
+        "application.def": ".slider/package/HBASE/slider-hbase-app-win-package-${pkg.version}.zip",
         "create.default.zookeeper.node": "true",
         "java_home": "C:\\java",
 
