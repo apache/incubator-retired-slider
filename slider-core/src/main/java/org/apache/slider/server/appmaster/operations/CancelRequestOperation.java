@@ -18,28 +18,41 @@
 
 package org.apache.slider.server.appmaster.operations;
 
-import org.apache.hadoop.yarn.client.api.AMRMClient;
+import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.slider.server.appmaster.state.ContainerPriority;
 
-public class ContainerRequestOperation extends AbstractRMOperation {
+/**
+ * Cancel a container request
+ */
+public class CancelRequestOperation extends AbstractRMOperation {
 
-  private final AMRMClient.ContainerRequest request;
+  private final Priority priority1;
+  private final Priority priority2;
+  private final int count;
 
-  public ContainerRequestOperation(AMRMClient.ContainerRequest request) {
-    this.request = request;
-  }
-
-  public AMRMClient.ContainerRequest getRequest() {
-    return request;
+  public CancelRequestOperation(Priority priority1, Priority priority2, int count) {
+    this.priority1 = priority1;
+    this.priority2 = priority2;
+    this.count = count;
   }
 
   @Override
   public void execute(RMOperationHandler handler) {
-    handler.addContainerRequest(request);
+    handler.cancelContainerRequests(priority1, priority2, count);
   }
 
   @Override
   public String toString() {
-    return "request container for " + ContainerPriority.toString(request.getPriority());
+    return "release " + count
+           + " requests for " + ContainerPriority.toString(priority1)
+           + " and " + ContainerPriority.toString(priority2);
+  }
+
+  /**
+   * Get the number to release
+   * @return the number of containers to release
+   */
+  public int getCount() {
+    return count;
   }
 }

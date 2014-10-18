@@ -629,8 +629,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       asyncRMClient = AMRMClientAsync.createAMRMClientAsync(heartbeatInterval,
                                                             this);
       addService(asyncRMClient);
-      //wrap it for the app state model
-      rmOperationHandler = new AsyncRMOperationHandler(asyncRMClient);
       //now bring it up
       deployChildService(asyncRMClient);
 
@@ -707,6 +705,12 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       containerMaxCores = maxResources.getVirtualCores();
       appState.setContainerLimits(maxResources.getMemory(),
                                   maxResources.getVirtualCores());
+
+      // build the handler for RM request/release operations; this uses
+      // the max value as part of its lookup
+      rmOperationHandler = new AsyncRMOperationHandler(asyncRMClient,
+          maxResources);
+
       // set the RM-defined maximum cluster values
       appInformation.put(ResourceKeys.YARN_CORES, Integer.toString(containerMaxCores));
       appInformation.put(ResourceKeys.YARN_MEMORY, Integer.toString(containerMaxMemory));

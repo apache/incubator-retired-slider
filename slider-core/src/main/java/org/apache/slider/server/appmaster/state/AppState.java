@@ -28,6 +28,7 @@ import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.ContainerStatus;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.hadoop.yarn.api.records.NodeId;
+import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.api.records.impl.pb.ContainerPBImpl;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
@@ -58,6 +59,7 @@ import org.apache.slider.core.exceptions.SliderInternalStateException;
 import org.apache.slider.core.exceptions.TriggerClusterTeardownException;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
+import org.apache.slider.server.appmaster.operations.CancelRequestOperation;
 import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation;
 import org.apache.slider.server.appmaster.operations.ContainerRequestOperation;
 import org.slf4j.Logger;
@@ -948,7 +950,7 @@ public class AppState {
       boolean active) {
     List<RoleInstance> nodes = new ArrayList<RoleInstance>();
     Collection<RoleInstance> allRoleInstances;
-    allRoleInstances = active? ownedContainers.values() : liveNodes.values();
+    allRoleInstances = active ? ownedContainers.values() : liveNodes.values();
     for (RoleInstance node : allRoleInstances) {
       if (node.roleId == roleId) {
         nodes.add(node);
@@ -1574,7 +1576,7 @@ public class AppState {
   /**
    * Get the failure threshold for a specific role, falling back to
    * the global one if not
-   * @param roleStatus
+   * @param roleStatus role
    * @return the threshold for failures
    */
   private int getFailureThresholdForRole(RoleStatus roleStatus) {
@@ -1615,11 +1617,10 @@ public class AppState {
     String name = role.getName();
     synchronized (role) {
       delta = role.getDelta();
-      details = role.toString();
       expected = role.getDesired();
     }
 
-    log.info(details);
+    log.info("Reviewing {}", role);
     checkFailureThreshold(role);
     
     if (delta > 0) {
@@ -1630,13 +1631,11 @@ public class AppState {
         Resource capability = recordFactory.newResource();
         AMRMClient.ContainerRequest containerAsk =
           buildContainerResourceAndRequest(role, capability);
-        log.info("Container ask is {} and label = {}", containerAsk, containerAsk.getNodeLabelExpression());
-        if (containerAsk.getCapability().getMemory() >
-            this.containerMaxMemory) {
-          log.warn(
-            "Memory requested: " + containerAsk.getCapability().getMemory() +
-            " > " +
-            this.containerMaxMemory);
+        log.info("Container ask is {} and label = {}", containerAsk,
+            containerAsk.getNodeLabelExpression());
+        int askMemory = containerAsk.getCapability().getMemory();
+        if (askMemory > this.containerMaxMemory) {
+          log.warn("Memory requested: {} > max of {}", askMemory, containerMaxMemory);
         }
         operations.add(new ContainerRequestOperation(containerAsk));
       }
@@ -1649,47 +1648,73 @@ public class AppState {
       //then pick some containers to kill
       int excess = -delta;
 
-      // get the nodes to release
-      int roleId = role.getKey();
-            
-      // enum all active nodes that aren't being released
-      List<RoleInstance> containersToRelease = enumNodesWithRoleId(roleId, true);
-
-      // cut all release-in-progress nodes
-      ListIterator<RoleInstance> li = containersToRelease.listIterator();
-      while (li.hasNext()) {
-        RoleInstance next = li.next();
-        if (next.released) {
-          li.remove();
+      // how many requests are outstanding
+      int outstandingRequests = role.getRequested();
+      if (outstandingRequests > 0) {
+        // outstanding requests.
+        int toCancel = Math.min(outstandingRequests, excess);
+        Priority p1 =
+            ContainerPriority.createPriority(role.getPriority(), true);
+        Priority p2 =
+            ContainerPriority.createPriority(role.getPriority(), false);
+        operations.add(new CancelRequestOperation(p1, p2, toCancel));
+        role.cancel(toCancel);
+        excess -= toCancel;
+        assert excess >= 0 : "Attempted to cancel too many requests";
+        log.info("Submitted {} cancellations, leaving {} to release",
+            toCancel, excess);
+        if (excess == 0) {
+          log.info("After cancelling requests, application is at desired size");
         }
       }
 
-      // warn if the desired state can't be reaced
-      if (containersToRelease.size() < excess) {
-        log.warn("Not enough nodes to release...short of {} nodes",
-            containersToRelease.size() - excess);
-      }
-      
-      // ask the release selector to sort the targets
-      containersToRelease =  containerReleaseSelector.sortCandidates(
-          roleId,
-          containersToRelease,
-          excess);
-      
-      //crop to the excess
 
-      List<RoleInstance> finalCandidates = (excess < containersToRelease.size()) 
-          ? containersToRelease.subList(0, excess)
-          : containersToRelease;
-      
+      // after the cancellation there may be no excess
+      if (excess > 0) {
+        // get the nodes to release
+        int roleId = role.getKey();
 
-      // then build up a release operation, logging each container as released
-      for (RoleInstance possible : finalCandidates) {
-        log.debug("Targeting for release: {}", possible);
-        containerReleaseSubmitted(possible.container);
-        operations.add(new ContainerReleaseOperation(possible.getId()));       
+        // enum all active nodes that aren't being released
+        List<RoleInstance> containersToRelease = enumNodesWithRoleId(roleId, true);
+
+        // cut all release-in-progress nodes
+        ListIterator<RoleInstance> li = containersToRelease.listIterator();
+        while (li.hasNext()) {
+          RoleInstance next = li.next();
+          if (next.released) {
+            li.remove();
+          }
+        }
+
+        // warn if the desired state can't be reaced
+        int numberAvailableForRelease = containersToRelease.size();
+        if (numberAvailableForRelease < excess) {
+          log.warn("Not enough nodes to release, have {} and need {} more",
+              numberAvailableForRelease,
+              excess - numberAvailableForRelease);
+        }
+
+        // ask the release selector to sort the targets
+        containersToRelease =  containerReleaseSelector.sortCandidates(
+            roleId,
+            containersToRelease,
+            excess);
+
+        //crop to the excess
+
+        List<RoleInstance> finalCandidates = (excess < numberAvailableForRelease) 
+            ? containersToRelease.subList(0, excess)
+            : containersToRelease;
+
+
+        // then build up a release operation, logging each container as released
+        for (RoleInstance possible : finalCandidates) {
+          log.debug("Targeting for release: {}", possible);
+          containerReleaseSubmitted(possible.container);
+          operations.add(new ContainerReleaseOperation(possible.getId()));       
+        }
       }
-   
+
     }
 
     return operations;

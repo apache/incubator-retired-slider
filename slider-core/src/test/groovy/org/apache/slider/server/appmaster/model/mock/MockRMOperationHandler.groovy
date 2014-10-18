@@ -20,6 +20,7 @@ package org.apache.slider.server.appmaster.model.mock
 
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.ContainerId
+import org.apache.hadoop.yarn.api.records.Priority
 import org.apache.hadoop.yarn.client.api.AMRMClient
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
 import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation
@@ -30,6 +31,10 @@ import org.apache.slider.server.appmaster.operations.RMOperationHandler
 class MockRMOperationHandler extends RMOperationHandler {
   public List<AbstractRMOperation> operations = [];
   int requests, releases;
+  // number available to cancel
+  int availableToCancel = 0;
+  // count of cancelled values. This must be explicitly set
+  int cancelled
 
   @Override
   public void releaseAssignedContainer(ContainerId containerId) {
@@ -45,9 +50,20 @@ class MockRMOperationHandler extends RMOperationHandler {
     requests++;
   }
 
-  /**
-   * clear the history
-   */
+  @Override
+  int cancelContainerRequests(
+      Priority priority1,
+      Priority priority2,
+      int count) {
+    int releaseable = Math.min(count, availableToCancel)
+    availableToCancel -= releaseable;
+    cancelled += releaseable;
+    return releaseable;
+  }
+
+/**
+ * clear the history
+ */
   public void clear() {
     operations.clear()
     releases = 0;
