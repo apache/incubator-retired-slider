@@ -201,9 +201,8 @@ public interface StateAccessForProviders {
 
   /**
    * Update the cluster description with anything interesting
-   * @param providerStatus status from the provider for the cluster info section
    */
   void refreshClusterStatus();
-  
 
+  List<RoleStatus> cloneRoleStatusList();
 }
