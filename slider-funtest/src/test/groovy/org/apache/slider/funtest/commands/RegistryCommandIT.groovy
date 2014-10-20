@@ -16,20 +16,21 @@
  * limitations under the License.
  */
 
-package org.apache.slider.core.exceptions;
+package org.apache.slider.funtest.commands
 
+import groovy.transform.CompileStatic
+import groovy.util.logging.Slf4j
+import org.apache.slider.funtest.framework.CommandTestBase
+import org.junit.BeforeClass
+import org.junit.Test
 
-/**
- * The system is in a bad state
- */
-public class BadClusterStateException extends SliderException {
-  public BadClusterStateException(String message,
-                                  Object... args) {
-    super(EXIT_BAD_STATE, message, args);
+@CompileStatic
+@Slf4j
+public class RegistryCommandIT extends CommandTestBase {
+
+  @Test
+  public void testListAll() throws Throwable {
+    assertSuccess(list(null))
   }
 
-  public BadClusterStateException(Throwable throwable,
-                                  String message, Object... args) {
-    super(EXIT_BAD_STATE, throwable, message, args);
-  }
 }

@@ -20,16 +20,16 @@ package org.apache.slider.core.exceptions;
 
 
 /**
- * The system is in a bad state
+ * Whatever was being resolved: it was not found
  */
-public class BadClusterStateException extends SliderException {
-  public BadClusterStateException(String message,
-                                  Object... args) {
-    super(EXIT_BAD_STATE, message, args);
+public class NotFoundException extends SliderException {
+  public NotFoundException(String message,
+      Object... args) {
+    super(EXIT_NOT_FOUND, message, args);
   }
 
-  public BadClusterStateException(Throwable throwable,
-                                  String message, Object... args) {
-    super(EXIT_BAD_STATE, throwable, message, args);
+  public NotFoundException(Throwable throwable,
+      String message, Object... args) {
+    super(EXIT_NOT_FOUND, throwable, message, args);
   }
 }

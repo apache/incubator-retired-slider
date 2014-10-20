@@ -31,10 +31,9 @@ import org.apache.hadoop.registry.client.impl.RegistryOperationsClient
 import org.apache.hadoop.registry.client.types.RegistryPathStatus
 import org.apache.hadoop.registry.client.types.ServiceRecord
 import org.apache.hadoop.registry.client.types.yarn.YarnRegistryAttributes
+import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.ActionResolveArgs
 import org.apache.slider.common.params.Arguments
-import org.apache.slider.core.exceptions.BadCommandArgumentsException
-import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
 import org.apache.slider.core.main.LauncherExitCodes
 
 import static org.apache.hadoop.registry.client.binding.RegistryUtils.*
@@ -61,9 +60,7 @@ import static org.apache.slider.core.registry.info.CustomRegistryConstants.*
  */
 //@CompileStatic
 @Slf4j
-
 class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
-
 
   public static final String ARTIFACT_NAME = PublishedArtifacts.COMPLETE_CONFIG
   public static final String HBASE = "hbase/localhost@HADOOP.APACHE.ORG"
@@ -72,7 +69,7 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
   public void testStandaloneYarnRegistryAM() throws Throwable {
     
 
-    describe "create a masterless AM then perform YARN registry operations on it"
+    describe "create a standalone AM then perform YARN registry operations on it"
 
     
     String clustername = createMiniCluster(configuration, 1, true)
@@ -83,7 +80,7 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
       registryOperations.stat(RegistryConstants.PATH_SYSTEM_SERVICES)
     } catch (PathNotFoundException e) {
       log.warn(" RM is not apparently running registry services: {}", e, e)
-    }
+    }  
     
     ServiceLauncher<SliderClient> launcher
     launcher = createStandaloneAM(clustername, true, false)
@@ -192,13 +189,12 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     assert 0 == client.actionResolve(resolveList)
     // to a file
     resolveList.out = resolveListDir;
-    try {
+
+    assertFailsWithException(
+        LauncherExitCodes.EXIT_COMMAND_ARGUMENT_ERROR,
+        Arguments.ARG_OUTPUT) {
       client.actionResolve(resolveList)
-    } catch (BadCommandArgumentsException ex) {
-      assertExceptionDetails(ex, LauncherExitCodes.EXIT_COMMAND_ARGUMENT_ERROR,
-          Arguments.ARG_OUTPUT)
     }
-    
     // list to a destination dir
     resolveList.out = null
     resolveList.destdir = resolveListDir
@@ -219,22 +215,34 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     assert 0 == listParentDir.list().length
 
     // look for a record a path not in the registry expect failure
-    ActionResolveArgs listUnknownPath = new ActionResolveArgs(
-        path: recordsPath +"/unknown",
-        list: true)
+    def unknownPath = recordsPath + "/unknown"
     // the record is not there, even if the path is
-    assert LauncherExitCodes.EXIT_NOT_FOUND == client.actionResolve(
-        listUnknownPath)
-    
-    
-    // look for a record at the same path as the listing; expect failure
-    ActionResolveArgs resolveRecordAtListPath = new ActionResolveArgs(
-        path: recordsPath,
-        list: false)
-    // the record is not there, even if the path is
-    assert LauncherExitCodes.EXIT_NOT_FOUND == client.actionResolve(
-        resolveRecordAtListPath)
+    assertFailsWithException(LauncherExitCodes.EXIT_NOT_FOUND, unknownPath) {
+      client.actionResolve(new ActionResolveArgs(
+          path: unknownPath,
+          list: true))
+    }
 
+    // there's always a root path for listing 
+    client.actionResolve(new ActionResolveArgs(
+        path: "/",
+        list: true))
+
+    // but not usually a root entry
+    assertFailsWithException(LauncherExitCodes.EXIT_NOT_FOUND, "") {
+      client.actionResolve(new ActionResolveArgs(
+          path: "/"))
+    }
+
+
+    // look for a record at the same path as the listing; expect failure
+    // the record is not there, even if the path is
+    assertFailsWithException(LauncherExitCodes.EXIT_NOT_FOUND, recordsPath) {
+      client.actionResolve(new ActionResolveArgs(
+          path: recordsPath,
+          list: false))
+    }
+    
     // look at a single record
     def instanceRecordPath = recordsPath + "/" + clustername
     ActionResolveArgs resolveRecordCommand = new ActionResolveArgs(
@@ -373,21 +381,17 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     assert rmAddrViaClientSideXML == rmAddrFromDownloadedProperties
     
     describe "fetch missing artifact"
-    try {
+    assertFailsWithExceptionClass(
+        FileNotFoundException, "") {
       retriever.retrieveConfiguration(externalConfSet, "no-such-artifact", true)
-      fail("expected a failure")
-    } catch (FileNotFoundException expected) {
-      // expected
-    }
-    describe "Internal configurations"
-    assert !retriever.hasConfigurations(false)
-    try {
-      retriever.getConfigurations(false)
-      fail("expected a failure")
-    } catch (FileNotFoundException expected) {
-      // expected
     }
 
+    describe "Internal configurations"
+    assert !retriever.hasConfigurations(false)
+    assertFailsWithExceptionClass(
+        FileNotFoundException, "") {
+      retriever.getConfigurations(false)
+    }
 
     // retrieval via API
     ActionRegistryArgs registryArgs = new ActionRegistryArgs()
@@ -401,20 +405,16 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     // list a named instance and expect a  failure
     registryArgs.list = true;
     registryArgs.name = "unknown"
-    try {
+    assertFailsWithException(LauncherExitCodes.EXIT_NOT_FOUND, "") {
       client.actionRegistryList(registryArgs)
-    } catch (UnknownApplicationInstanceException expected) {
-      // expected 
     }
 
     // list all instances of an alternate type and expect failure
     registryArgs.list = true;
     registryArgs.name = null
     registryArgs.serviceType = "org-apache-hadoop"
-    try {
+    assertFailsWithException(LauncherExitCodes.EXIT_NOT_FOUND,"") {
       client.actionRegistryList(registryArgs)
-    } catch (UnknownApplicationInstanceException expected) {
-      // expected 
     }
 
     registryArgs.serviceType = ""
@@ -487,7 +487,7 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     assert LauncherExitCodes.EXIT_NOT_FOUND == client.actionRegistry(registryArgs)
 
     //look for a different user
-    try {
+    assertFailsWithException(SliderExitCodes.EXIT_NOT_FOUND, "") {
       def args = new ActionRegistryArgs(
           name: clustername,
           user: "unknown",
@@ -496,9 +496,7 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
           verbose: true
       )
       client.actionRegistry(args)
-      fail("registry operation succeeded unexpectedly on $args")
-    } catch (UnknownApplicationInstanceException expected) {
-      // expected
+      log.warn("Success on $args")
     }
     
     describe "stop cluster"
@@ -517,12 +515,18 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
 
     // only check this if the YARN registry renaming logic is in
     if (!hbase.contains("@")) {
-      assert LauncherExitCodes.EXIT_NOT_FOUND == client.actionResolve(
-          new ActionResolveArgs(
-              path: hbaseServices,
-              list: true))
-      assert LauncherExitCodes.EXIT_NOT_FOUND == client.actionResolve(
-          new ActionResolveArgs(path: hbaseServices))
+      assertFailsWithException(LauncherExitCodes.EXIT_NOT_FOUND, "") {
+        client.actionResolve(
+            new ActionResolveArgs(
+                path: hbaseServices,
+                list: true))
+      }
+      assertFailsWithException(LauncherExitCodes.EXIT_NOT_FOUND, "") {
+        client.actionResolve(
+            new ActionResolveArgs(
+                path: hbaseServices))
+      }
+
     }
 
   }

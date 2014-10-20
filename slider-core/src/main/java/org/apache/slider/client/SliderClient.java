@@ -31,7 +31,7 @@ import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.registry.client.binding.RegistryPathUtils;
-import org.apache.hadoop.registry.client.exceptions.InvalidRecordException;
+import org.apache.hadoop.registry.client.types.RegistryPathStatus;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.alias.CredentialProvider;
 import org.apache.hadoop.security.alias.CredentialProviderFactory;
@@ -102,6 +102,7 @@ import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.core.exceptions.ErrorStrings;
 import org.apache.slider.core.exceptions.NoSuchNodeException;
+import org.apache.slider.core.exceptions.NotFoundException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.exceptions.UnknownApplicationInstanceException;
 import org.apache.slider.core.exceptions.WaitTimeoutException;
@@ -323,8 +324,31 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
 */
+
+  /**
+   * Launched service execution. This runs {@link #exec()}
+   * then catches some exceptions and converts them to exit codes
+   * @return an exit code
+   * @throws Throwable
+   */
   @Override
   public int runService() throws Throwable {
+    try {
+      return exec();
+    } catch (FileNotFoundException nfe) {
+      throw new NotFoundException(nfe, nfe.toString());
+    } catch (PathNotFoundException nfe) {
+      throw new NotFoundException(nfe, nfe.toString());
+    }
+
+  }
+
+  /**
+   * Execute the command line
+   * @return an exit code
+   * @throws Throwable on a failure
+   */
+  public int exec() throws Throwable {
 
     // choose the action
     String action = serviceArgs.getAction();
@@ -2288,9 +2312,19 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
           destDir.mkdirs();
         }
 
-        Map<String, ServiceRecord> recordMap =
-            listServiceRecords(operations, path);
-
+        Map<String, ServiceRecord> recordMap;
+        try {
+          recordMap = listServiceRecords(operations, path);
+        } catch (PathNotFoundException e) {
+          // treat the root directory as if if is always there
+        
+          if ("/".equals(path)) {
+            recordMap = new HashMap<String, ServiceRecord>(0);
+          } else {
+            throw e;
+          }
+        }
+     
         for (Entry<String, ServiceRecord> recordEntry : recordMap.entrySet()) {
           String name = recordEntry.getKey();
           ServiceRecord instance = recordEntry.getValue();
@@ -2321,16 +2355,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 //      TODO JDK7
     } catch (PathNotFoundException e) {
       // no record at this path
-      return EXIT_NOT_FOUND;
+      throw new NotFoundException(e, path);
     } catch (NoRecordException e) {
-      return EXIT_NOT_FOUND;
-    } catch (UnknownApplicationInstanceException e) {
-      return EXIT_NOT_FOUND;
-    } catch (InvalidRecordException e) {
-      // it is not a record
-      log.error("{}", e);
-      log.debug("{}", e, e);
-      return EXIT_EXCEPTION_THROWN;
+      throw new NotFoundException(e, path);
     }
     return EXIT_SUCCESS;
   }
@@ -2410,7 +2437,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         }
         serviceRecords = recordMap.values();
       } catch (PathNotFoundException e) {
-        throw new UnknownApplicationInstanceException(path, e);
+        throw new NotFoundException(path, e);
       }
     } else {
       ServiceRecord instance = lookupServiceRecord(registryArgs);
@@ -2945,7 +2972,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
   /**
-   * Look up an instance
+   * Look up a service record of the current user
    * @param serviceType service type
    * @param id instance ID
    * @return instance data
@@ -2965,7 +2992,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * Look up an instance
    * @param path path
    * @return instance data
-   * @throws UnknownApplicationInstanceException no path or service record
+   * @throws NotFoundException no path/no service record
    * at the end of the path
    * @throws SliderException other failures
    * @throws IOException IO problems or wrapped exceptions
@@ -2973,13 +3000,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   public ServiceRecord resolve(String path)
       throws IOException, SliderException {
     try {
-      return getRegistryOperations().resolve(
-          path);
-      // TODO JDK7 SWITCH
+      return getRegistryOperations().resolve(path);
     } catch (PathNotFoundException e) {
-      throw new UnknownApplicationInstanceException(e.getPath().toString(), e);
+      throw new NotFoundException(e.getPath().toString(), e);
     } catch (NoRecordException e) {
-      throw new UnknownApplicationInstanceException(e.getPath().toString(), e);
+      throw new NotFoundException(e.getPath().toString(), e);
     }
   }
 
@@ -2988,11 +3013,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @return a list of slider registry instances
    * @throws IOException Any IO problem ... including no path in the registry
    * to slider service classes for this user
-   * @throws YarnException
+   * @throws SliderException other failures
    */
 
   public Map<String, ServiceRecord> listRegistryInstances()
-      throws IOException, YarnException {
+      throws IOException, SliderException {
     Map<String, ServiceRecord> recordMap = listServiceRecords(
         getRegistryOperations(),
         serviceclassPath(currentUser(), SliderKeys.APP_TYPE));

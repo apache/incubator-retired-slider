@@ -30,7 +30,7 @@ import org.apache.slider.core.main.ServiceLauncher
 import org.junit.Test
 
 /**
- * kill a masterless AM and verify it shuts down. This test
+ * kill a standalone AM and verify it shuts down. This test
  * also sets the retry count to 1 to stop recreation attempts
  */
 @CompileStatic
