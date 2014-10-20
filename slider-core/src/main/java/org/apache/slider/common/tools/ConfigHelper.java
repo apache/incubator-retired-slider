@@ -81,7 +81,7 @@ public class ConfigHelper {
    * @return the sorted keyset
 
    */
-  public static TreeSet<String> sortedConfigKeys(Iterable<Map.Entry<String, String>> conf) {
+  public static Set<String> sortedConfigKeys(Iterable<Map.Entry<String, String>> conf) {
     TreeSet<String> sorted = new TreeSet<String>();
     for (Map.Entry<String, String> entry : conf) {
       sorted.add(entry.getKey());
@@ -339,13 +339,40 @@ public class ConfigHelper {
     try {
       conf.addResource(file.toURI().toURL());
     } catch (MalformedURLException e) {
-      //should never happen...
+      // should never happen...
       throw new IOException(
         "File " + file.toURI() + " doesn't have a valid URL");
     }
     return conf;
   }
 
+  /**
+   * Add a configuration from a file to an existing configuration
+   * @param conf existing configuration
+   * @param file file to load
+   * @return the merged configuration
+   * @throws IOException
+   */
+  public static Configuration addConfigurationFile(Configuration conf,
+      File file)
+      throws IOException {
+    Configuration c2 = loadConfFromFile(file, false);
+    mergeConfigurations(conf, c2, file.getAbsolutePath());
+    return conf;
+  }
+
+  /**
+   * Add the system env variables with the given prefix (by convention, env.)
+   * @param conf existing configuration
+   * @param prefix prefix
+   */
+  public static void addEnvironmentVariables(Configuration conf, String prefix) {
+    Map<String, String> env = System.getenv();
+    for (Map.Entry<String, String> entry : env.entrySet()) {
+      conf.set(prefix + entry.getKey(),entry.getValue(), "env");
+    }
+  }
+  
   /**
    * looks for the config under $confdir/$templateFilename; if not there
    * loads it from /conf/templateFile.
@@ -384,8 +411,8 @@ public class ConfigHelper {
    */
   public static Configuration loadTemplateConfiguration(FileSystem fs,
                                                         Path templatePath,
-                                                        String fallbackResource) throws
-                                                                                 IOException {
+                                                        String fallbackResource)
+      throws IOException {
     Configuration conf;
     String origin;
     if (fs.exists(templatePath)) {
@@ -490,8 +517,8 @@ public class ConfigHelper {
    * @return the loaded configuration
    * @throws FileNotFoundException if the resource is missing
    */
-  public static Configuration loadMandatoryResource(String resource) throws
-                                                                     FileNotFoundException {
+  public static Configuration loadMandatoryResource(String resource)
+      throws FileNotFoundException {
     Configuration conf = new Configuration(false);
     URL resURL = ConfigHelper.class.getClassLoader()
                                 .getResource(resource);

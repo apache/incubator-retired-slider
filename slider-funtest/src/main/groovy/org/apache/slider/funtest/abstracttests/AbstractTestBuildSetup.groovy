@@ -137,7 +137,6 @@ abstract class AbstractTestBuildSetup extends SliderTestUtils implements Funtest
     
     def fs = HadoopFS.get(path.toUri(), conf)
     assert fs.exists(path)
-
   }
 
   @Test
