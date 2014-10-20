@@ -22,6 +22,8 @@ import org.apache.slider.api.StatusKeys;
 import org.apache.slider.providers.PlacementPolicy;
 import org.apache.slider.providers.ProviderRole;
 
+import java.io.Serializable;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -298,4 +300,27 @@ public final class RoleStatus implements Cloneable {
     stats.put(StatusKeys.STATISTICS_CONTAINERS_START_FAILED, getStartFailed());
     return stats;
   }
+
+  /**
+   * Compare two role status entries by name
+   */
+  public static class CompareByName implements Comparator<RoleStatus>,
+      Serializable {
+    @Override
+    public int compare(RoleStatus o1, RoleStatus o2) {
+      return o1.getName().compareTo(o2.getName());
+    }
+  }
+  
+  /**
+   * Compare two role status entries by key
+   */
+  public static class CompareByKey implements Comparator<RoleStatus>,
+      Serializable {
+    @Override
+    public int compare(RoleStatus o1, RoleStatus o2) {
+      return Integer.compare(o1.getKey(), o2.getKey());
+    }
+  }
+  
 }

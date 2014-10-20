@@ -787,6 +787,23 @@ public class AppState {
     return lookupRoleStatus(ContainerPriority.extractRole(c));
   }
 
+  /**
+   * Get a clone of the role status list. Concurrent events may mean this
+   * list (or indeed, some of the role status entries) may be inconsistent
+   * @return a snapshot of the role status entries
+   */
+  public List<RoleStatus> cloneRoleStatusList() {
+    Collection<RoleStatus> statuses = roleStatusMap.values();
+    List<RoleStatus> statusList = new ArrayList<RoleStatus>(statuses.size());
+    try {
+      for (RoleStatus status : statuses) {
+        statusList.add((RoleStatus)(status.clone()));
+      }
+    } catch (CloneNotSupportedException e) {
+      log.warn("Unexpected cloning failure: {}", e, e);
+    }
+    return statusList;
+  }
 
 
   public RoleStatus lookupRoleStatus(String name) throws YarnRuntimeException {

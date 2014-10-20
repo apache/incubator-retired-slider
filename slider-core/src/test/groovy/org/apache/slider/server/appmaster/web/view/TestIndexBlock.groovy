@@ -82,6 +82,20 @@ public class TestIndexBlock extends BaseMockAppStateTest {
 
   @Test
   public void testIndex() {
+    def role0 = role0Status
+    def role1 = role1Status
+    role0.desired = 8
+    role0.incActual()
+    role0.incActual()
+    role0.incActual()
+    role0.incActual()
+    role0.incActual()
+    role1.incRequested()
+    role1.incRequested()
+    role1.incRequested()
+    role0.noteFailed(false, "")
+    role0.noteFailed(true, "")
+
     StringWriter sw = new StringWriter(64);
     PrintWriter pw = new PrintWriter(sw);
 
@@ -89,7 +103,23 @@ public class TestIndexBlock extends BaseMockAppStateTest {
     
     int level = hamlet.nestLevel();
     indexBlock.doIndex(hamlet, "accumulo");
+
+    def body = sw.toString()
+    log.info(body)
+    assertEquals(body, level, hamlet.nestLevel())
+    // verify role data came out
+    assert body.contains("role0")
+    // 
+    assert body.contains("8")
+    assert body.contains("5")
+    assert body.contains("3")
+    assert body.contains("2")
+    assert body.contains("1")
     
-    assert level == hamlet.nestLevel();
+    assert body.contains("role1")
+    assert body.contains("role2")
+    // verify that the sorting took place
+    assert body.indexOf("role0") < body.indexOf("role1")
+    assert body.indexOf("role1") < body.indexOf("role2")
   }
 }
