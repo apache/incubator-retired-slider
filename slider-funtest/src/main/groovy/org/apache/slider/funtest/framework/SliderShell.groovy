@@ -42,6 +42,11 @@ class SliderShell extends Shell {
   
   public static final List<String> slider_classpath_extra = []
 
+  /**
+   * Environment varaibles
+   */
+  protected static final Map<String, String> environment = [:]
+
   final String command
 
   /**
@@ -49,7 +54,7 @@ class SliderShell extends Shell {
    * @param commands
    */
   SliderShell(Collection<String> commands) {
-    super(org.apache.hadoop.util.Shell.WINDOWS? CMD : BASH)
+    super(org.apache.hadoop.util.Shell.WINDOWS ? CMD : BASH)
     assert confDir != null;
     assert scriptFile != null;
     command = scriptFile.absolutePath + " " + commands.join(" ")
@@ -60,17 +65,16 @@ class SliderShell extends Shell {
    * @return the script exit code
    */
   int execute() {
-    String confDirCmd = env(FuntestProperties.ENV_CONF_DIR, confDir)
     log.info(command)
-    List<String> commandLine = [
-        confDirCmd,
-    ]
+    setEnv(FuntestProperties.ENV_SLIDER_CONF_DIR, confDir)
     if (!slider_classpath_extra.empty) {
-      commandLine << env(FuntestProperties.ENV_SLIDER_CLASSPATH_EXTRA,
-          SliderUtils.join(slider_classpath_extra, 
-              (org.apache.hadoop.util.Shell.WINDOWS? ";" : ":"),
-               false))
+      setEnv(FuntestProperties.ENV_SLIDER_CLASSPATH_EXTRA,
+          SliderUtils.join(slider_classpath_extra,
+              pathElementSeparator,
+              false))
     }
+    List<String> commandLine = buildEnvCommands()
+
     commandLine << command
     String script = commandLine.join("\n")
     log.debug(script)
@@ -79,14 +83,53 @@ class SliderShell extends Shell {
     return ret;
   }
 
+  public String getPathElementSeparator() {
+    File.pathSeparator
+  }
+
+  public static boolean isWindows() {
+    return org.apache.hadoop.util.Shell.WINDOWS
+  }
+
+  /**
+   * Set an environment variable
+   * @param var variable name
+   * @param val value
+   */
+  public static void setEnv(String var, Object val) {
+    environment[var] = val.toString()
+  }
+
+  /**
+   * Get an environment variable
+   * @param var variable name
+   * @return the value or null
+   */
+  public static String getEnv(String var) {
+    return environment[var]
+  }
+
+  /**
+   * Build up a list of environment variable setters from the
+   * env variables
+   * @return a list of commands to set up the env on the target system.
+   */
+  public static List<String> buildEnvCommands() {
+    List<String> commands = []
+    environment.each { String var, String val ->
+      commands << env(var, val)
+    }
+    return commands
+  }
+  
   /**
    * Add an environment variable
    * @param var variable
    * @param val value (which will be stringified)
    * @return an env variable command
    */
-  String env(String var, Object val) {
-    if (org.apache.hadoop.util.Shell.WINDOWS) {
+  static String env(String var, Object val) {
+    if (isWindows()) {
       return "set " + var + "=${val.toString()}"
     } else {
       return "export " + var + "=${val.toString()};"

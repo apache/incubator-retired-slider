@@ -24,7 +24,6 @@ import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.registry.client.api.RegistryConstants
 import org.apache.hadoop.util.ExitUtil
-import org.apache.hadoop.util.Shell
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.common.tools.ConfigHelper
 import org.apache.slider.core.main.LauncherExitCodes
@@ -81,10 +80,13 @@ abstract class CommandTestBase extends SliderTestUtils {
   public static final String TEST_AM_KEYTAB
   static File keytabFile
 
-
+  /*
+  Static initializer for test configurations. If this code throws exceptions
+  (which it may) the class will not be instantiable.
+   */
   static {
     ConfigHelper.registerDeprecatedConfigItems();
-    SLIDER_CONFIG = ConfLoader.loadSliderConf(SLIDER_CONF_XML);
+    SLIDER_CONFIG = ConfLoader.loadSliderConf(SLIDER_CONF_XML, true);
     THAW_WAIT_TIME = getTimeOptionMillis(SLIDER_CONFIG,
         KEY_TEST_THAW_WAIT_TIME,
         1000 * DEFAULT_THAW_WAIT_TIME_SECONDS)
@@ -111,6 +113,21 @@ abstract class CommandTestBase extends SliderTestUtils {
   @BeforeClass
   public static void setupTestBase() {
     Configuration conf = loadSliderConf();
+
+    SliderShell.confDir = SLIDER_CONF_DIRECTORY
+    SliderShell.scriptFile = SliderShell.windows ? SLIDER_SCRIPT_PYTHON : SLIDER_SCRIPT
+    
+    //set the property of the configuration directory
+    def path = SLIDER_CONF_DIRECTORY.absolutePath
+    SLIDER_CONFIG.set(ENV_SLIDER_CONF_DIR, path)
+    // locate any hadoop conf dir
+    def hadoopConf = SLIDER_CONFIG.getTrimmed(ENV_HADOOP_CONF_DIR)
+    if (hadoopConf) {
+      File hadoopConfDir = new File(hadoopConf).canonicalFile
+      // propagate the value to the client config
+      SliderShell.setEnv(ENV_HADOOP_CONF_DIR, hadoopConfDir.absolutePath)
+    }
+
     if (SliderUtils.maybeInitSecurity(conf)) {
       log.debug("Security enabled")
       SliderUtils.forceLogin()
@@ -129,16 +146,13 @@ abstract class CommandTestBase extends SliderTestUtils {
     } else {
       log.info "Security is off"
     }
-    SliderShell.confDir = SLIDER_CONF_DIRECTORY
-    SliderShell.scriptFile = Shell.WINDOWS ? SLIDER_SCRIPT_PYTHON : SLIDER_SCRIPT
     
     log.info("Test using ${HadoopFS.getDefaultUri(SLIDER_CONFIG)} " +
              "and YARN RM @ ${SLIDER_CONFIG.get(YarnConfiguration.RM_ADDRESS)}")
-
   }
 
   /**
-   * give our thread a name
+   * give the test thread a name
    */
   @Before
   public void nameThread() {
@@ -146,8 +160,28 @@ abstract class CommandTestBase extends SliderTestUtils {
   }
 
   /**
-   * Add a jar to the slider classpath
-   * @param clazz
+   * Add a configuration file at a given path
+   * @param dir directory containing the file
+   * @param filename filename
+   * @return true if the file was found
+   * @throws IOException loading problems (other than a missing file)
+   */
+  public static boolean maybeAddConfFile(File dir, String filename) throws IOException {
+    File confFile = new File(dir, filename)
+    if (confFile.isFile()) {
+      ConfigHelper.addConfigurationFile(SLIDER_CONFIG, confFile)
+      log.debug("Loaded $confFile")
+      return true;
+    } else {
+      log.debug("Did not find $confFile —skipping load")
+      return false;
+    }
+  }
+  
+  /**
+   * Add a jar to the slider classpath by looking up a class and determining
+   * its containing JAR
+   * @param clazz class inside the JAR
    */
   public static void addExtraJar(Class clazz) {
     def jar = SliderUtils.findContainingJarOrFail(clazz)
@@ -158,6 +192,12 @@ abstract class CommandTestBase extends SliderTestUtils {
     }
   }
 
+  /**
+   * Resolve a system property, throwing an exception if it is not present
+   * @param key property name
+   * @return the value
+   * @throws RuntimeException if the property is not set
+   */
   public static String sysprop(String key) {
     def property = System.getProperty(key)
     if (!property) {
@@ -173,8 +213,9 @@ abstract class CommandTestBase extends SliderTestUtils {
   static void println(String s) {
     System.out.println(s)
   }
+  
   /**
-   * Print to system out
+   * Print a newline to system out
    * @param string
    */
   static void println() {
@@ -208,7 +249,7 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @return
    */
   public static Configuration loadSliderConf() {
-    Configuration conf = ConfLoader.loadSliderConf(SLIDER_CONF_XML)
+    Configuration conf = ConfLoader.loadSliderConf(SLIDER_CONF_XML, true)
     return conf
   }
 
