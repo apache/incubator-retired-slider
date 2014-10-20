@@ -377,6 +377,12 @@ abstract class CommandTestBase extends SliderTestUtils {
     slider(0, [ACTION_THAW, name] + args)
   }
 
+  static SliderShell resolve(int result, Collection<String> commands) {
+    slider(result,
+        [ACTION_RESOLVE] + commands
+    )
+  }
+
   static SliderShell registry(int result, Collection<String> commands) {
     slider(result,
         [ACTION_REGISTRY] + commands
@@ -422,7 +428,7 @@ abstract class CommandTestBase extends SliderTestUtils {
   }
 
   /**
-   * Assert the exit code is that the cluster is unknown
+   * Assert the exit code is that the cluster is 0
    * @param shell shell
    */
   public static void assertSuccess(SliderShell shell) {

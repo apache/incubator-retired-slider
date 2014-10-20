@@ -20,17 +20,33 @@ package org.apache.slider.funtest.commands
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.registry.client.api.RegistryConstants
+
+import static org.apache.slider.common.params.Arguments.*
+import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.funtest.framework.CommandTestBase
-import org.junit.BeforeClass
 import org.junit.Test
 
 @CompileStatic
 @Slf4j
-public class RegistryCommandIT extends CommandTestBase {
+public class ResolveCommandIT extends CommandTestBase {
 
   @Test
-  public void testListAll() throws Throwable {
-    assertSuccess(list(null))
+  public void testRegistryIsNotLocalhost() throws Throwable {
+    def quorum = SLIDER_CONFIG.get(RegistryConstants.KEY_REGISTRY_ZK_QUORUM)
+    assert quorum != RegistryConstants.DEFAULT_REGISTRY_ZK_QUORUM;
+  }
+  
+  @Test
+  public void testResolveRoot() throws Throwable {
+    resolve(0, 
+        [ARG_LIST, ARG_PATH, "/"])
+  }
+
+  @Test
+  public void testResolveRootServiceRecord() throws Throwable {
+    resolve(LauncherExitCodes.EXIT_NOT_FOUND, 
+        [ARG_PATH, "/"])
   }
 
 }
