@@ -663,6 +663,9 @@ public class AgentProviderService extends AbstractProviderService implements
       String portname = port.getKey();
       String portNo = port.getValue();
       log.info("Recording allocated port for {} as {}", portname, portNo);
+
+      // add the allocated ports to the global list as well as per container list
+      // per container allocation will over-write each other in the global
       this.getAllocatedPorts().put(portname, portNo);
       this.getAllocatedPorts(containerId).put(portname, portNo);
       if (instance != null) {
@@ -744,7 +747,15 @@ public class AgentProviderService extends AbstractProviderService implements
       }
 
       if (this.allocatedPorts.containsKey(containerIdStr)) {
+        Map<String, String> portsByContainerId = getAllocatedPorts(containerIdStr);
         this.allocatedPorts.remove(containerIdStr);
+        // free up the allocations from global as well
+        // if multiple containers allocate global ports then last one
+        // wins and similarly first one removes it - its not supported anyway
+        for(String portName : portsByContainerId.keySet()) {
+          getAllocatedPorts().remove(portName);
+        }
+
       }
 
       String componentName = null;
