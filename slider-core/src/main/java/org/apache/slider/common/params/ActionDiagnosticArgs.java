@@ -3,14 +3,14 @@ package org.apache.slider.common.params;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 
-@Parameters(commandNames = {SliderActions.ACTION_DIAGNOSTIC},
-commandDescription = SliderActions.DESCRIBE_ACTION_DIAGNOSTIC)
-public class ActionDiagnosticArgs extends AbstractActionArgs
-{
+@Parameters(
+  commandNames = {SliderActions.ACTION_DIAGNOSTIC, SliderActions.ACTION_DIAGNOSTICS},
+  commandDescription = SliderActions.DESCRIBE_ACTION_DIAGNOSTIC)
+public class ActionDiagnosticArgs extends AbstractActionArgs {
 
 	@Override
 	public String getActionName() {
-		return SliderActions.ACTION_DIAGNOSTIC;
+		return SliderActions.ACTION_DIAGNOSTICS;
 	}
 	
 	  @Parameter(names = {ARG_CLIENT}, 

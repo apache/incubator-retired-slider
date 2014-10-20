@@ -18,17 +18,66 @@
 
 package org.apache.slider.funtest.framework
 
+import groovy.util.logging.Slf4j
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.yarn.conf.YarnConfiguration
+import org.apache.slider.common.tools.ConfigHelper
 
+import static org.apache.slider.funtest.framework.FuntestProperties.*
+
+@Slf4j
 public class ConfLoader {
 
-  public static YarnConfiguration loadSliderConf(File confFile) {
+  public static YarnConfiguration loadSliderConf(File confFile, boolean loadHadoopConfDir = true) {
     URI confURI = confFile.toURI();
     YarnConfiguration conf = new YarnConfiguration()
     def confXmlUrl = confURI.toURL()
     conf.addResource(confXmlUrl)
-    conf.set(FuntestProperties.KEY_TEST_CONF_XML, confXmlUrl.toString())
-    conf.set(FuntestProperties.KEY_TEST_CONF_DIR, CommandTestBase.SLIDER_CONF_DIRECTORY.absolutePath)
+    conf.set(KEY_TEST_CONF_XML, confXmlUrl.toString())
+
+    def sliderConfDir = confFile.parent
+    conf.set(KEY_TEST_CONF_DIR, sliderConfDir)
+    conf.set(ENV_SLIDER_CONF_DIR, sliderConfDir)
+    ConfigHelper.addEnvironmentVariables(conf, ENV_PREFIX)
+    
+    if (loadHadoopConfDir) {
+      def hadoopConf = conf.getTrimmed(ENV_HADOOP_CONF_DIR)
+      if (hadoopConf) {
+        File hadoopConfDir = new File(hadoopConf).canonicalFile
+        def hadoopConfDirPath = hadoopConfDir.absolutePath
+        if (!hadoopConfDir.directory) {
+          throw new FileNotFoundException(hadoopConfDirPath)
+        }
+        log.debug("$ENV_HADOOP_CONF_DIR=$hadoopConfDirPath —loading")
+        // a conf dir has been set. Load the values locally
+        maybeAddConfFile(conf, hadoopConfDir, CORE_SITE_XML)
+        maybeAddConfFile(conf, hadoopConfDir, HDFS_SITE_XML)
+        maybeAddConfFile(conf, hadoopConfDir, YARN_SITE_XML)
+      }
+
+    }
+    
     return conf
   }
+
+  /**
+   * Add a configuration file at a given path
+   * @param dir directory containing the file
+   * @param filename filename
+   * @return true if the file was found
+   * @throws IOException loading problems (other than a missing file)
+   */
+  public static boolean maybeAddConfFile(Configuration conf, File dir, String filename)
+  throws IOException {
+    File confFile = new File(dir, filename)
+    if (confFile.isFile()) {
+      ConfigHelper.addConfigurationFile(conf, confFile)
+      log.info("Loaded ${confFile.absolutePath}")
+      return true;
+    } else {
+      log.info("Did not find ${confFile.absolutePath} —skipping load")
+      return false;
+    }
+  }
+
 }
