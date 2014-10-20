@@ -319,7 +319,11 @@ public final class RoleStatus implements Cloneable {
       Serializable {
     @Override
     public int compare(RoleStatus o1, RoleStatus o2) {
-      return Integer.compare(o1.getKey(), o2.getKey());
+      int key1 = o1.getKey();
+      int key2 = o2.getKey();
+      if (key1 < key2) return -1;
+      if (key1 == key2) return 0;
+      return 1;
     }
   }
   
