@@ -1146,7 +1146,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // local files or archives as needed
     // In this scenario, the jar file for the application master is part of the local resources
     Map<String, LocalResource> localResources = amLauncher.getLocalResources();
-    // conf directory setup
+    
+    // look for the configuration directory named on the command line
     Path remoteConfPath = null;
     String relativeConfDir = null;
     String confdirProp =
@@ -1160,11 +1161,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
                                      confDir);
       }
       Path localConfDirPath = SliderUtils.createLocalPath(confDir);
-      log.debug("Copying AM configuration data from {}", localConfDirPath);
-      remoteConfPath = new Path(clusterDirectory,
-                                    SliderKeys.SUBMITTED_CONF_DIR);
-      SliderUtils.copyDirectory(config, localConfDirPath, remoteConfPath,
-          null);
+      log.debug("Slide configuration directory is {}; remote to be {}",
+          localConfDirPath, SliderKeys.SUBMITTED_CONF_DIR);
+      remoteConfPath = new Path(clusterDirectory, SliderKeys.SUBMITTED_CONF_DIR);
+      SliderUtils.copyDirectory(config, localConfDirPath, remoteConfPath, null);
     }
     // the assumption here is that minimr cluster => this is a test run
     // and the classpath can look after itself

@@ -1210,10 +1210,10 @@ public final class SliderUtils {
       // and nothing else
       classpath.appendAll(classpath.localJVMClasspath());
     } else {
-      classpath.addLibDir(libdir);
       if (sliderConfDir != null) {
         classpath.addClassDirectory(sliderConfDir);
       }
+      classpath.addLibDir(libdir);
       classpath.addRemoteClasspathEnvVar();
       classpath.appendAll(classpath.yarnApplicationClasspath(config));
     }

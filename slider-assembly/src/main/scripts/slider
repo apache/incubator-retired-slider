@@ -55,7 +55,7 @@ if [ -f "${confdir}/slider-env.sh" ]; then
   . "${confdir}/slider-env.sh"
 fi
 
-slider_jvm_opts="-Djava.net.preferIPv4Stack=true -Djava.awt.headless=true -Xmx256m -Djava.confdir=${confdir}"
+slider_jvm_opts="-Djava.net.preferIPv4Stack=true -Djava.awt.headless=true -Xmx256m -Dslider.confdir=${confdir}"
 slider_jvm_opts=${SLIDER_JVM_OPTS:-$slider_jvm_opts}
 
 # allow for an extra classpath
