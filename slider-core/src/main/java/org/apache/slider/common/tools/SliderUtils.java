@@ -55,7 +55,6 @@ import org.apache.slider.core.exceptions.BadClusterStateException;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.core.exceptions.ErrorStrings;
-import org.apache.slider.core.exceptions.MissingArgException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.ClasspathConstructor;
 import org.apache.slider.core.main.LauncherExitCodes;
@@ -565,10 +564,17 @@ public final class SliderUtils {
     return b.toString();
   }
 
-  public static String mandatoryEnvVariable(String key) {
+  /**
+   * Resolve a mandatory environment variable
+   * @param key env var
+   * @return the resolved value
+   * @throws BadClusterStateException
+   */
+  public static String mandatoryEnvVariable(String key) throws
+      BadClusterStateException {
     String v = System.getenv(key);
     if (v == null) {
-      throw new MissingArgException("Missing Environment variable " + key);
+      throw new BadClusterStateException("Missing Environment variable " + key);
     }
     return v;
   }
@@ -1204,10 +1210,10 @@ public final class SliderUtils {
       // and nothing else
       classpath.appendAll(classpath.localJVMClasspath());
     } else {
-      classpath.addLibDir(libdir);
       if (sliderConfDir != null) {
         classpath.addClassDirectory(sliderConfDir);
       }
+      classpath.addLibDir(libdir);
       classpath.addRemoteClasspathEnvVar();
       classpath.appendAll(classpath.yarnApplicationClasspath(config));
     }

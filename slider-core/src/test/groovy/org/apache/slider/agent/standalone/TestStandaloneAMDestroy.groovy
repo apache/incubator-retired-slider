@@ -35,7 +35,7 @@ import org.apache.slider.core.main.ServiceLauncher
 import org.junit.Test
 
 /**
- * destroy a masterless AM
+ * destroy a standalone AM
  */
 @CompileStatic
 @Slf4j

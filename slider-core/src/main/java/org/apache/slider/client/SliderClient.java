@@ -30,8 +30,9 @@ import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.net.NetUtils;
+import org.apache.hadoop.registry.client.api.RegistryConstants;
 import org.apache.hadoop.registry.client.binding.RegistryPathUtils;
-import org.apache.hadoop.registry.client.exceptions.InvalidRecordException;
+import org.apache.hadoop.registry.client.types.RegistryPathStatus;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.alias.CredentialProvider;
 import org.apache.hadoop.security.alias.CredentialProviderFactory;
@@ -45,7 +46,6 @@ import org.apache.hadoop.yarn.api.records.NodeState;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
-import org.apache.hadoop.registry.client.api.RegistryConstants;
 import org.apache.hadoop.registry.client.api.RegistryOperations;
 
 import static org.apache.hadoop.registry.client.binding.RegistryUtils.*;
@@ -68,6 +68,7 @@ import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.params.AbstractActionArgs;
 import org.apache.slider.common.params.AbstractClusterBuildingActionArgs;
 import org.apache.slider.common.params.ActionDiagnosticArgs;
+import org.apache.slider.common.params.ActionExistsArgs;
 import org.apache.slider.common.params.ActionInstallKeytabArgs;
 import org.apache.slider.common.params.ActionInstallPackageArgs;
 import org.apache.slider.common.params.ActionAMSuicideArgs;
@@ -102,6 +103,7 @@ import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.core.exceptions.ErrorStrings;
 import org.apache.slider.core.exceptions.NoSuchNodeException;
+import org.apache.slider.core.exceptions.NotFoundException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.exceptions.UnknownApplicationInstanceException;
 import org.apache.slider.core.exceptions.WaitTimeoutException;
@@ -155,6 +157,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -228,7 +231,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   @Override
   protected void serviceInit(Configuration conf) throws Exception {
     Configuration clientConf = SliderUtils.loadClientConfigurationResource();
-    ConfigHelper.mergeConfigurations(conf, clientConf, CLIENT_RESOURCE);
+    ConfigHelper.mergeConfigurations(conf, clientConf, CLIENT_RESOURCE, true);
     serviceArgs.applyDefinitions(conf);
     serviceArgs.applyFileSystemBinding(conf);
     // init security with our conf
@@ -323,8 +326,31 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
 */
+
+  /**
+   * Launched service execution. This runs {@link #exec()}
+   * then catches some exceptions and converts them to exit codes
+   * @return an exit code
+   * @throws Throwable
+   */
   @Override
   public int runService() throws Throwable {
+    try {
+      return exec();
+    } catch (FileNotFoundException nfe) {
+      throw new NotFoundException(nfe, nfe.toString());
+    } catch (PathNotFoundException nfe) {
+      throw new NotFoundException(nfe, nfe.toString());
+    }
+
+  }
+
+  /**
+   * Execute the command line
+   * @return an exit code
+   * @throws Throwable on a failure
+   */
+  public int exec() throws Throwable {
 
     // choose the action
     String action = serviceArgs.getAction();
@@ -351,7 +377,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       exitCode = actionDiagnostic(serviceArgs.getActionDiagnosticArgs());
     } else if (ACTION_EXISTS.equals(action)) {
       exitCode = actionExists(clusterName,
-          serviceArgs.getActionExistsArgs().live);
+          serviceArgs.getActionExistsArgs());
     } else if (ACTION_FLEX.equals(action)) {
       exitCode = actionFlex(clusterName, serviceArgs.getActionFlexArgs());
     } else if (ACTION_HELP.equals(action)) {
@@ -1124,7 +1150,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // local files or archives as needed
     // In this scenario, the jar file for the application master is part of the local resources
     Map<String, LocalResource> localResources = amLauncher.getLocalResources();
-    // conf directory setup
+    
+    // look for the configuration directory named on the command line
     Path remoteConfPath = null;
     String relativeConfDir = null;
     String confdirProp =
@@ -1138,11 +1165,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
                                      confDir);
       }
       Path localConfDirPath = SliderUtils.createLocalPath(confDir);
-      log.debug("Copying AM configuration data from {}", localConfDirPath);
-      remoteConfPath = new Path(clusterDirectory,
-                                    SliderKeys.SUBMITTED_CONF_DIR);
-      SliderUtils.copyDirectory(config, localConfDirPath, remoteConfPath,
-          null);
+      log.debug("Slide configuration directory is {}; remote to be {}",
+          localConfDirPath, SliderKeys.SUBMITTED_CONF_DIR);
+      remoteConfPath = new Path(clusterDirectory, SliderKeys.SUBMITTED_CONF_DIR);
+      SliderUtils.copyDirectory(config, localConfDirPath, remoteConfPath, null);
     }
     // the assumption here is that minimr cluster => this is a test run
     // and the classpath can look after itself
@@ -1291,7 +1317,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     if (serviceArgs.getFilesystemBinding() != null) {
       commandLine.add(Arguments.ARG_FILESYSTEM, serviceArgs.getFilesystemBinding());
     }
-    
+
+    /**
+     * pass the registry binding
+     */
     addConfOptionToCLI(commandLine, config, REGISTRY_PATH,
         DEFAULT_REGISTRY_PATH);
     addMandatoryConfOptionToCLI(commandLine, config,
@@ -1701,10 +1730,16 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
   @Override
-  @VisibleForTesting
   public int actionExists(String name, boolean checkLive) throws YarnException, IOException {
+    ActionExistsArgs args = new ActionExistsArgs();
+    args.live = checkLive;
+    return actionExists(name, args);
+  }
+
+  public int actionExists(String name, ActionExistsArgs args) throws YarnException, IOException {
     verifyBindingsDefined();
     SliderUtils.validateClusterName(name);
+    boolean checkLive = args.live;
     log.debug("actionExists({}, {})", name, checkLive);
 
     //initial probe for a cluster in the filesystem
@@ -1712,31 +1747,40 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     if (!sliderFileSystem.getFileSystem().exists(clusterDirectory)) {
       throw unknownClusterException(name);
     }
-    
-    //test for liveness if desired
-
-    if (checkLive) {
-      ApplicationReport instance = findInstance(name);
-      if (instance == null) {
-        log.info("Cluster {} not running", name);
-        return EXIT_FALSE;
-      } else {
-        // the app exists, but it may be in a terminated state
-        SliderUtils.OnDemandReportStringifier report =
-          new SliderUtils.OnDemandReportStringifier(instance);
-        YarnApplicationState state =
-          instance.getYarnApplicationState();
-        if (state.ordinal() >= YarnApplicationState.FINISHED.ordinal()) {
-          //cluster in the list of apps but not running
-          log.info("Cluster {} found but is in state {}", name, state);
-          log.debug("State {}", report);
-          return EXIT_FALSE;
-        }
-        log.info("Cluster {} is live:\n{}", name, report);
-      }
-    } else {
-      log.info("Cluster {} exists", name);
+    String state = args.state;
+    if (!checkLive && SliderUtils.isUnset(state)) {
+      log.info("Application {} exists", name);
+      return EXIT_SUCCESS;
     }
+    
+    //test for liveness/state
+    ApplicationReport instance = findInstance(name);
+    if (instance == null) {
+      log.info("Application {} not running", name);
+      return EXIT_FALSE;
+    } else {
+      // the app exists, but it may be in a terminated state
+      SliderUtils.OnDemandReportStringifier report =
+          new SliderUtils.OnDemandReportStringifier(instance);
+      YarnApplicationState appstate =
+          instance.getYarnApplicationState();
+      boolean inDesiredState;
+      if (checkLive) {
+        inDesiredState =
+            appstate.ordinal() < YarnApplicationState.FINISHED.ordinal();
+      } else {
+        state = state.toUpperCase(Locale.ENGLISH);
+        inDesiredState = state.equals(appstate.toString());
+      }
+      if (!inDesiredState) {
+        //cluster in the list of apps but not running
+        log.info("Application {} found but is in wrong state {}", name, appstate);
+        log.debug("State {}", report);
+        return EXIT_FALSE;
+      }
+      log.info("Application {} is {}\n{}", name, appstate, report);
+    }
+
     return EXIT_SUCCESS;
   }
 
@@ -2259,7 +2303,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   public ApplicationReport getApplicationReport(ApplicationId appId)
     throws YarnException, IOException {
     return new LaunchedApplication(appId, yarnClient).getApplicationReport();
-
   }
 
   /**
@@ -2288,21 +2331,45 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
           destDir.mkdirs();
         }
 
-        Map<String, ServiceRecord> recordMap =
-            listServiceRecords(operations, path);
+        Map<String, ServiceRecord> recordMap;
+        Map<String, RegistryPathStatus> znodes;
+        try {
+          znodes = statChildren(registryOperations, path);
+          recordMap = extractServiceRecords(registryOperations,
+              path,
+              znodes.values());
+        } catch (PathNotFoundException e) {
+          // treat the root directory as if if is always there
+        
+          if ("/".equals(path)) {
+            znodes = new HashMap<String, RegistryPathStatus>(0);
+            recordMap = new HashMap<String, ServiceRecord>(0);
+          } else {
+            throw e;
+          }
+        }
+        // subtract all records from the znodes map to get pure directories
+        log.info("Entries: {}", znodes.size());
 
+        for (String name : znodes.keySet()) {
+          println("  " + name);
+        }
+        println("");
+
+        log.info("Service records: {}", recordMap.size());
         for (Entry<String, ServiceRecord> recordEntry : recordMap.entrySet()) {
           String name = recordEntry.getKey();
           ServiceRecord instance = recordEntry.getValue();
           String json = serviceRecordMarshal.toJson(instance);
           if (destDir == null) {
-            print(name);
-            print(json);
+            println(name);
+            println(json);
           } else {
             String filename = RegistryPathUtils.lastPathEntry(name) + ".json";
             File jsonFile = new File(destDir, filename);
             SliderUtils.write(jsonFile,
-                serviceRecordMarshal.toBytes(instance), true);
+                serviceRecordMarshal.toBytes(instance),
+                true);
           }
         }
       } else  {
@@ -2315,22 +2382,15 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         if (outFile != null) {
           SliderUtils.write(outFile, serviceRecordMarshal.toBytes(instance), true);
         } else {
-          print(serviceRecordMarshal.toJson(instance));
+          println(serviceRecordMarshal.toJson(instance));
         }
       }
 //      TODO JDK7
     } catch (PathNotFoundException e) {
       // no record at this path
-      return EXIT_NOT_FOUND;
+      throw new NotFoundException(e, path);
     } catch (NoRecordException e) {
-      return EXIT_NOT_FOUND;
-    } catch (UnknownApplicationInstanceException e) {
-      return EXIT_NOT_FOUND;
-    } catch (InvalidRecordException e) {
-      // it is not a record
-      log.error("{}", e);
-      log.debug("{}", e, e);
-      return EXIT_EXCEPTION_THROWN;
+      throw new NotFoundException(e, path);
     }
     return EXIT_SUCCESS;
   }
@@ -2410,7 +2470,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         }
         serviceRecords = recordMap.values();
       } catch (PathNotFoundException e) {
-        throw new UnknownApplicationInstanceException(path, e);
+        throw new NotFoundException(path, e);
       }
     } else {
       ServiceRecord instance = lookupServiceRecord(registryArgs);
@@ -2945,7 +3005,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
   /**
-   * Look up an instance
+   * Look up a service record of the current user
    * @param serviceType service type
    * @param id instance ID
    * @return instance data
@@ -2965,7 +3025,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * Look up an instance
    * @param path path
    * @return instance data
-   * @throws UnknownApplicationInstanceException no path or service record
+   * @throws NotFoundException no path/no service record
    * at the end of the path
    * @throws SliderException other failures
    * @throws IOException IO problems or wrapped exceptions
@@ -2973,13 +3033,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   public ServiceRecord resolve(String path)
       throws IOException, SliderException {
     try {
-      return getRegistryOperations().resolve(
-          path);
-      // TODO JDK7 SWITCH
+      return getRegistryOperations().resolve(path);
     } catch (PathNotFoundException e) {
-      throw new UnknownApplicationInstanceException(e.getPath().toString(), e);
+      throw new NotFoundException(e.getPath().toString(), e);
     } catch (NoRecordException e) {
-      throw new UnknownApplicationInstanceException(e.getPath().toString(), e);
+      throw new NotFoundException(e.getPath().toString(), e);
     }
   }
 
@@ -2988,11 +3046,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @return a list of slider registry instances
    * @throws IOException Any IO problem ... including no path in the registry
    * to slider service classes for this user
-   * @throws YarnException
+   * @throws SliderException other failures
    */
 
   public Map<String, ServiceRecord> listRegistryInstances()
-      throws IOException, YarnException {
+      throws IOException, SliderException {
     Map<String, ServiceRecord> recordMap = listServiceRecords(
         getRegistryOperations(),
         serviceclassPath(currentUser(), SliderKeys.APP_TYPE));

@@ -149,6 +149,6 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
       assert fail("Should have exported cl-site")
     }
 
-    assert isApplicationInState("RUNNING", APPLICATION_NAME), 'App is not running.'
+    assert isApplicationUp(APPLICATION_NAME), 'App is not running.'
   }
 }

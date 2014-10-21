@@ -33,7 +33,7 @@ SLIDER_CLASSPATH_EXTRA = "SLIDER_CLASSPATH_EXTRA"
 HADOOP_CONF_DIR = "HADOOP_CONF_DIR"
 
 SLIDER_CLASSNAME = "org.apache.slider.Slider"
-DEFAULT_JVM__OPTS = "-Djava.net.preferIPv4Stack=true -Djava.awt.headless=true -Xmx256m -Djava.confdir=%s"
+DEFAULT_JVM__OPTS = "-Djava.net.preferIPv4Stack=true -Djava.awt.headless=true -Xmx256m -Dslider.confdir=%s"
 
 ON_POSIX = 'posix' in sys.builtin_module_names
 
@@ -211,7 +211,6 @@ def java(classname, args, classpath, jvm_opts_list):
   """
   # split the JVM opts by space
   # java = "/usr/bin/java"
-  prg = "java"
   if os.environ["JAVA_HOME"] is not None and os.environ["JAVA_HOME"]:
     prg = os.path.join(os.environ["JAVA_HOME"], "bin", "java")
   else:
