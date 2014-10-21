@@ -21,9 +21,11 @@ package org.apache.slider.agent.actions
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.ApplicationReport
+import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.client.SliderClient
+import org.apache.slider.common.params.ActionExistsArgs
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
 import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
@@ -107,8 +109,12 @@ class TestActionExists extends AgentMiniClusterTestBase {
     assertSucceeded(launcher)
     
     // assert that the cluster exists
-
     assert 0 == sliderClient.actionExists(clustername, true)
+
+    // assert that the cluster is in the running state
+    ActionExistsArgs args = new ActionExistsArgs()
+    args.state = YarnApplicationState.RUNNING.toString()
+    assert 0 == sliderClient.actionExists(clustername, args)
     
     // stop the cluster
     clusterActionFreeze(sliderClient, clustername)

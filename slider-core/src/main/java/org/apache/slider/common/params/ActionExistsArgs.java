@@ -31,6 +31,11 @@ public class ActionExistsArgs extends AbstractActionArgs {
     return SliderActions.ACTION_EXISTS;
   }
   @Parameter(names = {ARG_LIVE},
-             description = "verify that the cluster is running")
+             description = "verify that the application is running")
   public boolean live;
+  
+  @Parameter(names = {ARG_STATE},
+             description = "verify that the application is in the specific YARN state")
+  public String state = "";
+  
 }

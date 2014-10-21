@@ -66,6 +66,7 @@ import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.params.AbstractActionArgs;
 import org.apache.slider.common.params.AbstractClusterBuildingActionArgs;
 import org.apache.slider.common.params.ActionDiagnosticArgs;
+import org.apache.slider.common.params.ActionExistsArgs;
 import org.apache.slider.common.params.ActionInstallKeytabArgs;
 import org.apache.slider.common.params.ActionInstallPackageArgs;
 import org.apache.slider.common.params.ActionAMSuicideArgs;
@@ -154,6 +155,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -373,7 +375,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       exitCode = actionDiagnostic(serviceArgs.getActionDiagnosticArgs());
     } else if (ACTION_EXISTS.equals(action)) {
       exitCode = actionExists(clusterName,
-          serviceArgs.getActionExistsArgs().live);
+          serviceArgs.getActionExistsArgs());
     } else if (ACTION_FLEX.equals(action)) {
       exitCode = actionFlex(clusterName, serviceArgs.getActionFlexArgs());
     } else if (ACTION_HELP.equals(action)) {
@@ -1724,10 +1726,16 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
   @Override
-  @VisibleForTesting
   public int actionExists(String name, boolean checkLive) throws YarnException, IOException {
+    ActionExistsArgs args = new ActionExistsArgs();
+    args.live = checkLive;
+    return actionExists(name, args);
+  }
+
+  public int actionExists(String name, ActionExistsArgs args) throws YarnException, IOException {
     verifyBindingsDefined();
     SliderUtils.validateClusterName(name);
+    boolean checkLive = args.live;
     log.debug("actionExists({}, {})", name, checkLive);
 
     //initial probe for a cluster in the filesystem
@@ -1735,31 +1743,40 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     if (!sliderFileSystem.getFileSystem().exists(clusterDirectory)) {
       throw unknownClusterException(name);
     }
-    
-    //test for liveness if desired
-
-    if (checkLive) {
-      ApplicationReport instance = findInstance(name);
-      if (instance == null) {
-        log.info("Cluster {} not running", name);
-        return EXIT_FALSE;
-      } else {
-        // the app exists, but it may be in a terminated state
-        SliderUtils.OnDemandReportStringifier report =
-          new SliderUtils.OnDemandReportStringifier(instance);
-        YarnApplicationState state =
-          instance.getYarnApplicationState();
-        if (state.ordinal() >= YarnApplicationState.FINISHED.ordinal()) {
-          //cluster in the list of apps but not running
-          log.info("Cluster {} found but is in state {}", name, state);
-          log.debug("State {}", report);
-          return EXIT_FALSE;
-        }
-        log.info("Cluster {} is live:\n{}", name, report);
-      }
-    } else {
-      log.info("Cluster {} exists", name);
+    String state = args.state;
+    if (!checkLive && SliderUtils.isUnset(state)) {
+      log.info("Application {} exists", name);
+      return EXIT_SUCCESS;
     }
+    
+    //test for liveness/state
+    ApplicationReport instance = findInstance(name);
+    if (instance == null) {
+      log.info("Application {} not running", name);
+      return EXIT_FALSE;
+    } else {
+      // the app exists, but it may be in a terminated state
+      SliderUtils.OnDemandReportStringifier report =
+          new SliderUtils.OnDemandReportStringifier(instance);
+      YarnApplicationState appstate =
+          instance.getYarnApplicationState();
+      boolean inDesiredState;
+      if (checkLive) {
+        inDesiredState =
+            appstate.ordinal() < YarnApplicationState.FINISHED.ordinal();
+      } else {
+        state = state.toUpperCase(Locale.ENGLISH);
+        inDesiredState = state.equals(appstate.toString());
+      }
+      if (!inDesiredState) {
+        //cluster in the list of apps but not running
+        log.info("Application {} found but is in wrong state {}", name, appstate);
+        log.debug("State {}", report);
+        return EXIT_FALSE;
+      }
+      log.info("Application {} is {}\n{}", name, appstate, report);
+    }
+
     return EXIT_SUCCESS;
   }
 

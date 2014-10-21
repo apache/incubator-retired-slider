@@ -25,6 +25,8 @@ import org.apache.hadoop.fs.Path
 import org.apache.hadoop.hdfs.HdfsConfiguration
 import org.apache.hadoop.registry.client.api.RegistryConstants
 import org.apache.hadoop.util.ExitUtil
+import org.apache.hadoop.util.Shell
+import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.common.tools.ConfigHelper
 import org.apache.slider.core.main.LauncherExitCodes
@@ -646,9 +648,9 @@ abstract class CommandTestBase extends SliderTestUtils {
 
   protected void ensureApplicationIsUp(String clusterName) {
     repeatUntilTrue(this.&isApplicationUp,
-        20,
-        1000 * SLIDER_CONFIG.getInt(KEY_TEST_INSTANCE_LAUNCH_TIME,
+        SLIDER_CONFIG.getInt(KEY_TEST_INSTANCE_LAUNCH_TIME,
             DEFAULT_INSTANCE_LAUNCH_TIME_SECONDS),
+        1000,
         ['arg1': clusterName],
         true,
         'Application did not start, aborting test.')
@@ -656,20 +658,24 @@ abstract class CommandTestBase extends SliderTestUtils {
 
   protected boolean isApplicationUp(Map<String, String> args) {
     String applicationName = args['arg1'];
-    return isApplicationInState("RUNNING", applicationName);
+    return isApplicationInState(YarnApplicationState.RUNNING, applicationName);
   }
 
-  public static boolean isApplicationInState(String text, String applicationName) {
-    boolean exists = false
-    SliderShell shell = slider(0,
-      [ACTION_LIST, applicationName])
-    for (String str in shell.out) {
-      if (str.contains(text)) {
-        exists = true
-      }
-    }
+  protected boolean isApplicationUp(String applicationName) {
+    return isApplicationInState(YarnApplicationState.RUNNING, applicationName);
+  }
 
-    return exists
+  /**
+   * 
+   * @param yarnState
+   * @param applicationName
+   * @return
+   */
+  public static boolean isApplicationInState(YarnApplicationState yarnState, String applicationName) {
+    SliderShell shell = slider(
+      [ACTION_EXISTS, applicationName, ARG_STATE, yarnState.toString()])
+
+    return shell.ret == 0
   }
 
   protected void repeatUntilTrue(Closure c, int maxAttempts, int sleepDur, Map args,
