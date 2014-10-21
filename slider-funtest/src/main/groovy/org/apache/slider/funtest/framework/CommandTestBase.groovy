@@ -83,6 +83,12 @@ abstract class CommandTestBase extends SliderTestUtils {
   public static final String TEST_AM_KEYTAB
   static File keytabFile
 
+  /**
+   * shell-escaped ~ symbol. On windows this does
+   * not need to be escaped
+   */
+  static final String TILDE
+
   /*
   Static initializer for test configurations. If this code throws exceptions
   (which it may) the class will not be instantiable.
@@ -108,6 +114,7 @@ abstract class CommandTestBase extends SliderTestUtils {
     TEST_AM_KEYTAB = SLIDER_CONFIG.getTrimmed(
         KEY_TEST_AM_KEYTAB)
 
+    TILDE = Shell.WINDOWS? "~" : "\\~" 
   }
 
   @Rule

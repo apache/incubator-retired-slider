@@ -99,26 +99,13 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
 
     //simple status
     status(0, CLUSTER)
-    
-    // resolve the ~ path
-
-    resolve(0, [ARG_LIST, ARG_PATH, "~"])
-    // running app
-    resolve(0, [ARG_LIST, ARG_PATH, SliderKeys.APP_TYPE, CLUSTER])
-    // and the service record
-    File serviceRecordFile = File.createTempFile("tempfile", ".json")
-    resolve(0, [ARG_PATH, SliderKeys.APP_TYPE, CLUSTER,
-                ARG_OUTPUT, serviceRecordFile.absolutePath])
-    RegistryUtils.ServiceRecordMarshal marshal = new RegistryUtils.ServiceRecordMarshal()
-    
-    ServiceRecord serviceRecord = marshal.fromFile(serviceRecordFile)
 
     //now status to a temp file
     File jsonStatus = File.createTempFile("tempfile", ".json")
     try {
       slider(0,
           [
-              SliderActions.ACTION_STATUS, CLUSTER,
+              ACTION_STATUS, CLUSTER,
               ARG_OUTPUT, jsonStatus.canonicalPath
           ])
 

@@ -30,7 +30,9 @@ import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.net.NetUtils;
+import org.apache.hadoop.registry.client.api.RegistryConstants;
 import org.apache.hadoop.registry.client.binding.RegistryPathUtils;
+import org.apache.hadoop.registry.client.types.RegistryPathStatus;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.alias.CredentialProvider;
 import org.apache.hadoop.security.alias.CredentialProviderFactory;
@@ -1315,12 +1317,14 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     if (serviceArgs.getFilesystemBinding() != null) {
       commandLine.add(Arguments.ARG_FILESYSTEM, serviceArgs.getFilesystemBinding());
     }
-/*   
+
+    /**
+     * pass the registry binding
+     */
     addConfOptionToCLI(commandLine, config, REGISTRY_PATH,
         DEFAULT_REGISTRY_PATH);
     addMandatoryConfOptionToCLI(commandLine, config,
         RegistryConstants.KEY_REGISTRY_ZK_QUORUM);
-*/
 
     if (clusterSecure) {
       // if the cluster is secure, make sure that
@@ -2299,7 +2303,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   public ApplicationReport getApplicationReport(ApplicationId appId)
     throws YarnException, IOException {
     return new LaunchedApplication(appId, yarnClient).getApplicationReport();
-
   }
 
   /**
@@ -2329,30 +2332,44 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         }
 
         Map<String, ServiceRecord> recordMap;
+        Map<String, RegistryPathStatus> znodes;
         try {
-          recordMap = listServiceRecords(operations, path);
+          znodes = statChildren(registryOperations, path);
+          recordMap = extractServiceRecords(registryOperations,
+              path,
+              znodes.values());
         } catch (PathNotFoundException e) {
           // treat the root directory as if if is always there
         
           if ("/".equals(path)) {
+            znodes = new HashMap<String, RegistryPathStatus>(0);
             recordMap = new HashMap<String, ServiceRecord>(0);
           } else {
             throw e;
           }
         }
-     
+        // subtract all records from the znodes map to get pure directories
+        log.info("Entries: {}", znodes.size());
+
+        for (String name : znodes.keySet()) {
+          println("  " + name);
+        }
+        println("");
+
+        log.info("Service records: {}", recordMap.size());
         for (Entry<String, ServiceRecord> recordEntry : recordMap.entrySet()) {
           String name = recordEntry.getKey();
           ServiceRecord instance = recordEntry.getValue();
           String json = serviceRecordMarshal.toJson(instance);
           if (destDir == null) {
-            print(name);
-            print(json);
+            println(name);
+            println(json);
           } else {
             String filename = RegistryPathUtils.lastPathEntry(name) + ".json";
             File jsonFile = new File(destDir, filename);
             SliderUtils.write(jsonFile,
-                serviceRecordMarshal.toBytes(instance), true);
+                serviceRecordMarshal.toBytes(instance),
+                true);
           }
         }
       } else  {
@@ -2365,7 +2382,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         if (outFile != null) {
           SliderUtils.write(outFile, serviceRecordMarshal.toBytes(instance), true);
         } else {
-          print(serviceRecordMarshal.toJson(instance));
+          println(serviceRecordMarshal.toJson(instance));
         }
       }
 //      TODO JDK7
