@@ -1895,13 +1895,22 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
                app.getYarnApplicationState());
       return EXIT_SUCCESS;
     }
+
+    // IPC request for a managed shutdown is only possible if the app is running.
+    // so we need to force kill if the app is accepted or submitted
+    if (!forcekill
+        && app.getYarnApplicationState().ordinal() < YarnApplicationState.RUNNING.ordinal()) {
+      log.info("Cluster {} is in a pre-running state {}. Force killing it", clustername,
+          app.getYarnApplicationState());
+      forcekill = true;
+    }
+
     LaunchedApplication application = new LaunchedApplication(yarnClient, app);
     applicationId = application.getApplicationId();
     
     if (forcekill) {
-      //escalating to forced kill
-      application.kill("Forced stop of " + clustername +
-                       ": " + text);
+      // escalating to forced kill
+      application.kill("Forced stop of " + clustername + ": " + text);
     } else {
       try {
         SliderClusterProtocol appMaster = connect(app);
@@ -1938,10 +1947,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
 // JDK7    } catch (YarnException | IOException e) {
     } catch (YarnException e) {
-      log.warn("Exception while waiting for the cluster {} to shut down: {}",
+      log.warn("Exception while waiting for the application {} to shut down: {}",
                clustername, e);
     } catch ( IOException e) {
-      log.warn("Exception while waiting for the cluster {} to shut down: {}",
+      log.warn("Exception while waiting for the application {} to shut down: {}",
                clustername, e);
     }
 
