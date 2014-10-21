@@ -22,6 +22,7 @@ import groovy.transform.CompileStatic
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.hdfs.HdfsConfiguration
 import org.apache.hadoop.registry.client.api.RegistryConstants
 import org.apache.hadoop.util.ExitUtil
 import org.apache.hadoop.yarn.conf.YarnConfiguration
@@ -85,6 +86,7 @@ abstract class CommandTestBase extends SliderTestUtils {
   (which it may) the class will not be instantiable.
    */
   static {
+    new HdfsConfiguration()
     ConfigHelper.registerDeprecatedConfigItems();
     SLIDER_CONFIG = ConfLoader.loadSliderConf(SLIDER_CONF_XML, true);
     THAW_WAIT_TIME = getTimeOptionMillis(SLIDER_CONFIG,
@@ -169,7 +171,7 @@ abstract class CommandTestBase extends SliderTestUtils {
   public static boolean maybeAddConfFile(File dir, String filename) throws IOException {
     File confFile = new File(dir, filename)
     if (confFile.isFile()) {
-      ConfigHelper.addConfigurationFile(SLIDER_CONFIG, confFile)
+      ConfigHelper.addConfigurationFile(SLIDER_CONFIG, confFile, true)
       log.debug("Loaded $confFile")
       return true;
     } else {
@@ -621,7 +623,6 @@ abstract class CommandTestBase extends SliderTestUtils {
     ])
 
 
-
     def sleeptime = SLIDER_CONFIG.getInt(KEY_AM_RESTART_SLEEP_TIME,
         DEFAULT_AM_RESTART_SLEEP_TIME)
     sleep(sleeptime)
@@ -646,7 +647,7 @@ abstract class CommandTestBase extends SliderTestUtils {
   protected void ensureApplicationIsUp(String clusterName) {
     repeatUntilTrue(this.&isApplicationUp,
         20,
-        SLIDER_CONFIG.getInt(KEY_TEST_INSTANCE_LAUNCH_TIME,
+        1000 * SLIDER_CONFIG.getInt(KEY_TEST_INSTANCE_LAUNCH_TIME,
             DEFAULT_INSTANCE_LAUNCH_TIME_SECONDS),
         ['arg1': clusterName],
         true,
@@ -661,9 +662,7 @@ abstract class CommandTestBase extends SliderTestUtils {
   public static boolean isApplicationInState(String text, String applicationName) {
     boolean exists = false
     SliderShell shell = slider(0,
-      [
-        ACTION_LIST,
-        applicationName])
+      [ACTION_LIST, applicationName])
     for (String str in shell.out) {
       if (str.contains(text)) {
         exists = true

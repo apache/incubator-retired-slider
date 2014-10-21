@@ -23,7 +23,7 @@ import groovy.util.logging.Slf4j
 import org.apache.hadoop.registry.client.api.RegistryConstants
 
 import static org.apache.slider.common.params.Arguments.*
-import org.apache.slider.core.main.LauncherExitCodes
+import static org.apache.slider.core.main.LauncherExitCodes.*;
 import org.apache.slider.funtest.framework.CommandTestBase
 import org.junit.Test
 
@@ -42,11 +42,23 @@ public class ResolveCommandIT extends CommandTestBase {
     resolve(0, 
         [ARG_LIST, ARG_PATH, "/"])
   }
+  
+  @Test
+  public void testResolveUnknownPath() throws Throwable {
+    resolve(EXIT_NOT_FOUND, 
+        [ARG_LIST, ARG_PATH, "/undefined"])
+  }
 
   @Test
   public void testResolveRootServiceRecord() throws Throwable {
-    resolve(LauncherExitCodes.EXIT_NOT_FOUND, 
+    resolve(EXIT_NOT_FOUND, 
         [ARG_PATH, "/"])
+  }
+
+  @Test
+  public void testResolveHomeServiceRecord() throws Throwable {
+    resolve(EXIT_NOT_FOUND, 
+        [ARG_PATH, "~"])
   }
 
 }

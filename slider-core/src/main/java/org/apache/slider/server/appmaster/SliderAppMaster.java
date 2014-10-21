@@ -387,7 +387,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // Load in the server configuration - if it is actually on the Classpath
     Configuration serverConf =
       ConfigHelper.loadFromResource(SERVER_RESOURCE);
-    ConfigHelper.mergeConfigurations(conf, serverConf, SERVER_RESOURCE);
+    ConfigHelper.mergeConfigurations(conf, serverConf, SERVER_RESOURCE, true);
 
     AbstractActionArgs action = serviceArgs.getCoreAction();
     SliderAMCreateAction createAction = (SliderAMCreateAction) action;
@@ -537,6 +537,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     String sliderClusterDir = serviceArgs.getSliderClusterURI();
     URI sliderClusterURI = new URI(sliderClusterDir);
     Path clusterDirPath = new Path(sliderClusterURI);
+    log.info("Application defined at {}", sliderClusterURI);
     SliderFileSystem fs = getClusterFS();
 
     // build up information about the running application -this

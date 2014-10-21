@@ -31,7 +31,6 @@ import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.registry.client.binding.RegistryPathUtils;
-import org.apache.hadoop.registry.client.types.RegistryPathStatus;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.alias.CredentialProvider;
 import org.apache.hadoop.security.alias.CredentialProviderFactory;
@@ -45,7 +44,6 @@ import org.apache.hadoop.yarn.api.records.NodeState;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
-import org.apache.hadoop.registry.client.api.RegistryConstants;
 import org.apache.hadoop.registry.client.api.RegistryOperations;
 
 import static org.apache.hadoop.registry.client.binding.RegistryUtils.*;
@@ -229,7 +227,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   @Override
   protected void serviceInit(Configuration conf) throws Exception {
     Configuration clientConf = SliderUtils.loadClientConfigurationResource();
-    ConfigHelper.mergeConfigurations(conf, clientConf, CLIENT_RESOURCE);
+    ConfigHelper.mergeConfigurations(conf, clientConf, CLIENT_RESOURCE, true);
     serviceArgs.applyDefinitions(conf);
     serviceArgs.applyFileSystemBinding(conf);
     // init security with our conf
@@ -1315,11 +1313,12 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     if (serviceArgs.getFilesystemBinding() != null) {
       commandLine.add(Arguments.ARG_FILESYSTEM, serviceArgs.getFilesystemBinding());
     }
-    
+/*   
     addConfOptionToCLI(commandLine, config, REGISTRY_PATH,
         DEFAULT_REGISTRY_PATH);
     addMandatoryConfOptionToCLI(commandLine, config,
         RegistryConstants.KEY_REGISTRY_ZK_QUORUM);
+*/
 
     if (clusterSecure) {
       // if the cluster is secure, make sure that

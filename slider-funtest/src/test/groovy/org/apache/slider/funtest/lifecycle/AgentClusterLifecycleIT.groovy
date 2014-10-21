@@ -20,10 +20,13 @@ package org.apache.slider.funtest.lifecycle
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.registry.client.binding.RegistryUtils
+import org.apache.hadoop.registry.client.types.ServiceRecord
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.StatusKeys
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderExitCodes
+import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
@@ -61,6 +64,8 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
 
     describe "Walk a 0-role cluster through its lifecycle"
 
+    // sanity check to verify the config is correct
+    assert clusterFS.uri.scheme!="file"
 
     def clusterpath = buildClusterPath(CLUSTER)
     assert !clusterFS.exists(clusterpath)
@@ -94,6 +99,19 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
 
     //simple status
     status(0, CLUSTER)
+    
+    // resolve the ~ path
+
+    resolve(0, [ARG_LIST, ARG_PATH, "~"])
+    // running app
+    resolve(0, [ARG_LIST, ARG_PATH, SliderKeys.APP_TYPE, CLUSTER])
+    // and the service record
+    File serviceRecordFile = File.createTempFile("tempfile", ".json")
+    resolve(0, [ARG_PATH, SliderKeys.APP_TYPE, CLUSTER,
+                ARG_OUTPUT, serviceRecordFile.absolutePath])
+    RegistryUtils.ServiceRecordMarshal marshal = new RegistryUtils.ServiceRecordMarshal()
+    
+    ServiceRecord serviceRecord = marshal.fromFile(serviceRecordFile)
 
     //now status to a temp file
     File jsonStatus = File.createTempFile("tempfile", ".json")
