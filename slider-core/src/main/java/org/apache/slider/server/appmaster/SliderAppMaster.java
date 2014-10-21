@@ -1304,19 +1304,32 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   /**
    * Start the slider RPC server
    */
-  private void startSliderRPCServer() throws IOException {
-    SliderClusterProtocolPBImpl protobufRelay = new SliderClusterProtocolPBImpl(this);
-    BlockingService blockingService = SliderClusterAPI.SliderClusterProtocolPB
-                                                    .newReflectiveBlockingService(
-                                                      protobufRelay);
+  private void startSliderRPCServer() throws IOException, BadConfigException {
 
-    rpcService = new WorkflowRpcService("SliderRPC", RpcBinder.createProtobufServer(
-      new InetSocketAddress("0.0.0.0", 0),
-      getConfig(),
-      secretManager,
-      NUM_RPC_HANDLERS,
-      blockingService,
-      null));
+    // verify that if the cluster is authed, the ACLs are set.
+    boolean authorization = getConfig().getBoolean(
+        CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION,
+        false);
+    String acls = getConfig().get(SliderXmlConfKeys.KEY_PROTOCOL_ACL);
+    if (authorization && SliderUtils.isUnset(acls)) {
+      throw new BadConfigException("Application has IPC authorization enabled in " +
+          CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION +
+          " but no ACLs in " + SliderXmlConfKeys.KEY_PROTOCOL_ACL);
+    }
+    SliderClusterProtocolPBImpl protobufRelay =
+        new SliderClusterProtocolPBImpl(this);
+    BlockingService blockingService = SliderClusterAPI.SliderClusterProtocolPB
+        .newReflectiveBlockingService(
+            protobufRelay);
+
+    rpcService =
+        new WorkflowRpcService("SliderRPC", RpcBinder.createProtobufServer(
+            new InetSocketAddress("0.0.0.0", 0),
+            getConfig(),
+            secretManager,
+            NUM_RPC_HANDLERS,
+            blockingService,
+            null));
     deployChildService(rpcService);
   }
 
