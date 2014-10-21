@@ -124,6 +124,7 @@ class TestActionExists extends AgentMiniClusterTestBase {
 
     //but the cluster is still there for the default
     assert 0 == sliderClient.actionExists(clustername, false)
+    assert LauncherExitCodes.EXIT_FALSE == sliderClient.actionExists(clustername, args)
   }
   
 }
