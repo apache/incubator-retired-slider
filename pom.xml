@@ -1246,10 +1246,10 @@
   <profiles>
 
     <profile>
-      <id>linux</id>
+      <id>Non-Windows</id>
       <activation>
         <os>
-          <family>linux</family>
+          <family>!windows</family>
         </os>
       </activation>
       <modules>
@@ -1262,8 +1262,7 @@
       <id>Windows</id>
       <activation>
         <os>
-          <name>Windows XP</name>
-          <family>Windows</family>
+          <family>windows</family>
         </os>
       </activation>
       <modules>
