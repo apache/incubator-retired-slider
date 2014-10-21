@@ -55,7 +55,11 @@ public class CertificateManager {
       "-passin pass:{3} -cert {0}/{5}";
   private static final String SIGN_AGENT_CRT = "openssl ca -config " +
       "{0}/ca.config -in {0}/{1} -out {0}/{2} -batch -passin pass:{3} " +
-      "-keyfile {0}/{4} -cert {0}/{5}"; /**
+      "-keyfile {0}/{4} -cert {0}/{5}";
+  private static final String GEN_AGENT_KEY="openssl req -new -newkey " +
+      "rsa:1024 -nodes -keyout {0}/{2}.key -subj /OU={1}/CN={2} -out {0}/{2}.csr";
+
+  /**
        * Verify that root certificate exists, generate it otherwise.
        */
   public void initRootCert(MapOperations compOperations) {
@@ -148,7 +152,7 @@ public class CertificateManager {
         SecurityUtils.logOpenSslExitCode(command, process.exitValue());
         exitCode = process.exitValue();
         if (exitCode != 0) {
-          throw new SliderException(exitCode, "Error running command {}", command);
+          throw new SliderException(exitCode, "Error running command %s", command);
         }
       } catch (InterruptedException e) {
         e.printStackTrace();
@@ -167,6 +171,23 @@ public class CertificateManager {
 
     return exitCode;//some exception occurred
 
+  }
+
+  public synchronized void generateAgentCertificate(String agentHostname, String containerId) {
+    LOG.info("Generation of agent certificate for {}", agentHostname);
+
+    String srvrKstrDir = SecurityUtils.getSecurityDir();
+    Object[] scriptArgs = {srvrKstrDir, agentHostname, containerId};
+
+    try {
+      String command = MessageFormat.format(GEN_AGENT_KEY, scriptArgs);
+      runCommand(command);
+
+      signAgentCertificate(containerId);
+
+    } catch (SliderException e) {
+      LOG.error("Error generating the agent certificate", e);
+    }
   }
 
   private void generateServerCertificate(){
@@ -205,8 +226,7 @@ public class CertificateManager {
    * @return string with server certificate content
    */
   public String getServerCert() {
-    File certFile = new File(SecurityUtils.getSecurityDir() +
-        File.separator + SliderKeys.CRT_FILE_NAME);
+    File certFile = getServerCertficateFilePath();
     String srvrCrtContent = null;
     try {
       srvrCrtContent = FileUtils.readFileToString(certFile);
@@ -214,6 +234,21 @@ public class CertificateManager {
       LOG.error(e.getMessage());
     }
     return srvrCrtContent;
+  }
+
+  public static File getServerCertficateFilePath() {
+    return new File(SecurityUtils.getSecurityDir() +
+          File.separator + SliderKeys.CRT_FILE_NAME);
+  }
+
+  public static File getAgentCertficateFilePath(String containerId) {
+    return new File(SecurityUtils.getSecurityDir() +
+                    File.separator + containerId + ".crt");
+  }
+
+  public static File getAgentKeyFilePath(String containerId) {
+    return new File(SecurityUtils.getSecurityDir() +
+                    File.separator + containerId + ".key");
   }
 
   /**
@@ -301,5 +336,36 @@ public class CertificateManager {
     response.setSignedCa(agentCrtContent);
     //LOG.info(ShellCommandUtil.getOpenSslCommandResult(command, commandExitCode));
     return response;
+  }
+
+  private String signAgentCertificate (String containerId)
+      throws SliderException {
+    String srvrKstrDir = SecurityUtils.getSecurityDir();
+    String srvrCrtPass = SecurityUtils.getKeystorePass();
+    String srvrCrtName = SliderKeys.CRT_FILE_NAME;
+    String srvrKeyName = SliderKeys.KEY_FILE_NAME;
+    String agentCrtReqName = containerId + ".csr";
+    String agentCrtName = containerId + ".crt";
+
+    Object[] scriptArgs = {srvrKstrDir, agentCrtReqName, agentCrtName,
+        srvrCrtPass, srvrKeyName, srvrCrtName};
+
+    //Revoke previous agent certificate if exists
+    File agentCrtFile = new File(srvrKstrDir + File.separator + agentCrtName);
+
+    String command;
+    if (agentCrtFile.exists()) {
+      LOG.info("Revoking of " + containerId + " certificate.");
+      command = MessageFormat.format(REVOKE_AGENT_CRT, scriptArgs);
+      runCommand(command);
+    }
+
+    command = MessageFormat.format(SIGN_AGENT_CRT, scriptArgs);
+
+    LOG.debug(SecurityUtils.hideOpenSslPassword(command));
+    runCommand(command);
+
+    return agentCrtName;
+
   }
 }

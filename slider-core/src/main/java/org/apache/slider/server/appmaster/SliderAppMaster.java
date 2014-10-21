@@ -25,6 +25,8 @@ import com.google.protobuf.BlockingService;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.permission.FsAction;
+import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenIdentifier;
@@ -108,6 +110,7 @@ import org.apache.slider.providers.ProviderCompleted;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderService;
 import org.apache.slider.providers.SliderProviderFactory;
+import org.apache.slider.providers.agent.AgentKeys;
 import org.apache.slider.providers.slideram.SliderAMClientProvider;
 import org.apache.slider.providers.slideram.SliderAMProviderService;
 import org.apache.slider.server.appmaster.actions.ActionKillContainer;
@@ -679,6 +682,12 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
           instanceDefinition.getAppConfOperations()
               .getComponent(SliderKeys.COMPONENT_AM));
 
+      if (Boolean.valueOf(instanceDefinition.
+          getAppConfOperations().getComponent(SliderKeys.COMPONENT_AM).
+          getOptionBool(AgentKeys.KEY_AGENT_TWO_WAY_SSL_ENABLED, false))) {
+        uploadServerCertForLocalization(clustername, fs);
+      }
+
       startAgentWebApp(appInformation, serviceConf);
 
       webApp = new SliderAMWebApp(registryOperations);
@@ -889,6 +898,27 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
     //shutdown time
     return finish();
+  }
+
+  private void uploadServerCertForLocalization(String clustername,
+                                               SliderFileSystem fs)
+      throws IOException {
+    Path certsDir = new Path(fs.buildClusterDirPath(clustername),
+                             "certs");
+    if (!fs.getFileSystem().exists(certsDir)) {
+      fs.getFileSystem().mkdirs(certsDir,
+        new FsPermission(FsAction.ALL, FsAction.NONE, FsAction.NONE));
+    }
+    Path destPath = new Path(certsDir, SliderKeys.CRT_FILE_NAME);
+    if (!fs.getFileSystem().exists(destPath)) {
+      fs.getFileSystem().copyFromLocalFile(
+          new Path(CertificateManager.getServerCertficateFilePath().getAbsolutePath()),
+          destPath);
+      log.info("Uploaded server cert to localization path {}", destPath);
+    }
+
+    fs.getFileSystem().setPermission(destPath,
+      new FsPermission(FsAction.READ, FsAction.NONE, FsAction.NONE));
   }
 
   protected void login(String principal, File localKeytabFile)
