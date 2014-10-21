@@ -72,9 +72,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
             ACTION_STATUS,
             APPLICATION_NAME])
 
-    assertComponentCount(COMMAND_LOGGER, 2, shell)
+    expectContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 2)
 
-    assertSuccess(shell)
 
     // get log folders
     shell = slider(EXIT_SUCCESS,

@@ -67,18 +67,27 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     logShell(shell)
 
     ensureApplicationIsUp(APPLICATION_NAME)
-    repeatUntilTrue(this.&hasContainerCountExceeded, 15, 1000 * 10, ['arg1': '1']);
+
+    repeatUntilTrue(
+        this.&hasRequestedContainerCountExceeded,
+        20,
+        1000 * 10,
+        [limit      : '1',
+         role       : COMMAND_LOGGER,
+         application: APPLICATION_NAME]);
+    
     // Wait for 20 secs for AM and agent to both reach STARTED state
     sleep(1000 * 20)
 
-    shell = slider(EXIT_SUCCESS,
-        [
-            ACTION_STATUS,
-            APPLICATION_NAME])
-    assertComponentCount(COMMAND_LOGGER, 1, shell)
-    String live = findLineEntryValue(shell, ["statistics", COMMAND_LOGGER, "containers.live"] as String[])
-    assert live != null && live.isInteger() && live.toInteger() == 1,
-        'At least 1 container must be live now'
+    def cd = expectContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 1)
+    def loggerInstances = cd.instances[COMMAND_LOGGER]
+    assert loggerInstances.size() == 1
+
+    def loggerStats = cd.statistics[COMMAND_LOGGER]
+
+    def origRequested = loggerStats["containers.requested"]
+    assert origRequested >= 2
+    assert loggerStats["containers.live"] == 1
 
     assert isApplicationUp(APPLICATION_NAME), 'App is not running.'
     assertSuccess(shell)
@@ -98,42 +107,16 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     // Wait until AM comes back up and verify container count again
     ensureApplicationIsUp(APPLICATION_NAME)
 
-    // There should be exactly 1 live container
-    shell = slider(EXIT_SUCCESS,
-      [
-          ACTION_STATUS,
-          APPLICATION_NAME])
-
-    live = findLineEntryValue(shell, ["statistics", COMMAND_LOGGER, "containers.live"] as String[])
-    assert live != null && live.isInteger() && live.toInteger() == 1,
-        'At least 1 container must be live now'
-    log.info("After AM KILL: agent container is still live")
+    // There should be exactly 1 live logger container
+    def cd2 = expectContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 1)
 
     // No new containers should be requested for the agents
-    String requested = findLineEntryValue(shell, ["statistics", COMMAND_LOGGER, "containers.requested"] as String[])
-    assert requested != null && requested.isInteger() && requested.toInteger() == 0,
+    def loggerStats2 = cd2.statistics[COMMAND_LOGGER]
+    assert origRequested == loggerStats2["containers.requested"],
         'No new agent containers should be requested'
-    log.info("After AM KILL: no new agent containers were requested")
-
     assert isApplicationUp(APPLICATION_NAME), 'App is not running.'
-    assertSuccess(shell)
   }
 
-  boolean hasContainerCountExceeded(Map<String, String> args) {
-    int expectedCount = args['arg1'].toInteger();
-    SliderShell shell = slider(EXIT_SUCCESS,
-        [
-            ACTION_STATUS,
-            APPLICATION_NAME])
-
-    String requested = findLineEntryValue(
-        shell, ["statistics", COMMAND_LOGGER, "containers.requested"] as String[])
-    if (requested != null && requested.isInteger() && requested.toInteger() >= expectedCount) {
-      return true
-    }
-
-    return false
-  }
 
   protected void killAMUsingAmSuicide() {
     SliderShell shell = slider(EXIT_SUCCESS,

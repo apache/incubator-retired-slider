@@ -88,13 +88,15 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     ensureApplicationIsUp(APPLICATION_NAME)
 
-    repeatUntilTrue(this.&hasContainerCountExceeded, 15, 1000 * 10, ['arg1': '1']);
+    repeatUntilTrue(
+        this.&hasRequestedContainerCountExceeded,
+        50,
+        1000 * 10,
+        [limit      : '1',
+         role       : COMMAND_LOGGER,
+         application: APPLICATION_NAME]);
 
-    shell = slider(EXIT_SUCCESS,
-        [
-            ACTION_STATUS,
-            APPLICATION_NAME])
-    assertComponentCount(COMMAND_LOGGER, 1, shell)
+    expectContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 1)
 
     //flex
     slider(EXIT_SUCCESS,
@@ -106,32 +108,22 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
             "2"])
 
     // sleep till the new instance starts
-    repeatUntilTrue(this.&hasContainerCountExceeded, 15, 1000 * 10, ['arg1': '2']);
+    ensureApplicationIsUp(APPLICATION_NAME)
 
-    shell = slider(EXIT_SUCCESS,
-        [
-            ACTION_STATUS,
-            APPLICATION_NAME])
-    assertComponentCount(COMMAND_LOGGER, 2, shell)
+    repeatUntilTrue(
+        this.&hasRequestedContainerCountExceeded,
+        20,
+        1000 * 10,
+        [limit      : '3',
+         role       : COMMAND_LOGGER,
+         application: APPLICATION_NAME]);
 
-    assertSuccess(shell)
+    sleep(1000 * 20)
+    def cd = execStatus(APPLICATION_NAME)
+    assert cd.statistics[COMMAND_LOGGER]["containers.requested"] >= 3
+
     assert isApplicationUp(APPLICATION_NAME), 'App is not running.'
   }
 
-  boolean hasContainerCountExceeded(Map<String, String> args) {
-    int expectedCount = args['arg1'].toInteger();
-    SliderShell shell = slider(EXIT_SUCCESS,
-        [
-            ACTION_STATUS,
-            APPLICATION_NAME])
 
-    //logShell(shell)
-    int instanceCount = getComponentCount(COMMAND_LOGGER, shell)
-    log.info("Noticed instance count - " + instanceCount + " for " + COMMAND_LOGGER)
-    if (instanceCount >= expectedCount) {
-      return true
-    }
-
-    return false
-  }
 }

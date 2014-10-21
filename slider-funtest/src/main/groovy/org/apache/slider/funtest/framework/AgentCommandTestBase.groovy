@@ -21,6 +21,7 @@ package org.apache.slider.funtest.framework
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.slider.api.ClusterDescription
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
@@ -128,25 +129,56 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     shell.dumpOutput();
   }
 
-  public static void assertComponentCount(String component, int count, SliderShell shell) {
-    log.info("Asserting component count.")
-    int instanceCount = getComponentCount(component, shell)
-    assert count == instanceCount, 'Instance count for component did not match expected.'
+
+  public ClusterDescription execStatus(String application) {
+    ClusterDescription cd
+    File statusFile = File.createTempFile("status", ".json")
+    try {
+      SliderShell shell = slider(EXIT_SUCCESS,
+          [
+              ACTION_STATUS,
+              application,
+              ARG_OUTPUT, statusFile.absolutePath
+          ])
+
+      assert statusFile.exists()
+      cd = new ClusterDescription();
+      cd.fromFile(statusFile)
+      return cd
+    } finally {
+      statusFile.delete()
+    }
   }
 
-  public static int getComponentCount(String component, SliderShell shell) {
-    String entry = findLineEntry(shell, ["instances", component] as String[])
-    int instanceCount = 0
-    if (!SliderUtils.isUnset(entry)) {
-      log.info(entry)
-      int index = entry.indexOf("container_")
-      while (index != -1) {
-        instanceCount++;
-        index = entry.indexOf("container_", index + 1)
-      }
-    }
+  public int queryRequestedCount(String  application, String role) {
+    ClusterDescription cd = execStatus(application)
+    int requestedCount = cd.statistics[role]["containers.requested"]
+    return requestedCount
+  }
 
-    return instanceCount
+  boolean hasRequestedContainerCountExceeded(Map<String, String> args) {
+    String application = args['application']
+    String role = args['role']
+    int expectedCount = args['limit'].toInteger();
+    return queryRequestedCount(application, role) >= expectedCount
+  }
+
+  public ClusterDescription expectContainersLive(String clustername,
+      String component,
+      int count) {
+    ClusterDescription cd = execStatus(clustername)
+    assertContainersLive(cd, component, count)
+    return cd;
+  }
+
+  public static void assertContainersLive(ClusterDescription clusterDescription,
+      String component, int count) {
+    log.info("Asserting component count.")
+    int instanceCount = clusterDescription.instances[component].size()
+    if (count != instanceCount) {
+      log.warn(clusterDescription.toString())
+    }
+    assert count == instanceCount 
   }
 
   public static String findLineEntry(SliderShell shell, String[] locaters) {

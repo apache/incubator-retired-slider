@@ -639,39 +639,29 @@ abstract class CommandTestBase extends SliderTestUtils {
     ])
 
 
+    sleep(5000)
+    ensureApplicationIsUp(cluster)
     def sleeptime = SLIDER_CONFIG.getInt(KEY_AM_RESTART_SLEEP_TIME,
         DEFAULT_AM_RESTART_SLEEP_TIME)
     sleep(sleeptime)
     ClusterDescription status
 
-    try {
-      // am should have restarted it by now
-      // cluster is live
-      exists(0, cluster, true)
-
-      status = sliderClient.clusterDescription
-    } catch (SliderException e) {
-      if (e.exitCode == EXIT_BAD_STATE) {
-        log.error(
-            "Property $YarnConfiguration.RM_AM_MAX_ATTEMPTS may be too low")
-      }
-      throw e;
-    }
+    status = sliderClient.clusterDescription
     return status
   }
 
-  protected void ensureApplicationIsUp(String clusterName) {
+  protected void ensureApplicationIsUp(String application) {
     repeatUntilTrue(this.&isApplicationUp,
         SLIDER_CONFIG.getInt(KEY_TEST_INSTANCE_LAUNCH_TIME,
             DEFAULT_INSTANCE_LAUNCH_TIME_SECONDS),
         1000,
-        ['arg1': clusterName],
+        [application: application],
         true,
-        'Application did not start, aborting test.')
+        'Application did not start, failing test.')
   }
 
   protected boolean isApplicationUp(Map<String, String> args) {
-    String applicationName = args['arg1'];
+    String applicationName = args['application'];
     return isApplicationInState(YarnApplicationState.RUNNING, applicationName);
   }
 
