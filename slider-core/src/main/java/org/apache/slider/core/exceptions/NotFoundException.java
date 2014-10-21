@@ -16,26 +16,20 @@
  * limitations under the License.
  */
 
-package org.apache.slider.common.params;
+package org.apache.slider.core.exceptions;
 
-import com.beust.jcommander.Parameter;
-import com.beust.jcommander.Parameters;
 
-@Parameters(commandNames = {SliderActions.ACTION_EXISTS},
-            commandDescription = SliderActions.DESCRIBE_ACTION_EXISTS)
-
-public class ActionExistsArgs extends AbstractActionArgs {
-
-  @Override
-  public String getActionName() {
-    return SliderActions.ACTION_EXISTS;
+/**
+ * Whatever was being resolved: it was not found
+ */
+public class NotFoundException extends SliderException {
+  public NotFoundException(String message,
+      Object... args) {
+    super(EXIT_NOT_FOUND, message, args);
   }
-  @Parameter(names = {ARG_LIVE},
-             description = "verify that the application is running")
-  public boolean live;
-  
-  @Parameter(names = {ARG_STATE},
-             description = "verify that the application is in the specific YARN state")
-  public String state = "";
-  
+
+  public NotFoundException(Throwable throwable,
+      String message, Object... args) {
+    super(EXIT_NOT_FOUND, throwable, message, args);
+  }
 }

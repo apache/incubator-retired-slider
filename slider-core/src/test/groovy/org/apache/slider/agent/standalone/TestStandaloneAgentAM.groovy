@@ -40,7 +40,7 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
   @Test
   public void testStandaloneAgentAM() throws Throwable {
 
-    describe "create a masterless AM then perform actions on it"
+    describe "create a standalone AM then perform actions on it"
 
     //launch fake master
     String clustername = createMiniCluster("", configuration, 1, true)
@@ -54,7 +54,7 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     List<ApplicationReport> apps = client.applications;
 
     //get some of its status
-    dumpClusterStatus(client, "masterless application status")
+    dumpClusterStatus(client, "standalone application status")
     List<ClusterNode> clusterNodes = client.listClusterNodesInRole(
         SliderKeys.COMPONENT_AM)
     assert clusterNodes.size() == 1
@@ -130,7 +130,7 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     //now try to create instance #3, and expect an in-use failure
     try {
       createStandaloneAM(clustername, false, true)
-      fail("expected a failure, got a masterless AM")
+      fail("expected a failure, got a standalone AM")
     } catch (SliderException e) {
       assertFailureClusterInUse(e);
     }

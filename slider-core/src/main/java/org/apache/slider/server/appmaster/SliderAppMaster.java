@@ -23,8 +23,10 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.BlockingService;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
+import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenIdentifier;
 import org.apache.hadoop.http.HttpConfig;
 import org.apache.hadoop.io.DataOutputBuffer;
@@ -78,6 +80,7 @@ import org.apache.slider.api.proto.Messages;
 import org.apache.slider.api.proto.SliderClusterAPI;
 import org.apache.slider.common.SliderExitCodes;
 import org.apache.slider.common.SliderKeys;
+import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.common.params.AbstractActionArgs;
 import org.apache.slider.common.params.SliderAMArgs;
 import org.apache.slider.common.params.SliderAMCreateAction;
@@ -375,6 +378,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   public SliderAppMaster() {
     super(SERVICE_CLASSNAME_SHORT);
+    new HdfsConfiguration();
+    new YarnConfiguration();
   }
 
 /* =================================================================== */
@@ -383,25 +388,31 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
   @Override //AbstractService
   public synchronized void serviceInit(Configuration conf) throws Exception {
-
+    // slider client if found
+    
+    Configuration customConf = SliderUtils.loadClientConfigurationResource();
     // Load in the server configuration - if it is actually on the Classpath
     Configuration serverConf =
       ConfigHelper.loadFromResource(SERVER_RESOURCE);
-    ConfigHelper.mergeConfigurations(conf, serverConf, SERVER_RESOURCE);
+    ConfigHelper.mergeConfigurations(customConf, serverConf, SERVER_RESOURCE, true);
+    serviceArgs.applyDefinitions(customConf);
+    serviceArgs.applyFileSystemBinding(customConf);
+    // conf now contains all customizations
 
     AbstractActionArgs action = serviceArgs.getCoreAction();
     SliderAMCreateAction createAction = (SliderAMCreateAction) action;
-    //sort out the location of the AM
-    serviceArgs.applyDefinitions(conf);
-    serviceArgs.applyFileSystemBinding(conf);
 
+    // sort out the location of the AM
     String rmAddress = createAction.getRmAddress();
     if (rmAddress != null) {
       log.debug("Setting rm address from the command line: {}", rmAddress);
-      SliderUtils.setRmSchedulerAddress(conf, rmAddress);
+      SliderUtils.setRmSchedulerAddress(customConf, rmAddress);
     }
-    serviceArgs.applyDefinitions(conf);
-    serviceArgs.applyFileSystemBinding(conf);
+
+    log.info("AM configuration:\n{}",
+        ConfigHelper.dumpConfigToString(customConf));
+
+    ConfigHelper.mergeConfigurations(conf, customConf, CLIENT_RESOURCE, true);
     //init security with our conf
     if (SliderUtils.isHadoopClusterSecure(conf)) {
       log.info("Secure mode with kerberos realm {}",
@@ -537,6 +548,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     String sliderClusterDir = serviceArgs.getSliderClusterURI();
     URI sliderClusterURI = new URI(sliderClusterDir);
     Path clusterDirPath = new Path(sliderClusterURI);
+    log.info("Application defined at {}", sliderClusterURI);
     SliderFileSystem fs = getClusterFS();
 
     // build up information about the running application -this
@@ -1292,19 +1304,32 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   /**
    * Start the slider RPC server
    */
-  private void startSliderRPCServer() throws IOException {
-    SliderClusterProtocolPBImpl protobufRelay = new SliderClusterProtocolPBImpl(this);
-    BlockingService blockingService = SliderClusterAPI.SliderClusterProtocolPB
-                                                    .newReflectiveBlockingService(
-                                                      protobufRelay);
+  private void startSliderRPCServer() throws IOException, BadConfigException {
 
-    rpcService = new WorkflowRpcService("SliderRPC", RpcBinder.createProtobufServer(
-      new InetSocketAddress("0.0.0.0", 0),
-      getConfig(),
-      secretManager,
-      NUM_RPC_HANDLERS,
-      blockingService,
-      null));
+    // verify that if the cluster is authed, the ACLs are set.
+    boolean authorization = getConfig().getBoolean(
+        CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION,
+        false);
+    String acls = getConfig().get(SliderXmlConfKeys.KEY_PROTOCOL_ACL);
+    if (authorization && SliderUtils.isUnset(acls)) {
+      throw new BadConfigException("Application has IPC authorization enabled in " +
+          CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION +
+          " but no ACLs in " + SliderXmlConfKeys.KEY_PROTOCOL_ACL);
+    }
+    SliderClusterProtocolPBImpl protobufRelay =
+        new SliderClusterProtocolPBImpl(this);
+    BlockingService blockingService = SliderClusterAPI.SliderClusterProtocolPB
+        .newReflectiveBlockingService(
+            protobufRelay);
+
+    rpcService =
+        new WorkflowRpcService("SliderRPC", RpcBinder.createProtobufServer(
+            new InetSocketAddress("0.0.0.0", 0),
+            getConfig(),
+            secretManager,
+            NUM_RPC_HANDLERS,
+            blockingService,
+            null));
     deployChildService(rpcService);
   }
 

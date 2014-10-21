@@ -115,7 +115,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     assertComponentCount(COMMAND_LOGGER, 2, shell)
 
     assertSuccess(shell)
-    assert isApplicationInState("RUNNING", APPLICATION_NAME), 'App is not running.'
+    assert isApplicationUp(APPLICATION_NAME), 'App is not running.'
   }
 
   boolean hasContainerCountExceeded(Map<String, String> args) {

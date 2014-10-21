@@ -23,23 +23,35 @@ import com.google.protobuf.ServiceException;
 import org.apache.hadoop.ipc.ProtobufHelper;
 import org.apache.hadoop.ipc.ProtocolSignature;
 import org.apache.hadoop.ipc.RPC;
+import org.apache.hadoop.ipc.RemoteException;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.slider.api.SliderClusterProtocol;
 import org.apache.slider.api.proto.Messages;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 
 public class SliderClusterProtocolProxy implements SliderClusterProtocol {
 
-  final SliderClusterProtocolPB endpoint;
   private static final RpcController NULL_CONTROLLER = null;
-  
-  public SliderClusterProtocolProxy(SliderClusterProtocolPB endpoint) {
+  private final SliderClusterProtocolPB endpoint;
+  private final InetSocketAddress address;
+
+  public SliderClusterProtocolProxy(SliderClusterProtocolPB endpoint,
+      InetSocketAddress address) {
     this.endpoint = endpoint;
+    this.address = address;
   }
 
   private IOException convert(ServiceException se) {
-    return ProtobufHelper.getRemoteException(se);
+    IOException ioe = ProtobufHelper.getRemoteException(se);
+    if (ioe instanceof RemoteException) {
+      RemoteException remoteException = (RemoteException) ioe;
+      return new RemoteException(
+          remoteException.getClassName(),
+          address.toString() + ": " + remoteException.getMessage());
+    }
+    return ioe;
   }
   
   @Override

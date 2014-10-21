@@ -22,8 +22,11 @@ import groovy.transform.CompileStatic
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.hdfs.HdfsConfiguration
 import org.apache.hadoop.registry.client.api.RegistryConstants
 import org.apache.hadoop.util.ExitUtil
+import org.apache.hadoop.util.Shell
+import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.common.tools.ConfigHelper
 import org.apache.slider.core.main.LauncherExitCodes
@@ -80,11 +83,18 @@ abstract class CommandTestBase extends SliderTestUtils {
   public static final String TEST_AM_KEYTAB
   static File keytabFile
 
+  /**
+   * shell-escaped ~ symbol. On windows this does
+   * not need to be escaped
+   */
+  static final String TILDE
+
   /*
   Static initializer for test configurations. If this code throws exceptions
   (which it may) the class will not be instantiable.
    */
   static {
+    new HdfsConfiguration()
     ConfigHelper.registerDeprecatedConfigItems();
     SLIDER_CONFIG = ConfLoader.loadSliderConf(SLIDER_CONF_XML, true);
     THAW_WAIT_TIME = getTimeOptionMillis(SLIDER_CONFIG,
@@ -104,6 +114,7 @@ abstract class CommandTestBase extends SliderTestUtils {
     TEST_AM_KEYTAB = SLIDER_CONFIG.getTrimmed(
         KEY_TEST_AM_KEYTAB)
 
+    TILDE = Shell.WINDOWS? "~" : "\\~" 
   }
 
   @Rule
@@ -169,7 +180,7 @@ abstract class CommandTestBase extends SliderTestUtils {
   public static boolean maybeAddConfFile(File dir, String filename) throws IOException {
     File confFile = new File(dir, filename)
     if (confFile.isFile()) {
-      ConfigHelper.addConfigurationFile(SLIDER_CONFIG, confFile)
+      ConfigHelper.addConfigurationFile(SLIDER_CONFIG, confFile, true)
       log.debug("Loaded $confFile")
       return true;
     } else {
@@ -377,6 +388,12 @@ abstract class CommandTestBase extends SliderTestUtils {
     slider(0, [ACTION_THAW, name] + args)
   }
 
+  static SliderShell resolve(int result, Collection<String> commands) {
+    slider(result,
+        [ACTION_RESOLVE] + commands
+    )
+  }
+
   static SliderShell registry(int result, Collection<String> commands) {
     slider(result,
         [ACTION_REGISTRY] + commands
@@ -422,7 +439,7 @@ abstract class CommandTestBase extends SliderTestUtils {
   }
 
   /**
-   * Assert the exit code is that the cluster is unknown
+   * Assert the exit code is that the cluster is 0
    * @param shell shell
    */
   public static void assertSuccess(SliderShell shell) {
@@ -615,7 +632,6 @@ abstract class CommandTestBase extends SliderTestUtils {
     ])
 
 
-
     def sleeptime = SLIDER_CONFIG.getInt(KEY_AM_RESTART_SLEEP_TIME,
         DEFAULT_AM_RESTART_SLEEP_TIME)
     sleep(sleeptime)
@@ -639,9 +655,9 @@ abstract class CommandTestBase extends SliderTestUtils {
 
   protected void ensureApplicationIsUp(String clusterName) {
     repeatUntilTrue(this.&isApplicationUp,
-        20,
         SLIDER_CONFIG.getInt(KEY_TEST_INSTANCE_LAUNCH_TIME,
             DEFAULT_INSTANCE_LAUNCH_TIME_SECONDS),
+        1000,
         ['arg1': clusterName],
         true,
         'Application did not start, aborting test.')
@@ -649,22 +665,24 @@ abstract class CommandTestBase extends SliderTestUtils {
 
   protected boolean isApplicationUp(Map<String, String> args) {
     String applicationName = args['arg1'];
-    return isApplicationInState("RUNNING", applicationName);
+    return isApplicationInState(YarnApplicationState.RUNNING, applicationName);
   }
 
-  public static boolean isApplicationInState(String text, String applicationName) {
-    boolean exists = false
-    SliderShell shell = slider(0,
-      [
-        ACTION_LIST,
-        applicationName])
-    for (String str in shell.out) {
-      if (str.contains(text)) {
-        exists = true
-      }
-    }
+  protected boolean isApplicationUp(String applicationName) {
+    return isApplicationInState(YarnApplicationState.RUNNING, applicationName);
+  }
 
-    return exists
+  /**
+   * 
+   * @param yarnState
+   * @param applicationName
+   * @return
+   */
+  public static boolean isApplicationInState(YarnApplicationState yarnState, String applicationName) {
+    SliderShell shell = slider(
+      [ACTION_EXISTS, applicationName, ARG_STATE, yarnState.toString()])
+
+    return shell.ret == 0
   }
 
   protected void repeatUntilTrue(Closure c, int maxAttempts, int sleepDur, Map args,

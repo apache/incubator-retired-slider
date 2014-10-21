@@ -74,7 +74,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     assert requested != null && requested.isInteger() && requested.toInteger() >= 3,
         'At least 2 containers must be requested'
 
-    assert isApplicationInState("RUNNING", APPLICATION_NAME), 'App is not running.'
+    assert isApplicationUp(APPLICATION_NAME), 'App is not running.'
 
     assertSuccess(shell)
   }

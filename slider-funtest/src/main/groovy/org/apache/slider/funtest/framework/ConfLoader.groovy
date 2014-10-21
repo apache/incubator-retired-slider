@@ -53,6 +53,9 @@ public class ConfLoader {
         maybeAddConfFile(conf, hadoopConfDir, CORE_SITE_XML)
         maybeAddConfFile(conf, hadoopConfDir, HDFS_SITE_XML)
         maybeAddConfFile(conf, hadoopConfDir, YARN_SITE_XML)
+        // now need to force in the original again because otherwise
+        // the -site.xml values will overwrite the -client ones
+        ConfigHelper.addConfigurationFile(conf, confFile, true)
       }
 
     }
@@ -70,8 +73,8 @@ public class ConfLoader {
   public static boolean maybeAddConfFile(Configuration conf, File dir, String filename)
   throws IOException {
     File confFile = new File(dir, filename)
-    if (confFile.isFile()) {
-      ConfigHelper.addConfigurationFile(conf, confFile)
+    if (confFile.file) {
+      ConfigHelper.addConfigurationFile(conf, confFile, true)
       log.info("Loaded ${confFile.absolutePath}")
       return true;
     } else {
