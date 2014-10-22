@@ -239,7 +239,7 @@ class CustomServiceOrchestrator():
     self.finalize_command(command, store_command, allocated_ports)
 
     with os.fdopen(os.open(file_path, os.O_WRONLY | os.O_CREAT,
-                           0600), 'w') as f:
+                           0644), 'w') as f:
       content = json.dumps(command, sort_keys=False, indent=4)
       f.write(content)
     return file_path
