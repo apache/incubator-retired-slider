@@ -49,7 +49,7 @@ public class AgentRegistryIT extends AgentCommandTestBase
   @Before
   public void prepareCluster() {
     setupCluster(CLUSTER)
-    describe("Create a 0-role cluster and make registry queries against it")
+
 
   }
 
@@ -60,8 +60,7 @@ public class AgentRegistryIT extends AgentCommandTestBase
 
   @Test
   public void testAgentClusterLifecycle() throws Throwable {
-
-    describe "Walk a 0-role cluster through its lifecycle"
+    describe("Create a 0-role cluster and make registry queries against it")
 
     // sanity check to verify the config is correct
     assert clusterFS.uri.scheme != "file"
