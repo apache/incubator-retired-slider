@@ -250,6 +250,12 @@ public class SliderYarnClientImpl extends YarnClientImpl {
     return results;
   }
 
+  /**
+   * Find a cluster in the instance list; biased towards live instances
+   * @param instances
+   * @param appname
+   * @return
+   */
   public ApplicationReport findClusterInInstanceList(List<ApplicationReport> instances,
                                                      String appname) {
     ApplicationReport found = null;
@@ -266,6 +272,22 @@ public class SliderYarnClientImpl extends YarnClientImpl {
       found = foundAndLive;
     }
     return found;
+  }
+
+  public ApplicationReport findClusterInInstanceList(List<ApplicationReport> instances,
+                                                     String appname,
+      YarnApplicationState desiredState) {
+    ApplicationReport found = null;
+    ApplicationReport foundAndLive = null;
+    for (ApplicationReport app : instances) {
+      if (app.getName().equals(appname)) {
+        if (app.getYarnApplicationState().equals(desiredState)) {
+          return app;
+        }
+      }
+    }
+    // nothing found in desired state
+    return null;
   }
 
 

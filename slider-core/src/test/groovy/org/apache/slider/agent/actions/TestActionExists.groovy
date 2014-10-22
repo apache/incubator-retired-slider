@@ -112,9 +112,9 @@ class TestActionExists extends AgentMiniClusterTestBase {
     assert 0 == sliderClient.actionExists(clustername, true)
 
     // assert that the cluster is in the running state
-    ActionExistsArgs args = new ActionExistsArgs()
-    args.state = YarnApplicationState.RUNNING.toString()
-    assert 0 == sliderClient.actionExists(clustername, args)
+    ActionExistsArgs running = new ActionExistsArgs()
+    running.state = YarnApplicationState.RUNNING.toString()
+    assert 0 == sliderClient.actionExists(clustername, running)
     
     // stop the cluster
     clusterActionFreeze(sliderClient, clustername)
@@ -124,7 +124,15 @@ class TestActionExists extends AgentMiniClusterTestBase {
 
     //but the cluster is still there for the default
     assert 0 == sliderClient.actionExists(clustername, false)
-    assert LauncherExitCodes.EXIT_FALSE == sliderClient.actionExists(clustername, args)
+    assert LauncherExitCodes.EXIT_FALSE == sliderClient.actionExists(clustername, running)
+
+    // verify that on a cluster thaw the existence probes still work, that is
+    // they do not discover the previous instance and return false when there
+    // is actually a live cluster
+    ServiceLauncher launcher2 = thawCluster(clustername, [], true);
+    addToTeardown(launcher2)
+    assert 0 == sliderClient.actionExists(clustername, running)
+    assert 0 == sliderClient.actionExists(clustername, true)
   }
   
 }
