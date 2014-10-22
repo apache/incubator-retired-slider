@@ -88,6 +88,7 @@ import org.apache.slider.common.params.SliderAMArgs;
 import org.apache.slider.common.params.SliderAMCreateAction;
 import org.apache.slider.common.params.SliderActions;
 import org.apache.slider.common.tools.ConfigHelper;
+import org.apache.slider.common.tools.PortScanner;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.common.tools.SliderVersionInfo;
@@ -375,6 +376,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private YarnRegistryViewForProviders yarnRegistryOperations;
   private FsDelegationTokenManager fsDelegationTokenManager;
   private RegisterApplicationMasterResponse amRegistrationData;
+  private PortScanner portScanner;
 
   /**
    * Service Constructor
@@ -656,7 +658,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       secretManager = new ClientToAMTokenSecretManager(appAttemptID, null);
 
       //bring up the Slider RPC service
-      startSliderRPCServer();
+      startSliderRPCServer(instanceDefinition);
 
       rpcServiceAddress = rpcService.getConnectAddress();
       appMasterHostname = rpcServiceAddress.getHostName();
@@ -690,6 +692,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       startAgentWebApp(appInformation, serviceConf);
 
+      int port = getPortToRequest(instanceDefinition);
+
       webApp = new SliderAMWebApp(registryOperations);
       WebApps.$for(SliderAMWebApp.BASE_PATH, WebAppApi.class,
                    new WebAppApiImpl(this,
@@ -698,6 +702,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
                                      certificateManager, registryOperations),
                    RestPaths.WS_CONTEXT)
                       .withHttpPolicy(serviceConf, HttpConfig.Policy.HTTP_ONLY)
+                      .at(port)
                       .start(webApp);
       String scheme = WebAppUtils.HTTP_PREFIX;
       appMasterTrackingUrl = scheme  + appMasterHostname + ":" + webApp.port();
@@ -898,6 +903,23 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
     //shutdown time
     return finish();
+  }
+
+  private int getPortToRequest(AggregateConf instanceDefinition)
+      throws SliderException {
+    int portToRequest = 0;
+    String portRange = instanceDefinition.
+        getAppConfOperations().getComponent(SliderKeys.COMPONENT_AM)
+        .getOption(SliderKeys.KEY_AM_ALLOWED_PORT_RANGE , "0");
+    if (!"0".equals(portRange)) {
+      if (portScanner == null) {
+        portScanner = new PortScanner();
+        portScanner.setPortRange(portRange);
+      }
+      portToRequest = portScanner.getAvailablePort();
+    }
+
+    return portToRequest;
   }
 
   private void uploadServerCertForLocalization(String clustername,
@@ -1334,7 +1356,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   /**
    * Start the slider RPC server
    */
-  private void startSliderRPCServer() throws IOException, BadConfigException {
+  private void startSliderRPCServer(AggregateConf instanceDefinition)
+      throws IOException, SliderException {
 
     // verify that if the cluster is authed, the ACLs are set.
     boolean authorization = getConfig().getBoolean(
@@ -1352,9 +1375,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         .newReflectiveBlockingService(
             protobufRelay);
 
+    int port = getPortToRequest(instanceDefinition);
     rpcService =
         new WorkflowRpcService("SliderRPC", RpcBinder.createProtobufServer(
-            new InetSocketAddress("0.0.0.0", 0),
+            new InetSocketAddress("0.0.0.0", port),
             getConfig(),
             secretManager,
             NUM_RPC_HANDLERS,
