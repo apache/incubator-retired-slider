@@ -766,6 +766,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
             amRegistrationData.getClientToAMTokenMasterKey().array());
         applicationACLs = amRegistrationData.getApplicationACLs();
 
+        // fix up the ACLs if they are not set
+        String acls = getConfig().get(SliderXmlConfKeys.KEY_PROTOCOL_ACL);
+        if (acls == null) {
+          getConfig().set(SliderXmlConfKeys.KEY_PROTOCOL_ACL, "*");
+        }
         //tell the server what the ACLs are
         rpcService.getServer().refreshServiceAcl(serviceConf,
             new SliderAMPolicyProvider());
@@ -1358,17 +1363,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   private void startSliderRPCServer(AggregateConf instanceDefinition)
       throws IOException, SliderException {
+    verifyIPCAccess();
 
-    // verify that if the cluster is authed, the ACLs are set.
-    boolean authorization = getConfig().getBoolean(
-        CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION,
-        false);
-    String acls = getConfig().get(SliderXmlConfKeys.KEY_PROTOCOL_ACL);
-    if (authorization && SliderUtils.isUnset(acls)) {
-      throw new BadConfigException("Application has IPC authorization enabled in " +
-          CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION +
-          " but no ACLs in " + SliderXmlConfKeys.KEY_PROTOCOL_ACL);
-    }
+
     SliderClusterProtocolPBImpl protobufRelay =
         new SliderClusterProtocolPBImpl(this);
     BlockingService blockingService = SliderClusterAPI.SliderClusterProtocolPB
@@ -1385,6 +1382,22 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
             blockingService,
             null));
     deployChildService(rpcService);
+  }
+
+  /**
+   * verify that if the cluster is authed, the ACLs are set.
+   * @throws BadConfigException if Authorization is set without any ACL
+   */
+  private void verifyIPCAccess() throws BadConfigException {
+    boolean authorization = getConfig().getBoolean(
+        CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION,
+        false);
+    String acls = getConfig().get(SliderXmlConfKeys.KEY_PROTOCOL_ACL);
+    if (authorization && SliderUtils.isUnset(acls)) {
+      throw new BadConfigException("Application has IPC authorization enabled in " +
+          CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION +
+          " but no ACLs in " + SliderXmlConfKeys.KEY_PROTOCOL_ACL);
+    }
   }
 
 
