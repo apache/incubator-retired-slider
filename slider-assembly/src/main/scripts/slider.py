@@ -51,8 +51,9 @@ to explain the code here
 """
 
 def executeEnvSh(confDir):
-  if not IS_WINDOWS:
-    envCmd = 'source %s/slider-env.sh && env' % confDir
+  envscript = '%s/slider-env.sh' % confDir
+  if not IS_WINDOWS and os.path.exists(envscript):
+    envCmd = 'source %s && env' % envscript
     command = ['bash', '-c', envCmd]
 
     proc = subprocess.Popen(command, stdout = subprocess.PIPE)

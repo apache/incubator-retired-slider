@@ -87,8 +87,8 @@ abstract class CommandTestBase extends SliderTestUtils {
    * shell-escaped ~ symbol. On windows this does
    * not need to be escaped
    */
-  static final String TILDE
-
+  public static final String TILDE
+  
   /*
   Static initializer for test configurations. If this code throws exceptions
   (which it may) the class will not be instantiable.
@@ -113,6 +113,8 @@ abstract class CommandTestBase extends SliderTestUtils {
 
     TEST_AM_KEYTAB = SLIDER_CONFIG.getTrimmed(
         KEY_TEST_AM_KEYTAB)
+    
+    
 
     TILDE = Shell.WINDOWS? "~" : "\\~" 
   }
@@ -126,7 +128,12 @@ abstract class CommandTestBase extends SliderTestUtils {
     Configuration conf = loadSliderConf();
 
     SliderShell.confDir = SLIDER_CONF_DIRECTORY
-    SliderShell.scriptFile = SliderShell.windows ? SLIDER_SCRIPT_PYTHON : SLIDER_SCRIPT
+    
+    // choose python script if on windows or the launch key recommends it
+    // 
+    boolean python = SLIDER_CONFIG.getBoolean(KEY_LAUNCH_PYTHON, false)
+    SliderShell.scriptFile =
+        (SliderShell.windows || python) ? SLIDER_SCRIPT_PYTHON : SLIDER_SCRIPT
     
     //set the property of the configuration directory
     def path = SLIDER_CONF_DIRECTORY.absolutePath
