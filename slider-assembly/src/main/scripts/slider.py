@@ -33,7 +33,8 @@ SLIDER_CLASSPATH_EXTRA = "SLIDER_CLASSPATH_EXTRA"
 HADOOP_CONF_DIR = "HADOOP_CONF_DIR"
 
 SLIDER_CLASSNAME = "org.apache.slider.Slider"
-DEFAULT_JVM__OPTS = "-Djava.net.preferIPv4Stack=true -Djava.awt.headless=true -Xmx256m -Dslider.confdir=%s"
+SLIDER_CONFDIR_OPTS ="-Dslider.confdir=%s"
+DEFAULT_JVM_OPTS = "-Djava.net.preferIPv4Stack=true -Djava.awt.headless=true -Xmx256m"
 
 ON_POSIX = 'posix' in sys.builtin_module_names
 
@@ -51,8 +52,9 @@ to explain the code here
 """
 
 def executeEnvSh(confDir):
-  if not IS_WINDOWS:
-    envCmd = 'source %s/slider-env.sh && env' % confDir
+  envscript = '%s/slider-env.sh' % confDir
+  if not IS_WINDOWS and os.path.exists(envscript):
+    envCmd = 'source %s && env' % envscript
     command = ['bash', '-c', envCmd]
 
     proc = subprocess.Popen(command, stdout = subprocess.PIPE)
@@ -243,9 +245,10 @@ def main():
   libdir = dirMustExist(libDir(slider_home))
   confdir = dirMustExist(confDir(slider_home))
   executeEnvSh(confdir)
-  default_jvm_opts = DEFAULT_JVM__OPTS % confdir
+  jvm_opts_list = (SLIDER_CONFDIR_OPTS % confdir).split()
+  default_jvm_opts = DEFAULT_JVM_OPTS
   slider_jvm_opts = os.environ.get(SLIDER_JVM_OPTS, default_jvm_opts)
-  jvm_opts_split = slider_jvm_opts.split()
+  jvm_opts_list.extend(slider_jvm_opts.split())
   slider_classpath_extra = os.environ.get(SLIDER_CLASSPATH_EXTRA, "")
   hadoop_conf_dir = os.environ.get(HADOOP_CONF_DIR, "")
   p = os.pathsep    # path separator
@@ -256,14 +259,14 @@ def main():
                      + hadoop_conf_dir
 
 
-  #print "slider_home = \"%s\"" % slider_home
-  #print "slider_jvm_opts = \"%s\"" % slider_jvm_opts
-  #print "slider_classpath = \"%s\"" % slider_classpath
+  debug("slider_home = \"%s\"" % slider_home)
+  debug("slider_jvm_opts = \"%s\"" % slider_jvm_opts)
+  debug("slider_classpath = \"%s\"" % slider_classpath)
 
   return java(SLIDER_CLASSNAME,
               args,
               slider_classpath,
-              jvm_opts_split)
+              jvm_opts_list)
 
 if __name__ == '__main__':
   """

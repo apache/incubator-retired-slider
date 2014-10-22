@@ -74,4 +74,9 @@ public interface FuntestProperties extends SliderXMLConfKeysForTesting {
   String CORE_SITE_XML = "core-site.xml"
   String HDFS_SITE_XML = "hdfs-site.xml"
   String YARN_SITE_XML = "yarn-site.xml"
+
+  /**
+   * Flag to indicate that the .py script should be launched: {@value}
+   */
+  String KEY_LAUNCH_PYTHON = "slider.test.launch.python"
 }
