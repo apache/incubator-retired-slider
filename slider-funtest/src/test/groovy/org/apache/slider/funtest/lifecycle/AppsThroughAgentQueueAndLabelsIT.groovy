@@ -88,14 +88,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     ensureApplicationIsUp(APPLICATION_NAME)
 
-    repeatUntilTrue(
-        this.&hasRequestedContainerCountExceeded,
-        50,
-        1000 * 10,
-        [limit      : '1',
-         role       : COMMAND_LOGGER,
-         application: APPLICATION_NAME]);
-
+    expectContainerCountExceeded(APPLICATION_NAME, COMMAND_LOGGER, 1 )
     expectContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 1)
 
     //flex
@@ -109,14 +102,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     // sleep till the new instance starts
     ensureApplicationIsUp(APPLICATION_NAME)
+    expectContainerCountExceeded(APPLICATION_NAME, COMMAND_LOGGER, 3)
 
-    repeatUntilTrue(
-        this.&hasRequestedContainerCountExceeded,
-        20,
-        1000 * 10,
-        [limit      : '3',
-         role       : COMMAND_LOGGER,
-         application: APPLICATION_NAME]);
 
     sleep(1000 * 20)
     def cd = execStatus(APPLICATION_NAME)

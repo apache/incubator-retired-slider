@@ -34,10 +34,10 @@ import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.api.ClusterDescription
-import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.client.SliderClient
 import org.apache.slider.test.SliderTestUtils
+import org.junit.Assert
 import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Rule
@@ -584,14 +584,16 @@ abstract class CommandTestBase extends SliderTestUtils {
     List<String> commands = [
         ACTION_CREATE, name,
         ARG_TEMPLATE, appTemplate,
-        ARG_RESOURCES, resourceTemplate
+        ARG_RESOURCES, resourceTemplate,
+        ARG_WAIT, Integer.toString(THAW_WAIT_TIME)
+        
     ]
-    
+
     maybeAddCommandOption(commands,
         [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME],
         SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME));
     maybeAddCommandOption(commands,
-        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM,  SliderXmlConfKeys.KEY_HDFS_KEYTAB_DIR ],
+        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_HDFS_KEYTAB_DIR],
         SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_HDFS_KEYTAB_DIR));
     maybeAddCommandOption(commands,
         [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH],
@@ -657,7 +659,9 @@ abstract class CommandTestBase extends SliderTestUtils {
         1000,
         [application: application],
         true,
-        'Application did not start, failing test.')
+        'Application did not start, failing test.') {
+      exists(application,true).dumpOutput()
+    }
   }
 
   protected boolean isApplicationUp(Map<String, String> args) {
@@ -682,20 +686,26 @@ abstract class CommandTestBase extends SliderTestUtils {
     return shell.ret == 0
   }
 
-  protected void repeatUntilTrue(Closure c, int maxAttempts, int sleepDur, Map args,
-                                 boolean failIfUnsuccessful = false, String message = "") {
+  protected void repeatUntilTrue(Closure closure,
+      int maxAttempts, int sleepDur, Map args,
+      boolean failIfUnsuccessful = false, String message,
+      Closure failureHandler) {
     int attemptCount = 0
     while (attemptCount < maxAttempts) {
-      if (c(args)) {
+      if (closure(args)) {
+        // finished
         break
       };
       attemptCount++;
 
-      if (failIfUnsuccessful) {
-        assert attemptCount != maxAttempts, message
-      }
-
       sleep(sleepDur)
+    }
+    
+    if (failIfUnsuccessful & attemptCount != maxAttempts) {
+      if (failureHandler) {
+        failureHandler()
+      }
+      fail(message)
     }
   }
 

@@ -163,6 +163,21 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     return queryRequestedCount(application, role) >= expectedCount
   }
 
+  void expectContainerCountExceeded(String application, String role, int limit) {
+
+    repeatUntilTrue(
+        this.&hasRequestedContainerCountExceeded,
+        50,
+        1000 * 10,
+        [limit      : Integer.toString(limit),
+         role       : role,
+         application: application],
+        true,
+        "countainer count not reached") {
+      status(application).dumpOutput()
+    };
+
+  }
   public ClusterDescription expectContainersLive(String clustername,
       String component,
       int count) {

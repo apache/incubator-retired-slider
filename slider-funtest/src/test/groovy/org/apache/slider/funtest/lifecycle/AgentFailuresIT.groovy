@@ -47,8 +47,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
   @Test
   public void testAgentFailRegistrationOnce() throws Throwable {
     if (!AGENTTESTS_ENABLED) {
-      log.info "TESTS are not run."
-      return
+      skip("Agent tests are not run.")
     }
 
     cleanup(APPLICATION_NAME)
@@ -60,17 +59,9 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     ensureApplicationIsUp(APPLICATION_NAME)
 
-    repeatUntilTrue(this.&hasRequestedContainerCountExceeded, 
-        15,
-        1000 * 10, 
-        [
-            application:APPLICATION_NAME,
-            role:COMMAND_LOGGER,
-            limit: '2'
-        ]);
-
+    expectContainerCountExceeded(APPLICATION_NAME, COMMAND_LOGGER, 2)
     sleep(1000 * 20)
-
+    assert isApplicationUp(APPLICATION_NAME), 'App is not running.'
     def cd = expectContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 1)
     assert cd.statistics[COMMAND_LOGGER]["containers.requested"] >= 2
     assert isApplicationUp(APPLICATION_NAME), 'App is not running.'
