@@ -58,7 +58,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     ensureApplicationIsUp(APPLICATION_NAME)
 
-    expectContainerCountExceeded(APPLICATION_NAME, COMMAND_LOGGER, 2)
+    expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 2)
     sleep(1000 * 20)
     assert isApplicationUp(APPLICATION_NAME), 'App is not running.'
     def cd = expectContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 1)

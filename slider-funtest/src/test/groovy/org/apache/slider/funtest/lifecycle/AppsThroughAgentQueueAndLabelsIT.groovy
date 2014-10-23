@@ -88,7 +88,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     ensureApplicationIsUp(APPLICATION_NAME)
 
-    expectContainerCountExceeded(APPLICATION_NAME, COMMAND_LOGGER, 1 )
+    expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 1 )
     expectContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 1)
 
     //flex
@@ -102,7 +102,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     // sleep till the new instance starts
     ensureApplicationIsUp(APPLICATION_NAME)
-    expectContainerCountExceeded(APPLICATION_NAME, COMMAND_LOGGER, 3)
+    expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 3)
 
 
     sleep(1000 * 20)

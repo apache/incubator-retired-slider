@@ -58,7 +58,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     logShell(shell)
 
     ensureApplicationIsUp(APPLICATION_NAME)
-    expectContainerCountExceeded(APPLICATION_NAME, COMMAND_LOGGER, 3)
+    expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 3)
     sleep(1000 * 20)
     def cd = execStatus(APPLICATION_NAME)
     assert cd.statistics[COMMAND_LOGGER]["containers.requested"] >= 3

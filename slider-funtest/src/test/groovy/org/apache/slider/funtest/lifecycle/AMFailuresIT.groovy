@@ -67,7 +67,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     logShell(shell)
 
     ensureApplicationIsUp(APPLICATION_NAME)
-    expectContainerCountExceeded(APPLICATION_NAME, COMMAND_LOGGER, 1)
+    expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 1)
     
     // Wait for 20 secs for AM and agent to both reach STARTED state
     sleep(1000 * 20)

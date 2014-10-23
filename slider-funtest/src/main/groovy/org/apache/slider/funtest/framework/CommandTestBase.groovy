@@ -28,6 +28,7 @@ import org.apache.hadoop.util.ExitUtil
 import org.apache.hadoop.util.Shell
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
+import org.apache.slider.api.StatusKeys
 import org.apache.slider.common.tools.ConfigHelper
 import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.core.main.ServiceLauncher
@@ -755,9 +756,7 @@ abstract class CommandTestBase extends SliderTestUtils {
           ])
 
       assert statusFile.exists()
-      cd = new ClusterDescription();
-      cd.fromFile(statusFile)
-      return cd
+      return ClusterDescription.fromFile(statusFile)
     } finally {
       statusFile.delete()
     }
@@ -766,36 +765,45 @@ abstract class CommandTestBase extends SliderTestUtils {
   public int queryRequestedCount(String  application, String role) {
     ClusterDescription cd = execStatus(application)
 
+    if (cd.statistics.size() == 0) {
+      log.debug("No statistics entries")
+    }
+    
     if (!cd.statistics[role]) {
+      log.debug("No stats for role $role")
       return 0;
     }
     def statsForRole = cd.statistics[role]
 
-    def requested = statsForRole["containers.requested"]
-    assert null != statsForRole["containers.requested"]
-    int requestedCount = requested
-    return requestedCount
+    def requested = statsForRole[StatusKeys.STATISTICS_CONTAINERS_REQUESTED]
+    assert null != statsForRole[StatusKeys.STATISTICS_CONTAINERS_REQUESTED]
+    return requested
   }
 
-  boolean hasRequestedContainerCountExceeded(Map<String, String> args) {
+  boolean hasRequestedContainerCountReached(Map<String, String> args) {
     String application = args['application']
     String role = args['role']
     int expectedCount = args['limit'].toInteger();
-    return queryRequestedCount(application, role) >= expectedCount
+
+    int requestedCount = queryRequestedCount(application, role)
+    log.debug("requested count = $requestedCount; expected=$expectedCount")
+    return requestedCount >= expectedCount
   }
 
-  void expectContainerCountExceeded(String application, String role, int limit) {
+  void expectContainerRequestedCountReached(String application, String role, int limit) {
 
     repeatUntilTrue(
-        this.&hasRequestedContainerCountExceeded,
-        50,
-        1000 * 10,
+        this.&hasRequestedContainerCountReached,
+        90,
+        1000,
         [limit      : Integer.toString(limit),
          role       : role,
          application: application],
         true,
         "countainer count not reached") {
       describe "container count not reached"
+      ClusterDescription cd = execStatus(application);
+      log.info("Parsed status \n$cd")
       status(application).dumpOutput()
     };
 
