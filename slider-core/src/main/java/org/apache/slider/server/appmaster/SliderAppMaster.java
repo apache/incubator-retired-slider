@@ -1514,7 +1514,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   @Override //AMRMClientAsync
   public void onNodesUpdated(List<NodeReport> updatedNodes) {
-    LOG_YARN.info("Nodes updated");
+    LOG_YARN.info("onNodesUpdated({})", updatedNodes.size());
+    log.info("Updated nodes {}", updatedNodes);
+    // Check if any nodes are lost or revived and update state accordingly
+    appState.onNodesUpdated(updatedNodes);
   }
 
   /**
