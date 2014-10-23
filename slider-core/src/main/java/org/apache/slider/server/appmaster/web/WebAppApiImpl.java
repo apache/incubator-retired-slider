@@ -99,50 +99,14 @@ public class WebAppApiImpl implements WebAppApi {
    * @see org.apache.slider.server.appmaster.web.WebAppApi#getRoleStatusByName()
    */
   @Override
-  public TreeMap<String,RoleStatus> getRoleStatusByName() {
-    Map<Integer,ProviderRole> rolesById = rolesById(provider.getRoles());
-    Map<Integer,RoleStatus> status = appState.getRoleStatusMap();
-    
-    return getRoleStatusesByName(rolesById, status);
-  }
-  
-  /**
-   * Get the ProviderRoles by their index
-   * @param roles
-   * @return
-   */
-  private Map<Integer,ProviderRole> rolesById(List<ProviderRole> roles) {
-    Map<Integer,ProviderRole> rolesById = new HashMap<Integer,ProviderRole>();
-    rolesById.put(SliderKeys.ROLE_AM_PRIORITY_INDEX, AM_ROLE_NAME);
-
-    for (ProviderRole role : roles) {
-      rolesById.put(role.id, role);
+  public Map<String,RoleStatus> getRoleStatusByName() {
+    List<RoleStatus> roleStatuses = appState.cloneRoleStatusList();
+    TreeMap<String, RoleStatus> map =
+        new TreeMap<String, RoleStatus>();
+    for (RoleStatus status : roleStatuses) {
+      map.put(status.getName(), status);
     }
-
-    return rolesById;
-  }
-
-  /**
-   * Join the ProviderRole by their ID with the RoleStatus by their ID, to get the RoleStatus by role name.
-   * @param rolesById
-   * @param statusById
-   * @return A Map of RoleStatus by the role name
-   */
-  private TreeMap<String, RoleStatus> getRoleStatusesByName(Map<Integer, ProviderRole> rolesById,
-      Map<Integer, RoleStatus> statusById) {
-    TreeMap<String, RoleStatus> statusByName = new TreeMap<String, RoleStatus>();
-    for (Entry<Integer, ProviderRole> role : rolesById.entrySet()) {
-      final RoleStatus status = statusById.get(role.getKey());
-
-      if (null == status) {
-        log.error("Found ID ({}) which has no known ProviderRole",
-            role.getKey());
-      } else {
-        statusByName.put(role.getValue().name, status);
-      }
-    }
-
-    return statusByName;
+    return map;
   }
 
   @Override

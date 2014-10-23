@@ -57,7 +57,7 @@ public interface WebAppApi {
    * Generate a mapping from role name to its {@link RoleStatus}. Be aware that this
    * is a computed value and not just a getter
    */
-  public Map<String,RoleStatus> getRoleStatusByName();
+  public Map<String, RoleStatus> getRoleStatusByName();
 
   /**
    * Returns an interface that can support the agent-based REST operations.
