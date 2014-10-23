@@ -21,7 +21,6 @@ package org.apache.slider.funtest.framework
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.slider.api.ClusterDescription
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
@@ -125,77 +124,6 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     }
   }
 
-  public static void logShell(SliderShell shell) {
-    shell.dumpOutput();
-  }
-
-
-  public ClusterDescription execStatus(String application) {
-    ClusterDescription cd
-    File statusFile = File.createTempFile("status", ".json")
-    try {
-      SliderShell shell = slider(EXIT_SUCCESS,
-          [
-              ACTION_STATUS,
-              application,
-              ARG_OUTPUT, statusFile.absolutePath
-          ])
-
-      assert statusFile.exists()
-      cd = new ClusterDescription();
-      cd.fromFile(statusFile)
-      return cd
-    } finally {
-      statusFile.delete()
-    }
-  }
-
-  public int queryRequestedCount(String  application, String role) {
-    ClusterDescription cd = execStatus(application)
-    int requestedCount = cd.statistics[role]["containers.requested"]
-    return requestedCount
-  }
-
-  boolean hasRequestedContainerCountExceeded(Map<String, String> args) {
-    String application = args['application']
-    String role = args['role']
-    int expectedCount = args['limit'].toInteger();
-    return queryRequestedCount(application, role) >= expectedCount
-  }
-
-  void expectContainerCountExceeded(String application, String role, int limit) {
-
-    repeatUntilTrue(
-        this.&hasRequestedContainerCountExceeded,
-        50,
-        1000 * 10,
-        [limit      : Integer.toString(limit),
-         role       : role,
-         application: application],
-        true,
-        "countainer count not reached") {
-      status(application).dumpOutput()
-    };
-
-  }
-  public ClusterDescription expectContainersLive(String clustername,
-      String component,
-      int count) {
-    ClusterDescription cd = execStatus(clustername)
-    assertContainersLive(cd, component, count)
-    return cd;
-  }
-
-  public static void assertContainersLive(ClusterDescription clusterDescription,
-      String component, int count) {
-    log.info("Asserting component count.")
-    int instanceCount = clusterDescription.instances[component].size()
-    if (count != instanceCount) {
-      log.warn(clusterDescription.toString())
-    }
-    assert count == instanceCount 
-  }
-
   public static String findLineEntry(SliderShell shell, String[] locaters) {
     int index = 0;
     def output = shell.out
@@ -279,12 +207,9 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
       return
     }
 
-    log.info "Cleaning app instance, if exists, by name " + applicationName
+    describe "Teardown app instance " + applicationName
+    // forced freeze with wait
     teardown(applicationName)
-
-    // sleep till the instance is frozen
-    sleep(1000 * 3)
-
     SliderShell shell = slider([
         ACTION_DESTROY,
         applicationName])

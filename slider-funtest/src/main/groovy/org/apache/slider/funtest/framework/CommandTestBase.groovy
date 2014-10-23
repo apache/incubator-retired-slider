@@ -37,7 +37,6 @@ import org.apache.slider.api.ClusterDescription
 import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.client.SliderClient
 import org.apache.slider.test.SliderTestUtils
-import org.junit.Assert
 import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Rule
@@ -45,6 +44,7 @@ import org.junit.rules.Timeout
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import static org.apache.slider.common.SliderExitCodes.*
+import static org.apache.slider.core.main.LauncherExitCodes.*
 import static org.apache.slider.funtest.framework.FuntestProperties.*
 import static org.apache.slider.common.params.Arguments.*
 import static org.apache.slider.common.params.SliderActions.*
@@ -167,6 +167,20 @@ abstract class CommandTestBase extends SliderTestUtils {
     
     log.info("Test using ${HadoopFS.getDefaultUri(SLIDER_CONFIG)} " +
              "and YARN RM @ ${SLIDER_CONFIG.get(YarnConfiguration.RM_ADDRESS)}")
+  }
+
+  public static void assertContainersLive(ClusterDescription clusterDescription,
+      String component, int count) {
+    log.info("Asserting component count.")
+    int instanceCount = clusterDescription.instances[component].size()
+    if (count != instanceCount) {
+      log.warn(clusterDescription.toString())
+    }
+    assert count == instanceCount 
+  }
+
+  public static void logShell(SliderShell shell) {
+    shell.dumpOutput();
   }
 
   /**
@@ -333,7 +347,7 @@ abstract class CommandTestBase extends SliderTestUtils {
   }
 
   static SliderShell freezeForce(String name) {
-    freeze(name, [ARG_FORCE])
+    freeze(name, [ARG_FORCE, ARG_WAIT, "10000"])
   }
 
   static SliderShell killContainer(String name, String containerID) {
@@ -643,9 +657,12 @@ abstract class CommandTestBase extends SliderTestUtils {
 
     sleep(5000)
     ensureApplicationIsUp(cluster)
+    
+/*
     def sleeptime = SLIDER_CONFIG.getInt(KEY_AM_RESTART_SLEEP_TIME,
         DEFAULT_AM_RESTART_SLEEP_TIME)
     sleep(sleeptime)
+*/
     ClusterDescription status
 
     status = sliderClient.clusterDescription
@@ -653,18 +670,19 @@ abstract class CommandTestBase extends SliderTestUtils {
   }
 
   protected void ensureApplicationIsUp(String application) {
-    repeatUntilTrue(this.&isApplicationUp,
+    repeatUntilTrue(this.&isApplicationRunning,
         SLIDER_CONFIG.getInt(KEY_TEST_INSTANCE_LAUNCH_TIME,
             DEFAULT_INSTANCE_LAUNCH_TIME_SECONDS),
         1000,
         [application: application],
         true,
         'Application did not start, failing test.') {
+      describe "final state of app that tests say is not up"
       exists(application,true).dumpOutput()
     }
   }
 
-  protected boolean isApplicationUp(Map<String, String> args) {
+  protected boolean isApplicationRunning(Map<String, String> args) {
     String applicationName = args['application'];
     return isApplicationInState(YarnApplicationState.RUNNING, applicationName);
   }
@@ -686,14 +704,30 @@ abstract class CommandTestBase extends SliderTestUtils {
     return shell.ret == 0
   }
 
-  protected void repeatUntilTrue(Closure closure,
+  /**
+   * Repeat a probe until it succeeds, if it does not execute a failure
+   * closure then raise an exception with the supplied message
+   * @param probe probe
+   * @param maxAttempts max number of attempts
+   * @param sleepDur sleep between failing attempts
+   * @param args map of arguments to the probe
+   * @param failIfUnsuccessful if the probe fails after all the attempts
+   * —should it raise an exception
+   * @param failureMessage message to include in exception raised
+   * @param failureHandler closure to invoke prior to the failure being raised
+   */
+  protected void repeatUntilTrue(Closure probe,
       int maxAttempts, int sleepDur, Map args,
-      boolean failIfUnsuccessful = false, String message,
+      boolean failIfUnsuccessful = false,
+      String failureMessage,
       Closure failureHandler) {
     int attemptCount = 0
+    boolean succeeded = false;
     while (attemptCount < maxAttempts) {
-      if (closure(args)) {
+      if (probe(args)) {
         // finished
+        log.debug("Success after $attemptCount attempt(s)")
+        succeeded = true;
         break
       };
       attemptCount++;
@@ -701,12 +735,77 @@ abstract class CommandTestBase extends SliderTestUtils {
       sleep(sleepDur)
     }
     
-    if (failIfUnsuccessful & attemptCount != maxAttempts) {
+    if (failIfUnsuccessful & !succeeded) {
       if (failureHandler) {
         failureHandler()
       }
-      fail(message)
+      fail(failureMessage)
     }
   }
 
+  public ClusterDescription execStatus(String application) {
+    ClusterDescription cd
+    File statusFile = File.createTempFile("status", ".json")
+    try {
+      slider(EXIT_SUCCESS,
+          [
+              ACTION_STATUS,
+              application,
+              ARG_OUTPUT, statusFile.absolutePath
+          ])
+
+      assert statusFile.exists()
+      cd = new ClusterDescription();
+      cd.fromFile(statusFile)
+      return cd
+    } finally {
+      statusFile.delete()
+    }
+  }
+
+  public int queryRequestedCount(String  application, String role) {
+    ClusterDescription cd = execStatus(application)
+
+    if (!cd.statistics[role]) {
+      return 0;
+    }
+    def statsForRole = cd.statistics[role]
+
+    def requested = statsForRole["containers.requested"]
+    assert null != statsForRole["containers.requested"]
+    int requestedCount = requested
+    return requestedCount
+  }
+
+  boolean hasRequestedContainerCountExceeded(Map<String, String> args) {
+    String application = args['application']
+    String role = args['role']
+    int expectedCount = args['limit'].toInteger();
+    return queryRequestedCount(application, role) >= expectedCount
+  }
+
+  void expectContainerCountExceeded(String application, String role, int limit) {
+
+    repeatUntilTrue(
+        this.&hasRequestedContainerCountExceeded,
+        50,
+        1000 * 10,
+        [limit      : Integer.toString(limit),
+         role       : role,
+         application: application],
+        true,
+        "countainer count not reached") {
+      describe "container count not reached"
+      status(application).dumpOutput()
+    };
+
+  }
+
+  public ClusterDescription expectContainersLive(String clustername,
+      String component,
+      int count) {
+    ClusterDescription cd = execStatus(clustername)
+    assertContainersLive(cd, component, count)
+    return cd;
+  }
 }

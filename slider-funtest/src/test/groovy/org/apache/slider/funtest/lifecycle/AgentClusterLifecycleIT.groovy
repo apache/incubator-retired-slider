@@ -147,7 +147,7 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
               ARG_MESSAGE, "forced-freeze-in-test"
           ])
 
-      describe " >>> Cluster is now frozen - 2nd time."
+      describe " >>> Cluster is now force frozen - 2nd time."
 
       //cluster is no longer live
       exists(0, CLUSTER, false)
@@ -165,9 +165,9 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
 
       describe " >>> Cluster is now thawed - 2nd time."
 
-      ClusterDescription status = killAmAndWaitForRestart(sliderClient, CLUSTER)
 
       describe " >>> Kill AM and wait for restart."
+      ClusterDescription status = killAmAndWaitForRestart(sliderClient, CLUSTER)
 
       def restarted = status.getInfo(
           StatusKeys.INFO_CONTAINERS_AM_RESTART)
