@@ -124,31 +124,6 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     }
   }
 
-  public static void logShell(SliderShell shell) {
-    shell.dumpOutput();
-  }
-
-  public static void assertComponentCount(String component, int count, SliderShell shell) {
-    log.info("Asserting component count.")
-    int instanceCount = getComponentCount(component, shell)
-    assert count == instanceCount, 'Instance count for component did not match expected.'
-  }
-
-  public static int getComponentCount(String component, SliderShell shell) {
-    String entry = findLineEntry(shell, ["instances", component] as String[])
-    int instanceCount = 0
-    if (!SliderUtils.isUnset(entry)) {
-      log.info(entry)
-      int index = entry.indexOf("container_")
-      while (index != -1) {
-        instanceCount++;
-        index = entry.indexOf("container_", index + 1)
-      }
-    }
-
-    return instanceCount
-  }
-
   public static String findLineEntry(SliderShell shell, String[] locaters) {
     int index = 0;
     def output = shell.out
@@ -232,12 +207,9 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
       return
     }
 
-    log.info "Cleaning app instance, if exists, by name " + applicationName
+    describe "Teardown app instance " + applicationName
+    // forced freeze with wait
     teardown(applicationName)
-
-    // sleep till the instance is frozen
-    sleep(1000 * 3)
-
     SliderShell shell = slider([
         ACTION_DESTROY,
         applicationName])

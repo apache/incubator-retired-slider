@@ -1740,7 +1740,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     verifyBindingsDefined();
     SliderUtils.validateClusterName(name);
     boolean checkLive = args.live;
-    log.debug("actionExists({}, {})", name, checkLive);
+    log.debug("actionExists({}, {}, {})", name, checkLive, args.state);
 
     //initial probe for a cluster in the filesystem
     Path clusterDirectory = sliderFileSystem.buildClusterDirPath(name);
@@ -1752,36 +1752,51 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       log.info("Application {} exists", name);
       return EXIT_SUCCESS;
     }
-    
+
     //test for liveness/state
-    ApplicationReport instance = findInstance(name);
+    boolean inDesiredState = false;
+    ApplicationReport instance;
+    instance = findInstance(name);
     if (instance == null) {
       log.info("Application {} not running", name);
       return EXIT_FALSE;
-    } else {
-      // the app exists, but it may be in a terminated state
-      SliderUtils.OnDemandReportStringifier report =
-          new SliderUtils.OnDemandReportStringifier(instance);
-      YarnApplicationState appstate =
-          instance.getYarnApplicationState();
-      boolean inDesiredState;
-      if (checkLive) {
-        inDesiredState =
+    }
+    if (checkLive) {
+      // the app exists, check that it is not in any terminated state
+      YarnApplicationState appstate = instance.getYarnApplicationState();
+      log.debug(" current app state = {}", appstate);
+      inDesiredState =
             appstate.ordinal() < YarnApplicationState.FINISHED.ordinal();
-      } else {
-        state = state.toUpperCase(Locale.ENGLISH);
-        inDesiredState = state.equals(appstate.toString());
+    } else {
+      // scan for instance in single --state state
+      List<ApplicationReport> userInstances = yarnClient.listInstances("");
+      state = state.toUpperCase(Locale.ENGLISH);
+      YarnApplicationState desiredState =
+          YarnApplicationState.valueOf(state);
+      ApplicationReport foundInstance =
+          yarnClient.findAppInInstanceList(userInstances, name, desiredState);
+      if (foundInstance != null) {
+        // found in selected state: success
+        inDesiredState = true;
+        // mark this as the instance to report
+        instance = foundInstance;
       }
-      if (!inDesiredState) {
-        //cluster in the list of apps but not running
-        log.info("Application {} found but is in wrong state {}", name, appstate);
-        log.debug("State {}", report);
-        return EXIT_FALSE;
-      }
-      log.info("Application {} is {}\n{}", name, appstate, report);
     }
 
-    return EXIT_SUCCESS;
+    SliderUtils.OnDemandReportStringifier report =
+        new SliderUtils.OnDemandReportStringifier(instance);
+    if (!inDesiredState) {
+      //cluster in the list of apps but not running
+      log.info("Application {} found but is in wrong state {}", name,
+          instance.getYarnApplicationState());
+      log.debug("State {}", report);
+      return EXIT_FALSE;
+    } else {
+      log.debug("Application instance is in desired state");
+      log.info("Application {} is {}\n{}", name,
+          instance.getYarnApplicationState(), report);
+      return EXIT_SUCCESS;
+    }
   }
 
 
