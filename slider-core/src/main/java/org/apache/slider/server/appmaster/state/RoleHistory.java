@@ -22,6 +22,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.Container;
+import org.apache.hadoop.yarn.api.records.NodeReport;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.slider.common.tools.SliderUtils;
@@ -87,6 +88,14 @@ public class RoleHistory {
    ordered by more recently released - To accelerate node selection
    */
   private Map<Integer, LinkedList<NodeInstance>> availableNodes;
+
+  /**
+   * Track the failed nodes. Currently used to make wiser decision of container
+   * ask with/without locality. Has other potential uses as well.
+   */
+  private Map<String, Object> failedNodes = new HashMap<String, Object>();
+  // dummy to be used in maps for faster lookup where we don't care about values
+  private final Object DUMMY_VALUE = new Object(); 
 
   public RoleHistory(List<ProviderRole> providerRoles) throws
                                                        BadConfigException {
@@ -660,6 +669,28 @@ public class RoleHistory {
   }
 
   /**
+   * Update failedNodes and nodemap based on the node state
+   * 
+   * @param updatedNodes list of updated nodes
+   */
+  public synchronized void onNodesUpdated(List<NodeReport> updatedNodes) {
+    for (NodeReport updatedNode : updatedNodes) {
+      String hostname = updatedNode.getNodeId() == null ? null : updatedNode
+          .getNodeId().getHost();
+      if (hostname == null) {
+        continue;
+      }
+      if (updatedNode.getNodeState() != null
+          && updatedNode.getNodeState().isUnusable()) {
+        failedNodes.put(hostname, DUMMY_VALUE);
+        nodemap.remove(hostname);
+      } else {
+        failedNodes.remove(hostname);
+      }
+    }
+  }
+
+  /**
    * A container release request was issued
    * @param container container submitted
    */
@@ -710,7 +741,11 @@ public class RoleHistory {
       available = false;
     } else {
       available = nodeEntry.containerCompleted(wasReleased);
-      maybeQueueNodeForWork(container, nodeEntry, available);
+      boolean isFailedNode = failedNodes.containsKey(RoleHistoryUtils
+          .hostnameOf(container));
+      if (!isFailedNode) {
+        maybeQueueNodeForWork(container, nodeEntry, available);
+      }
     }
     touch();
     return available;
@@ -775,5 +810,13 @@ public class RoleHistory {
     return outstandingRequests.listOutstandingRequests();
   }
 
+  /**
+   * Get a clone of the failedNodes
+   * 
+   * @return the list
+   */
+  public List<String> cloneFailedNodes() {
+    return new ArrayList<String>(failedNodes.keySet());
+  }
 
 }

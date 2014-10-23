@@ -18,9 +18,14 @@
 
 package org.apache.slider.server.appmaster.model.history
 
+import java.util.List;
+
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.Container
+import org.apache.hadoop.yarn.api.records.NodeId;
+import org.apache.hadoop.yarn.api.records.NodeReport;
+import org.apache.hadoop.yarn.api.records.NodeState;
 import org.apache.hadoop.yarn.api.records.Priority
 import org.apache.hadoop.yarn.api.records.Resource
 import org.apache.hadoop.yarn.client.api.AMRMClient
@@ -364,5 +369,55 @@ class TestRoleHistoryContainerEvents extends BaseMockAppStateTest {
     assert c1.priority.getPriority() == 0
     MockContainer c2 = (MockContainer) sortedContainers[1]
     assert c2.priority.getPriority() == 1
+  }
+
+  @Test
+  public void testNodeUpdated() throws Throwable {
+    describe("fail a node")
+    
+    int role = 0
+    ProviderRole provRole = new ProviderRole(roleName, role)
+    RoleStatus roleStatus = new RoleStatus(provRole)
+    AMRMClient.ContainerRequest request =
+        roleHistory.requestNode(roleStatus, resource);
+
+    String hostname = request.getNodes()[0]
+    assert hostname == age3Active0.hostname
+
+    // build a container
+    MockContainer container = factory.newContainer()
+    container.nodeId = new MockNodeId(hostname, 0)
+    container.priority = request.getPriority()
+    roleHistory.onContainerAssigned(container);
+
+    NodeMap nodemap = roleHistory.cloneNodemap();
+    NodeInstance allocated = nodemap.get(hostname)
+    NodeEntry roleEntry = allocated.get(role)
+    assert roleEntry.starting == 1
+    assert !roleEntry.available
+    RoleInstance ri = new RoleInstance(container);
+    // start it
+    roleHistory.onContainerStartSubmitted(container, ri)
+    roleHistory.onContainerStarted(container)
+
+    int startSize = nodemap.size()
+    
+    // now send a list of updated (failed) nodes event
+    List<NodeReport> nodesUpdated = new ArrayList<NodeReport>();
+    NodeId nodeId = NodeId.newInstance(hostname, 0)
+    NodeReport nodeReport = NodeReport.newInstance(nodeId, NodeState.LOST, null, null, null, null, 1, null, 0)
+    nodesUpdated.add(nodeReport)
+    roleHistory.onNodesUpdated(nodesUpdated)
+
+    nodemap = roleHistory.cloneNodemap()
+    int endSize = nodemap.size()
+    if (startSize == 0) {
+      assert endSize == 0
+    } else {
+      assert startSize - endSize == 1
+    }
+    assert nodemap.get(hostname) == null
+    List<String> failedNodes = roleHistory.cloneFailedNodes()
+    assert failedNodes.contains(hostname)
   }
 }
