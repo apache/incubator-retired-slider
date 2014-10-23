@@ -1740,7 +1740,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     verifyBindingsDefined();
     SliderUtils.validateClusterName(name);
     boolean checkLive = args.live;
-    log.debug("actionExists({}, {})", name, checkLive);
+    log.debug("actionExists({}, {}, {})", name, checkLive, args.state);
 
     //initial probe for a cluster in the filesystem
     Path clusterDirectory = sliderFileSystem.buildClusterDirPath(name);
@@ -1764,6 +1764,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     if (checkLive) {
       // the app exists, check that it is not in any terminated state
       YarnApplicationState appstate = instance.getYarnApplicationState();
+      log.debug(" current app state = {}", appstate);
       inDesiredState =
             appstate.ordinal() < YarnApplicationState.FINISHED.ordinal();
     } else {
@@ -1773,7 +1774,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       YarnApplicationState desiredState =
           YarnApplicationState.valueOf(state);
       ApplicationReport foundInstance =
-          yarnClient.findClusterInInstanceList(userInstances, name, desiredState);
+          yarnClient.findAppInInstanceList(userInstances, name, desiredState);
       if (foundInstance != null) {
         // found in selected state: success
         inDesiredState = true;
@@ -1791,6 +1792,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       log.debug("State {}", report);
       return EXIT_FALSE;
     } else {
+      log.debug("Application instance is in desired state");
       log.info("Application {} is {}\n{}", name,
           instance.getYarnApplicationState(), report);
       return EXIT_SUCCESS;
