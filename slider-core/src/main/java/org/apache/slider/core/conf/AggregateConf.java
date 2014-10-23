@@ -18,6 +18,8 @@
 
 package org.apache.slider.core.conf;
 
+import org.apache.commons.lang.RandomStringUtils;
+import org.apache.slider.common.SliderKeys;
 import org.apache.slider.core.exceptions.BadConfigException;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
@@ -42,6 +44,8 @@ public final class AggregateConf {
   private ConfTreeOperations resourceOperations;
   private ConfTreeOperations appConfOperations;
   private ConfTreeOperations internalOperations;
+
+  private String passphrase;
 
   public AggregateConf() {
     this(new ConfTree(), new ConfTree(), new ConfTree());
@@ -152,6 +156,16 @@ public final class AggregateConf {
     resourceOperations.resolve();
     internalOperations.resolve();
     appConfOperations.resolve();
+  }
+
+  @JsonIgnore
+  public String getPassphrase() {
+    if (passphrase == null) {
+      passphrase = RandomStringUtils.randomAlphanumeric(
+          Integer.valueOf(SliderKeys.PASS_LEN));
+    }
+
+    return passphrase;
   }
 
   /**

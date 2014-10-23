@@ -43,7 +43,7 @@ public class TestCertificateManager {
     File keystoreFile = new File(secDir, SliderKeys.KEYSTORE_FILE_NAME);
     compOperations.put(SliderXmlConfKeys.KEY_KEYSTORE_LOCATION,
                        keystoreFile.getAbsolutePath());
-    certMan.initRootCert(compOperations);
+    certMan.initialize(compOperations);
   }
 
   @Test
