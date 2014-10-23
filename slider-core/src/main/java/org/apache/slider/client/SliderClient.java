@@ -546,9 +546,15 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       if (!deleted) {
         log.warn("Filesystem returned false from delete() operation");
       }
+
+      if(!deleteZookeeperNode(clustername)) {
+        log.warn("Unable to perform node cleanup in Zookeeper.");
+      }
+
     } else {
       log.debug("Application Instance {} already destroyed", clustername);
     }
+
 
     // rm the registry entry —do not let this block the destroy operations
     String registryPath = SliderRegistryUtils.registryPathForInstance(
