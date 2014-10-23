@@ -83,7 +83,7 @@ public class TestAMAgentWebServices {
     SecurityUtils.initializeSecurityParameters(new MapOperations());
     MapOperations compOperations = new MapOperations();
     CertificateManager certificateManager = new CertificateManager();
-    certificateManager.initRootCert(compOperations);
+    certificateManager.initialize(compOperations);
     String keystoreFile = SecurityUtils.getSecurityDir() + File.separator + SliderKeys.KEYSTORE_FILE_NAME;
     String password = SecurityUtils.getKeystorePass();
     System.setProperty("javax.net.ssl.trustStore", keystoreFile);

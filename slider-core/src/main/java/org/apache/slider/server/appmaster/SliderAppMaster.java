@@ -680,9 +680,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       // Start up the WebApp and track the URL for it
       certificateManager = new CertificateManager();
-      certificateManager.initRootCert(
+      certificateManager.initialize(
           instanceDefinition.getAppConfOperations()
               .getComponent(SliderKeys.COMPONENT_AM));
+      certificateManager.setPassphrase(instanceDefinition.getPassphrase());
 
       if (Boolean.valueOf(instanceDefinition.
           getAppConfOperations().getComponent(SliderKeys.COMPONENT_AM).

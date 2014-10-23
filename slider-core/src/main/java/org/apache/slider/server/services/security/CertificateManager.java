@@ -58,11 +58,12 @@ public class CertificateManager {
       "-keyfile {0}/{4} -cert {0}/{5}";
   private static final String GEN_AGENT_KEY="openssl req -new -newkey " +
       "rsa:1024 -nodes -keyout {0}/{2}.key -subj /OU={1}/CN={2} -out {0}/{2}.csr";
+  private String passphrase;
 
   /**
        * Verify that root certificate exists, generate it otherwise.
        */
-  public void initRootCert(MapOperations compOperations) {
+  public void initialize(MapOperations compOperations) {
     SecurityUtils.initializeSecurityParameters(compOperations);
 
     LOG.info("Initialization of root certificate");
@@ -89,6 +90,10 @@ public class CertificateManager {
     LOG.debug("certFile = " + certFile.getAbsolutePath());
 
     return certFile.exists();
+  }
+
+  public void setPassphrase(String passphrase) {
+    this.passphrase = passphrase;
   }
 
   class StreamConsumer extends Thread
@@ -263,9 +268,7 @@ public class CertificateManager {
     LOG.info("Signing of agent certificate");
     LOG.info("Verifying passphrase");
 
-    String passphraseSrvr = SliderKeys.PASSPHRASE;
-
-    if (!passphraseSrvr.equals(passphraseAgent.trim())) {
+    if (!this.passphrase.equals(passphraseAgent.trim())) {
       LOG.warn("Incorrect passphrase from the agent");
       response.setResult(SignCertResponse.ERROR_STATUS);
       response.setMessage("Incorrect passphrase from the agent");

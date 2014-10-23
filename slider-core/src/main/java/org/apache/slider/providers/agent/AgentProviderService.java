@@ -317,7 +317,7 @@ public class AgentProviderService extends AbstractProviderService implements
       launcher.setEnv(HADOOP_USER_NAME, System.getenv(HADOOP_USER_NAME));
     }
     // for 2-Way SSL
-    launcher.setEnv(SLIDER_PASSPHRASE, SliderKeys.PASSPHRASE);
+    launcher.setEnv(SLIDER_PASSPHRASE, instanceDefinition.getPassphrase());
 
     //local resources
 

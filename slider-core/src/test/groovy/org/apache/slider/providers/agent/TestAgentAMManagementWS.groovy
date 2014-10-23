@@ -93,7 +93,7 @@ class TestAgentAMManagementWS extends AgentTestBase {
         compOperations.put(SliderXmlConfKeys.KEY_KEYSTORE_LOCATION, "/tmp/work/security/keystore.p12");
         SecurityUtils.initializeSecurityParameters(compOperations);
         CertificateManager certificateManager = new CertificateManager();
-        certificateManager.initRootCert(compOperations);
+        certificateManager.initialize(compOperations);
         String keystoreFile = SecurityUtils.getSecurityDir() + File.separator + SliderKeys.KEYSTORE_FILE_NAME;
         String password = SecurityUtils.getKeystorePass();
         System.setProperty("javax.net.ssl.trustStore", keystoreFile);
