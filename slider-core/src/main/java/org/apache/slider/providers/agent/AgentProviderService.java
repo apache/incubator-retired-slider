@@ -20,18 +20,22 @@ package org.apache.slider.providers.agent;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.permission.FsAction;
+import org.apache.hadoop.fs.permission.FsPermission;
+import org.apache.hadoop.registry.client.types.Endpoint;
+import org.apache.hadoop.registry.client.types.ProtocolTypes;
+import org.apache.hadoop.registry.client.types.ServiceRecord;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.LocalResourceType;
-import org.apache.hadoop.registry.client.types.Endpoint;
-import org.apache.hadoop.registry.client.types.ProtocolTypes;
-import org.apache.hadoop.registry.client.types.ServiceRecord;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterDescriptionKeys;
 import org.apache.slider.api.ClusterNode;
@@ -39,6 +43,7 @@ import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.OptionKeys;
 import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.StatusKeys;
+import org.apache.slider.common.SliderExitCodes;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.common.tools.SliderFileSystem;
@@ -88,6 +93,7 @@ import org.apache.slider.server.appmaster.web.rest.agent.Register;
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationResponse;
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationStatus;
 import org.apache.slider.server.appmaster.web.rest.agent.StatusCommand;
+import org.apache.slider.server.services.security.CertificateManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,7 +109,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -378,33 +383,15 @@ public class AgentProviderService extends AbstractProviderService implements
     }
 
     if (SliderUtils.isHadoopClusterSecure(getConfig())) {
-      String keytabPathOnHost = instanceDefinition.getAppConfOperations()
-          .getComponent(SliderKeys.COMPONENT_AM).get(
-              SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH);
-      if (SliderUtils.isUnset(keytabPathOnHost)) {
-        String amKeytabName = instanceDefinition.getAppConfOperations()
-            .getComponent(SliderKeys.COMPONENT_AM).get(
-                SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME);
-        String keytabDir = instanceDefinition.getAppConfOperations()
-            .getComponent(SliderKeys.COMPONENT_AM).get(
-                SliderXmlConfKeys.KEY_HDFS_KEYTAB_DIR);
-        // we need to localize the keytab files in the directory
-        Path keytabDirPath = fileSystem.buildKeytabPath(keytabDir, null,
-                                                        clusterName);
-        FileStatus[] keytabs = fileSystem.getFileSystem().listStatus(keytabDirPath);
-        LocalResource keytabRes;
-        for (FileStatus keytab : keytabs) {
-          if (!amKeytabName.equals(keytab.getPath().getName())
-              && keytab.getPath().getName().endsWith(".keytab")) {
-            log.info("Localizing keytab {}", keytab.getPath().getName());
-            keytabRes = fileSystem.createAmResource(keytab.getPath(),
-              LocalResourceType.FILE);
-            launcher.addLocalResource(SliderKeys.KEYTAB_DIR + "/" +
-                                    keytab.getPath().getName(),
-                                    keytabRes);
-          }
-        }
-      }
+      localizeServiceKeytabs(launcher, instanceDefinition, fileSystem);
+    }
+
+    MapOperations amComponent = instanceDefinition.
+        getAppConfOperations().getComponent(SliderKeys.COMPONENT_AM);
+    boolean twoWayEnabled = amComponent != null ? Boolean.valueOf(amComponent.
+        getOptionBool(AgentKeys.KEY_AGENT_TWO_WAY_SSL_ENABLED, false)) : false;
+    if (twoWayEnabled) {
+      localizeContainerSSLResources(launcher, container, fileSystem);
     }
 
     //add the configuration resources
@@ -440,6 +427,112 @@ public class AgentProviderService extends AbstractProviderService implements
                                    role,
                                    container.getId(),
                                    getClusterInfoPropertyValue(OptionKeys.APPLICATION_NAME)));
+  }
+
+  private void localizeContainerSSLResources(ContainerLauncher launcher,
+                                             Container container,
+                                             SliderFileSystem fileSystem)
+      throws SliderException {
+    try {
+      // localize server cert
+      Path certsDir = new Path(fileSystem.buildClusterDirPath(
+          getClusterName()), "certs");
+      LocalResource certResource = fileSystem.createAmResource(
+          new Path(certsDir, SliderKeys.CRT_FILE_NAME),
+            LocalResourceType.FILE);
+      launcher.addLocalResource(AgentKeys.CERT_FILE_LOCALIZATION_PATH,
+                                certResource);
+
+      // generate and localize agent cert
+      CertificateManager certMgr = new CertificateManager();
+      String hostname = container.getNodeId().getHost();
+      String containerId = container.getId().toString();
+      certMgr.generateAgentCertificate(hostname, containerId);
+      LocalResource agentCertResource = fileSystem.createAmResource(
+          uploadSecurityResource(
+            CertificateManager.getAgentCertficateFilePath(containerId),
+            fileSystem), LocalResourceType.FILE);
+      // still using hostname as file name on the agent side, but the files
+      // do end up under the specific container's file space
+      launcher.addLocalResource("certs/" + hostname + ".crt",
+                                agentCertResource);
+      LocalResource agentKeyResource = fileSystem.createAmResource(
+          uploadSecurityResource(
+              CertificateManager.getAgentKeyFilePath(containerId), fileSystem),
+            LocalResourceType.FILE);
+      launcher.addLocalResource("certs/" + hostname + ".key",
+                                agentKeyResource);
+
+    } catch (Exception e) {
+      throw new SliderException(SliderExitCodes.EXIT_DEPLOYMENT_FAILED, e,
+          "Unable to localize certificates.  Two-way SSL cannot be enabled");
+    }
+  }
+
+  private Path uploadSecurityResource(File resource, SliderFileSystem fileSystem)
+      throws IOException {
+    Path certsDir = new Path(fileSystem.buildClusterDirPath(getClusterName()),
+                             "certs");
+    if (!fileSystem.getFileSystem().exists(certsDir)) {
+      fileSystem.getFileSystem().mkdirs(certsDir,
+        new FsPermission(FsAction.ALL, FsAction.NONE, FsAction.NONE));
+    }
+    Path destPath = new Path(certsDir, resource.getName());
+    if (!fileSystem.getFileSystem().exists(destPath)) {
+      FSDataOutputStream os = fileSystem.getFileSystem().create(destPath);
+      byte[] contents = FileUtils.readFileToByteArray(resource);
+      os.write(contents, 0, contents.length);
+
+      os.flush();
+      os.close();
+      log.info("Uploaded {} to localization path {}", resource, destPath);
+    }
+
+    while (!fileSystem.getFileSystem().exists(destPath)) {
+      try {
+        Thread.sleep(500);
+      } catch (InterruptedException e) {
+        // ignore
+      }
+    }
+
+    fileSystem.getFileSystem().setPermission(destPath,
+      new FsPermission(FsAction.READ, FsAction.NONE, FsAction.NONE));
+
+    return destPath;
+  }
+
+  private void localizeServiceKeytabs(ContainerLauncher launcher,
+                                      AggregateConf instanceDefinition,
+                                      SliderFileSystem fileSystem)
+      throws IOException {
+    String keytabPathOnHost = instanceDefinition.getAppConfOperations()
+        .getComponent(SliderKeys.COMPONENT_AM).get(
+            SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH);
+    if (SliderUtils.isUnset(keytabPathOnHost)) {
+      String amKeytabName = instanceDefinition.getAppConfOperations()
+          .getComponent(SliderKeys.COMPONENT_AM).get(
+              SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME);
+      String keytabDir = instanceDefinition.getAppConfOperations()
+          .getComponent(SliderKeys.COMPONENT_AM).get(
+              SliderXmlConfKeys.KEY_HDFS_KEYTAB_DIR);
+      // we need to localize the keytab files in the directory
+      Path keytabDirPath = fileSystem.buildKeytabPath(keytabDir, null,
+                                                      getClusterName());
+      FileStatus[] keytabs = fileSystem.getFileSystem().listStatus(keytabDirPath);
+      LocalResource keytabRes;
+      for (FileStatus keytab : keytabs) {
+        if (!amKeytabName.equals(keytab.getPath().getName())
+            && keytab.getPath().getName().endsWith(".keytab")) {
+          log.info("Localizing keytab {}", keytab.getPath().getName());
+          keytabRes = fileSystem.createAmResource(keytab.getPath(),
+            LocalResourceType.FILE);
+          launcher.addLocalResource(SliderKeys.KEYTAB_DIR + "/" +
+                                  keytab.getPath().getName(),
+                                  keytabRes);
+        }
+      }
+    }
   }
 
   /**
@@ -663,6 +756,9 @@ public class AgentProviderService extends AbstractProviderService implements
       String portname = port.getKey();
       String portNo = port.getValue();
       log.info("Recording allocated port for {} as {}", portname, portNo);
+
+      // add the allocated ports to the global list as well as per container list
+      // per container allocation will over-write each other in the global
       this.getAllocatedPorts().put(portname, portNo);
       this.getAllocatedPorts(containerId).put(portname, portNo);
       if (instance != null) {
@@ -744,7 +840,15 @@ public class AgentProviderService extends AbstractProviderService implements
       }
 
       if (this.allocatedPorts.containsKey(containerIdStr)) {
+        Map<String, String> portsByContainerId = getAllocatedPorts(containerIdStr);
         this.allocatedPorts.remove(containerIdStr);
+        // free up the allocations from global as well
+        // if multiple containers allocate global ports then last one
+        // wins and similarly first one removes it - its not supported anyway
+        for(String portName : portsByContainerId.keySet()) {
+          getAllocatedPorts().remove(portName);
+        }
+
       }
 
       String componentName = null;

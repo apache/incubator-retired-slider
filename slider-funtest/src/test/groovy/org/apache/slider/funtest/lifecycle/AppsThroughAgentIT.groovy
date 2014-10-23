@@ -97,7 +97,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
             APPLICATION_NAME,
             ARG_GETEXP,
             "container_log_dirs"])
-    if(!containsString(shell, "\"tag\":\"COMMAND_LOGGER\",\"level\":\"component\"", 2)) {
+    if(!containsString(shell, "\"tag\" : \"COMMAND_LOGGER\"", 2)
+    || !containsString(shell, "\"level\" : \"component\"", 2)) {
       logShell(shell)
       assert fail("Should list 2 entries for log folders")
     }
@@ -110,11 +111,44 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
             APPLICATION_NAME,
             ARG_GETEXP,
             "container_work_dirs"])
-    if(!containsString(shell, "\"tag\":\"COMMAND_LOGGER\",\"level\":\"component\"", 2)) {
+    if(!containsString(shell, "\"tag\" : \"COMMAND_LOGGER\"", 2)
+    || !containsString(shell, "\"level\" : \"component\"", 2)) {
       logShell(shell)
       assert fail("Should list 2 entries for work folder")
     }
 
-    assert isApplicationInState("RUNNING", APPLICATION_NAME), 'App is not running.'
+    // get cl-site config
+    shell = slider(
+        [
+            ACTION_REGISTRY,
+            ARG_NAME,
+            APPLICATION_NAME,
+            ARG_GETCONF,
+            "cl-site",
+            ARG_FORMAT,
+            "json"])
+
+    for (int i = 0; i < 10; i++) {
+      if (shell.getRet() != EXIT_SUCCESS) {
+        println "Waiting for the cl-site to show up"
+        sleep(1000 * 10)
+        shell = slider(
+            [
+                ACTION_REGISTRY,
+                ARG_NAME,
+                APPLICATION_NAME,
+                ARG_GETCONF,
+                "cl-site",
+                ARG_FORMAT,
+                "json"])
+      }
+    }
+    assert shell.getRet() == EXIT_SUCCESS, "cl-site should be retrieved"
+    if (!containsString(shell, "\"pattern.for.test.to.verify\" : \"verify this pattern\"", 1)) {
+      logShell(shell)
+      assert fail("Should have exported cl-site")
+    }
+
+    assert isApplicationUp(APPLICATION_NAME), 'App is not running.'
   }
 }

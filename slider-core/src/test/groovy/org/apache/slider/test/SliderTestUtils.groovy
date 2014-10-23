@@ -85,17 +85,42 @@ class SliderTestUtils extends Assert {
 
   public static void assume(boolean condition, String message) {
     if (!condition) {
-      log.warn("Skipping test: {}",  message)
-      Assume.assumeTrue(message, false);
+      skip(message)
     }
   }
 
-
+  /**
+   * Equality size for a list
+   * @param left
+   * @param right
+   */
   public static void assertListEquals(List left, List right) {
-    assert left.size() == right.size();
+    String lval = collectionToString(left)
+    String rval = collectionToString(right)
+    String text = "comparing $lval to $rval"
+    assertEquals(text, left.size(), right.size())
     for (int i = 0; i < left.size(); i++) {
-      assert left[0] == right[0]
+      assertEquals(text, left[i], right[i])
     }
+  }
+
+  /**
+   * Assert a list has a given length
+   * @param list list
+   * @param size size to have
+   */
+  public static void assertListLength(List list, int size) {
+    String lval = collectionToString(list)
+    assertEquals(lval, size, list.size())
+  }
+
+  /**
+   * Stringify a collection with [ ] at either end
+   * @param collection collection
+   * @return string value
+   */
+  public static String collectionToString(List collection) {
+    return "[" + SliderUtils.join(collection, ", ", false) + "]"
   }
 
   /**
@@ -108,8 +133,7 @@ class SliderTestUtils extends Assert {
       skip("Configuration key $key not set")
     }
   }
-  
-  
+
   /**
    * assert that a string option is set and not equal to ""
    * @param conf configuration file
@@ -118,8 +142,6 @@ class SliderTestUtils extends Assert {
   public static void assertStringOptionSet(Configuration conf, String key) {
     getRequiredConfOption(conf, key)
   }
-  
-  
 
   /**
    * Assume that a boolean option is set and true.
@@ -140,8 +162,8 @@ class SliderTestUtils extends Assert {
    */
   public static void assumeBoolOption(
       Configuration conf, String key, boolean defval) {
-    assume(conf.getBoolean(key, defval), 
-      "Configuration key $key is false")
+    assume(conf.getBoolean(key, defval),
+        "Configuration key $key is false")
   }
 
   /**
@@ -171,7 +193,9 @@ class SliderTestUtils extends Assert {
    * @param sliderClient client
    * @return the app report of the live cluster
    */
-  public static ApplicationReport waitForClusterLive(SliderClient sliderClient,int goLiveTime) {
+  public static ApplicationReport waitForClusterLive(
+      SliderClient sliderClient,
+      int goLiveTime) {
     ApplicationReport report = sliderClient.monitorAppToRunning(
         new Duration(goLiveTime));
     assertNotNull(
@@ -287,7 +311,7 @@ class SliderTestUtils extends Assert {
         duration.finish();
         describe("$operation: role count not met after $duration: $details")
         log.info(prettyPrint(status.toJsonString()))
-        fail("$operation: role counts not met after $duration: "  +
+        fail("$operation: role counts not met after $duration: " +
              details.toString() +
              " in \n$status ")
       }
@@ -305,35 +329,42 @@ class SliderTestUtils extends Assert {
    * @throws IOException
    * @throws SliderException
    */
-  public static boolean spinForClusterStartup(SliderClient client, long spintime,
+  public static boolean spinForClusterStartup(
+      SliderClient client,
+      long spintime,
       String role)
-      throws WaitTimeoutException, IOException, SliderException {
+  throws WaitTimeoutException, IOException, SliderException {
     int state = client.waitForRoleInstanceLive(role, spintime);
     return state == ClusterDescription.STATE_LIVE;
   }
 
-  public static ClusterDescription dumpClusterStatus(SliderClient client, String text) {
+  public static ClusterDescription dumpClusterStatus(
+      SliderClient client,
+      String text) {
     ClusterDescription status = client.clusterDescription;
     dumpClusterDescription(text, status)
     return status;
   }
 
-  public static List<ClusterNode> listNodesInRole(SliderClient client, String role) {
+  public static List<ClusterNode> listNodesInRole(
+      SliderClient client,
+      String role) {
     return client.listClusterNodesInRole(role)
   }
 
-  public static void dumpClusterDescription(String text, ClusterDescription status) {
+  public static void dumpClusterDescription(
+      String text,
+      ClusterDescription status) {
     describe(text)
     log.info(prettyPrint(status.toJsonString()))
   }
 
-  
+
   public static void dumpClusterDescription(String text, AggregateConf status) {
     describe(text)
     log.info(status.toString())
   }
 
-  
   /**
    * Fetch the current site config from the Slider AM, from the 
    * <code>clientProperties</code> field of the ClusterDescription
@@ -359,15 +390,15 @@ class SliderTestUtils extends Assert {
   public static String GET(URL url) {
     return fetchWebPageWithoutError(url.toString())
   }
-  
+
   public static String GET(URL url, String path) {
     return GET(url.toString(), path)
   }
-  
+
   public static String GET(String base, String path) {
     String s = appendToURL(base, path)
     return GET(s)
-    
+
   }
 
   def static String GET(String s) {
@@ -398,17 +429,17 @@ class SliderTestUtils extends Assert {
     int resultCode
     try {
       resultCode = httpclient.executeMethod(get);
-      if (resultCode!=200) {
+      if (resultCode != 200) {
         log.warn("Result code of $resultCode")
       }
     } catch (IOException e) {
-      log.error("Failed on $url: $e",e)
+      log.error("Failed on $url: $e", e)
       throw e;
     }
     String body = get.responseBodyAsString;
     return body;
   }
-  
+
   /**
    * Fetches a web page asserting that the response code is between 200 and 400.
    * Will error on 400 and 500 series response codes and let 200 and 300 through. 
@@ -417,13 +448,13 @@ class SliderTestUtils extends Assert {
    */
   public static String fetchWebPageWithoutError(String url) {
     assert null != url
-    
+
     log.info("Fetching HTTP content at " + url);
-    
+
     def client = new HttpClient(new MultiThreadedHttpConnectionManager());
     client.httpConnectionManager.params.connectionTimeout = 10000;
     GetMethod get = new GetMethod(url);
-    
+
     get.followRedirects = true;
     int resultCode = client.executeMethod(get);
 
@@ -445,6 +476,42 @@ class SliderTestUtils extends Assert {
   }
 
   /**
+   * Execute a closure, assert it fails with a given exit code and text
+   * @param exitCode exit code
+   * @param text text (can be "")
+   * @param action action
+   * @return
+   */
+  def assertFailsWithException(int exitCode,
+      String text,
+      Closure action) {
+    try {
+      action()
+      fail("Operation was expected to fail —but it succeeded")
+    } catch (ServiceLaunchException e) {
+      assertExceptionDetails(e, exitCode, text)
+    }
+  }
+  
+  /**
+   * Execute a closure, assert it fails with a given exit code and text
+   * @param exitCode exit code
+   * @param text text (can be "")
+   * @param action action
+   * @return
+   */
+  def assertFailsWithExceptionClass(Class clazz,
+      String text,
+      Closure action) {
+    try {
+      action()
+      fail("Operation was expected to fail —but it succeeded")
+    } catch (Exception e) {
+      assertExceptionDetails(e, clazz, text)
+    }
+  }
+
+  /**
    * Make an assertion about the exit code of an exception
    * @param ex exception
    * @param exitCode exit code
@@ -462,9 +529,26 @@ class SliderTestUtils extends Assert {
     }
     if (text) {
       if (!(ex.toString().contains(text))) {
-        log.warn("String match failed in $ex", ex)
+        log.warn("String match for \"${text}\"failed in $ex", ex)
         assert ex.toString().contains(text);
       }
+    }
+  }
+  /**
+   * Make an assertion about the exit code of an exception
+   * @param ex exception
+   * @param exitCode exit code
+   * @param text error text to look for in the exception
+   */
+  static void assertExceptionDetails(
+      Exception ex,
+      Class clazz,
+      String text = "") {
+    if (ex.class != clazz) {
+      throw ex;
+    }
+    if (text && !(ex.toString().contains(text))) {
+      throw ex;
     }
   }
 
@@ -489,8 +573,8 @@ class SliderTestUtils extends Assert {
   }
 
   public static ServiceLauncher launch(Class serviceClass,
-                                       Configuration conf,
-                                       List<Object> args) throws
+      Configuration conf,
+      List<Object> args) throws
       Throwable {
     ServiceLauncher serviceLauncher =
         new ServiceLauncher(serviceClass.name);
@@ -503,20 +587,21 @@ class SliderTestUtils extends Assert {
   }
 
   public static Throwable launchExpectingException(Class serviceClass,
-                                              Configuration conf,
-                                              String expectedText,
-                                              List args)
-      throws Throwable {
+      Configuration conf,
+      String expectedText,
+      List args)
+  throws Throwable {
     try {
       ServiceLauncher launch = launch(serviceClass, conf, args);
-      throw new AssertionError("Expected an exception with text containing " + expectedText
-               + " -but the service completed with exit code "
-               + launch.serviceExitCode);
+      throw new AssertionError(
+          "Expected an exception with text containing " + expectedText
+              + " -but the service completed with exit code "
+              + launch.serviceExitCode);
     } catch (Throwable thrown) {
       if (expectedText && !thrown.toString().contains(expectedText)) {
         //not the right exception -rethrow
         log.warn("Caught Exception did not contain expected text" +
-                 "\""+ expectedText +"\"")
+                 "\"" + expectedText + "\"")
         throw thrown;
       }
       return thrown;
@@ -547,10 +632,10 @@ class SliderTestUtils extends Assert {
       List<String> extraArgs,
       YarnConfiguration conf,
       String option) {
-    
+
     conf.getTrimmed(option);
     extraArgs << ARG_OPTION << option << getRequiredConfOption(conf, option)
-    
+
   }
 
   /**
@@ -560,7 +645,7 @@ class SliderTestUtils extends Assert {
    * @throws IOException on File IO problems
    */
   public static void assertIsDirectory(HadoopFS fs,
-                                       Path path) throws IOException {
+      Path path) throws IOException {
     FileStatus fileStatus = fs.getFileStatus(path);
     assertIsDirectory(fileStatus);
   }
@@ -571,7 +656,7 @@ class SliderTestUtils extends Assert {
    */
   public static void assertIsDirectory(FileStatus fileStatus) {
     assertTrue("Should be a dir -but isn't: " + fileStatus,
-               fileStatus.isDirectory());
+        fileStatus.isDirectory());
   }
 
   /**
@@ -589,8 +674,10 @@ class SliderTestUtils extends Assert {
       Path path) throws IOException {
     if (!fileSystem.exists(path)) {
       //failure, report it
-      fail(message + ": not found \"" + path + "\" in " + path.getParent() + "-" +
-        ls(fileSystem, path.getParent()));
+      fail(
+          message + ": not found \"" + path + "\" in " + path.getParent() +
+          "-" +
+          ls(fileSystem, path.getParent()));
     }
   }
 
@@ -624,8 +711,8 @@ class SliderTestUtils extends Assert {
    * @throws IOException IO probles
    */
   public static void assertListStatusFinds(HadoopFS fs,
-                                           Path dir,
-                                           Path subdir) throws IOException {
+      Path dir,
+      Path subdir) throws IOException {
     FileStatus[] stats = fs.listStatus(dir);
     boolean found = false;
     StringBuilder builder = new StringBuilder();
@@ -636,8 +723,8 @@ class SliderTestUtils extends Assert {
       }
     }
     assertTrue("Path " + subdir
-                   + " not found in directory " + dir + ":" + builder,
-               found);
+        + " not found in directory " + dir + ":" + builder,
+        found);
   }
 
   /**
@@ -694,7 +781,7 @@ class SliderTestUtils extends Assert {
     describe "end list service registry slider instances"
   }
 
-  
+
   public static void dumpRegistryInstanceIDs(List<String> instanceIds) {
     describe "service registry instance IDs"
     dumpCollection(instanceIds)
@@ -707,7 +794,7 @@ class SliderTestUtils extends Assert {
 
   def static void dumpCollection(Collection entries) {
     log.info("number of entries: ${entries.size()}")
-    entries.each {  log.info(it.toString()) }
+    entries.each { log.info(it.toString()) }
   }
 
   def static void dumpArray(Object[] entries) {
@@ -720,7 +807,7 @@ class SliderTestUtils extends Assert {
       log.info("\"${it.key.toString()}\": \"${it.value.toString()}\"")
     }
   }
-  
+
   /**
    * Get a time option in seconds if set, otherwise the default value (also in seconds).
    * This operation picks up the time value as a system property if set -that
@@ -730,7 +817,10 @@ class SliderTestUtils extends Assert {
    * @param defVal
    * @return
    */
-  public static int getTimeOptionMillis(Configuration conf, String key, int defValMillis) {
+  public static int getTimeOptionMillis(
+      Configuration conf,
+      String key,
+      int defValMillis) {
     int val = conf.getInt(key, 0)
     val = Integer.getInteger(key, val)
     int time = 1000 * val
@@ -756,7 +846,7 @@ class SliderTestUtils extends Assert {
     def commandString
     if (!Shell.WINDOWS) {
       GString killCommand = "jps -l| grep ${grepString} | awk '{print \$1}' | xargs kill $signal"
-      log.info("Command command = $killCommand" )
+      log.info("Command command = $killCommand")
 
       commandString = ["bash", "-c", killCommand]
     } else {
@@ -781,7 +871,7 @@ class SliderTestUtils extends Assert {
    */
   public void killJavaProcesses(List<String> greps, int signal) {
     for (String grep : greps) {
-      killJavaProcesses(grep,signal)
+      killJavaProcesses(grep, signal)
     }
   }
 
@@ -806,7 +896,7 @@ class SliderTestUtils extends Assert {
       def files = parent.list()
       StringBuilder builder = new StringBuilder()
       builder.append("${parent.absolutePath}:\n")
-      files.each { String name-> builder.append("  $name\n")}
+      files.each { String name -> builder.append("  $name\n") }
       throw new FileNotFoundException("$text: $file not found in $builder")
     }
   }

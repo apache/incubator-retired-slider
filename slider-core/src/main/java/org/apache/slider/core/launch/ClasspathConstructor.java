@@ -113,7 +113,7 @@ public class ClasspathConstructor {
   }
 
   public void addClassDirectory(String pathToDir) {
-    append(buildLibDir(appendDirectoryTerminator(pathToDir)));
+    append(appendDirectoryTerminator(pathToDir));
   }
 
   public void insertClassDirectory(String pathToDir) {

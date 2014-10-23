@@ -22,9 +22,11 @@ import groovy.transform.CompileStatic
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.hdfs.HdfsConfiguration
 import org.apache.hadoop.registry.client.api.RegistryConstants
 import org.apache.hadoop.util.ExitUtil
 import org.apache.hadoop.util.Shell
+import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.common.tools.ConfigHelper
 import org.apache.slider.core.main.LauncherExitCodes
@@ -81,10 +83,20 @@ abstract class CommandTestBase extends SliderTestUtils {
   public static final String TEST_AM_KEYTAB
   static File keytabFile
 
-
+  /**
+   * shell-escaped ~ symbol. On windows this does
+   * not need to be escaped
+   */
+  public static final String TILDE
+  
+  /*
+  Static initializer for test configurations. If this code throws exceptions
+  (which it may) the class will not be instantiable.
+   */
   static {
+    new HdfsConfiguration()
     ConfigHelper.registerDeprecatedConfigItems();
-    SLIDER_CONFIG = ConfLoader.loadSliderConf(SLIDER_CONF_XML);
+    SLIDER_CONFIG = ConfLoader.loadSliderConf(SLIDER_CONF_XML, true);
     THAW_WAIT_TIME = getTimeOptionMillis(SLIDER_CONFIG,
         KEY_TEST_THAW_WAIT_TIME,
         1000 * DEFAULT_THAW_WAIT_TIME_SECONDS)
@@ -101,7 +113,10 @@ abstract class CommandTestBase extends SliderTestUtils {
 
     TEST_AM_KEYTAB = SLIDER_CONFIG.getTrimmed(
         KEY_TEST_AM_KEYTAB)
+    
+    
 
+    TILDE = Shell.WINDOWS? "~" : "\\~" 
   }
 
   @Rule
@@ -111,6 +126,26 @@ abstract class CommandTestBase extends SliderTestUtils {
   @BeforeClass
   public static void setupTestBase() {
     Configuration conf = loadSliderConf();
+
+    SliderShell.confDir = SLIDER_CONF_DIRECTORY
+    
+    // choose python script if on windows or the launch key recommends it
+    // 
+    boolean python = SLIDER_CONFIG.getBoolean(KEY_LAUNCH_PYTHON, false)
+    SliderShell.scriptFile =
+        (SliderShell.windows || python) ? SLIDER_SCRIPT_PYTHON : SLIDER_SCRIPT
+    
+    //set the property of the configuration directory
+    def path = SLIDER_CONF_DIRECTORY.absolutePath
+    SLIDER_CONFIG.set(ENV_SLIDER_CONF_DIR, path)
+    // locate any hadoop conf dir
+    def hadoopConf = SLIDER_CONFIG.getTrimmed(ENV_HADOOP_CONF_DIR)
+    if (hadoopConf) {
+      File hadoopConfDir = new File(hadoopConf).canonicalFile
+      // propagate the value to the client config
+      SliderShell.setEnv(ENV_HADOOP_CONF_DIR, hadoopConfDir.absolutePath)
+    }
+
     if (SliderUtils.maybeInitSecurity(conf)) {
       log.debug("Security enabled")
       SliderUtils.forceLogin()
@@ -129,16 +164,13 @@ abstract class CommandTestBase extends SliderTestUtils {
     } else {
       log.info "Security is off"
     }
-    SliderShell.confDir = SLIDER_CONF_DIRECTORY
-    SliderShell.scriptFile = Shell.WINDOWS ? SLIDER_SCRIPT_PYTHON : SLIDER_SCRIPT
     
     log.info("Test using ${HadoopFS.getDefaultUri(SLIDER_CONFIG)} " +
              "and YARN RM @ ${SLIDER_CONFIG.get(YarnConfiguration.RM_ADDRESS)}")
-
   }
 
   /**
-   * give our thread a name
+   * give the test thread a name
    */
   @Before
   public void nameThread() {
@@ -146,8 +178,28 @@ abstract class CommandTestBase extends SliderTestUtils {
   }
 
   /**
-   * Add a jar to the slider classpath
-   * @param clazz
+   * Add a configuration file at a given path
+   * @param dir directory containing the file
+   * @param filename filename
+   * @return true if the file was found
+   * @throws IOException loading problems (other than a missing file)
+   */
+  public static boolean maybeAddConfFile(File dir, String filename) throws IOException {
+    File confFile = new File(dir, filename)
+    if (confFile.isFile()) {
+      ConfigHelper.addConfigurationFile(SLIDER_CONFIG, confFile, true)
+      log.debug("Loaded $confFile")
+      return true;
+    } else {
+      log.debug("Did not find $confFile —skipping load")
+      return false;
+    }
+  }
+  
+  /**
+   * Add a jar to the slider classpath by looking up a class and determining
+   * its containing JAR
+   * @param clazz class inside the JAR
    */
   public static void addExtraJar(Class clazz) {
     def jar = SliderUtils.findContainingJarOrFail(clazz)
@@ -158,6 +210,12 @@ abstract class CommandTestBase extends SliderTestUtils {
     }
   }
 
+  /**
+   * Resolve a system property, throwing an exception if it is not present
+   * @param key property name
+   * @return the value
+   * @throws RuntimeException if the property is not set
+   */
   public static String sysprop(String key) {
     def property = System.getProperty(key)
     if (!property) {
@@ -173,8 +231,9 @@ abstract class CommandTestBase extends SliderTestUtils {
   static void println(String s) {
     System.out.println(s)
   }
+  
   /**
-   * Print to system out
+   * Print a newline to system out
    * @param string
    */
   static void println() {
@@ -208,7 +267,7 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @return
    */
   public static Configuration loadSliderConf() {
-    Configuration conf = ConfLoader.loadSliderConf(SLIDER_CONF_XML)
+    Configuration conf = ConfLoader.loadSliderConf(SLIDER_CONF_XML, true)
     return conf
   }
 
@@ -336,6 +395,12 @@ abstract class CommandTestBase extends SliderTestUtils {
     slider(0, [ACTION_THAW, name] + args)
   }
 
+  static SliderShell resolve(int result, Collection<String> commands) {
+    slider(result,
+        [ACTION_RESOLVE] + commands
+    )
+  }
+
   static SliderShell registry(int result, Collection<String> commands) {
     slider(result,
         [ACTION_REGISTRY] + commands
@@ -381,7 +446,7 @@ abstract class CommandTestBase extends SliderTestUtils {
   }
 
   /**
-   * Assert the exit code is that the cluster is unknown
+   * Assert the exit code is that the cluster is 0
    * @param shell shell
    */
   public static void assertSuccess(SliderShell shell) {
@@ -574,7 +639,6 @@ abstract class CommandTestBase extends SliderTestUtils {
     ])
 
 
-
     def sleeptime = SLIDER_CONFIG.getInt(KEY_AM_RESTART_SLEEP_TIME,
         DEFAULT_AM_RESTART_SLEEP_TIME)
     sleep(sleeptime)
@@ -608,22 +672,24 @@ abstract class CommandTestBase extends SliderTestUtils {
 
   protected boolean isApplicationUp(Map<String, String> args) {
     String applicationName = args['arg1'];
-    return isApplicationInState("RUNNING", applicationName);
+    return isApplicationInState(YarnApplicationState.RUNNING, applicationName);
   }
 
-  public static boolean isApplicationInState(String text, String applicationName) {
-    boolean exists = false
-    SliderShell shell = slider(0,
-      [
-        ACTION_LIST,
-        applicationName])
-    for (String str in shell.out) {
-      if (str.contains(text)) {
-        exists = true
-      }
-    }
+  protected boolean isApplicationUp(String applicationName) {
+    return isApplicationInState(YarnApplicationState.RUNNING, applicationName);
+  }
 
-    return exists
+  /**
+   * 
+   * @param yarnState
+   * @param applicationName
+   * @return
+   */
+  public static boolean isApplicationInState(YarnApplicationState yarnState, String applicationName) {
+    SliderShell shell = slider(
+      [ACTION_EXISTS, applicationName, ARG_STATE, yarnState.toString()])
+
+    return shell.ret == 0
   }
 
   protected void repeatUntilTrue(Closure c, int maxAttempts, int sleepDur, Map args,

@@ -97,6 +97,8 @@ public interface AgentKeys {
   String HEARTBEAT_MONITOR_INTERVAL = "heartbeat.monitor.interval";
   String AGENT_INSTANCE_DEBUG_DATA = "agent.instance.debug.data";
   String AGENT_OUT_FILE = "slider-agent.out";
+  String KEY_AGENT_TWO_WAY_SSL_ENABLED = "ssl.server.client.auth";
+  String CERT_FILE_LOCALIZATION_PATH = "certs/ca.crt";
 }
 
 

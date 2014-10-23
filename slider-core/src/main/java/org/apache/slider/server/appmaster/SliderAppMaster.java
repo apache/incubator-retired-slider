@@ -23,8 +23,12 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.BlockingService;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.permission.FsAction;
+import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
+import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenIdentifier;
 import org.apache.hadoop.http.HttpConfig;
 import org.apache.hadoop.io.DataOutputBuffer;
@@ -78,11 +82,13 @@ import org.apache.slider.api.proto.Messages;
 import org.apache.slider.api.proto.SliderClusterAPI;
 import org.apache.slider.common.SliderExitCodes;
 import org.apache.slider.common.SliderKeys;
+import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.common.params.AbstractActionArgs;
 import org.apache.slider.common.params.SliderAMArgs;
 import org.apache.slider.common.params.SliderAMCreateAction;
 import org.apache.slider.common.params.SliderActions;
 import org.apache.slider.common.tools.ConfigHelper;
+import org.apache.slider.common.tools.PortScanner;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.common.tools.SliderVersionInfo;
@@ -105,6 +111,7 @@ import org.apache.slider.providers.ProviderCompleted;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderService;
 import org.apache.slider.providers.SliderProviderFactory;
+import org.apache.slider.providers.agent.AgentKeys;
 import org.apache.slider.providers.slideram.SliderAMClientProvider;
 import org.apache.slider.providers.slideram.SliderAMProviderService;
 import org.apache.slider.server.appmaster.actions.ActionKillContainer;
@@ -369,12 +376,15 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private YarnRegistryViewForProviders yarnRegistryOperations;
   private FsDelegationTokenManager fsDelegationTokenManager;
   private RegisterApplicationMasterResponse amRegistrationData;
+  private PortScanner portScanner;
 
   /**
    * Service Constructor
    */
   public SliderAppMaster() {
     super(SERVICE_CLASSNAME_SHORT);
+    new HdfsConfiguration();
+    new YarnConfiguration();
   }
 
 /* =================================================================== */
@@ -383,25 +393,31 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
   @Override //AbstractService
   public synchronized void serviceInit(Configuration conf) throws Exception {
-
+    // slider client if found
+    
+    Configuration customConf = SliderUtils.loadClientConfigurationResource();
     // Load in the server configuration - if it is actually on the Classpath
     Configuration serverConf =
       ConfigHelper.loadFromResource(SERVER_RESOURCE);
-    ConfigHelper.mergeConfigurations(conf, serverConf, SERVER_RESOURCE);
+    ConfigHelper.mergeConfigurations(customConf, serverConf, SERVER_RESOURCE, true);
+    serviceArgs.applyDefinitions(customConf);
+    serviceArgs.applyFileSystemBinding(customConf);
+    // conf now contains all customizations
 
     AbstractActionArgs action = serviceArgs.getCoreAction();
     SliderAMCreateAction createAction = (SliderAMCreateAction) action;
-    //sort out the location of the AM
-    serviceArgs.applyDefinitions(conf);
-    serviceArgs.applyFileSystemBinding(conf);
 
+    // sort out the location of the AM
     String rmAddress = createAction.getRmAddress();
     if (rmAddress != null) {
       log.debug("Setting rm address from the command line: {}", rmAddress);
-      SliderUtils.setRmSchedulerAddress(conf, rmAddress);
+      SliderUtils.setRmSchedulerAddress(customConf, rmAddress);
     }
-    serviceArgs.applyDefinitions(conf);
-    serviceArgs.applyFileSystemBinding(conf);
+
+    log.info("AM configuration:\n{}",
+        ConfigHelper.dumpConfigToString(customConf));
+
+    ConfigHelper.mergeConfigurations(conf, customConf, CLIENT_RESOURCE, true);
     //init security with our conf
     if (SliderUtils.isHadoopClusterSecure(conf)) {
       log.info("Secure mode with kerberos realm {}",
@@ -537,6 +553,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     String sliderClusterDir = serviceArgs.getSliderClusterURI();
     URI sliderClusterURI = new URI(sliderClusterDir);
     Path clusterDirPath = new Path(sliderClusterURI);
+    log.info("Application defined at {}", sliderClusterURI);
     SliderFileSystem fs = getClusterFS();
 
     // build up information about the running application -this
@@ -629,8 +646,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       asyncRMClient = AMRMClientAsync.createAMRMClientAsync(heartbeatInterval,
                                                             this);
       addService(asyncRMClient);
-      //wrap it for the app state model
-      rmOperationHandler = new AsyncRMOperationHandler(asyncRMClient);
       //now bring it up
       deployChildService(asyncRMClient);
 
@@ -643,7 +658,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       secretManager = new ClientToAMTokenSecretManager(appAttemptID, null);
 
       //bring up the Slider RPC service
-      startSliderRPCServer();
+      startSliderRPCServer(instanceDefinition);
 
       rpcServiceAddress = rpcService.getConnectAddress();
       appMasterHostname = rpcServiceAddress.getHostName();
@@ -669,7 +684,15 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
           instanceDefinition.getAppConfOperations()
               .getComponent(SliderKeys.COMPONENT_AM));
 
+      if (Boolean.valueOf(instanceDefinition.
+          getAppConfOperations().getComponent(SliderKeys.COMPONENT_AM).
+          getOptionBool(AgentKeys.KEY_AGENT_TWO_WAY_SSL_ENABLED, false))) {
+        uploadServerCertForLocalization(clustername, fs);
+      }
+
       startAgentWebApp(appInformation, serviceConf);
+
+      int port = getPortToRequest(instanceDefinition);
 
       webApp = new SliderAMWebApp(registryOperations);
       WebApps.$for(SliderAMWebApp.BASE_PATH, WebAppApi.class,
@@ -679,6 +702,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
                                      certificateManager, registryOperations),
                    RestPaths.WS_CONTEXT)
                       .withHttpPolicy(serviceConf, HttpConfig.Policy.HTTP_ONLY)
+                      .at(port)
                       .start(webApp);
       String scheme = WebAppUtils.HTTP_PREFIX;
       appMasterTrackingUrl = scheme  + appMasterHostname + ":" + webApp.port();
@@ -707,6 +731,12 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       containerMaxCores = maxResources.getVirtualCores();
       appState.setContainerLimits(maxResources.getMemory(),
                                   maxResources.getVirtualCores());
+
+      // build the handler for RM request/release operations; this uses
+      // the max value as part of its lookup
+      rmOperationHandler = new AsyncRMOperationHandler(asyncRMClient,
+          maxResources);
+
       // set the RM-defined maximum cluster values
       appInformation.put(ResourceKeys.YARN_CORES, Integer.toString(containerMaxCores));
       appInformation.put(ResourceKeys.YARN_MEMORY, Integer.toString(containerMaxMemory));
@@ -736,6 +766,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
             amRegistrationData.getClientToAMTokenMasterKey().array());
         applicationACLs = amRegistrationData.getApplicationACLs();
 
+        // fix up the ACLs if they are not set
+        String acls = getConfig().get(SliderXmlConfKeys.KEY_PROTOCOL_ACL);
+        if (acls == null) {
+          getConfig().set(SliderXmlConfKeys.KEY_PROTOCOL_ACL, "*");
+        }
         //tell the server what the ACLs are
         rpcService.getServer().refreshServiceAcl(serviceConf,
             new SliderAMPolicyProvider());
@@ -873,6 +908,44 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
     //shutdown time
     return finish();
+  }
+
+  private int getPortToRequest(AggregateConf instanceDefinition)
+      throws SliderException {
+    int portToRequest = 0;
+    String portRange = instanceDefinition.
+        getAppConfOperations().getComponent(SliderKeys.COMPONENT_AM)
+        .getOption(SliderKeys.KEY_AM_ALLOWED_PORT_RANGE , "0");
+    if (!"0".equals(portRange)) {
+      if (portScanner == null) {
+        portScanner = new PortScanner();
+        portScanner.setPortRange(portRange);
+      }
+      portToRequest = portScanner.getAvailablePort();
+    }
+
+    return portToRequest;
+  }
+
+  private void uploadServerCertForLocalization(String clustername,
+                                               SliderFileSystem fs)
+      throws IOException {
+    Path certsDir = new Path(fs.buildClusterDirPath(clustername),
+                             "certs");
+    if (!fs.getFileSystem().exists(certsDir)) {
+      fs.getFileSystem().mkdirs(certsDir,
+        new FsPermission(FsAction.ALL, FsAction.NONE, FsAction.NONE));
+    }
+    Path destPath = new Path(certsDir, SliderKeys.CRT_FILE_NAME);
+    if (!fs.getFileSystem().exists(destPath)) {
+      fs.getFileSystem().copyFromLocalFile(
+          new Path(CertificateManager.getServerCertficateFilePath().getAbsolutePath()),
+          destPath);
+      log.info("Uploaded server cert to localization path {}", destPath);
+    }
+
+    fs.getFileSystem().setPermission(destPath,
+      new FsPermission(FsAction.READ, FsAction.NONE, FsAction.NONE));
   }
 
   protected void login(String principal, File localKeytabFile)
@@ -1288,20 +1361,43 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   /**
    * Start the slider RPC server
    */
-  private void startSliderRPCServer() throws IOException {
-    SliderClusterProtocolPBImpl protobufRelay = new SliderClusterProtocolPBImpl(this);
-    BlockingService blockingService = SliderClusterAPI.SliderClusterProtocolPB
-                                                    .newReflectiveBlockingService(
-                                                      protobufRelay);
+  private void startSliderRPCServer(AggregateConf instanceDefinition)
+      throws IOException, SliderException {
+    verifyIPCAccess();
 
-    rpcService = new WorkflowRpcService("SliderRPC", RpcBinder.createProtobufServer(
-      new InetSocketAddress("0.0.0.0", 0),
-      getConfig(),
-      secretManager,
-      NUM_RPC_HANDLERS,
-      blockingService,
-      null));
+
+    SliderClusterProtocolPBImpl protobufRelay =
+        new SliderClusterProtocolPBImpl(this);
+    BlockingService blockingService = SliderClusterAPI.SliderClusterProtocolPB
+        .newReflectiveBlockingService(
+            protobufRelay);
+
+    int port = getPortToRequest(instanceDefinition);
+    rpcService =
+        new WorkflowRpcService("SliderRPC", RpcBinder.createProtobufServer(
+            new InetSocketAddress("0.0.0.0", port),
+            getConfig(),
+            secretManager,
+            NUM_RPC_HANDLERS,
+            blockingService,
+            null));
     deployChildService(rpcService);
+  }
+
+  /**
+   * verify that if the cluster is authed, the ACLs are set.
+   * @throws BadConfigException if Authorization is set without any ACL
+   */
+  private void verifyIPCAccess() throws BadConfigException {
+    boolean authorization = getConfig().getBoolean(
+        CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION,
+        false);
+    String acls = getConfig().get(SliderXmlConfKeys.KEY_PROTOCOL_ACL);
+    if (authorization && SliderUtils.isUnset(acls)) {
+      throw new BadConfigException("Application has IPC authorization enabled in " +
+          CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION +
+          " but no ACLs in " + SliderXmlConfKeys.KEY_PROTOCOL_ACL);
+    }
   }
 
 

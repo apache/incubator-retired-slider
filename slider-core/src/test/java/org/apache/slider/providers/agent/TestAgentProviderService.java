@@ -1364,6 +1364,7 @@ public class TestAgentProviderService {
     String id = cid.toString();
     ContainerId cid2 = new MockContainerId(2);
     mockAps.getAllocatedPorts().put("a", "100");
+    mockAps.getAllocatedPorts(id).put("a", "100");
     mockAps.getAllocatedPorts(id).put("b", "101");
     mockAps.getAllocatedPorts("cid2").put("c", "102");
 
@@ -1380,13 +1381,13 @@ public class TestAgentProviderService {
     Assert.assertNotNull(mockAps.getComponentStatuses().get("cid2_HM"));
 
     Assert.assertEquals(mockAps.getAllocatedPorts().size(), 1);
-    Assert.assertEquals(mockAps.getAllocatedPorts(id).size(), 1);
+    Assert.assertEquals(mockAps.getAllocatedPorts(id).size(), 2);
     Assert.assertEquals(mockAps.getAllocatedPorts("cid2").size(), 1);
 
     // Make the call
     mockAps.notifyContainerCompleted(new MockContainerId(1));
 
-    Assert.assertEquals(mockAps.getAllocatedPorts().size(), 1);
+    Assert.assertEquals(mockAps.getAllocatedPorts().size(), 0);
     Assert.assertEquals(mockAps.getAllocatedPorts(id).size(), 0);
     Assert.assertEquals(mockAps.getAllocatedPorts("cid2").size(), 1);
 

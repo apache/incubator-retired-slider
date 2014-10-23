@@ -20,24 +20,45 @@ package org.apache.slider.funtest.commands
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.bigtop.itest.shell.Shell
+import org.apache.hadoop.registry.client.api.RegistryConstants
+
+import static org.apache.slider.common.params.Arguments.*
+import static org.apache.slider.core.main.LauncherExitCodes.*;
 import org.apache.slider.funtest.framework.CommandTestBase
-import org.apache.slider.funtest.framework.SliderShell
-import org.apache.slider.common.params.SliderActions
 import org.junit.Test
 
 @CompileStatic
 @Slf4j
-public class SimpleCommandsIT extends CommandTestBase {
+public class ResolveCommandIT extends CommandTestBase {
 
   @Test
-  public void testVersion() throws Throwable {
-    slider(0, [SliderActions.ACTION_VERSION])
-  }
-
-  @Test
-  public void testUsage() throws Throwable {
-    slider(0, [SliderActions.ACTION_HELP])
+  public void testRegistryIsNotLocalhost() throws Throwable {
+    def quorum = SLIDER_CONFIG.get(RegistryConstants.KEY_REGISTRY_ZK_QUORUM)
+    assert quorum != RegistryConstants.DEFAULT_REGISTRY_ZK_QUORUM;
   }
   
+  @Test
+  public void testResolveRoot() throws Throwable {
+    resolve(0, 
+        [ARG_LIST, ARG_PATH, "/"])
+  }
+  
+  @Test
+  public void testResolveUnknownPath() throws Throwable {
+    resolve(EXIT_NOT_FOUND, 
+        [ARG_LIST, ARG_PATH, "/undefined"])
+  }
+
+  @Test
+  public void testResolveRootServiceRecord() throws Throwable {
+    resolve(EXIT_NOT_FOUND, 
+        [ARG_PATH, "/"])
+  }
+
+  @Test
+  public void testResolveHomeServiceRecord() throws Throwable {
+    resolve(EXIT_NOT_FOUND, 
+        [ARG_PATH, "~"])
+  }
+
 }

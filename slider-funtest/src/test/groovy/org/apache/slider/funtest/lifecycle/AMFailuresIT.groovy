@@ -25,6 +25,7 @@ import org.apache.bigtop.itest.shell.Shell
 import org.apache.chaos.remote.RemoteServer
 import org.apache.chaos.remote.SshCommands
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
@@ -79,7 +80,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     assert live != null && live.isInteger() && live.toInteger() == 1,
         'At least 1 container must be live now'
 
-    assert isApplicationInState("RUNNING", APPLICATION_NAME), 'App is not running.'
+    assert isApplicationUp(APPLICATION_NAME), 'App is not running.'
     assertSuccess(shell)
 
     // Now kill the AM
@@ -89,7 +90,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     killAMUsingVagrantShell()
 
     // Check that the application is not running (and is in ACCEPTED state)
-    assert isApplicationInState("ACCEPTED", APPLICATION_NAME), 
+    assert isApplicationInState(YarnApplicationState.ACCEPTED,
+        APPLICATION_NAME), 
       'App should be in ACCEPTED state (since AM got killed)'
     log.info("After AM KILL: application {} is in ACCEPTED state", APPLICATION_NAME)
 
@@ -113,7 +115,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
         'No new agent containers should be requested'
     log.info("After AM KILL: no new agent containers were requested")
 
-    assert isApplicationInState("RUNNING", APPLICATION_NAME), 'App is not running.'
+    assert isApplicationUp(APPLICATION_NAME), 'App is not running.'
     assertSuccess(shell)
   }
 

@@ -272,7 +272,7 @@ public class AccumuloClientProvider extends AbstractClientProvider implements
     //now, if there is an extra client conf, merge it in too
     if (clientConfExtras != null) {
       ConfigHelper.mergeConfigurations(siteConf, clientConfExtras,
-                                       "Slider Client");
+                                       "Slider Client", true);
     }
 
     if (log.isDebugEnabled()) {

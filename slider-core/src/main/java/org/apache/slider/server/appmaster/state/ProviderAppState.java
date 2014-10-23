@@ -211,4 +211,8 @@ public class ProviderAppState implements StateAccessForProviders {
     appState.refreshClusterStatus();
   }
 
+  @Override
+  public List<RoleStatus> cloneRoleStatusList() {
+    return appState.cloneRoleStatusList();
+  }
 }

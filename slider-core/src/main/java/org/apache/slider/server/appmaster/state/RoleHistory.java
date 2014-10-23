@@ -359,7 +359,7 @@ public class RoleHistory {
    * Handler for bootstrap event
    */
   public void onBootstrap() {
-    log.info("Role history bootstrapped");
+    log.debug("Role history bootstrapped");
   }
 
   /**
@@ -380,7 +380,7 @@ public class RoleHistory {
     }
     if (loaded != null) {
       thawSuccessful = true;
-      log.info("loaded history from {}", loaded);
+      log.debug("loaded history from {}", loaded);
       // delete any old entries
       try {
         int count = historyWriter.purgeOlderHistoryEntries(filesystem, loaded);
@@ -478,7 +478,7 @@ public class RoleHistory {
     
     List<NodeInstance> targets = getNodesForRoleId(roleKey);
     int cnt = targets == null ? 0 : targets.size();
-    log.info("There're {} nodes to consider for {}", cnt, role.getName());
+    log.debug("There're {} nodes to consider for {}", cnt, role.getName());
     while (targets != null && !targets.isEmpty() && nodeInstance == null) {
       NodeInstance head = targets.remove(0);
       if (head.getActiveRoleInstances(roleKey) == 0) {

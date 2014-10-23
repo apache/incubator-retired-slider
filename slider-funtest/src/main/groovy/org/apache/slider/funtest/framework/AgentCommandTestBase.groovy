@@ -151,7 +151,9 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   public static String findLineEntry(SliderShell shell, String[] locaters) {
     int index = 0;
-    for (String str in shell.out) {
+    def output = shell.out
+    output += shell.err
+    for (String str in output) {
       if (str.contains("\"" + locaters[index] + "\"")) {
         if (locaters.size() == index + 1) {
           return str;
@@ -166,7 +168,9 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   public static boolean containsString(SliderShell shell, String lookThisUp, int n = 1) {
     int count = 0
-    for (String str in shell.out) {
+    def output = shell.out
+    output += shell.err
+    for (String str in output) {
       int subCount = countString(str, lookThisUp)
       count = count + subCount
       if (count == n) {

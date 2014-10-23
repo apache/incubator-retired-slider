@@ -50,9 +50,10 @@ public interface FuntestProperties extends SliderXMLConfKeysForTesting {
 
   String CLIENT_CONFIG_FILENAME = SliderKeys.CLIENT_RESOURCE
   
-  String ENV_CONF_DIR = "SLIDER_CONF_DIR"
+  String ENV_SLIDER_CONF_DIR = "SLIDER_CONF_DIR"
+  String ENV_HADOOP_CONF_DIR = "HADOOP_CONF_DIR"
   String ENV_SLIDER_CLASSPATH_EXTRA = "SLIDER_CLASSPATH_EXTRA"
-
+  
   String SCRIPT_NAME = "slider"
   String KEY_TEST_CONF_XML = "slider.test.conf.xml"
   String KEY_TEST_CONF_DIR = "slider.test.conf.dir"
@@ -69,4 +70,13 @@ public interface FuntestProperties extends SliderXMLConfKeysForTesting {
           "slider.test.instance.launch.wait.seconds";
   int DEFAULT_INSTANCE_LAUNCH_TIME_SECONDS = 60 * 3;
 
+  String ENV_PREFIX = "env."
+  String CORE_SITE_XML = "core-site.xml"
+  String HDFS_SITE_XML = "hdfs-site.xml"
+  String YARN_SITE_XML = "yarn-site.xml"
+
+  /**
+   * Flag to indicate that the .py script should be launched: {@value}
+   */
+  String KEY_LAUNCH_PYTHON = "slider.test.launch.python"
 }

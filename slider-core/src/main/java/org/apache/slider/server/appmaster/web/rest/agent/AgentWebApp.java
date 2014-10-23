@@ -23,6 +23,7 @@ import com.sun.jersey.spi.container.servlet.ServletContainer;
 import com.sun.jersey.spi.container.servlet.WebConfig;
 import com.sun.jersey.spi.inject.SingletonTypeInjectableProvider;
 import org.apache.slider.core.conf.MapOperations;
+import org.apache.slider.providers.agent.AgentKeys;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.rest.RestPaths;
 import org.apache.slider.server.services.security.SecurityUtils;
@@ -82,7 +83,8 @@ public class AgentWebApp implements Closeable {
       SslSelectChannelConnector ssl1WayConnector = createSSLConnector(false);
       SslSelectChannelConnector ssl2WayConnector =
           createSSLConnector(Boolean.valueOf(
-              configsMap.getOption("ssl.server.client.auth","false")));
+              configsMap.getOption(AgentKeys.KEY_AGENT_TWO_WAY_SSL_ENABLED,
+                                   "false")));
       agentServer.setConnectors(new Connector[]{ssl1WayConnector,
           ssl2WayConnector});
 

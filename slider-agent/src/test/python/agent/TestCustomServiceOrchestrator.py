@@ -86,7 +86,7 @@ class TestCustomServiceOrchestrator(TestCase):
     json_file = orchestrator.dump_command_to_json(command, {})
     self.assertTrue(os.path.exists(json_file))
     self.assertTrue(os.path.getsize(json_file) > 0)
-    self.assertEqual(oct(os.stat(json_file).st_mode & 0777), '0600')
+    self.assertEqual(oct(os.stat(json_file).st_mode & 0777), '0644')
     self.assertTrue(json_file.endswith("command-3.json"))
     os.unlink(json_file)
 
