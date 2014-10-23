@@ -24,7 +24,7 @@ from kazoo.client import KazooClient
 
 logger = logging.getLogger()
 
-class Registry:
+class Registry(object):
   def __init__(self, zk_quorum, zk_reg_path):
     self.zk_quorum = zk_quorum
     self.zk_reg_path = zk_reg_path
@@ -39,17 +39,18 @@ class Registry:
       zk = KazooClient(hosts=self.zk_quorum, read_only=True)
       zk.start()
       data, stat = zk.get(self.zk_reg_path)
-      data = data.lstrip("jsonservicerec")
       logger.debug("Registry Data: %s" % (data.decode("utf-8")))
       sliderRegistry = json.loads(data)
       internalAttr = sliderRegistry["internal"]
       for internal in internalAttr:
         if internal["api"] == "org.apache.slider.agents.secure":
-          amUrl = internal["addresses"][0][0]
+          address0 = internal["addresses"][0]
+          amUrl = address0["uri"]
           amHost = amUrl.split("/")[2].split(":")[0]
           amSecuredPort = amUrl.split(":")[2].split("/")[0]
         if internal["api"] == "org.apache.slider.agents.oneway":
-          amUnsecureUrl = internal["addresses"][0][0]
+          address0 = internal["addresses"][0]
+          amUnsecureUrl = address0["uri"]
           amHost = amUnsecureUrl.split("/")[2].split(":")[0]
           amUnsecuredPort = amUnsecureUrl.split(":")[2].split("/")[0]
 
@@ -62,7 +63,7 @@ class Registry:
                    (self.zk_reg_path, self.zk_quorum, str(e)))
       pass
     finally:
-      if not zk == None:
+      if not zk is None:
         zk.stop()
         zk.close()
     logger.info("AM Host = %s, AM Secured Port = %s, ping port = %s" % (amHost, amSecuredPort, amUnsecuredPort))

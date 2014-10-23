@@ -1060,8 +1060,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     serviceRecord.addExternalEndpoint(
         RegistryTypeUtils.ipcEndpoint(
             CustomRegistryConstants.AM_IPC_PROTOCOL,
-            true,
-            RegistryTypeUtils.marshall(rpcServiceAddress)));
+            rpcServiceAddress));
     
     // internal services
     sliderAMProvider.applyInitialRegistryDefinitions(amWebURI,

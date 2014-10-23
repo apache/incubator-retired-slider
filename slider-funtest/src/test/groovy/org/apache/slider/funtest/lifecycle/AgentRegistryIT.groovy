@@ -50,7 +50,7 @@ public class AgentRegistryIT extends AgentCommandTestBase
   @Before
   public void prepareCluster() {
     setupCluster(CLUSTER)
- }
+  }
 
   @After
   public void destroyCluster() {
