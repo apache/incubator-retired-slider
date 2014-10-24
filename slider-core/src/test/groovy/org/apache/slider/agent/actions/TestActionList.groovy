@@ -207,8 +207,7 @@ class TestActionList extends AgentMiniClusterTestBase {
         new ActionListArgs(live: true));
 
     //Listing all the instance both history (previously freezed instance) and live
-    args.live = true
-    assert 0 == sliderClient.actionList("", args);
+    assert 0 == sliderClient.actionList("", new ActionListArgs(live: true));
 
     maybeStopCluster(sliderClient, "", "forced", true)
     assert 0 == sliderClient.actionList(clustername,
