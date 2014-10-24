@@ -31,12 +31,15 @@ import StringIO
 import sys
 import logging
 from Controller import State
+from AgentToggleLogger import AgentToggleLogger
+
 
 class TestHeartbeat(TestCase):
   def setUp(self):
     # disable stdout
     out = StringIO.StringIO()
     sys.stdout = out
+    self.agentToggleLogger = AgentToggleLogger("info")
 
 
   def tearDown(self):
@@ -48,8 +51,8 @@ class TestHeartbeat(TestCase):
     config = AgentConfig("", "")
     config.set('agent', 'prefix', 'tmp')
     dummy_controller = MagicMock()
-    actionQueue = ActionQueue(config, dummy_controller)
-    heartbeat = Heartbeat(actionQueue, config)
+    actionQueue = ActionQueue(config, dummy_controller, self.agentToggleLogger)
+    heartbeat = Heartbeat(actionQueue, config, self.agentToggleLogger)
     result = heartbeat.build({}, 100)
     print "Heartbeat: " + str(result)
     self.assertEquals(result['hostname'] != '', True,
@@ -74,7 +77,7 @@ class TestHeartbeat(TestCase):
     config = AgentConfig("", "")
     config.set('agent', 'prefix', 'tmp')
     dummy_controller = MagicMock()
-    actionQueue = ActionQueue(config, dummy_controller)
+    actionQueue = ActionQueue(config, dummy_controller, self.agentToggleLogger)
     result_mock.return_value = {
       'reports': [{'status': 'IN_PROGRESS',
                    'stderr': 'Read from /tmp/errors-3.txt',
@@ -144,7 +147,7 @@ class TestHeartbeat(TestCase):
         {'status': 'UNHEALTHY', 'componentName': 'HBASE_MASTER', 'reportResult' : False},
       ],
     }
-    heartbeat = Heartbeat(actionQueue, config)
+    heartbeat = Heartbeat(actionQueue, config, self.agentToggleLogger)
     # State.STARTED results in agentState to be set to 4 (enum order)
     hb = heartbeat.build({}, 10)
     hb['hostname'] = 'hostname'
@@ -182,7 +185,7 @@ class TestHeartbeat(TestCase):
     config = AgentConfig("", "")
     config.set('agent', 'prefix', 'tmp')
     dummy_controller = MagicMock()
-    actionQueue = ActionQueue(config, dummy_controller)
+    actionQueue = ActionQueue(config, dummy_controller, self.agentToggleLogger)
     result_mock.return_value = {
       'reports': [{'status': 'IN_PROGRESS',
                    'stderr': 'Read from /tmp/errors-3.txt',
@@ -198,7 +201,7 @@ class TestHeartbeat(TestCase):
       ],
       'componentStatus': []
       }
-    heartbeat = Heartbeat(actionQueue, config)
+    heartbeat = Heartbeat(actionQueue, config, self.agentToggleLogger)
 
     commandResult = {}
     hb = heartbeat.build(commandResult, 10)
@@ -219,7 +222,7 @@ class TestHeartbeat(TestCase):
     config = AgentConfig("", "")
     config.set('agent', 'prefix', 'tmp')
     dummy_controller = MagicMock()
-    actionQueue = ActionQueue(config, dummy_controller)
+    actionQueue = ActionQueue(config, dummy_controller, self.agentToggleLogger)
     result_mock.return_value = {
       'reports': [{'status': 'COMPLETED',
                    'stderr': 'Read from /tmp/errors-3.txt',
@@ -235,7 +238,7 @@ class TestHeartbeat(TestCase):
       ],
       'componentStatus': []
     }
-    heartbeat = Heartbeat(actionQueue, config)
+    heartbeat = Heartbeat(actionQueue, config, self.agentToggleLogger)
 
     commandResult = {}
     hb = heartbeat.build(commandResult, 10)

@@ -48,10 +48,10 @@ class CustomServiceOrchestrator():
   LIVE_STATUS = "STARTED"
   DEAD_STATUS = "INSTALLED"
 
-  def __init__(self, config, controller):
+  def __init__(self, config, controller, agentToggleLogger):
     self.config = config
     self.tmp_dir = config.getResolvedPath(AgentConfig.APP_TASK_DIR)
-    self.python_executor = PythonExecutor(self.tmp_dir, config)
+    self.python_executor = PythonExecutor(self.tmp_dir, config, agentToggleLogger)
     self.status_commands_stdout = os.path.realpath(posixpath.join(self.tmp_dir,
                                                                   'status_command_stdout.txt'))
     self.status_commands_stderr = os.path.realpath(posixpath.join(self.tmp_dir,
