@@ -65,7 +65,7 @@ class TestStandaloneAMDestroy extends AgentMiniClusterTestBase {
           [
               SliderActions.ACTION_LIST,
               "no-cluster-of-this-name",
-              Arguments.ARG_LIVE, Arguments.ARG_HISTORY
+              Arguments.ARG_LIVE
           ])
       fail("expected a failure")
     } catch (UnknownApplicationInstanceException e) {

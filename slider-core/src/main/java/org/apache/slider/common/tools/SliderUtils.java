@@ -97,6 +97,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -513,7 +514,7 @@ public final class SliderUtils {
     int length = separator.length();
     String s = b.toString();
     return (trailing || s.isEmpty()) ?
-           s  : (b.substring(0, b.length() - length));
+           s : (b.substring(0, b.length() - length));
   }
 
   /**
@@ -631,12 +632,15 @@ public final class SliderUtils {
     if (instances.size() <= 1) {
       return;
     }
-    List<ApplicationReport> nonLiveInstance = new ArrayList<ApplicationReport>(instances.size());
-    List<ApplicationReport> liveInstance = new ArrayList<ApplicationReport>(instances.size());
+    List<ApplicationReport> nonLiveInstance =
+        new ArrayList<ApplicationReport>(instances.size());
+    List<ApplicationReport> liveInstance =
+        new ArrayList<ApplicationReport>(instances.size());
 
     for (ApplicationReport report : instances) {
       if (report.getYarnApplicationState() == YarnApplicationState.RUNNING
-          || report.getYarnApplicationState() == YarnApplicationState.ACCEPTED) {
+          ||
+          report.getYarnApplicationState() == YarnApplicationState.ACCEPTED) {
         liveInstance.add(report);
       } else {
         nonLiveInstance.add(report);
@@ -644,27 +648,55 @@ public final class SliderUtils {
     }
 
     if (liveInstance.size() > 1) {
-      Comparator<ApplicationReport> liveInstanceComparator = new Comparator<ApplicationReport>() {
-        @Override
-        public int compare(ApplicationReport r1, ApplicationReport r2) {
-          return Long.compare(r1.getStartTime(), r2.getStartTime());
-        }
-      };
+      Comparator<ApplicationReport> liveInstanceComparator =
+          new Comparator<ApplicationReport>() {
+            @Override
+            public int compare(ApplicationReport r1, ApplicationReport r2) {
+              return Long.compare(r1.getStartTime(), r2.getStartTime());
+            }
+          };
       Collections.sort(liveInstance, liveInstanceComparator);
     }
     if (nonLiveInstance.size() > 1) {
-      Comparator<ApplicationReport> nonLiveInstanceComparator = new Comparator<ApplicationReport>() {
-        @Override
-        public int compare(ApplicationReport r1, ApplicationReport r2) {
-          return Long.compare(r1.getFinishTime(), r2.getFinishTime());
-        }
-      };
+      Comparator<ApplicationReport> nonLiveInstanceComparator =
+          new Comparator<ApplicationReport>() {
+            @Override
+            public int compare(ApplicationReport r1, ApplicationReport r2) {
+              return Long.compare(r1.getFinishTime(), r2.getFinishTime());
+            }
+          };
       Collections.sort(nonLiveInstance, nonLiveInstanceComparator);
     }
     instances.clear();
     instances.addAll(liveInstance);
     instances.addAll(nonLiveInstance);
   }
+
+  /**
+   * Built a (sorted) map of application reports, mapped to the instance name
+   * The list is sorted, and the addition process does not add a report
+   * if there is already one that exists. If the list handed in is sorted,
+   * those that are listed first form the entries returned
+   * @param instances list of intances
+   * @param minState minimum YARN state to be included
+   * @param maxState maximum YARN state to be included
+   * @return all reports in the list whose state &gt;= minimum and &lt;= maximum
+   */
+  public static Map<String, ApplicationReport> buildApplicationReportMap(
+      List<ApplicationReport> instances,
+      YarnApplicationState minState, YarnApplicationState maxState) {
+    TreeMap<String, ApplicationReport> map = new TreeMap<String, ApplicationReport>();
+    for (ApplicationReport report : instances) {
+      YarnApplicationState state = report.getYarnApplicationState();
+      if (state.ordinal() >= minState.ordinal() &&
+          state.ordinal() <= maxState.ordinal() &&
+          map.get(report.getName()) == null) {
+        map.put(report.getName(), report);
+      }
+    }
+    return map;
+  }
+  
 
   /**
    * Merge in one map to another -all entries in the second map are
@@ -1079,7 +1111,8 @@ public final class SliderUtils {
         UserGroupInformation.AuthenticationMethod.SIMPLE) {
       throw new BadConfigException("Auth User is not Kerberized %s" +
                                    " -security has already been set up with the wrong authentication method. "
-                                   + "This can occur if a file system has already been created prior to the loading of "
+                                   +
+                                   "This can occur if a file system has already been created prior to the loading of "
                                    + "the security configuration.",
           authUser);
 
@@ -1415,7 +1448,7 @@ public final class SliderUtils {
     String appHomeOption =
         internalOptions.get(InternalKeys.INTERNAL_APPLICATION_HOME);
     if (!isUnset(imagePathOption)) {
-      if(!isUnset(appHomeOption)) {
+      if (!isUnset(appHomeOption)) {
         throw new BadClusterStateException(
             ErrorStrings.E_BOTH_IMAGE_AND_HOME_DIR_SPECIFIED);
       }
@@ -1627,7 +1660,9 @@ public final class SliderUtils {
    * @throws FileNotFoundException if the file is not considered valid
    * @param logger
    */
-  public static void maybeVerifyWinUtilsValid(Logger logger) throws IOException, SliderException {
+  public static void maybeVerifyWinUtilsValid(Logger logger) throws
+      IOException,
+      SliderException {
     if (!Shell.WINDOWS) {
       return;
     }
@@ -1668,19 +1703,19 @@ public final class SliderUtils {
    * Look for the windows executable and check it has the right headers.
    * <code>File.canRead()</code> doesn't work on windows, so the reading
    * is mandatory.
-   * 
+   *
    * @param program program name for errors
    * @param exe executable
    * @throws IOException IOE
    */
-  public static void verifyWindowsExe(String program, File exe) 
+  public static void verifyWindowsExe(String program, File exe)
       throws IOException {
     verifyIsFile(program, exe);
 
     verifyFileSize(program, exe, 0x100);
 
     // now read two bytes and verify the header.
-    
+
     FileReader reader = null;
     try {
       int[] header = new int[2];
@@ -1811,7 +1846,7 @@ public final class SliderUtils {
           }
         }
       }
-      if (errorText== null) {
+      if (errorText == null) {
         return process;
       }
 
@@ -1862,107 +1897,110 @@ public final class SliderUtils {
     execCommand(PYTHON, 0, 5000, logger, "Python", PYTHON, "--version");
   }
 
-	/**
-	 * return the path to the currently running slider command
-	 * 
-	 * @throws NullPointerException
-	 *             - If the pathname argument is null
-	 * @throws SecurityException
-	 *             - if a security manager exists and its checkPermission method
-	 *             doesn't allow getting the ProtectionDomain
-	 */
-	public static String getCurrentCommandPath() {
-		File f = new File(Slider.class.getProtectionDomain().getCodeSource()
-				.getLocation().getPath());
-		return f.getAbsolutePath();
-	}
-
-	/**
-	 * return the path to the slider-client.xml used by the current running
-	 * slider command
-	 * 
-	 * @throws SecurityException
-	 *             - if a security manager exists and its checkPermission method
-	 *             denies access to the class loader for the class
-	 */
-	public static String getClientConfigPath() {
-		URL path = ConfigHelper.class.getClassLoader().getResource(
-				SliderKeys.CLIENT_RESOURCE);
-		return path.toString();
-	}
-
-	/**
-	 * validate if slider-client.xml under the path can be opened
-	 * 
-	 * @throws IOException
-	 *             : the file can't be found or open
-	 */
-	public static void validateClientConfigFile() throws IOException {
-		URL resURL = SliderVersionInfo.class.getClassLoader().getResource(
-				SliderKeys.CLIENT_RESOURCE);
-		if (resURL == null) {
-			throw new IOException(
-					"slider-client.xml doesn't exist on the path: "
-							+ getClientConfigPath());
-		}
-
-		try {
-			InputStream inStream = resURL.openStream();
-			if (inStream == null) {
-				throw new IOException("slider-client.xml can't be opened");
-			}
-		} catch (IOException e) {
-			throw new IOException("slider-client.xml can't be opened: "
-					+ e.toString());
-		}
-	}
-
-	/**
-	 * validate if a file on HDFS can be open
-	 * 
-	 * @throws IOException the file can't be found or opened
-	 * @throws URISyntaxException
-	 */
-	public static void validateHDFSFile(SliderFileSystem sliderFileSystem, String pathStr)
-      throws IOException, URISyntaxException{
-	  URI pathURI = new URI(pathStr);
-	  InputStream inputStream = sliderFileSystem.getFileSystem().open(new Path(pathURI));
-	  if(inputStream == null){
-		  throw new IOException("HDFS file " + pathStr + " can't be opened");
-	  }
+  /**
+   * return the path to the currently running slider command
+   *
+   * @throws NullPointerException
+   *             - If the pathname argument is null
+   * @throws SecurityException
+   *             - if a security manager exists and its checkPermission method
+   *             doesn't allow getting the ProtectionDomain
+   */
+  public static String getCurrentCommandPath() {
+    File f = new File(Slider.class.getProtectionDomain().getCodeSource()
+                                  .getLocation().getPath());
+    return f.getAbsolutePath();
   }
 
-	/**
-	 * return the version and path of the JDK invoking the current running
-	 * slider command
-	 * 
-	 * @throws SecurityException
-	 *             - if a security manager exists and its checkPropertyAccess
-	 *             method doesn't allow access to the specified system property.
-	 */
-	public static String getJDKInfo() {
-		String version = System.getProperty("java.version");
-		String javaHome = System.getProperty("java.home");
-		return "The version of the JDK invoking the current running slider command: "
-				+ version + "; The path to it is: " + javaHome;
-	}
+  /**
+   * return the path to the slider-client.xml used by the current running
+   * slider command
+   *
+   * @throws SecurityException
+   *             - if a security manager exists and its checkPermission method
+   *             denies access to the class loader for the class
+   */
+  public static String getClientConfigPath() {
+    URL path = ConfigHelper.class.getClassLoader().getResource(
+        SliderKeys.CLIENT_RESOURCE);
+    return path.toString();
+  }
 
-	/**
-	 * return a description of whether the current user has created credential
-	 * cache files from kerberos servers
-	 * 
-	 * @throws IOException
-	 * @throws BadConfigException
-	 * @throws SecurityException
-	 *             - if a security manager exists and its checkPropertyAccess
-	 *             method doesn't allow access to the specified system property.
-	 */
-	public static String checkCredentialCacheFile() throws IOException,
-			BadConfigException {
-		String result = null;
-		if (!Shell.WINDOWS) {
-			result = Shell.execCommand("klist");
-		}
-		return result;
-	}
+  /**
+   * validate if slider-client.xml under the path can be opened
+   *
+   * @throws IOException
+   *             : the file can't be found or open
+   */
+  public static void validateClientConfigFile() throws IOException {
+    URL resURL = SliderVersionInfo.class.getClassLoader().getResource(
+        SliderKeys.CLIENT_RESOURCE);
+    if (resURL == null) {
+      throw new IOException(
+          "slider-client.xml doesn't exist on the path: "
+          + getClientConfigPath());
+    }
+
+    try {
+      InputStream inStream = resURL.openStream();
+      if (inStream == null) {
+        throw new IOException("slider-client.xml can't be opened");
+      }
+    } catch (IOException e) {
+      throw new IOException("slider-client.xml can't be opened: "
+                            + e.toString());
+    }
+  }
+
+  /**
+   * validate if a file on HDFS can be open
+   *
+   * @throws IOException the file can't be found or opened
+   * @throws URISyntaxException
+   */
+  public static void validateHDFSFile(SliderFileSystem sliderFileSystem,
+      String pathStr)
+      throws IOException, URISyntaxException {
+    URI pathURI = new URI(pathStr);
+    InputStream inputStream =
+        sliderFileSystem.getFileSystem().open(new Path(pathURI));
+    if (inputStream == null) {
+      throw new IOException("HDFS file " + pathStr + " can't be opened");
+    }
+  }
+
+  /**
+   * return the version and path of the JDK invoking the current running
+   * slider command
+   *
+   * @throws SecurityException
+   *             - if a security manager exists and its checkPropertyAccess
+   *             method doesn't allow access to the specified system property.
+   */
+  public static String getJDKInfo() {
+    String version = System.getProperty("java.version");
+    String javaHome = System.getProperty("java.home");
+    return
+        "The version of the JDK invoking the current running slider command: "
+        + version + "; The path to it is: " + javaHome;
+  }
+
+  /**
+   * return a description of whether the current user has created credential
+   * cache files from kerberos servers
+   *
+   * @throws IOException
+   * @throws BadConfigException
+   * @throws SecurityException
+   *             - if a security manager exists and its checkPropertyAccess
+   *             method doesn't allow access to the specified system property.
+   */
+  public static String checkCredentialCacheFile() throws IOException,
+      BadConfigException {
+    String result = null;
+    if (!Shell.WINDOWS) {
+      result = Shell.execCommand("klist");
+    }
+    return result;
+  }
 }

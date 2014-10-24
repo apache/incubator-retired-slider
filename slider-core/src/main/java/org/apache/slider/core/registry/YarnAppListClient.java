@@ -37,7 +37,6 @@ public class YarnAppListClient {
   final String username;
   final Configuration conf;
 
-
   public YarnAppListClient(SliderYarnClientImpl yarnClient,
       String username,
       Configuration conf) {
@@ -76,17 +75,29 @@ public class YarnAppListClient {
   public ApplicationReport findInstance(String appname) throws
                                                         YarnException,
                                                         IOException {
-    List<ApplicationReport> instances = listInstances();
+    List<ApplicationReport> instances = listInstances(null);
     return yarnClient.findClusterInInstanceList(instances, appname);
+  }
+
+  /**
+   * List instances belonging to the specific user
+   * @return a possibly empty list of AMs
+   */
+  public List<ApplicationReport> listInstances()
+      throws YarnException, IOException {
+    return listInstances(null);
   }
 
   /**
    * List instances belonging to a specific user
    * @return a possibly empty list of AMs
+   * @param user user if not the default. null means default, "" means all users, 
+   * otherwise it is the name of a user
    */
-  public List<ApplicationReport> listInstances()
-    throws YarnException, IOException {
-    return yarnClient.listInstances(username);
+  public List<ApplicationReport> listInstances(String user)
+      throws YarnException, IOException {
+    String listUser = user == null ? username : user;
+    return yarnClient.listInstances(listUser);
   }
 
 

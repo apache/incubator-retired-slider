@@ -34,9 +34,13 @@ public class ActionListArgs extends AbstractActionArgs {
           description = "List only live application instances")
   public boolean live;
 
-  @Parameter(names = {ARG_HISTORY},
-          description = "List only historical application instances")
-  public boolean history;
+  @Parameter(names = {ARG_STATE},
+      description = "list only applications in the specific YARN state")
+  public String state = "";
+  
+  @Parameter(names = {ARG_VERBOSE},
+      description = "print out information in details")
+  public boolean verbose = false;
 
   /**
    * Get the min #of params expected

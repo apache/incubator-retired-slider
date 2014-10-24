@@ -22,6 +22,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathNotFoundException;
@@ -1666,100 +1667,162 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
   /**
-   * List Slider instances belonging to a specific user
-   * @param user user: "" means all users
+   * List Slider instances belonging to a specific user. This will include
+   * failed and killed instances; there may be duplicates
+   * @param user user: "" means all users, null means "default"
    * @return a possibly empty list of Slider AMs
    */
   @VisibleForTesting
   public List<ApplicationReport> listSliderInstances(String user)
     throws YarnException, IOException {
-    return YarnAppListClient.listInstances();
+    return YarnAppListClient.listInstances(user);
   }
 
-  @Override
   /**
-   * Implement the list action: list all nodes
-   *
-   * live: List out only live instances
-   * history: List out only history instances
-   *
-   * If arguments are not given then list out both finished and
-   * running instances
-   *
-   * @param clustername List out specific cluster
-   * @param args Action list arguments
-   * @return exit code of 0 if a list was created
+   * A basic list action to list live instances
+   * @param clustername cluster name
+   * @return success if the listing was considered successful
+   * @throws IOException
+   * @throws YarnException
    */
+  public int actionList(String clustername) throws IOException, YarnException {
+    ActionListArgs args = new ActionListArgs();
+    args.live = true;
+    return actionList(clustername, args);
+  }
+
+    /**
+     * Implement the list action: list all nodes
+  
+     * @param clustername List out specific instance name
+     * @param args Action list arguments
+     * @return 0 if one or more entries were listed
+     */
+  @Override
   @VisibleForTesting
   public int actionList(String clustername, ActionListArgs args)
       throws IOException, YarnException {
     verifyBindingsDefined();
 
-    String user = UserGroupInformation.getCurrentUser().getUserName();
-    List<ApplicationReport> instances = listSliderInstances(user);
-    SliderUtils.sortApplicationReport(instances);
     boolean live = args.live;
-    boolean history = args.history;
-    if (isUnset(clustername)) {
-      // no cluster name: list all
-      log.info("Instances for {}: {}",
-               (user != null ? user : "all users"),
-               instances.size());
-      for (ApplicationReport report : instances) {
-        logAppReport(report, live, history);
-      }
-      // and always succeed
-      return EXIT_SUCCESS;
+    String state = args.state;
+    boolean verbose = args.verbose;
+
+    if (live && !state.isEmpty()) {
+      throw new BadCommandArgumentsException(
+          Arguments.ARG_LIVE + " and " + Arguments.ARG_STATE + " are exclusive");
+    }
+    // flag to indicate only services in a specific state are to be listed
+    boolean listOnlyInState = live || !state.isEmpty();
+    
+    YarnApplicationState min, max;
+    if (live) {
+      min = YarnApplicationState.NEW;
+      max = YarnApplicationState.RUNNING;
+    } else if (!state.isEmpty()) {
+      YarnApplicationState stateVal = extractYarnApplicationState(state);
+      min = max = stateVal;
     } else {
-      // cluster name provided
-      SliderUtils.validateClusterName(clustername);
-      log.debug("Listing cluster named {}, live={}, history={}",
-          clustername, live, history);
-      boolean instanceFound = false;
-      if (history) {
-        for (ApplicationReport report : instances) {
-          if (report.getName().equals(clustername)) {
-            logAppReport(report, live, true);
-            instanceFound = true;
-          }
-        }
-      } else {
-        // no history flag, only list live value
-        ApplicationReport report =
-            findClusterInInstanceList(instances, clustername);
-        if (report != null) {
-          instanceFound = logAppReport(report, true, false);
-        }
-      }
-      // exit code if the instance was found
-      if (instanceFound) {
-        return EXIT_SUCCESS;
-      } else {
+      min = YarnApplicationState.NEW;
+      max = YarnApplicationState.KILLED;
+    }
+    // get the complete list of persistent instances
+    Map<String, Path> persistentInstances = sliderFileSystem.listPersistentInstances();
+
+    if (persistentInstances.isEmpty() && isUnset(clustername)) {
+      // an empty listing is a success if no cluster was named
+      log.debug("No application instances found");
+      return EXIT_SUCCESS;
+    }
+    
+    // and those the RM knows about
+    List<ApplicationReport> instances = listSliderInstances(null);
+    SliderUtils.sortApplicationReport(instances);
+    Map<String, ApplicationReport> reportMap =
+        SliderUtils.buildApplicationReportMap(instances, min, max);
+    log.debug("Persisted {} deployed {} filtered[{}-{}] & de-duped to {}",
+        persistentInstances.size(),
+        instances.size(),
+        min, max,
+        reportMap.size() );
+
+    if (isSet(clustername)) {
+      // only one instance is expected
+      // resolve the persistent value
+      Path persistent = persistentInstances.get(clustername);
+      if (persistent == null) {
         throw unknownClusterException(clustername);
       }
+      persistentInstances = new HashMap<String, Path>();
+      persistentInstances.put(clustername, persistent);  
     }
+    
+    // at this point there is either the entire list or a stripped down instance
+    int listed = 0;
+
+    for (String name : persistentInstances.keySet()) {
+      ApplicationReport report = reportMap.get(name);
+      if (!listOnlyInState || report != null) {
+        // list the details if all were requested, or the filtering contained
+        // a report
+        listed++;
+        String details = instanceDetailsToString(name, report, verbose);
+        print(details);
+      }
+    }
+    
+    return listed > 0 ? EXIT_SUCCESS: EXIT_FALSE;
+  }
+
+  String instanceDetailsToString(String name,
+      ApplicationReport report,
+      boolean verbose) {
+    // format strings
+    String staticf = "%-30s";
+    String reportedf = staticf + "  %10s  %-40s";
+    String livef = reportedf + " %s";
+    StringBuilder builder = new StringBuilder(200);
+    if (report == null) {
+      builder.append(String.format(staticf, name));
+    } else {
+      // there's a report to look at
+      String appId = report.getApplicationId().toString();
+      String state = report.getYarnApplicationState().toString();
+      if (report.getYarnApplicationState() == YarnApplicationState.RUNNING) {
+        // running: there's a URL
+        builder.append(String.format(livef, name, state, appId ,report.getTrackingUrl()));
+      } else {
+        builder.append(String.format(reportedf, name, state, appId));
+      }
+      if (verbose) {
+        builder.append('\n');
+        builder.append(SliderUtils.appReportToString(report, "\n  "));
+      }
+    }
+
+    builder.append('\n');
+    return builder.toString();
   }
 
   /**
-   * Log the application report at INFO
-   * @param report report to log
-   * @param live only list live apps
-   * @param history list historical containers
-   * @return whether the report was logged or not
+   * Extract the state of a Yarn application --state argument
+   * @param state state argument
+   * @return the application state
+   * @throws BadCommandArgumentsException if the argument did not match
+   * any known state
    */
-  public boolean logAppReport(ApplicationReport report,
-      boolean live,
-      boolean history) {
-    // app is active if it is accepted or running
-    boolean active = isApplicationActive(report);
-    
-    boolean toLog = (active && live) || (!active && history);
-    if (toLog) {
-      log.info(SliderUtils.appReportToString(report, "\n"));
-    }
-    return toLog;
-  }
+  private YarnApplicationState extractYarnApplicationState(String state) throws
+      BadCommandArgumentsException {
+    YarnApplicationState stateVal;
+    try {
+      stateVal = YarnApplicationState.valueOf(state.toUpperCase(Locale.ENGLISH));
+    } catch (IllegalArgumentException e) {
+      throw new BadCommandArgumentsException("Unknown state: " + state);
 
+    }
+    return stateVal;
+  }
+  
   /**
    * Is an application active: accepted or running
    * @param report the application report
@@ -1839,8 +1902,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       // scan for instance in single --state state
       List<ApplicationReport> userInstances = yarnClient.listInstances("");
       state = state.toUpperCase(Locale.ENGLISH);
-      YarnApplicationState desiredState =
-          YarnApplicationState.valueOf(state);
+      YarnApplicationState desiredState = extractYarnApplicationState(state);
       ApplicationReport foundInstance =
           yarnClient.findAppInInstanceList(userInstances, name, desiredState);
       if (foundInstance != null) {
