@@ -652,7 +652,9 @@ public final class SliderUtils {
           new Comparator<ApplicationReport>() {
             @Override
             public int compare(ApplicationReport r1, ApplicationReport r2) {
-              return Long.compare(r1.getStartTime(), r2.getStartTime());
+              long x = r1.getStartTime();
+              long y = r2.getStartTime();
+              return (x < y) ? -1 : ((x == y) ? 0 : 1);
             }
           };
       Collections.sort(liveInstance, liveInstanceComparator);
@@ -662,7 +664,9 @@ public final class SliderUtils {
           new Comparator<ApplicationReport>() {
             @Override
             public int compare(ApplicationReport r1, ApplicationReport r2) {
-              return Long.compare(r1.getFinishTime(), r2.getFinishTime());
+              long x = r1.getFinishTime();
+              long y = r2.getFinishTime();
+              return (x < y) ? -1 : ((x == y) ? 0 : 1);
             }
           };
       Collections.sort(nonLiveInstance, nonLiveInstanceComparator);
