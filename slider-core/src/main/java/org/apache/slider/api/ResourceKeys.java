@@ -129,7 +129,9 @@ public interface ResourceKeys {
    */
   int DEFAULT_CONTAINER_FAILURE_THRESHOLD = 5;
 
+  /**
+   * Log aggregation include, exclude patterns
+   */
   String YARN_LOG_INCLUDE_PATTERNS = "yarn.log.include.patterns";
   String YARN_LOG_EXCLUDE_PATTERNS = "yarn.log.exclude.patterns";
-  String YARN_LOG_INTERVAL = "yarn.log.interval";
 }

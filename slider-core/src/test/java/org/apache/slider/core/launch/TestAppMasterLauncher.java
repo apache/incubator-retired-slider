@@ -58,7 +58,6 @@ public class TestAppMasterLauncher {
         " | slider*.txt  |agent.out| |");
     options.put(ResourceKeys.YARN_LOG_EXCLUDE_PATTERNS,
         "command*.json|  agent.log*        |     ");
-    options.put(ResourceKeys.YARN_LOG_INTERVAL, "30");
 
     EasyMock.replay(mockYarnClient, appSubmissionContext, yarnClientApp);
     AppMasterLauncher appMasterLauncher = new AppMasterLauncher("cl1",
@@ -74,9 +73,6 @@ public class TestAppMasterLauncher {
     Assert.assertEquals(expectedExclude,
         appMasterLauncher.logAggregationContext.getExcludePattern());
 
-//    Assert.assertEquals(30,
-//        appMasterLauncher.logAggregationContext.getRollingIntervalSeconds());
-
     EasyMock.verify(mockYarnClient, appSubmissionContext, yarnClientApp);
   }
 
@@ -87,7 +83,6 @@ public class TestAppMasterLauncher {
     options.put(ResourceKeys.YARN_LOG_INCLUDE_PATTERNS, " ");
     options.put(ResourceKeys.YARN_LOG_EXCLUDE_PATTERNS,
         "command*.json|  agent.log*        |     ");
-    options.put(ResourceKeys.YARN_LOG_INTERVAL, "600");
 
     EasyMock.replay(mockYarnClient, appSubmissionContext, yarnClientApp);
     AppMasterLauncher appMasterLauncher = new AppMasterLauncher("cl1",
@@ -102,9 +97,6 @@ public class TestAppMasterLauncher {
     String expectedExclude = "command*.json|agent.log*";
     Assert.assertEquals(expectedExclude,
         appMasterLauncher.logAggregationContext.getExcludePattern());
-
-//    Assert.assertEquals(600,
-//        appMasterLauncher.logAggregationContext.getRollingIntervalSeconds());
 
     EasyMock.verify(mockYarnClient, appSubmissionContext, yarnClientApp);
   }

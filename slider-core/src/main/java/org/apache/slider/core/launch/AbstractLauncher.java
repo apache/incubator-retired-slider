@@ -307,12 +307,8 @@ public abstract class AbstractLauncher extends Configured {
           logPatternJoinStr);
       log.info("Log exclude patterns: {}", logExcludePattern);
 
-      long logInterval = options
-          .getOptionInt(ResourceKeys.YARN_LOG_INTERVAL, 0);
-      log.info("Log interval: {}", logInterval);
       logAggregationContext = LogAggregationContext.newInstance(
           logIncludePattern, logExcludePattern);
-      // log interval has been removed from signature - fix required
     }
   }
 
