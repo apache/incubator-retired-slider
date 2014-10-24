@@ -233,7 +233,7 @@ class CustomServiceOrchestrator():
       task_id = command['taskId']
       file_path = os.path.realpath(posixpath.join(self.tmp_dir, "command-{0}.json".format(task_id)))
       # Json may contain passwords, that's why we need proper permissions
-    if os.path.isfile(file_path):
+    if os.path.isfile(file_path) and os.path.exists(file_path):
       os.unlink(file_path)
 
     self.finalize_command(command, store_command, allocated_ports)
