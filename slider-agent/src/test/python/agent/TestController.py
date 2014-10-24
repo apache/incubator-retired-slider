@@ -32,6 +32,7 @@ from AgentConfig import AgentConfig
 from mock.mock import patch, MagicMock, call, Mock
 import logging
 from threading import Event
+from AgentToggleLogger import AgentToggleLogger
 
 class TestController(unittest.TestCase):
 
@@ -56,7 +57,8 @@ class TestController(unittest.TestCase):
     self.controller = Controller.Controller(config)
     self.controller.netutil.MINIMUM_INTERVAL_BETWEEN_HEARTBEATS = 0.1
     self.controller.netutil.HEARTBEAT_NOT_IDDLE_INTERVAL_SEC = 0.1
-    self.controller.actionQueue = ActionQueue.ActionQueue(config, self.controller)
+    self.agentToggleLogger = AgentToggleLogger("info")
+    self.controller.actionQueue = ActionQueue.ActionQueue(config, self.controller, self.agentToggleLogger)
 
 
   @patch("json.dumps")

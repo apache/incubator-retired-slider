@@ -30,9 +30,11 @@ import unittest
 from PythonExecutor import PythonExecutor
 from AgentConfig import AgentConfig
 from mock.mock import MagicMock, patch
-
+from AgentToggleLogger import AgentToggleLogger
 
 class TestPythonExecutor(TestCase):
+  def setUp(self):
+    self.agentToggleLogger = AgentToggleLogger("info")
 
   @patch("shell.kill_process_with_children")
   def test_watchdog_1(self, kill_process_with_children_mock):
@@ -40,7 +42,7 @@ class TestPythonExecutor(TestCase):
     Tests whether watchdog works
     """
     subproc_mock = self.Subprocess_mockup()
-    executor = PythonExecutor("/tmp", AgentConfig("", ""))
+    executor = PythonExecutor("/tmp", AgentConfig("", ""), self.agentToggleLogger)
     _, tmpoutfile = tempfile.mkstemp()
     _, tmperrfile = tempfile.mkstemp()
     _, tmpstrucout = tempfile.mkstemp()
@@ -69,7 +71,7 @@ class TestPythonExecutor(TestCase):
     Tries to catch false positive watchdog invocations
     """
     subproc_mock = self.Subprocess_mockup()
-    executor = PythonExecutor("/tmp", AgentConfig("", ""))
+    executor = PythonExecutor("/tmp", AgentConfig("", ""), self.agentToggleLogger)
     _, tmpoutfile = tempfile.mkstemp()
     _, tmperrfile = tempfile.mkstemp()
     _, tmpstrucout = tempfile.mkstemp()
@@ -100,7 +102,7 @@ class TestPythonExecutor(TestCase):
   @patch("os.environ.copy")
   def test_set_env_values(self, os_env_copy_mock, subprocess_mock, open_mock):
     actual_vars = {"someOther" : "value1"}
-    executor = PythonExecutor("/tmp", AgentConfig("", ""))
+    executor = PythonExecutor("/tmp", AgentConfig("", ""), self.agentToggleLogger)
     environment_vars = [("PYTHONPATH", "a:b")]
     os_env_copy_mock.return_value = actual_vars
     executor.run_file("script.pynot", ["a","b"], "", "", 10, "", "INFO", True, environment_vars)
@@ -108,7 +110,7 @@ class TestPythonExecutor(TestCase):
 
   def test_execution_results(self):
     subproc_mock = self.Subprocess_mockup()
-    executor = PythonExecutor("/tmp", AgentConfig("", ""))
+    executor = PythonExecutor("/tmp", AgentConfig("", ""), self.agentToggleLogger)
     _, tmpoutfile = tempfile.mkstemp()
     _, tmperrfile = tempfile.mkstemp()
     _, tmpstroutfile = tempfile.mkstemp()
@@ -130,7 +132,7 @@ class TestPythonExecutor(TestCase):
 
 
   def test_is_successfull(self):
-    executor = PythonExecutor("/tmp", AgentConfig("", ""))
+    executor = PythonExecutor("/tmp", AgentConfig("", ""), self.agentToggleLogger)
 
     executor.python_process_has_been_killed = False
     self.assertTrue(executor.isSuccessfull(0))
@@ -142,7 +144,7 @@ class TestPythonExecutor(TestCase):
 
 
   def test_python_command(self):
-    executor = PythonExecutor("/tmp", AgentConfig("", ""))
+    executor = PythonExecutor("/tmp", AgentConfig("", ""), self.agentToggleLogger)
     command = executor.python_command("script", ["script_param1"])
     self.assertEqual(4, len(command))
     self.assertTrue("python" in command[0].lower(), "Looking for python in %s" % (command[0].lower()))

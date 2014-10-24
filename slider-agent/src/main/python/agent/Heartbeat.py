@@ -31,16 +31,17 @@ import AgentConfig
 logger = logging.getLogger()
 
 class Heartbeat:
-  def __init__(self, actionQueue, config=None):
+  def __init__(self, actionQueue, config=None, agentToggleLogger=None):
     self.actionQueue = actionQueue
     self.config = config
     self.reports = []
+    self.agentToggleLogger = agentToggleLogger
 
   def build(self, commandResult, id='-1',
             componentsMapped=False):
     timestamp = int(time.time() * 1000)
     queueResult = self.actionQueue.result()
-    logger.info("Queue result: " + pformat(queueResult))
+    self.agentToggleLogger.log("Queue result: " + pformat(queueResult))
 
     nodeStatus = {"status": "HEALTHY",
                   "cause": "NONE"}
@@ -93,10 +94,11 @@ class Heartbeat:
       if len(componentStatuses) > 0:
         heartbeat['componentStatus'] = componentStatuses
 
-    logger.info("Sending heartbeat with response id: " + str(id) + " and "
-                                                                   "timestamp: " + str(timestamp) +
-                ". Command(s) in progress: " + repr(commandsInProgress) +
-                ". Components mapped: " + repr(componentsMapped))
+    self.agentToggleLogger.log(
+                 "Sending heartbeat with response id: " + str(id) + " and "
+                 "timestamp: " + str(timestamp) +
+                 ". Command(s) in progress: " + repr(commandsInProgress) +
+                 ". Components mapped: " + repr(componentsMapped))
     logger.debug("Heartbeat : " + pformat(heartbeat))
 
     return heartbeat

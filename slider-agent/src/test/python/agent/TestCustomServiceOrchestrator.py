@@ -35,7 +35,7 @@ from mock.mock import MagicMock, patch
 import StringIO
 import sys
 from socket import socket
-
+from AgentToggleLogger import AgentToggleLogger
 
 class TestCustomServiceOrchestrator(TestCase):
 
@@ -45,6 +45,7 @@ class TestCustomServiceOrchestrator(TestCase):
     sys.stdout = out
     # generate sample config
     tmpdir = tempfile.gettempdir()
+    self.agentToggleLogger = AgentToggleLogger("info")
 
 
   @patch("hostname.public_hostname")
@@ -79,7 +80,7 @@ class TestCustomServiceOrchestrator(TestCase):
     config.getLogPath.return_value = tempdir
 
     dummy_controller = MagicMock()
-    orchestrator = CustomServiceOrchestrator(config, dummy_controller)
+    orchestrator = CustomServiceOrchestrator(config, dummy_controller, self.agentToggleLogger)
     isfile_mock.return_value = True
     self.assertEquals(command['hostname'], "host1")
     # Test dumping EXECUTION_COMMAND
@@ -100,7 +101,7 @@ class TestCustomServiceOrchestrator(TestCase):
     json_file = orchestrator.dump_command_to_json(command, {})
     self.assertTrue(os.path.exists(json_file))
     self.assertTrue(os.path.getsize(json_file) > 0)
-    self.assertEqual(oct(os.stat(json_file).st_mode & 0777), '0600')
+    self.assertEqual(oct(os.stat(json_file).st_mode & 0777), '0644')
     self.assertTrue(json_file.endswith("status_command.json"))
     os.unlink(json_file)
     # Testing side effect of dump_command_to_json
@@ -142,7 +143,7 @@ class TestCustomServiceOrchestrator(TestCase):
 
     resolve_script_path_mock.return_value = "/basedir/scriptpath"
     dummy_controller = MagicMock()
-    orchestrator = CustomServiceOrchestrator(config, dummy_controller)
+    orchestrator = CustomServiceOrchestrator(config, dummy_controller, self.agentToggleLogger)
     # normal run case
     run_file_mock.return_value = {
       'stdout': 'sss',
@@ -228,7 +229,7 @@ class TestCustomServiceOrchestrator(TestCase):
 
     resolve_script_path_mock.return_value = "/basedir/scriptpath"
     dummy_controller = MagicMock()
-    orchestrator = CustomServiceOrchestrator(config, dummy_controller)
+    orchestrator = CustomServiceOrchestrator(config, dummy_controller, self.agentToggleLogger)
     # normal run case
     run_file_mock.return_value = {
       'stdout': 'sss',
@@ -257,7 +258,7 @@ class TestCustomServiceOrchestrator(TestCase):
     config.getLogPath.return_value = tempdir
 
     dummy_controller = MagicMock()
-    orchestrator = CustomServiceOrchestrator(config, dummy_controller)
+    orchestrator = CustomServiceOrchestrator(config, dummy_controller, self.agentToggleLogger)
     ret = orchestrator.allocate_port(10)
     self.assertEqual(ret, 10)
 
@@ -275,7 +276,7 @@ class TestCustomServiceOrchestrator(TestCase):
     config.getLogPath.return_value = tempdir
 
     dummy_controller = MagicMock()
-    orchestrator = CustomServiceOrchestrator(config, dummy_controller)
+    orchestrator = CustomServiceOrchestrator(config, dummy_controller, self.agentToggleLogger)
     socket_getsockname_mock.return_value = [100, 101]
     ret = orchestrator.allocate_port(10)
     self.assertEqual(ret, 101)
@@ -291,7 +292,7 @@ class TestCustomServiceOrchestrator(TestCase):
     config.getLogPath.return_value = tempdir
 
     dummy_controller = MagicMock()
-    orchestrator = CustomServiceOrchestrator(config, dummy_controller)
+    orchestrator = CustomServiceOrchestrator(config, dummy_controller, self.agentToggleLogger)
     socket_getsockname_mock.return_value = [100, 102]
     ret = orchestrator.allocate_port()
     self.assertEqual(ret, 102)
@@ -308,7 +309,7 @@ class TestCustomServiceOrchestrator(TestCase):
     config.getLogPath.return_value = tempdir
 
     dummy_controller = MagicMock()
-    orchestrator = CustomServiceOrchestrator(config, dummy_controller)
+    orchestrator = CustomServiceOrchestrator(config, dummy_controller, self.agentToggleLogger)
 
     is_port_available_mock.return_value = False
     allocate_port_mock.side_effect = [101, 102, 103, 104, 105, 106]
@@ -336,7 +337,7 @@ class TestCustomServiceOrchestrator(TestCase):
     config.getLogPath.return_value = tempdir
 
     dummy_controller = MagicMock()
-    orchestrator = CustomServiceOrchestrator(config, dummy_controller)
+    orchestrator = CustomServiceOrchestrator(config, dummy_controller, self.agentToggleLogger)
 
     is_port_available_mock.return_value = True
     ret = orchestrator.allocate_ports("${A.ALLOCATED_PORT}{DEFAULT_1005}", "${A.ALLOCATED_PORT}")
@@ -409,7 +410,7 @@ class TestCustomServiceOrchestrator(TestCase):
 
     resolve_script_path_mock.return_value = "/basedir/scriptpath"
     dummy_controller = MagicMock()
-    orchestrator = CustomServiceOrchestrator(config, dummy_controller)
+    orchestrator = CustomServiceOrchestrator(config, dummy_controller, self.agentToggleLogger)
     # normal run case
     run_file_mock.return_value = {
       'stdout': 'sss',
@@ -459,7 +460,7 @@ class TestCustomServiceOrchestrator(TestCase):
     config.getWorkRootPath.return_value = tempdir
     config.getLogPath.return_value = tempdir
 
-    orchestrator = CustomServiceOrchestrator(config, dummy_controller)
+    orchestrator = CustomServiceOrchestrator(config, dummy_controller, self.agentToggleLogger)
     # Test alive case
     runCommand_mock.return_value = {
       "exitcode": 0
@@ -486,7 +487,7 @@ class TestCustomServiceOrchestrator(TestCase):
     config.getLogPath.return_value = tempdir
     mock_allocate_ports.return_value = "10023"
 
-    orchestrator = CustomServiceOrchestrator(config, dummy_controller)
+    orchestrator = CustomServiceOrchestrator(config, dummy_controller, self.agentToggleLogger)
     command = {}
     command['componentName'] = "HBASE_MASTER"
     command['configurations'] = {}
@@ -540,7 +541,7 @@ class TestCustomServiceOrchestrator(TestCase):
     config.getWorkRootPath.return_value = tempWorkDir
     config.getLogPath.return_value = tempdir
 
-    orchestrator = CustomServiceOrchestrator(config, dummy_controller)
+    orchestrator = CustomServiceOrchestrator(config, dummy_controller, self.agentToggleLogger)
     port = orchestrator.allocate_port()
     self.assertFalse(port == -1)
     self.assertTrue(port > 0)

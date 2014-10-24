@@ -31,6 +31,7 @@ import math
 from random import randint
 
 from AgentConfig import AgentConfig
+from AgentToggleLogger import AgentToggleLogger
 from Heartbeat import Heartbeat
 from Register import Register
 from ActionQueue import ActionQueue
@@ -515,10 +516,11 @@ class Controller(threading.Thread):
 
 
   def run(self):
-    self.actionQueue = ActionQueue(self.config, controller=self)
+    self.agentToggleLogger = AgentToggleLogger("info")
+    self.actionQueue = ActionQueue(self.config, controller=self, agentToggleLogger=self.agentToggleLogger)
     self.actionQueue.start()
     self.register = Register(self.config)
-    self.heartbeat = Heartbeat(self.actionQueue, self.config)
+    self.heartbeat = Heartbeat(self.actionQueue, self.config, self.agentToggleLogger)
 
     opener = urllib2.build_opener()
     urllib2.install_opener(opener)
