@@ -4,8 +4,7 @@
   },
   "global": {
     "yarn.log.include.patterns": "",
-    "yarn.log.exclude.patterns": "",
-    "yarn.log.interval": "0"
+    "yarn.log.exclude.patterns": ""
   },
   "components": {
     "HBASE_MASTER": {
