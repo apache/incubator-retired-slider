@@ -58,6 +58,22 @@ class TestStandaloneAMDestroy extends AgentMiniClusterTestBase {
         ])
     assert launcher1.serviceExitCode == 0
 
+    // try to list it and expect failures
+    try {
+      launchClientAgainstMiniMR(
+          configuration,
+          [
+              SliderActions.ACTION_LIST,
+              "no-cluster-of-this-name",
+              Arguments.ARG_LIVE
+          ])
+      fail("expected a failure")
+    } catch (UnknownApplicationInstanceException e) {
+      assertExceptionDetails(e,
+          SliderExitCodes.EXIT_UNKNOWN_INSTANCE,
+          ErrorStrings.E_UNKNOWN_INSTANCE)
+    }
+    
     ServiceLauncher<SliderClient> launcher = createStandaloneAM(
         clustername,
         true,

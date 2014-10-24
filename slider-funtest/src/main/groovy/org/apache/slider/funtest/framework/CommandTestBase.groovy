@@ -370,14 +370,8 @@ abstract class CommandTestBase extends SliderTestUtils {
     slider(cmd)
   }
 
-  static SliderShell list(int result, String name) {
-    List<String> cmd = [
-        ACTION_LIST
-    ]
-    if (name != null) {
-      cmd << name
-    }
-    slider(result, cmd)
+  static SliderShell list(int result, Collection<String> commands =[]) {
+    slider(result, [ACTION_LIST] + commands )
   }
 
   static SliderShell status(String name) {

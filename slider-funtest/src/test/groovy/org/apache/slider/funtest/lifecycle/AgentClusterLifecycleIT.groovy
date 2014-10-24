@@ -92,7 +92,13 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
     exists(0, CLUSTER)
 
     //listing the cluster will succeed
-    list(0, CLUSTER)
+    list(0, [CLUSTER])
+
+    list(0, [""])
+    list(0, [CLUSTER, ARG_LIVE])
+    list(0, [CLUSTER, ARG_STATE, "running"])
+    list(0, [ARG_LIVE])
+    list(0, [ARG_STATE, "running"])
 
     //simple status
     status(0, CLUSTER)
@@ -132,6 +138,15 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
       //condition returns false if it is required to be live
       exists(EXIT_FALSE, CLUSTER, true)
 
+      list( 0, [CLUSTER])
+      list( 0, [CLUSTER, ARG_STATE, "FINISHED"])
+      list(-1, [CLUSTER, ARG_LIVE])
+      list(-1, [CLUSTER, ARG_STATE, "running"])
+
+      list(-1, [ARG_LIVE])
+      list(-1, [ARG_STATE, "running"])
+      list( 0, [ARG_STATE, "FINISHED"])
+      
       //start then stop the cluster
       thaw(CLUSTER,
           [
@@ -139,6 +154,11 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
           ])
       exists(0, CLUSTER)
       describe " >>> Cluster is now thawed."
+      list(0, [CLUSTER, ARG_LIVE])
+      list(0, [CLUSTER, ARG_STATE, "running"])
+      list(0, [ARG_LIVE])
+      list(0, [ARG_STATE, "running"])
+      list(0, [CLUSTER, ARG_STATE, "FINISHED"])
 
       freeze(0, CLUSTER,
           [
@@ -180,10 +200,14 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
               ARG_MESSAGE, "final-shutdown"
           ])
 
+      list(0, [CLUSTER, "--verbose", "--state", "FINISHED"]).dumpOutput()
+      
       destroy(0, CLUSTER)
 
       //cluster now missing
       exists(EXIT_UNKNOWN_INSTANCE, CLUSTER)
+      list(0, [])
+      list(EXIT_UNKNOWN_INSTANCE, [CLUSTER])
 
     } finally {
       jsonStatus.delete()

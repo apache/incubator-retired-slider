@@ -19,6 +19,7 @@
 package org.apache.slider.client;
 
 import com.google.common.annotations.VisibleForTesting;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.registry.client.api.RegistryOperations;
 import org.apache.hadoop.service.Service;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
@@ -32,6 +33,7 @@ import org.apache.slider.common.params.ActionFreezeArgs;
 import org.apache.slider.common.params.ActionInstallKeytabArgs;
 import org.apache.slider.common.params.ActionInstallPackageArgs;
 import org.apache.slider.common.params.ActionKillContainerArgs;
+import org.apache.slider.common.params.ActionListArgs;
 import org.apache.slider.common.params.ActionRegistryArgs;
 import org.apache.slider.common.params.ActionResolveArgs;
 import org.apache.slider.common.params.ActionStatusArgs;
@@ -41,6 +43,7 @@ import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.providers.AbstractClientProvider;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Interface of those method calls in the slider API that are intended
@@ -138,7 +141,7 @@ public interface SliderClientAPI extends Service {
    * Implement the list action: list all nodes
    * @return exit code of 0 if a list was created
    */
-  int actionList(String clustername) throws IOException, YarnException;
+  int actionList(String clustername, ActionListArgs args) throws IOException, YarnException;
 
   /**
    * Implement the islive action: probe for a cluster of the given name existing

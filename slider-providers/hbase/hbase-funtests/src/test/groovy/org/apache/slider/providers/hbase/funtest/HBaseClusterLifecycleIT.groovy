@@ -88,7 +88,7 @@ public class HBaseClusterLifecycleIT extends HBaseCommandTestBase
     exists(0, CLUSTER)
 
     //listing the cluster will succeed
-    list(0, CLUSTER)
+    list(0, [CLUSTER])
 
     //simple status
     status(0, CLUSTER)

@@ -74,7 +74,8 @@ class TestCommonArgParsing implements SliderActions, Arguments {
 
   @Test
   public void testSliderBasePath() throws Throwable {
-    ClientArgs clientArgs = createClientArgs([ACTION_LIST, "--basepath", "/projects/slider/clusters"])
+    ClientArgs clientArgs = createClientArgs([ACTION_LIST,
+        ARG_BASE_PATH,  "/projects/slider/clusters"])
     assert clientArgs.basePath == new Path("/projects/slider/clusters")
   }
 
