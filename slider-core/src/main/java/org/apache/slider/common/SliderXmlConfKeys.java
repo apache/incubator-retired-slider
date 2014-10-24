@@ -76,7 +76,7 @@ public interface SliderXmlConfKeys {
    * Name of the property for ACLs for Slider AM.
    * {@value}
    */
-  String KEY_PROTOCOL_ACL = "security.slider.protocol.acl";
+  String KEY_PROTOCOL_ACL = "slider.security.protocol.acl";
 
   /**
    * Limit on restarts for the AM
