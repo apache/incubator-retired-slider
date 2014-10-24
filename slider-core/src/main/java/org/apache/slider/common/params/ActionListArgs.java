@@ -18,6 +18,7 @@
 
 package org.apache.slider.common.params;
 
+import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 
 @Parameters(commandNames = {SliderActions.ACTION_LIST},
@@ -28,6 +29,18 @@ public class ActionListArgs extends AbstractActionArgs {
   public String getActionName() {
     return SliderActions.ACTION_LIST;
   }
+
+  @Parameter(names = {ARG_LIVE},
+          description = "List only live application instances")
+  public boolean live;
+
+  @Parameter(names = {ARG_STATE},
+      description = "list only applications in the specific YARN state")
+  public String state = "";
+  
+  @Parameter(names = {ARG_VERBOSE},
+      description = "print out information in details")
+  public boolean verbose = false;
 
   /**
    * Get the min #of params expected

@@ -30,7 +30,19 @@ public class ListCommandIT extends CommandTestBase {
 
   @Test
   public void testListAll() throws Throwable {
-    assertSuccess(list(null))
+    assertSuccess(list(""))
+  }
+
+  @Test
+  public void testListAllLive() throws Throwable {
+    def shell = list("--live")
+    assert shell.ret == 0 || shell.ret ==1
+  }
+
+  @Test
+  public void testListAllFinishedLive() throws Throwable {
+    def shell = list("--live")
+    assert shell.ret == 0 || shell.ret == 1
   }
 
 }

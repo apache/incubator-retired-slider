@@ -555,6 +555,36 @@ public class CoreFileSystem {
     return builder.toString();
   }
 
+  /**
+   * List all application instances persisted for this user, giving the 
+   * patha. The instance name is the last element in the path
+   * @return a possibly empty map of application instance names to paths
+   */
+  public Map<String, Path> listPersistentInstances() throws IOException {
+    FileSystem fs = getFileSystem();
+    Path path = new Path(getBaseApplicationPath(), SliderKeys.CLUSTER_DIRECTORY);
+    if (!fs.exists(path)) {
+      // special case: no instances have ever been created
+      return new HashMap<String, Path>(0);
+    }
+    FileStatus[] statuses = fs.listStatus(path);
+    Map<String, Path> instances = new HashMap<String, Path>(statuses.length);
+
+    // enum the child entries
+    for (FileStatus status : statuses) {
+      if (status.isDirectory()) {
+        // for directories, look for an internal.json underneath
+        Path child = status.getPath();
+        Path internalJson = new Path(child, Filenames.INTERNAL);
+        if (fs.exists(internalJson)) {
+          // success => this is an instance
+          instances.put(child.getName(), child);
+        }
+      }
+    }
+    return instances;
+  }
+
   public void touch(Path path, boolean overwrite) throws IOException {
     FSDataOutputStream out = fileSystem.create(path, overwrite);
     out.close();
