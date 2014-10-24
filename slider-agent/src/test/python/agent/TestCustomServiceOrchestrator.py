@@ -50,8 +50,7 @@ class TestCustomServiceOrchestrator(TestCase):
 
   @patch("hostname.public_hostname")
   @patch("os.path.isfile")
-  @patch("os.unlink")
-  def test_dump_command_to_json(self, unlink_mock,
+  def test_dump_command_to_json(self,
                                 isfile_mock, hostname_mock):
     hostname_mock.return_value = "test.hst"
     command = {
@@ -108,7 +107,6 @@ class TestCustomServiceOrchestrator(TestCase):
     self.assertEquals(command['public_hostname'], "test.hst")
     self.assertEquals(command['hostname'], "test.hst")
     self.assertEquals(command['appmaster_hostname'], "test.hst")
-    self.assertTrue(unlink_mock.called)
 
 
   @patch.object(CustomServiceOrchestrator, "resolve_script_path")
