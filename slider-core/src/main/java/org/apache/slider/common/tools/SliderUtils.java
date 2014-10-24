@@ -40,6 +40,7 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.ExitUtil;
 import org.apache.hadoop.util.Shell;
 import org.apache.hadoop.util.VersionInfo;
+import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.LocalResource;
@@ -70,6 +71,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
@@ -1170,6 +1172,42 @@ public final class SliderUtils {
     return res;
   }
 
+  /**
+   * Submit a JAR containing and map it
+   * @param providerResources provider map to build up
+   * @param sliderFileSystem remote fs
+   * @param libDir lib directory
+   * @param srcPath copy jars from
+   * @throws IOException, SliderException trouble copying to HDFS
+   */
+  public static void putAllJars(Map<String, LocalResource> providerResources,
+                                SliderFileSystem sliderFileSystem,
+                                Path tempPath,
+                                String libDir,
+                                String srcPath
+  )
+      throws IOException, SliderException {
+    log.info("Loading all dependencies from {}", srcPath);
+    if (SliderUtils.isSet(srcPath)) {
+      File srcFolder = new File(srcPath);
+      FilenameFilter jarFilter = new FilenameFilter() {
+        public boolean accept(File dir, String name) {
+          String lowercaseName = name.toLowerCase();
+          if (lowercaseName.endsWith(".jar")) {
+            return true;
+          } else {
+            return false;
+          }
+        }
+      };
+      File[] listOfJars = srcFolder.listFiles(jarFilter);
+      for (File jarFile : listOfJars) {
+        LocalResource res = sliderFileSystem.submitFile(jarFile, tempPath, libDir, jarFile.getName());
+        providerResources.put(libDir + "/" + jarFile.getName(), res);
+      }
+    }
+  }
+
   public static Map<String, Map<String, String>> deepClone(Map<String, Map<String, String>> src) {
     Map<String, Map<String, String>> dest =
         new HashMap<String, Map<String, String>>();
@@ -1301,7 +1339,7 @@ public final class SliderUtils {
       }
       classpath.addLibDir(libdir);
       classpath.addRemoteClasspathEnvVar();
-      classpath.appendAll(classpath.yarnApplicationClasspath(config));
+      classpath.append(ApplicationConstants.Environment.HADOOP_CONF_DIR.$());
     }
     return classpath;
   }

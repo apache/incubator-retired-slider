@@ -175,6 +175,34 @@ public class ProviderUtils implements RoleKeys {
   }
 
   /**
+   * Loads all dependency jars from the default path
+   * @param providerResources map of provider resources to add these entries to
+   * @param sliderFileSystem target filesystem
+   * @param tempPath path in the cluster FS for temp files
+   * @param libDir relative directory to place resources
+   * @param libLocalSrcDir explicitly supplied local libs dir
+   * @throws IOException
+   * @throws SliderException
+   */
+  public static void addAllDependencyJars(Map<String, LocalResource> providerResources,
+                                          SliderFileSystem sliderFileSystem,
+                                          Path tempPath,
+                                          String libDir,
+                                          String libLocalSrcDir
+  ) throws
+      IOException,
+      SliderException {
+    String libSrcToUse = libLocalSrcDir;
+    if (SliderUtils.isSet(libLocalSrcDir)) {
+      File file = new File(libLocalSrcDir);
+      if (!file.exists() || !file.isDirectory()) {
+        throw new BadCommandArgumentsException("Supplied lib src dir %s is not valid", libLocalSrcDir);
+      }
+    }
+    SliderUtils.putAllJars(providerResources, sliderFileSystem, tempPath, libDir, libSrcToUse);
+  }
+
+  /**
    * build the log directory
    * @return the log dir
    */
