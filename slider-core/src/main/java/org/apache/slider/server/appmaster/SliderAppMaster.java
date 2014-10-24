@@ -657,6 +657,13 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       // set up secret manager
       secretManager = new ClientToAMTokenSecretManager(appAttemptID, null);
 
+      if (securityEnabled) {
+        // fix up the ACLs if they are not set
+        String acls = getConfig().get(SliderXmlConfKeys.KEY_PROTOCOL_ACL);
+        if (acls == null) {
+          getConfig().set(SliderXmlConfKeys.KEY_PROTOCOL_ACL, "*");
+        }
+      }
       //bring up the Slider RPC service
       startSliderRPCServer(instanceDefinition);
 
@@ -767,11 +774,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
             amRegistrationData.getClientToAMTokenMasterKey().array());
         applicationACLs = amRegistrationData.getApplicationACLs();
 
-        // fix up the ACLs if they are not set
-        String acls = getConfig().get(SliderXmlConfKeys.KEY_PROTOCOL_ACL);
-        if (acls == null) {
-          getConfig().set(SliderXmlConfKeys.KEY_PROTOCOL_ACL, "*");
-        }
         //tell the server what the ACLs are
         rpcService.getServer().refreshServiceAcl(serviceConf,
             new SliderAMPolicyProvider());
