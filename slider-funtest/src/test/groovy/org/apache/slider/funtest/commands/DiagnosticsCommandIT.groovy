@@ -33,7 +33,7 @@ public class DiagnosticsCommandIT extends CommandTestBase {
   public void testClientDiagnostics() throws Throwable {
     def shell = slider(0,
         [
-            SliderActions.ACTION_DIAGNOSTIC,
+            SliderActions.ACTION_DIAGNOSTICS,
             Arguments.ARG_CLIENT,
             Arguments.ARG_VERBOSE
         ]
