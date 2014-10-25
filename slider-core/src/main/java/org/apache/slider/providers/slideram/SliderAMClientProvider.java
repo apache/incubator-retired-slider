@@ -18,6 +18,11 @@
 
 package org.apache.slider.providers.slideram;
 
+import com.beust.jcommander.JCommander;
+import com.codahale.metrics.MetricRegistry;
+import com.google.gson.GsonBuilder;
+import org.apache.curator.CuratorZookeeperClient;
+import org.apache.curator.framework.CuratorFramework;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.UserGroupInformation;
@@ -42,6 +47,7 @@ import org.apache.slider.providers.AbstractClientProvider;
 import org.apache.slider.providers.PlacementPolicy;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
+import org.mortbay.jetty.security.SslSelectChannelConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -181,14 +187,29 @@ public class SliderAMClientProvider extends AbstractClientProvider
         libdir,
         miniClusterTestRun);
 
-    String libDirProp =
-        System.getProperty(SliderKeys.PROPERTY_LIB_DIR);
-      log.info("Loading all dependencies for AM.");
-      ProviderUtils.addAllDependencyJars(providerResources,
-                                         fileSystem,
-                                         tempPath,
-                                         libdir,
-                                         libDirProp);
+    Class<?>[] classes = {
+      JCommander.class,
+      GsonBuilder.class,
+      SslSelectChannelConnector.class,
+
+      CuratorFramework.class,
+      CuratorZookeeperClient.class,
+      MetricRegistry.class
+    };
+    String[] jars =
+      {
+        JCOMMANDER_JAR,
+        GSON_JAR,
+        "jetty-sslengine.jar",
+
+        "curator-framework.jar",
+        "curator-client.jar",
+        "metrics-core.jar"
+      };
+    ProviderUtils.addDependencyJars(providerResources, fileSystem, tempPath,
+                                    libdir, jars,
+                                    classes);
+
     addKeytabResourceIfNecessary(fileSystem,
                                  launcher,
                                  instanceDescription,

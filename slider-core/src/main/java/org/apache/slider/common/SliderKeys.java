@@ -122,12 +122,6 @@ public interface SliderKeys extends SliderXmlConfKeys {
   String PROPERTY_CONF_DIR = "slider.confdir";
 
   /**
-   * JVM property to define the slider lib directory;
-   * this is set by the slider script: {@value}
-   */
-  String PROPERTY_LIB_DIR = "slider.libdir";
-
-  /**
    * name of generated dir for this conf: {@value}
    */
   String SUBMITTED_CONF_DIR = "confdir";

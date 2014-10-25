@@ -247,8 +247,6 @@ def main():
   executeEnvSh(confdir)
   jvm_opts_list = (SLIDER_CONFDIR_OPTS % confdir).split()
   default_jvm_opts = DEFAULT_JVM_OPTS
-  libdir_jvm_opts = "-Dslider.libdir={0}".format(libdir)
-  default_jvm_opts = "{0} {1}".format(default_jvm_opts, libdir_jvm_opts)
   slider_jvm_opts = os.environ.get(SLIDER_JVM_OPTS, default_jvm_opts)
   jvm_opts_list.extend(slider_jvm_opts.split())
   slider_classpath_extra = os.environ.get(SLIDER_CLASSPATH_EXTRA, "")
