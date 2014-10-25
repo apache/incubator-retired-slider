@@ -100,7 +100,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
             APPLICATION_NAME,
             ARG_COMPONENT,
             COMMAND_LOGGER,
-            "2"])
+            "3"])
 
     // sleep till the new instance starts
     ensureApplicationIsUp(APPLICATION_NAME)

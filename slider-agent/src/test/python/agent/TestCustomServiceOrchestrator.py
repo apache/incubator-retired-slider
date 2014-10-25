@@ -555,7 +555,7 @@ class TestCustomServiceOrchestrator(TestCase):
     config.getWorkRootPath.return_value = tempWorkDir
     config.getLogPath.return_value = tempdir
 
-    orchestrator = CustomServiceOrchestrator(config, dummy_controller)
+    orchestrator = CustomServiceOrchestrator(config, dummy_controller, self.agentToggleLogger)
     port_range = "48000-48005"
     port_range_full_list = [48000, 48001, 48002, 48003, 48004, 48005]
     allowed_ports = orchestrator.get_allowed_port_list(port_range, 3)
