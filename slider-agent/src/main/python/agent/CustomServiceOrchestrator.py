@@ -22,6 +22,7 @@ import logging
 import os
 import json
 import pprint
+import random
 import sys
 import socket
 import posixpath
@@ -33,6 +34,7 @@ from PythonExecutor import PythonExecutor
 import hostname
 import Constants
 
+MAX_ATTEMPTS = 5
 
 logger = logging.getLogger()
 
@@ -252,13 +254,13 @@ class CustomServiceOrchestrator():
   Its of the form {component_name.ALLOCATED_PORT}[{DEFAULT_default_port}][{PER_CONTAINER}]
   Either a port gets allocated or if not then just set the value to "0"
   """
-
   def finalize_command(self, command, store_command, allocated_ports):
     component = command['componentName']
     allocated_for_this_component_format = "${{{0}.ALLOCATED_PORT}}"
     allocated_for_any = ".ALLOCATED_PORT}"
 
     port_allocation_req = allocated_for_this_component_format.format(component)
+    allowed_ports = self.get_allowed_ports(command)
     if 'configurations' in command:
       for key in command['configurations']:
         if len(command['configurations'][key]) > 0:
@@ -269,7 +271,7 @@ class CustomServiceOrchestrator():
               value = value.replace("${AGENT_LOG_ROOT}",
                                     self.config.getLogPath())
               if port_allocation_req in value:
-                value = self.allocate_ports(value, port_allocation_req)
+                value = self.allocate_ports(value, port_allocation_req, allowed_ports)
                 allocated_ports[key + "." + k] = value
               elif allocated_for_any in value:
                 ## All unallocated ports should be set to 0
@@ -323,7 +325,7 @@ class CustomServiceOrchestrator():
     append {DEFAULT_ and find the default value
     append {PER_CONTAINER} if it exists
   """
-  def allocate_ports(self, value, port_req_pattern):
+  def allocate_ports(self, value, port_req_pattern, allowed_ports=None):
     default_port_pattern = "{DEFAULT_"
     do_not_propagate_pattern = "{PER_CONTAINER}"
     index = value.find(port_req_pattern)
@@ -345,7 +347,7 @@ class CustomServiceOrchestrator():
       if index == value.find(replaced_pattern + do_not_propagate_pattern):
         replaced_pattern = replaced_pattern + do_not_propagate_pattern
         pass
-      port = self.allocate_port(def_port)
+      port = self.allocate_port(def_port, allowed_ports)
       value = value.replace(replaced_pattern, str(port), 1)
       logger.info("Allocated port " + str(port) + " for " + replaced_pattern)
       index = value.find(port_req_pattern)
@@ -354,24 +356,28 @@ class CustomServiceOrchestrator():
     pass
 
 
-  def allocate_port(self, default_port=None):
+  def allocate_port(self, default_port=None, allowed_ports=None):
     if default_port != None:
       if self.is_port_available(default_port):
         return default_port
 
-    MAX_ATTEMPT = 5
-    iter = 0
+    port_list = [0] * MAX_ATTEMPTS
+    if allowed_ports != None:
+      port_list = allowed_ports
+
+    i = 0
     port = -1
-    while iter < MAX_ATTEMPT:
-      iter = iter + 1
+    itor = iter(port_list)
+    while i < min(len(port_list), MAX_ATTEMPTS):
       try:
         sock = socket.socket()
-        sock.bind(('', 0))
+        sock.bind(('', itor.next()))
         port = sock.getsockname()[1]
       except Exception, err:
-        logger.info("Encountered error while trying to opening socket - " + str(err))
+        logger.info("Encountered error while trying to open socket - " + str(err))
       finally:
         sock.close()
+      i = i + 1
       pass
     logger.info("Allocated dynamic port: " + str(port))
     return port
@@ -385,5 +391,45 @@ class CustomServiceOrchestrator():
     except:
       return True
     return False
+
+
+  def get_allowed_ports(self, command):
+      allowed_ports = None
+      global_config = command['configurations'].get('global')
+      if global_config != None:
+          allowed_ports_value = global_config.get("slider.allowed.ports")
+          if allowed_ports_value:
+              allowed_ports = self.get_allowed_port_list(allowed_ports_value)
+
+      return allowed_ports
+
+
+  def get_allowed_port_list(self, allowedPortsOptionValue,
+                            num_values=MAX_ATTEMPTS):
+    selection = set()
+    invalid = set()
+    # tokens are comma seperated values
+    tokens = [x.strip() for x in allowedPortsOptionValue.split(',')]
+    for i in tokens:
+      try:
+        selection.add(int(i))
+      except:
+        # should be a range
+        try:
+          token = [int(k.strip()) for k in i.split('-')]
+          if len(token) > 1:
+            token.sort()
+            first = token[0]
+            last = token[len(token)-1]
+            for x in range(first, last+1):
+              selection.add(x)
+        except:
+          # not an int and not a range...
+          invalid.add(i)
+    selection = random.sample(selection, min (len(selection), num_values))
+    # Report invalid tokens before returning valid selection
+    logger.info("Allowed port values: " + str(selection))
+    logger.warning("Invalid port range values: " + str(invalid))
+    return selection
 
 

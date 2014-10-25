@@ -189,5 +189,5 @@ public interface SliderKeys extends SliderXmlConfKeys {
   String AM_FILTER_NAME =
       "org.apache.hadoop.yarn.server.webproxy.amfilter.AmFilterInitializer";
 
-  String KEY_AM_ALLOWED_PORT_RANGE = "slider.am.allowed.port.range";
+  String KEY_ALLOWED_PORT_RANGE = "site.global.slider.allowed.ports";
 }

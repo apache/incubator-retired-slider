@@ -20,17 +20,23 @@ package org.apache.slider.agent.standalone
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.fs.Path
 import org.apache.hadoop.yarn.api.records.ApplicationId
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
+import org.apache.hadoop.yarn.exceptions.YarnException
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.api.ClusterNode
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.params.ActionRegistryArgs
+import org.apache.slider.core.build.InstanceBuilder
+import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.exceptions.SliderException
+import org.apache.slider.core.launch.LaunchedApplication
 import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.core.main.ServiceLauncher
+import org.apache.slider.core.persist.LockAcquireFailedException
 import org.junit.Test
 
 @CompileStatic
@@ -159,8 +165,49 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
         clustername)
     assert instance3.yarnApplicationState >= YarnApplicationState.FINISHED
 
+    //create another AM, this time with a port range
+    setSliderClientClassName(TestSliderClient.name)
+    try {
+      launcher = createStandaloneAM(clustername, true, true)
+      client = launcher.service
+      i2AppID = client.applicationId
 
+      reportFor = client.getApplicationReport(i2AppID)
+      URI uri = new URI(reportFor.originalTrackingUrl)
+      assert uri.port in [60000, 60001, 60002, 60003]
+      assert reportFor.rpcPort in [60000, 60001, 60002, 60003]
+
+      assert 0 == clusterActionFreeze(client, clustername)
+
+    } finally {
+      setSliderClientClassName(SliderClient.name)
+    }
   }
 
 
+  static class TestSliderClient extends SliderClient {
+    @Override
+    protected void persistInstanceDefinition(boolean overwrite,
+                                             Path appconfdir,
+                                             InstanceBuilder builder)
+    throws IOException, SliderException, LockAcquireFailedException {
+      AggregateConf conf = builder.getInstanceDescription()
+      conf.getAppConfOperations().getGlobalOptions().put(
+          SliderKeys.KEY_ALLOWED_PORT_RANGE,
+          "60000-60003")
+      super.persistInstanceDefinition(overwrite, appconfdir, builder)
+    }
+
+    @Override
+    LaunchedApplication launchApplication(String clustername,
+                                          Path clusterDirectory,
+                                          AggregateConf instanceDefinition,
+                                          boolean debugAM)
+    throws YarnException, IOException {
+      instanceDefinition.getAppConfOperations().getGlobalOptions().put(
+          SliderKeys.KEY_ALLOWED_PORT_RANGE,
+          "60000-60003")
+      return super.launchApplication(clustername, clusterDirectory, instanceDefinition, debugAM)
+    }
+  }
 }
