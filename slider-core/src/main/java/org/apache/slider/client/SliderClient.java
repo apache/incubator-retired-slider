@@ -440,7 +440,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * Delete the zookeeper node associated with the calling user and the cluster
    * TODO: YARN registry operations
    **/
-  @Deprecated
   @VisibleForTesting
   public boolean deleteZookeeperNode(String clusterName) throws YarnException, IOException {
     String user = getUsername();
@@ -448,17 +447,13 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     Exception e = null;
     try {
       Configuration config = getConfig();
-      if (!SliderUtils.isHadoopClusterSecure(config)) {
-        ZKIntegration client = getZkClient(clusterName, user);
-        if (client != null) {
-          if (client.exists(zkPath)) {
-            log.info("Deleting zookeeper path {}", zkPath);
-          }
-          client.deleteRecursive(zkPath);
-          return true;
+      ZKIntegration client = getZkClient(clusterName, user);
+      if (client != null) {
+        if (client.exists(zkPath)) {
+          log.info("Deleting zookeeper path {}", zkPath);
         }
-      } else {
-        log.warn("Default zookeeper node is not available for secure cluster");
+        client.deleteRecursive(zkPath);
+        return true;
       }
     } catch (InterruptedException ignored) {
       e = ignored;
@@ -468,7 +463,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       e = ignored;
     }
     if (e != null) {
-      log.warn("Unable to recursively delete zk node {}", zkPath);
+      log.debug("Unable to recursively delete zk node {}", zkPath);
       log.debug("Reason: ", e);
     }
 
@@ -479,29 +474,23 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * Create the zookeeper node associated with the calling user and the cluster
    */
   @VisibleForTesting
-  @Deprecated
   public String createZookeeperNode(String clusterName, Boolean nameOnly) throws YarnException, IOException {
     String user = getUsername();
     String zkPath = ZKIntegration.mkClusterPath(user, clusterName);
-    if(nameOnly) {
+    if (nameOnly) {
       return zkPath;
     }
     Configuration config = getConfig();
-    if (!SliderUtils.isHadoopClusterSecure(config)) {
-      ZKIntegration client = getZkClient(clusterName, user);
-      if (client != null) {
-        try {
-          client.createPath(zkPath, "", ZooDefs.Ids.OPEN_ACL_UNSAFE,
-                            CreateMode.PERSISTENT);
-          return zkPath;
-          
-          //JDK7
-//        } catch (InterruptedException | KeeperException e) {
-        } catch (InterruptedException e) {
-          log.warn("Unable to create zk node {}", zkPath, e);
-        } catch ( KeeperException e) {
-          log.warn("Unable to create zk node {}", zkPath, e);
-        }
+    ZKIntegration client = getZkClient(clusterName, user);
+    if (client != null) {
+      try {
+        client.createPath(zkPath, "", ZooDefs.Ids.OPEN_ACL_UNSAFE,
+                          CreateMode.PERSISTENT);
+        return zkPath;
+      } catch (InterruptedException e) {
+        log.warn("Unable to create default zk node {}", zkPath, e);
+      } catch (KeeperException e) {
+        log.warn("Unable to create default zk node {}", zkPath, e);
       }
     }
 
