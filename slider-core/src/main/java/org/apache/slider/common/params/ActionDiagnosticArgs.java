@@ -4,7 +4,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 
 @Parameters(
-  commandNames = {SliderActions.ACTION_DIAGNOSTIC, SliderActions.ACTION_DIAGNOSTICS},
+  commandNames = {SliderActions.ACTION_DIAGNOSTICS},
   commandDescription = SliderActions.DESCRIBE_ACTION_DIAGNOSTIC)
 public class ActionDiagnosticArgs extends AbstractActionArgs {
 
@@ -42,7 +42,7 @@ public class ActionDiagnosticArgs extends AbstractActionArgs {
 	  public String all;
 	
 	  @Parameter(names = {ARG_LEVEL}, 
-	      description = "diagnoze the application intelligently")
+	      description = "diagnose each slider configuration one by one")
 	  public String level;
 
 	  /**

@@ -218,7 +218,7 @@ public class ClientArgs extends CommonArgs {
     } else if (SliderActions.ACTION_DESTROY.equals(action)) {
       bindCoreAction(actionDestroyArgs);
 
-    } else if (SliderActions.ACTION_DIAGNOSTIC.equals(action)) {
+    } else if (SliderActions.ACTION_DIAGNOSTICS.equals(action)) {
       bindCoreAction(actionDiagnosticArgs);
 
     } else if (SliderActions.ACTION_EXISTS.equals(action)) {

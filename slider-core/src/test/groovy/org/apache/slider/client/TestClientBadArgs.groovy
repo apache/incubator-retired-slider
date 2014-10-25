@@ -58,7 +58,7 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
   public void testActionWithoutOptions() throws Throwable {
     launchExpectingException(SliderClient,
                              new Configuration(),
-                             "Usage: build [options] Options:",
+                             "Usage: slider build <application>",
                              [SliderActions.ACTION_BUILD])
   }
 

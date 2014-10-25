@@ -42,7 +42,7 @@ class TestDiagnostics extends YarnZKMiniClusterTestBase {
         //config includes RM binding info
         new YarnConfiguration(miniCluster.config),
         //varargs list of command line params
-        [SliderActions.ACTION_DIAGNOSTIC,
+        [SliderActions.ACTION_DIAGNOSTICS,
          Arguments.ARG_CLIENT]
     )
     def client = launcher.service
