@@ -31,8 +31,8 @@ import org.junit.Test
 
 /**
  * SETUP FOR THE TEST
- * Create valid labels, red and blue [yarn rmadmin -addLabels red,blue]
- * Add nodes with label [yarn rmadmin -setNodeToLabels host1:blue]
+ * Create valid labels, red and blue [yarn rmadmin -addToClusterNodeLabels red,blue]
+ * Add nodes with label [yarn rmadmin -replaceLabelsOnNode host1,red,blue]
  * Perform refresh queue [yarn rmadmin -refreshQueues]
  *
  * Create a queue with access to labels - these are changes to capacity scheduler configuration
@@ -45,7 +45,9 @@ import org.junit.Test
  *       yarn.scheduler.capacity.root.labeled.state=RUNNING
  *       yarn.scheduler.capacity.root.labeled.maximum-capacity=80
  *   Have queue access the label
- *       yarn.scheduler.capacity.root.labeled.labels=red,blue
+ *       yarn.scheduler.capacity.root.labeled.accessible-node-labels=red,blue
+ *       yarn.scheduler.capacity.root.labeled.accessible-node-labels.blue.capacity=100
+ *       yarn.scheduler.capacity.root.labeled.accessible-node-labels.red.capacity=100
  *
  * After specifying the new configuration call refresh [yarn rmadmin -refreshQueues]
  *
