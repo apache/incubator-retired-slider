@@ -375,7 +375,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       exitCode = actionThaw(clusterName, serviceArgs.getActionThawArgs());
     } else if (ACTION_DESTROY.equals(action)) {
       exitCode = actionDestroy(clusterName);
-    } else if (ACTION_DIAGNOSTIC.equals(action)) {
+    } else if (ACTION_DIAGNOSTICS.equals(action)) {
       exitCode = actionDiagnostic(serviceArgs.getActionDiagnosticArgs());
     } else if (ACTION_EXISTS.equals(action)) {
       exitCode = actionExists(clusterName,
@@ -675,8 +675,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       throws YarnException, IOException {
 
     Path srcFile = null;
-    if (StringUtils.isEmpty(installKeytabInfo.folder )) {
-      throw new BadCommandArgumentsException("A valid destination keytab sub-folder name is required (e.g. 'security').");
+    if (StringUtils.isEmpty(installKeytabInfo.folder)) {
+      throw new BadCommandArgumentsException(
+          "A valid destination keytab sub-folder name is required (e.g. 'security').\n"
+              + CommonArgs.usage(serviceArgs, ACTION_INSTALL_KEYTAB));
     }
 
     if (StringUtils.isEmpty(installKeytabInfo.keytabUri)) {
@@ -717,8 +719,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       IOException {
 
     Path srcFile = null;
-    if (StringUtils.isEmpty(installPkgInfo.name )) {
-      throw new BadCommandArgumentsException("A valid application type name is required (e.g. HBASE).");
+    if (StringUtils.isEmpty(installPkgInfo.name)) {
+      throw new BadCommandArgumentsException(
+          "A valid application type name is required (e.g. HBASE).\n"
+              + CommonArgs.usage(serviceArgs, ACTION_INSTALL_PACKAGE));
     }
 
     if (StringUtils.isEmpty(installPkgInfo.packageURI)) {
@@ -2568,7 +2572,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         outputExport(publishedExports, registryArgs);
       } else {
         // it's an unknown command
-        log.info(CommonArgs.usage(serviceArgs, ACTION_DIAGNOSTIC));
+        log.info(CommonArgs.usage(serviceArgs, ACTION_DIAGNOSTICS));
         return EXIT_USAGE;
       }
 //      JDK7
@@ -2648,7 +2652,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         actionDiagnosticIntelligent(diagnosticArgs);
       } else {
         // it's an unknown option
-        log.info(CommonArgs.usage(serviceArgs, ACTION_DIAGNOSTIC));
+        log.info(CommonArgs.usage(serviceArgs, ACTION_DIAGNOSTICS));
         return EXIT_USAGE;
       }
     } catch (Exception e) {
