@@ -40,6 +40,8 @@ class SliderShell extends Shell {
   
   public static File scriptFile;
   
+  public File shellScript;
+  
   public static final List<String> slider_classpath_extra = []
 
   /**
@@ -57,6 +59,7 @@ class SliderShell extends Shell {
     super(org.apache.hadoop.util.Shell.WINDOWS ? CMD : BASH)
     assert confDir != null;
     assert scriptFile != null;
+    shellScript = scriptFile;
     command = scriptFile.absolutePath + " " + commands.join(" ")
   }
 
@@ -319,9 +322,9 @@ class SliderShell extends Shell {
     }
 
     int index = str.indexOf(search, 0)
-    while (index > 0) {
-      index = str.indexOf(search, index + 1)
+    while (index >= 0) {
       ++count
+      index = str.indexOf(search, index + 1)
     }
     return count
   }

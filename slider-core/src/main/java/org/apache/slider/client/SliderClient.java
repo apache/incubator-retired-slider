@@ -22,7 +22,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathNotFoundException;
@@ -162,6 +161,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -2902,9 +2902,21 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         }
         println(builder.toString());
 
+        // Java properties
+        builder = new StringBuilder("JVM Properties\n");
+        Map<String, String> props =
+            SliderUtils.sortedMap(SliderUtils.toMap(System.getProperties()));
+        for (Entry<String, String> entry : props.entrySet()) {
+          builder.append(entry.getKey()).append("=")
+                 .append(entry.getValue()).append("\n");
+        }
+        
+        println(builder.toString());
+
         // then the config
         println("Slider client configuration:\n"
-            + ConfigHelper.dumpConfigToString(config));
+                + ConfigHelper.dumpConfigToString(config));
+        
       }
 
       SliderUtils.validateSliderClientEnvironment(log);
