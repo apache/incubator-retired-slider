@@ -20,9 +20,11 @@ package org.apache.slider.funtest.commands
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
 import org.apache.slider.funtest.framework.CommandTestBase
+import org.apache.slider.funtest.framework.SliderShell
 import org.junit.Test
 
 @CompileStatic
@@ -41,7 +43,26 @@ public class DiagnosticsCommandIT extends CommandTestBase {
     println(shell.stdoutHistory)
     println()
     println(shell.stdErrHistory)
-    
+  }
+
+  @Test
+  public void testJVMOptionPassdown() throws Throwable {
+    SliderShell shell = new SliderShell([
+        SliderActions.ACTION_DIAGNOSTICS,
+        Arguments.ARG_CLIENT,
+        Arguments.ARG_VERBOSE
+    ])
+
+    def name = "testpropertySetInFuntest"
+
+    def val = "TestPropertyValue"
+    shell.setEnv(SliderKeys.SLIDER_JVM_OPTS, "-D" + name + "=" + val)
+    shell.execute(0)
+    assert shell.outputContains(name)
+    assert shell.outputContains(val)
+    assert shell.outputContains(SliderKeys.PROPERTY_LIB_DIR)
+    assert shell.outputContains(SliderKeys.PROPERTY_CONF_DIR)
+
   }
 
 }

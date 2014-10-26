@@ -190,4 +190,15 @@ public interface SliderKeys extends SliderXmlConfKeys {
       "org.apache.hadoop.yarn.server.webproxy.amfilter.AmFilterInitializer";
 
   String KEY_ALLOWED_PORT_RANGE = "site.global.slider.allowed.ports";
+  /**
+   * Allowed port range
+   */
+  String KEY_AM_ALLOWED_PORT_RANGE = "slider.am.allowed.port.range";
+
+  /**
+   * env var for custom JVM options.
+   */
+  String SLIDER_JVM_OPTS = "SLIDER_JVM_OPTS";
+
+  String SLIDER_CLASSPATH_EXTRA = "SLIDER_CLASSPATH_EXTRA";
 }
