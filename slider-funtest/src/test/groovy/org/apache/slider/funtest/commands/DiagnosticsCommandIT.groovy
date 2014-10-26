@@ -41,7 +41,6 @@ public class DiagnosticsCommandIT extends CommandTestBase {
     println(shell.stdoutHistory)
     println()
     println(shell.stdErrHistory)
-    
   }
 
 }

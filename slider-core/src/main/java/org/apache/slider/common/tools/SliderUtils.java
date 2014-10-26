@@ -702,7 +702,29 @@ public final class SliderUtils {
     }
     return map;
   }
-  
+
+  /**
+   * Take a map and produce a sorted equivalent
+   * @param source source map
+   * @return a map whose iterator returns the string-sorted ordering of entries
+   */
+  public static Map<String, String> sortedMap(Map<String, String> source) {
+    Map<String, String> out = new TreeMap<String, String>(source);
+    return out;
+  }
+
+  /**
+   * Convert a properties instance to a string map.
+   * @param properties source property object
+   * @return a string map
+   */
+  public static Map<String, String> toMap(Properties properties) {
+    Map<String, String> out = new HashMap<String, String>(properties.size());
+    for (Map.Entry<Object, Object> entry : properties.entrySet()) {
+      out.put(entry.getKey().toString(), entry.getValue().toString());
+    }
+    return out;
+  }
 
   /**
    * Merge in one map to another -all entries in the second map are

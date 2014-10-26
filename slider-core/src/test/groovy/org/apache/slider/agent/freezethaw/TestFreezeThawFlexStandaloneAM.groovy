@@ -20,6 +20,7 @@ package org.apache.slider.agent.freezethaw
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.fs.CommonConfigurationKeysPublic
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus
@@ -31,7 +32,8 @@ import org.apache.slider.core.main.ServiceLauncher
 import org.junit.Test
 
 /**
- * stop and start an AM
+ * stop and start an AM. For fun authorization is turned on, so this
+ * verifies that the AM comes up successfully
  */
 @CompileStatic
 @Slf4j
@@ -50,6 +52,8 @@ class TestFreezeThawFlexStandaloneAM extends AgentMiniClusterTestBase {
   @Test
   public void testFreezeThawFlexStandaloneAM() throws Throwable {
     YarnConfiguration conf = configuration
+    conf.setBoolean(CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION,
+        false);
     String clustername = createMiniCluster("", conf, 1, 1, 1, true, false)
     
     describe "create a standalone AM, stop it, start it"

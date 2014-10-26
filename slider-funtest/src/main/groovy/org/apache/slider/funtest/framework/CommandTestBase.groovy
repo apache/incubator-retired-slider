@@ -480,6 +480,26 @@ abstract class CommandTestBase extends SliderTestUtils {
   }
 
   /**
+   * Assert that the stdout/stderr streams of the shell contain the string
+   * to look for.
+   * If the assertion does not hold, the output is logged before
+   * the assertion is thrown
+   * @param shell
+   * @param lookThisUp
+   * @param n number of times (default = 1)
+   */
+  public static void assertOutputContains(
+      SliderShell shell,
+      String lookThisUp,
+      int n = 1) {
+    if (!shell.outputContains(lookThisUp)) {
+      log.error("Missing $lookThisUp from:")
+      shell.dumpOutput()
+      assert shell.outputContains(lookThisUp)
+    }
+  }
+  
+  /**
    * Create a connection to the cluster by execing the status command
    *
    * @param clustername
