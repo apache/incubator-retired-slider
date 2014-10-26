@@ -8,22 +8,22 @@ import com.beust.jcommander.Parameters;
   commandDescription = SliderActions.DESCRIBE_ACTION_DIAGNOSTIC)
 public class ActionDiagnosticArgs extends AbstractActionArgs {
 
-	@Override
-	public String getActionName() {
-		return SliderActions.ACTION_DIAGNOSTICS;
-	}
-	
+    @Override
+    public String getActionName() {
+      return SliderActions.ACTION_DIAGNOSTICS;
+    }
+
+    @Parameter(names = {ARG_NAME}, 
+        description = "the name of the running application")
+    public String name;
+
 	  @Parameter(names = {ARG_CLIENT}, 
 	      description = "print configuration of the slider client")
 	  public boolean client = false;
 	
-	  @Parameter(names = {ARG_SLIDER}, 
-	      description = "print configuration of the running slider app master")
-	  public String slider;
-	
 	  @Parameter(names = {ARG_APPLICATION}, 
 	      description = "print configuration of the running application")
-	  public String application;
+	  public boolean application;
 
 	  @Parameter(names = {ARG_VERBOSE}, 
 	      description = "print out information in details")
@@ -39,11 +39,11 @@ public class ActionDiagnosticArgs extends AbstractActionArgs {
 	
 	  @Parameter(names = {ARG_ALL}, 
 	      description = "print all of the information above")
-	  public String all;
+	  public boolean all;
 	
 	  @Parameter(names = {ARG_LEVEL}, 
 	      description = "diagnose each slider configuration one by one")
-	  public String level;
+	  public boolean level;
 
 	  /**
 	   * Get the min #of params expected
