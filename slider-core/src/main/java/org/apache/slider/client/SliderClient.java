@@ -2627,17 +2627,15 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     try {
       if (diagnosticArgs.client) {
         actionDiagnosticClient(diagnosticArgs);
-      } else if (SliderUtils.isSet(diagnosticArgs.application)) {
+      } else if (diagnosticArgs.application) {
         actionDiagnosticApplication(diagnosticArgs);
-      } else if (SliderUtils.isSet(diagnosticArgs.slider)) {
-        actionDiagnosticSlider(diagnosticArgs);
       } else if (diagnosticArgs.yarn) {
         actionDiagnosticYarn(diagnosticArgs);
       } else if (diagnosticArgs.credentials) {
         actionDiagnosticCredentials();
-      } else if (SliderUtils.isSet(diagnosticArgs.all)) {
+      } else if (diagnosticArgs.all) {
         actionDiagnosticAll(diagnosticArgs);
-      } else if (SliderUtils.isSet(diagnosticArgs.level)) {
+      } else if (diagnosticArgs.level) {
         actionDiagnosticIntelligent(diagnosticArgs);
       } else {
         // it's an unknown option
@@ -2656,8 +2654,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // not using member variable clustername because we want to place
     // application name after --application option and member variable
     // cluster name has to be put behind action
-    String clusterName = diagnosticArgs.level;
-
+    String clusterName = diagnosticArgs.name;
+    if(SliderUtils.isUnset(clusterName)){
+      throw new BadCommandArgumentsException("application name must be provided with --name option");
+    }
+    
     try {
       SliderUtils.validateClientConfigFile();
       log.info("Slider-client.xml is accessible");
@@ -2684,18 +2685,19 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       if (imagePath == null) {
         ApplicationReport appReport = findInstance(clusterName);
         Path path1 = sliderFileSystem.getTempPathForCluster(clusterName);
+        
         Path subPath = new Path(path1, appReport.getApplicationId().toString()
-            + "/am");
+            + "/agent");
         imagePath = subPath.toString();
       }
       try {
-        SliderUtils.validateHDFSFile(sliderFileSystem, imagePath);
+        SliderUtils.validateHDFSFile(sliderFileSystem, imagePath + "/" + AGENT_TAR);
         log.info("Slider agent package is properly installed");
       } catch (FileNotFoundException e) {
-        log.error("can not find agent package: {}", e);
+        log.error("can not find agent package: " + e.toString());
         return;
       } catch (IOException e) {
-        log.error("can not open agent package: {}", e, e);
+        log.error("can not open agent package: " + e.toString());
         return;
       }
       String pkgTarballPath = instanceDefinition.getAppConfOperations()
@@ -2716,8 +2718,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   private void actionDiagnosticAll(ActionDiagnosticArgs diagnosticArgs)
       throws IOException, YarnException {
     // assign application name from param to each sub diagnostic function
-    diagnosticArgs.application = diagnosticArgs.all;
-    diagnosticArgs.slider = diagnosticArgs.all;
     actionDiagnosticClient(diagnosticArgs);
     actionDiagnosticApplication(diagnosticArgs);
     actionDiagnosticSlider(diagnosticArgs);
@@ -2792,7 +2792,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // not using member variable clustername because we want to place
     // application name after --application option and member variable
     // cluster name has to be put behind action
-    String clusterName = diagnosticArgs.slider;
+    String clusterName = diagnosticArgs.name;
+    if(SliderUtils.isUnset(clusterName)){
+      throw new BadCommandArgumentsException("application name must be provided with --name option");
+    }
     SliderClusterOperations clusterOperations;
     AggregateConf instanceDefinition = null;
     try {
@@ -2814,7 +2817,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       ApplicationReport appReport = findInstance(clusterName);
       Path path1 = sliderFileSystem.getTempPathForCluster(clusterName);
       Path subPath = new Path(path1, appReport.getApplicationId().toString()
-          + "/am");
+          + "/agent");
       imagePath = subPath.toString();
     }
     log.info("The path of slider agent tarball on HDFS is: " + imagePath);
@@ -2825,7 +2828,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // not using member variable clustername because we want to place
     // application name after --application option and member variable
     // cluster name has to be put behind action
-    String clusterName = diagnosticArgs.application;
+    String clusterName = diagnosticArgs.name;
+    if(SliderUtils.isUnset(clusterName)){
+      throw new BadCommandArgumentsException("application name must be provided with --name option");
+    }
     SliderClusterOperations clusterOperations;
     AggregateConf instanceDefinition = null;
     try {
