@@ -24,7 +24,6 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
-import org.apache.slider.common.tools.SliderUtils
 import org.apache.tools.zip.ZipEntry
 import org.apache.tools.zip.ZipOutputStream
 import org.junit.Before
@@ -125,66 +124,15 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
   }
 
   public static String findLineEntry(SliderShell shell, String[] locaters) {
-    int index = 0;
-    def output = shell.out
-    output += shell.err
-    for (String str in output) {
-      if (str.contains("\"" + locaters[index] + "\"")) {
-        if (locaters.size() == index + 1) {
-          return str;
-        } else {
-          index++;
-        }
-      }
-    }
-
-    return null;
+    return shell.findLineEntry(locaters)
   }
 
   public static boolean containsString(SliderShell shell, String lookThisUp, int n = 1) {
-    int count = 0
-    def output = shell.out
-    output += shell.err
-    for (String str in output) {
-      int subCount = countString(str, lookThisUp)
-      count = count + subCount
-      if (count == n) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  public static int countString(String str, String search) {
-    int count = 0
-    if (SliderUtils.isUnset(str) || SliderUtils.isUnset(search)) {
-      return count
-    }
-
-    int index = str.indexOf(search, 0)
-    while (index > 0) {
-      index = str.indexOf(search, index + 1)
-      ++count
-    }
-    return count
+    return shell.outputContains(lookThisUp, n)
   }
 
   public static String findLineEntryValue(SliderShell shell, String[] locaters) {
-    String line = findLineEntry(shell, locaters);
-
-    if (line != null) {
-      log.info("Parsing {} for value.", line)
-      int dividerIndex = line.indexOf(":");
-      if (dividerIndex > 0) {
-        String value = line.substring(dividerIndex + 1).trim()
-        if (value.endsWith(",")) {
-          value = value.subSequence(0, value.length() - 1)
-        }
-        return value;
-      }
-    }
-    return null;
+    return shell.findLineEntryValue(locaters)
   }
 
   public static void addDir(File dirObj, ZipOutputStream zipFile, String prefix) {

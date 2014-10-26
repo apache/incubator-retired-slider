@@ -40,6 +40,8 @@ class SliderShell extends Shell {
   
   public static File scriptFile;
   
+  public File shellScript;
+  
   public static final List<String> slider_classpath_extra = []
 
   /**
@@ -57,6 +59,7 @@ class SliderShell extends Shell {
     super(org.apache.hadoop.util.Shell.WINDOWS ? CMD : BASH)
     assert confDir != null;
     assert scriptFile != null;
+    shellScript = scriptFile;
     command = scriptFile.absolutePath + " " + commands.join(" ")
   }
 
@@ -278,6 +281,69 @@ class SliderShell extends Shell {
     }
 
     return this
+  }
+
+
+  public String findLineEntry(String[] locaters) {
+    int index = 0;
+    def output = out +"\n"+ err
+    for (String str in output) {
+      if (str.contains("\"" + locaters[index] + "\"")) {
+        if (locaters.size() == index + 1) {
+          return str;
+        } else {
+          index++;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  public boolean outputContains(
+      String lookThisUp,
+      int n = 1) {
+    int count = 0
+    def output = out + "\n" + err
+    for (String str in output) {
+      int subCount = countString(str, lookThisUp)
+      count = count + subCount
+      if (count == n) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public static int countString(String str, String search) {
+    int count = 0
+    if (SliderUtils.isUnset(str) || SliderUtils.isUnset(search)) {
+      return count
+    }
+
+    int index = str.indexOf(search, 0)
+    while (index >= 0) {
+      ++count
+      index = str.indexOf(search, index + 1)
+    }
+    return count
+  }
+
+  public findLineEntryValue(String[] locaters) {
+    String line = findLineEntry(locaters);
+
+    if (line != null) {
+      log.info("Parsing {} for value.", line)
+      int dividerIndex = line.indexOf(":");
+      if (dividerIndex > 0) {
+        String value = line.substring(dividerIndex + 1).trim()
+        if (value.endsWith(",")) {
+          value = value.subSequence(0, value.length() - 1)
+        }
+        return value;
+      }
+    }
+    return null;
   }
 
 }
