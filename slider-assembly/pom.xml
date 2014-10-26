@@ -38,6 +38,7 @@
     <src.confdir>src/conf-hdp</src.confdir>
     <src.libdir>${project.build.directory}/lib</src.libdir>
     <src.agent.ini.dir>${project.build.directory}/../../slider-agent/conf</src.agent.ini.dir>
+    <skipTests>false</skipTests>
   </properties>
 
   <build>
@@ -60,6 +61,32 @@
                 <file>../build.properties</file>
               </files>
             </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>${maven-exec-plugin.version}</version>
+        <executions>
+          <execution>
+            <configuration>
+              <executable>python</executable>
+              <workingDirectory>src/test/python</workingDirectory>
+              <arguments>
+                <argument>unitTests.py</argument>
+              </arguments>
+              <environmentVariables>
+                <PYTHONPATH>${project.basedir}/src/main/scripts:${project.basedir}/../slider-agent/src/test/python/mock:${project.basedir}/src/test/python/scripts</PYTHONPATH>
+              </environmentVariables>
+              <skip>${skipTests}</skip>
+            </configuration>
+            <id>python-test</id>
+            <phase>test</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
           </execution>
         </executions>
       </plugin>

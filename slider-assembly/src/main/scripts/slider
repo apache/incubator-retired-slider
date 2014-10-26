@@ -58,7 +58,7 @@ fi
 slider_confdir_opts="-Dslider.confdir=${confdir}"
 libdir_jvm_opts="-Dslider.libdir=${libdir}"
 
-slider_jvm_opts="-Djava.net.preferIPv4Stack=true -Djava.awt.headless=true ${libdir_jvm_opts} -Xmx256m"
+slider_jvm_opts="-Djava.net.preferIPv4Stack=true -Djava.awt.headless=true -Xmx256m"
 slider_jvm_opts=${SLIDER_JVM_OPTS:-$slider_jvm_opts}
 
 # allow for an extra classpath
@@ -90,4 +90,4 @@ fi
 #echo $javabin
 #type ${javabin}java 2>&1
 
-exec ${javabin}java ${slider_jvm_opts} ${slider_confdir_opts} ${launcher} $@
+exec ${javabin}java ${slider_jvm_opts} ${slider_confdir_opts} ${libdir_jvm_opts} ${launcher} $@

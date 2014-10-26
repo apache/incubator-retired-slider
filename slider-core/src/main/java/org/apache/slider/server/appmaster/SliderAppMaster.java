@@ -917,8 +917,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       throws SliderException {
     int portToRequest = 0;
     String portRange = instanceDefinition.
-        getAppConfOperations().getComponent(SliderKeys.COMPONENT_AM)
-        .getOption(SliderKeys.KEY_AM_ALLOWED_PORT_RANGE , "0");
+        getAppConfOperations().getGlobalOptions().
+          getOption(SliderKeys.KEY_ALLOWED_PORT_RANGE, "0");
     if (!"0".equals(portRange)) {
       if (portScanner == null) {
         portScanner = new PortScanner();

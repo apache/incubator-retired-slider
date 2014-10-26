@@ -34,6 +34,7 @@ HADOOP_CONF_DIR = "HADOOP_CONF_DIR"
 
 SLIDER_CLASSNAME = "org.apache.slider.Slider"
 SLIDER_CONFDIR_OPTS ="-Dslider.confdir=%s"
+SLIDER_LIBDIR_OPTS ="-Dslider.libdir=%s"
 DEFAULT_JVM_OPTS = "-Djava.net.preferIPv4Stack=true -Djava.awt.headless=true -Xmx256m"
 
 ON_POSIX = 'posix' in sys.builtin_module_names
@@ -245,12 +246,19 @@ def main():
   libdir = dirMustExist(libDir(slider_home))
   confdir = dirMustExist(confDir(slider_home))
   executeEnvSh(confdir)
+
+  #create sys property for conf dirs
   jvm_opts_list = (SLIDER_CONFDIR_OPTS % confdir).split()
+
+  #extend with libdir
+  libdir_jvm_opts = (SLIDER_LIBDIR_OPTS % libdir)
+  jvm_opts_list.extend(libdir_jvm_opts.split())
+
+  #append user specified additional properties
   default_jvm_opts = DEFAULT_JVM_OPTS
-  libdir_jvm_opts = "-Dslider.libdir={0}".format(libdir)
-  default_jvm_opts = "{0} {1}".format(default_jvm_opts, libdir_jvm_opts)
   slider_jvm_opts = os.environ.get(SLIDER_JVM_OPTS, default_jvm_opts)
   jvm_opts_list.extend(slider_jvm_opts.split())
+
   slider_classpath_extra = os.environ.get(SLIDER_CLASSPATH_EXTRA, "")
   hadoop_conf_dir = os.environ.get(HADOOP_CONF_DIR, "")
   p = os.pathsep    # path separator

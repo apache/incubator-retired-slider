@@ -544,6 +544,34 @@ class TestCustomServiceOrchestrator(TestCase):
     self.assertFalse(port == -1)
     self.assertTrue(port > 0)
 
+
+  def test_parse_allowed_port_values(self):
+    dummy_controller = MagicMock()
+    tempdir = tempfile.gettempdir()
+    tempWorkDir = tempdir + "W"
+    config = MagicMock()
+    config.get.return_value = "something"
+    config.getResolvedPath.return_value = tempdir
+    config.getWorkRootPath.return_value = tempWorkDir
+    config.getLogPath.return_value = tempdir
+
+    orchestrator = CustomServiceOrchestrator(config, dummy_controller, self.agentToggleLogger)
+    port_range = "48000-48005"
+    port_range_full_list = [48000, 48001, 48002, 48003, 48004, 48005]
+    allowed_ports = orchestrator.get_allowed_port_list(port_range, 3)
+    self.assertTrue(set(allowed_ports).issubset(port_range_full_list))
+
+    port_range = "48000 , 48005"
+    port_range_full_list = [48000, 48005]
+    allowed_ports = orchestrator.get_allowed_port_list(port_range, 1)
+    self.assertTrue(set(allowed_ports).issubset(port_range_full_list))
+
+    port_range = "48000 , 48004-48005"
+    port_range_full_list = [48000, 48004, 48005]
+    allowed_ports = orchestrator.get_allowed_port_list(port_range, 2)
+    self.assertTrue(set(allowed_ports).issubset(port_range_full_list))
+
+
   def tearDown(self):
     # enable stdout
     sys.stdout = sys.__stdout__
