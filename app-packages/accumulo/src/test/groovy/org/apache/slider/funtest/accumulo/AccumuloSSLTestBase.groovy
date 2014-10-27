@@ -25,6 +25,15 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.funtest.framework.AgentUploads
 import org.junit.Before
+import org.junit.BeforeClass
+
+import javax.net.ssl.KeyManager
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
+import java.security.SecureRandom
+import java.security.cert.CertificateException
+import java.security.cert.X509Certificate
 
 class AccumuloSSLTestBase extends AccumuloBasicIT {
   protected static final File trustStoreFile = new File(TEST_APP_PKG_DIR, "truststore.jks")
@@ -52,6 +61,15 @@ class AccumuloSSLTestBase extends AccumuloBasicIT {
   @Override
   public String getDescription() {
     return "Test enable SSL $clusterName"
+  }
+
+  @BeforeClass
+  public static void initHttps() {
+    SSLContext ctx = SSLContext.getInstance("SSL");
+    TrustManager[] t = new TrustManager[1];
+    t[0] = new DefaultTrustManager();
+    ctx.init(new KeyManager[0], t, new SecureRandom());
+    SSLContext.setDefault(ctx);
   }
 
   @Before
@@ -101,16 +119,36 @@ class AccumuloSSLTestBase extends AccumuloBasicIT {
   }
 
   def getNodeList(Configuration conf) {
-    String address = conf.get(YarnConfiguration.RM_WEBAPP_ADDRESS) +
-      "/ws/v1/cluster/nodes"
+    String address
+    if (YarnConfiguration.useHttps(conf)) {
+      address = "https://" + conf.get(YarnConfiguration.RM_WEBAPP_HTTPS_ADDRESS,
+        YarnConfiguration.DEFAULT_RM_WEBAPP_HTTPS_ADDRESS);
+    } else {
+      address = "http://" + conf.get(YarnConfiguration.RM_WEBAPP_ADDRESS,
+        YarnConfiguration.DEFAULT_RM_WEBAPP_ADDRESS);
+    }
     address = address.replace("0.0.0.0", conf.get(YarnConfiguration.RM_ADDRESS)
       .split(":")[0])
+    address = address + "/ws/v1/cluster/nodes"
     def slurper = new JsonSlurper()
-    def result = slurper.parse(new URL("http://" + address))
+    def result = slurper.parse(new URL(address))
     def hosts = []
     for (host in result.nodes.node) {
       hosts.add(host.nodeHostName)
     }
     return hosts.unique()
+  }
+
+  private static class DefaultTrustManager implements X509TrustManager {
+    @Override
+    public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {}
+
+    @Override
+    public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {}
+
+    @Override
+    public X509Certificate[] getAcceptedIssuers() {
+      return null;
+    }
   }
 }
