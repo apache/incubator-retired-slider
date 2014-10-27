@@ -134,25 +134,7 @@ function Install(
         Write-Log "Installing Slider Storm App package"
         $stormPackage = Get-Item -Path "$HDP_RESOURCES_DIR\slider-storm-app-win-package-*.zip"
         $stormPackagePath = $stormPackage.FullName
-        $stormPackageName = $stormPackage.BaseName
-        New-Item -ItemType Directory -Path "$sliderInstallPath\app-packages\$stormPackageName" -Force -ErrorAction Stop |Out-Null
-        Write-Log "Extracting $stormPackagePath to $sliderIntallPath\app-packages\$stormPackageName"
-        if ( Test-Path ENV:UNZIP_CMD )
-        {
-            ### Use external unzip command if given
-            $unzipExpr = $ENV:UNZIP_CMD.Replace("@SRC", "`"$stormPackagePath`"")
-            $unzipExpr = $unzipExpr.Replace("@DEST", "`"$sliderIntallPath\app-packages\$stormPackageName`"")
-            ### We ignore the error code of the unzip command for now to be
-            ### consistent with prior behavior.
-            Invoke-Ps $unzipExpr
-        }
-        else
-        {
-            $shellApplication = new-object -com shell.application
-            $zipPackage = $shellApplication.NameSpace("$stormPackagePath")
-            $destinationFolder = $shellApplication.NameSpace("$sliderIntallPath\app-packages\$stormPackageName")
-            $destinationFolder.CopyHere($zipPackage.Items(), 20)
-        }
+        Copy-Item -Path $stormPackagePath -Destination "$sliderIntallPath\app-packages" -Force -ErrorAction Stop
 		
 	    Write-Log "Finished installing Apache slider"
     }
