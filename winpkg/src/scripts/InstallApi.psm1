@@ -122,28 +122,11 @@ function Install(
         ###
         ### Installing Slider Hbase App package
         ###
+        New-Item -ItemType Directory -Path "$sliderInstallPath\app-packages\" -Force -ErrorAction Stop |Out-Null
         Write-Log "Installing Slider Hbase App package"
         $hbasePackage = Get-Item -Path "$HDP_RESOURCES_DIR\slider-hbase-app-win-package-*.zip"
         $hbasePackagePath = $hbasePackage.FullName
-        $hbasePackageName = $hbasePackage.BaseName
-        New-Item -ItemType Directory -Path "$sliderInstallPath\app-packages\$hbasePackageName" -Force -ErrorAction Stop |Out-Null
-        Write-Log "Extracting $hbasePackagePath to $sliderIntallPath\app-packages\$hbasePackageName"
-        if ( Test-Path ENV:UNZIP_CMD )
-        {
-            ### Use external unzip command if given
-            $unzipExpr = $ENV:UNZIP_CMD.Replace("@SRC", "`"$hbasePackagePath`"")
-            $unzipExpr = $unzipExpr.Replace("@DEST", "`"$sliderIntallPath\app-packages\$hbasePackageName`"")
-            ### We ignore the error code of the unzip command for now to be
-            ### consistent with prior behavior.
-            Invoke-Ps $unzipExpr
-        }
-        else
-        {
-            $shellApplication = new-object -com shell.application
-            $zipPackage = $shellApplication.NameSpace("$hbasePackagePath")
-            $destinationFolder = $shellApplication.NameSpace("$sliderIntallPath\app-packages\$hbasePackageName")
-            $destinationFolder.CopyHere($zipPackage.Items(), 20)
-        }
+        Copy-Item -Path $hbasePackage.FullName -Destination "$sliderIntallPath\app-packages" -Force -ErrorAction Stop
         
         ###
         ### Installing Slider Storm App package
