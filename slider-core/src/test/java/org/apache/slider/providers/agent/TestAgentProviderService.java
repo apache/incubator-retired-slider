@@ -1447,6 +1447,8 @@ public class TestAgentProviderService {
     Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("app_install_dir"));
     Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("app_input_conf_dir"));
     Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("app_container_id"));
+    Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("pid_file"));
+    Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("app_root"));
   }
 
   @Test
@@ -1529,6 +1531,8 @@ public class TestAgentProviderService {
     Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("app_install_dir"));
     Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("app_input_conf_dir"));
     Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("app_container_id"));
+    Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("pid_file"));
+    Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("app_root"));
     Assert.assertTrue(cmd.getConfigurations().get("hbase-site").containsKey("defaultA"));
     Assert.assertFalse(cmd.getConfigurations().get("hbase-site").containsKey("defaultB"));
   }

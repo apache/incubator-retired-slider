@@ -1934,6 +1934,14 @@ public class AgentProviderService extends AbstractProviderService implements
     config.put("app_input_conf_dir", "${AGENT_WORK_ROOT}/" + SliderKeys.PROPAGATED_CONF_DIR_NAME);
     config.put("app_container_id", containerId);
     config.put("app_container_tag", tags.getTag(roleName, containerId));
+
+    // add optional parameters only if they are not already provided
+    if(!config.containsKey("pid_file")) {
+      config.put("pid_file", "${AGENT_WORK_ROOT}/app/run/component.pid");
+    }
+    if(!config.containsKey("app_root")) {
+      config.put("app_root", "${AGENT_WORK_ROOT}/app/install");
+    }
   }
 
   private void buildRoleHostDetails(Map<String, String> details) {
