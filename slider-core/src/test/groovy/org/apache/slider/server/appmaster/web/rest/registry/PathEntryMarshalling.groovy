@@ -23,6 +23,6 @@ import org.apache.hadoop.registry.client.binding.JsonSerDeser
 class PathEntryMarshalling
     extends JsonSerDeser<PathEntryResource> {
   public PathEntryMarshalling() {
-    super(PathEntryResource.class, new byte[0]);
+    super(PathEntryResource.class);
   }
 }
