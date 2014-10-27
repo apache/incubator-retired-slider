@@ -81,7 +81,6 @@ class CommandLogger(Script):
 
     file_location = params.file_location
     TemplateConfig( file_location,
-                    owner = params.app_user,
                     template_tag = None
     )
 
