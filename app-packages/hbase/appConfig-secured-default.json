@@ -1,0 +1,63 @@
+{
+    "schema": "http://example.org/specification/v2.0.0",
+    "metadata": {
+    },
+    "global": {
+        "application.def": ".slider/package/HBASE/slider-hbase-app-package-0.98.4.2.2.0.0-830-hadoop2.zip",
+        "create.default.zookeeper.node": "true",
+        "java_home": "/usr/jdk64/jdk1.7.0_67",
+        "system_configs": "core-site,hdfs-site",
+
+        "site.global.app_user": "${USER_NAME}",
+        "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/hbase-0.98.4.2.2.0.0-830-hadoop2",
+
+        "site.global.ganglia_server_host": "${NN_HOST}",
+        "site.global.ganglia_server_port": "8667",
+        "site.global.ganglia_server_id": "Application1",
+        "site.global.ganglia_enabled":"true",
+
+        "site.global.hbase_instance_name": "instancename",
+        "site.global.hbase_root_password": "secret",
+        "site.global.user_group": "hadoop",
+        "site.global.security_enabled": "false",
+        "site.global.monitor_protocol": "http",
+        "site.global.hbase_thrift_port": "${HBASE_THRIFT.ALLOCATED_PORT}",
+        "site.global.hbase_thrift2_port": "${HBASE_THRIFT2.ALLOCATED_PORT}",
+        "site.global.hbase_rest_port": "${HBASE_REST.ALLOCATED_PORT}",
+
+        "site.hbase-env.hbase_master_heapsize": "1024m",
+        "site.hbase-env.hbase_regionserver_heapsize": "1024m",
+
+        "site.hbase-site.hbase.rootdir": "${DEFAULT_DATA_DIR}",
+        "site.hbase-site.hbase.superuser": "${USER_NAME}",
+        "site.hbase-site.hbase.tmp.dir": "${AGENT_WORK_ROOT}/work/app/tmp",
+        "site.hbase-site.hbase.local.dir": "${hbase.tmp.dir}/local",
+        "site.hbase-site.hbase.zookeeper.quorum": "${ZK_HOST}",
+        "site.hbase-site.zookeeper.znode.parent": "${DEFAULT_ZK_PATH}",
+        "site.hbase-site.hbase.regionserver.info.port": "0",
+        "site.hbase-site.hbase.master.info.port": "${HBASE_MASTER.ALLOCATED_PORT}",
+        "site.hbase-site.hbase.regionserver.port": "0",
+        "site.hbase-site.hbase.master.port": "0",
+
+        "site.hbase-site.hbase.security.authentication": "kerberos",
+        "site.hbase-site.hbase.security.authorization": "true",
+        "site.hbase-site.hbase.coprocessor.master.classes": "org.apache.hadoop.hbase.security.access.AccessController",
+        "site.hbase-site.hbase.coprocessor.region.classes": "org.apache.hadoop.hbase.security.token.TokenProvider,org.apache.hadoop.hbase.security.access.AccessController",
+        "site.hbase-site.hbase.regionserver.kerberos.principal": "${USER_NAME}/_HOST@EXAMPLE.COM",
+        "site.hbase-site.hbase.regionserver.keytab.file": "${AGENT_WORK_ROOT}/keytabs/${USER_NAME}.headless.keytab",
+        "site.hbase-site.hbase.master.kerberos.principal": "${USER_NAME}/_HOST@EXAMPLE.COM",
+        "site.hbase-site.hbase.master.keytab.file": "${AGENT_WORK_ROOT}/keytabs/${USER_NAME}.headless.keytab",
+        "site.hbase-site.hbase.rest.kerberos.principal": "${USER_NAME}/_HOST@EXAMPLE.COM",
+        "site.hbase-site.hbase.rest.keytab.file": "${AGENT_WORK_ROOT}/keytabs/${USER_NAME}.headless.keytab",
+        "site.hbase-site.hbase.thrift.kerberos.principal": "${USER_NAME}/_HOST@EXAMPLE.COM",
+        "site.hbase-site.hbase.thrift.keytab.file": "${AGENT_WORK_ROOT}/keytabs/${USER_NAME}.headless.keytab"
+    },
+    "components": {
+        "slider-appmaster": {
+            "jvm.heapsize": "256M",
+            "slider.hdfs.keytab.dir": ".slider/keytabs/hbase",
+            "slider.am.login.keytab.name": "hbase.headless.keytab",
+            "slider.keytab.principal.name": "${USER_NAME}"
+        }
+    }
+}
