@@ -684,17 +684,42 @@ abstract class CommandTestBase extends SliderTestUtils {
     return status
   }
 
+  protected void ensureRegistryCallSucceeds(String application) {
+    repeatUntilTrue(this.&isRegistryAccessible,
+        10,
+        5 * 1000,
+        [application: application],
+        true,
+        'Application registry is not accessible, failing test.') {
+      describe "final state of app that tests say is not able to access registry"
+      exists(application, true).dumpOutput()
+    }
+  }
+
   protected void ensureApplicationIsUp(String application) {
     repeatUntilTrue(this.&isApplicationRunning,
+        30,
         SLIDER_CONFIG.getInt(KEY_TEST_INSTANCE_LAUNCH_TIME,
             DEFAULT_INSTANCE_LAUNCH_TIME_SECONDS),
-        1000,
         [application: application],
         true,
         'Application did not start, failing test.') {
       describe "final state of app that tests say is not up"
-      exists(application,true).dumpOutput()
+      exists(application, true).dumpOutput()
     }
+  }
+
+  protected boolean isRegistryAccessible(Map<String, String> args) {
+    String applicationName = args['application'];
+    SliderShell shell = slider(
+        [
+            ACTION_REGISTRY,
+            ARG_NAME,
+            applicationName,
+            ARG_LISTEXP])
+    if (EXIT_SUCCESS != shell.execute())
+      logShell(shell)
+    return EXIT_SUCCESS == shell.execute()
   }
 
   protected boolean isApplicationRunning(Map<String, String> args) {
