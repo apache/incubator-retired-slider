@@ -3,13 +3,13 @@
     "metadata": {
     },
     "global": {
-        "application.def": ".slider/package/HBASE/slider-hbase-app-package-0.98.4.2.2.0.0-830-hadoop2.zip",
+        "application.def": ".slider/package/HBASE/slider-hbase-app-package-${pkg.version}.zip",
         "create.default.zookeeper.node": "true",
         "java_home": "/usr/jdk64/jdk1.7.0_67",
         "system_configs": "core-site,hdfs-site",
 
         "site.global.app_user": "${USER_NAME}",
-        "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/hbase-0.98.4.2.2.0.0-830-hadoop2",
+        "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/hbase-${pkg.version}",
 
         "site.global.ganglia_server_host": "${NN_HOST}",
         "site.global.ganglia_server_port": "8667",
@@ -19,7 +19,6 @@
         "site.global.hbase_instance_name": "instancename",
         "site.global.hbase_root_password": "secret",
         "site.global.user_group": "hadoop",
-        "site.global.security_enabled": "false",
         "site.global.monitor_protocol": "http",
         "site.global.hbase_thrift_port": "${HBASE_THRIFT.ALLOCATED_PORT}",
         "site.global.hbase_thrift2_port": "${HBASE_THRIFT2.ALLOCATED_PORT}",
@@ -44,19 +43,19 @@
         "site.hbase-site.hbase.coprocessor.master.classes": "org.apache.hadoop.hbase.security.access.AccessController,org.apache.hadoop.hbase.security.visibility.VisibilityController",
         "site.hbase-site.hbase.coprocessor.region.classes": "org.apache.hadoop.hbase.security.token.TokenProvider,org.apache.hadoop.hbase.security.access.AccessController,org.apache.hadoop.hbase.security.visibility.VisibilityController",
         "site.hbase-site.hbase.regionserver.kerberos.principal": "${USER_NAME}/_HOST@EXAMPLE.COM",
-        "site.hbase-site.hbase.regionserver.keytab.file": "${AGENT_WORK_ROOT}/keytabs/${USER_NAME}.headless.keytab",
+        "site.hbase-site.hbase.regionserver.keytab.file": "${AGENT_WORK_ROOT}/keytabs/${USER_NAME}.HBASE.service.keytab",
         "site.hbase-site.hbase.master.kerberos.principal": "${USER_NAME}/_HOST@EXAMPLE.COM",
-        "site.hbase-site.hbase.master.keytab.file": "${AGENT_WORK_ROOT}/keytabs/${USER_NAME}.headless.keytab",
+        "site.hbase-site.hbase.master.keytab.file": "${AGENT_WORK_ROOT}/keytabs/${USER_NAME}.HBASE.service.keytab",
         "site.hbase-site.hbase.rest.kerberos.principal": "${USER_NAME}/_HOST@EXAMPLE.COM",
-        "site.hbase-site.hbase.rest.keytab.file": "${AGENT_WORK_ROOT}/keytabs/${USER_NAME}.headless.keytab",
+        "site.hbase-site.hbase.rest.keytab.file": "${AGENT_WORK_ROOT}/keytabs/${USER_NAME}.HBASE.service.keytab",
         "site.hbase-site.hbase.thrift.kerberos.principal": "${USER_NAME}/_HOST@EXAMPLE.COM",
-        "site.hbase-site.hbase.thrift.keytab.file": "${AGENT_WORK_ROOT}/keytabs/${USER_NAME}.headless.keytab"
+        "site.hbase-site.hbase.thrift.keytab.file": "${AGENT_WORK_ROOT}/keytabs/${USER_NAME}.HBASE.service.keytab"
     },
     "components": {
         "slider-appmaster": {
             "jvm.heapsize": "256M",
             "slider.hdfs.keytab.dir": ".slider/keytabs/hbase",
-            "slider.am.login.keytab.name": "hbase.headless.keytab",
+            "slider.am.login.keytab.name": "${USER_NAME}.headless.keytab",
             "slider.keytab.principal.name": "${USER_NAME}"
         }
     }
