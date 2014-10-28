@@ -161,7 +161,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -193,8 +192,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   private SliderYarnClientImpl yarnClient;
   private YarnAppListClient YarnAppListClient;
   private AggregateConf launchedInstanceDefinition;
-//  private SliderRegistryService registry;
-
 
   /**
    * The YARN registry service
@@ -1009,7 +1006,13 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
                         serviceArgs.isDebug());
     applicationId = launchedApplication.getApplicationId();
 
-    return waitForAppAccepted(launchedApplication, launchArgs.getWaittime());
+    int waittime = launchArgs.getWaittime();
+    if (waittime > 0) {
+      return waitForAppRunning(launchedApplication, waittime, waittime);
+    } else {
+      // no waiting
+      return EXIT_SUCCESS;
+    }
   }
 
   /**
@@ -1384,34 +1387,38 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   
   
   /**
-   * Wait for the launched app to be accepted
-   * @param waittime time in millis
-   * @return exit code
+   * Wait for the launched app to be accepted in the time  
+   * and, optionally running.
+   * <p>
+   * If the application
+   *
+   * @param launchedApplication application
+   * @param acceptWaitMillis time in millis to wait for accept
+   * @param runWaitMillis time in millis to wait for the app to be running.
+   * May be null, in which case no wait takes place
+   * @return exit code: success
    * @throws YarnException
    * @throws IOException
    */
-  public int waitForAppAccepted(LaunchedApplication launchedApplication, 
-                                int waittime) throws
-                                              YarnException,
-                                              IOException {
+  public int waitForAppRunning(LaunchedApplication launchedApplication,
+      int acceptWaitMillis, int runWaitMillis) throws YarnException, IOException {
     assert launchedApplication != null;
     int exitCode;
     // wait for the submit state to be reached
     ApplicationReport report = launchedApplication.monitorAppToState(
       YarnApplicationState.ACCEPTED,
-      new Duration(Constants.ACCEPT_TIME));
-
+      new Duration(acceptWaitMillis));
 
     // may have failed, so check that
     if (SliderUtils.hasAppFinished(report)) {
       exitCode = buildExitCode(report);
     } else {
       // exit unless there is a wait
-      exitCode = EXIT_SUCCESS;
 
-      if (waittime != 0) {
+
+      if (runWaitMillis != 0) {
         // waiting for state to change
-        Duration duration = new Duration(waittime * 1000);
+        Duration duration = new Duration(runWaitMillis * 1000);
         duration.start();
         report = launchedApplication.monitorAppToState(
           YarnApplicationState.RUNNING, duration);
@@ -1419,10 +1426,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
             report.getYarnApplicationState() == YarnApplicationState.RUNNING) {
           exitCode = EXIT_SUCCESS;
         } else {
-
-          launchedApplication.kill("");
           exitCode = buildExitCode(report);
         }
+      } else {
+        exitCode = EXIT_SUCCESS;
       }
     }
     return exitCode;
@@ -1579,16 +1586,17 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
   /**
-   * Build an exit code for an application Id and its report.
-   * If the report parameter is null, the app is killed
-   * @param report report
+   * Build an exit code for an application from its report.
+   * If the report parameter is null, its interpreted as a timeout
+   * @param report report application report
    * @return the exit code
+   * @throws IOException
+   * @throws YarnException
    */
   private int buildExitCode(ApplicationReport report) throws
                                                       IOException,
                                                       YarnException {
     if (null == report) {
-      forceKillApplication("Reached client specified timeout for application");
       return EXIT_TIMED_OUT;
     }
 
@@ -1615,6 +1623,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         log.info("Application Failed. YarnState={}, DSFinalStatus={}", state,
                  dsStatus);
         return EXIT_YARN_SERVICE_FAILED;
+
       default:
         //not in any of these states
         return EXIT_SUCCESS;
@@ -1730,7 +1739,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     
     // and those the RM knows about
     List<ApplicationReport> instances = listSliderInstances(null);
-    SliderUtils.sortApplicationReport(instances);
+    SliderUtils.sortApplicationsByMostRecent(instances);
     Map<String, ApplicationReport> reportMap =
         SliderUtils.buildApplicationReportMap(instances, min, max);
     log.debug("Persisted {} deployed {} filtered[{}-{}] & de-duped to {}",
@@ -1746,6 +1755,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       if (persistent == null) {
         throw unknownClusterException(clustername);
       }
+      // create a new map with only that instance in it.
+      // this restricts the output of results to this instance
       persistentInstances = new HashMap<String, Path>();
       persistentInstances.put(clustername, persistent);  
     }
@@ -1767,6 +1778,13 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     return listed > 0 ? EXIT_SUCCESS: EXIT_FALSE;
   }
 
+  /**
+   * Convert the instance details of an application to a string
+   * @param name instance name
+   * @param report the application report
+   * @param verbose verbose output
+   * @return a string
+   */
   String instanceDetailsToString(String name,
       ApplicationReport report,
       boolean verbose) {
@@ -1992,12 +2010,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     throws YarnException, IOException {
     
     return YarnAppListClient.findAllLiveInstances(appname);
-  }
-
-
-  public ApplicationReport findClusterInInstanceList(List<ApplicationReport> instances,
-                                                     String appname) {
-    return yarnClient.findClusterInInstanceList(instances, appname);
   }
 
   /**

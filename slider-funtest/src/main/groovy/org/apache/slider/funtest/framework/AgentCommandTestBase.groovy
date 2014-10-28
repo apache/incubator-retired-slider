@@ -111,9 +111,9 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
       SliderShell shell = slider(EXIT_SUCCESS,
           [
               ACTION_INSTALL_PACKAGE,
-              Arguments.ARG_NAME, TEST_APP_PKG_NAME,
-              Arguments.ARG_PACKAGE, zipFileName.absolutePath,
-              Arguments.ARG_REPLACE_PKG
+              ARG_NAME, TEST_APP_PKG_NAME,
+              ARG_PACKAGE, zipFileName.absolutePath,
+              ARG_REPLACE_PKG
           ])
       logShell(shell)
       log.info "App pkg uploaded at home directory .slider/package/$TEST_APP_PKG_NAME/$TEST_APP_PKG_FILE"

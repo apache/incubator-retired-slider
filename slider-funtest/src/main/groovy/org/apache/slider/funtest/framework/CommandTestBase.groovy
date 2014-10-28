@@ -30,7 +30,6 @@ import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.api.StatusKeys
 import org.apache.slider.common.tools.ConfigHelper
-import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.SliderXmlConfKeys
@@ -615,7 +614,6 @@ abstract class CommandTestBase extends SliderTestUtils {
         ARG_TEMPLATE, appTemplate,
         ARG_RESOURCES, resourceTemplate,
         ARG_WAIT, Integer.toString(THAW_WAIT_TIME)
-        
     ]
 
     maybeAddCommandOption(commands,
@@ -631,7 +629,21 @@ abstract class CommandTestBase extends SliderTestUtils {
         [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL],
         SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL));
     commands.addAll(extraArgs)
-    SliderShell shell = slider(LauncherExitCodes.EXIT_SUCCESS, commands)
+    SliderShell shell = new SliderShell(commands)
+    shell.execute()
+    if (!shell.execute()) {
+      // app has failed.
+      
+      // grab the app report of the last known instance of this app
+      // which may not be there if it was a config failure; may be out of date
+      // from a previous run
+      log.error("Launch failed with exit code ${shell.ret}.\nLast instance of $name:")
+      slider([ACTION_LIST, name, ARG_VERBOSE]).dumpOutput()
+      
+      // trigger the assertion failure
+      shell.assertExitCode(EXIT_SUCCESS)
+    }
+    
     return shell
   }
 
