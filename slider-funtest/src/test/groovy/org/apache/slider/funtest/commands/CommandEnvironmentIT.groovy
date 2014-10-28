@@ -33,6 +33,8 @@ import org.junit.Test
 @Slf4j
 public class CommandEnvironmentIT extends CommandTestBase {
 
+  public static final String TESTPROPERTY_SET_IN_FUNTEST = "testpropertySetInFuntest"
+  public static final String TEST_PROPERTY_VALUE = "TestPropertyValue"
   File originalScript
   
   @Before
@@ -47,31 +49,59 @@ public class CommandEnvironmentIT extends CommandTestBase {
 
   @Test
   public void testJVMOptionPassdownBash() throws Throwable {
-    assume(!SliderShell.windows, "skip bash test on windows")
-    SliderShell.scriptFile = SLIDER_SCRIPT;
-    execScriptTest()
+    SliderShell shell = diagnostics(false)
+    assertOutputContains(shell, TESTPROPERTY_SET_IN_FUNTEST, 2)
+    assertOutputContains(shell, TEST_PROPERTY_VALUE, 2)
   }
 
   @Test
   public void testJVMOptionPassdownPython() throws Throwable {
-    SliderShell.scriptFile = SLIDER_SCRIPT_PYTHON;
-    execScriptTest()
+    SliderShell shell = diagnostics(true)
+    assertOutputContains(shell, TESTPROPERTY_SET_IN_FUNTEST, 2)
+    assertOutputContains(shell, TEST_PROPERTY_VALUE, 2)
   }
 
-  public void execScriptTest() {
+  @Test
+  public void testLibdirPython() throws Throwable {
+    SliderShell shell = diagnostics(true)
+    assertOutputContains(shell, SliderKeys.PROPERTY_LIB_DIR)
+  }
+
+  @Test
+  public void testLibdirBash() throws Throwable {
+    SliderShell shell = diagnostics(false)
+    assertOutputContains(shell, SliderKeys.PROPERTY_LIB_DIR)
+  }
+
+
+  @Test
+  public void testConfdirPython() throws Throwable {
+    SliderShell shell = diagnostics(true)
+    assertOutputContains(shell, SliderKeys.PROPERTY_CONF_DIR)
+  }
+
+  @Test
+  public void testConfdirBash() throws Throwable {
+    SliderShell shell = diagnostics(false)
+    assertOutputContains(shell, SliderKeys.PROPERTY_CONF_DIR)
+  }
+
+  public SliderShell diagnostics(boolean python) {
+    if (python) {
+      SliderShell.scriptFile = SLIDER_SCRIPT_PYTHON;
+    } else {
+      assume(!SliderShell.windows, "skip bash test on windows")
+      SliderShell.scriptFile = SLIDER_SCRIPT;
+    }
     SliderShell shell = new SliderShell([
         SliderActions.ACTION_DIAGNOSTICS,
         Arguments.ARG_CLIENT,
         Arguments.ARG_VERBOSE
     ])
-    def name = "testpropertySetInFuntest"
-    def val = "TestPropertyValue"
-    shell.setEnv(SliderKeys.SLIDER_JVM_OPTS, "-D" + name + "=" + val)
+    shell.setEnv(SliderKeys.SLIDER_JVM_OPTS, 
+        "-D${TESTPROPERTY_SET_IN_FUNTEST}=${TEST_PROPERTY_VALUE}")
     shell.execute(0)
-    assertOutputContains(shell, name, 2)
-    assertOutputContains(shell, val, 2)
-    assertOutputContains(shell, SliderKeys.PROPERTY_LIB_DIR)
-    assertOutputContains(shell, SliderKeys.PROPERTY_CONF_DIR)
+    return shell
   }
 
 }
