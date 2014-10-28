@@ -79,16 +79,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.apache.slider.api.ResourceKeys.DEF_YARN_CORES;
-import static org.apache.slider.api.ResourceKeys.DEF_YARN_LABEL_EXPRESSION;
-import static org.apache.slider.api.ResourceKeys.DEF_YARN_MEMORY;
-import static org.apache.slider.api.ResourceKeys.YARN_CORES;
-import static org.apache.slider.api.ResourceKeys.YARN_LABEL_EXPRESSION;
-import static org.apache.slider.api.ResourceKeys.YARN_MEMORY;
-import static org.apache.slider.api.RoleKeys.ROLE_FAILED_INSTANCES;
-import static org.apache.slider.api.RoleKeys.ROLE_FAILED_STARTING_INSTANCES;
-import static org.apache.slider.api.RoleKeys.ROLE_RELEASING_INSTANCES;
-import static org.apache.slider.api.RoleKeys.ROLE_REQUESTED_INSTANCES;
+import static org.apache.slider.api.ResourceKeys.*;
+import static org.apache.slider.api.RoleKeys.*;
 
 
 /**
@@ -615,6 +607,11 @@ public class AppState {
                                                           IOException {
     instanceDefinition.resolve();
 
+    // force in the AM desired state values
+    instanceDefinition.getResourceOperations().setComponentOpt(
+        SliderKeys.COMPONENT_AM, ResourceKeys.COMPONENT_INSTANCES, "1"
+    );
+    
     //note the time 
     snapshotTime = now();
     //snapshot all three sectons
@@ -665,8 +662,8 @@ public class AppState {
   /**
    * build the role requirements from the cluster specification
    */
-  private void buildRoleRequirementsFromResources() throws
-                                                      BadConfigException {
+  private void buildRoleRequirementsFromResources() throws BadConfigException {
+
     //now update every role's desired count.
     //if there are no instance values, that role count goes to zero
 
@@ -675,6 +672,10 @@ public class AppState {
 
     // Add all the existing roles
     for (RoleStatus roleStatus : getRoleStatusMap().values()) {
+      if (roleStatus.getExcludeFromFlexing()) {
+        // skip inflexible roles, e.g AM itself
+        continue;
+      }
       int currentDesired = roleStatus.getDesired();
       String role = roleStatus.getName();
       MapOperations comp =
@@ -711,8 +712,10 @@ public class AppState {
    * should be used while setting up the system state -before servicing
    * requests.
    * @param providerRole role to add
+   * @return the role status built up
+   * @throws BadConfigException if a role of that priority already exists
    */
-  public void buildRole(ProviderRole providerRole) throws BadConfigException {
+  public RoleStatus buildRole(ProviderRole providerRole) throws BadConfigException {
     //build role status map
     int priority = providerRole.id;
     if (roleStatusMap.containsKey(priority)) {
@@ -720,10 +723,11 @@ public class AppState {
                                    providerRole,
                                    roleStatusMap.get(priority));
     }
-    roleStatusMap.put(priority,
-        new RoleStatus(providerRole));
+    RoleStatus roleStatus = new RoleStatus(providerRole);
+    roleStatusMap.put(priority, roleStatus);
     roles.put(providerRole.name, providerRole);
     rolePriorityMap.put(priority, providerRole);
+    return roleStatus;
   }
 
   /**
@@ -748,6 +752,13 @@ public class AppState {
     appMasterNode = am;
     //it is also added to the set of live nodes
     getLiveNodes().put(containerId, am);
+    
+    // patch up the role status
+    RoleStatus roleStatus = roleStatusMap.get(
+        (SliderKeys.ROLE_AM_PRIORITY_INDEX));
+    roleStatus.setDesired(1);
+    roleStatus.incActual();
+    roleStatus.incStarted();
   }
 
   /**

@@ -86,12 +86,15 @@ public class SliderAMClientProvider extends AbstractClientProvider
 
   public static final int KEY_AM = ROLE_AM_PRIORITY_INDEX;
 
+  public static final ProviderRole APPMASTER =
+      new ProviderRole(COMPONENT_AM, KEY_AM,
+          PlacementPolicy.EXCLUDE_FROM_FLEXING);
+
   /**
    * Initialize role list
    */
   static {
-    ROLES.add(new ProviderRole(COMPONENT_AM, KEY_AM,
-                               PlacementPolicy.EXCLUDE_FROM_FLEXING));
+    ROLES.add(APPMASTER);
   }
 
   @Override
