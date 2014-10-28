@@ -18,7 +18,17 @@
 
 package org.apache.slider.server.appmaster.state;
 
-import com.google.common.annotations.VisibleForTesting;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.Container;
@@ -33,14 +43,7 @@ import org.apache.slider.server.avro.RoleHistoryWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import com.google.common.annotations.VisibleForTesting;
 
 /**
  * The Role History.
@@ -93,7 +96,7 @@ public class RoleHistory {
    * Track the failed nodes. Currently used to make wiser decision of container
    * ask with/without locality. Has other potential uses as well.
    */
-  private Map<String, Object> failedNodes = new HashMap<String, Object>();
+  private Set<String> failedNodes = new HashSet<String>();
   // dummy to be used in maps for faster lookup where we don't care about values
   private final Object DUMMY_VALUE = new Object(); 
 
@@ -682,7 +685,7 @@ public class RoleHistory {
       }
       if (updatedNode.getNodeState() != null
           && updatedNode.getNodeState().isUnusable()) {
-        failedNodes.put(hostname, DUMMY_VALUE);
+        failedNodes.add(hostname);
         nodemap.remove(hostname);
       } else {
         failedNodes.remove(hostname);
@@ -741,7 +744,7 @@ public class RoleHistory {
       available = false;
     } else {
       available = nodeEntry.containerCompleted(wasReleased);
-      boolean isFailedNode = failedNodes.containsKey(RoleHistoryUtils
+      boolean isFailedNode = failedNodes.contains(RoleHistoryUtils
           .hostnameOf(container));
       if (!isFailedNode) {
         maybeQueueNodeForWork(container, nodeEntry, available);
@@ -816,7 +819,9 @@ public class RoleHistory {
    * @return the list
    */
   public List<String> cloneFailedNodes() {
-    return new ArrayList<String>(failedNodes.keySet());
+    List<String> lst = new ArrayList<String>();
+    lst.addAll(failedNodes);
+    return lst;
   }
 
 }
