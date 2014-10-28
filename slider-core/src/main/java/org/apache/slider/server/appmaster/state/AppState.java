@@ -477,18 +477,15 @@ public class AppState {
 
     Set<String> confKeys = ConfigHelper.sortedConfigKeys(publishedProviderConf);
 
-//     Add the -site configuration properties
+    //  Add the -site configuration properties
     for (String key : confKeys) {
       String val = publishedProviderConf.get(key);
       clientProperties.put(key, val);
     }
 
-
     // set the cluster specification (once its dependency the client properties
     // is out the way
-
     updateInstanceDefinition(instanceDefinition);
-
 
     //build the initial role list
     for (ProviderRole providerRole : providerRoles) {
@@ -502,7 +499,7 @@ public class AppState {
     for (String name : roleNames) {
       if (!roles.containsKey(name)) {
         // this is a new value
-        log.info("Adding new role {}", name);
+        log.info("Adding role {}", name);
         MapOperations resComponent = resources.getComponent(name);
         ProviderRole dynamicRole =
             createDynamicProviderRole(name, resComponent);
@@ -582,16 +579,14 @@ public class AppState {
                                                         BadConfigException {
     String priOpt = component.getMandatoryOption(ResourceKeys.COMPONENT_PRIORITY);
     int pri = SliderUtils.parseAndValidate("value of " + name + " " +
-                                           ResourceKeys.COMPONENT_PRIORITY,
-        priOpt, 0, 1, -1
-    );
+        ResourceKeys.COMPONENT_PRIORITY,
+        priOpt, 0, 1, -1);
     log.info("Role {} assigned priority {}", name, pri);
     String placementOpt = component.getOption(
       ResourceKeys.COMPONENT_PLACEMENT_POLICY, "0");
     int placement = SliderUtils.parseAndValidate("value of " + name + " " +
-                                                 ResourceKeys.COMPONENT_PLACEMENT_POLICY,
-        placementOpt, 0, 0, -1
-    );
+        ResourceKeys.COMPONENT_PLACEMENT_POLICY,
+        placementOpt, 0, 0, -1);
     return new ProviderRole(name, pri, placement);
   }
 
@@ -608,10 +603,13 @@ public class AppState {
     instanceDefinition.resolve();
 
     // force in the AM desired state values
-    instanceDefinition.getResourceOperations().setComponentOpt(
-        SliderKeys.COMPONENT_AM, ResourceKeys.COMPONENT_INSTANCES, "1"
-    );
-    
+    ConfTreeOperations resources =
+        instanceDefinition.getResourceOperations();
+    if (resources.getComponent(SliderKeys.COMPONENT_AM) != null) {
+      resources.setComponentOpt(
+          SliderKeys.COMPONENT_AM, ResourceKeys.COMPONENT_INSTANCES, "1");
+    }
+
     //note the time 
     snapshotTime = now();
     //snapshot all three sectons

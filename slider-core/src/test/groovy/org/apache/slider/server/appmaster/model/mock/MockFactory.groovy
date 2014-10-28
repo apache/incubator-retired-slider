@@ -35,7 +35,7 @@ import org.apache.slider.providers.ProviderRole
  */
 //@CompileStatic
 @Slf4j
-class MockFactory implements  MockRoles {
+class MockFactory implements MockRoles {
 
   public static final ProviderRole PROVIDER_ROLE0 = new ProviderRole(
       MockRoles.ROLE0,
