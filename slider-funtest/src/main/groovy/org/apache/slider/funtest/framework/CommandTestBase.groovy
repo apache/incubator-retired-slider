@@ -717,8 +717,9 @@ abstract class CommandTestBase extends SliderTestUtils {
             ARG_NAME,
             applicationName,
             ARG_LISTEXP])
-    if (EXIT_SUCCESS != shell.execute())
+    if (EXIT_SUCCESS != shell.execute()) {
       logShell(shell)
+    }
     return EXIT_SUCCESS == shell.execute()
   }
 
@@ -781,6 +782,12 @@ abstract class CommandTestBase extends SliderTestUtils {
       }
       fail(failureMessage)
     }
+  }
+
+  public String getInfoAmWebUrl(String applicationName) {
+    ClusterDescription cd = execStatus(applicationName);
+    String urlString = cd.getInfo("info.am.web.url");
+    return urlString;
   }
 
   public ClusterDescription execStatus(String application) {
