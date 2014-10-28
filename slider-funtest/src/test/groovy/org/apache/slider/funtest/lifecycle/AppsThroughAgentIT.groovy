@@ -74,6 +74,10 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     expectContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 2)
 
+    String amWebUrl = getInfoAmWebUrl(APPLICATION_NAME)
+    log.info("Dumping data from AM Web URL");
+    log.info(amWebUrl.toURL().text);
+
     ensureRegistryCallSucceeds(APPLICATION_NAME)
 
     // get log folders
