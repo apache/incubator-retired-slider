@@ -692,9 +692,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
               .getComponent(SliderKeys.COMPONENT_AM));
       certificateManager.setPassphrase(instanceDefinition.getPassphrase());
 
-      if (Boolean.valueOf(instanceDefinition.
+      if (instanceDefinition.
           getAppConfOperations().getComponent(SliderKeys.COMPONENT_AM).
-          getOptionBool(AgentKeys.KEY_AGENT_TWO_WAY_SSL_ENABLED, false))) {
+          getOptionBool(AgentKeys.KEY_AGENT_TWO_WAY_SSL_ENABLED, false)) {
         uploadServerCertForLocalization(clustername, fs);
       }
 
@@ -895,8 +895,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       // start handling any scheduled events
 
       startQueueProcessing();
-      // Start the Slider AM provider
 
+      // Start the Slider AM provider
       sliderAMProvider.start();
 
       // launch the real provider; this is expected to trigger a callback that

@@ -267,7 +267,6 @@ public final class RoleStatus implements Cloneable {
            ", startFailed=" + startFailed +
            ", completed=" + completed +
            ", failureMessage='" + failureMessage + '\'' +
-           
            '}';
   }
 
