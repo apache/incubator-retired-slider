@@ -74,6 +74,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     expectContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 2)
 
+    ensureRegistryCallSucceeds(APPLICATION_NAME)
 
     // get log folders
     shell = slider(EXIT_SUCCESS,
