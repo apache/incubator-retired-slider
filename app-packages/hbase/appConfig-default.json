@@ -8,7 +8,7 @@
         "java_home": "/usr/jdk64/jdk1.7.0_67",
         "system_configs": "core-site",
 
-        "site.global.app_user": "yarn",
+        "site.global.app_user": "${USER_NAME}",
         "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/hbase-${pkg.version}",
 
         "site.global.ganglia_server_host": "${NN_HOST}",
@@ -28,7 +28,7 @@
         "site.hbase-env.hbase_regionserver_heapsize": "1024m",
 
         "site.hbase-site.hbase.rootdir": "${DEFAULT_DATA_DIR}",
-        "site.hbase-site.hbase.superuser": "yarn",
+        "site.hbase-site.hbase.superuser": "${USER_NAME}",
         "site.hbase-site.hbase.tmp.dir": "${AGENT_WORK_ROOT}/work/app/tmp",
         "site.hbase-site.hbase.local.dir": "${hbase.tmp.dir}/local",
         "site.hbase-site.hbase.zookeeper.quorum": "${ZK_HOST}",
