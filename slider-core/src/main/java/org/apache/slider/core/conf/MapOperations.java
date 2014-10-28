@@ -112,7 +112,11 @@ public class MapOperations implements Map<String, String> {
         log.debug("Missing key {} from config containing {}",
                   key, this);
       }
-      throw new BadConfigException("Missing option " + key);
+      String text = "Missing option " + key;
+      if (SliderUtils.isSet(name)) {
+        text += " from set " + name;
+      }
+      throw new BadConfigException(text);
     }
     return val;
   }
