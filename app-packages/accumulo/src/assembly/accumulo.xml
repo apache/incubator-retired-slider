@@ -35,6 +35,12 @@
       <fileMode>0755</fileMode>
     </file>
     <file>
+      <source>appConfig-secured-default.json</source>
+      <outputDirectory>/</outputDirectory>
+      <filtered>true</filtered>
+      <fileMode>0755</fileMode>
+    </file>
+    <file>
       <source>metainfo.xml</source>
       <outputDirectory>/</outputDirectory>
       <filtered>true</filtered>
@@ -64,6 +70,7 @@
         <exclude>src/**</exclude>
         <exclude>target/**</exclude>
         <exclude>appConfig-default.json</exclude>
+        <exclude>appConfig-secured-default.json</exclude>
         <exclude>metainfo.xml</exclude>
       </excludes>
       <fileMode>0755</fileMode>
