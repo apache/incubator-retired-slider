@@ -45,6 +45,8 @@ import org.apache.hadoop.yarn.api.records.NodeReport;
 import org.apache.hadoop.yarn.api.records.NodeState;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.apache.hadoop.yarn.exceptions.ApplicationAttemptNotFoundException;
+import org.apache.hadoop.yarn.exceptions.ApplicationNotFoundException;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.registry.client.api.RegistryOperations;
 
@@ -55,6 +57,7 @@ import org.apache.hadoop.registry.client.exceptions.NoRecordException;
 import org.apache.hadoop.registry.client.types.Endpoint;
 import org.apache.hadoop.registry.client.types.ServiceRecord;
 import org.apache.hadoop.registry.client.types.yarn.YarnRegistryAttributes;
+import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterNode;
 import org.apache.slider.api.InternalKeys;
@@ -78,6 +81,7 @@ import org.apache.slider.common.params.ActionFlexArgs;
 import org.apache.slider.common.params.ActionFreezeArgs;
 import org.apache.slider.common.params.ActionKillContainerArgs;
 import org.apache.slider.common.params.ActionListArgs;
+import org.apache.slider.common.params.ActionLookupArgs;
 import org.apache.slider.common.params.ActionRegistryArgs;
 import org.apache.slider.common.params.ActionResolveArgs;
 import org.apache.slider.common.params.ActionStatusArgs;
@@ -114,7 +118,9 @@ import org.apache.slider.core.launch.CommandLineBuilder;
 import org.apache.slider.core.launch.JavaCommandLineBuilder;
 import org.apache.slider.core.launch.LaunchedApplication;
 import org.apache.slider.core.launch.RunningApplication;
+import org.apache.slider.core.launch.SerializedApplicationReport;
 import org.apache.slider.core.main.RunService;
+import org.apache.slider.core.persist.ApplicationReportSerDeser;
 import org.apache.slider.core.persist.ConfPersister;
 import org.apache.slider.core.persist.LockAcquireFailedException;
 import org.apache.slider.core.registry.SliderRegistryUtils;
@@ -389,6 +395,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
           serviceArgs.getActionAMSuicideArgs());
     } else if (ACTION_LIST.equals(action)) {
       exitCode = actionList(clusterName, serviceArgs.getActionListArgs());
+    } else if (ACTION_LOOKUP.equals(action)) {
+      exitCode = actionLookup(serviceArgs.getActionLookupArgs());
     } else if (ACTION_REGISTRY.equals(action)) {
       exitCode = actionRegistry(serviceArgs.getActionRegistryArgs());
     } else if (ACTION_RESOLVE.equals(action)) {
@@ -1006,6 +1014,14 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
                         serviceArgs.isDebug());
     applicationId = launchedApplication.getApplicationId();
 
+    if (launchArgs.getOutputFile() != null) {
+      // output file has been requested. Get the app report and serialize it
+      ApplicationReport report =
+          launchedApplication.getApplicationReport();
+      SerializedApplicationReport sar = new SerializedApplicationReport(report);
+      ApplicationReportSerDeser serDeser = new ApplicationReportSerDeser();
+      serDeser.save(sar, launchArgs.getOutputFile());
+    }
     int waittime = launchArgs.getWaittime();
     if (waittime > 0) {
       return waitForAppRunning(launchedApplication, waittime, waittime);
@@ -1373,12 +1389,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     if (amQueue != null) {
       amLauncher.setQueue(amQueue);
     }
-
-    // Submit the application to the applications manager
-    // SubmitApplicationResponse submitResp = applicationsManager.submitApplication(appRequest);
-    // Ignore the response as either a valid response object is returned on success
-    // or an exception thrown to denote some form of a failure
-    
 
     // submit the application
     LaunchedApplication launchedApplication = amLauncher.submitApplication();
@@ -3300,6 +3310,38 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     print("\n");
   }
 
+  /**
+   * Implement the lookup action.
+   * @param args Action arguments
+   * @return 0 if the entry was found
+   * @throws IOException
+   * @throws YarnException
+   * @throws UnknownApplicationInstanceException if a specific instance
+   * was named but it was not found
+   */
+  @VisibleForTesting
+  public int actionLookup(ActionLookupArgs args)
+      throws IOException, YarnException {
+    verifyBindingsDefined();
+    try {
+      ApplicationId id = ConverterUtils.toApplicationId(args.id);
+      ApplicationReport report = yarnClient.getApplicationReport(id);
+      SerializedApplicationReport sar = new SerializedApplicationReport(report);
+      ApplicationReportSerDeser serDeser = new ApplicationReportSerDeser();
+      if (args.outputFile != null) {
+        serDeser.save(sar, args.outputFile);
+      } else {
+        println(serDeser.toJson(sar));
+      }
+    } catch (IllegalArgumentException e) {
+      throw new BadCommandArgumentsException(e, "%s : %s", args, e);
+    } catch (ApplicationAttemptNotFoundException notFound) {
+      throw new NotFoundException(notFound, notFound.toString());
+    } catch (ApplicationNotFoundException notFound) {
+      throw new NotFoundException(notFound, notFound.toString());
+    }
+    return EXIT_SUCCESS;
+  }
 }
 
 

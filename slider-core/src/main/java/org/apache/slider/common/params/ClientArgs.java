@@ -43,28 +43,31 @@ public class ClientArgs extends CommonArgs {
    * This is not bonded to jcommander, it is set up
    * after the construction to point to the relevant
    * entry
+   * 
+   * KEEP IN ALPHABETICAL ORDER
    */
   private AbstractClusterBuildingActionArgs buildingActionArgs;
   private final ActionAMSuicideArgs actionAMSuicideArgs = new ActionAMSuicideArgs();
   private final ActionBuildArgs actionBuildArgs = new ActionBuildArgs();
-  private final ActionInstallPackageArgs actionInstallPackageArgs = new ActionInstallPackageArgs();
-  private final ActionInstallKeytabArgs actionInstallKeytabArgs = new ActionInstallKeytabArgs();
-  private final ActionUpdateArgs actionUpdateArgs = new ActionUpdateArgs();
   private final ActionCreateArgs actionCreateArgs = new ActionCreateArgs();
   private final ActionDestroyArgs actionDestroyArgs = new ActionDestroyArgs();
+  private final ActionDiagnosticArgs actionDiagnosticArgs = new ActionDiagnosticArgs();
   private final ActionExistsArgs actionExistsArgs = new ActionExistsArgs();
   private final ActionFlexArgs actionFlexArgs = new ActionFlexArgs();
   private final ActionFreezeArgs actionFreezeArgs = new ActionFreezeArgs();
+  private final ActionHelpArgs actionHelpArgs = new ActionHelpArgs();
+  private final ActionInstallPackageArgs actionInstallPackageArgs = new ActionInstallPackageArgs();
+  private final ActionInstallKeytabArgs actionInstallKeytabArgs = new ActionInstallKeytabArgs();
   private final ActionKillContainerArgs actionKillContainerArgs =
     new ActionKillContainerArgs();
   private final ActionListArgs actionListArgs = new ActionListArgs();
+  private final ActionLookupArgs actionLookupArgs = new ActionLookupArgs();
   private final ActionRegistryArgs actionRegistryArgs = new ActionRegistryArgs();
   private final ActionResolveArgs actionResolveArgs = new ActionResolveArgs();
   private final ActionStatusArgs actionStatusArgs = new ActionStatusArgs();
   private final ActionThawArgs actionThawArgs = new ActionThawArgs();
+  private final ActionUpdateArgs actionUpdateArgs = new ActionUpdateArgs();
   private final ActionVersionArgs actionVersionArgs = new ActionVersionArgs();
-  private final ActionHelpArgs actionHelpArgs = new ActionHelpArgs();
-  private final ActionDiagnosticArgs actionDiagnosticArgs = new ActionDiagnosticArgs();
 
 
   public ClientArgs(String[] args) {
@@ -171,6 +174,10 @@ public class ClientArgs extends CommonArgs {
     return actionListArgs;
   }
 
+  public ActionLookupArgs getActionLookupArgs() {
+    return actionLookupArgs;
+  }
+
   public ActionRegistryArgs getActionRegistryArgs() {
     return actionRegistryArgs;
   }
@@ -241,6 +248,9 @@ public class ClientArgs extends CommonArgs {
 
     } else if (SliderActions.ACTION_LIST.equals(action)) {
       bindCoreAction(actionListArgs);
+
+    } else if (SliderActions.ACTION_LOOKUP.equals(action)) {
+      bindCoreAction(actionLookupArgs);
 
     } else if (SliderActions.ACTION_REGISTRY.equals(action)) {
       bindCoreAction(actionRegistryArgs);

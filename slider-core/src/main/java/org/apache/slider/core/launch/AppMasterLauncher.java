@@ -46,18 +46,19 @@ public class AppMasterLauncher extends AbstractLauncher {
   private static final Logger log =
     LoggerFactory.getLogger(AppMasterLauncher.class);
 
-  protected final YarnClientApplication application;
-  private final String name;
-  private final String type;
-  private final ApplicationSubmissionContext submissionContext;
-  private final ApplicationId appId;
-  private final boolean secureCluster;
+  public final YarnClientApplication application;
+  public final String name;
+  public final String type;
+  public final ApplicationSubmissionContext submissionContext;
+  public final ApplicationId appId;
+  public final boolean secureCluster;
   private int maxAppAttempts = 0;
   private boolean keepContainersOverRestarts = true;
   private String queue = YarnConfiguration.DEFAULT_QUEUE_NAME;
   private int priority = 1;
   private final Resource resource = Records.newRecord(Resource.class);
   private final SliderYarnClientImpl yarnClient;
+  private Long submitTime;
 
   /**
    * Build the AM Launcher
@@ -65,10 +66,15 @@ public class AppMasterLauncher extends AbstractLauncher {
    * @param type applicatin type
    * @param conf hadoop config
    * @param fs filesystem binding
-   * @param application precreated YARN client app instance
+   * @param yarnClient yarn client
    * @param secureCluster is the cluster secure?
-   * @param options map of options. All values are extracted in this constructor only
    * -the map is not retained.
+   * @param secureCluster flag to indicate secure cluster
+   * @param options map of options. All values are extracted in this constructor only
+   * @param resourceGlobalOptions global options
+   * @param applicationTags any app tags
+   * @throws IOException
+   * @throws YarnException
    */
   public AppMasterLauncher(String name,
                            String type,
@@ -192,7 +198,6 @@ public class AppMasterLauncher extends AbstractLauncher {
     completeContainerLaunch();
     submissionContext.setAMContainerSpec(containerLaunchContext);
     return submissionContext;
-
   }
 
   /**
@@ -216,13 +221,35 @@ public class AppMasterLauncher extends AbstractLauncher {
     fs.addDelegationTokens(tokenRenewer, credentials);
   }
 
- 
+  /**
+   * Submit the application. 
+   * @return a launched application representing the submitted application
+   * @throws IOException
+   * @throws YarnException
+   */
   public LaunchedApplication submitApplication() throws IOException, YarnException {
     completeAppMasterLaunch();
     log.info("Submitting application to Resource Manager");
     ApplicationId applicationId =
       yarnClient.submitApplication(submissionContext);
+    // implicit success; record the time
+    submitTime = System.currentTimeMillis();
     return new LaunchedApplication(applicationId, yarnClient);
   }
-  
+
+  /**
+   * Build a serializable application report. This is a very minimal
+   * report that contains the application Id, name and type —the information
+   * available
+   * @return a data structure which can be persisted
+   */
+  public SerializedApplicationReport createSerializedApplicationReport() {
+    SerializedApplicationReport sar = new SerializedApplicationReport();
+    sar.applicationId = appId.toString();
+    sar.name = name;
+    sar.applicationType = type;
+    sar.queue = queue;
+    sar.submitTime = submitTime;
+    return sar;
+  }
 }
