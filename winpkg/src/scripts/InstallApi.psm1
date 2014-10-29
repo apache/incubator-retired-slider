@@ -126,7 +126,7 @@ function Install(
         Write-Log "Installing Slider Hbase App package"
         $hbasePackage = Get-Item -Path "$HDP_RESOURCES_DIR\slider-hbase-app-win-package-*.zip"
         $hbasePackagePath = $hbasePackage.FullName
-        Copy-Item -Path $hbasePackage.FullName -Destination "$sliderIntallPath\app-packages" -Force -ErrorAction Stop
+        Copy-Item -Path $hbasePackagePath -Destination "$sliderInstallPath\app-packages" -Force -ErrorAction Stop
         
         ###
         ### Installing Slider Storm App package
@@ -134,7 +134,7 @@ function Install(
         Write-Log "Installing Slider Storm App package"
         $stormPackage = Get-Item -Path "$HDP_RESOURCES_DIR\slider-storm-app-win-package-*.zip"
         $stormPackagePath = $stormPackage.FullName
-        Copy-Item -Path $stormPackagePath -Destination "$sliderIntallPath\app-packages" -Force -ErrorAction Stop
+        Copy-Item -Path $stormPackagePath -Destination "$sliderInstallPath\app-packages" -Force -ErrorAction Stop
 		
 	    Write-Log "Finished installing Apache slider"
     }
