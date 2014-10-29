@@ -78,7 +78,7 @@ class TestMockMonkey extends BaseMockAppStateTest {
     assert 0 == monkey.targetCount;
     monkey.addTarget("target", counter, ChaosMonkeyService.PERCENT_100)
     assert 1 == monkey.targetCount;
-    assert monkey.schedule(1, TimeUnit.SECONDS)
+    assert monkey.schedule(0, 1, TimeUnit.SECONDS)
     assert 1 == queues.scheduledActions.size()
   }
 
@@ -96,7 +96,7 @@ class TestMockMonkey extends BaseMockAppStateTest {
   public void testMonkeyScheduleProb0Actions() throws Throwable {
     ChaosCounter counter = new ChaosCounter()
     monkey.addTarget("target", counter, 0)
-    assert !monkey.schedule(1, TimeUnit.SECONDS)
+    assert !monkey.schedule(0, 1, TimeUnit.SECONDS)
     assert 0 == queues.scheduledActions.size()
   }
 

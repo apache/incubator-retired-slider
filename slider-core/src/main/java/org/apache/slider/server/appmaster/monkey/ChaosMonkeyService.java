@@ -92,13 +92,14 @@ public class ChaosMonkeyService extends AbstractService {
 
   /**
    * Schedule the monkey
-   * @param time interval
+   *
+   * @param delay initial delay
    * @param timeUnit time unit
    * @return true if it was scheduled (i.e. 1+ action) and interval > 0
    */
-  public boolean schedule(long time, TimeUnit timeUnit) {
-    if (time > 0 && !chaosEntries.isEmpty()) {
-      queues.schedule(getChaosAction(time, timeUnit));
+  public boolean schedule(long delay, long interval, TimeUnit timeUnit) {
+    if (interval > 0 && !chaosEntries.isEmpty()) {
+      queues.schedule(getChaosAction(delay, interval, timeUnit));
       return true;
     } else {
       return false;
@@ -107,15 +108,18 @@ public class ChaosMonkeyService extends AbstractService {
 
   /**
    * Get the chaos action
-   * @param time interval
+   *
+   * @param delay
    * @param timeUnit time unit
    * @return the action to schedule
    */
-  public RenewingAction<MonkeyPlayAction> getChaosAction(long time, TimeUnit timeUnit) {
+  public RenewingAction<MonkeyPlayAction> getChaosAction(long delay,
+      long interval,
+      TimeUnit timeUnit) {
     RenewingAction<MonkeyPlayAction> action = new RenewingAction<MonkeyPlayAction>(
         new MonkeyPlayAction(this, 0, TimeUnit.MILLISECONDS),
-        time,
-        time,
+        delay,
+        interval,
         timeUnit,
         0
     );

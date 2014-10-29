@@ -1101,14 +1101,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
   }
 
-/*
-
-  @Override
-  protected RegistryOperationsService createRegistryOperationsInstance() {
-    return new ResourceManagerRegistryService("YarnRegistry");
-  }
-*/
-
   /**
    * TODO: purge this once RM is doing the work
    * @throws IOException
@@ -1133,7 +1125,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     if (instance == null) {
       return false;
     }
-    // this is where component registrations will go
+    // this is where component registrations  go
     log.info("Registering component {}", id);
     String cid = RegistryPathUtils.encodeYarnID(id.toString());
     ServiceRecord container = new ServiceRecord();
@@ -2185,8 +2177,16 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
           "Chaos monkey not configured with a time interval...not enabling");
       return false;
     }
-    log.info("Adding Chaos Monkey scheduled every {} seconds ({} hours)",
-        monkeyInterval, monkeyInterval/(60*60));
+
+    long monkeyDelay = internals.getTimeRange(
+        InternalKeys.CHAOS_MONKEY_DELAY,
+        0,
+        0,
+        0,
+        (int)monkeyInterval);
+    
+    log.info("Adding Chaos Monkey scheduled every {} seconds ({} hours -delay {}",
+        monkeyInterval, monkeyInterval/(60*60), monkeyDelay);
     monkey = new ChaosMonkeyService(metrics, actionQueues);
     initAndAddService(monkey);
     
@@ -2204,7 +2204,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         containerKillProbability);
     
     // and schedule it
-    if (monkey.schedule(monkeyInterval, TimeUnit.SECONDS)) {
+    if (monkey.schedule(monkeyDelay, monkeyInterval, TimeUnit.SECONDS)) {
       log.info("Chaos Monkey is running");
       return true;
     } else {

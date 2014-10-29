@@ -282,7 +282,7 @@ public class MapOperations implements Map<String, String> {
    * @param defHours
    * @param defMins
    * @param defSecs
-   * @return
+   * @return the aggregate time range in seconds
    */
   public long getTimeRange(String basekey,
       int defDays,
