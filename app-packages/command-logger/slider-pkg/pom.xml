@@ -112,7 +112,7 @@
         <plugins>
 
           <plugin>
-            <groupId>rat</groupId>
+            <groupId>org.apache.rat</groupId>
             <artifactId>apache-rat-plugin</artifactId>
             <version>${apache-rat-plugin.version}</version>
             <executions>
@@ -123,6 +123,11 @@
                 </goals>
               </execution>
             </executions>
+            <configuration>
+              <excludes>
+                <exclude>**/*.json</exclude>
+              </excludes>
+            </configuration>
           </plugin>
 
         </plugins>
