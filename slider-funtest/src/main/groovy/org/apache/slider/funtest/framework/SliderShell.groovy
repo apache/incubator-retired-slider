@@ -223,11 +223,11 @@ class SliderShell extends Shell {
    * if not the output is printed and an assertion is raised
    * @param errorCode expected error code
    */
-  public void assertExitCode(int errorCode) {
+  public void assertExitCode(int errorCode, String extra="") {
     if (this.ret != errorCode) {
       dumpOutput()
       throw new SliderException(ret,
-          "Expected exit code of command ${command} : ${errorCode} - actual=${ret}")
+          "Expected exit code of command ${command} : ${errorCode} - actual=${ret} $extra")
     }
   }
 

@@ -23,11 +23,11 @@ import groovy.util.logging.Slf4j
 import org.apache.hadoop.registry.client.binding.RegistryUtils
 import org.apache.hadoop.registry.client.types.Endpoint
 import org.apache.hadoop.registry.client.types.ServiceRecord
+import org.apache.slider.api.InternalKeys
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
-import static org.apache.slider.core.registry.info.CustomRegistryConstants.*
 import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
@@ -35,13 +35,15 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
+import static org.apache.slider.core.registry.info.CustomRegistryConstants.*
+
 @CompileStatic
 @Slf4j
-public class AgentRegistryIT extends AgentCommandTestBase
+public class AgentLaunchFailureIT extends AgentCommandTestBase
     implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
 
-  static String CLUSTER = "test-agent-registry"
+  static String CLUSTER = "test-agent-launchfail"
 
   static String APP_RESOURCE2 = "../slider-core/src/test/app_packages/test_command_log/resources_no_role.json"
 
@@ -57,69 +59,24 @@ public class AgentRegistryIT extends AgentCommandTestBase
   }
 
   @Test
-  public void testAgentRegistry() throws Throwable {
-    describe("Create a 0-role cluster and make registry queries against it")
+  public void testAgentLaunchFailure() throws Throwable {
+    describe("Create a failing cluster and validate failure logic")
 
-    // sanity check to verify the config is correct
-    assert clusterFS.uri.scheme != "file"
-
-    def clusterpath = buildClusterPath(CLUSTER)
-    assert !clusterFS.exists(clusterpath)
+    // create an AM which fails to launch within a second
+    File launchReportFile = createAppReportFile();
     SliderShell shell = createTemplatedSliderApplication(CLUSTER,
         APP_TEMPLATE,
-        APP_RESOURCE2)
+        APP_RESOURCE2,
+        [
+            ARG_INTERNAL, InternalKeys.CHAOS_MONKEY_ENABLED, "true",
+            ARG_INTERNAL, InternalKeys.CHAOS_MONKEY_INTERVAL_SECONDS, "1",
+            ARG_INTERNAL, InternalKeys.CHAOS_MONKEY_PROBABILITY_AM_FAILURE, "100",
+        ],
+        launchReportFile)
 
-    logShell(shell)
-
+    maybeLookupFromLaunchReport(launchReportFile)
     ensureApplicationIsUp(CLUSTER)
 
-    //at this point the cluster should exist.
-    assertPathExists(
-        clusterFS,
-        "Cluster parent directory does not exist",
-        clusterpath.parent)
-
-    assertPathExists(clusterFS, "Cluster directory does not exist", clusterpath)
-
-    // resolve the ~ path
-
-    resolve(0, [ARG_LIST, ARG_PATH, "/"])
-    resolve(0, [ARG_LIST, ARG_PATH, "/users"])
-
-    resolve(0, [ARG_LIST, ARG_PATH, TILDE]).dumpOutput()
-
-
-    String sliderApps = "${TILDE}/services/${SliderKeys.APP_TYPE}"
-    resolve(0, [ARG_LIST, ARG_PATH, sliderApps]).dumpOutput()
-
-    // running app
-    String appPath = sliderApps +"/"+ CLUSTER
-    resolve(0, [ARG_LIST, ARG_PATH, appPath]).dumpOutput()
-
-    resolve(0, [ARG_PATH, appPath]).dumpOutput()
-    // and the service record
-    File serviceRecordFile = File.createTempFile("tempfile", ".json")
-    serviceRecordFile.deleteOnExit()
-    resolve(0, [ARG_PATH, appPath,
-                ARG_OUTPUT, serviceRecordFile.absolutePath])
-    RegistryUtils.ServiceRecordMarshal marshal = new RegistryUtils.ServiceRecordMarshal()
-
-    ServiceRecord serviceRecord = marshal.fromFile(serviceRecordFile)
-    def ipcEndpoint = serviceRecord.external.find { Endpoint epr ->
-      epr.api == AM_IPC_PROTOCOL;
-    }
-    assert ipcEndpoint != null;
-    def endpoints = [:]
-    serviceRecord.external.each { Endpoint epr ->
-      endpoints[epr.api] = epr;
-    }
-    serviceRecord.internal.each { Endpoint epr ->
-      endpoints[epr.api] = epr;
-    }
-    assert endpoints[PUBLISHER_REST_API]
-    assert endpoints[REGISTRY_REST_API]
-    assert endpoints[AGENT_SECURE_REST_API]
-    assert endpoints[AGENT_ONEWAY_REST_API]
 
     //stop
     freeze(0, CLUSTER,

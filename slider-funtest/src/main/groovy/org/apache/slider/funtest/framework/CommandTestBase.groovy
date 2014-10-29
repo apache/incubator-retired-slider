@@ -30,12 +30,15 @@ import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.api.StatusKeys
 import org.apache.slider.common.tools.ConfigHelper
+import org.apache.slider.core.exceptions.SliderException
+import org.apache.slider.core.launch.SerializedApplicationReport
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.client.SliderClient
+import org.apache.slider.core.persist.ApplicationReportSerDeser
 import org.apache.slider.test.SliderTestUtils
 import org.junit.Before
 import org.junit.BeforeClass
@@ -369,6 +372,20 @@ abstract class CommandTestBase extends SliderTestUtils {
     slider(cmd)
   }
 
+  static SliderShell lookup(int result, String id, File out) {
+    assert id
+    def commands = [ACTION_LOOKUP, ARG_ID, id]
+    if (out) commands += [ARG_OUTPUT, out.absolutePath]
+    slider(result, commands)
+  }
+  
+  static SliderShell lookup(String id, File out) {
+    assert id
+    def commands = [ACTION_LOOKUP, ARG_ID, id]
+    if (out) commands += [ARG_OUTPUT, out.absolutePath]
+    slider(commands)
+  }
+
   static SliderShell list(int result, Collection<String> commands =[]) {
     slider(result, [ACTION_LIST] + commands )
   }
@@ -608,11 +625,18 @@ abstract class CommandTestBase extends SliderTestUtils {
       String name,
       String appTemplate,
       String resourceTemplate,
-      List<String> extraArgs=[]) {
+      List<String> extraArgs = [],
+      File launchReport = null) {
+
+    if (!launchReport) {
+      launchReport = createAppReportFile()
+    }
+    
     List<String> commands = [
         ACTION_CREATE, name,
         ARG_TEMPLATE, appTemplate,
         ARG_RESOURCES, resourceTemplate,
+        ARG_OUTPUT, launchReport.absolutePath,
         ARG_WAIT, Integer.toString(THAW_WAIT_TIME)
     ]
 
@@ -633,18 +657,33 @@ abstract class CommandTestBase extends SliderTestUtils {
     shell.execute()
     if (!shell.execute()) {
       // app has failed.
-      
+
       // grab the app report of the last known instance of this app
       // which may not be there if it was a config failure; may be out of date
       // from a previous run
-      log.error("Launch failed with exit code ${shell.ret}.\nLast instance of $name:")
-      slider([ACTION_LIST, name, ARG_VERBOSE]).dumpOutput()
-      
-      // trigger the assertion failure
-      shell.assertExitCode(EXIT_SUCCESS)
+      log.error(
+          "Launch failed with exit code ${shell.ret}")
+      shell.dumpOutput()
+
+      // now grab that app report if it is there
+      def appReport = maybeLookupFromLaunchReport(launchReport)
+      String extraText = ""
+      if (appReport) {
+        log.error("Application report:\n$appReport")
+        extraText = appReport.diagnostics
+      }
+
+      fail("Application Launch Failure, exit code  ${shell.ret}\n${extraText}")
     }
-    
     return shell
+  }
+
+  public File createAppReportFile() {
+    File reportFile = File.createTempFile(
+        "launch",
+        ".json",
+        new File("target"))
+    return reportFile
   }
 
   /**
@@ -662,7 +701,47 @@ abstract class CommandTestBase extends SliderTestUtils {
     }
     return args
   }
+  
+  public SerializedApplicationReport maybeLoadAppReport(File reportFile) {
+    if (reportFile.exists() && reportFile.length()> 0) {
+      ApplicationReportSerDeser serDeser = new ApplicationReportSerDeser()
+      def report = serDeser.fromFile(reportFile)
+      return report
+    }    
+    return null;
+  }  
+  
+  public SerializedApplicationReport maybeLookupFromLaunchReport(File launchReport) {
+    def report = maybeLoadAppReport(launchReport)
+    if (report) {
+      return lookupApplication(report.applicationId)
+    } else {
+      return null
+    }
+  }
 
+  /**
+   * Lookup an application, return null if loading failed
+   * @param id application ID
+   * @return an application report or null
+   */
+  public SerializedApplicationReport lookupApplication(String id) {
+    File reportFile = createAppReportFile();
+    try {
+      def shell = lookup(id, reportFile)
+      if (shell.ret) {
+        return maybeLoadAppReport(reportFile)
+      } else {
+        log.warn("Lookup operation failed:\n" + shell.dumpOutput())
+        return null
+      }
+    } finally {
+      reportFile.delete()
+      
+    }
+  }
+
+  
   public Path buildClusterPath(String clustername) {
     return new Path(
         clusterFS.homeDirectory,
