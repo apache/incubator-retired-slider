@@ -1693,13 +1693,16 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     return actionList(clustername, args);
   }
 
-    /**
-     * Implement the list action: list all nodes
-  
-     * @param clustername List out specific instance name
-     * @param args Action list arguments
-     * @return 0 if one or more entries were listed
-     */
+  /**
+   * Implement the list action.
+   * @param clustername List out specific instance name
+   * @param args Action list arguments
+   * @return 0 if one or more entries were listed
+   * @throws IOException
+   * @throws YarnException
+   * @throws UnknownApplicationInstanceException if a specific instance
+   * was named but it was not found
+   */
   @Override
   @VisibleForTesting
   public int actionList(String clustername, ActionListArgs args)
@@ -1996,8 +1999,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   private RunningApplication findApplication(String appname)
       throws YarnException, IOException {
     ApplicationReport applicationReport = findInstance(appname);
-    return applicationReport != null ? new RunningApplication(yarnClient, applicationReport): null; 
-      
+    return applicationReport != null ?
+           new RunningApplication(yarnClient, applicationReport): null; 
   }
 
   /**
