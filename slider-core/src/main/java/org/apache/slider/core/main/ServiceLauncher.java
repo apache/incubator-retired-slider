@@ -401,6 +401,8 @@ public class ServiceLauncher<S extends Service>
     Configuration conf = new Configuration();
     String[] processedArgs = extractConfigurationArgs(conf, args);
     ExitUtil.ExitException ee = launchServiceRobustly(conf, processedArgs);
+    System.out.flush();
+    System.err.flush();
     exit(ee);
   }
 

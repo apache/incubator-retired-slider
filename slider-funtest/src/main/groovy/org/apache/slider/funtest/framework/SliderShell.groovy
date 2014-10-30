@@ -228,7 +228,6 @@ class SliderShell extends Shell {
 
   /**
    * Execute shell script consisting of as many Strings as we have arguments,
-   * possibly under an explicit username (requires sudoers privileges).
    * NOTE: individual strings are concatenated into a single script as though
    * they were delimited with new line character. All quoting rules are exactly
    * what one would expect in standalone shell script.
@@ -251,21 +250,15 @@ class SliderShell extends Shell {
       writer.close()
     }
     ByteArrayOutputStream baosErr = new ByteArrayOutputStream(4096);
-    proc.consumeProcessErrorStream(baosErr);
-    out = proc.in.readLines()
-
-    // Possibly a bug in String.split as it generates a 1-element array on an
-    // empty String
-    
-    if (baosErr.size() != 0) {
-      err = baosErr.toString().split('\n');
-    } else {
-      err = [];
-    }
+    ByteArrayOutputStream baosOut = new ByteArrayOutputStream(4096);
+    proc.consumeProcessOutput(baosOut, baosErr)
 
     proc.waitFor()
     ret = proc.exitValue()
 
+    out = streamToLines(baosOut)
+    err = streamToLines(baosErr)
+    
     if (LOG.isTraceEnabled()) {
       if (ret != 0) {
         LOG.trace("return: $ret");
@@ -274,15 +267,25 @@ class SliderShell extends Shell {
         LOG.trace("\n<stdout>\n${out.join('\n')}\n</stdout>");
       }
 
-      def stderror = super.err
-      if (stderror.size() != 0) {
-        LOG.trace("\n<stderr>\n${stderror.join('\n')}\n</stderr>");
+      if (err.size() != 0) {
+        LOG.trace("\n<stderr>\n${err.join('\n')}\n</stderr>");
       }
     }
-
     return this
   }
 
+  /**
+   * Convert a stream to lines in an array
+   * @param out output stream
+   * @return the list of entries
+   */
+  protected List<String> streamToLines(ByteArrayOutputStream out) {
+    if (out.size() != 0) {
+      return out.toString().split('\n');
+    } else {
+      return [];
+    }
+  }
 
   public String findLineEntry(String[] locaters) {
     int index = 0;
