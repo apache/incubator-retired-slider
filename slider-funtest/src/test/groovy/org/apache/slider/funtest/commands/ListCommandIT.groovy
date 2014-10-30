@@ -20,6 +20,7 @@ package org.apache.slider.funtest.commands
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.funtest.framework.CommandTestBase
 import org.junit.BeforeClass
 import org.junit.Test
@@ -36,13 +37,7 @@ public class ListCommandIT extends CommandTestBase {
   @Test
   public void testListAllLive() throws Throwable {
     def shell = list("--live")
-    assert shell.ret == 0 || shell.ret == 1
-  }
-
-  @Test
-  public void testListAllFinishedLive() throws Throwable {
-    def shell = list("--live")
-    assert shell.ret == 0 || shell.ret == 1
+    assert shell.ret == 0 || shell.ret == LauncherExitCodes.EXIT_FALSE
   }
 
 }
