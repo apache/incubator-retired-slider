@@ -109,6 +109,19 @@ def info(text):
   sys.stdout.flush()
 
 
+def out(toStdErr, text) :
+  """
+  Write to one of the system output channels.
+  This action does not add newlines. If you want that: write them yourself
+  :param toStdErr: flag set if stderr is to be the dest
+  :param text: text to write.
+  :return:
+  """
+  if toStdErr:
+    sys.stderr.write(text)
+  else:
+    sys.stdout.write(text)
+
 def read(pipe, line):
   """
   read a char, append to the listing if there is a char that is not \n
@@ -129,7 +142,7 @@ def read(pipe, line):
     return line, False
 
 
-def print_output(name, src):
+def print_output(name, src, toStdErr):
   """
   Relay the output stream to stdout line by line 
   :param name: 
@@ -142,11 +155,14 @@ def print_output(name, src):
   while not finished:
     (line, done) = read(src, line)
     if done:
-      if DEBUG:
-        info(name +': ' + line)
-      else:
-        info(line)
+      out(toStdErr, line + "\n")
       line = ""
+  # closedown: read remainder of stream
+  c = src.read(1)
+  while c!="" :
+    out(toStdErr, c)
+    c = src.read(1)
+    
   src.close()
 
 
@@ -166,10 +182,10 @@ def runProcess(commandline):
                          bufsize=1, 
                          close_fds=ON_POSIX)
 
-  t = Thread(target=print_output, args=("stdout", exe.stdout))
+  t = Thread(target=print_output, args=("stdout", exe.stdout, False))
   t.daemon = True 
   t.start()
-  t2 = Thread(target=print_output, args=("stderr", exe.stderr,))
+  t2 = Thread(target=print_output, args=("stderr", exe.stderr, True))
   t2.daemon = True 
   t2.start()
 
