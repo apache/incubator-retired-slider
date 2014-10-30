@@ -66,7 +66,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 2)
     sleep(1000 * 20)
-    assert isApplicationUp(APPLICATION_NAME), 'App is not running.'
+    assertInYarnState(appId, YarnApplicationState.RUNNING)
     def cd = expectContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 1)
     assert cd.statistics[COMMAND_LOGGER]["containers.requested"] >= 2
     assertInYarnState(appId, YarnApplicationState.RUNNING)

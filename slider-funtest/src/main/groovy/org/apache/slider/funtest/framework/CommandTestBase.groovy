@@ -1051,14 +1051,14 @@ abstract class CommandTestBase extends SliderTestUtils {
     return requested
   }
 
-  boolean hasRequestedContainerCountReached(Map<String, String> args) {
+  Outcome hasRequestedContainerCountReached(Map<String, String> args) {
     String application = args['application']
     String role = args['role']
     int expectedCount = args['limit'].toInteger();
 
     int requestedCount = queryRequestedCount(application, role)
     log.debug("requested count = $requestedCount; expected=$expectedCount")
-    return requestedCount >= expectedCount
+    return Outcome.fromBool(requestedCount >= expectedCount)
   }
 
   void expectContainerRequestedCountReached(String application, String role, int limit) {
