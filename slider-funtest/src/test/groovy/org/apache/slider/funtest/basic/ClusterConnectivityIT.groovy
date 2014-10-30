@@ -65,13 +65,17 @@ class ClusterConnectivityIT extends CommandTestBase {
 
   @Test
   public void testRMTelnet() throws Throwable {
-    def rmAddr = SLIDER_CONFIG.getSocketAddr(YarnConfiguration.RM_ADDRESS, "", 0)
-    telnet(rmAddr.hostName, rmAddr.port)
+    def isHaEnabled = SLIDER_CONFIG.getTrimmed(YarnConfiguration.RM_HA_ENABLED)
+    // Telnet test is not straight forward for HA setup and is not required
+    // as long as RM binding is tested
+    if (!isHaEnabled) {
+      def rmAddr = SLIDER_CONFIG.getSocketAddr(YarnConfiguration.RM_ADDRESS, "", 0)
+      telnet(rmAddr.hostName, rmAddr.port)
+    }
   }
   
   @Test
   public void testRMBinding() throws Throwable {
-    testRMTelnet()
     SliderYarnClientImpl yarnClient = new SliderYarnClientImpl()
     try {
       SLIDER_CONFIG.setInt("ipc.client.connect.retry.interval",100)
