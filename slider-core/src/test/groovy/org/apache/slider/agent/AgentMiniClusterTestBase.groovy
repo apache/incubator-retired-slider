@@ -140,7 +140,7 @@ extends YarnZKMiniClusterTestBase {
   }
 
 /**
- * Create an AM without a master
+ * Create a standalone AM
  * @param clustername AM name
  * @param size # of nodes
  * @param deleteExistingData should any existing cluster data be deleted

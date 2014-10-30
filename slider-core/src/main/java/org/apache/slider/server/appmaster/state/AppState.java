@@ -678,11 +678,10 @@ public class AppState {
       String role = roleStatus.getName();
       MapOperations comp =
         resources.getComponent(role);
-      int desiredInstanceCount =
-        resources.getComponentOptInt(role, ResourceKeys.COMPONENT_INSTANCES, 0);
+      int desiredInstanceCount = getDesiredInstanceCount(resources, role);
       if (desiredInstanceCount == 0) {
-        log.warn("Role {} has 0 instances specified", role);
-      }
+        log.info("Role {} has 0 instances specified", role);
+      }  
       if (currentDesired != desiredInstanceCount) {
         log.info("Role {} flexed from {} to {}", role, currentDesired,
                  desiredInstanceCount);
@@ -698,10 +697,33 @@ public class AppState {
         log.info("Adding new role {}", name);
         ProviderRole dynamicRole = createDynamicProviderRole(name,
                                resources.getComponent(name));
-        buildRole(dynamicRole);
+        RoleStatus roleStatus = buildRole(dynamicRole);
+        roleStatus.setDesired(getDesiredInstanceCount(resources, name));
         roleHistory.addNewProviderRole(dynamicRole);
       }
     }
+  }
+
+  /**
+   * Get the desired instance count of a role, rejecting negative values
+   * @param resources resource map
+   * @param role role name
+   * @return the instance count
+   * @throws BadConfigException if the count is negative
+   */
+  private int getDesiredInstanceCount(ConfTreeOperations resources,
+      String role) throws BadConfigException {
+    int desiredInstanceCount =
+      resources.getComponentOptInt(role, ResourceKeys.COMPONENT_INSTANCES, 0);
+
+    if (desiredInstanceCount < 0) {
+      log.error("Role {} has negative desired instances : {}", role,
+          desiredInstanceCount);
+      throw new BadConfigException(
+          "Negative instance count (%) requested for component %s",
+          desiredInstanceCount, role);
+    }
+    return desiredInstanceCount;
   }
 
   /**
@@ -1592,10 +1614,9 @@ public class AppState {
     if (failures > threshold) {
       throw new TriggerClusterTeardownException(
         SliderExitCodes.EXIT_DEPLOYMENT_FAILED,
-        ErrorStrings.E_UNSTABLE_CLUSTER +
+          FinalApplicationStatus.FAILED, ErrorStrings.E_UNSTABLE_CLUSTER +
         " - failed with component %s failing %d times (%d in startup);" +
         " threshold is %d - last failure: %s",
-          FinalApplicationStatus.FAILED,
           role.getName(),
         role.getFailed(),
         role.getStartFailed(),
@@ -1651,8 +1672,17 @@ public class AppState {
       expected = role.getDesired();
     }
 
-    log.info("Reviewing {}", role);
+    log.info("Reviewing {} : expected {}", role, expected);
     checkFailureThreshold(role);
+    
+    if (expected < 0 ) {
+      // negative value: fail
+      throw new TriggerClusterTeardownException(
+          SliderExitCodes.EXIT_DEPLOYMENT_FAILED,
+          FinalApplicationStatus.FAILED,
+          "Negative component count of %d desired for component %s",
+          expected, role);
+    }
     
     if (delta > 0) {
       log.info("{}: Asking for {} more nodes(s) for a total of {} ", name,

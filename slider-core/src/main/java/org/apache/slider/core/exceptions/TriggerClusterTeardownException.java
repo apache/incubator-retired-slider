@@ -29,8 +29,7 @@ public class TriggerClusterTeardownException extends SliderException {
   private final FinalApplicationStatus finalApplicationStatus;
   
   public TriggerClusterTeardownException(int code,
-      String message,
-      FinalApplicationStatus finalApplicationStatus,
+      FinalApplicationStatus finalApplicationStatus, String message,
       Object... args) {
     super(code, message, args);
     this.finalApplicationStatus = finalApplicationStatus;

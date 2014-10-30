@@ -150,7 +150,7 @@ public class SliderAMClientProvider extends AbstractClientProvider
       int instances = mapOperations.getOptionInt(COMPONENT_INSTANCES, 0);
       if (instances < 0) {
         throw new BadClusterStateException(
-            "Component %s has invalid instance count: %d",
+            "Component %s has negative instance count: %d",
             mapOperations.name,
             instances);
       }

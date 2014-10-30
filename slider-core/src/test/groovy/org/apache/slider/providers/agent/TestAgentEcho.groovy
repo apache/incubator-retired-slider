@@ -26,6 +26,7 @@ import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.core.exceptions.BadClusterStateException
 import org.apache.slider.core.main.ServiceLauncher
+import org.junit.Before
 import org.junit.Test
 
 import static org.apache.slider.common.params.Arguments.*
@@ -38,6 +39,28 @@ import static org.apache.slider.providers.agent.AgentKeys.*
 @Slf4j
 class TestAgentEcho extends AgentTestBase {
 
+  File slider_core
+  String echo_py
+  File echo_py_path
+  File app_def_path
+  String agt_ver
+  File agt_ver_path
+  String agt_conf
+  File agt_conf_path
+  
+  @Before
+  public void setupArtifacts() {
+    slider_core = new File(new File(".").absoluteFile, "src/test/python");
+    echo_py = "echo.py"
+    echo_py_path = new File(slider_core, echo_py)
+    app_def_path = new File(app_def_pkg_path)
+    agt_ver = "version"
+    agt_ver_path = new File(slider_core, agt_ver)
+    agt_conf = "agent.ini"
+    agt_conf_path = new File(slider_core, agt_conf)
+
+  }
+  
   @Override
   void checkTestAssumptions(YarnConfiguration conf) {
 
@@ -53,14 +76,6 @@ class TestAgentEcho extends AgentTestBase {
         true,
         false)
 
-    File slider_core = new File(new File(".").absoluteFile, "src/test/python");
-    String echo_py = "echo.py"
-    File echo_py_path = new File(slider_core, echo_py)
-    File app_def_path = new File(app_def_pkg_path)
-    String agt_ver = "version"
-    File agt_ver_path = new File(slider_core, agt_ver)
-    String agt_conf = "agent.ini"
-    File agt_conf_path = new File(slider_core, agt_conf)
     assert echo_py_path.exists()
     assert app_def_path.exists()
     assert agt_ver_path.exists()
@@ -102,7 +117,7 @@ class TestAgentEcho extends AgentTestBase {
       sliderClient.flex(clustername, [(role): -1]);
       fail("expected an exception")
     } catch (BadClusterStateException e) {
-      assertExceptionDetails(e, SliderExitCodes.EXIT_BAD_STATE, "")
+      assertExceptionDetails(e, SliderExitCodes.EXIT_BAD_STATE, "negative")
     }
 
   }
