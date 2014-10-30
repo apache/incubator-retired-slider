@@ -2199,12 +2199,14 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         InternalKeys.CHAOS_MONKEY_PROBABILITY_AM_LAUNCH_FAILURE,
         0);
     if (amLaunchFailProbability> 0 && monkey.chaosCheck(amLaunchFailProbability)) {
+      log.info("Chaos Monkey has triggered AM Launch failure");
       // trigger a failure
       ActionStopSlider stop = new ActionStopSlider("stop",
           0, TimeUnit.SECONDS,
           LauncherExitCodes.EXIT_FALSE,
           FinalApplicationStatus.FAILED,
           E_TRIGGERED_LAUNCH_FAILURE);
+      queue(stop);
     }
     
     int amKillProbability = internals.getOptionInt(

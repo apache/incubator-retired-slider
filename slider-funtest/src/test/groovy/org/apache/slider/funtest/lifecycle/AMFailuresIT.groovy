@@ -61,12 +61,15 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
   @Test
   public void testAMKilledWithStateAMStartedAgentsStarted() throws Throwable {
     cleanup(APPLICATION_NAME)
+    File launchReportFile = createAppReportFile();
+
     SliderShell shell = createTemplatedSliderApplication(
-        APPLICATION_NAME, APP_TEMPLATE, APP_RESOURCE
-    )
+        APPLICATION_NAME, APP_TEMPLATE, APP_RESOURCE,
+        [],
+        launchReportFile)
     logShell(shell)
 
-    ensureApplicationIsUp(APPLICATION_NAME)
+    def appId = ensureYarnApplicationIsUp(launchReportFile)
     expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 1)
     
     // Wait for 20 secs for AM and agent to both reach STARTED state
@@ -92,13 +95,12 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     killAMUsingVagrantShell()
 
     // Check that the application is not running (and is in ACCEPTED state)
-    assert isApplicationInState(APPLICATION_NAME, YarnApplicationState.ACCEPTED
-    ), 
+    assert lookupYarnAppState(appId) == YarnApplicationState.ACCEPTED ,
       'App should be in ACCEPTED state (since AM got killed)'
     log.info("After AM KILL: application {} is in ACCEPTED state", APPLICATION_NAME)
 
     // Wait until AM comes back up and verify container count again
-    ensureApplicationIsUp(APPLICATION_NAME)
+    ensureYarnApplicationIsUp(appId)
 
     // There should be exactly 1 live logger container
     def cd2 = expectContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 1)
@@ -107,7 +109,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     def loggerStats2 = cd2.statistics[COMMAND_LOGGER]
     assert origRequested == loggerStats2["containers.requested"],
         'No new agent containers should be requested'
-    assert isApplicationUp(APPLICATION_NAME), 'App is not running.'
+    assert lookupYarnAppState(appId) == YarnApplicationState.RUNNING 
   }
 
 

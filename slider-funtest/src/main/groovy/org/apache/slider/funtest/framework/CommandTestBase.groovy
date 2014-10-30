@@ -30,6 +30,7 @@ import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.api.StatusKeys
 import org.apache.slider.common.tools.ConfigHelper
+import org.apache.slider.common.tools.Duration
 import org.apache.slider.core.launch.SerializedApplicationReport
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.common.SliderKeys
@@ -90,7 +91,12 @@ abstract class CommandTestBase extends SliderTestUtils {
    * not need to be escaped
    */
   public static final String TILDE
-  
+  public static final int CONTAINER_LAUNCH_TIMEOUT = 90000
+  public static final int PROBE_SLEEP_TIME = 4000
+  public static final int REGISTRY_STARTUP_TIMEOUT = 60000
+  public static
+  final String E_LAUNCH_FAIL = 'Application did not start'
+
   /*
   Static initializer for test configurations. If this code throws exceptions
   (which it may) the class will not be instantiable.
@@ -710,6 +716,16 @@ abstract class CommandTestBase extends SliderTestUtils {
     }    
     return null;
   }  
+   
+  public static SerializedApplicationReport loadAppReport(File reportFile) {
+    if (reportFile.exists() && reportFile.length()> 0) {
+      ApplicationReportSerDeser serDeser = new ApplicationReportSerDeser()
+      def report = serDeser.fromFile(reportFile)
+      return report
+    }  else {
+      throw new FileNotFoundException(reportFile.absolutePath)
+    }  
+  }  
   
   public static SerializedApplicationReport maybeLookupFromLaunchReport(File launchReport) {
     def report = maybeLoadAppReport(launchReport)
@@ -776,9 +792,9 @@ abstract class CommandTestBase extends SliderTestUtils {
   }
 
   protected void ensureRegistryCallSucceeds(String application) {
-    repeatUntilTrue(this.&isRegistryAccessible,
-        10,
-        5 * 1000,
+    repeatUntilSuccess(this.&isRegistryAccessible,
+        REGISTRY_STARTUP_TIMEOUT,
+        PROBE_SLEEP_TIME,
         [application: application],
         true,
         'Application registry is not accessible, failing test.') {
@@ -789,35 +805,36 @@ abstract class CommandTestBase extends SliderTestUtils {
 
    
   protected void ensureApplicationIsUp(String application) {
-    repeatUntilTrue(this.&isApplicationRunning,
-        30,
+    repeatUntilSuccess(this.&isApplicationRunning,
         SLIDER_CONFIG.getInt(KEY_TEST_INSTANCE_LAUNCH_TIME,
-            DEFAULT_INSTANCE_LAUNCH_TIME_SECONDS),
+            DEFAULT_INSTANCE_LAUNCH_TIME_SECONDS) * 1000,
+        PROBE_SLEEP_TIME,
         [application: application],
         true,
-        'Application did not start, failing test.') {
+        E_LAUNCH_FAIL) {
       describe "final state of app that tests say is not up"
       exists(application, true).dumpOutput()
     }
   }
 
-  protected boolean isRegistryAccessible(Map<String, String> args) {
+  protected Outcome isRegistryAccessible(Map<String, String> args) {
     String applicationName = args['application'];
     SliderShell shell = slider(
         [
             ACTION_REGISTRY,
             ARG_NAME,
             applicationName,
-            ARG_LISTEXP])
+            ARG_LISTEXP
+        ])
     if (EXIT_SUCCESS != shell.execute()) {
       logShell(shell)
     }
-    return EXIT_SUCCESS == shell.execute()
+    return Outcome.fromBool(EXIT_SUCCESS == shell.execute())
   }
 
-  protected boolean isApplicationRunning(Map<String, String> args) {
+  protected Outcome isApplicationRunning(Map<String, String> args) {
     String applicationName = args['application'];
-    return isApplicationUp(applicationName);
+    return Outcome.fromBool(isApplicationUp(applicationName))
   }
 
   protected boolean isApplicationUp(String applicationName) {
@@ -827,18 +844,6 @@ abstract class CommandTestBase extends SliderTestUtils {
     );
   }
 
-  protected void ensureYarnApplicationIsUp(String application) {
-    repeatUntilTrue(this.&isApplicationRunning,
-        30,
-        SLIDER_CONFIG.getInt(KEY_TEST_INSTANCE_LAUNCH_TIME,
-            DEFAULT_INSTANCE_LAUNCH_TIME_SECONDS),
-        [application: application],
-        true,
-        'Application did not start, failing test.') {
-      describe "final state of app that tests say is not up"
-      exists(application, true).dumpOutput()
-    }
-  }
   
   /**
    * is an application in a desired yarn state 
@@ -853,27 +858,111 @@ abstract class CommandTestBase extends SliderTestUtils {
       [ACTION_EXISTS, applicationName, ARG_STATE, yarnState.toString()])
     return shell.ret == 0
   }
-  
+
+
+  protected Outcome isYarnApplicationRunning(Map<String, String> args) {
+    String applicationId = args['applicationId'];
+    return isYarnApplicationRunning(applicationId)
+  }
+
   /**
    * is a yarn application in a desired yarn state 
    * @param yarnState
    * @param applicationName
-   * @return
+   * @return an outcome indicating whether the app is at the state, on its way
+   * or has gone past
    */
-  public static boolean isYarnApplicationInState(
-      String applicationId,
-      YarnApplicationState yarnState) {
-    def sar = lookupApplication(applicationId)
-    assert sar != null;
-    return yarnState.toString() == sar.state
+  public static Outcome isYarnApplicationRunning(
+      String applicationId) {
+    YarnApplicationState appState = lookupYarnAppState(applicationId)
+    YarnApplicationState yarnState = YarnApplicationState.RUNNING
+    if (yarnState == appState) {
+      return Outcome.Success;
+    }
+    
+    if (appState.ordinal() > yarnState.ordinal()) {
+      // app has passed beyond hope
+      return Outcome.Fail
+    }
+    return Outcome.Retry
   }
 
+  public static YarnApplicationState lookupYarnAppState(String applicationId) {
+    def sar = lookupApplication(applicationId)
+    assert sar != null;
+    YarnApplicationState appState = YarnApplicationState.valueOf(sar.state)
+    return appState
+  }
+
+  public static void assertInYarnState(String applicationId,
+      YarnApplicationState expectedState) {
+    def applicationReport = lookupApplication(applicationId)
+    assert expectedState.toString() == applicationReport.state 
+  }
+
+  /**
+   * Wait for the YARN app to come up. This will fail fast
+   * @param launchReportFile launch time file containing app id
+   * @return the app ID
+   */
+  protected String ensureYarnApplicationIsUp(File launchReportFile) {
+    def id = loadAppReport(launchReportFile).applicationId
+    ensureYarnApplicationIsUp(id)
+    return id;
+  }
+  /**
+   * Wait for the YARN app to come up. This will fail fast
+   * @param applicationId
+   */
+  protected void ensureYarnApplicationIsUp(String applicationId) {
+    repeatUntilSuccess(this.&isYarnApplicationRunning,
+        SLIDER_CONFIG.getInt(KEY_TEST_INSTANCE_LAUNCH_TIME,
+            DEFAULT_INSTANCE_LAUNCH_TIME_SECONDS),
+        PROBE_SLEEP_TIME,
+        [applicationId: applicationId],
+        true,
+        E_LAUNCH_FAIL) {
+      describe "final state of app that tests say is not up"
+      def sar = lookupApplication(applicationId)
+
+      def message = E_LAUNCH_FAIL + "\n$sar"
+      log.error(message)
+      fail(message)
+    }
+  }
+
+  /**
+   * Outcome for probes
+   */
+  static class Outcome {
+
+    public final String name;
+
+    private Outcome(String name) {
+      this.name = name
+    }
+
+    static Outcome Success = new Outcome("Success")
+    static Outcome Retry = new Outcome("Retry")
+    static Outcome Fail = new Outcome("Fail")
+
+
+    /**
+     * build from a bool, where false is mapped to retry
+     * @param b boolean
+     * @return an outcome
+     */
+    static Outcome fromBool(boolean b) {
+      return b? Success: Retry;
+    }
+
+  }
   
   /**
    * Repeat a probe until it succeeds, if it does not execute a failure
    * closure then raise an exception with the supplied message
    * @param probe probe
-   * @param maxAttempts max number of attempts
+   * @param timeout time in millis before giving up
    * @param sleepDur sleep between failing attempts
    * @param args map of arguments to the probe
    * @param failIfUnsuccessful if the probe fails after all the attempts
@@ -881,23 +970,35 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @param failureMessage message to include in exception raised
    * @param failureHandler closure to invoke prior to the failure being raised
    */
-  protected void repeatUntilTrue(Closure probe,
-      int maxAttempts, int sleepDur, Map args,
-      boolean failIfUnsuccessful = false,
+  protected void repeatUntilSuccess(Closure probe,
+      int timeout, int sleepDur,
+      Map args,
+      boolean failIfUnsuccessful,
       String failureMessage,
       Closure failureHandler) {
     int attemptCount = 0
     boolean succeeded = false;
-    while (attemptCount < maxAttempts) {
-      if (probe(args)) {
-        // finished
+    boolean completed = false;
+    Duration duration = new Duration(timeout)
+    duration.start();
+    while (!completed) {
+      Outcome outcome = (Outcome) probe(args)
+      if (outcome.equals(Outcome.Success)) {
+        // success
         log.debug("Success after $attemptCount attempt(s)")
         succeeded = true;
-        break
-      };
-      attemptCount++;
-
-      sleep(sleepDur)
+        completed = true;
+      } else if (outcome.equals(Outcome.Retry)) {
+        // failed but retry possible
+        attemptCount++;
+        completed = duration.limitExceeded
+        if (!completed) {
+          sleep(sleepDur)
+        }
+      } else if (outcome.equals(Outcome.Fail)) {
+        // fast fail
+          completed = true;
+      }
     }
     
     if (failIfUnsuccessful & !succeeded) {
@@ -962,10 +1063,10 @@ abstract class CommandTestBase extends SliderTestUtils {
 
   void expectContainerRequestedCountReached(String application, String role, int limit) {
 
-    repeatUntilTrue(
+    repeatUntilSuccess(
         this.&hasRequestedContainerCountReached,
-        90,
-        1000,
+        CONTAINER_LAUNCH_TIMEOUT,
+        PROBE_SLEEP_TIME,
         [limit      : Integer.toString(limit),
          role       : role,
          application: application],

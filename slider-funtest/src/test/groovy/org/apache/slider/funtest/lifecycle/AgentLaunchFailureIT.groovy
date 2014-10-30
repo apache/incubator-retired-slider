@@ -20,6 +20,8 @@ package org.apache.slider.funtest.lifecycle
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.slider.server.appmaster.SliderAppMaster
+
 import static org.apache.slider.api.InternalKeys.*
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
@@ -65,33 +67,33 @@ public class AgentLaunchFailureIT extends AgentCommandTestBase
         APP_RESOURCE2,
         [
             ARG_OPTION, CHAOS_MONKEY_ENABLED, "true",
+            ARG_OPTION, CHAOS_MONKEY_INTERVAL_SECONDS, "60",
             ARG_OPTION, CHAOS_MONKEY_PROBABILITY_AM_LAUNCH_FAILURE, 
              Integer.toString(PROBABILITY_PERCENT_100),
         ],
         launchReportFile)
 
-    shell.dumpOutput();
     assert launchReportFile.exists()
     assert launchReportFile.size() > 0
     def launchReport = maybeLoadAppReport(launchReportFile)
     assert launchReport;
     assert launchReport.applicationId;
-    def report = maybeLookupFromLaunchReport(launchReportFile)
-    assert report;
-    ensureApplicationIsUp(CLUSTER)
 
-    //stop
-    freeze(0, CLUSTER,
-        [
-            ARG_FORCE,
-            ARG_WAIT, Integer.toString(FREEZE_WAIT_TIME),
-            ARG_MESSAGE, "final-shutdown"
-        ])
-
-    destroy(0, CLUSTER)
-
-    //cluster now missing
-    exists(EXIT_UNKNOWN_INSTANCE, CLUSTER)
+    // spin expecting failure
+    def appId = launchReport.applicationId
+    sleep(5000)
+    describe("Awaiting failure")
+    try {
+      ensureYarnApplicationIsUp(appId)
+      fail("application is up")
+    } catch (AssertionError e) {
+      if(!e.toString().contains(SliderAppMaster.E_TRIGGERED_LAUNCH_FAILURE)) {
+        throw e;
+      }
+    }
+    def sar = lookupApplication(appId)
+    log.info(sar.toString())
+    assert sar.diagnostics.contains(SliderAppMaster.E_TRIGGERED_LAUNCH_FAILURE)
 
   }
 }

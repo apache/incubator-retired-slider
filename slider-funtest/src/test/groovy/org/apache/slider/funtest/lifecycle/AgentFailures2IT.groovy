@@ -20,6 +20,7 @@ package org.apache.slider.funtest.lifecycle
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
@@ -50,21 +51,20 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     assumeAgentTestsEnabled()
     
     cleanup(APPLICATION_NAME)
-    SliderShell shell = createTemplatedSliderApplication(
-        APPLICATION_NAME,
-        APP_TEMPLATE3,
-        APP_RESOURCE)
+    File launchReportFile = createAppReportFile();
 
+    SliderShell shell = createTemplatedSliderApplication(
+        APPLICATION_NAME, APP_TEMPLATE3, APP_RESOURCE,
+        [],
+        launchReportFile)
     logShell(shell)
 
-    ensureApplicationIsUp(APPLICATION_NAME)
+    def appId = ensureYarnApplicationIsUp(launchReportFile)
     expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 3)
     sleep(1000 * 20)
     def cd = execStatus(APPLICATION_NAME)
     assert cd.statistics[COMMAND_LOGGER]["containers.requested"] >= 3
-
-    assert isApplicationUp(APPLICATION_NAME), 'App is not running.'
-
+    assertInYarnState(appId, YarnApplicationState.RUNNING)
   }
 
 

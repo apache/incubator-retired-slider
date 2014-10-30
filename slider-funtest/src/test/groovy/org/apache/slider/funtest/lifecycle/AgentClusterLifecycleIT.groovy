@@ -78,7 +78,7 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
     def launchReport = maybeLoadAppReport(launchReportFile)
     assert launchReport;
 
-    ensureApplicationIsUp(CLUSTER)
+    def appId = ensureYarnApplicationIsUp(launchReportFile)
 
     //at this point the cluster should exist.
     assertPathExists(clusterFS, "Cluster parent directory does not exist", clusterpath.parent)

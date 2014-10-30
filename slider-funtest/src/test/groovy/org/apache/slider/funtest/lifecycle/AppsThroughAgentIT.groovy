@@ -20,6 +20,7 @@ package org.apache.slider.funtest.lifecycle
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
@@ -53,13 +54,15 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     assumeAgentTestsEnabled()
 
     cleanup(APPLICATION_NAME)
+    File launchReportFile = createAppReportFile();
     SliderShell shell = createTemplatedSliderApplication(APPLICATION_NAME,
         APP_TEMPLATE,
-        APP_RESOURCE)
-
+        APP_RESOURCE,
+        [],
+        launchReportFile)
     logShell(shell)
 
-    ensureApplicationIsUp(APPLICATION_NAME)
+    def appId = ensureYarnApplicationIsUp(launchReportFile)
 
     //flex
     slider(EXIT_SUCCESS,
@@ -107,8 +110,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
             APPLICATION_NAME,
             ARG_GETEXP,
             "container_log_dirs"])
-    if(!containsString(shell, "\"tag\" : \"COMMAND_LOGGER\"", 2)
-    || !containsString(shell, "\"level\" : \"component\"", 2)) {
+    if (!containsString(shell, "\"tag\" : \"COMMAND_LOGGER\"", 2)
+        || !containsString(shell, "\"level\" : \"component\"", 2)) {
       logShell(shell)
       assert fail("Should list 2 entries for log folders")
     }
@@ -159,6 +162,6 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
       assert fail("Should have exported cl-site")
     }
 
-    assert isApplicationUp(APPLICATION_NAME), 'App is not running.'
+    assertInYarnState(appId,  YarnApplicationState.RUNNING)
   }
 }
