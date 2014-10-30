@@ -122,6 +122,17 @@ def out(toStdErr, text) :
   else:
     sys.stdout.write(text)
 
+def flush(toStdErr) :
+  """
+  Flush the output stream
+  :param toStdErr: flag set if stderr is to be the dest
+  :return:
+  """
+  if toStdErr:
+    sys.stderr.flush()
+  else:
+    sys.stdout.flush()
+
 def read(pipe, line):
   """
   read a char, append to the listing if there is a char that is not \n
@@ -147,6 +158,7 @@ def print_output(name, src, toStdErr):
   Relay the output stream to stdout line by line 
   :param name: 
   :param src: source stream
+  :param toStdErr: flag set if stderr is to be the dest
   :return:
   """
 
@@ -156,13 +168,16 @@ def print_output(name, src, toStdErr):
     (line, done) = read(src, line)
     if done:
       out(toStdErr, line + "\n")
+      flush(toStdErr)
       line = ""
   # closedown: read remainder of stream
   c = src.read(1)
   while c!="" :
     out(toStdErr, c)
+    if c == "\n":
+      flush(toStdErr)
     c = src.read(1)
-    
+  flush(toStdErr)
   src.close()
 
 
