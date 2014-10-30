@@ -79,9 +79,14 @@ class SliderShell extends Shell {
     List<String> commandLine = buildEnvCommands()
 
     commandLine << command
+    if (org.apache.hadoop.util.Shell.WINDOWS) {
+      // Ensure the errorlevel returned by last call is set for the invoking shell
+      commandLine << "@echo ERRORLEVEL=%ERRORLEVEL%"
+      commandLine << "@exit %ERRORLEVEL%"
+    }
     String script = commandLine.join("\n")
     log.debug(script)
-    super.exec(script);
+    exec(script);
     signCorrectReturnCode()
     return ret;
   }
@@ -240,18 +245,19 @@ class SliderShell extends Shell {
    * @return Shell object for chaining
    */
   Shell exec(Object... args) {
-    def proc = "$shell".execute()
+    Process proc = "$shell".execute()
     script = args.join("\n")
     LOG.debug("${shell} << __EOT__\n${script}\n__EOT__");
+    ByteArrayOutputStream baosErr = new ByteArrayOutputStream(4096);
+    ByteArrayOutputStream baosOut = new ByteArrayOutputStream(4096);
+    proc.consumeProcessOutput(baosOut, baosErr)
 
     Thread.start {
       def writer = new PrintWriter(new BufferedOutputStream(proc.out))
       writer.println(script)
+      writer.flush()
       writer.close()
     }
-    ByteArrayOutputStream baosErr = new ByteArrayOutputStream(4096);
-    ByteArrayOutputStream baosOut = new ByteArrayOutputStream(4096);
-    proc.consumeProcessOutput(baosOut, baosErr)
 
     proc.waitFor()
     ret = proc.exitValue()
