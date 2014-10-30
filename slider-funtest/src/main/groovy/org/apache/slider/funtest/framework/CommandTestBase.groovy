@@ -30,7 +30,6 @@ import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.api.StatusKeys
 import org.apache.slider.common.tools.ConfigHelper
-import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.launch.SerializedApplicationReport
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.common.SliderKeys
@@ -626,17 +625,19 @@ abstract class CommandTestBase extends SliderTestUtils {
       String appTemplate,
       String resourceTemplate,
       List<String> extraArgs = [],
-      File launchReport = null) {
+      File launchReportFile = null) {
 
-    if (!launchReport) {
-      launchReport = createAppReportFile()
+    if (!launchReportFile) {
+      launchReportFile = createAppReportFile()
     }
+    // delete any previous copy of the file
+    launchReportFile.delete();
     
     List<String> commands = [
         ACTION_CREATE, name,
         ARG_TEMPLATE, appTemplate,
         ARG_RESOURCES, resourceTemplate,
-        ARG_OUTPUT, launchReport.absolutePath,
+        ARG_OUTPUT, launchReportFile.absolutePath,
         ARG_WAIT, Integer.toString(THAW_WAIT_TIME)
     ]
 
@@ -655,18 +656,17 @@ abstract class CommandTestBase extends SliderTestUtils {
     commands.addAll(extraArgs)
     SliderShell shell = new SliderShell(commands)
     shell.execute()
-    if (!shell.execute()) {
+    if (0 != shell.execute()) {
       // app has failed.
 
       // grab the app report of the last known instance of this app
       // which may not be there if it was a config failure; may be out of date
       // from a previous run
-      log.error(
-          "Launch failed with exit code ${shell.ret}")
+      log.error("Launch failed with exit code ${shell.ret}")
       shell.dumpOutput()
 
       // now grab that app report if it is there
-      def appReport = maybeLookupFromLaunchReport(launchReport)
+      def appReport = maybeLookupFromLaunchReport(launchReportFile)
       String extraText = ""
       if (appReport) {
         log.error("Application report:\n$appReport")
@@ -729,15 +729,15 @@ abstract class CommandTestBase extends SliderTestUtils {
     File reportFile = createAppReportFile();
     try {
       def shell = lookup(id, reportFile)
-      if (shell.ret) {
+      if (shell.ret == 0) {
         return maybeLoadAppReport(reportFile)
       } else {
-        log.warn("Lookup operation failed:\n" + shell.dumpOutput())
+        log.warn("Lookup operation failed with ${shell.ret}")
+        shell.dumpOutput()
         return null
       }
     } finally {
       reportFile.delete()
-      
     }
   }
 

@@ -66,11 +66,18 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
 
     def clusterpath = buildClusterPath(CLUSTER)
     assert !clusterFS.exists(clusterpath)
+    File launchReportFile = createAppReportFile();
     SliderShell shell = createTemplatedSliderApplication(CLUSTER,
         APP_TEMPLATE,
-        APP_RESOURCE2)
+        APP_RESOURCE2,
+        [],
+        launchReportFile)
 
     logShell(shell)
+    assert launchReportFile.exists()
+    assert launchReportFile.size() > 0
+    def launchReport = maybeLoadAppReport(launchReportFile)
+    assert launchReport;
 
     ensureApplicationIsUp(CLUSTER)
 

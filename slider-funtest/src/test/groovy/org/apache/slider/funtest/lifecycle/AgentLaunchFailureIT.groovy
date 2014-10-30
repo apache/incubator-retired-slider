@@ -20,12 +20,8 @@ package org.apache.slider.funtest.lifecycle
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.hadoop.registry.client.binding.RegistryUtils
-import org.apache.hadoop.registry.client.types.Endpoint
-import org.apache.hadoop.registry.client.types.ServiceRecord
 import org.apache.slider.api.InternalKeys
 import org.apache.slider.common.SliderExitCodes
-import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
 import org.apache.slider.funtest.framework.AgentCommandTestBase
@@ -34,8 +30,6 @@ import org.apache.slider.funtest.framework.SliderShell
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-
-import static org.apache.slider.core.registry.info.CustomRegistryConstants.*
 
 @CompileStatic
 @Slf4j
@@ -62,21 +56,31 @@ public class AgentLaunchFailureIT extends AgentCommandTestBase
   public void testAgentLaunchFailure() throws Throwable {
     describe("Create a failing cluster and validate failure logic")
 
+    // verify no cluster
+    assert 0 != exists(CLUSTER).ret
+ 
     // create an AM which fails to launch within a second
     File launchReportFile = createAppReportFile();
     SliderShell shell = createTemplatedSliderApplication(CLUSTER,
         APP_TEMPLATE,
         APP_RESOURCE2,
         [
-            ARG_INTERNAL, InternalKeys.CHAOS_MONKEY_ENABLED, "true",
-            ARG_INTERNAL, InternalKeys.CHAOS_MONKEY_INTERVAL_SECONDS, "1",
-            ARG_INTERNAL, InternalKeys.CHAOS_MONKEY_PROBABILITY_AM_FAILURE, "100",
+            ARG_OPTION, InternalKeys.CHAOS_MONKEY_ENABLED, "true",
+            ARG_OPTION, InternalKeys.CHAOS_MONKEY_DELAY_SECONDS, "1",
+            ARG_OPTION, InternalKeys.CHAOS_MONKEY_INTERVAL_SECONDS, "60",
+            ARG_OPTION, InternalKeys.CHAOS_MONKEY_PROBABILITY_AM_FAILURE, "100",
         ],
         launchReportFile)
 
-    maybeLookupFromLaunchReport(launchReportFile)
+    shell.dumpOutput();
+    assert launchReportFile.exists()
+    assert launchReportFile.size() > 0
+    def launchReport = maybeLoadAppReport(launchReportFile)
+    assert launchReport;
+    assert launchReport.applicationId;
+    def report = maybeLookupFromLaunchReport(launchReportFile)
+    assert report;
     ensureApplicationIsUp(CLUSTER)
-
 
     //stop
     freeze(0, CLUSTER,
