@@ -20,29 +20,24 @@ package org.apache.slider.funtest.commands
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.slider.common.SliderExitCodes
+import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.funtest.framework.CommandTestBase
-import org.junit.BeforeClass
 import org.junit.Test
 
 @CompileStatic
 @Slf4j
-public class ListCommandIT extends CommandTestBase {
+public class CommandExitCodesIT extends CommandTestBase {
 
   @Test
-  public void testListAll() throws Throwable {
-    assertSuccess(list(""))
+  public void testHelp() throws Throwable {
+    slider(0, ["help"])
   }
 
   @Test
-  public void testListAllLive() throws Throwable {
-    def shell = list("--live")
-    assert shell.ret == 0 || shell.ret == 1
+  public void testStopWithoutCluster() throws Throwable {
+    slider(LauncherExitCodes.EXIT_COMMAND_ARGUMENT_ERROR, ["stop"]).dumpOutput()
   }
 
-  @Test
-  public void testListAllFinishedLive() throws Throwable {
-    def shell = list("--live")
-    assert shell.ret == 0 || shell.ret == 1
-  }
 
 }
