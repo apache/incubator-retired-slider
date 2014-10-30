@@ -79,9 +79,14 @@ class SliderShell extends Shell {
     List<String> commandLine = buildEnvCommands()
 
     commandLine << command
+    if (org.apache.hadoop.util.Shell.WINDOWS) {
+      // Ensure the errorlevel returned by last call is set for the invoking shell
+      commandLine << "@echo ERRORLEVEL=%ERRORLEVEL%"
+      commandLine << "@exit %ERRORLEVEL%"
+    }
     String script = commandLine.join("\n")
     log.debug(script)
-    super.exec(script);
+    exec(script);
     signCorrectReturnCode()
     return ret;
   }
@@ -251,12 +256,6 @@ class SliderShell extends Shell {
       def writer = new PrintWriter(new BufferedOutputStream(proc.out))
       writer.println(script)
       writer.flush()
-      if (org.apache.hadoop.util.Shell.WINDOWS) {
-        // Ensure the errorlevel returned by last call is set for the invoking shell
-        writer.println("@echo ERRORLEVEL=%ERRORLEVEL%")
-        writer.println("@exit %ERRORLEVEL%")
-        writer.flush()
-      }
       writer.close()
     }
 
