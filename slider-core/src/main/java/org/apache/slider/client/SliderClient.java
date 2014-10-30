@@ -347,7 +347,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     } catch (PathNotFoundException nfe) {
       throw new NotFoundException(nfe, nfe.toString());
     }
-
   }
 
   /**
@@ -529,7 +528,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     SliderUtils.validateClusterName(clustername);
     //no=op, it is now mandatory. 
     verifyBindingsDefined();
-    verifyNoLiveClusters(clustername);
+    verifyNoLiveClusters(clustername, "Destroy");
 
     // create the directory path
     Path clusterDirectory = sliderFileSystem.buildClusterDirPath(clustername);
@@ -772,7 +771,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     SliderUtils.validateClusterName(clustername);
     verifyBindingsDefined();
     if (!liveClusterAllowed) {
-      verifyNoLiveClusters(clustername);
+      verifyNoLiveClusters(clustername, "Create");
     }
 
     Configuration conf = getConfig();
@@ -1100,7 +1099,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     deployedClusterName = clustername;
     SliderUtils.validateClusterName(clustername);
-    verifyNoLiveClusters(clustername);
+    verifyNoLiveClusters(clustername, "Launch");
     Configuration config = getConfig();
     lookupZKQuorum();
     boolean clusterSecure = SliderUtils.isHadoopClusterSecure(config);
@@ -1534,17 +1533,21 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   /**
    * verify that a live cluster isn't there
    * @param clustername cluster name
+   * @param action
    * @throws SliderException with exit code EXIT_CLUSTER_LIVE
    * if a cluster of that name is either live or starting up.
    */
-  public void verifyNoLiveClusters(String clustername) throws
+  public void verifyNoLiveClusters(String clustername, String action) throws
                                                        IOException,
                                                        YarnException {
     List<ApplicationReport> existing = findAllLiveInstances(clustername);
 
     if (!existing.isEmpty()) {
       throw new SliderException(EXIT_APPLICATION_IN_USE,
-                              clustername + ": " + E_CLUSTER_RUNNING + " :" +
+          action +" failed for "
+                              + clustername
+                              + ": "
+                              + E_CLUSTER_RUNNING + " :" +
                               existing.get(0));
     }
   }
@@ -2168,10 +2171,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   @Override
   public int actionThaw(String clustername, ActionThawArgs thaw) throws YarnException, IOException {
     SliderUtils.validateClusterName(clustername);
-    // see if it is actually running and bail out;
     verifyBindingsDefined();
-    verifyNoLiveClusters(clustername);
-
+    // see if it is actually running and bail out;
+    verifyNoLiveClusters(clustername, "Start");
 
     //start the cluster
     return startCluster(clustername, thaw);

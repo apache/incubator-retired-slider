@@ -150,6 +150,12 @@ public interface InternalKeys {
   int DEFAULT_CHAOS_MONKEY_PROBABILITY_AM_FAILURE = 0;
 
   /**
+   * Probability of a monkey check killing the AM:  {@value}
+   */
+  String CHAOS_MONKEY_PROBABILITY_AM_LAUNCH_FAILURE =
+      CHAOS_MONKEY_PROBABILITY + ".amlaunchfailure";
+
+  /**
    * Probability of a monkey check killing a container:  {@value}
    */
 
@@ -162,4 +168,14 @@ public interface InternalKeys {
   int DEFAULT_CHAOS_MONKEY_PROBABILITY_CONTAINER_FAILURE = 0;
 
 
+  /**
+   * 1% of chaos
+   */
+  int PROBABILITY_PERCENT_1 = 100;
+  
+  /**
+   * 100% for chaos values
+   */
+  int PROBABILITY_PERCENT_100 = 100 * PROBABILITY_PERCENT_1;
+  
 }

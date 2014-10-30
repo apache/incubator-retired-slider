@@ -192,7 +192,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     ServiceStateChangeListener,
     RoleKeys,
     ProviderCompleted {
-  
+
   protected static final Logger log =
     LoggerFactory.getLogger(SliderAppMaster.class);
 
@@ -220,7 +220,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * Singleton of metrics registry
    */
   public static final MetricRegistry metrics = new MetricRegistry();
-  
+  public static final String E_TRIGGERED_LAUNCH_FAILURE =
+      "Chaos monkey triggered launch failure";
+
   /** YARN RPC to communicate with the Resource Manager or Node Manager */
   private YarnRPC yarnRPC;
 
@@ -2191,6 +2193,20 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     initAndAddService(monkey);
     
     // configure the targets
+    
+    // launch failure: special case with explicit failure triggered now
+    int amLaunchFailProbability = internals.getOptionInt(
+        InternalKeys.CHAOS_MONKEY_PROBABILITY_AM_LAUNCH_FAILURE,
+        0);
+    if (amLaunchFailProbability> 0 && monkey.chaosCheck(amLaunchFailProbability)) {
+      // trigger a failure
+      ActionStopSlider stop = new ActionStopSlider("stop",
+          0, TimeUnit.SECONDS,
+          LauncherExitCodes.EXIT_FALSE,
+          FinalApplicationStatus.FAILED,
+          E_TRIGGERED_LAUNCH_FAILURE);
+    }
+    
     int amKillProbability = internals.getOptionInt(
         InternalKeys.CHAOS_MONKEY_PROBABILITY_AM_FAILURE,
         InternalKeys.DEFAULT_CHAOS_MONKEY_PROBABILITY_AM_FAILURE);

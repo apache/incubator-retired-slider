@@ -21,6 +21,7 @@ package org.apache.slider.server.appmaster.model.monkey
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.conf.YarnConfiguration
+import org.apache.slider.api.InternalKeys
 import org.apache.slider.server.appmaster.actions.ActionHalt
 import org.apache.slider.server.appmaster.actions.ActionKillContainer
 import org.apache.slider.server.appmaster.actions.QueueService
@@ -66,7 +67,7 @@ class TestMockMonkey extends BaseMockAppStateTest {
   @Test
   public void testMonkeyPlay() throws Throwable {
     ChaosCounter counter = new ChaosCounter()
-    monkey.addTarget("target", counter, ChaosMonkeyService.PERCENT_100)
+    monkey.addTarget("target", counter, InternalKeys.PROBABILITY_PERCENT_100)
     assert 1 == monkey.targetCount;
     monkey.play()
     assert counter.count == 1
@@ -76,7 +77,7 @@ class TestMockMonkey extends BaseMockAppStateTest {
   public void testMonkeySchedule() throws Throwable {
     ChaosCounter counter = new ChaosCounter()
     assert 0 == monkey.targetCount;
-    monkey.addTarget("target", counter, ChaosMonkeyService.PERCENT_100)
+    monkey.addTarget("target", counter, InternalKeys.PROBABILITY_PERCENT_100)
     assert 1 == monkey.targetCount;
     assert monkey.schedule(0, 1, TimeUnit.SECONDS)
     assert 1 == queues.scheduledActions.size()
@@ -105,8 +106,8 @@ class TestMockMonkey extends BaseMockAppStateTest {
   public void testMonkeyPlaySometimes() throws Throwable {
     ChaosCounter counter = new ChaosCounter()
     ChaosCounter counter2 = new ChaosCounter()
-    monkey.addTarget("target1", counter, ChaosMonkeyService.PERCENT_1 * 50)
-    monkey.addTarget("target2", counter2, ChaosMonkeyService.PERCENT_1 * 25)
+    monkey.addTarget("target1", counter, InternalKeys.PROBABILITY_PERCENT_1 * 50)
+    monkey.addTarget("target2", counter2, InternalKeys.PROBABILITY_PERCENT_1 * 25)
 
     for (int i = 0; i < 100; i++) {
       monkey.play()

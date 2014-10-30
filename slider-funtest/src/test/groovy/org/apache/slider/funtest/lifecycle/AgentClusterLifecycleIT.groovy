@@ -48,7 +48,6 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
   @Before
   public void prepareCluster() {
     setupCluster(CLUSTER)
-    describe("Create a 0-role cluster, so testing AM start/stop")
   }
 
   @After
@@ -62,7 +61,7 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
     describe "Walk a 0-role cluster through its lifecycle"
 
     // sanity check to verify the config is correct
-    assert clusterFS.uri.scheme!="file"
+    assert clusterFS.uri.scheme != "file"
 
     def clusterpath = buildClusterPath(CLUSTER)
     assert !clusterFS.exists(clusterpath)

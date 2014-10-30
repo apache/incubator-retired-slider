@@ -92,8 +92,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     killAMUsingVagrantShell()
 
     // Check that the application is not running (and is in ACCEPTED state)
-    assert isApplicationInState(YarnApplicationState.ACCEPTED,
-        APPLICATION_NAME), 
+    assert isApplicationInState(APPLICATION_NAME, YarnApplicationState.ACCEPTED
+    ), 
       'App should be in ACCEPTED state (since AM got killed)'
     log.info("After AM KILL: application {} is in ACCEPTED state", APPLICATION_NAME)
 

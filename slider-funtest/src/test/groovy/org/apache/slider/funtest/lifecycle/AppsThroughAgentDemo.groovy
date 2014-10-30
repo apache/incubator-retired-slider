@@ -32,20 +32,16 @@ import org.junit.Test
 
 @CompileStatic
 @Slf4j
-public class AppsThroughAgentIT extends AgentCommandTestBase
+public class AppsThroughAgentDemo extends AgentCommandTestBase
 implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   private static String COMMAND_LOGGER = "COMMAND_LOGGER"
-  private static String APPLICATION_NAME = "apps-through-agent"
+  private static String APPLICATION_NAME = "agent-demo"
+
 
   @Before
   public void prepareCluster() {
     setupCluster(APPLICATION_NAME)
-  }
-  
-  @After
-  public void destroyCluster() {
-    cleanup(APPLICATION_NAME)
   }
 
   @Test

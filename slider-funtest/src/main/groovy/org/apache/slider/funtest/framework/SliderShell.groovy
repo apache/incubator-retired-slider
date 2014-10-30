@@ -247,7 +247,6 @@ class SliderShell extends Shell {
   Shell exec(Object... args) {
     Process proc = "$shell".execute()
     script = args.join("\n")
-    LOG.debug("${shell} << __EOT__\n${script}\n__EOT__");
     ByteArrayOutputStream baosErr = new ByteArrayOutputStream(4096);
     ByteArrayOutputStream baosOut = new ByteArrayOutputStream(4096);
     proc.consumeProcessOutput(baosOut, baosErr)

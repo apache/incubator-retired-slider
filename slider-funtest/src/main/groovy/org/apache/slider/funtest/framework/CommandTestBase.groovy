@@ -457,6 +457,7 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @param cluster
    */
   static void setupCluster(String cluster) {
+    describe "setting up $cluster"
     ensureClusterDestroyed(cluster)
   }
 
@@ -655,7 +656,6 @@ abstract class CommandTestBase extends SliderTestUtils {
         SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL));
     commands.addAll(extraArgs)
     SliderShell shell = new SliderShell(commands)
-    shell.execute()
     if (0 != shell.execute()) {
       // app has failed.
 
@@ -678,7 +678,7 @@ abstract class CommandTestBase extends SliderTestUtils {
     return shell
   }
 
-  public File createAppReportFile() {
+  public static  File createAppReportFile() {
     File reportFile = File.createTempFile(
         "launch",
         ".json",
@@ -693,7 +693,7 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @param option option to probe and use
    * @return the (possibly extended) list
    */
-  public List<String> maybeAddCommandOption(
+  public static List<String> maybeAddCommandOption(
       List<String> args, List<String> commands, String option) {
     if ( SliderUtils.isSet(option)) {
       args.addAll(commands)
@@ -702,7 +702,7 @@ abstract class CommandTestBase extends SliderTestUtils {
     return args
   }
   
-  public SerializedApplicationReport maybeLoadAppReport(File reportFile) {
+  public static SerializedApplicationReport maybeLoadAppReport(File reportFile) {
     if (reportFile.exists() && reportFile.length()> 0) {
       ApplicationReportSerDeser serDeser = new ApplicationReportSerDeser()
       def report = serDeser.fromFile(reportFile)
@@ -711,7 +711,7 @@ abstract class CommandTestBase extends SliderTestUtils {
     return null;
   }  
   
-  public SerializedApplicationReport maybeLookupFromLaunchReport(File launchReport) {
+  public static SerializedApplicationReport maybeLookupFromLaunchReport(File launchReport) {
     def report = maybeLoadAppReport(launchReport)
     if (report) {
       return lookupApplication(report.applicationId)
@@ -725,7 +725,7 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @param id application ID
    * @return an application report or null
    */
-  public SerializedApplicationReport lookupApplication(String id) {
+  public static SerializedApplicationReport lookupApplication(String id) {
     File reportFile = createAppReportFile();
     try {
       def shell = lookup(id, reportFile)
@@ -787,6 +787,7 @@ abstract class CommandTestBase extends SliderTestUtils {
     }
   }
 
+   
   protected void ensureApplicationIsUp(String application) {
     repeatUntilTrue(this.&isApplicationRunning,
         30,
@@ -816,26 +817,58 @@ abstract class CommandTestBase extends SliderTestUtils {
 
   protected boolean isApplicationRunning(Map<String, String> args) {
     String applicationName = args['application'];
-    return isApplicationInState(YarnApplicationState.RUNNING, applicationName);
+    return isApplicationUp(applicationName);
   }
 
   protected boolean isApplicationUp(String applicationName) {
-    return isApplicationInState(YarnApplicationState.RUNNING, applicationName);
+    return isApplicationInState(
+        applicationName,
+        YarnApplicationState.RUNNING
+    );
   }
 
+  protected void ensureYarnApplicationIsUp(String application) {
+    repeatUntilTrue(this.&isApplicationRunning,
+        30,
+        SLIDER_CONFIG.getInt(KEY_TEST_INSTANCE_LAUNCH_TIME,
+            DEFAULT_INSTANCE_LAUNCH_TIME_SECONDS),
+        [application: application],
+        true,
+        'Application did not start, failing test.') {
+      describe "final state of app that tests say is not up"
+      exists(application, true).dumpOutput()
+    }
+  }
+  
   /**
-   * 
+   * is an application in a desired yarn state 
    * @param yarnState
    * @param applicationName
    * @return
    */
-  public static boolean isApplicationInState(YarnApplicationState yarnState, String applicationName) {
+  public static boolean isApplicationInState(
+      String applicationName,
+      YarnApplicationState yarnState) {
     SliderShell shell = slider(
       [ACTION_EXISTS, applicationName, ARG_STATE, yarnState.toString()])
-
     return shell.ret == 0
   }
+  
+  /**
+   * is a yarn application in a desired yarn state 
+   * @param yarnState
+   * @param applicationName
+   * @return
+   */
+  public static boolean isYarnApplicationInState(
+      String applicationId,
+      YarnApplicationState yarnState) {
+    def sar = lookupApplication(applicationId)
+    assert sar != null;
+    return yarnState.toString() == sar.state
+  }
 
+  
   /**
    * Repeat a probe until it succeeds, if it does not execute a failure
    * closure then raise an exception with the supplied message
