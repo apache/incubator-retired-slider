@@ -261,19 +261,11 @@ def java(classname, args, classpath, jvm_opts_list):
   return runProcess(commandline)
 
 
-def usage():
-  print "Usage: slider <action> <arguments>"
-  return 1
-
-
 def main():
   """
   Slider main method
   :return: exit code of the process
   """
-  if len(sys.argv)==1 :
-    return usage()
-  # print "stdout encoding: "+ sys.stdout.encoding
   args = sys.argv[1:]
   slider_home = sliderDir()
   libdir = dirMustExist(libDir(slider_home))
