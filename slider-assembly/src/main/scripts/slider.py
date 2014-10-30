@@ -170,6 +170,7 @@ def print_output(name, src, toStdErr):
       out(toStdErr, line + "\n")
       flush(toStdErr)
       line = ""
+  out(toStdErr, line)
   # closedown: read remainder of stream
   c = src.read(1)
   while c!="" :
