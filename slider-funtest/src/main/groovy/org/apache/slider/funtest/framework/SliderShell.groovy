@@ -240,18 +240,25 @@ class SliderShell extends Shell {
    * @return Shell object for chaining
    */
   Shell exec(Object... args) {
-    def proc = "$shell".execute()
+    Process proc = "$shell".execute()
     script = args.join("\n")
     LOG.debug("${shell} << __EOT__\n${script}\n__EOT__");
+    ByteArrayOutputStream baosErr = new ByteArrayOutputStream(4096);
+    ByteArrayOutputStream baosOut = new ByteArrayOutputStream(4096);
+    proc.consumeProcessOutput(baosOut, baosErr)
 
     Thread.start {
       def writer = new PrintWriter(new BufferedOutputStream(proc.out))
       writer.println(script)
+      writer.flush()
+      if (org.apache.hadoop.util.Shell.WINDOWS) {
+        // Ensure the errorlevel returned by last call is set for the invoking shell
+        writer.println("@echo ERRORLEVEL=%ERRORLEVEL%")
+        writer.println("@exit %ERRORLEVEL%")
+        writer.flush()
+      }
       writer.close()
     }
-    ByteArrayOutputStream baosErr = new ByteArrayOutputStream(4096);
-    ByteArrayOutputStream baosOut = new ByteArrayOutputStream(4096);
-    proc.consumeProcessOutput(baosOut, baosErr)
 
     proc.waitFor()
     ret = proc.exitValue()
