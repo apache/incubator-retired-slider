@@ -96,6 +96,7 @@ public class ClientArgs extends CommonArgs {
         actionInstallKeytabArgs,
         actionKillContainerArgs,
         actionListArgs,
+        actionLookupArgs,
         actionRegistryArgs,
         actionResolveArgs,
         actionStatusArgs,

@@ -1019,6 +1019,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       ApplicationReport report =
           launchedApplication.getApplicationReport();
       SerializedApplicationReport sar = new SerializedApplicationReport(report);
+      sar.submitTime = System.currentTimeMillis();
       ApplicationReportSerDeser serDeser = new ApplicationReportSerDeser();
       serDeser.save(sar, launchArgs.getOutputFile());
     }

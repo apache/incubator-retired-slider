@@ -244,8 +244,10 @@ public class JsonSerDeser<T> {
       String json = toJson(instance);
       byte[] b = json.getBytes(UTF_8);
       dataOutputStream.write(b);
-    } finally {
+      dataOutputStream.flush();
       dataOutputStream.close();
+    } finally {
+      IOUtils.closeStream(dataOutputStream);
     }
   }
 
