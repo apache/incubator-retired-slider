@@ -20,6 +20,7 @@ package org.apache.slider.server.appmaster.model.appstate
 
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.Container
+import org.apache.slider.core.exceptions.TriggerClusterTeardownException
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
@@ -109,6 +110,29 @@ class TestMockAppStateFlexing extends BaseMockAppStateTest implements MockRoles 
     assert instances.size() == 0
     // assert two nodes were released
     assert completionResults.size() == 3
+
+  }
+  
+  @Test
+  public void testFlexNegative() throws Throwable {
+    int r0 = 6
+    int r1 = 0
+    int r2 = 0
+    role0Status.desired = r0
+    role1Status.desired = r1
+    role2Status.desired = r2
+    List<RoleInstance> instances = createAndStartNodes()
+
+    int clusterSize = r0 + r1 + r2
+    assert instances.size() == clusterSize
+    log.info("shrinking cluster")
+    role0Status.desired = -2
+    List<AppState.NodeCompletionResult> completionResults = []
+    try {
+      createStartAndStopNodes(completionResults)
+      fail("expected an exception")
+    } catch (TriggerClusterTeardownException e) {
+    }
 
   }
   
