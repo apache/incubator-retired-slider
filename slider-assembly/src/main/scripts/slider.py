@@ -173,6 +173,7 @@ def print_output(name, src, toStdErr):
   # closedown: read remainder of stream
   c = src.read(1)
   while c!="" :
+    c = c.decode('utf-8')
     out(toStdErr, c)
     if c == "\n":
       flush(toStdErr)
