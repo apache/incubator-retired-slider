@@ -36,7 +36,7 @@ public class CommandExitCodesIT extends CommandTestBase {
 
   @Test
   public void testStopWithoutCluster() throws Throwable {
-    slider(LauncherExitCodes.EXIT_COMMAND_ARGUMENT_ERROR, ["stop"])
+    slider(LauncherExitCodes.EXIT_COMMAND_ARGUMENT_ERROR, ["stop"]).dumpOutput()
   }
 
 
