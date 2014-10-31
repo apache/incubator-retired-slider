@@ -76,6 +76,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.io.StringWriter;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -84,6 +85,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -97,6 +100,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
@@ -599,27 +603,46 @@ public final class SliderUtils {
         builder.append(tag).append(separator);
       }
     }
+    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
+    dateFormat.setTimeZone(TimeZone.getDefault());
     builder.append("state: ").append(r.getYarnApplicationState());
-    builder.append(separator).append("URL: ").append(r.getTrackingUrl());
+    String trackingUrl = r.getTrackingUrl();
+    if (isSet(trackingUrl)) {
+      builder.append(separator).append("URL: ").append(trackingUrl);
+    }
     builder.append(separator)
-           .append("Started ")
-           .append(new Date(r.getStartTime()).toGMTString());
+           .append("Started: ")
+           .append(dateFormat.format(new Date(r.getStartTime())));
     long finishTime = r.getFinishTime();
     if (finishTime > 0) {
       builder.append(separator)
-             .append("Finished ")
-             .append(new Date(finishTime).toGMTString());
+             .append("Finished: ")
+             .append(dateFormat.format(new Date(finishTime)));
     }
-    builder.append(separator)
-           .append("RPC :")
-           .append(r.getHost())
-           .append(':')
-           .append(r.getRpcPort());
+    String rpcHost = r.getHost();
+    if (!isSet(rpcHost)) {
+      builder.append(separator)
+             .append("RPC :")
+             .append(rpcHost)
+             .append(':')
+             .append(r.getRpcPort());
+    }
     String diagnostics = r.getDiagnostics();
-    if (!diagnostics.isEmpty()) {
+    if (!isSet(diagnostics)) {
       builder.append(separator).append("Diagnostics :").append(diagnostics);
     }
     return builder.toString();
+  }
+
+
+  /**
+   * Sorts the given list of application reports, most recently started 
+   * or finished instance first.
+   *
+   * @param instances list of instances
+   */
+  public static void sortApplicationsByMostRecent(List<ApplicationReport> instances) {
+    Collections.sort(instances, new MostRecentlyStartedOrFinishedFirst());
   }
 
   /**
@@ -628,7 +651,7 @@ public final class SliderUtils {
    * ordered by start time
    * Finally Instance are order by finished instances coming after running instances
    *
-   * @param instances list of intances
+   * @param instances list of instances
    */
   public static void sortApplicationReport(List<ApplicationReport> instances) {
     if (instances.size() <= 1) {
@@ -650,28 +673,10 @@ public final class SliderUtils {
     }
 
     if (liveInstance.size() > 1) {
-      Comparator<ApplicationReport> liveInstanceComparator =
-          new Comparator<ApplicationReport>() {
-            @Override
-            public int compare(ApplicationReport r1, ApplicationReport r2) {
-              long x = r1.getStartTime();
-              long y = r2.getStartTime();
-              return (x < y) ? -1 : ((x == y) ? 0 : 1);
-            }
-          };
-      Collections.sort(liveInstance, liveInstanceComparator);
+      Collections.sort(liveInstance, new MostRecentlyStartedAppFirst());
     }
     if (nonLiveInstance.size() > 1) {
-      Comparator<ApplicationReport> nonLiveInstanceComparator =
-          new Comparator<ApplicationReport>() {
-            @Override
-            public int compare(ApplicationReport r1, ApplicationReport r2) {
-              long x = r1.getFinishTime();
-              long y = r2.getFinishTime();
-              return (x < y) ? -1 : ((x == y) ? 0 : 1);
-            }
-          };
-      Collections.sort(nonLiveInstance, nonLiveInstanceComparator);
+      Collections.sort(nonLiveInstance, new MostRecentAppFinishFirst());
     }
     instances.clear();
     instances.addAll(liveInstance);
@@ -2067,4 +2072,63 @@ public final class SliderUtils {
     }
     return result;
   }
+
+  /**
+   * Compare the times of two applications: most recent app comes first
+   * Specifically: the one whose start time value is greater.
+   */
+  private static class MostRecentlyStartedAppFirst
+      implements Comparator<ApplicationReport>, Serializable {
+    @Override
+    public int compare(ApplicationReport r1, ApplicationReport r2) {
+      long x = r1.getStartTime();
+      long y = r2.getStartTime();
+      return compareTwoLongs(x, y);
+    }
+  }
+  
+  /**
+   * Compare the times of two applications: most recent app comes first.
+   * "Recent"== the app whose start time <i>or finish time</i> is the greatest.
+   */
+  private static class MostRecentlyStartedOrFinishedFirst
+      implements Comparator<ApplicationReport>, Serializable {
+    @Override
+    public int compare(ApplicationReport r1, ApplicationReport r2) {
+      long started1 = r1.getStartTime();
+      long started2 = r2.getStartTime();
+      long finished1 = r1.getFinishTime();
+      long finished2 = r2.getFinishTime();
+      long lastEvent1 = Math.max(started1, finished1);
+      long lastEvent2 = Math.max(started2, finished2);
+      return compareTwoLongs(lastEvent1, lastEvent2);
+    }
+  }
+
+  /**
+   * Compare the times of two applications: most recently finished app comes first
+   * Specifically: the one whose finish time value is greater.
+   */
+  private static class MostRecentAppFinishFirst
+      implements Comparator<ApplicationReport>, Serializable {
+    @Override
+    public int compare(ApplicationReport r1, ApplicationReport r2) {
+      long x = r1.getFinishTime();
+      long y = r2.getFinishTime();
+      return compareTwoLongs(x, y);
+    }
+  }
+
+  /**
+   * Compare two long values for sorting. As the return value for 
+   * comparators must be int, the simple value of <code>x-y</code>
+   * is inapplicable
+   * @param x x value
+   * @param y y value
+   * @return -ve if x is less than y, +ve if y is greater than x; 0 for equality
+   */
+  public static int compareTwoLongs(long x, long y) {
+    return (x < y) ? -1 : ((x == y) ? 0 : 1);
+  }
+  
 }

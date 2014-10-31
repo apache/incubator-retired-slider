@@ -49,8 +49,9 @@ public interface Arguments {
    */
   String ARG_FILESYSTEM = "--fs";
   String ARG_FILESYSTEM_LONG = "--filesystem";
-  String ARG_FORMAT = "--format";
+  String ARG_FOLDER = "--folder";
   String ARG_FORCE = "--force";
+  String ARG_FORMAT = "--format";
   String ARG_GETCONF = "--getconf";
   String ARG_GETEXP = "--getexp";
   String ARG_GETFILES = "--getfiles";
@@ -58,6 +59,7 @@ public interface Arguments {
   String ARG_ID = "--id";
   String ARG_IMAGE = "--image";
   String ARG_INTERNAL = "--internal";
+  String ARG_KEYTAB = "--keytab";
   String ARG_LEVEL = "--level";
   String ARG_LIST = "--list";
   String ARG_LISTCONF = "--listconf";
@@ -67,19 +69,17 @@ public interface Arguments {
   String ARG_MANAGER = "--manager";
   String ARG_MANAGER_SHORT = "--m";
   String ARG_MESSAGE = "--message";
+  String ARG_NAME = "--name";
   String ARG_OPTION = "--option";
   String ARG_OPTION_SHORT = "-O";
-  String ARG_NAME = "--name";
-  String ARG_FOLDER = "--folder";
   String ARG_OUTPUT = "--out";
   String ARG_OUTPUT_SHORT = "-o";
+  String ARG_OVERWRITE = "--overwrite";
   String ARG_PACKAGE = "--package";
-  String ARG_KEYTAB = "--keytab";
   String ARG_PATH = "--path";
   String ARG_PROVIDER = "--provider";
   String ARG_QUEUE = "--queue";
   String ARG_REPLACE_PKG = "--replacepkg";
-  String ARG_OVERWRITE = "--overwrite";
   String ARG_RESOURCES = "--resources";
   String ARG_RES_COMP_OPT = "--rescompopt";
   String ARG_RES_COMP_OPT_SHORT = "--rco";

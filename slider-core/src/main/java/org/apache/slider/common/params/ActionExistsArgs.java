@@ -21,6 +21,8 @@ package org.apache.slider.common.params;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 
+import java.io.File;
+
 @Parameters(commandNames = {SliderActions.ACTION_EXISTS},
             commandDescription = SliderActions.DESCRIBE_ACTION_EXISTS)
 
@@ -30,6 +32,7 @@ public class ActionExistsArgs extends AbstractActionArgs {
   public String getActionName() {
     return SliderActions.ACTION_EXISTS;
   }
+
   @Parameter(names = {ARG_LIVE},
              description = "verify that the application is running")
   public boolean live;
@@ -37,5 +40,8 @@ public class ActionExistsArgs extends AbstractActionArgs {
   @Parameter(names = {ARG_STATE},
              description = "verify that the application is in the specific YARN state")
   public String state = "";
-  
+
+  @Parameter(names = {ARG_OUTPUT, ARG_OUTPUT_SHORT},
+      description = "output file for any application report")
+  public File out;
 }

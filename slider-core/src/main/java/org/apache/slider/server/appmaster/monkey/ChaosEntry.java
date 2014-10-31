@@ -22,6 +22,7 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Preconditions;
 import org.apache.commons.lang.StringUtils;
+import org.apache.slider.api.InternalKeys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,16 +43,16 @@ public class ChaosEntry {
 
   /**
    * Constructor -includes validation of all arguments
-   * @param name
-   * @param target
-   * @param probability
+   * @param name entry name
+   * @param target target
+   * @param probability probability of occurring
    */
   public ChaosEntry(String name, ChaosTarget target, long probability,
       MetricRegistry metrics) {
     Preconditions.checkArgument(!StringUtils.isEmpty(name), "missing name");
     Preconditions.checkArgument(target != null, "null target");
     Preconditions.checkArgument(probability > 0, "negative probability");
-    Preconditions.checkArgument(probability <= ChaosMonkeyService.PERCENT_100,
+    Preconditions.checkArgument(probability <= InternalKeys.PROBABILITY_PERCENT_100,
         "probability over 100%: "+ probability);
     this.name = name;
     this.target = target;

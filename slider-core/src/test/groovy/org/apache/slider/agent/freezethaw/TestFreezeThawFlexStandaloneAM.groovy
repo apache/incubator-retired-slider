@@ -24,11 +24,19 @@ import org.apache.hadoop.fs.CommonConfigurationKeysPublic
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus
+import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.client.SliderClient
+import org.apache.slider.common.params.ActionLookupArgs
+import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.tools.SliderUtils
+import org.apache.slider.core.exceptions.BadCommandArgumentsException
+import org.apache.slider.core.exceptions.NotFoundException
+import org.apache.slider.core.exceptions.SliderException
+import org.apache.slider.core.main.ServiceLaunchException
 import org.apache.slider.core.main.ServiceLauncher
+import org.apache.slider.core.persist.ApplicationReportSerDeser
 import org.junit.Test
 
 /**
@@ -80,12 +88,35 @@ class TestFreezeThawFlexStandaloneAM extends AgentMiniClusterTestBase {
     localFS.delete(tempConfPath,true)
     
     //now start the cluster
-    ServiceLauncher launcher2 = thawCluster(clustername, [], true);
+    File appreport = new File("target/$clustername/appreport.json")
+    ServiceLauncher launcher2 = thawCluster(clustername,
+        [Arguments.ARG_OUTPUT, appreport.absolutePath],
+        true);
+
     SliderClient newCluster = launcher2.service
     addToTeardown(newCluster);
+    ApplicationReportSerDeser serDeser = new ApplicationReportSerDeser();
+    def sar = serDeser.fromFile(appreport)
+    log.info(sar.toString())
+    assert sar.applicationId != null
+
+    describe("lookup")
+
+    // now via lookup
+    appreport.delete()
+    def lookup1 = new ActionLookupArgs()
+    lookup1.id = sar.applicationId
+
+    assert 0 == newCluster.actionLookup(lookup1)
+    lookup1.outputFile = appreport
+    assert 0 == newCluster.actionLookup(lookup1)
+    sar = serDeser.fromFile(appreport)
+    assert sar.state == YarnApplicationState.RUNNING.toString()
+    
 
     newCluster.getClusterDescription(clustername);
     
+    describe("no change flex")
     // while running, flex it with no changes
     newCluster.flex(clustername, [:]);
 
@@ -95,9 +126,28 @@ class TestFreezeThawFlexStandaloneAM extends AgentMiniClusterTestBase {
     report = newCluster.applicationReport
     assert report.finalApplicationStatus == FinalApplicationStatus.KILLED
 
+    assert 0 == newCluster.actionLookup(lookup1)
+    sar = serDeser.fromFile(appreport)
+    assert sar.finalStatus == FinalApplicationStatus.KILLED.toString()
+    
     //stop again
     assert 0 == clusterActionFreeze(newCluster, clustername)
 
+    // and add some invalid lookup operations for
+    
+    def lookup2 = new ActionLookupArgs()
+    lookup2.id = "invalid"
+    try {
+      newCluster.actionLookup(lookup2)
+      fail("expected $lookup2 to fail")
+    } catch (BadCommandArgumentsException expected) {
+    }
+    try {
+      lookup2.id = "application_1414593568640_0002"
+      newCluster.actionLookup(lookup2)
+      fail("expected $lookup2 to fail")
+    } catch (NotFoundException expected) {
+    }
   }
 
 }

@@ -30,13 +30,15 @@ import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.api.StatusKeys
 import org.apache.slider.common.tools.ConfigHelper
-import org.apache.slider.core.main.LauncherExitCodes
+import org.apache.slider.common.tools.Duration
+import org.apache.slider.core.launch.SerializedApplicationReport
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.client.SliderClient
+import org.apache.slider.core.persist.ApplicationReportSerDeser
 import org.apache.slider.test.SliderTestUtils
 import org.junit.Before
 import org.junit.BeforeClass
@@ -89,7 +91,11 @@ abstract class CommandTestBase extends SliderTestUtils {
    * not need to be escaped
    */
   public static final String TILDE
-  
+  public static final int CONTAINER_LAUNCH_TIMEOUT = 90000
+  public static final int PROBE_SLEEP_TIME = 4000
+  public static final int REGISTRY_STARTUP_TIMEOUT = 60000
+  public static final String E_LAUNCH_FAIL = 'Application did not start'
+
   /*
   Static initializer for test configurations. If this code throws exceptions
   (which it may) the class will not be instantiable.
@@ -370,6 +376,24 @@ abstract class CommandTestBase extends SliderTestUtils {
     slider(cmd)
   }
 
+  static SliderShell lookup(int result, String id, File out) {
+    assert id
+    def commands = [ACTION_LOOKUP, ARG_ID, id]
+    if (out) {
+      commands += [ARG_OUTPUT, out.absolutePath]
+    }
+    slider(result, commands)
+  }
+  
+  static SliderShell lookup(String id, File out) {
+    assert id
+    def commands = [ACTION_LOOKUP, ARG_ID, id]
+    if (out) {
+      commands += [ARG_OUTPUT, out.absolutePath]
+    }
+    slider(commands)
+  }
+
   static SliderShell list(int result, Collection<String> commands =[]) {
     slider(result, [ACTION_LIST] + commands )
   }
@@ -442,6 +466,7 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @param cluster
    */
   static void setupCluster(String cluster) {
+    describe "setting up $cluster"
     ensureClusterDestroyed(cluster)
   }
 
@@ -609,13 +634,21 @@ abstract class CommandTestBase extends SliderTestUtils {
       String name,
       String appTemplate,
       String resourceTemplate,
-      List<String> extraArgs=[]) {
+      List<String> extraArgs = [],
+      File launchReportFile = null) {
+
+    if (!launchReportFile) {
+      launchReportFile = createAppReportFile()
+    }
+    // delete any previous copy of the file
+    launchReportFile.delete();
+    
     List<String> commands = [
         ACTION_CREATE, name,
         ARG_TEMPLATE, appTemplate,
         ARG_RESOURCES, resourceTemplate,
+        ARG_OUTPUT, launchReportFile.absolutePath,
         ARG_WAIT, Integer.toString(THAW_WAIT_TIME)
-        
     ]
 
     maybeAddCommandOption(commands,
@@ -631,8 +664,36 @@ abstract class CommandTestBase extends SliderTestUtils {
         [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL],
         SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL));
     commands.addAll(extraArgs)
-    SliderShell shell = slider(LauncherExitCodes.EXIT_SUCCESS, commands)
+    SliderShell shell = new SliderShell(commands)
+    if (0 != shell.execute()) {
+      // app has failed.
+
+      // grab the app report of the last known instance of this app
+      // which may not be there if it was a config failure; may be out of date
+      // from a previous run
+      log.error("Launch failed with exit code ${shell.ret}")
+      shell.dumpOutput()
+
+      // now grab that app report if it is there
+      def appReport = maybeLookupFromLaunchReport(launchReportFile)
+      String extraText = ""
+      if (appReport) {
+        log.error("Application report:\n$appReport")
+        extraText = appReport.diagnostics
+      }
+
+      fail("Application Launch Failure, exit code  ${shell.ret}\n${extraText}")
+    }
     return shell
+  }
+
+  public static  File createAppReportFile() {
+    File reportFile = File.createTempFile(
+        "launch",
+        ".json",
+        new File("target"))
+    reportFile.delete()
+    return reportFile
   }
 
   /**
@@ -642,7 +703,7 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @param option option to probe and use
    * @return the (possibly extended) list
    */
-  public List<String> maybeAddCommandOption(
+  public static List<String> maybeAddCommandOption(
       List<String> args, List<String> commands, String option) {
     if ( SliderUtils.isSet(option)) {
       args.addAll(commands)
@@ -651,6 +712,56 @@ abstract class CommandTestBase extends SliderTestUtils {
     return args
   }
 
+  public static SerializedApplicationReport maybeLoadAppReport(File reportFile) {
+    if (reportFile.exists() && reportFile.length()> 0) {
+      ApplicationReportSerDeser serDeser = new ApplicationReportSerDeser()
+      def report = serDeser.fromFile(reportFile)
+      return report
+    }    
+    return null;
+  }  
+   
+  public static SerializedApplicationReport loadAppReport(File reportFile) {
+    if (reportFile.exists() && reportFile.length()> 0) {
+      ApplicationReportSerDeser serDeser = new ApplicationReportSerDeser()
+      def report = serDeser.fromFile(reportFile)
+      return report
+    }  else {
+      throw new FileNotFoundException(reportFile.absolutePath)
+    }  
+  }  
+  
+  public static SerializedApplicationReport maybeLookupFromLaunchReport(File launchReport) {
+    def report = maybeLoadAppReport(launchReport)
+    if (report) {
+      return lookupApplication(report.applicationId)
+    } else {
+      return null
+    }
+  }
+
+  /**
+   * Lookup an application, return null if loading failed
+   * @param id application ID
+   * @return an application report or null
+   */
+  public static SerializedApplicationReport lookupApplication(String id) {
+    File reportFile = createAppReportFile();
+    try {
+      def shell = lookup(id, reportFile)
+      if (shell.ret == 0) {
+        return maybeLoadAppReport(reportFile)
+      } else {
+        log.warn("Lookup operation failed with ${shell.ret}")
+        shell.dumpOutput()
+        return null
+      }
+    } finally {
+      reportFile.delete()
+    }
+  }
+
+  
   public Path buildClusterPath(String clustername) {
     return new Path(
         clusterFS.homeDirectory,
@@ -669,25 +780,30 @@ abstract class CommandTestBase extends SliderTestUtils {
         ARG_MESSAGE, "suicide"
     ])
 
-
     sleep(5000)
     ensureApplicationIsUp(cluster)
-    
-/*
-    def sleeptime = SLIDER_CONFIG.getInt(KEY_AM_RESTART_SLEEP_TIME,
-        DEFAULT_AM_RESTART_SLEEP_TIME)
-    sleep(sleeptime)
-*/
-    ClusterDescription status
+    return sliderClient.clusterDescription
+  }
+  public ClusterDescription killAmAndWaitForRestart(
+      SliderClient sliderClient, String cluster, String appId) {
 
-    status = sliderClient.clusterDescription
-    return status
+    assert cluster
+    slider(0, [
+        ACTION_AM_SUICIDE, cluster,
+        ARG_EXITCODE, "1",
+        ARG_WAIT, "1000",
+        ARG_MESSAGE, "suicide"
+    ])
+
+    sleep(5000)
+    ensureYarnApplicationIsUp(appId)
+    return sliderClient.clusterDescription
   }
 
   protected void ensureRegistryCallSucceeds(String application) {
-    repeatUntilTrue(this.&isRegistryAccessible,
-        10,
-        5 * 1000,
+    repeatUntilSuccess(this.&isRegistryAccessible,
+        REGISTRY_STARTUP_TIMEOUT,
+        PROBE_SLEEP_TIME,
         [application: application],
         true,
         'Application registry is not accessible, failing test.') {
@@ -696,60 +812,165 @@ abstract class CommandTestBase extends SliderTestUtils {
     }
   }
 
+   
   protected void ensureApplicationIsUp(String application) {
-    repeatUntilTrue(this.&isApplicationRunning,
-        30,
+    repeatUntilSuccess(this.&isApplicationRunning,
         SLIDER_CONFIG.getInt(KEY_TEST_INSTANCE_LAUNCH_TIME,
-            DEFAULT_INSTANCE_LAUNCH_TIME_SECONDS),
+            DEFAULT_INSTANCE_LAUNCH_TIME_SECONDS) * 1000,
+        PROBE_SLEEP_TIME,
         [application: application],
         true,
-        'Application did not start, failing test.') {
+        E_LAUNCH_FAIL) {
       describe "final state of app that tests say is not up"
       exists(application, true).dumpOutput()
     }
   }
 
-  protected boolean isRegistryAccessible(Map<String, String> args) {
+  protected Outcome isRegistryAccessible(Map<String, String> args) {
     String applicationName = args['application'];
     SliderShell shell = slider(
         [
             ACTION_REGISTRY,
             ARG_NAME,
             applicationName,
-            ARG_LISTEXP])
+            ARG_LISTEXP
+        ])
     if (EXIT_SUCCESS != shell.execute()) {
       logShell(shell)
     }
-    return EXIT_SUCCESS == shell.execute()
+    return Outcome.fromBool(EXIT_SUCCESS == shell.execute())
   }
 
-  protected boolean isApplicationRunning(Map<String, String> args) {
+  protected Outcome isApplicationRunning(Map<String, String> args) {
     String applicationName = args['application'];
-    return isApplicationInState(YarnApplicationState.RUNNING, applicationName);
+    return Outcome.fromBool(isApplicationUp(applicationName))
   }
 
   protected boolean isApplicationUp(String applicationName) {
-    return isApplicationInState(YarnApplicationState.RUNNING, applicationName);
+    return isApplicationInState(
+        applicationName,
+        YarnApplicationState.RUNNING
+    );
   }
 
   /**
-   * 
+   * is an application in a desired yarn state 
    * @param yarnState
    * @param applicationName
    * @return
    */
-  public static boolean isApplicationInState(YarnApplicationState yarnState, String applicationName) {
+  public static boolean isApplicationInState(
+      String applicationName,
+      YarnApplicationState yarnState) {
     SliderShell shell = slider(
       [ACTION_EXISTS, applicationName, ARG_STATE, yarnState.toString()])
-
     return shell.ret == 0
   }
 
+
+  protected Outcome isYarnApplicationRunning(Map<String, String> args) {
+    String applicationId = args['applicationId'];
+    return isYarnApplicationRunning(applicationId)
+  }
+
+  /**
+   * is a yarn application in a desired yarn state 
+   * @param yarnState
+   * @param applicationName
+   * @return an outcome indicating whether the app is at the state, on its way
+   * or has gone past
+   */
+  public static Outcome isYarnApplicationRunning(
+      String applicationId) {
+    YarnApplicationState appState = lookupYarnAppState(applicationId)
+    YarnApplicationState yarnState = YarnApplicationState.RUNNING
+    if (yarnState == appState) {
+      return Outcome.Success;
+    }
+    
+    if (appState.ordinal() > yarnState.ordinal()) {
+      // app has passed beyond hope
+      return Outcome.Fail
+    }
+    return Outcome.Retry
+  }
+
+  public static YarnApplicationState lookupYarnAppState(String applicationId) {
+    def sar = lookupApplication(applicationId)
+    assert sar != null;
+    YarnApplicationState appState = YarnApplicationState.valueOf(sar.state)
+    return appState
+  }
+
+  public static void assertInYarnState(String applicationId,
+      YarnApplicationState expectedState) {
+    def applicationReport = lookupApplication(applicationId)
+    assert expectedState.toString() == applicationReport.state 
+  }
+
+  /**
+   * Wait for the YARN app to come up. This will fail fast
+   * @param launchReportFile launch time file containing app id
+   * @return the app ID
+   */
+  protected String ensureYarnApplicationIsUp(File launchReportFile) {
+    def id = loadAppReport(launchReportFile).applicationId
+    ensureYarnApplicationIsUp(id)
+    return id;
+  }
+  /**
+   * Wait for the YARN app to come up. This will fail fast
+   * @param applicationId
+   */
+  protected void ensureYarnApplicationIsUp(String applicationId) {
+    repeatUntilSuccess(this.&isYarnApplicationRunning,
+        SLIDER_CONFIG.getInt(KEY_TEST_INSTANCE_LAUNCH_TIME,
+            DEFAULT_INSTANCE_LAUNCH_TIME_SECONDS),
+        PROBE_SLEEP_TIME,
+        [applicationId: applicationId],
+        true,
+        E_LAUNCH_FAIL) {
+      describe "final state of app that tests say is not up"
+      def sar = lookupApplication(applicationId)
+
+      def message = E_LAUNCH_FAIL + "\n$sar"
+      log.error(message)
+      fail(message)
+    }
+  }
+
+  /**
+   * Outcome for probes
+   */
+  static class Outcome {
+
+    public final String name;
+
+    private Outcome(String name) {
+      this.name = name
+    }
+
+    static Outcome Success = new Outcome("Success")
+    static Outcome Retry = new Outcome("Retry")
+    static Outcome Fail = new Outcome("Fail")
+
+
+    /**
+     * build from a bool, where false is mapped to retry
+     * @param b boolean
+     * @return an outcome
+     */
+    static Outcome fromBool(boolean b) {
+      return b? Success: Retry;
+    }
+
+  }
+  
   /**
    * Repeat a probe until it succeeds, if it does not execute a failure
    * closure then raise an exception with the supplied message
    * @param probe probe
-   * @param maxAttempts max number of attempts
+   * @param timeout time in millis before giving up
    * @param sleepDur sleep between failing attempts
    * @param args map of arguments to the probe
    * @param failIfUnsuccessful if the probe fails after all the attempts
@@ -757,23 +978,35 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @param failureMessage message to include in exception raised
    * @param failureHandler closure to invoke prior to the failure being raised
    */
-  protected void repeatUntilTrue(Closure probe,
-      int maxAttempts, int sleepDur, Map args,
-      boolean failIfUnsuccessful = false,
+  protected void repeatUntilSuccess(Closure probe,
+      int timeout, int sleepDur,
+      Map args,
+      boolean failIfUnsuccessful,
       String failureMessage,
       Closure failureHandler) {
     int attemptCount = 0
     boolean succeeded = false;
-    while (attemptCount < maxAttempts) {
-      if (probe(args)) {
-        // finished
+    boolean completed = false;
+    Duration duration = new Duration(timeout)
+    duration.start();
+    while (!completed) {
+      Outcome outcome = (Outcome) probe(args)
+      if (outcome.equals(Outcome.Success)) {
+        // success
         log.debug("Success after $attemptCount attempt(s)")
         succeeded = true;
-        break
-      };
-      attemptCount++;
-
-      sleep(sleepDur)
+        completed = true;
+      } else if (outcome.equals(Outcome.Retry)) {
+        // failed but retry possible
+        attemptCount++;
+        completed = duration.limitExceeded
+        if (!completed) {
+          sleep(sleepDur)
+        }
+      } else if (outcome.equals(Outcome.Fail)) {
+        // fast fail
+          completed = true;
+      }
     }
     
     if (failIfUnsuccessful & !succeeded) {
@@ -826,31 +1059,36 @@ abstract class CommandTestBase extends SliderTestUtils {
     return requested
   }
 
-  boolean hasRequestedContainerCountReached(Map<String, String> args) {
+  Outcome hasRequestedContainerCountReached(Map<String, String> args) {
     String application = args['application']
     String role = args['role']
     int expectedCount = args['limit'].toInteger();
 
     int requestedCount = queryRequestedCount(application, role)
-    log.debug("requested count = $requestedCount; expected=$expectedCount")
-    return requestedCount >= expectedCount
+    log.debug("requested $role count = $requestedCount; expected=$expectedCount")
+    return Outcome.fromBool(requestedCount >= expectedCount)
   }
 
-  void expectContainerRequestedCountReached(String application, String role, int limit) {
+  void expectContainerRequestedCountReached(String application, String role, int limit,
+      int container_launch_timeout) {
 
-    repeatUntilTrue(
+    repeatUntilSuccess(
         this.&hasRequestedContainerCountReached,
-        90,
-        1000,
+        container_launch_timeout,
+        PROBE_SLEEP_TIME,
         [limit      : Integer.toString(limit),
          role       : role,
          application: application],
         true,
         "countainer count not reached") {
-      describe "container count not reached"
+      int requestedCount = queryRequestedCount(application, role)
+
+      def message = "expected count of $role = $limit not reached: $requestedCount" +
+                    " after $container_launch_timeout mS"
+      describe message
       ClusterDescription cd = execStatus(application);
       log.info("Parsed status \n$cd")
-      status(application).dumpOutput()
+      fail(message)
     };
 
   }

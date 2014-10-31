@@ -95,6 +95,12 @@ public class LaunchedApplication {
     return yarnClient.killRunningApplication(applicationId, reason);
   }
 
+  /**
+   * Get the application report of this application
+   * @return an application report
+   * @throws YarnException
+   * @throws IOException
+   */
   public ApplicationReport getApplicationReport()
     throws YarnException, IOException {
     return yarnClient.getApplicationReport(applicationId);

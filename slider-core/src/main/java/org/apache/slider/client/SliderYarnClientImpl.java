@@ -252,24 +252,24 @@ public class SliderYarnClientImpl extends YarnClientImpl {
 
   /**
    * Find a cluster in the instance list; biased towards live instances
-   * @param instances
-   * @param appname
-   * @return
+   * @param instances list of instances
+   * @param appname application name
+   * @return the first found instance, else a failed/finished instance, or null
+   * if there are none of those
    */
   public ApplicationReport findClusterInInstanceList(List<ApplicationReport> instances,
                                                      String appname) {
+    // sort by most recent
+    SliderUtils.sortApplicationsByMostRecent(instances);
     ApplicationReport found = null;
-    ApplicationReport foundAndLive = null;
     for (ApplicationReport app : instances) {
       if (app.getName().equals(appname)) {
-        found = app;
         if (isApplicationLive(app)) {
-          foundAndLive = app;
+          return app;
         }
+        // set the found value if not set
+        found = found != null ? found : app;
       }
-    }
-    if (foundAndLive != null) {
-      found = foundAndLive;
     }
     return found;
   }

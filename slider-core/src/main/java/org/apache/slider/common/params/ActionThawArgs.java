@@ -21,6 +21,8 @@ package org.apache.slider.common.params;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
 
+import java.io.File;
+
 @Parameters(commandNames = {SliderActions.ACTION_THAW},
             commandDescription = SliderActions.DESCRIBE_ACTION_THAW)
 public class ActionThawArgs extends AbstractActionArgs implements
@@ -49,5 +51,11 @@ public class ActionThawArgs extends AbstractActionArgs implements
   @Override
   public void setWaittime(int waittime) {
     launchArgs.setWaittime(waittime);
+  }
+
+
+  @Override
+  public File getOutputFile() {
+    return launchArgs.getOutputFile();
   }
 }

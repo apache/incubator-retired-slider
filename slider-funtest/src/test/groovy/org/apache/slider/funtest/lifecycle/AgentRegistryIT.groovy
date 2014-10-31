@@ -23,6 +23,7 @@ import groovy.util.logging.Slf4j
 import org.apache.hadoop.registry.client.binding.RegistryUtils
 import org.apache.hadoop.registry.client.types.Endpoint
 import org.apache.hadoop.registry.client.types.ServiceRecord
+import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.params.Arguments
@@ -49,9 +50,7 @@ public class AgentRegistryIT extends AgentCommandTestBase
   @Before
   public void prepareCluster() {
     setupCluster(CLUSTER)
-
-
-  }
+ }
 
   @After
   public void destroyCluster() {
@@ -59,21 +58,19 @@ public class AgentRegistryIT extends AgentCommandTestBase
   }
 
   @Test
-  public void testAgentClusterLifecycle() throws Throwable {
+  public void testAgentRegistry() throws Throwable {
     describe("Create a 0-role cluster and make registry queries against it")
-
-    // sanity check to verify the config is correct
-    assert clusterFS.uri.scheme != "file"
-
     def clusterpath = buildClusterPath(CLUSTER)
-    assert !clusterFS.exists(clusterpath)
+    File launchReportFile = createAppReportFile();
     SliderShell shell = createTemplatedSliderApplication(CLUSTER,
         APP_TEMPLATE,
-        APP_RESOURCE2)
+        APP_RESOURCE2,
+        [],
+        launchReportFile)
 
     logShell(shell)
 
-    ensureApplicationIsUp(CLUSTER)
+    def appId = ensureYarnApplicationIsUp(launchReportFile)
 
     //at this point the cluster should exist.
     assertPathExists(
@@ -126,15 +123,14 @@ public class AgentRegistryIT extends AgentCommandTestBase
     //stop
     freeze(0, CLUSTER,
         [
-            ARG_FORCE,
             ARG_WAIT, Integer.toString(FREEZE_WAIT_TIME),
             ARG_MESSAGE, "final-shutdown"
         ])
 
+    assertInYarnState(appId, YarnApplicationState.FINISHED)
     destroy(0, CLUSTER)
 
     //cluster now missing
     exists(EXIT_UNKNOWN_INSTANCE, CLUSTER)
-
   }
 }

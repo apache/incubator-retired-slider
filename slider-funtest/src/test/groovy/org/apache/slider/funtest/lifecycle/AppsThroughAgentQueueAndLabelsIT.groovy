@@ -20,6 +20,7 @@ package org.apache.slider.funtest.lifecycle
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
@@ -80,17 +81,19 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     assumeLabelsRedAndBlueAdded()
 
     cleanup(APPLICATION_NAME)
-    SliderShell shell = createTemplatedSliderApplication(APPLICATION_NAME,
+    File launchReportFile = createAppReportFile();
+    SliderShell shell = createTemplatedSliderApplication(
+        APPLICATION_NAME,
         APP_TEMPLATE,
         APP_RESOURCE4,
-        [ARG_QUEUE, TARGET_QUEUE]
-    )
-
+        [ARG_QUEUE, TARGET_QUEUE],
+        launchReportFile)
     logShell(shell)
 
-    ensureApplicationIsUp(APPLICATION_NAME)
+    def appId = ensureYarnApplicationIsUp(launchReportFile)
 
-    expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 1 )
+    expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 1,
+        CONTAINER_LAUNCH_TIMEOUT)
     expectContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 1)
 
     //flex
@@ -100,18 +103,19 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
             APPLICATION_NAME,
             ARG_COMPONENT,
             COMMAND_LOGGER,
-            "3"])
+            "3"
+        ])
 
-    // sleep till the new instance starts
-    ensureApplicationIsUp(APPLICATION_NAME)
-    expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 3)
+    // spin till the flexed instance starts
+    ensureYarnApplicationIsUp(appId)
+    expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 3,
+        CONTAINER_LAUNCH_TIMEOUT)
 
 
     sleep(1000 * 20)
     def cd = execStatus(APPLICATION_NAME)
     assert cd.statistics[COMMAND_LOGGER]["containers.requested"] >= 3
-
-    assert isApplicationUp(APPLICATION_NAME), 'App is not running.'
+    assertInYarnState(appId, YarnApplicationState.RUNNING)
   }
 
 

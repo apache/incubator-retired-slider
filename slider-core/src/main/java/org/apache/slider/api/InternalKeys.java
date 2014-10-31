@@ -121,6 +121,14 @@ public interface InternalKeys {
   int DEFAULT_CHAOS_MONKEY_INTERVAL_HOURS = 0;
   int DEFAULT_CHAOS_MONKEY_INTERVAL_MINUTES = 0;
 
+  String CHAOS_MONKEY_DELAY = "internal.chaos.monkey.delay";
+  String CHAOS_MONKEY_DELAY_DAYS = CHAOS_MONKEY_DELAY + ".days";
+  String CHAOS_MONKEY_DELAY_HOURS = CHAOS_MONKEY_DELAY + ".hours";
+  String CHAOS_MONKEY_DELAY_MINUTES = CHAOS_MONKEY_DELAY + ".minutes";
+  String CHAOS_MONKEY_DELAY_SECONDS = CHAOS_MONKEY_DELAY + ".seconds";
+  
+  int DEFAULT_CHAOS_MONKEY_STARTUP_DELAY = 0;
+
   /**
    * Prefix for all chaos monkey probabilities
    */
@@ -133,12 +141,19 @@ public interface InternalKeys {
   /**
    * Probability of a monkey check killing the AM:  {@value}
    */
-  String CHAOS_MONKEY_PROBABILITY_AM_FAILURE = CHAOS_MONKEY_PROBABILITY +".amfailure";
+  String CHAOS_MONKEY_PROBABILITY_AM_FAILURE =
+      CHAOS_MONKEY_PROBABILITY + ".amfailure";
 
   /**
    * Default probability of a monkey check killing the AM:  {@value}
    */
   int DEFAULT_CHAOS_MONKEY_PROBABILITY_AM_FAILURE = 0;
+
+  /**
+   * Probability of a monkey check killing the AM:  {@value}
+   */
+  String CHAOS_MONKEY_PROBABILITY_AM_LAUNCH_FAILURE =
+      CHAOS_MONKEY_PROBABILITY + ".amlaunchfailure";
 
   /**
    * Probability of a monkey check killing a container:  {@value}
@@ -153,4 +168,14 @@ public interface InternalKeys {
   int DEFAULT_CHAOS_MONKEY_PROBABILITY_CONTAINER_FAILURE = 0;
 
 
+  /**
+   * 1% of chaos
+   */
+  int PROBABILITY_PERCENT_1 = 100;
+  
+  /**
+   * 100% for chaos values
+   */
+  int PROBABILITY_PERCENT_100 = 100 * PROBABILITY_PERCENT_1;
+  
 }

@@ -45,6 +45,8 @@ import org.apache.hadoop.yarn.api.records.NodeReport;
 import org.apache.hadoop.yarn.api.records.NodeState;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.apache.hadoop.yarn.exceptions.ApplicationAttemptNotFoundException;
+import org.apache.hadoop.yarn.exceptions.ApplicationNotFoundException;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.registry.client.api.RegistryOperations;
 
@@ -55,6 +57,7 @@ import org.apache.hadoop.registry.client.exceptions.NoRecordException;
 import org.apache.hadoop.registry.client.types.Endpoint;
 import org.apache.hadoop.registry.client.types.ServiceRecord;
 import org.apache.hadoop.registry.client.types.yarn.YarnRegistryAttributes;
+import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterNode;
 import org.apache.slider.api.InternalKeys;
@@ -78,6 +81,7 @@ import org.apache.slider.common.params.ActionFlexArgs;
 import org.apache.slider.common.params.ActionFreezeArgs;
 import org.apache.slider.common.params.ActionKillContainerArgs;
 import org.apache.slider.common.params.ActionListArgs;
+import org.apache.slider.common.params.ActionLookupArgs;
 import org.apache.slider.common.params.ActionRegistryArgs;
 import org.apache.slider.common.params.ActionResolveArgs;
 import org.apache.slider.common.params.ActionStatusArgs;
@@ -114,7 +118,9 @@ import org.apache.slider.core.launch.CommandLineBuilder;
 import org.apache.slider.core.launch.JavaCommandLineBuilder;
 import org.apache.slider.core.launch.LaunchedApplication;
 import org.apache.slider.core.launch.RunningApplication;
+import org.apache.slider.core.launch.SerializedApplicationReport;
 import org.apache.slider.core.main.RunService;
+import org.apache.slider.core.persist.ApplicationReportSerDeser;
 import org.apache.slider.core.persist.ConfPersister;
 import org.apache.slider.core.persist.LockAcquireFailedException;
 import org.apache.slider.core.registry.SliderRegistryUtils;
@@ -161,7 +167,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -193,8 +198,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   private SliderYarnClientImpl yarnClient;
   private YarnAppListClient YarnAppListClient;
   private AggregateConf launchedInstanceDefinition;
-//  private SliderRegistryService registry;
-
 
   /**
    * The YARN registry service
@@ -344,7 +347,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     } catch (PathNotFoundException nfe) {
       throw new NotFoundException(nfe, nfe.toString());
     }
-
   }
 
   /**
@@ -392,6 +394,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
           serviceArgs.getActionAMSuicideArgs());
     } else if (ACTION_LIST.equals(action)) {
       exitCode = actionList(clusterName, serviceArgs.getActionListArgs());
+    } else if (ACTION_LOOKUP.equals(action)) {
+      exitCode = actionLookup(serviceArgs.getActionLookupArgs());
     } else if (ACTION_REGISTRY.equals(action)) {
       exitCode = actionRegistry(serviceArgs.getActionRegistryArgs());
     } else if (ACTION_RESOLVE.equals(action)) {
@@ -524,7 +528,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     SliderUtils.validateClusterName(clustername);
     //no=op, it is now mandatory. 
     verifyBindingsDefined();
-    verifyNoLiveClusters(clustername);
+    verifyNoLiveClusters(clustername, "Destroy");
 
     // create the directory path
     Path clusterDirectory = sliderFileSystem.buildClusterDirPath(clustername);
@@ -767,7 +771,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     SliderUtils.validateClusterName(clustername);
     verifyBindingsDefined();
     if (!liveClusterAllowed) {
-      verifyNoLiveClusters(clustername);
+      verifyNoLiveClusters(clustername, "Create");
     }
 
     Configuration conf = getConfig();
@@ -1009,7 +1013,22 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
                         serviceArgs.isDebug());
     applicationId = launchedApplication.getApplicationId();
 
-    return waitForAppAccepted(launchedApplication, launchArgs.getWaittime());
+    if (launchArgs.getOutputFile() != null) {
+      // output file has been requested. Get the app report and serialize it
+      ApplicationReport report =
+          launchedApplication.getApplicationReport();
+      SerializedApplicationReport sar = new SerializedApplicationReport(report);
+      sar.submitTime = System.currentTimeMillis();
+      ApplicationReportSerDeser serDeser = new ApplicationReportSerDeser();
+      serDeser.save(sar, launchArgs.getOutputFile());
+    }
+    int waittime = launchArgs.getWaittime();
+    if (waittime > 0) {
+      return waitForAppRunning(launchedApplication, waittime, waittime);
+    } else {
+      // no waiting
+      return EXIT_SUCCESS;
+    }
   }
 
   /**
@@ -1080,7 +1099,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     deployedClusterName = clustername;
     SliderUtils.validateClusterName(clustername);
-    verifyNoLiveClusters(clustername);
+    verifyNoLiveClusters(clustername, "Launch");
     Configuration config = getConfig();
     lookupZKQuorum();
     boolean clusterSecure = SliderUtils.isHadoopClusterSecure(config);
@@ -1371,12 +1390,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       amLauncher.setQueue(amQueue);
     }
 
-    // Submit the application to the applications manager
-    // SubmitApplicationResponse submitResp = applicationsManager.submitApplication(appRequest);
-    // Ignore the response as either a valid response object is returned on success
-    // or an exception thrown to denote some form of a failure
-    
-
     // submit the application
     LaunchedApplication launchedApplication = amLauncher.submitApplication();
     return launchedApplication;
@@ -1384,34 +1397,38 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   
   
   /**
-   * Wait for the launched app to be accepted
-   * @param waittime time in millis
-   * @return exit code
+   * Wait for the launched app to be accepted in the time  
+   * and, optionally running.
+   * <p>
+   * If the application
+   *
+   * @param launchedApplication application
+   * @param acceptWaitMillis time in millis to wait for accept
+   * @param runWaitMillis time in millis to wait for the app to be running.
+   * May be null, in which case no wait takes place
+   * @return exit code: success
    * @throws YarnException
    * @throws IOException
    */
-  public int waitForAppAccepted(LaunchedApplication launchedApplication, 
-                                int waittime) throws
-                                              YarnException,
-                                              IOException {
+  public int waitForAppRunning(LaunchedApplication launchedApplication,
+      int acceptWaitMillis, int runWaitMillis) throws YarnException, IOException {
     assert launchedApplication != null;
     int exitCode;
     // wait for the submit state to be reached
     ApplicationReport report = launchedApplication.monitorAppToState(
       YarnApplicationState.ACCEPTED,
-      new Duration(Constants.ACCEPT_TIME));
-
+      new Duration(acceptWaitMillis));
 
     // may have failed, so check that
     if (SliderUtils.hasAppFinished(report)) {
       exitCode = buildExitCode(report);
     } else {
       // exit unless there is a wait
-      exitCode = EXIT_SUCCESS;
 
-      if (waittime != 0) {
+
+      if (runWaitMillis != 0) {
         // waiting for state to change
-        Duration duration = new Duration(waittime * 1000);
+        Duration duration = new Duration(runWaitMillis * 1000);
         duration.start();
         report = launchedApplication.monitorAppToState(
           YarnApplicationState.RUNNING, duration);
@@ -1419,10 +1436,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
             report.getYarnApplicationState() == YarnApplicationState.RUNNING) {
           exitCode = EXIT_SUCCESS;
         } else {
-
-          launchedApplication.kill("");
           exitCode = buildExitCode(report);
         }
+      } else {
+        exitCode = EXIT_SUCCESS;
       }
     }
     return exitCode;
@@ -1516,17 +1533,21 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   /**
    * verify that a live cluster isn't there
    * @param clustername cluster name
+   * @param action
    * @throws SliderException with exit code EXIT_CLUSTER_LIVE
    * if a cluster of that name is either live or starting up.
    */
-  public void verifyNoLiveClusters(String clustername) throws
+  public void verifyNoLiveClusters(String clustername, String action) throws
                                                        IOException,
                                                        YarnException {
     List<ApplicationReport> existing = findAllLiveInstances(clustername);
 
     if (!existing.isEmpty()) {
       throw new SliderException(EXIT_APPLICATION_IN_USE,
-                              clustername + ": " + E_CLUSTER_RUNNING + " :" +
+          action +" failed for "
+                              + clustername
+                              + ": "
+                              + E_CLUSTER_RUNNING + " :" +
                               existing.get(0));
     }
   }
@@ -1579,16 +1600,17 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
   /**
-   * Build an exit code for an application Id and its report.
-   * If the report parameter is null, the app is killed
-   * @param report report
+   * Build an exit code for an application from its report.
+   * If the report parameter is null, its interpreted as a timeout
+   * @param report report application report
    * @return the exit code
+   * @throws IOException
+   * @throws YarnException
    */
   private int buildExitCode(ApplicationReport report) throws
                                                       IOException,
                                                       YarnException {
     if (null == report) {
-      forceKillApplication("Reached client specified timeout for application");
       return EXIT_TIMED_OUT;
     }
 
@@ -1615,6 +1637,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         log.info("Application Failed. YarnState={}, DSFinalStatus={}", state,
                  dsStatus);
         return EXIT_YARN_SERVICE_FAILED;
+
       default:
         //not in any of these states
         return EXIT_SUCCESS;
@@ -1684,13 +1707,16 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     return actionList(clustername, args);
   }
 
-    /**
-     * Implement the list action: list all nodes
-  
-     * @param clustername List out specific instance name
-     * @param args Action list arguments
-     * @return 0 if one or more entries were listed
-     */
+  /**
+   * Implement the list action.
+   * @param clustername List out specific instance name
+   * @param args Action list arguments
+   * @return 0 if one or more entries were listed
+   * @throws IOException
+   * @throws YarnException
+   * @throws UnknownApplicationInstanceException if a specific instance
+   * was named but it was not found
+   */
   @Override
   @VisibleForTesting
   public int actionList(String clustername, ActionListArgs args)
@@ -1730,7 +1756,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     
     // and those the RM knows about
     List<ApplicationReport> instances = listSliderInstances(null);
-    SliderUtils.sortApplicationReport(instances);
+    SliderUtils.sortApplicationsByMostRecent(instances);
     Map<String, ApplicationReport> reportMap =
         SliderUtils.buildApplicationReportMap(instances, min, max);
     log.debug("Persisted {} deployed {} filtered[{}-{}] & de-duped to {}",
@@ -1746,6 +1772,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       if (persistent == null) {
         throw unknownClusterException(clustername);
       }
+      // create a new map with only that instance in it.
+      // this restricts the output of results to this instance
       persistentInstances = new HashMap<String, Path>();
       persistentInstances.put(clustername, persistent);  
     }
@@ -1767,6 +1795,13 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     return listed > 0 ? EXIT_SUCCESS: EXIT_FALSE;
   }
 
+  /**
+   * Convert the instance details of an application to a string
+   * @param name instance name
+   * @param report the application report
+   * @param verbose verbose output
+   * @return a string
+   */
   String instanceDetailsToString(String name,
       ApplicationReport report,
       boolean verbose) {
@@ -1978,8 +2013,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   private RunningApplication findApplication(String appname)
       throws YarnException, IOException {
     ApplicationReport applicationReport = findInstance(appname);
-    return applicationReport != null ? new RunningApplication(yarnClient, applicationReport): null; 
-      
+    return applicationReport != null ?
+           new RunningApplication(yarnClient, applicationReport): null; 
   }
 
   /**
@@ -1992,12 +2027,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     throws YarnException, IOException {
     
     return YarnAppListClient.findAllLiveInstances(appname);
-  }
-
-
-  public ApplicationReport findClusterInInstanceList(List<ApplicationReport> instances,
-                                                     String appname) {
-    return yarnClient.findClusterInInstanceList(instances, appname);
   }
 
   /**
@@ -2142,10 +2171,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   @Override
   public int actionThaw(String clustername, ActionThawArgs thaw) throws YarnException, IOException {
     SliderUtils.validateClusterName(clustername);
-    // see if it is actually running and bail out;
     verifyBindingsDefined();
-    verifyNoLiveClusters(clustername);
-
+    // see if it is actually running and bail out;
+    verifyNoLiveClusters(clustername, "Start");
 
     //start the cluster
     return startCluster(clustername, thaw);
@@ -3285,6 +3313,38 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     print("\n");
   }
 
+  /**
+   * Implement the lookup action.
+   * @param args Action arguments
+   * @return 0 if the entry was found
+   * @throws IOException
+   * @throws YarnException
+   * @throws UnknownApplicationInstanceException if a specific instance
+   * was named but it was not found
+   */
+  @VisibleForTesting
+  public int actionLookup(ActionLookupArgs args)
+      throws IOException, YarnException {
+    verifyBindingsDefined();
+    try {
+      ApplicationId id = ConverterUtils.toApplicationId(args.id);
+      ApplicationReport report = yarnClient.getApplicationReport(id);
+      SerializedApplicationReport sar = new SerializedApplicationReport(report);
+      ApplicationReportSerDeser serDeser = new ApplicationReportSerDeser();
+      if (args.outputFile != null) {
+        serDeser.save(sar, args.outputFile);
+      } else {
+        println(serDeser.toJson(sar));
+      }
+    } catch (IllegalArgumentException e) {
+      throw new BadCommandArgumentsException(e, "%s : %s", args, e);
+    } catch (ApplicationAttemptNotFoundException notFound) {
+      throw new NotFoundException(notFound, notFound.toString());
+    } catch (ApplicationNotFoundException notFound) {
+      throw new NotFoundException(notFound, notFound.toString());
+    }
+    return EXIT_SUCCESS;
+  }
 }
 
 
