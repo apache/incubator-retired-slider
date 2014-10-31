@@ -692,6 +692,7 @@ abstract class CommandTestBase extends SliderTestUtils {
         "launch",
         ".json",
         new File("target"))
+    reportFile.delete()
     return reportFile
   }
 

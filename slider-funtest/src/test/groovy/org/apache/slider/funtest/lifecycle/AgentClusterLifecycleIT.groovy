@@ -20,6 +20,7 @@ package org.apache.slider.funtest.lifecycle
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.StatusKeys
 import org.apache.slider.client.SliderClient
@@ -65,6 +66,7 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
 
     def clusterpath = buildClusterPath(CLUSTER)
     assert !clusterFS.exists(clusterpath)
+
     File launchReportFile = createAppReportFile();
     SliderShell shell = createTemplatedSliderApplication(CLUSTER,
         APP_TEMPLATE,
@@ -138,6 +140,9 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
           ARG_MESSAGE, "freeze-in-test-cluster-lifecycle"
       ])
       describe " >>> Cluster is now frozen."
+      
+      // should be in finished state, as this was a clean shutdown
+      assertInYarnState(appId, YarnApplicationState.FINISHED)
 
       //cluster exists if you don't want it to be live
       exists(0, CLUSTER, false)
@@ -152,12 +157,19 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
       list(-1, [ARG_LIVE])
       list(-1, [ARG_STATE, "running"])
       list( 0, [ARG_STATE, "FINISHED"])
-      
+
+      def thawReport = createAppReportFile()
       //start then stop the cluster
       thaw(CLUSTER,
           [
               ARG_WAIT, Integer.toString(THAW_WAIT_TIME),
+              ARG_OUTPUT, thawReport.absolutePath,
           ])
+      def thawedAppId = ensureYarnApplicationIsUp(thawReport)
+     
+
+      assertAppRunning(thawedAppId)
+
       exists(0, CLUSTER)
       describe " >>> Cluster is now thawed."
       list(0, [CLUSTER, ARG_LIVE])
@@ -175,6 +187,8 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
 
       describe " >>> Cluster is now force frozen - 2nd time."
 
+      // new instance should be in killed state
+      assertInYarnState(thawedAppId, YarnApplicationState.KILLED)
       //cluster is no longer live
       exists(0, CLUSTER, false)
 
@@ -183,19 +197,23 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
 
       //start with a restart count set to enable restart
       describe "the kill/restart phase may fail if yarn.resourcemanager.am.max-attempts is too low"
-      
+
+      def thawReport2 = createAppReportFile()
+      //start then stop the cluster
       thaw(CLUSTER,
           [
               ARG_WAIT, Integer.toString(THAW_WAIT_TIME),
-              ARG_DEFINE, SliderXmlConfKeys.KEY_AM_RESTART_LIMIT + "=3"
+              ARG_DEFINE, SliderXmlConfKeys.KEY_AM_RESTART_LIMIT + "=3",
+              ARG_OUTPUT, thawReport2.absolutePath
           ])
-
+      def thawedAppId2 = ensureYarnApplicationIsUp(thawReport2)
       describe " >>> Cluster is now thawed - 2nd time."
 
 
       describe " >>> Kill AM and wait for restart."
       ClusterDescription status = killAmAndWaitForRestart(sliderClient, CLUSTER)
 
+      assertAppRunning(thawedAppId2)
       def restarted = status.getInfo(
           StatusKeys.INFO_CONTAINERS_AM_RESTART)
       assert restarted != null
