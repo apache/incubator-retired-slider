@@ -63,8 +63,6 @@ public class RoleHistory {
   protected static final Logger log =
     LoggerFactory.getLogger(RoleHistory.class);
   private final List<ProviderRole> providerRoles;
-  private final Map<String, ProviderRole> providerRoleMap =
-    new HashMap<String, ProviderRole>();
   private long startTime;
   /**
    * Time when saved
@@ -97,6 +95,7 @@ public class RoleHistory {
    * ask with/without locality. Has other potential uses as well.
    */
   private Set<String> failedNodes = new HashSet<String>();
+  
   // dummy to be used in maps for faster lookup where we don't care about values
   private final Object DUMMY_VALUE = new Object(); 
 
@@ -104,9 +103,6 @@ public class RoleHistory {
                                                        BadConfigException {
     this.providerRoles = providerRoles;
     roleSize = providerRoles.size();
-    for (ProviderRole providerRole : providerRoles) {
-      providerRoleMap.put(providerRole.name, providerRole);
-    }
     reset();
   }
 
@@ -120,18 +116,24 @@ public class RoleHistory {
     resetAvailableNodeLists();
 
     outstandingRequests = new OutstandingRequestTracker();
+    
     Map<Integer, RoleStatus> roleStats = new HashMap<Integer, RoleStatus>();
-
-
     for (ProviderRole providerRole : providerRoles) {
-      addProviderRole(roleStats, providerRole);
+      checkProviderRole(roleStats, providerRole);
     }
   }
 
-  
-  private void addProviderRole(Map<Integer, RoleStatus> roleStats,
-                               ProviderRole providerRole)
-    throws ArrayIndexOutOfBoundsException, BadConfigException {
+  /**
+   * safety check: make sure the provider role is unique amongst
+   * the role stats...which is extended with the new role
+   * @param roleStats role stats
+   * @param providerRole role
+   * @throws ArrayIndexOutOfBoundsException
+   * @throws BadConfigException
+   */
+  private void checkProviderRole(Map<Integer, RoleStatus> roleStats,
+      ProviderRole providerRole)
+    throws BadConfigException {
     int index = providerRole.id;
     if (index < 0) {
       throw new BadConfigException("Provider " + providerRole
@@ -154,12 +156,12 @@ public class RoleHistory {
     throws BadConfigException {
     Map<Integer, RoleStatus> roleStats = new HashMap<Integer, RoleStatus>();
 
-
     for (ProviderRole role : providerRoles) {
       roleStats.put(role.id, new RoleStatus(role));
     }
 
-    addProviderRole(roleStats, providerRole);
+    checkProviderRole(roleStats, providerRole);
+    this.providerRoles.add(providerRole);
   }
 
   /**
@@ -432,7 +434,8 @@ public class RoleHistory {
    * @param id role ID
    * @return potenially null list
    */
-  private List<NodeInstance> getNodesForRoleId(int id) {
+  @VisibleForTesting
+  public List<NodeInstance> getNodesForRoleId(int id) {
     return availableNodes.get(id);
   }
   
@@ -610,6 +613,8 @@ public class RoleHistory {
   public synchronized boolean onContainerAllocated(Container container, int desiredCount, int actualCount) {
     int role = ContainerPriority.extractRole(container);
     String hostname = RoleHistoryUtils.hostnameOf(container);
+    LinkedList<NodeInstance> nodeInstances =
+        getOrCreateNodesForRoleId(role);
     boolean requestFound =
       outstandingRequests.onContainerAllocated(role, hostname);
     if (desiredCount <= actualCount) {
@@ -619,7 +624,7 @@ public class RoleHistory {
       if (!hosts.isEmpty()) {
         //add the list
         log.debug("Adding {} hosts for role {}", hosts.size(), role);
-        getOrCreateNodesForRoleId(role).addAll(hosts);
+        nodeInstances.addAll(hosts);
         sortAvailableNodeList(role);
       }
     }
@@ -734,6 +739,8 @@ public class RoleHistory {
                                                        boolean wasReleased,
                                                        boolean shortLived) {
     NodeEntry nodeEntry = getOrCreateNodeEntry(container);
+    log.debug("Finished container for node {}, released={}, shortlived={}",
+        nodeEntry.rolePriority, wasReleased, shortLived);
     boolean available;
     if (shortLived) {
       nodeEntry.onStartFailed();
@@ -781,13 +788,16 @@ public class RoleHistory {
       List<NodeInstance> instances =
         getOrCreateNodesForRoleId(role.id);
       log.info("  available: " + instances.size()
-               + " " + SliderUtils.joinWithInnerSeparator(", ", instances));
+               + " " + SliderUtils.joinWithInnerSeparator(" ", instances));
     }
 
     log.info("Nodes in Cluster: {}", getClusterSize());
     for (NodeInstance node : nodemap.values()) {
       log.info(node.toFullString());
     }
+
+    log.info("Failed nodes: {}",
+        SliderUtils.joinWithInnerSeparator(" ", failedNodes));
   }
 
   /**

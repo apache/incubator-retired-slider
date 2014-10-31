@@ -30,6 +30,8 @@ class MockAppState extends AppState {
     super(recordFactory);
   }
 
+  long time = 0;
+  
   /**
    * Instance with a mock record factory
    */
@@ -39,5 +41,14 @@ class MockAppState extends AppState {
 
   public Map<String, ProviderRole> getRoleMap() {
     return super.roleMap;
+  }
+
+  /**
+   * Current time. if the <code>time</code> field
+   * is set, that value is returned
+   * @return the current time.
+   */
+  protected long now() {
+    return time ?: System.currentTimeMillis();
   }
 }

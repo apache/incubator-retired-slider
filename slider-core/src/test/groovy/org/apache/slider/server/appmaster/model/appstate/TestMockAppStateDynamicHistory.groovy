@@ -24,7 +24,6 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.yarn.api.records.ContainerId
 import org.apache.slider.api.ResourceKeys
 import org.apache.slider.core.conf.ConfTreeOperations
-import org.apache.slider.providers.PlacementPolicy
 import org.apache.slider.providers.ProviderRole
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockAppState
@@ -84,7 +83,7 @@ class TestMockAppStateDynamicHistory extends BaseMockAppStateTest
   public void testDynamicRoleHistory() throws Throwable {
 
     def dynamic = "dynamicRole"
-    int priority_num_8 = 8
+    int role_priority_8 = 8
     int desired = 1
     int placementPolicy = 0
     // snapshot and patch existing spec
@@ -92,7 +91,7 @@ class TestMockAppStateDynamicHistory extends BaseMockAppStateTest
         appState.resourcesSnapshot.confTree)
     def opts = [
         (ResourceKeys.COMPONENT_INSTANCES): ""+desired,
-        (ResourceKeys.COMPONENT_PRIORITY) : "" +priority_num_8,
+        (ResourceKeys.COMPONENT_PRIORITY) : "" +role_priority_8,
         (ResourceKeys.COMPONENT_PLACEMENT_POLICY): "" + placementPolicy
     ]
 
@@ -109,21 +108,21 @@ class TestMockAppStateDynamicHistory extends BaseMockAppStateTest
     def snapshotDefinition = appState.resourcesSnapshot.getMandatoryComponent(
         dynamic)
     assert snapshotDefinition.getMandatoryOptionInt(
-        ResourceKeys.COMPONENT_PRIORITY) == priority_num_8
+        ResourceKeys.COMPONENT_PRIORITY) == role_priority_8
 
     // now look at the role map
     assert appState.roleMap[dynamic] != null
     def mappedRole = appState.roleMap[dynamic]
-    assert mappedRole.id == priority_num_8
+    assert mappedRole.id == role_priority_8
 
     def priorityMap = appState.rolePriorityMap
     assert priorityMap.size() == 4
     ProviderRole dynamicProviderRole
-    assert (dynamicProviderRole = priorityMap[priority_num_8]) != null
-    assert dynamicProviderRole.id == priority_num_8
+    assert (dynamicProviderRole = priorityMap[role_priority_8]) != null
+    assert dynamicProviderRole.id == role_priority_8
 
-    assert null != appState.roleStatusMap[priority_num_8]
-    def dynamicRoleStatus = appState.roleStatusMap[priority_num_8]
+    assert null != appState.roleStatusMap[role_priority_8]
+    def dynamicRoleStatus = appState.roleStatusMap[role_priority_8]
     assert dynamicRoleStatus.desired == desired
 
     
@@ -135,6 +134,9 @@ class TestMockAppStateDynamicHistory extends BaseMockAppStateTest
     assert targetNode == engine.allocator.nextIndex()
     def targetHostname = engine.cluster.nodeAt(targetNode).hostname
 
+    // clock is set to a small value
+    appState.time = 100000
+    
     // allocate the nodes
     def actions = appState.reviewRequestAndReleaseNodes()
     assert actions.size() == 1
@@ -150,31 +152,52 @@ class TestMockAppStateDynamicHistory extends BaseMockAppStateTest
     RoleInstance ri = allocations[0]
     
     assert ri.role == dynamic
-    assert ri.roleId == priority_num_8
+    assert ri.roleId == role_priority_8
     assert ri.host.host == targetHostname
 
     // now look at the role history
 
     def roleHistory = appState.roleHistory
-    def activeNodes = roleHistory.listActiveNodes(priority_num_8)
+    def activeNodes = roleHistory.listActiveNodes(role_priority_8)
     assert activeNodes.size() == 1
     NodeInstance activeNode = activeNodes[0]
+    assert activeNode.get(role_priority_8)
+    def entry8 = activeNode.get(role_priority_8)
+    assert entry8.active == 1
 
     assert activeNode.hostname == targetHostname
-    
+
+    def activeNodeInstance = roleHistory.getOrCreateNodeInstance(ri.container)
+
+    assert activeNode == activeNodeInstance
+    def entry
+    assert (entry = activeNodeInstance.get(role_priority_8)) != null
+    assert entry.active
+    assert entry.live
+
+
     // now trigger a termination event on that role
+    
+    // increment time for a long-lived failure event
+    appState.time = appState.time + 100000
 
-
+    log.debug("Triggering failure")
     def cid = ri.id
-    // failure
     AppState.NodeCompletionResult result = appState.onCompletedNode(
         containerStatus(cid, 1))
     assert result.roleInstance == ri
     assert result.containerFailed
+    
+    roleHistory.dump();
+    // values should have changed
+    assert entry.failed == 1
+    assert !entry.startFailed
+    assert !entry.active
+    assert !entry.live
 
-    def nodeForNewInstance = roleHistory.findNodeForNewInstance(
-        dynamicRoleStatus)
-    assert nodeForNewInstance
+
+    def nodesForRoleId = roleHistory.getNodesForRoleId(role_priority_8)
+    assert nodesForRoleId
     
     // make sure new nodes will default to a different host in the engine
     assert targetNode < engine.allocator.nextIndex()

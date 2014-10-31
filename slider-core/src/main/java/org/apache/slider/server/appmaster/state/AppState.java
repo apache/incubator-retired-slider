@@ -708,8 +708,6 @@ public class AppState {
         log.info("New role {}", roleStatus);
         roleHistory.addNewProviderRole(dynamicRole);
         newRoles.add(dynamicRole);
-      } else {
-        log.debug("known role: {}", name);
       }
     }
     return newRoles;
