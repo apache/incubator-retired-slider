@@ -37,10 +37,10 @@ package org.apache.slider.server.appmaster.state;
  */
 public class NodeEntry {
   
-  public final int index;
+  public final int rolePriority;
 
-  public NodeEntry(int index) {
-    this.index = index;
+  public NodeEntry(int rolePriority) {
+    this.rolePriority = rolePriority;
   }
 
   /**
@@ -132,8 +132,7 @@ public class NodeEntry {
   public synchronized boolean onStartFailed() {
     decStarting();
     ++startFailed;
-    ++failed;
-    return isAvailable();
+    return containerCompleted(false);
   }
   
   /**
@@ -211,7 +210,8 @@ public class NodeEntry {
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder("NodeEntry{");
-    sb.append("requested=").append(requested);
+    sb.append("priority=").append(rolePriority);
+    sb.append(", requested=").append(requested);
     sb.append(", starting=").append(starting);
     sb.append(", live=").append(live);
     sb.append(", failed=").append(failed);

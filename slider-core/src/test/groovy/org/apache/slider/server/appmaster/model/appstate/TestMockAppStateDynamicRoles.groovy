@@ -22,12 +22,12 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
 import org.apache.slider.api.ResourceKeys
+import org.apache.slider.common.tools.SliderUtils
+import org.apache.slider.core.conf.ConfTreeOperations
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
-import org.apache.slider.server.appmaster.model.mock.MockRecordFactory
+import org.apache.slider.server.appmaster.model.mock.MockAppState
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.model.mock.MockYarnEngine
-import org.apache.slider.server.appmaster.operations.AbstractRMOperation
-import org.apache.slider.server.appmaster.state.AppState
 import org.apache.slider.server.appmaster.state.RoleInstance
 import org.apache.slider.server.appmaster.state.SimpleReleaseSelector
 import org.junit.Test
@@ -58,7 +58,7 @@ class TestMockAppStateDynamicRoles extends BaseMockAppStateTest
   @Override
   void initApp() {
     super.initApp()
-    appState = new AppState(new MockRecordFactory())
+    appState = new MockAppState()
     appState.setContainerLimits(RM_MAX_RAM, RM_MAX_CORES)
 
     def instance = factory.newInstanceDefinition(0,0,0)
@@ -85,10 +85,10 @@ class TestMockAppStateDynamicRoles extends BaseMockAppStateTest
   @Test
   public void testAllocateReleaseRealloc() throws Throwable {
 
-    List<RoleInstance> instances = createAndStartNodes()
-    List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()
+    createAndStartNodes()
+    appState.reviewRequestAndReleaseNodes()
     appState.getRoleHistory().dump();
     
   }
-  
+
 }

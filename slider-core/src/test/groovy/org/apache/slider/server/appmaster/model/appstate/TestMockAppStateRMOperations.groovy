@@ -31,7 +31,8 @@ import org.apache.slider.server.appmaster.operations.CancelRequestOperation
 import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation
 import org.apache.slider.server.appmaster.operations.ContainerRequestOperation
 import org.apache.slider.server.appmaster.operations.RMOperationHandler
-import org.apache.slider.server.appmaster.state.*
+import org.apache.slider.server.appmaster.state.ContainerAssignment
+import org.apache.slider.server.appmaster.state.RoleInstance
 import org.junit.Test
 
 import static org.apache.slider.server.appmaster.state.ContainerPriority.buildPriority

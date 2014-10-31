@@ -27,7 +27,9 @@ import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
 import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation
 import org.apache.slider.server.appmaster.operations.ContainerRequestOperation
-import org.apache.slider.server.appmaster.state.*
+import org.apache.slider.server.appmaster.state.ContainerAssignment
+import org.apache.slider.server.appmaster.state.RoleHistoryUtils
+import org.apache.slider.server.appmaster.state.RoleInstance
 import org.junit.Test
 
 import static org.apache.slider.server.appmaster.state.ContainerPriority.extractRole
