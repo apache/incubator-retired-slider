@@ -521,9 +521,11 @@ public class AgentProviderService extends AbstractProviderService implements
                                                       getClusterName());
       FileStatus[] keytabs = fileSystem.getFileSystem().listStatus(keytabDirPath);
       LocalResource keytabRes;
+      boolean serviceKeytabsDeployed = false;
       for (FileStatus keytab : keytabs) {
         if (!amKeytabName.equals(keytab.getPath().getName())
             && keytab.getPath().getName().endsWith(".keytab")) {
+          serviceKeytabsDeployed = true;
           log.info("Localizing keytab {}", keytab.getPath().getName());
           keytabRes = fileSystem.createAmResource(keytab.getPath(),
             LocalResourceType.FILE);
@@ -531,6 +533,13 @@ public class AgentProviderService extends AbstractProviderService implements
                                   keytab.getPath().getName(),
                                   keytabRes);
         }
+      }
+      if (!serviceKeytabsDeployed) {
+        log.warn("No service keytabs for the application have been localized.  "
+                 + "If the application requires keytabs for secure operation, "
+                 + "please ensure that the required keytabs have been uploaded "
+                 + "to the folder designated by the property {}: {}",
+                 SliderXmlConfKeys.KEY_HDFS_KEYTAB_DIR, keytabDirPath);
       }
     }
   }
