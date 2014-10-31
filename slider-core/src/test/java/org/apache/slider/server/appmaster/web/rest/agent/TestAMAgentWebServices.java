@@ -80,10 +80,10 @@ public class TestAMAgentWebServices {
           }
         });
 
-    SecurityUtils.initializeSecurityParameters(new MapOperations());
-    MapOperations compOperations = new MapOperations();
+    MapOperations configMap = new MapOperations();
+    SecurityUtils.initializeSecurityParameters(configMap, true);
     CertificateManager certificateManager = new CertificateManager();
-    certificateManager.initialize(compOperations);
+    certificateManager.initialize(configMap);
     String keystoreFile = SecurityUtils.getSecurityDir() + File.separator + SliderKeys.KEYSTORE_FILE_NAME;
     String password = SecurityUtils.getKeystorePass();
     System.setProperty("javax.net.ssl.trustStore", keystoreFile);

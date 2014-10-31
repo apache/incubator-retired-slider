@@ -140,6 +140,11 @@ public class SecurityUtils {
   }
 
   public static void initializeSecurityParameters(MapOperations configMap) {
+    initializeSecurityParameters(configMap, false);
+  }
+
+  public static void initializeSecurityParameters(MapOperations configMap,
+                                                boolean persistPassword) {
     String keyStoreLocation = configMap.getOption(
         SliderXmlConfKeys.KEY_KEYSTORE_LOCATION, getDefaultKeystoreLocation());
     File secDirFile = new File(keyStoreLocation).getParentFile();
@@ -167,26 +172,28 @@ public class SecurityUtils {
       }
       // need to create the password
     }
-    keystorePass = getKeystorePassword(secDirFile);
+    keystorePass = getKeystorePassword(secDirFile, persistPassword);
     securityDir = secDirFile.getAbsolutePath();
   }
 
-  private static String getKeystorePassword(File secDirFile) {
+  private static String getKeystorePassword(File secDirFile,
+                                            boolean persistPassword) {
     File passFile = new File(secDirFile, SliderKeys.CRT_PASS_FILE_NAME);
     String password = null;
-
     if (!passFile.exists()) {
-      LOG.info("Generation of file with password");
-      try {
-        password = RandomStringUtils.randomAlphanumeric(
-            Integer.valueOf(SliderKeys.PASS_LEN));
-        FileUtils.writeStringToFile(passFile, password);
-        passFile.setWritable(true);
-        passFile.setReadable(true);
-      } catch (IOException e) {
-        e.printStackTrace();
-        throw new RuntimeException(
-            "Error creating certificate password file");
+      LOG.info("Generating keystore password");
+      password = RandomStringUtils.randomAlphanumeric(
+          Integer.valueOf(SliderKeys.PASS_LEN));
+      if (persistPassword) {
+        try {
+          FileUtils.writeStringToFile(passFile, password);
+          passFile.setWritable(true);
+          passFile.setReadable(true);
+        } catch (IOException e) {
+          e.printStackTrace();
+          throw new RuntimeException(
+              "Error creating certificate password file");
+        }
       }
     } else {
       LOG.info("Reading password from existing file");

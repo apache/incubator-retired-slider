@@ -687,14 +687,13 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       // Start up the WebApp and track the URL for it
       certificateManager = new CertificateManager();
-      certificateManager.initialize(
-          instanceDefinition.getAppConfOperations()
-              .getComponent(SliderKeys.COMPONENT_AM));
+      MapOperations component = instanceDefinition.getAppConfOperations()
+          .getComponent(SliderKeys.COMPONENT_AM);
+      certificateManager.initialize(component);
       certificateManager.setPassphrase(instanceDefinition.getPassphrase());
 
-      if (instanceDefinition.
-          getAppConfOperations().getComponent(SliderKeys.COMPONENT_AM).
-          getOptionBool(AgentKeys.KEY_AGENT_TWO_WAY_SSL_ENABLED, false)) {
+      if (component.getOptionBool(
+          AgentKeys.KEY_AGENT_TWO_WAY_SSL_ENABLED, false)) {
         uploadServerCertForLocalization(clustername, fs);
       }
 

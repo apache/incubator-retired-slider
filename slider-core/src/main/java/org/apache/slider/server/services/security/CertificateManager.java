@@ -61,8 +61,8 @@ public class CertificateManager {
   private String passphrase;
 
   /**
-       * Verify that root certificate exists, generate it otherwise.
-       */
+    * Verify that root certificate exists, generate it otherwise.
+    */
   public void initialize(MapOperations compOperations) {
     SecurityUtils.initializeSecurityParameters(compOperations);
 

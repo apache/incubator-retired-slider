@@ -174,7 +174,6 @@ public interface SliderKeys extends SliderXmlConfKeys {
   String KEY_FILE_NAME = "ca.key";
   String KEYSTORE_FILE_NAME = "keystore.p12";
   String CRT_PASS_FILE_NAME = "pass.txt";
-  String PASSPHRASE = "DEV";
   String PASS_LEN = "50";
 
   /**
