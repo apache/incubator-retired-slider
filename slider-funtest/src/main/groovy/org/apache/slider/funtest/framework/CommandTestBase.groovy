@@ -806,9 +806,14 @@ abstract class CommandTestBase extends SliderTestUtils {
         PROBE_SLEEP_TIME,
         [application: application],
         true,
-        'Application registry is not accessible, failing test.') {
-      describe "final state of app that tests say is not able to access registry"
+        "Application registry is not accessible after $REGISTRY_STARTUP_TIMEOUT") {
+      describe "Not able to access registry after after $REGISTRY_STARTUP_TIMEOUT"
       exists(application, true).dumpOutput()
+      SliderShell shell = registry(0, [
+              ARG_NAME,
+              application,
+              ARG_LISTEXP
+          ])
     }
   }
 
