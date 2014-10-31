@@ -24,10 +24,14 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.yarn.api.records.Container
 import org.apache.slider.api.StatusKeys
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
-import org.apache.slider.server.appmaster.model.mock.MockRecordFactory
+import org.apache.slider.server.appmaster.model.mock.MockAppState
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
-import org.apache.slider.server.appmaster.state.*
+import org.apache.slider.server.appmaster.state.NodeEntry
+import org.apache.slider.server.appmaster.state.NodeInstance
+import org.apache.slider.server.appmaster.state.NodeMap
+import org.apache.slider.server.appmaster.state.RoleInstance
+import org.apache.slider.server.appmaster.state.SimpleReleaseSelector
 import org.junit.Test
 
 /**
@@ -67,7 +71,7 @@ class TestMockAppStateRebuildOnAMRestart extends BaseMockAppStateTest
     NodeMap nodemap = appState.roleHistory.cloneNodemap()
 
     // now destroy the app state
-    appState = new AppState(new MockRecordFactory())
+    appState = new MockAppState()
 
     //and rebuild
     appState.buildInstance(

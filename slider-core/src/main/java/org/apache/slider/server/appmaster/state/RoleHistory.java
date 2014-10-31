@@ -430,9 +430,9 @@ public class RoleHistory {
   /**
    * Get the nodes for an ID -may be null
    * @param id role ID
-   * @return list
+   * @return potenially null list
    */
-  private LinkedList<NodeInstance> getNodesForRoleId(int id) {
+  private List<NodeInstance> getNodesForRoleId(int id) {
     return availableNodes.get(id);
   }
   
@@ -481,7 +481,7 @@ public class RoleHistory {
     
     List<NodeInstance> targets = getNodesForRoleId(roleKey);
     int cnt = targets == null ? 0 : targets.size();
-    log.debug("There're {} nodes to consider for {}", cnt, role.getName());
+    log.debug("There are {} node(s) to consider for {}", cnt, role.getName());
     while (targets != null && !targets.isEmpty() && nodeInstance == null) {
       NodeInstance head = targets.remove(0);
       if (head.getActiveRoleInstances(roleKey) == 0) {

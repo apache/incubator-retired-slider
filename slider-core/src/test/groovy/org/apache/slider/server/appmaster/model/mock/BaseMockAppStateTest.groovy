@@ -43,7 +43,7 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
   public static final int RM_MAX_RAM = 4096
   public static final int RM_MAX_CORES = 64
   MockFactory factory = new MockFactory()
-  AppState appState
+  MockAppState appState
   MockYarnEngine engine
   protected HadoopFS fs
   protected SliderFileSystem sliderFileSystem
@@ -86,7 +86,7 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
     historyWorkDir = new File("target/history", historyDirName)
     historyPath = new Path(historyWorkDir.toURI())
     fs.delete(historyPath, true)
-    appState = new AppState(new MockRecordFactory())
+    appState = new MockAppState()
     appState.setContainerLimits(RM_MAX_RAM, RM_MAX_CORES)
     appState.buildInstance(
         buildInstanceDefinition(),
@@ -172,7 +172,7 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
    */
   public ContainerStatus containerStatus(ContainerId cid) {
     ContainerStatus status = containerStatus(cid,
-                                             LauncherExitCodes.EXIT_CLIENT_INITIATED_SHUTDOWN)
+        LauncherExitCodes.EXIT_CLIENT_INITIATED_SHUTDOWN)
     return status
   }
 
@@ -203,6 +203,20 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
       List<AppState.NodeCompletionResult> completionResults) {
     List<ContainerId> released = []
     List<RoleInstance> instances = createAndSubmitNodes(released)
+    processSubmissionOperations(instances, completionResults, released)
+    return instances
+  }
+
+  /**
+   * Process the start/stop operations from 
+   * @param instances
+   * @param completionResults
+   * @param released
+   */
+  public void processSubmissionOperations(
+      List<RoleInstance> instances,
+      List<AppState.NodeCompletionResult> completionResults,
+      List<ContainerId> released) {
     for (RoleInstance instance : instances) {
       assert appState.onNodeManagerContainerStarted(instance.containerId)
     }
@@ -212,7 +226,6 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
         "released",
         0
     )
-    return instances
   }
 
   /**
@@ -256,6 +269,19 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
   public List<RoleInstance> createAndSubmitNodes(
       List<ContainerId> released) {
     List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()
+    return submitOperations(ops, released)
+  }
+
+  /**
+   * Process the RM operations and send <code>onContainersAllocated</code>
+   * events to the app state
+   * @param ops
+   * @param released
+   * @return
+   */
+  public List<RoleInstance> submitOperations(
+      List<AbstractRMOperation> ops,
+      List<ContainerId> released) {
     List<Container> allocatedContainers = engine.execute(ops, released)
     List<ContainerAssignment> assignments = [];
     List<AbstractRMOperation> operations = []

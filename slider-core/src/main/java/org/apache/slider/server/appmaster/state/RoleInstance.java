@@ -51,8 +51,13 @@ public final class RoleInstance implements Cloneable {
    * already been targeted for termination
    */
   public boolean released;
+
+  /**
+   * Name of the role
+   */
   public String role;
   public int roleId;
+
   /**
    * state from {@link ClusterDescription}
    */

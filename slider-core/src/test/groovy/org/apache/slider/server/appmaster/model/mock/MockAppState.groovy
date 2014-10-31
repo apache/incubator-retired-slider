@@ -17,13 +17,27 @@
 
 package org.apache.slider.server.appmaster.model.mock
 
+import org.apache.slider.providers.ProviderRole
 import org.apache.slider.server.appmaster.state.AbstractRecordFactory
 import org.apache.slider.server.appmaster.state.AppState
 
+/**
+ * Extended app state that makes more things public
+ */
 class MockAppState extends AppState {
 
   public MockAppState(AbstractRecordFactory recordFactory) {
     super(recordFactory);
   }
 
+  /**
+   * Instance with a mock record factory
+   */
+  public MockAppState() {
+    super(new MockRecordFactory());
+  }
+
+  public Map<String, ProviderRole> getRoleMap() {
+    return super.roleMap;
+  }
 }

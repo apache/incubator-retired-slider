@@ -574,20 +574,21 @@ public class AppState {
    * @return a new provider role
    * @throws BadConfigException bad configuration
    */
+  @VisibleForTesting
   public ProviderRole createDynamicProviderRole(String name,
                                                 MapOperations component) throws
                                                         BadConfigException {
     String priOpt = component.getMandatoryOption(ResourceKeys.COMPONENT_PRIORITY);
-    int pri = SliderUtils.parseAndValidate("value of " + name + " " +
+    int priority = SliderUtils.parseAndValidate("value of " + name + " " +
         ResourceKeys.COMPONENT_PRIORITY,
         priOpt, 0, 1, -1);
-    log.info("Role {} assigned priority {}", name, pri);
+    log.info("Role {} assigned priority {}", name, priority);
     String placementOpt = component.getOption(
       ResourceKeys.COMPONENT_PLACEMENT_POLICY, "0");
     int placement = SliderUtils.parseAndValidate("value of " + name + " " +
         ResourceKeys.COMPONENT_PLACEMENT_POLICY,
         placementOpt, 0, 0, -1);
-    return new ProviderRole(name, pri, placement);
+    return new ProviderRole(name, priority, placement);
   }
 
 
@@ -694,11 +695,13 @@ public class AppState {
     for (String name : roleNames) {
       if (!roles.containsKey(name)) {
         // this is a new value
+        MapOperations component = resources.getComponent(name);
         log.info("Adding new role {}", name);
         ProviderRole dynamicRole = createDynamicProviderRole(name,
-                               resources.getComponent(name));
+            component);
         RoleStatus roleStatus = buildRole(dynamicRole);
         roleStatus.setDesired(getDesiredInstanceCount(resources, name));
+        log.info("New role {}", roleStatus);
         roleHistory.addNewProviderRole(dynamicRole);
       }
     }

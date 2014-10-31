@@ -26,6 +26,7 @@ import org.apache.slider.api.ResourceKeys
 import org.apache.slider.core.conf.ConfTreeOperations
 import org.apache.slider.core.exceptions.BadConfigException
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
+import org.apache.slider.server.appmaster.model.mock.MockAppState
 import org.apache.slider.server.appmaster.model.mock.MockRecordFactory
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.model.mock.MockYarnEngine
@@ -60,7 +61,7 @@ class TestMockAppStateFlexDynamicRoles extends BaseMockAppStateTest
   @Override
   void initApp() {
     super.initApp()
-    appState = new AppState(new MockRecordFactory())
+    appState = new MockAppState()
     appState.setContainerLimits(RM_MAX_RAM, RM_MAX_CORES)
 
     def instance = factory.newInstanceDefinition(0, 0, 0)
@@ -174,7 +175,7 @@ class TestMockAppStateFlexDynamicRoles extends BaseMockAppStateTest
     //now reset the app state
     def historyWorkDir2 = new File("target/history" + testName + "-0002")
     def historyPath2 = new Path(historyWorkDir2.toURI())
-    appState = new AppState(new MockRecordFactory())
+    appState = new MockAppState()
     appState.setContainerLimits(RM_MAX_RAM, RM_MAX_CORES)
     appState.buildInstance(
         factory.newInstanceDefinition(0, 0, 0),
