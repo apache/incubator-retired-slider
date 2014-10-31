@@ -94,8 +94,7 @@ abstract class CommandTestBase extends SliderTestUtils {
   public static final int CONTAINER_LAUNCH_TIMEOUT = 90000
   public static final int PROBE_SLEEP_TIME = 4000
   public static final int REGISTRY_STARTUP_TIMEOUT = 60000
-  public static
-  final String E_LAUNCH_FAIL = 'Application did not start'
+  public static final String E_LAUNCH_FAIL = 'Application did not start'
 
   /*
   Static initializer for test configurations. If this code throws exceptions
@@ -380,14 +379,18 @@ abstract class CommandTestBase extends SliderTestUtils {
   static SliderShell lookup(int result, String id, File out) {
     assert id
     def commands = [ACTION_LOOKUP, ARG_ID, id]
-    if (out) commands += [ARG_OUTPUT, out.absolutePath]
+    if (out) {
+      commands += [ARG_OUTPUT, out.absolutePath]
+    }
     slider(result, commands)
   }
   
   static SliderShell lookup(String id, File out) {
     assert id
     def commands = [ACTION_LOOKUP, ARG_ID, id]
-    if (out) commands += [ARG_OUTPUT, out.absolutePath]
+    if (out) {
+      commands += [ARG_OUTPUT, out.absolutePath]
+    }
     slider(commands)
   }
 
@@ -707,7 +710,7 @@ abstract class CommandTestBase extends SliderTestUtils {
     }
     return args
   }
-  
+
   public static SerializedApplicationReport maybeLoadAppReport(File reportFile) {
     if (reportFile.exists() && reportFile.length()> 0) {
       ApplicationReportSerDeser serDeser = new ApplicationReportSerDeser()
@@ -776,19 +779,24 @@ abstract class CommandTestBase extends SliderTestUtils {
         ARG_MESSAGE, "suicide"
     ])
 
-
     sleep(5000)
     ensureApplicationIsUp(cluster)
-    
-/*
-    def sleeptime = SLIDER_CONFIG.getInt(KEY_AM_RESTART_SLEEP_TIME,
-        DEFAULT_AM_RESTART_SLEEP_TIME)
-    sleep(sleeptime)
-*/
-    ClusterDescription status
+    return sliderClient.clusterDescription
+  }
+  public ClusterDescription killAmAndWaitForRestart(
+      SliderClient sliderClient, String cluster, String appId) {
 
-    status = sliderClient.clusterDescription
-    return status
+    assert cluster
+    slider(0, [
+        ACTION_AM_SUICIDE, cluster,
+        ARG_EXITCODE, "1",
+        ARG_WAIT, "1000",
+        ARG_MESSAGE, "suicide"
+    ])
+
+    sleep(5000)
+    ensureYarnApplicationIsUp(appId)
+    return sliderClient.clusterDescription
   }
 
   protected void ensureRegistryCallSucceeds(String application) {
@@ -844,7 +852,6 @@ abstract class CommandTestBase extends SliderTestUtils {
     );
   }
 
-  
   /**
    * is an application in a desired yarn state 
    * @param yarnState
@@ -1057,25 +1064,30 @@ abstract class CommandTestBase extends SliderTestUtils {
     int expectedCount = args['limit'].toInteger();
 
     int requestedCount = queryRequestedCount(application, role)
-    log.debug("requested count = $requestedCount; expected=$expectedCount")
+    log.debug("requested $role count = $requestedCount; expected=$expectedCount")
     return Outcome.fromBool(requestedCount >= expectedCount)
   }
 
-  void expectContainerRequestedCountReached(String application, String role, int limit) {
+  void expectContainerRequestedCountReached(String application, String role, int limit,
+      int container_launch_timeout) {
 
     repeatUntilSuccess(
         this.&hasRequestedContainerCountReached,
-        CONTAINER_LAUNCH_TIMEOUT,
+        container_launch_timeout,
         PROBE_SLEEP_TIME,
         [limit      : Integer.toString(limit),
          role       : role,
          application: application],
         true,
         "countainer count not reached") {
-      describe "container count not reached"
+      int requestedCount = queryRequestedCount(application, role)
+
+      def message = "expected count of $role = $limit not reached: $requestedCount" +
+                    " after $container_launch_timeout mS"
+      describe message
       ClusterDescription cd = execStatus(application);
       log.info("Parsed status \n$cd")
-      status(application).dumpOutput()
+      fail(message)
     };
 
   }

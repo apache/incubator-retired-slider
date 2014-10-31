@@ -28,7 +28,6 @@ import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
 import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
-import org.apache.slider.funtest.framework.SliderShell
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -62,7 +61,7 @@ public class AgentLaunchFailureIT extends AgentCommandTestBase
  
     // create an AM which fails to launch
     File launchReportFile = createAppReportFile();
-    SliderShell shell = createTemplatedSliderApplication(CLUSTER,
+    createTemplatedSliderApplication(CLUSTER,
         APP_TEMPLATE,
         APP_RESOURCE2,
         [

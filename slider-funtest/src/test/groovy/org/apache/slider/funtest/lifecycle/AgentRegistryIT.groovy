@@ -132,7 +132,5 @@ public class AgentRegistryIT extends AgentCommandTestBase
 
     //cluster now missing
     exists(EXIT_UNKNOWN_INSTANCE, CLUSTER)
-
-
   }
 }

@@ -21,6 +21,7 @@ package org.apache.slider.funtest.framework
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
@@ -166,5 +167,14 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
       logShell(shell)
       assert fail("Old cluster either should not exist or should get destroyed; destroy exit code = ${shell.ret}")
     }
+  }
+
+  /**
+   * Assert that the application is running (i.e in state
+   * {@link YarnApplicationState#RUNNING})
+   * @param appId application ID
+   */
+  def assertAppRunning(String appId) {
+    assertInYarnState(appId, YarnApplicationState.RUNNING)
   }
 }

@@ -20,7 +20,6 @@ package org.apache.slider.funtest.lifecycle
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
@@ -60,13 +59,12 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     logShell(shell)
 
     def appId = ensureYarnApplicationIsUp(launchReportFile)
-    expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 3)
+    expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 2,
+        CONTAINER_LAUNCH_TIMEOUT * 2)
     sleep(1000 * 20)
-    def cd = execStatus(APPLICATION_NAME)
-    assert cd.statistics[COMMAND_LOGGER]["containers.requested"] >= 3
-    assertInYarnState(appId, YarnApplicationState.RUNNING)
+    expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 3,
+        CONTAINER_LAUNCH_TIMEOUT * 2)
+    assertAppRunning(appId)
   }
-
-
 
 }

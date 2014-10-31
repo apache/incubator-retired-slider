@@ -49,13 +49,17 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     assumeAgentTestsEnabled()
 
     cleanup(APPLICATION_NAME)
+    File launchReportFile = createAppReportFile();
+
     SliderShell shell = createTemplatedSliderApplication(APPLICATION_NAME,
         APP_TEMPLATE,
-        APP_RESOURCE)
+        APP_RESOURCE,
+        [],
+        launchReportFile)
 
     logShell(shell)
 
-    ensureApplicationIsUp(APPLICATION_NAME)
+    def appId = ensureYarnApplicationIsUp(launchReportFile)
 
     //flex
     slider(EXIT_SUCCESS,
@@ -69,9 +73,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     // sleep till the new instance starts
     sleep(1000 * 10)
 
-    shell = slider(EXIT_SUCCESS,
-        [
-            ACTION_STATUS,
+    slider(EXIT_SUCCESS,
+        [ACTION_STATUS,
             APPLICATION_NAME])
 
     expectContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 2)
@@ -88,7 +91,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
             ACTION_REGISTRY,
             ARG_NAME,
             APPLICATION_NAME,
-            ARG_LISTEXP])
+            ARG_LISTEXP
+        ])
     if(!containsString(shell, "container_log_dirs") ||
        !containsString(shell, "container_work_dirs")) {
       logShell(shell)
@@ -102,7 +106,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
             ARG_NAME,
             APPLICATION_NAME,
             ARG_GETEXP,
-            "container_log_dirs"])
+            "container_log_dirs"
+        ])
     if(!containsString(shell, "\"tag\" : \"COMMAND_LOGGER\"", 2)
     || !containsString(shell, "\"level\" : \"component\"", 2)) {
       logShell(shell)
@@ -116,7 +121,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
             ARG_NAME,
             APPLICATION_NAME,
             ARG_GETEXP,
-            "container_work_dirs"])
+            "container_work_dirs"
+        ])
     if(!containsString(shell, "\"tag\" : \"COMMAND_LOGGER\"", 2)
     || !containsString(shell, "\"level\" : \"component\"", 2)) {
       logShell(shell)
@@ -132,7 +138,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
             ARG_GETCONF,
             "cl-site",
             ARG_FORMAT,
-            "json"])
+            "json"
+        ])
 
     for (int i = 0; i < 10; i++) {
       if (shell.getRet() != EXIT_SUCCESS) {
@@ -155,6 +162,6 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
       assert fail("Should have exported cl-site")
     }
 
-    assert isApplicationUp(APPLICATION_NAME), 'App is not running.'
+    assertAppRunning(appId)
   }
 }

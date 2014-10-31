@@ -20,7 +20,6 @@ package org.apache.slider.funtest.lifecycle
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
@@ -76,10 +75,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     // sleep till the new instance starts
     sleep(1000 * 10)
 
-    shell = slider(EXIT_SUCCESS,
-        [
-            ACTION_STATUS,
-            APPLICATION_NAME])
+    status(0, APPLICATION_NAME)
 
     expectContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 2)
 
@@ -145,7 +141,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
       if (shell.getRet() != EXIT_SUCCESS) {
         println "Waiting for the cl-site to show up"
         sleep(1000 * 10)
-        shell = slider(
+        shell = slider(0,
             [
                 ACTION_REGISTRY,
                 ARG_NAME,
@@ -156,12 +152,14 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
                 "json"])
       }
     }
-    assert shell.getRet() == EXIT_SUCCESS, "cl-site should be retrieved"
     if (!containsString(shell, "\"pattern.for.test.to.verify\" : \"verify this pattern\"", 1)) {
       logShell(shell)
-      assert fail("Should have exported cl-site")
+      
+      fail("Should have exported cl-site; got " +
+                  "stdout"  +shell.stdErrHistory +
+                  " \nstderr:" + shell.stdErrHistory)
     }
 
-    assertInYarnState(appId,  YarnApplicationState.RUNNING)
+    assertAppRunning(appId)
   }
 }

@@ -63,13 +63,13 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     logShell(shell)
 
     def appId = ensureYarnApplicationIsUp(launchReportFile)
-
-    expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 2)
+    expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 2,
+        CONTAINER_LAUNCH_TIMEOUT)
     sleep(1000 * 20)
-    assertInYarnState(appId, YarnApplicationState.RUNNING)
+    assertAppRunning(appId)
     def cd = expectContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 1)
     assert cd.statistics[COMMAND_LOGGER]["containers.requested"] >= 2
-    assertInYarnState(appId, YarnApplicationState.RUNNING)
+    assertAppRunning(appId)
   }
 
 }

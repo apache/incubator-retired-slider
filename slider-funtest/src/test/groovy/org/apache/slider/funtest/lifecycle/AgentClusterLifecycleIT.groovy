@@ -183,6 +183,7 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
 
       //start with a restart count set to enable restart
       describe "the kill/restart phase may fail if yarn.resourcemanager.am.max-attempts is too low"
+      
       thaw(CLUSTER,
           [
               ARG_WAIT, Integer.toString(THAW_WAIT_TIME),

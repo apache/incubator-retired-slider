@@ -92,7 +92,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     def appId = ensureYarnApplicationIsUp(launchReportFile)
 
-    expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 1 )
+    expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 1,
+        CONTAINER_LAUNCH_TIMEOUT)
     expectContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 1)
 
     //flex
@@ -107,7 +108,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     // spin till the flexed instance starts
     ensureYarnApplicationIsUp(appId)
-    expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 3)
+    expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 3,
+        CONTAINER_LAUNCH_TIMEOUT)
 
 
     sleep(1000 * 20)

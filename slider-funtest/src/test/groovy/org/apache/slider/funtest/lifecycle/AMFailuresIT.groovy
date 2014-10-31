@@ -70,7 +70,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     logShell(shell)
 
     def appId = ensureYarnApplicationIsUp(launchReportFile)
-    expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 1)
+    expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 1,
+        CONTAINER_LAUNCH_TIMEOUT)
     
     // Wait for 20 secs for AM and agent to both reach STARTED state
     sleep(1000 * 20)
