@@ -641,33 +641,36 @@ public class AppState {
   /**
    * The resource configuration is updated -review and update state.
    * @param resources updated resources specification
+   * @return a list of any dynamically added provider roles
+   * (purely for testing purposes)
    */
-  public synchronized void updateResourceDefinitions(ConfTree resources)
+  public synchronized List<ProviderRole> updateResourceDefinitions(ConfTree resources)
       throws BadConfigException, IOException {
     log.debug("Updating resources to {}", resources);
     
     instanceDefinition.setResources(resources);
     onInstanceDefinitionUpdated();
-    
-    
+ 
     //propagate the role table
-
     Map<String, Map<String, String>> updated = resources.components;
     getClusterStatus().roles = SliderUtils.deepClone(updated);
     getClusterStatus().updateTime = now();
-    buildRoleRequirementsFromResources();
+    return buildRoleRequirementsFromResources();
   }
 
   /**
    * build the role requirements from the cluster specification
+   * @return a list of any dynamically added provider roles
    */
-  private void buildRoleRequirementsFromResources() throws BadConfigException {
+  private List<ProviderRole> buildRoleRequirementsFromResources() throws BadConfigException {
 
+    List<ProviderRole> newRoles = new ArrayList<ProviderRole>(0);
+    
     //now update every role's desired count.
     //if there are no instance values, that role count goes to zero
 
     ConfTreeOperations resources =
-      instanceDefinition.getResourceOperations();
+        instanceDefinition.getResourceOperations();
 
     // Add all the existing roles
     for (RoleStatus roleStatus : getRoleStatusMap().values()) {
@@ -678,33 +681,38 @@ public class AppState {
       int currentDesired = roleStatus.getDesired();
       String role = roleStatus.getName();
       MapOperations comp =
-        resources.getComponent(role);
+          resources.getComponent(role);
       int desiredInstanceCount = getDesiredInstanceCount(resources, role);
       if (desiredInstanceCount == 0) {
         log.info("Role {} has 0 instances specified", role);
-      }  
+      }
       if (currentDesired != desiredInstanceCount) {
         log.info("Role {} flexed from {} to {}", role, currentDesired,
-                 desiredInstanceCount);
+            desiredInstanceCount);
         roleStatus.setDesired(desiredInstanceCount);
       }
     }
+
     //now the dynamic ones. Iterate through the the cluster spec and
     //add any role status entries not in the role status
     Set<String> roleNames = resources.getComponentNames();
     for (String name : roleNames) {
       if (!roles.containsKey(name)) {
         // this is a new value
-        MapOperations component = resources.getComponent(name);
         log.info("Adding new role {}", name);
+        MapOperations component = resources.getComponent(name);
         ProviderRole dynamicRole = createDynamicProviderRole(name,
             component);
         RoleStatus roleStatus = buildRole(dynamicRole);
         roleStatus.setDesired(getDesiredInstanceCount(resources, name));
         log.info("New role {}", roleStatus);
         roleHistory.addNewProviderRole(dynamicRole);
+        newRoles.add(dynamicRole);
+      } else {
+        log.debug("known role: {}", name);
       }
     }
+    return newRoles;
   }
 
   /**

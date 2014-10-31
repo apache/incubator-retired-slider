@@ -462,10 +462,6 @@ public class RoleHistory {
     }
   }
 
-  public synchronized void onAMRestart() {
-    //TODO once AM restart is implemented and we know what to expect
-  }
-
   /**
    * Find a node for use
    * @param role role

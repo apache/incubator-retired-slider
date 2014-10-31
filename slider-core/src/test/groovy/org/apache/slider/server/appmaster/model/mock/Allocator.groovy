@@ -51,11 +51,11 @@ class Allocator {
   MockContainer allocate(AMRMClient.ContainerRequest request) {
     MockYarnCluster.MockYarnClusterNode node = null
     MockYarnCluster.MockYarnClusterContainer allocated = null
-    if (request.nodes != null) {
+    if (request.nodes) {
       for (String host : request.nodes) {
         node = cluster.lookup(host)
         allocated = node.allocate()
-        if (allocated != null) {
+        if (allocated) {
           break
         }
       }
@@ -64,7 +64,7 @@ class Allocator {
     if (allocated) {
       return createContainerRecord(request, allocated, node)
     } else {
-      if (request.relaxLocality || request.nodes.isEmpty()) {
+      if (request.relaxLocality || request.nodes.empty) {
         // fallback to anywhere
         return allocateRandom(request)
       } else {
@@ -117,7 +117,7 @@ class Allocator {
     return container;
   }
 
-  private int nextIndex() {
+  public int nextIndex() {
     rollingIndex = (rollingIndex + 1) % cluster.clusterSize;
     return rollingIndex;
   }
