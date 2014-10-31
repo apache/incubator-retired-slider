@@ -50,23 +50,21 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     assumeAgentTestsEnabled()
     
     cleanup(APPLICATION_NAME)
-    SliderShell shell = createTemplatedSliderApplication(
-        APPLICATION_NAME,
-        APP_TEMPLATE3,
-        APP_RESOURCE)
+    File launchReportFile = createAppReportFile();
 
+    SliderShell shell = createTemplatedSliderApplication(
+        APPLICATION_NAME, APP_TEMPLATE3, APP_RESOURCE,
+        [],
+        launchReportFile)
     logShell(shell)
 
-    ensureApplicationIsUp(APPLICATION_NAME)
-    expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 3)
+    def appId = ensureYarnApplicationIsUp(launchReportFile)
+    expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 2,
+        CONTAINER_LAUNCH_TIMEOUT * 2)
     sleep(1000 * 20)
-    def cd = execStatus(APPLICATION_NAME)
-    assert cd.statistics[COMMAND_LOGGER]["containers.requested"] >= 3
-
-    assert isApplicationUp(APPLICATION_NAME), 'App is not running.'
-
+    expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 3,
+        CONTAINER_LAUNCH_TIMEOUT * 2)
+    assertAppRunning(appId)
   }
-
-
 
 }

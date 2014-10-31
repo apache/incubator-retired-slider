@@ -22,6 +22,8 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
 
+import java.io.File;
+
 
 @Parameters(commandNames = {SliderActions.ACTION_CREATE},
             commandDescription = SliderActions.DESCRIBE_ACTION_CREATE)
@@ -62,6 +64,11 @@ public class SliderAMCreateAction extends AbstractActionArgs implements
   @Override
   public void setWaittime(int waittime) {
     launchArgs.setWaittime(waittime);
+  }
+
+  @Override
+  public File getOutputFile() {
+    return launchArgs.getOutputFile();
   }
   
 }

@@ -32,20 +32,16 @@ import org.junit.Test
 
 @CompileStatic
 @Slf4j
-public class AppsThroughAgentIT extends AgentCommandTestBase
+public class AppsThroughAgentDemo extends AgentCommandTestBase
 implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   private static String COMMAND_LOGGER = "COMMAND_LOGGER"
-  private static String APPLICATION_NAME = "apps-through-agent"
+  private static String APPLICATION_NAME = "agent-demo"
+
 
   @Before
   public void prepareCluster() {
     setupCluster(APPLICATION_NAME)
-  }
-  
-  @After
-  public void destroyCluster() {
-    cleanup(APPLICATION_NAME)
   }
 
   @Test
@@ -54,11 +50,13 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     cleanup(APPLICATION_NAME)
     File launchReportFile = createAppReportFile();
+
     SliderShell shell = createTemplatedSliderApplication(APPLICATION_NAME,
         APP_TEMPLATE,
         APP_RESOURCE,
         [],
         launchReportFile)
+
     logShell(shell)
 
     def appId = ensureYarnApplicationIsUp(launchReportFile)
@@ -75,7 +73,9 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     // sleep till the new instance starts
     sleep(1000 * 10)
 
-    status(0, APPLICATION_NAME)
+    slider(EXIT_SUCCESS,
+        [ACTION_STATUS,
+            APPLICATION_NAME])
 
     expectContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 2)
 
@@ -91,7 +91,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
             ACTION_REGISTRY,
             ARG_NAME,
             APPLICATION_NAME,
-            ARG_LISTEXP])
+            ARG_LISTEXP
+        ])
     if(!containsString(shell, "container_log_dirs") ||
        !containsString(shell, "container_work_dirs")) {
       logShell(shell)
@@ -105,9 +106,10 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
             ARG_NAME,
             APPLICATION_NAME,
             ARG_GETEXP,
-            "container_log_dirs"])
-    if (!containsString(shell, "\"tag\" : \"COMMAND_LOGGER\"", 2)
-        || !containsString(shell, "\"level\" : \"component\"", 2)) {
+            "container_log_dirs"
+        ])
+    if(!containsString(shell, "\"tag\" : \"COMMAND_LOGGER\"", 2)
+    || !containsString(shell, "\"level\" : \"component\"", 2)) {
       logShell(shell)
       assert fail("Should list 2 entries for log folders")
     }
@@ -119,7 +121,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
             ARG_NAME,
             APPLICATION_NAME,
             ARG_GETEXP,
-            "container_work_dirs"])
+            "container_work_dirs"
+        ])
     if(!containsString(shell, "\"tag\" : \"COMMAND_LOGGER\"", 2)
     || !containsString(shell, "\"level\" : \"component\"", 2)) {
       logShell(shell)
@@ -135,13 +138,14 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
             ARG_GETCONF,
             "cl-site",
             ARG_FORMAT,
-            "json"])
+            "json"
+        ])
 
     for (int i = 0; i < 10; i++) {
       if (shell.getRet() != EXIT_SUCCESS) {
         println "Waiting for the cl-site to show up"
         sleep(1000 * 10)
-        shell = slider(0,
+        shell = slider(
             [
                 ACTION_REGISTRY,
                 ARG_NAME,
@@ -152,12 +156,10 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
                 "json"])
       }
     }
+    assert shell.getRet() == EXIT_SUCCESS, "cl-site should be retrieved"
     if (!containsString(shell, "\"pattern.for.test.to.verify\" : \"verify this pattern\"", 1)) {
       logShell(shell)
-      
-      fail("Should have exported cl-site; got " +
-                  "stdout"  +shell.stdErrHistory +
-                  " \nstderr:" + shell.stdErrHistory)
+      assert fail("Should have exported cl-site")
     }
 
     assertAppRunning(appId)

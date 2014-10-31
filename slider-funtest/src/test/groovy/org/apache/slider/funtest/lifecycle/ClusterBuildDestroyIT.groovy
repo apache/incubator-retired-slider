@@ -68,7 +68,6 @@ public class ClusterBuildDestroyIT extends AgentCommandTestBase
             ARG_RESOURCES, APP_RESOURCE
         ])
 
-
     assert clusterFS.exists(clusterDirPath)
     //cluster exists if you don't want it to be live
     exists(EXIT_SUCCESS, CLUSTER, false)

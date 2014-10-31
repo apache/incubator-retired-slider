@@ -24,6 +24,7 @@ import com.beust.jcommander.Parameters;
             commandDescription = SliderActions.DESCRIBE_ACTION_DESTROY)
 
 public class ActionDestroyArgs extends AbstractActionArgs {
+  
   @Override
   public String getActionName() {
     return SliderActions.ACTION_DESTROY;

@@ -33,12 +33,13 @@ import org.codehaus.jackson.map.SerializationConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * Support for marshalling objects to and from JSON.
@@ -126,6 +127,7 @@ public class JsonSerDeser<T> {
    * @throws IOException IO problems
    * @throws JsonMappingException failure to map from the JSON to this class
    */
+  @SuppressWarnings("IOResourceOpenedButNotSafelyClosed")
   public synchronized T fromResource(String resource)
       throws IOException, JsonParseException, JsonMappingException {
     InputStream resStream = null;
@@ -206,9 +208,10 @@ public class JsonSerDeser<T> {
 
 
   /**
-   * Save a cluster description to a hadoop filesystem
+   * Save to a hadoop filesystem
    * @param fs filesystem
    * @param path path
+   * @param instance instance to save
    * @param overwrite should any existing file be overwritten
    * @throws IOException IO exception
    */
@@ -220,19 +223,31 @@ public class JsonSerDeser<T> {
   }
 
   /**
+   * Save an instance to a file
+   * @param instance instance to save
+   * @param file file
+   * @throws IOException
+   */
+  public void save(T instance, File file) throws
+      IOException {
+    writeJsonAsBytes(instance, new FileOutputStream(file));
+  }
+  
+  /**
    * Write the json as bytes -then close the file
    * @param dataOutputStream an outout stream that will always be closed
    * @throws IOException on any failure
    */
   private void writeJsonAsBytes(T instance,
-                                DataOutputStream dataOutputStream) throws
-                                                                   IOException {
+      OutputStream dataOutputStream) throws IOException {
     try {
       String json = toJson(instance);
       byte[] b = json.getBytes(UTF_8);
       dataOutputStream.write(b);
-    } finally {
+      dataOutputStream.flush();
       dataOutputStream.close();
+    } finally {
+      IOUtils.closeStream(dataOutputStream);
     }
   }
 

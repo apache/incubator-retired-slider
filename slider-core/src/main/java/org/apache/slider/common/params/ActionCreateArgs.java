@@ -21,6 +21,8 @@ package org.apache.slider.common.params;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
 
+import java.io.File;
+
 @Parameters(commandNames = {SliderActions.ACTION_CREATE},
             commandDescription = SliderActions.DESCRIBE_ACTION_CREATE)
 
@@ -34,6 +36,11 @@ public class ActionCreateArgs extends AbstractClusterBuildingActionArgs
   
   @ParametersDelegate
   LaunchArgsDelegate launchArgs = new LaunchArgsDelegate();
+
+  @Override
+  public File getOutputFile() {
+    return launchArgs.getOutputFile();
+  }
 
   @Override
   public String getRmAddress() {

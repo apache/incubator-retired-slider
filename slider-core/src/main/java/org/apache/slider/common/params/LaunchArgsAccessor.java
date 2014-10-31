@@ -18,9 +18,13 @@
 
 package org.apache.slider.common.params;
 
+import java.io.File;
+
 /**
  * Launch args for create and start and anything else that can start something
  */
 public interface LaunchArgsAccessor extends WaitTimeAccessor {
   String getRmAddress();
+
+  File getOutputFile();
 }

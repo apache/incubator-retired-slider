@@ -20,11 +20,13 @@ package org.apache.slider.funtest.lifecycle
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
 import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
+import org.apache.slider.funtest.framework.SliderShell
 import org.junit.After
 import org.junit.Test
 
@@ -50,20 +52,24 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     }
 
     cleanup(APPLICATION_NAME)
-    def shell = createTemplatedSliderApplication( APPLICATION_NAME,
-            APP_TEMPLATE2,
-            APP_RESOURCE)
 
+    File launchReportFile = createAppReportFile();
+    SliderShell shell = createTemplatedSliderApplication(
+        APPLICATION_NAME,
+        APP_TEMPLATE2,
+        APP_RESOURCE,
+        [],
+        launchReportFile)
     logShell(shell)
 
-    ensureApplicationIsUp(APPLICATION_NAME)
-
-    expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 2)
+    def appId = ensureYarnApplicationIsUp(launchReportFile)
+    expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 2,
+        CONTAINER_LAUNCH_TIMEOUT)
     sleep(1000 * 20)
-    assert isApplicationUp(APPLICATION_NAME), 'App is not running.'
+    assertAppRunning(appId)
     def cd = expectContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 1)
     assert cd.statistics[COMMAND_LOGGER]["containers.requested"] >= 2
-    assert isApplicationUp(APPLICATION_NAME), 'App is not running.'
+    assertAppRunning(appId)
   }
 
 }

@@ -21,6 +21,7 @@ package org.apache.slider.funtest.framework
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
@@ -111,9 +112,9 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
       SliderShell shell = slider(EXIT_SUCCESS,
           [
               ACTION_INSTALL_PACKAGE,
-              Arguments.ARG_NAME, TEST_APP_PKG_NAME,
-              Arguments.ARG_PACKAGE, zipFileName.absolutePath,
-              Arguments.ARG_REPLACE_PKG
+              ARG_NAME, TEST_APP_PKG_NAME,
+              ARG_PACKAGE, zipFileName.absolutePath,
+              ARG_REPLACE_PKG
           ])
       logShell(shell)
       log.info "App pkg uploaded at home directory .slider/package/$TEST_APP_PKG_NAME/$TEST_APP_PKG_FILE"
@@ -166,5 +167,14 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
       logShell(shell)
       assert fail("Old cluster either should not exist or should get destroyed; destroy exit code = ${shell.ret}")
     }
+  }
+
+  /**
+   * Assert that the application is running (i.e in state
+   * {@link YarnApplicationState#RUNNING})
+   * @param appId application ID
+   */
+  def assertAppRunning(String appId) {
+    assertInYarnState(appId, YarnApplicationState.RUNNING)
   }
 }

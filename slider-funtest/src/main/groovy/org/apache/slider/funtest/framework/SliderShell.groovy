@@ -223,11 +223,11 @@ class SliderShell extends Shell {
    * if not the output is printed and an assertion is raised
    * @param errorCode expected error code
    */
-  public void assertExitCode(int errorCode) {
+  public void assertExitCode(int errorCode, String extra="") {
     if (this.ret != errorCode) {
       dumpOutput()
       throw new SliderException(ret,
-          "Expected exit code of command ${command} : ${errorCode} - actual=${ret}")
+          "Expected exit code of command ${command} : ${errorCode} - actual=${ret} $extra")
     }
   }
 
@@ -247,7 +247,6 @@ class SliderShell extends Shell {
   Shell exec(Object... args) {
     Process proc = "$shell".execute()
     script = args.join("\n")
-    LOG.debug("${shell} << __EOT__\n${script}\n__EOT__");
     ByteArrayOutputStream baosErr = new ByteArrayOutputStream(4096);
     ByteArrayOutputStream baosOut = new ByteArrayOutputStream(4096);
     proc.consumeProcessOutput(baosOut, baosErr)

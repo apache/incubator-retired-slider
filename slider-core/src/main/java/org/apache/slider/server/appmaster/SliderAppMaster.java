@@ -192,7 +192,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     ServiceStateChangeListener,
     RoleKeys,
     ProviderCompleted {
-  
+
   protected static final Logger log =
     LoggerFactory.getLogger(SliderAppMaster.class);
 
@@ -220,7 +220,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * Singleton of metrics registry
    */
   public static final MetricRegistry metrics = new MetricRegistry();
-  
+  public static final String E_TRIGGERED_LAUNCH_FAILURE =
+      "Chaos monkey triggered launch failure";
+
   /** YARN RPC to communicate with the Resource Manager or Node Manager */
   private YarnRPC yarnRPC;
 
@@ -1101,14 +1103,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
   }
 
-/*
-
-  @Override
-  protected RegistryOperationsService createRegistryOperationsInstance() {
-    return new ResourceManagerRegistryService("YarnRegistry");
-  }
-*/
-
   /**
    * TODO: purge this once RM is doing the work
    * @throws IOException
@@ -1133,7 +1127,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     if (instance == null) {
       return false;
     }
-    // this is where component registrations will go
+    // this is where component registrations  go
     log.info("Registering component {}", id);
     String cid = RegistryPathUtils.encodeYarnID(id.toString());
     ServiceRecord container = new ServiceRecord();
@@ -2185,12 +2179,36 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
           "Chaos monkey not configured with a time interval...not enabling");
       return false;
     }
-    log.info("Adding Chaos Monkey scheduled every {} seconds ({} hours)",
-        monkeyInterval, monkeyInterval/(60*60));
+
+    long monkeyDelay = internals.getTimeRange(
+        InternalKeys.CHAOS_MONKEY_DELAY,
+        0,
+        0,
+        0,
+        (int)monkeyInterval);
+    
+    log.info("Adding Chaos Monkey scheduled every {} seconds ({} hours -delay {}",
+        monkeyInterval, monkeyInterval/(60*60), monkeyDelay);
     monkey = new ChaosMonkeyService(metrics, actionQueues);
     initAndAddService(monkey);
     
     // configure the targets
+    
+    // launch failure: special case with explicit failure triggered now
+    int amLaunchFailProbability = internals.getOptionInt(
+        InternalKeys.CHAOS_MONKEY_PROBABILITY_AM_LAUNCH_FAILURE,
+        0);
+    if (amLaunchFailProbability> 0 && monkey.chaosCheck(amLaunchFailProbability)) {
+      log.info("Chaos Monkey has triggered AM Launch failure");
+      // trigger a failure
+      ActionStopSlider stop = new ActionStopSlider("stop",
+          0, TimeUnit.SECONDS,
+          LauncherExitCodes.EXIT_FALSE,
+          FinalApplicationStatus.FAILED,
+          E_TRIGGERED_LAUNCH_FAILURE);
+      queue(stop);
+    }
+    
     int amKillProbability = internals.getOptionInt(
         InternalKeys.CHAOS_MONKEY_PROBABILITY_AM_FAILURE,
         InternalKeys.DEFAULT_CHAOS_MONKEY_PROBABILITY_AM_FAILURE);
@@ -2204,7 +2222,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         containerKillProbability);
     
     // and schedule it
-    if (monkey.schedule(monkeyInterval, TimeUnit.SECONDS)) {
+    if (monkey.schedule(monkeyDelay, monkeyInterval, TimeUnit.SECONDS)) {
       log.info("Chaos Monkey is running");
       return true;
     } else {
