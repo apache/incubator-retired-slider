@@ -23,6 +23,7 @@ import com.sun.jersey.api.client.WebResource
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.yarn.exceptions.YarnException
 import org.apache.slider.api.StatusKeys
 import org.apache.slider.client.SliderClient
@@ -57,6 +58,7 @@ import static org.apache.slider.providers.agent.AgentTestUtils.createTestClient
 @CompileStatic
 @Slf4j
 class TestAgentAMManagementWS extends AgentTestBase {
+  private static String password;
 
   public static final String AGENT_URI = "ws/v1/slider/agents/";
     final static Logger logger = LoggerFactory.getLogger(TestAgentAMManagementWS.class)
@@ -91,11 +93,11 @@ class TestAgentAMManagementWS extends AgentTestBase {
         super.setup()
         MapOperations compOperations = new MapOperations();
         compOperations.put(SliderXmlConfKeys.KEY_KEYSTORE_LOCATION, "/tmp/work/security/keystore.p12");
-        SecurityUtils.initializeSecurityParameters(compOperations);
+        SecurityUtils.initializeSecurityParameters(compOperations, true);
         CertificateManager certificateManager = new CertificateManager();
         certificateManager.initialize(compOperations);
         String keystoreFile = SecurityUtils.getSecurityDir() + File.separator + SliderKeys.KEYSTORE_FILE_NAME;
-        String password = SecurityUtils.getKeystorePass();
+        password = SecurityUtils.getKeystorePass();
         System.setProperty("javax.net.ssl.trustStore", keystoreFile);
         System.setProperty("javax.net.ssl.trustStorePassword", password);
         System.setProperty("javax.net.ssl.trustStoreType", "PKCS12");
@@ -184,9 +186,11 @@ class TestAgentAMManagementWS extends AgentTestBase {
                                                InstanceBuilder builder)
       throws IOException, SliderException, LockAcquireFailedException {
           AggregateConf conf = builder.getInstanceDescription()
-          conf.getAppConfOperations().getComponent("slider-appmaster").put(
+          MapOperations component = conf.getAppConfOperations().getComponent("slider-appmaster")
+          component.put(
                   "ssl.server.keystore.location",
                   "/tmp/work/security/keystore.p12")
+          component.put("ssl.server.keystore.password", password)
           super.persistInstanceDefinition(overwrite, appconfdir, builder)
       }
 
@@ -196,10 +200,12 @@ class TestAgentAMManagementWS extends AgentTestBase {
                                             AggregateConf instanceDefinition,
                                             boolean debugAM)
       throws YarnException, IOException {
-          instanceDefinition.getAppConfOperations().getComponent("slider-appmaster").put(
+        MapOperations component = instanceDefinition.getAppConfOperations().getComponent("slider-appmaster")
+        component.put(
                   "ssl.server.keystore.location",
                   "/tmp/work/security/keystore.p12")
-          return super.launchApplication(clustername, clusterDirectory, instanceDefinition, debugAM)
+        component.put("ssl.server.keystore.password", password)
+        return super.launchApplication(clustername, clusterDirectory, instanceDefinition, debugAM)
       }
   }
 
