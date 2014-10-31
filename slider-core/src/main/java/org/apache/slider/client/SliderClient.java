@@ -960,6 +960,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   private static String replaceTokens(String s, String userName,
       String clusterName) throws IOException {
     return s.replaceAll(Pattern.quote("${USER}"), userName)
+        .replaceAll(Pattern.quote("${USER_NAME}"), userName)
         .replaceAll(Pattern.quote("${CLUSTER_NAME}"), clusterName);
   }
 

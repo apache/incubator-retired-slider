@@ -55,8 +55,6 @@ class TestClientBasicArgs extends ServiceLauncherBaseTest {
                                         [])
   }
 
-  // removed due to retry policy dicating 15 minutes of retries for the
-  // generated UnknownHostExceptionj
   @Test
   public void testListUnknownRM() throws Throwable {
     try {
