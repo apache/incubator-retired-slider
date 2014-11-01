@@ -131,7 +131,7 @@ public class RoleHistory {
    * @throws ArrayIndexOutOfBoundsException
    * @throws BadConfigException
    */
-  private void checkProviderRole(Map<Integer, RoleStatus> roleStats,
+  protected void checkProviderRole(Map<Integer, RoleStatus> roleStats,
       ProviderRole providerRole)
     throws BadConfigException {
     int index = providerRole.id;
@@ -154,6 +154,8 @@ public class RoleHistory {
    */
   public void addNewProviderRole(ProviderRole providerRole)
     throws BadConfigException {
+    log.debug("Validating/adding new provider role to role history: {} ",
+        providerRole);
     Map<Integer, RoleStatus> roleStats = new HashMap<Integer, RoleStatus>();
 
     for (ProviderRole role : providerRoles) {
@@ -161,6 +163,7 @@ public class RoleHistory {
     }
 
     checkProviderRole(roleStats, providerRole);
+    log.debug("Check successful; adding role");
     this.providerRoles.add(providerRole);
   }
 
