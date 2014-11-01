@@ -123,6 +123,7 @@ class TestMockAppStateFlexDynamicRoles extends BaseMockAppStateTest
     try {
       appState.updateResourceDefinitions(cd.confTree);
       dumpClusterDescription("updated CD", appState.getClusterStatus())
+      fail("Expected an exception")
     } catch (BadConfigException expected) {
     }
   }
