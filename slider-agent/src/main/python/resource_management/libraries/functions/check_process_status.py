@@ -41,7 +41,12 @@ def check_process_status(pid_file):
   @param pid_file: path to service pid file
   """
   if not pid_file or not os.path.isfile(pid_file):
+    if not pid_file:
+      Logger.warn("pid_file is not valid")
+    else:
+      Logger.info("pid file does not exist {0}".format(pid_file))
     raise ComponentIsNotRunning()
+
   with open(pid_file, "r") as f:
     try:
       pid = int(f.read())

@@ -41,7 +41,6 @@ def hbase_service(
   process_cmd = format("{java64_home}\\bin\\java {rest_of_the_command} {main_class} {action}")
 
   Execute(process_cmd,
-          user=params.hbase_user,
           logoutput=False,
           wait_for_finish=False,
           pid_file=pid_file

@@ -27,7 +27,7 @@ with appropriate parameters.
 
 Command:
 mvn clean package -Phbase-app-package-win -Dpkg.version=<version>
-   -Dpkg.name=<file name of app tarball> -Dpkg.src=<folder location where the pkg is available>
+   -Dpkg.name=<file name of app zip file> -Dpkg.src=<folder location where the pkg is available>
 
 Example:
 mvn clean package -Phbase-app-package -Dpkg.version=0.98.5-hadoop2

@@ -28,20 +28,15 @@ def hbase(name=None # 'master' or 'regionserver'
   import params
 
   Directory( params.conf_dir,
-      owner = params.hbase_user,
-      group = params.user_group,
       recursive = True,
       content = params.input_conf_files_dir
   )
 
   Directory (params.tmp_dir,
-             owner = params.hbase_user,
              recursive = True
   )
 
   Directory (os.path.join(params.local_dir, "jars"),
-             owner = params.hbase_user,
-             group = params.user_group,
              recursive = True
   )
 
