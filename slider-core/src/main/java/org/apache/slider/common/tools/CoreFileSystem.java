@@ -563,6 +563,7 @@ public class CoreFileSystem {
   public Map<String, Path> listPersistentInstances() throws IOException {
     FileSystem fs = getFileSystem();
     Path path = new Path(getBaseApplicationPath(), SliderKeys.CLUSTER_DIRECTORY);
+    log.debug("Looking for all persisted application at {}", path.toString());
     if (!fs.exists(path)) {
       // special case: no instances have ever been created
       return new HashMap<String, Path>(0);
@@ -579,6 +580,9 @@ public class CoreFileSystem {
         if (fs.exists(internalJson)) {
           // success => this is an instance
           instances.put(child.getName(), child);
+        } else {
+          log.info("Malformed cluster found at {}. It does not appear to be a valid persisted instance.",
+                   child.toString());
         }
       }
     }
