@@ -54,7 +54,7 @@
     },
     "components": {
         "slider-appmaster": {
-            "jvm.heapsize": "256M",
+            "jvm.heapsize": "1024M",
             "slider.hdfs.keytab.dir": ".slider/keytabs/hbase",
             "slider.am.login.keytab.name": "${USER_NAME}.headless.keytab",
             "slider.keytab.principal.name": "${USER_NAME}"

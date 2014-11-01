@@ -151,9 +151,10 @@ class ActionQueue(threading.Thread):
       store_config = 'true' == command['commandParams'][ActionQueue.STORE_APPLIED_CONFIG]
     store_command = False
     if 'roleParams' in command and ActionQueue.AUTO_RESTART in command['roleParams']:
-      logger.info("Component has indicated auto-restart. Saving details from START command.")
       store_command = 'true' == command['roleParams'][ActionQueue.AUTO_RESTART]
 
+    if store_command:
+      logger.info("Component has indicated auto-restart. Saving details from START command.")
 
     # running command
     commandresult = self.customServiceOrchestrator.runCommand(command,

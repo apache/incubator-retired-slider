@@ -40,7 +40,7 @@
     },
     "components": {
         "slider-appmaster": {
-            "jvm.heapsize": "256M"
+            "jvm.heapsize": "1024M"
         }
     }
 }
