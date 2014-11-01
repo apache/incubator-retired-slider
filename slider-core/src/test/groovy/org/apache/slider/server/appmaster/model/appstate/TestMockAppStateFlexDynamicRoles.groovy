@@ -27,10 +27,8 @@ import org.apache.slider.core.conf.ConfTreeOperations
 import org.apache.slider.core.exceptions.BadConfigException
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockAppState
-import org.apache.slider.server.appmaster.model.mock.MockRecordFactory
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.model.mock.MockYarnEngine
-import org.apache.slider.server.appmaster.state.AppState
 import org.apache.slider.server.appmaster.state.SimpleReleaseSelector
 import org.apache.slider.server.avro.RoleHistoryWriter
 import org.junit.Test
@@ -71,7 +69,7 @@ class TestMockAppStateFlexDynamicRoles extends BaseMockAppStateTest
         (ResourceKeys.COMPONENT_PRIORITY): "6",
     ]
 
-    instance.resourceOperations.components["dynamic"] = opts
+    instance.resourceOperations.components["dynamic-6"] = opts
 
     
     appState.buildInstance(instance,
@@ -98,7 +96,7 @@ class TestMockAppStateFlexDynamicRoles extends BaseMockAppStateTest
         (ResourceKeys.COMPONENT_PRIORITY): "7",
     ]
 
-    cd.components["role4"] = opts
+    cd.components["dynamicAdd7"] = opts
     appState.updateResourceDefinitions(cd.confTree);
     createAndStartNodes();
     dumpClusterDescription("updated CD", appState.getClusterStatus())
@@ -119,11 +117,17 @@ class TestMockAppStateFlexDynamicRoles extends BaseMockAppStateTest
         (ResourceKeys.COMPONENT_PRIORITY): "6",
     ]
 
-    cd.components["role4"] = opts
+    cd.components["conflictingPriority"] = opts
     try {
       appState.updateResourceDefinitions(cd.confTree);
-      dumpClusterDescription("updated CD", appState.getClusterStatus())
+
+      def status = appState.getClusterStatus()
+      dumpClusterDescription("updated CD", status)
+      fail("Expected an exception, got $status")
     } catch (BadConfigException expected) {
+      log.info("Expected: {}", expected)
+      log.debug("Expected: {}", expected, expected)
+      // expected
     }
   }
   
@@ -148,24 +152,24 @@ class TestMockAppStateFlexDynamicRoles extends BaseMockAppStateTest
     RoleHistoryWriter historyWriter = new RoleHistoryWriter();
     def opts = [
         (ResourceKeys.COMPONENT_INSTANCES): "1",
-        (ResourceKeys.COMPONENT_PRIORITY): "7",
+        (ResourceKeys.COMPONENT_PRIORITY): "9",
     ]
 
-    cd.components["role4"] = opts
+    cd.components["HistorySaveFlexLoad"] = opts
     appState.updateResourceDefinitions(cd.confTree);
     createAndStartNodes();
     historyWriter.read(fs, history, appState.roleHistory)
   }
 
   @Test
-  public void testHistoryFlexSaveLoad() throws Throwable {
+  public void testHistoryFlexSaveResetLoad() throws Throwable {
     def cd = init()
     def opts = [
         (ResourceKeys.COMPONENT_INSTANCES): "1",
-        (ResourceKeys.COMPONENT_PRIORITY): "7",
+        (ResourceKeys.COMPONENT_PRIORITY): "10",
     ]
 
-    cd.components["role4"] = opts
+    cd.components["HistoryFlexSaveLoad"] = opts
     appState.updateResourceDefinitions(cd.confTree);
     createAndStartNodes();
     RoleHistoryWriter historyWriter = new RoleHistoryWriter();
@@ -184,7 +188,13 @@ class TestMockAppStateFlexDynamicRoles extends BaseMockAppStateTest
         fs,
         historyPath2,
         null, null, new SimpleReleaseSelector())
-    historyWriter.read(fs, history, appState.roleHistory)
+    // on this read there won't be the right number of roles
+    try {
+      historyWriter.read(fs, history, appState.roleHistory)
+      fail("expected an exception")
+    } catch (IOException e) {
+      assert e.toString().contains("Number of roles")
+    }
   }
 
 }

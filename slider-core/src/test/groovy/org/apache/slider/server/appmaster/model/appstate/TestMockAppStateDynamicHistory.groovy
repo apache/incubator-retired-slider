@@ -24,9 +24,11 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.yarn.api.records.ContainerId
 import org.apache.slider.api.ResourceKeys
 import org.apache.slider.core.conf.ConfTreeOperations
+import org.apache.slider.core.exceptions.BadConfigException
 import org.apache.slider.providers.ProviderRole
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockAppState
+import org.apache.slider.server.appmaster.model.mock.MockRoleHistory
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.model.mock.MockYarnEngine
 import org.apache.slider.server.appmaster.operations.ContainerRequestOperation
@@ -208,4 +210,25 @@ class TestMockAppStateDynamicHistory extends BaseMockAppStateTest
     def request1 = action1.request
     assert request1.nodes
   }
+
+  @Test(expected = BadConfigException.class)
+  public void testRoleHistoryRoleAdditions() throws Throwable {
+    MockRoleHistory roleHistory = new MockRoleHistory([])
+    roleHistory.addNewProviderRole(new ProviderRole("one", 1))
+    roleHistory.addNewProviderRole(new ProviderRole("two", 1))
+    roleHistory.dump()
+    fail("should have raised an exception")
+  }
+  
+  
+  @Test(expected = BadConfigException.class)
+  public void testRoleHistoryRoleStartupConflict() throws Throwable {
+    MockRoleHistory roleHistory = new MockRoleHistory([
+        new ProviderRole("one", 1), new ProviderRole("two", 1)
+    ])
+    roleHistory.dump()
+    fail("should have raised an exception")
+  }
+  
+  
 }
