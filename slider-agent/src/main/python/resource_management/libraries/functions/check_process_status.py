@@ -44,14 +44,14 @@ def check_process_status(pid_file):
     if not pid_file:
       Logger.warn("pid_file is not valid")
     else:
-      Logger.info("pid file does not exist {0}".format(pid_file,))
+      Logger.info("pid file does not exist {0}".format(pid_file))
     raise ComponentIsNotRunning()
 
   with open(pid_file, "r") as f:
     try:
       pid = int(f.read())
     except:
-      Logger.debug("Pid file {0} does not exist".format(pid_file,))
+      Logger.debug("Pid file {0} does not exist".format(pid_file))
       raise ComponentIsNotRunning()
 
     if IS_WINDOWS:
