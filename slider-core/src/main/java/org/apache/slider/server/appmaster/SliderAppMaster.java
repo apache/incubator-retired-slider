@@ -1057,11 +1057,15 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         PersistencePolicies.APPLICATION);
     serviceRecord.description = "Slider Application Master";
 
+/* SLIDER-531: disable this addition so things compile against versions of
+the registry with/without the new record format
+
     serviceRecord.addExternalEndpoint(
         RegistryTypeUtils.ipcEndpoint(
             CustomRegistryConstants.AM_IPC_PROTOCOL,
             rpcServiceAddress));
-    
+            
+    */
     // internal services
     sliderAMProvider.applyInitialRegistryDefinitions(amWebURI,
         agentOpsURI,
