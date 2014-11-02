@@ -176,16 +176,6 @@ abstract class CommandTestBase extends SliderTestUtils {
              "and YARN RM @ ${SLIDER_CONFIG.get(YarnConfiguration.RM_ADDRESS)}")
   }
 
-  public static void assertContainersLive(ClusterDescription clusterDescription,
-      String component, int count) {
-    log.info("Asserting component count.")
-    int instanceCount = clusterDescription.instances[component].size()
-    if (count != instanceCount) {
-      log.warn(clusterDescription.toString())
-    }
-    assert count == instanceCount 
-  }
-
   public static void logShell(SliderShell shell) {
     shell.dumpOutput();
   }
