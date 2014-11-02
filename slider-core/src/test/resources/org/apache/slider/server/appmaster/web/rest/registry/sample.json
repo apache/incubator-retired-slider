@@ -3,73 +3,7 @@
   "description": "Slider Application Master",
   "yarn:id": "application_1411664296263_0001",
   "yarn:persistence": 1,
-  "external": [
-    {
-      "api": "org.apache.slider.appmaster",
-      "addressType": "host/port",
-      "protocolType": "hadoop/protobuf",
-      "addresses": [
-        ["server", "63385"]
-      ]
-    },
-    {
-      "api": "org.apache.http.UI",
-      "addressType": "uri",
-      "protocolType": "webui",
-      "addresses": [
-        ["http://server:63391"]
-      ]
-    },
-    {
-      "api": "org.apache.slider.management",
-      "addressType": "uri",
-      "protocolType": "REST",
-      "addresses": [
-        ["http://server:63391/ws/v1/slider/mgmt"]
-      ]
-    },
-    {
-      "api": "org.apache.slider.publisher",
-      "addressType": "uri",
-      "protocolType": "REST",
-      "addresses": [
-        ["http://server:63391/ws/v1/slider/publisher"]
-      ]
-    },
-    {
-      "api": "org.apache.slider.registry",
-      "addressType": "uri",
-      "protocolType": "REST",
-      "addresses": [
-        ["http://server:63391/ws/v1/slider/registry"]
-      ]
-    },
-    {
-      "api": "org.apache.slider.publisher.configurations",
-      "addressType": "uri",
-      "protocolType": "REST",
-      "addresses": [
-        ["http://server:63391/ws/v1/slider/publisher/slider"]
-      ]
-    }
-  ],
-  "internal": [
-    {
-      "api": "org.apache.slider.agents.secure",
-      "addressType": "uri",
-      "protocolType": "REST",
-      "addresses": [
-        ["https://server:63390/ws/v1/slider/agents"]
-      ]
-    },
-    {
-      "api": "org.apache.slider.agents.oneway",
-      "addressType": "uri",
-      "protocolType": "REST",
-      "addresses": [
-        ["https://server:63389/ws/v1/slider/agents"]
-      ]
-    }
-  ]
+  "external": [],
+  "internal": []
 }
 }
