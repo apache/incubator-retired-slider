@@ -33,6 +33,15 @@ def hbase_service(
   if name == "regionserver":
     heap_size = params.regionserver_heapsize
     main_class = "org.apache.hadoop.hbase.regionserver.HRegionServer"
+  if name == "rest":
+    heap_size = params.restserver_heapsize
+    main_class = "org.apache.hadoop.hbase.rest.RESTServer"
+  if name == "thrift":
+    heap_size = params.thriftserver_heapsize
+    main_class = "org.apache.hadoop.hbase.thrift.ThriftServer"
+  if name == "thrift2":
+    heap_size = params.thrift2server_heapsize
+    main_class = "org.apache.hadoop.hbase.thrift2.ThriftServer"
 
   role_user = format("{hbase_user}-{name}")
 
