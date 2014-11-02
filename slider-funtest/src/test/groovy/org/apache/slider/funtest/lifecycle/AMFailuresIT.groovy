@@ -76,7 +76,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     // Wait for 20 secs for AM and agent to both reach STARTED state
     sleep(1000 * 20)
 
-    def cd = expectContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 1)
+    def cd = assertContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 1)
     def loggerInstances = cd.instances[COMMAND_LOGGER]
     assert loggerInstances.size() == 1
 
@@ -104,7 +104,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     ensureYarnApplicationIsUp(appId)
 
     // There should be exactly 1 live logger container
-    def cd2 = expectContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 1)
+    def cd2 = assertContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 1)
 
     // No new containers should be requested for the agents
     def loggerStats2 = cd2.statistics[COMMAND_LOGGER]

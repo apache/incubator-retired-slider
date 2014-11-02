@@ -94,7 +94,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 1,
         CONTAINER_LAUNCH_TIMEOUT)
-    expectContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 1)
+    assertContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 1)
 
     //flex
     slider(EXIT_SUCCESS,
