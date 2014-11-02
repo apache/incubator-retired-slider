@@ -82,13 +82,15 @@ public class AgentRegistryIT extends AgentCommandTestBase
 
     // resolve the ~ path
 
-    resolve(0, [ARG_LIST, ARG_PATH, "/"])
-    resolve(0, [ARG_LIST, ARG_PATH, "/users"])
-
-    resolve(0, [ARG_LIST, ARG_PATH, TILDE]).dumpOutput()
+    resolve(0, [ARG_LIST, ARG_PATH, "/"]).dumpOutput()
+    resolve(0, [ARG_LIST, ARG_PATH, "/users"]).dumpOutput()
 
 
-    String sliderApps = "${TILDE}/services/${SliderKeys.APP_TYPE}"
+    def home = homepath()
+    resolve(0, [ARG_LIST, ARG_PATH, home]).dumpOutput()
+
+
+    String sliderApps = "${home}/services/${SliderKeys.APP_TYPE}"
     resolve(0, [ARG_LIST, ARG_PATH, sliderApps]).dumpOutput()
 
     // running app
@@ -132,5 +134,13 @@ public class AgentRegistryIT extends AgentCommandTestBase
 
     //cluster now missing
     exists(EXIT_UNKNOWN_INSTANCE, CLUSTER)
+  }
+
+  /**
+   * Return the home registry path
+   * @return
+   */
+  public String homepath() {
+    return RegistryUtils.homePathForCurrentUser()
   }
 }
