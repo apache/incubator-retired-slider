@@ -25,6 +25,8 @@ import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.api.json.JSONConfiguration;
+import com.sun.jersey.client.urlconnection.HttpURLConnectionFactory;
+import com.sun.jersey.client.urlconnection.URLConnectionClientHandler;
 import org.apache.hadoop.registry.client.binding.RegistryTypeUtils;
 import org.apache.hadoop.registry.client.exceptions.RegistryIOException;
 import org.apache.hadoop.registry.client.types.Endpoint;
@@ -39,9 +41,13 @@ import org.apache.slider.core.registry.info.CustomRegistryConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URL;
 import java.util.List;
 
 /**
@@ -63,7 +69,31 @@ public class RegistryRetriever {
     clientConfig.getFeatures().put(
         JSONConfiguration.FEATURE_POJO_MAPPING,
         Boolean.TRUE);
-    jerseyClient = Client.create(clientConfig);
+    clientConfig.getProperties().put(
+        URLConnectionClientHandler.PROPERTY_HTTP_URL_CONNECTION_SET_METHOD_WORKAROUND, true);
+    URLConnectionClientHandler handler =
+        new URLConnectionClientHandler(new HttpURLConnectionFactory() {
+      @Override
+      public HttpURLConnection getHttpURLConnection(URL url)
+          throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        if (connection.getResponseCode() == HttpURLConnection.HTTP_MOVED_TEMP) {
+          // is a redirect - are we changing schemes?
+          String redirectLocation = connection.getHeaderField(HttpHeaders.LOCATION);
+          String originalScheme = url.getProtocol();
+          String redirectScheme = URI.create(redirectLocation).getScheme();
+          if (!originalScheme.equals(redirectScheme)) {
+            // need to fake it out by doing redirect ourselves
+            log.info("Protocol change during redirect. Redirecting {} to URL {}",
+                     url, redirectLocation);
+            URL redirectURL = new URL(redirectLocation);
+            connection = (HttpURLConnection) redirectURL.openConnection();
+          }
+        }
+        return connection;
+      }
+    });
+    jerseyClient = new Client(handler, clientConfig);
     jerseyClient.setFollowRedirects(true);
   }
   
