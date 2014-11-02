@@ -15,6 +15,9 @@
         "site.global.monitor_protocol": "http",
         "site.global.hbase_additional_cp": "c:\\java\\lib\\tools.jar;",
         "site.global.java_library_path": "c:\\hdp\\hadoop\\bin",
+        "site.global.hbase_rest_port": "17000",
+        "site.global.hbase_thrift_port": "9090",
+        "site.global.hbase_thrift2_port": "9091",
 
         "site.hbase-env.hbase_master_heapsize": "1024m",
         "site.hbase-env.hbase_regionserver_heapsize": "1024m",

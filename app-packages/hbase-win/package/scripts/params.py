@@ -40,39 +40,30 @@ log_dir = config['configurations']['global']['app_log_dir']
 input_conf_files_dir = config['configurations']['global']['app_input_conf_dir']
 
 hbase_hdfs_root_dir = config['configurations']['hbase-site']['hbase.rootdir']
+
+"""
+Read various ports, unused as of now
+"""
 rest_port = config['configurations']['global']['hbase_rest_port']
 thrift_port = config['configurations']['global']['hbase_thrift_port']
 thrift2_port = config['configurations']['global']['hbase_thrift2_port']
 
+"""
+Compute or read various heap sizes
+"""
 master_heapsize = config['configurations']['hbase-env']['hbase_master_heapsize']
 regionserver_heapsize = config['configurations']['hbase-env']['hbase_regionserver_heapsize']
 regionserver_xmn_max = config['configurations']['hbase-env']['hbase_regionserver_xmn_max']
 regionserver_xmn_percent = config['configurations']['hbase-env']['hbase_regionserver_xmn_ratio']
 regionserver_xmn_size = calc_xmn_from_xms(regionserver_heapsize, regionserver_xmn_percent, regionserver_xmn_max)
 
+restserver_heapsize =  default("configurations/hbase-env/hbase_restserver_heapsize", "512m")
+thriftserver_heapsize =  default("configurations/hbase-env/hbase_thriftserver_heapsize", "512m")
+thrift2server_heapsize =  default("configurations/hbase-env/hbase_thrift2server_heapsize", "512m")
+
 hbase_env_sh_template = config['configurations']['hbase-env']['content']
 java_library_path = config['configurations']['global']['java_library_path']
 hbase_additional_cp = config['configurations']['global']['hbase_additional_cp']
-
-master_jaas_config_file = default('hbase_master_jaas_config_file', format("{conf_dir}/hbase_master_jaas.conf"))
-regionserver_jaas_config_file = default('hbase_regionserver_jaas_config_file',
-                                        format("{conf_dir}/hbase_regionserver_jaas.conf"))
-master_keytab_path = config['configurations']['hbase-site']['hbase.master.keytab.file']
-regionserver_keytab_path = config['configurations']['hbase-site']['hbase.regionserver.keytab.file']
-
-_authentication = config['configurations']['core-site']['hadoop.security.authentication']
-security_enabled = ( not is_empty(_authentication) and _authentication == 'kerberos')
-if security_enabled:
-  _hostname_lowercase = config['hostname'].lower()
-  master_jaas_princ = config['configurations']['hbase-site']['hbase.master.kerberos.principal'].replace('_HOST', hostname_lowercase)
-  regionserver_jaas_princ = config['configurations']['hbase-site']['hbase.regionserver.kerberos.principal'].replace('_HOST', hostname_lowercase)
-
-kinit_path_local = functions.get_kinit_path(
-  [default("kinit_path_local", None), "/usr/bin", "/usr/kerberos/bin", "/usr/sbin"])
-if security_enabled:
-  kinit_cmd = format("{kinit_path_local} -kt {hbase_user_keytab} {hbase_user};")
-else:
-  kinit_cmd = ""
 
 # log4j.properties
 if (('hbase-log4j' in config['configurations']) and ('content' in config['configurations']['hbase-log4j'])):
