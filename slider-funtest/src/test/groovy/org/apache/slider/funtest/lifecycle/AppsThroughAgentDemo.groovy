@@ -26,7 +26,6 @@ import org.apache.slider.common.params.SliderActions
 import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
-import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
@@ -77,7 +76,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
         [ACTION_STATUS,
             APPLICATION_NAME])
 
-    expectContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 2)
+    assertContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 2)
 
     String amWebUrl = getInfoAmWebUrl(APPLICATION_NAME)
     log.info("Dumping data from AM Web URL");

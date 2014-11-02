@@ -76,8 +76,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     sleep(1000 * 10)
 
     status(0, APPLICATION_NAME)
-
-    expectContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 2)
+    expectLiveContainerCountReached(APPLICATION_NAME, COMMAND_LOGGER, 2,
+        CONTAINER_LAUNCH_TIMEOUT)
 
     String amWebUrl = getInfoAmWebUrl(APPLICATION_NAME)
     log.info("Dumping data from AM Web URL");

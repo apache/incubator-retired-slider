@@ -478,13 +478,26 @@ class SliderTestUtils extends Assert {
   public static void assertContainersLive(ClusterDescription clusterDescription,
       String component, int expected) {
     log.info("Asserting component $component expected count $expected}",)
-    def instances = clusterDescription?.instances?.get(component)
-    int actual = instances != null ? instances.size() : 0
+    int actual = extractLiveContainerCount(clusterDescription, component)
     if (expected != actual) {
       log.warn(
           "$component actual=$actual, expected $expected in \n$clusterDescription")
     }
     assert expected == actual
+  }
+
+  /**
+   * Robust extraction of live container count
+   * @param clusterDescription status
+   * @param component component to resolve
+   * @return the number of containers live.
+   */
+  public static int extractLiveContainerCount(
+      ClusterDescription clusterDescription,
+      String component) {
+    def instances = clusterDescription?.instances?.get(component)
+    int actual = instances != null ? instances.size() : 0
+    return actual
   }
 
   /**

@@ -1084,15 +1084,60 @@ abstract class CommandTestBase extends SliderTestUtils {
       ClusterDescription cd = execStatus(application);
       log.info("Parsed status \n$cd")
       fail(message)
-    };
-
+    }
   }
 
-  public ClusterDescription expectContainersLive(String clustername,
+  public ClusterDescription assertContainersLive(String clustername,
       String component,
       int count) {
     ClusterDescription cd = execStatus(clustername)
     assertContainersLive(cd, component, count)
     return cd;
+  }
+
+  /**
+   * Outcome checker for the live container count
+   * @param args argument map, must contain "application", "component" and "live"
+   * @return
+   */
+  Outcome hasLiveContainerCountReached(Map<String, String> args) {
+    assert args['application']
+    assert args['component']
+    assert args['live']
+    String application = args['application']
+    String component = args['component']
+    int expectedCount = args['live'].toInteger();
+    ClusterDescription cd = execStatus(application)
+    def actual = extractLiveContainerCount(cd, component)
+    log.debug(
+        "live $component count = $actual; expected=$expectedCount")
+    return Outcome.fromBool(actual >= expectedCount)
+  }
+
+  /**
+   * Wait for the live container count to be reached
+   * @param application application name
+   * @param component component name
+   * @param expected expected count
+   * @param container_launch_timeout launch timeout
+   */
+  void expectLiveContainerCountReached(
+      String application,
+      String component,
+      int expected,
+      int container_launch_timeout) {
+
+    repeatUntilSuccess(
+        this.&hasLiveContainerCountReached,
+        container_launch_timeout,
+        PROBE_SLEEP_TIME,
+        [live      : Integer.toString(expected),
+         component  : component,
+         application: application],
+        true,
+        "countainer count not reached") {
+      describe "container count not reached"
+      assertContainersLive(application, component, expected)
+    }
   }
 }
