@@ -475,6 +475,18 @@ class SliderTestUtils extends Assert {
     assert 0 == service.serviceExitCode;
   }
 
+  public static void assertContainersLive(ClusterDescription clusterDescription,
+      String component, int expected) {
+    log.info("Asserting component $component expected count $expected}",)
+    def instances = clusterDescription?.instances?.get(component)
+    int actual = instances != null ? instances.size() : 0
+    if (expected != actual) {
+      log.warn(
+          "$component actual=$actual, expected $expected in \n$clusterDescription")
+    }
+    assert expected == actual
+  }
+
   /**
    * Execute a closure, assert it fails with a given exit code and text
    * @param exitCode exit code
