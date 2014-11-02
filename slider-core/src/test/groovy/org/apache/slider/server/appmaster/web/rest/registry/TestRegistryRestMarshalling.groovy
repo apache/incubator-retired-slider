@@ -20,6 +20,7 @@ package org.apache.slider.server.appmaster.web.rest.registry
 
 import groovy.transform.CompileStatic
 import org.apache.hadoop.registry.client.types.yarn.YarnRegistryAttributes
+import org.junit.Ignore
 import org.junit.Test
 
 /**
@@ -33,6 +34,7 @@ import org.junit.Test
 class TestRegistryRestMarshalling {
 
   @Test
+  @Ignore("SLIDER-531")
   public void testDeser() throws Throwable {
     PathEntryMarshalling pem = new PathEntryMarshalling();
     def unmarshalled = pem.fromResource(

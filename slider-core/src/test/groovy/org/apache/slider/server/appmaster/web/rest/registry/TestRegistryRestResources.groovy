@@ -33,6 +33,7 @@ import org.apache.slider.common.SliderKeys
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.providers.agent.AgentTestBase
 import org.apache.slider.server.appmaster.web.rest.RestPaths
+import org.junit.Ignore
 import org.junit.Test
 
 import javax.ws.rs.core.MediaType
@@ -52,6 +53,7 @@ class TestRegistryRestResources extends AgentTestBase {
 
 
   @Test
+  @Ignore("SLIDER-531")
   public void testRestURIs() throws Throwable {
 
     def clustername = CLUSTERNAME
