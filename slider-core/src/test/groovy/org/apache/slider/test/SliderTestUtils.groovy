@@ -925,4 +925,56 @@ class SliderTestUtils extends Assert {
       throw new FileNotFoundException("$text: $file not found in $builder")
     }
   }
+
+  /**
+   * Repeat a probe until it succeeds, if it does not execute a failure
+   * closure then raise an exception with the supplied message
+   * @param probe probe
+   * @param timeout time in millis before giving up
+   * @param sleepDur sleep between failing attempts
+   * @param args map of arguments to the probe
+   * @param failIfUnsuccessful if the probe fails after all the attempts
+   * —should it raise an exception
+   * @param failureMessage message to include in exception raised
+   * @param failureHandler closure to invoke prior to the failure being raised
+   */
+  protected void repeatUntilSuccess(Closure probe,
+      int timeout, int sleepDur,
+      Map args,
+      boolean failIfUnsuccessful,
+      String failureMessage,
+      Closure failureHandler) {
+    int attemptCount = 0
+    boolean succeeded = false;
+    boolean completed = false;
+    Duration duration = new Duration(timeout)
+    duration.start();
+    while (!completed) {
+      Outcome outcome = (Outcome) probe(args)
+      if (outcome.equals(Outcome.Success)) {
+        // success
+        log.debug("Success after $attemptCount attempt(s)")
+        succeeded = true;
+        completed = true;
+      } else if (outcome.equals(Outcome.Retry)) {
+        // failed but retry possible
+        attemptCount++;
+        completed = duration.limitExceeded
+        if (!completed) {
+          sleep(sleepDur)
+        }
+      } else if (outcome.equals(Outcome.Fail)) {
+        // fast fail
+        completed = true;
+      }
+    }
+
+    if (failIfUnsuccessful & !succeeded) {
+      if (failureHandler) {
+        failureHandler()
+      }
+      fail(failureMessage)
+    }
+  }
+
 }
