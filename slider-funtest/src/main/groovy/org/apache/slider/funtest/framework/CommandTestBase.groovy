@@ -30,7 +30,6 @@ import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.api.StatusKeys
 import org.apache.slider.common.tools.ConfigHelper
-import org.apache.slider.common.tools.Duration
 import org.apache.slider.core.launch.SerializedApplicationReport
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.common.SliderKeys
@@ -40,6 +39,8 @@ import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.client.SliderClient
 import org.apache.slider.core.persist.ApplicationReportSerDeser
 import org.apache.slider.test.SliderTestUtils
+import org.apache.slider.test.Outcome;
+
 import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Rule
@@ -931,84 +932,6 @@ abstract class CommandTestBase extends SliderTestUtils {
       def message = E_LAUNCH_FAIL + "\n$sar"
       log.error(message)
       fail(message)
-    }
-  }
-
-  /**
-   * Outcome for probes
-   */
-  static class Outcome {
-
-    public final String name;
-
-    private Outcome(String name) {
-      this.name = name
-    }
-
-    static Outcome Success = new Outcome("Success")
-    static Outcome Retry = new Outcome("Retry")
-    static Outcome Fail = new Outcome("Fail")
-
-
-    /**
-     * build from a bool, where false is mapped to retry
-     * @param b boolean
-     * @return an outcome
-     */
-    static Outcome fromBool(boolean b) {
-      return b? Success: Retry;
-    }
-
-  }
-  
-  /**
-   * Repeat a probe until it succeeds, if it does not execute a failure
-   * closure then raise an exception with the supplied message
-   * @param probe probe
-   * @param timeout time in millis before giving up
-   * @param sleepDur sleep between failing attempts
-   * @param args map of arguments to the probe
-   * @param failIfUnsuccessful if the probe fails after all the attempts
-   * —should it raise an exception
-   * @param failureMessage message to include in exception raised
-   * @param failureHandler closure to invoke prior to the failure being raised
-   */
-  protected void repeatUntilSuccess(Closure probe,
-      int timeout, int sleepDur,
-      Map args,
-      boolean failIfUnsuccessful,
-      String failureMessage,
-      Closure failureHandler) {
-    int attemptCount = 0
-    boolean succeeded = false;
-    boolean completed = false;
-    Duration duration = new Duration(timeout)
-    duration.start();
-    while (!completed) {
-      Outcome outcome = (Outcome) probe(args)
-      if (outcome.equals(Outcome.Success)) {
-        // success
-        log.debug("Success after $attemptCount attempt(s)")
-        succeeded = true;
-        completed = true;
-      } else if (outcome.equals(Outcome.Retry)) {
-        // failed but retry possible
-        attemptCount++;
-        completed = duration.limitExceeded
-        if (!completed) {
-          sleep(sleepDur)
-        }
-      } else if (outcome.equals(Outcome.Fail)) {
-        // fast fail
-          completed = true;
-      }
-    }
-    
-    if (failIfUnsuccessful & !succeeded) {
-      if (failureHandler) {
-        failureHandler()
-      }
-      fail(failureMessage)
     }
   }
 

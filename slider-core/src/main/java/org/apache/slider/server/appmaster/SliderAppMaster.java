@@ -1093,17 +1093,6 @@ the registry with/without the new record format
           yarnRegistryOperations.getSelfRegistrationPath(),
           true);
     }
-
-    // and a shorter lived binding to the app
-    String attempt = appAttemptID.toString();
-    ServiceRecord attemptRecord = new ServiceRecord(serviceRecord);
-    attemptRecord.set(YarnRegistryAttributes.YARN_ID, attempt);
-    attemptRecord.set(YarnRegistryAttributes.YARN_PERSISTENCE,
-        PersistencePolicies.APPLICATION_ATTEMPT);
-    yarnRegistryOperations.putComponent(
-        RegistryPathUtils.encodeYarnID(attempt),
-        serviceRecord);
-
   }
 
   /**

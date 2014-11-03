@@ -24,10 +24,15 @@ import org.apache.hadoop.registry.client.binding.RegistryUtils
 import org.apache.hadoop.registry.client.types.Endpoint
 import org.apache.hadoop.registry.client.types.ServiceRecord
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
+import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.SliderKeys
+import org.apache.slider.common.params.ActionResolveArgs
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
+import org.apache.slider.core.exceptions.NotFoundException
+import org.apache.slider.test.Outcome
+
 import static org.apache.slider.core.registry.info.CustomRegistryConstants.*
 import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
@@ -136,6 +141,15 @@ public class AgentRegistryIT extends AgentCommandTestBase
 
     //cluster now missing
     exists(EXIT_UNKNOWN_INSTANCE, CLUSTER)
+
+
+    repeatUntilSuccess(this.&probeForEntryMissing, 10000, 1000,
+        [path: appPath],
+        true,
+        "registry entry never deleted") {
+      // await the registry lookup to fail
+      resolve(EXIT_NOT_FOUND, [ARG_PATH, appPath])
+    }
   }
 
   /**
@@ -144,5 +158,12 @@ public class AgentRegistryIT extends AgentCommandTestBase
    */
   public String homepath() {
     return RegistryUtils.homePathForCurrentUser()
+  }
+
+
+  Outcome probeForEntryMissing(Map args) {
+    String path = args["path"]
+    def shell = slider([ACTION_RESOLVE, ARG_PATH, path])
+    return Outcome.fromBool(shell.ret == EXIT_NOT_FOUND)
   }
 }

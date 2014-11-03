@@ -34,6 +34,7 @@ import org.apache.hadoop.registry.client.types.yarn.YarnRegistryAttributes
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.ActionResolveArgs
 import org.apache.slider.common.params.Arguments
+import org.apache.slider.core.exceptions.NotFoundException
 import org.apache.slider.core.main.LauncherExitCodes
 
 import static org.apache.hadoop.registry.client.binding.RegistryUtils.*
@@ -47,10 +48,10 @@ import org.apache.slider.core.persist.JsonSerDeser
 import org.apache.slider.core.registry.docstore.PublishedConfigSet
 import org.apache.slider.core.registry.docstore.PublishedConfiguration
 import org.apache.slider.core.registry.docstore.UriMap
-import org.apache.slider.core.registry.info.CustomRegistryConstants
 import org.apache.slider.core.registry.retrieve.RegistryRetriever
 import org.apache.slider.server.appmaster.PublishedArtifacts
 import org.apache.slider.server.appmaster.web.rest.RestPaths
+import org.apache.slider.test.Outcome;
 import org.junit.Test
 
 import static org.apache.slider.core.registry.info.CustomRegistryConstants.*
@@ -102,13 +103,13 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     String[] uuids = client.listNodeUUIDsByRole(SliderKeys.COMPONENT_AM)
     assert uuids.length == 1;
     nodes = client.listClusterNodes(uuids);
-    assert ((List<ClusterNode>)nodes).size() == 1;
+    assert nodes.size() == 1;
     describe "AM Node UUID=${uuids[0]}"
 
     nodes = listNodesInRole(client, SliderKeys.COMPONENT_AM)
-    assert ((List<ClusterNode>)nodes).size() == 1;
+    assert nodes.size() == 1;
     nodes = listNodesInRole(client, "")
-    assert ((List<ClusterNode>)nodes).size() == 1;
+    assert nodes.size() == 1;
     ClusterNode master = nodes[0]
     assert master.role == SliderKeys.COMPONENT_AM
 
@@ -163,10 +164,12 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     assert serviceRecord[YarnRegistryAttributes.YARN_PERSISTENCE] != ""
     def externalEndpoints = serviceRecord.external;
     assert externalEndpoints.size() > 0
+/*
 
     def am_ipc_protocol = AM_IPC_PROTOCOL
     serviceRecord.getExternalEndpoint(am_ipc_protocol)
     assert null != am_ipc_protocol;
+*/
 
     assert null != serviceRecord.getExternalEndpoint(MANAGEMENT_REST_API)
     assert null != serviceRecord.getExternalEndpoint(PUBLISHER_REST_API)
@@ -273,8 +276,7 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
         list: true))
 
     // hit the registry web page
-    def registryEndpoint = serviceRecord.getExternalEndpoint(
-        CustomRegistryConstants.REGISTRY_REST_API)
+    def registryEndpoint = serviceRecord.getExternalEndpoint(REGISTRY_REST_API)
     assert registryEndpoint != null
     def registryURL = RegistryTypeUtils.retrieveAddressURLs(registryEndpoint)[0]
 
@@ -290,8 +292,7 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
 
            // Look at the Registry WADL
     describe("Registry WADL @ $registryURL")
-    def publisherEndpoint = serviceRecord.getExternalEndpoint(
-        CustomRegistryConstants.PUBLISHER_REST_API)
+    def publisherEndpoint = serviceRecord.getExternalEndpoint(PUBLISHER_REST_API)
 
     def publisherURL = RegistryTypeUtils.retrieveAddressURLs(publisherEndpoint)[0]
     def publisher = publisherURL.toString()
@@ -346,7 +347,6 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     assert rmHostnameFromDownloadedProperties
 
     String json = GET(yarnSitePublisher + ".json")
-
 
 
     describe("Registry List")
@@ -508,7 +508,7 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     assert oldInstance != null
     assert oldInstance.yarnApplicationState >= YarnApplicationState.FINISHED
 
-    
+   
     // verify hbase to path generation filters things
     def hbase = homePathForUser(HBASE)
     def hbaseServices = serviceclassPath(hbase, SliderKeys.APP_TYPE)
@@ -529,5 +529,25 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
 
     }
 
+    // now expect the AM to have had its service record deleted
+    ActionResolveArgs finalResolve = new ActionResolveArgs(
+        path: instanceRecordPath)
+      
+    repeatUntilSuccess(this.&probeForEntryMissing, 10000, 1000,
+        [client:client,
+        resolve:finalResolve],
+        true, 
+        "registry entry never deleted") {}
+  }
+  
+  Outcome probeForEntryMissing(Map args) {
+    SliderClient client = (SliderClient)args["client"]
+    ActionResolveArgs resolveArgs = (ActionResolveArgs) args["resolve"]
+    try {
+      client.actionResolve(resolveArgs)
+      return Outcome.Retry
+    } catch (NotFoundException ignored) {
+      return Outcome.Success
+    }
   }
 }
