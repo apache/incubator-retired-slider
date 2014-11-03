@@ -13,7 +13,7 @@
       "yarn.memory": "256"
     },
     "slider-appmaster": {
-      "yarn.memory": "256"
+      "yarn.memory": "1024"
     },
     "HBASE_REGIONSERVER": {
       "yarn.role.priority": "2",
