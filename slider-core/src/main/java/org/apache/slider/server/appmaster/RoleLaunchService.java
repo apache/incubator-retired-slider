@@ -22,12 +22,14 @@ import com.google.common.base.Preconditions;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.Container;
+import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.MapOperations;
 import org.apache.slider.core.launch.ContainerLauncher;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderService;
+import org.apache.slider.providers.agent.AgentKeys;
 import org.apache.slider.server.appmaster.actions.ActionStartContainer;
 import org.apache.slider.server.appmaster.actions.QueueAccess;
 import org.apache.slider.server.appmaster.state.RoleInstance;
@@ -213,9 +215,26 @@ public class RoleLaunchService
         instance.role = containerRole;
         instance.roleId = role.id;
         instance.environment = envDescription;
-        actionQueue.put(new ActionStartContainer("starting " + containerRole,
-            container, containerLauncher.completeContainerLaunch(), instance, 0,
-            TimeUnit.MILLISECONDS));
+        int delay = appComponent.getOptionInt(
+            AgentKeys.KEY_CONTAINER_LAUNCH_DELAY, 0);
+        int maxDelay =
+            getConfig().getInt(YarnConfiguration.RM_CONTAINER_ALLOC_EXPIRY_INTERVAL_MS,
+                               YarnConfiguration.DEFAULT_RM_CONTAINER_ALLOC_EXPIRY_INTERVAL_MS);
+        if (delay > maxDelay/1000) {
+          log.warn("Container launch delay of {} exceeds the maximum allowed of"
+                   + " {} seconds.  Delay will not be utilized.",
+                   delay, maxDelay/1000);
+          delay = 0;
+        }
+        log.info("Container launch delay for {} set to {} seconds",
+                 role.name, delay);
+        actionQueue.schedule(new ActionStartContainer("starting "
+                                                      + containerRole,
+                                                      container,
+                                                      containerLauncher.completeContainerLaunch(),
+                                                      instance,
+                                                      delay,
+                                                      TimeUnit.SECONDS));
       } catch (Exception e) {
         log.error("Exception thrown while trying to start {}: {}",
             containerRole, e);

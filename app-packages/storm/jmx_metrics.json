@@ -2,17 +2,17 @@
     "Component": {
         "NIMBUS": {
             "FreeSlots": {
-                "metric": "$['slots.free']",
+                "metric": "$['slotsFree']",
                 "pointInTime": true,
                 "temporal": false
             },
             "Tasks": {
-                "metric": "$['tasks.total']",
+                "metric": "$['tasksTotal']",
                 "pointInTime": true,
                 "temporal": false
             },
             "Executors": {
-                "metric": "$['executors.total']",
+                "metric": "$['executorsTotal']",
                 "pointInTime": true,
                 "temporal": false
             },
@@ -22,7 +22,7 @@
                 "temporal": false
             },
             "NimbusUptime": {
-                "metric": "$['nimbus.uptime']",
+                "metric": "$['nimbusUptime']",
                 "pointInTime": true,
                 "temporal": false
             }
