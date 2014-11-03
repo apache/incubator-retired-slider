@@ -99,6 +99,7 @@ public interface AgentKeys {
   String AGENT_OUT_FILE = "slider-agent.out";
   String KEY_AGENT_TWO_WAY_SSL_ENABLED = "ssl.server.client.auth";
   String CERT_FILE_LOCALIZATION_PATH = "certs/ca.crt";
+  String KEY_CONTAINER_LAUNCH_DELAY = "container.launch.delay.sec";
 }
 
 
