@@ -43,12 +43,12 @@ class Registry(object):
       sliderRegistry = json.loads(data)
       internalAttr = sliderRegistry["internal"]
       for internal in internalAttr:
-        if internal["api"] == "org.apache.slider.agents.secure":
+        if internal["api"] == "classpath:org.apache.slider.agents.secure":
           address0 = internal["addresses"][0]
           amUrl = address0["uri"]
           amHost = amUrl.split("/")[2].split(":")[0]
           amSecuredPort = amUrl.split(":")[2].split("/")[0]
-        if internal["api"] == "org.apache.slider.agents.oneway":
+        if internal["api"] == "classpath:org.apache.slider.agents.oneway":
           address0 = internal["addresses"][0]
           amUnsecureUrl = address0["uri"]
           amHost = amUnsecureUrl.split("/")[2].split(":")[0]
