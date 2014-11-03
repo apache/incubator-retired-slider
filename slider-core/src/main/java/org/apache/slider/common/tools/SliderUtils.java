@@ -2083,7 +2083,7 @@ public final class SliderUtils {
     public int compare(ApplicationReport r1, ApplicationReport r2) {
       long x = r1.getStartTime();
       long y = r2.getStartTime();
-      return compareTwoLongs(x, y);
+      return compareTwoLongsReverse(x, y);
     }
   }
   
@@ -2101,7 +2101,7 @@ public final class SliderUtils {
       long finished2 = r2.getFinishTime();
       long lastEvent1 = Math.max(started1, finished1);
       long lastEvent2 = Math.max(started2, finished2);
-      return compareTwoLongs(lastEvent1, lastEvent2);
+      return compareTwoLongsReverse(lastEvent1, lastEvent2);
     }
   }
 
@@ -2115,7 +2115,7 @@ public final class SliderUtils {
     public int compare(ApplicationReport r1, ApplicationReport r2) {
       long x = r1.getFinishTime();
       long y = r2.getFinishTime();
-      return compareTwoLongs(x, y);
+      return compareTwoLongsReverse(x, y);
     }
   }
 
@@ -2125,10 +2125,10 @@ public final class SliderUtils {
    * is inapplicable
    * @param x x value
    * @param y y value
-   * @return -ve if x is less than y, +ve if y is greater than x; 0 for equality
+   * @return +ve if x is less than y, -ve if y is greater than x; 0 for equality
    */
-  public static int compareTwoLongs(long x, long y) {
-    return (x < y) ? -1 : ((x == y) ? 0 : 1);
+  public static int compareTwoLongsReverse(long x, long y) {
+    return (x < y) ? +1 : ((x == y) ? 0 : -1);
   }
   
 }

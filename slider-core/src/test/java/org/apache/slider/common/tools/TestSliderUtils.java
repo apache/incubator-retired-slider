@@ -19,6 +19,9 @@ package org.apache.slider.common.tools;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.yarn.api.records.ApplicationReport;
+import org.apache.hadoop.yarn.api.records.YarnApplicationState;
+import org.apache.hadoop.yarn.api.records.impl.pb.ApplicationReportPBImpl;
 import org.apache.slider.tools.TestUtility;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -28,6 +31,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /** Test slider util methods. */
 public class TestSliderUtils {
@@ -67,5 +72,65 @@ public class TestSliderUtils {
     Assert.assertEquals(SliderUtils.truncate("1234567890", 1), "1");
     Assert.assertEquals(SliderUtils.truncate("1234567890", 10), "1234567890");
     Assert.assertEquals(SliderUtils.truncate("", 10), "");
+  }
+
+  @Test
+  public void testApplicationReportComparison() {
+    List<ApplicationReport> instances = getApplicationReports();
+
+    SliderUtils.sortApplicationsByMostRecent(instances);
+
+    Assert.assertEquals(1000, instances.get(0).getStartTime());
+    Assert.assertEquals(1000, instances.get(1).getStartTime());
+    Assert.assertEquals(1000, instances.get(2).getStartTime());
+    Assert.assertEquals(1000, instances.get(3).getStartTime());
+
+    instances = getApplicationReports();
+
+    SliderUtils.sortApplicationReport(instances);
+    Assert.assertEquals(1000, instances.get(0).getStartTime());
+    Assert.assertEquals(1000, instances.get(1).getStartTime());
+    Assert.assertEquals(1000, instances.get(2).getStartTime());
+    Assert.assertEquals(1000, instances.get(3).getStartTime());
+
+    Assert.assertTrue(instances.get(0).getYarnApplicationState() == YarnApplicationState.ACCEPTED ||
+                      instances.get(0).getYarnApplicationState() == YarnApplicationState.RUNNING);
+    Assert.assertTrue(instances.get(1).getYarnApplicationState() == YarnApplicationState.ACCEPTED ||
+                      instances.get(1).getYarnApplicationState() == YarnApplicationState.RUNNING);
+    Assert.assertTrue(instances.get(2).getYarnApplicationState() == YarnApplicationState.ACCEPTED ||
+                      instances.get(2).getYarnApplicationState() == YarnApplicationState.RUNNING);
+    Assert.assertTrue(instances.get(3).getYarnApplicationState() == YarnApplicationState.KILLED);
+  }
+
+  private List<ApplicationReport> getApplicationReports() {
+    List<ApplicationReport> instances = new ArrayList<ApplicationReport>();
+    instances.add(getApplicationReport(1000, 0, "app1", YarnApplicationState.ACCEPTED));
+    instances.add(getApplicationReport(900, 998, "app1", YarnApplicationState.KILLED));
+    instances.add(getApplicationReport(900, 998, "app2", YarnApplicationState.FAILED));
+    instances.add(getApplicationReport(1000, 0, "app2", YarnApplicationState.RUNNING));
+    instances.add(getApplicationReport(800, 837, "app3", YarnApplicationState.FINISHED));
+    instances.add(getApplicationReport(1000, 0, "app3", YarnApplicationState.RUNNING));
+    instances.add(getApplicationReport(900, 998, "app3", YarnApplicationState.KILLED));
+    instances.add(getApplicationReport(800, 837, "app4", YarnApplicationState.FINISHED));
+    instances.add(getApplicationReport(1000, 1050, "app4", YarnApplicationState.KILLED));
+    instances.add(getApplicationReport(900, 998, "app4", YarnApplicationState.FINISHED));
+
+    Assert.assertEquals("app1", instances.get(0).getApplicationType());
+    Assert.assertEquals("app1", instances.get(1).getApplicationType());
+    Assert.assertEquals("app2", instances.get(2).getApplicationType());
+    Assert.assertEquals("app2", instances.get(3).getApplicationType());
+    return instances;
+  }
+
+  private ApplicationReportPBImpl getApplicationReport(long startTime,
+                                                       long finishTime,
+                                                       String name,
+                                                       YarnApplicationState state) {
+    ApplicationReportPBImpl ar = new ApplicationReportPBImpl();
+    ar.setFinishTime(finishTime);
+    ar.setStartTime(startTime);
+    ar.setApplicationType(name);
+    ar.setYarnApplicationState(state);
+    return ar;
   }
 }
