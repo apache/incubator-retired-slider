@@ -528,6 +528,7 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
       }
 
     }
+/* SLIDER-531 disabled until YARN-2571 patch in everywhere
 
     // now expect the AM to have had its service record deleted
     ActionResolveArgs finalResolve = new ActionResolveArgs(
@@ -538,6 +539,7 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
         resolve:finalResolve],
         true, 
         "registry entry never deleted") {}
+    */
   }
   
   Outcome probeForEntryMissing(Map args) {
