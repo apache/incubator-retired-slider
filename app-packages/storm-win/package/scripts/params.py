@@ -37,18 +37,3 @@ nimbus_port = config['configurations']['storm-site']['nimbus.thrift.port']
 rest_api_conf_file = format("{conf_dir}/config.yaml")
 rest_lib_dir = format("{app_root}/external/storm-rest")
 storm_bin = format("{app_root}/bin/storm.cmd")
-
-security_enabled = config['configurations']['global']['security_enabled']
-
-if security_enabled:
-  _hostname_lowercase = config['hostname'].lower()
-  _kerberos_domain = config['configurations']['storm-env']['kerberos_domain']
-  _storm_client_principal_name = config['configurations']['storm-env']['storm_client_principal_name']
-  _storm_server_principal_name = config['configurations']['storm-env']['storm_server_principal_name']
-
-  storm_jaas_client_principal = _storm_client_principal_name.replace('_HOST', _hostname_lowercase)
-  storm_client_keytab_path = config['configurations']['storm-env']['storm_client_keytab']
-  storm_jaas_server_principal = _storm_server_principal_name.replace('_HOST',nimbus_host.lower())
-  storm_jaas_stormclient_servicename = storm_jaas_server_principal.split("/")[0]
-  storm_server_keytab_path = config['configurations']['storm-env']['storm_server_keytab']
-  kinit_path_local = functions.get_kinit_path(["/usr/bin", "/usr/kerberos/bin", "/usr/sbin"])
