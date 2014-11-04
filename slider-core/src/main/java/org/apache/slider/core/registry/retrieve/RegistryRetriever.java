@@ -27,10 +27,12 @@ import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.api.json.JSONConfiguration;
 import com.sun.jersey.client.urlconnection.HttpURLConnectionFactory;
 import com.sun.jersey.client.urlconnection.URLConnectionClientHandler;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.registry.client.binding.RegistryTypeUtils;
 import org.apache.hadoop.registry.client.exceptions.RegistryIOException;
 import org.apache.hadoop.registry.client.types.Endpoint;
 import org.apache.hadoop.registry.client.types.ServiceRecord;
+import org.apache.hadoop.security.ssl.SSLFactory;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.ExceptionConverter;
 import org.apache.slider.core.registry.docstore.PublishedConfigSet;
@@ -41,6 +43,9 @@ import org.apache.slider.core.registry.info.CustomRegistryConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSocketFactory;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import java.io.FileNotFoundException;
@@ -48,6 +53,7 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
+import java.security.GeneralSecurityException;
 import java.util.List;
 
 /**
@@ -71,8 +77,13 @@ public class RegistryRetriever {
         Boolean.TRUE);
     clientConfig.getProperties().put(
         URLConnectionClientHandler.PROPERTY_HTTP_URL_CONNECTION_SET_METHOD_WORKAROUND, true);
-    URLConnectionClientHandler handler =
-        new URLConnectionClientHandler(new HttpURLConnectionFactory() {
+    URLConnectionClientHandler handler = getUrlConnectionClientHandler();
+    jerseyClient = new Client(handler, clientConfig);
+    jerseyClient.setFollowRedirects(true);
+  }
+
+  private static URLConnectionClientHandler getUrlConnectionClientHandler() {
+    return new URLConnectionClientHandler(new HttpURLConnectionFactory() {
       @Override
       public HttpURLConnection getHttpURLConnection(URL url)
           throws IOException {
@@ -90,13 +101,32 @@ public class RegistryRetriever {
             connection = (HttpURLConnection) redirectURL.openConnection();
           }
         }
+        if (connection instanceof HttpsURLConnection) {
+          log.debug("Attempting to configure HTTPS connection using client "
+                    + "configuration");
+          final SSLFactory factory;
+          final SSLSocketFactory sf;
+          final HostnameVerifier hv;
+
+          try {
+            HttpsURLConnection c = (HttpsURLConnection) connection;
+            factory = new SSLFactory(SSLFactory.Mode.CLIENT, new Configuration());
+            factory.init();
+            sf = factory.createSSLSocketFactory();
+            hv = factory.getHostnameVerifier();
+            c.setSSLSocketFactory(sf);
+            c.setHostnameVerifier(hv);
+          } catch (Exception e) {
+            log.info("Unable to configure HTTPS connection from "
+                     + "configuration.  Leveraging JDK properties.");
+          }
+
+        }
         return connection;
       }
     });
-    jerseyClient = new Client(handler, clientConfig);
-    jerseyClient.setFollowRedirects(true);
   }
-  
+
   public RegistryRetriever(String externalConfigurationURL, String internalConfigurationURL,
                            String externalExportsURL, String internalExportsURL) {
     this.externalConfigurationURL = externalConfigurationURL;
