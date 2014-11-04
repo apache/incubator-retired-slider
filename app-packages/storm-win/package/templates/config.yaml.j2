@@ -17,3 +17,21 @@ nimbusHost: {{nimbus_host}}
 nimbusPort: {{nimbus_port}}
 
 enableGanglia: false
+
+# ganglia configuration
+ganglia:
+
+  # how often to report to ganglia metrics (in seconds)
+  reportInterval: 600
+
+  # the hostname of the gmond server where storm cluster metrics will be sent
+  host: localhost
+  port: 8649
+
+  # address mode
+  # default is MULTICAST
+  addressMode: "UNICAST"
+
+  # an <IP>:<HOSTNAME> pair to spoof
+  # this allows us to simulate storm cluster metrics coming from a specific host
+  #spoof: "192.168.1.1:storm"

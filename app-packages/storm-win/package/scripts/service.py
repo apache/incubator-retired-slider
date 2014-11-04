@@ -38,6 +38,8 @@ def service(
 
   if action == "start":
     os.environ['STORM_LOG_DIR'] = params.log_dir
+    os.environ['STORM_HOME'] = params.app_root
+    os.environ['STORM_CONF_DIR'] = params.conf_dir
     cmd = format("{storm_bin} {name} > {log_dir}/{name}.out 2>&1")
 
     Execute(cmd,
