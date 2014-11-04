@@ -92,7 +92,7 @@ public class IndexBlock extends HtmlBlock {
          .th("Component")
          .th("Desired")
          .th("Actual")
-         .th("Requested")
+         .th("Outstanding Requests")
          .th("Failed")
          .th("Failed to start")
          ._();
