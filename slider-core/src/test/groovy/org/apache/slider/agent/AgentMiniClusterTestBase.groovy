@@ -44,7 +44,6 @@ public abstract class AgentMiniClusterTestBase
 extends YarnZKMiniClusterTestBase {
   protected static File agentConf
   protected static File agentDef
-  protected static File imagePath
   protected static Map<String, String> agentDefOptions
   private static TemporaryFolder tempFolder = new TemporaryFolder();
 
@@ -89,13 +88,16 @@ extends YarnZKMiniClusterTestBase {
 
   @AfterClass
   public static void cleanSubConfFiles() {
-    def tempRoot = tempFolder.root
-    if (tempRoot.exists()) {
-      try {
+    def tempRoot
+    try {
+      tempRoot = tempFolder.root
+      if (tempRoot.exists()) {
         FileUtils.deleteDirectory(tempRoot);
-      } catch (IOException e) {
-        log.info("Failed to delete $tempRoot :$e", e)
       }
+    } catch (IOException e) {
+      log.info("Failed to delete $tempRoot :$e", e)
+    } catch (IllegalStateException e) {
+      log.warn("Temp folder deletion failed: $e")
     }
   }
 
