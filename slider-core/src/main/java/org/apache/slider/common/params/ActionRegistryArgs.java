@@ -97,6 +97,7 @@ public class ActionRegistryArgs extends AbstractActionArgs {
   @Parameter(names = {ARG_LISTEXP},
              description = "list exports")
   public boolean listExports;
+
   @Parameter(names = {ARG_GETEXP},
              description = "get export")
   public String getExport;
@@ -154,7 +155,7 @@ public class ActionRegistryArgs extends AbstractActionArgs {
       throw new UsageException(USAGE);
     }
 
-    if (out != null && (lists > 0 || set == 0)) {
+    if (out != null && ( set == 0)) {
       throw new UsageException("output path"
            + " is only supported on 'get' operations: ");
     }
