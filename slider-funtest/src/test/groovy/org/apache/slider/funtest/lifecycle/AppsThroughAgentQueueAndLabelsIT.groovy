@@ -81,7 +81,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     assumeLabelsRedAndBlueAdded()
 
     cleanup(APPLICATION_NAME)
-    File launchReportFile = createAppReportFile();
+    File launchReportFile = createTempJsonFile();
     SliderShell shell = createTemplatedSliderApplication(
         APPLICATION_NAME,
         APP_TEMPLATE,

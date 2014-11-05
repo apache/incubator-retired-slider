@@ -43,7 +43,7 @@ public class AMFailuresIT extends AgentCommandTestBase
 implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   private static String COMMAND_LOGGER = "COMMAND_LOGGER"
-  private static String APPLICATION_NAME = "am-started-agents-started"
+  private static String APPLICATION_NAME = "am-failures-it"
   public static final String TEST_REMOTE_SSH_KEY = "test.remote.ssh.key"
   public static final String VAGRANT_CWD = "vagrant.current.working.dir"
   File sshkey
@@ -61,7 +61,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
   @Test
   public void testAMKilledWithStateAMStartedAgentsStarted() throws Throwable {
     cleanup(APPLICATION_NAME)
-    File launchReportFile = createAppReportFile();
+    File launchReportFile = createTempJsonFile();
 
     SliderShell shell = createTemplatedSliderApplication(
         APPLICATION_NAME, APP_TEMPLATE, APP_RESOURCE,
@@ -84,35 +84,18 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     // Now kill the AM
     log.info("Killing AM now ...")
-//    killAMUsingJsch()
     killAmAndWaitForRestart(APPLICATION_NAME, appId)
 
     // There should be exactly 1 live logger container
     def cd2 = assertContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 1)
 
     // No new containers should be requested for the agents
-    def loggerStats2 = cd2.statistics[COMMAND_LOGGER]
-    assert loggerStats["containers.requested"] == loggerStats2["containers.requested"],
+    def restartedStats = cd2.statistics[COMMAND_LOGGER]
+    assert restartedStats["containers.live"] == 1
+
+    assert 0==restartedStats["containers.requested"],
         'No new agent containers should be requested'
     assert lookupYarnAppState(appId) == YarnApplicationState.RUNNING 
-  }
-
-  /**
-   * Allow for 2x as long as other test instances, as for AM restart we
-   * need to allow for a longer delay
-   */
-  @Override
-  int getInstanceLaunchTime() {
-    return 2* super.instanceLaunchTime
-  }
-
-  protected void killAMUsingAmSuicide() {
-    SliderShell shell = slider(EXIT_SUCCESS,
-      [
-          ACTION_AM_SUICIDE,
-          ARG_MESSAGE, "testAMRestart",
-          APPLICATION_NAME])
-    logShell(shell)
   }
 
   protected void killAMUsingVagrantShell() {

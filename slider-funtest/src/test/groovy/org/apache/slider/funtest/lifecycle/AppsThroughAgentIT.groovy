@@ -26,6 +26,7 @@ import org.apache.slider.common.params.SliderActions
 import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
+import org.apache.slider.test.Outcome
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -43,6 +44,10 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     setupCluster(APPLICATION_NAME)
   }
   
+  public String getApplicationName() {
+    return APPLICATION_NAME
+  }
+
   @After
   public void destroyCluster() {
     cleanup(APPLICATION_NAME)
@@ -52,9 +57,10 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
   public void testCreateFlex() throws Throwable {
     assumeAgentTestsEnabled()
 
-    cleanup(APPLICATION_NAME)
-    File launchReportFile = createAppReportFile();
-    SliderShell shell = createTemplatedSliderApplication(APPLICATION_NAME,
+    def application = APPLICATION_NAME
+    cleanup(application)
+    File launchReportFile = createTempJsonFile();
+    SliderShell shell = createTemplatedSliderApplication(application,
         APP_TEMPLATE,
         APP_RESOURCE,
         [],
@@ -67,7 +73,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     slider(EXIT_SUCCESS,
         [
             ACTION_FLEX,
-            APPLICATION_NAME,
+            application,
             ARG_COMPONENT,
             COMMAND_LOGGER,
             "2"])
@@ -75,91 +81,140 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     // sleep till the new instance starts
     sleep(1000 * 10)
 
-    status(0, APPLICATION_NAME)
-    expectLiveContainerCountReached(APPLICATION_NAME, COMMAND_LOGGER, 2,
+    status(0, application)
+    expectLiveContainerCountReached(application, COMMAND_LOGGER, 2,
         CONTAINER_LAUNCH_TIMEOUT)
 
-    String amWebUrl = getInfoAmWebUrl(APPLICATION_NAME)
+    String amWebUrl = getInfoAmWebUrl(application)
     log.info("Dumping data from AM Web URL");
     log.info(amWebUrl.toURL().text);
 
-    ensureRegistryCallSucceeds(APPLICATION_NAME)
+    ensureRegistryCallSucceeds(application)
+    def outfile = tmpFile(".txt")
 
+    assertAppRunning(appId)
+
+    def commands = [
+        ACTION_REGISTRY,
+        ARG_NAME,
+        application,
+        ARG_LISTEXP,
+        ARG_OUTPUT,
+        outfile.absolutePath
+    ]
+
+    awaitRegistryOutfileContains(outfile, commands, "container_log_dirs")
+    awaitRegistryOutfileContains(outfile, commands, "container_work_dirs")
     // get log folders
     shell = slider(EXIT_SUCCESS,
         [
             ACTION_REGISTRY,
             ARG_NAME,
-            APPLICATION_NAME,
+            application,
             ARG_LISTEXP])
-    if(!containsString(shell, "container_log_dirs") ||
-       !containsString(shell, "container_work_dirs")) {
-      logShell(shell)
-      assert fail("Should list default exports container_log_dirs or container_work_dirs")
-    }
+    assertOutputContains(shell, "container_log_dirs")
+    assertOutputContains(shell, "container_work_dirs")
 
     // get log folders
     shell = slider(EXIT_SUCCESS,
         [
             ACTION_REGISTRY,
             ARG_NAME,
-            APPLICATION_NAME,
+            application,
             ARG_GETEXP,
             "container_log_dirs"])
-    if (!containsString(shell, "\"tag\" : \"COMMAND_LOGGER\"", 2)
-        || !containsString(shell, "\"level\" : \"component\"", 2)) {
-      logShell(shell)
-      assert fail("Should list 2 entries for log folders")
-    }
 
-    // get log folders
-    shell = slider(EXIT_SUCCESS,
-        [
-            ACTION_REGISTRY,
-            ARG_NAME,
-            APPLICATION_NAME,
-            ARG_GETEXP,
-            "container_work_dirs"])
-    if(!containsString(shell, "\"tag\" : \"COMMAND_LOGGER\"", 2)
-    || !containsString(shell, "\"level\" : \"component\"", 2)) {
-      logShell(shell)
-      assert fail("Should list 2 entries for work folder")
-    }
+    assertOutputContains(shell, '"tag" : "COMMAND_LOGGER"', 2)
+    assertOutputContains(shell, '"level" : "level"', 2)
 
     // get cl-site config
-    shell = slider(
-        [
-            ACTION_REGISTRY,
-            ARG_NAME,
-            APPLICATION_NAME,
-            ARG_GETCONF,
-            "cl-site",
-            ARG_FORMAT,
-            "json"])
 
-    for (int i = 0; i < 10; i++) {
-      if (shell.getRet() != EXIT_SUCCESS) {
-        println "Waiting for the cl-site to show up"
-        sleep(1000 * 10)
-        shell = slider(0,
-            [
-                ACTION_REGISTRY,
-                ARG_NAME,
-                APPLICATION_NAME,
-                ARG_GETCONF,
-                "cl-site",
-                ARG_FORMAT,
-                "json"])
-      }
-    }
-    if (!containsString(shell, "\"pattern.for.test.to.verify\" : \"verify this pattern\"", 1)) {
-      logShell(shell)
-      
-      fail("Should have exported cl-site; got " +
-                  "stdout"  +shell.stdErrHistory +
-                  " \nstderr:" + shell.stdErrHistory)
+    def getconf = [
+        ACTION_REGISTRY,
+        ARG_NAME,
+        application,
+        ARG_GETCONF,
+        "cl-site",
+        ARG_FORMAT,
+        "json"]
+
+    def pattern = '"pattern.for.test.to.verify" : "verify this pattern"'
+
+    repeatUntilSuccess("registry",
+        this.&commandSucceeds,
+        REGISTRY_STARTUP_TIMEOUT,
+        PROBE_SLEEP_TIME,
+        [
+            text: "pattern",
+            command: getconf
+        ],
+        true,
+        "failed to find $pattern in output") {
+      slider(0, getconf)
+      assertOutputContains(shell, pattern)
     }
 
     assertAppRunning(appId)
   }
+
+  public awaitRegistryOutfileContains(
+      File outfile,
+      List<String> commands,
+      String match) {
+    repeatUntilSuccess("registry",
+        this.&generatedFileContains,
+        REGISTRY_STARTUP_TIMEOUT * 2,
+        PROBE_SLEEP_TIME,
+        [
+            text    : match,
+            filename: outfile.absolutePath,
+            command : commands
+        ],
+        true,
+        "failed to find $match in output") {
+      slider(0, commands).dumpOutput()
+      fail("no $match in \n$outfile.text")
+    }
+  }
+
+  /**
+   * Is the registry accessible for an application?
+   * @param args argument map containing <code>"application"</code>
+   * @return probe outcome
+   */
+  protected Outcome commandOutputContains(Map args) {
+    String text = args['text'];
+    List<String> command = (List < String >)args['command']
+    SliderShell shell = slider(0, command)
+    return Outcome.fromBool(shell.outputContains(text))
+  }
+
+  /**
+   * Is the registry accessible for an application?
+   * @param args argument map containing <code>"application"</code>
+   * @return probe outcome
+   */
+  protected Outcome commandSucceeds(Map args) {
+    List<String> command = (List<String>) args['command']
+    SliderShell shell = slider(command)
+    return Outcome.fromBool(shell.ret == 0)
+  }
+
+  /**
+   * Is the registry accessible for an application?
+   * @param args argument map
+   * @return probe outcome
+   */
+  protected Outcome generatedFileContains(Map args) {
+    List<String> command = (List<String>) args['command']
+    String text = args['text'];
+    String filename = args['filename'];
+    File f = new File(filename)
+    f.delete()
+    SliderShell shell = slider(0, command)
+    shell.dumpOutput()
+    assert f.exists()
+    return Outcome.fromBool(f.text.contains(text))
+  }
+
 }

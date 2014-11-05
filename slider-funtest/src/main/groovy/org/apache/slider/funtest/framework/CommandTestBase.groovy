@@ -511,7 +511,7 @@ abstract class CommandTestBase extends SliderTestUtils {
     if (!shell.outputContains(lookThisUp)) {
       log.error("Missing $lookThisUp from:")
       shell.dumpOutput()
-      assert shell.outputContains(lookThisUp)
+      fail("Missing $lookThisUp from:\n$shell.out\n$shell.err" )
     }
   }
   
@@ -629,7 +629,7 @@ abstract class CommandTestBase extends SliderTestUtils {
       File launchReportFile = null) {
 
     if (!launchReportFile) {
-      launchReportFile = createAppReportFile()
+      launchReportFile = createTempJsonFile()
     }
     // delete any previous copy of the file
     launchReportFile.delete();
@@ -678,10 +678,19 @@ abstract class CommandTestBase extends SliderTestUtils {
     return shell
   }
 
-  public static  File createAppReportFile() {
+  /**
+   * Create a temp JSON file. After coming up with the name, the file
+   * is deleted
+   * @return the filename
+   */
+  public static  File createTempJsonFile() {
+    return tmpFile(".json")
+  }
+
+  public static File tmpFile(String suffix) {
     File reportFile = File.createTempFile(
         "launch",
-        ".json",
+        suffix,
         new File("target"))
     reportFile.delete()
     return reportFile
@@ -737,7 +746,7 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @return an application report or null
    */
   public static SerializedApplicationReport lookupApplication(String id) {
-    File reportFile = createAppReportFile();
+    File reportFile = createTempJsonFile();
     try {
       def shell = lookup(id, reportFile)
       if (shell.ret == 0) {
@@ -789,11 +798,15 @@ abstract class CommandTestBase extends SliderTestUtils {
     slider(0, [
         ACTION_AM_SUICIDE, application,
         ARG_EXITCODE, "1",
-        ARG_WAIT, "1000",
+        ARG_WAIT, "500",
         ARG_MESSAGE, "suicide"
     ])
 
-    sleep(5000)
+    // app gets accepted
+    log.info "awaiting app to enter ACCEPTED state"
+    awaitYarnApplicationAccepted(appId)
+    // app goes live
+    log.info "awaiting app to enter RUNNING state"
     ensureYarnApplicationIsUp(appId)
   }
 
@@ -802,7 +815,8 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @param application application
    */
   protected void ensureRegistryCallSucceeds(String application) {
-    repeatUntilSuccess(this.&isRegistryAccessible,
+    repeatUntilSuccess("registry",
+        this.&isRegistryAccessible,
         REGISTRY_STARTUP_TIMEOUT,
         PROBE_SLEEP_TIME,
         [application: application],
@@ -823,9 +837,9 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @param application
    */
   protected void ensureApplicationIsUp(String application) {
-    repeatUntilSuccess(this.&isApplicationRunning,
-        SLIDER_CONFIG.getInt(KEY_TEST_INSTANCE_LAUNCH_TIME,
-            DEFAULT_INSTANCE_LAUNCH_TIME_SECONDS) * 1000,
+    repeatUntilSuccess("await application up",
+        this.&isApplicationRunning,
+        instanceLaunchTime,
         PROBE_SLEEP_TIME,
         [application: application],
         true,
@@ -898,9 +912,22 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @return
    */
 
-  protected Outcome isYarnApplicationRunning(Map<String, String> args) {
+  protected static Outcome isYarnApplicationRunning(Map<String, String> args) {
     String applicationId = args['applicationId'];
-    return isYarnApplicationRunning(applicationId)
+    return isYarnApplicationInState(applicationId,
+        YarnApplicationState.RUNNING, true)
+  }
+
+  /**
+   * Probe callback for is the the app running or not
+   * @param args map where 'applicationId' must m
+   * @return
+   */
+  protected static Outcome isYarnApplicationInExactState(Map<String, String> args) {
+    String applicationId = args['applicationId'];
+    String state = args['state']
+    def desired = YarnApplicationState.valueOf(state)
+    return isYarnApplicationInState(applicationId, desired, false)
   }
 
   /**
@@ -912,8 +939,8 @@ abstract class CommandTestBase extends SliderTestUtils {
    */
   public static Outcome isYarnApplicationRunning(
       String applicationId) {
-    YarnApplicationState yarnState = YarnApplicationState.RUNNING
-    return isYarnApplicationInState(applicationId, yarnState)
+    return isYarnApplicationInState(applicationId,
+        YarnApplicationState.RUNNING, true)
   }
 
   /**
@@ -924,14 +951,14 @@ abstract class CommandTestBase extends SliderTestUtils {
    * above it
    */
   public static Outcome isYarnApplicationInState(
-      String applicationId,
-      YarnApplicationState yarnState) {
+      String applicationId, YarnApplicationState yarnState, boolean failfast) {
     YarnApplicationState appState = lookupYarnAppState(applicationId)
     if (yarnState == appState) {
       return Outcome.Success;
     }
 
-    if (appState.ordinal() > yarnState.ordinal()) {
+    if (failfast && appState.ordinal() > yarnState.ordinal()) {
+      log.debug("App state $appState past desired state $yarnState: failing")
       // app has passed beyond hope
       return Outcome.Fail
     }
@@ -977,13 +1004,14 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @param applicationId
    */
   protected void ensureYarnApplicationIsUp(String applicationId) {
-    repeatUntilSuccess(this.&isYarnApplicationRunning,
+    repeatUntilSuccess("await yarn application Running",
+        this.&isYarnApplicationRunning,
         instanceLaunchTime,
         PROBE_SLEEP_TIME,
         [applicationId: applicationId],
         true,
         E_LAUNCH_FAIL) {
-      describe "final state of app that tests say is not up"
+      describe "final state of application"
       def sar = lookupApplication(applicationId)
 
       def message = E_LAUNCH_FAIL + "\n$sar"
@@ -993,6 +1021,27 @@ abstract class CommandTestBase extends SliderTestUtils {
   }
 
   /**
+   * Wait for the YARN app to come up. This will fail fast
+   * @param applicationId
+   */
+  protected void awaitYarnApplicationAccepted(String applicationId) {
+    repeatUntilSuccess("Await Yarn App Accepted",
+        this.&isYarnApplicationInExactState,
+        instanceLaunchTime,
+        1000,
+        [applicationId: applicationId,
+         state: YarnApplicationState.ACCEPTED.toString()],
+        true,
+        "application never reached accepted state") {
+      describe "app did not enter accepted"
+      def sar = lookupApplication(applicationId)
+
+      def message = 'Application did not enter ACCEPTED state' + "\n$sar"
+      log.error(message)
+      fail(message)
+    }
+  }
+  /**
    * Get the expected launch time. Default is the configuration option
    * {@link FuntestProperties#KEY_TEST_INSTANCE_LAUNCH_TIME} and
    * default value {@link FuntestProperties#KEY_TEST_INSTANCE_LAUNCH_TIME}
@@ -1000,7 +1049,7 @@ abstract class CommandTestBase extends SliderTestUtils {
    */
   public int getInstanceLaunchTime() {
     return SLIDER_CONFIG.getInt(KEY_TEST_INSTANCE_LAUNCH_TIME,
-        DEFAULT_INSTANCE_LAUNCH_TIME_SECONDS)
+        DEFAULT_INSTANCE_LAUNCH_TIME_SECONDS) * 1000;
   }
 
   public String getInfoAmWebUrl(String applicationName) {
@@ -1045,6 +1094,11 @@ abstract class CommandTestBase extends SliderTestUtils {
     return requested
   }
 
+  /**
+   * Probe: has the requested container count of a specific role been reached?
+   * @param args map with: "application", "role", "limit"
+   * @return success on a match, retry if not
+   */
   Outcome hasRequestedContainerCountReached(Map<String, String> args) {
     String application = args['application']
     String role = args['role']
@@ -1059,6 +1113,7 @@ abstract class CommandTestBase extends SliderTestUtils {
       int container_launch_timeout) {
 
     repeatUntilSuccess(
+        "await container count",
         this.&hasRequestedContainerCountReached,
         container_launch_timeout,
         PROBE_SLEEP_TIME,
@@ -1119,6 +1174,7 @@ abstract class CommandTestBase extends SliderTestUtils {
       int container_launch_timeout) {
 
     repeatUntilSuccess(
+        "await live container count",
         this.&hasLiveContainerCountReached,
         container_launch_timeout,
         PROBE_SLEEP_TIME,
