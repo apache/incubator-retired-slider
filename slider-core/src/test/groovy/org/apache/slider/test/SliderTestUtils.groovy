@@ -938,12 +938,19 @@ class SliderTestUtils extends Assert {
    * @param failureMessage message to include in exception raised
    * @param failureHandler closure to invoke prior to the failure being raised
    */
-  protected void repeatUntilSuccess(Closure probe,
-      int timeout, int sleepDur,
+  protected void repeatUntilSuccess(
+      String action,
+      Closure probe,
+      int timeout,
+      int sleepDur,
       Map args,
       boolean failIfUnsuccessful,
       String failureMessage,
       Closure failureHandler) {
+    log.debug("Probe $action timelimit $timeout")
+    if (timeout < 1000) {
+      fail("Timeout $timeout too low: milliseconds are expected, not seconds")
+    }
     int attemptCount = 0
     boolean succeeded = false;
     boolean completed = false;
@@ -961,19 +968,25 @@ class SliderTestUtils extends Assert {
         attemptCount++;
         completed = duration.limitExceeded
         if (!completed) {
+          log.debug("Attempt $attemptCount failed")
           sleep(sleepDur)
         }
       } else if (outcome.equals(Outcome.Fail)) {
         // fast fail
+        log.debug("Fast fail of probe")
         completed = true;
       }
     }
-
-    if (failIfUnsuccessful & !succeeded) {
+    if (!succeeded) {
+      if (duration.limitExceeded) {
+        log.info("probe timed out after $timeout and $attemptCount attempts")
+      }
       if (failureHandler) {
         failureHandler()
       }
-      fail(failureMessage)
+      if (failIfUnsuccessful) {
+        fail(failureMessage)
+      }
     }
   }
 

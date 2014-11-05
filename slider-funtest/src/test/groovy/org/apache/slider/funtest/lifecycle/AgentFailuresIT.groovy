@@ -52,7 +52,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     cleanup(APPLICATION_NAME)
 
-    File launchReportFile = createAppReportFile();
+    File launchReportFile = createTempJsonFile();
     SliderShell shell = createTemplatedSliderApplication(
         APPLICATION_NAME,
         APP_TEMPLATE2,

@@ -67,7 +67,7 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
     def clusterpath = buildClusterPath(CLUSTER)
     assert !clusterFS.exists(clusterpath)
 
-    File launchReportFile = createAppReportFile();
+    File launchReportFile = createTempJsonFile();
     SliderShell shell = createTemplatedSliderApplication(CLUSTER,
         APP_TEMPLATE,
         APP_RESOURCE2,
@@ -158,7 +158,7 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
       list(-1, [ARG_STATE, "running"])
       list( 0, [ARG_STATE, "FINISHED"])
 
-      def thawReport = createAppReportFile()
+      def thawReport = createTempJsonFile()
       //start then stop the cluster
       thaw(CLUSTER,
           [
@@ -198,7 +198,7 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
       //start with a restart count set to enable restart
       describe "the kill/restart phase may fail if yarn.resourcemanager.am.max-attempts is too low"
 
-      def thawReport2 = createAppReportFile()
+      def thawReport2 = createTempJsonFile()
       //start then stop the cluster
       thaw(CLUSTER,
           [
