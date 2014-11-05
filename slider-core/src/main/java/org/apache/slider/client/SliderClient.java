@@ -153,7 +153,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.net.InetSocketAddress;
@@ -3000,16 +3002,28 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     RegistryRetriever retriever = new RegistryRetriever(instance);
     PublishedConfigSet configurations =
         retriever.getConfigurations(!registryArgs.internal);
-
-    for (String configName : configurations.keys()) {
-      if (!registryArgs.verbose) {
-        log.info("{}", configName);
+    PrintStream out = null;
+    try {
+      if (registryArgs.out != null) {
+        out = new PrintStream(new FileOutputStream(registryArgs.out));
       } else {
-        PublishedConfiguration published =
-            configurations.get(configName);
-        log.info("{} : {}",
-            configName,
-            published.description);
+        out = System.out;
+      }
+      for (String configName : configurations.keys()) {
+        if (!registryArgs.verbose) {
+          out.println(configName);
+        } else {
+          PublishedConfiguration published =
+              configurations.get(configName);
+          out.printf("%s: %s\n",
+              configName,
+              published.description);
+        }
+      }
+    } finally {
+      if (registryArgs.out != null && out != null) {
+        out.flush();
+        out.close();
       }
     }
   }
@@ -3028,16 +3042,34 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     RegistryRetriever retriever = new RegistryRetriever(instance);
     PublishedExportsSet exports =
         retriever.getExports(!registryArgs.internal);
-
-    for (String exportName : exports.keys()) {
-      if (!registryArgs.verbose) {
-        log.info("{}", exportName);
+    PrintStream out = null;
+    boolean streaming = false;
+    try {
+      if (registryArgs.out != null) {
+        out = new PrintStream(new FileOutputStream(registryArgs.out));
+        streaming = true;
+        log.debug("Saving output to {}", registryArgs.out);
       } else {
-        PublishedExports published =
-            exports.get(exportName);
-        log.info("{} : {}",
-                 exportName,
-                 published.description);
+        out = System.out;
+      }
+      log.debug("Number of exports: {}", exports.keys().size());
+      for (String exportName : exports.keys()) {
+        if (streaming) {
+          log.debug(exportName);
+        }
+        if (!registryArgs.verbose) {
+          out.println(exportName);
+        } else {
+          PublishedExports published = exports.get(exportName);
+          out.printf("%s: %s\n",
+              exportName,
+              published.description);
+        }
+      }
+    } finally {
+      if (streaming) {
+        out.flush();
+        out.close();
       }
     }
   }
