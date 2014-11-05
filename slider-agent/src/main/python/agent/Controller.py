@@ -295,7 +295,7 @@ class Controller(threading.Thread):
         if 'restartEnabled' in response:
           restartEnabled = response['restartEnabled']
           if restartEnabled:
-            logger.info("Component auto-restart is enabled.")
+            logger.debug("Component auto-restart is enabled.")
 
         if 'hasMappedComponents' in response.keys():
           self.hasMappedComponents = response['hasMappedComponents'] != False

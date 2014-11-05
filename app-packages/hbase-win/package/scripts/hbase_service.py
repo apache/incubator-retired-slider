@@ -28,6 +28,8 @@ def hbase_service(
   import params
 
   pid_file = format("{pid_dir}/hbase-{hbase_user}-{name}.pid")
+  custom_port = None
+  custom_info_port = None
   heap_size = params.master_heapsize
   main_class = "org.apache.hadoop.hbase.master.HMaster"
   if name == "regionserver":
@@ -36,18 +38,29 @@ def hbase_service(
   if name == "rest":
     heap_size = params.restserver_heapsize
     main_class = "org.apache.hadoop.hbase.rest.RESTServer"
+    custom_port = params.rest_port
   if name == "thrift":
     heap_size = params.thriftserver_heapsize
     main_class = "org.apache.hadoop.hbase.thrift.ThriftServer"
+    custom_port = params.thrift_port
+    custom_info_port = params.thrift_info_port
   if name == "thrift2":
     heap_size = params.thrift2server_heapsize
     main_class = "org.apache.hadoop.hbase.thrift2.ThriftServer"
+    custom_port = params.thrift2_port
+    custom_info_port = params.thrift2_info_port
 
   role_user = format("{hbase_user}-{name}")
 
   rest_of_the_command = InlineTemplate(params.hbase_env_sh_template, [], heap_size=heap_size, role_user=role_user)()
 
   process_cmd = format("{java64_home}\\bin\\java {rest_of_the_command} {main_class} {action}")
+
+  if custom_port:
+    process_cmd = format("{process_cmd} -p {custom_port}")
+
+  if custom_info_port:
+    process_cmd = format("{process_cmd} --infoport {custom_info_port}")
 
   Execute(process_cmd,
           logoutput=False,

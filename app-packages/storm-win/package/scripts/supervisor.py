@@ -53,7 +53,7 @@ class Supervisor(Script):
     import status_params
     env.set_params(status_params)
 
-    #check_process_status(status_params.pid_supervisor)
+    check_process_status(status_params.pid_supervisor)
 
 
 if __name__ == "__main__":
