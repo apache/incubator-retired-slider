@@ -122,7 +122,7 @@
             <test.app.pkg.name>CMD_LOGGER</test.app.pkg.name>
             <test.app.resource>../slider-core/src/test/app_packages/test_command_log/resources.json</test.app.resource>
             <test.app.template>../slider-core/src/test/app_packages/test_command_log/appConfig.json</test.app.template>
-            <vagrant.current.working.dir>/Users/gsaha/work/workspace/ambari-vagrant/centos6.4</vagrant.current.working.dir>
+            <vagrant.current.working.dir></vagrant.current.working.dir>
           </systemPropertyVariables>
         </configuration>
       </plugin>
@@ -172,8 +172,6 @@
   <reporting>
     <plugins>
  
-
-
     </plugins>
   </reporting>
 

@@ -72,9 +72,6 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     def appId = ensureYarnApplicationIsUp(launchReportFile)
     expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 1,
         CONTAINER_LAUNCH_TIMEOUT)
-    
-    // Wait for 20 secs for AM and agent to both reach STARTED state
-    sleep(1000 * 20)
 
     def cd = assertContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 1)
     def loggerInstances = cd.instances[COMMAND_LOGGER]
@@ -82,37 +79,32 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     def loggerStats = cd.statistics[COMMAND_LOGGER]
 
-    def origRequested = loggerStats["containers.requested"]
-    assert origRequested >= 2
+    assert loggerStats["containers.requested"] == 1
     assert loggerStats["containers.live"] == 1
-
-    assert isApplicationUp(APPLICATION_NAME), 'App is not running.'
-    assertSuccess(shell)
 
     // Now kill the AM
     log.info("Killing AM now ...")
 //    killAMUsingJsch()
-//    killAMUsingAmSuicide()
-    killAMUsingVagrantShell()
-
-    // Check that the application is not running (and is in ACCEPTED state)
-    assert lookupYarnAppState(appId) == YarnApplicationState.ACCEPTED ,
-      'App should be in ACCEPTED state (since AM got killed)'
-    log.info("After AM KILL: application {} is in ACCEPTED state", APPLICATION_NAME)
-
-    // Wait until AM comes back up and verify container count again
-    ensureYarnApplicationIsUp(appId)
+    killAmAndWaitForRestart(APPLICATION_NAME, appId)
 
     // There should be exactly 1 live logger container
     def cd2 = assertContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 1)
 
     // No new containers should be requested for the agents
     def loggerStats2 = cd2.statistics[COMMAND_LOGGER]
-    assert origRequested == loggerStats2["containers.requested"],
+    assert loggerStats["containers.requested"] == loggerStats2["containers.requested"],
         'No new agent containers should be requested'
     assert lookupYarnAppState(appId) == YarnApplicationState.RUNNING 
   }
 
+  /**
+   * Allow for 2x as long as other test instances, as for AM restart we
+   * need to allow for a longer delay
+   */
+  @Override
+  int getInstanceLaunchTime() {
+    return 2* super.instanceLaunchTime
+  }
 
   protected void killAMUsingAmSuicide() {
     SliderShell shell = slider(EXIT_SUCCESS,
@@ -121,12 +113,11 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
           ARG_MESSAGE, "testAMRestart",
           APPLICATION_NAME])
     logShell(shell)
-    assertSuccess(shell)
   }
 
   protected void killAMUsingVagrantShell() {
     String hostname = SLIDER_CONFIG.get(YarnConfiguration.RM_ADDRESS).split(":")[0]
-    assert hostname != null && !hostname.isEmpty()
+    assert hostname
     String vagrantVmName = hostname.split("\\.")[0]
 
     String vagrantCwd = sysprop(VAGRANT_CWD)
@@ -146,8 +137,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
   protected void killAMUsingJsch() {
     String hostname = SLIDER_CONFIG.get(YarnConfiguration.RM_ADDRESS).split(":")[0]
     String user = UserGroupInformation.currentUser
-    assert hostname != null && !hostname.isEmpty()
-    assert user != null && !user.isEmpty()
+    assert hostname
+    assert user
 
     bindSSHKey()
     RemoteServer remoteServer = new RemoteServer(

@@ -775,12 +775,19 @@ abstract class CommandTestBase extends SliderTestUtils {
     ensureApplicationIsUp(cluster)
     return sliderClient.clusterDescription
   }
-  public ClusterDescription killAmAndWaitForRestart(
-      SliderClient sliderClient, String cluster, String appId) {
 
-    assert cluster
+  /**
+   * Kill an AM and await restrt
+   * @param sliderClient
+   * @param application
+   * @param appId
+   * @return
+   */
+  public void killAmAndWaitForRestart(String application, String appId) {
+
+    assert application
     slider(0, [
-        ACTION_AM_SUICIDE, cluster,
+        ACTION_AM_SUICIDE, application,
         ARG_EXITCODE, "1",
         ARG_WAIT, "1000",
         ARG_MESSAGE, "suicide"
@@ -788,9 +795,12 @@ abstract class CommandTestBase extends SliderTestUtils {
 
     sleep(5000)
     ensureYarnApplicationIsUp(appId)
-    return sliderClient.clusterDescription
   }
 
+  /**
+   * Spinning operation to perform a registry call
+   * @param application application
+   */
   protected void ensureRegistryCallSucceeds(String application) {
     repeatUntilSuccess(this.&isRegistryAccessible,
         REGISTRY_STARTUP_TIMEOUT,
@@ -808,7 +818,10 @@ abstract class CommandTestBase extends SliderTestUtils {
     }
   }
 
-   
+  /**
+   * wait for an application to come up
+   * @param application
+   */
   protected void ensureApplicationIsUp(String application) {
     repeatUntilSuccess(this.&isApplicationRunning,
         SLIDER_CONFIG.getInt(KEY_TEST_INSTANCE_LAUNCH_TIME,
@@ -822,6 +835,11 @@ abstract class CommandTestBase extends SliderTestUtils {
     }
   }
 
+  /**
+   * Is the registry accessible for an application?
+   * @param args argument map containing <code>"application"</code>
+   * @return probe outcome
+   */
   protected Outcome isRegistryAccessible(Map<String, String> args) {
     String applicationName = args['application'];
     SliderShell shell = slider(
@@ -837,11 +855,21 @@ abstract class CommandTestBase extends SliderTestUtils {
     return Outcome.fromBool(EXIT_SUCCESS == shell.execute())
   }
 
+  /**
+   * Probe for an application running; uses <code>exists</code> operation
+   * @param args argument map containing <code>"application"</code>
+   * @return
+   */
   protected Outcome isApplicationRunning(Map<String, String> args) {
     String applicationName = args['application'];
     return Outcome.fromBool(isApplicationUp(applicationName))
   }
 
+  /**
+   * Use <code>exists</code> operation to probe for an application being up
+   * @param applicationName app name
+   * @return true if it s running
+   */
   protected boolean isApplicationUp(String applicationName) {
     return isApplicationInState(
         applicationName,
@@ -850,7 +878,8 @@ abstract class CommandTestBase extends SliderTestUtils {
   }
 
   /**
-   * is an application in a desired yarn state 
+   * is an application in a desired yarn state. Uses the <code>exists</code>
+   * CLI operation
    * @param yarnState
    * @param applicationName
    * @return
@@ -863,6 +892,11 @@ abstract class CommandTestBase extends SliderTestUtils {
     return shell.ret == 0
   }
 
+  /**
+   * Probe callback for is the the app running or not
+   * @param args map where 'applicationId' must m
+   * @return
+   */
 
   protected Outcome isYarnApplicationRunning(Map<String, String> args) {
     String applicationId = args['applicationId'];
@@ -878,12 +912,25 @@ abstract class CommandTestBase extends SliderTestUtils {
    */
   public static Outcome isYarnApplicationRunning(
       String applicationId) {
-    YarnApplicationState appState = lookupYarnAppState(applicationId)
     YarnApplicationState yarnState = YarnApplicationState.RUNNING
+    return isYarnApplicationInState(applicationId, yarnState)
+  }
+
+  /**
+   * Probe for a YARN application being in a given state
+   * @param applicationId app id
+   * @param yarnStat desired state
+   * @return success for a match, retry if state below desired, and fail if
+   * above it
+   */
+  public static Outcome isYarnApplicationInState(
+      String applicationId,
+      YarnApplicationState yarnState) {
+    YarnApplicationState appState = lookupYarnAppState(applicationId)
     if (yarnState == appState) {
       return Outcome.Success;
     }
-    
+
     if (appState.ordinal() > yarnState.ordinal()) {
       // app has passed beyond hope
       return Outcome.Fail
@@ -891,6 +938,11 @@ abstract class CommandTestBase extends SliderTestUtils {
     return Outcome.Retry
   }
 
+  /**
+   * Look up the YARN application by ID, get its application record
+   * @param applicationId the application ID
+   * @return the application state
+   */
   public static YarnApplicationState lookupYarnAppState(String applicationId) {
     def sar = lookupApplication(applicationId)
     assert sar != null;
@@ -898,6 +950,11 @@ abstract class CommandTestBase extends SliderTestUtils {
     return appState
   }
 
+  /**
+   * Assert an application is in a given state; fail if not
+   * @param applicationId appId
+   * @param expectedState expected state
+   */
   public static void assertInYarnState(String applicationId,
       YarnApplicationState expectedState) {
     def applicationReport = lookupApplication(applicationId)
@@ -914,14 +971,14 @@ abstract class CommandTestBase extends SliderTestUtils {
     ensureYarnApplicationIsUp(id)
     return id;
   }
+ 
   /**
    * Wait for the YARN app to come up. This will fail fast
    * @param applicationId
    */
   protected void ensureYarnApplicationIsUp(String applicationId) {
     repeatUntilSuccess(this.&isYarnApplicationRunning,
-        SLIDER_CONFIG.getInt(KEY_TEST_INSTANCE_LAUNCH_TIME,
-            DEFAULT_INSTANCE_LAUNCH_TIME_SECONDS),
+        instanceLaunchTime,
         PROBE_SLEEP_TIME,
         [applicationId: applicationId],
         true,
@@ -933,6 +990,17 @@ abstract class CommandTestBase extends SliderTestUtils {
       log.error(message)
       fail(message)
     }
+  }
+
+  /**
+   * Get the expected launch time. Default is the configuration option
+   * {@link FuntestProperties#KEY_TEST_INSTANCE_LAUNCH_TIME} and
+   * default value {@link FuntestProperties#KEY_TEST_INSTANCE_LAUNCH_TIME}
+   * @return
+   */
+  public int getInstanceLaunchTime() {
+    return SLIDER_CONFIG.getInt(KEY_TEST_INSTANCE_LAUNCH_TIME,
+        DEFAULT_INSTANCE_LAUNCH_TIME_SECONDS)
   }
 
   public String getInfoAmWebUrl(String applicationName) {
