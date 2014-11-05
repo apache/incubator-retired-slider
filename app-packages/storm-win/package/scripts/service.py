@@ -20,9 +20,9 @@ limitations under the License.
 
 
 from resource_management import *
-import time
 import os
 import sys
+import xml.etree.ElementTree as et
 
 """
 Slider package uses jps as pgrep does not list the whole process start command
@@ -40,13 +40,31 @@ def service(
     os.environ['STORM_LOG_DIR'] = params.log_dir
     os.environ['STORM_HOME'] = params.app_root
     os.environ['STORM_CONF_DIR'] = params.conf_dir
-    cmd = format("{storm_bin} {name} > {log_dir}/{name}.out 2>&1")
 
-    Execute(cmd,
-            logoutput=False,
-            wait_for_finish=False,
-            pid_file = pid_file
+    generate_xml = format("{storm_bin} --service {name} > {log_dir}/{name}.cmd")
+
+    Execute(generate_xml,
+            logoutput=True,
+            wait_for_finish=True
     )
+
+    tree = et.parse(format("{log_dir}/{name}.cmd"))
+    root = tree.getroot()
+    cmd_part = None
+    for child in root:
+      if child.tag == "arguments":
+        cmd_part = child.text
+
+    if cmd_part:
+      cmd = format("{java64_home}\\bin\\java {cmd_part}")
+
+      Execute(cmd,
+              logoutput=False,
+              wait_for_finish=False,
+              pid_file=pid_file
+      )
+    else:
+      Logger.warn("Valid command file did not get generated at " + format("{log_dir}/{name}.cmd"))
 
   elif action == "stop":
     pid = format("`cat {pid_file}` >/dev/null 2>&1")

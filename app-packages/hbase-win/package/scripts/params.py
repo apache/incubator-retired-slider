@@ -42,11 +42,13 @@ input_conf_files_dir = config['configurations']['global']['app_input_conf_dir']
 hbase_hdfs_root_dir = config['configurations']['hbase-site']['hbase.rootdir']
 
 """
-Read various ports, unused as of now
+Read various ports
 """
-rest_port = config['configurations']['global']['hbase_rest_port']
-thrift_port = config['configurations']['global']['hbase_thrift_port']
-thrift2_port = config['configurations']['global']['hbase_thrift2_port']
+rest_port = default("configurations/global/hbase_rest_port", 1700)
+thrift_port = default("configurations/global/hbase_thrift_port", 9090)
+thrift2_port = default("configurations/global/hbase_thrift2_port", 9091)
+thrift_info_port = default("configurations/global/hbase_info_thrift_port", 9095)
+thrift2_info_port = default("configurations/global/hbase_info_thrift2_port", 9096)
 
 """
 Compute or read various heap sizes
