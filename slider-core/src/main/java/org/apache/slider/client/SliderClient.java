@@ -1175,6 +1175,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     Map<String, LocalResource> localResources = amLauncher.getLocalResources();
     
     // look for the configuration directory named on the command line
+    boolean hasServerLog4jProperties = false;
     Path remoteConfPath = null;
     String relativeConfDir = null;
     String confdirProp =
@@ -1192,6 +1193,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       log.debug("Slider configuration directory is {}; remote to be {}",
     		  localConfDirPath, remoteConfPath);
       SliderUtils.copyDirectory(config, localConfDirPath, remoteConfPath, null);
+
+      File log4jserver =
+          new File(confDir, SliderKeys.LOG4J_SERVER_PROP_FILENAME);
+      hasServerLog4jProperties = log4jserver.isFile();
     }
     // the assumption here is that minimr cluster => this is a test run
     // and the classpath can look after itself
@@ -1319,6 +1324,12 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     sliderAM.addJVMOptions(instanceDefinition, commandLine);
     // enable asserts if the text option is set
     commandLine.enableJavaAssertions();
+    
+    // if the conf dir has a log4j-server.properties, switch to that
+    if (hasServerLog4jProperties) {
+      commandLine.sysprop(SYSPROP_LOG4_CONFIGURATION, LOG4J_SERVER_PROP_FILENAME);
+    }
+    
     // add the AM sevice entry point
     commandLine.add(SliderAppMaster.SERVICE_CLASSNAME);
 
