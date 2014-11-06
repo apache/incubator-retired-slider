@@ -415,7 +415,9 @@ public final class SliderUtils {
       new SliderFileSystem(destFS, conf).createWithPermissions(destDirPath,
           permission);
     }
-    Path[] sourcePaths = new Path[srcFileCount];
+    // Slider AM now has its own log4j-server.properties file
+    List<Path> sourcePaths = new ArrayList<Path>();
+    Path serverLog4jPath = null;
     for (int i = 0; i < srcFileCount; i++) {
       FileStatus e = entries[i];
       Path srcFile = e.getPath();
@@ -425,13 +427,32 @@ public final class SliderUtils {
         log.warn(msg);
         throw new IOException(msg);
       }
+      if (SliderKeys.LOG4J_SERVER_PROP_FILENAME.equals(srcFile.getName())) {
+        // log4j-server.properties will be copied as log4j.properties
+        serverLog4jPath = srcFile;
+        log.debug("copying src conf file {} as {}", srcFile,
+            SliderKeys.LOG4J_PROP_FILENAME);
+        continue;
+      }
+      if (SliderKeys.LOG4J_PROP_FILENAME.equals(srcFile.getName())) {
+        // ignore log4j.properties entirely for Slider AM
+        log.debug("ignoring file {}", srcFile);
+        continue;
+      }
       log.debug("copying src conf file {}", srcFile);
-      sourcePaths[i] = srcFile;
+      sourcePaths.add(srcFile);
     }
-    log.debug("Copying {} files from {} to dest {}", srcFileCount,
+    log.debug("Copying {} files from {} to dest {}", 
+        sourcePaths.size() + (serverLog4jPath != null ? 1 : 0),
         srcDirPath,
         destDirPath);
-    FileUtil.copy(srcFS, sourcePaths, destFS, destDirPath, false, true, conf);
+    FileUtil.copy(srcFS, sourcePaths.toArray(new Path[0]), destFS, destDirPath,
+        false, true, conf);
+    // Now copy log4j-server.properties (if exists) to dest as log4j.properties
+    if (serverLog4jPath != null) {
+      FileUtil.copy(srcFS, serverLog4jPath, destFS, new Path(destDirPath,
+          SliderKeys.LOG4J_PROP_FILENAME), false, true, conf);
+    }
     return srcFileCount;
   }
 
