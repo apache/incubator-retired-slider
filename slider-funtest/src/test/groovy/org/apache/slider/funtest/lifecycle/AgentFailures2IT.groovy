@@ -50,7 +50,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     assumeAgentTestsEnabled()
     
     cleanup(APPLICATION_NAME)
-    File launchReportFile = createAppReportFile();
+    File launchReportFile = createTempJsonFile();
 
     SliderShell shell = createTemplatedSliderApplication(
         APPLICATION_NAME, APP_TEMPLATE3, APP_RESOURCE,

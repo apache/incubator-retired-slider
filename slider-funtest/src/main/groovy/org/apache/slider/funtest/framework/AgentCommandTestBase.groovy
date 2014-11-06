@@ -67,7 +67,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     AGENTTESTS_LABELS_RED_BLUE_DEFINED =
         SLIDER_CONFIG.getBoolean(KEY_AGENTTESTS_LABELS_RED_BLUE_DEFINED, false)
     AGENTTESTS_AM_FAILURES_ENABLED = 
-        SLIDER_CONFIG.getBoolean(KEY_AGENTTESTS_AM_FAILURES_ENABLED, false)
+        SLIDER_CONFIG.getBoolean(KEY_AGENTTESTS_AM_FAILURES_ENABLED,
+            AGENTTESTS_ENABLED)
   }
 
   protected String getAppResource() {

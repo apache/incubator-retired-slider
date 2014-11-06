@@ -60,7 +60,7 @@ public class AgentLaunchFailureIT extends AgentCommandTestBase
     assert 0 != exists(CLUSTER).ret
  
     // create an AM which fails to launch
-    File launchReportFile = createAppReportFile();
+    File launchReportFile = createTempJsonFile();
     createTemplatedSliderApplication(CLUSTER,
         APP_TEMPLATE,
         APP_RESOURCE2,

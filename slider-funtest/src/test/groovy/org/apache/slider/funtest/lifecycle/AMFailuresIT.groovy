@@ -43,7 +43,7 @@ public class AMFailuresIT extends AgentCommandTestBase
 implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   private static String COMMAND_LOGGER = "COMMAND_LOGGER"
-  private static String APPLICATION_NAME = "am-started-agents-started"
+  private static String APPLICATION_NAME = "am-failures-it"
   public static final String TEST_REMOTE_SSH_KEY = "test.remote.ssh.key"
   public static final String VAGRANT_CWD = "vagrant.current.working.dir"
   File sshkey
@@ -61,7 +61,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
   @Test
   public void testAMKilledWithStateAMStartedAgentsStarted() throws Throwable {
     cleanup(APPLICATION_NAME)
-    File launchReportFile = createAppReportFile();
+    File launchReportFile = createTempJsonFile();
 
     SliderShell shell = createTemplatedSliderApplication(
         APPLICATION_NAME, APP_TEMPLATE, APP_RESOURCE,
@@ -72,9 +72,6 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     def appId = ensureYarnApplicationIsUp(launchReportFile)
     expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 1,
         CONTAINER_LAUNCH_TIMEOUT)
-    
-    // Wait for 20 secs for AM and agent to both reach STARTED state
-    sleep(1000 * 20)
 
     def cd = assertContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 1)
     def loggerInstances = cd.instances[COMMAND_LOGGER]
@@ -82,51 +79,28 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     def loggerStats = cd.statistics[COMMAND_LOGGER]
 
-    def origRequested = loggerStats["containers.requested"]
-    assert origRequested >= 2
+    assert loggerStats["containers.requested"] == 1
     assert loggerStats["containers.live"] == 1
-
-    assert isApplicationUp(APPLICATION_NAME), 'App is not running.'
-    assertSuccess(shell)
 
     // Now kill the AM
     log.info("Killing AM now ...")
-//    killAMUsingJsch()
-//    killAMUsingAmSuicide()
-    killAMUsingVagrantShell()
-
-    // Check that the application is not running (and is in ACCEPTED state)
-    assert lookupYarnAppState(appId) == YarnApplicationState.ACCEPTED ,
-      'App should be in ACCEPTED state (since AM got killed)'
-    log.info("After AM KILL: application {} is in ACCEPTED state", APPLICATION_NAME)
-
-    // Wait until AM comes back up and verify container count again
-    ensureYarnApplicationIsUp(appId)
+    killAmAndWaitForRestart(APPLICATION_NAME, appId)
 
     // There should be exactly 1 live logger container
     def cd2 = assertContainersLive(APPLICATION_NAME, COMMAND_LOGGER, 1)
 
     // No new containers should be requested for the agents
-    def loggerStats2 = cd2.statistics[COMMAND_LOGGER]
-    assert origRequested == loggerStats2["containers.requested"],
+    def restartedStats = cd2.statistics[COMMAND_LOGGER]
+    assert restartedStats["containers.live"] == 1
+
+    assert 0==restartedStats["containers.requested"],
         'No new agent containers should be requested'
     assert lookupYarnAppState(appId) == YarnApplicationState.RUNNING 
   }
 
-
-  protected void killAMUsingAmSuicide() {
-    SliderShell shell = slider(EXIT_SUCCESS,
-      [
-          ACTION_AM_SUICIDE,
-          ARG_MESSAGE, "testAMRestart",
-          APPLICATION_NAME])
-    logShell(shell)
-    assertSuccess(shell)
-  }
-
   protected void killAMUsingVagrantShell() {
     String hostname = SLIDER_CONFIG.get(YarnConfiguration.RM_ADDRESS).split(":")[0]
-    assert hostname != null && !hostname.isEmpty()
+    assert hostname
     String vagrantVmName = hostname.split("\\.")[0]
 
     String vagrantCwd = sysprop(VAGRANT_CWD)
@@ -146,8 +120,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
   protected void killAMUsingJsch() {
     String hostname = SLIDER_CONFIG.get(YarnConfiguration.RM_ADDRESS).split(":")[0]
     String user = UserGroupInformation.currentUser
-    assert hostname != null && !hostname.isEmpty()
-    assert user != null && !user.isEmpty()
+    assert hostname
+    assert user
 
     bindSSHKey()
     RemoteServer remoteServer = new RemoteServer(
