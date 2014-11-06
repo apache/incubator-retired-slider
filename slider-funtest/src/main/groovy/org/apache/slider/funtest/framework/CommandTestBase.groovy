@@ -1187,4 +1187,74 @@ abstract class CommandTestBase extends SliderTestUtils {
       assertContainersLive(application, component, expected)
     }
   }
+
+  /**
+   * Spin for <code>REGISTRY_STARTUP_TIMEOUT</code> waiting
+   * for the output of the registry command to contain the specified
+   * values
+   * @param outfile file to save the output to
+   * @param commands commands to execute
+   * @param match text to match on
+   */
+  public void awaitRegistryOutfileContains(
+      File outfile,
+      List<String> commands,
+      String match) {
+    def errorText = "failed to find $match in output. Check your hadoop versions and the agent logs"
+    repeatUntilSuccess("registry",
+        this.&generatedFileContains,
+        REGISTRY_STARTUP_TIMEOUT,
+        PROBE_SLEEP_TIME,
+        [
+            text    : match,
+            filename: outfile.absolutePath,
+            command : commands
+        ],
+        true,
+        errorText) {
+      slider(0, commands).dumpOutput()
+      if (!outfile.length()) {
+        log.warn("No exported entries.\n" +
+                 "Is your application using a consistent version of Hadoop? ")
+      }
+      fail(errorText + "\n" + outfile.text)
+    }
+  }
+  /**
+   * Is the registry accessible for an application?
+   * @param args argument map containing <code>"application"</code>
+   * @return probe outcome
+   */
+  protected Outcome commandOutputContains(Map args) {
+    String text = args['text'];
+    List<String> command = (List < String >)args['command']
+    SliderShell shell = slider(0, command)
+    return Outcome.fromBool(shell.outputContains(text))
+  }
+  /**
+   * Is the registry accessible for an application?
+   * @param args argument map containing <code>"application"</code>
+   * @return probe outcome
+   */
+  protected Outcome commandSucceeds(Map args) {
+    List<String> command = (List<String>) args['command']
+    SliderShell shell = slider(command)
+    return Outcome.fromBool(shell.ret == 0)
+  }
+  /**
+   * Is the registry accessible for an application?
+   * @param args argument map
+   * @return probe outcome
+   */
+  protected Outcome generatedFileContains(Map args) {
+    List<String> command = (List<String>) args['command']
+    String text = args['text'];
+    String filename = args['filename'];
+    File f = new File(filename)
+    f.delete()
+    SliderShell shell = slider(0, command)
+    shell.dumpOutput()
+    assert f.exists()
+    return Outcome.fromBool(f.text.contains(text))
+  }
 }

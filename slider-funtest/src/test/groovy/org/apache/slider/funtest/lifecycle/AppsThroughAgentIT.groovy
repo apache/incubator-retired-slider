@@ -26,7 +26,6 @@ import org.apache.slider.common.params.SliderActions
 import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
-import org.apache.slider.test.Outcome
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -90,9 +89,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     log.info(amWebUrl.toURL().text);
 
     ensureRegistryCallSucceeds(application)
-    def outfile = tmpFile(".txt")
-
     assertAppRunning(appId)
+    def outfile = tmpFile(".txt")
 
     def commands = [
         ACTION_REGISTRY,
@@ -105,15 +103,6 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     awaitRegistryOutfileContains(outfile, commands, "container_log_dirs")
     awaitRegistryOutfileContains(outfile, commands, "container_work_dirs")
-    // get log folders
-    shell = slider(EXIT_SUCCESS,
-        [
-            ACTION_REGISTRY,
-            ARG_NAME,
-            application,
-            ARG_LISTEXP])
-    assertOutputContains(shell, "container_log_dirs")
-    assertOutputContains(shell, "container_work_dirs")
 
     // get log folders
     shell = slider(EXIT_SUCCESS,
@@ -125,7 +114,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
             "container_log_dirs"])
 
     assertOutputContains(shell, '"tag" : "COMMAND_LOGGER"', 2)
-    assertOutputContains(shell, '"level" : "level"', 2)
+    assertOutputContains(shell, '"level" : "component"', 2)
 
     // get cl-site config
 
@@ -155,66 +144,6 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     }
 
     assertAppRunning(appId)
-  }
-
-  public awaitRegistryOutfileContains(
-      File outfile,
-      List<String> commands,
-      String match) {
-    repeatUntilSuccess("registry",
-        this.&generatedFileContains,
-        REGISTRY_STARTUP_TIMEOUT * 2,
-        PROBE_SLEEP_TIME,
-        [
-            text    : match,
-            filename: outfile.absolutePath,
-            command : commands
-        ],
-        true,
-        "failed to find $match in output") {
-      slider(0, commands).dumpOutput()
-      fail("no $match in \n$outfile.text")
-    }
-  }
-
-  /**
-   * Is the registry accessible for an application?
-   * @param args argument map containing <code>"application"</code>
-   * @return probe outcome
-   */
-  protected Outcome commandOutputContains(Map args) {
-    String text = args['text'];
-    List<String> command = (List < String >)args['command']
-    SliderShell shell = slider(0, command)
-    return Outcome.fromBool(shell.outputContains(text))
-  }
-
-  /**
-   * Is the registry accessible for an application?
-   * @param args argument map containing <code>"application"</code>
-   * @return probe outcome
-   */
-  protected Outcome commandSucceeds(Map args) {
-    List<String> command = (List<String>) args['command']
-    SliderShell shell = slider(command)
-    return Outcome.fromBool(shell.ret == 0)
-  }
-
-  /**
-   * Is the registry accessible for an application?
-   * @param args argument map
-   * @return probe outcome
-   */
-  protected Outcome generatedFileContains(Map args) {
-    List<String> command = (List<String>) args['command']
-    String text = args['text'];
-    String filename = args['filename'];
-    File f = new File(filename)
-    f.delete()
-    SliderShell shell = slider(0, command)
-    shell.dumpOutput()
-    assert f.exists()
-    return Outcome.fromBool(f.text.contains(text))
   }
 
 }
