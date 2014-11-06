@@ -1188,9 +1188,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
                                      confDir);
       }
       Path localConfDirPath = SliderUtils.createLocalPath(confDir);
-      log.debug("Slide configuration directory is {}; remote to be {}",
-          localConfDirPath, SliderKeys.SUBMITTED_CONF_DIR);
       remoteConfPath = new Path(clusterDirectory, SliderKeys.SUBMITTED_CONF_DIR);
+      log.debug("Slider configuration directory is {}; remote to be {}",
+    		  localConfDirPath, remoteConfPath);
       SliderUtils.copyDirectory(config, localConfDirPath, remoteConfPath, null);
     }
     // the assumption here is that minimr cluster => this is a test run
