@@ -41,7 +41,7 @@ public interface SliderXMLConfKeysForTesting {
 
   String KEY_TEST_TIMEOUT = "slider.test.timeout.seconds";
 
-  int DEFAULT_TEST_TIMEOUT_SECONDS = 10 * 60;
+  int DEFAULT_TEST_TIMEOUT_SECONDS = 30 * 60;
 
   String KEY_TEST_HBASE_LAUNCH_TIME = "slider.test.hbase.launch.wait.seconds";
 
