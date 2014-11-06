@@ -69,6 +69,7 @@
       <component>
         <name>NIMBUS</name>
         <category>MASTER</category>
+        <publishConfig>true</publishConfig>
         <autoStartOnFailure>true</autoStartOnFailure>
         <appExports>QuickLinks-nimbus.host_port</appExports>
         <commandScript>

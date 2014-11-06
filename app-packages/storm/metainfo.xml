@@ -76,6 +76,7 @@
       <component>
         <name>NIMBUS</name>
         <category>MASTER</category>
+        <publishConfig>true</publishConfig>
         <autoStartOnFailure>true</autoStartOnFailure>
         <appExports>QuickLinks-nimbus.host_port,QuickLinks-org.apache.slider.metrics.ui,QuickLinks-org.apache.slider.metrics</appExports>
         <maxInstanceCount>1</maxInstanceCount>
