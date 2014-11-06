@@ -118,7 +118,7 @@
   </property>
   <property>
     <name>nimbus.childopts</name>
-    <value>-Xmx1024m -Djava.security.auth.login.config=/etc/storm/conf/storm_jaas.conf -javaagent:/usr/lib/storm/contrib/storm-jmxetric/lib/jmxetric-1.0.4.jar=host=localhost,port=8649,wireformat31x=true,mode=multicast,config=/usr/lib/storm/contrib/storm-jmxetric/conf/jmxetric-conf.xml,process=Nimbus_JVM</value>
+    <value>-Xmx1024m</value>
     <description>This parameter is used by the storm-deploy project to configure the jvm options for the nimbus daemon.</description>
   </property>
   <property>
@@ -292,7 +292,7 @@
   </property>
   <property>
     <name>worker.childopts</name>
-    <value>-Xmx768m -javaagent:/usr/lib/storm/contrib/storm-jmxetric/lib/jmxetric-1.0.4.jar=host=localhost,port=8650,wireformat31x=true,mode=multicast,config=/usr/lib/storm/contrib/storm-jmxetric/conf/jmxetric-conf.xml,process=Worker_%ID%_JVM</value>
+    <value>-Xmx768m</value>
     <description>The jvm opts provided to workers launched by this supervisor. All \"%ID%\" substrings are replaced with an identifier for this worker.</description>
   </property>
   <property>
