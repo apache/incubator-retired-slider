@@ -511,7 +511,7 @@ abstract class CommandTestBase extends SliderTestUtils {
     if (!shell.outputContains(lookThisUp)) {
       log.error("Missing $lookThisUp from:")
       shell.dumpOutput()
-      assert shell.outputContains(lookThisUp)
+      fail("Missing $lookThisUp from:\n$shell.out\n$shell.err" )
     }
   }
   
@@ -629,7 +629,7 @@ abstract class CommandTestBase extends SliderTestUtils {
       File launchReportFile = null) {
 
     if (!launchReportFile) {
-      launchReportFile = createAppReportFile()
+      launchReportFile = createTempJsonFile()
     }
     // delete any previous copy of the file
     launchReportFile.delete();
@@ -678,10 +678,19 @@ abstract class CommandTestBase extends SliderTestUtils {
     return shell
   }
 
-  public static  File createAppReportFile() {
+  /**
+   * Create a temp JSON file. After coming up with the name, the file
+   * is deleted
+   * @return the filename
+   */
+  public static  File createTempJsonFile() {
+    return tmpFile(".json")
+  }
+
+  public static File tmpFile(String suffix) {
     File reportFile = File.createTempFile(
         "launch",
-        ".json",
+        suffix,
         new File("target"))
     reportFile.delete()
     return reportFile
@@ -737,7 +746,7 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @return an application report or null
    */
   public static SerializedApplicationReport lookupApplication(String id) {
-    File reportFile = createAppReportFile();
+    File reportFile = createTempJsonFile();
     try {
       def shell = lookup(id, reportFile)
       if (shell.ret == 0) {
@@ -775,24 +784,39 @@ abstract class CommandTestBase extends SliderTestUtils {
     ensureApplicationIsUp(cluster)
     return sliderClient.clusterDescription
   }
-  public ClusterDescription killAmAndWaitForRestart(
-      SliderClient sliderClient, String cluster, String appId) {
 
-    assert cluster
+  /**
+   * Kill an AM and await restrt
+   * @param sliderClient
+   * @param application
+   * @param appId
+   * @return
+   */
+  public void killAmAndWaitForRestart(String application, String appId) {
+
+    assert application
     slider(0, [
-        ACTION_AM_SUICIDE, cluster,
+        ACTION_AM_SUICIDE, application,
         ARG_EXITCODE, "1",
-        ARG_WAIT, "1000",
+        ARG_WAIT, "500",
         ARG_MESSAGE, "suicide"
     ])
 
-    sleep(5000)
+    // app gets accepted
+    log.info "awaiting app to enter ACCEPTED state"
+    awaitYarnApplicationAccepted(appId)
+    // app goes live
+    log.info "awaiting app to enter RUNNING state"
     ensureYarnApplicationIsUp(appId)
-    return sliderClient.clusterDescription
   }
 
+  /**
+   * Spinning operation to perform a registry call
+   * @param application application
+   */
   protected void ensureRegistryCallSucceeds(String application) {
-    repeatUntilSuccess(this.&isRegistryAccessible,
+    repeatUntilSuccess("registry",
+        this.&isRegistryAccessible,
         REGISTRY_STARTUP_TIMEOUT,
         PROBE_SLEEP_TIME,
         [application: application],
@@ -808,11 +832,14 @@ abstract class CommandTestBase extends SliderTestUtils {
     }
   }
 
-   
+  /**
+   * wait for an application to come up
+   * @param application
+   */
   protected void ensureApplicationIsUp(String application) {
-    repeatUntilSuccess(this.&isApplicationRunning,
-        SLIDER_CONFIG.getInt(KEY_TEST_INSTANCE_LAUNCH_TIME,
-            DEFAULT_INSTANCE_LAUNCH_TIME_SECONDS) * 1000,
+    repeatUntilSuccess("await application up",
+        this.&isApplicationRunning,
+        instanceLaunchTime,
         PROBE_SLEEP_TIME,
         [application: application],
         true,
@@ -822,6 +849,11 @@ abstract class CommandTestBase extends SliderTestUtils {
     }
   }
 
+  /**
+   * Is the registry accessible for an application?
+   * @param args argument map containing <code>"application"</code>
+   * @return probe outcome
+   */
   protected Outcome isRegistryAccessible(Map<String, String> args) {
     String applicationName = args['application'];
     SliderShell shell = slider(
@@ -837,11 +869,21 @@ abstract class CommandTestBase extends SliderTestUtils {
     return Outcome.fromBool(EXIT_SUCCESS == shell.execute())
   }
 
+  /**
+   * Probe for an application running; uses <code>exists</code> operation
+   * @param args argument map containing <code>"application"</code>
+   * @return
+   */
   protected Outcome isApplicationRunning(Map<String, String> args) {
     String applicationName = args['application'];
     return Outcome.fromBool(isApplicationUp(applicationName))
   }
 
+  /**
+   * Use <code>exists</code> operation to probe for an application being up
+   * @param applicationName app name
+   * @return true if it s running
+   */
   protected boolean isApplicationUp(String applicationName) {
     return isApplicationInState(
         applicationName,
@@ -850,7 +892,8 @@ abstract class CommandTestBase extends SliderTestUtils {
   }
 
   /**
-   * is an application in a desired yarn state 
+   * is an application in a desired yarn state. Uses the <code>exists</code>
+   * CLI operation
    * @param yarnState
    * @param applicationName
    * @return
@@ -863,10 +906,28 @@ abstract class CommandTestBase extends SliderTestUtils {
     return shell.ret == 0
   }
 
+  /**
+   * Probe callback for is the the app running or not
+   * @param args map where 'applicationId' must m
+   * @return
+   */
 
-  protected Outcome isYarnApplicationRunning(Map<String, String> args) {
+  protected static Outcome isYarnApplicationRunning(Map<String, String> args) {
     String applicationId = args['applicationId'];
-    return isYarnApplicationRunning(applicationId)
+    return isYarnApplicationInState(applicationId,
+        YarnApplicationState.RUNNING, true)
+  }
+
+  /**
+   * Probe callback for is the the app running or not
+   * @param args map where 'applicationId' must m
+   * @return
+   */
+  protected static Outcome isYarnApplicationInExactState(Map<String, String> args) {
+    String applicationId = args['applicationId'];
+    String state = args['state']
+    def desired = YarnApplicationState.valueOf(state)
+    return isYarnApplicationInState(applicationId, desired, false)
   }
 
   /**
@@ -878,19 +939,37 @@ abstract class CommandTestBase extends SliderTestUtils {
    */
   public static Outcome isYarnApplicationRunning(
       String applicationId) {
+    return isYarnApplicationInState(applicationId,
+        YarnApplicationState.RUNNING, true)
+  }
+
+  /**
+   * Probe for a YARN application being in a given state
+   * @param applicationId app id
+   * @param yarnStat desired state
+   * @return success for a match, retry if state below desired, and fail if
+   * above it
+   */
+  public static Outcome isYarnApplicationInState(
+      String applicationId, YarnApplicationState yarnState, boolean failfast) {
     YarnApplicationState appState = lookupYarnAppState(applicationId)
-    YarnApplicationState yarnState = YarnApplicationState.RUNNING
     if (yarnState == appState) {
       return Outcome.Success;
     }
-    
-    if (appState.ordinal() > yarnState.ordinal()) {
+
+    if (failfast && appState.ordinal() > yarnState.ordinal()) {
+      log.debug("App state $appState past desired state $yarnState: failing")
       // app has passed beyond hope
       return Outcome.Fail
     }
     return Outcome.Retry
   }
 
+  /**
+   * Look up the YARN application by ID, get its application record
+   * @param applicationId the application ID
+   * @return the application state
+   */
   public static YarnApplicationState lookupYarnAppState(String applicationId) {
     def sar = lookupApplication(applicationId)
     assert sar != null;
@@ -898,6 +977,11 @@ abstract class CommandTestBase extends SliderTestUtils {
     return appState
   }
 
+  /**
+   * Assert an application is in a given state; fail if not
+   * @param applicationId appId
+   * @param expectedState expected state
+   */
   public static void assertInYarnState(String applicationId,
       YarnApplicationState expectedState) {
     def applicationReport = lookupApplication(applicationId)
@@ -914,25 +998,58 @@ abstract class CommandTestBase extends SliderTestUtils {
     ensureYarnApplicationIsUp(id)
     return id;
   }
+ 
   /**
    * Wait for the YARN app to come up. This will fail fast
    * @param applicationId
    */
   protected void ensureYarnApplicationIsUp(String applicationId) {
-    repeatUntilSuccess(this.&isYarnApplicationRunning,
-        SLIDER_CONFIG.getInt(KEY_TEST_INSTANCE_LAUNCH_TIME,
-            DEFAULT_INSTANCE_LAUNCH_TIME_SECONDS),
+    repeatUntilSuccess("await yarn application Running",
+        this.&isYarnApplicationRunning,
+        instanceLaunchTime,
         PROBE_SLEEP_TIME,
         [applicationId: applicationId],
         true,
         E_LAUNCH_FAIL) {
-      describe "final state of app that tests say is not up"
+      describe "final state of application"
       def sar = lookupApplication(applicationId)
 
       def message = E_LAUNCH_FAIL + "\n$sar"
       log.error(message)
       fail(message)
     }
+  }
+
+  /**
+   * Wait for the YARN app to come up. This will fail fast
+   * @param applicationId
+   */
+  protected void awaitYarnApplicationAccepted(String applicationId) {
+    repeatUntilSuccess("Await Yarn App Accepted",
+        this.&isYarnApplicationInExactState,
+        instanceLaunchTime,
+        1000,
+        [applicationId: applicationId,
+         state: YarnApplicationState.ACCEPTED.toString()],
+        true,
+        "application never reached accepted state") {
+      describe "app did not enter accepted"
+      def sar = lookupApplication(applicationId)
+
+      def message = 'Application did not enter ACCEPTED state' + "\n$sar"
+      log.error(message)
+      fail(message)
+    }
+  }
+  /**
+   * Get the expected launch time. Default is the configuration option
+   * {@link FuntestProperties#KEY_TEST_INSTANCE_LAUNCH_TIME} and
+   * default value {@link FuntestProperties#KEY_TEST_INSTANCE_LAUNCH_TIME}
+   * @return
+   */
+  public int getInstanceLaunchTime() {
+    return SLIDER_CONFIG.getInt(KEY_TEST_INSTANCE_LAUNCH_TIME,
+        DEFAULT_INSTANCE_LAUNCH_TIME_SECONDS) * 1000;
   }
 
   public String getInfoAmWebUrl(String applicationName) {
@@ -977,6 +1094,11 @@ abstract class CommandTestBase extends SliderTestUtils {
     return requested
   }
 
+  /**
+   * Probe: has the requested container count of a specific role been reached?
+   * @param args map with: "application", "role", "limit"
+   * @return success on a match, retry if not
+   */
   Outcome hasRequestedContainerCountReached(Map<String, String> args) {
     String application = args['application']
     String role = args['role']
@@ -991,6 +1113,7 @@ abstract class CommandTestBase extends SliderTestUtils {
       int container_launch_timeout) {
 
     repeatUntilSuccess(
+        "await container count",
         this.&hasRequestedContainerCountReached,
         container_launch_timeout,
         PROBE_SLEEP_TIME,
@@ -1051,6 +1174,7 @@ abstract class CommandTestBase extends SliderTestUtils {
       int container_launch_timeout) {
 
     repeatUntilSuccess(
+        "await live container count",
         this.&hasLiveContainerCountReached,
         container_launch_timeout,
         PROBE_SLEEP_TIME,
@@ -1062,5 +1186,75 @@ abstract class CommandTestBase extends SliderTestUtils {
       describe "container count not reached"
       assertContainersLive(application, component, expected)
     }
+  }
+
+  /**
+   * Spin for <code>REGISTRY_STARTUP_TIMEOUT</code> waiting
+   * for the output of the registry command to contain the specified
+   * values
+   * @param outfile file to save the output to
+   * @param commands commands to execute
+   * @param match text to match on
+   */
+  public void awaitRegistryOutfileContains(
+      File outfile,
+      List<String> commands,
+      String match) {
+    def errorText = "failed to find $match in output. Check your hadoop versions and the agent logs"
+    repeatUntilSuccess("registry",
+        this.&generatedFileContains,
+        REGISTRY_STARTUP_TIMEOUT,
+        PROBE_SLEEP_TIME,
+        [
+            text    : match,
+            filename: outfile.absolutePath,
+            command : commands
+        ],
+        true,
+        errorText) {
+      slider(0, commands).dumpOutput()
+      if (!outfile.length()) {
+        log.warn("No exported entries.\n" +
+                 "Is your application using a consistent version of Hadoop? ")
+      }
+      fail(errorText + "\n" + outfile.text)
+    }
+  }
+  /**
+   * Is the registry accessible for an application?
+   * @param args argument map containing <code>"application"</code>
+   * @return probe outcome
+   */
+  protected Outcome commandOutputContains(Map args) {
+    String text = args['text'];
+    List<String> command = (List < String >)args['command']
+    SliderShell shell = slider(0, command)
+    return Outcome.fromBool(shell.outputContains(text))
+  }
+  /**
+   * Is the registry accessible for an application?
+   * @param args argument map containing <code>"application"</code>
+   * @return probe outcome
+   */
+  protected Outcome commandSucceeds(Map args) {
+    List<String> command = (List<String>) args['command']
+    SliderShell shell = slider(command)
+    return Outcome.fromBool(shell.ret == 0)
+  }
+  /**
+   * Is the registry accessible for an application?
+   * @param args argument map
+   * @return probe outcome
+   */
+  protected Outcome generatedFileContains(Map args) {
+    List<String> command = (List<String>) args['command']
+    String text = args['text'];
+    String filename = args['filename'];
+    File f = new File(filename)
+    f.delete()
+    SliderShell shell = slider(0, command)
+    shell.dumpOutput()
+    assert f.exists()
+    return Outcome.fromBool(f.text.contains(text))
   }
 }

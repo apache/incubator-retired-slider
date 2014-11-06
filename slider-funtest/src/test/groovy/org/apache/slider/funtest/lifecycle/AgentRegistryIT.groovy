@@ -24,13 +24,10 @@ import org.apache.hadoop.registry.client.binding.RegistryUtils
 import org.apache.hadoop.registry.client.types.Endpoint
 import org.apache.hadoop.registry.client.types.ServiceRecord
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
-import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.SliderKeys
-import org.apache.slider.common.params.ActionResolveArgs
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
-import org.apache.slider.core.exceptions.NotFoundException
 import org.apache.slider.test.Outcome
 
 import static org.apache.slider.core.registry.info.CustomRegistryConstants.*
@@ -66,7 +63,7 @@ public class AgentRegistryIT extends AgentCommandTestBase
   public void testAgentRegistry() throws Throwable {
     describe("Create a 0-role cluster and make registry queries against it")
     def clusterpath = buildClusterPath(CLUSTER)
-    File launchReportFile = createAppReportFile();
+    File launchReportFile = createTempJsonFile();
     SliderShell shell = createTemplatedSliderApplication(CLUSTER,
         APP_TEMPLATE,
         APP_RESOURCE2,
@@ -143,7 +140,8 @@ public class AgentRegistryIT extends AgentCommandTestBase
     exists(EXIT_UNKNOWN_INSTANCE, CLUSTER)
 
 
-    repeatUntilSuccess(this.&probeForEntryMissing, 10000, 1000,
+    repeatUntilSuccess("probe for missing registry entry",
+        this.&probeForEntryMissing, 10000, 1000,
         [path: appPath],
         true,
         "registry entry never deleted") {
