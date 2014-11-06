@@ -133,6 +133,16 @@ public interface SliderKeys extends SliderXmlConfKeys {
   String SUBMITTED_CONF_DIR = "confdir";
 
   /**
+   * Slider AM log4j file name 
+   */
+  String LOG4J_SERVER_PROP_FILENAME = "log4j-server.properties";
+
+  /**
+   * Standard log4j file name 
+   */
+  String LOG4J_PROP_FILENAME = "log4j.properties";
+
+  /**
    * name of the Slider client resource
    * loaded when the service is loaded.
    */
