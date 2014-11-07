@@ -19,7 +19,16 @@ How to create a Slider app package for Memcached?
 
 To create the app package you will need the Memcached tarball copied to a specific location.
 
-Replace the placeholder tarball for JMemcached.
+Replace the placeholder tarball for JMemcached. The tarball must have all the jar files at the
+root directory.
+Example:
+  tar -tvf jmemcached-1.0.0.tar
+  -rw-r--r--  ./jmemcached-cli-1.0.0.jar
+  -rwxr-xr-x  ./jmemcached-core-1.0.0.jar
+
+If not modify, appConfig.json to have correct application install root.
+  "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/my_sub_root_for_jars",
+
   cp ~/Downloads/jmemcached-1.0.0.tar package/files/
   rm package/files/jmemcached-1.0.0.tar.REPLACE
 

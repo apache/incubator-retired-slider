@@ -62,9 +62,11 @@ def _merge_env(env1, env2, merge_keys=['PYTHONPATH']):
     result_env[str(key)] = str(os.pathsep.join(set(all_values)))
   return result_env
 
+
 # Execute command. As windows stack heavily relies on proper environment it is better to reload fresh environment
 # on every execution. env variable will me merged with fresh environment for user.
-def _call_command(command, logoutput=False, cwd=None, env=None, wait_for_finish=True, timeout=None, user=None, pid_file_name=None):
+def _call_command(command, logoutput=False, cwd=None, env=None, wait_for_finish=True, timeout=None, user=None,
+                  pid_file_name=None, poll_after=None):
   # TODO implement user
   Logger.info("Executing %s" % (command))
   proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -73,26 +75,41 @@ def _call_command(command, logoutput=False, cwd=None, env=None, wait_for_finish=
   if not wait_for_finish:
     Logger.debug("No need to wait for the process to exit. Will leave the process running ...")
     code = 0
+    logAnyway = False
     if pid_file_name:
       Logger.debug("Writing the process id %s to file %s" % (str(proc.pid), pid_file_name))
       pidfile = open(pid_file_name, 'w')
       pidfile.write(str(proc.pid))
       pidfile.close()
       Logger.info("Wrote the process id to file %s" % pid_file_name)
-    return code, None, None
+
+      ## wait poll_after seconds and poll
+    if poll_after:
+      time.sleep(poll_after)
+      if proc.poll() is None:
+        return code, None, None  # if still running then return
+      else:
+        logAnyway = True  # assume failure and log
+        Logger.warning("Process is not up after the polling interval " + str(poll_after) + " seconds.")
+    else:
+      return code, None, None
 
   if timeout:
     q = Queue()
-    t = threading.Timer( timeout, on_timeout, [proc, q] )
+    t = threading.Timer(timeout, on_timeout, [proc, q])
     t.start()
 
   out, err = proc.communicate()
   code = proc.returncode
 
-  if logoutput and out:
-    Logger.info(out)
-  if logoutput and err:
-    Logger.info(err)
+  if logoutput or logAnyway:
+    if out:
+      Logger.info("Out: " + str(out))
+    if err:
+      Logger.info("Err: " + str(err))
+    if code:
+      Logger.info("Ret Code: " + str(code))
+
   return code, out, err
 
 # see msdn Icacls doc for rights
@@ -183,7 +200,7 @@ class ExecuteProvider(Provider):
                                     cwd=self.resource.cwd, env=self.resource.environment,
                                     wait_for_finish=self.resource.wait_for_finish,
                                     timeout=self.resource.timeout, user=self.resource.user,
-                                    pid_file_name=self.resource.pid_file)
+                                    pid_file_name=self.resource.pid_file, poll_after=self.resource.poll_after)
         if code != 0 and not self.resource.ignore_failures:
           raise Fail("Failed to execute " + self.resource.command)
         break
