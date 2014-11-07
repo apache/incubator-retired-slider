@@ -64,7 +64,8 @@ import static Arguments.ARG_OPTION
 @Slf4j
 @CompileStatic
 class SliderTestUtils extends Assert {
-  static String sliderClientClassName = SliderClient.class.name
+  public static final String DEFAULT_SLIDER_CLIENT = SliderClient.class.name
+  static String sliderClientClassName = DEFAULT_SLIDER_CLIENT
 
   public static void describe(String s) {
     log.info("");

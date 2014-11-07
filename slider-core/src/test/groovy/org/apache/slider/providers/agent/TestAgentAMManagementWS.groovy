@@ -124,7 +124,7 @@ class TestAgentAMManagementWS extends AgentTestBase {
     assert agt_ver_path.exists()
     assert agt_conf_path.exists()
     try {
-        setSliderClientClassName(TestSliderClient.name)
+        sliderClientClassName = TestSliderClient.name
         ServiceLauncher<SliderClient> launcher = buildAgentCluster(clustername,
             roles,
             [
@@ -174,7 +174,7 @@ class TestAgentAMManagementWS extends AgentTestBase {
         //TODO: assert failure as actual agent is not started. This test only starts the AM.
         assert RegistrationStatus.FAILED == response.getResponseStatus();
     } finally {
-        setSliderClientClassName(SliderClient.name)
+      sliderClientClassName = DEFAULT_SLIDER_CLIENT
     }
     
   }
