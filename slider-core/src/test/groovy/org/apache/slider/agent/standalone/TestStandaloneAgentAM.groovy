@@ -45,7 +45,7 @@ import org.junit.Test
 class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
   
   @After
-  def clientname() {
+  void fixclientname() {
     sliderClientClassName = DEFAULT_SLIDER_CLIENT
   }
   
