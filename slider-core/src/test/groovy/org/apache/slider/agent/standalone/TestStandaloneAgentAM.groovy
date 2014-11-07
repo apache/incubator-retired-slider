@@ -165,8 +165,11 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
         clustername)
     assert instance3.yarnApplicationState >= YarnApplicationState.FINISHED
 
+    // destroy it
+    client.actionDestroy(clustername)
+    
     //create another AM, this time with a port range
-    setSliderClientClassName(TestSliderClient.name)
+    sliderClientClassName = ExtendedSliderClient.name
     try {
       launcher = createStandaloneAM(clustername, true, true)
       client = launcher.service
@@ -180,12 +183,12 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
       assert 0 == clusterActionFreeze(client, clustername)
 
     } finally {
-      setSliderClientClassName(SliderClient.name)
+      sliderClientClassName = DEFAULT_SLIDER_CLIENT
     }
   }
 
 
-  static class TestSliderClient extends SliderClient {
+  static class ExtendedSliderClient extends SliderClient {
     @Override
     protected void persistInstanceDefinition(boolean overwrite,
                                              Path appconfdir,

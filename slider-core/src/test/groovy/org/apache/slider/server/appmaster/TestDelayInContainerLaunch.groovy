@@ -100,7 +100,7 @@ class TestDelayInContainerLaunch extends AgentTestBase {
     long delay = 30
 
     TestDelayingSliderClient.delay = delay
-    setSliderClientClassName(TestDelayingSliderClient.name)
+    sliderClientClassName = TestDelayingSliderClient
     try {
       ServiceLauncher<SliderClient> launcher = buildAgentCluster(clustername,
         roles,
@@ -134,7 +134,7 @@ class TestDelayInContainerLaunch extends AgentTestBase {
       assert duration/1000 >= delay
 
     } finally {
-      setSliderClientClassName(SliderClient.name)
+      sliderClientClassName = DEFAULT_SLIDER_CLIENT
     }
 
 
