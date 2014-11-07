@@ -42,7 +42,7 @@ class TestZKIntegration extends YarnZKMiniClusterTestBase implements KeysForTest
   @Before
   void createCluster() {
     Configuration conf = configuration
-    createMicroZKCluster(conf)
+    createMicroZKCluster(methodName.methodName, conf)
   }
 
   @Test

@@ -44,8 +44,8 @@ class MicroZKCluster implements Closeable {
     this.conf = conf
   }
 
-  void createCluster() {
-    zkService = new MicroZookeeperService("zookeeper")
+  void createCluster(String name) {
+    zkService = new MicroZookeeperService(name)
     
     zkService.init(conf)
     zkService.start()
