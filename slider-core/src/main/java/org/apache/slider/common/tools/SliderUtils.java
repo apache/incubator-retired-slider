@@ -1963,7 +1963,7 @@ public final class SliderUtils {
       SliderException {
     maybeVerifyWinUtilsValid(logger);
     execCommand(OPENSSL, 0, 5000, logger, "OpenSSL", OPENSSL, "version");
-    execCommand(PYTHON, 0, 5000, logger, "Python", PYTHON, "--version");
+    execCommand(PYTHON, 0, 5000, logger, "Python", PYTHON, "-V");
   }
 
   /**
