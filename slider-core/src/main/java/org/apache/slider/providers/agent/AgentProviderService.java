@@ -1836,6 +1836,7 @@ public class AgentProviderService extends AbstractProviderService implements
         .getInternalsSnapshot()
         .getGlobalOptions()
         .getMandatoryOption(InternalKeys.INTERNAL_DATA_DIR_PATH));
+    tokens.put("${JAVA_HOME}", appConf.get(AgentKeys.JAVA_HOME));
     return tokens;
   }
 

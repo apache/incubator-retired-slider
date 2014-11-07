@@ -10,7 +10,7 @@
     "site.global.app_user": "${USER}",
     "site.global.user_group": "${USER}",
 
-    "site.accumulo-env.java_home": "${app.java.home}",
+    "site.accumulo-env.java_home": "${JAVA_HOME}",
     "site.accumulo-env.tserver_heapsize": "256m",
     "site.accumulo-env.master_heapsize": "128m",
     "site.accumulo-env.monitor_heapsize": "64m",
