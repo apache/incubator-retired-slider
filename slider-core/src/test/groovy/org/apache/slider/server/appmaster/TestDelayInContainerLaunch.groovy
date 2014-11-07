@@ -100,7 +100,7 @@ class TestDelayInContainerLaunch extends AgentTestBase {
     long delay = 30
 
     TestDelayingSliderClient.delay = delay
-    sliderClientClassName = TestDelayingSliderClient
+    sliderClientClassName = TestDelayingSliderClient.name
     try {
       ServiceLauncher<SliderClient> launcher = buildAgentCluster(clustername,
         roles,
