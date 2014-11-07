@@ -1969,13 +1969,13 @@ public final class SliderUtils {
   public static void validateOpenSSLEnv(Logger logger) throws
       IOException,
       SliderException {
-    execCommand(PYTHON, 0, 5000, logger, "Python", PYTHON, "-V");
+    execCommand(OPENSSL, 0, 5000, logger, "OpenSSL", OPENSSL, "version");
   }
 
   public static void validatePythonEnv(Logger logger) throws
       IOException,
       SliderException {
-    execCommand(OPENSSL, 0, 5000, logger, "OpenSSL", OPENSSL, "version");
+    execCommand(PYTHON, 0, 5000, logger, "Python", PYTHON, "-V");
   }
 
   /**
