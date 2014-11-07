@@ -25,6 +25,7 @@ import org.apache.slider.api.InternalKeys
 import org.apache.slider.api.ResourceKeys
 import org.apache.slider.api.RoleKeys
 import org.apache.slider.client.SliderClient
+import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.exceptions.BadConfigException
@@ -54,16 +55,31 @@ class TestBuildBasicAgent extends AgentTestBase {
     return new File(app_def_pkg_path);
   }
 
+  private String getAppDefURI() {
+    appDef.toURI().toString()
+  }
+
   private File getBadAppDef() {
     return bad_app_def_path;
+  }
+
+  private String getBadAppDefURI() {
+    badAppDef.toURI().toString()
   }
 
   private File getAgentConf() {
     return agt_conf_path;
   }
 
+  private String getAgentConfURI() {
+    agentConf.toURI().toString()
+  }
+
   private File getAgentImg() {
     return new File(app_def_pkg_path);
+  }
+  private String getAgentImgURI() {
+    agentImg.toURI().toString()
   }
 
 
@@ -83,8 +99,8 @@ class TestBuildBasicAgent extends AgentTestBase {
         [
             ARG_OPTION, CONTROLLER_URL, "http://localhost",
             ARG_PACKAGE, ".",
-            ARG_OPTION, APP_DEF, "file://" + getAppDef().absolutePath,
-            ARG_OPTION, AGENT_CONF, "file://" + getAgentConf().absolutePath,
+            ARG_OPTION, APP_DEF, appDefURI,
+            ARG_OPTION, AGENT_CONF, agentConfURI,
             ARG_OPTION, SCRIPT_PATH, "agent/scripts/agent.py",
             ARG_COMP_OPT, ROLE_NODE, SCRIPT_PATH, "agent/scripts/agent.py",
             ARG_RES_COMP_OPT, ROLE_NODE, ResourceKeys.COMPONENT_PRIORITY, "1",
@@ -103,8 +119,8 @@ class TestBuildBasicAgent extends AgentTestBase {
         [
             ARG_OPTION, CONTROLLER_URL, "http://localhost",
             ARG_OPTION, PACKAGE_PATH, ".",
-            ARG_OPTION, APP_DEF, "file://" + getAppDef().absolutePath,
-            ARG_OPTION, AGENT_CONF, "file://" + getAgentConf().absolutePath,
+            ARG_OPTION, APP_DEF, appDefURI,
+            ARG_OPTION, AGENT_CONF, agentConfURI,
             ARG_COMP_OPT, master, SCRIPT_PATH, "agent/scripts/agent.py",
             ARG_COMP_OPT, rs, SCRIPT_PATH, "agent/scripts/agent.py",
             ARG_RES_COMP_OPT, master, ResourceKeys.COMPONENT_PRIORITY, "2",
@@ -162,8 +178,8 @@ class TestBuildBasicAgent extends AgentTestBase {
           [
               ARG_OPTION, CONTROLLER_URL, "http://localhost",
               ARG_OPTION, PACKAGE_PATH, ".",
-              ARG_OPTION, APP_DEF, "file://" + getAppDef().absolutePath,
-              ARG_OPTION, AGENT_CONF, "file://" + getAgentConf().absolutePath,
+              ARG_OPTION, APP_DEF, appDefURI,
+              ARG_OPTION, AGENT_CONF, agentConfURI,
               ARG_COMP_OPT, ROLE_NODE, SCRIPT_PATH, "agent/scripts/agent.py",
               ARG_RES_COMP_OPT, ROLE_NODE, ResourceKeys.COMPONENT_PRIORITY, "1",
           ],
@@ -205,8 +221,8 @@ class TestBuildBasicAgent extends AgentTestBase {
             (rs): 5
         ],
         [
-            ARG_OPTION, APP_DEF, "file://" + getAppDef().absolutePath,
-            ARG_OPTION, AGENT_CONF, "file://" + getAgentConf().absolutePath,
+            ARG_OPTION, APP_DEF, appDefURI,
+            ARG_OPTION, AGENT_CONF, agentConfURI,
             ARG_PACKAGE, ".",
             ARG_COMP_OPT, SliderKeys.COMPONENT_AM, RoleKeys.JVM_OPTS, jvmopts,
             ARG_COMP_OPT, master, RoleKeys.JVM_OPTS, jvmopts,
@@ -235,8 +251,8 @@ class TestBuildBasicAgent extends AgentTestBase {
             "hbase-rs": 1,
         ],
         [
-            ARG_OPTION, APP_DEF, "file://" + getAppDef().absolutePath,
-            ARG_OPTION, AGENT_CONF, "file://" + getAgentConf().absolutePath,
+            ARG_OPTION, APP_DEF, appDefURI,
+            ARG_OPTION, AGENT_CONF, agentConfURI,
             ARG_PACKAGE, ".",
             ARG_RES_COMP_OPT, "hbase-rs", ResourceKeys.COMPONENT_PRIORITY, "3",
         ],
@@ -261,7 +277,7 @@ class TestBuildBasicAgent extends AgentTestBase {
           [
               ARG_OPTION, CONTROLLER_URL, "http://localhost",
               ARG_PACKAGE, ".",
-              ARG_OPTION, APP_DEF, "file://" + appDef.absolutePath,
+              ARG_OPTION, APP_DEF, appDefURI,
               ARG_RESOURCES, TEST_FILES + "good/resources_with_label.json",
               ARG_TEMPLATE, TEST_FILES + "good/appconf.json"
           ],
@@ -320,8 +336,8 @@ class TestBuildBasicAgent extends AgentTestBase {
         [
             ARG_OPTION, CONTROLLER_URL, "http://localhost",
             ARG_OPTION, PACKAGE_PATH, ".",
-            ARG_OPTION, APP_DEF, "file://" + getAppDef().absolutePath,
-            ARG_OPTION, AGENT_CONF, "file://" + getAgentConf().absolutePath,
+            ARG_OPTION, APP_DEF, appDefURI,
+            ARG_OPTION, AGENT_CONF, agentConfURI,
             ARG_COMP_OPT, master, SCRIPT_PATH, "agent/scripts/agent.py",
             ARG_COMP_OPT, rs, SCRIPT_PATH, "agent/scripts/agent.py",
             ARG_RES_COMP_OPT, master, ResourceKeys.COMPONENT_PRIORITY, "2",
@@ -359,8 +375,8 @@ class TestBuildBasicAgent extends AgentTestBase {
         [
             ARG_OPTION, CONTROLLER_URL, "http://localhost",
             ARG_OPTION, PACKAGE_PATH, ".",
-            ARG_OPTION, APP_DEF, "file://" + getAppDef().absolutePath,
-            ARG_OPTION, AGENT_CONF, "file://" + getAgentConf().absolutePath,
+            ARG_OPTION, APP_DEF, appDefURI,
+            ARG_OPTION, AGENT_CONF, agentConfURI,
             ARG_COMP_OPT, master, SCRIPT_PATH, "agent/scripts/agent.py",
             ARG_COMP_OPT, rs, SCRIPT_PATH, "agent/scripts/agent.py",
             ARG_RES_COMP_OPT, master, ResourceKeys.COMPONENT_PRIORITY, "4",
@@ -416,7 +432,7 @@ class TestBuildBasicAgent extends AgentTestBase {
           [
               ARG_OPTION, CONTROLLER_URL, "http://localhost",
               ARG_PACKAGE, ".",
-              ARG_OPTION, APP_DEF, "file://" + appDef.absolutePath,
+              ARG_OPTION, APP_DEF, appDefURI,
               ARG_RESOURCES, TEST_FILES + "good/resources.json",
               ARG_TEMPLATE, TEST_FILES + "good/appconf.json"
           ],
@@ -447,7 +463,7 @@ class TestBuildBasicAgent extends AgentTestBase {
           [
               ARG_OPTION, CONTROLLER_URL, "http://localhost",
               ARG_PACKAGE, ".",
-              ARG_OPTION, APP_DEF, "file://" + appDef.absolutePath,
+              ARG_OPTION, APP_DEF, appDefURI,
               ARG_RESOURCES, TEST_FILES + "bad/resources-3.json",
               ARG_TEMPLATE, TEST_FILES + "good/appconf.json"
           ],
@@ -455,8 +471,8 @@ class TestBuildBasicAgent extends AgentTestBase {
           false)
       failWithBuildSucceeding(badArgs1, "bad component type node")
     } catch (BadConfigException expected) {
-      log.info("Expected failure.", expected)
-      assert expected.message.contains("Component node is not a member of application")
+      assertExceptionDetails(expected, SliderExitCodes.EXIT_BAD_CONFIGURATION,
+        "Component node is not a member of application")
     }
   }
 
@@ -477,7 +493,7 @@ class TestBuildBasicAgent extends AgentTestBase {
           [
               ARG_OPTION, CONTROLLER_URL, "http://localhost",
               ARG_PACKAGE, ".",
-              ARG_OPTION, APP_DEF, "file://" + appDef.absolutePath,
+              ARG_OPTION, APP_DEF, appDefURI,
               ARG_RESOURCES, TEST_FILES + "good/resources.json",
               ARG_TEMPLATE, TEST_FILES + "good/appconf.json",
               ARG_QUEUE, "labeled"
@@ -513,9 +529,9 @@ class TestBuildBasicAgent extends AgentTestBase {
           [:],
           [
               ARG_OPTION, CONTROLLER_URL, "http://localhost",
-              ARG_IMAGE, "file://" + getAgentImg().absolutePath,
-              ARG_OPTION, APP_DEF, "file://" + getAppDef().absolutePath,
-              ARG_OPTION, AGENT_CONF, "file://" + getAgentConf().absolutePath,
+              ARG_IMAGE, agentImgURI,
+              ARG_OPTION, APP_DEF, appDefURI,
+              ARG_OPTION, AGENT_CONF, agentConfURI,
               ARG_RESOURCES, TEST_FILES + "good/resources.json",
               ARG_TEMPLATE, TEST_FILES + "good/appconf.json"
           ],
@@ -533,7 +549,7 @@ class TestBuildBasicAgent extends AgentTestBase {
           [:],
           [
               ARG_OPTION, CONTROLLER_URL, "http://localhost",
-              ARG_OPTION, AGENT_CONF, "file://" + getAgentConf().absolutePath,
+              ARG_OPTION, AGENT_CONF, agentConfURI,
               ARG_PACKAGE, ".",
               ARG_RESOURCES, TEST_FILES + "good/resources.json",
               ARG_TEMPLATE, TEST_FILES + "good/appconf.json"
@@ -552,9 +568,9 @@ class TestBuildBasicAgent extends AgentTestBase {
           [:],
           [
               ARG_OPTION, CONTROLLER_URL, "http://localhost",
-              ARG_OPTION, AGENT_CONF, "file://" + getAgentConf().absolutePath,
+              ARG_OPTION, AGENT_CONF, agentConfURI,
               ARG_PACKAGE, ".",
-              ARG_OPTION, APP_DEF, "file://" + getBadAppDef().absolutePath,
+              ARG_OPTION, APP_DEF, badAppDefURI,
               ARG_RESOURCES, TEST_FILES + "good/resources.json",
               ARG_TEMPLATE, TEST_FILES + "good/appconf.json"
           ],
@@ -582,8 +598,8 @@ class TestBuildBasicAgent extends AgentTestBase {
         [:],
         [
             ARG_OPTION, CONTROLLER_URL, "http://localhost",
-            ARG_OPTION, APP_DEF, "file://" + getAppDef().absolutePath,
-            ARG_OPTION, AGENT_CONF, "file://" + getAgentConf().absolutePath,
+            ARG_OPTION, APP_DEF, appDefURI,
+            ARG_OPTION, AGENT_CONF, agentConfURI,
             ARG_PACKAGE, ".",
             ARG_RESOURCES, TEST_FILES + "good/resources.json",
             ARG_TEMPLATE, TEST_FILES + "good/appconf.json"

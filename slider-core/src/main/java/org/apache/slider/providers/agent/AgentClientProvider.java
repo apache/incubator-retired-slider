@@ -45,6 +45,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -131,7 +132,7 @@ public class AgentClientProvider extends AbstractClientProvider
         getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
     log.info("Validating app definition {}", appDef);
     String extension = appDef.substring(appDef.lastIndexOf(".") + 1, appDef.length());
-    if (!"zip".equalsIgnoreCase(extension)) {
+    if (!"zip".equals(extension.toLowerCase(Locale.ENGLISH))) {
       throw new BadConfigException("App definition must be packaged as a .zip file. File provided is " + appDef);
     }
 
