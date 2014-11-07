@@ -62,6 +62,31 @@ class TestExecuteResource(TestCase):
     self.assertTrue(popen_mock.called, 'subprocess.Popen should have been called!')
     self.assertFalse(proc_communicate_mock.called, 'proc.communicate should not have been called!')
 
+  @patch('subprocess.Popen.communicate')
+  @patch('subprocess.Popen')
+  def test_attribute_wait_and_poll(self, popen_mock, proc_communicate_mock):
+    with Environment("/") as env:
+      try:
+        Execute('echo "1"',
+                wait_for_finish=False,
+                poll_after = 5)
+        self.assertTrue(False, "Should fail as process does not run for 5 seconds")
+      except Fail as e:
+        self.assertTrue("returned 1" in e.message)
+        pass
+
+    self.assertTrue(popen_mock.called, 'subprocess.Popen should have been called!')
+    self.assertFalse(proc_communicate_mock.called, 'proc.communicate should not have been called!')
+
+  @patch('subprocess.Popen.communicate')
+  def test_attribute_wait_and_poll_and_success(self, proc_communicate_mock):
+    with Environment("/") as env:
+      Execute('sleep 6',
+              wait_for_finish=False,
+              poll_after = 2)
+
+    self.assertFalse(proc_communicate_mock.called, 'proc.communicate should not have been called!')
+
   @patch.object(os.path, "exists")
   @patch.object(subprocess, "Popen")
   def test_attribute_creates(self, popen_mock, exists_mock):

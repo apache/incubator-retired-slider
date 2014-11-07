@@ -39,7 +39,8 @@ class Memcached(Script):
     Execute(process_cmd,
         logoutput=False,
         wait_for_finish=False,
-        pid_file=params.pid_file
+        pid_file=params.pid_file,
+        poll_after = 5
     )
 
   def stop(self, env):
