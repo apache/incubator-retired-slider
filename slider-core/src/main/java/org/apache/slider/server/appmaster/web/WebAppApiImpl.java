@@ -18,8 +18,6 @@ package org.apache.slider.server.appmaster.web;
 
 import org.apache.hadoop.registry.client.api.RegistryOperations;
 import org.apache.slider.api.SliderClusterProtocol;
-import org.apache.slider.common.SliderKeys;
-import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderService;
 import org.apache.slider.server.appmaster.state.RoleStatus;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
@@ -28,10 +26,8 @@ import org.apache.slider.server.services.security.CertificateManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -41,8 +37,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class WebAppApiImpl implements WebAppApi {
   private static final Logger log = LoggerFactory.getLogger(WebAppApiImpl.class);
-
-  protected static final ProviderRole AM_ROLE_NAME = new ProviderRole("Slider Application Master", SliderKeys.ROLE_AM_PRIORITY_INDEX);
 
   protected final SliderClusterProtocol clusterProto;
   protected final StateAccessForProviders appState;
