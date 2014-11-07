@@ -1962,8 +1962,20 @@ public final class SliderUtils {
       IOException,
       SliderException {
     maybeVerifyWinUtilsValid(logger);
-    execCommand(OPENSSL, 0, 5000, logger, "OpenSSL", OPENSSL, "version");
+    validatePythonEnv(logger);
+    validateOpenSSLEnv(logger);
+  }
+
+  public static void validateOpenSSLEnv(Logger logger) throws
+      IOException,
+      SliderException {
     execCommand(PYTHON, 0, 5000, logger, "Python", PYTHON, "-V");
+  }
+
+  public static void validatePythonEnv(Logger logger) throws
+      IOException,
+      SliderException {
+    execCommand(OPENSSL, 0, 5000, logger, "OpenSSL", OPENSSL, "version");
   }
 
   /**
