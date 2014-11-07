@@ -176,7 +176,7 @@ class TestWindowsSupport extends SliderTestBase {
     process.init(new Configuration());
     EndOfServiceWaiter waiter = new EndOfServiceWaiter(process);
     process.start();
-    waiter.waitForServiceToStop(5000);
+    waiter.waitForServiceToStop(10000);
     process
   }
 }
