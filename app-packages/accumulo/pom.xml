@@ -57,6 +57,16 @@
 
   <profiles>
     <profile>
+      <id>hdp</id>
+      <properties>
+        <hadoop.dir>/usr/hdp/current/hadoop-client</hadoop.dir>
+        <hdfs.dir>/usr/hdp/current/hadoop-hdfs-client</hdfs.dir>
+        <yarn.dir>/usr/hdp/current/hadoop-yarn-client</yarn.dir>
+        <mapred.dir>/usr/hdp/current/hadoop-mapreduce-client</mapred.dir>
+        <zk.dir>/usr/hdp/current/zookeeper-client</zk.dir>
+      </properties>
+    </profile>
+    <profile>
       <id>accumulo-app-package</id>
       <build>
         <plugins>
