@@ -253,7 +253,7 @@ class ExecuteProvider(Provider):
                             cwd=self.resource.cwd, env=self.resource.environment,
                             preexec_fn=_preexec_fn(self.resource), user=self.resource.user,
                             wait_for_finish=self.resource.wait_for_finish, timeout=self.resource.timeout,
-                            pid_file=self.resource.pid_file)
+                            pid_file=self.resource.pid_file, poll_after=self.resource.poll_after)
         break
       except Fail as ex:
         if i == self.resource.tries-1: # last try

@@ -44,11 +44,11 @@ hbase_hdfs_root_dir = config['configurations']['hbase-site']['hbase.rootdir']
 """
 Read various ports
 """
-rest_port = default("configurations/global/hbase_rest_port", 1700)
-thrift_port = default("configurations/global/hbase_thrift_port", 9090)
-thrift2_port = default("configurations/global/hbase_thrift2_port", 9091)
-thrift_info_port = default("configurations/global/hbase_info_thrift_port", 9095)
-thrift2_info_port = default("configurations/global/hbase_info_thrift2_port", 9096)
+rest_port = default("/configurations/global/hbase_rest_port", 1700)
+thrift_port = default("/configurations/global/hbase_thrift_port", 9090)
+thrift2_port = default("/configurations/global/hbase_thrift2_port", 9091)
+thrift_info_port = default("/configurations/global/hbase_info_thrift_port", 9095)
+thrift2_info_port = default("/configurations/global/hbase_info_thrift2_port", 9096)
 
 """
 Compute or read various heap sizes
@@ -59,9 +59,9 @@ regionserver_xmn_max = config['configurations']['hbase-env']['hbase_regionserver
 regionserver_xmn_percent = config['configurations']['hbase-env']['hbase_regionserver_xmn_ratio']
 regionserver_xmn_size = calc_xmn_from_xms(regionserver_heapsize, regionserver_xmn_percent, regionserver_xmn_max)
 
-restserver_heapsize =  default("configurations/hbase-env/hbase_restserver_heapsize", "512m")
-thriftserver_heapsize =  default("configurations/hbase-env/hbase_thriftserver_heapsize", "512m")
-thrift2server_heapsize =  default("configurations/hbase-env/hbase_thrift2server_heapsize", "512m")
+restserver_heapsize =  default("/configurations/hbase-env/hbase_restserver_heapsize", "512m")
+thriftserver_heapsize =  default("/configurations/hbase-env/hbase_thriftserver_heapsize", "512m")
+thrift2server_heapsize =  default("/configurations/hbase-env/hbase_thrift2server_heapsize", "512m")
 
 hbase_env_sh_template = config['configurations']['hbase-env']['content']
 java_library_path = config['configurations']['global']['java_library_path']
