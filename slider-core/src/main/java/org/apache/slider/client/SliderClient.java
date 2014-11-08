@@ -36,7 +36,6 @@ import org.apache.hadoop.registry.client.types.RegistryPathStatus;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.alias.CredentialProvider;
 import org.apache.hadoop.security.alias.CredentialProviderFactory;
-import org.apache.hadoop.security.alias.CredentialShell;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
@@ -613,28 +612,25 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         clustername, clusterDirectory);
     try {
       checkForCredentials(getConfig(), instanceDefinition.getAppConf());
-    } catch (Exception e) {
-      throw new IOException("problem setting credentials", e);
+    } catch (IOException e) {
+      sliderFileSystem.getFileSystem().delete(clusterDirectory, true);
+      throw e;
     }
     return startCluster(clustername, createArgs);
   }
 
   private void checkForCredentials(Configuration conf,
-      ConfTree tree) throws Exception {
+      ConfTree tree) throws IOException {
     if (tree.credentials == null || tree.credentials.size()==0) {
       log.info("No credentials requested");
       return;
     }
-    CredentialShell credentialShell = null;
+
     for (Entry<String, List<String>> cred : tree.credentials.entrySet()) {
       String provider = cred.getKey();
       List<String> aliases = cred.getValue();
       if (aliases == null || aliases.size()==0) {
         continue;
-      }
-      if (credentialShell == null) {
-        credentialShell = new CredentialShell();
-        credentialShell.setConf(conf);
       }
       Configuration c = new Configuration(conf);
       c.set(CredentialProviderFactory.CREDENTIAL_PROVIDER_PATH, provider);
@@ -642,15 +638,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
           CredentialProviderFactory.getProviders(c).get(0);
       Set<String> existingAliases = new HashSet<String>(credentialProvider.getAliases());
       for (String alias : aliases) {
-        if (existingAliases.contains(alias.toLowerCase(Locale.ENGLISH))) {
-          log.warn("Skipping creation of credentials for {}, " +
-              "alias already exists in {}", alias, provider);
-          continue;
+        if (!existingAliases.contains(alias.toLowerCase(Locale.ENGLISH))) {
+          throw new IOException("Specified credentials have not been " +
+              "initialized in provider " + provider + ": " + alias);
         }
-        String[] csarg = new String[]{
-            "create", alias, "-provider", provider};
-        log.info("Creating credentials for {} in {}", alias, provider);
-        credentialShell.run(csarg);
       }
     }
   }
