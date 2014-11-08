@@ -54,7 +54,7 @@ public abstract class AgentTestBase extends YarnZKMiniClusterTestBase {
    */
   @BeforeClass
   public static void checkServerEnv() {
-    SliderUtils.validateSliderServerEnvironment(null)
+//    SliderUtils.validateSliderServerEnvironment(null)
   }
   
   public String app_def_pkg_path;

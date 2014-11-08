@@ -52,7 +52,7 @@ extends YarnZKMiniClusterTestBase {
    */
   @BeforeClass
   public static void checkSystem() {
-    SliderUtils.validateSliderServerEnvironment(null)
+//    SliderUtils.validateSliderServerEnvironment(LOG)
   }
   
   @BeforeClass
