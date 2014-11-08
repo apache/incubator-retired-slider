@@ -239,7 +239,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
                                    int numLocalDirs,
                                    int numLogDirs,
                                    boolean startHDFS) {
-   
+    assertNativeLibrariesPresent();
     conf.setInt(YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_MB, 64);
     conf.set(YarnConfiguration.RM_SCHEDULER, FIFO_SCHEDULER);
     SliderUtils.patchConfiguration(conf)
@@ -275,6 +275,8 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
   public static MiniDFSCluster buildMiniHDFSCluster(
       String name,
       YarnConfiguration conf) {
+    assertNativeLibrariesPresent();
+
     File baseDir = new File("./target/hdfs/$name").absoluteFile;
     //use file: to rm it recursively
     FileUtil.fullyDelete(baseDir)
