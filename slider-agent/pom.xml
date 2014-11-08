@@ -63,7 +63,7 @@
         <executions>
           <execution>
             <configuration>
-              <executable>python</executable>
+              <executable>${project.basedir}/../slider-agent/src/test/python/python-wrap</executable>
               <workingDirectory>src/test/python</workingDirectory>
               <arguments>
                 <argument>unitTests.py</argument>
