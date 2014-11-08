@@ -32,11 +32,19 @@ class TestExecutionEnvironment extends SliderTestBase {
     SliderUtils.validateSliderClientEnvironment(log)
   }
   
-  
   @Test
   public void testServerEnv() throws Throwable {
     SliderUtils.validateSliderServerEnvironment(log)
   }
   
+  @Test
+  public void testopenSSLEnv() throws Throwable {
+    SliderUtils.validateOpenSSLEnv(log)
+  }
+  
+  @Test
+  public void testValidatePythonEnv() throws Throwable {
+    SliderUtils.validatePythonEnv(log)
+  }
   
 }

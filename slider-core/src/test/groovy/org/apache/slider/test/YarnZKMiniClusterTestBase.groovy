@@ -24,7 +24,6 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.io.IOUtils
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.registry.client.api.RegistryConstants
-import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.core.zk.BlockingZKWatcher
 import org.apache.slider.core.zk.ZKIntegration
 
@@ -101,7 +100,7 @@ public abstract class YarnZKMiniClusterTestBase extends YarnMiniClusterTestBase 
                                    int numLogDirs,
                                    boolean startZK,
                                    boolean startHDFS) {
-    createMicroZKCluster(conf)
+    createMicroZKCluster("-${name?:'zk'}", conf)
     conf.setBoolean(RegistryConstants.KEY_REGISTRY_ENABLED, true)
     conf.set(RegistryConstants.KEY_REGISTRY_ZK_QUORUM, ZKBinding)
     name = super.createMiniCluster(name, conf, noOfNodeManagers, numLocalDirs, numLogDirs,
@@ -137,9 +136,9 @@ public abstract class YarnZKMiniClusterTestBase extends YarnMiniClusterTestBase 
     return createMiniCluster("", conf, noOfNodeManagers, 1, 1, startZK, false)
   }
 
-  public void createMicroZKCluster(Configuration conf) {
+  public void createMicroZKCluster(String name, Configuration conf) {
     microZKCluster = new MicroZKCluster(new Configuration(conf))
-    microZKCluster.createCluster();
+    microZKCluster.createCluster(name);
   }
 
   void assertHasZKCluster() {

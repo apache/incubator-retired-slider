@@ -18,21 +18,16 @@
 
 package org.apache.slider.server.appmaster
 
-import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.yarn.api.records.ApplicationId
-import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.yarn.exceptions.YarnException
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.ResourceKeys
 import org.apache.slider.client.SliderClient
-import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.ActionKillContainerArgs
 import org.apache.slider.core.build.InstanceBuilder
 import org.apache.slider.core.conf.AggregateConf
-import org.apache.slider.core.exceptions.BadClusterStateException
 import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.launch.LaunchedApplication
 import org.apache.slider.core.main.ServiceLauncher
@@ -99,8 +94,8 @@ class TestDelayInContainerLaunch extends AgentTestBase {
     ];
     long delay = 30
 
-    TestDelayingSliderClient.delay = delay
-    setSliderClientClassName(TestDelayingSliderClient.name)
+    DelayingSliderClient.delay = delay
+    sliderClientClassName = DelayingSliderClient.name
     try {
       ServiceLauncher<SliderClient> launcher = buildAgentCluster(clustername,
         roles,
@@ -134,13 +129,15 @@ class TestDelayInContainerLaunch extends AgentTestBase {
       assert duration/1000 >= delay
 
     } finally {
-      setSliderClientClassName(SliderClient.name)
+      sliderClientClassName = DEFAULT_SLIDER_CLIENT
     }
 
 
   }
 
-  static class TestDelayingSliderClient extends SliderClient {
+  static class DelayingSliderClient extends SliderClient {
+    
+    
     static long delay
     @Override
     protected void persistInstanceDefinition(boolean overwrite,

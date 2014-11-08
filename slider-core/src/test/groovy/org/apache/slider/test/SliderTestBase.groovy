@@ -27,7 +27,6 @@ import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.rules.TestName
 
-//import java.nio.file.Files
 
 /**
  * Base class for unit tests as well as ones starting mini clusters
@@ -54,10 +53,8 @@ public abstract class SliderTestBase extends SliderTestUtils {
 
   @Before
   public void setup() {
+    sliderClientClassName = DEFAULT_SLIDER_CLIENT
     FileUtil.fullyDelete(new File(SliderXMLConfKeysForTesting.TEST_SECURITY_DIR))
   }
-
-  
-  
 
 }

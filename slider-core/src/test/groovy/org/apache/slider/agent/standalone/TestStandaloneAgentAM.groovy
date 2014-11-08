@@ -37,25 +37,37 @@ import org.apache.slider.core.launch.LaunchedApplication
 import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.persist.LockAcquireFailedException
+import org.junit.After
 import org.junit.Test
 
 @CompileStatic
 @Slf4j
 class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
   
+  @After
+  void fixclientname() {
+    sliderClientClassName = DEFAULT_SLIDER_CLIENT
+  }
+  
   @Test
   public void testStandaloneAgentAM() throws Throwable {
 
     describe "create a standalone AM then perform actions on it"
-
+    sliderClientClassName = ExtendedSliderClient.name
     //launch fake master
     String clustername = createMiniCluster("", configuration, 1, true)
+
+
     ServiceLauncher<SliderClient> launcher =
         createStandaloneAM(clustername, true, false)
     SliderClient client = launcher.service
     addToTeardown(client);
 
     ApplicationReport report = waitForClusterLive(client)
+    URI uri = new URI(report.originalTrackingUrl)
+    assert uri.port in [60000, 60001, 60002, 60003]
+    assert report.rpcPort in [60000, 60001, 60002, 60003]
+
     logReport(report)
     List<ApplicationReport> apps = client.applications;
 
@@ -80,8 +92,6 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     nodes = listNodesInRole(client, "")
     assert nodes.size() == 1;
     assert nodes[0].role == SliderKeys.COMPONENT_AM
-
-
 
 
     String username = client.username
@@ -165,36 +175,21 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
         clustername)
     assert instance3.yarnApplicationState >= YarnApplicationState.FINISHED
 
-    //create another AM, this time with a port range
-    setSliderClientClassName(TestSliderClient.name)
-    try {
-      launcher = createStandaloneAM(clustername, true, true)
-      client = launcher.service
-      i2AppID = client.applicationId
-
-      reportFor = client.getApplicationReport(i2AppID)
-      URI uri = new URI(reportFor.originalTrackingUrl)
-      assert uri.port in [60000, 60001, 60002, 60003]
-      assert reportFor.rpcPort in [60000, 60001, 60002, 60003]
-
-      assert 0 == clusterActionFreeze(client, clustername)
-
-    } finally {
-      setSliderClientClassName(SliderClient.name)
-    }
+    // destroy it
+    client.actionDestroy(clustername)
+    
   }
 
 
-  static class TestSliderClient extends SliderClient {
+  static class ExtendedSliderClient extends SliderClient {
     @Override
     protected void persistInstanceDefinition(boolean overwrite,
                                              Path appconfdir,
                                              InstanceBuilder builder)
     throws IOException, SliderException, LockAcquireFailedException {
-      AggregateConf conf = builder.getInstanceDescription()
-      conf.getAppConfOperations().getGlobalOptions().put(
-          SliderKeys.KEY_ALLOWED_PORT_RANGE,
-          "60000-60003")
+      AggregateConf conf = builder.instanceDescription
+      conf.appConfOperations.
+          globalOptions[SliderKeys.KEY_ALLOWED_PORT_RANGE]= "60000-60003"
       super.persistInstanceDefinition(overwrite, appconfdir, builder)
     }
 
@@ -204,9 +199,8 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
                                           AggregateConf instanceDefinition,
                                           boolean debugAM)
     throws YarnException, IOException {
-      instanceDefinition.getAppConfOperations().getGlobalOptions().put(
-          SliderKeys.KEY_ALLOWED_PORT_RANGE,
-          "60000-60003")
+      instanceDefinition.appConfOperations.
+          globalOptions[SliderKeys.KEY_ALLOWED_PORT_RANGE] ="60000-60003"
       return super.launchApplication(clustername, clusterDirectory, instanceDefinition, debugAM)
     }
   }

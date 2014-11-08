@@ -51,6 +51,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Key Features:
  * <ol>
  *   <li>Output is streamed to the output logger provided</li>.
+ *   <li>the input stream is closed as soon as the process starts.</li>
  *   <li>The most recent lines of output are saved to a linked list</li>.
  *   <li>A synchronous callback, {@link LongLivedProcessLifecycleEvent}, is raised on the start
  *   and finish of a process.</li>
@@ -323,6 +324,8 @@ public class LongLivedProcess implements Runnable {
       lifecycleCallback.onProcessStarted(this);
     }
     try {
+      //close stdin for the process
+      IOUtils.closeStream(process.getOutputStream());
       exitCode = process.waitFor();
     } catch (InterruptedException e) {
       LOG.debug("Process wait interrupted -exiting thread", e);
@@ -416,6 +419,7 @@ public class LongLivedProcess implements Runnable {
     }
     return getRecentOutput();
   }
+
   /**
    * add the recent line to the list of recent lines; deleting
    * an earlier on if the limit is reached.
