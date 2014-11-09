@@ -15,6 +15,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 '''
+import platform
+
+IS_WINDOWS = platform.system() == "Windows"
 
 from unittest import TestCase
 from mock.mock import patch, MagicMock, call
@@ -27,8 +30,10 @@ import subprocess
 import logging
 import os
 from resource_management import Fail
-import grp
-import pwd
+
+if not IS_WINDOWS:
+  import grp
+  import pwd
 
 
 @patch.object(System, "os_family", new='redhat')
@@ -78,14 +83,15 @@ class TestExecuteResource(TestCase):
     self.assertTrue(popen_mock.called, 'subprocess.Popen should have been called!')
     self.assertFalse(proc_communicate_mock.called, 'proc.communicate should not have been called!')
 
-  @patch('subprocess.Popen.communicate')
-  def test_attribute_wait_and_poll_and_success(self, proc_communicate_mock):
-    with Environment("/") as env:
-      Execute('sleep 6',
-              wait_for_finish=False,
-              poll_after = 2)
+  if not IS_WINDOWS:
+    @patch('subprocess.Popen.communicate')
+    def test_attribute_wait_and_poll_and_success(self, proc_communicate_mock):
+      with Environment("/") as env:
+        Execute('sleep 6',
+                wait_for_finish=False,
+                poll_after = 2)
 
-    self.assertFalse(proc_communicate_mock.called, 'proc.communicate should not have been called!')
+      self.assertFalse(proc_communicate_mock.called, 'proc.communicate should not have been called!')
 
   @patch.object(os.path, "exists")
   @patch.object(subprocess, "Popen")
@@ -115,7 +121,11 @@ class TestExecuteResource(TestCase):
       execute_resource = Execute('echo "1"',
                                  path=["/test/one", "test/two"]
       )
-    self.assertEqual(execute_resource.environment["PATH"], '/test/one:test/two')
+
+    if IS_WINDOWS:
+      self.assertEqual(execute_resource.environment["PATH"], '/test/one;test/two')
+    else:
+      self.assertEqual(execute_resource.environment["PATH"], '/test/one:test/two')
 
   @patch('time.sleep')
   @patch.object(subprocess, "Popen")
@@ -136,37 +146,39 @@ class TestExecuteResource(TestCase):
 
     time_mock.assert_called_once_with(10)
 
-  @patch.object(pwd, "getpwnam")
-  def test_attribute_group(self, getpwnam_mock):
-    def error(argument):
-      self.assertEqual(argument, "test_user")
-      raise KeyError("fail")
+  if not IS_WINDOWS:
+    @patch.object(pwd, "getpwnam")
+    def test_attribute_group(self, getpwnam_mock):
+      def error(argument):
+        self.assertEqual(argument, "test_user")
+        raise KeyError("fail")
 
-    getpwnam_mock.side_effect = error
-    try:
-      with Environment("/") as env:
-        Execute('echo "1"',
-                user="test_user",
-        )
-    except Fail as e:
-      pass
+      getpwnam_mock.side_effect = error
+      try:
+        with Environment("/") as env:
+          Execute('echo "1"',
+                  user="test_user",
+          )
+      except Fail as e:
+        pass
 
-  @patch.object(grp, "getgrnam")
-  @patch.object(pwd, "getpwnam")
-  def test_attribute_group(self, getpwnam_mock, getgrnam_mock):
-    def error(argument):
-      self.assertEqual(argument, "test_group")
-      raise KeyError("fail")
+    @patch.object(grp, "getgrnam")
+    @patch.object(pwd, "getpwnam")
+    def test_attribute_group(self, getpwnam_mock, getgrnam_mock):
+      def error(argument):
+        self.assertEqual(argument, "test_group")
+        raise KeyError("fail")
 
-    getpwnam_mock.side_effect = 1
-    getgrnam_mock.side_effect = error
-    try:
-      with Environment("/") as env:
-        Execute('echo "1"',
-                group="test_group",
-        )
-    except Fail as e:
-      pass
+      getpwnam_mock.side_effect = 1
+      getgrnam_mock.side_effect = error
+      try:
+        with Environment("/") as env:
+          Execute('echo "1"',
+                  group="test_group",
+          )
+      except Fail as e:
+        pass
+  
 
   @patch.object(subprocess, "Popen")
   def test_attribute_environment(self, popen_mock):

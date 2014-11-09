@@ -28,6 +28,7 @@ from mock.mock import MagicMock
 from Register import Register
 from Controller import State
 from AgentConfig import AgentConfig
+import posixpath
 
 class TestRegistration(TestCase):
 
@@ -53,11 +54,11 @@ class TestRegistration(TestCase):
     self.assertEquals(data['tags'], "tag", "tags should be tag")
     self.assertEquals(len(data), 10)
 
-    self.assertEquals(os.path.join(tmpdir, "app/definition"), config.getResolvedPath("app_pkg_dir"))
-    self.assertEquals(os.path.join(tmpdir, "app/install"), config.getResolvedPath("app_install_dir"))
-    self.assertEquals(os.path.join(ver_dir, "."), config.getResolvedPath("app_log_dir"))
-    self.assertEquals(os.path.join(ver_dir, "."), config.getResolvedPath("log_dir"))
-    self.assertEquals(os.path.join(ver_dir, "."), config.getResolvedPath("app_task_dir"))
+    self.assertEquals(posixpath.join(tmpdir, "app/definition"), config.getResolvedPath("app_pkg_dir"))
+    self.assertEquals(posixpath.join(tmpdir, "app/install"), config.getResolvedPath("app_install_dir"))
+    self.assertEquals(posixpath.join(ver_dir, "."), config.getResolvedPath("app_log_dir"))
+    self.assertEquals(posixpath.join(ver_dir, "."), config.getResolvedPath("log_dir"))
+    self.assertEquals(posixpath.join(ver_dir, "."), config.getResolvedPath("app_task_dir"))
 
 if __name__ == "__main__":
   unittest.main()

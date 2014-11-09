@@ -33,6 +33,9 @@ import tempfile
 from Controller import Controller
 from Registry import Registry
 from optparse import OptionParser
+import platform
+
+IS_WINDOWS = platform.system() == "Windows"
 
 logger = logging.getLogger()
 
@@ -116,15 +119,15 @@ class TestMain(unittest.TestCase):
     main.update_log_level(config, tmpoutfile)
     setLevel_mock.assert_called_with(logging.INFO)
 
-
-  @patch("signal.signal")
-  def test_bind_signal_handlers(self, signal_mock):
-    main.bind_signal_handlers()
-    # Check if on SIGINT/SIGTERM agent is configured to terminate
-    signal_mock.assert_any_call(signal.SIGINT, main.signal_handler)
-    signal_mock.assert_any_call(signal.SIGTERM, main.signal_handler)
-    # Check if on SIGUSR1 agent is configured to fall into debug
-    signal_mock.assert_any_call(signal.SIGUSR1, main.debug)
+  if not IS_WINDOWS:
+    @patch("signal.signal")
+    def test_bind_signal_handlers(self, signal_mock):
+      main.bind_signal_handlers()
+      # Check if on SIGINT/SIGTERM agent is configured to terminate
+      signal_mock.assert_any_call(signal.SIGINT, main.signal_handler)
+      signal_mock.assert_any_call(signal.SIGTERM, main.signal_handler)
+      # Check if on SIGUSR1 agent is configured to fall into debug
+      signal_mock.assert_any_call(signal.SIGUSR1, main.debug)
 
 
   @patch("os.path.exists")
@@ -180,43 +183,43 @@ class TestMain(unittest.TestCase):
     main.perform_prestart_checks(main.config)
     self.assertFalse(exit_mock.called)
 
-
-  @patch("time.sleep")
-  @patch("os.kill")
-  @patch("os._exit")
-  @patch("os.path.exists")
-  def test_daemonize_and_stop(self, exists_mock, _exit_mock, kill_mock,
+  if not IS_WINDOWS:
+    @patch("time.sleep")
+    @patch("os.kill")
+    @patch("os._exit")
+    @patch("os.path.exists")
+    def test_daemonize_and_stop(self, exists_mock, _exit_mock, kill_mock,
                               sleep_mock):
-    oldpid = ProcessHelper.pidfile
-    pid = str(os.getpid())
-    _, tmpoutfile = tempfile.mkstemp()
-    ProcessHelper.pidfile = tmpoutfile
+      oldpid = ProcessHelper.pidfile
+      pid = str(os.getpid())
+      _, tmpoutfile = tempfile.mkstemp()
+      ProcessHelper.pidfile = tmpoutfile
 
-    # Test daemonization
-    main.write_pid()
-    saved = open(ProcessHelper.pidfile, 'r').read()
-    self.assertEqual(pid, saved)
+      # Test daemonization
+      main.write_pid()
+      saved = open(ProcessHelper.pidfile, 'r').read()
+      self.assertEqual(pid, saved)
 
-    # Reuse pid file when testing agent stop
-    # Testing normal exit
-    exists_mock.return_value = False
-    main.stop_agent()
-    kill_mock.assert_called_with(int(pid), signal.SIGTERM)
+      # Reuse pid file when testing agent stop
+      # Testing normal exit
+      exists_mock.return_value = False
+      main.stop_agent()
+      kill_mock.assert_called_with(int(pid), signal.SIGTERM)
 
-    # Restore
-    kill_mock.reset_mock()
-    _exit_mock.reset_mock()
+      # Restore
+      kill_mock.reset_mock()
+      _exit_mock.reset_mock()
 
-    # Testing exit when failed to remove pid file
-    exists_mock.return_value = True
-    main.stop_agent()
-    kill_mock.assert_any_call(int(pid), signal.SIGTERM)
-    kill_mock.assert_any_call(int(pid), signal.SIGKILL)
-    _exit_mock.assert_called_with(1)
+      # Testing exit when failed to remove pid file
+      exists_mock.return_value = True
+      main.stop_agent()
+      kill_mock.assert_any_call(int(pid), signal.SIGTERM)
+      kill_mock.assert_any_call(int(pid), signal.SIGKILL)
+      _exit_mock.assert_called_with(1)
 
-    # Restore
-    ProcessHelper.pidfile = oldpid
-    os.remove(tmpoutfile)
+      # Restore
+      ProcessHelper.pidfile = oldpid
+      os.remove(tmpoutfile)
 
   @patch.object(Registry, "readAMHostPort")
   @patch.object(main, "setup_logging")
@@ -253,7 +256,8 @@ class TestMain(unittest.TestCase):
     main.main()
 
     self.assertTrue(setup_logging_mock.called)
-    self.assertTrue(bind_signal_handlers_mock.called)
+    if not IS_WINDOWS:
+      self.assertTrue(bind_signal_handlers_mock.called)
     self.assertTrue(update_config_from_file_mock.called)
     self.assertTrue(perform_prestart_checks_mock.called)
     self.assertTrue(write_pid_mock.called)
