@@ -125,6 +125,9 @@ class TestPythonExecutor(TestCase):
     _, tmpoutfile = tempfile.mkstemp()
     _, tmperrfile = tempfile.mkstemp()
     _, tmpstroutfile = tempfile.mkstemp()
+    if IS_WINDOWS:
+      if os.path.exists(tmpstroutfile):
+        os.remove(tmpstroutfile)
     PYTHON_TIMEOUT_SECONDS =  5
 
     def launch_python_subprocess_method(command, tmpout, tmperr, environment_vars):
