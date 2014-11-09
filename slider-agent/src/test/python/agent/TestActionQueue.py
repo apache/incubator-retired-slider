@@ -38,6 +38,8 @@ from CustomServiceOrchestrator import CustomServiceOrchestrator
 from PythonExecutor import PythonExecutor
 from CommandStatusDict import CommandStatusDict
 from AgentToggleLogger import AgentToggleLogger
+import platform
+IS_WINDOWS = platform.system() == "Windows"
 
 
 class TestActionQueue(TestCase):
@@ -347,6 +349,19 @@ class TestActionQueue(TestCase):
                 'taskId': 3,
                 'exitcode': 777,
                 'reportResult': True}
+    if IS_WINDOWS:
+      expected = {'status': 'IN_PROGRESS',
+                  'stderr': 'Read from {0}\\errors-3.txt'.format(tempdir),
+                  'stdout': 'Read from {0}\\output-3.txt'.format(tempdir),
+                  'structuredOut': '',
+                  'clusterName': u'cc',
+                  'roleCommand': u'INSTALL',
+                  'serviceName': u'HBASE',
+                  'role': u'HBASE_MASTER',
+                  'actionId': '1-1',
+                  'taskId': 3,
+                  'exitcode': 777,
+                  'reportResult': True}
     self.assertEqual(report['reports'][0], expected)
     # Continue command execution
     unfreeze_flag.set()
