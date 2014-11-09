@@ -1975,15 +1975,19 @@ public final class SliderUtils {
    * This looks for everything felt to be critical for execution, including
    * native binaries and other essential dependencies.
    * @param logger logger to log to on normal execution
+   * @param dependencyChecks flag to indicate checks for agent dependencies
    * @throws IOException on IO failures
    * @throws SliderException on validation failures
    */
-  public static void validateSliderServerEnvironment(Logger logger) throws
+  public static void validateSliderServerEnvironment(Logger logger,
+      boolean dependencyChecks) throws
       IOException,
       SliderException {
-    maybeVerifyWinUtilsValid(logger);
-    validatePythonEnv(logger);
-    validateOpenSSLEnv(logger);
+    maybeVerifyWinUtilsValid();
+    if (dependencyChecks) {
+      validatePythonEnv(logger);
+      validateOpenSSLEnv(logger);
+    }
   }
 
   public static void validateOpenSSLEnv(Logger logger) throws

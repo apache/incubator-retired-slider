@@ -24,6 +24,7 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.api.ResourceKeys
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderExitCodes
+import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.core.exceptions.BadClusterStateException
 import org.apache.slider.core.main.ServiceLauncher
 import org.junit.Before
@@ -68,6 +69,8 @@ class TestAgentEcho extends AgentTestBase {
 
   @Test
   public void testEchoOperation() throws Throwable {
+    assumeValidServerEnv()
+
     String clustername = createMiniCluster("",
         configuration,
         1,
@@ -95,6 +98,8 @@ class TestAgentEcho extends AgentTestBase {
             ARG_RES_COMP_OPT, role, ResourceKeys.COMPONENT_PRIORITY, "1",
             ARG_COMP_OPT, role, SCRIPT_PATH, echo_py,
             ARG_COMP_OPT, role, SERVICE_NAME, "Agent",
+            ARG_DEFINE, 
+            SliderXmlConfKeys.KEY_SLIDER_AM_DEPENDENCY_CHECKS_DISABLED + "=false" 
         ],
         true, true,
         true)
