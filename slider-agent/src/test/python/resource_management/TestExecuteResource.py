@@ -83,14 +83,15 @@ class TestExecuteResource(TestCase):
     self.assertTrue(popen_mock.called, 'subprocess.Popen should have been called!')
     self.assertFalse(proc_communicate_mock.called, 'proc.communicate should not have been called!')
 
-  @patch('subprocess.Popen.communicate')
-  def test_attribute_wait_and_poll_and_success(self, proc_communicate_mock):
-    with Environment("/") as env:
-      Execute('sleep 6',
-              wait_for_finish=False,
-              poll_after = 2)
+  if not IS_WINDOWS:
+    @patch('subprocess.Popen.communicate')
+    def test_attribute_wait_and_poll_and_success(self, proc_communicate_mock):
+      with Environment("/") as env:
+        Execute('sleep 6',
+                wait_for_finish=False,
+                poll_after = 2)
 
-    self.assertFalse(proc_communicate_mock.called, 'proc.communicate should not have been called!')
+      self.assertFalse(proc_communicate_mock.called, 'proc.communicate should not have been called!')
 
   @patch.object(os.path, "exists")
   @patch.object(subprocess, "Popen")
