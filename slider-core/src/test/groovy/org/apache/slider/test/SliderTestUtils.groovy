@@ -27,6 +27,7 @@ import org.apache.commons.httpclient.methods.GetMethod
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileStatus
 import org.apache.hadoop.fs.FileSystem as HadoopFS
+import org.apache.hadoop.fs.FileUtil
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.nativeio.NativeIO
 import org.apache.hadoop.util.Shell
@@ -195,24 +196,31 @@ class SliderTestUtils extends Assert {
    * on windows they must be present
    * @return true if all is well
    */
-  public static boolean areRequiredLibrariesAvailable() {
+  public static String checkForRequiredLibraries() {
     
     if (!Shell.WINDOWS) {
-      return true;
+      return "";
     }
+    StringBuilder errorText = new StringBuilder("")
     boolean available = true;
     if (!NativeIO.available) {
-      log.warn("No native IO library")
-      available = false;
+      errorText.append("No native IO library. ")
     }
     try {
       def path = Shell.getQualifiedBinPath("winutils.exe");
       log.debug("winutils is at $path")
     } catch (IOException e) {
+      errorText.append("No WINUTILS.EXE. ")
       log.warn("No winutils: $e", e)
-      available = false;
     }
-    return available;
+    try {
+      File target = new File("target")
+      FileUtil.canRead(target)
+    } catch (UnsatisfiedLinkError e) {
+      log.warn("Failing to link to native IO methods: $e", e)
+      errorText.append("No native IO methods")
+    }
+    return errorText.toString();
   }
 
   /**
@@ -220,9 +228,10 @@ class SliderTestUtils extends Assert {
    * on windows they must be present
    */
   public static void assertNativeLibrariesPresent() {
-    assertTrue("Required Native libraries and executables are not present." +
-               "Check your HADOOP_HOME and PATH environment variables",
-        areRequiredLibrariesAvailable())
+    String errorText = checkForRequiredLibraries()
+    if (errorText != null) {
+      fail(errorText)
+    }
   }
 
   /**
