@@ -30,6 +30,9 @@ from resource_management.core.source import InlineTemplate
 from jinja2 import UndefinedError, TemplateNotFound
 import urllib2
 import os
+import platform
+
+IS_WINDOWS = platform.system() == "Windows"
 
 
 @patch.object(System, "os_family", new = 'redhat')
@@ -46,8 +49,12 @@ class TestContentSources(TestCase):
     file_mock.read.return_value = 'content'
     open_mock.return_value = file_mock
 
+    filepath = "/absolute/path/file"
+    if IS_WINDOWS:
+      filepath = "\\absolute\\path\\file"
+
     with Environment("/base") as env:
-      static_file = StaticFile("/absolute/path/file")
+      static_file = StaticFile(filepath)
       content = static_file.get_content()
 
     self.assertEqual('content', content)
@@ -216,4 +223,7 @@ class TestContentSources(TestCase):
     with Environment("/base") as env:
       template = InlineTemplate("{{test_arg1}} template content {{os.path.join(path[0],path[1])}}", [os], test_arg1 = "test", path = ["/one","two"])
       content = template.get_content()
-    self.assertEqual(u'test template content /one/two\n', content)
+    if IS_WINDOWS:
+      self.assertEqual(u'test template content /one\\two\n', content)
+    else:
+      self.assertEqual(u'test template content /one/two\n', content)
