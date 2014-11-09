@@ -119,6 +119,7 @@ class TestPythonExecutor(TestCase):
       self.assertEquals(2, len(os_env_copy_mock.return_value))
 
   def test_execution_results(self):
+    self.assertEqual.__self__.maxDiff = None
     subproc_mock = self.Subprocess_mockup()
     executor = PythonExecutor("/tmp", AgentConfig("", ""), self.agentToggleLogger)
     _, tmpoutfile = tempfile.mkstemp()

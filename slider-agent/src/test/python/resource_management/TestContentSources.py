@@ -134,12 +134,12 @@ class TestContentSources(TestCase):
 
     self.assertEqual(open_mock.call_count, 1)
     if IS_WINDOWS:
-      open_mock.assert_called_with('/base/templates\\test.j2', 'rb')
+      open_mock.assert_called_with('/base\\templates\\test.j2', 'rb')
     else:
       open_mock.assert_called_with('/base/templates/test.j2', 'rb')
     self.assertEqual(getmtime_mock.call_count, 1)
     if IS_WINDOWS:
-      getmtime_mock.assert_called_with('/base/templates\\test.j2')
+      getmtime_mock.assert_called_with('/base\\templates\\test.j2')
     else:
       getmtime_mock.assert_called_with('/base/templates/test.j2')
 

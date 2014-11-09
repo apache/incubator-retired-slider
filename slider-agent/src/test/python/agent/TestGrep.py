@@ -23,6 +23,8 @@ from Grep import Grep
 import socket
 import os, sys
 import logging
+import platform
+IS_WINDOWS = platform.system() == "Windows"
 
 class TestGrep(TestCase):
 
@@ -32,8 +34,12 @@ class TestGrep(TestCase):
   grep = Grep()
 
   def setUp(self):
-    self.string_good = open('agent' + os.sep + 'dummy_output_good.txt', 'r').read().replace("\n", os.linesep)
-    self.string_bad = open('agent' + os.sep + 'dummy_output_error.txt', 'r').read().replace("\n", os.linesep)
+    if IS_WINDOWS:
+      self.string_good = open('agent' + os.sep + 'dummy_output_good.txt', 'r').read().replace("\r\n", os.linesep)
+      self.string_bad = open('agent' + os.sep + 'dummy_output_error.txt', 'r').read().replace("\r\n", os.linesep)
+    else:
+      self.string_good = open('agent' + os.sep + 'dummy_output_good.txt', 'r').read().replace("\n", os.linesep)
+      self.string_bad = open('agent' + os.sep + 'dummy_output_error.txt', 'r').read().replace("\n", os.linesep)
     pass
 
   def test_grep_many_lines(self):
