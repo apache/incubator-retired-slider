@@ -77,7 +77,7 @@ class TestExecuteResource(TestCase):
                 poll_after = 5)
         self.assertTrue(False, "Should fail as process does not run for 5 seconds")
       except Fail as e:
-        self.assertTrue("returned 1" in e.message)
+        self.assertTrue("returned 1" in str(e))
         pass
 
     self.assertTrue(popen_mock.called, 'subprocess.Popen should have been called!')
