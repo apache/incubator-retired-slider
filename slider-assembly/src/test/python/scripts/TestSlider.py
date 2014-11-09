@@ -25,28 +25,40 @@ import unittest
 import logging
 import slider
 import os
+import platform
+
+IS_WINDOWS = platform.system() == "Windows"
 
 logger = logging.getLogger()
 
 class TestSlider(unittest.TestCase):
 
+  @patch("os.environ.get")
   @patch.object(slider, "confDir")
   @patch.object(slider, "libDir")
   @patch.object(slider, "executeEnvSh")
   @patch("os.path.exists")
   @patch.object(slider, "java")
-  def test_main(self, java_mock, exists_mock, executeEnvSh_mock, libDir_mock, confDir_mock):
+  def test_main(self, java_mock, exists_mock, executeEnvSh_mock, libDir_mock, confDir_mock, os_env_get_mock):
     sys.argv = ["slider", "list"]
     exists_mock.return_value = True
     libDir_mock.return_value = "/dir/libdir"
     confDir_mock.return_value = "/dir/confdir"
+    os_env_get_mock.return_value = "env_val"
     slider.main()
     self.assertTrue(java_mock.called)
-    java_mock.assert_called_with(
-      'org.apache.slider.Slider',
-      ['list'],
-      '/dir/libdir/*:/dir/confdir::',
-      ['-Dslider.confdir=/dir/confdir', '-Dslider.libdir=/dir/libdir', '-Djava.net.preferIPv4Stack=true', '-Djava.awt.headless=true', '-Xmx256m'])
+    if IS_WINDOWS:
+      java_mock.assert_called_with(
+        'org.apache.slider.Slider',
+        ['list'],
+        '/dir/libdir\\*;/dir/confdir;env_val;env_val',
+        ['-Dslider.confdir=/dir/confdir', '-Dslider.libdir=/dir/libdir', 'env_val'])
+    else:
+      java_mock.assert_called_with(
+        'org.apache.slider.Slider',
+        ['list'],
+        '/dir/libdir/*:/dir/confdir:env_val:env_val',
+        ['-Dslider.confdir=/dir/confdir', '-Dslider.libdir=/dir/libdir', 'env_val'])
     pass
 
 
