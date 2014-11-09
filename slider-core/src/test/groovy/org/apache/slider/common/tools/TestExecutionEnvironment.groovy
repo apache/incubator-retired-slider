@@ -35,12 +35,16 @@ class TestExecutionEnvironment extends SliderTestBase {
   @Test
   public void testWinutils() throws Throwable {
     SliderUtils.maybeVerifyWinUtilsValid();
-
   }
   
   @Test
   public void testServerEnv() throws Throwable {
-    SliderUtils.validateSliderServerEnvironment(log)
+    SliderUtils.validateSliderServerEnvironment(log, true)
+  }
+  
+  @Test
+  public void testServerEnvNoDependencies() throws Throwable {
+    SliderUtils.validateSliderServerEnvironment(log, false)
   }
   
   @Test

@@ -64,7 +64,6 @@ import org.apache.hadoop.registry.client.api.RegistryOperations;
 import org.apache.hadoop.registry.client.binding.RegistryPathUtils;
 import org.apache.hadoop.registry.client.types.yarn.PersistencePolicies;
 import org.apache.hadoop.registry.client.types.ServiceRecord;
-import org.apache.hadoop.registry.client.binding.RegistryTypeUtils;
 import org.apache.hadoop.registry.client.types.yarn.YarnRegistryAttributes;
 import org.apache.hadoop.registry.server.integration.RMRegistryOperationsService;
 import org.apache.hadoop.yarn.security.AMRMTokenIdentifier;
@@ -106,7 +105,6 @@ import org.apache.slider.core.main.LauncherExitCodes;
 import org.apache.slider.core.main.RunService;
 import org.apache.slider.core.main.ServiceLauncher;
 import org.apache.slider.core.persist.ConfTreeSerDeser;
-import org.apache.slider.core.registry.info.CustomRegistryConstants;
 import org.apache.slider.providers.ProviderCompleted;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderService;
@@ -438,7 +436,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     checkAndWarnForAuthTokenProblems();
     
     // validate server env
-    SliderUtils.validateSliderServerEnvironment(log);
+    boolean dependencyChecks =
+        !conf.getBoolean(KEY_SLIDER_AM_DEPENDENCY_CHECKS_DISABLED,
+            false);
+    SliderUtils.validateSliderServerEnvironment(log, dependencyChecks);
 
     executorService = new WorkflowExecutorService<ExecutorService>("AmExecutor",
         Executors.newFixedThreadPool(2,

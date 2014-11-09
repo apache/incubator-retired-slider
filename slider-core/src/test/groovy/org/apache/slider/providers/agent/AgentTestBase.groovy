@@ -30,7 +30,6 @@ import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.test.YarnZKMiniClusterTestBase
 import org.junit.Before
-import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 
@@ -52,9 +51,12 @@ public abstract class AgentTestBase extends YarnZKMiniClusterTestBase {
   /**
    * Server side test: validate system env before launch
    */
-  @BeforeClass
-  public static void checkServerEnv() {
-//    SliderUtils.validateSliderServerEnvironment(null)
+  public static void assumeValidServerEnv() {
+    try {
+      SliderUtils.validateSliderServerEnvironment(log, true)
+    } catch (Exception e) {
+      skip(e.toString())
+    }
   }
   
   public String app_def_pkg_path;
