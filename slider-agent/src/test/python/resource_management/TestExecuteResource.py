@@ -15,6 +15,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 '''
+import platform
+
+IS_WINDOWS = platform.system() == "Windows"
 
 from unittest import TestCase
 from mock.mock import patch, MagicMock, call
@@ -27,8 +30,10 @@ import subprocess
 import logging
 import os
 from resource_management import Fail
-import grp
-import pwd
+
+if not IS_WINDOWS:
+  import grp
+  import pwd
 
 
 @patch.object(System, "os_family", new='redhat')
@@ -136,37 +141,39 @@ class TestExecuteResource(TestCase):
 
     time_mock.assert_called_once_with(10)
 
-  @patch.object(pwd, "getpwnam")
-  def test_attribute_group(self, getpwnam_mock):
-    def error(argument):
-      self.assertEqual(argument, "test_user")
-      raise KeyError("fail")
+  if not IS_WINDOWS:
+    @patch.object(pwd, "getpwnam")
+    def test_attribute_group(self, getpwnam_mock):
+      def error(argument):
+        self.assertEqual(argument, "test_user")
+        raise KeyError("fail")
 
-    getpwnam_mock.side_effect = error
-    try:
-      with Environment("/") as env:
-        Execute('echo "1"',
-                user="test_user",
-        )
-    except Fail as e:
-      pass
+      getpwnam_mock.side_effect = error
+      try:
+        with Environment("/") as env:
+          Execute('echo "1"',
+                  user="test_user",
+          )
+      except Fail as e:
+        pass
 
-  @patch.object(grp, "getgrnam")
-  @patch.object(pwd, "getpwnam")
-  def test_attribute_group(self, getpwnam_mock, getgrnam_mock):
-    def error(argument):
-      self.assertEqual(argument, "test_group")
-      raise KeyError("fail")
+    @patch.object(grp, "getgrnam")
+    @patch.object(pwd, "getpwnam")
+    def test_attribute_group(self, getpwnam_mock, getgrnam_mock):
+      def error(argument):
+        self.assertEqual(argument, "test_group")
+        raise KeyError("fail")
 
-    getpwnam_mock.side_effect = 1
-    getgrnam_mock.side_effect = error
-    try:
-      with Environment("/") as env:
-        Execute('echo "1"',
-                group="test_group",
-        )
-    except Fail as e:
-      pass
+      getpwnam_mock.side_effect = 1
+      getgrnam_mock.side_effect = error
+      try:
+        with Environment("/") as env:
+          Execute('echo "1"',
+                  group="test_group",
+          )
+      except Fail as e:
+        pass
+  
 
   @patch.object(subprocess, "Popen")
   def test_attribute_environment(self, popen_mock):
