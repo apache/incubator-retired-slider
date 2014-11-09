@@ -172,7 +172,8 @@ def stop_agent():
     if pid == -1:
       print ("Agent process is not running")
     else:
-      os.kill(pid, signal.SIGKILL)
+      if not IS_WINDOWS:
+        os.kill(pid, signal.SIGKILL)
     os._exit(1)
 
 

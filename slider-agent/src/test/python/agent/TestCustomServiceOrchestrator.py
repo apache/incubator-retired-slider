@@ -36,6 +36,8 @@ import StringIO
 import sys
 from socket import socket
 from AgentToggleLogger import AgentToggleLogger
+import platform
+IS_WINDOWS = platform.system() == "Windows"
 
 class TestCustomServiceOrchestrator(TestCase):
 
@@ -86,7 +88,10 @@ class TestCustomServiceOrchestrator(TestCase):
     json_file = orchestrator.dump_command_to_json(command, {})
     self.assertTrue(os.path.exists(json_file))
     self.assertTrue(os.path.getsize(json_file) > 0)
-    self.assertEqual(oct(os.stat(json_file).st_mode & 0777), '0644')
+    if IS_WINDOWS:
+      self.assertEqual(oct(os.stat(json_file).st_mode & 0777), '0666')
+    else:
+      self.assertEqual(oct(os.stat(json_file).st_mode & 0777), '0644')
     self.assertTrue(json_file.endswith("command-3.json"))
     os.unlink(json_file)
 
@@ -100,7 +105,10 @@ class TestCustomServiceOrchestrator(TestCase):
     json_file = orchestrator.dump_command_to_json(command, {})
     self.assertTrue(os.path.exists(json_file))
     self.assertTrue(os.path.getsize(json_file) > 0)
-    self.assertEqual(oct(os.stat(json_file).st_mode & 0777), '0644')
+    if IS_WINDOWS:
+      self.assertEqual(oct(os.stat(json_file).st_mode & 0777), '0666')
+    else:
+      self.assertEqual(oct(os.stat(json_file).st_mode & 0777), '0644')
     self.assertTrue(json_file.endswith("status_command.json"))
     os.unlink(json_file)
     # Testing side effect of dump_command_to_json

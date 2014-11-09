@@ -30,6 +30,9 @@ from resource_management.core.source import InlineTemplate
 from jinja2 import UndefinedError, TemplateNotFound
 import urllib2
 import os
+import platform
+
+IS_WINDOWS = platform.system() == "Windows"
 
 
 @patch.object(System, "os_family", new = 'redhat')
@@ -46,8 +49,12 @@ class TestContentSources(TestCase):
     file_mock.read.return_value = 'content'
     open_mock.return_value = file_mock
 
+    filepath = "/absolute/path/file"
+    if IS_WINDOWS:
+      filepath = "\\absolute\\path\\file"
+
     with Environment("/base") as env:
-      static_file = StaticFile("/absolute/path/file")
+      static_file = StaticFile(filepath)
       content = static_file.get_content()
 
     self.assertEqual('content', content)
@@ -108,130 +115,6 @@ class TestContentSources(TestCase):
     self.assertEqual(exists_mock.call_count, 1)
     pass
 
-  @patch.object(urllib2, "urlopen")
-  @patch.object(os, "makedirs")
-  @patch.object(os.path, "exists")
-  def test_download_source_get_content_nocache(self, exists_mock, makedirs_mock, urlopen_mock):
-    """
-    Testing DownloadSource.get_content without cache
-    """
-    exists_mock.return_value = True
-    web_file_mock = MagicMock()
-    web_file_mock.read.return_value = 'web_content'
-    urlopen_mock.return_value = web_file_mock
-
-    with Environment("/base") as env:
-      download_source = DownloadSource("http://download/source", cache=False)
-    content = download_source.get_content()
-
-    self.assertEqual('web_content', content)
-    self.assertEqual(urlopen_mock.call_count, 1)
-    urlopen_mock.assert_called_with('http://download/source')
-    self.assertEqual(web_file_mock.read.call_count, 1)
-
-  @patch.object(urllib2, "urlopen")
-  @patch.object(os, "makedirs")
-  @patch.object(os.path, "exists")
-  def test_download_source_get_content_cache_new(self, exists_mock, makedirs_mock, urlopen_mock):
-    """
-    Testing DownloadSource.get_content with cache on non-cached resource
-    """
-    exists_mock.side_effect = [True, False]
-    web_file_mock = MagicMock()
-    web_file_mock.read.return_value = 'web_content'
-    urlopen_mock.return_value = web_file_mock
-
-    with Environment("/base") as env:
-      download_source = DownloadSource("http://download/source", cache=True)
-    content = download_source.get_content()
-
-    self.assertEqual('web_content', content)
-    self.assertEqual(urlopen_mock.call_count, 1)
-    urlopen_mock.assert_called_with('http://download/source')
-    self.assertEqual(web_file_mock.read.call_count, 1)
-
-  @patch("__builtin__.open")
-  @patch.object(os, "makedirs")
-  @patch.object(os.path, "exists")
-  def test_download_source_get_content_cache_existent(self, exists_mock, makedirs_mock, open_mock):
-    """
-    Testing DownloadSource.get_content with cache on cached resource
-    """
-    exists_mock.side_effect = [True, True, False]
-
-    file_mock = MagicMock(name = 'file_mock')
-    file_mock.__enter__.return_value = file_mock
-    file_mock.read.return_value = 'cached_content'
-    open_mock.return_value = file_mock
-
-
-    with Environment("/base") as env:
-      download_source = DownloadSource("http://download/source", cache=True)
-    content = download_source.get_content()
-
-    self.assertEqual('cached_content', content)
-    self.assertEqual(open_mock.call_count, 1)
-    open_mock.assert_called_with('/var/tmp/downloads/source')
-    self.assertEqual(file_mock.read.call_count, 1)
-
-  @patch.object(urllib2, "urlopen")
-  @patch("__builtin__.open")
-  @patch.object(os, "makedirs")
-  @patch.object(os.path, "exists")
-  def test_download_source_get_content_cache_existent_md5_match(self, exists_mock, makedirs_mock, open_mock,
-                                                                urlopen_mock):
-    """
-    Testing DownloadSource.get_content with cache on cached resource with md5 check
-    """
-    exists_mock.side_effect = [True, True, False]
-
-    file_mock = MagicMock(name = 'file_mock')
-    file_mock.__enter__.return_value = file_mock
-    file_mock.read.return_value = 'cached_content'
-    open_mock.return_value = file_mock
-
-
-    with Environment("/base") as env:
-      download_source = DownloadSource("http://download/source", cache=True)
-    content = download_source.get_content()
-
-    self.assertEqual('cached_content', content)
-    self.assertEqual(open_mock.call_count, 1)
-    open_mock.assert_called_with('/var/tmp/downloads/source')
-    self.assertEqual(file_mock.read.call_count, 1)
-    self.assertEqual(urlopen_mock.call_count, 0)
-
-  @patch.object(urllib2, "urlopen")
-  @patch("__builtin__.open")
-  @patch.object(os, "makedirs")
-  @patch.object(os.path, "exists")
-  def test_download_source_get_content_cache_existent_md5_unmatch(self, exists_mock, makedirs_mock, open_mock,
-                                                                  urlopen_mock):
-    """
-    Testing DownloadSource.get_content with cache on cached resource with md5 check
-    """
-    exists_mock.side_effect = [True, True, False]
-    fake_md5 = "144c9defac04969c7bfad8efaa8ea194"
-    file_mock = MagicMock(name = 'file_mock')
-    file_mock.__enter__.return_value = file_mock
-    file_mock.read.return_value = 'cached_content'
-    open_mock.return_value = file_mock
-    web_file_mock = MagicMock()
-    web_file_mock.read.return_value = 'web_content'
-    urlopen_mock.return_value = web_file_mock
-
-    with Environment("/base") as env:
-      download_source = DownloadSource("http://download/source", cache=True, md5sum=fake_md5)
-    content = download_source.get_content()
-
-    self.assertEqual('web_content', content)
-    self.assertEqual(open_mock.call_count, 2)
-    open_mock.assert_once_called('/var/tmp/downloads/source', 'w')
-    open_mock.assert_once_called('/var/tmp/downloads/source')
-    self.assertEqual(file_mock.read.call_count, 1)
-    self.assertEqual(urlopen_mock.call_count, 1)
-    urlopen_mock.assert_called_with('http://download/source')
-
   @patch("__builtin__.open")
   @patch.object(os.path, "getmtime")
   @patch.object(os.path, "exists")
@@ -250,9 +133,15 @@ class TestContentSources(TestCase):
       template = Template("test.j2")
 
     self.assertEqual(open_mock.call_count, 1)
-    open_mock.assert_called_with('/base/templates/test.j2', 'rb')
+    if IS_WINDOWS:
+      open_mock.assert_called_with('/base\\templates\\test.j2', 'rb')
+    else:
+      open_mock.assert_called_with('/base/templates/test.j2', 'rb')
     self.assertEqual(getmtime_mock.call_count, 1)
-    getmtime_mock.assert_called_with('/base/templates/test.j2')
+    if IS_WINDOWS:
+      getmtime_mock.assert_called_with('/base\\templates\\test.j2')
+    else:
+      getmtime_mock.assert_called_with('/base/templates/test.j2')
 
   @patch.object(os.path, "exists")
   def test_template_loader_fail(self, exists_mock):
@@ -340,4 +229,7 @@ class TestContentSources(TestCase):
     with Environment("/base") as env:
       template = InlineTemplate("{{test_arg1}} template content {{os.path.join(path[0],path[1])}}", [os], test_arg1 = "test", path = ["/one","two"])
       content = template.get_content()
-    self.assertEqual(u'test template content /one/two\n', content)
+    if IS_WINDOWS:
+      self.assertEqual(u'test template content /one\\two\n', content)
+    else:
+      self.assertEqual(u'test template content /one/two\n', content)
