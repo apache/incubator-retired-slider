@@ -34,7 +34,7 @@ class TestExecutionEnvironment extends SliderTestBase {
 
   @Test
   public void testWinutils() throws Throwable {
-    SliderUtils.maybeVerifyWinUtilsValid(log);
+    SliderUtils.maybeVerifyWinUtilsValid();
 
   }
   

@@ -27,9 +27,7 @@ import org.apache.commons.httpclient.methods.GetMethod
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileStatus
 import org.apache.hadoop.fs.FileSystem as HadoopFS
-import org.apache.hadoop.fs.FileUtil
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.io.nativeio.NativeIO
 import org.apache.hadoop.util.Shell
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.conf.YarnConfiguration
@@ -191,45 +189,15 @@ class SliderTestUtils extends Assert {
     fail("Not implemented")
   }
 
-  /**
-   * Check for any needed libraries being present. On Unix none are needed;
-   * on windows they must be present
-   * @return true if all is well
-   */
-  public static String checkForRequiredLibraries() {
-    
-    if (!Shell.WINDOWS) {
-      return "";
-    }
-    StringBuilder errorText = new StringBuilder("")
-    boolean available = true;
-    if (!NativeIO.available) {
-      errorText.append("No native IO library. ")
-    }
-    try {
-      def path = Shell.getQualifiedBinPath("winutils.exe");
-      log.debug("winutils is at $path")
-    } catch (IOException e) {
-      errorText.append("No WINUTILS.EXE. ")
-      log.warn("No winutils: $e", e)
-    }
-    try {
-      File target = new File("target")
-      FileUtil.canRead(target)
-    } catch (UnsatisfiedLinkError e) {
-      log.warn("Failing to link to native IO methods: $e", e)
-      errorText.append("No native IO methods")
-    }
-    return errorText.toString();
-  }
+
 
   /**
    * Assert that any needed libraries being present. On Unix none are needed;
    * on windows they must be present
    */
   public static void assertNativeLibrariesPresent() {
-    String errorText = checkForRequiredLibraries()
-    if (errorText != null) {
+    String errorText = SliderUtils.checkForRequiredNativeLibraries()
+    if (errorText != "") {
       fail(errorText)
     }
   }
