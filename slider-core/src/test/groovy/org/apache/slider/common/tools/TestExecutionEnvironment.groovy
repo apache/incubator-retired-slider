@@ -31,6 +31,12 @@ class TestExecutionEnvironment extends SliderTestBase {
   public void testClientEnv() throws Throwable {
     SliderUtils.validateSliderClientEnvironment(log)
   }
+
+  @Test
+  public void testWinutils() throws Throwable {
+    SliderUtils.maybeVerifyWinUtilsValid(log);
+
+  }
   
   @Test
   public void testServerEnv() throws Throwable {
@@ -46,5 +52,9 @@ class TestExecutionEnvironment extends SliderTestBase {
   public void testValidatePythonEnv() throws Throwable {
     SliderUtils.validatePythonEnv(log)
   }
-  
+
+  @Test
+  public void testNativeLibs() throws Throwable {
+    assertNativeLibrariesPresent()
+  }
 }
