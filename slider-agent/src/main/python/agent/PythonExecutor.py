@@ -101,18 +101,18 @@ class PythonExecutor:
     out = open(tmpoutfile, 'r').read()
     error = open(tmperrfile, 'r').read()
 
-    try:
-      with open(tmpstructedoutfile, 'r') as fp:
-        structured_out = json.load(fp)
-    except Exception:
-      if os.path.exists(tmpstructedoutfile):
-        errMsg = 'Unable to read structured output from ' + tmpstructedoutfile
-        structured_out = {
-          'msg': errMsg
-        }
-        logger.warn(structured_out)
-      else:
-        structured_out = {}
+    structured_out = {}
+    if os.path.exists(tmpstructedoutfile):
+      try:
+        with open(tmpstructedoutfile, 'r') as fp:
+          structured_out = json.load(fp)
+      except Exception as e:
+        if os.path.exists(tmpstructedoutfile):
+          errMsg = 'Unable to read structured output from ' + tmpstructedoutfile + ' ' + str(e)
+          structured_out = {
+            'msg': errMsg
+          }
+          logger.warn(structured_out)
 
     if self.python_process_has_been_killed:
       error = str(error) + "\n Python script has been killed due to timeout"
