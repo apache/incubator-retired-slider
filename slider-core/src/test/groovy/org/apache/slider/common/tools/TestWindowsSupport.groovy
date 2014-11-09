@@ -134,7 +134,7 @@ class TestWindowsSupport extends SliderTestBase {
   @Test
   public void testHasWinutils() throws Throwable {
     assume(Shell.WINDOWS, "not windows")
-    SliderUtils.maybeVerifyWinUtilsValid(log)
+    SliderUtils.maybeVerifyWinUtilsValid()
   }
 
   @Test
