@@ -32,7 +32,7 @@ ignoredDirs = ["mock"]
 class TestAgent(unittest.TestSuite):
   def run(self, result, debug=False):
     run = unittest.TestSuite.run
-    run(self, result, debug)
+    run(self, result)
     return result
 
 

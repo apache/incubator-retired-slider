@@ -38,6 +38,9 @@
     <src.confdir>src/conf-hdp</src.confdir>
     <src.libdir>${project.build.directory}/lib</src.libdir>
     <src.agent.ini.dir>${project.build.directory}/../../slider-agent/conf</src.agent.ini.dir>
+    <python.ver>python &gt;= 2.6</python.ver>
+    <executable.python>${project.basedir}/../slider-agent/src/test/python/python-wrap</executable.python>
+    <python.path.l>${project.basedir}/src/main/scripts:${project.basedir}/../slider-agent/src/test/python/mock:${project.basedir}/src/test/python/scripts</python.path.l>
     <skipTests>false</skipTests>
   </properties>
 
@@ -72,13 +75,13 @@
         <executions>
           <execution>
             <configuration>
-              <executable>python</executable>
+              <executable>${executable.python}</executable>
               <workingDirectory>src/test/python</workingDirectory>
               <arguments>
                 <argument>unitTests.py</argument>
               </arguments>
               <environmentVariables>
-                <PYTHONPATH>${project.basedir}/src/main/scripts:${project.basedir}/../slider-agent/src/test/python/mock:${project.basedir}/src/test/python/scripts</PYTHONPATH>
+                <PYTHONPATH>${python.path.l}</PYTHONPATH>
               </environmentVariables>
               <skip>${skipTests}</skip>
             </configuration>
@@ -235,6 +238,27 @@
   </reporting>
 
   <profiles>
+   <profile>
+      <id>Windows</id>
+      <activation>
+        <os><family>windows</family></os>
+      </activation>
+      <properties>
+        <executable.python>python</executable.python>
+        <python.path.l>${project.basedir}\src\main\scripts;${project.basedir}\..\slider-agent\src\test\python\mock;${project.basedir}\src\test\python\scripts</python.path.l>
+      </properties>
+    </profile>
+
+    <profile>
+      <id>Linux</id>
+      <activation>
+        <os><family>!windows</family></os>
+      </activation>
+      <properties>
+        <executable.python>${project.basedir}/../slider-agent/src/test/python/python-wrap</executable.python>
+        <python.path.l>${project.basedir}/src/main/scripts:${project.basedir}/../slider-agent/src/test/python/mock:${project.basedir}/src/test/python/scripts</python.path.l>
+      </properties>
+    </profile>
     <profile>
       <id>rpm</id>
       <build>
