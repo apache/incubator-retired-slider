@@ -133,9 +133,15 @@ class TestContentSources(TestCase):
       template = Template("test.j2")
 
     self.assertEqual(open_mock.call_count, 1)
-    open_mock.assert_called_with('/base/templates/test.j2', 'rb')
+    if IS_WINDOWS:
+      open_mock.assert_called_with('/base/templates\\test.j2', 'rb')
+    else:
+      open_mock.assert_called_with('/base/templates/test.j2', 'rb')
     self.assertEqual(getmtime_mock.call_count, 1)
-    getmtime_mock.assert_called_with('/base/templates/test.j2')
+    if IS_WINDOWS:
+      getmtime_mock.assert_called_with('/base/templates\\test.j2')
+    else:
+      getmtime_mock.assert_called_with('/base/templates/test.j2')
 
   @patch.object(os.path, "exists")
   def test_template_loader_fail(self, exists_mock):

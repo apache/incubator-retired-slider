@@ -121,7 +121,11 @@ class TestExecuteResource(TestCase):
       execute_resource = Execute('echo "1"',
                                  path=["/test/one", "test/two"]
       )
-    self.assertEqual(execute_resource.environment["PATH"], '/test/one:test/two')
+
+    if IS_WINDOWS:
+      self.assertEqual(execute_resource.environment["PATH"], '/test/one;test/two')
+    else:
+      self.assertEqual(execute_resource.environment["PATH"], '/test/one:test/two')
 
   @patch('time.sleep')
   @patch.object(subprocess, "Popen")

@@ -43,6 +43,7 @@ class TestGrep(TestCase):
 
 
   def test_grep_few_lines(self):
+    self.assertEqual.__self__.maxDiff = None
     fragment = self.grep.grep(self.string_bad, "Err", 3, 3)
     desired = """
 debug: /Schedule[never]: Skipping device resources because running on a host
@@ -77,6 +78,7 @@ debug: Finishing transaction 70171639726240
     self.assertEquals(fragment, desired, "Grep tail function should return all lines if there are less lines than n")
 
   def test_tail_few_lines(self):
+    self.assertEqual.__self__.maxDiff = None
     fragment = self.grep.tail(self.string_good, 3)
     desired = """
 debug: Finishing transaction 70060456663980
@@ -106,6 +108,7 @@ debug: Processing report from ambari-dmi with processor Puppet::Reports::Store
     pass
 
   def test_cleanByTemplate(self):
+    self.assertEqual.__self__.maxDiff = None
     fragment = self.grep.cleanByTemplate(self.string_bad, "debug")
     desired = """
 info: Applying configuration version '1352127563'
