@@ -169,4 +169,19 @@ class TestWindowsSupport extends YarnMiniClusterTestBase {
     exec(0, [winUtilsPath, "systeminfo"])
   }
 
+
+  @Test
+  public void testPath() throws Throwable {
+    String pathkey;
+    
+    System.getenv().keySet().each { String it ->
+      if (it.toLowerCase(Locale.ENGLISH).equals("path")) {
+        pathkey = it;
+      }
+    }
+    assert pathkey
+    log.info("Path env variable is $pathkey")
+    def pathval = System.getenv(pathkey)
+    log.info("Path value = $pathval")
+  }
 }

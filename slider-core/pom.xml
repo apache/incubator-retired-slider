@@ -116,6 +116,9 @@
           <argLine>${test.argLine}</argLine>
           <failIfNoTests>${test.failIfNoTests}</failIfNoTests>
           <redirectTestOutputToFile>${build.redirect.test.output.to.file}</redirectTestOutputToFile>
+          <environmentVariables>
+            <PATH>${test.env.path}</PATH>
+          </environmentVariables>
           <systemPropertyVariables>
             <java.net.preferIPv4Stack>true</java.net.preferIPv4Stack>
             <java.awt.headless>true</java.awt.headless>
