@@ -19,6 +19,7 @@
 package org.apache.slider.core.launch;
 
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
+import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.slider.core.persist.ApplicationReportSerDeser;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
@@ -77,7 +78,8 @@ public class SerializedApplicationReport {
     this.diagnostics = report.getDiagnostics();
     this.startTime = report.getStartTime();
     this.finishTime = report.getFinishTime();
-    this.finalStatus = report.getFinalApplicationStatus().toString();
+    FinalApplicationStatus appStatus = report.getFinalApplicationStatus();
+    this.finalStatus = appStatus == null ? "" : appStatus.toString();
     this.progress = report.getProgress();
   }
 
