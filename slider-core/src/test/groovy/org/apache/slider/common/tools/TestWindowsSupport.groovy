@@ -25,6 +25,7 @@ import org.apache.hadoop.fs.ChecksumFileSystem
 import org.apache.hadoop.fs.FSDataInputStream
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.fs.FileSystem as HadoopFS
+import org.apache.hadoop.service.ServiceStateException
 import org.apache.hadoop.util.Shell
 import org.apache.slider.providers.agent.AgentUtils
 import org.apache.slider.server.services.workflow.ForkedProcessService
@@ -120,10 +121,15 @@ class TestWindowsSupport extends SliderTestBase {
   @Test
   public void testExecNonexistentBinary() throws Throwable {
     assume(Shell.WINDOWS, "not windows")
-    exec(2, ["undefined-application", "--version"])
+    try {
+      exec(2, ["undefined-application", "--version"])
+    } catch (ServiceStateException e) {
+      if (!(e.cause instanceof FileNotFoundException)) {
+        throw e;
+      }
+    }
   }
 
-  
   @Test
   public void testEmitKillCommand() throws Throwable {
     killJavaProcesses("regionserver", 9)
