@@ -131,6 +131,8 @@
     <test.failIfNoTests>true</test.failIfNoTests>
     <test.funtests.failIfNoTests>false</test.funtests.failIfNoTests>
     <test.forkMode>always</test.forkMode>
+    <!-- path environment variable -->
+    <test.env.path>${env.PATH}</test.env.path>    
     
     <!--
     core artifacts
@@ -1267,7 +1269,38 @@
         <version>${jetty.version}</version>
       </dependency>
 
+      <dependency>
+        <groupId>org.codehaus.jettison</groupId>
+        <artifactId>jettison</artifactId>
+        <version>1.1</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.powermock</groupId>
+        <artifactId>powermock-core</artifactId>
+        <version>1.5</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.powermock</groupId>
+        <artifactId>powermock-reflect</artifactId>
+        <version>1.5</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.powermock</groupId>
+        <artifactId>powermock-api-easymock</artifactId>
+        <version>1.5</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.powermock</groupId>
+        <artifactId>powermock-module-junit4</artifactId>
+        <version>1.5</version>
+      </dependency>
+
     </dependencies>
+    
   </dependencyManagement>
 
   <profiles>
@@ -1317,6 +1350,7 @@
         <module>app-packages/storm</module>
       </modules>
     </profile>
+    
     <profile>
       <id>Windows</id>
       <activation>
@@ -1416,7 +1450,7 @@
       <!-- hadoop branch-2 builds  -->
       <id>branch-2</id>
       <properties>
-        <hadoop.version>2.6.0-SNAPSHOT</hadoop.version>
+        <hadoop.version>2.7.0-SNAPSHOT</hadoop.version>
       </properties>
     </profile>
     

@@ -72,7 +72,7 @@ class TestZKIntegration extends YarnZKMiniClusterTestBase implements KeysForTest
     assertHasZKCluster()
 
     ZKIntegration zki = createZKIntegrationInstance(
-        getZKBinding(), "", true, false, 5000)
+        getZKBinding(), methodName.methodName, true, false, 5000)
     String userPath = ZKIntegration.mkSliderUserPath(USER)
     String fullPath = zki.createPath(userPath, "/cluster-",
                                      ZooDefs.Ids.OPEN_ACL_UNSAFE,
@@ -86,7 +86,7 @@ class TestZKIntegration extends YarnZKMiniClusterTestBase implements KeysForTest
   @Test
   public void testListUserClustersWithTwoCluster() throws Throwable {
     ZKIntegration zki = createZKIntegrationInstance(
-        getZKBinding(), "", true, false, 5000)
+        getZKBinding(), methodName.methodName, true, false, 5000)
     String userPath = ZKIntegration.mkSliderUserPath(USER)
     String c1 = createEphemeralChild(zki, userPath)
     log.info("Ephemeral path $c1")
