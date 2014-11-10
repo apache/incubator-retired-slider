@@ -211,11 +211,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
    */
   @BeforeClass 
   public static void checkKillSupport() {
-    if (!Shell.WINDOWS) {
-      kill_supported = true;
-    } else {
-      kill_supported = doesWindowsAppExist(["xargs", "--version"])
-    }
+    kill_supported = !Shell.WINDOWS
   }
 
   /**
