@@ -59,6 +59,7 @@ public class EndOfServiceWaiter implements ServiceStateChangeListener {
 
   public synchronized void waitForServiceToStop(long timeout) throws
       InterruptedException, TimeoutException {
+    service.waitForServiceToStop(timeout);
     if (!finished.get()) {
       wait(timeout);
       if (!finished.get()) {
