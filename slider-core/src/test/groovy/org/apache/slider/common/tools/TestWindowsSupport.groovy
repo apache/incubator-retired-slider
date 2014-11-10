@@ -104,17 +104,21 @@ class TestWindowsSupport extends YarnMiniClusterTestBase {
   }
 
 
+/*
   @Test
   public void testHasGawkInstalled() throws Throwable {
     assume(Shell.WINDOWS, "not windows")
     exec(0, ["gawk", "--version"])
   }
+*/
 
+/*
   @Test
   public void testHasXargsInstalled() throws Throwable {
     assume(Shell.WINDOWS, "not windows")
     exec(0, ["xargs", "--version"])
   }
+*/
 
   @Test
   public void testExecNonexistentBinary() throws Throwable {
