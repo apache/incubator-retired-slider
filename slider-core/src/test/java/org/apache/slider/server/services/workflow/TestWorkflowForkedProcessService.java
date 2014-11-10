@@ -20,7 +20,6 @@ package org.apache.slider.server.services.workflow;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.ServiceOperations;
-import org.apache.slider.server.services.utility.EndOfServiceWaiter;
 import org.apache.slider.test.SliderTestUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -137,9 +136,8 @@ public class TestWorkflowForkedProcessService extends WorkflowServiceTestBase {
 
   public void exec() throws InterruptedException, TimeoutException {
     assertNotNull(process);
-    EndOfServiceWaiter waiter = new EndOfServiceWaiter(process);
     process.start();
-    waiter.waitForServiceToStop(5000);
+    process.waitForServiceToStop(5000);
   }
 
 }
