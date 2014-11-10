@@ -28,6 +28,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileStatus
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.service.ServiceStateException
 import org.apache.hadoop.util.Shell
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.conf.YarnConfiguration
@@ -46,6 +47,7 @@ import org.apache.slider.core.exceptions.WaitTimeoutException
 import org.apache.slider.core.main.ServiceLaunchException
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.registry.docstore.PublishedConfigSet
+import org.apache.slider.server.services.workflow.ForkedProcessService
 import org.junit.Assert
 import org.junit.Assume
 
@@ -519,6 +521,45 @@ class SliderTestUtils extends Assert {
     def instances = clusterDescription?.instances?.get(component)
     int actual = instances != null ? instances.size() : 0
     return actual
+  }
+  /**
+   * Exec a set of commands, wait a few seconds for it to finish.
+   * @param status code
+   * @param commands
+   * @return the process
+   */
+  public static ForkedProcessService exec(int status, List<String> commands) {
+    ForkedProcessService process = exec(commands)
+    assert status == process.exitCode
+    return process
+  }
+  /**
+     * Exec a set of commands, wait a few seconds for it to finish.
+     * @param commands
+     * @return
+     */
+  public static ForkedProcessService exec(List<String> commands) {
+    ForkedProcessService process;
+    process = new ForkedProcessService(
+        commands[0],
+        [:],
+        commands);
+    process.init(new Configuration());
+    process.start();
+    process.waitForServiceToStop(10000);
+    process
+  }
+
+  public static boolean doesWindowsAppExist(List<String> commands) {
+    try {
+      exec(0, commands)
+      return true;
+    } catch (ServiceStateException e) {
+      if (!(e.cause instanceof FileNotFoundException)) {
+        throw e;
+      }
+      return false;
+    }
   }
 
   /**
