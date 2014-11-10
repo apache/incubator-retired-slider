@@ -1326,9 +1326,6 @@
           <family>windows</family>
         </os>
       </activation>
-      <properties>
-        <test.env.path>${env.PATH}:${project.basedir}\bin\windows\${hadoop.version}\bin}</test.env.path>  
-      </properties>
       <modules>
         <module>app-packages/hbase-win</module>
         <module>app-packages/storm-win</module>
