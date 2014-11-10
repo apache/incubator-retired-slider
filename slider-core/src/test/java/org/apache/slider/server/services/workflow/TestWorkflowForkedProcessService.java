@@ -20,7 +20,6 @@ package org.apache.slider.server.services.workflow;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.ServiceOperations;
-import org.apache.slider.server.services.utility.EndOfServiceWaiter;
 import org.apache.slider.test.SliderTestUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -70,9 +69,9 @@ public class TestWorkflowForkedProcessService extends WorkflowServiceTestBase {
     initProcess(commandFactory.ls(testDir));
     exec();
     assertFalse(process.isProcessRunning());
-    assertEquals(0, process.getExitCode());
-
-    assertStringInOutput("test-classes", getFinalOutput());
+    Integer exitCode = process.getExitCode();
+    assertNotNull("null exit code", exitCode);
+    assertEquals(0, exitCode.intValue());
     // assert that the service did not fail
     assertNull(process.getFailureCause());
   }
@@ -84,7 +83,8 @@ public class TestWorkflowForkedProcessService extends WorkflowServiceTestBase {
     initProcess(commandFactory.exitFalse());
     exec();
     assertFalse(process.isProcessRunning());
-    int exitCode = process.getExitCode();
+    Integer exitCode = process.getExitCode();
+    assertNotNull("null exit code", exitCode);
     assertTrue(exitCode != 0);
     int corrected = process.getExitCodeSignCorrected();
     assertEquals(1, corrected);
@@ -99,8 +99,9 @@ public class TestWorkflowForkedProcessService extends WorkflowServiceTestBase {
     String echoText = "hello, world";
     initProcess(commandFactory.echo(echoText));
     exec();
-
-    assertEquals(0, process.getExitCode());
+    Integer exitCode = process.getExitCode();
+    assertNotNull("null exit code", exitCode);
+    assertEquals(0, exitCode.intValue());
     assertStringInOutput(echoText, getFinalOutput());
 
   }
@@ -113,8 +114,9 @@ public class TestWorkflowForkedProcessService extends WorkflowServiceTestBase {
     env.put(var, val);
     initProcess(commandFactory.env());
     exec();
-
-    assertEquals(0, process.getExitCode());
+    Integer exitCode = process.getExitCode();
+    assertNotNull("null exit code", exitCode);
+    assertEquals(0, exitCode.intValue());
     assertStringInOutput(val, getFinalOutput());
   }
 
@@ -137,9 +139,8 @@ public class TestWorkflowForkedProcessService extends WorkflowServiceTestBase {
 
   public void exec() throws InterruptedException, TimeoutException {
     assertNotNull(process);
-    EndOfServiceWaiter waiter = new EndOfServiceWaiter(process);
     process.start();
-    waiter.waitForServiceToStop(5000);
+    assert process.waitForServiceToStop(5000);
   }
 
 }

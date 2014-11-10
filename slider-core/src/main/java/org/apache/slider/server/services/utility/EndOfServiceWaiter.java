@@ -35,6 +35,7 @@ public class EndOfServiceWaiter implements ServiceStateChangeListener {
 
   private final AtomicBoolean finished = new AtomicBoolean(false);
   private final String name;
+  private Service service;
 
   /**
    * Wait for a service; use the service name as this instance's name
@@ -52,18 +53,20 @@ public class EndOfServiceWaiter implements ServiceStateChangeListener {
    */
   public EndOfServiceWaiter(String name, Service service) {
     this.name = name;
+    this.service = service;
     service.registerServiceListener(this);
   }
 
   public synchronized void waitForServiceToStop(long timeout) throws
       InterruptedException, TimeoutException {
+    service.waitForServiceToStop(timeout);
     if (!finished.get()) {
       wait(timeout);
-    }
-    if (!finished.get()) {
-      throw new TimeoutException(name
-               + " did not finish after " + timeout +
-               " milliseconds");
+      if (!finished.get()) {
+        throw new TimeoutException(name
+                                   + " did not finish after " + timeout +
+                                   " milliseconds");
+      }
     }
   }
 

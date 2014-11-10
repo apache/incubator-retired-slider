@@ -25,18 +25,17 @@ import org.apache.hadoop.fs.ChecksumFileSystem
 import org.apache.hadoop.fs.FSDataInputStream
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.fs.FileSystem as HadoopFS
+import org.apache.hadoop.service.ServiceStateException
 import org.apache.hadoop.util.Shell
 import org.apache.slider.providers.agent.AgentUtils
-import org.apache.slider.server.services.utility.EndOfServiceWaiter
-import org.apache.slider.server.services.workflow.ForkedProcessService
-import org.apache.slider.test.SliderTestBase
+import org.apache.slider.test.YarnMiniClusterTestBase
 import org.junit.Test
 
 import java.util.regex.Pattern
 
 @CompileStatic
 @Slf4j
-class TestWindowsSupport extends SliderTestBase {
+class TestWindowsSupport extends YarnMiniClusterTestBase {
 
   private static final Pattern hasDriveLetterSpecifier =
       Pattern.compile("^/?[a-zA-Z]:");
@@ -68,8 +67,8 @@ class TestWindowsSupport extends SliderTestBase {
   
   @Test
   public void testPathHandling() throws Throwable {
-    assume(Shell.WINDOWS, "not windows")
-    
+    assumeWindows()
+
     Path path = new Path(windowsFile);
     def uri = path.toUri()
 //    assert "file" == uri.scheme 
@@ -95,51 +94,79 @@ class TestWindowsSupport extends SliderTestBase {
 
   @Test
   public void testSliderFS() throws Throwable {
-    assume(Shell.WINDOWS, "not windows")
+    assumeWindows()
     SliderFileSystem sfs = new SliderFileSystem(new Configuration())
     try {
       def metainfo = AgentUtils.getApplicationMetainfo(sfs, windowsFile)
     } catch (FileNotFoundException fnfe) {
       // expected
     }
-    
   }
 
 
+/*
   @Test
   public void testHasGawkInstalled() throws Throwable {
     assume(Shell.WINDOWS, "not windows")
     exec(0, ["gawk", "--version"])
   }
+*/
 
+/*
   @Test
   public void testHasXargsInstalled() throws Throwable {
     assume(Shell.WINDOWS, "not windows")
     exec(0, ["xargs", "--version"])
   }
+*/
 
-  
+  @Test
+  public void testExecNonexistentBinary() throws Throwable {
+    assume(Shell.WINDOWS, "not windows")
+    def commands = ["undefined-application", "--version"]
+    try {
+      exec(0, commands)
+      fail("expected an exception")
+    } catch (ServiceStateException e) {
+      if (!(e.cause instanceof FileNotFoundException)) {
+        throw e;
+      }
+    }
+  }
+  @Test
+  public void testExecNonexistentBinary2() throws Throwable {
+    assumeWindows()
+    assert !doesWindowsAppExist(["undefined-application", "--version"])
+  }
+
+  public assumeWindows() {
+    assume(Shell.WINDOWS, "not windows")
+  }
+
   @Test
   public void testEmitKillCommand() throws Throwable {
-    killJavaProcesses("regionserver", 9)
+
+    def result = killJavaProcesses("regionserver", 9)
+    // we know the exit code if there is no supported kill operation
+    assert kill_supported || result == -1
   }
 
   @Test
   public void testHadoopHomeDefined() throws Throwable {
-    assume(Shell.WINDOWS, "not windows")
+    assumeWindows()
     def hadoopHome = Shell.hadoopHome
     log.info("HADOOP_HOME=$hadoopHome")
   }
   
   @Test
   public void testHasWinutils() throws Throwable {
-    assume(Shell.WINDOWS, "not windows")
+    assumeWindows()
     SliderUtils.maybeVerifyWinUtilsValid()
   }
 
   @Test
   public void testExecWinutils() throws Throwable {
-    assume(Shell.WINDOWS, "not windows")
+    assumeWindows()
     def winUtilsPath = Shell.winUtilsPath
     assert winUtilsPath
     File winUtils = new File(winUtilsPath)
@@ -148,35 +175,53 @@ class TestWindowsSupport extends SliderTestBase {
     exec(0, [winUtilsPath, "systeminfo"])
   }
 
+  @Test
+  public void testPath() throws Throwable {
+    String path = extractPath()
+    log.info("Path value = $path")
+  }
 
-  /**
-   * Exec a set of commands, wait a few seconds for it to finish.
-   * @param status code
-   * @param commands
-   * @return the process
-   */
-  public ForkedProcessService exec(int status, List<String> commands) {
-    ForkedProcessService process = exec(commands)
-    assert status == process.exitCode
-    return process
+  @Test
+  public void testFindJavac() throws Throwable {
+    String name = Shell.WINDOWS ? "javac.exe" : "javac"
+    assert locateExecutable(name)
   }
   
-  /**
-     * Exec a set of commands, wait a few seconds for it to finish.
-     * @param commands
-     * @return
-     */
-  
-  public ForkedProcessService exec(List<String> commands) {
-    ForkedProcessService process;
-    process = new ForkedProcessService(
-        methodName.methodName,
-        [:],
-        commands);
-    process.init(new Configuration());
-    EndOfServiceWaiter waiter = new EndOfServiceWaiter(process);
-    process.start();
-    waiter.waitForServiceToStop(10000);
-    process
+  @Test
+  public void testHadoopDLL() throws Throwable {
+    assumeWindows()
+    // split the path
+    File exepath = locateExecutable("HADOOP.DLL")
+    assert exepath
+    log.info "Hadoop DLL at: $exepath"
+  }
+
+  public File locateExecutable(String exe) {
+    File exepath = null
+    String path = extractPath()
+    String[] dirs = path.split(System.getProperty("path.separator"));
+    dirs.each { String dirname ->
+      File dir = new File(dirname)
+
+      File possible = new File(dir, exe)
+      if (possible.exists()) {
+        exepath = possible
+      }
+    }
+    return exepath
+  }
+
+  public String extractPath() {
+    String pathkey = "";
+
+    System.getenv().keySet().each { String it ->
+      if (it.toLowerCase(Locale.ENGLISH).equals("path")) {
+        pathkey = it;
+      }
+    }
+    assert pathkey
+    log.info("Path env variable is $pathkey")
+    def path = System.getenv(pathkey)
+    return path
   }
 }
