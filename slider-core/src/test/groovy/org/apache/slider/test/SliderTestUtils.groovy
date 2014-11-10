@@ -28,7 +28,6 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileStatus
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.io.nativeio.NativeIO
 import org.apache.hadoop.util.Shell
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.conf.YarnConfiguration
@@ -191,28 +190,12 @@ class SliderTestUtils extends Assert {
   }
 
   /**
-   * Check for any needed libraries being present. On Unix none are needed;
-   * on windows they must be present
-   * @return true if all is well
+   * skip a test on windows
    */
-  public static boolean areRequiredLibrariesAvailable() {
-    
-    if (!Shell.WINDOWS) {
-      return true;
+  public static void skipOnWindows() {
+    if (Shell.WINDOWS) {
+      skip("Not supported on windows")
     }
-    boolean available = true;
-    if (!NativeIO.available) {
-      log.warn("No native IO library")
-      available = false;
-    }
-    try {
-      def path = Shell.getQualifiedBinPath("winutils.exe");
-      log.debug("winutils is at $path")
-    } catch (IOException e) {
-      log.warn("No winutils: $e", e)
-      available = false;
-    }
-    return available;
   }
 
   /**
@@ -220,9 +203,10 @@ class SliderTestUtils extends Assert {
    * on windows they must be present
    */
   public static void assertNativeLibrariesPresent() {
-    assertTrue("Required Native libraries and executables are not present." +
-               "Check your HADOOP_HOME and PATH environment variables",
-        areRequiredLibrariesAvailable())
+    String errorText = SliderUtils.checkForRequiredNativeLibraries()
+    if (errorText != "") {
+      fail(errorText)
+    }
   }
 
   /**

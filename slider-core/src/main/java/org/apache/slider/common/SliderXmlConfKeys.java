@@ -149,4 +149,11 @@ public interface SliderXmlConfKeys {
   String KEY_AM_KEYTAB_LOCAL_PATH = "slider.am.keytab.local.path";
   String KEY_KEYTAB_PRINCIPAL = "slider.keytab.principal.name";
   String KEY_SECURITY_ENABLED = "site.global.security_enabled";
+
+  /**
+   * Set to disable server-side checks for python, openssl &c.
+   * This should only be set for testing
+   */
+  String KEY_SLIDER_AM_DEPENDENCY_CHECKS_DISABLED =
+      "slider.am.dependency.checks.disabled";
 }

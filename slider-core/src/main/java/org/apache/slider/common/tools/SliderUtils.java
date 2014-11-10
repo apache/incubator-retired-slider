@@ -34,6 +34,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.io.IOUtils;
+import org.apache.hadoop.io.nativeio.NativeIO;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
@@ -1720,6 +1721,36 @@ public final class SliderUtils {
     return is;
   }
 
+  /**
+   * Check for any needed libraries being present. On Unix none are needed;
+   * on windows they must be present
+   * @return true if all is well
+   */
+  public static String checkForRequiredNativeLibraries() {
+
+    if (!Shell.WINDOWS) {
+      return "";
+    }
+    StringBuilder errorText = new StringBuilder("");
+    if (!NativeIO.isAvailable()) {
+      errorText.append("No native IO library. ");
+    }
+    try {
+      String path = Shell.getQualifiedBinPath("winutils.exe");
+      log.debug("winutils is at {}", path);
+    } catch (IOException e) {
+      errorText.append("No WINUTILS.EXE. ");
+      log.warn("No winutils: {}", e, e);
+    }
+    try {
+      File target = new File("target");
+      FileUtil.canRead(target);
+    } catch (UnsatisfiedLinkError e) {
+      log.warn("Failing to link to native IO methods: {}", e, e);
+      errorText.append("No native IO methods");
+    }
+    return errorText.toString();
+  }
 
   /**
    * Strictly verify that windows utils is present.
@@ -1727,25 +1758,14 @@ public final class SliderUtils {
    * the headers. 
    * @throws IOException on any problem reading the file
    * @throws FileNotFoundException if the file is not considered valid
-   * @param logger
    */
-  public static void maybeVerifyWinUtilsValid(Logger logger) throws
+  public static void maybeVerifyWinUtilsValid() throws
       IOException,
       SliderException {
-    if (!Shell.WINDOWS) {
-      return;
+    String errorText = SliderUtils.checkForRequiredNativeLibraries();
+    if (!errorText.isEmpty()) {
+      throw new BadClusterStateException(errorText);
     }
-    String exePath = Shell.getWinUtilsPath();
-    String program = WINUTILS;
-    if (exePath == null) {
-      throw new FileNotFoundException(program + " not found on Path : " +
-                                      System.getenv("Path"));
-    }
-    File exe = new File(exePath);
-
-    verifyWindowsExe(program, exe);
-    execCommand(WINUTILS, 0, 5000, log, null, exePath, "systeminfo");
-
   }
 
   public static void verifyIsFile(String program, File exe) throws
@@ -1947,7 +1967,7 @@ public final class SliderUtils {
   public static void validateSliderClientEnvironment(Logger logger) throws
       IOException,
       SliderException {
-    maybeVerifyWinUtilsValid(logger);
+    maybeVerifyWinUtilsValid();
   }
 
   /**
@@ -1955,15 +1975,19 @@ public final class SliderUtils {
    * This looks for everything felt to be critical for execution, including
    * native binaries and other essential dependencies.
    * @param logger logger to log to on normal execution
+   * @param dependencyChecks flag to indicate checks for agent dependencies
    * @throws IOException on IO failures
    * @throws SliderException on validation failures
    */
-  public static void validateSliderServerEnvironment(Logger logger) throws
+  public static void validateSliderServerEnvironment(Logger logger,
+      boolean dependencyChecks) throws
       IOException,
       SliderException {
-    maybeVerifyWinUtilsValid(logger);
-    validatePythonEnv(logger);
-    validateOpenSSLEnv(logger);
+    maybeVerifyWinUtilsValid();
+    if (dependencyChecks) {
+      validatePythonEnv(logger);
+      validateOpenSSLEnv(logger);
+    }
   }
 
   public static void validateOpenSSLEnv(Logger logger) throws
