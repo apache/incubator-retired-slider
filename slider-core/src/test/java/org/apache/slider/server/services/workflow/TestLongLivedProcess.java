@@ -18,6 +18,7 @@
 
 package org.apache.slider.server.services.workflow;
 
+import org.apache.slider.test.SliderTestUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -75,6 +76,7 @@ public class TestLongLivedProcess extends WorkflowServiceTestBase implements
 
   @Test
   public void testExitCodes() throws Throwable {
+    SliderTestUtils.skipOnWindows();
 
     initProcess(commandFactory.exitFalse());
     process.start();
@@ -93,6 +95,7 @@ public class TestLongLivedProcess extends WorkflowServiceTestBase implements
 
   @Test
   public void testEcho() throws Throwable {
+    SliderTestUtils.skipOnWindows();
 
     String echoText = "hello, world";
     initProcess(commandFactory.echo(echoText));

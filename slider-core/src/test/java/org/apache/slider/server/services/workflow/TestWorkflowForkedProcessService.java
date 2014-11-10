@@ -21,6 +21,7 @@ package org.apache.slider.server.services.workflow;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.ServiceOperations;
 import org.apache.slider.server.services.utility.EndOfServiceWaiter;
+import org.apache.slider.test.SliderTestUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -78,6 +79,7 @@ public class TestWorkflowForkedProcessService extends WorkflowServiceTestBase {
 
   @Test
   public void testExitCodes() throws Throwable {
+    SliderTestUtils.skipOnWindows();
 
     initProcess(commandFactory.exitFalse());
     exec();
@@ -93,7 +95,7 @@ public class TestWorkflowForkedProcessService extends WorkflowServiceTestBase {
 
   @Test
   public void testEcho() throws Throwable {
-
+    SliderTestUtils.skipOnWindows();
     String echoText = "hello, world";
     initProcess(commandFactory.echo(echoText));
     exec();
