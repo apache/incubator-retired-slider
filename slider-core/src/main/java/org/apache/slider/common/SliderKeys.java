@@ -145,7 +145,12 @@ public interface SliderKeys extends SliderXmlConfKeys {
   /**
    * Log4j sysprop to name the resource :{@value}
    */
-  String SYSPROP_LOG4_CONFIGURATION = "log4j.configuration";
+  String SYSPROP_LOG4J_CONFIGURATION = "log4j.configuration";
+
+  /**
+   * sysprop for Slider AM log4j directory :{@value}
+   */
+  String SYSPROP_LOG_DIR = "LOG_DIR";
 
   /**
    * name of the Slider client resource
