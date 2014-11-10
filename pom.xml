@@ -1327,7 +1327,7 @@
         </os>
       </activation>
       <properties>
-        <test.env.path>${env.PATH}:{$project.basedir}\bin\windows\${hadoop.version}\bin}</test.env.path>  
+        <test.env.path>${env.PATH}:${project.basedir}\bin\windows\${hadoop.version}\bin}</test.env.path>  
       </properties>
       <modules>
         <module>app-packages/hbase-win</module>
