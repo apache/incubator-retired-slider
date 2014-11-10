@@ -189,7 +189,14 @@ class SliderTestUtils extends Assert {
     fail("Not implemented")
   }
 
-
+  /**
+   * skip a test on windows
+   */
+  public static void skipOnWindows() {
+    if (Shell.WINDOWS) {
+      skip("Not supported on windows")
+    }
+  }
 
   /**
    * Assert that any needed libraries being present. On Unix none are needed;
