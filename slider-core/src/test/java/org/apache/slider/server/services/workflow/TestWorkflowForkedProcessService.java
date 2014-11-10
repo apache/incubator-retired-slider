@@ -72,8 +72,6 @@ public class TestWorkflowForkedProcessService extends WorkflowServiceTestBase {
     Integer exitCode = process.getExitCode();
     assertNotNull("null exit code", exitCode);
     assertEquals(0, exitCode.intValue());
-
-    assertStringInOutput("test-classes", getFinalOutput());
     // assert that the service did not fail
     assertNull(process.getFailureCause());
   }
