@@ -117,6 +117,12 @@ class TestWindowsSupport extends SliderTestBase {
     exec(0, ["xargs", "--version"])
   }
 
+  @Test
+  public void testExecNonexistentBinary() throws Throwable {
+    assume(Shell.WINDOWS, "not windows")
+    exec(2, ["undefined-application", "--version"])
+  }
+
   
   @Test
   public void testEmitKillCommand() throws Throwable {
