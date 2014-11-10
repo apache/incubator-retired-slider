@@ -1910,7 +1910,7 @@ public final class SliderUtils {
     String errorText = null;
     process.start();
     try {
-      if (process.waitForServiceToStop(timeoutMillis)) {
+      if (!process.waitForServiceToStop(timeoutMillis)) {
         throw new TimeoutException(
             "Process did not stop in " + timeoutMillis + "mS");
       }
