@@ -88,7 +88,10 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     SLIDER_CONFIG.setInt(YarnConfiguration.RM_AM_MAX_ATTEMPTS, 100)
     SLIDER_CONFIG.setBoolean(YarnConfiguration.NM_PMEM_CHECK_ENABLED, false)
     SLIDER_CONFIG.setBoolean(YarnConfiguration.NM_VMEM_CHECK_ENABLED, false)
+    SLIDER_CONFIG.setBoolean(SliderXmlConfKeys.KEY_SLIDER_AM_DEPENDENCY_CHECKS_DISABLED,
+        true)
     SLIDER_CONFIG.setInt(YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_MB, 1)
+    
   }
 
 
@@ -345,9 +348,8 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
   
   public YarnConfiguration getTestConfiguration() {
     YarnConfiguration conf = getConfiguration()
-
     conf.addResource(SLIDER_TEST_XML)
-    return conf
+    return conf;
   }
 
   protected String getRMAddr() {
