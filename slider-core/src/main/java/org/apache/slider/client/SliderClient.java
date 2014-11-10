@@ -36,6 +36,7 @@ import org.apache.hadoop.registry.client.types.RegistryPathStatus;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.alias.CredentialProvider;
 import org.apache.hadoop.security.alias.CredentialProviderFactory;
+import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
@@ -1318,7 +1319,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     
     // if the conf dir has a log4j-server.properties, switch to that
     if (hasServerLog4jProperties) {
-      commandLine.sysprop(SYSPROP_LOG4_CONFIGURATION, LOG4J_SERVER_PROP_FILENAME);
+      commandLine.sysprop(SYSPROP_LOG4J_CONFIGURATION, LOG4J_SERVER_PROP_FILENAME);
+      commandLine.sysprop(SYSPROP_LOG_DIR, ApplicationConstants.LOG_DIR_EXPANSION_VAR);
     }
     
     // add the AM sevice entry point
