@@ -100,7 +100,7 @@ public abstract class YarnZKMiniClusterTestBase extends YarnMiniClusterTestBase 
                                    int numLogDirs,
                                    boolean startZK,
                                    boolean startHDFS) {
-    createMicroZKCluster("-${name?:'zk'}", conf)
+    createMicroZKCluster("-${name?:methodName.methodName}", conf)
     conf.setBoolean(RegistryConstants.KEY_REGISTRY_ENABLED, true)
     conf.set(RegistryConstants.KEY_REGISTRY_ZK_QUORUM, ZKBinding)
     name = super.createMiniCluster(name, conf, noOfNodeManagers, numLocalDirs, numLogDirs,
