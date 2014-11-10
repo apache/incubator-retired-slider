@@ -28,15 +28,15 @@ import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.service.ServiceStateException
 import org.apache.hadoop.util.Shell
 import org.apache.slider.providers.agent.AgentUtils
-import org.apache.slider.server.services.workflow.ForkedProcessService
 import org.apache.slider.test.SliderTestBase
+import org.apache.slider.test.YarnMiniClusterTestBase
 import org.junit.Test
 
 import java.util.regex.Pattern
 
 @CompileStatic
 @Slf4j
-class TestWindowsSupport extends SliderTestBase {
+class TestWindowsSupport extends YarnMiniClusterTestBase {
 
   private static final Pattern hasDriveLetterSpecifier =
       Pattern.compile("^/?[a-zA-Z]:");
@@ -121,18 +121,28 @@ class TestWindowsSupport extends SliderTestBase {
   @Test
   public void testExecNonexistentBinary() throws Throwable {
     assume(Shell.WINDOWS, "not windows")
+    def commands = ["undefined-application", "--version"]
     try {
-      exec(2, ["undefined-application", "--version"])
+      exec(0, commands)
+      fail("expected an exception")
     } catch (ServiceStateException e) {
       if (!(e.cause instanceof FileNotFoundException)) {
         throw e;
       }
     }
   }
+  @Test
+  public void testExecNonexistentBinary2() throws Throwable {
+    assume(Shell.WINDOWS, "not windows")
+    assert !doesWindowsAppExist(["undefined-application", "--version"])
+  }
 
   @Test
   public void testEmitKillCommand() throws Throwable {
-    killJavaProcesses("regionserver", 9)
+
+    def result = killJavaProcesses("regionserver", 9)
+    // we know the exit code if there is no supported kill operation
+    assert kill_supported || result == -1
   }
 
   @Test
@@ -159,34 +169,4 @@ class TestWindowsSupport extends SliderTestBase {
     exec(0, [winUtilsPath, "systeminfo"])
   }
 
-
-  /**
-   * Exec a set of commands, wait a few seconds for it to finish.
-   * @param status code
-   * @param commands
-   * @return the process
-   */
-  public ForkedProcessService exec(int status, List<String> commands) {
-    ForkedProcessService process = exec(commands)
-    assert status == process.exitCode
-    return process
-  }
-  
-  /**
-     * Exec a set of commands, wait a few seconds for it to finish.
-     * @param commands
-     * @return
-     */
-  
-  public ForkedProcessService exec(List<String> commands) {
-    ForkedProcessService process;
-    process = new ForkedProcessService(
-        methodName.methodName,
-        [:],
-        commands);
-    process.init(new Configuration());
-    process.start();
-    process.waitForServiceToStop(10000);
-    process
-  }
 }

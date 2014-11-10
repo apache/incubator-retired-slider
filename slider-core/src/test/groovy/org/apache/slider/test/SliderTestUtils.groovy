@@ -925,44 +925,6 @@ class SliderTestUtils extends Assert {
   }
 
   /**
-   * Kill any java process with the given grep pattern
-   * @param grepString string to grep for
-   */
-  public int killJavaProcesses(String grepString, int signal) {
-
-    def commandString
-    if (!Shell.WINDOWS) {
-      GString killCommand = "jps -l| grep ${grepString} | awk '{print \$1}' | xargs kill $signal"
-      log.info("Command command = $killCommand")
-
-      commandString = ["bash", "-c", killCommand]
-    } else {
-      /*
-      "jps -l | grep "String" | awk "{print $1}" | xargs -n 1 taskkill /PID"
-       */
-      GString killCommand = "\"jps -l | grep \"${grepString}\" | gawk \"{print \$1}\" | xargs -n 1 taskkill /f /PID\""
-      commandString = ["CMD", "/C", killCommand]
-    }
-    Process command = commandString.execute()
-    def exitCode = command.waitFor()
-
-    log.info(command.in.text)
-    log.error(command.err.text)
-    return exitCode
-  }
-
-  /**
-   * Kill all processes which match one of the list of grepstrings
-   * @param greps
-   * @param signal
-   */
-  public void killJavaProcesses(List<String> greps, int signal) {
-    for (String grep : greps) {
-      killJavaProcesses(grep, signal)
-    }
-  }
-
-  /**
    * Convert a file to a URI suitable for use in an argument
    * @param file file
    * @return a URI string valid on all platforms

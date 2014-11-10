@@ -29,6 +29,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.hadoop.hdfs.DFSConfigKeys
 import org.apache.hadoop.hdfs.MiniDFSCluster
 import org.apache.hadoop.service.ServiceOperations
+import org.apache.hadoop.util.Shell
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
@@ -84,6 +85,9 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
 
 
   public static final YarnConfiguration SLIDER_CONFIG = SliderUtils.createConfiguration();
+  
+  public static boolean kill_supported;
+  
   static {
     SLIDER_CONFIG.setInt(SliderXmlConfKeys.KEY_AM_RESTART_LIMIT, 1)
     SLIDER_CONFIG.setInt(YarnConfiguration.RM_AM_MAX_ATTEMPTS, 100)
@@ -92,7 +96,6 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     SLIDER_CONFIG.setBoolean(SliderXmlConfKeys.KEY_SLIDER_AM_DEPENDENCY_CHECKS_DISABLED,
         true)
     SLIDER_CONFIG.setInt(YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_MB, 1)
-    
   }
 
 
@@ -195,6 +198,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
   protected void addToTeardown(SliderClient client) {
     clustersToTeardown << client;
   }
+
   protected void addToTeardown(ServiceLauncher<SliderClient> launcher) {
     SliderClient sliderClient = launcher?.service
     if (sliderClient) {
@@ -202,6 +206,60 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     }
   }
 
+  /**
+   * Work out if kill is supported
+   */
+  @BeforeClass 
+  public static void checkKillSupport() {
+    if (!Shell.WINDOWS) {
+      kill_supported = true;
+    } else {
+      kill_supported = doesWindowsAppExist(["xargs", "--version"])
+    }
+  }
+
+  /**
+   * Kill any java process with the given grep pattern
+   * @param grepString string to grep for
+   */
+  public int killJavaProcesses(String grepString, int signal) {
+
+    def commandString
+    if (!Shell.WINDOWS) {
+      GString killCommand = "jps -l| grep ${grepString} | awk '{print \$1}' | xargs kill $signal"
+      log.info("Command command = $killCommand")
+
+      commandString = ["bash", "-c", killCommand]
+    } else {
+      // windows
+      if (!kill_supported) {
+        return -1;
+      }
+
+      /*
+      "jps -l | grep "String" | awk "{print $1}" | xargs -n 1 taskkill /PID"
+       */
+      GString killCommand = "\"jps -l | grep \"${grepString}\" | gawk \"{print \$1}\" | xargs -n 1 taskkill /f /PID\""
+      commandString = ["CMD", "/C", killCommand]
+    }
+    Process command = commandString.execute()
+    def exitCode = command.waitFor()
+
+    log.info(command.in.text)
+    log.error(command.err.text)
+    return exitCode
+  }
+
+  /**
+   * Kill all processes which match one of the list of grepstrings
+   * @param greps
+   * @param signal
+   */
+  public void killJavaProcesses(List<String> greps, int signal) {
+    for (String grep : greps) {
+      killJavaProcesses(grep, signal)
+    }
+  }
 
   protected YarnConfiguration getConfiguration() {
     return SLIDER_CONFIG;

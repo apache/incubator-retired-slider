@@ -87,7 +87,9 @@ class TestAccFreezeThaw extends AccumuloTestBase {
       log.debug("expected exception", expected)
     }
     //force kill any accumulo processes
-    killAllAccumuloProcesses()
+    if (kill_supported) {
+      killAllAccumuloProcesses()
+    }
 
     sleepForAccumuloClusterLive();
 
