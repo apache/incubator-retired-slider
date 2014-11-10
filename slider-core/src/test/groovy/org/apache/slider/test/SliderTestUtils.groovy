@@ -51,6 +51,8 @@ import org.apache.slider.server.services.workflow.ForkedProcessService
 import org.junit.Assert
 import org.junit.Assume
 
+import java.util.concurrent.TimeoutException
+
 import static Arguments.ARG_OPTION
 
 /**
@@ -530,7 +532,10 @@ class SliderTestUtils extends Assert {
    */
   public static ForkedProcessService exec(int status, List<String> commands) {
     ForkedProcessService process = exec(commands)
-    assert status == process.exitCode
+
+    def exitCode = process.exitCode
+    assert exitCode != null
+    assert status == exitCode
     return process
   }
   /**
@@ -546,7 +551,11 @@ class SliderTestUtils extends Assert {
         commands);
     process.init(new Configuration());
     process.start();
-    process.waitForServiceToStop(10000);
+    int timeoutMillis = 5000
+    if (!process.waitForServiceToStop(timeoutMillis)) {
+      throw new TimeoutException(
+          "Process did not stop in " + timeoutMillis + "mS");
+    }
     process
   }
 
