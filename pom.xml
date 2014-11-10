@@ -131,6 +131,8 @@
     <test.failIfNoTests>true</test.failIfNoTests>
     <test.funtests.failIfNoTests>false</test.funtests.failIfNoTests>
     <test.forkMode>always</test.forkMode>
+    <!-- path environment variable -->
+    <test.env.path>${env.PATH}</test.env.path>    
     
     <!--
     core artifacts
@@ -1316,6 +1318,7 @@
         <module>app-packages/storm</module>
       </modules>
     </profile>
+    
     <profile>
       <id>Windows</id>
       <activation>
@@ -1323,6 +1326,9 @@
           <family>windows</family>
         </os>
       </activation>
+      <properties>
+        <test.env.path>${env.PATH}:{$project.basedir}\bin\windows\${hadoop.version}\bin}</test.env.path>  
+      </properties>
       <modules>
         <module>app-packages/hbase-win</module>
         <module>app-packages/storm-win</module>
