@@ -26,6 +26,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.FileUtil
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.hdfs.DFSConfigKeys
 import org.apache.hadoop.hdfs.MiniDFSCluster
 import org.apache.hadoop.service.ServiceOperations
 import org.apache.hadoop.yarn.api.records.ApplicationReport
@@ -245,6 +246,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     assertNativeLibrariesPresent();
     conf.setInt(YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_MB, 64);
     conf.set(YarnConfiguration.RM_SCHEDULER, FIFO_SCHEDULER);
+    patchDiskCapacityLimits(conf)
     SliderUtils.patchConfiguration(conf)
     name = buildClustername(name)
     miniCluster = new MiniYARNCluster(
@@ -254,10 +256,30 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
         numLogDirs)
     miniCluster.init(conf)
     miniCluster.start();
+    // health check
+    assertMiniClusterDisksHealthy(miniCluster)
     if (startHDFS) {
       createMiniHDFSCluster(name, conf)
     }
     return name
+  }
+
+  public patchDiskCapacityLimits(YarnConfiguration conf) {
+    conf.setFloat(
+        YarnConfiguration.NM_MAX_PER_DISK_UTILIZATION_PERCENTAGE,
+        99.0f)
+    conf.setInt(DFSConfigKeys.DFS_NAMENODE_DU_RESERVED_KEY, 2 * 1024 * 1024)
+  }
+
+  /**
+   * Probe for the disks being healthy in a mini cluster. Only the first
+   * NM is checked
+   * @param miniCluster
+   */
+  public static void assertMiniClusterDisksHealthy(MiniYARNCluster miniCluster) {
+    def healthy = miniCluster.getNodeManager(
+        0).nodeHealthChecker.diskHandler.areDisksHealthy()
+    assert healthy, "Disks on test cluster unhealthy —may be full"
   }
 
   /**
