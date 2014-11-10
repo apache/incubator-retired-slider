@@ -28,7 +28,6 @@ import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.service.ServiceStateException
 import org.apache.hadoop.util.Shell
 import org.apache.slider.providers.agent.AgentUtils
-import org.apache.slider.test.SliderTestBase
 import org.apache.slider.test.YarnMiniClusterTestBase
 import org.junit.Test
 
@@ -68,8 +67,8 @@ class TestWindowsSupport extends YarnMiniClusterTestBase {
   
   @Test
   public void testPathHandling() throws Throwable {
-    assume(Shell.WINDOWS, "not windows")
-    
+    assumeWindows()
+
     Path path = new Path(windowsFile);
     def uri = path.toUri()
 //    assert "file" == uri.scheme 
@@ -95,14 +94,13 @@ class TestWindowsSupport extends YarnMiniClusterTestBase {
 
   @Test
   public void testSliderFS() throws Throwable {
-    assume(Shell.WINDOWS, "not windows")
+    assumeWindows()
     SliderFileSystem sfs = new SliderFileSystem(new Configuration())
     try {
       def metainfo = AgentUtils.getApplicationMetainfo(sfs, windowsFile)
     } catch (FileNotFoundException fnfe) {
       // expected
     }
-    
   }
 
 
@@ -133,8 +131,12 @@ class TestWindowsSupport extends YarnMiniClusterTestBase {
   }
   @Test
   public void testExecNonexistentBinary2() throws Throwable {
-    assume(Shell.WINDOWS, "not windows")
+    assumeWindows()
     assert !doesWindowsAppExist(["undefined-application", "--version"])
+  }
+
+  public assumeWindows() {
+    assume(Shell.WINDOWS, "not windows")
   }
 
   @Test
@@ -147,20 +149,20 @@ class TestWindowsSupport extends YarnMiniClusterTestBase {
 
   @Test
   public void testHadoopHomeDefined() throws Throwable {
-    assume(Shell.WINDOWS, "not windows")
+    assumeWindows()
     def hadoopHome = Shell.hadoopHome
     log.info("HADOOP_HOME=$hadoopHome")
   }
   
   @Test
   public void testHasWinutils() throws Throwable {
-    assume(Shell.WINDOWS, "not windows")
+    assumeWindows()
     SliderUtils.maybeVerifyWinUtilsValid()
   }
 
   @Test
   public void testExecWinutils() throws Throwable {
-    assume(Shell.WINDOWS, "not windows")
+    assumeWindows()
     def winUtilsPath = Shell.winUtilsPath
     assert winUtilsPath
     File winUtils = new File(winUtilsPath)
@@ -169,11 +171,45 @@ class TestWindowsSupport extends YarnMiniClusterTestBase {
     exec(0, [winUtilsPath, "systeminfo"])
   }
 
-
   @Test
   public void testPath() throws Throwable {
-    String pathkey;
-    
+    String path = extractPath()
+    log.info("Path value = $path")
+  }
+
+  @Test
+  public void testFindJavac() throws Throwable {
+    String name = Shell.WINDOWS ? "javac.exe" : "javac"
+    assert locateExecutable(name)
+  }
+  
+  @Test
+  public void testHadoopDLL() throws Throwable {
+    assumeWindows()
+    // split the path
+    File exepath = locateExecutable("HADOOP.DLL")
+    assert exepath
+    log.info "Hadoop DLL at: $exepath"
+  }
+
+  public File locateExecutable(String exe) {
+    File exepath = null
+    String path = extractPath()
+    String[] dirs = path.split(System.getProperty("path.separator"));
+    dirs.each { String dirname ->
+      File dir = new File(dirname)
+
+      File possible = new File(dir, exe)
+      if (possible.exists()) {
+        exepath = possible
+      }
+    }
+    return exepath
+  }
+
+  public String extractPath() {
+    String pathkey = "";
+
     System.getenv().keySet().each { String it ->
       if (it.toLowerCase(Locale.ENGLISH).equals("path")) {
         pathkey = it;
@@ -181,7 +217,7 @@ class TestWindowsSupport extends YarnMiniClusterTestBase {
     }
     assert pathkey
     log.info("Path env variable is $pathkey")
-    def pathval = System.getenv(pathkey)
-    log.info("Path value = $pathval")
+    def path = System.getenv(pathkey)
+    return path
   }
 }
