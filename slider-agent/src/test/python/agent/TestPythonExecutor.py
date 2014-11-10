@@ -33,6 +33,7 @@ from PythonExecutor import PythonExecutor
 from AgentConfig import AgentConfig
 from mock.mock import MagicMock, patch
 from AgentToggleLogger import AgentToggleLogger
+import os
 
 class TestPythonExecutor(TestCase):
   def setUp(self):
