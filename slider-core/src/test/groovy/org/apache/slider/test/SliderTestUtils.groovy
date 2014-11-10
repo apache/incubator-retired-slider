@@ -28,6 +28,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileStatus
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.service.ServiceStateException
 import org.apache.hadoop.util.Shell
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.conf.YarnConfiguration
@@ -46,8 +47,11 @@ import org.apache.slider.core.exceptions.WaitTimeoutException
 import org.apache.slider.core.main.ServiceLaunchException
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.registry.docstore.PublishedConfigSet
+import org.apache.slider.server.services.workflow.ForkedProcessService
 import org.junit.Assert
 import org.junit.Assume
+
+import java.util.concurrent.TimeoutException
 
 import static Arguments.ARG_OPTION
 
@@ -520,6 +524,52 @@ class SliderTestUtils extends Assert {
     int actual = instances != null ? instances.size() : 0
     return actual
   }
+  /**
+   * Exec a set of commands, wait a few seconds for it to finish.
+   * @param status code
+   * @param commands
+   * @return the process
+   */
+  public static ForkedProcessService exec(int status, List<String> commands) {
+    ForkedProcessService process = exec(commands)
+
+    def exitCode = process.exitCode
+    assert exitCode != null
+    assert status == exitCode
+    return process
+  }
+  /**
+     * Exec a set of commands, wait a few seconds for it to finish.
+     * @param commands
+     * @return
+     */
+  public static ForkedProcessService exec(List<String> commands) {
+    ForkedProcessService process;
+    process = new ForkedProcessService(
+        commands[0],
+        [:],
+        commands);
+    process.init(new Configuration());
+    process.start();
+    int timeoutMillis = 5000
+    if (!process.waitForServiceToStop(timeoutMillis)) {
+      throw new TimeoutException(
+          "Process did not stop in " + timeoutMillis + "mS");
+    }
+    process
+  }
+
+  public static boolean doesWindowsAppExist(List<String> commands) {
+    try {
+      exec(0, commands)
+      return true;
+    } catch (ServiceStateException e) {
+      if (!(e.cause instanceof FileNotFoundException)) {
+        throw e;
+      }
+      return false;
+    }
+  }
 
   /**
    * Execute a closure, assert it fails with a given exit code and text
@@ -880,44 +930,6 @@ class SliderTestUtils extends Assert {
     confSet.keys().each { String key ->
       def config = confSet.get(key)
       log.info "$key -- ${config.description}"
-    }
-  }
-
-  /**
-   * Kill any java process with the given grep pattern
-   * @param grepString string to grep for
-   */
-  public int killJavaProcesses(String grepString, int signal) {
-
-    def commandString
-    if (!Shell.WINDOWS) {
-      GString killCommand = "jps -l| grep ${grepString} | awk '{print \$1}' | xargs kill $signal"
-      log.info("Command command = $killCommand")
-
-      commandString = ["bash", "-c", killCommand]
-    } else {
-      /*
-      "jps -l | grep "String" | awk "{print $1}" | xargs -n 1 taskkill /PID"
-       */
-      GString killCommand = "\"jps -l | grep \"${grepString}\" | gawk \"{print \$1}\" | xargs -n 1 taskkill /f /PID\""
-      commandString = ["CMD", "/C", killCommand]
-    }
-    Process command = commandString.execute()
-    def exitCode = command.waitFor()
-
-    log.info(command.in.text)
-    log.error(command.err.text)
-    return exitCode
-  }
-
-  /**
-   * Kill all processes which match one of the list of grepstrings
-   * @param greps
-   * @param signal
-   */
-  public void killJavaProcesses(List<String> greps, int signal) {
-    for (String grep : greps) {
-      killJavaProcesses(grep, signal)
     }
   }
 

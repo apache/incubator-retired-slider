@@ -70,8 +70,6 @@ public class TestLongLivedProcess extends WorkflowServiceTestBase implements
     assertTrue("process stop callback not received", stopped);
     assertFalse(process.isRunning());
     assertEquals(0, process.getExitCode().intValue());
-
-    assertStringInOutput("test-classes", getFinalOutput());
   }
 
   @Test

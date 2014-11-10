@@ -115,6 +115,10 @@ class TestStandaloneAMDestroy extends AgentMiniClusterTestBase {
     
     int exitCode = sliderClient.actionDestroy(clustername);
     assert 0 == exitCode
+    sleep(1000)
+    // twice, not expecting an error the second time
+    exitCode = sliderClient.actionDestroy(clustername);
+    assert 0 == exitCode
 
     describe "post destroy checks"
     sliderFileSystem.verifyDirectoryNonexistent(instanceDir)

@@ -60,7 +60,6 @@ import org.apache.slider.core.exceptions.ErrorStrings;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.ClasspathConstructor;
 import org.apache.slider.core.main.LauncherExitCodes;
-import org.apache.slider.server.services.utility.EndOfServiceWaiter;
 import org.apache.slider.server.services.utility.PatternValidator;
 import org.apache.slider.server.services.workflow.ForkedProcessService;
 import org.apache.zookeeper.server.util.KerberosUtil;
@@ -75,7 +74,6 @@ import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InterruptedIOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
@@ -1910,10 +1908,12 @@ public final class SliderUtils {
     process.setProcessLog(logger);
     process.init(new Configuration());
     String errorText = null;
-    EndOfServiceWaiter waiter = new EndOfServiceWaiter(process);
     process.start();
     try {
-      waiter.waitForServiceToStop(timeoutMillis);
+      if (!process.waitForServiceToStop(timeoutMillis)) {
+        throw new TimeoutException(
+            "Process did not stop in " + timeoutMillis + "mS");
+      }
       int exitCode = process.getExitCode();
       List<String> recentOutput = process.getRecentOutput();
       if (status != exitCode) {
@@ -1939,8 +1939,6 @@ public final class SliderUtils {
         return process;
       }
 
-    } catch (InterruptedException e) {
-      throw new InterruptedIOException(e.toString());
     } catch (TimeoutException e) {
       errorText = e.toString();
     }

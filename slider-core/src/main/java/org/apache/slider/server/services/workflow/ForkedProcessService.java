@@ -264,7 +264,7 @@ public class ForkedProcessService
   }
 
 
-  public int getExitCode() {
+  public Integer getExitCode() {
     return process.getExitCode();
   }
   
