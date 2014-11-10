@@ -127,6 +127,7 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     assert oldInstance != null
     assert oldInstance.yarnApplicationState >= YarnApplicationState.FINISHED
 
+    sleep(5000)
     //create another AM
     launcher = createStandaloneAM(clustername, true, true)
     client = launcher.service

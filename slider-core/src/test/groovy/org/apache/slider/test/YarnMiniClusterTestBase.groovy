@@ -516,6 +516,9 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
       //this is a safety check to stop us doing something stupid like deleting /
       assert clusterDir.toString().contains("/.slider/")
       dfs.delete(clusterDir, true)
+      sleep(1000)
+      dfs.delete(clusterDir, true)
+      assert !dfs.exists(clusterDir), "delete operation failed —application in use?"
     }
 
 
