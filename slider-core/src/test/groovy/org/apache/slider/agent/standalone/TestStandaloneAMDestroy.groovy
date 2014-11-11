@@ -44,6 +44,8 @@ class TestStandaloneAMDestroy extends AgentMiniClusterTestBase {
 
   @Test
   public void testStandaloneAMDestroy() throws Throwable {
+    skipOnWindows()
+    
     String clustername = createMiniCluster("", configuration, 1, true)
 
     describe "create a Standalone AM, stop it, try to create" +
