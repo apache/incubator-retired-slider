@@ -121,6 +121,11 @@ class TestStandaloneAMDestroy extends AgentMiniClusterTestBase {
     assert 0 == exitCode
 
     describe "post destroy checks"
+    if (fs.exists(instanceDir)) {
+      log.warn("Destroy operation did not delete $instanceDir")
+      rigorousDelete(sliderFileSystem, instanceDir, 60000)
+    }
+    
     sliderFileSystem.verifyDirectoryNonexistent(instanceDir)
 
     // look up app report and verify exit code is good

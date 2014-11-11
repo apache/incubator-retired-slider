@@ -21,15 +21,15 @@ package org.apache.slider.providers.hbase.minicluster.live
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.registry.client.api.RegistryOperations
-import org.apache.hadoop.registry.client.binding.RegistryUtils
 import org.apache.hadoop.registry.client.binding.RegistryPathUtils
+import org.apache.hadoop.registry.client.binding.RegistryUtils
 import org.apache.hadoop.registry.client.types.ServiceRecord
+import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.params.Arguments
-import org.apache.slider.client.SliderClient
+import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.providers.hbase.HBaseKeys
 import org.apache.slider.providers.hbase.minicluster.HBaseMiniClusterTestBase
-import org.apache.slider.core.main.ServiceLauncher
 import org.junit.Test
 
 @CompileStatic

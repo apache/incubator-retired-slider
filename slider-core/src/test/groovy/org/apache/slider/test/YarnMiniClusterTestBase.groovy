@@ -18,8 +18,8 @@
 
 package org.apache.slider.test
 
-import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.commons.io.FileUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
@@ -489,14 +489,13 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     def config = miniCluster.config
     if (deleteExistingData && !SliderActions.ACTION_UPDATE.equals(action)) {
       HadoopFS dfs = HadoopFS.get(new URI(fsDefaultName), config)
-      Path clusterDir = new SliderFileSystem(dfs, config).buildClusterDirPath(clustername)
-      log.info("deleting customer data at $clusterDir")
+
+      def sliderFileSystem = new SliderFileSystem(dfs, config)
+      Path clusterDir = sliderFileSystem.buildClusterDirPath(clustername)
+      log.info("deleting instance data at $clusterDir")
       //this is a safety check to stop us doing something stupid like deleting /
       assert clusterDir.toString().contains("/.slider/")
-      dfs.delete(clusterDir, true)
-      sleep(1000)
-      dfs.delete(clusterDir, true)
-      assert !dfs.exists(clusterDir), "delete operation failed —application in use?"
+      rigorousDelete(sliderFileSystem, clusterDir, 60000)
     }
 
 
@@ -541,6 +540,58 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
       client.monitorAppToRunning(new Duration(CLUSTER_GO_LIVE_TIME))
     }
     return launcher;
+  }
+
+  /**
+   * Delete with some pauses and backoff; designed to handle slow delete
+   * operation in windows
+   * @param dfs
+   * @param path
+   */
+  public void rigorousDelete(
+      SliderFileSystem sliderFileSystem,
+      Path path, long timeout) {
+
+    if (path.toUri().scheme == "file") {
+      File dir = new File(path.toUri().getPath());
+      rigorousDelete(dir, timeout)
+    } else {
+      Duration duration = new Duration(timeout)
+      duration.start()
+      HadoopFS dfs = sliderFileSystem.fileSystem
+      boolean deleted = false;
+      while (!deleted && !duration.limitExceeded) {
+        dfs.delete(path, true)
+        deleted = !dfs.exists(path)
+        if (!deleted) {
+          sleep(1000)
+        }
+      }
+    }
+    sliderFileSystem.verifyDirectoryNonexistent(path)
+  }
+
+  /**
+   * Delete with some pauses and backoff; designed to handle slow delete
+   * operation in windows
+   * @param dir dir to delete
+   * @param timeout timeout in millis
+   */
+  public void rigorousDelete(File dir, long timeout) {
+    Duration duration = new Duration(timeout)
+    duration.start()
+    boolean deleted = false;
+    while (!deleted && !duration.limitExceeded) {
+      FileUtils.deleteQuietly(dir)
+      deleted = !dir.exists()
+      if (!deleted) {
+        sleep(1000)
+      }
+    }
+    if (!deleted) {
+      // noisy delete raises an IOE
+      FileUtils.deleteDirectory(dir)
+    }
   }
 
   /**

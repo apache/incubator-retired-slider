@@ -23,6 +23,7 @@ import com.google.common.base.Preconditions;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathNotFoundException;
 import org.apache.hadoop.fs.permission.FsAction;
@@ -536,23 +537,22 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // create the directory path
     Path clusterDirectory = sliderFileSystem.buildClusterDirPath(clustername);
     // delete the directory;
-    boolean exists = sliderFileSystem.getFileSystem().exists(clusterDirectory);
+    FileSystem fs = sliderFileSystem.getFileSystem();
+    boolean exists = fs.exists(clusterDirectory);
     if (exists) {
       log.debug("Application Instance {} found at {}: destroying", clustername, clusterDirectory);
       boolean deleted =
-          sliderFileSystem.getFileSystem().delete(clusterDirectory, true);
+          fs.delete(clusterDirectory, true);
       if (!deleted) {
         log.warn("Filesystem returned false from delete() operation");
       }
-
-      if(!deleteZookeeperNode(clustername)) {
-        log.warn("Unable to perform node cleanup in Zookeeper.");
+      if (fs.exists(clusterDirectory)) {
+        log.warn("Failed to delete {}", clusterDirectory);
       }
 
     } else {
       log.debug("Application Instance {} already destroyed", clustername);
     }
-
 
     // rm the registry entry —do not let this block the destroy operations
     String registryPath = SliderRegistryUtils.registryPathForInstance(

@@ -20,17 +20,13 @@ package org.apache.slider.providers.accumulo.live
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.accumulo.core.client.Connector
-import org.apache.accumulo.core.client.ZooKeeperInstance
-import org.apache.accumulo.core.client.security.tokens.PasswordToken
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
-import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.api.ClusterDescription
-import org.apache.slider.providers.accumulo.AccumuloKeys
-import org.apache.slider.common.params.Arguments
 import org.apache.slider.client.SliderClient
+import org.apache.slider.common.params.Arguments
+import org.apache.slider.core.main.ServiceLauncher
+import org.apache.slider.providers.accumulo.AccumuloKeys
 import org.apache.slider.providers.accumulo.AccumuloTestBase
-import org.apache.slider.core.zk.ZKIntegration
 import org.junit.Test
 
 @CompileStatic
@@ -47,8 +43,6 @@ class TestAccCorrectInstanceName extends AccumuloTestBase {
     describe(" Create an accumulo cluster");
 
     //make sure that ZK is up and running at the binding string
-    ZKIntegration zki = createZKIntegrationInstance(ZKBinding, clustername, false, false, 5000)
-    log.info("ZK up at $zki");
     //now launch the cluster
     Map<String, Integer> roles = [
         (AccumuloKeys.ROLE_MASTER): 1,
@@ -78,11 +72,6 @@ class TestAccCorrectInstanceName extends AccumuloTestBase {
 
     //verify that all is still there
     waitForRoleCount(sliderClient, roles, 0)
-
-    // Making the connector validates that the instance name is correct, we have the right zk,
-    // and the proper username and password were created in accumulo
-    ZooKeeperInstance instance = new ZooKeeperInstance(System.getProperty("user.name") + "-" + clustername, zki.getConnectionString());
-    Connector c = instance.getConnector("root", new PasswordToken(password));
 
     log.info("Finishing")
     status = sliderClient.getClusterDescription(clustername)
