@@ -488,11 +488,13 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     def config = miniCluster.config
     if (deleteExistingData && !SliderActions.ACTION_UPDATE.equals(action)) {
       HadoopFS dfs = HadoopFS.get(new URI(fsDefaultName), config)
-      Path clusterDir = new SliderFileSystem(dfs, config).buildClusterDirPath(clustername)
-      log.info("deleting customer data at $clusterDir")
+
+      def sliderFileSystem = new SliderFileSystem(dfs, config)
+      Path clusterDir = sliderFileSystem.buildClusterDirPath(clustername)
+      log.info("deleting instance data at $clusterDir")
       //this is a safety check to stop us doing something stupid like deleting /
       assert clusterDir.toString().contains("/.slider/")
-      rigorousDelete(dfs, clusterDir, 60000)
+      rigorousDelete(sliderFileSystem, clusterDir, 60000)
     }
 
 
@@ -543,26 +545,23 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
    * Delete with some pauses and backoff; designed to handle slow delete
    * operation in windows
    * @param dfs
-   * @param clusterDir
+   * @param path
    */
   public void rigorousDelete(
-      HadoopFS dfs, Path clusterDir, long timeout) {
+      SliderFileSystem sliderFileSystem,
+      Path path, long timeout) {
     Duration duration = new Duration(timeout)
     duration.start()
+    HadoopFS dfs = sliderFileSystem.fileSystem
     boolean deleted = false;
-    while (!deleted) {
-      dfs.delete(clusterDir, true)
-      deleted = !dfs.exists(clusterDir)
-      if (!deleted ) {
-        if (duration.limitExceeded) {
-          assert !dfs.exists(
-              clusterDir), "delete operation failed —directory in use?"
-  
-        }
+    while (!deleted && !duration.limitExceeded) {
+      dfs.delete(path, true)
+      deleted = !dfs.exists(path)
+      if (!deleted) {
         sleep(1000)
       }
-
     }
+    sliderFileSystem.verifyDirectoryNonexistent(path)
   }
 
   /**
