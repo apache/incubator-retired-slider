@@ -21,6 +21,8 @@ package org.apache.slider.common.tools
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.FileUtil
+import org.apache.hadoop.registry.server.services.MicroZookeeperServiceKeys
 import org.apache.slider.client.SliderClient
 import org.apache.slider.core.zk.ZKIntegration
 import org.apache.slider.test.KeysForTests
@@ -28,6 +30,7 @@ import org.apache.slider.test.YarnZKMiniClusterTestBase
 import org.apache.zookeeper.CreateMode
 import org.apache.zookeeper.ZooDefs
 import org.apache.zookeeper.data.Stat
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
@@ -38,32 +41,46 @@ class TestZKIntegration extends YarnZKMiniClusterTestBase implements KeysForTest
 
   // as the static compiler doesn't resolve consistently
   public static final String USER = KeysForTests.USERNAME
+  private ZKIntegration zki
 
   @Before
   void createCluster() {
     Configuration conf = configuration
-    createMicroZKCluster(methodName.methodName, conf)
+    def name = methodName.methodName
+    File zkdir = new File("target/zk/${name}")
+    FileUtil.fullyDelete(zkdir);
+    conf.set(MicroZookeeperServiceKeys.KEY_ZKSERVICE_DIR, zkdir.absolutePath)
+    createMicroZKCluster("-"+ name, conf)
+  }
+
+  @After
+  void closeZKI() {
+    zki?.close()
+    zki = null;
   }
 
   @Test
   public void testIntegrationCreate() throws Throwable {
     assertHasZKCluster()
-    ZKIntegration zki = createZKIntegrationInstance(
-        getZKBinding(), "cluster1", true, false, 5000)
+    initZKI()
     String userPath = ZKIntegration.mkSliderUserPath(USER)
     Stat stat = zki.stat(userPath)
     assert stat != null
     log.info("User path $userPath has stat $stat")
   }
 
+  public ZKIntegration initZKI() {
+    zki = createZKIntegrationInstance(
+        getZKBinding(), methodName.methodName, true, false, 5000)
+    return zki
+  }
+
   @Test
   public void testListUserClustersWithoutAnyClusters() throws Throwable {
     assertHasZKCluster()
-
-    ZKIntegration zki = createZKIntegrationInstance(
-        getZKBinding(), "", true, false, 5000)
+    initZKI()
     String userPath = ZKIntegration.mkSliderUserPath(USER)
-    List<String> clusters = zki.clusters
+    List<String> clusters = this.zki.clusters
     assert clusters.empty
   }
 
@@ -71,8 +88,7 @@ class TestZKIntegration extends YarnZKMiniClusterTestBase implements KeysForTest
   public void testListUserClustersWithOneCluster() throws Throwable {
     assertHasZKCluster()
 
-    ZKIntegration zki = createZKIntegrationInstance(
-        getZKBinding(), methodName.methodName, true, false, 5000)
+    initZKI()
     String userPath = ZKIntegration.mkSliderUserPath(USER)
     String fullPath = zki.createPath(userPath, "/cluster-",
                                      ZooDefs.Ids.OPEN_ACL_UNSAFE,
@@ -85,8 +101,7 @@ class TestZKIntegration extends YarnZKMiniClusterTestBase implements KeysForTest
 
   @Test
   public void testListUserClustersWithTwoCluster() throws Throwable {
-    ZKIntegration zki = createZKIntegrationInstance(
-        getZKBinding(), methodName.methodName, true, false, 5000)
+    initZKI()
     String userPath = ZKIntegration.mkSliderUserPath(USER)
     String c1 = createEphemeralChild(zki, userPath)
     log.info("Ephemeral path $c1")
@@ -103,7 +118,7 @@ class TestZKIntegration extends YarnZKMiniClusterTestBase implements KeysForTest
     MockSliderClient client = new MockSliderClient()
 
     String path = client.createZookeeperNode("cl1", true)
-    ZKIntegration zki = client.lastZKIntegration
+    zki = client.lastZKIntegration
 
     String zkPath = ZKIntegration.mkClusterPath(USER, "cl1")
     assert zkPath == "/services/slider/users/" + USER + "/cl1", "zkPath must be as expected"
@@ -140,7 +155,7 @@ class TestZKIntegration extends YarnZKMiniClusterTestBase implements KeysForTest
 
     @Override
     protected ZKIntegration getZkClient(String clusterName, String user) {
-      zki = createZKIntegrationInstance(getZKBinding(), "cl1", true, false, 5000)
+      zki = createZKIntegrationInstance(getZKBinding(), clusterName, true, false, 5000)
       return zki;
     }
 
