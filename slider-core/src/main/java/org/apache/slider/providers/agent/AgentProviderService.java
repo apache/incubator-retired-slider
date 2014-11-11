@@ -402,7 +402,11 @@ public class AgentProviderService extends AbstractProviderService implements
     String label = getContainerLabel(container, role);
     CommandLineBuilder operation = new CommandLineBuilder();
 
-    operation.add(AgentKeys.PYTHON_EXE);
+    String pythonExec = instanceDefinition.getAppConfOperations()
+        .getGlobalOptions().getOption(SliderXmlConfKeys.PYTHON_EXECUTABLE_PATH,
+                                      AgentKeys.PYTHON_EXE);
+
+    operation.add(pythonExec);
 
     operation.add(scriptPath);
     operation.add(ARG_LABEL, label);

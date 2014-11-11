@@ -68,6 +68,7 @@ import org.apache.slider.api.proto.Messages;
 import org.apache.slider.common.Constants;
 import org.apache.slider.common.SliderExitCodes;
 import org.apache.slider.common.SliderKeys;
+import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.common.params.AbstractActionArgs;
 import org.apache.slider.common.params.AbstractClusterBuildingActionArgs;
 import org.apache.slider.common.params.ActionDiagnosticArgs;
@@ -905,6 +906,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       appConf.set(AgentKeys.PACKAGE_PATH, buildInfo.packageURI);
     }
 
+    propagatePythonExecutable(conf, instanceDefinition);
+
     // make any substitutions needed at this stage
     replaceTokens(appConf.getConfTree(), getUsername(), clustername);
 
@@ -1213,6 +1216,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     propagatePrincipals(config, instanceDefinition);
     // validate security data
+
 /*
     // turned off until tested
     SecurityConfiguration securityConfiguration =
@@ -1401,8 +1405,19 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     LaunchedApplication launchedApplication = amLauncher.submitApplication();
     return launchedApplication;
   }
-  
-  
+
+  private void propagatePythonExecutable(Configuration config,
+                                         AggregateConf instanceDefinition) {
+    String pythonExec = config.get(
+        SliderXmlConfKeys.PYTHON_EXECUTABLE_PATH);
+    if (pythonExec != null) {
+      instanceDefinition.getAppConfOperations().getGlobalOptions().putIfUnset(
+          SliderXmlConfKeys.PYTHON_EXECUTABLE_PATH,
+          pythonExec);
+    }
+  }
+
+
   /**
    * Wait for the launched app to be accepted in the time  
    * and, optionally running.
