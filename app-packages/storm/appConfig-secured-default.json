@@ -37,7 +37,7 @@
 
     "site.storm-site.nimbus.authorizer": "backtype.storm.security.auth.authorizer.SimpleACLAuthorizer",
     "site.storm-site.storm.thrift.transport": "backtype.storm.security.auth.kerberos.KerberosSaslTransportPlugin",
-    "site.storm-site.java.security.auth.login.config": "${AGENT_WORK_ROOT}/app/install/apache-storm-0.9.3.0.2.5.0-100/conf/storm_jaas.conf",
+    "site.storm-site.java.security.auth.login.config": "${AGENT_WORK_ROOT}/app/install/apache-storm-${pkg.version}/conf/storm_jaas.conf",
     "site.storm-site.storm.principal.tolocal": "backtype.storm.security.auth.KerberosPrincipalToLocal",
     "site.storm-site.storm.zookeeper.superACL": "PLACE_JAAS_CLIENT_PRINCIPAL_HERE",
     "site.storm-site.nimbus.admins": "['${USER_NAME}', 'PLACE_JAAS_STORMCLIENT_PRINCIPAL_HERE']",
