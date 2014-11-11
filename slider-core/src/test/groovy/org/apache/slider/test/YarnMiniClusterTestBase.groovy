@@ -19,6 +19,7 @@
 package org.apache.slider.test
 
 import groovy.util.logging.Slf4j
+import org.apache.commons.io.FileUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
@@ -572,18 +573,47 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
   public void rigorousDelete(
       SliderFileSystem sliderFileSystem,
       Path path, long timeout) {
+
+    if (path.toUri().scheme == "file") {
+      File dir = new File(path.toUri().getPath());
+      rigorousDelete(dir, timeout)
+    } else {
+      Duration duration = new Duration(timeout)
+      duration.start()
+      HadoopFS dfs = sliderFileSystem.fileSystem
+      boolean deleted = false;
+      while (!deleted && !duration.limitExceeded) {
+        dfs.delete(path, true)
+        deleted = !dfs.exists(path)
+        if (!deleted) {
+          sleep(1000)
+        }
+      }
+    }
+    sliderFileSystem.verifyDirectoryNonexistent(path)
+  }
+
+  /**
+   * Delete with some pauses and backoff; designed to handle slow delete
+   * operation in windows
+   * @param dir dir to delete
+   * @param timeout timeout in millis
+   */
+  public void rigorousDelete(File dir, long timeout) {
     Duration duration = new Duration(timeout)
     duration.start()
-    HadoopFS dfs = sliderFileSystem.fileSystem
     boolean deleted = false;
     while (!deleted && !duration.limitExceeded) {
-      dfs.delete(path, true)
-      deleted = !dfs.exists(path)
+      FileUtils.deleteQuietly(dir)
+      deleted = !dir.exists()
       if (!deleted) {
         sleep(1000)
       }
     }
-    sliderFileSystem.verifyDirectoryNonexistent(path)
+    if (!deleted) {
+      // noisy delete raises an IOE
+      FileUtils.deleteDirectory(dir)
+    }
   }
 
   /**
