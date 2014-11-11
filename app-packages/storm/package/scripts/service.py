@@ -55,12 +55,6 @@ def service(
     else:
       cmd = format("env JAVA_HOME={java64_home} PATH={java64_home}/bin:$PATH STORM_BASE_DIR={app_root} STORM_CONF_DIR={conf_dir} {python_binary} {storm_bin} {name} > {log_dir}/{name}.out 2>&1")
 
-    if params.security_enabled:
-      if name == "nimbus":
-        Execute(format("{kinit_path_local} -kt {storm_server_keytab_path} {storm_jaas_server_principal}"))
-      else:
-        Execute(format("{kinit_path_local} -kt {storm_client_keytab_path} {storm_jaas_client_principal}"))
-
     Execute(cmd,
             not_if=no_op_test,
             logoutput=False,
