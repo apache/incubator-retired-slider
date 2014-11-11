@@ -23,11 +23,21 @@ import os
 import sys
 import subprocess
 
-ON_POSIX = 'posix' in sys.builtin_module_names
+pyExecPath = None
 
+if os.path.isfile('/usr/bin/python2.7') and (pyExecPath is None):
+  pyExecPath = '/usr/bin/python2.7'
+if os.path.isfile('/usr/bin/python2.6') and (pyExecPath is None):
+  pyExecPath = '/usr/bin/python2.6'
+if os.path.isfile('/usr/bin/python') and (pyExecPath is None):
+  pyExecPath = '/usr/bin/python'
+if pyExecPath is None:
+  pyExecPath = 'python'
+
+ON_POSIX = 'posix' in sys.builtin_module_names
 currDir = os.path.dirname(os.path.realpath(__file__))
 args = sys.argv[1:]
-cmd = [currDir + "/slider.py"]
+cmd = [pyExecPath + " " + currDir + "/slider.py"]
 cmd.extend(args)
 finalCmd = " ".join(cmd)
 
