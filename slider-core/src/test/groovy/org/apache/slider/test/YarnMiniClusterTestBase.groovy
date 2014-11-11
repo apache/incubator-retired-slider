@@ -18,7 +18,6 @@
 
 package org.apache.slider.test
 
-import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
@@ -515,10 +514,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
       log.info("deleting customer data at $clusterDir")
       //this is a safety check to stop us doing something stupid like deleting /
       assert clusterDir.toString().contains("/.slider/")
-      dfs.delete(clusterDir, true)
-      sleep(1000)
-      dfs.delete(clusterDir, true)
-      assert !dfs.exists(clusterDir), "delete operation failed —application in use?"
+      rigorousDelete(dfs, clusterDir, 60000)
     }
 
 
@@ -563,6 +559,32 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
       client.monitorAppToRunning(new Duration(CLUSTER_GO_LIVE_TIME))
     }
     return launcher;
+  }
+
+  /**
+   * Delete with some pauses and backoff; designed to handle slow delete
+   * operation in windows
+   * @param dfs
+   * @param clusterDir
+   */
+  public void rigorousDelete(
+      HadoopFS dfs, Path clusterDir, long timeout) {
+    Duration duration = new Duration(timeout)
+    duration.start()
+    boolean deleted = false;
+    while (!deleted) {
+      dfs.delete(clusterDir, true)
+      deleted = !dfs.exists(clusterDir)
+      if (!deleted ) {
+        if (duration.limitExceeded) {
+          assert !dfs.exists(
+              clusterDir), "delete operation failed —directory in use?"
+  
+        }
+        sleep(1000)
+      }
+
+    }
   }
 
   /**
