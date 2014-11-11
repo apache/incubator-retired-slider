@@ -59,16 +59,6 @@ class TestZKIntegration extends YarnZKMiniClusterTestBase implements KeysForTest
     zki = null;
   }
 
-  @Test
-  public void testIntegrationCreate() throws Throwable {
-    assertHasZKCluster()
-    initZKI()
-    String userPath = ZKIntegration.mkSliderUserPath(USER)
-    Stat stat = zki.stat(userPath)
-    assert stat != null
-    log.info("User path $userPath has stat $stat")
-  }
-
   public ZKIntegration initZKI() {
     zki = createZKIntegrationInstance(
         getZKBinding(), methodName.methodName, true, false, 5000)
