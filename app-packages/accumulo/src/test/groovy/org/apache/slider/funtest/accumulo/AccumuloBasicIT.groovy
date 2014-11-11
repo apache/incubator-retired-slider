@@ -95,12 +95,9 @@ class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
     conf.set(CredentialProviderFactory.CREDENTIAL_PROVIDER_PATH, jks)
     CredentialProvider provider =
       CredentialProviderFactory.getProviders(conf).get(0)
-    provider.createCredentialEntry(
-      CustomAuthenticator.ROOT_INITIAL_PASSWORD_PROPERTY, PASSWORD.toCharArray())
+    // root initial password and trace password will be initialized at runtime
     provider.createCredentialEntry(Property.INSTANCE_SECRET.toString(),
       INSTANCE_SECRET.toCharArray())
-    provider.createCredentialEntry(Property.TRACE_TOKEN_PROPERTY_PREFIX
-      .toString() + "password", PASSWORD.toCharArray())
     provider.createCredentialEntry(Property.RPC_SSL_KEYSTORE_PASSWORD
       .toString(), KEY_PASS.toCharArray())
     provider.createCredentialEntry(Property.RPC_SSL_TRUSTSTORE_PASSWORD
@@ -131,7 +128,8 @@ class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
       [
         ACTION_CREATE, getClusterName(),
         ARG_TEMPLATE, APP_TEMPLATE,
-        ARG_RESOURCES, APP_RESOURCE
+        ARG_RESOURCES, APP_RESOURCE, "<",
+        sysprop("test.app.resources.dir") + "/test_password_file"
       ])
 
     logShell(shell)
