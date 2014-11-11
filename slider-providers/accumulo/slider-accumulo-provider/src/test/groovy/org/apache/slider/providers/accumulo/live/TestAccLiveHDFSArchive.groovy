@@ -21,13 +21,12 @@ package org.apache.slider.providers.accumulo.live
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
-import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.api.ClusterDescription
+import org.apache.slider.client.SliderClient
+import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.providers.accumulo.AccumuloConfigFileOptions
 import org.apache.slider.providers.accumulo.AccumuloKeys
-import org.apache.slider.client.SliderClient
 import org.apache.slider.providers.accumulo.AccumuloTestBase
-import org.apache.slider.core.zk.ZKIntegration
 import org.junit.Test
 
 @CompileStatic
@@ -44,9 +43,6 @@ class TestAccLiveHDFSArchive extends AccumuloTestBase {
     describe(" Create an accumulo cluster from an archive");
 
     enableTestRunAgainstUploadedArchive();
-    //make sure that ZK is up and running at the binding string
-    ZKIntegration zki = createZKIntegrationInstance(ZKBinding, clustername, false, false, 5000)
-    log.info("ZK up at $zki");
     //now launch the cluster
     Map<String, Integer> roles = [
         (AccumuloKeys.ROLE_MASTER): 1,
