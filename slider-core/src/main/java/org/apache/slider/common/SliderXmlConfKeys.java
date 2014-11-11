@@ -156,4 +156,9 @@ public interface SliderXmlConfKeys {
    */
   String KEY_SLIDER_AM_DEPENDENCY_CHECKS_DISABLED =
       "slider.am.dependency.checks.disabled";
+
+  /**
+   * The path to the python executable utilized to launch the agent.
+   */
+  String PYTHON_EXECUTABLE_PATH = "agent.python.exec.path";
 }
