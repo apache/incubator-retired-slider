@@ -23,17 +23,16 @@ import groovy.util.logging.Slf4j
 import org.apache.hadoop.registry.client.binding.RegistryUtils
 import org.apache.hadoop.registry.client.types.ServiceRecord
 import org.apache.hadoop.registry.client.types.yarn.YarnRegistryAttributes
-import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.RoleKeys
+import org.apache.slider.client.SliderClient
+import org.apache.slider.common.SliderXmlConfKeys
+import org.apache.slider.common.params.Arguments
+import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.registry.docstore.PublishedConfigSet
 import org.apache.slider.core.registry.retrieve.RegistryRetriever
 import org.apache.slider.providers.hbase.HBaseKeys
-import org.apache.slider.core.zk.ZKIntegration
-import org.apache.slider.common.params.Arguments
-import org.apache.slider.client.SliderClient
 import org.apache.slider.providers.hbase.minicluster.HBaseMiniClusterTestBase
-import org.apache.slider.core.main.ServiceLauncher
 import org.junit.Test
 
 /**
@@ -47,8 +46,6 @@ class TestHBaseMaster extends HBaseMiniClusterTestBase {
   @Test
   public void testHBaseMaster() throws Throwable {
     String clustername = createMiniCluster("", configuration, 1, true)
-    //make sure that ZK is up and running at the binding string
-    ZKIntegration zki = createZKIntegrationInstance(ZKBinding, clustername, false, false, 5000)
     //now launch the cluster with 1 region server
     int regionServerCount = 1
     ServiceLauncher<SliderClient> launcher = createHBaseCluster(clustername, regionServerCount,
