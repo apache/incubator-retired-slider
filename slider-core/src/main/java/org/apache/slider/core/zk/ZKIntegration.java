@@ -29,13 +29,14 @@ import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
-public class ZKIntegration implements Watcher {
+public class ZKIntegration implements Watcher, Closeable {
 
 /**
  * Base path for services
@@ -115,7 +116,20 @@ public class ZKIntegration implements Watcher {
                              createClusterPath,
                              watchEventHandler);
   }
-  
+
+
+  @Override
+  public synchronized void close() throws IOException {
+    if (zookeeper != null) {
+      try {
+        zookeeper.close();
+      } catch (InterruptedException ignored) {
+
+      }
+      zookeeper = null;
+    }
+  }
+
   public String getConnectionString() {
     return zkConnection;
   }
