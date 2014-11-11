@@ -129,7 +129,8 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
 
     sleep(5000)
     //create another AM
-    launcher = createStandaloneAM(clustername, true, true)
+    def newcluster = clustername + "2"
+    launcher = createStandaloneAM(newcluster, true, true)
     client = launcher.service
     ApplicationId i2AppID = client.applicationId
 
@@ -140,13 +141,13 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
 
     //but when we look up an instance, we get the new App ID
     ApplicationReport instance2 = serviceRegistryClient.findInstance(
-        clustername)
+        newcluster)
     assert i2AppID == instance2.applicationId
 
     describe("attempting to create instance #3")
     //now try to create instance #3, and expect an in-use failure
     try {
-      createStandaloneAM(clustername, false, true)
+      createStandaloneAM(newcluster, false, true)
       fail("expected a failure, got a standalone AM")
     } catch (SliderException e) {
       assertFailureClusterInUse(e);
@@ -160,7 +161,7 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
 
     describe("Stopping instance #2")
     //now stop that cluster
-    assert 0 == clusterActionFreeze(client, clustername)
+    assert 0 == clusterActionFreeze(client, newcluster)
 
     logApplications(client.listSliderInstances(username))
 
@@ -173,11 +174,11 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
 
 
     ApplicationReport instance3 = serviceRegistryClient.findInstance(
-        clustername)
+        newcluster)
     assert instance3.yarnApplicationState >= YarnApplicationState.FINISHED
 
     // destroy it
-    client.actionDestroy(clustername)
+    client.actionDestroy(newcluster)
     
   }
 
