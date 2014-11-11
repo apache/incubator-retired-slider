@@ -171,7 +171,7 @@ class TestBuildBasicAgent extends AgentTestBase {
     }
 
     try {
-      launcher = buildAgentCluster(clustername,
+      launcher = buildAgentCluster(clustername + "-10",
           [
               (ROLE_NODE): 4,
           ],

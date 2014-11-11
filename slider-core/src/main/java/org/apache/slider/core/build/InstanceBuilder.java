@@ -253,7 +253,9 @@ public class InstanceBuilder {
       IOException,
       SliderException,
       LockAcquireFailedException {
-    if (!overwrite) coreFS.createClusterDirectories(instancePaths);
+    if (!overwrite) {
+      coreFS.createClusterDirectories(instancePaths);
+    }
     ConfPersister persister =
       new ConfPersister(coreFS, getInstanceDir());
     ConfDirSnapshotAction action = null;
