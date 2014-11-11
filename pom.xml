@@ -137,7 +137,7 @@
     <!--
     core artifacts
     -->
-    <hadoop.version>2.6.0-SNAPSHOT</hadoop.version>
+    <hadoop.version>2.6.0</hadoop.version>
 
     <hbase.version>0.98.4-hadoop2</hbase.version>
     <accumulo.version>1.6.1</accumulo.version>
