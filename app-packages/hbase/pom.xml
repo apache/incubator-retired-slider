@@ -28,7 +28,6 @@
   <packaging>pom</packaging>
   <name>Slider HBase App Package</name>
   <description>Slider HBase App Package</description>
-  <version>${pkg.version}</version>
   <properties>
     <work.dir>package-tmp</work.dir>
     <app.package.name>${project.artifactId}-${project.version}</app.package.name>
