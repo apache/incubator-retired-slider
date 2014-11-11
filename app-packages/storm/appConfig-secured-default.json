@@ -39,10 +39,10 @@
     "site.storm-site.storm.thrift.transport": "backtype.storm.security.auth.kerberos.KerberosSaslTransportPlugin",
     "site.storm-site.java.security.auth.login.config": "${AGENT_WORK_ROOT}/app/install/apache-storm-${pkg.version}/conf/storm_jaas.conf",
     "site.storm-site.storm.principal.tolocal": "backtype.storm.security.auth.KerberosPrincipalToLocal",
-    "site.storm-site.storm.zookeeper.superACL": "PLACE_JAAS_CLIENT_PRINCIPAL_HERE",
-    "site.storm-site.nimbus.admins": "['${USER_NAME}', 'PLACE_JAAS_STORMCLIENT_PRINCIPAL_HERE']",
+    "site.storm-site.storm.zookeeper.superACL": "sasl:${USER_NAME}@EXAMPLE.COM",
+    "site.storm-site.nimbus.admins": "['${USER_NAME}']",
     "site.storm-site.nimbus.users": "['${USER_NAME}']",
-    "site.storm-site.nimbus.supervisor.users": "['PLACE_JAAS_STORMCLIENT_PRINCIPAL_HERE']",
+    "site.storm-site.nimbus.supervisor.users": "['${USER_NAME}']",
     "site.storm-site.nimubs.authorizer": "backtype.storm.security.auth.authorizer.SimpleACLAuthorizer", 
     "site.storm-site.storm.thrift.transport": "backtype.storm.security.auth.kerberos.KerberosSaslTransportPlugin",
     "site.storm-site.storm.principal.tolocal": "backtype.storm.security.auth.KerberosPrincipalToLocal",
@@ -50,8 +50,8 @@
     "site.storm-site.ui.filter.params": "{'type': 'kerberos', 'kerberos.principal': 'HTTP/_HOST', 'kerberos.keytab': '/etc/security/keytabs/spnego.service.keytab', 'kerberos.name.rules': 'RULE:[2:$1@$0]([jt]t@.*EXAMPLE.COM)s/.*/$MAPRED_USER/ RULE:[2:$1@$0]([nd]n@.*EXAMPLE.COM)s/.*/$HDFS_USER/DEFAULT'}",
 
     "site.storm-env.kerberos_domain": "EXAMPLE.COM",
-    "site.storm-env.storm_client_principal_name": "PLACE_JAAS_STORMCLIENT_PRINCIPAL_HERE",
-    "site.storm-env.storm_server_principal_name": "PLACE_JAAS_STORMSERVER_PRINCIPAL_HERE/_HOST",
+    "site.storm-env.storm_client_principal_name": "${USER_NAME}@EXAMPLE.COM",
+    "site.storm-env.storm_server_principal_name": "${USER_NAME}/_HOST@EXAMPLE.COM",
     "site.storm-env.storm_client_keytab": "${AGENT_WORK_ROOT}/keytabs/${USER_NAME}.STORM.client.keytab",
     "site.storm-env.storm_server_keytab": "${AGENT_WORK_ROOT}/keytabs/${USER_NAME}.STORM.nimbus.keytab"
     
