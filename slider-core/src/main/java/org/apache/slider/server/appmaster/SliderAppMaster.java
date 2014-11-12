@@ -547,6 +547,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
   /**
    * Create and run the cluster.
+   * @param clustername
    * @return exit code
    * @throws Throwable on a failure
    */
@@ -1113,6 +1114,7 @@ the registry with/without the new record format
    * Register/re-register an ephemeral container that is already in the app state
    * @param id the component
    * @param description
+   * @return true if the component is registered
    */
   public boolean registerComponent(ContainerId id, String description) throws
       IOException {
@@ -1133,6 +1135,7 @@ the registry with/without the new record format
     } catch (IOException e) {
       log.warn("Failed to register container {}/{}: {}",
           id, description, e, e);
+      return false;
     }
     return true;
   }
