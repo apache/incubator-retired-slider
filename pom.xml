@@ -137,7 +137,7 @@
     <!--
     core artifacts
     -->
-    <hadoop.version>2.6.0</hadoop.version>
+    <hadoop.version>2.6.0-SNAPSHOT</hadoop.version>
 
     <hbase.version>0.98.4-hadoop2</hbase.version>
     <accumulo.version>1.6.1</accumulo.version>
@@ -1405,12 +1405,18 @@
     </profile>
 
     <profile>
-      <!-- local builds of everything -->
-      <id>local</id>
+      <!-- 2.6 snapshots -->
+      <id>branch-2.6</id>
       <properties>
         <hadoop.version>2.6.0-SNAPSHOT</hadoop.version>
-        <hbase.version>0.98.5-SNAPSHOT</hbase.version>
-        <accumulo.version>1.6.0-SNAPSHOT</accumulo.version>
+      </properties>
+    </profile>
+
+    <profile>
+      <!-- 2.6 snapshots -->
+      <id>release-2.6</id>
+      <properties>
+        <hadoop.version>2.6.0</hadoop.version>
       </properties>
     </profile>
 
@@ -1424,9 +1430,25 @@
     
     <profile>
       <!-- hadoop trunk builds  -->
-      <id>hadoop-trunk</id>
+      <id>trunk</id>
       <properties>
         <hadoop.version>3.0.0-SNAPSHOT</hadoop.version>
+      </properties>
+    </profile>
+    
+    <profile>
+      <!-- Java 7 build -->
+      <id>java7</id>
+      <properties>
+       <project.java.src.version>7</project.java.src.version>
+      </properties>
+    </profile>
+
+    <profile>
+      <!-- Java 8 build -->
+      <id>java8</id>
+      <properties>
+       <project.java.src.version>8</project.java.src.version>
       </properties>
     </profile>
     
