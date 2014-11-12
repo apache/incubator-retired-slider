@@ -39,7 +39,7 @@
     "site.storm-site.storm.thrift.transport": "backtype.storm.security.auth.kerberos.KerberosSaslTransportPlugin",
     "site.storm-site.java.security.auth.login.config": "${AGENT_WORK_ROOT}/app/install/apache-storm-${pkg.version}/conf/storm_jaas.conf",
     "site.storm-site.storm.principal.tolocal": "backtype.storm.security.auth.KerberosPrincipalToLocal",
-    "site.storm-site.storm.zookeeper.superACL": "sasl:${USER_NAME}@EXAMPLE.COM",
+    "site.storm-site.storm.zookeeper.superACL": "sasl:${USER_NAME}",
     "site.storm-site.nimbus.admins": "['${USER_NAME}']",
     "site.storm-site.nimbus.users": "['${USER_NAME}']",
     "site.storm-site.nimbus.supervisor.users": "['${USER_NAME}']",
