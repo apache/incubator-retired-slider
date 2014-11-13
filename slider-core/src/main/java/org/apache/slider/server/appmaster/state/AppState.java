@@ -58,6 +58,7 @@ import org.apache.slider.core.exceptions.ErrorStrings;
 import org.apache.slider.core.exceptions.NoSuchNodeException;
 import org.apache.slider.core.exceptions.SliderInternalStateException;
 import org.apache.slider.core.exceptions.TriggerClusterTeardownException;
+import org.apache.slider.providers.PlacementPolicy;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
 import org.apache.slider.server.appmaster.operations.CancelRequestOperation;
@@ -582,13 +583,15 @@ public class AppState {
     int priority = SliderUtils.parseAndValidate("value of " + name + " " +
         ResourceKeys.COMPONENT_PRIORITY,
         priOpt, 0, 1, -1);
-    log.info("Role {} assigned priority {}", name, priority);
     String placementOpt = component.getOption(
-      ResourceKeys.COMPONENT_PLACEMENT_POLICY, "0");
+      ResourceKeys.COMPONENT_PLACEMENT_POLICY,
+        Integer.toString(PlacementPolicy.DEFAULT));
     int placement = SliderUtils.parseAndValidate("value of " + name + " " +
         ResourceKeys.COMPONENT_PLACEMENT_POLICY,
         placementOpt, 0, 0, -1);
-    return new ProviderRole(name, priority, placement);
+    ProviderRole newRole = new ProviderRole(name, priority, placement);
+    log.info("New {} ", newRole);
+    return newRole;
   }
 
 
@@ -998,17 +1001,17 @@ public class AppState {
 
  
   /**
-   * enum nodes by role ID, from either the active or live node list
+   * enum nodes by role ID, from either the owned or live node list
    * @param roleId role the container must be in
-   * @param active flag to indicate "use active list" rather than the smaller
+   * @param owned flag to indicate "use owned list" rather than the smaller
    * "live" list
    * @return a list of nodes, may be empty
    */
   public synchronized List<RoleInstance> enumNodesWithRoleId(int roleId,
-      boolean active) {
+      boolean owned) {
     List<RoleInstance> nodes = new ArrayList<RoleInstance>();
     Collection<RoleInstance> allRoleInstances;
-    allRoleInstances = active ? ownedContainers.values() : liveNodes.values();
+    allRoleInstances = owned ? ownedContainers.values() : liveNodes.values();
     for (RoleInstance node : allRoleInstances) {
       if (node.roleId == roleId) {
         nodes.add(node);
@@ -1746,6 +1749,9 @@ public class AppState {
 
         // enum all active nodes that aren't being released
         List<RoleInstance> containersToRelease = enumNodesWithRoleId(roleId, true);
+        if (containersToRelease.isEmpty()) {
+          log.info("No containers for component {}", roleId);
+        }
 
         // cut all release-in-progress nodes
         ListIterator<RoleInstance> li = containersToRelease.listIterator();
@@ -1759,7 +1765,7 @@ public class AppState {
         // warn if the desired state can't be reaced
         int numberAvailableForRelease = containersToRelease.size();
         if (numberAvailableForRelease < excess) {
-          log.warn("Not enough nodes to release, have {} and need {} more",
+          log.warn("Not enough containers to release, have {} and need {} more",
               numberAvailableForRelease,
               excess - numberAvailableForRelease);
         }

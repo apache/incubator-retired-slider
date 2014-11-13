@@ -56,6 +56,10 @@ class TestMockAppStateRolePlacement extends BaseMockAppStateTest
     List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()
     ContainerRequestOperation operation = (ContainerRequestOperation) ops[0]
     AMRMClient.ContainerRequest request = operation.request
+    assert request.relaxLocality
+    assert request.nodes == null
+    assert request.racks == null
+
     Container allocated = engine.allocateContainer(request)
     List<ContainerAssignment> assignments = [];
     List<AbstractRMOperation> operations = []
@@ -97,6 +101,7 @@ class TestMockAppStateRolePlacement extends BaseMockAppStateTest
     AMRMClient.ContainerRequest request2 = operation.request
     assert request2 != null
     assert request2.nodes[0] == containerHostname
+    assert request2.relaxLocality
     engine.execute(ops)
 
   }
