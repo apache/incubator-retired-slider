@@ -25,6 +25,7 @@ import org.apache.hadoop.yarn.api.records.ContainerId
 import org.apache.slider.api.ResourceKeys
 import org.apache.slider.core.conf.ConfTreeOperations
 import org.apache.slider.core.exceptions.BadConfigException
+import org.apache.slider.providers.PlacementPolicy
 import org.apache.slider.providers.ProviderRole
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockAppState
@@ -87,7 +88,7 @@ class TestMockAppStateDynamicHistory extends BaseMockAppStateTest
     def dynamic = "dynamicRole"
     int role_priority_8 = 8
     int desired = 1
-    int placementPolicy = 0
+    int placementPolicy = PlacementPolicy.DEFAULT
     // snapshot and patch existing spec
     def resources = ConfTreeOperations.fromInstance(
         appState.resourcesSnapshot.confTree)

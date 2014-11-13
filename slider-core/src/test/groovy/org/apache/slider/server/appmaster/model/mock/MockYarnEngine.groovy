@@ -50,6 +50,11 @@ class MockYarnEngine {
       attemptId: 1,
       )
 
+  @Override
+  String toString() {
+    return "MockYarnEngine $cluster + pending=${pending.size()}" 
+  }
+
   int containerCount() {
     return cluster.containersInUse();
   }
@@ -109,6 +114,7 @@ class MockYarnEngine {
       } else {
         ContainerRequestOperation req = (ContainerRequestOperation) op
         Container container = allocateContainer(req.request)
+        log.info("allocated container $container for $req")
         if (container != null) {
           allocation.add(container)
         } else {
