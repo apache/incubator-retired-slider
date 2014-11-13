@@ -615,10 +615,15 @@ abstract class CommandTestBase extends SliderTestUtils {
   }
 
   /**
-   * Create a templated slider app
+   * Create a templated slider app.
+   * <p>
+   * If the extraArgs list does not contain a --wait parm then a wait 
+   * duration of THAW_WAIT_TIME will be added to the launch args.
    * @param name name
    * @param appTemplate application template
    * @param resourceTemplate resource template
+   * @param extraArgs list of extra arguments to the command
+   * @param launchReportFile optional file to save the AM launch report to
    * @return the shell
    */
   public SliderShell createTemplatedSliderApplication(
@@ -638,9 +643,12 @@ abstract class CommandTestBase extends SliderTestUtils {
         ACTION_CREATE, name,
         ARG_TEMPLATE, appTemplate,
         ARG_RESOURCES, resourceTemplate,
-        ARG_OUTPUT, launchReportFile.absolutePath,
-        ARG_WAIT, Integer.toString(THAW_WAIT_TIME)
+        ARG_OUTPUT, launchReportFile.absolutePath
     ]
+    
+    if (!extraArgs.contains(ARG_WAIT)) {
+      commands << ARG_WAIT << Integer.toString(THAW_WAIT_TIME)
+    }
 
     maybeAddCommandOption(commands,
         [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME],

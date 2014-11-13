@@ -20,6 +20,7 @@ package org.apache.slider.funtest.lifecycle
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.server.appmaster.SliderAppMaster
 
 import static org.apache.slider.api.InternalKeys.*
@@ -69,6 +70,8 @@ public class AgentLaunchFailureIT extends AgentCommandTestBase
             ARG_OPTION, CHAOS_MONKEY_INTERVAL_SECONDS, "60",
             ARG_OPTION, CHAOS_MONKEY_PROBABILITY_AM_LAUNCH_FAILURE, 
              Integer.toString(PROBABILITY_PERCENT_100),
+            ARG_DEFINE, SliderXmlConfKeys.KEY_AM_RESTART_LIMIT + "=1",
+            ARG_WAIT, "0"
         ],
         launchReportFile)
 
@@ -93,6 +96,5 @@ public class AgentLaunchFailureIT extends AgentCommandTestBase
     def sar = lookupApplication(appId)
     log.info(sar.toString())
     assert sar.diagnostics.contains(SliderAppMaster.E_TRIGGERED_LAUNCH_FAILURE)
-
   }
 }
