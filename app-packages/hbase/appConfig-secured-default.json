@@ -37,7 +37,6 @@
         "site.hbase-site.hbase.master.info.port": "${HBASE_MASTER.ALLOCATED_PORT}",
         "site.hbase-site.hbase.regionserver.port": "0",
         "site.hbase-site.hbase.master.port": "0",
-        "site.hbase-site.hfile.format.version": "3",
 
         "site.hbase-site.hbase.security.authentication": "kerberos",
         "site.hbase-site.hbase.security.authorization": "true",
