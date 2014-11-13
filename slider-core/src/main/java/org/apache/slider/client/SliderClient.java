@@ -187,6 +187,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     SliderExitCodes, SliderKeys, ErrorStrings, SliderClientAPI {
   private static final Logger log = LoggerFactory.getLogger(SliderClient.class);
 
+  // value should not be changed without updating string find in slider.py
+  private static final String PASSWORD_PROMPT = "Enter password for";
+
   private ClientArgs serviceArgs;
   public ApplicationId applicationId;
   
@@ -677,9 +680,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     boolean noMatch;
     do {
-      log.info(String.format("Enter password for %s: ", alias));
+      log.info(String.format("%s %s: ", PASSWORD_PROMPT, alias));
       char[] newPassword1 = br.readLine().toCharArray();
-      log.info(String.format("Enter password for %s again: ", alias));
+      log.info(String.format("%s %s again: ", PASSWORD_PROMPT, alias));
       char[] newPassword2 = br.readLine().toCharArray();
       noMatch = !Arrays.equals(newPassword1, newPassword2);
       if (noMatch) {
