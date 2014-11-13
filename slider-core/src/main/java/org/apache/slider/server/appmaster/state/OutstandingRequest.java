@@ -108,7 +108,7 @@ public final class OutstandingRequest {
     if (node != null) {
       hosts = new String[1];
       hosts[0] = node.hostname;
-      relaxLocality = false;
+      relaxLocality = !role.isStrictPlacement();
       // tell the node it is in play
       node.getOrCreate(roleId);
       log.info("Submitting request for container on {}", hosts[0]);

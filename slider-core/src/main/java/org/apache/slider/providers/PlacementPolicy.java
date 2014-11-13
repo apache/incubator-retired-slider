@@ -23,9 +23,29 @@ package org.apache.slider.providers;
  */
 public class PlacementPolicy {
 
+  /**
+   * Default values
+   */
   public static final int DEFAULT = 0;
-  public static final int EXCLUDE_FROM_FLEXING = 1;
+
+  /**
+   * Strict placement: when asking for an instance for which there is
+   * history, mandate that it is strict
+   */
+  public static final int STRICT = 1;
+
+  /**
+   * No data locality; do not bother trying to ask for any location
+   */
   public static final int NO_DATA_LOCALITY = 2;
+  /**
+   * Anti-affinity is mandatory. 
+   */
   public static final int ANTI_AFFINITY_REQUIRED = 4;
+  
+  /**
+   * Exclude from flexing; used internally to mark AMs.
+   */
+  public static final int EXCLUDE_FROM_FLEXING = 16;
 
 }

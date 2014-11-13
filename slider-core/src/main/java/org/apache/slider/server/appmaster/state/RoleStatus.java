@@ -100,6 +100,10 @@ public final class RoleStatus implements Cloneable {
   public boolean getNoDataLocality() {
     return 0 != (getPlacementPolicy() & PlacementPolicy.NO_DATA_LOCALITY);
   }
+  
+  public boolean isStrictPlacement() {
+    return 0 != (getPlacementPolicy() & PlacementPolicy.STRICT);
+  }
 
   public synchronized int getDesired() {
     return desired;
