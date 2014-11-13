@@ -1358,6 +1358,7 @@
                 <exclude>**/dfs.exclude</exclude>
                 <exclude>**/*.iml</exclude>
                 <exclude>**/rat.txt</exclude>
+                <exclude>**/test_password_file</exclude>
                 <exclude>DISCLAIMER</exclude>
                 <exclude>app-packages/hbase/target/**</exclude>
                 <exclude>target/*</exclude>
