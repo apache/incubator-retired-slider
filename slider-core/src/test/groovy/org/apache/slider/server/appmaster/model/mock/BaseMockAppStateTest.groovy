@@ -223,6 +223,7 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
       List<AppState.NodeCompletionResult> completionResults,
       List<ContainerId> released) {
     for (RoleInstance instance : instances) {
+      log.debug("Started ${instance.role} on ${instance.id} ")
       assert appState.onNodeManagerContainerStarted(instance.containerId)
     }
     releaseContainers(completionResults,
@@ -297,6 +298,7 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
       RoleInstance ri = roleInstance(assigned)
       instances << ri
       //tell the app it arrived
+      log.debug("Start submitted ${ri.role} on ${container.id} ")
       appState.containerStartSubmitted(container, ri);
     }
     return instances
