@@ -80,7 +80,7 @@ class TestStandaloneAMRestart extends AgentMiniClusterTestBase {
 
     // kill again & expect it to be considered a failure
     killAmAndWaitForDeath(sliderClient, iteration++, clustername)
-    sleep(20000)
+    sleep(40000)
 
     report = sliderClient.applicationReport
     assert report.finalApplicationStatus == FinalApplicationStatus.FAILED
@@ -109,8 +109,8 @@ class TestStandaloneAMRestart extends AgentMiniClusterTestBase {
         iteration,
         clustername)
     //give yarn some time to notice
-    sleep(20000)
-    waitUntilClusterLive(sliderClient, 20000)
+    sleep(40000)
+    waitUntilClusterLive(sliderClient, 40000)
     return args
   }
 
