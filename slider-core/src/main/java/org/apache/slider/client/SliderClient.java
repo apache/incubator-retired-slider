@@ -546,6 +546,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       if (!deleted) {
         log.warn("Filesystem returned false from delete() operation");
       }
+
+      if(!deleteZookeeperNode(clustername)) {
+        log.warn("Unable to perform node cleanup in Zookeeper.");
+      }
+
       if (fs.exists(clusterDirectory)) {
         log.warn("Failed to delete {}", clusterDirectory);
       }
