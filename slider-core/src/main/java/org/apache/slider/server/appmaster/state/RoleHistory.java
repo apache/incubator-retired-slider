@@ -750,11 +750,7 @@ public class RoleHistory {
       available = false;
     } else {
       available = nodeEntry.containerCompleted(wasReleased);
-      boolean isFailedNode = failedNodes.contains(RoleHistoryUtils
-        .hostnameOf(container));
-      if (!isFailedNode) {
-        maybeQueueNodeForWork(container, nodeEntry, available);
-      }
+      maybeQueueNodeForWork(container, nodeEntry, available);
     }
     touch();
     return available;
