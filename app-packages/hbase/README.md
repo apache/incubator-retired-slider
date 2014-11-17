@@ -41,7 +41,8 @@ Example:
       -Dpkg.src=/Users/user1/Downloads/0.98.5-hadoop2
 
 App package can be found in
-  app-packages/hbase/target/slider-hbase-app-package-${pkg.version}.zip
+
+    app-packages/hbase/target/slider-hbase-app-package-${pkg.version}.zip
 
 ## OPTION - II 
 
