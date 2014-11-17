@@ -3361,6 +3361,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
           serviceclassPath(currentUser(), SliderKeys.APP_TYPE));
       return new ArrayList<String>(recordMap.keySet());
 /// JDK7    } catch (YarnException | IOException e) {
+    } catch (PathNotFoundException e) {
+      log.debug("No registry path for slider instances for current user: {}", e, e);
+      // no entries: return an empty list
+      return new ArrayList<String>(0);
     } catch (IOException e) {
       throw e;
     } catch (YarnException e) {

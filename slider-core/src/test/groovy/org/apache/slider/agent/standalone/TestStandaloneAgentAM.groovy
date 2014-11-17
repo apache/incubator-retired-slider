@@ -30,6 +30,7 @@ import org.apache.slider.api.ClusterNode
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.params.ActionRegistryArgs
+import org.apache.slider.common.tools.Duration
 import org.apache.slider.core.build.InstanceBuilder
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.exceptions.SliderException
@@ -110,9 +111,20 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     //switch to the slider ZK-based registry
     describe "service registry instance IDs"
 
-    def instanceIds = client.listRegisteredSliderInstances()
+    // iterate waiting for registry to come up
+    List<String> instanceIds = []
+    Duration duration = new Duration(10000)
+    duration.start()
+
+    while (!duration.limitExceeded && instanceIds.size() < 1) {
+      instanceIds = client.listRegisteredSliderInstances()
+      if (!instanceIds.size()) {
+        sleep(500)
+      }
+    }
 
     log.info("number of instanceIds: ${instanceIds.size()}")
+    assert instanceIds.size() >= 1
     instanceIds.each { String it -> log.info(it) }
 
     describe "Yarn registry"
