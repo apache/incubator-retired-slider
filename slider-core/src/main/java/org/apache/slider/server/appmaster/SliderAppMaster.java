@@ -1840,6 +1840,9 @@ the registry with/without the new record format
       throws IOException, YarnException {
     int signal = request.getSignal();
     String text = request.getText();
+    if (text == null) {
+      text = "";
+    }
     int delay = request.getDelay();
     log.info("AM Suicide with signal {}, message {} delay = {}", signal, text, delay);
     ActionHalt action = new ActionHalt(signal, text, delay,
