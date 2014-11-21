@@ -18,6 +18,7 @@
 
 package org.apache.slider.server.appmaster.web.rest.management;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -167,7 +168,7 @@ public class TestAMManagementWebServices extends JerseyTest {
               historyPath =
               new org.apache.hadoop.fs.Path(historyWorkDir.toURI());
           fs.delete(historyPath, true);
-          appState = new AppState(new MockRecordFactory());
+          appState = new AppState(new MockRecordFactory(), new MetricRegistry());
           appState.setContainerLimits(RM_MAX_RAM, RM_MAX_CORES);
           appState.buildInstance(
               factory.newInstanceDefinition(0, 0, 0),
@@ -191,7 +192,7 @@ public class TestAMManagementWebServices extends JerseyTest {
             appState);
 
         slider = new WebAppApiImpl(new MockSliderClusterProtocol(), providerAppState,
-                                   new MockProviderService(), null, null);
+                                   new MockProviderService(), null, null, null);
 
         bind(SliderJacksonJaxbJsonProvider.class);
         bind(MockSliderAMWebServices.class);

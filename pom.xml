@@ -1224,6 +1224,18 @@
         <version>${metrics.version}</version>
       </dependency>
 
+      <dependency>
+        <groupId>com.codahale.metrics</groupId>
+        <artifactId>metrics-ganglia</artifactId>
+        <version>${metrics.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.codahale.metrics</groupId>
+        <artifactId>metrics-servlets</artifactId>
+        <version>${metrics.version}</version>
+      </dependency>
+
       <!-- ======================================================== -->
       <!-- Mocking -->
       <!-- ======================================================== -->

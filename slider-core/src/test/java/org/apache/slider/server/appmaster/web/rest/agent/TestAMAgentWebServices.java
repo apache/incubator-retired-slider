@@ -18,6 +18,7 @@
 
 package org.apache.slider.server.appmaster.web.rest.agent;
 
+import com.codahale.metrics.MetricRegistry;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
@@ -121,7 +122,7 @@ public class TestAMAgentWebServices {
           historyPath =
           new org.apache.hadoop.fs.Path(historyWorkDir.toURI());
       fs.delete(historyPath, true);
-      appState = new AppState(new MockRecordFactory());
+      appState = new AppState(new MockRecordFactory(), new MetricRegistry());
       appState.setContainerLimits(RM_MAX_RAM, RM_MAX_CORES);
       appState.buildInstance(
           factory.newInstanceDefinition(0, 0, 0),
@@ -138,7 +139,7 @@ public class TestAMAgentWebServices {
                                                              appState);
 
     slider = new WebAppApiImpl(new MockSliderClusterProtocol(), providerAppState,
-                               new MockProviderService(), null, null);
+                               new MockProviderService(), null, null, null);
 
     MapOperations compOperations = new MapOperations();
 

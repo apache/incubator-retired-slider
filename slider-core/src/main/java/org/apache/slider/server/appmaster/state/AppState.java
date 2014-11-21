@@ -18,6 +18,7 @@
 
 package org.apache.slider.server.appmaster.state;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import org.apache.hadoop.conf.Configuration;
@@ -261,8 +262,16 @@ public class AppState {
   
   private ContainerReleaseSelector containerReleaseSelector;
 
-  public AppState(AbstractRecordFactory recordFactory) {
+  private MetricRegistry metrics;
+
+  /**
+   * Create an instance
+   * @param recordFactory factory for YARN records
+   * @param metrics metrics registry or null if a new one 
+   */
+  public AppState(AbstractRecordFactory recordFactory, MetricRegistry metrics) {
     this.recordFactory = recordFactory;
+    this.metrics = metrics; 
   }
 
   public int getFailedCountainerCount() {

@@ -149,6 +149,7 @@ import org.apache.slider.server.appmaster.web.rest.RestPaths;
 import org.apache.slider.server.services.security.CertificateManager;
 import org.apache.slider.server.services.security.FsDelegationTokenManager;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
+import org.apache.slider.server.services.utility.MetricsBindingService;
 import org.apache.slider.server.services.utility.WebAppService;
 import org.apache.slider.server.services.workflow.ServiceThreadFactory;
 import org.apache.slider.server.services.workflow.WorkflowExecutorService;
@@ -203,13 +204,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       "SliderAppMaster";
   public static final String SERVICE_CLASSNAME =
       "org.apache.slider.server.appmaster." + SERVICE_CLASSNAME_SHORT;
-
-
-  /**
-   * time to wait from shutdown signal being rx'd to telling
-   * the AM: {@value}
-   */
-  public static final int TERMINATION_SIGNAL_PROPAGATION_DELAY = 1000;
 
   public static final int HEARTBEAT_INTERVAL = 1000;
   public static final int NUM_RPC_HANDLERS = 5;
@@ -276,7 +270,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * Ongoing state of the cluster: containers, nodes they
    * live on, etc.
    */
-  private final AppState appState = new AppState(new ProtobufRecordFactory());
+  private final AppState appState = new AppState(new ProtobufRecordFactory(),
+      metrics);
 
   private final ProviderAppState stateForProviders =
       new ProviderAppState("undefined", appState);
@@ -447,6 +442,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     addService(executorService);
 
     addService(actionQueues);
+    
+    addService(new MetricsBindingService("MetricsBindingService",
+        metrics));
     //init all child services
     super.serviceInit(conf);
   }
@@ -705,12 +703,15 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       int port = getPortToRequest(instanceDefinition);
 
-      webApp = new SliderAMWebApp(registryOperations);
+      WebAppApi webAppApi = new WebAppApiImpl(this,
+          stateForProviders,
+          providerService,
+          certificateManager,
+          registryOperations,
+          metrics);
+      webApp = new SliderAMWebApp(webAppApi);
       WebApps.$for(SliderAMWebApp.BASE_PATH, WebAppApi.class,
-                   new WebAppApiImpl(this,
-                                     stateForProviders,
-                                     providerService,
-                                     certificateManager, registryOperations),
+                   webAppApi,
                    RestPaths.WS_CONTEXT)
                       .withHttpPolicy(serviceConf, HttpConfig.Policy.HTTP_ONLY)
                       .at(port)
@@ -1000,9 +1001,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // Start up the agent web app and track the URL for it
     AgentWebApp agentWebApp = AgentWebApp.$for(AgentWebApp.BASE_PATH,
                      new WebAppApiImpl(this,
-                                       stateForProviders,
-                                       providerService,
-                                       certificateManager, registryOperations),
+                         stateForProviders,
+                         providerService,
+                         certificateManager,
+                         registryOperations,
+                         metrics),
                      RestPaths.AGENT_WS_CONTEXT)
         .withComponentConfig(getInstanceDefinition().getAppConfOperations()
                                  .getComponent(SliderKeys.COMPONENT_AM))

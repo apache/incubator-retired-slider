@@ -64,7 +64,7 @@ public class TestContainerStatsBlock extends BaseMockAppStateTest {
         providerAppState,
         providerService,
         null,
-        null);
+        null, metricRegistry);
 
     Injector injector = Guice.createInjector(new AbstractModule() {
           @Override

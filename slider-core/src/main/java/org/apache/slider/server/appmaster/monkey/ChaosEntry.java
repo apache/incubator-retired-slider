@@ -37,7 +37,6 @@ public class ChaosEntry {
   public final ChaosTarget target;
   public final long probability;
 
-  private final MetricRegistry metrics;
   private final Counter invocationCounter;
 
 
@@ -57,7 +56,6 @@ public class ChaosEntry {
     this.name = name;
     this.target = target;
     this.probability = probability;
-    this.metrics = metrics;
     invocationCounter =
         metrics.counter(MetricRegistry.name(ChaosEntry.class, name));
   }

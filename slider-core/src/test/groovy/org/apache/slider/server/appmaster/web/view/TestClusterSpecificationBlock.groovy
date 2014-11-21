@@ -57,7 +57,7 @@ public class TestClusterSpecificationBlock {
         providerAppState,
         providerService,
         null,
-        null);
+        null, null);
 
     Injector injector = Guice.createInjector(new AbstractModule() {
           @Override
