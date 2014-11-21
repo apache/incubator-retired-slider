@@ -1365,7 +1365,7 @@ public final class SliderUtils {
       }
       classpath.addLibDir(libdir);
       classpath.addRemoteClasspathEnvVar();
-      classpath.append(ApplicationConstants.Environment.HADOOP_CONF_DIR.$());
+      classpath.append(ApplicationConstants.Environment.HADOOP_CONF_DIR.$$());
     }
     return classpath;
   }
