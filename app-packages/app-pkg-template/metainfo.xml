@@ -28,12 +28,12 @@
       <component>
         <name>MYAPP_COMPONENT</name>
         <category>MASTER</category>
-        <componentExports>
-          <componentExport>
+        <exports>
+          <export>
             <name>host_port</name>
             <value>${THIS_HOST}:${site.global.listen_port}</value>
-          </componentExport>
-        </componentExports>
+          </export>
+        </exports>
         <commandScript>
           <script>scripts/myapp_component.py</script>
           <scriptType>PYTHON</scriptType>
