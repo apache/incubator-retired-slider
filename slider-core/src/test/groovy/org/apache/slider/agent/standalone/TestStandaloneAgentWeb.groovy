@@ -69,7 +69,7 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
 
     def appmaster = report.trackingUrl
 
-//    GET(appmaster)
+    GET(appmaster)
 
 //    GET(appmaster, RestPaths.SYSTEM_HEALTHCHECK)
 //    GET(appmaster, RestPaths.SYSTEM_PING)
