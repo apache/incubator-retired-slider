@@ -19,10 +19,11 @@
 package org.apache.slider.core.conf
 
 import groovy.util.logging.Slf4j
+import static org.apache.slider.api.InternalKeys.*
 import org.junit.Assert
 import org.junit.Test
 
-import static org.apache.slider.core.conf.ExampleConfResources.overridden
+import static org.apache.slider.core.conf.ExampleConfResources.*
 
 /**
  * Test 
@@ -88,5 +89,24 @@ class TestConfTreeResolve extends Assert {
     assert worker["g2"] == "b"
     assert worker["timeout"] == "1000"
 
+  }
+
+  @Test
+  public void testTimeIntervalLoading() throws Throwable {
+
+    def orig = ExampleConfResources.loadResource(internal)
+
+    MapOperations internals = new MapOperations(orig.global)
+    def s = internals.getOptionInt(
+        CHAOS_MONKEY_INTERVAL + MapOperations.SECONDS,
+        0)
+    assert s == 60
+    long monkeyInterval = internals.getTimeRange(
+        CHAOS_MONKEY_INTERVAL,
+        DEFAULT_CHAOS_MONKEY_INTERVAL_DAYS,
+        DEFAULT_CHAOS_MONKEY_INTERVAL_HOURS,
+        DEFAULT_CHAOS_MONKEY_INTERVAL_MINUTES,
+        0);
+    assert monkeyInterval == 60;
   }
 }

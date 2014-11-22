@@ -24,7 +24,7 @@ package org.apache.slider.providers.agent;
 public interface AgentKeys {
 
   String PROVIDER_AGENT = "agent";
-  String ROLE_NODE = "node";
+  String ROLE_NODE = "echo";
   /**
    * {@value}
    */
@@ -60,6 +60,11 @@ public interface AgentKeys {
    * Execution home for the agent.
    */
   String APP_HOME = "app.home";
+  String APP_ROOT = "site.global.app_root";
+  /**
+   * Runas user of the application
+   */
+  String RUNAS_USER = "site.global.app_user";
   /**
    * Name of the service.
    */
@@ -85,11 +90,16 @@ public interface AgentKeys {
 
   String JAVA_HOME = "java_home";
   String PACKAGE_LIST = "package_list";
+  String SYSTEM_CONFIGS = "system_configs";
   String WAIT_HEARTBEAT = "wait.heartbeat";
   String PYTHON_EXE = "python";
   String CREATE_DEF_ZK_NODE = "create.default.zookeeper.node";
   String HEARTBEAT_MONITOR_INTERVAL = "heartbeat.monitor.interval";
   String AGENT_INSTANCE_DEBUG_DATA = "agent.instance.debug.data";
+  String AGENT_OUT_FILE = "slider-agent.out";
+  String KEY_AGENT_TWO_WAY_SSL_ENABLED = "ssl.server.client.auth";
+  String CERT_FILE_LOCALIZATION_PATH = "certs/ca.crt";
+  String KEY_CONTAINER_LAUNCH_DELAY = "container.launch.delay.sec";
 }
 
 

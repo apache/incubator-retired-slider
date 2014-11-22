@@ -25,6 +25,7 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;
+import org.apache.hadoop.registry.client.api.RegistryConstants;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.core.exceptions.BadConfigException;
@@ -48,6 +49,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 
 /**
@@ -65,14 +67,13 @@ public class ConfigHelper {
    * @param conf config
    * @return the sorted keyset
    */
-  public static TreeSet<String> dumpConf(Configuration conf) {
-    TreeSet<String> keys = sortedConfigKeys(conf);
+  public static Set<String> dumpConf(Configuration conf) {
+    Set<String> keys = sortedConfigKeys(conf);
     for (String key : keys) {
       log.info("{}={}", key, conf.get(key));
     }
     return keys;
   }
-
 
   /**
    * Take a configuration and return a sorted set
@@ -80,7 +81,7 @@ public class ConfigHelper {
    * @return the sorted keyset
 
    */
-  public static TreeSet<String> sortedConfigKeys(Iterable<Map.Entry<String, String>> conf) {
+  public static Set<String> sortedConfigKeys(Iterable<Map.Entry<String, String>> conf) {
     TreeSet<String> sorted = new TreeSet<String>();
     for (Map.Entry<String, String> entry : conf) {
       sorted.add(entry.getKey());
@@ -338,13 +339,41 @@ public class ConfigHelper {
     try {
       conf.addResource(file.toURI().toURL());
     } catch (MalformedURLException e) {
-      //should never happen...
+      // should never happen...
       throw new IOException(
         "File " + file.toURI() + " doesn't have a valid URL");
     }
     return conf;
   }
 
+  /**
+   * Add a configuration from a file to an existing configuration
+   * @param conf existing configuration
+   * @param file file to load
+   * @param overwrite flag to indicate new values should overwrite the predecessor
+   * @return the merged configuration
+   * @throws IOException
+   */
+  public static Configuration addConfigurationFile(Configuration conf,
+      File file, boolean overwrite)
+      throws IOException {
+    Configuration c2 = loadConfFromFile(file, false);
+    mergeConfigurations(conf, c2, file.getAbsolutePath(), overwrite);
+    return conf;
+  }
+
+  /**
+   * Add the system env variables with the given prefix (by convention, env.)
+   * @param conf existing configuration
+   * @param prefix prefix
+   */
+  public static void addEnvironmentVariables(Configuration conf, String prefix) {
+    Map<String, String> env = System.getenv();
+    for (Map.Entry<String, String> entry : env.entrySet()) {
+      conf.set(prefix + entry.getKey(),entry.getValue(), "env");
+    }
+  }
+  
   /**
    * looks for the config under $confdir/$templateFilename; if not there
    * loads it from /conf/templateFile.
@@ -383,8 +412,8 @@ public class ConfigHelper {
    */
   public static Configuration loadTemplateConfiguration(FileSystem fs,
                                                         Path templatePath,
-                                                        String fallbackResource) throws
-                                                                                 IOException {
+                                                        String fallbackResource)
+      throws IOException {
     Configuration conf;
     String origin;
     if (fs.exists(templatePath)) {
@@ -415,7 +444,7 @@ public class ConfigHelper {
    * @return listing in key=value style
    */
   public static String dumpConfigToString(Configuration conf) {
-    TreeSet<String> sorted = sortedConfigKeys(conf);
+    Set<String> sorted = sortedConfigKeys(conf);
 
     StringBuilder builder = new StringBuilder();
     for (String key : sorted) {
@@ -434,13 +463,18 @@ public class ConfigHelper {
    * @param merge one to merge. This MUST be a non-default-load config to avoid
    * merge origin confusion
    * @param origin description of the origin for the put operation
+   * @param overwrite flag to indicate new values should overwrite the predecessor
    * @return the base with the merged values
    */
   public static Configuration mergeConfigurations(Configuration base,
-                                                  Iterable<Map.Entry<String, String>> merge,
-                                                  String origin) {
+      Iterable<Map.Entry<String, String>> merge,
+      String origin,
+      boolean overwrite) {
     for (Map.Entry<String, String> entry : merge) {
-      base.set(entry.getKey(), entry.getValue(), origin);
+      String key = entry.getKey();
+      if (overwrite || base.get(key) == null) {
+        base.set(key, entry.getValue(), origin);
+      }
     }
     return base;
   }
@@ -489,8 +523,8 @@ public class ConfigHelper {
    * @return the loaded configuration
    * @throws FileNotFoundException if the resource is missing
    */
-  public static Configuration loadMandatoryResource(String resource) throws
-                                                                     FileNotFoundException {
+  public static Configuration loadMandatoryResource(String resource)
+      throws FileNotFoundException {
     Configuration conf = new Configuration(false);
     URL resURL = ConfigHelper.class.getClassLoader()
                                 .getResource(resource);
@@ -560,5 +594,18 @@ public class ConfigHelper {
       result.set(key, value);
     }
     return result;
+  }
+
+  /**
+   * Register anything we consider deprecated
+   */
+  public static void registerDeprecatedConfigItems() {
+    Configuration.addDeprecation(
+        SliderXmlConfKeys.REGISTRY_ZK_QUORUM,
+        RegistryConstants.KEY_REGISTRY_ZK_QUORUM);
+    Configuration.addDeprecation(
+        SliderXmlConfKeys.REGISTRY_PATH,
+        RegistryConstants.KEY_REGISTRY_ZK_ROOT);
+    
   }
 }

@@ -16,20 +16,25 @@
  */
 package org.apache.slider.server.appmaster.web.view;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
-import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.DIV;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.UL;
 import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
+import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.providers.ProviderService;
+import org.apache.slider.server.appmaster.state.RoleStatus;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -37,15 +42,14 @@ import java.util.Map.Entry;
  * 
  */
 public class IndexBlock extends HtmlBlock {
-  private static final String HBASE = "HBase";
   private static final Logger log = LoggerFactory.getLogger(IndexBlock.class);
 
-  private StateAccessForProviders appState;
+  private StateAccessForProviders appView;
   private ProviderService providerService;
 
   @Inject
   public IndexBlock(WebAppApi slider) {
-    this.appState = slider.getAppState();
+    this.appView = slider.getAppState();
     this.providerService = slider.getProviderService();
   }
 
@@ -57,45 +61,73 @@ public class IndexBlock extends HtmlBlock {
   }
 
   // An extra method to make testing easier since you can't make an instance of Block
+  @VisibleForTesting
   protected void doIndex(Hamlet html, String providerName) {
-    DIV<Hamlet> div = html.div("general_info").h1("index_header", providerName + " cluster: '" + appState.getClusterStatus().name + "'");
+    ClusterDescription clusterStatus = appView.getClusterStatus();
+    DIV<Hamlet> div = html.div("general_info")
+                          .h1("index_header",
+                              "Application: '" + clusterStatus.name + "'");
 
     UL<DIV<Hamlet>> ul = div.ul();
 
-    ul.li("Total number of containers for cluster: " + appState.getNumOwnedContainers());
-    ul.li("Cluster created: " + getInfoAvoidingNulls(StatusKeys.INFO_CREATE_TIME_HUMAN));
-    ul.li("Cluster last flexed: " + getInfoAvoidingNulls(StatusKeys.INFO_FLEX_TIME_HUMAN));
-    ul.li("Cluster running since: " + getInfoAvoidingNulls(StatusKeys.INFO_LIVE_TIME_HUMAN));
-    ul.li("Cluster HDFS storage path: " + appState.getClusterStatus().dataPath);
-    ul.li("Cluster configuration path: " + appState.getClusterStatus().originConfigurationPath);
+    ul.li("Total number of containers for application: " + appView.getNumOwnedContainers());
+    ul.li("Application created: " +
+          getInfoAvoidingNulls(StatusKeys.INFO_CREATE_TIME_HUMAN));
+    ul.li("Application last flexed: " + getInfoAvoidingNulls(StatusKeys.INFO_FLEX_TIME_HUMAN));
+    ul.li("Application running since: " + getInfoAvoidingNulls(StatusKeys.INFO_LIVE_TIME_HUMAN));
+    ul.li("Application HDFS storage path: " + clusterStatus.dataPath);
+    ul.li("Application configuration path: " + clusterStatus.originConfigurationPath);
 
     ul._()._();
 
     html.div("provider_info").h3(providerName + " specific information");
     ul = div.ul();
-    addProviderServiceOptions(providerService, ul);
+    addProviderServiceOptions(providerService, ul, clusterStatus);
     ul._()._();
+
+    html.div("container_instances").h3("Component Instances");
+
+    Hamlet.TABLE<DIV<Hamlet>> table = div.table();
+    table.tr()
+         .th("Component")
+         .th("Desired")
+         .th("Actual")
+         .th("Outstanding Requests")
+         .th("Failed")
+         .th("Failed to start")
+         ._();
+
+    List<RoleStatus> roleStatuses = appView.cloneRoleStatusList();
+    Collections.sort(roleStatuses, new RoleStatus.CompareByName());
+    for (RoleStatus status : roleStatuses) {
+      table.tr()
+           .td(status.getName())
+           .th(String.format("%d", status.getDesired()))
+           .th(String.format("%d", status.getActual()))
+           .th(String.format("%d", status.getRequested()))
+           .th(String.format("%d", status.getFailed()))
+           .th(String.format("%d", status.getStartFailed()))
+            ._();
+    }
+
+    table._()._();
   }
 
   private String getProviderName() {
-    String providerServiceName = providerService.getName().toLowerCase();
-
-    // Get HBase properly capitalized
-    if (providerServiceName.contains("hbase")) {
-      return HBASE;
-    }
-
-    return StringUtils.capitalize(providerServiceName);
+    String providerServiceName = providerService.getName().toLowerCase(Locale.ENGLISH);
+    return providerServiceName;
   }
 
   private String getInfoAvoidingNulls(String key) {
-    String createTime = appState.getClusterStatus().getInfo(key);
+    String createTime = appView.getClusterStatus().getInfo(key);
 
     return null == createTime ? "N/A" : createTime;
   }
 
-  protected void addProviderServiceOptions(ProviderService providerService, UL<DIV<Hamlet>> ul) {
-    Map<String, String> details = providerService.buildMonitorDetails(appState.getClusterStatus());
+  protected void addProviderServiceOptions(ProviderService providerService,
+      UL<DIV<Hamlet>> ul, ClusterDescription clusterStatus) {
+    Map<String, String> details = providerService.buildMonitorDetails(
+        clusterStatus);
     if (null == details) {
       return;
     }

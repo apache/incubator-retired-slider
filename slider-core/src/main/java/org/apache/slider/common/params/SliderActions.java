@@ -32,18 +32,21 @@ public interface SliderActions {
   String ACTION_ECHO = "echo";
   String ACTION_EXISTS = "exists";
   String ACTION_FLEX = "flex";
-  String ACTION_FREEZE = "freeze";
-  String ACTION_GETCONF = "getconf";
+  String ACTION_FREEZE = "stop";
   String ACTION_HELP = "help";
   String ACTION_KILL_CONTAINER = "kill-container";
   String ACTION_LIST = "list";
+  String ACTION_LOOKUP = "lookup";
   String ACTION_PREFLIGHT = "preflight";
   String ACTION_RECONFIGURE = "reconfigure";
   String ACTION_REGISTRY = "registry";
+  String ACTION_RESOLVE = "resolve";
   String ACTION_STATUS = "status";
-  String ACTION_THAW = "thaw";
-  String ACTION_USAGE = "usage";
+  String ACTION_THAW = "start";
   String ACTION_VERSION = "version";
+  String ACTION_DIAGNOSTICS = "diagnostics";
+  String ACTION_INSTALL_PACKAGE = "install-package";
+  String ACTION_INSTALL_KEYTAB = "install-keytab";
   String DESCRIBE_ACTION_AM_SUICIDE =
     "Tell the Slider Application Master to simulate a process failure by terminating itself";
   String DESCRIBE_ACTION_BUILD =
@@ -58,7 +61,7 @@ public interface SliderActions {
             "Probe for an application running";
   String DESCRIBE_ACTION_FLEX = "Flex a Slider application";
   String DESCRIBE_ACTION_FREEZE =
-              "Freeze/suspend a running application";
+              "Stop a running application";
   String DESCRIBE_ACTION_GETCONF =
                 "Get the configuration of an application";
   String DESCRIBE_ACTION_KILL_CONTAINER =
@@ -66,14 +69,23 @@ public interface SliderActions {
   String DESCRIBE_ACTION_HELP = "Print help information";
   String DESCRIBE_ACTION_LIST =
                   "List running Slider applications";
+  String DESCRIBE_ACTION_LOOKUP =
+                  "look up a YARN application";
   String DESCRIBE_ACTION_MONITOR =
                     "Monitor a running application";
   String DESCRIBE_ACTION_REGISTRY =
                       "Query the registry of a YARN application";
+  String DESCRIBE_ACTION_RESOLVE =
+                      "Resolve or list records in the YARN registry";
   String DESCRIBE_ACTION_STATUS =
                       "Get the status of an application";
   String DESCRIBE_ACTION_THAW =
-                        "Thaw a frozen application";
+                        "Start a stopped application";
   String DESCRIBE_ACTION_VERSION =
                         "Print the Slider version information";
+  String DESCRIBE_ACTION_INSTALL_PACKAGE = "Install the application package in the home directory under sub-folder packages";
+  String DESCRIBE_ACTION_INSTALL_KEYTAB = "Install the Kerberos keytab file in the sub-folder 'keytabs' of the user's Slider base directory";
+  String DESCRIBE_ACTION_DIAGNOSTIC = "Diagnose the configuration of the running slider application and slider client";
+  
 }
+

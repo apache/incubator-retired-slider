@@ -20,31 +20,21 @@ package org.apache.slider.agent.standalone
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.hadoop.SleepJob
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.api.InternalKeys
-import org.apache.slider.api.ResourceKeys
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderXmlConfKeys
-import org.apache.slider.common.params.ActionAMSuicideArgs
 import org.apache.slider.common.params.Arguments
-import org.apache.slider.core.exceptions.ErrorStrings
 import org.apache.slider.core.main.ServiceLauncher
 import org.junit.Test
 
-/**
- * kill a masterless AM and verify it shuts down. This test
- * also sets the retry count to 1 to stop recreation attempts
- */
 @CompileStatic
 @Slf4j
-
 class TestStandaloneAMMonkeyRestart extends AgentMiniClusterTestBase {
-
 
   @Test
   public void testStandaloneAMMonkeyRestart() throws Throwable {
@@ -59,7 +49,7 @@ class TestStandaloneAMMonkeyRestart extends AgentMiniClusterTestBase {
             [
                 Arguments.ARG_OPTION, InternalKeys.CHAOS_MONKEY_ENABLED, "true",
                 Arguments.ARG_OPTION, InternalKeys.CHAOS_MONKEY_INTERVAL_SECONDS, "8",
-                Arguments.ARG_OPTION, InternalKeys.CHAOS_MONKEY_PROBABILITY_AM_FAILURE, "75000",
+                Arguments.ARG_OPTION, InternalKeys.CHAOS_MONKEY_PROBABILITY_AM_FAILURE, "7500",
             ],
             true,
             false)
@@ -69,13 +59,11 @@ class TestStandaloneAMMonkeyRestart extends AgentMiniClusterTestBase {
     ApplicationReport report
     report = waitForClusterLive(sliderClient, 30000)
     describe "Waiting for the cluster to fail"
-    sleep(40000)
-    // end of process
-    report = sliderClient.applicationReport
-    log.info(report.diagnostics)
-    assert report.currentApplicationAttemptId.attemptId == threshold
-    assert YarnApplicationState.FAILED == report.yarnApplicationState  
-    assert FinalApplicationStatus.FAILED == report.finalApplicationStatus
+    def finishedReport = waitForAppToFinish(sliderClient, 90000)
+    log.info(finishedReport.diagnostics)
+    assert finishedReport.currentApplicationAttemptId.attemptId == threshold
+    assert YarnApplicationState.FAILED == finishedReport.yarnApplicationState  
+    assert FinalApplicationStatus.FAILED == finishedReport.finalApplicationStatus
   }
 
   /**

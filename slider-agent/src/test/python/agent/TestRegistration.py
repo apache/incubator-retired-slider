@@ -28,6 +28,7 @@ from mock.mock import MagicMock
 from Register import Register
 from Controller import State
 from AgentConfig import AgentConfig
+import posixpath
 
 class TestRegistration(TestCase):
 
@@ -37,37 +38,27 @@ class TestRegistration(TestCase):
     config = AgentConfig(tmpdir, ver_dir)
     config.set('agent', 'prefix', tmpdir)
     config.set('agent', 'current_ping_port', '33777')
-    try:
-      os.mkdir(ver_dir)
-    except OSError as exception:
-      if exception.errno != errno.EEXIST:
-        raise
-    pass
-    ver_file = os.path.join(ver_dir, "version")
-    with open(ver_file, "w") as text_file:
-      text_file.write("1.3.0")
 
     register = Register(config)
-    data = register.build(State.INIT, State.INIT, {}, 1)
+    data = register.build(State.INIT, State.INIT, {}, {}, "tag", 1)
     #print ("Register: " + pprint.pformat(data))
-    self.assertEquals(data['hostname'] != "", True, "hostname should not be empty")
+    self.assertEquals(data['label'] != "", True, "hostname should not be empty")
     self.assertEquals(data['publicHostname'] != "", True, "publicHostname should not be empty")
     self.assertEquals(data['responseId'], 1)
     self.assertEquals(data['timestamp'] > 1353678475465L, True, "timestamp should not be empty")
-    self.assertEquals(data['agentVersion'], '1.3.0', "agentVersion should not be empty")
+    self.assertEquals(data['agentVersion'], '1', "agentVersion should not be empty")
     self.assertEquals(data['actualState'], State.INIT, "actualState should not be empty")
     self.assertEquals(data['expectedState'], State.INIT, "expectedState should not be empty")
     self.assertEquals(data['allocatedPorts'], {}, "allocatedPorts should be empty")
-    self.assertEquals(len(data), 8)
+    self.assertEquals(data['logFolders'], {}, "allocated log should be empty")
+    self.assertEquals(data['tags'], "tag", "tags should be tag")
+    self.assertEquals(len(data), 10)
 
-    self.assertEquals(os.path.join(tmpdir, "app/definition"), config.getResolvedPath("app_pkg_dir"))
-    self.assertEquals(os.path.join(tmpdir, "app/install"), config.getResolvedPath("app_install_dir"))
-    self.assertEquals(os.path.join(ver_dir, "."), config.getResolvedPath("app_log_dir"))
-    self.assertEquals(os.path.join(ver_dir, "."), config.getResolvedPath("log_dir"))
-    self.assertEquals(os.path.join(ver_dir, "."), config.getResolvedPath("app_task_dir"))
-
-    os.remove(ver_file)
-    os.removedirs(ver_dir)
+    self.assertEquals(posixpath.join(tmpdir, "app/definition"), config.getResolvedPath("app_pkg_dir"))
+    self.assertEquals(posixpath.join(tmpdir, "app/install"), config.getResolvedPath("app_install_dir"))
+    self.assertEquals(posixpath.join(ver_dir, "."), config.getResolvedPath("app_log_dir"))
+    self.assertEquals(posixpath.join(ver_dir, "."), config.getResolvedPath("log_dir"))
+    self.assertEquals(posixpath.join(ver_dir, "."), config.getResolvedPath("app_task_dir"))
 
 if __name__ == "__main__":
   unittest.main()

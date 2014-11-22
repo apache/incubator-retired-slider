@@ -6,10 +6,12 @@
     },
     "components": {
         "COMMAND_LOGGER": {
-            "yarn.role.priority": "1",
+          "yarn.memory": "128",
+          "yarn.role.priority": "1",
             "yarn.component.instances": "1"
         },
         "slider-appmaster": {
+          "yarn.memory": "256"
         }
     }
 }

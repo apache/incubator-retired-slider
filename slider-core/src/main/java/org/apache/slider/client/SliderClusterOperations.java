@@ -56,7 +56,6 @@ public class SliderClusterOperations {
 
   /**
    * Get a node from the AM
-   * @param appMaster AM
    * @param uuid uuid of node
    * @return deserialized node
    * @throws IOException IO problems

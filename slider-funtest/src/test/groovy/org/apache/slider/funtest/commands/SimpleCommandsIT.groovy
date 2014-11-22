@@ -32,14 +32,12 @@ public class SimpleCommandsIT extends CommandTestBase {
 
   @Test
   public void testVersion() throws Throwable {
-    Shell shell = slider([SliderActions.ACTION_VERSION])
-    assertSuccess(shell)
+    slider(0, [SliderActions.ACTION_VERSION])
   }
 
   @Test
   public void testUsage() throws Throwable {
-    SliderShell shell = slider(0, [SliderActions.ACTION_USAGE])
-    assertSuccess(shell)
+    slider(0, [SliderActions.ACTION_HELP])
   }
   
 }

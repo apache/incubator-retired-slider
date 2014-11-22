@@ -18,12 +18,15 @@
 
 package org.apache.slider.common.tools
 
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.junit.Test
 
 @Slf4j
+@CompileStatic
+
 class TestClientResourceRegistration {
 
   /**
@@ -50,12 +53,28 @@ class TestClientResourceRegistration {
     conf1.set("key1", "conf1")
     conf1.set("key2", "conf1")
     Configuration conf2 = new Configuration(false)
-    conf1.set("key1", "conf2")
-    conf1.set("key3", "conf2")
-    ConfigHelper.mergeConfigurations(conf1, conf2, "test")
+    conf2.set("key1", "conf2")
+    conf2.set("key3", "conf2")
+    ConfigHelper.mergeConfigurations(conf1, conf2, "test", true)
     log.info(ConfigHelper.dumpConfigToString(conf1))
 
     assert conf1.get("key1").equals("conf2")
+    assert conf1.get("key2").equals("conf1")
+    assert conf1.get("key3").equals("conf2")
+  }
+  
+  @Test
+  public void testMergeConfigsNoOverwrite() throws Throwable {
+    Configuration conf1 = new Configuration(false)
+    conf1.set("key1", "conf1")
+    conf1.set("key2", "conf1")
+    Configuration conf2 = new Configuration(false)
+    conf2.set("key1", "conf2")
+    conf2.set("key3", "conf2")
+    ConfigHelper.mergeConfigurations(conf1, conf2, "test", false)
+    log.info(ConfigHelper.dumpConfigToString(conf1))
+
+    assert conf1.get("key1").equals("conf1")
     assert conf1.get("key2").equals("conf1")
     assert conf1.get("key3").equals("conf2")
   }
@@ -73,7 +92,7 @@ class TestClientResourceRegistration {
     String hostname = "nosuchhost:0"
     conf.set(YarnConfiguration.RM_ADDRESS, hostname)
     YarnConfiguration yc = new YarnConfiguration()
-    ConfigHelper.mergeConfigurations(yc, conf, "slider-client")
+    ConfigHelper.mergeConfigurations(yc, conf, "slider-client", true)
     InetSocketAddress addr = SliderUtils.getRmAddress(yc)
     assert SliderUtils.isAddressDefined(addr)
   }

@@ -36,6 +36,7 @@ import org.apache.slider.providers.AbstractClientProvider;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
 import org.apache.slider.providers.agent.application.metadata.Application;
+import org.apache.slider.providers.agent.application.metadata.Component;
 import org.apache.slider.providers.agent.application.metadata.Metainfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +45,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -109,25 +111,55 @@ public class AgentClientProvider extends AbstractClientProvider
   }
 
   @Override
-  public void validateInstanceDefinition(AggregateConf instanceDefinition) throws
+  public void validateInstanceDefinition(AggregateConf instanceDefinition, SliderFileSystem fs) throws
       SliderException {
-    super.validateInstanceDefinition(instanceDefinition);
+    super.validateInstanceDefinition(instanceDefinition, fs);
     log.debug("Validating conf {}", instanceDefinition);
     ConfTreeOperations resources =
         instanceDefinition.getResourceOperations();
-    ConfTreeOperations appConf =
-        instanceDefinition.getAppConfOperations();
 
     providerUtils.validateNodeCount(instanceDefinition, ROLE_NODE,
                                     0, -1);
 
+    try {
+      // Validate the app definition
+      instanceDefinition.getAppConfOperations().
+          getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
+    } catch (BadConfigException bce) {
+      throw new BadConfigException("Application definition must be provided. " + bce.getMessage());
+    }
+    String appDef = instanceDefinition.getAppConfOperations().
+        getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
+    log.info("Validating app definition {}", appDef);
+    String extension = appDef.substring(appDef.lastIndexOf(".") + 1, appDef.length());
+    if (!"zip".equals(extension.toLowerCase(Locale.ENGLISH))) {
+      throw new BadConfigException("App definition must be packaged as a .zip file. File provided is " + appDef);
+    }
+
     Set<String> names = resources.getComponentNames();
     names.remove(SliderKeys.COMPONENT_AM);
     Map<Integer, String> priorityMap = new HashMap<Integer, String>();
+
+    Metainfo metaInfo = null;
+    if (fs != null) {
+      try {
+        metaInfo = AgentUtils.getApplicationMetainfo(fs, appDef);
+      } catch (IOException ioe) {
+        // Ignore missing metainfo file for now
+        log.info("Missing metainfo.xml {}", ioe.getMessage());
+      }
+    }
+
     for (String name : names) {
       MapOperations component = resources.getMandatoryComponent(name);
 
-      // Validate count against the metainfo.xml
+      if (metaInfo != null) {
+        Component componentDef = metaInfo.getApplicationComponent(name);
+        if (componentDef == null) {
+          throw new BadConfigException(
+              "Component %s is not a member of application.", name);
+        }
+      }
 
       int priority =
           component.getMandatoryOptionInt(ResourceKeys.COMPONENT_PRIORITY);
@@ -150,46 +182,59 @@ public class AgentClientProvider extends AbstractClientProvider
       priorityMap.put(priority, name);
     }
 
-    try {
-      // Validate the app definition
-      instanceDefinition.getAppConfOperations().
-          getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
-    } catch (BadConfigException bce) {
-      throw new BadConfigException("Application definition must be provided. " + bce.getMessage());
-    }
-    String appDef = instanceDefinition.getAppConfOperations().
-        getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
-    log.info("Validating app definition {}", appDef);
-    String extension = appDef.substring(appDef.lastIndexOf(".") + 1, appDef.length());
-    if (!"zip".equalsIgnoreCase(extension)) {
-      throw new BadConfigException("App definition must be packaged as a .zip file. File provided is " + appDef);
-    }
+    // fileSystem may be null for tests
+    if (metaInfo != null) {
+      for (String name : names) {
+        Component componentDef = metaInfo.getApplicationComponent(name);
+        if (componentDef == null) {
+          throw new BadConfigException(
+              "Component %s is not a member of application.", name);
+        }
 
-    String appHome = instanceDefinition.getAppConfOperations().
-        getGlobalOptions().get(AgentKeys.PACKAGE_PATH);
-    String agentImage = instanceDefinition.getInternalOperations().
-        get(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH);
-
-    if (SliderUtils.isUnset(appHome) && SliderUtils.isUnset(agentImage)) {
-      throw new BadConfigException("Either agent package path " +
-                                   AgentKeys.PACKAGE_PATH + " or image root " +
-                                   InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH
-                                   + " must be provided.");
+        MapOperations componentConfig = resources.getMandatoryComponent(name);
+        int count =
+            componentConfig.getMandatoryOptionInt(ResourceKeys.COMPONENT_INSTANCES);
+        int definedMinCount = componentDef.getMinInstanceCountInt();
+        int definedMaxCount = componentDef.getMaxInstanceCountInt();
+        if (count < definedMinCount || count > definedMaxCount) {
+          throw new BadConfigException("Component %s, %s value %d out of range. "
+                                       + "Expected minimum is %d and maximum is %d",
+                                       name,
+                                       ResourceKeys.COMPONENT_INSTANCES,
+                                       count,
+                                       definedMinCount,
+                                       definedMaxCount);
+        }
+      }
     }
   }
 
+
   @Override
   public void prepareAMAndConfigForLaunch(SliderFileSystem fileSystem,
-      Configuration serviceConf,
-      AbstractLauncher launcher,
-      AggregateConf instanceDescription,
-      Path snapshotConfDirPath,
-      Path generatedConfDirPath,
-      Configuration clientConfExtras,
-      String libdir,
-      Path tempPath, boolean miniClusterTestRun) throws
+                                          Configuration serviceConf,
+                                          AbstractLauncher launcher,
+                                          AggregateConf instanceDefinition,
+                                          Path snapshotConfDirPath,
+                                          Path generatedConfDirPath,
+                                          Configuration clientConfExtras,
+                                          String libdir,
+                                          Path tempPath,
+                                          boolean miniClusterTestRun) throws
       IOException,
       SliderException {
+    String agentImage = instanceDefinition.getInternalOperations().
+        get(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH);
+    if (SliderUtils.isUnset(agentImage)) {
+      Path agentPath = new Path(tempPath.getParent(), AgentKeys.PROVIDER_AGENT);
+      log.info("Automatically uploading the agent tarball at {}", agentPath);
+      fileSystem.getFileSystem().mkdirs(agentPath);
+      if(ProviderUtils.addAgentTar(this, AGENT_TAR, fileSystem, agentPath)) {
+        instanceDefinition.getInternalOperations().set(
+            InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH,
+            new Path(agentPath, AGENT_TAR).toUri());
+      }
+    }
   }
 
   @Override

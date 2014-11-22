@@ -21,6 +21,7 @@ package org.apache.slider.funtest.basic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.net.NetUtils
+import org.apache.hadoop.registry.client.api.RegistryConstants
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.client.SliderYarnClientImpl
 import org.apache.slider.common.SliderXmlConfKeys
@@ -52,7 +53,8 @@ class ClusterConnectivityIT extends CommandTestBase {
 
   @Test
   public void testZKBinding() throws Throwable {
-    def quorum = SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.REGISTRY_ZK_QUORUM)
+    def quorum = SLIDER_CONFIG.getTrimmed(
+        RegistryConstants.KEY_REGISTRY_ZK_QUORUM)
     assert quorum
     def tuples = ZookeeperUtils.splitToHostsAndPortsStrictly(quorum);
     tuples.each {
@@ -63,13 +65,17 @@ class ClusterConnectivityIT extends CommandTestBase {
 
   @Test
   public void testRMTelnet() throws Throwable {
-    def rmAddr = SLIDER_CONFIG.getSocketAddr(YarnConfiguration.RM_ADDRESS, "", 0)
-    telnet(rmAddr.hostName, rmAddr.port)
+    def isHaEnabled = SLIDER_CONFIG.getTrimmed(YarnConfiguration.RM_HA_ENABLED)
+    // Telnet test is not straight forward for HA setup and is not required
+    // as long as RM binding is tested
+    if (!isHaEnabled) {
+      def rmAddr = SLIDER_CONFIG.getSocketAddr(YarnConfiguration.RM_ADDRESS, "", 0)
+      telnet(rmAddr.hostName, rmAddr.port)
+    }
   }
   
   @Test
   public void testRMBinding() throws Throwable {
-    testRMTelnet()
     SliderYarnClientImpl yarnClient = new SliderYarnClientImpl()
     try {
       SLIDER_CONFIG.setInt("ipc.client.connect.retry.interval",100)

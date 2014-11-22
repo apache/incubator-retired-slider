@@ -19,7 +19,7 @@
   <parent>
     <groupId>org.apache.slider</groupId>
     <artifactId>slider</artifactId>
-    <version>0.50.2-incubating</version>
+    <version>0.60.0-incubating</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>slider-agent</artifactId>
@@ -32,8 +32,9 @@
     <package.release>1</package.release>
     <skipTests>false</skipTests>
     <python.ver>python &gt;= 2.6</python.ver>
+    <executable.python>${project.basedir}/../slider-agent/src/test/python/python-wrap</executable.python>
+    <python.path.l>${project.basedir}/src/main/python/jinja2:${project.basedir}/src/test/python:${project.basedir}/src/main/python:${project.basedir}/src/main/python/agent:${project.basedir}/src/main/python/resource_management:${project.basedir}/src/test/python/agent:${project.basedir}/src/test/python/resource_management:${project.basedir}/src/main/python/kazoo</python.path.l>
   </properties>
-
   <build>
     <plugins>
       
@@ -59,17 +60,17 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>1.2</version>
+        <version>${maven-exec-plugin.version}</version>
         <executions>
           <execution>
             <configuration>
-              <executable>${project.basedir}/src/test/python/python-wrap</executable>
+              <executable>${executable.python}</executable>
               <workingDirectory>src/test/python</workingDirectory>
               <arguments>
                 <argument>unitTests.py</argument>
               </arguments>
               <environmentVariables>
-                <PYTHONPATH>${project.basedir}/src/main/python/jinja2:${project.basedir}/src/test/python:${project.basedir}/src/main/python:${project.basedir}/src/main/python/agent:${project.basedir}/src/main/python/resource_management:${project.basedir}/src/test/python/agent:${project.basedir}/src/test/python/resource_management:${project.basedir}/src/main/python/kazoo</PYTHONPATH>
+                <PYTHONPATH>${python.path.l}</PYTHONPATH>
               </environmentVariables>
               <skip>${skipTests}</skip>
             </configuration>
@@ -82,32 +83,9 @@
         </executions>
       </plugin>
       
-      <plugin>
-        <groupId>org.apache.rat</groupId>
-        <artifactId>apache-rat-plugin</artifactId>
-        <version>${apache-rat-plugin.version}</version>
-        <executions>
-          <execution>
-            <id>check-licenses</id>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <excludes>
-            <exclude>src/test/python/agent/dummy_output_error.txt</exclude>
-            <exclude>src/test/python/agent/dummy_output_good.txt</exclude>
-            <!-- jinja2 files (BSD license) -->
-            <exclude>src/main/python/jinja2/**</exclude>
-            <!-- mock files (BSD license) -->
-            <exclude>src/test/python/mock/**</exclude>
-            <!-- kazoo files (Apache License, Version 2.0) -->
-            <exclude>src/main/python/kazoo/**</exclude>
-          </excludes>
-        </configuration>
-      </plugin>
+  
     </plugins>
+    
     <extensions>
       <extension>
         <groupId>org.apache.maven.wagon</groupId>
@@ -115,4 +93,60 @@
       </extension>
     </extensions>
   </build>
+  
+  <profiles>
+   <profile>
+      <id>Windows</id>
+      <activation>
+        <os><family>windows</family></os>
+      </activation>
+      <properties>
+        <executable.python>python</executable.python>
+        <python.path.l>${project.basedir}\src\main\python\jinja2;${project.basedir}\src\test\python;${project.basedir}\src\main\python;${project.basedir}\src\main\python\agent;${project.basedir}\src\main\python\resource_management;${project.basedir}\src\test\python\agent;${project.basedir}\src\test\python\resource_management;${project.basedir}\src\main\python\kazoo</python.path.l>
+      </properties>
+    </profile>
+
+    <profile>
+      <id>Linux</id>
+      <activation>
+        <os><family>!windows</family></os>
+      </activation>
+      <properties>
+        <executable.python>${project.basedir}/../slider-agent/src/test/python/python-wrap</executable.python>
+        <python.path.l>${project.basedir}/src/main/python/jinja2:${project.basedir}/src/test/python:${project.basedir}/src/main/python:${project.basedir}/src/main/python/agent:${project.basedir}/src/main/python/resource_management:${project.basedir}/src/test/python/agent:${project.basedir}/src/test/python/resource_management:${project.basedir}/src/main/python/kazoo</python.path.l>
+      </properties>
+    </profile>
+    <profile>
+      <id>rat</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.rat</groupId>
+            <artifactId>apache-rat-plugin</artifactId>
+            <version>${apache-rat-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>check-licenses</id>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <excludes>
+                <exclude>src/test/python/agent/dummy_output_error.txt</exclude>
+                <exclude>src/test/python/agent/dummy_output_good.txt</exclude>
+                <!-- jinja2 files (BSD license) -->
+                <exclude>src/main/python/jinja2/**</exclude>
+                <!-- mock files (BSD license) -->
+                <exclude>src/test/python/mock/**</exclude>
+                <!-- kazoo files (Apache License, Version 2.0) -->
+                <exclude>src/main/python/kazoo/**</exclude>
+              </excludes>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

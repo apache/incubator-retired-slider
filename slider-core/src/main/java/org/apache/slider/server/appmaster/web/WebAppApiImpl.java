@@ -16,9 +16,8 @@
  */
 package org.apache.slider.server.appmaster.web;
 
+import org.apache.hadoop.registry.client.api.RegistryOperations;
 import org.apache.slider.api.SliderClusterProtocol;
-import org.apache.slider.common.SliderKeys;
-import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderService;
 import org.apache.slider.server.appmaster.state.RoleStatus;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
@@ -27,10 +26,8 @@ import org.apache.slider.server.services.security.CertificateManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -41,17 +38,18 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class WebAppApiImpl implements WebAppApi {
   private static final Logger log = LoggerFactory.getLogger(WebAppApiImpl.class);
 
-  protected static final ProviderRole AM_ROLE_NAME = new ProviderRole("Slider Application Master", SliderKeys.ROLE_AM_PRIORITY_INDEX);
-
   protected final SliderClusterProtocol clusterProto;
   protected final StateAccessForProviders appState;
   protected final ProviderService provider;
   protected final CertificateManager certificateManager;
-  
+  private final RegistryOperations registryOperations;
+
   public WebAppApiImpl(SliderClusterProtocol clusterProto,
-                       StateAccessForProviders appState,
-                       ProviderService provider,
-                       CertificateManager certificateManager) {
+      StateAccessForProviders appState,
+      ProviderService provider,
+      CertificateManager certificateManager,
+      RegistryOperations registryOperations) {
+    this.registryOperations = registryOperations;
     checkNotNull(clusterProto);
     checkNotNull(appState);
     checkNotNull(provider);
@@ -95,54 +93,23 @@ public class WebAppApiImpl implements WebAppApi {
    * @see org.apache.slider.server.appmaster.web.WebAppApi#getRoleStatusByName()
    */
   @Override
-  public TreeMap<String,RoleStatus> getRoleStatusByName() {
-    Map<Integer,ProviderRole> rolesById = rolesById(provider.getRoles());
-    Map<Integer,RoleStatus> status = appState.getRoleStatusMap();
-    
-    return getRoleStatusesByName(rolesById, status);
-  }
-  
-  /**
-   * Get the ProviderRoles by their index
-   * @param roles
-   * @return
-   */
-  private Map<Integer,ProviderRole> rolesById(List<ProviderRole> roles) {
-    Map<Integer,ProviderRole> rolesById = new HashMap<Integer,ProviderRole>();
-    rolesById.put(SliderKeys.ROLE_AM_PRIORITY_INDEX, AM_ROLE_NAME);
-
-    for (ProviderRole role : roles) {
-      rolesById.put(role.id, role);
+  public Map<String,RoleStatus> getRoleStatusByName() {
+    List<RoleStatus> roleStatuses = appState.cloneRoleStatusList();
+    TreeMap<String, RoleStatus> map =
+        new TreeMap<String, RoleStatus>();
+    for (RoleStatus status : roleStatuses) {
+      map.put(status.getName(), status);
     }
-
-    return rolesById;
-  }
-
-  /**
-   * Join the ProviderRole by their ID with the RoleStatus by their ID, to get the RoleStatus by role name.
-   * @param rolesById
-   * @param statusById
-   * @return A Map of RoleStatus by the role name
-   */
-  private TreeMap<String, RoleStatus> getRoleStatusesByName(Map<Integer, ProviderRole> rolesById,
-      Map<Integer, RoleStatus> statusById) {
-    TreeMap<String, RoleStatus> statusByName = new TreeMap<String, RoleStatus>();
-    for (Entry<Integer, ProviderRole> role : rolesById.entrySet()) {
-      final RoleStatus status = statusById.get(role.getKey());
-
-      if (null == status) {
-        log.error("Found ID ({}) which has no known ProviderRole",
-            role.getKey());
-      } else {
-        statusByName.put(role.getValue().name, status);
-      }
-    }
-
-    return statusByName;
+    return map;
   }
 
   @Override
   public AgentRestOperations getAgentRestOperations() {
     return provider.getAgentRestOperations();
+  }
+
+  @Override
+  public RegistryOperations getRegistryOperations() {
+    return registryOperations;
   }
 }

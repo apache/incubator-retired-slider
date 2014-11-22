@@ -22,6 +22,7 @@ import com.beust.jcommander.Parameter;
 import org.apache.hadoop.fs.Path;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.ErrorStrings;
+import org.apache.slider.core.exceptions.UsageException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -118,13 +119,14 @@ public abstract class AbstractActionArgs extends ArgOps implements Arguments {
     return getMinParams();
   }
 
-  public void validate() throws BadCommandArgumentsException {
+  public void validate() throws BadCommandArgumentsException, UsageException {
     
     int minArgs = getMinParams();
     int actionArgSize = parameters.size();
     if (minArgs > actionArgSize) {
       throw new BadCommandArgumentsException(
-        ErrorStrings.ERROR_NOT_ENOUGH_ARGUMENTS + getActionName());
+        ErrorStrings.ERROR_NOT_ENOUGH_ARGUMENTS + getActionName() +
+        " Expected minimum " + minArgs + " but got " + actionArgSize);
     }
     int maxArgs = getMaxParams();
     if (maxArgs == -1) {
@@ -147,5 +149,16 @@ public abstract class AbstractActionArgs extends ArgOps implements Arguments {
   @Override
   public String toString() {
     return super.toString() + ": " + getActionName();
+  }
+
+  /**
+   * Override point: 
+   * Flag to indicate that core hadoop API services are needed (HDFS, YARN, etc)
+   * —and that validation of the client state should take place.
+   * 
+   * @return a flag to indicate that the core hadoop services will be needed.
+   */
+  public boolean getHadoopServicesRequired() {
+    return true;
   }
 }

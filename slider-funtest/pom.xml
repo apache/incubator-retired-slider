@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.slider</groupId>
     <artifactId>slider</artifactId>
-    <version>0.50.2-incubating</version>
+    <version>0.60.0-incubating</version>
   </parent>
   <properties>
     <work.dir>package-tmp</work.dir>
@@ -119,33 +119,14 @@
             <slider.bin.dir>../slider-assembly/target/slider-${project.version}-all/slider-${project.version}</slider.bin.dir>
             <test.app.pkg.dir>../app-packages/command-logger/slider-pkg/target</test.app.pkg.dir>
             <test.app.pkg.file>apache-slider-command-logger.zip</test.app.pkg.file>
+            <test.app.pkg.name>CMD_LOGGER</test.app.pkg.name>
             <test.app.resource>../slider-core/src/test/app_packages/test_command_log/resources.json</test.app.resource>
             <test.app.template>../slider-core/src/test/app_packages/test_command_log/appConfig.json</test.app.template>
+            <vagrant.current.working.dir></vagrant.current.working.dir>
           </systemPropertyVariables>
         </configuration>
       </plugin>
   
-      <plugin>
-        <groupId>org.apache.rat</groupId>
-        <artifactId>apache-rat-plugin</artifactId>
-        <version>${apache-rat-plugin.version}</version>
-        <executions>
-          <execution>
-            <id>check-licenses</id>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <excludes>
-            <exclude>**/*.json</exclude>
-            <exclude>**/httpfs-signature.secret</exclude>
-            <exclude>**/regionservers</exclude>
-          </excludes>
-        </configuration>
-      </plugin>
-
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
@@ -191,8 +172,6 @@
   <reporting>
     <plugins>
  
-
-
     </plugins>
   </reporting>
 
@@ -309,7 +288,11 @@
         <groupId>org.codehaus.groovy</groupId>
         <artifactId>groovy-all</artifactId>
       </dependency>
-
+    <dependency>
+      <groupId>com.jcraft</groupId>
+      <artifactId>jsch</artifactId>
+      <version>0.1.51</version>
+    </dependency>
 
   </dependencies>
 
@@ -345,7 +328,34 @@
         <maven.test.skip>true</maven.test.skip>
       </properties>
     </profile>
+      <profile>
+        <id>rat</id>
+        <build>
+          <plugins>
+            <plugin>
+              <groupId>org.apache.rat</groupId>
+              <artifactId>apache-rat-plugin</artifactId>
+              <version>${apache-rat-plugin.version}</version>
+              <executions>
+                <execution>
+                  <id>check-licenses</id>
+                  <goals>
+                    <goal>check</goal>
+                  </goals>
+                </execution>
+              </executions>
+              <configuration>
+                <excludes>
+                  <exclude>**/*.json</exclude>
+                  <exclude>**/httpfs-signature.secret</exclude>
+                  <exclude>**/regionservers</exclude>
+                </excludes>
+              </configuration>
+            </plugin>
 
+          </plugins>
+        </build>
+      </profile>
   </profiles>
 
 </project>

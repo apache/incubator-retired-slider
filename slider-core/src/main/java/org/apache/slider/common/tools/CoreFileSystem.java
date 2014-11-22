@@ -122,6 +122,49 @@ public class CoreFileSystem {
   }
 
   /**
+   * Build up the path string for package install location -no attempt to
+   * create the directory is made
+   *
+   * @return the path for persistent app package
+   */
+  public Path buildPackageDirPath(String packageName) {
+    Preconditions.checkNotNull(packageName);
+    Path path = getBaseApplicationPath();
+    return new Path(path, SliderKeys.PACKAGE_DIRECTORY + "/" + packageName);
+  }
+
+  /**
+   * Build up the path string for keytab install location -no attempt to
+   * create the directory is made
+   *
+   * @return the path for keytab
+   */
+  public Path buildKeytabInstallationDirPath(String keytabFolder) {
+    Preconditions.checkNotNull(keytabFolder);
+    Path path = getBaseApplicationPath();
+    return new Path(path, SliderKeys.KEYTAB_DIR + "/" + keytabFolder);
+  }
+
+  /**
+   * Build up the path string for keytab install location -no attempt to
+   * create the directory is made
+   *
+   * @return the path for keytab installation location
+   */
+  public Path buildKeytabPath(String keytabDir, String keytabName, String clusterName) {
+    Path homePath = getHomeDirectory();
+    Path baseKeytabDir;
+    if (keytabDir != null) {
+      baseKeytabDir = new Path(homePath, keytabDir);
+    } else {
+      baseKeytabDir = new Path(buildClusterDirPath(clusterName),
+                               SliderKeys.KEYTAB_DIR);
+    }
+    return keytabName == null ? baseKeytabDir :
+        new Path(baseKeytabDir, keytabName);
+  }
+
+  /**
    * Create the Slider cluster path for a named cluster and all its subdirs
    * This is a directory; a mkdirs() operation is executed
    * to ensure that it is there.
@@ -131,11 +174,10 @@ public class CoreFileSystem {
    * @throws java.io.IOException                      trouble
    * @throws SliderException slider-specific exceptions
    */
-  public Path createClusterDirectories(String clustername, Configuration conf) throws
-                                                                               IOException,
-      SliderException {
-    
-    
+  public Path createClusterDirectories(String clustername, Configuration conf)
+      throws IOException, SliderException {
+
+
     Path clusterDirectory = buildClusterDirPath(clustername);
     InstancePaths instancePaths = new InstancePaths(clusterDirectory);
     createClusterDirectories(instancePaths);
@@ -177,8 +219,8 @@ public class CoreFileSystem {
    *
    * @param dir          directory
    * @param clusterPerms cluster permissions
-   * @throws IOException                                 IO problem
-   * @throws org.apache.slider.core.exceptions.BadClusterStateException any cluster state problem
+   * @throws IOException  IO problem
+   * @throws BadClusterStateException any cluster state problem
    */
   public void createWithPermissions(Path dir, FsPermission clusterPerms) throws
           IOException,
@@ -513,6 +555,40 @@ public class CoreFileSystem {
     return builder.toString();
   }
 
+  /**
+   * List all application instances persisted for this user, giving the 
+   * patha. The instance name is the last element in the path
+   * @return a possibly empty map of application instance names to paths
+   */
+  public Map<String, Path> listPersistentInstances() throws IOException {
+    FileSystem fs = getFileSystem();
+    Path path = new Path(getBaseApplicationPath(), SliderKeys.CLUSTER_DIRECTORY);
+    log.debug("Looking for all persisted application at {}", path.toString());
+    if (!fs.exists(path)) {
+      // special case: no instances have ever been created
+      return new HashMap<String, Path>(0);
+    }
+    FileStatus[] statuses = fs.listStatus(path);
+    Map<String, Path> instances = new HashMap<String, Path>(statuses.length);
+
+    // enum the child entries
+    for (FileStatus status : statuses) {
+      if (status.isDirectory()) {
+        // for directories, look for an internal.json underneath
+        Path child = status.getPath();
+        Path internalJson = new Path(child, Filenames.INTERNAL);
+        if (fs.exists(internalJson)) {
+          // success => this is an instance
+          instances.put(child.getName(), child);
+        } else {
+          log.info("Malformed cluster found at {}. It does not appear to be a valid persisted instance.",
+                   child.toString());
+        }
+      }
+    }
+    return instances;
+  }
+
   public void touch(Path path, boolean overwrite) throws IOException {
     FSDataOutputStream out = fileSystem.create(path, overwrite);
     out.close();
@@ -545,7 +621,7 @@ public class CoreFileSystem {
    *
    * @param clustername name of the cluster
    * @return the path to the spec.
-   * @throws IOException                      IO problems
+   * @throws IOException IO problems
    * @throws SliderException if the path isn't there
    */
   public Path locateInstanceDefinition(String clustername) throws IOException,
@@ -564,23 +640,15 @@ public class CoreFileSystem {
    * @throws IOException IO problems
    * @throws SliderException if the cluster specification is not present
    */
-  public void verifyClusterSpecExists(String clustername,
-                                             Path clusterSpecPath) throws
-                                                                   IOException,
+  public void verifyClusterSpecExists(String clustername, Path clusterSpecPath)
+      throws IOException,
       SliderException {
     if (!fileSystem.isFile(clusterSpecPath)) {
       log.debug("Missing specification file {}", clusterSpecPath);
-      throw UnknownApplicationInstanceException.unknownInstance(clustername
-                                                                +
-                                                                "\n (definition not found at "
-                                                                +
-                                                                clusterSpecPath);
+      throw UnknownApplicationInstanceException.unknownInstance(
+          clustername + "\n (definition not found at " + clusterSpecPath);
     }
   }
-  
-  public Path fileToPath(File file) {
-    return new Path(file.getAbsoluteFile().toURI());
 
-  }
   
 }

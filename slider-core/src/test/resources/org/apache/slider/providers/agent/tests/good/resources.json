@@ -4,9 +4,9 @@
   "global": {
   },
   "components": {
-    "node": {
+    "echo": {
       "yarn.memory": "256",
-      "yarn.component.instances": "5",
+      "yarn.component.instances": "2",
       "yarn.role.priority":"1"
     }
   }

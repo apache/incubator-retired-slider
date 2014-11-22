@@ -17,10 +17,10 @@
 package org.apache.slider.server.appmaster.web.rest.publisher;
 
 import org.apache.hadoop.yarn.api.records.Container;
+import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.providers.agent.AgentProviderService;
 import org.apache.slider.server.appmaster.actions.QueueAccess;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
-import org.apache.slider.server.services.registry.RegistryViewForProviders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,17 +42,19 @@ public class TestAgentProviderService extends AgentProviderService {
 
   @Override
   public void bind(StateAccessForProviders stateAccessor,
-      RegistryViewForProviders reg,
       QueueAccess queueAccess,
       List<Container> liveContainers) {
-    super.bind(stateAccessor, reg, queueAccess, liveContainers);
+    super.bind(stateAccessor, queueAccess, liveContainers);
     Map<String,String> dummyProps = new HashMap<String, String>();
     dummyProps.put("prop1", "val1");
     dummyProps.put("prop2", "val2");
     log.info("publishing dummy-site.xml with values {}", dummyProps);
     publishApplicationInstanceData("dummy-site", "dummy configuration",
                                    dummyProps.entrySet());
-
+    // publishing global config for testing purposes
+    publishApplicationInstanceData("global", "global configuration",
+                                   stateAccessor.getAppConfSnapshot()
+                                       .getGlobalOptions().entrySet());
   }
 
 }

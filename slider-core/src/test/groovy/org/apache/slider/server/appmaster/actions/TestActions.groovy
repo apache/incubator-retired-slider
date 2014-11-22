@@ -191,7 +191,7 @@ class TestActions {
     queues.renewing("note", renewer)
     assert queues.removeRenewingAction("note")
     queues.stop()
-    queues.waitForServiceToStop(10000)
+    assert queues.waitForServiceToStop(10000)
   }
   
   public class ActionNoteExecuted extends AsyncAction {

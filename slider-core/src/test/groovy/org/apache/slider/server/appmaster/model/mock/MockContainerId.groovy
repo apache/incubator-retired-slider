@@ -23,28 +23,51 @@ import org.apache.hadoop.yarn.api.records.ContainerId
 
 class MockContainerId extends ContainerId implements Cloneable {
 
-  int id;
+  private static final defaultAppAttemptId = new MockApplicationAttemptId(
+      new MockApplicationId(1), 1)
+  
+  long containerId;
   ApplicationAttemptId applicationAttemptId;
 
   MockContainerId() {
   }
-  
-  MockContainerId(int id) {
-    setId(id);
+
+  /**
+   * Sets up a default app Attempt ID
+   * @param containerId
+   */
+  @Deprecated
+  MockContainerId(long containerId) {
+    this.containerId = containerId;
+    this.applicationAttemptId = defaultAppAttemptId;
+  }
+
+  MockContainerId(ApplicationAttemptId applicationAttemptId, long containerId) {
+    this.containerId = containerId;
+    this.applicationAttemptId = applicationAttemptId
   }
   
   MockContainerId(ContainerId that) {
-    id = that.id
+    containerId = that.containerId
     applicationAttemptId = that.applicationAttemptId
   }
   
 
   int getId() {
-    return id
+    return (int) containerId
   }
 
+  // TODO: Temporarily adding it back
   void setId(int id) {
-    this.id = id
+    containerId = (long) id;
+  }
+
+  long getContainerId() {
+    return this.containerId;
+  }
+
+  void setContainerId(long id) {
+    this.containerId = id
   }
 
   ApplicationAttemptId getApplicationAttemptId() {
@@ -62,7 +85,7 @@ class MockContainerId extends ContainerId implements Cloneable {
   
   @Override
   public String toString() {
-    return "mockcontainer_" + id;
+    return "mockcontainer_" + containerId;
   }
 
   @Override

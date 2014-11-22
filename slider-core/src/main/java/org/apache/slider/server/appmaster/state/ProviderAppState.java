@@ -26,6 +26,7 @@ import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTreeOperations;
 import org.apache.slider.core.exceptions.NoSuchNodeException;
 import org.apache.slider.core.registry.docstore.PublishedConfigSet;
+import org.apache.slider.core.registry.docstore.PublishedExportsSet;
 import org.apache.slider.server.appmaster.web.rest.RestPaths;
 import org.apache.slider.server.services.utility.PatternValidator;
 
@@ -40,6 +41,7 @@ public class ProviderAppState implements StateAccessForProviders {
 
   private final Map<String, PublishedConfigSet> publishedConfigSets =
       new ConcurrentHashMap<String, PublishedConfigSet>(5);
+  private final PublishedExportsSet publishedExportsSets = new PublishedExportsSet();
   private static final PatternValidator validator = new PatternValidator(
       RestPaths.PUBLISHED_CONFIGURATION_SET_REGEXP);
   private String applicationName;
@@ -63,6 +65,11 @@ public class ProviderAppState implements StateAccessForProviders {
   @Override
   public PublishedConfigSet getPublishedSliderConfigurations() {
     return getOrCreatePublishedConfigSet(RestPaths.SLIDER_CONFIGSET);
+  }
+
+  @Override
+  public PublishedExportsSet getPublishedExportsSet() {
+    return publishedExportsSets;
   }
 
   @Override
@@ -204,4 +211,8 @@ public class ProviderAppState implements StateAccessForProviders {
     appState.refreshClusterStatus();
   }
 
+  @Override
+  public List<RoleStatus> cloneRoleStatusList() {
+    return appState.cloneRoleStatusList();
+  }
 }

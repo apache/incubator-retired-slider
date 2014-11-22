@@ -19,7 +19,6 @@
 package org.apache.slider.common;
 
 public class Constants {
-  public static final int ACCEPT_TIME = 60000;
   public static final int CONNECT_TIMEOUT = 10000;
   public static final int RPC_TIMEOUT = 15000;
 }

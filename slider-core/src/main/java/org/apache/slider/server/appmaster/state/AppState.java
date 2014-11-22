@@ -26,7 +26,10 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.ContainerStatus;
+import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.hadoop.yarn.api.records.NodeId;
+import org.apache.hadoop.yarn.api.records.NodeReport;
+import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.api.records.impl.pb.ContainerPBImpl;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
@@ -36,6 +39,7 @@ import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterDescriptionKeys;
 import org.apache.slider.api.ClusterDescriptionOperations;
 import org.apache.slider.api.ClusterNode;
+import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.RoleKeys;
 import org.apache.slider.api.StatusKeys;
@@ -54,8 +58,10 @@ import org.apache.slider.core.exceptions.ErrorStrings;
 import org.apache.slider.core.exceptions.NoSuchNodeException;
 import org.apache.slider.core.exceptions.SliderInternalStateException;
 import org.apache.slider.core.exceptions.TriggerClusterTeardownException;
+import org.apache.slider.providers.PlacementPolicy;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
+import org.apache.slider.server.appmaster.operations.CancelRequestOperation;
 import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation;
 import org.apache.slider.server.appmaster.operations.ContainerRequestOperation;
 import org.slf4j.Logger;
@@ -74,14 +80,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.apache.slider.api.ResourceKeys.DEF_YARN_CORES;
-import static org.apache.slider.api.ResourceKeys.DEF_YARN_MEMORY;
-import static org.apache.slider.api.ResourceKeys.YARN_CORES;
-import static org.apache.slider.api.ResourceKeys.YARN_MEMORY;
-import static org.apache.slider.api.RoleKeys.ROLE_FAILED_INSTANCES;
-import static org.apache.slider.api.RoleKeys.ROLE_FAILED_STARTING_INSTANCES;
-import static org.apache.slider.api.RoleKeys.ROLE_RELEASING_INSTANCES;
-import static org.apache.slider.api.RoleKeys.ROLE_REQUESTED_INSTANCES;
+import static org.apache.slider.api.ResourceKeys.*;
+import static org.apache.slider.api.RoleKeys.*;
 
 
 /**
@@ -478,18 +478,15 @@ public class AppState {
 
     Set<String> confKeys = ConfigHelper.sortedConfigKeys(publishedProviderConf);
 
-//     Add the -site configuration properties
+    //  Add the -site configuration properties
     for (String key : confKeys) {
       String val = publishedProviderConf.get(key);
       clientProperties.put(key, val);
     }
 
-
     // set the cluster specification (once its dependency the client properties
     // is out the way
-
     updateInstanceDefinition(instanceDefinition);
-
 
     //build the initial role list
     for (ProviderRole providerRole : providerRoles) {
@@ -503,7 +500,7 @@ public class AppState {
     for (String name : roleNames) {
       if (!roles.containsKey(name)) {
         // this is a new value
-        log.info("Adding new role {}", name);
+        log.info("Adding role {}", name);
         MapOperations resComponent = resources.getComponent(name);
         ProviderRole dynamicRole =
             createDynamicProviderRole(name, resComponent);
@@ -520,8 +517,8 @@ public class AppState {
         instanceDefinition.getResourceOperations().getGlobalOptions();
     
     startTimeThreshold = globalResOpts.getOptionInt(
-        ResourceKeys.CONTAINER_FAILURE_SHORTLIFE,
-        ResourceKeys.DEFAULT_CONTAINER_FAILURE_SHORTLIFE);
+        InternalKeys.INTERNAL_CONTAINER_FAILURE_SHORTLIFE,
+        InternalKeys.DEFAULT_INTERNAL_CONTAINER_FAILURE_SHORTLIFE);
 
     failureThreshold = globalResOpts.getOptionInt(
         ResourceKeys.CONTAINER_FAILURE_THRESHOLD,
@@ -578,22 +575,23 @@ public class AppState {
    * @return a new provider role
    * @throws BadConfigException bad configuration
    */
+  @VisibleForTesting
   public ProviderRole createDynamicProviderRole(String name,
                                                 MapOperations component) throws
                                                         BadConfigException {
     String priOpt = component.getMandatoryOption(ResourceKeys.COMPONENT_PRIORITY);
-    int pri = SliderUtils.parseAndValidate("value of " + name + " " +
-                                           ResourceKeys.COMPONENT_PRIORITY,
-        priOpt, 0, 1, -1
-    );
-    log.info("Role {} assigned priority {}", name, pri);
+    int priority = SliderUtils.parseAndValidate("value of " + name + " " +
+        ResourceKeys.COMPONENT_PRIORITY,
+        priOpt, 0, 1, -1);
     String placementOpt = component.getOption(
-      ResourceKeys.COMPONENT_PLACEMENT_POLICY, "0");
+      ResourceKeys.COMPONENT_PLACEMENT_POLICY,
+        Integer.toString(PlacementPolicy.DEFAULT));
     int placement = SliderUtils.parseAndValidate("value of " + name + " " +
-                                                 ResourceKeys.COMPONENT_PLACEMENT_POLICY,
-        placementOpt, 0, 0, -1
-    );
-    return new ProviderRole(name, pri, placement);
+        ResourceKeys.COMPONENT_PLACEMENT_POLICY,
+        placementOpt, 0, 0, -1);
+    ProviderRole newRole = new ProviderRole(name, priority, placement);
+    log.info("New {} ", newRole);
+    return newRole;
   }
 
 
@@ -607,6 +605,14 @@ public class AppState {
                                                           BadConfigException,
                                                           IOException {
     instanceDefinition.resolve();
+
+    // force in the AM desired state values
+    ConfTreeOperations resources =
+        instanceDefinition.getResourceOperations();
+    if (resources.getComponent(SliderKeys.COMPONENT_AM) != null) {
+      resources.setComponentOpt(
+          SliderKeys.COMPONENT_AM, ResourceKeys.COMPONENT_INSTANCES, "1");
+    }
 
     //note the time 
     snapshotTime = now();
@@ -638,52 +644,58 @@ public class AppState {
   /**
    * The resource configuration is updated -review and update state.
    * @param resources updated resources specification
+   * @return a list of any dynamically added provider roles
+   * (purely for testing purposes)
    */
-  public synchronized void updateResourceDefinitions(ConfTree resources) throws
-                                                                         BadConfigException,
-                                                                         IOException {
+  public synchronized List<ProviderRole> updateResourceDefinitions(ConfTree resources)
+      throws BadConfigException, IOException {
     log.debug("Updating resources to {}", resources);
     
     instanceDefinition.setResources(resources);
     onInstanceDefinitionUpdated();
-    
-    
+ 
     //propagate the role table
-
     Map<String, Map<String, String>> updated = resources.components;
     getClusterStatus().roles = SliderUtils.deepClone(updated);
     getClusterStatus().updateTime = now();
-    buildRoleRequirementsFromResources();
+    return buildRoleRequirementsFromResources();
   }
 
   /**
    * build the role requirements from the cluster specification
+   * @return a list of any dynamically added provider roles
    */
-  private void buildRoleRequirementsFromResources() throws
-                                                      BadConfigException {
+  private List<ProviderRole> buildRoleRequirementsFromResources() throws BadConfigException {
+
+    List<ProviderRole> newRoles = new ArrayList<ProviderRole>(0);
+    
     //now update every role's desired count.
     //if there are no instance values, that role count goes to zero
 
     ConfTreeOperations resources =
-      instanceDefinition.getResourceOperations();
+        instanceDefinition.getResourceOperations();
 
     // Add all the existing roles
     for (RoleStatus roleStatus : getRoleStatusMap().values()) {
+      if (roleStatus.getExcludeFromFlexing()) {
+        // skip inflexible roles, e.g AM itself
+        continue;
+      }
       int currentDesired = roleStatus.getDesired();
       String role = roleStatus.getName();
       MapOperations comp =
-        resources.getComponent(role);
-      int desiredInstanceCount =
-        resources.getComponentOptInt(role, ResourceKeys.COMPONENT_INSTANCES, 0);
+          resources.getComponent(role);
+      int desiredInstanceCount = getDesiredInstanceCount(resources, role);
       if (desiredInstanceCount == 0) {
-        log.warn("Role {} has 0 instances specified", role);
+        log.info("Role {} has 0 instances specified", role);
       }
       if (currentDesired != desiredInstanceCount) {
         log.info("Role {} flexed from {} to {}", role, currentDesired,
-                 desiredInstanceCount);
+            desiredInstanceCount);
         roleStatus.setDesired(desiredInstanceCount);
       }
     }
+
     //now the dynamic ones. Iterate through the the cluster spec and
     //add any role status entries not in the role status
     Set<String> roleNames = resources.getComponentNames();
@@ -691,12 +703,39 @@ public class AppState {
       if (!roles.containsKey(name)) {
         // this is a new value
         log.info("Adding new role {}", name);
+        MapOperations component = resources.getComponent(name);
         ProviderRole dynamicRole = createDynamicProviderRole(name,
-                               resources.getComponent(name));
-        buildRole(dynamicRole);
+            component);
+        RoleStatus roleStatus = buildRole(dynamicRole);
+        roleStatus.setDesired(getDesiredInstanceCount(resources, name));
+        log.info("New role {}", roleStatus);
         roleHistory.addNewProviderRole(dynamicRole);
+        newRoles.add(dynamicRole);
       }
     }
+    return newRoles;
+  }
+
+  /**
+   * Get the desired instance count of a role, rejecting negative values
+   * @param resources resource map
+   * @param role role name
+   * @return the instance count
+   * @throws BadConfigException if the count is negative
+   */
+  private int getDesiredInstanceCount(ConfTreeOperations resources,
+      String role) throws BadConfigException {
+    int desiredInstanceCount =
+      resources.getComponentOptInt(role, ResourceKeys.COMPONENT_INSTANCES, 0);
+
+    if (desiredInstanceCount < 0) {
+      log.error("Role {} has negative desired instances : {}", role,
+          desiredInstanceCount);
+      throw new BadConfigException(
+          "Negative instance count (%) requested for component %s",
+          desiredInstanceCount, role);
+    }
+    return desiredInstanceCount;
   }
 
   /**
@@ -705,8 +744,10 @@ public class AppState {
    * should be used while setting up the system state -before servicing
    * requests.
    * @param providerRole role to add
+   * @return the role status built up
+   * @throws BadConfigException if a role of that priority already exists
    */
-  public void buildRole(ProviderRole providerRole) throws BadConfigException {
+  public RoleStatus buildRole(ProviderRole providerRole) throws BadConfigException {
     //build role status map
     int priority = providerRole.id;
     if (roleStatusMap.containsKey(priority)) {
@@ -714,18 +755,20 @@ public class AppState {
                                    providerRole,
                                    roleStatusMap.get(priority));
     }
-    roleStatusMap.put(priority,
-        new RoleStatus(providerRole));
+    RoleStatus roleStatus = new RoleStatus(providerRole);
+    roleStatusMap.put(priority, roleStatus);
     roles.put(providerRole.name, providerRole);
     rolePriorityMap.put(priority, providerRole);
+    return roleStatus;
   }
 
   /**
    * build up the special master node, which lives
    * in the live node set but has a lifecycle bonded to the AM
    * @param containerId the AM master
-   * @param host
-   * @param nodeHttpAddress
+   * @param host hostname
+   * @param amPort port
+   * @param nodeHttpAddress http address: may be null
    */
   public void buildAppMasterNode(ContainerId containerId,
                                  String host,
@@ -741,6 +784,13 @@ public class AppState {
     appMasterNode = am;
     //it is also added to the set of live nodes
     getLiveNodes().put(containerId, am);
+    
+    // patch up the role status
+    RoleStatus roleStatus = roleStatusMap.get(
+        (SliderKeys.ROLE_AM_PRIORITY_INDEX));
+    roleStatus.setDesired(1);
+    roleStatus.incActual();
+    roleStatus.incStarted();
   }
 
   /**
@@ -781,6 +831,23 @@ public class AppState {
     return lookupRoleStatus(ContainerPriority.extractRole(c));
   }
 
+  /**
+   * Get a clone of the role status list. Concurrent events may mean this
+   * list (or indeed, some of the role status entries) may be inconsistent
+   * @return a snapshot of the role status entries
+   */
+  public List<RoleStatus> cloneRoleStatusList() {
+    Collection<RoleStatus> statuses = roleStatusMap.values();
+    List<RoleStatus> statusList = new ArrayList<RoleStatus>(statuses.size());
+    try {
+      for (RoleStatus status : statuses) {
+        statusList.add((RoleStatus)(status.clone()));
+      }
+    } catch (CloneNotSupportedException e) {
+      log.warn("Unexpected cloning failure: {}", e, e);
+    }
+    return statusList;
+  }
 
 
   public RoleStatus lookupRoleStatus(String name) throws YarnRuntimeException {
@@ -934,17 +1001,17 @@ public class AppState {
 
  
   /**
-   * enum nodes by role ID, from either the active or live node list
+   * enum nodes by role ID, from either the owned or live node list
    * @param roleId role the container must be in
-   * @param active flag to indicate "use active list" rather than the smaller
+   * @param owned flag to indicate "use owned list" rather than the smaller
    * "live" list
    * @return a list of nodes, may be empty
    */
   public synchronized List<RoleInstance> enumNodesWithRoleId(int roleId,
-      boolean active) {
+      boolean owned) {
     List<RoleInstance> nodes = new ArrayList<RoleInstance>();
     Collection<RoleInstance> allRoleInstances;
-    allRoleInstances = active? ownedContainers.values() : liveNodes.values();
+    allRoleInstances = owned ? ownedContainers.values() : liveNodes.values();
     for (RoleInstance node : allRoleInstances) {
       if (node.roleId == roleId) {
         nodes.add(node);
@@ -1048,9 +1115,10 @@ public class AppState {
         RoleStatus role,
         Resource capability) {
     buildResourceRequirements(role, capability);
+    String labelExpression = getLabelExpression(role);
     //get the role history to select a suitable node, if available
     AMRMClient.ContainerRequest containerRequest =
-    createContainerRequest(role, capability);
+      createContainerRequest(role, capability, labelExpression);
     return  containerRequest;
   }
 
@@ -1060,15 +1128,16 @@ public class AppState {
    * This is where role history information will be used for placement decisions -
    * @param role role
    * @param resource requirements
+   * @param labelExpression label expression to satisfy
    * @return the container request to submit
    */
   public AMRMClient.ContainerRequest createContainerRequest(RoleStatus role,
-                                                            Resource resource) {
+                                                            Resource resource,
+                                                            String labelExpression) {
     
     
     AMRMClient.ContainerRequest request;
-    int key = role.getKey();
-    request = roleHistory.requestNode(role, resource);
+    request = roleHistory.requestNode(role, resource, labelExpression);
     role.incRequested();
 
     return request;
@@ -1103,6 +1172,7 @@ public class AppState {
     }
     return intVal;
   }
+
   
   /**
    * Build up the resource requirements for this role from the
@@ -1126,6 +1196,17 @@ public class AppState {
                                      DEF_YARN_MEMORY,
                                      containerMaxMemory);
     capability.setMemory(ram);
+  }
+
+  /**
+   * Extract the label expression for this role.
+   * @param role role
+   */
+  public String getLabelExpression(RoleStatus role) {
+    // Set up resource requirements from role values
+    String name = role.getName();
+    ConfTreeOperations resources = getResourcesSnapshot();
+    return resources.getComponentOpt(name, YARN_LABEL_EXPRESSION, DEF_YARN_LABEL_EXPRESSION);
   }
 
   /**
@@ -1224,10 +1305,14 @@ public class AppState {
     }
   }
 
+  public synchronized void onNodesUpdated(List<NodeReport> updatedNodes) {
+    roleHistory.onNodesUpdated(updatedNodes);
+  }
+
   /**
    * Is a role short lived by the threshold set for this application
    * @param instance instance
-   * @return true if the instance is considered short live
+   * @return true if the instance is considered short lived
    */
   @VisibleForTesting
   public boolean isShortLived(RoleInstance instance) {
@@ -1236,7 +1321,7 @@ public class AppState {
     boolean shortlived;
     if (started > 0) {
       long duration = time - started;
-      shortlived = duration < startTimeThreshold;
+      shortlived = duration < (startTimeThreshold * 1000);
     } else {
       // never even saw a start event
       shortlived = true;
@@ -1254,13 +1339,14 @@ public class AppState {
   }
 
   /**
-   * This is a very small class to send a triple result back from 
+   * This is a very small class to send a multiple result back from 
    * the completion operation
    */
   public static class NodeCompletionResult {
     public boolean surplusNode = false;
     public RoleInstance roleInstance;
     public boolean containerFailed;
+    public boolean unknownNode = false;
 
   
     public String toString() {
@@ -1269,6 +1355,7 @@ public class AppState {
       sb.append("surplusNode=").append(surplusNode);
       sb.append(", roleInstance=").append(roleInstance);
       sb.append(", containerFailed=").append(containerFailed);
+      sb.append(", unknownNode=").append(unknownNode);
       sb.append('}');
       return sb.toString();
     }
@@ -1352,6 +1439,7 @@ public class AppState {
         log.error("Notified of completed container {} that is not in the list" +
                   " of active or failed containers", containerId);
         completionOfUnknownContainerEvent.incrementAndGet();
+        result.unknownNode = true;
       }
     }
 
@@ -1532,16 +1620,16 @@ public class AppState {
       throws TriggerClusterTeardownException {
     int failures = role.getFailed();
     int threshold = getFailureThresholdForRole(role);
-    log.debug("Failure count of role: {}: {}, threshold={}",
+    log.debug("Failure count of component: {}: {}, threshold={}",
         role.getName(), failures, threshold);
 
     if (failures > threshold) {
       throw new TriggerClusterTeardownException(
         SliderExitCodes.EXIT_DEPLOYMENT_FAILED,
-        ErrorStrings.E_UNSTABLE_CLUSTER +
-        " - failed with role %s failing %d times (%d in startup);" +
+          FinalApplicationStatus.FAILED, ErrorStrings.E_UNSTABLE_CLUSTER +
+        " - failed with component %s failing %d times (%d in startup);" +
         " threshold is %d - last failure: %s",
-        role.getName(),
+          role.getName(),
         role.getFailed(),
         role.getStartFailed(),
           threshold,
@@ -1552,14 +1640,14 @@ public class AppState {
   /**
    * Get the failure threshold for a specific role, falling back to
    * the global one if not
-   * @param roleStatus
+   * @param roleStatus role
    * @return the threshold for failures
    */
   private int getFailureThresholdForRole(RoleStatus roleStatus) {
     ConfTreeOperations resources =
         instanceDefinition.getResourceOperations();
     return resources.getComponentOptInt(roleStatus.getName(),
-        ResourceKeys.CONTAINER_FAILURE_SHORTLIFE,
+        ResourceKeys.CONTAINER_FAILURE_THRESHOLD,
         failureThreshold);
   }
   
@@ -1593,12 +1681,20 @@ public class AppState {
     String name = role.getName();
     synchronized (role) {
       delta = role.getDelta();
-      details = role.toString();
       expected = role.getDesired();
     }
 
-    log.info(details);
+    log.info("Reviewing {} : expected {}", role, expected);
     checkFailureThreshold(role);
+    
+    if (expected < 0 ) {
+      // negative value: fail
+      throw new TriggerClusterTeardownException(
+          SliderExitCodes.EXIT_DEPLOYMENT_FAILED,
+          FinalApplicationStatus.FAILED,
+          "Negative component count of %d desired for component %s",
+          expected, role);
+    }
     
     if (delta > 0) {
       log.info("{}: Asking for {} more nodes(s) for a total of {} ", name,
@@ -1608,13 +1704,11 @@ public class AppState {
         Resource capability = recordFactory.newResource();
         AMRMClient.ContainerRequest containerAsk =
           buildContainerResourceAndRequest(role, capability);
-        log.info("Container ask is {}", containerAsk);
-        if (containerAsk.getCapability().getMemory() >
-            this.containerMaxMemory) {
-          log.warn(
-            "Memory requested: " + containerAsk.getCapability().getMemory() +
-            " > " +
-            this.containerMaxMemory);
+        log.info("Container ask is {} and label = {}", containerAsk,
+            containerAsk.getNodeLabelExpression());
+        int askMemory = containerAsk.getCapability().getMemory();
+        if (askMemory > this.containerMaxMemory) {
+          log.warn("Memory requested: {} > max of {}", askMemory, containerMaxMemory);
         }
         operations.add(new ContainerRequestOperation(containerAsk));
       }
@@ -1627,47 +1721,76 @@ public class AppState {
       //then pick some containers to kill
       int excess = -delta;
 
-      // get the nodes to release
-      int roleId = role.getKey();
-            
-      // enum all active nodes that aren't being released
-      List<RoleInstance> containersToRelease = enumNodesWithRoleId(roleId, true);
-
-      // cut all release-in-progress nodes
-      ListIterator<RoleInstance> li = containersToRelease.listIterator();
-      while (li.hasNext()) {
-        RoleInstance next = li.next();
-        if (next.released) {
-          li.remove();
+      // how many requests are outstanding
+      int outstandingRequests = role.getRequested();
+      if (outstandingRequests > 0) {
+        // outstanding requests.
+        int toCancel = Math.min(outstandingRequests, excess);
+        Priority p1 =
+            ContainerPriority.createPriority(role.getPriority(), true);
+        Priority p2 =
+            ContainerPriority.createPriority(role.getPriority(), false);
+        operations.add(new CancelRequestOperation(p1, p2, toCancel));
+        role.cancel(toCancel);
+        excess -= toCancel;
+        assert excess >= 0 : "Attempted to cancel too many requests";
+        log.info("Submitted {} cancellations, leaving {} to release",
+            toCancel, excess);
+        if (excess == 0) {
+          log.info("After cancelling requests, application is at desired size");
         }
       }
 
-      // warn if the desired state can't be reaced
-      if (containersToRelease.size() < excess) {
-        log.warn("Not enough nodes to release...short of {} nodes",
-            containersToRelease.size() - excess);
-      }
-      
-      // ask the release selector to sort the targets
-      containersToRelease =  containerReleaseSelector.sortCandidates(
-          roleId,
-          containersToRelease,
-          excess);
-      
-      //crop to the excess
 
-      List<RoleInstance> finalCandidates = (excess < containersToRelease.size()) 
-          ? containersToRelease.subList(0, excess)
-          : containersToRelease;
-      
+      // after the cancellation there may be no excess
+      if (excess > 0) {
+        // get the nodes to release
+        int roleId = role.getKey();
 
-      // then build up a release operation, logging each container as released
-      for (RoleInstance possible : finalCandidates) {
-        log.debug("Targeting for release: {}", possible);
-        containerReleaseSubmitted(possible.container);
-        operations.add(new ContainerReleaseOperation(possible.getId()));       
+        // enum all active nodes that aren't being released
+        List<RoleInstance> containersToRelease = enumNodesWithRoleId(roleId, true);
+        if (containersToRelease.isEmpty()) {
+          log.info("No containers for component {}", roleId);
+        }
+
+        // cut all release-in-progress nodes
+        ListIterator<RoleInstance> li = containersToRelease.listIterator();
+        while (li.hasNext()) {
+          RoleInstance next = li.next();
+          if (next.released) {
+            li.remove();
+          }
+        }
+
+        // warn if the desired state can't be reaced
+        int numberAvailableForRelease = containersToRelease.size();
+        if (numberAvailableForRelease < excess) {
+          log.warn("Not enough containers to release, have {} and need {} more",
+              numberAvailableForRelease,
+              excess - numberAvailableForRelease);
+        }
+
+        // ask the release selector to sort the targets
+        containersToRelease =  containerReleaseSelector.sortCandidates(
+            roleId,
+            containersToRelease,
+            excess);
+
+        //crop to the excess
+
+        List<RoleInstance> finalCandidates = (excess < numberAvailableForRelease) 
+            ? containersToRelease.subList(0, excess)
+            : containersToRelease;
+
+
+        // then build up a release operation, logging each container as released
+        for (RoleInstance possible : finalCandidates) {
+          log.debug("Targeting for release: {}", possible);
+          containerReleaseSubmitted(possible.container);
+          operations.add(new ContainerReleaseOperation(possible.getId()));       
+        }
       }
-   
+
     }
 
     return operations;

@@ -137,7 +137,6 @@ abstract class AbstractTestBuildSetup extends SliderTestUtils implements Funtest
     
     def fs = HadoopFS.get(path.toUri(), conf)
     assert fs.exists(path)
-
   }
 
   @Test
@@ -160,6 +159,9 @@ abstract class AbstractTestBuildSetup extends SliderTestUtils implements Funtest
   @Test
   public void testSecuritySettingsValid() throws Throwable {
     Configuration conf = loadSliderConf();
+    if (SliderUtils.isHadoopClusterSecure(conf)) {
+      UserGroupInformation.setLoginUser(null)
+    }
     if (SliderUtils.maybeInitSecurity(conf)) {
       log.info("Security enabled")
       SliderUtils.forceLogin()

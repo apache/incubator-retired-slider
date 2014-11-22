@@ -47,58 +47,24 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   @Test
   public void testAgentFailHeartbeatingTwiceOnce() throws Throwable {
-    if (!AGENTTESTS_ENABLED) {
-      log.info "TESTS are not run."
-      return
-    }
-
+    assumeAgentTestsEnabled()
+    
     cleanup(APPLICATION_NAME)
-    SliderShell shell = slider(EXIT_SUCCESS,
-        [
-            ACTION_CREATE, APPLICATION_NAME,
-            ARG_IMAGE, agentTarballPath.toString(),
-            ARG_TEMPLATE, APP_TEMPLATE3,
-            ARG_RESOURCES, APP_RESOURCE
-        ])
+    File launchReportFile = createTempJsonFile();
 
+    SliderShell shell = createTemplatedSliderApplication(
+        APPLICATION_NAME, APP_TEMPLATE3, APP_RESOURCE,
+        [],
+        launchReportFile)
     logShell(shell)
 
-    ensureApplicationIsUp(APPLICATION_NAME)
-
-    repeatUntilTrue(this.&hasContainerCountExceeded, 20, 1000 * 10, ['arg1': '3']);
-
+    def appId = ensureYarnApplicationIsUp(launchReportFile)
+    expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 2,
+        CONTAINER_LAUNCH_TIMEOUT * 2)
     sleep(1000 * 20)
-
-    shell = slider(EXIT_SUCCESS,
-        [
-            ACTION_STATUS,
-            APPLICATION_NAME])
-
-    assertComponentCount(COMMAND_LOGGER, 1, shell)
-    String requested = findLineEntryValue(shell, ["statistics", COMMAND_LOGGER, "containers.requested"] as String[])
-    assert requested != null && requested.isInteger() && requested.toInteger() >= 3,
-        'At least 2 containers must be requested'
-
-    assert isApplicationInState("RUNNING", APPLICATION_NAME), 'App is not running.'
-
-    assertSuccess(shell)
+    expectContainerRequestedCountReached(APPLICATION_NAME, COMMAND_LOGGER, 3,
+        CONTAINER_LAUNCH_TIMEOUT * 2)
+    assertAppRunning(appId)
   }
 
-
-  boolean hasContainerCountExceeded(Map<String, String> args) {
-    int expectedCount = args['arg1'].toInteger();
-    SliderShell shell = slider(EXIT_SUCCESS,
-        [
-            ACTION_STATUS,
-            APPLICATION_NAME])
-
-    //logShell(shell)
-    String requested = findLineEntryValue(
-        shell, ["statistics", COMMAND_LOGGER, "containers.requested"] as String[])
-    if (requested != null && requested.isInteger() && requested.toInteger() >= expectedCount) {
-      return true
-    }
-
-    return false
-  }
 }

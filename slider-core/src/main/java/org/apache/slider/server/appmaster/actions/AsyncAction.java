@@ -23,8 +23,6 @@ import org.apache.slider.server.appmaster.SliderAppMaster;
 import org.apache.slider.server.appmaster.state.AppState;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.EnumSet;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -35,7 +33,7 @@ public abstract class AsyncAction implements Delayed {
 
   public final String name;
   private long nanos;
-  private final EnumSet<ActionAttributes> attrs;
+  public final int attrs;
   private final long sequenceNumber = sequencer.incrementAndGet();
 
 
@@ -51,32 +49,16 @@ public abstract class AsyncAction implements Delayed {
   protected AsyncAction(String name,
       long delay,
       TimeUnit timeUnit) {
-    this.name = name;
-    this.setNanos(convertAndOffset(delay, timeUnit));
-    attrs = EnumSet.noneOf(ActionAttributes.class);
+    this(name, delay, timeUnit, 0);
   }
 
   protected AsyncAction(String name,
       long delay,
       TimeUnit timeUnit,
-      EnumSet<ActionAttributes> attrs) {
+      int attrs) {
     this.name = name;
     this.setNanos(convertAndOffset(delay, timeUnit));
     this.attrs = attrs;
-  }
-
-  protected AsyncAction(String name,
-      long delay,
-      TimeUnit timeUnit,
-      ActionAttributes... attributes) {
-    this(name, delay, timeUnit);
-    Collections.addAll(attrs, attributes);
-  }
-  
-  protected AsyncAction(String name,
-      long delayMillis,
-      ActionAttributes... attributes) {
-    this(name, delayMillis, TimeUnit.MILLISECONDS);
   }
 
   protected long convertAndOffset(long delay, TimeUnit timeUnit) {
@@ -111,24 +93,25 @@ public abstract class AsyncAction implements Delayed {
     final StringBuilder sb =
         new StringBuilder(super.toString());
     sb.append(" name='").append(name).append('\'');
-    sb.append(", nanos=").append(getNanos());
+    sb.append(", delay=").append(getDelay(TimeUnit.SECONDS));
     sb.append(", attrs=").append(attrs);
     sb.append(", sequenceNumber=").append(sequenceNumber);
     sb.append('}');
     return sb.toString();
   }
 
-  protected EnumSet<ActionAttributes> getAttrs() {
+  protected int getAttrs() {
     return attrs;
   }
 
   /**
-   * Ask if an action has a specific attribute
+   * Ask if an action has an of the specified bits set. 
+   * This is not an equality test.
    * @param attr attribute
-   * @return true iff the action has the specific attribute
+   * @return true iff the action has any of the bits in the attr arg set
    */
-  public boolean hasAttr(ActionAttributes attr) {
-    return attrs.contains(attr);
+  public boolean hasAttr(int attr) {
+    return (attrs & attr) != 0;
   }
 
   /**
@@ -148,12 +131,8 @@ public abstract class AsyncAction implements Delayed {
   public void setNanos(long nanos) {
     this.nanos = nanos;
   }
-
-  public enum ActionAttributes {
-    SHRINKS_CLUSTER,
-    EXPANDS_CLUSTER,
-    HALTS_CLUSTER,
-  }
-
-
+  
+  public static final int ATTR_CHANGES_APP_SIZE = 1;
+  public static final int ATTR_HALTS_APP = 2;
+  public static final int ATTR_REVIEWS_APP_SIZE = 4;
 }

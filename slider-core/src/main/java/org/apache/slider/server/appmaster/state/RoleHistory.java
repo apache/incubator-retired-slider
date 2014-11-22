@@ -18,10 +18,21 @@
 
 package org.apache.slider.server.appmaster.state;
 
-import com.google.common.annotations.VisibleForTesting;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.Container;
+import org.apache.hadoop.yarn.api.records.NodeReport;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.slider.common.tools.SliderUtils;
@@ -32,14 +43,7 @@ import org.apache.slider.server.avro.RoleHistoryWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import com.google.common.annotations.VisibleForTesting;
 
 /**
  * The Role History.
@@ -59,8 +63,6 @@ public class RoleHistory {
   protected static final Logger log =
     LoggerFactory.getLogger(RoleHistory.class);
   private final List<ProviderRole> providerRoles;
-  private final Map<String, ProviderRole> providerRoleMap =
-    new HashMap<String, ProviderRole>();
   private long startTime;
   /**
    * Time when saved
@@ -88,13 +90,19 @@ public class RoleHistory {
    */
   private Map<Integer, LinkedList<NodeInstance>> availableNodes;
 
+  /**
+   * Track the failed nodes. Currently used to make wiser decision of container
+   * ask with/without locality. Has other potential uses as well.
+   */
+  private Set<String> failedNodes = new HashSet<String>();
+  
+  // dummy to be used in maps for faster lookup where we don't care about values
+  private final Object DUMMY_VALUE = new Object(); 
+
   public RoleHistory(List<ProviderRole> providerRoles) throws
                                                        BadConfigException {
     this.providerRoles = providerRoles;
     roleSize = providerRoles.size();
-    for (ProviderRole providerRole : providerRoles) {
-      providerRoleMap.put(providerRole.name, providerRole);
-    }
     reset();
   }
 
@@ -108,18 +116,24 @@ public class RoleHistory {
     resetAvailableNodeLists();
 
     outstandingRequests = new OutstandingRequestTracker();
+    
     Map<Integer, RoleStatus> roleStats = new HashMap<Integer, RoleStatus>();
-
-
     for (ProviderRole providerRole : providerRoles) {
-      addProviderRole(roleStats, providerRole);
+      checkProviderRole(roleStats, providerRole);
     }
   }
 
-  
-  private void addProviderRole(Map<Integer, RoleStatus> roleStats,
-                               ProviderRole providerRole)
-    throws ArrayIndexOutOfBoundsException, BadConfigException {
+  /**
+   * safety check: make sure the provider role is unique amongst
+   * the role stats...which is extended with the new role
+   * @param roleStats role stats
+   * @param providerRole role
+   * @throws ArrayIndexOutOfBoundsException
+   * @throws BadConfigException
+   */
+  protected void checkProviderRole(Map<Integer, RoleStatus> roleStats,
+      ProviderRole providerRole)
+    throws BadConfigException {
     int index = providerRole.id;
     if (index < 0) {
       throw new BadConfigException("Provider " + providerRole
@@ -140,14 +154,17 @@ public class RoleHistory {
    */
   public void addNewProviderRole(ProviderRole providerRole)
     throws BadConfigException {
+    log.debug("Validating/adding new provider role to role history: {} ",
+        providerRole);
     Map<Integer, RoleStatus> roleStats = new HashMap<Integer, RoleStatus>();
-
 
     for (ProviderRole role : providerRoles) {
       roleStats.put(role.id, new RoleStatus(role));
     }
 
-    addProviderRole(roleStats, providerRole);
+    checkProviderRole(roleStats, providerRole);
+    log.debug("Check successful; adding role");
+    this.providerRoles.add(providerRole);
   }
 
   /**
@@ -233,7 +250,7 @@ public class RoleHistory {
 
   /**
    * Get the node instance for the specific node -creating it if needed
-   * @param nodeAddr node address
+   * @param hostname node address
    * @return the instance
    */
   public synchronized NodeInstance getOrCreateNodeInstance(String hostname) {
@@ -350,11 +367,11 @@ public class RoleHistory {
    * Handler for bootstrap event
    */
   public void onBootstrap() {
-    log.info("Role history bootstrapped");
+    log.debug("Role history bootstrapped");
   }
 
   /**
-   * Handle the thaw process <i>after the history has been rebuilt</i>,
+   * Handle the start process <i>after the history has been rebuilt</i>,
    * and after any gc/purge
    */
   @VisibleForTesting
@@ -371,7 +388,7 @@ public class RoleHistory {
     }
     if (loaded != null) {
       thawSuccessful = true;
-      log.info("loaded history from {}", loaded);
+      log.debug("loaded history from {}", loaded);
       // delete any old entries
       try {
         int count = historyWriter.purgeOlderHistoryEntries(filesystem, loaded);
@@ -381,7 +398,7 @@ public class RoleHistory {
                  e);
       }
 
-      //thaw is then completed
+      //start is then completed
       buildAvailableNodeLists();
     } else {
       //fallback to bootstrap procedure
@@ -392,7 +409,7 @@ public class RoleHistory {
 
 
   /**
-   * (After the thaw), rebuild the availability datastructures
+   * (After the start), rebuild the availability data structures
    */
   @VisibleForTesting
   public synchronized void buildAvailableNodeLists() {
@@ -418,9 +435,10 @@ public class RoleHistory {
   /**
    * Get the nodes for an ID -may be null
    * @param id role ID
-   * @return list
+   * @return potenially null list
    */
-  private LinkedList<NodeInstance> getNodesForRoleId(int id) {
+  @VisibleForTesting
+  public List<NodeInstance> getNodesForRoleId(int id) {
     return availableNodes.get(id);
   }
   
@@ -450,10 +468,6 @@ public class RoleHistory {
     }
   }
 
-  public synchronized void onAMRestart() {
-    //TODO once AM restart is implemented and we know what to expect
-  }
-
   /**
    * Find a node for use
    * @param role role
@@ -469,7 +483,7 @@ public class RoleHistory {
     
     List<NodeInstance> targets = getNodesForRoleId(roleKey);
     int cnt = targets == null ? 0 : targets.size();
-    log.info("There're {} nodes to consider for {}", cnt, role.getName());
+    log.debug("There are {} node(s) to consider for {}", cnt, role.getName());
     while (targets != null && !targets.isEmpty() && nodeInstance == null) {
       NodeInstance head = targets.remove(0);
       if (head.getActiveRoleInstances(roleKey) == 0) {
@@ -495,12 +509,28 @@ public class RoleHistory {
    *
    * @param node node to target or null for "any"
    * @param role role to request
+   * @param labelExpression label to satisfy
    * @return the container priority
    */
   public synchronized AMRMClient.ContainerRequest requestInstanceOnNode(
-    NodeInstance node, RoleStatus role, Resource resource) {
+    NodeInstance node, RoleStatus role, Resource resource, String labelExpression) {
     OutstandingRequest outstanding = outstandingRequests.addRequest(node, role.getKey());
-    return outstanding.buildContainerRequest(resource, role, now());
+    return outstanding.buildContainerRequest(resource, role, now(), labelExpression);
+  }
+
+  /**
+   * Find a node for a role and request an instance on that (or a location-less
+   * instance) with a label expression
+   * @param role role status
+   * @param resource resource capabilities
+   * @param labelExpression label to satisfy
+   * @return a request ready to go
+   */
+  public synchronized AMRMClient.ContainerRequest requestNode(RoleStatus role,
+                                                              Resource resource,
+                                                              String labelExpression) {
+    NodeInstance node = findNodeForNewInstance(role);
+    return requestInstanceOnNode(node, role, resource, labelExpression);
   }
 
   /**
@@ -513,7 +543,7 @@ public class RoleHistory {
   public synchronized AMRMClient.ContainerRequest requestNode(RoleStatus role,
                                                               Resource resource) {
     NodeInstance node = findNodeForNewInstance(role);
-    return requestInstanceOnNode(node, role, resource);
+    return requestInstanceOnNode(node, role, resource, null);
   }
 
   /**
@@ -586,6 +616,8 @@ public class RoleHistory {
   public synchronized boolean onContainerAllocated(Container container, int desiredCount, int actualCount) {
     int role = ContainerPriority.extractRole(container);
     String hostname = RoleHistoryUtils.hostnameOf(container);
+    LinkedList<NodeInstance> nodeInstances =
+        getOrCreateNodesForRoleId(role);
     boolean requestFound =
       outstandingRequests.onContainerAllocated(role, hostname);
     if (desiredCount <= actualCount) {
@@ -595,7 +627,7 @@ public class RoleHistory {
       if (!hosts.isEmpty()) {
         //add the list
         log.debug("Adding {} hosts for role {}", hosts.size(), role);
-        getOrCreateNodesForRoleId(role).addAll(hosts);
+        nodeInstances.addAll(hosts);
         sortAvailableNodeList(role);
       }
     }
@@ -644,6 +676,28 @@ public class RoleHistory {
   }
 
   /**
+   * Update failedNodes and nodemap based on the node state
+   * 
+   * @param updatedNodes list of updated nodes
+   */
+  public synchronized void onNodesUpdated(List<NodeReport> updatedNodes) {
+    for (NodeReport updatedNode : updatedNodes) {
+      String hostname = updatedNode.getNodeId() == null ? null : updatedNode
+          .getNodeId().getHost();
+      if (hostname == null) {
+        continue;
+      }
+      if (updatedNode.getNodeState() != null
+          && updatedNode.getNodeState().isUnusable()) {
+        failedNodes.add(hostname);
+        nodemap.remove(hostname);
+      } else {
+        failedNodes.remove(hostname);
+      }
+    }
+  }
+
+  /**
    * A container release request was issued
    * @param container container submitted
    */
@@ -688,6 +742,8 @@ public class RoleHistory {
                                                        boolean wasReleased,
                                                        boolean shortLived) {
     NodeEntry nodeEntry = getOrCreateNodeEntry(container);
+    log.debug("Finished container for node {}, released={}, shortlived={}",
+        nodeEntry.rolePriority, wasReleased, shortLived);
     boolean available;
     if (shortLived) {
       nodeEntry.onStartFailed();
@@ -731,13 +787,16 @@ public class RoleHistory {
       List<NodeInstance> instances =
         getOrCreateNodesForRoleId(role.id);
       log.info("  available: " + instances.size()
-               + " " + SliderUtils.joinWithInnerSeparator(", ", instances));
+               + " " + SliderUtils.joinWithInnerSeparator(" ", instances));
     }
 
     log.info("Nodes in Cluster: {}", getClusterSize());
     for (NodeInstance node : nodemap.values()) {
       log.info(node.toFullString());
     }
+
+    log.info("Failed nodes: {}",
+        SliderUtils.joinWithInnerSeparator(" ", failedNodes));
   }
 
   /**
@@ -759,5 +818,15 @@ public class RoleHistory {
     return outstandingRequests.listOutstandingRequests();
   }
 
+  /**
+   * Get a clone of the failedNodes
+   * 
+   * @return the list
+   */
+  public List<String> cloneFailedNodes() {
+    List<String> lst = new ArrayList<String>();
+    lst.addAll(failedNodes);
+    return lst;
+  }
 
 }

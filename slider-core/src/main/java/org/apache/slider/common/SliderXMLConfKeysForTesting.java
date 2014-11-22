@@ -41,7 +41,7 @@ public interface SliderXMLConfKeysForTesting {
 
   String KEY_TEST_TIMEOUT = "slider.test.timeout.seconds";
 
-  int DEFAULT_TEST_TIMEOUT_SECONDS = 10 * 60;
+  int DEFAULT_TEST_TIMEOUT_SECONDS = 30 * 60;
 
   String KEY_TEST_HBASE_LAUNCH_TIME = "slider.test.hbase.launch.wait.seconds";
 
@@ -53,9 +53,16 @@ public interface SliderXMLConfKeysForTesting {
 
   String KEY_ACCUMULO_LAUNCH_TIME =
     "slider.test.accumulo.launch.wait.seconds";
-
   int DEFAULT_ACCUMULO_LAUNCH_TIME_SECONDS = 60 * 3;
+
+  String KEY_ACCUMULO_GO_LIVE_TIME =
+      "slider.test.accumulo.live.wait.seconds";
+  int DEFAULT_ACCUMULO_LIVE_TIME_SECONDS = 90;
+
   String KEY_TEST_AGENT_ENABLED = "slider.test.agent.enabled";
+  String KEY_AGENTTESTS_QUEUE_LABELED_DEFINED = "slider.test.agent.labeled.queue.enabled";
+  String KEY_AGENTTESTS_LABELS_RED_BLUE_DEFINED = "slider.test.agent.labels.defined";
+  String KEY_AGENTTESTS_AM_FAILURES_ENABLED = "slider.test.agent.am.failures.enabled";
 
   int DEFAULT_AGENT_LAUNCH_TIME_SECONDS = 60 * 3;
 
@@ -76,4 +83,9 @@ public interface SliderXMLConfKeysForTesting {
    * security related keys
    */
   String TEST_SECURITY_DIR = "/tmp/work/security";
+
+  /**
+   * Local path to AM keytab: {@value}
+   */
+  String KEY_TEST_AM_KEYTAB = "slider.test.am.keytab.local";
 }

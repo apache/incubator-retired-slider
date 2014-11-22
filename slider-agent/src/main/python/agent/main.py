@@ -43,7 +43,7 @@ formatstr = "%(levelname)s %(asctime)s %(filename)s:%(lineno)d - %(message)s"
 agentPid = os.getpid()
 
 configFileRelPath = "infra/conf/agent.ini"
-logFileName = "agent.log"
+logFileName = "slider-agent.log"
 
 SERVER_STATUS_URL="https://{0}:{1}{2}"
 
@@ -172,7 +172,8 @@ def stop_agent():
     if pid == -1:
       print ("Agent process is not running")
     else:
-      os.kill(pid, signal.SIGKILL)
+      if not IS_WINDOWS:
+        os.kill(pid, signal.SIGKILL)
     os._exit(1)
 
 
@@ -185,9 +186,14 @@ def main():
   parser.add_option("--debug", dest="debug", help="Agent debug hint", default="")
   (options, args) = parser.parse_args()
 
-  if not 'AGENT_WORK_ROOT' in os.environ:
-    parser.error("AGENT_WORK_ROOT environment variable must be set.")
-  options.root_folder = os.environ['AGENT_WORK_ROOT']
+  if not Constants.AGENT_WORK_ROOT in os.environ and not 'PWD' in os.environ:
+    parser.error("AGENT_WORK_ROOT environment variable or PWD must be set.")
+  if Constants.AGENT_WORK_ROOT in os.environ:
+    options.root_folder = os.environ[Constants.AGENT_WORK_ROOT]
+  else:
+    # some launch environments do not end up setting all environment variables
+    options.root_folder = os.environ['PWD']
+
   if not 'AGENT_LOG_ROOT' in os.environ:
     parser.error("AGENT_LOG_ROOT environment variable must be set.")
   options.log_folder = os.environ['AGENT_LOG_ROOT']
@@ -217,15 +223,6 @@ def main():
   if options.debug:
     agentConfig.set(AgentConfig.AGENT_SECTION, AgentConfig.APP_DBG_CMD, options.debug)
 
-  # Extract the AM hostname and secured port from ZK registry
-  registry = Registry(options.zk_quorum, options.zk_reg_path)
-  amHost, amSecuredPort = registry.readAMHostPort()
-  if amHost:
-      agentConfig.set(AgentConfig.SERVER_SECTION, "hostname", amHost)
-
-  if amSecuredPort:
-      agentConfig.set(AgentConfig.SERVER_SECTION, "secured_port", amSecuredPort)
-
   # set the security directory to a subdirectory of the run dir
   secDir = posixpath.join(agentConfig.getResolvedPath(AgentConfig.RUN_DIR), "security")
   logger.info("Security/Keys directory: " + secDir)
@@ -248,16 +245,44 @@ def main():
   if len(all_log_folders) > 1:
     logger.info("Selected log folder from available: " + ",".join(all_log_folders))
 
-  server_url = SERVER_STATUS_URL.format(
-    agentConfig.get(AgentConfig.SERVER_SECTION, 'hostname'),
-    agentConfig.get(AgentConfig.SERVER_SECTION, 'secured_port'),
-    agentConfig.get(AgentConfig.SERVER_SECTION, 'check_path'))
-  print("Connecting to the server at " + server_url + "...")
-  logger.info('Connecting to the server at: ' + server_url)
+  # Extract the AM hostname and secured port from ZK registry
+  zk_lookup_tries = 0
+  while zk_lookup_tries < Constants.MAX_AM_CONNECT_RETRIES:
+    registry = Registry(options.zk_quorum, options.zk_reg_path)
+    amHost, amUnsecuredPort, amSecuredPort = registry.readAMHostPort()
 
-  # Wait until server is reachable
-  netutil = NetUtil()
-  netutil.try_to_connect(server_url, -1, logger)
+    tryConnect = True
+    if not amHost or not amSecuredPort or not amUnsecuredPort:
+      logger.info("Unable to extract AM host details from ZK, retrying ...")
+      tryConnect = False
+      time.sleep(NetUtil.CONNECT_SERVER_RETRY_INTERVAL_SEC)
+
+    if tryConnect:
+      if amHost:
+        agentConfig.set(AgentConfig.SERVER_SECTION, "hostname", amHost)
+
+      if amSecuredPort:
+        agentConfig.set(AgentConfig.SERVER_SECTION, "secured_port", amSecuredPort)
+
+      if amUnsecuredPort:
+        agentConfig.set(AgentConfig.SERVER_SECTION, "port", amUnsecuredPort)
+
+      server_url = SERVER_STATUS_URL.format(
+        agentConfig.get(AgentConfig.SERVER_SECTION, 'hostname'),
+        agentConfig.get(AgentConfig.SERVER_SECTION, 'port'),
+        agentConfig.get(AgentConfig.SERVER_SECTION, 'check_path'))
+      print("Connecting to the server at " + server_url + "...")
+      logger.info('Connecting to the server at: ' + server_url)
+
+      # Wait until server is reachable and continue to query ZK
+      netutil = NetUtil()
+      retries = netutil.try_to_connect(server_url, 3, logger)
+      if retries < 3:
+        break;
+      pass
+    pass
+    zk_lookup_tries += 1
+  pass
 
   # Launch Controller communication
   controller = Controller(agentConfig)

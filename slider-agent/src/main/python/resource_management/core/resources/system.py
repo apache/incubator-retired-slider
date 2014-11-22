@@ -45,6 +45,7 @@ class Directory(Resource):
   mode = ResourceArgument()
   owner = ResourceArgument()
   group = ResourceArgument()
+  content = ResourceArgument()
   recursive = BooleanArgument(default=False) # this work for 'create', 'delete' is anyway recursive
 
   actions = Resource.actions + ["create", "delete"]
@@ -105,6 +106,7 @@ class Execute(Resource):
   if wait_for_finish is True then optionally the caller can ask for the pid to be written
   """
   pid_file = ResourceArgument()
+  poll_after = ResourceArgument() #seconds
 
 
 class ExecuteScript(Resource):

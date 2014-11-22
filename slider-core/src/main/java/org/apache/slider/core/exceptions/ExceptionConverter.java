@@ -20,6 +20,7 @@ package org.apache.slider.core.exceptions;
 
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.UniformInterfaceException;
+import org.apache.hadoop.fs.PathAccessDeniedException;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -39,17 +40,22 @@ public class ExceptionConverter {
   public static IOException convertJerseyException(String targetURL,
       UniformInterfaceException exception) {
 
+    IOException ioe = null;
     ClientResponse response = exception.getResponse();
     if (response != null) {
       int status = response.getStatus();
+      if (status == 401) {
+        ioe = new PathAccessDeniedException(targetURL);
+      }
       if (status >= 400 && status < 500) {
-        FileNotFoundException fnfe =
-            new FileNotFoundException(targetURL);
-        fnfe.initCause(exception);
-        return fnfe;
+        ioe =  new FileNotFoundException(targetURL);
       }
     }
 
-    return new IOException("Failed to GET " + targetURL + ": " + exception, exception);
+    if (ioe == null) {
+      ioe = new IOException("Failed to GET " + targetURL + ": " + exception);
+    }
+    ioe.initCause(exception);
+    return ioe; 
   }
 }

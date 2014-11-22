@@ -24,10 +24,12 @@
       log file. When stopped it renames the file.
     </comment>
     <version>0.1.0</version>
+    <exportedConfigs>cl-site</exportedConfigs>
     <components>
       <component>
         <name>COMMAND_LOGGER</name>
         <category>MASTER</category>
+        <publishConfig>true</publishConfig>
         <commandScript>
           <script>scripts/cl.py</script>
           <scriptType>PYTHON</scriptType>
@@ -42,11 +44,19 @@
         <packages>
           <package>
             <type>tarball</type>
-            <name>files/command_log.tar</name>
+            <name>files/command-logger.tar</name>
           </package>
         </packages>
       </osSpecific>
     </osSpecifics>
+
+    <configFiles>
+      <configFile>
+        <type>xml</type>
+        <fileName>cl-site.xml</fileName>
+        <dictionaryName>cl-site</dictionaryName>
+      </configFile>
+    </configFiles>
 
   </application>
 </metainfo>

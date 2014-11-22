@@ -20,12 +20,12 @@ package org.apache.slider.providers.accumulo.live
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.yarn.api.records.FinalApplicationStatus
+import org.apache.slider.client.SliderClient
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.providers.accumulo.AccumuloConfigFileOptions
 import org.apache.slider.providers.accumulo.AccumuloKeys
-import org.apache.slider.client.SliderClient
 import org.apache.slider.providers.accumulo.AccumuloTestBase
-import org.apache.slider.core.zk.ZKIntegration
 import org.junit.Test
 
 @CompileStatic
@@ -41,9 +41,6 @@ class TestAccFreezeThaw extends AccumuloTestBase {
         configuration, 1, 1, 1, true, false)
     describe(" Create an accumulo cluster");
 
-    //make sure that ZK is up and running at the binding string
-    ZKIntegration zki = createZKIntegrationInstance(ZKBinding, clustername, false, false, 5000)
-    log.info("ZK up at $zki");
     //now launch the cluster
     Map<String, Integer> roles = [
         (AccumuloKeys.ROLE_MASTER): 1,
@@ -68,10 +65,12 @@ class TestAccFreezeThaw extends AccumuloTestBase {
                                  AccumuloKeys.MONITOR_PAGE_JSON)
     log.info(page);
 
-    log.info("Freezing")
-    clusterActionFreeze(sliderClient, clustername, "freeze");
-    waitForAppToFinish(sliderClient)
-    
+    log.info("Stopping")
+    clusterActionFreeze(sliderClient, clustername, "stop");
+    def finishedAppReport = waitForAppToFinish(sliderClient)
+    assert finishedAppReport.finalApplicationStatus ==
+           FinalApplicationStatus.SUCCEEDED
+
     //make sure the fetch fails
     try {
       page = fetchLocalPage(AccumuloConfigFileOptions.MONITOR_PORT_CLIENT_INT,
@@ -84,7 +83,9 @@ class TestAccFreezeThaw extends AccumuloTestBase {
       log.debug("expected exception", expected)
     }
     //force kill any accumulo processes
-    killAllAccumuloProcesses()
+    if (kill_supported) {
+      killAllAccumuloProcesses()
+    }
 
     sleepForAccumuloClusterLive();
 

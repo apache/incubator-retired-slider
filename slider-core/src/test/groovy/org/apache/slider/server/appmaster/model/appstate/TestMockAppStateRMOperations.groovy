@@ -25,11 +25,14 @@ import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockFactory
 import org.apache.slider.server.appmaster.model.mock.MockRMOperationHandler
 import org.apache.slider.server.appmaster.model.mock.MockRoles
+import org.apache.slider.server.appmaster.model.mock.MockYarnEngine
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
+import org.apache.slider.server.appmaster.operations.CancelRequestOperation
 import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation
 import org.apache.slider.server.appmaster.operations.ContainerRequestOperation
 import org.apache.slider.server.appmaster.operations.RMOperationHandler
-import org.apache.slider.server.appmaster.state.*
+import org.apache.slider.server.appmaster.state.ContainerAssignment
+import org.apache.slider.server.appmaster.state.RoleInstance
 import org.junit.Test
 
 import static org.apache.slider.server.appmaster.state.ContainerPriority.buildPriority
@@ -63,17 +66,170 @@ class TestMockAppStateRMOperations extends BaseMockAppStateTest implements MockR
   public void testMockAddOp() throws Throwable {
     role0Status.desired = 1
     List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()
-    assert ops.size() == 1
+    assertListLength(ops, 1)
     ContainerRequestOperation operation = (ContainerRequestOperation) ops[0]
     int priority = operation.request.priority.priority
     assert extractRole(priority) == MockFactory.PROVIDER_ROLE0.id
     RMOperationHandler handler = new MockRMOperationHandler()
     handler.execute(ops)
 
-    //tell the container its been allocated
     AbstractRMOperation op = handler.operations[0]
     assert op instanceof ContainerRequestOperation
   }
+
+  /**
+   * Test of a flex up and down op which verifies that outstanding
+   * requests are cancelled first.
+   * <ol>
+   *   <li>request 5 nodes, assert 5 request made</li>
+   *   <li>allocate 1 of them</li>
+   *   <li>flex cluster size to 3</li>
+   *   <li>assert this generates 2 cancel requests</li>
+   * </ol>
+   */
+  @Test
+  public void testRequestThenCancelOps() throws Throwable {
+    def role0 = role0Status
+    role0.desired = 5
+    List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()
+    assertListLength(ops, 5)
+    // now 5 outstanding requests.
+    assert role0.requested == 5
+    
+    // allocate one
+    role0.incActual()
+    role0.decRequested()
+    assert role0.requested == 4
+
+
+    // flex cluster to 3
+    role0.desired = 3
+    ops = appState.reviewRequestAndReleaseNodes()
+
+    // expect a cancel operation from review
+    assertListLength(ops, 1)
+    assert ops[0] instanceof CancelRequestOperation
+    RMOperationHandler handler = new MockRMOperationHandler()
+    handler.availableToCancel = 4;
+    handler.execute(ops)
+    assert handler.availableToCancel == 2
+    assert role0.requested == 2
+    
+    // flex down one more
+    role0.desired = 2
+    ops = appState.reviewRequestAndReleaseNodes()
+    assertListLength(ops, 1)
+    assert ops[0] instanceof CancelRequestOperation
+    handler.execute(ops)
+    assert handler.availableToCancel == 1
+    assert role0.requested == 1
+
+  }
+
+  @Test
+  public void testCancelNoActualContainers() throws Throwable {
+    def role0 = role0Status
+    role0.desired = 5
+    List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()
+    assertListLength(ops, 5)
+    // now 5 outstanding requests.
+    assert role0.requested == 5
+    role0.desired = 0
+    ops = appState.reviewRequestAndReleaseNodes()
+    assertListLength(ops, 1)
+    CancelRequestOperation cancel = ops[0] as CancelRequestOperation
+    assert cancel.count == 5
+  }
+
+
+  @Test
+  public void testFlexDownOutstandingRequests() throws Throwable {
+    // engine only has two nodes, so > 2 will be outstanding
+    engine = new MockYarnEngine(1, 2)
+    List<AbstractRMOperation> ops
+    // role: desired = 2, requested = 1, actual=1 
+    def role0 = role0Status
+    role0.desired = 4
+    createAndSubmitNodes()
+    
+    assert role0.requested == 2
+    assert role0.actual == 2
+    // there are now two outstanding, two actual 
+    // Release 3 and verify that the two
+    // cancellations were combined with a release
+    role0.desired = 1;
+    assert role0.delta == -3
+    ops = appState.reviewRequestAndReleaseNodes()
+    assertListLength(ops, 2)
+    assert role0.requested == 0
+    assert role0.releasing == 1
+  }
+
+  @Test
+  public void testCancelAllOutstandingRequests() throws Throwable {
+
+    // role: desired = 2, requested = 1, actual=1 
+    def role0 = role0Status
+    role0.desired = 2
+    role0.incRequested()
+    role0.incRequested()
+    List<AbstractRMOperation> ops
+    
+    // there are now two outstanding, two actual 
+    // Release 3 and verify that the two
+    // cancellations were combined with a release
+    role0.desired = 0;
+    ops = appState.reviewRequestAndReleaseNodes()
+    assertListLength(ops, 1)
+    CancelRequestOperation cancel = ops[0] as CancelRequestOperation
+    assert cancel.getCount() == 2
+  }
+
+  
+  @Test
+  public void testFlexUpOutstandingRequests() throws Throwable {
+    
+    // role: desired = 2, requested = 1, actual=1 
+    def role0 = role0Status
+    role0.desired = 2
+    role0.incActual();
+    role0.incRequested()
+    
+    List<AbstractRMOperation> ops
+
+    // flex up 2 nodes, yet expect only one node to be requested,
+    // as the  outstanding request is taken into account
+    role0.desired = 4;
+    role0.incRequested()
+
+    assert role0.actual == 1;
+    assert role0.requested == 2;
+    assert role0.actualAndRequested == 3;
+    assert role0.delta == 1
+    ops = appState.reviewRequestAndReleaseNodes()
+    assertListLength(ops, 1)
+    assert ops[0] instanceof ContainerRequestOperation
+    assert role0.requested == 3
+  }
+
+  @Test
+  public void testFlexUpNoSpace() throws Throwable {
+    // engine only has two nodes, so > 2 will be outstanding
+    engine = new MockYarnEngine(1, 2)
+    List<AbstractRMOperation> ops
+    // role: desired = 2, requested = 1, actual=1 
+    def role0 = role0Status
+    role0.desired = 4
+    createAndSubmitNodes()
+
+    assert role0.requested == 2
+    assert role0.actual == 2
+    role0.desired = 8;
+    assert role0.delta == 4
+    createAndSubmitNodes()
+    assert role0.requested == 6
+  }
+
 
   @Test
   public void testAllocateReleaseOp() throws Throwable {
@@ -81,14 +237,10 @@ class TestMockAppStateRMOperations extends BaseMockAppStateTest implements MockR
 
     List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()
     ContainerRequestOperation operation = (ContainerRequestOperation) ops[0]
-    AMRMClient.ContainerRequest request = operation.request
-    Container cont = engine.allocateContainer(request)
-    List<Container> allocated = [cont]
-    List<ContainerAssignment> assignments = [];
-    List<AbstractRMOperation> operations = []
-    appState.onContainersAllocated(allocated, assignments, operations)
-    assert operations.size() == 0
-    assert assignments.size() == 1
+    def (ArrayList<ContainerAssignment> assignments, Container cont, AMRMClient.ContainerRequest request) = satisfyContainerRequest(
+        operation)
+    assertListLength(ops, 1)
+    assertListLength(assignments, 1)
     ContainerAssignment assigned = assignments[0]
     Container target = assigned.container
     assert target.id == cont.id
@@ -104,11 +256,21 @@ class TestMockAppStateRMOperations extends BaseMockAppStateTest implements MockR
     //now release it by changing the role status
     role0Status.desired = 0
     ops = appState.reviewRequestAndReleaseNodes()
-    assert ops.size() == 1
+    assertListLength(ops, 1)
 
     assert ops[0] instanceof ContainerReleaseOperation
     ContainerReleaseOperation release = (ContainerReleaseOperation) ops[0]
     assert release.containerId == cont.id
+  }
+
+  public List satisfyContainerRequest(ContainerRequestOperation operation) {
+    AMRMClient.ContainerRequest request = operation.request
+    Container cont = engine.allocateContainer(request)
+    List<Container> allocated = [cont]
+    List<ContainerAssignment> assignments = [];
+    List<AbstractRMOperation> operations = []
+    appState.onContainersAllocated(allocated, assignments, operations)
+    return [assignments, cont, request]
   }
 
   @Test
@@ -121,8 +283,8 @@ class TestMockAppStateRMOperations extends BaseMockAppStateTest implements MockR
     List<ContainerAssignment> assignments = [];
     List<AbstractRMOperation> releases = []
     appState.onContainersAllocated(allocations, assignments, releases)
-    assert releases.size() == 0
-    assert assignments.size() == 4
+    assertListLength(releases, 0)
+    assertListLength(assignments, 4)
     assignments.each { ContainerAssignment assigned ->
       Container target = assigned.container
       RoleInstance ri = roleInstance(assigned)
@@ -136,7 +298,7 @@ class TestMockAppStateRMOperations extends BaseMockAppStateTest implements MockR
     assert engine.containerCount() == 4;
     role1Status.desired = 0
     ops = appState.reviewRequestAndReleaseNodes()
-    assert ops.size() == 3
+    assertListLength(ops, 3)
     allocations = engine.execute(ops)
     assert engine.containerCount() == 1;
 
@@ -154,7 +316,7 @@ class TestMockAppStateRMOperations extends BaseMockAppStateTest implements MockR
     List<ContainerAssignment> assignments = [];
     List<AbstractRMOperation> releases = []
     appState.onContainersAllocated(allocations, assignments, releases)
-    assert assignments.size() == 1
+    assertListLength(assignments, 1)
     ContainerAssignment assigned = assignments[0]
     Container target = assigned.container
     RoleInstance ri = roleInstance(assigned)

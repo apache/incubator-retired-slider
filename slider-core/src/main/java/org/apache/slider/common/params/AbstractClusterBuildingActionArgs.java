@@ -93,6 +93,10 @@ public abstract class AbstractClusterBuildingActionArgs extends
       description = "Template application configuration")
   public File template;
 
+  @Parameter(names = {ARG_QUEUE},
+             description = "Queue to submit the application")
+  public String queue;
+
   @ParametersDelegate
   public ComponentArgsDelegate componentDelegate = new ComponentArgsDelegate();
 

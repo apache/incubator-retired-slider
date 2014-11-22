@@ -17,23 +17,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-export PYTHONPATH=/usr/lib/python2.6/site-packages/common_functions:$PYTHONPATH
-
 # reset settings
 unset PYTHON
+
+if [ -a /usr/bin/python2.6 ] && [ -z "$PYTHON" ]; then
+  PYTHON=/usr/bin/python2.6
+fi
 
 # checking for preferable python versions
 if [ -a /usr/bin/python2.7 ] && [ -z "$PYTHON" ]; then
   PYTHON=/usr/bin/python2.7
 fi
 
-if [ -a /usr/bin/python2.6 ] && [ -z "$PYTHON" ]; then
-  PYTHON=/usr/bin/python2.6
+# if no preferable python versions found, try to use system one
+if [ -a /usr/bin/python ] && [ -z "$PYTHON" ]; then
+  PYTHON=/usr/bin/python
 fi
 
 # if no preferable python versions found, try to use system one
 if [[ -z "$PYTHON" ]]; then
-  PYTHON=/usr/bin/python
+  PYTHON=python
 fi
 
 # execute script

@@ -20,42 +20,59 @@ package org.apache.slider.agent.standalone
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.fs.Path
 import org.apache.hadoop.yarn.api.records.ApplicationId
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
+import org.apache.hadoop.yarn.exceptions.YarnException
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.api.ClusterNode
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderKeys
+import org.apache.slider.common.params.ActionRegistryArgs
+import org.apache.slider.core.build.InstanceBuilder
+import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.exceptions.SliderException
+import org.apache.slider.core.launch.LaunchedApplication
+import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.core.main.ServiceLauncher
-import org.apache.slider.core.registry.info.ServiceInstanceData
-import org.apache.slider.server.services.curator.CuratorServiceInstance
-import org.apache.slider.server.services.registry.SliderRegistryService
+import org.apache.slider.core.persist.LockAcquireFailedException
+import org.junit.After
 import org.junit.Test
 
 @CompileStatic
 @Slf4j
 class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
   
+  @After
+  void fixclientname() {
+    sliderClientClassName = DEFAULT_SLIDER_CLIENT
+  }
+  
   @Test
   public void testStandaloneAgentAM() throws Throwable {
 
-    describe "create a masterless AM then get the service and look it up via the AM"
-
+    describe "create a standalone AM then perform actions on it"
+    sliderClientClassName = ExtendedSliderClient.name
     //launch fake master
     String clustername = createMiniCluster("", configuration, 1, true)
+
+
     ServiceLauncher<SliderClient> launcher =
         createStandaloneAM(clustername, true, false)
     SliderClient client = launcher.service
     addToTeardown(client);
 
     ApplicationReport report = waitForClusterLive(client)
+    URI uri = new URI(report.originalTrackingUrl)
+    assert uri.port in [60000, 60001, 60002, 60003]
+    assert report.rpcPort in [60000, 60001, 60002, 60003]
+
     logReport(report)
     List<ApplicationReport> apps = client.applications;
 
     //get some of its status
-    dumpClusterStatus(client, "masterless application status")
+    dumpClusterStatus(client, "standalone application status")
     List<ClusterNode> clusterNodes = client.listClusterNodesInRole(
         SliderKeys.COMPONENT_AM)
     assert clusterNodes.size() == 1
@@ -77,10 +94,8 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     assert nodes[0].role == SliderKeys.COMPONENT_AM
 
 
-
-
     String username = client.username
-    def serviceRegistryClient = client.YARNRegistryClient
+    def serviceRegistryClient = client.yarnAppListClient
     describe("list of all applications")
     logApplications(apps)
     describe("apps of user $username")
@@ -92,12 +107,7 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     logReport(instance)
     assert instance != null
 
-    //switch to the ZK-based registry
-
-    describe "service registry names"
-    SliderRegistryService registry = client.registry
-    def names = registry.getServiceTypes();
-    dumpRegistryServiceTypes(names)
+    //switch to the slider ZK-based registry
     describe "service registry instance IDs"
 
     def instanceIds = client.listRegisteredSliderInstances()
@@ -105,14 +115,9 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     log.info("number of instanceIds: ${instanceIds.size()}")
     instanceIds.each { String it -> log.info(it) }
 
-    describe "service registry slider instances"
-    List<CuratorServiceInstance<ServiceInstanceData>> instances = client.listRegistryInstances(
-    )
-    instances.each { CuratorServiceInstance<ServiceInstanceData> svc ->
-      log.info svc.toString()
-    }
-    describe "end list service registry slider instances"
-
+    describe "Yarn registry"
+    def yarnRegistry = client.registryOperations
+    
     describe "teardown of cluster instance #1"
     //now kill that cluster
     assert 0 == clusterActionFreeze(client, clustername)
@@ -122,8 +127,10 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     assert oldInstance != null
     assert oldInstance.yarnApplicationState >= YarnApplicationState.FINISHED
 
+    sleep(5000)
     //create another AM
-    launcher = createStandaloneAM(clustername, true, true)
+    def newcluster = clustername + "2"
+    launcher = createStandaloneAM(newcluster, true, true)
     client = launcher.service
     ApplicationId i2AppID = client.applicationId
 
@@ -134,22 +141,27 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
 
     //but when we look up an instance, we get the new App ID
     ApplicationReport instance2 = serviceRegistryClient.findInstance(
-        clustername)
+        newcluster)
     assert i2AppID == instance2.applicationId
 
     describe("attempting to create instance #3")
     //now try to create instance #3, and expect an in-use failure
     try {
-      createStandaloneAM(clustername, false, true)
-      fail("expected a failure, got a masterless AM")
+      createStandaloneAM(newcluster, false, true)
+      fail("expected a failure, got a standalone AM")
     } catch (SliderException e) {
       assertFailureClusterInUse(e);
     }
 
-    describe("Stopping instance #2")
+    // do a quick registry listing here expecting a usage failure.
+    ActionRegistryArgs registryArgs = new ActionRegistryArgs()
+    registryArgs.name=clustername;
+    def exitCode = client.actionRegistry(registryArgs)
+    assert LauncherExitCodes.EXIT_USAGE == exitCode 
 
+    describe("Stopping instance #2")
     //now stop that cluster
-    assert 0 == clusterActionFreeze(client, clustername)
+    assert 0 == clusterActionFreeze(client, newcluster)
 
     logApplications(client.listSliderInstances(username))
 
@@ -162,11 +174,36 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
 
 
     ApplicationReport instance3 = serviceRegistryClient.findInstance(
-        clustername)
+        newcluster)
     assert instance3.yarnApplicationState >= YarnApplicationState.FINISHED
 
-
+    // destroy it
+    client.actionDestroy(newcluster)
+    
   }
 
 
+  static class ExtendedSliderClient extends SliderClient {
+    @Override
+    protected void persistInstanceDefinition(boolean overwrite,
+                                             Path appconfdir,
+                                             InstanceBuilder builder)
+    throws IOException, SliderException, LockAcquireFailedException {
+      AggregateConf conf = builder.instanceDescription
+      conf.appConfOperations.
+          globalOptions[SliderKeys.KEY_ALLOWED_PORT_RANGE]= "60000-60003"
+      super.persistInstanceDefinition(overwrite, appconfdir, builder)
+    }
+
+    @Override
+    LaunchedApplication launchApplication(String clustername,
+                                          Path clusterDirectory,
+                                          AggregateConf instanceDefinition,
+                                          boolean debugAM)
+    throws YarnException, IOException {
+      instanceDefinition.appConfOperations.
+          globalOptions[SliderKeys.KEY_ALLOWED_PORT_RANGE] ="60000-60003"
+      return super.launchApplication(clustername, clusterDirectory, instanceDefinition, debugAM)
+    }
+  }
 }

@@ -117,9 +117,9 @@ class TestRoleHistoryRW extends BaseMockAppStateTest {
     assert loadedNE2.lastUsed == savetime
     assert rh2.thawedDataTime == savetime
 
-    // now thaw it
+    // now start it
     rh2.buildAvailableNodeLists();
-    describe("thawing")
+    describe("starting")
     rh2.dump();
     List<NodeInstance> available0 = rh2.cloneAvailableList(0)
     assert available0.size() == 1

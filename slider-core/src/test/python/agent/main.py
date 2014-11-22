@@ -27,7 +27,10 @@ import os
 
 def main():
   print "Executing echo"
-  print 'Argument List: {0}'.format(str(sys.argv))
+  try:
+    print 'Argument List: {0}'.format(str(sys.argv))
+  except AttributeError:
+    pass
 
   parser = OptionParser()
   parser.add_option("--log", dest="log_folder", help="log destination")

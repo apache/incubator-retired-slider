@@ -27,6 +27,7 @@ import os
 import time
 
 from AgentConfig import AgentConfig
+from AgentToggleLogger import AgentToggleLogger
 from CommandStatusDict import CommandStatusDict
 from CustomServiceOrchestrator import CustomServiceOrchestrator
 import Constants
@@ -51,8 +52,10 @@ class ActionQueue(threading.Thread):
   STORE_APPLIED_CONFIG = 'record_config'
   AUTO_RESTART = 'auto_restart'
 
-  def __init__(self, config, controller):
+  def __init__(self, config, controller, agentToggleLogger):
     super(ActionQueue, self).__init__()
+    self.queueOutAgentToggleLogger = agentToggleLogger
+    self.queueInAgentToggleLogger = AgentToggleLogger("info")
     self.commandQueue = Queue.Queue()
     self.commandStatuses = CommandStatusDict(callback_action=
     self.status_update_callback)
@@ -61,7 +64,8 @@ class ActionQueue(threading.Thread):
     self._stop = threading.Event()
     self.tmpdir = config.getResolvedPath(AgentConfig.APP_TASK_DIR)
     self.customServiceOrchestrator = CustomServiceOrchestrator(config,
-                                                               controller)
+                                                               controller,
+                                                               self.queueOutAgentToggleLogger)
 
 
   def stop(self):
@@ -72,9 +76,12 @@ class ActionQueue(threading.Thread):
 
   def put(self, commands):
     for command in commands:
-      logger.info("Adding " + command['commandType'] + " for service " + \
-                  command['serviceName'] + " of cluster " + \
-                  command['clusterName'] + " to the queue.")
+      self.queueInAgentToggleLogger.adjustLogLevelAtStart(command['commandType'])
+      message = "Adding " + command['commandType'] + " for service " + \
+                command['serviceName'] + " of cluster " + \
+                command['clusterName'] + " to the queue."
+      self.queueInAgentToggleLogger.log(message)
+      self.queueInAgentToggleLogger.adjustLogLevelAtEnd(command['commandType'])
       logger.debug(pprint.pformat(command))
       self.commandQueue.put(command)
 
@@ -86,7 +93,9 @@ class ActionQueue(threading.Thread):
     while not self.stopped():
       time.sleep(2)
       command = self.commandQueue.get() # Will block if queue is empty
+      self.queueOutAgentToggleLogger.adjustLogLevelAtStart(command['commandType'])
       self.process_command(command)
+      self.queueOutAgentToggleLogger.adjustLogLevelAtEnd(command['commandType'])
     logger.info("ActionQueue stopped.")
 
 
@@ -142,9 +151,10 @@ class ActionQueue(threading.Thread):
       store_config = 'true' == command['commandParams'][ActionQueue.STORE_APPLIED_CONFIG]
     store_command = False
     if 'roleParams' in command and ActionQueue.AUTO_RESTART in command['roleParams']:
-      logger.info("Component has indicated auto-restart. Saving details from START command.")
       store_command = 'true' == command['roleParams'][ActionQueue.AUTO_RESTART]
 
+    if store_command:
+      logger.info("Component has indicated auto-restart. Saving details from START command.")
 
     # running command
     commandresult = self.customServiceOrchestrator.runCommand(command,
@@ -154,6 +164,12 @@ class ActionQueue(threading.Thread):
                                                                 'tmperr'],
                                                               True,
                                                               store_config or store_command)
+    # If command is STOP then set flag to indicate stop has been triggered.
+    # In future we might check status of STOP command and take other measures
+    # if graceful STOP fails (like force kill the processes)
+    if command['roleCommand'] == 'STOP':
+      self.controller.appGracefulStopTriggered = True
+
     # dumping results
     status = self.COMPLETED_STATUS
     if commandresult[Constants.EXIT_CODE] != 0:

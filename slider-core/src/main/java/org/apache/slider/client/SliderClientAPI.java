@@ -1,0 +1,260 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.slider.client;
+
+import com.google.common.annotations.VisibleForTesting;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.registry.client.api.RegistryOperations;
+import org.apache.hadoop.service.Service;
+import org.apache.hadoop.yarn.api.records.ApplicationReport;
+import org.apache.hadoop.yarn.exceptions.YarnException;
+import org.apache.slider.common.params.AbstractClusterBuildingActionArgs;
+import org.apache.slider.common.params.ActionAMSuicideArgs;
+import org.apache.slider.common.params.ActionDiagnosticArgs;
+import org.apache.slider.common.params.ActionEchoArgs;
+import org.apache.slider.common.params.ActionFlexArgs;
+import org.apache.slider.common.params.ActionFreezeArgs;
+import org.apache.slider.common.params.ActionInstallKeytabArgs;
+import org.apache.slider.common.params.ActionInstallPackageArgs;
+import org.apache.slider.common.params.ActionKillContainerArgs;
+import org.apache.slider.common.params.ActionListArgs;
+import org.apache.slider.common.params.ActionRegistryArgs;
+import org.apache.slider.common.params.ActionResolveArgs;
+import org.apache.slider.common.params.ActionStatusArgs;
+import org.apache.slider.common.params.ActionThawArgs;
+import org.apache.slider.core.exceptions.BadCommandArgumentsException;
+import org.apache.slider.core.exceptions.SliderException;
+import org.apache.slider.providers.AbstractClientProvider;
+
+import java.io.IOException;
+import java.util.List;
+
+/**
+ * Interface of those method calls in the slider API that are intended
+ * for direct public invocation.
+ * <p>
+ * Stability: evolving
+ */
+public interface SliderClientAPI extends Service {
+  /**
+   * Destroy a cluster. There's two race conditions here
+   * #1 the cluster is started between verifying that there are no live
+   * clusters of that name.
+   */
+  int actionDestroy(String clustername) throws YarnException,
+      IOException;
+
+  /**
+   * AM to commit an asynchronous suicide
+   */
+  int actionAmSuicide(String clustername,
+      ActionAMSuicideArgs args) throws YarnException, IOException;
+
+  /**
+   * Get the provider for this cluster
+   * @param provider the name of the provider
+   * @return the provider instance
+   * @throws SliderException problems building the provider
+   */
+  AbstractClientProvider createClientProvider(String provider)
+    throws SliderException;
+
+  /**
+   * Build up the cluster specification/directory
+   *
+   * @param clustername cluster name
+   * @param buildInfo the arguments needed to build the cluster
+   * @throws YarnException Yarn problems
+   * @throws IOException other problems
+   * @throws BadCommandArgumentsException bad arguments.
+   */
+  int actionBuild(String clustername,
+      AbstractClusterBuildingActionArgs buildInfo) throws YarnException, IOException;
+
+  /**
+   * Upload keytab to a designated sub-directory of the user home directory
+   *
+   * @param installKeytabInfo the arguments needed to upload the keytab
+   * @throws YarnException Yarn problems
+   * @throws IOException other problems
+   * @throws BadCommandArgumentsException bad arguments.
+   */
+  int actionInstallKeytab(ActionInstallKeytabArgs installKeytabInfo)
+      throws YarnException, IOException;
+
+  /**
+   * Upload application package to user home directory
+   *
+   * @param installPkgInfo the arguments needed to upload the package
+   * @throws YarnException Yarn problems
+   * @throws IOException other problems
+   * @throws BadCommandArgumentsException bad arguments.
+   */
+  int actionInstallPkg(ActionInstallPackageArgs installPkgInfo)
+      throws YarnException, IOException;
+
+  /**
+   * Update the cluster specification
+   *
+   * @param clustername cluster name
+   * @param buildInfo the arguments needed to update the cluster
+   * @throws YarnException Yarn problems
+   * @throws IOException other problems
+   */
+  int actionUpdate(String clustername,
+      AbstractClusterBuildingActionArgs buildInfo)
+      throws YarnException, IOException; 
+  /**
+   * Get the report of a this application
+   * @return the app report or null if it could not be found.
+   * @throws IOException
+   * @throws YarnException
+   */
+  ApplicationReport getApplicationReport()
+      throws IOException, YarnException;
+
+  /**
+   * Kill the submitted application via YARN
+   * @throws YarnException
+   * @throws IOException
+   */
+  boolean forceKillApplication(String reason)
+    throws YarnException, IOException;
+
+  /**
+   * Implement the list action: list all nodes
+   * @return exit code of 0 if a list was created
+   */
+  int actionList(String clustername, ActionListArgs args) throws IOException, YarnException;
+
+  /**
+   * Implement the islive action: probe for a cluster of the given name existing
+   * @return exit code
+   */
+  int actionFlex(String name, ActionFlexArgs args) throws YarnException, IOException;
+
+  /**
+   * Test for a cluster existing probe for a cluster of the given name existing
+   * in the filesystem. If the live param is set, it must be a live cluster
+   * @return exit code
+   */
+  int actionExists(String name, boolean checkLive) throws YarnException, IOException;
+
+  /**
+   * Kill a specific container of the cluster
+   * @param name cluster name
+   * @param args arguments
+   * @return exit code
+   * @throws YarnException
+   * @throws IOException
+   */
+  int actionKillContainer(String name, ActionKillContainerArgs args)
+      throws YarnException, IOException;
+
+  /**
+   * Echo operation (not currently wired up to command line)
+   * @param name cluster name
+   * @param args arguments
+   * @return the echoed text
+   * @throws YarnException
+   * @throws IOException
+   */
+  String actionEcho(String name, ActionEchoArgs args)
+      throws YarnException, IOException;
+
+  /**
+   * Status operation
+   *
+   * @param clustername cluster name
+   * @param statusArgs status arguments
+   * @return 0 -for success, else an exception is thrown
+   * @throws YarnException
+   * @throws IOException
+   */
+  int actionStatus(String clustername, ActionStatusArgs statusArgs)
+      throws YarnException, IOException;
+
+  /**
+   * Version Details
+   * @return exit code
+   */
+  int actionVersion();
+
+  /**
+   * Stop the cluster
+   *
+   * @param clustername cluster name
+   * @param freezeArgs arguments to the stop
+   * @return EXIT_SUCCESS if the cluster was not running by the end of the operation
+   */
+  int actionFreeze(String clustername, ActionFreezeArgs freezeArgs)
+      throws YarnException, IOException;
+
+  /**
+   * Restore a cluster
+   */
+  int actionThaw(String clustername, ActionThawArgs thaw) throws YarnException, IOException;
+
+  /**
+   * Registry operation
+   *
+   * @param args registry Arguments
+   * @return 0 for success, -1 for some issues that aren't errors, just failures
+   * to retrieve information (e.g. no configurations for that entry)
+   * @throws YarnException YARN problems
+   * @throws IOException Network or other problems
+   */
+  int actionResolve(ActionResolveArgs args)
+      throws YarnException, IOException;
+
+  /**
+   * Registry operation
+   *
+   * @param registryArgs registry Arguments
+   * @return 0 for success, -1 for some issues that aren't errors, just failures
+   * to retrieve information (e.g. no configurations for that entry)
+   * @throws YarnException YARN problems
+   * @throws IOException Network or other problems
+   */
+  int actionRegistry(ActionRegistryArgs registryArgs)
+      throws YarnException, IOException;
+
+  /**
+   * diagnostic operation
+   *
+   * @param clusterName
+   *            application name
+   * @param diagosticArgs
+   *            diagnostic Arguments
+   * @return 0 for success, -1 for some issues that aren't errors, just
+   *         failures to retrieve information (e.g. no application name
+   *         specified)
+   * @throws YarnException YARN problems
+   * @throws IOException Network or other problems
+   */
+  int actionDiagnostic(ActionDiagnosticArgs diagnosticArgs);
+
+  /**
+   * Get the registry binding. As this may start the registry, it can take time
+   * and fail
+   * @return the registry 
+   */
+  RegistryOperations getRegistryOperations()
+      throws SliderException, IOException;
+}

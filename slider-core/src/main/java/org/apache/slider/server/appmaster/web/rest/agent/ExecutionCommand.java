@@ -36,6 +36,7 @@ public class ExecutionCommand {
   private String clusterName;
   private long taskId;
   private String commandId;
+  //TODO Remove hostname from being set in the command
   private String hostname;
   private String role;
   private Map<String, String> hostLevelParams = new HashMap<String, String>();
@@ -178,5 +179,21 @@ public class ExecutionCommand {
   @JsonProperty("componentName")
   public void setComponentName(String componentName) {
     this.componentName = componentName;
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder builder = new StringBuilder();
+    builder.append("ExecutionCommand [commandType=").append(commandType)
+        .append(", clusterName=").append(clusterName).append(", taskId=")
+        .append(taskId).append(", commandId=").append(commandId)
+        .append(", hostname=").append(hostname).append(", role=").append(role)
+        .append(", hostLevelParams=").append(hostLevelParams)
+        .append(", roleParams=").append(roleParams).append(", roleCommand=")
+        .append(roleCommand).append(", configurations=").append(configurations)
+        .append(", commandParams=").append(commandParams)
+        .append(", serviceName=").append(serviceName)
+        .append(", componentName=").append(componentName).append("]");
+    return builder.toString();
   }
 }

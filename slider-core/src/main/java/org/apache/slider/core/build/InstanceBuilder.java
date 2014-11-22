@@ -49,7 +49,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Map;
 
+import static org.apache.slider.api.InternalKeys.INTERNAL_QUEUE;
 import static org.apache.slider.api.OptionKeys.INTERNAL_AM_TMP_DIR;
+import static org.apache.slider.api.OptionKeys.INTERNAL_TMP_DIR;
 import static org.apache.slider.api.OptionKeys.INTERNAL_APPLICATION_HOME;
 import static org.apache.slider.api.OptionKeys.INTERNAL_APPLICATION_IMAGE_PATH;
 import static org.apache.slider.api.OptionKeys.INTERNAL_DATA_DIR_PATH;
@@ -132,6 +134,8 @@ public class InstanceBuilder {
 
     internalOps.set(INTERNAL_AM_TMP_DIR,
                     instancePaths.tmpPathAM.toUri());
+    internalOps.set(INTERNAL_TMP_DIR,
+                    instancePaths.tmpPath.toUri());
     internalOps.set(INTERNAL_SNAPSHOT_CONF_PATH,
                     instancePaths.snapshotConfPath.toUri());
     internalOps.set(INTERNAL_GENERATED_CONF_PATH,
@@ -146,45 +150,58 @@ public class InstanceBuilder {
   }
 
   /**
-   * Set up the image/app home path
-   * @param appImage path in the DFS to the tar file
-   * @param appHomeDir other strategy: home dir
-   * @throws BadConfigException if both or neither are found (its an xor)
+   * Set the queue used to start the application
+   * @param queue
+   * @throws BadConfigException
    */
-  public void setImageDetails(
-    Path appImage,
-    String appHomeDir) throws BadConfigException {
+  public void setQueue(String queue) throws BadConfigException {
+    if(queue != null) {
+      if(SliderUtils.isUnset(queue)) {
+        throw new BadConfigException("Queue value cannot be empty.");
+      }
+
+      instanceDescription.getInternalOperations().set(INTERNAL_QUEUE, queue);
+    }
+  }
+
+  /**
+   * Set up the image/app home path
+   * @param appImage   path in the DFS to the tar file
+   * @param appHomeDir other strategy: home dir
+   * @throws BadConfigException if both are found
+   */
+  public void setImageDetailsIfAvailable(
+      Path appImage,
+      String appHomeDir) throws BadConfigException {
     boolean appHomeUnset = SliderUtils.isUnset(appHomeDir);
     // App home or image
     if (appImage != null) {
       if (!appHomeUnset) {
         // both args have been set
         throw new BadConfigException(
-          ErrorStrings.E_BOTH_IMAGE_AND_HOME_DIR_SPECIFIED);
+            ErrorStrings.E_BOTH_IMAGE_AND_HOME_DIR_SPECIFIED);
       }
       instanceDescription.getInternalOperations().set(INTERNAL_APPLICATION_IMAGE_PATH,
-                                               appImage.toUri());
+                                                      appImage.toUri());
     } else {
       // the alternative is app home, which now MUST be set
-      if (appHomeUnset) {
-        // both args have been set
-        throw new BadConfigException(ErrorStrings.E_NO_IMAGE_OR_HOME_DIR_SPECIFIED);
-          
+      if (!appHomeUnset) {
+        instanceDescription.getInternalOperations().set(INTERNAL_APPLICATION_HOME,
+                                                        appHomeDir);
       }
-      instanceDescription.getInternalOperations().set(INTERNAL_APPLICATION_HOME,
-                                               appHomeDir);
-
     }
   }
+
 
   /**
    * Propagate any critical principals from the current site config down to the HBase one.
    */
   public void propagatePrincipals() {
-    String dfsPrincipal = conf.get(DFSConfigKeys.DFS_NAMENODE_USER_NAME_KEY);
+    String dfsPrincipal = conf.get(
+        DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY);
     if (dfsPrincipal != null) {
       String siteDfsPrincipal = OptionKeys.SITE_XML_PREFIX +
-                                DFSConfigKeys.DFS_NAMENODE_USER_NAME_KEY;
+                                DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY;
       instanceDescription.getAppConfOperations().set(siteDfsPrincipal, dfsPrincipal);
     }
   }
@@ -236,7 +253,9 @@ public class InstanceBuilder {
       IOException,
       SliderException,
       LockAcquireFailedException {
-    if (!overwrite) coreFS.createClusterDirectories(instancePaths);
+    if (!overwrite) {
+      coreFS.createClusterDirectories(instancePaths);
+    }
     ConfPersister persister =
       new ConfPersister(coreFS, getInstanceDir());
     ConfDirSnapshotAction action = null;

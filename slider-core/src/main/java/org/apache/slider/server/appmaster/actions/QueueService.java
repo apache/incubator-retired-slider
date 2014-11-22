@@ -19,7 +19,6 @@
 package org.apache.slider.server.appmaster.actions;
 
 
-import com.google.common.annotations.VisibleForTesting;
 import org.apache.slider.server.services.workflow.ServiceThreadFactory;
 import org.apache.slider.server.services.workflow.WorkflowExecutorService;
 import org.slf4j.Logger;
@@ -33,6 +32,7 @@ import java.util.concurrent.DelayQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * The Queue service provides immediate and scheduled queues, as well
@@ -52,6 +52,7 @@ implements Runnable, QueueAccess {
   private static final Logger log =
       LoggerFactory.getLogger(QueueService.class);
   public static final String NAME = "Action Queue";
+  private final AtomicBoolean completed = new AtomicBoolean(false);
 
   /**
    * Immediate actions.
@@ -149,6 +150,16 @@ implements Runnable, QueueAccess {
       }
     }
   }
+
+  @Override
+  public boolean hasQueuedActionWithAttribute(int attr) {
+    for (AsyncAction action : actionQueue) {
+      if (action.hasAttr(attr)) {
+        return true;
+      }
+    }
+    return false;
+  }
   
   /**
    * Run until the queue has been told to stop
@@ -167,7 +178,25 @@ implements Runnable, QueueAccess {
       } while (!(take instanceof ActionStopQueue));
       log.info("QueueService processor terminated");
     } catch (InterruptedException e) {
-      //game over
+      // interrupted during actions
     }
+    // the thread exits, but does not tag the service as complete. That's expected
+    // to be done by the stop queue
+  }
+
+
+  /**
+   * Check to see if the queue executor has completed
+   * @return the status
+   */
+  public boolean isCompleted() {
+    return completed.get();
+  }
+
+  /**
+   * Package scoped method to mark the queue service as finished
+   */
+  void complete() {
+    completed.set(true);
   }
 }

@@ -250,22 +250,59 @@ public class SliderYarnClientImpl extends YarnClientImpl {
     return results;
   }
 
+  /**
+   * Find a cluster in the instance list; biased towards live instances
+   * @param instances list of instances
+   * @param appname application name
+   * @return the first found instance, else a failed/finished instance, or null
+   * if there are none of those
+   */
   public ApplicationReport findClusterInInstanceList(List<ApplicationReport> instances,
                                                      String appname) {
+    // sort by most recent
+    SliderUtils.sortApplicationsByMostRecent(instances);
     ApplicationReport found = null;
-    ApplicationReport foundAndLive = null;
     for (ApplicationReport app : instances) {
       if (app.getName().equals(appname)) {
-        found = app;
         if (isApplicationLive(app)) {
-          foundAndLive = app;
+          return app;
+        }
+        // set the found value if not set
+        found = found != null ? found : app;
+      }
+    }
+    return found;
+  }
+
+  /**
+   * Find an app in the instance list in the desired state 
+   * @param instances instance list
+   * @param appname application name
+   * @param desiredState yarn state desired
+   * @return the match or null for none
+   */
+  public ApplicationReport findAppInInstanceList(List<ApplicationReport> instances,
+      String appname,
+      YarnApplicationState desiredState) {
+    ApplicationReport found = null;
+    ApplicationReport foundAndLive = null;
+    log.debug("Searching {} records for instance name {} in state '{}'",
+        instances.size(), appname, desiredState);
+    for (ApplicationReport app : instances) {
+      if (app.getName().equals(appname)) {
+
+        YarnApplicationState appstate =
+            app.getYarnApplicationState();
+        log.debug("app ID {} is in state {}", app.getApplicationId(), appstate);
+        if (appstate.equals(desiredState)) {
+          log.debug("match");
+          return app;
         }
       }
     }
-    if (foundAndLive != null) {
-      found = foundAndLive;
-    }
-    return found;
+    // nothing found in desired state
+    log.debug("No match");
+    return null;
   }
 
 

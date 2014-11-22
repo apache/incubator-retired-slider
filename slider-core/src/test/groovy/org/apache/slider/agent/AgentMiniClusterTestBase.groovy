@@ -27,6 +27,7 @@ import org.apache.commons.io.FileUtils
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderXMLConfKeysForTesting
 import org.apache.slider.common.params.Arguments
+import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.providers.agent.AgentKeys
 import org.apache.slider.test.YarnZKMiniClusterTestBase
@@ -43,10 +44,17 @@ public abstract class AgentMiniClusterTestBase
 extends YarnZKMiniClusterTestBase {
   protected static File agentConf
   protected static File agentDef
-  protected static File imagePath
   protected static Map<String, String> agentDefOptions
   private static TemporaryFolder tempFolder = new TemporaryFolder();
 
+  /**
+   * Server side test: validate system env before launch
+   */
+  @BeforeClass
+  public static void checkSystem() {
+//    SliderUtils.validateSliderServerEnvironment(LOG)
+  }
+  
   @BeforeClass
   public static void createSubConfFiles() {
 
@@ -80,8 +88,16 @@ extends YarnZKMiniClusterTestBase {
 
   @AfterClass
   public static void cleanSubConfFiles() {
-    if (tempFolder.getRoot().exists()) {
-      FileUtils.deleteDirectory(tempFolder.getRoot());
+    def tempRoot
+    try {
+      tempRoot = tempFolder.root
+      if (tempRoot.exists()) {
+        FileUtils.deleteDirectory(tempRoot);
+      }
+    } catch (IOException e) {
+      log.info("Failed to delete $tempRoot :$e", e)
+    } catch (IllegalStateException e) {
+      log.warn("Temp folder deletion failed: $e")
     }
   }
 
@@ -126,7 +142,7 @@ extends YarnZKMiniClusterTestBase {
   }
 
 /**
- * Create an AM without a master
+ * Create a standalone AM
  * @param clustername AM name
  * @param size # of nodes
  * @param deleteExistingData should any existing cluster data be deleted

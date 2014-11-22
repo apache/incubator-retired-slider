@@ -62,9 +62,11 @@ public abstract class AbstractClientProvider extends Configured {
   public abstract List<ProviderRole> getRoles();
 
   /**
-   * Validate the instance definition.
+   * Verify that an instance definition is considered valid by the provider
+   * @param instanceDefinition instance definition
+   * @throws SliderException if the configuration is not valid
    */
-  public void validateInstanceDefinition(AggregateConf instanceDefinition) throws
+  public void validateInstanceDefinition(AggregateConf instanceDefinition, SliderFileSystem fs) throws
       SliderException {
 
     List<ProviderRole> roles = getRoles();
@@ -202,10 +204,9 @@ public abstract class AbstractClientProvider extends Configured {
                                                       AggregateConf instanceDefinition,
                                                       Path clusterDirPath,
                                                       Path generatedConfDirPath,
-                                                      boolean secure) throws
-      SliderException,
-                                                                      IOException {
-    validateInstanceDefinition(instanceDefinition);
+                                                      boolean secure)
+      throws SliderException, IOException {
+    validateInstanceDefinition(instanceDefinition, sliderFileSystem);
   }
 
   /**

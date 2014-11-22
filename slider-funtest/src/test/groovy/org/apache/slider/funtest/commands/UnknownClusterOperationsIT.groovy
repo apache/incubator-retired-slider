@@ -21,12 +21,10 @@ package org.apache.slider.funtest.commands
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.slider.common.SliderExitCodes
-import org.apache.slider.funtest.categories.FunctionalTests
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
 import org.apache.slider.funtest.framework.CommandTestBase
 import org.apache.slider.funtest.framework.SliderShell
-import org.junit.BeforeClass
 import org.junit.Test
 
 /**
@@ -34,7 +32,6 @@ import org.junit.Test
  */
 @CompileStatic
 @Slf4j
-@org.junit.experimental.categories.Category(FunctionalTests)
 public class UnknownClusterOperationsIT extends CommandTestBase {
 
   public static final String UNKNOWN = "unknown_cluster"
@@ -90,11 +87,6 @@ public class UnknownClusterOperationsIT extends CommandTestBase {
   @Test
   public void testStatusUnknownCluster() throws Throwable {
     assertUnknownCluster(status(UNKNOWN))
-  }
-
-  @Test
-  public void testGetConfUnknownCluster() throws Throwable {
-    assertUnknownCluster(getConf(UNKNOWN))
   }
 
 }

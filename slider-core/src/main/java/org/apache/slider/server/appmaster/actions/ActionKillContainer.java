@@ -30,16 +30,34 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Kill a specific container
+ */
 public class ActionKillContainer extends AsyncAction {
 
+  /**
+   *  container to kill
+   */
   private final ContainerId containerId;
+
+  /**
+   *  handler for the operation
+   */
   private final RMOperationHandler operationHandler;
+
+  /**
+   * Kill a container
+   * @param containerId container to kill
+   * @param delay
+   * @param timeUnit
+   * @param operationHandler
+   */
   public ActionKillContainer(
       ContainerId containerId,
       long delay,
       TimeUnit timeUnit,
       RMOperationHandler operationHandler) {
-    super("kill container", delay, timeUnit);
+    super("kill container", delay, timeUnit, ATTR_CHANGES_APP_SIZE);
     this.operationHandler = operationHandler;
     Preconditions.checkArgument(containerId != null);
     

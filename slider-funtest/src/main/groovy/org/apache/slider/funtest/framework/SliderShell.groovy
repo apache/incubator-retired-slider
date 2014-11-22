@@ -27,9 +27,10 @@ import org.slf4j.LoggerFactory
 
 class SliderShell extends Shell {
   private static final Logger log = LoggerFactory.getLogger(SliderShell.class);
-
+  private static final Logger LOG = log;
 
   public static final String BASH = '/bin/bash -s'
+  public static final String CMD = 'cmd'
   
   /**
    * Configuration directory, shared across all instances. Not marked as volatile,
@@ -37,9 +38,16 @@ class SliderShell extends Shell {
    */
   public static File confDir;
   
-  public static File script;
+  public static File scriptFile;
+  
+  public File shellScript;
   
   public static final List<String> slider_classpath_extra = []
+
+  /**
+   * Environment varaibles
+   */
+  protected static final Map<String, String> environment = [:]
 
   final String command
 
@@ -48,10 +56,11 @@ class SliderShell extends Shell {
    * @param commands
    */
   SliderShell(Collection<String> commands) {
-    super(BASH)
+    super(org.apache.hadoop.util.Shell.WINDOWS ? CMD : BASH)
     assert confDir != null;
-    assert script != null;
-    command = script.absolutePath + " " + commands.join(" ")
+    assert scriptFile != null;
+    shellScript = scriptFile;
+    command = scriptFile.absolutePath + " " + commands.join(" ")
   }
 
   /**
@@ -59,25 +68,80 @@ class SliderShell extends Shell {
    * @return the script exit code
    */
   int execute() {
-    String confDirCmd = env(FuntestProperties.ENV_CONF_DIR, confDir)
     log.info(command)
-    List<String> commandLine = [
-        confDirCmd,
-    ]
+    setEnv(FuntestProperties.ENV_SLIDER_CONF_DIR, confDir)
     if (!slider_classpath_extra.empty) {
-      commandLine << env(FuntestProperties.ENV_SLIDER_CLASSPATH_EXTRA,
-          SliderUtils.join(slider_classpath_extra, ":", false))
+      setEnv(FuntestProperties.ENV_SLIDER_CLASSPATH_EXTRA,
+          SliderUtils.join(slider_classpath_extra,
+              pathElementSeparator,
+              false))
     }
+    List<String> commandLine = buildEnvCommands()
+
     commandLine << command
+    if (org.apache.hadoop.util.Shell.WINDOWS) {
+      // Ensure the errorlevel returned by last call is set for the invoking shell
+      commandLine << "@echo ERRORLEVEL=%ERRORLEVEL%"
+      commandLine << "@exit %ERRORLEVEL%"
+    }
     String script = commandLine.join("\n")
     log.debug(script)
-    super.exec(script);
+    exec(script);
     signCorrectReturnCode()
     return ret;
   }
 
-  String env(String var, Object val) {
-    return "export " + var + "=${val.toString()};"
+  public String getPathElementSeparator() {
+    File.pathSeparator
+  }
+
+  public static boolean isWindows() {
+    return org.apache.hadoop.util.Shell.WINDOWS
+  }
+
+  /**
+   * Set an environment variable
+   * @param var variable name
+   * @param val value
+   */
+  public static void setEnv(String var, Object val) {
+    environment[var] = val.toString()
+  }
+
+  /**
+   * Get an environment variable
+   * @param var variable name
+   * @return the value or null
+   */
+  public static String getEnv(String var) {
+    return environment[var]
+  }
+
+  /**
+   * Build up a list of environment variable setters from the
+   * env variables
+   * @return a list of commands to set up the env on the target system.
+   */
+  public static List<String> buildEnvCommands() {
+    List<String> commands = []
+    environment.each { String var, String val ->
+      commands << env(var, val)
+    }
+    return commands
+  }
+  
+  /**
+   * Add an environment variable
+   * @param var variable
+   * @param val value (which will be stringified)
+   * @return an env variable command
+   */
+  static String env(String var, Object val) {
+    if (isWindows()) {
+      return "set " + var + "=${val.toString()}"
+    } else {
+      return "export " + var + "=${val.toString()};"
+    }
   }
 
   /**
@@ -131,26 +195,163 @@ class SliderShell extends Shell {
     log.error(toString())
     log.error("return code = ${signCorrectReturnCode()}")
     if (out.size() != 0) {
-      log.info("\n<stdout>\n${out.join('\n')}\n</stdout>");
+      log.info("\n<stdout>\n${stdoutHistory}\n</stdout>");
     }
     if (err.size() != 0) {
-      log.error("\n<stderr>\n${err.join('\n')}\n</stderr>");
+      log.error("\n<stderr>\n${stdErrHistory}\n</stderr>");
     }
   }
-  
+
+  /**
+   * Get the stderr history
+   * @return the history
+   */
+  public String getStdErrHistory() {
+    return err.join('\n')
+  }
+
+  /**
+   * Get the stdout history
+   * @return the history
+   */
+  public String getStdoutHistory() {
+    return out.join('\n')
+  }
+
   /**
    * Assert the shell exited with a given error code
    * if not the output is printed and an assertion is raised
    * @param errorCode expected error code
    */
-  public void assertExitCode(int errorCode) {
+  public void assertExitCode(int errorCode, String extra="") {
     if (this.ret != errorCode) {
       dumpOutput()
       throw new SliderException(ret,
-          "Expected exit code of command ${command} : ${errorCode} - actual=${ret}")
-      
+          "Expected exit code of command ${command} : ${errorCode} - actual=${ret} $extra")
     }
   }
-  
 
+  /**
+   * Execute shell script consisting of as many Strings as we have arguments,
+   * NOTE: individual strings are concatenated into a single script as though
+   * they were delimited with new line character. All quoting rules are exactly
+   * what one would expect in standalone shell script.
+   *
+   * After executing the script its return code can be accessed as getRet(),
+   * stdout as getOut() and stderr as getErr(). The script itself can be accessed
+   * as getScript()
+   * WARNING: it isn't thread safe
+   * @param args shell script split into multiple Strings
+   * @return Shell object for chaining
+   */
+  Shell exec(Object... args) {
+    Process proc = "$shell".execute()
+    script = args.join("\n")
+    ByteArrayOutputStream baosErr = new ByteArrayOutputStream(4096);
+    ByteArrayOutputStream baosOut = new ByteArrayOutputStream(4096);
+    proc.consumeProcessOutput(baosOut, baosErr)
+
+    Thread.start {
+      def writer = new PrintWriter(new BufferedOutputStream(proc.out))
+      writer.println(script)
+      writer.flush()
+      writer.close()
+    }
+
+    proc.waitFor()
+    ret = proc.exitValue()
+
+    out = streamToLines(baosOut)
+    err = streamToLines(baosErr)
+    
+    if (LOG.isTraceEnabled()) {
+      if (ret != 0) {
+        LOG.trace("return: $ret");
+      }
+      if (out.size() != 0) {
+        LOG.trace("\n<stdout>\n${out.join('\n')}\n</stdout>");
+      }
+
+      if (err.size() != 0) {
+        LOG.trace("\n<stderr>\n${err.join('\n')}\n</stderr>");
+      }
+    }
+    return this
   }
+
+  /**
+   * Convert a stream to lines in an array
+   * @param out output stream
+   * @return the list of entries
+   */
+  protected List<String> streamToLines(ByteArrayOutputStream out) {
+    if (out.size() != 0) {
+      return out.toString().split('\n');
+    } else {
+      return [];
+    }
+  }
+
+  public String findLineEntry(String[] locaters) {
+    int index = 0;
+    def output = out +"\n"+ err
+    for (String str in output) {
+      if (str.contains("\"" + locaters[index] + "\"")) {
+        if (locaters.size() == index + 1) {
+          return str;
+        } else {
+          index++;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  public boolean outputContains(
+      String lookThisUp,
+      int n = 1) {
+    int count = 0
+    def output = out + "\n" + err
+    for (String str in output) {
+      int subCount = countString(str, lookThisUp)
+      count = count + subCount
+      if (count == n) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public static int countString(String str, String search) {
+    int count = 0
+    if (SliderUtils.isUnset(str) || SliderUtils.isUnset(search)) {
+      return count
+    }
+
+    int index = str.indexOf(search, 0)
+    while (index >= 0) {
+      ++count
+      index = str.indexOf(search, index + 1)
+    }
+    return count
+  }
+
+  public findLineEntryValue(String[] locaters) {
+    String line = findLineEntry(locaters);
+
+    if (line != null) {
+      log.info("Parsing {} for value.", line)
+      int dividerIndex = line.indexOf(":");
+      if (dividerIndex > 0) {
+        String value = line.substring(dividerIndex + 1).trim()
+        if (value.endsWith(",")) {
+          value = value.subSequence(0, value.length() - 1)
+        }
+        return value;
+      }
+    }
+    return null;
+  }
+
+}

@@ -28,7 +28,6 @@ import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.slider.core.main.ServiceLauncher
 import org.junit.Test
 
-import static HBaseKeys.PROVIDER_HBASE
 import static org.apache.slider.common.params.Arguments.ARG_PROVIDER
 
 @CompileStatic
@@ -50,18 +49,18 @@ class TestBuildThawClusterM1W1 extends HBaseMiniClusterTestBase {
             (HBaseKeys.ROLE_WORKER): 1,
         ],
         [
-            ARG_PROVIDER, PROVIDER_HBASE
+            ARG_PROVIDER, HBaseKeys.PROVIDER_HBASE
         ],
         true,
         false,
         [:])
     SliderClient sliderClient = launcher.service
     addToTeardown(sliderClient);
-    def serviceRegistryClient = sliderClient.YARNRegistryClient
+    def serviceRegistryClient = sliderClient.yarnAppListClient
     ApplicationReport report = serviceRegistryClient.findInstance(clustername)
     assert report == null;
 
-    //thaw time
+    //start time
     ServiceLauncher<SliderClient> l2 = thawCluster(clustername, [], true)
     SliderClient thawed = l2.service
     addToTeardown(thawed);

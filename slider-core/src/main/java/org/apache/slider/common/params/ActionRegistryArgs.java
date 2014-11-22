@@ -22,13 +22,12 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
-import org.apache.slider.core.exceptions.ErrorStrings;
+import org.apache.slider.core.exceptions.UsageException;
 import org.apache.slider.core.registry.docstore.ConfigFormat;
 
 import static org.apache.slider.common.params.SliderActions.ACTION_REGISTRY;
 import static org.apache.slider.common.params.SliderActions.DESCRIBE_ACTION_REGISTRY;
 import java.io.File;
-
 
 /**
  * Registry actions
@@ -43,6 +42,25 @@ import java.io.File;
 
 public class ActionRegistryArgs extends AbstractActionArgs {
 
+  public static final String USAGE =
+      "Usage: " + SliderActions.ACTION_REGISTRY
+      + " ("
+      + Arguments.ARG_LIST + "|"
+      + Arguments.ARG_LISTCONF + "|"
+      + Arguments.ARG_LISTEXP + "|"
+      + Arguments.ARG_LISTFILES + "|"
+      + Arguments.ARG_GETCONF + "|"
+      + Arguments.ARG_GETEXP + "> "
+      + Arguments.ARG_NAME + " <name> "
+      + " )"
+      + "[" + Arguments.ARG_VERBOSE + "] "
+      + "[" + Arguments.ARG_USER + "] "
+      + "[" + Arguments.ARG_OUTPUT + " <filename> ] "
+      + "[" + Arguments.ARG_SERVICETYPE + " <servicetype> ] "
+      + "[" + Arguments.ARG_FORMAT + " <xml|json|properties>] "
+      + System.getProperty("line.separator")
+      + "Arguments.ARG_GETEXP only supports " + Arguments.ARG_FORMAT + " json"
+      ;
   public ActionRegistryArgs() {
   }
 
@@ -54,7 +72,6 @@ public class ActionRegistryArgs extends AbstractActionArgs {
   public String getActionName() {
     return ACTION_REGISTRY;
   }
-
 
   /**
    * Get the min #of params expected
@@ -77,8 +94,15 @@ public class ActionRegistryArgs extends AbstractActionArgs {
       description = "get configuration")
   public String getConf;
 
+  @Parameter(names = {ARG_LISTEXP},
+             description = "list exports")
+  public boolean listExports;
 
-  @Parameter(names = {ARG_LISTFILES}, 
+  @Parameter(names = {ARG_GETEXP},
+             description = "get export")
+  public String getExport;
+
+  @Parameter(names = {ARG_LISTFILES},
       description = "list files")
   public String listFiles;
 
@@ -86,16 +110,14 @@ public class ActionRegistryArgs extends AbstractActionArgs {
       description = "get files")
   public String getFiles;
 
-
   //--format 
   @Parameter(names = ARG_FORMAT,
-      description = "Format for a response: [xml|json|properties]")
+      description = "Format for a response: <xml|json|properties>")
   public String format = ConfigFormat.XML.toString() ;
 
-
-  @Parameter(names = {ARG_DEST},
+  @Parameter(names = {ARG_OUTPUT, ARG_OUTPUT_SHORT, ARG_DEST},
       description = "Output destination")
-  public File dest;
+  public File out;
 
   @Parameter(names = {ARG_NAME},
       description = "name of an instance")
@@ -112,30 +134,34 @@ public class ActionRegistryArgs extends AbstractActionArgs {
   @Parameter(names = {ARG_INTERNAL},
       description = "fetch internal registry entries")
   public boolean internal;
-  
+
+  @Parameter(names = {ARG_USER},
+      description = "the name of the user whose application is being resolved")
+  public String user;
+
   /**
    * validate health of all the different operations
    * @throws BadCommandArgumentsException
    */
   @Override
-  public void validate() throws BadCommandArgumentsException {
+  public void validate() throws BadCommandArgumentsException, UsageException {
     super.validate();
 
     //verify that at most one of the operations is set
-    int gets = s(getConf) + s(getFiles);
-    int lists = s(list) + s(listConf) + s(listFiles);
+    int gets = s(getConf) + s(getFiles) + s(getExport);
+    int lists = s(list) + s(listConf) + s(listFiles) + s(listExports);
     int set = lists + gets;
     if (set > 1) {
-      throw new BadCommandArgumentsException(
-          ErrorStrings.ERROR_TOO_MANY_ARGUMENTS);
+      throw new UsageException(USAGE);
     }
-    if (dest != null && (lists > 0 || set == 0)) {
-      throw new BadCommandArgumentsException("Argument " + ARG_DEST
-           + " is only supported on 'get' operations");
+
+    if (out != null && ( set == 0)) {
+      throw new UsageException("output path"
+           + " is only supported on 'get' operations: ");
     }
     if (!list && !is(name)) {
-      throw new BadCommandArgumentsException("Argument " + ARG_NAME
-           +" missing");
+      throw new UsageException("Argument " + ARG_NAME
+           +" missing: ");
 
     }
   }
@@ -182,8 +208,8 @@ public class ActionRegistryArgs extends AbstractActionArgs {
     sb.append(ifdef(ARG_VERBOSE, verbose));
     sb.append(ifdef(ARG_INTERNAL, internal));
 
-    if (dest != null) {
-      sb.append(ifdef(ARG_DEST, dest.toString()));
+    if (out != null) {
+      sb.append(ifdef(ARG_OUTPUT, out.toString()));
     }
     sb.append(ifdef(ARG_FORMAT, format));
 

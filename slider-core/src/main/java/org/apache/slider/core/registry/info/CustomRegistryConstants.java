@@ -24,17 +24,31 @@ package org.apache.slider.core.registry.info;
 public class CustomRegistryConstants {
 
   public static final String MANAGEMENT_REST_API =
-      "org.apache.slider.management";
+      "classpath:org.apache.slider.management";
+  
   public static final String REGISTRY_REST_API =
-      "org.apache.slider.registry";
+      "classpath:org.apache.slider.registry";
   
   public static final String PUBLISHER_REST_API =
-      "org.apache.slider.publisher";
-  
-  public static final String AGENT_REST_API =
-      "org.apache.slider.agents";
+      "classpath:org.apache.slider.publisher";
+
+  public static final String PUBLISHER_CONFIGURATIONS_API =
+      "classpath:org.apache.slider.publisher.configurations";
+
+  public static final String PUBLISHER_EXPORTS_API =
+      "classpath:org.apache.slider.publisher.exports";
+
+  public static final String PUBLISHER_DOCUMENTS_API =
+      "classpath:org.apache.slider.publisher.documents";
+
+  public static final String AGENT_SECURE_REST_API =
+      "classpath:org.apache.slider.agents.secure";
+
+  public static final String AGENT_ONEWAY_REST_API =
+      "classpath:org.apache.slider.agents.oneway";
 
   public static final String AM_IPC_PROTOCOL =
-      "org.apache.slider.appmaster";
+      "classpath:org.apache.slider.appmaster";
 
+  public static final String WEB_UI = "http://";
 }

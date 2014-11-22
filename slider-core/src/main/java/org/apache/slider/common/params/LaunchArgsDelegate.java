@@ -20,6 +20,8 @@ package org.apache.slider.common.params;
 
 import com.beust.jcommander.Parameter;
 
+import java.io.File;
+
 /**
  * Any launch-time args
  */
@@ -36,5 +38,14 @@ public class LaunchArgsDelegate extends WaitArgsDelegate implements
   @Override
   public String getRmAddress() {
     return rmAddress;
+  }
+
+  @Parameter(names = {ARG_OUTPUT, ARG_OUTPUT_SHORT},
+      description = "output file for any application report")
+  public File outputFile;
+
+  @Override
+  public File getOutputFile() {
+    return outputFile;
   }
 }

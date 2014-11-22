@@ -80,11 +80,13 @@ public class ServiceLauncher<S extends Service>
   public static final String ARG_CONF = "--conf";
 
   public static final String USAGE_MESSAGE =
-    "Usage: " + NAME + " classname ["+ARG_CONF + "<conf file>] <service arguments> | ";
+      "Usage: " + NAME + " classname [" + ARG_CONF +
+      "<conf file>] <service arguments> | ";
   static final int SHUTDOWN_TIME_ON_INTERRUPT = 30 * 1000;
 
   private volatile S service;
   private int serviceExitCode;
+  @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
   private final List<IrqHandler> interruptHandlers = new ArrayList<IrqHandler>(1);
   private Configuration configuration;
   private String serviceClassName;
@@ -220,7 +222,7 @@ public class ServiceLauncher<S extends Service>
     Object instance = serviceClass.getConstructor().newInstance();
     if (!(instance instanceof Service)) {
       //not a service
-      throw new ExitUtil.ExitException(EXIT_BAD_CONFIGURATION,
+      throw new ExitUtil.ExitException(EXIT_COMMAND_ARGUMENT_ERROR,
           "Not a Service class: " + serviceClassName);
     }
 
@@ -399,6 +401,8 @@ public class ServiceLauncher<S extends Service>
     Configuration conf = new Configuration();
     String[] processedArgs = extractConfigurationArgs(conf, args);
     ExitUtil.ExitException ee = launchServiceRobustly(conf, processedArgs);
+    System.out.flush();
+    System.err.flush();
     exit(ee);
   }
 

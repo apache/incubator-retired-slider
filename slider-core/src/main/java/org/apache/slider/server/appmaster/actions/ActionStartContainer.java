@@ -25,6 +25,7 @@ import org.apache.slider.server.appmaster.state.AppState;
 import org.apache.slider.server.appmaster.state.RoleInstance;
 
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Start a container
@@ -37,15 +38,16 @@ public class ActionStartContainer extends AsyncAction {
   private final RoleInstance instance;
 
   public ActionStartContainer(String name,
-      long delay,
       Container container,
       ContainerLaunchContext ctx,
-      RoleInstance instance) {
+      RoleInstance instance,
+      long delay, TimeUnit timeUnit) {
     super(
         String.format(Locale.ENGLISH,
             "%s %s: /",
             name , container.getId().toString()), 
-        delay);
+        delay, 
+        timeUnit);
     this.container = container;
     this.ctx = ctx;
     this.instance = instance;

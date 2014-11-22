@@ -19,6 +19,7 @@
 package org.apache.slider.common;
 
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
+import org.apache.hadoop.registry.client.api.RegistryConstants;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 
 /**
@@ -75,7 +76,7 @@ public interface SliderXmlConfKeys {
    * Name of the property for ACLs for Slider AM.
    * {@value}
    */
-  String KEY_PROTOCOL_ACL = "security.slider.protocol.acl";
+  String KEY_PROTOCOL_ACL = "slider.security.protocol.acl";
 
   /**
    * Limit on restarts for the AM
@@ -84,10 +85,10 @@ public interface SliderXmlConfKeys {
   String KEY_AM_RESTART_LIMIT = "slider.yarn.restart.limit";
 
   /**
-   * queue name
+   * queue name, by default let YARN pick the queue
    */
   String KEY_YARN_QUEUE = "slider.yarn.queue";
-  String DEFAULT_YARN_QUEUE = YarnConfiguration.DEFAULT_QUEUE_NAME;
+  String DEFAULT_YARN_QUEUE = null;
 
   /**
    * default priority
@@ -127,7 +128,7 @@ public interface SliderXmlConfKeys {
   /**
    * Default value for the registry: {@value}
    */
-  String DEFAULT_REGISTRY_PATH = "/registry";
+  String DEFAULT_REGISTRY_PATH = RegistryConstants.DEFAULT_ZK_REGISTRY_ROOT;
 
 
   String REGISTRY_ZK_QUORUM = "slider.zookeeper.quorum";
@@ -142,4 +143,22 @@ public interface SliderXmlConfKeys {
       "ipc.client.fallback-to-simple-auth-allowed";
   String HADOOP_HTTP_FILTER_INITIALIZERS =
       "hadoop.http.filter.initializers";
+  String KEY_KEYSTORE_LOCATION = "ssl.server.keystore.location";
+  String KEY_AM_LOGIN_KEYTAB_NAME = "slider.am.login.keytab.name";
+  String KEY_HDFS_KEYTAB_DIR = "slider.hdfs.keytab.dir";
+  String KEY_AM_KEYTAB_LOCAL_PATH = "slider.am.keytab.local.path";
+  String KEY_KEYTAB_PRINCIPAL = "slider.keytab.principal.name";
+  String KEY_SECURITY_ENABLED = "site.global.security_enabled";
+
+  /**
+   * Set to disable server-side checks for python, openssl &c.
+   * This should only be set for testing
+   */
+  String KEY_SLIDER_AM_DEPENDENCY_CHECKS_DISABLED =
+      "slider.am.dependency.checks.disabled";
+
+  /**
+   * The path to the python executable utilized to launch the agent.
+   */
+  String PYTHON_EXECUTABLE_PATH = "agent.python.exec.path";
 }

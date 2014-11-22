@@ -1,0 +1,38 @@
+{
+    "Component": {
+        "HBASE_REGIONSERVER": {
+            "readRequestsCount": {
+                "metric": "regionserver.Server.readRequestCount",
+                "pointInTime": false,
+                "temporal": true
+            },
+            "regions": {
+                "metric": "regionserver.Server.regionCount",
+                "pointInTime": false,
+                "temporal": true
+            },
+            "flushQueueSize": {
+                "metric": "regionserver.Server.flushQueueLength",
+                "pointInTime": false,
+                "temporal": true
+            }
+        },
+        "HBASE_MASTER": {
+            "cluster_requests": {
+                "metric": "master.Server.clusterRequests",
+                "pointInTime": false,
+                "temporal": true
+            },
+            "splitTime_avg_time": {
+                "metric": "master.FileSystem.HlogSplitTime_mean",
+                "pointInTime": false,
+                "temporal": true
+            },
+            "splitSize_avg_time": {
+                "metric": "master.FileSystem.HlogSplitSize_mean",
+                "pointInTime": false,
+                "temporal": true
+            }
+        }
+    }
+}

@@ -1,0 +1,89 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!--
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+-->
+
+<configuration>
+  <property>
+    <name>tserver_heapsize</name>
+    <value>256m</value>
+    <description>TServer heap size.</description>
+  </property>
+  <property>
+    <name>master_heapsize</name>
+    <value>128m</value>
+    <description>Master Heap Size</description>
+  </property>
+  <property>
+    <name>monitor_heapsize</name>
+    <value>64m</value>
+    <description>Monitor Heap Size</description>
+  </property>
+  <property>
+    <name>gc_heapsize</name>
+    <value>64m</value>
+    <description>GC Heap Size</description>
+  </property>
+  <property>
+    <name>other_heapsize</name>
+    <value>128m</value>
+    <description>Other Heap Size</description>
+  </property>
+  <property>
+    <name>hadoop_prefix</name>
+    <value>/usr/lib/hadoop</value>
+    <description>Hadoop directory.</description>
+  </property>
+  <property>
+    <name>hadoop_conf_dir</name>
+    <value>/etc/hadoop/conf</value>
+    <description>Hadoop configuration directory.</description>
+  </property>
+  <property>
+    <name>zookeeper_home</name>
+    <value>/usr/lib/zookeeper</value>
+    <description>Zookeeper directory.</description>
+  </property>
+  <property>
+    <name>accumulo_instance_name</name>
+    <value>accumulo-instance</value>
+    <description>Accumulo Instance Name.</description>
+  </property>
+  <property>
+    <name>content</name>
+    <description>This is the template for a client accumulo-env.sh file</description>
+    <value>
+#! /usr/bin/env bash
+export HADOOP_PREFIX=${@//site/accumulo-env/hadoop_prefix}
+export HADOOP_CONF_DIR=${@//site/accumulo-env/hadoop_conf_dir}
+export JAVA_HOME=${@//site/accumulo-env/java_home}
+export ZOOKEEPER_HOME=${@//site/accumulo-env/zookeeper_home}
+export ACCUMULO_LOG_DIR=$ACCUMULO_HOME/logs
+export ACCUMULO_TSERVER_OPTS="-Xmx${@//site/accumulo-env/tserver_heapsize} -Xms${@//site/accumulo-env/tserver_heapsize}"
+export ACCUMULO_MASTER_OPTS="-Xmx${@//site/accumulo-env/master_heapsize} -Xms${@//site/accumulo-env/master_heapsize}"
+export ACCUMULO_MONITOR_OPTS="-Xmx${@//site/accumulo-env/monitor_heapsize} -Xms${@//site/accumulo-env/monitor_heapsize}"
+export ACCUMULO_GC_OPTS="-Xmx${@//site/accumulo-env/gc_heapsize} -Xms${@//site/accumulo-env/gc_heapsize}"
+export ACCUMULO_GENERAL_OPTS="-XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=75 -Djava.net.preferIPv4Stack=true"
+export ACCUMULO_OTHER_OPTS="-Xmx${@//site/accumulo-env/other_heapsize} -Xms${@//site/accumulo-env/other_heapsize}"
+# what do when the JVM runs out of heap memory
+export ACCUMULO_KILL_CMD='kill -9 %p'
+    </value>
+  </property>
+</configuration>

@@ -23,14 +23,18 @@ import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.ContainerId
 import org.apache.slider.api.ResourceKeys
 import org.apache.slider.core.conf.AggregateConf
-import org.apache.slider.core.conf.MapOperations
 import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.exceptions.TriggerClusterTeardownException
 import org.apache.slider.server.appmaster.actions.ResetFailureWindow
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.model.mock.MockYarnEngine
-import org.apache.slider.server.appmaster.state.*
+import org.apache.slider.server.appmaster.state.AppState
+import org.apache.slider.server.appmaster.state.NodeEntry
+import org.apache.slider.server.appmaster.state.NodeInstance
+import org.apache.slider.server.appmaster.state.RoleHistory
+import org.apache.slider.server.appmaster.state.RoleInstance
+import org.apache.slider.server.appmaster.state.RoleStatus
 import org.junit.Test
 
 /**

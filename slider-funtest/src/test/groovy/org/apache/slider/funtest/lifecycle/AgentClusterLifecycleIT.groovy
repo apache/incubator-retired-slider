@@ -20,6 +20,7 @@ package org.apache.slider.funtest.lifecycle
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.StatusKeys
 import org.apache.slider.client.SliderClient
@@ -40,7 +41,7 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
   implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
 
-  static String CLUSTER = "test_agent_cluster_lifecycle"
+  static String CLUSTER = "test-agent-cluster-lifecycle"
 
   static String APP_RESOURCE2 = "../slider-core/src/test/app_packages/test_command_log/resources_no_role.json"
 
@@ -48,7 +49,6 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
   @Before
   public void prepareCluster() {
     setupCluster(CLUSTER)
-    describe("Create a 0-role cluster, so testing AM start/stop")
   }
 
   @After
@@ -61,21 +61,26 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
 
     describe "Walk a 0-role cluster through its lifecycle"
 
+    // sanity check to verify the config is correct
+    assert clusterFS.uri.scheme != "file"
 
     def clusterpath = buildClusterPath(CLUSTER)
     assert !clusterFS.exists(clusterpath)
 
-    SliderShell shell = slider(EXIT_SUCCESS,
-        [
-            ACTION_CREATE, CLUSTER,
-            ARG_IMAGE, agentTarballPath.toString(),
-            ARG_TEMPLATE, APP_TEMPLATE,
-            ARG_RESOURCES, APP_RESOURCE2
-        ])
+    File launchReportFile = createTempJsonFile();
+    SliderShell shell = createTemplatedSliderApplication(CLUSTER,
+        APP_TEMPLATE,
+        APP_RESOURCE2,
+        [],
+        launchReportFile)
 
     logShell(shell)
+    assert launchReportFile.exists()
+    assert launchReportFile.size() > 0
+    def launchReport = maybeLoadAppReport(launchReportFile)
+    assert launchReport;
 
-    ensureApplicationIsUp(CLUSTER)
+    def appId = ensureYarnApplicationIsUp(launchReportFile)
 
     //at this point the cluster should exist.
     assertPathExists(clusterFS, "Cluster parent directory does not exist", clusterpath.parent)
@@ -88,14 +93,20 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
     //destroy will fail in use
     destroy(EXIT_APPLICATION_IN_USE, CLUSTER)
 
-    //thaw will fail as cluster is in use
+    //start will fail as cluster is in use
     thaw(EXIT_APPLICATION_IN_USE, CLUSTER)
 
     //it's still there
     exists(0, CLUSTER)
 
     //listing the cluster will succeed
-    list(0, CLUSTER)
+    list(0, [CLUSTER])
+
+    list(0, [""])
+    list(0, [CLUSTER, ARG_LIVE])
+    list(0, [CLUSTER, ARG_STATE, "running"])
+    list(0, [ARG_LIVE])
+    list(0, [ARG_STATE, "running"])
 
     //simple status
     status(0, CLUSTER)
@@ -105,7 +116,7 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
     try {
       slider(0,
           [
-              SliderActions.ACTION_STATUS, CLUSTER,
+              ACTION_STATUS, CLUSTER,
               ARG_OUTPUT, jsonStatus.canonicalPath
           ])
 
@@ -116,8 +127,6 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
 
       log.info(cd.toJsonString())
 
-      getConf(0, CLUSTER)
-
       //get a slider client against the cluster
       SliderClient sliderClient = bondToCluster(SLIDER_CONFIG, CLUSTER)
       ClusterDescription cd2 = sliderClient.clusterDescription
@@ -125,25 +134,49 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
 
       log.info("Connected via Client {}", sliderClient.toString())
 
-      //freeze
+      //stop
       freeze(0, CLUSTER, [
           ARG_WAIT, Integer.toString(FREEZE_WAIT_TIME),
           ARG_MESSAGE, "freeze-in-test-cluster-lifecycle"
       ])
       describe " >>> Cluster is now frozen."
+      
+      // should be in finished state, as this was a clean shutdown
+      assertInYarnState(appId, YarnApplicationState.FINISHED)
 
       //cluster exists if you don't want it to be live
       exists(0, CLUSTER, false)
       //condition returns false if it is required to be live
       exists(EXIT_FALSE, CLUSTER, true)
 
-      //thaw then freeze the cluster
+      list( 0, [CLUSTER])
+      list( 0, [CLUSTER, ARG_STATE, "FINISHED"])
+      list(-1, [CLUSTER, ARG_LIVE])
+      list(-1, [CLUSTER, ARG_STATE, "running"])
+
+      list(-1, [ARG_LIVE])
+      list(-1, [ARG_STATE, "running"])
+      list( 0, [ARG_STATE, "FINISHED"])
+
+      def thawReport = createTempJsonFile()
+      //start then stop the cluster
       thaw(CLUSTER,
           [
               ARG_WAIT, Integer.toString(THAW_WAIT_TIME),
+              ARG_OUTPUT, thawReport.absolutePath,
           ])
+      def thawedAppId = ensureYarnApplicationIsUp(thawReport)
+     
+
+      assertAppRunning(thawedAppId)
+
       exists(0, CLUSTER)
       describe " >>> Cluster is now thawed."
+      list(0, [CLUSTER, ARG_LIVE])
+      list(0, [CLUSTER, ARG_STATE, "running"])
+      list(0, [ARG_LIVE])
+      list(0, [ARG_STATE, "running"])
+      list(0, [CLUSTER, ARG_STATE, "FINISHED"])
 
       freeze(0, CLUSTER,
           [
@@ -152,28 +185,35 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
               ARG_MESSAGE, "forced-freeze-in-test"
           ])
 
-      describe " >>> Cluster is now frozen - 2nd time."
+      describe " >>> Cluster is now force frozen - 2nd time."
 
+      // new instance should be in killed state
+      assertInYarnState(thawedAppId, YarnApplicationState.KILLED)
       //cluster is no longer live
       exists(0, CLUSTER, false)
 
       //condition returns false if it is required to be live
       exists(EXIT_FALSE, CLUSTER, true)
 
-      //thaw with a restart count set to enable restart
+      //start with a restart count set to enable restart
       describe "the kill/restart phase may fail if yarn.resourcemanager.am.max-attempts is too low"
+
+      def thawReport2 = createTempJsonFile()
+      //start then stop the cluster
       thaw(CLUSTER,
           [
               ARG_WAIT, Integer.toString(THAW_WAIT_TIME),
-              ARG_DEFINE, SliderXmlConfKeys.KEY_AM_RESTART_LIMIT + "=3"
+              ARG_DEFINE, SliderXmlConfKeys.KEY_AM_RESTART_LIMIT + "=3",
+              ARG_OUTPUT, thawReport2.absolutePath
           ])
-
+      def thawedAppId2 = ensureYarnApplicationIsUp(thawReport2)
       describe " >>> Cluster is now thawed - 2nd time."
 
-      ClusterDescription status = killAmAndWaitForRestart(sliderClient, CLUSTER)
 
       describe " >>> Kill AM and wait for restart."
+      ClusterDescription status = killAmAndWaitForRestart(sliderClient, CLUSTER)
 
+      assertAppRunning(thawedAppId2)
       def restarted = status.getInfo(
           StatusKeys.INFO_CONTAINERS_AM_RESTART)
       assert restarted != null
@@ -185,10 +225,14 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
               ARG_MESSAGE, "final-shutdown"
           ])
 
+      list(0, [CLUSTER, "--verbose", "--state", "FINISHED"]).dumpOutput()
+      
       destroy(0, CLUSTER)
 
       //cluster now missing
       exists(EXIT_UNKNOWN_INSTANCE, CLUSTER)
+      list(0, [])
+      list(EXIT_UNKNOWN_INSTANCE, [CLUSTER])
 
     } finally {
       jsonStatus.delete()

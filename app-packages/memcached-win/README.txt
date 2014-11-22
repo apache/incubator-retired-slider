@@ -30,7 +30,6 @@ Create a zip package at the root of the package (<slider enlistment>/app-package
 Verify the content using  
   unzip -l "$@" jmemcached-1.0.0.zip
 
-While appConfig.json and resources.json are not required for the package they work
-well as the default configuration for Slider apps. So its advisable that when you
-create an application package for Slider, include sample/default resources.json and
-appConfig.json for a minimal Yarn cluster.
+appConfig-default.json and resources-default.json are not required to be packaged.
+These files are included as reference configuration for Slider apps and are suitable
+for a one-node cluster.

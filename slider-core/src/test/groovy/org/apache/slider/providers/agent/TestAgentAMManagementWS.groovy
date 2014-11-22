@@ -22,11 +22,20 @@ import com.sun.jersey.api.client.Client
 import com.sun.jersey.api.client.WebResource
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.fs.Path
+import org.apache.hadoop.yarn.conf.YarnConfiguration
+import org.apache.hadoop.yarn.exceptions.YarnException
 import org.apache.slider.api.StatusKeys
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderKeys
+import org.apache.slider.common.SliderXmlConfKeys
+import org.apache.slider.core.build.InstanceBuilder
+import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.conf.MapOperations
+import org.apache.slider.core.exceptions.SliderException
+import org.apache.slider.core.launch.LaunchedApplication
 import org.apache.slider.core.main.ServiceLauncher
+import org.apache.slider.core.persist.LockAcquireFailedException
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationResponse
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationStatus
 import org.apache.slider.server.services.security.CertificateManager
@@ -49,6 +58,7 @@ import static org.apache.slider.providers.agent.AgentTestUtils.createTestClient
 @CompileStatic
 @Slf4j
 class TestAgentAMManagementWS extends AgentTestBase {
+  private static String password;
 
   public static final String AGENT_URI = "ws/v1/slider/agents/";
     final static Logger logger = LoggerFactory.getLogger(TestAgentAMManagementWS.class)
@@ -82,12 +92,12 @@ class TestAgentAMManagementWS extends AgentTestBase {
     void setup() {
         super.setup()
         MapOperations compOperations = new MapOperations();
-        compOperations.put(SliderKeys.KEYSTORE_LOCATION, "/tmp/work/security/keystore.p12");
-        SecurityUtils.initializeSecurityParameters(compOperations);
+        compOperations.put(SliderXmlConfKeys.KEY_KEYSTORE_LOCATION, "/tmp/work/security/keystore.p12");
+        SecurityUtils.initializeSecurityParameters(compOperations, true);
         CertificateManager certificateManager = new CertificateManager();
-        certificateManager.initRootCert(compOperations);
+        certificateManager.initialize(compOperations);
         String keystoreFile = SecurityUtils.getSecurityDir() + File.separator + SliderKeys.KEYSTORE_FILE_NAME;
-        String password = SecurityUtils.getKeystorePass();
+        password = SecurityUtils.getKeystorePass();
         System.setProperty("javax.net.ssl.trustStore", keystoreFile);
         System.setProperty("javax.net.ssl.trustStorePassword", password);
         System.setProperty("javax.net.ssl.trustStoreType", "PKCS12");
@@ -113,54 +123,91 @@ class TestAgentAMManagementWS extends AgentTestBase {
     assert app_def_path.exists()
     assert agt_ver_path.exists()
     assert agt_conf_path.exists()
-    ServiceLauncher<SliderClient> launcher = buildAgentCluster(clustername,
-        roles,
-        [
-            ARG_OPTION, PACKAGE_PATH, slider_core.absolutePath,
-            ARG_OPTION, APP_DEF, "file://" + app_def_path.absolutePath,
-            ARG_OPTION, AGENT_CONF, "file://" + agt_conf_path.absolutePath,
-            ARG_OPTION, AGENT_VERSION, "file://" + agt_ver_path.absolutePath,
-        ],
-        true, true,
-        true)
-    SliderClient sliderClient = launcher.service
-    def report = waitForClusterLive(sliderClient)
-    def trackingUrl = report.trackingUrl
-    log.info("tracking URL is $trackingUrl")
-    def agent_url = trackingUrl + AGENT_URI
+    try {
+        sliderClientClassName = TestSliderClient.name
+        ServiceLauncher<SliderClient> launcher = buildAgentCluster(clustername,
+            roles,
+            [
+                ARG_OPTION, PACKAGE_PATH, slider_core.absolutePath,
+                ARG_OPTION, APP_DEF, toURIArg(app_def_path),
+                ARG_OPTION, AGENT_CONF, toURIArg(agt_conf_path),
+                ARG_OPTION, AGENT_VERSION, toURIArg(agt_ver_path),
+            ],
+            true, true,
+            true)
+        SliderClient sliderClient = launcher.service
+        def report = waitForClusterLive(sliderClient)
+        def trackingUrl = report.trackingUrl
+        log.info("tracking URL is $trackingUrl")
+        def agent_url = trackingUrl + AGENT_URI
 
-    
-    def status = dumpClusterStatus(sliderClient, "agent AM")
-    def liveURL = status.getInfo(StatusKeys.INFO_AM_AGENT_URL)
-    if (liveURL) {
-      agent_url = liveURL + AGENT_URI
+
+        def status = dumpClusterStatus(sliderClient, "agent AM")
+        def liveURL = status.getInfo(StatusKeys.INFO_AM_AGENT_OPS_URL)
+        if (liveURL) {
+          agent_url = liveURL + AGENT_URI
+        }
+
+        log.info("Agent  is $agent_url")
+        log.info("stacks is ${liveURL}stacks")
+        log.info("conf   is ${liveURL}conf")
+
+
+        def sleeptime = 10
+        log.info "sleeping for $sleeptime seconds"
+        Thread.sleep(sleeptime * 1000)
+
+
+        String page = fetchWebPageWithoutError(agent_url);
+        log.info(page);
+
+        //WS get
+        Client client = createTestClient();
+
+
+        WebResource webResource = client.resource(agent_url + "test/register");
+        RegistrationResponse response = webResource.type(MediaType.APPLICATION_JSON)
+                              .post(
+            RegistrationResponse.class,
+            createDummyJSONRegister());
+
+        //TODO: assert failure as actual agent is not started. This test only starts the AM.
+        assert RegistrationStatus.FAILED == response.getResponseStatus();
+    } finally {
+      sliderClientClassName = DEFAULT_SLIDER_CLIENT
     }
     
-    log.info("Agent  is $agent_url")
-    log.info("stacks is ${liveURL}stacks")
-    log.info("conf   is ${liveURL}conf")
-
-
-    def sleeptime = 10
-    log.info "sleeping for $sleeptime seconds"
-    Thread.sleep(sleeptime * 1000)
-    
-
-    String page = fetchWebPageWithoutError(agent_url);
-    log.info(page);
-    
-    //WS get
-    Client client = createTestClient();
-
-
-    WebResource webResource = client.resource(agent_url + "test/register");
-    RegistrationResponse response = webResource.type(MediaType.APPLICATION_JSON)
-                          .post(
-        RegistrationResponse.class,
-        createDummyJSONRegister());
-
-    //TODO: assert failure as actual agent is not started. This test only starts the AM.
-    assert RegistrationStatus.FAILED == response.getResponseStatus();
-    
   }
+
+  static class TestSliderClient extends SliderClient {
+      @Override
+      protected void persistInstanceDefinition(boolean overwrite,
+                                               Path appconfdir,
+                                               InstanceBuilder builder)
+      throws IOException, SliderException, LockAcquireFailedException {
+          AggregateConf conf = builder.getInstanceDescription()
+          MapOperations component = conf.getAppConfOperations().getComponent("slider-appmaster")
+          component.put(
+                  "ssl.server.keystore.location",
+                  "/tmp/work/security/keystore.p12")
+          component.put("ssl.server.keystore.password", password)
+          super.persistInstanceDefinition(overwrite, appconfdir, builder)
+      }
+
+      @Override
+      LaunchedApplication launchApplication(String clustername,
+                                            Path clusterDirectory,
+                                            AggregateConf instanceDefinition,
+                                            boolean debugAM)
+      throws YarnException, IOException {
+        MapOperations component = instanceDefinition.getAppConfOperations().getComponent("slider-appmaster")
+        component.put(
+                  "ssl.server.keystore.location",
+                  "/tmp/work/security/keystore.p12")
+        component.put("ssl.server.keystore.password", password)
+        return super.launchApplication(clustername, clusterDirectory, instanceDefinition, debugAM)
+      }
+  }
+
+
 }

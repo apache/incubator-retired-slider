@@ -65,10 +65,21 @@ public interface ResourceKeys {
    *  {@value}
    */
   String YARN_CORES = "yarn.vcores";
-  
+
   /** {@value} */
   int DEF_YARN_CORES = 1;
-  
+
+
+  /**
+   * Label expression that this container must satisfy
+   *  {@value}
+   */
+  String YARN_LABEL_EXPRESSION = "yarn.label.expression";
+
+  /** {@value} */
+  String DEF_YARN_LABEL_EXPRESSION = null;
+
+
   /**
    * Constant to indicate that the requirements of a YARN resource limit
    * (cores, memory, ...) should be set to the maximum allowed by
@@ -90,19 +101,6 @@ public interface ResourceKeys {
   String COMPONENT_PLACEMENT_POLICY = "yarn.component.placement.policy";
 
   
-
-  /**
-   * Time in seconds before a container is considered long-lived.
-   * Shortlived containers are interpreted as a problem with the role
-   * and/or the host: {@value}
-   */
-  String CONTAINER_FAILURE_SHORTLIFE =
-      "container.failure.shortlife";
-
-  /**
-   * Default short life threshold: {@value}
-   */
-  int DEFAULT_CONTAINER_FAILURE_SHORTLIFE = 60;
 
   /**
    * maximum number of failed containers (in a single role)
@@ -131,4 +129,9 @@ public interface ResourceKeys {
    */
   int DEFAULT_CONTAINER_FAILURE_THRESHOLD = 5;
 
+  /**
+   * Log aggregation include, exclude patterns
+   */
+  String YARN_LOG_INCLUDE_PATTERNS = "yarn.log.include.patterns";
+  String YARN_LOG_EXCLUDE_PATTERNS = "yarn.log.exclude.patterns";
 }

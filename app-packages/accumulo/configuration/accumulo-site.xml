@@ -28,17 +28,6 @@
   </property>
 
   <property>
-    <name>instance.secret</name>
-    <value>DEFAULT</value>
-    <description>A secret unique to a given instance that all servers
-      must know in order to communicate with one another.
-      Change it before initialization. To
-      change it later use ./bin/accumulo org.apache.accumulo.server.util.ChangeSecret --old [oldpasswd] --new [newpasswd],
-      and then update this file.
-    </description>
-  </property>
-
-  <property>
     <name>tserver.memory.maps.max</name>
     <value>80M</value>
   </property>
@@ -54,12 +43,6 @@
   </property>
 
   <property>
-    <name>trace.token.property.password</name>
-    <!-- change this to the root user's password, and/or change the user below -->
-    <value>secret</value>
-  </property>
-
-  <property>
     <name>trace.user</name>
     <value>root</value>
   </property>
@@ -71,7 +54,7 @@
 
   <property>
     <name>tserver.walog.max.size</name>
-    <value>100M</value>
+    <value>40M</value>
   </property>
 
   <property>

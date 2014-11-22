@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -50,6 +51,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Key Features:
  * <ol>
  *   <li>Output is streamed to the output logger provided</li>.
+ *   <li>the input stream is closed as soon as the process starts.</li>
  *   <li>The most recent lines of output are saved to a linked list</li>.
  *   <li>A synchronous callback, {@link LongLivedProcessLifecycleEvent}, is raised on the start
  *   and finish of a process.</li>
@@ -90,7 +92,7 @@ public class LongLivedProcess implements Runnable {
    * Log supplied in the constructor for the spawned process -accessible
    * to inner classes
    */
-  private final Logger processLog;
+  private Logger processLog;
   
   /**
    * Class log -accessible to inner classes
@@ -102,10 +104,15 @@ public class LongLivedProcess implements Runnable {
    */
   private final AtomicBoolean finished = new AtomicBoolean(false);
 
+  /**
+   * Create an instance
+   * @param name process name
+   * @param processLog log for output (or null)
+   * @param commands command list
+   */
   public LongLivedProcess(String name,
       Logger processLog,
       List<String> commands) {
-    Preconditions.checkArgument(processLog != null, "processLog");
     Preconditions.checkArgument(commands != null, "commands");
 
     this.name = name;
@@ -165,6 +172,14 @@ public class LongLivedProcess implements Runnable {
    */
   public String getEnv(String variable) {
     return processBuilder.environment().get(variable);
+  }
+
+  /**
+   * Set the process log. Ignored once the process starts
+   * @param processLog new log ... may be null
+   */
+  public void setProcessLog(Logger processLog) {
+    this.processLog = processLog;
   }
 
   /**
@@ -270,7 +285,8 @@ public class LongLivedProcess implements Runnable {
   /**
    * Exec the process
    * @return the process
-   * @throws IOException
+   * @throws IOException on aany failure to start the process
+   * @throws FileNotFoundException if the process could not be found
    */
   private Process spawnChildProcess() throws IOException {
     if (process != null) {
@@ -279,7 +295,20 @@ public class LongLivedProcess implements Runnable {
     if (LOG.isDebugEnabled()) {
       LOG.debug("Spawning process:\n " + describeBuilder());
     }
-    process = processBuilder.start();
+    try {
+      process = processBuilder.start();
+    } catch (IOException e) {
+      // on windows, upconvert DOS error 2 from ::CreateProcess()
+      // to its real meaning: FileNotFound
+      if (e.toString().contains("CreateProcess error=2")) {
+        FileNotFoundException fnfe =
+            new FileNotFoundException(e.toString());
+        fnfe.initCause(e);
+        throw fnfe;
+      } else {
+        throw e;
+      }
+    }
     return process;
   }
 
@@ -295,6 +324,8 @@ public class LongLivedProcess implements Runnable {
       lifecycleCallback.onProcessStarted(this);
     }
     try {
+      //close stdin for the process
+      IOUtils.closeStream(process.getOutputStream());
       exitCode = process.waitFor();
     } catch (InterruptedException e) {
       LOG.debug("Process wait interrupted -exiting thread", e);
@@ -388,6 +419,7 @@ public class LongLivedProcess implements Runnable {
     }
     return getRecentOutput();
   }
+
   /**
    * add the recent line to the list of recent lines; deleting
    * an earlier on if the limit is reached.
@@ -398,10 +430,11 @@ public class LongLivedProcess implements Runnable {
    * something that is only called once per line of IO?
    * @param line line to record
    * @param isErrorStream is the line from the error stream
-   * @param logger logger to log to
+   * @param logger logger to log to - null for no logging
    */
   private synchronized void recordRecentLine(String line,
-      boolean isErrorStream, Logger logger) {
+      boolean isErrorStream,
+      Logger logger) {
     if (line == null) {
       return;
     }
@@ -410,10 +443,12 @@ public class LongLivedProcess implements Runnable {
     if (recentLines.size() > recentLineLimit) {
       recentLines.remove(0);
     }
-    if (isErrorStream) {
-      logger.warn(line);
-    } else {
-      logger.info(line);
+    if (logger != null) {
+      if (isErrorStream) {
+        logger.warn(line);
+      } else {
+        logger.info(line);
+      }
     }
   }
 
@@ -428,6 +463,12 @@ public class LongLivedProcess implements Runnable {
     private final Logger streamLog;
     private final int sleepTime;
 
+    /**
+     * Create an instance
+     * @param streamLog log -or null to disable logging (recent entries
+     * will still be retained)
+     * @param sleepTime time to sleep when stopping
+     */
     private ProcessStreamReader(Logger streamLog, int sleepTime) {
       this.streamLog = streamLog;
       this.sleepTime = sleepTime;

@@ -74,7 +74,8 @@ class TestCommonArgParsing implements SliderActions, Arguments {
 
   @Test
   public void testSliderBasePath() throws Throwable {
-    ClientArgs clientArgs = createClientArgs([ACTION_LIST, "--basepath", "/projects/slider/clusters"])
+    ClientArgs clientArgs = createClientArgs([ACTION_LIST,
+        ARG_BASE_PATH,  "/projects/slider/clusters"])
     assert clientArgs.basePath == new Path("/projects/slider/clusters")
   }
 
@@ -154,7 +155,7 @@ class TestCommonArgParsing implements SliderActions, Arguments {
   }
 
   /**
-   * Test a thaw command
+   * Test a start command
    * @throws Throwable
    */
   @Test
@@ -231,37 +232,6 @@ class TestCommonArgParsing implements SliderActions, Arguments {
     ActionFreezeArgs freezeArgs = (ActionFreezeArgs) ca.coreAction;
     assert freezeArgs.message == "explanation"
     assert freezeArgs.force;
-  }
-
-  @Test
-  public void testGetConfFailsNoArg() throws Throwable {
-    assertParseFails([
-        ACTION_GETCONF,
-    ])
-  }
-
-  @Test
-  public void testGetConfWorks1Arg() throws Throwable {
-    ClientArgs ca = createClientArgs([
-        ACTION_GETCONF,
-        CLUSTERNAME,
-    ])
-    assert ca.clusterName == CLUSTERNAME
-    assert ca.coreAction instanceof ActionGetConfArgs
-  }
-  
-  @Test
-  public void testGetConfWorksOut() throws Throwable {
-    ClientArgs ca = createClientArgs([
-        ACTION_GETCONF,
-        CLUSTERNAME,
-        ARG_FORMAT,"xml",
-        ARG_OUTPUT,"file.xml"
-    ])
-    assert ca.clusterName == CLUSTERNAME
-    assert ca.coreAction instanceof ActionGetConfArgs
-    assert ca.actionGetConfArgs.format == "xml"
-    assert ca.actionGetConfArgs.output == "file.xml"
   }
 
   @Test

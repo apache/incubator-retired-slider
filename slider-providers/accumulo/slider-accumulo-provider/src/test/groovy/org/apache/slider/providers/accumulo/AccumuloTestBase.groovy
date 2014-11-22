@@ -27,6 +27,7 @@ import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.ResourceKeys
 import org.apache.slider.client.SliderClient
 import org.apache.slider.test.YarnZKMiniClusterTestBase
+import org.junit.internal.AssumptionViolatedException
 
 import static org.apache.slider.common.SliderXMLConfKeysForTesting.*
 import static org.apache.slider.providers.accumulo.AccumuloKeys.*
@@ -70,8 +71,12 @@ public abstract class AccumuloTestBase extends YarnZKMiniClusterTestBase {
   @Override
   void teardown() {
     super.teardown();
-    if (teardownKillall) {
-      killAllAccumuloProcesses();
+    if (teardownKillall && kill_supported) {
+      try {
+        killAllAccumuloProcesses();
+      } catch (AssumptionViolatedException e) {
+        log.info e.toString();
+      }
     }
   }
 
@@ -223,9 +228,7 @@ public abstract class AccumuloTestBase extends YarnZKMiniClusterTestBase {
         //now flex
         describe(
             "Flexing " + roleMapToString(flexTarget));
-        boolean flexed = 0 == sliderClient.flex(clustername,
-            flexTarget
-        );
+        sliderClient.flex(clustername, flexTarget);
         cd = waitForRoleCount(sliderClient, flexTarget,
             accumulo_cluster_startup_to_live_time);
 

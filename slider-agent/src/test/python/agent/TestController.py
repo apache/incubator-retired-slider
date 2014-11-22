@@ -25,12 +25,14 @@ import unittest, threading
 from agent import Controller, ActionQueue
 from agent import hostname
 import sys
+import time
 from Controller import AGENT_AUTO_RESTART_EXIT_CODE
 from Controller import State
 from AgentConfig import AgentConfig
 from mock.mock import patch, MagicMock, call, Mock
 import logging
 from threading import Event
+from AgentToggleLogger import AgentToggleLogger
 
 class TestController(unittest.TestCase):
 
@@ -55,7 +57,8 @@ class TestController(unittest.TestCase):
     self.controller = Controller.Controller(config)
     self.controller.netutil.MINIMUM_INTERVAL_BETWEEN_HEARTBEATS = 0.1
     self.controller.netutil.HEARTBEAT_NOT_IDDLE_INTERVAL_SEC = 0.1
-    self.controller.actionQueue = ActionQueue.ActionQueue(config, self.controller)
+    self.agentToggleLogger = AgentToggleLogger("info")
+    self.controller.actionQueue = ActionQueue.ActionQueue(config, self.controller, self.agentToggleLogger)
 
 
   @patch("json.dumps")
@@ -255,6 +258,68 @@ class TestController(unittest.TestCase):
     self.assertTrue(os_exit_mock.call_args[0][0] == AGENT_AUTO_RESTART_EXIT_CODE)
 
 
+  @patch("time.time")
+  def test_failure_window(self, mock_time):
+    config = AgentConfig("", "")
+    original_config = config.get(AgentConfig.COMMAND_SECTION, AgentConfig.AUTO_RESTART)
+    config.set(AgentConfig.COMMAND_SECTION, AgentConfig.AUTO_RESTART, '2,1')
+    ## The behavior of side_effect is different when you run tests in command line and when you do it through IDE
+    ## So few extra items are there in the list
+    mock_time.side_effect = [200, 500, 500]
+    controller5 = Controller.Controller(config)
+
+    try:
+      self.assertTrue(controller5.shouldAutoRestart())
+      self.assertTrue(controller5.shouldAutoRestart())
+    finally:
+      config.set(AgentConfig.COMMAND_SECTION, AgentConfig.AUTO_RESTART, original_config)
+
+
+  @patch("time.time")
+  def test_failure_window(self, mock_time):
+    config = AgentConfig("", "")
+    original_config = config.get(AgentConfig.COMMAND_SECTION, AgentConfig.AUTO_RESTART)
+    config.set(AgentConfig.COMMAND_SECTION, AgentConfig.AUTO_RESTART, '3,1')
+    ## The behavior of side_effect is different when you run tests in command line and when you do it through IDE
+    ## So few extra items are there in the list
+    mock_time.side_effect = [200, 210, 220, 230, 240, 250]
+    controller5 = Controller.Controller(config)
+
+    try:
+      self.assertTrue(controller5.shouldAutoRestart())
+      self.assertTrue(controller5.shouldAutoRestart())
+      self.assertTrue(controller5.shouldAutoRestart())
+      self.assertFalse(controller5.shouldAutoRestart())
+    finally:
+      config.set(AgentConfig.COMMAND_SECTION, AgentConfig.AUTO_RESTART, original_config)
+
+
+  def test_failure_window2(self):
+    config = MagicMock()
+    config.getErrorWindow.return_value = (0, 0)
+    controller = Controller.Controller(config)
+
+    self.assertTrue(controller.shouldAutoRestart())
+
+    config.getErrorWindow.return_value = (0, 1)
+    self.assertTrue(controller.shouldAutoRestart())
+
+    config.getErrorWindow.return_value = (1, 0)
+    self.assertTrue(controller.shouldAutoRestart())
+
+    config.getErrorWindow.return_value = (-1, -1)
+    self.assertTrue(controller.shouldAutoRestart())
+
+    config.getErrorWindow.return_value = (1, 1)
+    self.assertTrue(controller.shouldAutoRestart())
+
+    #second failure within a minute
+    self.assertFalse(controller.shouldAutoRestart())
+
+    #do not reset unless window expires
+    self.assertFalse(controller.shouldAutoRestart())
+
+
   @patch("urllib2.urlopen")
   def test_sendRequest(self, requestMock):
 
@@ -325,7 +390,7 @@ class TestController(unittest.TestCase):
     self.assertEqual(1, self.controller.DEBUG_SUCCESSFULL_HEARTBEATS)
 
     # retry registration
-    response["registrationCommand"] = "true"
+    response["registrationCommand"] = {"command": "register"}
     sendRequest.side_effect = one_heartbeat
     self.controller.DEBUG_STOP_HEARTBEATING = False
     self.controller.heartbeatWithServer()
@@ -333,7 +398,7 @@ class TestController(unittest.TestCase):
     self.assertTrue(self.controller.repeatRegistration)
 
     # components are not mapped
-    response["registrationCommand"] = "false"
+    response["registrationCommand"] = {"command": "register"}
     response["hasMappedComponents"] = False
     sendRequest.side_effect = one_heartbeat
     self.controller.DEBUG_STOP_HEARTBEATING = False
@@ -358,7 +423,7 @@ class TestController(unittest.TestCase):
     self.assertTrue(self.controller.hasMappedComponents)
 
     # wrong responseId => restart
-    response = {"responseId":"2", "restartAgent":"false"}
+    response = {"responseId":"2", "restartAgent": False}
     loadsMock.return_value = response
 
     restartAgent = MagicMock(name="restartAgent")
@@ -384,7 +449,7 @@ class TestController(unittest.TestCase):
 
     # just status command when state = STARTED
     self.controller.responseId = 1
-    response = {"responseId":"2", "restartAgent":"false"}
+    response = {"responseId":"2", "restartAgent": False}
     loadsMock.return_value = response
     addToQueue = MagicMock(name="addToQueue")
     self.controller.addToQueue = addToQueue
@@ -398,7 +463,7 @@ class TestController(unittest.TestCase):
 
     # just status command when state = FAILED
     self.controller.responseId = 1
-    response = {"responseId":"2", "restartAgent":"false"}
+    response = {"responseId":"2", "restartAgent": False}
     loadsMock.return_value = response
     addToQueue = MagicMock(name="addToQueue")
     self.controller.addToQueue = addToQueue
@@ -412,7 +477,7 @@ class TestController(unittest.TestCase):
 
     # no status command when state = STARTING
     self.controller.responseId = 1
-    response = {"responseId":"2", "restartAgent":"false"}
+    response = {"responseId":"2", "restartAgent": False}
     loadsMock.return_value = response
     addToQueue = MagicMock(name="addToQueue")
     self.controller.addToQueue = addToQueue
@@ -434,7 +499,7 @@ class TestController(unittest.TestCase):
     # restartAgent command
     self.controller.responseId = 1
     self.controller.DEBUG_STOP_HEARTBEATING = False
-    response["restartAgent"] = "true"
+    response["restartAgent"] = True
     restartAgent = MagicMock(name="restartAgent")
     self.controller.restartAgent = restartAgent
     self.controller.heartbeatWithServer()
@@ -445,7 +510,7 @@ class TestController(unittest.TestCase):
     self.controller.responseId = 1
     self.controller.DEBUG_STOP_HEARTBEATING = False
     actionQueue.isIdle.return_value = False
-    response["restartAgent"] = "false"
+    response["restartAgent"] = False
     self.controller.heartbeatWithServer()
 
     sleepMock.assert_called_with(
@@ -453,11 +518,138 @@ class TestController(unittest.TestCase):
 
     sys.stdout = sys.__stdout__
     self.controller.sendRequest = Controller.Controller.sendRequest
-    self.controller.sendRequest = Controller.Controller.addToQueue
+    self.controller.addToQueue = Controller.Controller.addToQueue
 
     self.controller.config = original_value
     pass
 
+  @patch.object(threading._Event, "wait")
+  @patch("time.sleep")
+  @patch("json.loads")
+  @patch("json.dumps")
+  def test_heartbeatWithServerTerminateAgent(self, dumpsMock, loadsMock, sleepMock, event_mock):
+    original_value = self.controller.config
+    self.controller.config = AgentConfig("", "")
+    out = StringIO.StringIO()
+    sys.stdout = out
+
+    hearbeat = MagicMock()
+    self.controller.heartbeat = hearbeat
+
+    dumpsMock.return_value = "data"
+
+    sendRequest = MagicMock(name="sendRequest")
+    self.controller.sendRequest = sendRequest
+
+    self.controller.responseId = 1
+    response = {"responseId":"2", "restartAgent": False}
+    loadsMock.return_value = response
+
+    def one_heartbeat(*args, **kwargs):
+      self.controller.DEBUG_STOP_HEARTBEATING = True
+      return "data"
+
+    sendRequest.side_effect = one_heartbeat
+
+    actionQueue = MagicMock()
+    actionQueue.isIdle.return_value = True
+
+    # one successful request, after stop
+    self.controller.actionQueue = actionQueue
+    self.controller.heartbeatWithServer()
+    self.assertTrue(sendRequest.called)
+
+    calls = []
+    def retry(*args, **kwargs):
+      if len(calls) == 0:
+        calls.append(1)
+        response["responseId"] = "3"
+        raise Exception()
+      if len(calls) > 0:
+        self.controller.DEBUG_STOP_HEARTBEATING = True
+      return "data"
+
+    # exception, retry, successful and stop
+    sendRequest.side_effect = retry
+    self.controller.DEBUG_STOP_HEARTBEATING = False
+    self.controller.heartbeatWithServer()
+
+    self.assertEqual(1, self.controller.DEBUG_SUCCESSFULL_HEARTBEATS)
+
+    original_stopApp = self.controller.stopApp
+
+    # terminateAgent command - test 1
+    self.controller.responseId = 1
+    self.controller.DEBUG_STOP_HEARTBEATING = False
+    response = {"responseId":"2", "terminateAgent": True}
+    loadsMock.return_value = response
+    stopApp = MagicMock(name="stopApp")
+    self.controller.stopApp = stopApp
+    self.controller.heartbeatWithServer()
+    stopApp.assert_called_once_with()
+    
+    # reset for next test
+    self.controller.terminateAgent = False
+
+    # terminateAgent command - test 2
+    self.controller.responseId = 1
+    self.controller.DEBUG_STOP_HEARTBEATING = False
+    response = {"responseId":"2", "terminateAgent": True}
+    loadsMock.return_value = response
+    self.controller.stopApp = original_stopApp
+    stopCommand = {"roleCommand": "STOP"}
+    self.controller.stopCommand = stopCommand
+    addToQueue = MagicMock(name="addToQueue")
+    self.controller.addToQueue = addToQueue
+    self.controller.componentActualState = State.STARTED
+    self.controller.heartbeatWithServer()
+    self.assertTrue(self.controller.terminateAgent)
+    self.assertTrue(self.controller.appGracefulStopQueued)
+    addToQueue.assert_has_calls([call([stopCommand])])
+
+    # reset for next test
+    self.controller.terminateAgent = False
+    self.controller.appGracefulStopQueued = False
+
+    # terminateAgent command - test 3
+    self.controller.responseId = 1
+    self.controller.DEBUG_STOP_HEARTBEATING = False
+    # set stopCommand to None and let it get set by updateStateBasedOnCommand
+    self.controller.stopCommand = None
+    # in this heartbeat don't send terminateAgent signal
+    response = {"responseId":"2", "terminateAgent": False}
+    stopCommand = {"roleCommand": "STOP"}
+    response["executionCommands"] = [stopCommand]
+    loadsMock.return_value = response
+    # terminateAgent is False - make STOP in commands set the stopCommand
+    self.controller.heartbeatWithServer()
+    self.assertFalse(self.controller.terminateAgent)
+    assert not self.controller.stopCommand == None
+
+    # now no need to have STOP command in response, just send terminateAgent
+    self.controller.responseId = 2
+    self.controller.DEBUG_STOP_HEARTBEATING = False
+    response = {"responseId":"3", "terminateAgent": True}
+    loadsMock.return_value = response
+    addToQueue = MagicMock(name="addToQueue")
+    self.controller.addToQueue = addToQueue
+    self.controller.stopApp = original_stopApp
+    self.controller.componentActualState = State.STARTED
+    self.controller.heartbeatWithServer()
+    self.assertTrue(self.controller.terminateAgent)
+    self.assertTrue(self.controller.appGracefulStopQueued)
+    addToQueue.assert_has_calls([call([stopCommand])])
+    self.controller.terminateAgent = False
+
+    sleepMock.assert_called_with(
+      self.controller.netutil.MINIMUM_INTERVAL_BETWEEN_HEARTBEATS)
+
+    sys.stdout = sys.__stdout__
+    self.controller.sendRequest = Controller.Controller.sendRequest
+    self.controller.addToQueue = Controller.Controller.addToQueue
+
+    self.controller.config = original_value
+    pass
 
   @patch.object(Controller.Controller, "createStatusCommand")
   def test_updateStateBasedOnResult(self, mock_createStatusCommand):

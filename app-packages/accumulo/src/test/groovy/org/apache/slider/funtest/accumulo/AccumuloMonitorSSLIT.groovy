@@ -20,19 +20,21 @@ package org.apache.slider.funtest.accumulo
 import groovy.util.logging.Slf4j
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.client.SliderClient
-
-import javax.net.ssl.KeyManager
-import javax.net.ssl.SSLContext
-import javax.net.ssl.TrustManager
-import javax.net.ssl.X509TrustManager
-import java.security.SecureRandom
-import java.security.cert.CertificateException
-import java.security.cert.X509Certificate
+import org.apache.slider.core.conf.ConfTree
 
 @Slf4j
-class AccumuloMonitorSSLIT extends AccumuloBasicIT {
-  AccumuloMonitorSSLIT() {
-    APP_TEMPLATE = "target/test-config/appConfig_monitor_ssl.json"
+class AccumuloMonitorSSLIT extends AccumuloSSLTestBase {
+  protected String templateName() {
+    return sysprop("test.app.resources.dir") + "/appConfig_monitor_ssl.json"
+  }
+
+  protected ConfTree modifyTemplate(ConfTree confTree) {
+    confTree.global.put("site.global.monitor_protocol", "https")
+    String jks = confTree.global.get(PROVIDER_PROPERTY)
+    def keys = confTree.credentials.get(jks)
+    keys.add("monitor.ssl.keyStorePassword")
+    keys.add("monitor.ssl.trustStorePassword")
+    return confTree
   }
 
   @Override
@@ -49,25 +51,6 @@ class AccumuloMonitorSSLIT extends AccumuloBasicIT {
   public void clusterLoadOperations(ClusterDescription cd, SliderClient sliderClient) {
     String monitorUrl = getMonitorUrl(sliderClient, getClusterName())
     assert monitorUrl.startsWith("https://"), "Monitor URL didn't have expected protocol"
-
-    SSLContext ctx = SSLContext.getInstance("SSL");
-    TrustManager[] t = new TrustManager[1];
-    t[0] = new DefaultTrustManager();
-    ctx.init(new KeyManager[0], t, new SecureRandom());
-    SSLContext.setDefault(ctx);
     checkMonitorPage(monitorUrl)
-  }
-
-  private static class DefaultTrustManager implements X509TrustManager {
-    @Override
-    public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {}
-
-    @Override
-    public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {}
-
-    @Override
-    public X509Certificate[] getAcceptedIssuers() {
-      return null;
-    }
   }
 }

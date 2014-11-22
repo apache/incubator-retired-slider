@@ -22,6 +22,8 @@ import org.apache.slider.api.StatusKeys;
 import org.apache.slider.providers.PlacementPolicy;
 import org.apache.slider.providers.ProviderRole;
 
+import java.io.Serializable;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,9 +34,7 @@ import java.util.Map;
  */
 public final class RoleStatus implements Cloneable {
 
-
   private final String name;
-
 
   /**
    * Role key in the container details stored in the AM,
@@ -45,8 +45,25 @@ public final class RoleStatus implements Cloneable {
   private final ProviderRole providerRole;
 
   private int desired, actual, requested, releasing;
-  private volatile int failed, started, startFailed, completed, totalRequested;
+  private int failed, started, startFailed, completed, totalRequested;
 
+  /**
+   * value to use when specifiying "no limit" for instances: {@value}
+   */
+  public static final int UNLIMITED_INSTANCES = 1;
+
+  /**
+   * minimum number of instances of a role permitted in a valid
+   * configuration. Default: 0.
+   */
+  private int minimum = 0;
+
+  /**
+   * maximum number of instances of a role permitted in a valid
+   * configuration. Default: unlimited.
+   */
+  private int maximum = UNLIMITED_INSTANCES;
+  
   private String failureMessage = "";
 
   public RoleStatus(ProviderRole providerRole) {
@@ -54,7 +71,7 @@ public final class RoleStatus implements Cloneable {
     this.name = providerRole.name;
     this.key = providerRole.id;
   }
-
+  
   public String getName() {
     return name;
   }
@@ -83,27 +100,29 @@ public final class RoleStatus implements Cloneable {
   public boolean getNoDataLocality() {
     return 0 != (getPlacementPolicy() & PlacementPolicy.NO_DATA_LOCALITY);
   }
+  
+  public boolean isStrictPlacement() {
+    return 0 != (getPlacementPolicy() & PlacementPolicy.STRICT);
+  }
 
-  public int getDesired() {
+  public synchronized int getDesired() {
     return desired;
   }
 
-  public void setDesired(int desired) {
+  public synchronized void setDesired(int desired) {
     this.desired = desired;
   }
 
-  public int getActual() {
+  public synchronized int getActual() {
     return actual;
   }
 
-  public int incActual() {
+  public synchronized int incActual() {
     return ++actual;
   }
 
-  public int decActual() {
-    if (0 > --actual) {
-      actual = 0;
-    }
+  public synchronized int decActual() {
+    actual = Math.max(0, actual - 1);
     return actual;
   }
 
@@ -116,29 +135,29 @@ public final class RoleStatus implements Cloneable {
     return ++requested;
   }
 
-  public synchronized int decRequested() {
-    if (0 > --requested) {
-      requested = 0;
-    }
+  public synchronized int cancel(int count) {
+    requested = Math.max(0, requested - count);
     return requested;
   }
+  
+  public synchronized int decRequested() {
+    return cancel(1);
+  }
 
-  public int getReleasing() {
+  public synchronized int getReleasing() {
     return releasing;
   }
 
-  public int incReleasing() {
+  public synchronized int incReleasing() {
     return ++releasing;
   }
 
-  public int decReleasing() {
-    if (0 > --releasing) {
-      releasing = 0;
-    }
+  public synchronized int decReleasing() {
+    releasing = Math.max(0, releasing - 1);
     return releasing;
   }
 
-  public int getFailed() {
+  public synchronized int getFailed() {
     return failed;
   }
 
@@ -146,7 +165,7 @@ public final class RoleStatus implements Cloneable {
    * Reset the failure counts
    * @return the total number of failures up to this point
    */
-  public int resetFailed() {
+  public synchronized int resetFailed() {
     int total = failed + startFailed;
     failed = 0;
     startFailed = 0;
@@ -161,7 +180,7 @@ public final class RoleStatus implements Cloneable {
    * @return the number of failures
    * @param text text about the failure
    */
-  public int noteFailed(boolean startupFailure, String text) {
+  public synchronized int noteFailed(boolean startupFailure, String text) {
     int current = ++failed;
     if (text != null) {
       failureMessage = text;
@@ -173,41 +192,42 @@ public final class RoleStatus implements Cloneable {
     return current;
   }
 
-  public int getStartFailed() {
+  public synchronized int getStartFailed() {
     return startFailed;
   }
 
-  public void incStartFailed() {
+  public synchronized void incStartFailed() {
     startFailed++;
   }
 
-  public String getFailureMessage() {
+  public synchronized String getFailureMessage() {
     return failureMessage;
   }
 
-  public int getCompleted() {
+  public synchronized int getCompleted() {
     return completed;
   }
 
-  public void setCompleted(int completed) {
+  public synchronized void setCompleted(int completed) {
     this.completed = completed;
   }
 
-  public int incCompleted() {
+  public synchronized int incCompleted() {
     return completed ++;
   }
-  public int getStarted() {
+  public synchronized int getStarted() {
     return started;
   }
 
-  public void incStarted() {
+  public synchronized void incStarted() {
     started++;
   }
 
-  public int getTotalRequested() {
+  public synchronized int getTotalRequested() {
     return totalRequested;
   }
 
+  
   /**
    * Get the number of roles we are short of.
    * nodes released are ignored.
@@ -215,9 +235,8 @@ public final class RoleStatus implements Cloneable {
    * 0 means "do nothing".
    */
   public synchronized int getDelta() {
-    int inuse = actual + requested;
+    int inuse = getActualAndRequested();
     //don't know how to view these. Are they in-use or not?
-    //inuse += releasing;
     int delta = desired - inuse;
     if (delta < 0) {
       //if we are releasing, remove the number that are already released.
@@ -228,11 +247,21 @@ public final class RoleStatus implements Cloneable {
     return delta;
   }
 
+  /**
+   * Get count of actual and requested containers
+   * @return the size of the application when outstanding requests are included
+   */
+  public synchronized int getActualAndRequested() {
+    return actual + requested;
+  }
+
   @Override
-  public String toString() {
+  public synchronized String toString() {
     return "RoleStatus{" +
            "name='" + name + '\'' +
            ", key=" + key +
+           ", minimum=" + minimum +
+           ", maximum=" + maximum +
            ", desired=" + desired +
            ", actual=" + actual +
            ", requested=" + requested +
@@ -242,18 +271,17 @@ public final class RoleStatus implements Cloneable {
            ", startFailed=" + startFailed +
            ", completed=" + completed +
            ", failureMessage='" + failureMessage + '\'' +
-           
            '}';
   }
 
   @Override
-  public Object clone() throws CloneNotSupportedException {
+  public synchronized  Object clone() throws CloneNotSupportedException {
     return super.clone();
   }
 
   /**
    * Get the provider role
-   * @return
+   * @return the provider role
    */
   public ProviderRole getProviderRole() {
     return providerRole;
@@ -263,7 +291,7 @@ public final class RoleStatus implements Cloneable {
    * Build the statistics map from the current data
    * @return a map for use in statistics reports
    */
-  public Map<String, Integer> buildStatistics() {
+  public synchronized Map<String, Integer> buildStatistics() {
     Map<String, Integer> stats = new HashMap<String, Integer>();
     stats.put(StatusKeys.STATISTICS_CONTAINERS_ACTIVE_REQUESTS, getRequested());
     stats.put(StatusKeys.STATISTICS_CONTAINERS_COMPLETED, getCompleted());
@@ -275,4 +303,27 @@ public final class RoleStatus implements Cloneable {
     stats.put(StatusKeys.STATISTICS_CONTAINERS_START_FAILED, getStartFailed());
     return stats;
   }
+
+  /**
+   * Compare two role status entries by name
+   */
+  public static class CompareByName implements Comparator<RoleStatus>,
+      Serializable {
+    @Override
+    public int compare(RoleStatus o1, RoleStatus o2) {
+      return o1.getName().compareTo(o2.getName());
+    }
+  }
+  
+  /**
+   * Compare two role status entries by key
+   */
+  public static class CompareByKey implements Comparator<RoleStatus>,
+      Serializable {
+    @Override
+    public int compare(RoleStatus o1, RoleStatus o2) {
+      return (o1.getKey() < o2.getKey() ? -1 : (o1.getKey() == o2.getKey() ? 0 : 1));
+    }
+  }
+  
 }

@@ -12,8 +12,7 @@
 
   "components": {
     "slider-appmaster" : {
-      "jvm.heapsize": "256M",
-      "ssl.server.keystore.location": "/tmp/work/security/keystore.p12"
+      "jvm.heapsize": "256M"
     }
 
   }

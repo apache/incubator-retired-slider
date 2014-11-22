@@ -27,10 +27,11 @@ import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.core.main.ServiceLauncher
+import org.junit.Assume
 import org.junit.Test
 
 /**
- * kill a masterless AM and verify it shuts down. This test
+ * kill a standalone AM and verify it shuts down. This test
  * also sets the retry count to 1 to stop recreation attempts
  */
 @CompileStatic
@@ -38,9 +39,9 @@ import org.junit.Test
 
 class TestStandaloneAMKill extends AgentMiniClusterTestBase {
 
-
   @Test
   public void testKillStandaloneAM() throws Throwable {
+    Assume.assumeTrue(kill_supported)
     String clustername = createMiniCluster("", configuration, 1, true)
 
     describe "kill a Standalone AM and verify that it shuts down"
@@ -54,11 +55,12 @@ class TestStandaloneAMKill extends AgentMiniClusterTestBase {
     SliderClient sliderClient = launcher.service
     addToTeardown(sliderClient);
     ApplicationReport report = waitForClusterLive(sliderClient)
+    assert report.yarnApplicationState == YarnApplicationState.RUNNING
 
     describe("listing Java processes")
     lsJavaProcesses();
     describe("killing AM")
-    killAM(SIGTERM);
+    assert 0 == killAM(SIGTERM);
     waitWhileClusterLive(sliderClient);
     //give yarn some time to notice
     sleep(10000)

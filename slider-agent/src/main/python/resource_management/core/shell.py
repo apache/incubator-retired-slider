@@ -29,17 +29,18 @@ from multiprocessing import Queue
 from exceptions import Fail
 from exceptions import ExecuteTimeoutException
 from resource_management.core.logger import Logger
+import time
 
 def checked_call(command, logoutput=False, 
-         cwd=None, env=None, preexec_fn=None, user=None, wait_for_finish=True, timeout=None, pid_file=None):
-  return _call(command, logoutput, True, cwd, env, preexec_fn, user, wait_for_finish, timeout, pid_file)
+         cwd=None, env=None, preexec_fn=None, user=None, wait_for_finish=True, timeout=None, pid_file=None, poll_after=None):
+  return _call(command, logoutput, True, cwd, env, preexec_fn, user, wait_for_finish, timeout, pid_file, poll_after)
 
 def call(command, logoutput=False, 
-         cwd=None, env=None, preexec_fn=None, user=None, wait_for_finish=True, timeout=None, pid_file=None):
-  return _call(command, logoutput, False, cwd, env, preexec_fn, user, wait_for_finish, timeout, pid_file)
+         cwd=None, env=None, preexec_fn=None, user=None, wait_for_finish=True, timeout=None, pid_file=None, poll_after=None):
+  return _call(command, logoutput, False, cwd, env, preexec_fn, user, wait_for_finish, timeout, pid_file, poll_after)
             
 def _call(command, logoutput=False, throw_on_failure=True, 
-         cwd=None, env=None, preexec_fn=None, user=None, wait_for_finish=True, timeout=None, pid_file_name=None):
+         cwd=None, env=None, preexec_fn=None, user=None, wait_for_finish=True, timeout=None, pid_file_name=None, poll_after=None):
   """
   Execute shell command
   
@@ -66,13 +67,25 @@ def _call(command, logoutput=False, throw_on_failure=True,
                           cwd=cwd, env=env, shell=False,
                           preexec_fn=preexec_fn)
 
+  logAnyway = False
   if not wait_for_finish:
     if pid_file_name:
       pidfile = open(pid_file_name, 'w')
       pidfile.write(str(proc.pid))
       pidfile.close()
-    return None, None
-  
+
+    ## wait poll_after seconds and poll
+    if poll_after:
+      time.sleep(poll_after)
+      if proc.poll() is None:
+        return None, None #if still running then return
+      else:
+        logAnyway = True #assume failure and log
+        Logger.warning("Process is not up after the polling interval " + str(poll_after) + " seconds.")
+    else:
+      return None, None
+
+
   if timeout:
     q = Queue()
     t = threading.Timer( timeout, on_timeout, [proc, q] )
@@ -89,7 +102,7 @@ def _call(command, logoutput=False, throw_on_failure=True,
    
   code = proc.returncode
   
-  if logoutput and out:
+  if (logoutput or logAnyway) and out:
     Logger.info(out)
   
   if throw_on_failure and code:

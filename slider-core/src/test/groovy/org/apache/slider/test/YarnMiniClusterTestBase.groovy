@@ -18,8 +18,8 @@
 
 package org.apache.slider.test
 
-import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.commons.io.FileUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
@@ -49,22 +49,18 @@ import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.main.ServiceLauncherBaseTest
 import org.apache.slider.server.appmaster.SliderAppMaster
 import org.junit.After
-import org.junit.Assert
-import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Rule
-import org.junit.rules.TestName
 import org.junit.rules.Timeout
 
 import static org.apache.slider.test.KeysForTests.*
 
-import static org.apache.slider.common.SliderKeys.*;
 import static org.apache.slider.common.SliderXMLConfKeysForTesting.*;
 /**
  * Base class for mini cluster tests -creates a field for the
  * mini yarn cluster
  */
-@CompileStatic
+//@CompileStatic
 @Slf4j
 public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
   /**
@@ -88,11 +84,16 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
 
 
   public static final YarnConfiguration SLIDER_CONFIG = SliderUtils.createConfiguration();
+  
+  public static boolean kill_supported;
+  
   static {
     SLIDER_CONFIG.setInt(SliderXmlConfKeys.KEY_AM_RESTART_LIMIT, 1)
     SLIDER_CONFIG.setInt(YarnConfiguration.RM_AM_MAX_ATTEMPTS, 100)
     SLIDER_CONFIG.setBoolean(YarnConfiguration.NM_PMEM_CHECK_ENABLED, false)
     SLIDER_CONFIG.setBoolean(YarnConfiguration.NM_VMEM_CHECK_ENABLED, false)
+    SLIDER_CONFIG.setBoolean(SliderXmlConfKeys.KEY_SLIDER_AM_DEPENDENCY_CHECKS_DISABLED,
+        true)
     SLIDER_CONFIG.setInt(YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_MB, 1)
   }
 
@@ -129,12 +130,14 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
           KEY_TEST_TIMEOUT,
           DEFAULT_TEST_TIMEOUT_SECONDS * 1000)
   )
+
+  /**
+   * Clent side test: validate system env before launch
+   */
   @BeforeClass
-  public static void checkWindowsSupport() {
-    if (Shell.WINDOWS) {
-      assertNotNull("winutils.exe not found", Shell.WINUTILS)
-    }
-  } 
+  public static void checkClientEnv() {
+    SliderUtils.validateSliderClientEnvironment(null)
+  }
 
   protected String buildClustername(String clustername) {
     return clustername ?: createClusterName()
@@ -194,11 +197,64 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
   protected void addToTeardown(SliderClient client) {
     clustersToTeardown << client;
   }
+
   protected void addToTeardown(ServiceLauncher<SliderClient> launcher) {
-    SliderClient sliderClient = launcher.service
-    if (sliderClient) addToTeardown(sliderClient)
+    SliderClient sliderClient = launcher?.service
+    if (sliderClient) {
+      addToTeardown(sliderClient)
+    }
   }
 
+  /**
+   * Work out if kill is supported
+   */
+  @BeforeClass 
+  public static void checkKillSupport() {
+    kill_supported = !Shell.WINDOWS
+  }
+
+  /**
+   * Kill any java process with the given grep pattern
+   * @param grepString string to grep for
+   */
+  public int killJavaProcesses(String grepString, int signal) {
+
+    def commandString
+    if (!Shell.WINDOWS) {
+      GString killCommand = "jps -l| grep ${grepString} | awk '{print \$1}' | xargs kill $signal"
+      log.info("Command command = $killCommand")
+
+      commandString = ["bash", "-c", killCommand]
+    } else {
+      // windows
+      if (!kill_supported) {
+        return -1;
+      }
+
+      /*
+      "jps -l | grep "String" | awk "{print $1}" | xargs -n 1 taskkill /PID"
+       */
+      GString killCommand = "\"jps -l | grep \"${grepString}\" | gawk \"{print \$1}\" | xargs -n 1 taskkill /f /PID\""
+      commandString = ["CMD", "/C", killCommand]
+    }
+    Process command = commandString.execute()
+    def exitCode = command.waitFor()
+
+    log.info(command.in.text)
+    log.error(command.err.text)
+    return exitCode
+  }
+
+  /**
+   * Kill all processes which match one of the list of grepstrings
+   * @param greps
+   * @param signal
+   */
+  public void killJavaProcesses(List<String> greps, int signal) {
+    for (String grep : greps) {
+      killJavaProcesses(grep, signal)
+    }
+  }
 
   protected YarnConfiguration getConfiguration() {
     return SLIDER_CONFIG;
@@ -210,7 +266,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
   public void stopRunningClusters() {
     clustersToTeardown.each { SliderClient client ->
       try {
-        maybeStopCluster(client, "", "Teardown at end of test case");
+        maybeStopCluster(client, "", "Teardown at end of test case", true);
       } catch (Exception e) {
         log.warn("While stopping cluster " + e, e);
       }
@@ -240,11 +296,16 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
                                    int numLocalDirs,
                                    int numLogDirs,
                                    boolean startHDFS) {
+    assertNativeLibrariesPresent();
     conf.setInt(YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_MB, 64);
     conf.set(YarnConfiguration.RM_SCHEDULER, FIFO_SCHEDULER);
     SliderUtils.patchConfiguration(conf)
     name = buildClustername(name)
-    miniCluster = new MiniYARNCluster(name, noOfNodeManagers, numLocalDirs, numLogDirs)
+    miniCluster = new MiniYARNCluster(
+        name,
+        noOfNodeManagers,
+        numLocalDirs,
+        numLogDirs)
     miniCluster.init(conf)
     miniCluster.start();
     if (startHDFS) {
@@ -271,6 +332,8 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
   public static MiniDFSCluster buildMiniHDFSCluster(
       String name,
       YarnConfiguration conf) {
+    assertNativeLibrariesPresent();
+
     File baseDir = new File("./target/hdfs/$name").absoluteFile;
     //use file: to rm it recursively
     FileUtil.fullyDelete(baseDir)
@@ -314,32 +377,11 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
 
 
   /**
-   * Kill all Slider Services. That i
+   * Kill all Slider Services. 
    * @param signal
    */
-  public void killAM(int signal) {
+  public int killAM(int signal) {
     killJavaProcesses(SliderAppMaster.SERVICE_CLASSNAME_SHORT, signal)
-  }
-
-  /**
-   * Kill any java process with the given grep pattern
-   * @param grepString string to grep for
-   */
-  public void killJavaProcesses(String grepString, int signal) {
-
-    GString bashCommand = "jps -l| grep ${grepString} | awk '{print \$1}' | xargs kill $signal"
-    log.info("Bash command = $bashCommand" )
-    Process bash = ["bash", "-c", bashCommand].execute()
-    bash.waitFor()
-
-    log.info(bash.in.text)
-    log.error(bash.err.text)
-  }
-
-  public void killJavaProcesses(List<String> greps, int signal) {
-    for (String grep : greps) {
-      killJavaProcesses(grep,signal)
-    }
   }
 
   /**
@@ -360,9 +402,8 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
   
   public YarnConfiguration getTestConfiguration() {
     YarnConfiguration conf = getConfiguration()
-
     conf.addResource(SLIDER_TEST_XML)
-    return conf
+    return conf;
   }
 
   protected String getRMAddr() {
@@ -448,11 +489,13 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     def config = miniCluster.config
     if (deleteExistingData && !SliderActions.ACTION_UPDATE.equals(action)) {
       HadoopFS dfs = HadoopFS.get(new URI(fsDefaultName), config)
-      Path clusterDir = new SliderFileSystem(dfs, config).buildClusterDirPath(clustername)
-      log.info("deleting customer data at $clusterDir")
+
+      def sliderFileSystem = new SliderFileSystem(dfs, config)
+      Path clusterDir = sliderFileSystem.buildClusterDirPath(clustername)
+      log.info("deleting instance data at $clusterDir")
       //this is a safety check to stop us doing something stupid like deleting /
       assert clusterDir.toString().contains("/.slider/")
-      dfs.delete(clusterDir, true)
+      rigorousDelete(sliderFileSystem, clusterDir, 60000)
     }
 
 
@@ -497,6 +540,58 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
       client.monitorAppToRunning(new Duration(CLUSTER_GO_LIVE_TIME))
     }
     return launcher;
+  }
+
+  /**
+   * Delete with some pauses and backoff; designed to handle slow delete
+   * operation in windows
+   * @param dfs
+   * @param path
+   */
+  public void rigorousDelete(
+      SliderFileSystem sliderFileSystem,
+      Path path, long timeout) {
+
+    if (path.toUri().scheme == "file") {
+      File dir = new File(path.toUri().getPath());
+      rigorousDelete(dir, timeout)
+    } else {
+      Duration duration = new Duration(timeout)
+      duration.start()
+      HadoopFS dfs = sliderFileSystem.fileSystem
+      boolean deleted = false;
+      while (!deleted && !duration.limitExceeded) {
+        dfs.delete(path, true)
+        deleted = !dfs.exists(path)
+        if (!deleted) {
+          sleep(1000)
+        }
+      }
+    }
+    sliderFileSystem.verifyDirectoryNonexistent(path)
+  }
+
+  /**
+   * Delete with some pauses and backoff; designed to handle slow delete
+   * operation in windows
+   * @param dir dir to delete
+   * @param timeout timeout in millis
+   */
+  public void rigorousDelete(File dir, long timeout) {
+    Duration duration = new Duration(timeout)
+    duration.start()
+    boolean deleted = false;
+    while (!deleted && !duration.limitExceeded) {
+      FileUtils.deleteQuietly(dir)
+      deleted = !dir.exists()
+      if (!deleted) {
+        sleep(1000)
+      }
+    }
+    if (!deleted) {
+      // noisy delete raises an IOE
+      FileUtils.deleteDirectory(dir)
+    }
   }
 
   /**
@@ -668,12 +763,18 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     return resourceConfDir.absoluteFile.toURI().toString()
   }
 
-
+  /**
+   * Log an application report
+   * @param report
+   */
   public void logReport(ApplicationReport report) {
     log.info(SliderUtils.reportToString(report));
   }
 
-
+  /**
+   * Log a list of application reports
+   * @param apps
+   */
   public void logApplications(List<ApplicationReport> apps) {
     apps.each { ApplicationReport r -> logReport(r) }
   }
@@ -691,6 +792,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
    * force kill the application after waiting for
    * it to shut down cleanly
    * @param client client to talk to
+   * @return the final application report
    */
   public ApplicationReport waitForAppToFinish(SliderClient client) {
 
@@ -698,6 +800,13 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     return waitForAppToFinish(client, waitTime)
   }
 
+  /**
+   * force kill the application after waiting for
+   * it to shut down cleanly
+   * @param client client to talk to 
+   * @param waitTime time in milliseconds to wait
+   * @return the final application report
+   */
   public static ApplicationReport waitForAppToFinish(
       SliderClient client,
       int waitTime) {
@@ -714,6 +823,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
       }
       nodes.each { ClusterNode node -> log.info(node.toString())}
       client.forceKillApplication("timed out waiting for application to complete");
+      report = client.applicationReport
     }
     return report;
   }
@@ -726,15 +836,17 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
    * @return the exit code
    */
   public int clusterActionFreeze(SliderClient sliderClient, String clustername,
-                                 String message = "action freeze") {
-    log.info("Freezing cluster $clustername: $message")
+                                String message = "action stop",
+                                boolean force = false) {
+    log.info("Stopping cluster $clustername: $message")
     ActionFreezeArgs freezeArgs  = new ActionFreezeArgs();
     freezeArgs.waittime = CLUSTER_STOP_TIME
     freezeArgs.message = message
+    freezeArgs.force = force
     int exitCode = sliderClient.actionFreeze(clustername,
         freezeArgs);
     if (exitCode != 0) {
-      log.warn("Cluster freeze failed with error code $exitCode")
+      log.warn("Cluster stop failed with error code $exitCode")
     }
     return exitCode
   }
@@ -749,14 +861,15 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
   public int maybeStopCluster(
       SliderClient sliderClient,
       String clustername,
-      String message) {
+      String message,
+      boolean force = false) {
     if (sliderClient != null) {
       if (!clustername) {
         clustername = sliderClient.deployedClusterName;
       }
       //only stop a cluster that exists
       if (clustername) {
-        return clusterActionFreeze(sliderClient, clustername, message);
+        return clusterActionFreeze(sliderClient, clustername, message, force);
       }
     }
     return 0;

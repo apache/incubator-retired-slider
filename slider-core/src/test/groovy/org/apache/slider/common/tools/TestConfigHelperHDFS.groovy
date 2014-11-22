@@ -18,6 +18,7 @@
 
 package org.apache.slider.common.tools
 
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem as HadoopFS
@@ -27,9 +28,10 @@ import org.apache.slider.test.YarnMiniClusterTestBase
 import org.junit.Test
 
 @Slf4j
+@CompileStatic
+
 class TestConfigHelperHDFS extends YarnMiniClusterTestBase {
 
-  //diabled for now; 
   @Test 
   public void testConfigHelperHDFS() throws Throwable {
     YarnConfiguration config = getConfiguration()
@@ -48,23 +50,4 @@ class TestConfigHelperHDFS extends YarnMiniClusterTestBase {
     assert loaded.get("key") == "value"
   }
 
-  @Test
-  public void testConfigLoaderIteration() throws Throwable {
-
-    String xml =
-    """<?xml version="1.0" encoding="UTF-8" standalone="no"?><configuration>
-<property><name>key</name><value>value</value><source>programatically</source></property>
-</configuration>
-    """
-    InputStream ins = new ByteArrayInputStream(xml.bytes);
-    Configuration conf = new Configuration(false);
-    conf.addResource(ins);
-    Configuration conf2 = new Configuration(false);
-    for (Map.Entry<String, String> entry : conf) {
-      String key = entry.getKey();
-      String val = entry.getValue();
-      conf2.set(key, val, "src")
-    }
-    
-  }
 }

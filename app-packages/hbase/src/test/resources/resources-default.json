@@ -1,0 +1,23 @@
+{
+  "schema": "http://example.org/specification/v2.0.0",
+  "metadata": {
+  },
+  "global": {
+    "yarn.log.include.patterns": "",
+    "yarn.log.exclude.patterns": ""
+  },
+  "components": {
+    "HBASE_MASTER": {
+      "yarn.role.priority": "1",
+      "yarn.component.instances": "1",
+      "yarn.memory": "256"
+    },
+    "slider-appmaster": {
+    },
+    "HBASE_REGIONSERVER": {
+      "yarn.role.priority": "2",
+      "yarn.component.instances": "1",
+      "yarn.memory": "256"
+    }
+  }
+}

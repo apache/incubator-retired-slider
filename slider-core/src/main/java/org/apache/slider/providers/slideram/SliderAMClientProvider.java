@@ -18,25 +18,22 @@
 
 package org.apache.slider.providers.slideram;
 
-import com.beust.jcommander.JCommander;
-import com.codahale.metrics.MetricRegistry;
-import com.google.gson.GsonBuilder;
-import org.apache.curator.CuratorZookeeperClient;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.x.discovery.ServiceInstance;
-import org.apache.curator.x.discovery.server.entity.ServiceNames;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.records.LocalResource;
+import org.apache.hadoop.yarn.api.records.LocalResourceType;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.RoleKeys;
 import org.apache.slider.common.SliderKeys;
+import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.MapOperations;
+import org.apache.slider.core.exceptions.BadClusterStateException;
 import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.AbstractLauncher;
@@ -45,7 +42,6 @@ import org.apache.slider.providers.AbstractClientProvider;
 import org.apache.slider.providers.PlacementPolicy;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
-import org.mortbay.jetty.security.SslSelectChannelConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,6 +50,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.apache.slider.api.ResourceKeys.COMPONENT_INSTANCES;
 
 /**
  * handles the setup of the Slider AM.
@@ -88,12 +86,15 @@ public class SliderAMClientProvider extends AbstractClientProvider
 
   public static final int KEY_AM = ROLE_AM_PRIORITY_INDEX;
 
+  public static final ProviderRole APPMASTER =
+      new ProviderRole(COMPONENT_AM, KEY_AM,
+          PlacementPolicy.EXCLUDE_FROM_FLEXING);
+
   /**
    * Initialize role list
    */
   static {
-    ROLES.add(new ProviderRole(COMPONENT_AM, KEY_AM,
-                               PlacementPolicy.EXCLUDE_FROM_FLEXING));
+    ROLES.add(APPMASTER);
   }
 
   @Override
@@ -132,6 +133,31 @@ public class SliderAMClientProvider extends AbstractClientProvider
   }
 
   /**
+   * Verify that an instance definition is considered valid by the provider
+   * @param instanceDefinition instance definition
+   * @throws SliderException if the configuration is not valid
+   */
+  public void validateInstanceDefinition(AggregateConf instanceDefinition, SliderFileSystem fs) throws
+      SliderException {
+
+    super.validateInstanceDefinition(instanceDefinition, fs);
+    
+    // make sure there is no negative entry in the instance count
+    Map<String, Map<String, String>> instanceMap =
+        instanceDefinition.getResources().components;
+    for (Map.Entry<String, Map<String, String>> entry : instanceMap.entrySet()) {
+      MapOperations mapOperations = new MapOperations(entry);
+      int instances = mapOperations.getOptionInt(COMPONENT_INSTANCES, 0);
+      if (instances < 0) {
+        throw new BadClusterStateException(
+            "Component %s has negative instance count: %d",
+            mapOperations.name,
+            instances);
+      }
+    }
+  }
+  
+  /**
    * The Slider AM sets up all the dependency JARs above slider.jar itself
    * {@inheritDoc}
    */
@@ -158,38 +184,61 @@ public class SliderAMClientProvider extends AbstractClientProvider
         libdir,
         miniClusterTestRun);
 
-    Class<?>[] classes = {
-      JCommander.class,
-      GsonBuilder.class,
-      SslSelectChannelConnector.class,
+    String libDirProp =
+        System.getProperty(SliderKeys.PROPERTY_LIB_DIR);
+      log.info("Loading all dependencies for AM.");
+      ProviderUtils.addAllDependencyJars(providerResources,
+                                         fileSystem,
+                                         tempPath,
+                                         libdir,
+                                         libDirProp);
+    addKeytabResourceIfNecessary(fileSystem,
+                                 launcher,
+                                 instanceDescription,
+                                 providerResources);
 
-      CuratorFramework.class,
-      CuratorZookeeperClient.class,
-      ServiceInstance.class,
-      ServiceNames.class,
-      MetricRegistry.class
-    };
-    String[] jars =
-      {
-        JCOMMANDER_JAR,
-        GSON_JAR,
-        "jetty-sslengine.jar",
-
-        "curator-framework.jar",
-        "curator-client.jar",
-        "curator-x-discovery.jar",
-        "curator-x-discovery-service.jar",
-        "metrics-core.jar"
-      };
-    ProviderUtils.addDependencyJars(providerResources, fileSystem, tempPath,
-                                    libdir, jars,
-                                    classes);
-    
-    launcher.addLocalResources(providerResources);
     //also pick up all env variables from a map
     launcher.copyEnvVars(
       instanceDescription.getInternalOperations().getOrAddComponent(
         SliderKeys.COMPONENT_AM));
+  }
+
+  /**
+   * If the cluster is secure, and an HDFS installed keytab is available for AM
+   * authentication, add this keytab as a local resource for the AM launch.
+   *
+   * @param fileSystem
+   * @param launcher
+   * @param instanceDescription
+   * @param providerResources
+   * @throws IOException
+   */
+  protected void addKeytabResourceIfNecessary(SliderFileSystem fileSystem,
+                                              AbstractLauncher launcher,
+                                              AggregateConf instanceDescription,
+                                              Map<String, LocalResource> providerResources)
+      throws IOException {
+    if (UserGroupInformation.isSecurityEnabled()) {
+      String keytabPathOnHost = instanceDescription.getAppConfOperations()
+          .getComponent(SliderKeys.COMPONENT_AM).get(
+              SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH);
+      if (SliderUtils.isUnset(keytabPathOnHost)) {
+        String amKeytabName = instanceDescription.getAppConfOperations()
+            .getComponent(SliderKeys.COMPONENT_AM).get(
+                SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME);
+        String keytabDir = instanceDescription.getAppConfOperations()
+            .getComponent(SliderKeys.COMPONENT_AM).get(
+                SliderXmlConfKeys.KEY_HDFS_KEYTAB_DIR);
+        Path keytabPath = fileSystem.buildKeytabPath(keytabDir, amKeytabName,
+                                                     instanceDescription.getName());
+        LocalResource keytabRes = fileSystem.createAmResource(keytabPath,
+                                                LocalResourceType.FILE);
+
+         providerResources.put(SliderKeys.KEYTAB_DIR + "/" +
+                               amKeytabName, keytabRes);
+      }
+    }
+    launcher.addLocalResources(providerResources);
   }
 
   /**

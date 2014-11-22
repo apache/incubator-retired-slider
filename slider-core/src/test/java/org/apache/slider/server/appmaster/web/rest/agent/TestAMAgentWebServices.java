@@ -25,8 +25,10 @@ import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.api.json.JSONConfiguration;
 import junit.framework.Assert;
+import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.tools.SliderUtils;
@@ -52,14 +54,13 @@ import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.MediaType;
 import java.io.File;
-import java.io.IOException;
 import java.net.URI;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
+//import java.nio.file.FileVisitResult;
+//import java.nio.file.Files;
+//import java.nio.file.Path;
+//import java.nio.file.Paths;
+//import java.nio.file.SimpleFileVisitor;
+//import java.nio.file.attribute.BasicFileAttributes;
 
 import static org.junit.Assert.assertEquals;
 
@@ -79,10 +80,10 @@ public class TestAMAgentWebServices {
           }
         });
 
-    SecurityUtils.initializeSecurityParameters(new MapOperations());
-    MapOperations compOperations = new MapOperations();
+    MapOperations configMap = new MapOperations();
+    SecurityUtils.initializeSecurityParameters(configMap, true);
     CertificateManager certificateManager = new CertificateManager();
-    certificateManager.initRootCert(compOperations);
+    certificateManager.initialize(configMap);
     String keystoreFile = SecurityUtils.getSecurityDir() + File.separator + SliderKeys.KEYSTORE_FILE_NAME;
     String password = SecurityUtils.getKeystorePass();
     System.setProperty("javax.net.ssl.trustStore", keystoreFile);
@@ -137,7 +138,7 @@ public class TestAMAgentWebServices {
                                                              appState);
 
     slider = new WebAppApiImpl(new MockSliderClusterProtocol(), providerAppState,
-                               new MockProviderService(), null);
+                               new MockProviderService(), null, null);
 
     MapOperations compOperations = new MapOperations();
 
@@ -152,7 +153,7 @@ public class TestAMAgentWebServices {
 
   @After
   public void tearDown () throws Exception {
-    webApp.stop();
+    IOUtils.closeStream(webApp);
     webApp = null;
   }
 
@@ -204,7 +205,7 @@ public class TestAMAgentWebServices {
     Register register = new Register();
     register.setResponseId(-1);
     register.setTimestamp(System.currentTimeMillis());
-    register.setHostname("dummyHost");
+    register.setLabel("dummyHost");
     return register;
   }
 
@@ -218,22 +219,23 @@ public class TestAMAgentWebServices {
 
   @AfterClass
   public static void tearDownClass() throws Exception{
-    Path directory = Paths.get(SecurityUtils.getSecurityDir());
-    Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
-      @Override
-      public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-          throws IOException {
-        Files.delete(file);
-        return FileVisitResult.CONTINUE;
-      }
-
-      @Override
-      public FileVisitResult postVisitDirectory(Path dir, IOException exc)
-          throws IOException {
-        Files.delete(dir);
-        return FileVisitResult.CONTINUE;
-      }
-
-    });
+    FileUtils.deleteDirectory(new File(SecurityUtils.getSecurityDir()));
+//    Path directory = Paths.get(SecurityUtils.getSecurityDir());
+//    Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
+//      @Override
+//      public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+//          throws IOException {
+//        Files.delete(file);
+//        return FileVisitResult.CONTINUE;
+//      }
+//
+//      @Override
+//      public FileVisitResult postVisitDirectory(Path dir, IOException exc)
+//          throws IOException {
+//        Files.delete(dir);
+//        return FileVisitResult.CONTINUE;
+//      }
+//
+//    });
   }
 }

@@ -86,6 +86,7 @@ public interface SliderKeys extends SliderXmlConfKeys {
   String HISTORY_DIR_NAME = "history";
   String HISTORY_FILENAME_SUFFIX = "json";
   String HISTORY_FILENAME_PREFIX = "rolehistory-";
+  String KEYTAB_DIR = "keytabs";
   
   /**
    * Filename pattern is required to save in strict temporal order.
@@ -112,6 +113,8 @@ public interface SliderKeys extends SliderXmlConfKeys {
 
   String CLUSTER_DIRECTORY = "cluster";
 
+  String PACKAGE_DIRECTORY = "package";
+
   /**
    * JVM property to define the slider configuration directory;
    * this is set by the slider script: {@value}
@@ -119,9 +122,35 @@ public interface SliderKeys extends SliderXmlConfKeys {
   String PROPERTY_CONF_DIR = "slider.confdir";
 
   /**
+   * JVM property to define the slider lib directory;
+   * this is set by the slider script: {@value}
+   */
+  String PROPERTY_LIB_DIR = "slider.libdir";
+
+  /**
    * name of generated dir for this conf: {@value}
    */
   String SUBMITTED_CONF_DIR = "confdir";
+
+  /**
+   * Slider AM log4j file name : {@value}
+   */
+  String LOG4J_SERVER_PROP_FILENAME = "log4j-server.properties";
+
+  /**
+   * Standard log4j file name  : {@value}
+   */
+  String LOG4J_PROP_FILENAME = "log4j.properties";
+
+  /**
+   * Log4j sysprop to name the resource :{@value}
+   */
+  String SYSPROP_LOG4J_CONFIGURATION = "log4j.configuration";
+
+  /**
+   * sysprop for Slider AM log4j directory :{@value}
+   */
+  String SYSPROP_LOG_DIR = "LOG_DIR";
 
   /**
    * name of the Slider client resource
@@ -142,6 +171,7 @@ public interface SliderKeys extends SliderXmlConfKeys {
   String SLIDER_JAR = "slider.jar";
   String JCOMMANDER_JAR = "jcommander.jar";
   String GSON_JAR = "gson.jar";
+  String AGENT_TAR = "slider-agent.tar.gz";
 
   String DEFAULT_JVM_HEAP = "256M";
   int DEFAULT_YARN_MEMORY = 256;
@@ -164,12 +194,30 @@ public interface SliderKeys extends SliderXmlConfKeys {
   String KEY_FILE_NAME = "ca.key";
   String KEYSTORE_FILE_NAME = "keystore.p12";
   String CRT_PASS_FILE_NAME = "pass.txt";
-  String PASSPHRASE = "DEV";
   String PASS_LEN = "50";
-  String KEYSTORE_LOCATION = "ssl.server.keystore.location";
 
   /**
    * Python specific
    */
   String PYTHONPATH = "PYTHONPATH";
+
+
+  /**
+   * Name of the AM filter to use: {@value}
+   */
+  String AM_FILTER_NAME =
+      "org.apache.hadoop.yarn.server.webproxy.amfilter.AmFilterInitializer";
+
+  String KEY_ALLOWED_PORT_RANGE = "site.global.slider.allowed.ports";
+  /**
+   * Allowed port range
+   */
+  String KEY_AM_ALLOWED_PORT_RANGE = "slider.am.allowed.port.range";
+
+  /**
+   * env var for custom JVM options.
+   */
+  String SLIDER_JVM_OPTS = "SLIDER_JVM_OPTS";
+
+  String SLIDER_CLASSPATH_EXTRA = "SLIDER_CLASSPATH_EXTRA";
 }

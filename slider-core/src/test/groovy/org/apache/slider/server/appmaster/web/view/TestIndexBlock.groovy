@@ -27,7 +27,6 @@ import org.apache.hadoop.yarn.webapp.hamlet.Hamlet
 import org.apache.slider.api.SliderClusterProtocol
 import org.apache.slider.providers.ProviderService
 import org.apache.slider.server.appmaster.model.mock.*
-import org.apache.slider.server.appmaster.state.AppState
 import org.apache.slider.server.appmaster.state.ProviderAppState
 import org.apache.slider.server.appmaster.web.WebAppApi
 import org.apache.slider.server.appmaster.web.WebAppApiImpl
@@ -36,7 +35,7 @@ import org.junit.Test
 
 @Slf4j
 @CompileStatic
-public class TestIndexBlock {
+public class TestIndexBlock extends BaseMockAppStateTest {
 
   private IndexBlock indexBlock;
 
@@ -44,14 +43,20 @@ public class TestIndexBlock {
 
   @Before
   public void setup() {
+    super.setup()
+    assert appState
     SliderClusterProtocol clusterProto = new MockSliderClusterProtocol();
-    AppState appState = new MockAppState(new MockRecordFactory());
     ProviderService providerService = new MockProviderService();
     ProviderAppState providerAppState = new ProviderAppState(
         "undefined",
         appState)
 
-    WebAppApiImpl inst = new WebAppApiImpl(clusterProto, providerAppState, providerService, null);
+    WebAppApiImpl inst = new WebAppApiImpl(
+        clusterProto,
+        providerAppState,
+        providerService,
+        null,
+        null);
 
     Injector injector = Guice.createInjector(new AbstractModule() {
           @Override
@@ -63,15 +68,13 @@ public class TestIndexBlock {
     indexBlock = injector.getInstance(IndexBlock.class);
 
     cont1 = new MockContainer();
-    cont1.id = new MockContainerId();
-    ((MockContainerId) cont1.id).setId(0);
+    cont1.id = new MockContainerId(applicationAttemptId, 0);
     cont1.nodeId = new MockNodeId();
     cont1.priority = Priority.newInstance(1);
     cont1.resource = new MockResource();
 
     cont2 = new MockContainer();
-    cont2.id = new MockContainerId();
-    ((MockContainerId) cont2.id).setId(1);
+    cont2.id = new MockContainerId(applicationAttemptId, 1);
     cont2.nodeId = new MockNodeId();
     cont2.priority = Priority.newInstance(1);
     cont2.resource = new MockResource();
@@ -79,6 +82,20 @@ public class TestIndexBlock {
 
   @Test
   public void testIndex() {
+    def role0 = role0Status
+    def role1 = role1Status
+    role0.desired = 8
+    role0.incActual()
+    role0.incActual()
+    role0.incActual()
+    role0.incActual()
+    role0.incActual()
+    role1.incRequested()
+    role1.incRequested()
+    role1.incRequested()
+    role0.noteFailed(false, "")
+    role0.noteFailed(true, "")
+
     StringWriter sw = new StringWriter(64);
     PrintWriter pw = new PrintWriter(sw);
 
@@ -86,7 +103,23 @@ public class TestIndexBlock {
     
     int level = hamlet.nestLevel();
     indexBlock.doIndex(hamlet, "accumulo");
+
+    def body = sw.toString()
+    log.info(body)
+    assertEquals(body, level, hamlet.nestLevel())
+    // verify role data came out
+    assert body.contains("role0")
+    // 
+    assert body.contains("8")
+    assert body.contains("5")
+    assert body.contains("3")
+    assert body.contains("2")
+    assert body.contains("1")
     
-    assert level == hamlet.nestLevel();
+    assert body.contains("role1")
+    assert body.contains("role2")
+    // verify that the sorting took place
+    assert body.indexOf("role0") < body.indexOf("role1")
+    assert body.indexOf("role1") < body.indexOf("role2")
   }
 }

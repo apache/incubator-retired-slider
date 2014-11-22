@@ -38,15 +38,15 @@ public class InstanceIO {
    * Load in an instance definition -but do not resolve it
    * @param sliderFileSystem filesystem
    * @param clusterDirectory CD
-   * @return
+   * @return the unresolved aggregate configuration
    * @throws IOException
    * @throws SliderException
+   * @throws BadClusterStateException if a lock could not be acquired
    */
   public static AggregateConf loadInstanceDefinitionUnresolved(
     CoreFileSystem sliderFileSystem,
-    Path clusterDirectory) throws
-                           IOException,
-      SliderException {
+    Path clusterDirectory)
+      throws IOException, SliderException {
     AggregateConf instanceDefinition = new AggregateConf();
     ConfPersister persister =
       new ConfPersister(sliderFileSystem, clusterDirectory);

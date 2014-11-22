@@ -20,20 +20,19 @@ package org.apache.slider.providers.hbase.minicluster.live
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.slider.common.SliderXmlConfKeys
+import org.apache.hadoop.registry.client.binding.RegistryUtils
+import org.apache.hadoop.registry.client.types.ServiceRecord
+import org.apache.hadoop.registry.client.types.yarn.YarnRegistryAttributes
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.RoleKeys
+import org.apache.slider.client.SliderClient
+import org.apache.slider.common.SliderXmlConfKeys
+import org.apache.slider.common.params.Arguments
+import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.registry.docstore.PublishedConfigSet
-import org.apache.slider.core.registry.info.ServiceInstanceData
 import org.apache.slider.core.registry.retrieve.RegistryRetriever
 import org.apache.slider.providers.hbase.HBaseKeys
-import org.apache.slider.core.zk.ZKIntegration
-import org.apache.slider.common.params.Arguments
-import org.apache.slider.client.SliderClient
 import org.apache.slider.providers.hbase.minicluster.HBaseMiniClusterTestBase
-import org.apache.slider.core.main.ServiceLauncher
-import org.apache.slider.server.services.curator.CuratorServiceInstance
-import org.apache.slider.server.services.registry.SliderRegistryService
 import org.junit.Test
 
 /**
@@ -47,8 +46,6 @@ class TestHBaseMaster extends HBaseMiniClusterTestBase {
   @Test
   public void testHBaseMaster() throws Throwable {
     String clustername = createMiniCluster("", configuration, 1, true)
-    //make sure that ZK is up and running at the binding string
-    ZKIntegration zki = createZKIntegrationInstance(ZKBinding, clustername, false, false, 5000)
     //now launch the cluster with 1 region server
     int regionServerCount = 1
     ServiceLauncher<SliderClient> launcher = createHBaseCluster(clustername, regionServerCount,
@@ -77,28 +74,24 @@ class TestHBaseMaster extends HBaseMiniClusterTestBase {
     
     // look up the registry entries for HBase 
     describe "service registry names"
-    SliderRegistryService registryService = client.registry
-    def names = registryService.getServiceTypes();
+    Map<String, ServiceRecord> records = RegistryUtils.listServiceRecords(
+        client.registryOperations,
+        RegistryUtils.serviceclassPath(
+            RegistryUtils.homePathForCurrentUser(),
+            HBaseKeys.HBASE_SERVICE_TYPE
+        )
+    )
+
+    def names = records.keySet()
     dumpRegistryServiceTypes(names)
 
-    List<CuratorServiceInstance<ServiceInstanceData>> instances =
-        client.listRegistryInstances();
 
-    def hbaseInstances = registryService.findInstances( HBaseKeys.HBASE_SERVICE_TYPE, null)
+
+    def hbaseInstances = records.values()
     assert hbaseInstances.size() == 1
-    def hbaseService = hbaseInstances[0]
-    assert hbaseService
-    def hbaseServiceData = hbaseService.payload
+    ServiceRecord hbaseServiceData = hbaseInstances[0]
     log.info "HBase service 0 == $hbaseServiceData"
-    assert hbaseServiceData.id 
-    assert hbaseServiceData.serviceType == HBaseKeys.HBASE_SERVICE_TYPE
-
-    hbaseInstances = registryService.findInstances(
-        HBaseKeys.HBASE_SERVICE_TYPE,
-        clustername)
-    assert hbaseInstances.size() == 1
-    def hbaseServiceData2 = hbaseInstances[0].payload
-    assert hbaseServiceData == hbaseServiceData2
+    assert hbaseServiceData[YarnRegistryAttributes.YARN_ID] 
 
     RegistryRetriever retriever = new RegistryRetriever(hbaseServiceData)
     log.info retriever.toString()

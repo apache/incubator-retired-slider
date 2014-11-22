@@ -1,0 +1,43 @@
+{
+  "schema": "http://example.org/specification/v2.0.0",
+  "metadata": {
+  },
+  "global": {
+    "application.def": ".slider/package/STORM/slider-storm-app-package-${pkg.version}.zip",
+    "java_home": "/usr/jdk64/jdk1.7.0_67",
+    "create.default.zookeeper.node": "true",
+
+    "site.global.app_user": "${USER_NAME}",
+    "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/apache-storm-${pkg.version}",
+    "site.global.user_group": "hadoop",
+    "site.global.ganglia_server_host": "${NN_HOST}",
+    "site.global.ganglia_server_id": "Application2",
+    "site.global.ganglia_enabled":"true",
+    "site.global.ganglia_server_port": "8668",
+
+    "site.storm-site.storm.log.dir" : "${AGENT_LOG_ROOT}",
+    "site.storm-site.storm.zookeeper.servers": "['${ZK_HOST}']",
+    "site.storm-site.nimbus.thrift.port": "${NIMBUS.ALLOCATED_PORT}",
+    "site.storm-site.storm.local.dir": "${AGENT_WORK_ROOT}/app/tmp/storm",
+    "site.storm-site.transactional.zookeeper.root": "/transactional",
+    "site.storm-site.storm.zookeeper.port": "2181",
+    "site.storm-site.nimbus.childopts": "-Xmx1024m -javaagent:${AGENT_WORK_ROOT}/app/install/apache-storm-${pkg.version}/external/storm-jmxetric/lib/jmxetric-1.0.4.jar=host=${@//site/global/ganglia_server_host},port=${@//site/global/ganglia_server_port},wireformat31x=true,mode=multicast,config=${AGENT_WORK_ROOT}/app/install/apache-storm-${pkg.version}/external/storm-jmxetric/conf/jmxetric-conf.xml,process=Nimbus_JVM",
+    "site.storm-site.supervisor.childopts": "-Xmx256m -javaagent:${AGENT_WORK_ROOT}/app/install/apache-storm-${pkg.version}/external/storm-jmxetric/lib/jmxetric-1.0.4.jar=host=${@//site/global/ganglia_server_host},port=${@//site/global/ganglia_server_port},wireformat31x=true,mode=multicast,config=${AGENT_WORK_ROOT}/app/install/apache-storm-${pkg.version}/external/storm-jmxetric/conf/jmxetric-conf.xml,process=Supervisor_JVM",
+    "site.storm-site.ui.childopts": "-Xmx768m",
+    "site.storm-site.worker.childopts": "-Xmx768m -javaagent:${AGENT_WORK_ROOT}/app/install/apache-storm-${pkg.version}/external/storm-jmxetric/lib/jmxetric-1.0.4.jar=host=${@//site/global/ganglia_server_host},port=${@//site/global/ganglia_server_port},wireformat31x=true,mode=multicast,config=${AGENT_WORK_ROOT}/app/install/apache-storm-${pkg.version}/external/storm-jmxetric/conf/jmxetric-conf.xml,process=Worker_%ID%_JVM",
+    "site.storm-site.dev.zookeeper.path": "${AGENT_WORK_ROOT}/app/tmp/dev-storm-zookeeper",
+    "site.storm-site.drpc.invocations.port": "0",
+    "site.storm-site.storm.zookeeper.root": "${DEFAULT_ZK_PATH}",
+    "site.storm-site.transactional.zookeeper.port": "null",
+    "site.storm-site.nimbus.host": "${NIMBUS_HOST}",
+    "site.storm-site.ui.port": "${STORM_UI_SERVER.ALLOCATED_PORT}",
+    "site.storm-site.supervisor.slots.ports": "[${SUPERVISOR.ALLOCATED_PORT}{PER_CONTAINER},${SUPERVISOR.ALLOCATED_PORT}{PER_CONTAINER}]",
+    "site.storm-site.drpc.port": "0",
+    "site.storm-site.logviewer.port": "${SUPERVISOR.ALLOCATED_PORT}{PER_CONTAINER}"
+  },
+  "components": {
+    "slider-appmaster": {
+      "jvm.heapsize": "256M"
+    }
+  }
+}

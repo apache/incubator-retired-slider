@@ -18,14 +18,15 @@
 
 package org.apache.slider.server.appmaster.model.mock
 
-import java.io.IOException;
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.registry.client.types.ServiceRecord
 import org.apache.hadoop.service.LifecycleEvent
+import org.apache.hadoop.service.Service.STATE
 import org.apache.hadoop.service.ServiceStateChangeListener
 import org.apache.hadoop.yarn.api.records.Container
 import org.apache.hadoop.yarn.api.records.ContainerId
+import org.apache.hadoop.yarn.api.records.Priority
 import org.apache.hadoop.yarn.client.api.AMRMClient
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.common.tools.SliderFileSystem
@@ -34,7 +35,7 @@ import org.apache.slider.core.conf.MapOperations
 import org.apache.slider.core.exceptions.BadCommandArgumentsException
 import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.launch.ContainerLauncher
-import org.apache.slider.core.registry.info.ServiceInstanceData
+import org.apache.slider.providers.ProviderCompleted
 import org.apache.slider.providers.ProviderRole
 import org.apache.slider.providers.ProviderService
 import org.apache.slider.server.appmaster.actions.QueueAccess
@@ -47,9 +48,7 @@ import org.apache.slider.server.appmaster.web.rest.agent.HeartBeatResponse
 import org.apache.slider.server.appmaster.web.rest.agent.Register
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationResponse
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationStatus
-import org.apache.slider.server.services.registry.RegistryViewForProviders
-import org.apache.slider.providers.ProviderCompleted
-import org.apache.hadoop.service.Service.STATE
+import org.apache.slider.server.services.yarnregistry.YarnRegistryViewForProviders
 
 class MockProviderService implements ProviderService {
 
@@ -208,9 +207,13 @@ class MockProviderService implements ProviderService {
   @Override
   void bind(
       StateAccessForProviders stateAccessor,
-      RegistryViewForProviders registry,
       QueueAccess queueAccess,
       List<Container> liveContainers) {
+
+  }
+
+  @Override
+  void bindToYarnRegistry(YarnRegistryViewForProviders yarnRegistry) {
 
   }
 
@@ -240,10 +243,10 @@ class MockProviderService implements ProviderService {
 
   @Override
   void applyInitialRegistryDefinitions(
-      URL unsecureWebAPI,
-      URL secureWebAPI,
-      ServiceInstanceData registryInstanceData)
-  throws MalformedURLException, IOException {
+      URL amWebURI,
+      URL agentOpsURI,
+      URL agentStatusURI,
+      ServiceRecord serviceRecord) throws IOException {
 
   }
 
@@ -264,6 +267,14 @@ class MockProviderService implements ProviderService {
   @Override
   public void addContainerRequest(AMRMClient.ContainerRequest req) {
     // no-op
+  }
+
+  @Override
+  int cancelContainerRequests(
+      Priority priority1,
+      Priority priority2,
+      int count) {
+    return 0
   }
 
   @Override

@@ -19,7 +19,6 @@
 package org.apache.slider.providers.agent;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +29,7 @@ public class ComponentInstanceState {
       LoggerFactory.getLogger(ComponentInstanceState.class);
   private static int MAX_FAILURE_TOLERATED = 3;
   private static String INVALID_TRANSITION_ERROR =
-      "Result {0} for command {1} is not expected for component {2} in state {3}.";
+      "Result %s for command %s is not expected for component %s in state %s.";
 
   private final String componentName;
   private final ContainerId containerId;

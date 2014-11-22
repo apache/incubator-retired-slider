@@ -61,6 +61,7 @@ public class MetainfoParser {
     digester.addBeanPropertySetter("*/component/maxInstanceCount");
     digester.addBeanPropertySetter("*/component/autoStartOnFailure");
     digester.addBeanPropertySetter("*/component/appExports");
+    digester.addBeanPropertySetter("*/component/compExports");
     digester.addObjectCreate("*/componentExport", ComponentExport.class);
     digester.addBeanPropertySetter("*/componentExport/name");
     digester.addBeanPropertySetter("*/componentExport/value");
@@ -81,10 +82,11 @@ public class MetainfoParser {
     digester.addSetNext("*/package", "addOSPackage");
     digester.addSetNext("*/osSpecific", "addOSSpecific");
 
-    digester.addObjectCreate("*/configuration-dependencies",
-                             ConfigurationDependencies.class);
-    digester.addBeanPropertySetter("*/config-type", "configType");
-    digester.addSetNext("*/configuration-dependencies", "setConfigDependencies");
+    digester.addObjectCreate("*/configFile", ConfigFile.class);
+    digester.addBeanPropertySetter("*/configFile/type");
+    digester.addBeanPropertySetter("*/configFile/fileName");
+    digester.addBeanPropertySetter("*/configFile/dictionaryName");
+    digester.addSetNext("*/configFile", "addConfigFile");
 
     digester.addSetRoot("*/application", "setApplication");
 

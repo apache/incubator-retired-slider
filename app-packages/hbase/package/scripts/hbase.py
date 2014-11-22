@@ -21,11 +21,13 @@ import os
 
 from resource_management import *
 import sys
+import shutil
 
 def hbase(name=None # 'master' or 'regionserver' or 'client'
               ):
   import params
 
+  """
   if name in ["master","regionserver"]:
     params.HdfsDirectory(params.hbase_hdfs_root_dir,
                          action="create_delayed"
@@ -35,10 +37,13 @@ def hbase(name=None # 'master' or 'regionserver' or 'client'
                          mode=0711
     )
     params.HdfsDirectory(None, action="create")
+  """
+
   Directory( params.conf_dir,
       owner = params.hbase_user,
       group = params.user_group,
-      recursive = True
+      recursive = True,
+      content = params.input_conf_files_dir
   )
 
   Directory (params.tmp_dir,
@@ -60,18 +65,13 @@ def hbase(name=None # 'master' or 'regionserver' or 'client'
             group = params.user_group
   )
 
-  XmlConfig( "hdfs-site.xml",
-            conf_dir = params.conf_dir,
-            configurations = params.config['configurations']['hdfs-site'],
-            owner = params.hbase_user,
-            group = params.user_group
-  )
-
+ 
   if 'hbase-policy' in params.config['configurations']:
     XmlConfig( "hbase-policy.xml",
-      configurations = params.config['configurations']['hbase-policy'],
-      owner = params.hbase_user,
-      group = params.user_group
+            conf_dir = params.conf_dir,
+            configurations = params.config['configurations']['hbase-policy'],
+            owner = params.hbase_user,
+            group = params.user_group
     )
   # Manually overriding ownership of file installed by hadoop package
   else: 
@@ -80,8 +80,10 @@ def hbase(name=None # 'master' or 'regionserver' or 'client'
       group = params.user_group
     )
   
-  hbase_TemplateConfig( 'hbase-env.sh')
-
+  File(format("{conf_dir}/hbase-env.sh"),
+       owner = params.hbase_user,
+       content=InlineTemplate(params.hbase_env_sh_template)
+  )     
   hbase_TemplateConfig( params.metric_prop_file_name,
                         tag = 'GANGLIA-MASTER' if name == 'master' else 'GANGLIA-RS'
   )
@@ -107,7 +109,7 @@ def hbase(name=None # 'master' or 'regionserver' or 'client'
          owner=params.hbase_user,
          content=params.log4j_props
     )
-  elif (os.path.exists(format("{params.conf_dir}/log4j.properties"))):
+  elif (os.path.exists(format("{conf_dir}/log4j.properties"))):
     File(format("{params.conf_dir}/log4j.properties"),
       mode=0644,
       group=params.user_group,

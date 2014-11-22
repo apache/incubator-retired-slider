@@ -20,7 +20,7 @@ package org.apache.slider.core.exceptions;
 
 
 /**
- * YARN cluster itself is in a bad state
+ * The system is in a bad state
  */
 public class BadClusterStateException extends SliderException {
   public BadClusterStateException(String message,

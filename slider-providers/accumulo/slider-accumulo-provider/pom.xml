@@ -28,7 +28,7 @@
   <parent>
     <groupId>org.apache.slider</groupId>
     <artifactId>slider</artifactId>
-    <version>0.50.2-incubating</version>
+    <version>0.60.0-incubating</version>
     <relativePath>../../../</relativePath>
   </parent>
 
@@ -180,6 +180,12 @@
     <dependency>
       <groupId>org.apache.accumulo</groupId>
       <artifactId>accumulo-trace</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.accumulo</groupId>
+      <artifactId>accumulo-fate</artifactId>
       <scope>test</scope>
     </dependency>
 

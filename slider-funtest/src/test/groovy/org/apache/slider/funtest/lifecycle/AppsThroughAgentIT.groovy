@@ -27,6 +27,7 @@ import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
 import org.junit.After
+import org.junit.Before
 import org.junit.Test
 
 @CompileStatic
@@ -35,7 +36,16 @@ public class AppsThroughAgentIT extends AgentCommandTestBase
 implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   private static String COMMAND_LOGGER = "COMMAND_LOGGER"
-  private static String APPLICATION_NAME = "happy-path-with-flex"
+  private static String APPLICATION_NAME = "apps-through-agent"
+
+  @Before
+  public void prepareCluster() {
+    setupCluster(APPLICATION_NAME)
+  }
+  
+  public String getApplicationName() {
+    return APPLICATION_NAME
+  }
 
   @After
   public void destroyCluster() {
@@ -46,24 +56,23 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
   public void testCreateFlex() throws Throwable {
     assumeAgentTestsEnabled()
 
-    cleanup(APPLICATION_NAME)
-    SliderShell shell = slider(EXIT_SUCCESS,
-        [
-            ACTION_CREATE, APPLICATION_NAME,
-            ARG_IMAGE, agentTarballPath.toString(),
-            ARG_TEMPLATE, APP_TEMPLATE,
-            ARG_RESOURCES, APP_RESOURCE
-        ])
-
+    def application = APPLICATION_NAME
+    cleanup(application)
+    File launchReportFile = createTempJsonFile();
+    SliderShell shell = createTemplatedSliderApplication(application,
+        APP_TEMPLATE,
+        APP_RESOURCE,
+        [],
+        launchReportFile)
     logShell(shell)
 
-    ensureApplicationIsUp(APPLICATION_NAME)
+    def appId = ensureYarnApplicationIsUp(launchReportFile)
 
     //flex
     slider(EXIT_SUCCESS,
         [
             ACTION_FLEX,
-            APPLICATION_NAME,
+            application,
             ARG_COMPONENT,
             COMMAND_LOGGER,
             "2"])
@@ -71,14 +80,70 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     // sleep till the new instance starts
     sleep(1000 * 10)
 
+    status(0, application)
+    expectLiveContainerCountReached(application, COMMAND_LOGGER, 2,
+        CONTAINER_LAUNCH_TIMEOUT)
+
+    String amWebUrl = getInfoAmWebUrl(application)
+    log.info("Dumping data from AM Web URL");
+    log.info(amWebUrl.toURL().text);
+
+    ensureRegistryCallSucceeds(application)
+    assertAppRunning(appId)
+    def outfile = tmpFile(".txt")
+
+    def commands = [
+        ACTION_REGISTRY,
+        ARG_NAME,
+        application,
+        ARG_LISTEXP,
+        ARG_OUTPUT,
+        outfile.absolutePath
+    ]
+
+    awaitRegistryOutfileContains(outfile, commands, "container_log_dirs")
+    awaitRegistryOutfileContains(outfile, commands, "container_work_dirs")
+
+    // get log folders
     shell = slider(EXIT_SUCCESS,
         [
-            ACTION_STATUS,
-            APPLICATION_NAME])
+            ACTION_REGISTRY,
+            ARG_NAME,
+            application,
+            ARG_GETEXP,
+            "container_log_dirs"])
 
-    assertComponentCount(COMMAND_LOGGER, 2, shell)
+    assertOutputContains(shell, '"tag" : "COMMAND_LOGGER"', 2)
+    assertOutputContains(shell, '"level" : "component"', 2)
 
-    assertSuccess(shell)
-    assert isApplicationInState("RUNNING", APPLICATION_NAME), 'App is not running.'
+    // get cl-site config
+
+    def getconf = [
+        ACTION_REGISTRY,
+        ARG_NAME,
+        application,
+        ARG_GETCONF,
+        "cl-site",
+        ARG_FORMAT,
+        "json"]
+
+    def pattern = '"pattern.for.test.to.verify" : "verify this pattern"'
+
+    repeatUntilSuccess("registry",
+        this.&commandSucceeds,
+        REGISTRY_STARTUP_TIMEOUT,
+        PROBE_SLEEP_TIME,
+        [
+            text: "pattern",
+            command: getconf
+        ],
+        true,
+        "failed to find $pattern in output") {
+      slider(0, getconf)
+      assertOutputContains(shell, pattern)
+    }
+
+    assertAppRunning(appId)
   }
+
 }

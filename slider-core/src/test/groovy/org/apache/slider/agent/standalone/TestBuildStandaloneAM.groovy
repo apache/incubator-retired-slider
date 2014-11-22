@@ -30,6 +30,7 @@ import org.apache.slider.common.params.SliderActions
 import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.core.main.ServiceLauncher
+import org.apache.slider.core.registry.YarnAppListClient
 import org.junit.Test
 
 import static org.apache.slider.common.params.Arguments.ARG_COMP_OPT
@@ -65,14 +66,12 @@ class TestBuildStandaloneAM extends AgentMiniClusterTestBase {
 
     //but the cluster is still there for the default
     assert 0 == sliderClient.actionExists(clustername, false)
-    
-    
-    
+
     // verify the YARN registry doesn't know of it
-    def serviceRegistryClient = sliderClient.YARNRegistryClient
+    YarnAppListClient serviceRegistryClient = sliderClient.yarnAppListClient
     ApplicationReport report = serviceRegistryClient.findInstance(clustername)
     assert report == null;
-    
+
     // verify that global resource options propagate from the CLI
     def aggregateConf = sliderClient.loadPersistedClusterDescription(clustername)
     def windowDays = aggregateConf.resourceOperations.globalOptions.getMandatoryOptionInt(
@@ -94,13 +93,27 @@ class TestBuildStandaloneAM extends AgentMiniClusterTestBase {
       assertExceptionDetails(e, SliderExitCodes.EXIT_INSTANCE_EXISTS, "")
     }
 
-    
-    
-    //thaw time
+    //start time
     ServiceLauncher<SliderClient> l2 = thawCluster(clustername, [], true)
     SliderClient thawed = l2.service
     addToTeardown(thawed);
     waitForClusterLive(thawed)
+
+    // in the same code (for speed), create an illegal cluster
+    try {
+      ServiceLauncher<SliderClient> cluster3 = createOrBuildCluster(
+          SliderActions.ACTION_BUILD,
+          "illegalcluster",
+          ["role1": -1],
+          [],
+          false,
+          false,
+          agentDefOptions)
+      fail("expected an exception, got $cluster3.service")
+    } catch (SliderException e) {
+      assertExceptionDetails(e, SliderExitCodes.EXIT_BAD_STATE, "role1")
+    } 
+
   }
 
   @Test
@@ -127,7 +140,7 @@ class TestBuildStandaloneAM extends AgentMiniClusterTestBase {
     //but the cluster is still there for the default
     assert 0 == sliderClient.actionExists(clustername, false)
 
-    def serviceRegistryClient = sliderClient.YARNRegistryClient
+    def serviceRegistryClient = sliderClient.yarnAppListClient
     ApplicationReport report = serviceRegistryClient.findInstance(clustername)
     assert report == null;
 

@@ -269,16 +269,12 @@ class TestFileResource(TestCase):
     self.assertEqual(open_mock.call_count, 0)
 
 
-  @patch("resource_management.core.providers.system._coerce_uid")
-  @patch("resource_management.core.providers.system._coerce_gid")
-  @patch.object(os, "chown")
   @patch.object(os, "chmod")
   @patch.object(os, "stat")
   @patch("__builtin__.open")
   @patch.object(os.path, "exists")
   @patch.object(os.path, "isdir")
-  def test_ensure_metadata(self, isdir_mock, exists_mock, open_mock, stat_mock, chmod_mock, chown_mock, gid_mock,
-                           uid_mock):
+  def test_ensure_metadata(self, isdir_mock, exists_mock, open_mock, stat_mock, chmod_mock):
     """
     Tests if _ensure_metadata changes owner, usergroup and permissions of file to proper values
     """
@@ -292,8 +288,6 @@ class TestFileResource(TestCase):
         self.st_gid = 1
 
     stat_mock.return_value = stat()
-    gid_mock.return_value = 0
-    uid_mock.return_value = 0
 
     with Environment('/') as env:
       File('/directory/file',
@@ -308,15 +302,7 @@ class TestFileResource(TestCase):
     open_mock.assert_called_with('/directory/file', 'wb')
     self.assertEqual(open_mock.call_count, 1)
     stat_mock.assert_called_with('/directory/file')
-    self.assertEqual(chmod_mock.call_count, 1)
-    self.assertEqual(chown_mock.call_count, 2)
-    gid_mock.assert_called_once_with('hdfs')
-    uid_mock.assert_called_once_with('root')
 
-    chmod_mock.reset_mock()
-    chown_mock.reset_mock()
-    gid_mock.return_value = 1
-    uid_mock.return_value = 1
 
     with Environment('/') as env:
       File('/directory/file',
@@ -326,7 +312,5 @@ class TestFileResource(TestCase):
            owner='root',
            group='hdfs'
       )
-    
+    self.assertTrue(chmod_mock.called)
 
-    self.assertEqual(chmod_mock.call_count, 1)
-    self.assertEqual(chown_mock.call_count, 0)

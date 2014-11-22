@@ -1,0 +1,39 @@
+{
+  "schema": "http://example.org/specification/v2.0.0",
+  "metadata": {
+  },
+  "global": {
+    "yarn.log.include.patterns": "",
+    "yarn.log.exclude.patterns": ""
+  },
+  "components": {
+    "HBASE_MASTER": {
+      "yarn.role.priority": "1",
+      "yarn.component.instances": "1",
+      "yarn.memory": "1500"
+    },
+    "slider-appmaster": {
+      "yarn.memory": "1024"
+    },
+    "HBASE_REGIONSERVER": {
+      "yarn.role.priority": "2",
+      "yarn.component.instances": "1",
+      "yarn.memory": "1500"
+    },
+    "HBASE_REST": {
+      "yarn.role.priority": "3",
+      "yarn.component.instances": "1",
+      "yarn.memory": "556"
+    },
+    "HBASE_THRIFT": {
+      "yarn.role.priority": "4",
+      "yarn.component.instances": "0",
+      "yarn.memory": "556"
+    },
+    "HBASE_THRIFT2": {
+      "yarn.role.priority": "5",
+      "yarn.component.instances": "1",
+      "yarn.memory": "556"
+    }
+  }
+}

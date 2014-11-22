@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.apache.slider</groupId>
     <artifactId>slider</artifactId>
-    <version>0.50.2-incubating</version>
+    <version>0.60.0-incubating</version>
   </parent>
 
 
@@ -33,11 +33,15 @@
     <rpm.bindir>${rpm.basedir}/bin</rpm.bindir>
     <rpm.libdir>${rpm.basedir}/lib</rpm.libdir>
     <rpm.agentdir>${rpm.basedir}/agent</rpm.agentdir>
-    <rpm.username>mapred</rpm.username>
-    <rpm.groupname>hadoop</rpm.groupname>
+    <rpm.username>root</rpm.username>
+    <rpm.groupname>root</rpm.groupname>
     <src.confdir>src/conf-hdp</src.confdir>
     <src.libdir>${project.build.directory}/lib</src.libdir>
     <src.agent.ini.dir>${project.build.directory}/../../slider-agent/conf</src.agent.ini.dir>
+    <python.ver>python &gt;= 2.6</python.ver>
+    <executable.python>${project.basedir}/../slider-agent/src/test/python/python-wrap</executable.python>
+    <python.path.l>${project.basedir}/src/main/scripts:${project.basedir}/../slider-agent/src/test/python/mock:${project.basedir}/src/test/python/scripts</python.path.l>
+    <skipTests>false</skipTests>
   </properties>
 
   <build>
@@ -60,6 +64,32 @@
                 <file>../build.properties</file>
               </files>
             </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>${maven-exec-plugin.version}</version>
+        <executions>
+          <execution>
+            <configuration>
+              <executable>${executable.python}</executable>
+              <workingDirectory>src/test/python</workingDirectory>
+              <arguments>
+                <argument>unitTests.py</argument>
+              </arguments>
+              <environmentVariables>
+                <PYTHONPATH>${python.path.l}</PYTHONPATH>
+              </environmentVariables>
+              <skip>${skipTests}</skip>
+            </configuration>
+            <id>python-test</id>
+            <phase>test</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
           </execution>
         </executions>
       </plugin>
@@ -99,6 +129,26 @@
                   <type>tar.gz</type>
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}/agent</outputDirectory>
+                  <destFileName>slider-agent.tar.gz</destFileName>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+          <execution>
+            <!-- copy in the agent tar file -->
+            <id>copy-to-lib</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.apache.slider</groupId>
+                  <artifactId>slider-agent</artifactId>
+                  <type>tar.gz</type>
+                  <overWrite>false</overWrite>
+                  <outputDirectory>${project.build.directory}/lib</outputDirectory>
                   <destFileName>slider-agent.tar.gz</destFileName>
                 </artifactItem>
               </artifactItems>
@@ -188,6 +238,27 @@
   </reporting>
 
   <profiles>
+   <profile>
+      <id>Windows</id>
+      <activation>
+        <os><family>windows</family></os>
+      </activation>
+      <properties>
+        <executable.python>python</executable.python>
+        <python.path.l>${project.basedir}\src\main\scripts;${project.basedir}\..\slider-agent\src\test\python\mock;${project.basedir}\src\test\python\scripts</python.path.l>
+      </properties>
+    </profile>
+
+    <profile>
+      <id>Linux</id>
+      <activation>
+        <os><family>!windows</family></os>
+      </activation>
+      <properties>
+        <executable.python>${project.basedir}/../slider-agent/src/test/python/python-wrap</executable.python>
+        <python.path.l>${project.basedir}/src/main/scripts:${project.basedir}/../slider-agent/src/test/python/mock:${project.basedir}/src/test/python/scripts</python.path.l>
+      </properties>
+    </profile>
     <profile>
       <id>rpm</id>
       <build>
@@ -231,8 +302,8 @@
               <mappings>
                 <mapping>
                   <directory>${rpm.basedir}</directory>
-                  <!-- RW.R..R.. -->
-                  <filemode>644</filemode>
+                  <!-- RWXR.XR.X -->
+                  <filemode>755</filemode>
 
                   <username>${rpm.username}</username>
                   <groupname>${rpm.groupname}</groupname>
@@ -258,8 +329,8 @@
                 <!-- library -->
                 <mapping>
                   <directory>${rpm.libdir}</directory>
-                  <!-- RW.R..R.. -->
-                  <filemode>644</filemode>
+                  <!-- RWXR.XR.X -->
+                  <filemode>755</filemode>
 
                   <username>${rpm.username}</username>
                   <groupname>${rpm.groupname}</groupname>
@@ -287,10 +358,10 @@
                 <!-- agent -->
                 <mapping>
                   <directory>${rpm.agentdir}</directory>
-                  <configuration>true</configuration>
                   <filemode>0755</filemode>
                   <username>${rpm.username}</username>
                   <groupname>${rpm.groupname}</groupname>
+                  <directoryIncluded>false</directoryIncluded>
                   <sources>
                     <source>
                       <location>${project.build.directory}/agent</location>
@@ -308,6 +379,7 @@
                   <filemode>0755</filemode>
                   <username>${rpm.username}</username>
                   <groupname>${rpm.groupname}</groupname>
+                  <directoryIncluded>false</directoryIncluded>
                   <sources>
                     <source>
                       <location>${src.agent.ini.dir}</location>
@@ -318,6 +390,24 @@
                     </source>
                   </sources>
                 </mapping>
+
+                <!-- needed to apply attribute to directory -->
+                <mapping>
+                  <directory>${rpm.agentdir}</directory>
+                  <filemode>0755</filemode>
+                  <username>${rpm.username}</username>
+                  <groupname>${rpm.groupname}</groupname>
+                  <directoryIncluded>true</directoryIncluded>
+                </mapping>
+
+                <mapping>
+                  <directory>${rpm.agentdir}/conf</directory>
+                  <filemode>0755</filemode>
+                  <username>${rpm.username}</username>
+                  <groupname>${rpm.groupname}</groupname>
+                  <directoryIncluded>true</directoryIncluded>
+                </mapping>
+
               </mappings>
               <!--
               Scripts. Very dangerous in RPMs unless you know exactly what you are doing.

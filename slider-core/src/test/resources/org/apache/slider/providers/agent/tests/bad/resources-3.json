@@ -1,0 +1,13 @@
+{
+  "schema": "http://example.org/specification/v2.0.0",
+
+  "global": {
+  },
+  "components": {
+    "node": {
+      "yarn.memory": "256",
+      "yarn.component.instances": "2",
+      "yarn.role.priority":"1"
+    }
+  }
+}

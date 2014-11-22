@@ -52,7 +52,7 @@ public class NodeInstance {
    */
   public synchronized NodeEntry get(int role) {
     for (NodeEntry nodeEntry : nodeEntries) {
-      if (nodeEntry.index == role) {
+      if (nodeEntry.rolePriority == role) {
         return nodeEntry;
       }
     }
@@ -146,7 +146,7 @@ public class NodeInstance {
       new StringBuilder(toString());
     int i = 0;
     for (NodeEntry entry : nodeEntries) {
-      sb.append(String.format("\n  [%02d]  ", i++));
+      sb.append(String.format("\n  [%02d]  ", entry.rolePriority));
         sb.append(entry.toString());
     }
     return sb.toString();

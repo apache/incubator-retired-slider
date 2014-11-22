@@ -33,11 +33,10 @@ class TestDirectoryResource(TestCase):
   @patch.object(os.path, "isdir")
   @patch.object(os, "stat")
   @patch.object(os,"chmod")
-  @patch.object(os,"chown")
   @patch("resource_management.core.providers.system._coerce_uid")
   @patch("resource_management.core.providers.system._coerce_gid")
   def test_create_directory_recursive(self, _coerce_gid_mock, _coerce_uid_mock,
-                                      os_chown_mock, os_chmod_mock, os_stat_mock,
+                                      os_chmod_mock, os_stat_mock,
                                       isdir_mock, os_makedirs_mock, 
                                       os_path_exists_mock):
     os_path_exists_mock.return_value = False
@@ -57,20 +56,17 @@ class TestDirectoryResource(TestCase):
       
     os_makedirs_mock.assert_called_with('/a/b/c/d', 0777)
     os_chmod_mock.assert_called_with('/a/b/c/d', 0777)
-    os_chown_mock.assert_any_call('/a/b/c/d', 66, -1)
-    os_chown_mock.assert_any_call('/a/b/c/d', -1, 77)
-  
+
   @patch.object(os.path, "exists")
   @patch.object(os.path, "dirname")
   @patch.object(os.path, "isdir")
   @patch.object(os, "mkdir")
   @patch.object(os, "stat")
   @patch.object(os,"chmod")
-  @patch.object(os,"chown")
   @patch("resource_management.core.providers.system._coerce_uid")
   @patch("resource_management.core.providers.system._coerce_gid")
   def test_create_directory_not_recursive(self, _coerce_gid_mock, _coerce_uid_mock,
-                                      os_chown_mock, os_chmod_mock, os_stat_mock,
+                                      os_chmod_mock, os_stat_mock,
                                       mkdir_mock, isdir_mock, os_dirname_mock, 
                                       os_path_exists_mock):
     os_path_exists_mock.return_value = False
@@ -90,9 +86,7 @@ class TestDirectoryResource(TestCase):
       
     mkdir_mock.assert_called_with('/a/b/c/d', 0777)
     os_chmod_mock.assert_called_with('/a/b/c/d', 0777)
-    os_chown_mock.assert_any_call('/a/b/c/d', 66, -1)
-    os_chown_mock.assert_any_call('/a/b/c/d', -1, 77)
-    
+
   @patch.object(os.path, "exists")
   @patch.object(os.path, "dirname")
   @patch.object(os.path, "isdir")

@@ -38,6 +38,10 @@ import java.util.Set;
 public class MapOperations implements Map<String, String> {
   private static final Logger log =
     LoggerFactory.getLogger(MapOperations.class);
+  public static final String DAYS = ".days";
+  public static final String HOURS = ".hours";
+  public static final String MINUTES = ".minutes";
+  public static final String SECONDS = ".seconds";
 
   /**
    * Global options
@@ -53,13 +57,23 @@ public class MapOperations implements Map<String, String> {
 
   /**
    * Create an instance
-   * @param name
-   * @param options
+   * @param name name
+   * @param options source of options
    */
   public MapOperations(String name, Map<String, String> options) {
-    assert options != null : "null map";
+    Preconditions.checkArgument(options != null, "null map");
     this.options = options;
     this.name = name;
+  }
+
+  /**
+   * Create an instance from an iterative map entry
+   * @param entry entry to work with
+   */
+  public MapOperations(Map.Entry<String, Map<String, String>> entry) {
+    Preconditions.checkArgument(entry != null, "null entry");
+    this.name = entry.getKey();
+    this.options = entry.getValue();
   }
 
   /**
@@ -102,7 +116,11 @@ public class MapOperations implements Map<String, String> {
         log.debug("Missing key {} from config containing {}",
                   key, this);
       }
-      throw new BadConfigException("Missing option " + key);
+      String text = "Missing option " + key;
+      if (SliderUtils.isSet(name)) {
+        text += " from set " + name;
+      }
+      throw new BadConfigException(text);
     }
     return val;
   }
@@ -263,12 +281,12 @@ public class MapOperations implements Map<String, String> {
 
   /**
    * Get the time range of a set of keys
-   * @param basekey
+   * @param basekey base key to which suffix gets applied
    * @param defDays
    * @param defHours
    * @param defMins
    * @param defSecs
-   * @return
+   * @return the aggregate time range in seconds
    */
   public long getTimeRange(String basekey,
       int defDays,
@@ -276,11 +294,11 @@ public class MapOperations implements Map<String, String> {
       int defMins,
       int defSecs) {
     Preconditions.checkArgument(basekey != null);
-    int days = getOptionInt(basekey + ".days", defDays);
-    int hours = getOptionInt(basekey + ".hours", defHours);
+    int days = getOptionInt(basekey + DAYS, defDays);
+    int hours = getOptionInt(basekey + HOURS, defHours);
 
-    int minutes = getOptionInt(basekey + ".minutes", defMins);
-    int seconds = getOptionInt(basekey + ".seconds", defSecs);
+    int minutes = getOptionInt(basekey + MINUTES, defMins);
+    int seconds = getOptionInt(basekey + SECONDS, defSecs);
     // range check
     Preconditions.checkState(days >= 0 && hours >= 0 && minutes >= 0
                              && seconds >= 0,

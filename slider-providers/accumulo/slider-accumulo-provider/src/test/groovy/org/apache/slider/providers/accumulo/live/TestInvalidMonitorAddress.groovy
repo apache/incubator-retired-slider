@@ -20,14 +20,14 @@ package org.apache.slider.providers.accumulo.live
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.slider.core.main.ServiceLaunchException
-import org.apache.slider.core.main.ServiceLauncher
-import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.RoleKeys
-import org.apache.slider.providers.accumulo.AccumuloKeys
-import org.apache.slider.common.params.Arguments
 import org.apache.slider.client.SliderClient
+import org.apache.slider.common.SliderExitCodes
+import org.apache.slider.common.params.Arguments
+import org.apache.slider.core.main.ServiceLaunchException
+import org.apache.slider.core.main.ServiceLauncher
+import org.apache.slider.providers.accumulo.AccumuloKeys
 import org.apache.slider.providers.accumulo.AccumuloTestBase
 import org.junit.Test
 

@@ -30,6 +30,7 @@ import shell
 import sys
 import platform
 import Constants
+from AgentToggleLogger import AgentToggleLogger
 
 
 logger = logging.getLogger()
@@ -47,9 +48,10 @@ class PythonExecutor:
   event = threading.Event()
   python_process_has_been_killed = False
 
-  def __init__(self, tmpDir, config):
+  def __init__(self, tmpDir, config, agentToggleLogger):
     self.tmpDir = tmpDir
     self.config = config
+    self.agentToggleLogger = agentToggleLogger
     pass
 
   def run_file(self, script, script_params, tmpoutfile, tmperrfile, timeout,
@@ -81,7 +83,7 @@ class PythonExecutor:
 
     script_params += [tmpstructedoutfile, logger_level]
     pythonCommand = self.python_command(script, script_params)
-    logger.info("Running command " + pprint.pformat(pythonCommand))
+    self.agentToggleLogger.log("Running command " + pprint.pformat(pythonCommand))
     process = self.launch_python_subprocess(pythonCommand, tmpout, tmperr,
                                             environment_vars)
     logger.debug("Launching watchdog thread")
@@ -99,24 +101,23 @@ class PythonExecutor:
     out = open(tmpoutfile, 'r').read()
     error = open(tmperrfile, 'r').read()
 
+    structured_out = {}
     try:
       with open(tmpstructedoutfile, 'r') as fp:
         structured_out = json.load(fp)
-    except Exception:
+    except Exception as e:
       if os.path.exists(tmpstructedoutfile):
-        errMsg = 'Unable to read structured output from ' + tmpstructedoutfile
+        errMsg = 'Unable to read structured output from ' + tmpstructedoutfile + ' ' + str(e)
         structured_out = {
           'msg': errMsg
         }
         logger.warn(structured_out)
-      else:
-        structured_out = {}
 
     if self.python_process_has_been_killed:
       error = str(error) + "\n Python script has been killed due to timeout"
       returncode = 999
     result = self.condenseOutput(out, error, returncode, structured_out)
-    logger.info("Result: %s" % result)
+    self.agentToggleLogger.log("Result: %s" % result)
     return result
 
 
@@ -130,7 +131,7 @@ class PythonExecutor:
     env = os.environ.copy()
     if environment_vars:
       for k, v in environment_vars:
-        logger.info("Setting env: %s to %s", k, v)
+        self.agentToggleLogger.log("Setting env: %s to %s", k, v)
         env[k] = v
     return subprocess.Popen(command,
                             stdout=tmpout,

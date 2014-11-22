@@ -23,11 +23,11 @@ import groovy.util.logging.Slf4j
 import org.apache.hadoop.hbase.ClusterStatus
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.RoleKeys
-import org.apache.slider.providers.hbase.HBaseKeys
-import org.apache.slider.common.params.Arguments
 import org.apache.slider.client.SliderClient
-import org.apache.slider.providers.hbase.minicluster.HBaseMiniClusterTestBase
+import org.apache.slider.common.params.Arguments
 import org.apache.slider.core.main.ServiceLauncher
+import org.apache.slider.providers.hbase.HBaseKeys
+import org.apache.slider.providers.hbase.minicluster.HBaseMiniClusterTestBase
 import org.junit.Test
 
 /**

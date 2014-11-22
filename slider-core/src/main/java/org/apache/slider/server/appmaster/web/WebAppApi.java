@@ -16,6 +16,7 @@
  */
 package org.apache.slider.server.appmaster.web;
 
+import org.apache.hadoop.registry.client.api.RegistryOperations;
 import org.apache.slider.api.SliderClusterProtocol;
 import org.apache.slider.providers.ProviderService;
 import org.apache.slider.server.appmaster.state.AppState;
@@ -56,10 +57,13 @@ public interface WebAppApi {
    * Generate a mapping from role name to its {@link RoleStatus}. Be aware that this
    * is a computed value and not just a getter
    */
-  public Map<String,RoleStatus> getRoleStatusByName();
+  public Map<String, RoleStatus> getRoleStatusByName();
 
   /**
    * Returns an interface that can support the agent-based REST operations.
    */
   public AgentRestOperations getAgentRestOperations();
+
+
+  RegistryOperations getRegistryOperations();
 }

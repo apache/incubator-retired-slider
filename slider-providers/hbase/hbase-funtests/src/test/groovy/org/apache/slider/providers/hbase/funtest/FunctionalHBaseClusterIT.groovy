@@ -21,16 +21,16 @@ package org.apache.slider.providers.hbase.funtest
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.registry.client.api.RegistryConstants
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.RoleKeys
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.SliderKeys
-import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.tools.ConfigHelper
-import org.apache.slider.core.registry.info.RegistryNaming
+
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.providers.hbase.HBaseConfigFileOptions
 import org.apache.slider.providers.hbase.HBaseTestUtils
@@ -66,7 +66,8 @@ public class FunctionalHBaseClusterIT extends HBaseCommandTestBase
   @Before
   public void prepareCluster() {
 
-    String quorumServers = SLIDER_CONFIG.get(SliderXmlConfKeys.REGISTRY_ZK_QUORUM, DEFAULT_SLIDER_ZK_HOSTS)
+    String quorumServers = SLIDER_CONFIG.get(
+        RegistryConstants.KEY_REGISTRY_ZK_QUORUM, DEFAULT_SLIDER_ZK_HOSTS)
   
     ZooKeeper monitor = new ZooKeeper(quorumServers,
       1000, new Watcher(){
@@ -184,10 +185,7 @@ public class FunctionalHBaseClusterIT extends HBaseCommandTestBase
         [ARG_LIST, ARG_NAME, "cluster-with-no-name"])
 
     // how to work out the current service name?
-    def name = RegistryNaming.createRegistryName(clustername,
-        System.getProperty("user.name"),
-        SliderKeys.APP_TYPE,
-        1)
+    def name = clustername
     registry([ARG_LIST, ARG_VERBOSE, ARG_NAME, name])
     
     registry([ARG_LISTCONF, ARG_NAME, name])
@@ -213,7 +211,7 @@ public class FunctionalHBaseClusterIT extends HBaseCommandTestBase
     getConfDir.mkdirs();
     registry([ARG_GETCONF, yarn_site_config,
               ARG_NAME, name,
-              ARG_DEST, getConfDir.absolutePath])
+              ARG_OUTPUT, getConfDir.absolutePath])
     File retrieved = new File(getConfDir, yarn_site_config +".xml")
     def confFromFile = ConfigHelper.loadConfFromFile(retrieved)
     assert confFromFile.get(YarnConfiguration.RM_ADDRESS)

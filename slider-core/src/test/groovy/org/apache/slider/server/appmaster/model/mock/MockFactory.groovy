@@ -35,7 +35,7 @@ import org.apache.slider.providers.ProviderRole
  */
 //@CompileStatic
 @Slf4j
-class MockFactory implements  MockRoles {
+class MockFactory implements MockRoles {
 
   public static final ProviderRole PROVIDER_ROLE0 = new ProviderRole(
       MockRoles.ROLE0,
@@ -70,7 +70,7 @@ class MockFactory implements  MockRoles {
 
   MockContainerId newContainerId(ApplicationAttemptId attemptId) {
     MockContainerId cid = new MockContainerId()
-    cid.id = containerIdCount++
+    cid.containerId = containerIdCount++
     cid.applicationAttemptId = attemptId;
     return cid;
   }

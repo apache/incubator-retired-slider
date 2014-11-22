@@ -76,19 +76,21 @@ def _ensure_metadata(path, user, group, mode=None):
       path, existing_mode, mode))
       os.chmod(path, mode)
 
-  if user:
-    uid = _coerce_uid(user)
-    if stat.st_uid != uid:
-      Logger.info(
-        "Changing owner for %s from %d to %s" % (path, stat.st_uid, user))
-      os.chown(path, uid, -1)
+  ## Slider apps should have no need to chown the uid or gid
+  ## Keeping the code around as a reference
+  ## if user:
+  ##   uid = _coerce_uid(user)
+  ##   if stat.st_uid != uid:
+  ##     Logger.info(
+  ##       "Changing owner for %s from %d to %s" % (path, stat.st_uid, user))
+  ##     os.chown(path, uid, -1)
 
-  if group:
-    gid = _coerce_gid(group)
-    if stat.st_gid != gid:
-      Logger.info(
-        "Changing group for %s from %d to %s" % (path, stat.st_gid, group))
-      os.chown(path, -1, gid)
+  ## if group:
+  ##   gid = _coerce_gid(group)
+  ##   if stat.st_gid != gid:
+  ##     Logger.info(
+  ##       "Changing group for %s from %d to %s" % (path, stat.st_gid, group))
+  ##     os.chown(path, -1, gid)
 
 
 class FileProvider(Provider):
@@ -166,6 +168,14 @@ class DirectoryProvider(Provider):
 
     _ensure_metadata(path, self.resource.owner, self.resource.group,
                         mode=self.resource.mode)
+    if self.resource.content and os.path.isdir(self.resource.content):
+      Logger.info("Copying from " + self.resource.content + " to " + path)
+      for item in os.listdir(self.resource.content):
+        src = os.path.join(self.resource.content, item)
+        dst = os.path.join(path, item)
+        if not os.path.isdir(src):
+          Logger.info("Copying " + src + " as " + dst)
+          shutil.copy2(src, dst)
 
   def action_delete(self):
     path = self.resource.path
@@ -243,7 +253,7 @@ class ExecuteProvider(Provider):
                             cwd=self.resource.cwd, env=self.resource.environment,
                             preexec_fn=_preexec_fn(self.resource), user=self.resource.user,
                             wait_for_finish=self.resource.wait_for_finish, timeout=self.resource.timeout,
-                            pid_file=self.resource.pid_file)
+                            pid_file=self.resource.pid_file, poll_after=self.resource.poll_after)
         break
       except Fail as ex:
         if i == self.resource.tries-1: # last try

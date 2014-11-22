@@ -7,7 +7,10 @@
   "global": {
     "application.name": "small_cluster",
     "application.type": "hbase",
-    "application": "hdfs://cluster:8020/apps/hbase/v/1.0.0/application.tar"
+    "application": "hdfs://cluster:8020/apps/hbase/v/1.0.0/application.tar",
+    "internal.chaos.monkey.probability.amlaunchfailure": "10000",
+    "internal.chaos.monkey.interval.seconds": "60",
+    "internal.chaos.monkey.enabled": "true"
   },
   "components": {
 

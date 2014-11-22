@@ -34,7 +34,7 @@ def hbase_service(
     no_op_test = None
     
     if action == 'start':
-      daemon_cmd = format("{cmd} start {role}")
+      daemon_cmd = format("env HBASE_IDENT_STRING={hbase_user} {cmd} start {role}")
       if name == 'rest':
         daemon_cmd = format("{daemon_cmd} -p {rest_port}")
       elif name == 'thrift':
@@ -43,7 +43,7 @@ def hbase_service(
         daemon_cmd = format("{daemon_cmd} -p {thrift2_port}")
       no_op_test = format("ls {pid_file} >/dev/null 2>&1 && ps `cat {pid_file}` >/dev/null 2>&1")
     elif action == 'stop':
-      daemon_cmd = format("{cmd} stop {role} && rm -f {pid_file}")
+      daemon_cmd = format("env HBASE_IDENT_STRING={hbase_user} {cmd} stop {role} && rm -f {pid_file}")
 
     if daemon_cmd is not None:
       Execute ( daemon_cmd,

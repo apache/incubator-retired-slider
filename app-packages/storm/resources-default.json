@@ -1,0 +1,34 @@
+{
+  "schema" : "http://example.org/specification/v2.0.0",
+  "metadata" : {
+  },
+  "global" : {
+    "yarn.log.include.patterns": "",
+    "yarn.log.exclude.patterns": ""
+  },
+  "components": {
+    "slider-appmaster": {
+      "yarn.memory": "512"
+    },
+    "NIMBUS": {
+      "yarn.role.priority": "1",
+      "yarn.component.instances": "1",
+      "yarn.memory": "2048"
+    },
+    "STORM_UI_SERVER": {
+      "yarn.role.priority": "2",
+      "yarn.component.instances": "1",
+      "yarn.memory": "1278"
+    },
+    "DRPC_SERVER": {
+      "yarn.role.priority": "3",
+      "yarn.component.instances": "1",
+      "yarn.memory": "1278"
+    },
+    "SUPERVISOR": {
+      "yarn.role.priority": "4",
+      "yarn.component.instances": "1",
+      "yarn.memory": "3072"
+    }
+  }
+}

@@ -42,10 +42,12 @@ public class RestPaths {
                                       + SLIDER_SUBPATH_PUBLISHER;
 
   public static final String SLIDER_SUBPATH_REGISTRY = "/registry";
-  public static final String SLIDER_PATH_REGISTRY = WS_CONTEXT_ROOT
+  public static final String SLIDER_PATH_REGISTRY = SLIDER_CONTEXT_ROOT
                                                     + SLIDER_SUBPATH_REGISTRY;
 
+  @Deprecated
   public static final String REGISTRY_SERVICE = "v1/service";
+  @Deprecated
   public static final String REGISTRY_ANYSERVICE = "v1/anyservice";
 
   /**
@@ -59,6 +61,7 @@ public class RestPaths {
       = "[a-z0-9][a-z0-9_.\\+-]*";
 
   public static final String SLIDER_CONFIGSET = "slider";
+  public static final String SLIDER_EXPORTS = "exports";
 
   public static final String SLIDER_CLASSPATH = "classpath";
 }

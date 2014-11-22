@@ -20,6 +20,7 @@ package org.apache.slider.providers;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.slider.core.conf.AggregateConf;
+import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.exceptions.SliderException;
 
 import java.util.List;
@@ -28,9 +29,15 @@ public interface ProviderCore {
   String getName();
 
   List<ProviderRole> getRoles();
-  
+
   Configuration getConf();
 
+  /**
+   * Verify that an instance definition is considered valid by the provider
+   * @param instanceDefinition instance definition
+   * @throws SliderException if the configuration is not valid
+   */
   void validateInstanceDefinition(AggregateConf instanceDefinition) throws
       SliderException;
+
 }

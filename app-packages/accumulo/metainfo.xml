@@ -40,7 +40,7 @@
             </value>
           </export>
           <export>
-            <name>app.jmx</name>
+            <name>org.apache.slider.jmx</name>
             <value>
               ${site.global.monitor_protocol}://${ACCUMULO_MONITOR_HOST}:${site.accumulo-site.monitor.port.client}/xml
             </value>
@@ -69,6 +69,14 @@
         <command>ACCUMULO_TRACER-START</command>
         <requires>ACCUMULO_MASTER-STARTED</requires>
       </commandOrder>
+      <commandOrder>
+        <command>ACCUMULO_GC-START</command>
+        <requires>ACCUMULO_TSERVER-STARTED</requires>
+      </commandOrder>
+      <commandOrder>
+        <command>ACCUMULO_TRACER-START</command>
+        <requires>ACCUMULO_TSERVER-STARTED</requires>
+      </commandOrder>
     </commandOrders>
     <components>
       <component>
@@ -85,7 +93,7 @@
         <name>ACCUMULO_MONITOR</name>
         <category>MASTER</category>
         <publishConfig>true</publishConfig>
-        <appExports>QuickLinks-app.jmx,QuickLinks-org.apache.slider.monitor</appExports>
+        <appExports>QuickLinks-org.apache.slider.jmx,QuickLinks-org.apache.slider.monitor</appExports>
         <commandScript>
           <script>scripts/accumulo_monitor.py</script>
           <scriptType>PYTHON</scriptType>
@@ -143,6 +151,24 @@
         </packages>
       </osSpecific>
     </osSpecifics>
+
+    <configFiles>
+      <configFile>
+        <type>xml</type>
+        <fileName>accumulo-site.xml</fileName>
+        <dictionaryName>accumulo-site</dictionaryName>
+      </configFile>
+      <configFile>
+        <type>env</type>
+        <fileName>accumulo-env.sh</fileName>
+        <dictionaryName>accumulo-env</dictionaryName>
+      </configFile>
+      <configFile>
+        <type>properties</type>
+        <fileName>client.conf</fileName>
+        <dictionaryName>client</dictionaryName>
+      </configFile>
+    </configFiles>
 
   </application>
 </metainfo>

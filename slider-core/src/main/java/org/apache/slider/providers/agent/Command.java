@@ -22,7 +22,8 @@ package org.apache.slider.providers.agent;
 public enum Command {
   NOP,      // do nothing
   INSTALL,  // Install the component
-  START;     // Start the component
+  START,    // Start the component
+  STOP;     // Stop the component
 
   public static Command getCommand(String commandVal) {
     if (commandVal.equals(Command.START.toString())) {
@@ -30,6 +31,9 @@ public enum Command {
     }
     if (commandVal.equals(Command.INSTALL.toString())) {
       return Command.INSTALL;
+    }
+    if (commandVal.equals(Command.STOP.toString())) {
+      return Command.STOP;
     }
 
     return Command.NOP;

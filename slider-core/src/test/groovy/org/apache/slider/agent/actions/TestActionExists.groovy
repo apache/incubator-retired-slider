@@ -21,9 +21,11 @@ package org.apache.slider.agent.actions
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.ApplicationReport
+import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.client.SliderClient
+import org.apache.slider.common.params.ActionExistsArgs
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
 import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
@@ -107,10 +109,14 @@ class TestActionExists extends AgentMiniClusterTestBase {
     assertSucceeded(launcher)
     
     // assert that the cluster exists
-
     assert 0 == sliderClient.actionExists(clustername, true)
+
+    // assert that the cluster is in the running state
+    ActionExistsArgs running = new ActionExistsArgs()
+    running.state = YarnApplicationState.RUNNING.toString()
+    assert 0 == sliderClient.actionExists(clustername, running)
     
-    // freeze the cluster
+    // stop the cluster
     clusterActionFreeze(sliderClient, clustername)
 
     //verify that exists(live) is now false
@@ -118,6 +124,15 @@ class TestActionExists extends AgentMiniClusterTestBase {
 
     //but the cluster is still there for the default
     assert 0 == sliderClient.actionExists(clustername, false)
+    assert LauncherExitCodes.EXIT_FALSE == sliderClient.actionExists(clustername, running)
+
+    // verify that on a cluster thaw the existence probes still work, that is
+    // they do not discover the previous instance and return false when there
+    // is actually a live cluster
+    ServiceLauncher launcher2 = thawCluster(clustername, [], true);
+    addToTeardown(launcher2)
+    assert 0 == sliderClient.actionExists(clustername, running)
+    assert 0 == sliderClient.actionExists(clustername, true)
   }
   
 }

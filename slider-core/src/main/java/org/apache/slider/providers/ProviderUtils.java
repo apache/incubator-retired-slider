@@ -106,6 +106,30 @@ public class ProviderUtils implements RoleKeys {
       }
     }
   }
+
+  /**
+   * Add/overwrite the agent tarball (overwritten every time application is restarted)
+   * @param provider
+   * @param tarName
+   * @param sliderFileSystem
+   * @param agentDir
+   * @return
+   * @throws IOException
+   */
+  public static boolean addAgentTar(Object provider,
+                                    String tarName,
+                                    SliderFileSystem sliderFileSystem,
+                                    Path agentDir) throws
+  IOException {
+    File localFile = SliderUtils.findContainingJar(provider.getClass());
+    if(localFile != null) {
+      String parentDir = localFile.getParent();
+      Path agentTarPath = new Path(parentDir, tarName);
+      sliderFileSystem.getFileSystem().copyFromLocalFile(false, true, agentTarPath, agentDir);
+      return true;
+    }
+    return false;
+  }
   
   /**
    * Add a set of dependencies to the provider resources being built up,
@@ -151,6 +175,34 @@ public class ProviderUtils implements RoleKeys {
   }
 
   /**
+   * Loads all dependency jars from the default path
+   * @param providerResources map of provider resources to add these entries to
+   * @param sliderFileSystem target filesystem
+   * @param tempPath path in the cluster FS for temp files
+   * @param libDir relative directory to place resources
+   * @param libLocalSrcDir explicitly supplied local libs dir
+   * @throws IOException
+   * @throws SliderException
+   */
+  public static void addAllDependencyJars(Map<String, LocalResource> providerResources,
+                                          SliderFileSystem sliderFileSystem,
+                                          Path tempPath,
+                                          String libDir,
+                                          String libLocalSrcDir
+  ) throws
+      IOException,
+      SliderException {
+    String libSrcToUse = libLocalSrcDir;
+    if (SliderUtils.isSet(libLocalSrcDir)) {
+      File file = new File(libLocalSrcDir);
+      if (!file.exists() || !file.isDirectory()) {
+        throw new BadCommandArgumentsException("Supplied lib src dir %s is not valid", libLocalSrcDir);
+      }
+    }
+    SliderUtils.putAllJars(providerResources, sliderFileSystem, tempPath, libDir, libSrcToUse);
+  }
+
+  /**
    * build the log directory
    * @return the log dir
    */
@@ -180,11 +232,13 @@ public class ProviderUtils implements RoleKeys {
   
   /**
    * Validate the node count and heap size values of a node class 
-   *
+   * <p>
+   * If max &lt;= 0:  min &lt;= count
+   * If max &gt; 0:  min &lt;= count &lt;= max
    * @param name node class name
    * @param count requested node count
    * @param min requested heap size
-   * @param max
+   * @param max maximum value. 
    * @throws BadCommandArgumentsException if the values are out of range
    */
   public void validateNodeCount(String name,
@@ -252,7 +306,7 @@ public class ProviderUtils implements RoleKeys {
   /**
    * Propagate an option from the cluster specification option map
    * to the site XML map, using the site key for the name
-   * @param clusterSpec cluster specification
+   * @param global global config spec
    * @param optionKey key in the option map
    * @param sitexml  map for XML file to build up
    * @param siteKey key to assign the value to in the site XML
@@ -268,14 +322,13 @@ public class ProviderUtils implements RoleKeys {
 
   /**
    * Build the image dir. This path is relative and only valid at the far end
-   * @param clusterSpec cluster spec
+   * @param instanceDefinition instance definition
    * @param bindir bin subdir
    * @param script script in bin subdir
    * @return the path to the script
    * @throws FileNotFoundException if a file is not found, or it is not a directory* 
    */
-  public String buildPathToHomeDir(AggregateConf instanceDefinition
-                                   ,
+  public String buildPathToHomeDir(AggregateConf instanceDefinition,
                                   String bindir,
                                   String script) throws
                                                  FileNotFoundException,
@@ -327,7 +380,7 @@ public class ProviderUtils implements RoleKeys {
   
   /**
    * Build the image dir. This path is relative and only valid at the far end
-   * @param internal internal options
+   * @param instance instance options
    * @param bindir bin subdir
    * @param script script in bin subdir
    * @return the path to the script

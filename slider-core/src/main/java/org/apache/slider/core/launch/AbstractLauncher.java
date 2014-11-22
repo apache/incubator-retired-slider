@@ -19,14 +19,18 @@
 package org.apache.slider.core.launch;
 
 import com.google.common.base.Preconditions;
+
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DataOutputBuffer;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
 import org.apache.hadoop.yarn.api.records.LocalResource;
+import org.apache.hadoop.yarn.api.records.LogAggregationContext;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.util.Records;
 import org.apache.slider.api.ResourceKeys;
@@ -51,6 +55,7 @@ import java.util.Map;
 public abstract class AbstractLauncher extends Configured {
   private static final Logger log =
     LoggerFactory.getLogger(AbstractLauncher.class);
+  public static final String CLASSPATH = "CLASSPATH";
   /**
    * Filesystem to use for the launch
    */
@@ -68,7 +73,8 @@ public abstract class AbstractLauncher extends Configured {
   private final Map<String, ByteBuffer> serviceData =
     new HashMap<String, ByteBuffer>();
   // security
-  Credentials credentials = new Credentials();
+  protected final Credentials credentials = new Credentials();
+  protected LogAggregationContext logAggregationContext;
 
 
   protected AbstractLauncher(Configuration conf,
@@ -97,10 +103,18 @@ public abstract class AbstractLauncher extends Configured {
     return env;
   }
 
+  /**
+   * Get the launch commands.
+   * @return the live list of commands 
+   */
   public List<String> getCommands() {
     return commands;
   }
 
+  /**
+   * Get the map of local resources.
+   * @return the live map of local resources.
+   */
   public Map<String, LocalResource> getLocalResources() {
     return localResources;
   }
@@ -122,6 +136,13 @@ public abstract class AbstractLauncher extends Configured {
     return serviceData;
   }
 
+  /**
+   * Accessor to the credentials
+   * @return the credentials associated with this launcher
+   */
+  public Credentials getCredentials() {
+    return credentials;
+  }
 
   /**
    * Add a command line. It is converted to a single command before being
@@ -138,7 +159,7 @@ public abstract class AbstractLauncher extends Configured {
 
   /**
    * Add a list of commands. Each element in the list becomes a single command
-   * @param commandList
+   * @param commandList list of commands
    */
   public void addCommands(List<String> commandList) {
     commands.addAll(commandList);
@@ -157,24 +178,41 @@ public abstract class AbstractLauncher extends Configured {
    * @return the container to launch
    */
   public ContainerLaunchContext completeContainerLaunch() throws IOException {
-    dumpLocalResources();
+    
 
     String cmdStr = SliderUtils.join(commands, " ", false);
     log.debug("Completed setting up container command {}", cmdStr);
     containerLaunchContext.setCommands(commands);
 
-    //fix the env variables
+    //env variables
+    if (log.isDebugEnabled()) {
+      log.debug("Environment variables");
+      for (Map.Entry<String, String> envPair : envVars.entrySet()) {
+        log.debug("    \"{}\"=\"{}\"", envPair.getKey(), envPair.getValue());
+      }
+    }
     containerLaunchContext.setEnvironment(env);
+    
     //service data
+    if (log.isDebugEnabled()) {
+      log.debug("Service Data size");
+      for (Map.Entry<String, ByteBuffer> entry : serviceData.entrySet()) {
+        log.debug("\"{}\"=> {} bytes of data", entry.getKey(),
+            entry.getValue().array().length);
+      }
+    }
     containerLaunchContext.setServiceData(serviceData);
+
+    // resources
+    dumpLocalResources();
     containerLaunchContext.setLocalResources(localResources);
 
-
+    //tokens
+    log.debug("{} tokens", credentials.numberOfTokens());
     DataOutputBuffer dob = new DataOutputBuffer();
     credentials.writeTokenStorageToStream(dob);
     ByteBuffer tokenBuffer = ByteBuffer.wrap(dob.getData(), 0, dob.getLength());
     containerLaunchContext.setTokens(tokenBuffer);
-
 
     return containerLaunchContext;
   }
@@ -220,7 +258,6 @@ public abstract class AbstractLauncher extends Configured {
   public void extractResourceRequirements(Resource resource,
                                           Map<String, String> map) {
 
-
     if (map != null) {
       MapOperations options = new MapOperations("", map);
       resource.setMemory(options.getOptionInt(ResourceKeys.YARN_MEMORY,
@@ -230,13 +267,57 @@ public abstract class AbstractLauncher extends Configured {
     }
   }
 
+  public void extractLogAggregationContext(Map<String, String> map) {
+    if (map != null) {
+      String logPatternSepStr = "\\|";
+      String logPatternJoinStr = "|";
+      MapOperations options = new MapOperations("", map);
+
+      List<String> logIncludePatterns = new ArrayList<String>();
+      String includePatternExpression = options.getOption(
+          ResourceKeys.YARN_LOG_INCLUDE_PATTERNS, "").trim();
+      if (!includePatternExpression.isEmpty()) {
+        String[] includePatterns = includePatternExpression
+            .split(logPatternSepStr);
+        for (String includePattern : includePatterns) {
+          String trimmedIncludePattern = includePattern.trim();
+          if (!trimmedIncludePattern.isEmpty()) {
+            logIncludePatterns.add(trimmedIncludePattern);
+          }
+        }
+      }
+      String logIncludePattern = StringUtils.join(logIncludePatterns,
+          logPatternJoinStr);
+      log.info("Log include patterns: {}", logIncludePattern);
+
+      List<String> logExcludePatterns = new ArrayList<String>();
+      String excludePatternExpression = options.getOption(
+          ResourceKeys.YARN_LOG_EXCLUDE_PATTERNS, "").trim();
+      if (!excludePatternExpression.isEmpty()) {
+        String[] excludePatterns = excludePatternExpression
+            .split(logPatternSepStr);
+        for (String excludePattern : excludePatterns) {
+          String trimmedExcludePattern = excludePattern.trim();
+          if (!trimmedExcludePattern.isEmpty()) {
+            logExcludePatterns.add(trimmedExcludePattern);
+          }
+        }
+      }
+      String logExcludePattern = StringUtils.join(logExcludePatterns,
+          logPatternJoinStr);
+      log.info("Log exclude patterns: {}", logExcludePattern);
+
+      logAggregationContext = LogAggregationContext.newInstance(
+          logIncludePattern, logExcludePattern);
+    }
+  }
 
   /**
    * Utility method to set up the classpath
    * @param classpath classpath to use
    */
   public void setClasspath(ClasspathConstructor classpath) {
-    setEnv("CLASSPATH", classpath.buildClasspath());
+    setEnv(CLASSPATH, classpath.buildClasspath());
   }
   public void setEnv(String var, String value) {
     Preconditions.checkArgument(var != null, "null variable name");
@@ -297,6 +378,19 @@ public abstract class AbstractLauncher extends Configured {
       srcDir,
       destRelativeDir);
     addLocalResources(confResources);
+  }
+
+  /**
+   * Return the label expression and if not set null
+   * @param map
+   * @return
+   */
+  public String extractLabelExpression(Map<String, String> map) {
+    if (map != null) {
+      MapOperations options = new MapOperations("", map);
+      return options.getOption(ResourceKeys.YARN_LABEL_EXPRESSION, null);
+    }
+    return null;
   }
 
 

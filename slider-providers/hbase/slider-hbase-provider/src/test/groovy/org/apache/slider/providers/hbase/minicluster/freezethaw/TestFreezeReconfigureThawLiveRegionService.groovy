@@ -54,8 +54,8 @@ class TestFreezeReconfigureThawLiveRegionService
     conf.setInt("yarn.nodemanager.resource.cpu-vcores", 1)
     String clustername = createMiniCluster("", conf, nodemanagers, true)
     describe(
-        "Create a $regionServerCount node cluster, freeze it, patch the configuration files," +
-        " thaw it and verify that it came back with the new settings")
+        "Create a $regionServerCount node cluster, stop it, patch the configuration files," +
+        " start it and verify that it came back with the new settings")
 
     ServiceLauncher<SliderClient> launcher = createHBaseCluster(
         clustername,

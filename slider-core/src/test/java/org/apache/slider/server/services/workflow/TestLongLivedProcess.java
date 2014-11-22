@@ -18,6 +18,7 @@
 
 package org.apache.slider.server.services.workflow;
 
+import org.apache.slider.test.SliderTestUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,11 +34,9 @@ import java.util.List;
  */
 public class TestLongLivedProcess extends WorkflowServiceTestBase implements
     LongLivedProcessLifecycleEvent {
-  private static final Logger
-      log = LoggerFactory.getLogger(TestLongLivedProcess.class);
+  private static final Logger log = LoggerFactory.getLogger(TestLongLivedProcess.class);
 
-  private static final Logger
-      processLog =
+  private static final Logger processLog =
       LoggerFactory.getLogger("org.apache.hadoop.services.workflow.Process");
 
 
@@ -71,12 +70,11 @@ public class TestLongLivedProcess extends WorkflowServiceTestBase implements
     assertTrue("process stop callback not received", stopped);
     assertFalse(process.isRunning());
     assertEquals(0, process.getExitCode().intValue());
-
-    assertStringInOutput("test-classes", getFinalOutput());
   }
 
   @Test
   public void testExitCodes() throws Throwable {
+    SliderTestUtils.skipOnWindows();
 
     initProcess(commandFactory.exitFalse());
     process.start();
@@ -95,6 +93,7 @@ public class TestLongLivedProcess extends WorkflowServiceTestBase implements
 
   @Test
   public void testEcho() throws Throwable {
+    SliderTestUtils.skipOnWindows();
 
     String echoText = "hello, world";
     initProcess(commandFactory.echo(echoText));

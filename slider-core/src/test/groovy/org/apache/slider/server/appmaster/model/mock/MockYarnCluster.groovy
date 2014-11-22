@@ -56,6 +56,12 @@ public class MockYarnCluster {
     build();
   }
 
+  @Override
+  String toString() {
+    return "MockYarnCluster size=$clusterSize, capacity=${totalClusterCapacity()},"+
+        " in use=${containersInUse()}"
+  }
+
   /**
    * Build the cluster.
    */
@@ -90,7 +96,9 @@ public class MockYarnCluster {
    */
   MockYarnClusterContainer release(ContainerId cid) {
     int host = extractHost(cid.id)
-    return nodeAt(host).release(cid.id)
+    def inUse = nodeAt(host).release(cid.id)
+    log.debug("Released $cid inuse=$inUse")
+    return inUse
   }
 
   int containersInUse() {
@@ -159,11 +167,16 @@ public class MockYarnCluster {
       containers = new MockYarnClusterContainer[size];
       for (int i = 0; i < size; i++) {
         int cid = makeCid(index, i);
-        MockContainerId mci = new MockContainerId(id: cid)
+        MockContainerId mci = new MockContainerId(containerId: cid)
         containers[i] = new MockYarnClusterContainer(mci)
       }
     }
 
+    /**
+     * Look up a container
+     * @param containerId
+     * @return
+     */
     public MockYarnClusterContainer lookup(int containerId) {
       return containers[extractContainer(containerId)]
     }

@@ -23,6 +23,7 @@ import com.sun.jersey.api.client.ClientResponse
 import com.sun.jersey.api.client.WebResource
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.util.Shell
 import org.apache.slider.api.StatusKeys
 import org.apache.slider.client.SliderClient
 import org.apache.slider.core.main.ServiceLauncher
@@ -65,14 +66,15 @@ class TestPublisherRestResources extends AgentTestBase {
     assert app_def_path.exists()
     assert agt_ver_path.exists()
     assert agt_conf_path.exists()
+
     ServiceLauncher<SliderClient> launcher = buildAgentCluster(clustername,
         roles,
         [
             ARG_PROVIDER, "org.apache.slider.server.appmaster.web.rest.publisher.TestSliderProviderFactory",
             ARG_OPTION, PACKAGE_PATH, slider_core.absolutePath,
-            ARG_OPTION, APP_DEF, "file://" + app_def_path.absolutePath,
-            ARG_OPTION, AGENT_CONF, "file://" + agt_conf_path.absolutePath,
-            ARG_OPTION, AGENT_VERSION, "file://" + agt_ver_path.absolutePath
+            ARG_OPTION, APP_DEF, toURIArg(app_def_path),
+            ARG_OPTION, AGENT_CONF, toURIArg(agt_conf_path),
+            ARG_OPTION, AGENT_VERSION, toURIArg(agt_ver_path)
         ],
         true, true,
         true)
@@ -116,7 +118,13 @@ class TestPublisherRestResources extends AgentTestBase {
     Map<String,String> val = webResource.type(MediaType.APPLICATION_JSON).get(Map.class);
     assert "val1".equals(val.get("prop1"))
 
-    // some negative tests...
+    // testing security_enabled auto-setting feature (SLIDER-392)
+    webResource = client.resource(sliderConfigset +
+                                  "global/site.global.security_enabled");
+    val = webResource.type(MediaType.APPLICATION_JSON).get(Map.class);
+    assert "false".equals(val.get("site.global.security_enabled"))
+
+      // some negative tests...
     webResource = client.resource(appendToURL(sliderConfigset,
         "foobar-site"));
 
@@ -133,13 +141,14 @@ class TestPublisherRestResources extends AgentTestBase {
     Set uris = webResource.type(MediaType.APPLICATION_JSON)
             .get(Set.class)
     assert uris.size() > 0
-    log.info("Classpath URIs: {}", uris)
-    // check for some expected classpath elements
-    assert uris.any {it =~ /curator-x-discovery/}
-    assert uris.any {it =~ /hadoop-yarn-api/}
-    assert uris.any {it =~ /hadoop-hdfs/}
-    // and a negative test...
-    assert !uris.any {it =~ /foo-bar/}
+    if (!Shell.WINDOWS) {
+      log.info("Classpath URIs: {}", uris)
+      // check for some expected classpath elements
+      assert uris.any {it =~ /hadoop-yarn-api/}
+      assert uris.any {it =~ /hadoop-hdfs/}
+      // and a negative test...
+      assert !uris.any {it =~ /foo-bar/}
+    }
   }
 
 }

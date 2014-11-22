@@ -19,6 +19,7 @@
 package org.apache.slider.server.appmaster.operations;
 
 import org.apache.hadoop.yarn.client.api.AMRMClient;
+import org.apache.slider.server.appmaster.state.ContainerPriority;
 
 public class ContainerRequestOperation extends AbstractRMOperation {
 
@@ -39,6 +40,6 @@ public class ContainerRequestOperation extends AbstractRMOperation {
 
   @Override
   public String toString() {
-    return "request container ";
+    return "request container for " + ContainerPriority.toString(request.getPriority());
   }
 }

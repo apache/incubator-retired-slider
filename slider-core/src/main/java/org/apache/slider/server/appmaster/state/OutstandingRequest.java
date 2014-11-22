@@ -97,17 +97,18 @@ public final class OutstandingRequest {
    * @param resource resource
    * @param role role
    * @param time: time to record
+   * @param labelExpression label to satisfy
    * @return the request to raise
    */
   public AMRMClient.ContainerRequest buildContainerRequest(Resource resource,
-      RoleStatus role, long time) {
+      RoleStatus role, long time, String labelExpression) {
     String[] hosts;
     boolean relaxLocality;
     requestedTime = time;
     if (node != null) {
       hosts = new String[1];
       hosts[0] = node.hostname;
-      relaxLocality = false;
+      relaxLocality = !role.isStrictPlacement();
       // tell the node it is in play
       node.getOrCreate(roleId);
       log.info("Submitting request for container on {}", hosts[0]);
@@ -122,8 +123,9 @@ public final class OutstandingRequest {
                                       hosts,
                                       null,
                                       pri,
-                                      relaxLocality);
-    
+                                      relaxLocality,
+                                      labelExpression);
+
     return request;
   }
 

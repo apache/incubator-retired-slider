@@ -33,7 +33,12 @@ import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
-import org.apache.slider.server.appmaster.state.*
+import org.apache.slider.server.appmaster.state.AppState
+import org.apache.slider.server.appmaster.state.ContainerAssignment
+import org.apache.slider.server.appmaster.state.NodeInstance
+import org.apache.slider.server.appmaster.state.RoleInstance
+import org.apache.slider.server.appmaster.state.RoleStatus
+import org.apache.slider.server.appmaster.state.SimpleReleaseSelector
 import org.apache.slider.test.SliderTestBase
 import org.junit.Before
 
@@ -43,12 +48,14 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
   public static final int RM_MAX_RAM = 4096
   public static final int RM_MAX_CORES = 64
   MockFactory factory = new MockFactory()
-  AppState appState
+  MockAppState appState
   MockYarnEngine engine
   protected HadoopFS fs
   protected SliderFileSystem sliderFileSystem
   protected File historyWorkDir
   protected Path historyPath;
+  protected MockApplicationId applicationId;
+  protected MockApplicationAttemptId applicationAttemptId;
 
   @Override
   void setup() {
@@ -75,12 +82,16 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
 
 
     YarnConfiguration conf = SliderUtils.createConfiguration()
+    applicationId = new MockApplicationId(id: 1, clusterTimestamp: 0)
+    applicationAttemptId = new MockApplicationAttemptId(
+        applicationId: applicationId,
+        attemptId: 1)
 
     fs = HadoopFS.get(new URI("file:///"), conf)
     historyWorkDir = new File("target/history", historyDirName)
     historyPath = new Path(historyWorkDir.toURI())
     fs.delete(historyPath, true)
-    appState = new AppState(new MockRecordFactory())
+    appState = new MockAppState()
     appState.setContainerLimits(RM_MAX_RAM, RM_MAX_CORES)
     appState.buildInstance(
         buildInstanceDefinition(),
@@ -130,7 +141,7 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
     Container target = assigned.container
     RoleInstance ri = new RoleInstance(target)
     ri.roleId = assigned.role.priority
-    ri.role = assigned.role
+    ri.role = assigned.role.name
     return ri
   }
 
@@ -166,7 +177,7 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
    */
   public ContainerStatus containerStatus(ContainerId cid) {
     ContainerStatus status = containerStatus(cid,
-                                             LauncherExitCodes.EXIT_CLIENT_INITIATED_SHUTDOWN)
+        LauncherExitCodes.EXIT_CLIENT_INITIATED_SHUTDOWN)
     return status
   }
 
@@ -187,6 +198,7 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
     return createStartAndStopNodes([])
   }
 
+
   /**
    * Create, Start and stop nodes
    * @param completionResults List filled in with the status on all completed nodes
@@ -196,7 +208,22 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
       List<AppState.NodeCompletionResult> completionResults) {
     List<ContainerId> released = []
     List<RoleInstance> instances = createAndSubmitNodes(released)
+    processSubmissionOperations(instances, completionResults, released)
+    return instances
+  }
+
+  /**
+   * Process the start/stop operations from 
+   * @param instances
+   * @param completionResults
+   * @param released
+   */
+  public void processSubmissionOperations(
+      List<RoleInstance> instances,
+      List<AppState.NodeCompletionResult> completionResults,
+      List<ContainerId> released) {
     for (RoleInstance instance : instances) {
+      log.debug("Started ${instance.role} on ${instance.id} ")
       assert appState.onNodeManagerContainerStarted(instance.containerId)
     }
     releaseContainers(completionResults,
@@ -205,7 +232,6 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
         "released",
         0
     )
-    return instances
   }
 
   /**
@@ -249,6 +275,19 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
   public List<RoleInstance> createAndSubmitNodes(
       List<ContainerId> released) {
     List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()
+    return submitOperations(ops, released)
+  }
+
+  /**
+   * Process the RM operations and send <code>onContainersAllocated</code>
+   * events to the app state
+   * @param ops
+   * @param released
+   * @return
+   */
+  public List<RoleInstance> submitOperations(
+      List<AbstractRMOperation> ops,
+      List<ContainerId> released) {
     List<Container> allocatedContainers = engine.execute(ops, released)
     List<ContainerAssignment> assignments = [];
     List<AbstractRMOperation> operations = []
@@ -259,11 +298,23 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
       RoleInstance ri = roleInstance(assigned)
       instances << ri
       //tell the app it arrived
+      log.debug("Start submitted ${ri.role} on ${container.id} ")
       appState.containerStartSubmitted(container, ri);
     }
     return instances
   }
 
+  /**
+   * Add the AM to the app state
+   */
+  protected void addAppMastertoAppState() {
+    appState.buildAppMasterNode(
+        new MockContainerId(applicationAttemptId, 999999L),
+        "appmaster",
+        0,
+        null)
+  }
+  
   /**
    * Extract the list of container IDs from the list of role instances
    * @param instances instance list

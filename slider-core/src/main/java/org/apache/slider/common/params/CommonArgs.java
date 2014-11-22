@@ -20,13 +20,16 @@ package org.apache.slider.common.params;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import com.beust.jcommander.ParameterDescription;
 import com.beust.jcommander.ParameterException;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.ErrorStrings;
 import org.apache.slider.core.exceptions.SliderException;
+import org.apache.slider.core.exceptions.UsageException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +49,9 @@ public abstract class CommonArgs extends ArgOps implements SliderActions,
                                                            Arguments {
 
   protected static final Logger log = LoggerFactory.getLogger(CommonArgs.class);
+
+
+  private static final int DIFF_BETWEEN_DESCIPTION_AND_COMMAND_NAME = 30;
 
 
   @Parameter(names = ARG_HELP, help = true)
@@ -96,14 +102,49 @@ public abstract class CommonArgs extends ArgOps implements SliderActions,
     commander = new JCommander(this);
   }
 
-
   public String usage() {
-    StringBuilder builder = new StringBuilder("\n");
-    commander.usage(builder, "  ");
-    builder.append("\nactions: ");
-    return builder.toString();
+    return usage(this, null);
   }
 
+  public static String usage(CommonArgs serviceArgs, String commandOfInterest) {
+    String result = null;
+    StringBuilder helperMessage = new StringBuilder();
+    if (commandOfInterest == null) {
+      // JCommander.usage is too verbose for a command with many options like
+      // slider no short version of that is found Instead, we compose our msg by
+      helperMessage.append("\nUsage: slider COMMAND [options]\n");
+      helperMessage.append("where COMMAND is one of\n");
+      for (String jcommand : serviceArgs.commander.getCommands().keySet()) {
+        helperMessage.append(String.format("\t%-"
+            + DIFF_BETWEEN_DESCIPTION_AND_COMMAND_NAME + "s%s", jcommand,
+            serviceArgs.commander.getCommandDescription(jcommand) + "\n"));
+      }
+      helperMessage
+          .append("Most commands print help when invoked without parameters");
+      result = helperMessage.toString();
+    } else {
+      helperMessage.append("\nUsage: slider " + commandOfInterest);
+      helperMessage.append(serviceArgs.coreAction.getMinParams() > 0 ? " <application>" : "");
+      helperMessage.append("\n");
+      for (ParameterDescription paramDesc : serviceArgs.commander.getCommands()
+          .get(commandOfInterest).getParameters()) {
+        String optional = paramDesc.getParameter().required() ? "  (required)"
+            : "  (optional)";
+        String paramName = paramDesc.getParameterized().getType() == Boolean.TYPE ? paramDesc
+            .getLongestName() : paramDesc.getLongestName() + " <"
+            + paramDesc.getParameterized().getName() + ">";
+        helperMessage.append(String.format("\t%-"
+            + DIFF_BETWEEN_DESCIPTION_AND_COMMAND_NAME + "s%s", paramName,
+            paramDesc.getDescription() + optional + "\n"));
+        result = helperMessage.toString();
+      }
+    }
+    return result;
+  }
+
+  public static String usage(CommonArgs serviceArgs) {
+    return usage(serviceArgs, null);
+  }
 
   /**
    * Parse routine -includes registering the action-specific argument classes
@@ -193,14 +234,25 @@ public abstract class CommonArgs extends ArgOps implements SliderActions,
   /**
    * Validate the arguments against the action requested
    */
-  public void validate() throws BadCommandArgumentsException {
+  public void validate() throws BadCommandArgumentsException, UsageException {
     if (coreAction == null) {
-      throw new BadCommandArgumentsException(ErrorStrings.ERROR_NO_ACTION
-                                             + usage());
+      throw new UsageException(ErrorStrings.ERROR_NO_ACTION + usage());
     }
     log.debug("action={}", getAction());
-    //let the action validate itself
-    coreAction.validate();
+    // let the action validate itself
+    try {
+      coreAction.validate();
+    } catch (BadCommandArgumentsException e) {
+      StringBuilder badArgMsgBuilder = new StringBuilder();
+      badArgMsgBuilder.append(e.toString() + "\n");
+      badArgMsgBuilder.append(usage(this, coreAction.getActionName()));
+      throw new BadCommandArgumentsException(badArgMsgBuilder.toString());
+    } catch (UsageException e) {
+      StringBuilder badArgMsgBuilder = new StringBuilder();
+      badArgMsgBuilder.append(e.toString() + "\n");
+      badArgMsgBuilder.append(usage(this, coreAction.getActionName()));
+      throw new UsageException(badArgMsgBuilder.toString());
+    }
   }
 
   /**

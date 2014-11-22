@@ -23,7 +23,11 @@ import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.api.ResourceKeys
 import org.apache.slider.client.SliderClient
+import org.apache.slider.common.SliderExitCodes
+import org.apache.slider.common.SliderXmlConfKeys
+import org.apache.slider.core.exceptions.BadClusterStateException
 import org.apache.slider.core.main.ServiceLauncher
+import org.junit.Before
 import org.junit.Test
 
 import static org.apache.slider.common.params.Arguments.*
@@ -36,6 +40,28 @@ import static org.apache.slider.providers.agent.AgentKeys.*
 @Slf4j
 class TestAgentEcho extends AgentTestBase {
 
+  File slider_core
+  String echo_py
+  File echo_py_path
+  File app_def_path
+  String agt_ver
+  File agt_ver_path
+  String agt_conf
+  File agt_conf_path
+  
+  @Before
+  public void setupArtifacts() {
+    slider_core = new File(new File(".").absoluteFile, "src/test/python");
+    echo_py = "echo.py"
+    echo_py_path = new File(slider_core, echo_py)
+    app_def_path = new File(app_def_pkg_path)
+    agt_ver = "version"
+    agt_ver_path = new File(slider_core, agt_ver)
+    agt_conf = "agent.ini"
+    agt_conf_path = new File(slider_core, agt_conf)
+
+  }
+  
   @Override
   void checkTestAssumptions(YarnConfiguration conf) {
 
@@ -43,6 +69,8 @@ class TestAgentEcho extends AgentTestBase {
 
   @Test
   public void testEchoOperation() throws Throwable {
+    assumeValidServerEnv()
+
     String clustername = createMiniCluster("",
         configuration,
         1,
@@ -51,14 +79,6 @@ class TestAgentEcho extends AgentTestBase {
         true,
         false)
 
-    File slider_core = new File(new File(".").absoluteFile, "src/test/python");
-    String echo_py = "echo.py"
-    File echo_py_path = new File(slider_core, echo_py)
-    File app_def_path = new File(app_def_pkg_path)
-    String agt_ver = "version"
-    File agt_ver_path = new File(slider_core, agt_ver)
-    String agt_conf = "agent.ini"
-    File agt_conf_path = new File(slider_core, agt_conf)
     assert echo_py_path.exists()
     assert app_def_path.exists()
     assert agt_ver_path.exists()
@@ -72,12 +92,14 @@ class TestAgentEcho extends AgentTestBase {
         roles,
         [
             ARG_OPTION, PACKAGE_PATH, slider_core.absolutePath,
-            ARG_OPTION, APP_DEF, "file://" + app_def_path.absolutePath,
-            ARG_OPTION, AGENT_CONF, "file://" + agt_conf_path.absolutePath,
-            ARG_OPTION, AGENT_VERSION, "file://" + agt_ver_path.absolutePath,
+            ARG_OPTION, APP_DEF, toURIArg(app_def_path),
+            ARG_OPTION, AGENT_CONF, toURIArg(agt_conf_path),
+            ARG_OPTION, AGENT_VERSION, toURIArg(agt_ver_path),
             ARG_RES_COMP_OPT, role, ResourceKeys.COMPONENT_PRIORITY, "1",
             ARG_COMP_OPT, role, SCRIPT_PATH, echo_py,
             ARG_COMP_OPT, role, SERVICE_NAME, "Agent",
+            ARG_DEFINE, 
+            SliderXmlConfKeys.KEY_SLIDER_AM_DEPENDENCY_CHECKS_DISABLED + "=false" 
         ],
         true, true,
         true)
@@ -85,9 +107,23 @@ class TestAgentEcho extends AgentTestBase {
 
     waitForRoleCount(sliderClient, roles, AGENT_CLUSTER_STARTUP_TIME)
     //sleep a bit
-    sleep(20000)
+    sleep(5000)
     //expect the role count to be the same
     waitForRoleCount(sliderClient, roles, 1000)
+
+    // flex size
+    // while running, flex it with no changes
+    sliderClient.flex(clustername, [(role): 2]);
+    sleep(1000)
+    waitForRoleCount(sliderClient, roles, 1000)
+    
+    // flex to an illegal value
+    try {
+      sliderClient.flex(clustername, [(role): -1]);
+      fail("expected an exception")
+    } catch (BadClusterStateException e) {
+      assertExceptionDetails(e, SliderExitCodes.EXIT_BAD_STATE, "negative")
+    }
 
   }
 }

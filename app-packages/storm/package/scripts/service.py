@@ -21,6 +21,8 @@ limitations under the License.
 
 from resource_management import *
 import time
+import os
+import sys
 
 """
 Slider package uses jps as pgrep does not list the whole process start command
@@ -31,6 +33,7 @@ def service(
   import params
   import status_params
 
+  python_binary = os.environ['PYTHON_EXE'] if 'PYTHON_EXE' in os.environ else sys.executable
   pid_file = status_params.pid_files[name]
   container_id = status_params.container_id
   no_op_test = format("ls {pid_file} >/dev/null 2>&1 && ps `cat {pid_file}` >/dev/null 2>&1")
@@ -50,18 +53,16 @@ def service(
     if name == "rest_api":
       cmd = format("{rest_process_cmd} {rest_api_conf_file} > {log_dir}/restapi.log")
     else:
-      cmd = format("env JAVA_HOME={java64_home} PATH=$PATH:{java64_home}/bin STORM_BASE_DIR={app_root} STORM_CONF_DIR={conf_dir} {storm_bin} {name} > {log_dir}/{name}.out 2>&1")
+      cmd = format("env JAVA_HOME={java64_home} PATH={java64_home}/bin:$PATH STORM_BASE_DIR={app_root} STORM_CONF_DIR={conf_dir} {python_binary} {storm_bin} {name} > {log_dir}/{name}.out 2>&1")
 
     Execute(cmd,
             not_if=no_op_test,
-            user=params.storm_user,
             logoutput=False,
             wait_for_finish=False
     )
 
     if name == "rest_api":
       Execute(crt_pid_cmd,
-              user=params.storm_user,
               logoutput=True,
               tries=6,
               try_sleep=10
@@ -70,14 +71,13 @@ def service(
       content = None
       for i in xrange(12):
         Execute(crt_pid_cmd,
-                user=params.storm_user,
                 logoutput=True
         )
         with open(pid_file) as f:
           content = f.readline().strip()
         if content.isdigit():
           break;
-        File(pid_file, action = "delete")
+        File(pid_file, action="delete")
         time.sleep(10)
         pass
 

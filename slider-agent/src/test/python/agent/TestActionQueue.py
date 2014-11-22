@@ -37,6 +37,9 @@ from mock.mock import patch, MagicMock, call
 from CustomServiceOrchestrator import CustomServiceOrchestrator
 from PythonExecutor import PythonExecutor
 from CommandStatusDict import CommandStatusDict
+from AgentToggleLogger import AgentToggleLogger
+import platform
+IS_WINDOWS = platform.system() == "Windows"
 
 
 class TestActionQueue(TestCase):
@@ -45,6 +48,7 @@ class TestActionQueue(TestCase):
     sys.stdout = out
     # save original open() method for later use
     self.original_open = open
+    self.agentToggleLogger = AgentToggleLogger("info")
 
 
   def tearDown(self):
@@ -104,7 +108,7 @@ class TestActionQueue(TestCase):
     CustomServiceOrchestrator_mock.return_value = None
     dummy_controller = MagicMock()
     config = MagicMock()
-    actionQueue = ActionQueue(config, dummy_controller)
+    actionQueue = ActionQueue(config, dummy_controller, self.agentToggleLogger)
     actionQueue.start()
     time.sleep(3)
     actionQueue.stop()
@@ -118,7 +122,7 @@ class TestActionQueue(TestCase):
   def test_process_command(self,
                            execute_command_mock, print_exc_mock):
     dummy_controller = MagicMock()
-    actionQueue = ActionQueue(AgentConfig("", ""), dummy_controller)
+    actionQueue = ActionQueue(AgentConfig("", ""), dummy_controller, self.agentToggleLogger)
     execution_command = {
       'commandType': ActionQueue.EXECUTION_COMMAND,
     }
@@ -167,7 +171,7 @@ class TestActionQueue(TestCase):
                                   status_update_callback):
     CustomServiceOrchestrator_mock.return_value = None
     dummy_controller = MagicMock()
-    actionQueue = ActionQueue(AgentConfig("", ""), dummy_controller)
+    actionQueue = ActionQueue(AgentConfig("", ""), dummy_controller, self.agentToggleLogger)
 
     requestComponentStatus_mock.return_value = {'exitcode': 'dummy report'}
     actionQueue.execute_status_command(self.status_command)
@@ -193,7 +197,7 @@ class TestActionQueue(TestCase):
     csoMocks[0].status_commands_stdout = None
     csoMocks[0].status_commands_stderr = None
     dummy_controller = MagicMock()
-    actionQueue = ActionQueue(AgentConfig("", ""), dummy_controller)
+    actionQueue = ActionQueue(AgentConfig("", ""), dummy_controller, self.agentToggleLogger)
 
     runCommand_mock.return_value = {'configurations': {}}
     actionQueue.execute_status_command(self.status_command_with_config)
@@ -212,7 +216,7 @@ class TestActionQueue(TestCase):
   def test_process_command2(self, execute_status_command_mock,
                            execute_command_mock, print_exc_mock):
     dummy_controller = MagicMock()
-    actionQueue = ActionQueue(AgentConfig("", ""), dummy_controller)
+    actionQueue = ActionQueue(AgentConfig("", ""), dummy_controller, self.agentToggleLogger)
     execution_command = {
       'commandType': ActionQueue.EXECUTION_COMMAND,
     }
@@ -294,7 +298,7 @@ class TestActionQueue(TestCase):
     resolve_script_path_mock.return_value = "abc.py"
 
     dummy_controller = MagicMock()
-    actionQueue = ActionQueue(config, dummy_controller)
+    actionQueue = ActionQueue(config, dummy_controller, self.agentToggleLogger)
     unfreeze_flag = threading.Event()
     python_execution_result_dict = {
       'stdout': 'out',
@@ -345,6 +349,19 @@ class TestActionQueue(TestCase):
                 'taskId': 3,
                 'exitcode': 777,
                 'reportResult': True}
+    if IS_WINDOWS:
+      expected = {'status': 'IN_PROGRESS',
+                  'stderr': 'Read from {0}\\errors-3.txt'.format(tempdir),
+                  'stdout': 'Read from {0}\\output-3.txt'.format(tempdir),
+                  'structuredOut': '',
+                  'clusterName': u'cc',
+                  'roleCommand': u'INSTALL',
+                  'serviceName': u'HBASE',
+                  'role': u'HBASE_MASTER',
+                  'actionId': '1-1',
+                  'taskId': 3,
+                  'exitcode': 777,
+                  'reportResult': True}
     self.assertEqual(report['reports'][0], expected)
     # Continue command execution
     unfreeze_flag.set()

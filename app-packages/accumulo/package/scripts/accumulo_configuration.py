@@ -20,8 +20,7 @@ limitations under the License.
 
 from resource_management import *
 
-def setup_conf_dir(name=None, # 'master' or 'tserver' or 'monitor' or 'gc' or 'tracer' or 'client'
-              extra_params=None):
+def setup_conf_dir(name=None): # 'master' or 'tserver' or 'monitor' or 'gc' or 'tracer' or 'client'
   import params
 
   # create the conf directory
@@ -29,6 +28,51 @@ def setup_conf_dir(name=None, # 'master' or 'tserver' or 'monitor' or 'gc' or 't
       owner = params.accumulo_user,
       group = params.user_group,
       recursive = True
+  )
+
+  ssl_params = False
+  if params.ssl_enabled or (params.monitor_security_enabled and
+                                name == 'monitor'):
+    import os
+
+    ssl_params = True
+    if os.path.exists(params.keystore_path) or os.path.exists(params.truststore_path):
+      if os.path.exists(params.keystore_path) and os.path.exists(params.truststore_path):
+        # assume keystores were already set up properly
+        pass
+      else:
+        self.fail_with_error("something went wrong when certs were created")
+
+    Directory( format("{params.conf_dir}/ssl"),
+               owner = params.accumulo_user,
+               group = params.user_group,
+               recursive = True
+    )
+    if not os.path.exists(params.truststore_path):
+      Execute( format("{hadoop_prefix}/bin/hadoop fs -get {params.ssl_cert_dir}/truststore.jks "
+                      "{params.truststore_path}"),
+               user=params.accumulo_user)
+      File( params.truststore_path,
+            mode=0600,
+            group=params.user_group,
+            owner=params.accumulo_user,
+            replace=False)
+    if not os.path.exists(params.keystore_path):
+      Execute( format("{hadoop_prefix}/bin/hadoop fs -get {params.ssl_cert_dir}/{params.hostname}.jks "
+                      "{params.keystore_path}"),
+               user=params.accumulo_user)
+      File( params.keystore_path,
+            mode=0600,
+            group=params.user_group,
+            owner=params.accumulo_user,
+            replace=False)
+
+  jarname = "SliderAccumuloUtils.jar"
+  File(format("{params.accumulo_root}/lib/{jarname}"),
+       mode=0644,
+       group=params.user_group,
+       owner=params.accumulo_user,
+       content=StaticFile(jarname)
   )
 
   if name != "client":
@@ -47,12 +91,16 @@ def setup_conf_dir(name=None, # 'master' or 'tserver' or 'monitor' or 'gc' or 't
     )
 
     configs = {}
-    if extra_params == None:
-      configs = params.config['configurations']['accumulo-site']
-    else:
+    if ssl_params:
       configs.update(params.config['configurations']['accumulo-site'])
-      for k in extra_params:
-        configs[k] = extra_params[k]
+      if (params.monitor_security_enabled and name == 'monitor'):
+        configs[params.monitor_keystore_property] = params.keystore_path
+        configs[params.monitor_truststore_property] = params.truststore_path
+      if params.ssl_enabled:
+        configs[params.ssl_keystore_file_property] = params.keystore_path
+        configs[params.ssl_truststore_file_property] = params.truststore_path
+    else:
+      configs = params.config['configurations']['accumulo-site']
 
     # create a site file for server processes
     XmlConfig( "accumulo-site.xml",
@@ -66,7 +114,6 @@ def setup_conf_dir(name=None, # 'master' or 'tserver' or 'monitor' or 'gc' or 't
     # create a minimal site file for client processes
     client_configurations = {}
     client_configurations['instance.zookeeper.host'] = params.config['configurations']['accumulo-site']['instance.zookeeper.host']
-    client_configurations['instance.dfs.dir'] = params.config['configurations']['accumulo-site']['instance.dfs.dir']
     client_configurations['instance.volumes'] = params.config['configurations']['accumulo-site']['instance.volumes']
     client_configurations['general.classpaths'] = params.config['configurations']['accumulo-site']['general.classpaths']
     XmlConfig( "accumulo-site.xml",
@@ -78,6 +125,13 @@ def setup_conf_dir(name=None, # 'master' or 'tserver' or 'monitor' or 'gc' or 't
 
   # create env file
   accumulo_TemplateConfig( 'accumulo-env.sh')
+
+  # create client.conf file
+  PropertiesFile(format("{params.conf_dir}/client.conf"),
+       properties = params.config['configurations']['client'],
+       owner = params.accumulo_user,
+       group = params.user_group
+  )
 
   # create host files
   accumulo_StaticFile( 'masters')

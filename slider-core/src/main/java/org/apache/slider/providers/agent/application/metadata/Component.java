@@ -16,6 +16,10 @@
  */
 package org.apache.slider.providers.agent.application.metadata;
 
+import org.apache.slider.common.tools.SliderUtils;
+import org.apache.slider.core.exceptions.BadConfigException;
+import org.apache.slider.core.exceptions.SliderException;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,6 +34,7 @@ public class Component {
   String maxInstanceCount;
   String autoStartOnFailure;
   String appExports;
+  String compExports;
   CommandScript commandScript;
   List<ComponentExport> componentExports;
 
@@ -78,8 +83,40 @@ public class Component {
     this.appExports = appExports;
   }
 
+  public String getCompExports() {
+    return compExports;
+  }
+
+  public void setCompExports(String compExports) {
+    this.compExports = compExports;
+  }
+
   public String getMinInstanceCount() {
     return minInstanceCount;
+  }
+
+  public int getMinInstanceCountInt() throws BadConfigException {
+    if (SliderUtils.isUnset(minInstanceCount)) {
+      return 0;
+    }
+
+    try {
+      return Integer.parseInt(minInstanceCount);
+    } catch (NumberFormatException nfe) {
+      throw new BadConfigException(nfe, "Invalid value for minInstanceCount for %s", name);
+    }
+  }
+
+  public int getMaxInstanceCountInt() throws BadConfigException {
+    if (SliderUtils.isUnset(maxInstanceCount)) {
+      return Integer.MAX_VALUE;
+    }
+
+    try {
+      return Integer.parseInt(maxInstanceCount);
+    } catch (NumberFormatException nfe) {
+      throw new BadConfigException(nfe, "Invalid value for maxInstanceCount for %s", name);
+    }
   }
 
   public void setMinInstanceCount(String minInstanceCount) {
@@ -123,5 +160,11 @@ public class Component {
     sb.append(",\n\"commandScript\" :").append(commandScript);
     sb.append('}');
     return sb.toString();
+  }
+
+  class AutoRestartSettings {
+    private boolean requiresAutoRestart;
+    private int maxFailures;
+    private int inThisManyMinutes;
   }
 }

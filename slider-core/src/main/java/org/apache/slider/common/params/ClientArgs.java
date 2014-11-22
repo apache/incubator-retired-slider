@@ -21,6 +21,7 @@ package org.apache.slider.common.params;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.slider.common.SliderXmlConfKeys;
+import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.ErrorStrings;
 import org.apache.slider.core.exceptions.SliderException;
@@ -42,25 +43,31 @@ public class ClientArgs extends CommonArgs {
    * This is not bonded to jcommander, it is set up
    * after the construction to point to the relevant
    * entry
+   * 
+   * KEEP IN ALPHABETICAL ORDER
    */
   private AbstractClusterBuildingActionArgs buildingActionArgs;
   private final ActionAMSuicideArgs actionAMSuicideArgs = new ActionAMSuicideArgs();
   private final ActionBuildArgs actionBuildArgs = new ActionBuildArgs();
-  private final ActionUpdateArgs actionUpdateArgs = new ActionUpdateArgs();
   private final ActionCreateArgs actionCreateArgs = new ActionCreateArgs();
   private final ActionDestroyArgs actionDestroyArgs = new ActionDestroyArgs();
+  private final ActionDiagnosticArgs actionDiagnosticArgs = new ActionDiagnosticArgs();
   private final ActionExistsArgs actionExistsArgs = new ActionExistsArgs();
   private final ActionFlexArgs actionFlexArgs = new ActionFlexArgs();
   private final ActionFreezeArgs actionFreezeArgs = new ActionFreezeArgs();
-  private final ActionGetConfArgs actionGetConfArgs = new ActionGetConfArgs();
+  private final ActionHelpArgs actionHelpArgs = new ActionHelpArgs();
+  private final ActionInstallPackageArgs actionInstallPackageArgs = new ActionInstallPackageArgs();
+  private final ActionInstallKeytabArgs actionInstallKeytabArgs = new ActionInstallKeytabArgs();
   private final ActionKillContainerArgs actionKillContainerArgs =
     new ActionKillContainerArgs();
   private final ActionListArgs actionListArgs = new ActionListArgs();
+  private final ActionLookupArgs actionLookupArgs = new ActionLookupArgs();
   private final ActionRegistryArgs actionRegistryArgs = new ActionRegistryArgs();
+  private final ActionResolveArgs actionResolveArgs = new ActionResolveArgs();
   private final ActionStatusArgs actionStatusArgs = new ActionStatusArgs();
   private final ActionThawArgs actionThawArgs = new ActionThawArgs();
+  private final ActionUpdateArgs actionUpdateArgs = new ActionUpdateArgs();
   private final ActionVersionArgs actionVersionArgs = new ActionVersionArgs();
-  private final ActionHelpArgs actionHelpArgs = new ActionHelpArgs();
 
 
   public ClientArgs(String[] args) {
@@ -75,23 +82,27 @@ public class ClientArgs extends CommonArgs {
   protected void addActionArguments() {
 
     addActions(
-      actionAMSuicideArgs,
-      actionBuildArgs,
-      actionCreateArgs,
-      actionUpdateArgs,
-      actionDestroyArgs,
-      actionExistsArgs,
-      actionFlexArgs,
-      actionFreezeArgs,
-      actionGetConfArgs,
-      actionKillContainerArgs,
-      actionListArgs,
-      actionRegistryArgs,
-      actionStatusArgs,
-      actionThawArgs,
-      actionHelpArgs,
-      actionVersionArgs
-              );
+        actionAMSuicideArgs,
+        actionBuildArgs,
+        actionCreateArgs,
+        actionUpdateArgs,
+        actionDestroyArgs,
+        actionDiagnosticArgs,
+        actionExistsArgs,
+        actionFlexArgs,
+        actionFreezeArgs,
+        actionHelpArgs,
+        actionInstallPackageArgs,
+        actionInstallKeytabArgs,
+        actionKillContainerArgs,
+        actionListArgs,
+        actionLookupArgs,
+        actionRegistryArgs,
+        actionResolveArgs,
+        actionStatusArgs,
+        actionThawArgs,
+        actionVersionArgs
+    );
   }
 
   @Override
@@ -110,6 +121,10 @@ public class ClientArgs extends CommonArgs {
     }
   }
 
+  public ActionDiagnosticArgs getActionDiagnosticArgs() {
+	  return actionDiagnosticArgs;
+  }
+
   public AbstractClusterBuildingActionArgs getBuildingActionArgs() {
     return buildingActionArgs;
   }
@@ -121,6 +136,12 @@ public class ClientArgs extends CommonArgs {
   public ActionBuildArgs getActionBuildArgs() {
     return actionBuildArgs;
   }
+
+  public ActionInstallPackageArgs getActionInstallPackageArgs() {
+    return actionInstallPackageArgs; }
+
+  public ActionInstallKeytabArgs getActionInstallKeytabArgs() {
+    return actionInstallKeytabArgs; }
 
   public ActionUpdateArgs getActionUpdateArgs() {
     return actionUpdateArgs;
@@ -146,10 +167,6 @@ public class ClientArgs extends CommonArgs {
     return actionFreezeArgs;
   }
 
-  public ActionGetConfArgs getActionGetConfArgs() {
-    return actionGetConfArgs;
-  }
-
   public ActionKillContainerArgs getActionKillContainerArgs() {
     return actionKillContainerArgs;
   }
@@ -158,8 +175,16 @@ public class ClientArgs extends CommonArgs {
     return actionListArgs;
   }
 
+  public ActionLookupArgs getActionLookupArgs() {
+    return actionLookupArgs;
+  }
+
   public ActionRegistryArgs getActionRegistryArgs() {
     return actionRegistryArgs;
+  }
+
+  public ActionResolveArgs getActionResolveArgs() {
+    return actionResolveArgs;
   }
 
   public ActionStatusArgs getActionStatusArgs() {
@@ -174,7 +199,7 @@ public class ClientArgs extends CommonArgs {
    * Look at the chosen action and bind it as the core action for the operation.
    * In theory this could be done by introspecting on the list of actions and 
    * choosing it without the switch statement. In practise this switch, while
-   * verbose, is easier to debug.
+   * verbose, is easier to debug. And in JDK7, much simpler.
    * @throws SliderException bad argument or similar
    */
   @Override
@@ -189,9 +214,6 @@ public class ClientArgs extends CommonArgs {
       //its a builder, so set those actions too
       buildingActionArgs = actionCreateArgs;
 
-    } else if (SliderActions.ACTION_UPDATE.equals(action)) {
-      bindCoreAction(actionUpdateArgs);
-
     } else if (SliderActions.ACTION_FREEZE.equals(action)) {
       bindCoreAction(actionFreezeArgs);
 
@@ -204,18 +226,23 @@ public class ClientArgs extends CommonArgs {
     } else if (SliderActions.ACTION_DESTROY.equals(action)) {
       bindCoreAction(actionDestroyArgs);
 
+    } else if (SliderActions.ACTION_DIAGNOSTICS.equals(action)) {
+      bindCoreAction(actionDiagnosticArgs);
+
     } else if (SliderActions.ACTION_EXISTS.equals(action)) {
       bindCoreAction(actionExistsArgs);
 
     } else if (SliderActions.ACTION_FLEX.equals(action)) {
       bindCoreAction(actionFlexArgs);
 
-    } else if (SliderActions.ACTION_GETCONF.equals(action)) {
-      bindCoreAction(actionGetConfArgs);
-
-    } else if (SliderActions.ACTION_HELP.equals(action) ||
-               SliderActions.ACTION_USAGE.equals(action)) {
+    } else if (SliderActions.ACTION_HELP.equals(action)) {
       bindCoreAction(actionHelpArgs);
+
+    } else if (SliderActions.ACTION_INSTALL_PACKAGE.equals(action)) {
+      bindCoreAction(actionInstallPackageArgs);
+
+    } else if (SliderActions.ACTION_INSTALL_KEYTAB.equals(action)) {
+      bindCoreAction(actionInstallKeytabArgs);
 
     } else if (SliderActions.ACTION_KILL_CONTAINER.equals(action)) {
       bindCoreAction(actionKillContainerArgs);
@@ -223,17 +250,26 @@ public class ClientArgs extends CommonArgs {
     } else if (SliderActions.ACTION_LIST.equals(action)) {
       bindCoreAction(actionListArgs);
 
+    } else if (SliderActions.ACTION_LOOKUP.equals(action)) {
+      bindCoreAction(actionLookupArgs);
+
     } else if (SliderActions.ACTION_REGISTRY.equals(action)) {
       bindCoreAction(actionRegistryArgs);
+
+    } else if (SliderActions.ACTION_RESOLVE.equals(action)) {
+      bindCoreAction(actionResolveArgs);
 
     } else if (SliderActions.ACTION_STATUS.equals(action)) {
       bindCoreAction(actionStatusArgs);
 
+    } else if (SliderActions.ACTION_UPDATE.equals(action)) {
+      bindCoreAction(actionUpdateArgs);
+
     } else if (SliderActions.ACTION_VERSION.equals(action)) {
       bindCoreAction(actionVersionArgs);
 
-    } else if (action == null || action.isEmpty()) {
-      throw new BadCommandArgumentsException(ErrorStrings.ERROR_NO_ACTION);
+    } else if (SliderUtils.isUnset(action)) {
+      bindCoreAction(actionHelpArgs);
 
     } else {
       throw new BadCommandArgumentsException(ErrorStrings.ERROR_UNKNOWN_ACTION

@@ -20,6 +20,7 @@ package org.apache.slider.agent.standalone
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.yarn.api.records.FinalApplicationStatus
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderExitCodes
@@ -34,7 +35,7 @@ import org.apache.slider.core.main.ServiceLauncher
 import org.junit.Test
 
 /**
- * destroy a masterless AM
+ * destroy a standalone AM
  */
 @CompileStatic
 @Slf4j
@@ -42,8 +43,10 @@ import org.junit.Test
 class TestStandaloneAMDestroy extends AgentMiniClusterTestBase {
 
   @Test
-  public void testDestroyStandaloneAM() throws Throwable {
-    String clustername = createMiniCluster("", configuration, 1, false)
+  public void testStandaloneAMDestroy() throws Throwable {
+    skipOnWindows()
+    
+    String clustername = createMiniCluster("", configuration, 1, true)
 
     describe "create a Standalone AM, stop it, try to create" +
              "a second cluster with the same name, destroy it, try a third time"
@@ -57,6 +60,22 @@ class TestStandaloneAMDestroy extends AgentMiniClusterTestBase {
         ])
     assert launcher1.serviceExitCode == 0
 
+    // try to list it and expect failures
+    try {
+      launchClientAgainstMiniMR(
+          configuration,
+          [
+              SliderActions.ACTION_LIST,
+              "no-cluster-of-this-name",
+              Arguments.ARG_LIVE
+          ])
+      fail("expected a failure")
+    } catch (UnknownApplicationInstanceException e) {
+      assertExceptionDetails(e,
+          SliderExitCodes.EXIT_UNKNOWN_INSTANCE,
+          ErrorStrings.E_UNKNOWN_INSTANCE)
+    }
+    
     ServiceLauncher<SliderClient> launcher = createStandaloneAM(
         clustername,
         true,
@@ -74,16 +93,17 @@ class TestStandaloneAMDestroy extends AgentMiniClusterTestBase {
         instanceDir)
 
     sliderFileSystem.locateInstanceDefinition(clustername)
-    clusterActionFreeze(sliderClient, clustername,"stopping first cluster")
-    waitForAppToFinish(sliderClient)
+    clusterActionFreeze(sliderClient, clustername, "stopping first cluster")
+    def finishedAppReport = waitForAppToFinish(sliderClient)
+    assert finishedAppReport.finalApplicationStatus == FinalApplicationStatus.SUCCEEDED
 
     
     describe "Warnings below are expected"
     
     //now try to create instance #2, and expect an in-use failure
     try {
-      createStandaloneAM(clustername, false, false)
-      fail("expected a failure, got an AM")
+      SliderClient am = createStandaloneAM(clustername, false, false).service
+      fail("expected a failure, got an AM: $am")
     } catch (SliderException e) {
       assertExceptionDetails(e,
                              SliderExitCodes.EXIT_INSTANCE_EXISTS,
@@ -92,18 +112,29 @@ class TestStandaloneAMDestroy extends AgentMiniClusterTestBase {
 
     describe "END EXPECTED WARNINGS"
 
-
     describe "destroying $clustername"
     //now: destroy it
     
     int exitCode = sliderClient.actionDestroy(clustername);
     assert 0 == exitCode
+    sleep(1000)
+    // twice, not expecting an error the second time
+    exitCode = sliderClient.actionDestroy(clustername);
+    assert 0 == exitCode
 
     describe "post destroy checks"
+    if (fs.exists(instanceDir)) {
+      log.warn("Destroy operation did not delete $instanceDir")
+      rigorousDelete(sliderFileSystem, instanceDir, 60000)
+    }
+    
     sliderFileSystem.verifyDirectoryNonexistent(instanceDir)
 
-    describe "thaw expected to fail"
-    //expect thaw to now fail
+    // look up app report and verify exit code is good
+    
+    
+    describe "start expected to fail"
+    //expect start to now fail
     def ex = launchExpectingException(SliderClient,
         configuration,
         "",
@@ -115,7 +146,7 @@ class TestStandaloneAMDestroy extends AgentMiniClusterTestBase {
         ])
     assert ex instanceof UnknownApplicationInstanceException
 
-    describe "thaw completed, checking dir is still absent"
+    describe "start completed, checking dir is still absent"
     sliderFileSystem.verifyDirectoryNonexistent(instanceDir)
 
 
@@ -148,6 +179,8 @@ class TestStandaloneAMDestroy extends AgentMiniClusterTestBase {
     
     //and try to destroy a completely different cluster just for the fun of it
     assert 0 == sliderClient.actionDestroy("no-cluster-of-this-name")
+
+    maybeStopCluster(cluster2, "", "Teardown at end of test case", false);
   }
 
 

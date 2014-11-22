@@ -23,6 +23,7 @@ import status_params
 
 # server configurations
 config = Script.get_config()
+hostname = config["public_hostname"]
 
 # user and status
 accumulo_user = status_params.accumulo_user
@@ -31,43 +32,51 @@ pid_dir = status_params.pid_dir
 
 # accumulo env
 java64_home = config['hostLevelParams']['java_home']
-hadoop_prefix = config['configurations']['global']['hadoop_prefix']
-hadoop_conf_dir = config['configurations']['global']['hadoop_conf_dir']
-zookeeper_home = config['configurations']['global']['zookeeper_home']
-master_heapsize = config['configurations']['global']['master_heapsize']
-tserver_heapsize = config['configurations']['global']['tserver_heapsize']
-monitor_heapsize = config['configurations']['global']['monitor_heapsize']
-gc_heapsize = config['configurations']['global']['gc_heapsize']
-other_heapsize = config['configurations']['global']['other_heapsize']
+hadoop_prefix = config['configurations']['accumulo-env']['hadoop_prefix']
+hadoop_conf_dir = config['configurations']['accumulo-env']['hadoop_conf_dir']
+zookeeper_home = config['configurations']['accumulo-env']['zookeeper_home']
+zookeeper_host = config['configurations']['accumulo-site']['instance.zookeeper.host']
+master_heapsize = config['configurations']['accumulo-env']['master_heapsize']
+tserver_heapsize = config['configurations']['accumulo-env']['tserver_heapsize']
+monitor_heapsize = config['configurations']['accumulo-env']['monitor_heapsize']
+gc_heapsize = config['configurations']['accumulo-env']['gc_heapsize']
+other_heapsize = config['configurations']['accumulo-env']['other_heapsize']
+env_sh_template = config['configurations']['accumulo-env']['content']
 
 # accumulo local directory structure
 accumulo_root = config['configurations']['global']['app_root']
-conf_dir = None
-if ('accumulo_conf_dir' in config['configurations']['global']):
-  conf_dir = config['configurations']['global']['accumulo_conf_dir']
-else:
-  conf_dir = format("{accumulo_root}/conf")
+conf_dir = format("{accumulo_root}/conf")
 log_dir = config['configurations']['global']['app_log_dir']
 daemon_script = format("{accumulo_root}/bin/accumulo")
 
 # accumulo monitor certificate properties
 monitor_security_enabled = config['configurations']['global']['monitor_protocol'] == "https"
-keystore_path = format("{accumulo_root}/conf/keystore.jks")
-truststore_path = format("{accumulo_root}/conf/cacerts.jks")
-cert_path = format("{accumulo_root}/conf/server.cer")
-keystore_property = "monitor.ssl.keyStore"
-keystore_password_property = "monitor.ssl.keyStorePassword"
-truststore_property = "monitor.ssl.trustStore"
-truststore_password_property = "monitor.ssl.trustStorePassword"
+monitor_keystore_property = "monitor.ssl.keyStore"
+monitor_truststore_property = "monitor.ssl.trustStore"
+
+# accumulo ssl properties
+ssl_enabled = False
+if 'instance.rpc.ssl.enabled' in config['configurations']['accumulo-site']:
+  ssl_enabled = config['configurations']['accumulo-site']['instance.rpc.ssl.enabled']
+clientauth_enabled = False
+if 'instance.rpc.ssl.clientAuth' in config['configurations']['accumulo-site']:
+  clientauth_enabled = config['configurations']['accumulo-site']['instance.rpc.ssl.clientAuth']
+ssl_cert_dir = config['configurations']['global']['ssl_cert_dir']
+keystore_path = format("{conf_dir}/ssl/keystore.jks")
+truststore_path = format("{conf_dir}/ssl/truststore.jks")
+ssl_keystore_file_property = "rpc.javax.net.ssl.keyStore"
+ssl_truststore_file_property = "rpc.javax.net.ssl.trustStore"
+credential_provider = config['configurations']['accumulo-site']["general.security.credential.provider.paths"]
+#credential_provider = credential_provider.replace("${HOST}", hostname) # if enabled, must propagate to configuration
+if ssl_keystore_file_property in config['configurations']['accumulo-site']:
+  keystore_path = config['configurations']['accumulo-site'][ssl_keystore_file_property]
+if ssl_truststore_file_property in config['configurations']['accumulo-site']:
+  truststore_path = config['configurations']['accumulo-site'][ssl_truststore_file_property]
 
 # accumulo initialization parameters
-accumulo_instance_name = config['configurations']['global']['accumulo_instance_name']
+accumulo_instance_name = config['configurations']['client']['instance.name']
 accumulo_root_password = config['configurations']['global']['accumulo_root_password']
-accumulo_hdfs_root_dir = None
-if ('instance.dfs.dir' in config['configurations']['accumulo-site']):
-  accumulo_hdfs_root_dir = config['configurations']['accumulo-site']['instance.dfs.dir']
-else:
-  accumulo_hdfs_root_dir = config['configurations']['accumulo-site']['instance.volumes'].split(",")[0]
+accumulo_hdfs_root_dir = config['configurations']['accumulo-site']['instance.volumes'].split(",")[0]
 
 #log4j.properties
 if (('accumulo-log4j' in config['configurations']) and ('content' in config['configurations']['accumulo-log4j'])):

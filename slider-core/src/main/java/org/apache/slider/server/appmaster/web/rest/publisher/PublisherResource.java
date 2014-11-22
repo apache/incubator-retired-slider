@@ -23,6 +23,8 @@ import org.apache.slider.core.registry.docstore.ConfigFormat;
 import org.apache.slider.core.registry.docstore.PublishedConfigSet;
 import org.apache.slider.core.registry.docstore.PublishedConfiguration;
 import org.apache.slider.core.registry.docstore.PublishedConfigurationOutputter;
+import org.apache.slider.core.registry.docstore.PublishedExports;
+import org.apache.slider.core.registry.docstore.PublishedExportsSet;
 import org.apache.slider.core.registry.docstore.UriMap;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.WebAppApi;
@@ -42,7 +44,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -56,7 +57,10 @@ public class PublisherResource {
   protected static final Logger log =
       LoggerFactory.getLogger(PublisherResource.class);
   private final WebAppApi slider;
-  public static final String SET_NAME = 
+  public static final String EXPORTS_NAME = "exports";
+  public static final String EXPORTS_RESOURCES_PATH = "/" + EXPORTS_NAME;
+  public static final String EXPORT_RESOURCE_PATH = EXPORTS_RESOURCES_PATH + "/{exportname}" ;
+  public static final String SET_NAME =
       "{setname: " + PUBLISHED_CONFIGURATION_SET_REGEXP + "}";
   private static final String CONFIG =
       SET_NAME + "/{config: " + PUBLISHED_CONFIGURATION_REGEXP + "}";
@@ -101,7 +105,9 @@ public class PublisherResource {
     UriMap uriMap = new UriMap();
     for (String name : appState.listConfigSets()) {
       uriMap.put(name, baseURL + name);
+      log.info("Tick tack {} and {}", name, baseURL);
     }
+    uriMap.put(EXPORTS_NAME, baseURL + EXPORTS_NAME);
     return uriMap;
   }
 
@@ -111,6 +117,26 @@ public class PublisherResource {
   public Set<URL> getAMClassPath() {
     URL[] urls = ((URLClassLoader) getClass().getClassLoader()).getURLs();
     return new LinkedHashSet<URL>(Arrays.asList(urls));
+  }
+
+  @GET
+  @Path(EXPORTS_RESOURCES_PATH)
+  @Produces({MediaType.APPLICATION_JSON})
+  public PublishedExportsSet gePublishedExports() {
+
+    PublishedExportsSet set = appState.getPublishedExportsSet();
+    return set.shallowCopy();
+  }
+
+  @GET
+  @Path(EXPORT_RESOURCE_PATH)
+  @Produces({MediaType.APPLICATION_JSON})
+  public PublishedExports getAMExports2(@PathParam("exportname") String exportname,
+                              @Context UriInfo uriInfo,
+                              @Context HttpServletResponse res) {
+    init(res, uriInfo);
+    PublishedExportsSet set = appState.getPublishedExportsSet();
+    return set.get(exportname);
   }
 
   @GET
@@ -129,7 +155,7 @@ public class PublisherResource {
   }
 
   private void logRequest(UriInfo uriInfo) {
-    log.debug(uriInfo.getRequestUri().toString());
+    log.info(uriInfo.getRequestUri().toString());
   }
 
   @GET

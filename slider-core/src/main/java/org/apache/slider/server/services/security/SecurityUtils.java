@@ -23,6 +23,7 @@ import org.apache.hadoop.fs.RawLocalFileSystem;
 import org.apache.hadoop.fs.permission.FsAction;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.slider.common.SliderKeys;
+import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.core.conf.MapOperations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +35,7 @@ import java.io.IOException;
 //import java.nio.file.Paths;
 //import java.nio.file.attribute.PosixFilePermission;
 //import java.nio.file.attribute.PosixFilePermissions;
-import java.util.Set;
+
 
 /**
  *
@@ -139,8 +140,13 @@ public class SecurityUtils {
   }
 
   public static void initializeSecurityParameters(MapOperations configMap) {
+    initializeSecurityParameters(configMap, false);
+  }
+
+  public static void initializeSecurityParameters(MapOperations configMap,
+                                                boolean persistPassword) {
     String keyStoreLocation = configMap.getOption(
-        SliderKeys.KEYSTORE_LOCATION, getDefaultKeystoreLocation());
+        SliderXmlConfKeys.KEY_KEYSTORE_LOCATION, getDefaultKeystoreLocation());
     File secDirFile = new File(keyStoreLocation).getParentFile();
     if (!secDirFile.exists()) {
       // create entire required directory structure
@@ -166,26 +172,28 @@ public class SecurityUtils {
       }
       // need to create the password
     }
-    keystorePass = getKeystorePassword(secDirFile);
+    keystorePass = getKeystorePassword(secDirFile, persistPassword);
     securityDir = secDirFile.getAbsolutePath();
   }
 
-  private static String getKeystorePassword(File secDirFile) {
+  private static String getKeystorePassword(File secDirFile,
+                                            boolean persistPassword) {
     File passFile = new File(secDirFile, SliderKeys.CRT_PASS_FILE_NAME);
     String password = null;
-
     if (!passFile.exists()) {
-      LOG.info("Generation of file with password");
-      try {
-        password = RandomStringUtils.randomAlphanumeric(
-            Integer.valueOf(SliderKeys.PASS_LEN));
-        FileUtils.writeStringToFile(passFile, password);
-        passFile.setWritable(true);
-        passFile.setReadable(true);
-      } catch (IOException e) {
-        e.printStackTrace();
-        throw new RuntimeException(
-            "Error creating certificate password file");
+      LOG.info("Generating keystore password");
+      password = RandomStringUtils.randomAlphanumeric(
+          Integer.valueOf(SliderKeys.PASS_LEN));
+      if (persistPassword) {
+        try {
+          FileUtils.writeStringToFile(passFile, password);
+          passFile.setWritable(true);
+          passFile.setReadable(true);
+        } catch (IOException e) {
+          e.printStackTrace();
+          throw new RuntimeException(
+              "Error creating certificate password file");
+        }
       }
     } else {
       LOG.info("Reading password from existing file");

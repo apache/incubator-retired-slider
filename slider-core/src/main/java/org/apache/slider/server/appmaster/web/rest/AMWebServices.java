@@ -22,6 +22,7 @@ import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentResource;
 import org.apache.slider.server.appmaster.web.rest.management.ManagementResource;
 import org.apache.slider.server.appmaster.web.rest.publisher.PublisherResource;
+import org.apache.slider.server.appmaster.web.rest.registry.RegistryResource;
 
 import javax.ws.rs.Path;
 
@@ -29,6 +30,7 @@ import javax.ws.rs.Path;
 @Singleton
 @Path(RestPaths.SLIDER_CONTEXT_ROOT)
 public class AMWebServices {
+  
   /** AM/WebApp info object */
   private WebAppApi slider;
 
@@ -46,4 +48,11 @@ public class AMWebServices {
   public PublisherResource getPublisherResource() {
     return new PublisherResource(slider);
   }
+ 
+  @Path(RestPaths.SLIDER_SUBPATH_REGISTRY)
+  public RegistryResource getRegistryResource() {
+    return new RegistryResource(slider);
+  }
+  
+  
 }

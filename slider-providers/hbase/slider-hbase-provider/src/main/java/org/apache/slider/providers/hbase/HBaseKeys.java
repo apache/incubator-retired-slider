@@ -88,7 +88,7 @@ public interface HBaseKeys {
   /**
    * Service type used in registry
    */
-  String HBASE_SERVICE_TYPE = "org.apache.hbase";
+  String HBASE_SERVICE_TYPE = "org-apache-hbase";
   String HBASE_SITE_PUBLISHED_CONFIG = "hbase-site";
 }
 

@@ -25,7 +25,6 @@ config = Script.get_config()
 
 container_id = config['hostLevelParams']['container_id']
 application_id = config['configurations']['global']['application_id']
-app_user = config['configurations']['global']['app_user']
 
 datetime_format = config['configurations']['cl-site']['datetime.format']
 file_location = config['configurations']['cl-site']['logfile.location']

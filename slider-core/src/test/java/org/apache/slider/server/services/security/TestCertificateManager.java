@@ -17,6 +17,7 @@
 package org.apache.slider.server.services.security;
 
 import org.apache.slider.common.SliderKeys;
+import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.core.conf.MapOperations;
 import org.junit.Assert;
 import org.junit.Before;
@@ -40,9 +41,9 @@ public class TestCertificateManager {
     MapOperations compOperations = new MapOperations();
     secDir = new File(workDir.getRoot(), SliderKeys.SECURITY_DIR);
     File keystoreFile = new File(secDir, SliderKeys.KEYSTORE_FILE_NAME);
-    compOperations.put(SliderKeys.KEYSTORE_LOCATION,
+    compOperations.put(SliderXmlConfKeys.KEY_KEYSTORE_LOCATION,
                        keystoreFile.getAbsolutePath());
-    certMan.initRootCert(compOperations);
+    certMan.initialize(compOperations);
   }
 
   @Test

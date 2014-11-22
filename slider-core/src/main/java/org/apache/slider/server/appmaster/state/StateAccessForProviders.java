@@ -26,6 +26,7 @@ import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTreeOperations;
 import org.apache.slider.core.exceptions.NoSuchNodeException;
 import org.apache.slider.core.registry.docstore.PublishedConfigSet;
+import org.apache.slider.core.registry.docstore.PublishedExportsSet;
 
 import java.util.Collection;
 import java.util.List;
@@ -49,6 +50,12 @@ public interface StateAccessForProviders {
    * @return the configuration set
    */
   PublishedConfigSet getPublishedSliderConfigurations();
+
+  /**
+   * Get the published exports set
+   * @return
+   */
+  PublishedExportsSet getPublishedExportsSet();
 
   /**
    * Get a named published config set
@@ -194,9 +201,8 @@ public interface StateAccessForProviders {
 
   /**
    * Update the cluster description with anything interesting
-   * @param providerStatus status from the provider for the cluster info section
    */
   void refreshClusterStatus();
-  
 
+  List<RoleStatus> cloneRoleStatusList();
 }

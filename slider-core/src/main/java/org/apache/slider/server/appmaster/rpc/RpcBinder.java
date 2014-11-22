@@ -130,7 +130,7 @@ public class RpcBinder {
                            rpcTimeout,
                            null);
     SliderClusterProtocolPB endpoint = protoProxy.getProxy();
-    return new SliderClusterProtocolProxy(endpoint);
+    return new SliderClusterProtocolProxy(endpoint, addr);
   }
 
 

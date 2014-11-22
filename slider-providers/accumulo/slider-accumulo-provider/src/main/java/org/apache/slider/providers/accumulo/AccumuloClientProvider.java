@@ -272,7 +272,7 @@ public class AccumuloClientProvider extends AbstractClientProvider implements
     //now, if there is an extra client conf, merge it in too
     if (clientConfExtras != null) {
       ConfigHelper.mergeConfigurations(siteConf, clientConfExtras,
-                                       "Slider Client");
+                                       "Slider Client", true);
     }
 
     if (log.isDebugEnabled()) {
@@ -300,9 +300,9 @@ public class AccumuloClientProvider extends AbstractClientProvider implements
   }
 
   @Override
-  public void validateInstanceDefinition(AggregateConf instanceDefinition) throws
+  public void validateInstanceDefinition(AggregateConf instanceDefinition, SliderFileSystem fs) throws
       SliderException {
-    super.validateInstanceDefinition(instanceDefinition);
+    super.validateInstanceDefinition(instanceDefinition, fs);
 
     ConfTreeOperations resources =
       instanceDefinition.getResourceOperations();

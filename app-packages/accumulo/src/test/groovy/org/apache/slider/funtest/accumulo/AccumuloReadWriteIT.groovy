@@ -25,6 +25,7 @@ import org.apache.accumulo.core.client.ZooKeeperInstance
 import org.apache.accumulo.core.client.security.tokens.PasswordToken
 import org.apache.accumulo.test.TestIngest
 import org.apache.accumulo.test.VerifyIngest
+import org.apache.hadoop.registry.client.api.RegistryConstants
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderXmlConfKeys
@@ -48,10 +49,12 @@ class AccumuloReadWriteIT extends AccumuloBasicIT {
   @Override
   public void clusterLoadOperations(ClusterDescription cd, SliderClient sliderClient) {
     try {
-      String zookeepers = SLIDER_CONFIG.get(SliderXmlConfKeys.REGISTRY_ZK_QUORUM,
+      String zookeepers = SLIDER_CONFIG.get(
+          RegistryConstants.KEY_REGISTRY_ZK_QUORUM,
         FuntestProperties.DEFAULT_SLIDER_ZK_HOSTS)
 
-      ZooKeeperInstance instance = new ZooKeeperInstance(INSTANCE_NAME, zookeepers)
+      ZooKeeperInstance instance = new ZooKeeperInstance(
+        tree.global.get("site.client.instance.name"), zookeepers)
       Connector connector = instance.getConnector(USER, new PasswordToken(PASSWORD))
 
       ingest(connector, 200000, 1, 50, 0);
@@ -77,7 +80,7 @@ class AccumuloReadWriteIT extends AccumuloBasicIT {
     TestIngest.ingest(connector, opts, new BatchWriterOpts());
   }
 
-  private static void verify(Connector connector, int rows, int cols, int width, int offset) throws Exception {
+  public static void verify(Connector connector, int rows, int cols, int width, int offset) throws Exception {
     ScannerOpts scannerOpts = new ScannerOpts();
     VerifyIngest.Opts opts = new VerifyIngest.Opts();
     opts.rows = rows;
@@ -88,7 +91,7 @@ class AccumuloReadWriteIT extends AccumuloBasicIT {
     VerifyIngest.verifyIngest(connector, opts, scannerOpts);
   }
 
-  static void interleaveTest(final Connector connector) throws Exception {
+  public static void interleaveTest(final Connector connector) throws Exception {
     final int ROWS = 200000;
     final AtomicBoolean fail = new AtomicBoolean(false);
     final int CHUNKSIZE = ROWS / 10;

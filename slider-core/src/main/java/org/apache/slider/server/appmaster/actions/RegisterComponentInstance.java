@@ -25,15 +25,23 @@ import org.apache.slider.server.appmaster.state.AppState;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Notify the app master that it should register a component instance
+ * in the registry
+ * {@link SliderAppMaster#registerComponent(ContainerId)}
+ */
 public class RegisterComponentInstance extends AsyncAction {
-  
 
   public final ContainerId containerId;
+  public final String description;
 
-  public RegisterComponentInstance(ContainerId containerId, long delay,
+  public RegisterComponentInstance(ContainerId containerId,
+      String description,
+      long delay,
       TimeUnit timeUnit) {
     super("RegisterComponentInstance :" + containerId,
         delay, timeUnit);
+    this.description = description;
     Preconditions.checkArgument(containerId != null);
     this.containerId = containerId;
   }
@@ -43,6 +51,6 @@ public class RegisterComponentInstance extends AsyncAction {
       QueueAccess queueService,
       AppState appState) throws Exception {
 
-    appMaster.registerComponent(containerId);
+    appMaster.registerComponent(containerId, description);
   }
 }

@@ -33,5 +33,5 @@ pid_files = {"logviewer":pid_logviewer,
              "ui": pid_ui,
              "nimbus": pid_nimbus,
              "supervisor": pid_supervisor,
-             "drpc": pid_drpc,
-             "rest_api": pid_rest_api}
+             "rest_api": pid_rest_api,
+             "drpc": pid_drpc}

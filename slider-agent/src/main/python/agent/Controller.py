@@ -27,9 +27,11 @@ import time
 import threading
 import urllib2
 import pprint
+import math
 from random import randint
 
 from AgentConfig import AgentConfig
+from AgentToggleLogger import AgentToggleLogger
 from Heartbeat import Heartbeat
 from Register import Register
 from ActionQueue import ActionQueue
@@ -86,7 +88,13 @@ class Controller(threading.Thread):
     self.statusCommand = None
     self.failureCount = 0
     self.heartBeatRetryCount = 0
-    self.autoRestart = False
+    self.autoRestartFailures = 0
+    self.autoRestartTrackingSince = 0
+    self.terminateAgent = False
+    self.stopCommand = None
+    self.appGracefulStopQueued = False
+    self.appGracefulStopTriggered = False
+    self.tags = ""
 
 
   def __del__(self):
@@ -122,34 +130,42 @@ class Controller(threading.Thread):
           self.componentActualState,
           self.componentExpectedState,
           self.actionQueue.customServiceOrchestrator.allocated_ports,
+          self.actionQueue.customServiceOrchestrator.log_folders,
+          self.tags,
           id))
         logger.info("Registering with the server at " + self.registerUrl +
                     " with data " + pprint.pformat(data))
         response = self.sendRequest(self.registerUrl, data)
-        ret = json.loads(response)
+        regResp = json.loads(response)
         exitstatus = 0
-        # exitstatus is a code of error which was rised on server side.
+        # exitstatus is a code of error which was raised on server side.
         # exitstatus = 0 (OK - Default)
         # exitstatus = 1 (Registration failed because
         #                different version of agent and server)
-        if 'exitstatus' in ret.keys():
-          exitstatus = int(ret['exitstatus'])
-          # log - message, which will be printed to agents  log
-        if 'log' in ret.keys():
-          log = ret['log']
+        if 'exitstatus' in regResp.keys():
+          exitstatus = int(regResp['exitstatus'])
+
+        # log - message, which will be printed to agents  log
+        if 'log' in regResp.keys():
+          log = regResp['log']
+
+        # container may be associated with tags
+        if 'tags' in regResp.keys():
+          self.tags = regResp['tags']
+
         if exitstatus == 1:
           logger.error(log)
           self.isRegistered = False
           self.repeatRegistration = False
-          return ret
-        logger.info("Registered with the server with " + pprint.pformat(ret))
+          return regResp
+        logger.info("Registered with the server with " + pprint.pformat(regResp))
         print("Registered with the server")
-        self.responseId = int(ret['responseId'])
+        self.responseId = int(regResp['responseId'])
         self.isRegistered = True
-        if 'statusCommands' in ret.keys():
+        if 'statusCommands' in regResp.keys():
           logger.info("Got status commands on registration " + pprint.pformat(
-            ret['statusCommands']))
-          self.addToQueue(ret['statusCommands'])
+            regResp['statusCommands']))
+          self.addToQueue(regResp['statusCommands'])
           pass
         else:
           self.hasMappedComponents = False
@@ -166,7 +182,7 @@ class Controller(threading.Thread):
         time.sleep(delay)
         pass
       pass
-    return ret
+    return regResp
 
 
   def addToQueue(self, commands):
@@ -187,15 +203,46 @@ class Controller(threading.Thread):
 
   def shouldStopAgent(self):
     '''
-    If component has failed after start then stop the agent
+    Stop the agent if:
+      - Component has failed after start
+      - AM sent terminate agent command
     '''
+    shouldStopAgent = False
     if (self.componentActualState == State.FAILED) \
       and (self.componentExpectedState == State.STARTED) \
       and (self.failureCount >= Controller.MAX_FAILURE_COUNT_TO_STOP):
-      return True
-    else:
-      return False
-    pass
+      logger.info("Component instance has stopped, stopping the agent ...")
+      shouldStopAgent = True
+    if self.terminateAgent:
+      logger.info("Terminate agent command received from AM, stopping the agent ...")
+      shouldStopAgent = True
+    return shouldStopAgent
+
+  def isAppGracefullyStopped(self):
+    '''
+    If an app graceful stop command was queued then it is considered stopped if:
+      - app stop was triggered
+
+    Note: We should enhance this method by checking if the app is stopped
+          successfully and if not, then take alternate measures (like kill
+          processes). For now if stop is triggered it is considered stopped.
+    '''
+    isAppStopped = False
+    if self.appGracefulStopTriggered:
+      isAppStopped = True
+    return isAppStopped
+
+  def stopApp(self):
+    '''
+    Stop the app if:
+      - the app is currently in STARTED state and
+        a valid stop command is provided
+    '''
+    if (self.componentActualState == State.STARTED) and (not self.stopCommand == None):
+      # Try to do graceful stop
+      self.addToQueue([self.stopCommand])
+      self.appGracefulStopQueued = True
+      logger.info("Attempting to gracefully stop the application ...")
 
   def heartbeatWithServer(self):
     self.DEBUG_HEARTBEAT_RETRIES = 0
@@ -207,12 +254,14 @@ class Controller(threading.Thread):
 
     while not self.DEBUG_STOP_HEARTBEATING:
 
-      if self.shouldStopAgent():
-        logger.info("Component instance has stopped, stopping the agent ...")
-        ProcessHelper.stopAgent()
-
       commandResult = {}
       try:
+        if self.appGracefulStopQueued and not self.isAppGracefullyStopped():
+          # Continue to wait until app is stopped
+          continue
+        if self.shouldStopAgent():
+          ProcessHelper.stopAgent()
+
         if not retry:
           data = json.dumps(
             self.heartbeat.build(commandResult,
@@ -229,11 +278,24 @@ class Controller(threading.Thread):
 
         serverId = int(response['responseId'])
 
+        if 'restartAgent' in response.keys():
+          restartAgent = response['restartAgent']
+          if restartAgent:
+            logger.error("Got restartAgent command")
+            self.restartAgent()
+        if 'terminateAgent' in response.keys():
+          self.terminateAgent = response['terminateAgent']
+          if self.terminateAgent:
+            logger.error("Got terminateAgent command")
+            self.stopApp()
+            # Continue will add some wait time
+            continue
+
         restartEnabled = False
         if 'restartEnabled' in response:
           restartEnabled = response['restartEnabled']
           if restartEnabled:
-            logger.info("Component auto-restart is enabled.")
+            logger.debug("Component auto-restart is enabled.")
 
         if 'hasMappedComponents' in response.keys():
           self.hasMappedComponents = response['hasMappedComponents'] != False
@@ -254,17 +316,18 @@ class Controller(threading.Thread):
         else:
           self.responseId = serverId
 
+        commandSentFromAM = False
         if 'executionCommands' in response.keys():
           self.updateStateBasedOnCommand(response['executionCommands'])
           self.addToQueue(response['executionCommands'])
+          commandSentFromAM = True
           pass
         if 'statusCommands' in response.keys() and len(response['statusCommands']) > 0:
           self.addToQueue(response['statusCommands'])
+          commandSentFromAM = True
           pass
-        if "true" == response['restartAgent']:
-          logger.error("Got restartAgent command")
-          self.restartAgent()
-        else:
+
+        if not commandSentFromAM:
           logger.info("No commands sent from the Server.")
           pass
 
@@ -274,7 +337,7 @@ class Controller(threading.Thread):
           stored_command = self.actionQueue.customServiceOrchestrator.stored_command
           if len(stored_command) > 0:
             auto_start_command = self.create_start_command(stored_command)
-            if auto_start_command:
+            if auto_start_command and self.shouldAutoRestart():
               logger.info("Automatically adding a start command.")
               logger.debug("Auto start command: " + pprint.pformat(auto_start_command))
               self.updateStateBasedOnCommand([auto_start_command], False)
@@ -330,8 +393,7 @@ class Controller(threading.Thread):
           zk_quorum = self.config.get(AgentConfig.SERVER_SECTION, Constants.ZK_QUORUM)
           zk_reg_path = self.config.get(AgentConfig.SERVER_SECTION, Constants.ZK_REG_PATH)
           registry = Registry(zk_quorum, zk_reg_path)
-          amHost, amSecuredPort = registry.readAMHostPort()
-          logger.info("Read from ZK registry: AM host = %s, AM secured port = %s" % (amHost, amSecuredPort))
+          amHost, amUnsecuredPort, amSecuredPort = registry.readAMHostPort()
           self.hostname = amHost
           self.secured_port = amSecuredPort
           self.config.set(AgentConfig.SERVER_SECTION, "hostname", self.hostname)
@@ -342,13 +404,14 @@ class Controller(threading.Thread):
           return
         self.cachedconnect = None # Previous connection is broken now
         retry = True
-      # Sleep for some time
-      timeout = self.netutil.HEARTBEAT_IDDLE_INTERVAL_SEC \
-                - self.netutil.MINIMUM_INTERVAL_BETWEEN_HEARTBEATS
-      self.heartbeat_wait_event.wait(timeout=timeout)
-      # Sleep a bit more to allow STATUS_COMMAND results to be collected
-      # and sent in one heartbeat. Also avoid server overload with heartbeats
-      time.sleep(self.netutil.MINIMUM_INTERVAL_BETWEEN_HEARTBEATS)
+      finally:
+        # Sleep for some time
+        timeout = self.netutil.HEARTBEAT_IDDLE_INTERVAL_SEC \
+                  - self.netutil.MINIMUM_INTERVAL_BETWEEN_HEARTBEATS
+        self.heartbeat_wait_event.wait(timeout=timeout)
+        # Sleep a bit more to allow STATUS_COMMAND results to be collected
+        # and sent in one heartbeat. Also avoid server overload with heartbeats
+        time.sleep(self.netutil.MINIMUM_INTERVAL_BETWEEN_HEARTBEATS)
     pass
     logger.info("Controller stopped heart-beating.")
 
@@ -364,6 +427,17 @@ class Controller(threading.Thread):
 
 
   def updateStateBasedOnCommand(self, commands, createStatus=True):
+    # A STOP command is paired with the START command to provide agents the
+    # capability to gracefully stop the app if possible. The STOP command needs
+    # to be stored since the AM might not be able to provide it since it could
+    # have lost the container state for whatever reasons. The STOP command has
+    # no other role to play in the Agent state transition so it is removed from
+    # the commands list.
+    index = 0
+    deleteIndex = 0
+    delete = False
+    # break only if an INSTALL command is found, since we might get a STOP
+    # command for a START command
     for command in commands:
       if command["roleCommand"] == "START":
         self.componentExpectedState = State.STARTED
@@ -372,12 +446,22 @@ class Controller(threading.Thread):
         if createStatus:
           self.statusCommand = self.createStatusCommand(command)
 
+      # The STOP command index is stored to be deleted
+      if command["roleCommand"] == "STOP":
+        self.stopCommand = command
+        delete = True
+        deleteIndex = index
+
       if command["roleCommand"] == "INSTALL":
         self.componentExpectedState = State.INSTALLED
         self.componentActualState = State.INSTALLING
         self.failureCount = 0
-      break;
+        break;
+      index += 1
 
+    # Delete the STOP command
+    if delete:
+      del commands[deleteIndex]
 
   def updateStateBasedOnResult(self, commandResult):
     if len(commandResult) > 0:
@@ -432,10 +516,11 @@ class Controller(threading.Thread):
 
 
   def run(self):
-    self.actionQueue = ActionQueue(self.config, controller=self)
+    self.agentToggleLogger = AgentToggleLogger("info")
+    self.actionQueue = ActionQueue(self.config, controller=self, agentToggleLogger=self.agentToggleLogger)
     self.actionQueue.start()
     self.register = Register(self.config)
-    self.heartbeat = Heartbeat(self.actionQueue, self.config)
+    self.heartbeat = Heartbeat(self.actionQueue, self.config, self.agentToggleLogger)
 
     opener = urllib2.build_opener()
     urllib2.install_opener(opener)
@@ -484,6 +569,35 @@ class Controller(threading.Thread):
                        + '; Response: ' + str(response))
             logger.warn(err_msg)
             return {'exitstatus': 1, 'log': err_msg}
+
+
+  # Basic window that only counts failures till the window duration expires
+  def shouldAutoRestart(self):
+    max, window = self.config.getErrorWindow()
+    if max <= 0 or window <= 0:
+      return True
+
+    seconds_now = time.time()
+    if self.autoRestartTrackingSince == 0:
+      self.autoRestartTrackingSince = seconds_now
+      self.autoRestartFailures = 1
+      return True
+
+    self.autoRestartFailures += 1
+    minutes = math.floor((seconds_now - self.autoRestartTrackingSince) / 60)
+    if self.autoRestartFailures > max:
+      logger.info("Auto restart not allowed due to " + str(self.autoRestartFailures) + " failures in " + str(minutes) +
+                  " minutes. Max restarts allowed is " + str(max) + " in " + str(window) + " minutes.")
+      return False
+
+    if minutes > window:
+      logger.info("Resetting window as number of minutes passed is " + str(minutes))
+      self.autoRestartTrackingSince = seconds_now
+      self.autoRestartFailures = 1
+      return True
+    return True
+
+    pass
 
 
 def main(argv=None):
