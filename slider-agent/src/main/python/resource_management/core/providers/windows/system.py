@@ -72,10 +72,10 @@ def _call_command(command, logoutput=False, cwd=None, env=None, wait_for_finish=
   proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                           cwd=cwd, env=env, shell=False)
   code = None
+  logAnyway = False
   if not wait_for_finish:
     Logger.debug("No need to wait for the process to exit. Will leave the process running ...")
     code = 0
-    logAnyway = False
     if pid_file_name:
       Logger.debug("Writing the process id %s to file %s" % (str(proc.pid), pid_file_name))
       pidfile = open(pid_file_name, 'w')
