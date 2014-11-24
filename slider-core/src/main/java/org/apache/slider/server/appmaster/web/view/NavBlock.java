@@ -18,6 +18,7 @@ package org.apache.slider.server.appmaster.web.view;
 
 import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
 import org.apache.slider.server.appmaster.web.SliderAMWebApp;
+import org.apache.slider.server.appmaster.web.rest.RestPaths;
 
 /**
  * 
@@ -32,6 +33,15 @@ public class NavBlock extends HtmlBlock {
         ul().
           li().a(this.prefix(), "Overview")._().
           li().a(this.prefix() + SliderAMWebApp.CONTAINER_STATS, "Statistics")._().
-          li().a(this.prefix() + SliderAMWebApp.CLUSTER_SPEC, "Specification")._()._()._();
+          li().a(this.prefix() + SliderAMWebApp.CLUSTER_SPEC, "Specification")._().
+          li().a(rootPath(RestPaths.SYSTEM_METRICS), "Metrics")._().
+          li().a(rootPath(RestPaths.SYSTEM_HEALTHCHECK), "Health")._().
+          li().a(rootPath(RestPaths.SYSTEM_THREADS), "Threads")._()
+        ._()
+      ._();
+  }
+
+  private String rootPath(String absolutePath) {
+    return root_url(absolutePath);
   }
 }

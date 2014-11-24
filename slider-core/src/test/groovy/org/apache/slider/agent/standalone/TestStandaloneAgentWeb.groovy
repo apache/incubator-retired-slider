@@ -71,8 +71,9 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
 
     GET(appmaster)
 
-//    GET(appmaster, RestPaths.SYSTEM_HEALTHCHECK)
-//    GET(appmaster, RestPaths.SYSTEM_PING)
+    log.info GET(appmaster, RestPaths.SYSTEM_PING)
+    log.info GET(appmaster, RestPaths.SYSTEM_THREADS)
+    log.info GET(appmaster, RestPaths.SYSTEM_HEALTHCHECK)
     
   }
 

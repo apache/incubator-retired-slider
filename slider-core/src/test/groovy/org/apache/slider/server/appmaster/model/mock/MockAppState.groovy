@@ -17,8 +17,8 @@
 
 package org.apache.slider.server.appmaster.model.mock
 
-import com.codahale.metrics.MetricRegistry
 import org.apache.slider.providers.ProviderRole
+import org.apache.slider.server.appmaster.management.MetricsAndMonitoring
 import org.apache.slider.server.appmaster.state.AbstractRecordFactory
 import org.apache.slider.server.appmaster.state.AppState
 
@@ -28,7 +28,7 @@ import org.apache.slider.server.appmaster.state.AppState
 class MockAppState extends AppState {
 
   public MockAppState(AbstractRecordFactory recordFactory) {
-    super(recordFactory, new MetricRegistry());
+    super(recordFactory, new MetricsAndMonitoring());
   }
 
   long time = 0;
@@ -37,7 +37,7 @@ class MockAppState extends AppState {
    * Instance with a mock record factory
    */
   public MockAppState() {
-    super(new MockRecordFactory(), new MetricRegistry());
+    super(new MockRecordFactory(), new MetricsAndMonitoring());
   }
 
   public Map<String, ProviderRole> getRoleMap() {

@@ -16,10 +16,10 @@
  */
 package org.apache.slider.server.appmaster.web;
 
-import com.codahale.metrics.MetricRegistry;
 import org.apache.hadoop.registry.client.api.RegistryOperations;
 import org.apache.slider.api.SliderClusterProtocol;
 import org.apache.slider.providers.ProviderService;
+import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
 import org.apache.slider.server.appmaster.state.AppState;
 import org.apache.slider.server.appmaster.state.RoleStatus;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
@@ -68,5 +68,5 @@ public interface WebAppApi {
 
   RegistryOperations getRegistryOperations();
 
-  MetricRegistry getMetrics();
+  MetricsAndMonitoring getMetricsAndMonitoring();
 }

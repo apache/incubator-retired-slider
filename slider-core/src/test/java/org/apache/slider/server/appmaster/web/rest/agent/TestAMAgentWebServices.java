@@ -18,7 +18,6 @@
 
 package org.apache.slider.server.appmaster.web.rest.agent;
 
-import com.codahale.metrics.MetricRegistry;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
@@ -34,6 +33,7 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.conf.MapOperations;
+import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
 import org.apache.slider.server.appmaster.model.mock.MockFactory;
 import org.apache.slider.server.appmaster.model.mock.MockProviderService;
 import org.apache.slider.server.appmaster.model.mock.MockRecordFactory;
@@ -122,7 +122,7 @@ public class TestAMAgentWebServices {
           historyPath =
           new org.apache.hadoop.fs.Path(historyWorkDir.toURI());
       fs.delete(historyPath, true);
-      appState = new AppState(new MockRecordFactory(), new MetricRegistry());
+      appState = new AppState(new MockRecordFactory(), new MetricsAndMonitoring());
       appState.setContainerLimits(RM_MAX_RAM, RM_MAX_CORES);
       appState.buildInstance(
           factory.newInstanceDefinition(0, 0, 0),

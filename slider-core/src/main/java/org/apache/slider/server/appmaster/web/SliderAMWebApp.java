@@ -16,6 +16,7 @@
  */
 package org.apache.slider.server.appmaster.web;
 
+import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.servlets.HealthCheckServlet;
 import com.codahale.metrics.servlets.MetricsServlet;
 import com.codahale.metrics.servlets.PingServlet;
@@ -25,10 +26,10 @@ import com.sun.jersey.api.container.filter.GZIPContentEncodingFilter;
 import com.sun.jersey.api.core.ResourceConfig;
 import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 import com.sun.jersey.spi.container.servlet.ServletContainer;
-import org.apache.hadoop.registry.client.api.RegistryOperations;
 import org.apache.hadoop.yarn.webapp.Dispatcher;
 import org.apache.hadoop.yarn.webapp.GenericExceptionHandler;
 import org.apache.hadoop.yarn.webapp.WebApp;
+import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
 import org.apache.slider.server.appmaster.web.rest.AMWadlGeneratorConfig;
 import org.apache.slider.server.appmaster.web.rest.AMWebServices;
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.*;
@@ -82,10 +83,12 @@ public class SliderAMWebApp extends WebApp {
     }
 
     // metrics
-//    serve(SYSTEM_HEALTHCHECK).with(new HealthCheckServlet());
-    serve(SYSTEM_METRICS).with(new MetricsServlet(webAppApi.getMetrics()));
-//    serve(SYSTEM_PING).with(PingServlet.class);
-//    serve(SYSTEM_THREADS).with(ThreadDumpServlet.class);
+    MetricsAndMonitoring monitoring =
+        webAppApi.getMetricsAndMonitoring();
+    serve(SYSTEM_HEALTHCHECK).with(new HealthCheckServlet(monitoring.getHealth()));
+    serve(SYSTEM_METRICS).with(new MetricsServlet(monitoring.getMetrics()));
+    serve(SYSTEM_PING).with(new PingServlet());
+    serve(SYSTEM_THREADS).with(new ThreadDumpServlet());
 
     String regex = "(?!/ws)";
     serveRegex(regex).with(SliderDefaultWrapperServlet.class); 

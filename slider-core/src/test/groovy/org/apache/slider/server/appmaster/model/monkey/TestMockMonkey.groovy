@@ -54,7 +54,7 @@ class TestMockMonkey extends BaseMockAppStateTest {
     def configuration = new YarnConfiguration()
     queues = new QueueService();
     queues.init(configuration)
-    monkey = new ChaosMonkeyService(metricRegistry, queues)
+    monkey = new ChaosMonkeyService(metrics.metrics, queues)
     monkey.init(configuration)
   }
   

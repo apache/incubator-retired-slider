@@ -18,7 +18,6 @@
 
 package org.apache.slider.server.appmaster.state;
 
-import com.codahale.metrics.MetricRegistry;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import org.apache.hadoop.conf.Configuration;
@@ -61,6 +60,7 @@ import org.apache.slider.core.exceptions.SliderInternalStateException;
 import org.apache.slider.core.exceptions.TriggerClusterTeardownException;
 import org.apache.slider.providers.PlacementPolicy;
 import org.apache.slider.providers.ProviderRole;
+import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
 import org.apache.slider.server.appmaster.operations.CancelRequestOperation;
 import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation;
@@ -97,6 +97,8 @@ public class AppState {
     LoggerFactory.getLogger(AppState.class);
   
   private final AbstractRecordFactory recordFactory;
+
+  private final MetricsAndMonitoring metricsAndMonitoring;
 
   /**
    * Flag set to indicate the application is live -this only happens
@@ -262,16 +264,14 @@ public class AppState {
   
   private ContainerReleaseSelector containerReleaseSelector;
 
-  private MetricRegistry metrics;
-
   /**
    * Create an instance
    * @param recordFactory factory for YARN records
-   * @param metrics metrics registry or null if a new one 
+   * @param metricsAndMonitoring metrics and monitoring services
    */
-  public AppState(AbstractRecordFactory recordFactory, MetricRegistry metrics) {
+  public AppState(AbstractRecordFactory recordFactory, MetricsAndMonitoring metricsAndMonitoring) {
     this.recordFactory = recordFactory;
-    this.metrics = metrics; 
+    this.metricsAndMonitoring = metricsAndMonitoring; 
   }
 
   public int getFailedCountainerCount() {

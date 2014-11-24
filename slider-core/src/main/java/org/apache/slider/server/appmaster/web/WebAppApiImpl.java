@@ -16,10 +16,10 @@
  */
 package org.apache.slider.server.appmaster.web;
 
-import com.codahale.metrics.MetricRegistry;
 import org.apache.hadoop.registry.client.api.RegistryOperations;
 import org.apache.slider.api.SliderClusterProtocol;
 import org.apache.slider.providers.ProviderService;
+import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
 import org.apache.slider.server.appmaster.state.RoleStatus;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
@@ -44,14 +44,14 @@ public class WebAppApiImpl implements WebAppApi {
   protected final ProviderService provider;
   protected final CertificateManager certificateManager;
   private final RegistryOperations registryOperations;
-  private final MetricRegistry metrics;
+  private final MetricsAndMonitoring metricsAndMonitoring;
 
   public WebAppApiImpl(SliderClusterProtocol clusterProto,
       StateAccessForProviders appState,
       ProviderService provider,
       CertificateManager certificateManager,
       RegistryOperations registryOperations,
-      MetricRegistry metrics) {
+      MetricsAndMonitoring metricsAndMonitoring) {
     this.registryOperations = registryOperations;
     checkNotNull(clusterProto);
     checkNotNull(appState);
@@ -61,7 +61,7 @@ public class WebAppApiImpl implements WebAppApi {
     this.appState = appState;
     this.provider = provider;
     this.certificateManager = certificateManager;
-    this.metrics = metrics;
+    this.metricsAndMonitoring = metricsAndMonitoring;
   }
 
   @Override
@@ -106,7 +106,7 @@ public class WebAppApiImpl implements WebAppApi {
   }
 
   @Override
-  public MetricRegistry getMetrics() {
-    return metrics;
+  public MetricsAndMonitoring getMetricsAndMonitoring() {
+    return metricsAndMonitoring;
   }
 }
