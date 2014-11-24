@@ -203,6 +203,8 @@
     <maven-doxia-module-markdown.version>1.4</maven-doxia-module-markdown.version>
     <maven-enforcer-plugin.version>1.0</maven-enforcer-plugin.version>
     <maven-exec-plugin.version>1.2.1</maven-exec-plugin.version>
+    <maven-gpg-plugin.version>1.5</maven-gpg-plugin.version>
+    <maven-groovydoc-plugin.version>1.3</maven-groovydoc-plugin.version>
     <maven-jar-plugin.version>2.3.1</maven-jar-plugin.version>
     <maven.javadoc.version>2.8</maven.javadoc.version>
     <maven.project.version>2.4</maven.project.version>
@@ -1400,7 +1402,77 @@
               </execution>
             </executions>
           </plugin>
-        </plugins>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>${maven-source-plugin.version}</version>
+            <executions>
+              <execution>
+              <id>attach-sources</id>
+                <goals>
+                <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <!--
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <executions>
+              <execution>
+              <id>attach-javadocs</id>
+              <goals>
+                <goal>jar</goal>
+              </goals>
+              </execution>
+            </executions>
+          </plugin>
+          -->
+            <plugin>
+              <groupId>com.bluetrainsoftware.maven</groupId>
+              <artifactId>maven-groovydoc-plugin</artifactId>
+              <version>${maven-groovydoc-plugin.version}</version>
+              <executions>
+                <execution>
+                  <id>attach-javadocs</id>
+                  <goals>
+                    <goal>attach-docs</goal>
+                  </goals>
+                </execution>
+              </executions>
+            </plugin>
+            
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>${maven-gpg-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <!-- We want to deploy the artifact to a staging location for perusal -->
+          <!--
+          <plugin>
+            <inherited>true</inherited>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-deploy-plugin</artifactId>
+            <version>${maven-deploy-plugin.version}</version>
+            <configuration>
+              <updateReleaseInfo>true</updateReleaseInfo>
+            </configuration>
+          </plugin>        
+            -->
+          </plugins>
       </build>
     </profile>
 
@@ -1462,53 +1534,6 @@
     </profile>
 
     <profile>
-      <!-- anything for a github release -->
-      <!-- see https://github.com/github/maven-plugins-->
-      <!-- this doesn't seem to work and is not in active us-->
-      <id>github</id>
-      <properties>
-        <maven-site-plugin.skipDeploy>false</maven-site-plugin.skipDeploy>
-      </properties>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>com.github.github</groupId>
-            <artifactId>site-maven-plugin</artifactId>
-            <version>${github.site.plugin.version}</version>
-            <inherited>true</inherited>
-            <configuration>
-              <message>Creating site for ${project.version}</message>
-              <dryRun>false</dryRun>
-              <repositoryName>slider</repositoryName>
-              <repositoryOwner>hortonworks</repositoryOwner>
-            </configuration>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>site</goal>
-                </goals>
-                <phase>site-deploy</phase>
-              </execution>
-            </executions>
-          </plugin>
-
-          <plugin>
-            <artifactId>maven-deploy-plugin</artifactId>
-            <version>${maven-deploy-plugin.version}</version>
-            <configuration>
-              <altDeploymentRepository>
-                internal.repo::default::file://${project.build.directory}/mvn-repo
-              </altDeploymentRepository>
-            </configuration>
-          </plugin>
-
-  
-        </plugins>
-      </build>
-
-    </profile>
-    
-    <profile>
     <id>strict</id>
     <!--enable this if you want to get told off about dependency conflict-->
     <build>
@@ -1543,6 +1568,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
+            <version>${maven-gpg-plugin.version}</version>
             <executions>
               <execution>
                 <id>sign-artifacts</id>
@@ -1579,6 +1605,30 @@
         </repository>
       </repositories>
     </profile>
+
+    <!-- see https://github.com/rvowles/maven-groovydoc-plugin -->
+    <profile>
+      <id>groovydoc</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.bluetrainsoftware.maven</groupId>
+            <artifactId>maven-groovydoc-plugin</artifactId>
+            <version>${maven-groovydoc-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>attach-docs</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>attach-docs</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
   </profiles>
 
 
