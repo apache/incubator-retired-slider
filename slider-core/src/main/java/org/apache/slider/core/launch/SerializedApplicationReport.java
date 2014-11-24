@@ -81,6 +81,8 @@ public class SerializedApplicationReport {
     FinalApplicationStatus appStatus = report.getFinalApplicationStatus();
     this.finalStatus = appStatus == null ? "" : appStatus.toString();
     this.progress = report.getProgress();
+    this.url = report.getTrackingUrl();
+    this.origTrackingUrl= report.getTrackingUrl();
   }
 
   @Override
