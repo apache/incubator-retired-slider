@@ -18,6 +18,7 @@
 
 package org.apache.slider.server.appmaster.management;
 
+import com.codahale.metrics.JmxReporter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.ScheduledReporter;
 import com.codahale.metrics.ganglia.GangliaReporter;
@@ -65,7 +66,8 @@ public class MetricsBindingService extends AbstractService {
   public static final int DEFAULT_GANGLIA_PORT = 8649;
 
   private final MetricRegistry metrics;
-  private ScheduledReporter reporter;
+  private ScheduledReporter gangliaReporter;
+  private JmxReporter jmxReporter;
 
   public MetricsBindingService(String name,
       MetricRegistry metrics) {
@@ -89,9 +91,15 @@ public class MetricsBindingService extends AbstractService {
   protected void serviceStart() throws Exception {
     super.serviceStart();
     Configuration conf = getConfig();
-    boolean enabled = conf.getBoolean(METRICS_GANGLIA_ENABLED, false);
+    
+    // always start the JMX binding
+    jmxReporter =  JmxReporter.forRegistry(metrics).build();
+    jmxReporter.start();
+    
+    
+    boolean gangliaEnabled = conf.getBoolean(METRICS_GANGLIA_ENABLED, false);
 
-    if (enabled) {
+    if (gangliaEnabled) {
       String host = conf.getTrimmed(METRICS_GANGLIA_HOST, "");
       int port = conf.getInt(METRICS_GANGLIA_PORT, DEFAULT_GANGLIA_PORT);
       int interval = conf.getInt(METRICS_GANGLIA_REPORT_INTERVAL, 60);
@@ -107,22 +115,19 @@ public class MetricsBindingService extends AbstractService {
               mcast,
               ttl,
               ganglia31);
-      reporter = GangliaReporter.forRegistry(metrics)
+      gangliaReporter = GangliaReporter.forRegistry(metrics)
                                 .convertRatesTo(TimeUnit.SECONDS)
                                 .convertDurationsTo(TimeUnit.MILLISECONDS)
                                 .build(ganglia);
-      reporter.start(interval, TimeUnit.SECONDS);
+      gangliaReporter.start(interval, TimeUnit.SECONDS);
     }
   }
 
   @Override
   protected void serviceStop() throws Exception {
-    IOUtils.closeStream(reporter);
+    IOUtils.closeStream(gangliaReporter);
+    IOUtils.closeStream(jmxReporter);
     super.serviceStop();
-  }
-  
-  public boolean isEnabled() {
-    return reporter != null;
   }
 
 }
