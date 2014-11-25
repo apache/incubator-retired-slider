@@ -109,34 +109,38 @@ public interface SliderXmlConfKeys {
    */
   String CLUSTER_DIRECTORY_PERMISSIONS =
     "slider.cluster.directory.permissions";
+
   /**
    * Default value for the permissions :{@value}
    */
   String DEFAULT_CLUSTER_DIRECTORY_PERMISSIONS = "750";
-  /**: {@value}
-   * Option for the permissions for the data directory itself
+
+  /**
+   * 
+   * Option for the permissions for the data directory itself: {@value}
    */
   String DATA_DIRECTORY_PERMISSIONS = "slider.data.directory.permissions";
+
   /**
    * Default value for the data directory permissions: {@value}
    */
   String DEFAULT_DATA_DIRECTORY_PERMISSIONS = "750";
 
-
+  /**
+   *
+   * Use {@link RegistryConstants#KEY_REGISTRY_ZK_ROOT}
+   *
+   */
+  @Deprecated
   String REGISTRY_PATH = "slider.registry.path";
 
   /**
-   * Default value for the registry: {@value}
+   * 
+   * @Deprecated use {@link RegistryConstants#KEY_REGISTRY_ZK_QUORUM}
+   * 
    */
-  String DEFAULT_REGISTRY_PATH = RegistryConstants.DEFAULT_ZK_REGISTRY_ROOT;
-
-
+  @Deprecated
   String REGISTRY_ZK_QUORUM = "slider.zookeeper.quorum";
-
-  /**
-   * Default value for the registry: {@value}
-   */
-  String DEFAULT_REGISTRY_ZK_QUORUM = "localhost:2181";
 
 
   String IPC_CLIENT_FALLBACK_TO_SIMPLE_AUTH =

@@ -1405,8 +1405,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     /**
      * pass the registry binding
      */
-    addConfOptionToCLI(commandLine, config, REGISTRY_PATH,
-        DEFAULT_REGISTRY_PATH);
+    addConfOptionToCLI(commandLine, config,
+        RegistryConstants.KEY_REGISTRY_ZK_ROOT,
+        RegistryConstants.DEFAULT_ZK_REGISTRY_ROOT);
     addMandatoryConfOptionToCLI(commandLine, config,
         RegistryConstants.KEY_REGISTRY_ZK_QUORUM);
 
