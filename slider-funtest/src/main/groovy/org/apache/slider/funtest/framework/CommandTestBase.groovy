@@ -121,8 +121,6 @@ abstract class CommandTestBase extends SliderTestUtils {
 
     TEST_AM_KEYTAB = SLIDER_CONFIG.getTrimmed(
         KEY_TEST_AM_KEYTAB)
-    
-    
 
     TILDE = Shell.WINDOWS? "~" : "\\~" 
   }
@@ -137,11 +135,10 @@ abstract class CommandTestBase extends SliderTestUtils {
 
     SliderShell.confDir = SLIDER_CONF_DIRECTORY
     
-    // choose python script if on windows or the launch key recommends it
+    // choose python script if on windows
     // 
-    boolean python = SLIDER_CONFIG.getBoolean(KEY_LAUNCH_PYTHON, false)
     SliderShell.scriptFile =
-        (SliderShell.windows || python) ? SLIDER_SCRIPT_PYTHON : SLIDER_SCRIPT
+        SliderShell.windows ? SLIDER_SCRIPT_PYTHON : SLIDER_SCRIPT
     
     //set the property of the configuration directory
     def path = SLIDER_CONF_DIRECTORY.absolutePath
