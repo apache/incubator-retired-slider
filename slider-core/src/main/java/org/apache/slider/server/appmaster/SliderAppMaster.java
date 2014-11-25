@@ -19,6 +19,7 @@
 package org.apache.slider.server.appmaster;
 
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.health.HealthCheckRegistry;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.BlockingService;
@@ -123,6 +124,8 @@ import org.apache.slider.server.appmaster.actions.RenewingAction;
 import org.apache.slider.server.appmaster.actions.ResetFailureWindow;
 import org.apache.slider.server.appmaster.actions.ReviewAndFlexApplicationSize;
 import org.apache.slider.server.appmaster.actions.UnregisterComponentInstance;
+import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
+import org.apache.slider.server.appmaster.management.YarnServiceHealthCheck;
 import org.apache.slider.server.appmaster.monkey.ChaosKillAM;
 import org.apache.slider.server.appmaster.monkey.ChaosKillContainer;
 import org.apache.slider.server.appmaster.monkey.ChaosMonkeyService;
@@ -149,6 +152,7 @@ import org.apache.slider.server.appmaster.web.rest.RestPaths;
 import org.apache.slider.server.services.security.CertificateManager;
 import org.apache.slider.server.services.security.FsDelegationTokenManager;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
+import org.apache.slider.server.appmaster.management.MetricsBindingService;
 import org.apache.slider.server.services.utility.WebAppService;
 import org.apache.slider.server.services.workflow.ServiceThreadFactory;
 import org.apache.slider.server.services.workflow.WorkflowExecutorService;
@@ -204,20 +208,17 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public static final String SERVICE_CLASSNAME =
       "org.apache.slider.server.appmaster." + SERVICE_CLASSNAME_SHORT;
 
-
-  /**
-   * time to wait from shutdown signal being rx'd to telling
-   * the AM: {@value}
-   */
-  public static final int TERMINATION_SIGNAL_PROPAGATION_DELAY = 1000;
-
   public static final int HEARTBEAT_INTERVAL = 1000;
   public static final int NUM_RPC_HANDLERS = 5;
 
   /**
-   * Singleton of metrics registry
+   * Metrics and monitoring services
    */
-  public static final MetricRegistry metrics = new MetricRegistry();
+  private final MetricsAndMonitoring metricsAndMonitoring = new MetricsAndMonitoring(); 
+  /**
+   * metrics registry
+   */
+  public MetricRegistry metrics;
   public static final String E_TRIGGERED_LAUNCH_FAILURE =
       "Chaos monkey triggered launch failure";
 
@@ -276,7 +277,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * Ongoing state of the cluster: containers, nodes they
    * live on, etc.
    */
-  private final AppState appState = new AppState(new ProtobufRecordFactory());
+  private final AppState appState =
+      new AppState(new ProtobufRecordFactory(), metricsAndMonitoring);
 
   private final ProviderAppState stateForProviders =
       new ProviderAppState("undefined", appState);
@@ -441,12 +443,18 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
             false);
     SliderUtils.validateSliderServerEnvironment(log, dependencyChecks);
 
+    // create app state and monitoring
+    addService(metricsAndMonitoring);
+    metrics = metricsAndMonitoring.getMetrics();
+
+    
     executorService = new WorkflowExecutorService<ExecutorService>("AmExecutor",
         Executors.newFixedThreadPool(2,
             new ServiceThreadFactory("AmExecutor", true)));
     addService(executorService);
 
     addService(actionQueues);
+    
     //init all child services
     super.serviceInit(conf);
   }
@@ -454,6 +462,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   @Override
   protected void serviceStart() throws Exception {
     super.serviceStart();
+    HealthCheckRegistry health = metricsAndMonitoring.getHealth();
+    health.register("AM Health", new YarnServiceHealthCheck(this));
   }
 
   /**
@@ -705,12 +715,15 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       int port = getPortToRequest(instanceDefinition);
 
-      webApp = new SliderAMWebApp(registryOperations);
+      WebAppApi webAppApi = new WebAppApiImpl(this,
+          stateForProviders,
+          providerService,
+          certificateManager,
+          registryOperations,
+          metricsAndMonitoring);
+      webApp = new SliderAMWebApp(webAppApi);
       WebApps.$for(SliderAMWebApp.BASE_PATH, WebAppApi.class,
-                   new WebAppApiImpl(this,
-                                     stateForProviders,
-                                     providerService,
-                                     certificateManager, registryOperations),
+                   webAppApi,
                    RestPaths.WS_CONTEXT)
                       .withHttpPolicy(serviceConf, HttpConfig.Policy.HTTP_ONLY)
                       .at(port)
@@ -1000,12 +1013,15 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // Start up the agent web app and track the URL for it
     AgentWebApp agentWebApp = AgentWebApp.$for(AgentWebApp.BASE_PATH,
                      new WebAppApiImpl(this,
-                                       stateForProviders,
-                                       providerService,
-                                       certificateManager, registryOperations),
+                         stateForProviders,
+                         providerService,
+                         certificateManager,
+                         registryOperations,
+                         metricsAndMonitoring),
                      RestPaths.AGENT_WS_CONTEXT)
         .withComponentConfig(getInstanceDefinition().getAppConfOperations()
-                                 .getComponent(SliderKeys.COMPONENT_AM))
+                                                    .getComponent(
+                                                        SliderKeys.COMPONENT_AM))
         .start();
     agentOpsUrl =
         "https://" + appMasterHostname + ":" + agentWebApp.getSecuredPort();

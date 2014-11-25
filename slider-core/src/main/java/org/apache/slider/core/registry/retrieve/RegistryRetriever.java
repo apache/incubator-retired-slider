@@ -19,20 +19,12 @@
 package org.apache.slider.core.registry.retrieve;
 
 import com.beust.jcommander.Strings;
-import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.config.ClientConfig;
-import com.sun.jersey.api.client.config.DefaultClientConfig;
-import com.sun.jersey.api.json.JSONConfiguration;
-import com.sun.jersey.client.urlconnection.HttpURLConnectionFactory;
-import com.sun.jersey.client.urlconnection.URLConnectionClientHandler;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.registry.client.binding.RegistryTypeUtils;
 import org.apache.hadoop.registry.client.exceptions.RegistryIOException;
 import org.apache.hadoop.registry.client.types.Endpoint;
 import org.apache.hadoop.registry.client.types.ServiceRecord;
-import org.apache.hadoop.security.ssl.SSLFactory;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.ExceptionConverter;
 import org.apache.slider.core.registry.docstore.PublishedConfigSet;
@@ -43,17 +35,8 @@ import org.apache.slider.core.registry.info.CustomRegistryConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLSocketFactory;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URL;
-import java.security.GeneralSecurityException;
 import java.util.List;
 
 /**
@@ -61,71 +44,13 @@ import java.util.List;
  * This hides the HTTP operations that take place to
  * get the actual content
  */
-public class RegistryRetriever {
+public class RegistryRetriever extends AMWebClient {
   private static final Logger log = LoggerFactory.getLogger(RegistryRetriever.class);
 
   private final String externalConfigurationURL;
   private final String internalConfigurationURL;
   private final String externalExportsURL;
   private final String internalExportsURL;
-  private static final Client jerseyClient;
-  
-  static {
-    ClientConfig clientConfig = new DefaultClientConfig();
-    clientConfig.getFeatures().put(
-        JSONConfiguration.FEATURE_POJO_MAPPING,
-        Boolean.TRUE);
-    clientConfig.getProperties().put(
-        URLConnectionClientHandler.PROPERTY_HTTP_URL_CONNECTION_SET_METHOD_WORKAROUND, true);
-    URLConnectionClientHandler handler = getUrlConnectionClientHandler();
-    jerseyClient = new Client(handler, clientConfig);
-    jerseyClient.setFollowRedirects(true);
-  }
-
-  private static URLConnectionClientHandler getUrlConnectionClientHandler() {
-    return new URLConnectionClientHandler(new HttpURLConnectionFactory() {
-      @Override
-      public HttpURLConnection getHttpURLConnection(URL url)
-          throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        if (connection.getResponseCode() == HttpURLConnection.HTTP_MOVED_TEMP) {
-          // is a redirect - are we changing schemes?
-          String redirectLocation = connection.getHeaderField(HttpHeaders.LOCATION);
-          String originalScheme = url.getProtocol();
-          String redirectScheme = URI.create(redirectLocation).getScheme();
-          if (!originalScheme.equals(redirectScheme)) {
-            // need to fake it out by doing redirect ourselves
-            log.info("Protocol change during redirect. Redirecting {} to URL {}",
-                     url, redirectLocation);
-            URL redirectURL = new URL(redirectLocation);
-            connection = (HttpURLConnection) redirectURL.openConnection();
-          }
-        }
-        if (connection instanceof HttpsURLConnection) {
-          log.debug("Attempting to configure HTTPS connection using client "
-                    + "configuration");
-          final SSLFactory factory;
-          final SSLSocketFactory sf;
-          final HostnameVerifier hv;
-
-          try {
-            HttpsURLConnection c = (HttpsURLConnection) connection;
-            factory = new SSLFactory(SSLFactory.Mode.CLIENT, new Configuration());
-            factory.init();
-            sf = factory.createSSLSocketFactory();
-            hv = factory.getHostnameVerifier();
-            c.setSSLSocketFactory(sf);
-            c.setHostnameVerifier(hv);
-          } catch (Exception e) {
-            log.info("Unable to configure HTTPS connection from "
-                     + "configuration.  Leveraging JDK properties.");
-          }
-
-        }
-        return connection;
-      }
-    });
-  }
 
   public RegistryRetriever(String externalConfigurationURL, String internalConfigurationURL,
                            String externalExportsURL, String internalExportsURL) {
@@ -255,16 +180,6 @@ public class RegistryRetriever {
     }
   }
 
-  private WebResource resource(String url) {
-    WebResource resource = jerseyClient.resource(url);
-    return resource;
-  }
-
-  private WebResource jsonResource(String url) {
-    WebResource resource = resource(url);
-    resource.type(MediaType.APPLICATION_JSON);
-    return resource;
-  }
 
   /**
    * Get a complete configuration, with all values

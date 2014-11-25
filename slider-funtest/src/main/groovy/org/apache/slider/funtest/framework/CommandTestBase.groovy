@@ -1225,6 +1225,7 @@ abstract class CommandTestBase extends SliderTestUtils {
       fail(errorText + "\n" + outfile.text)
     }
   }
+ 
   /**
    * Is the registry accessible for an application?
    * @param args argument map containing <code>"application"</code>
@@ -1261,5 +1262,55 @@ abstract class CommandTestBase extends SliderTestUtils {
     shell.dumpOutput()
     assert f.exists()
     return Outcome.fromBool(f.text.contains(text))
+  }
+
+  /**
+   * Probe callback for is the the app root web page up
+   * @param args map where 'applicationId' must be set
+   * @return the outcome
+   */
+  protected static Outcome isRootWebPageUp(
+      Map<String, String> args) {
+    assert args['applicationId'] != null
+    String applicationId = args['applicationId'];
+    def sar = lookupApplication(applicationId)
+    assert sar != null;
+    if (!sar.url) {
+      return Outcome.Retry;
+    }
+    try {
+      GET(sar.url)
+      return Outcome.Success
+    } catch (Exception e) {
+      return Outcome.Retry;
+    }
+  }
+
+  /**
+   * Await for the root web page of an app to come up
+   * @param applicationId app ID
+   * @param launch_timeout launch timeout
+   */
+  void expectRootWebPageUp(
+      String applicationId,
+      int launch_timeout) {
+
+    repeatUntilSuccess(
+        "await root web page",
+        this.&isRootWebPageUp,
+        launch_timeout,
+        PROBE_SLEEP_TIME,
+        [
+         applicationId: applicationId
+        ],
+        false,
+        "web page not up") {
+
+      def sar = lookupApplication(applicationId)
+      assert sar != null;
+      assert sar.url
+      // this is the final failure cause
+      GET(sar.url)
+    }
   }
 }

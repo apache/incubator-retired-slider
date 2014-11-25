@@ -22,6 +22,7 @@ import com.codahale.metrics.MetricRegistry
 import groovy.transform.CompileStatic
 import org.apache.hadoop.fs.FileUtil
 import org.apache.slider.common.SliderXMLConfKeysForTesting
+import org.apache.slider.server.appmaster.management.MetricsAndMonitoring
 import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Rule
@@ -41,7 +42,7 @@ public abstract class SliderTestBase extends SliderTestUtils {
   /**
    * Singleton metric registry
    */
-  public static final MetricRegistry metricRegistry = new MetricRegistry()
+  public static final MetricsAndMonitoring metrics = new MetricsAndMonitoring()
   
   @Rule
   public TestName methodName = new TestName();

@@ -16,30 +16,23 @@
  * limitations under the License.
  */
 
-package org.apache.slider.funtest.lifecycle
+package org.apache.slider.server.appmaster.management;
 
-import groovy.transform.CompileStatic
-import groovy.util.logging.Slf4j
-import org.apache.slider.common.SliderExitCodes
-import org.apache.slider.common.params.Arguments
-import org.apache.slider.common.params.SliderActions
-import org.apache.slider.funtest.framework.AgentCommandTestBase
-import org.apache.slider.funtest.framework.FuntestProperties
-import org.apache.slider.funtest.framework.SliderShell
-import org.junit.Before
-import org.junit.Test
+import com.codahale.metrics.health.HealthCheck;
+import org.apache.hadoop.service.Service;
 
-/**
- * For a quick demo of a slider app; this starts the apps through agent test but
- * neglects to tear it down afterwards
- */
-@CompileStatic
-@Slf4j
-public class AppsThroughAgentDemo extends AppsThroughAgentIT {
+public class YarnServiceHealthCheck extends HealthCheck {
+  
+  private final Service service;
+
+  public YarnServiceHealthCheck(Service service) {
+    this.service = service;
+  }
 
   @Override
-  void destroyCluster() {
-//    super.destroyCluster()
+  protected Result check() throws Exception {
+    return service.isInState(Service.STATE.STARTED)
+           ? Result.healthy()
+           : Result.unhealthy("Service is not running: %s", service);
   }
-  
 }

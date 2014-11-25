@@ -60,6 +60,7 @@ import org.apache.slider.core.exceptions.SliderInternalStateException;
 import org.apache.slider.core.exceptions.TriggerClusterTeardownException;
 import org.apache.slider.providers.PlacementPolicy;
 import org.apache.slider.providers.ProviderRole;
+import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
 import org.apache.slider.server.appmaster.operations.CancelRequestOperation;
 import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation;
@@ -96,6 +97,8 @@ public class AppState {
     LoggerFactory.getLogger(AppState.class);
   
   private final AbstractRecordFactory recordFactory;
+
+  private final MetricsAndMonitoring metricsAndMonitoring;
 
   /**
    * Flag set to indicate the application is live -this only happens
@@ -261,8 +264,14 @@ public class AppState {
   
   private ContainerReleaseSelector containerReleaseSelector;
 
-  public AppState(AbstractRecordFactory recordFactory) {
+  /**
+   * Create an instance
+   * @param recordFactory factory for YARN records
+   * @param metricsAndMonitoring metrics and monitoring services
+   */
+  public AppState(AbstractRecordFactory recordFactory, MetricsAndMonitoring metricsAndMonitoring) {
     this.recordFactory = recordFactory;
+    this.metricsAndMonitoring = metricsAndMonitoring; 
   }
 
   public int getFailedCountainerCount() {

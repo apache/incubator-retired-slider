@@ -33,6 +33,7 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.conf.MapOperations;
+import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
 import org.apache.slider.server.appmaster.model.mock.MockFactory;
 import org.apache.slider.server.appmaster.model.mock.MockProviderService;
 import org.apache.slider.server.appmaster.model.mock.MockRecordFactory;
@@ -121,7 +122,7 @@ public class TestAMAgentWebServices {
           historyPath =
           new org.apache.hadoop.fs.Path(historyWorkDir.toURI());
       fs.delete(historyPath, true);
-      appState = new AppState(new MockRecordFactory());
+      appState = new AppState(new MockRecordFactory(), new MetricsAndMonitoring());
       appState.setContainerLimits(RM_MAX_RAM, RM_MAX_CORES);
       appState.buildInstance(
           factory.newInstanceDefinition(0, 0, 0),
@@ -138,7 +139,7 @@ public class TestAMAgentWebServices {
                                                              appState);
 
     slider = new WebAppApiImpl(new MockSliderClusterProtocol(), providerAppState,
-                               new MockProviderService(), null, null);
+                               new MockProviderService(), null, null, null);
 
     MapOperations compOperations = new MapOperations();
 
