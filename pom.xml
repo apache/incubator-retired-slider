@@ -184,39 +184,45 @@
     <zookeeper.version>3.4.6</zookeeper.version>
 
 
-    <!--  Plugin versions    -->
+    <!-- artifacts used in plugins -->
+    <apache-resources.version>1.0.4</apache-resources.version>
     <gmavenVersion>1.5</gmavenVersion>
     <gmavenProviderSelection>2.0</gmavenProviderSelection>
     <groovy-eclipse-compiler.version>2.8.0-01</groovy-eclipse-compiler.version>
     <groovy-eclipse-batch.version>2.1.3-01</groovy-eclipse-batch.version>
     <buildnumber-maven-plugin.version>1.2</buildnumber-maven-plugin.version>
-    
+  
     
     <maven.version.range>[3.0.0,)</maven.version.range>
-    
+
+    <!--  Plugin versions    -->  
     <maven-antrun-plugin.version>1.7</maven-antrun-plugin.version>
     <maven-assembly-plugin.version>2.4</maven-assembly-plugin.version>
     <maven.cobertura.version>2.5.2</maven.cobertura.version>
     <maven-compiler-plugin.version>3.1</maven-compiler-plugin.version>
     <maven-dependency-plugin.version>2.8</maven-dependency-plugin.version>
-    <maven-deploy-plugin.version>2.7</maven-deploy-plugin.version>
+    <maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
     <maven-doxia-module-markdown.version>1.4</maven-doxia-module-markdown.version>
-    <maven-enforcer-plugin.version>1.0</maven-enforcer-plugin.version>
+    <maven-enforcer-plugin.version>1.3.1</maven-enforcer-plugin.version>
     <maven-exec-plugin.version>1.2.1</maven-exec-plugin.version>
+    <maven-install-plugin.version>2.5.2</maven-install-plugin.version>
     <maven-gpg-plugin.version>1.5</maven-gpg-plugin.version>
     <maven-groovydoc-plugin.version>1.3</maven-groovydoc-plugin.version>
-    <maven-jar-plugin.version>2.3.1</maven-jar-plugin.version>
-    <maven.javadoc.version>2.8</maven.javadoc.version>
+    <maven-jar-plugin.version>2.5</maven-jar-plugin.version>
+    <maven.javadoc.version>2.9.1</maven.javadoc.version>
     <maven.project.version>2.4</maven.project.version>
     <maven.properties.version>1.0-alpha-2</maven.properties.version>
     <maven-project-info-reports-plugin.version>2.7</maven-project-info-reports-plugin.version>
+    <maven-release-plugin.version>2.5.1</maven-release-plugin.version>
+    <maven-remote-resources-plugin.version>1.5</maven-remote-resources-plugin.version>
+    <maven-resources-plugin.version>2.6</maven-resources-plugin.version>
     <maven-rpm-plugin.version>2.1-alpha-4</maven-rpm-plugin.version>
-    <maven-site-plugin.version>3.3</maven-site-plugin.version>
-    <maven-source-plugin.version>2.2.1</maven-source-plugin.version>
-    <maven-surefire-plugin.version>2.16</maven-surefire-plugin.version>
-    <maven-surefire-report-plugin.version>2.16</maven-surefire-report-plugin.version>
-    <maven-failsafe-plugin.version>2.16</maven-failsafe-plugin.version>
-    <apache-rat-plugin.version>0.10</apache-rat-plugin.version>
+    <maven-site-plugin.version>3.4</maven-site-plugin.version>
+    <maven-source-plugin.version>2.3</maven-source-plugin.version>
+    <maven-surefire-plugin.version>2.17</maven-surefire-plugin.version>
+    <maven-surefire-report-plugin.version>${maven-surefire-plugin.version}</maven-surefire-report-plugin.version>
+    <maven-failsafe-plugin.version>${maven-surefire-plugin.version}</maven-failsafe-plugin.version>
+    <apache-rat-plugin.version>0.11</apache-rat-plugin.version>
 
     <!-- build options-->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -313,8 +319,38 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
       
+      </plugin>
+      <!-- Create a source-release artifact that contains the fully buildable 
+           project directory source structure. This is the artifact which is 
+           the official subject of any release vote. -->
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <dependencies>
+          <dependency>
+            <groupId>org.apache.apache.resources</groupId>
+            <artifactId>apache-source-release-assembly-descriptor</artifactId>
+            <version>${apache-resources.version}</version>
+          </dependency>
+        </dependencies>
+        <executions>
+          <execution>
+            <id>source-release-assembly</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <runOnlyAtExecutionRoot>true</runOnlyAtExecutionRoot>
+              <descriptorRefs>
+                <descriptorRef>${sourceReleaseAssemblyDescriptor}</descriptorRef>
+              </descriptorRefs>
+              <tarLongFileMode>gnu</tarLongFileMode>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+            
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-site-plugin</artifactId>
@@ -353,6 +389,23 @@
         </executions>
       </plugin>
 
+      <!-- We want to package up license resources in the JARs produced -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-remote-resources-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>process</goal>
+            </goals>
+            <configuration>
+              <resourceBundles>
+                <resourceBundle>org.apache:apache-jar-resource-bundle:1.4</resourceBundle>
+              </resourceBundles>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
 
   </plugins>
   </build>
