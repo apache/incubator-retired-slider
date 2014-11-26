@@ -43,14 +43,6 @@ public interface SliderXMLConfKeysForTesting {
 
   int DEFAULT_TEST_TIMEOUT_SECONDS = 30 * 60;
 
-  String KEY_TEST_HBASE_LAUNCH_TIME = "slider.test.hbase.launch.wait.seconds";
-
-  int DEFAULT_HBASE_LAUNCH_TIME_SECONDS = 60 * 3;
-
-  String KEY_TEST_HBASE_ENABLED = "slider.test.hbase.enabled";
-
-  String KEY_TEST_ACCUMULO_ENABLED = "slider.test.accumulo.enabled";
-
   String KEY_ACCUMULO_LAUNCH_TIME =
     "slider.test.accumulo.launch.wait.seconds";
   int DEFAULT_ACCUMULO_LAUNCH_TIME_SECONDS = 60 * 3;

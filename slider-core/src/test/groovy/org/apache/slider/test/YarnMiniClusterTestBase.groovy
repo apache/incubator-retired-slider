@@ -103,14 +103,6 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
   public int freezeWaitTime = DEFAULT_TEST_FREEZE_WAIT_TIME_SECONDS * 1000
   public int sliderTestTimeout = DEFAULT_TEST_TIMEOUT_SECONDS * 1000
   public boolean teardownKillall = DEFAULT_TEARDOWN_KILLALL
-  
-  
-  public boolean accumuloTestsEnabled = true
-  public int accumuloLaunchWaitTime = DEFAULT_ACCUMULO_LAUNCH_TIME_SECONDS * 1000
-  
-  public boolean hbaseTestsEnabled = true
-  public int hbaseLaunchWaitTime = DEFAULT_HBASE_LAUNCH_TIME_SECONDS * 1000
-  
 
   protected MiniDFSCluster hdfsCluster
   protected MiniYARNCluster miniCluster
@@ -175,17 +167,6 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
         testConf.getBoolean(KEY_TEST_TEARDOWN_KILLALL,
             teardownKillall)
 
-    hbaseTestsEnabled =
-        testConf.getBoolean(KEY_TEST_HBASE_ENABLED, hbaseTestsEnabled)
-    hbaseLaunchWaitTime = getTimeOptionMillis(testConf,
-        KEY_TEST_HBASE_LAUNCH_TIME,
-        hbaseLaunchWaitTime)
-
-    accumuloTestsEnabled =
-        testConf.getBoolean(KEY_TEST_ACCUMULO_ENABLED, accumuloTestsEnabled)
-    accumuloLaunchWaitTime = getTimeOptionMillis(testConf,
-        KEY_ACCUMULO_LAUNCH_TIME,
-        accumuloLaunchWaitTime)
   }
 
   @After
