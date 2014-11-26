@@ -34,28 +34,6 @@ public interface SliderXmlConfKeys {
   String KEY_PROVIDER = PREFIX_PROVIDER + ".%s";
 
   /**
-   * HBase provider key (derived from {@link #KEY_PROVIDER}
-   * and so not found in the code itself
-   * {@value}
-   */
-  String KEY_PROVIDER_HBASE = PREFIX_PROVIDER + ".hbase";
-
-  /**
-   * Accumulo provider key (derived from {@link #KEY_PROVIDER}
-   * and so not found in the code itself
-   * {@value}
-   */
-  String KEY_PROVIDER_ACCUMULO =
-    PREFIX_PROVIDER + ".accumulo";
-
-  /**
-   * Accumulo agent key (derived from {@link #KEY_PROVIDER}
-   * and so not found in the code itself
-   * {@value}
-   */
-  String KEY_PROVIDER_AGENT = PREFIX_PROVIDER + ".agent";
-
-  /**
    * conf option set to point to where the config came from
    * {@value}
    */
