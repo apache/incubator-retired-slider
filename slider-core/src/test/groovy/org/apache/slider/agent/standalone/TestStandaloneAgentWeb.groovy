@@ -20,28 +20,14 @@ package org.apache.slider.agent.standalone
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.hadoop.fs.Path
-import org.apache.hadoop.yarn.api.records.ApplicationId
 import org.apache.hadoop.yarn.api.records.ApplicationReport
-import org.apache.hadoop.yarn.api.records.YarnApplicationState
-import org.apache.hadoop.yarn.exceptions.YarnException
 import org.apache.slider.agent.AgentMiniClusterTestBase
-import org.apache.slider.api.ClusterNode
 import org.apache.slider.client.SliderClient
-import org.apache.slider.common.SliderKeys
-import org.apache.slider.common.params.ActionRegistryArgs
-import org.apache.slider.common.tools.Duration
-import org.apache.slider.core.build.InstanceBuilder
-import org.apache.slider.core.conf.AggregateConf
-import org.apache.slider.core.exceptions.SliderException
-import org.apache.slider.core.launch.LaunchedApplication
-import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.core.main.ServiceLauncher
-import org.apache.slider.core.persist.LockAcquireFailedException
-import org.apache.slider.core.registry.retrieve.AMWebClient
 import org.apache.slider.server.appmaster.web.rest.RestPaths
-import org.junit.After
 import org.junit.Test
+
+import static org.apache.slider.server.appmaster.management.MetricsKeys.*
 
 @CompileStatic
 @Slf4j
@@ -53,6 +39,9 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
 
     describe "create a standalone AM then perform actions on it"
     //launch fake master
+    def configuration = configuration
+    configuration.setBoolean(METRICS_LOGGING_ENABLED, true)
+    configuration.setInt(METRICS_LOGGING_LOG_INTERVAL, 1)
     String clustername = createMiniCluster("", configuration, 1, true)
 
 
@@ -66,7 +55,8 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
     GET(realappmaster)
     def metrics = GET(realappmaster, RestPaths.SYSTEM_METRICS)
     log.info metrics
-
+    
+    sleep(5000)
     def appmaster = report.trackingUrl
 
     GET(appmaster)
@@ -74,6 +64,7 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
     log.info GET(appmaster, RestPaths.SYSTEM_PING)
     log.info GET(appmaster, RestPaths.SYSTEM_THREADS)
     log.info GET(appmaster, RestPaths.SYSTEM_HEALTHCHECK)
+    log.info GET(appmaster, RestPaths.SYSTEM_METRICS_JSON)
     
   }
 
