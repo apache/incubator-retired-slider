@@ -16,7 +16,10 @@
  * limitations under the License.
  */
 
+/**
+ * Slider Functional Test Module.
+ * <p>
+ * This module contains slider's functional test runner, which is derived
+ * from the Apache Bigtop Test runner.
+ */
 package org.apache.slider.funtest;
-
-public class StubToForceGroovySrcToCompile {
-}
