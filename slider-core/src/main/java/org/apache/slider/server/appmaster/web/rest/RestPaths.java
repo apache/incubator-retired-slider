@@ -67,6 +67,7 @@ public class RestPaths {
   public static final String SYSTEM = "/system";
   public static final String SYSTEM_HEALTHCHECK = SYSTEM + "/health";
   public static final String SYSTEM_METRICS = SYSTEM + "/metrics";
+  public static final String SYSTEM_METRICS_JSON = SYSTEM_METRICS + "?format=json";
   public static final String SYSTEM_PING = SYSTEM + "/ping";
   public static final String SYSTEM_THREADS = SYSTEM + "/threads";
 }

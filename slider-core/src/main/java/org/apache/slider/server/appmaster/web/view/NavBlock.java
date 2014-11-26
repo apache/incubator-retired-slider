@@ -35,6 +35,7 @@ public class NavBlock extends HtmlBlock {
           li().a(this.prefix() + SliderAMWebApp.CONTAINER_STATS, "Statistics")._().
           li().a(this.prefix() + SliderAMWebApp.CLUSTER_SPEC, "Specification")._().
           li().a(rootPath(RestPaths.SYSTEM_METRICS), "Metrics")._().
+          li().a(rootPath(RestPaths.SYSTEM_METRICS_JSON), "Metrics as JSON")._().
           li().a(rootPath(RestPaths.SYSTEM_HEALTHCHECK), "Health")._().
           li().a(rootPath(RestPaths.SYSTEM_THREADS), "Threads")._()
         ._()
