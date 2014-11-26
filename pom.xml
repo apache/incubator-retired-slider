@@ -40,10 +40,6 @@
     <module>slider-agent</module>
     <module>slider-assembly</module>
     <module>slider-funtest</module>
-    <module>slider-providers/hbase/slider-hbase-provider</module>
-    <module>slider-providers/hbase/hbase-funtests</module>
-    <module>slider-providers/accumulo/slider-accumulo-provider</module>
-    <module>slider-providers/accumulo/accumulo-funtests</module>
   </modules>
 
   <licenses>
