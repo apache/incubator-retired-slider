@@ -28,6 +28,8 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileStatus
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.hdfs.web.URLConnectionFactory
+import org.apache.hadoop.io.IOUtils
 import org.apache.hadoop.service.ServiceStateException
 import org.apache.hadoop.util.Shell
 import org.apache.hadoop.yarn.api.records.ApplicationReport
@@ -423,7 +425,6 @@ class SliderTestUtils extends Assert {
   public static String GET(String base, String path) {
     String s = appendToURL(base, path)
     return GET(s)
-
   }
 
   def static String GET(String s) {
@@ -490,6 +491,61 @@ class SliderTestUtils extends Assert {
       fail(message)
     }
     return body;
+  }
+
+  /**
+   * Fetches a web page asserting that the response code is between 200 and 400.
+   * Will error on 400 and 500 series response codes and let 200 and 300 through.
+   *
+   * if security is enabled, this uses SPNEGO to auth
+   * @param page
+   * @return body of response
+   */
+  public static String getWebPage(Configuration conf,
+      String base,
+      String path) {
+    String s = appendToURL(base, path)
+    return getWebPage(conf, s)
+  }
+
+    /**
+   * Fetches a web page asserting that the response code is between 200 and 400.
+   * Will error on 400 and 500 series response codes and let 200 and 300 through.
+   * 
+   * if security is enabled, this uses SPNEGO to auth
+   * @param page
+   * @return body of response
+   */
+  public static String getWebPage(Configuration conf, String page) {
+    assert null != page
+
+    log.info("Fetching HTTP content at " + page);
+    URLConnectionFactory connectionFactory = URLConnectionFactory
+        .newDefaultURLConnectionFactory(conf);
+    URL url = new URL(page)
+    HttpURLConnection conn =
+        (HttpURLConnection) connectionFactory.openConnection(url);
+    try {
+      conn.instanceFollowRedirects = true;
+      conn.connect()
+
+      int resultCode = conn.responseCode
+      InputStream stream = conn.errorStream;
+      if (stream == null) {
+        stream = conn.inputStream;
+      }
+
+      def body = stream ? stream.text : "(no body)"
+      if (!(resultCode >= 200 && resultCode < 400)) {
+        def message = "Request to $url failed with ${conn.responseMessage}, body length ${body?.length()}:\n$body"
+        log.error(message)
+        fail(message)
+      }
+      return body;
+    } finally {
+      conn?.disconnect()
+      
+    }
   }
 
   /**

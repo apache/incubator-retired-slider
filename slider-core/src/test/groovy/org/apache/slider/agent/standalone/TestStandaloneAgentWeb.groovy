@@ -39,10 +39,10 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
 
     describe "create a standalone AM then perform actions on it"
     //launch fake master
-    def configuration = configuration
-    configuration.setBoolean(METRICS_LOGGING_ENABLED, true)
-    configuration.setInt(METRICS_LOGGING_LOG_INTERVAL, 1)
-    String clustername = createMiniCluster("", configuration, 1, true)
+    def conf = configuration
+    conf.setBoolean(METRICS_LOGGING_ENABLED, true)
+    conf.setInt(METRICS_LOGGING_LOG_INTERVAL, 1)
+    String clustername = createMiniCluster("", conf, 1, true)
 
 
     ServiceLauncher<SliderClient> launcher =
@@ -65,6 +65,16 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
     log.info GET(appmaster, RestPaths.SYSTEM_THREADS)
     log.info GET(appmaster, RestPaths.SYSTEM_HEALTHCHECK)
     log.info GET(appmaster, RestPaths.SYSTEM_METRICS_JSON)
+    
+    describe "Hadoop HTTP operations"
+    // now switch to the Hadoop URL connection, with SPNEGO escalation
+    getWebPage(conf, appmaster)
+    getWebPage(conf, appmaster, RestPaths.SYSTEM_THREADS)
+    getWebPage(conf, appmaster, RestPaths.SYSTEM_HEALTHCHECK)
+    getWebPage(conf, appmaster, RestPaths.SYSTEM_METRICS_JSON)
+    
+    log.info getWebPage(conf, realappmaster, RestPaths.SYSTEM_METRICS_JSON)
+
     
   }
 

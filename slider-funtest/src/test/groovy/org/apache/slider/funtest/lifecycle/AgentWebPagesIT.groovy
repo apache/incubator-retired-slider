@@ -82,11 +82,12 @@ public class AgentWebPagesIT extends AgentCommandTestBase
     def report = loadAppReport(liveReportFile)
     assert report.url
 
+    def conf = SLIDER_CONFIG
     def root = report.url
-    log.info GET(root, RestPaths.SYSTEM_METRICS)
-    GET(root, RestPaths.SYSTEM_THREADS)
-    log.info GET(root, RestPaths.SYSTEM_HEALTHCHECK)
-    log.info GET(root, RestPaths.SYSTEM_PING)
+    log.info getWebPage (conf, root, RestPaths.SYSTEM_METRICS)
+    log.info getWebPage(conf, root, RestPaths.SYSTEM_THREADS)
+    log.info getWebPage(conf, root, RestPaths.SYSTEM_HEALTHCHECK)
+    log.info getWebPage(conf, root, RestPaths.SYSTEM_PING)
   }
 
 }
