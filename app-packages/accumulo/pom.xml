@@ -145,6 +145,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-assembly-plugin</artifactId>
+            <version>${maven-assembly-plugin.version}</version>
             <configuration>
               <descriptor>src/assembly/accumulo.xml</descriptor>
               <appendAssemblyId>false</appendAssemblyId>
@@ -241,6 +242,7 @@
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven-compiler-plugin.version}</version>
         <dependencies>
           <dependency>
             <groupId>org.codehaus.groovy</groupId>

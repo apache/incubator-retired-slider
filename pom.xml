@@ -135,9 +135,8 @@
     -->
     <hadoop.version>2.6.0</hadoop.version>
 
-    <hbase.version>0.98.4-hadoop2</hbase.version>
+    <hbase.version>0.99.0</hbase.version>
     <accumulo.version>1.6.1</accumulo.version>
-    
     <!--
      artifact versions
     -->
@@ -166,6 +165,7 @@
     <jsr311-api.version>1.1.1</jsr311-api.version>
     <jaxb-api.version>2.2.7</jaxb-api.version>
     <jsp.version>2.1</jsp.version>
+    <jsch.version>0.1.51</jsch.version>
     <junit.version>4.11</junit.version>
     <log4j.version>1.2.17</log4j.version>
     <metrics.version>3.0.1</metrics.version>
@@ -176,6 +176,7 @@
     <protobuf.version>2.5.0</protobuf.version>
 
     <slf4j.version>1.7.5</slf4j.version>
+    <storm.version>0.9.3</storm.version>
     <stringtemplate.version>2.4.1</stringtemplate.version>
     <zookeeper.version>3.4.6</zookeeper.version>
 
@@ -1144,7 +1145,7 @@
         <version>${slf4j.version}</version>
       </dependency>
 
-      <!-- Used for unit testing -->
+      <!-- Used for testing -->
       <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
@@ -1155,6 +1156,12 @@
         <groupId>com.google.protobuf</groupId>
         <artifactId>protobuf-java</artifactId>
         <version>${protobuf.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.jcraft</groupId>
+        <artifactId>jsch</artifactId>
+        <version>${jsch.version}</version>
       </dependency>
 
       <!-- ======================================================== -->
