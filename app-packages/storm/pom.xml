@@ -41,7 +41,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-antrun-plugin</artifactId>
-            <version>1.7</version>
+            <version>${maven-antrun-plugin.version}</version>
             <executions>
               <execution>
                 <id>copy</id>
@@ -60,6 +60,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-assembly-plugin</artifactId>
+            <version>${maven-assembly-plugin.version}</version>
             <configuration>
               <tarLongFileMode>gnu</tarLongFileMode>
               <descriptor>src/assembly/storm.xml</descriptor>
