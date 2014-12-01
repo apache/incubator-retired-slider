@@ -52,11 +52,6 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     sliderClientClassName = DEFAULT_SLIDER_CLIENT
   }
   
-  @After
-  void fixclientname() {
-    sliderClientClassName = DEFAULT_SLIDER_CLIENT
-  }
-  
   @Test
   public void testStandaloneAgentAM() throws Throwable {
 

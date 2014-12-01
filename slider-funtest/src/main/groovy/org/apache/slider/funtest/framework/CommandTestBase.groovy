@@ -1225,10 +1225,7 @@ abstract class CommandTestBase extends SliderTestUtils {
       fail(errorText + "\n" + outfile.text)
     }
   }
-<<<<<<< HEAD
-=======
  
->>>>>>> origin/apache-ref/develop
   /**
    * Is the registry accessible for an application?
    * @param args argument map containing <code>"application"</code>
