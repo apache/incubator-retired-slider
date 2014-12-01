@@ -38,6 +38,7 @@ import org.apache.slider.core.conf.MapOperations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -171,7 +172,16 @@ public abstract class AbstractLauncher extends Configured {
 
 
     DataOutputBuffer dob = new DataOutputBuffer();
-    credentials.writeTokenStorageToStream(dob);
+    String tokenFileName = this.getConf().get("mapreduce.job.credentials.binary");
+    if (tokenFileName != null) {
+      // use delegation tokens, i.e. from Oozie
+      Credentials creds = Credentials.readTokenStorageFile(new File(tokenFileName), getConf());
+      creds.writeTokenStorageToStream(dob);
+    } else {
+      // normal auth
+      credentials.writeTokenStorageToStream(dob);
+    }
+
     ByteBuffer tokenBuffer = ByteBuffer.wrap(dob.getData(), 0, dob.getLength());
     containerLaunchContext.setTokens(tokenBuffer);
 
