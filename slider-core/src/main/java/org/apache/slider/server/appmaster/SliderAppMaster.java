@@ -33,6 +33,7 @@ import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenIdentifier;
 import org.apache.hadoop.http.HttpConfig;
 import org.apache.hadoop.io.DataOutputBuffer;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.ipc.ProtocolSignature;
 import org.apache.hadoop.registry.client.binding.RegistryUtils;
 import org.apache.hadoop.security.Credentials;
@@ -150,7 +151,7 @@ import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.WebAppApiImpl;
 import org.apache.slider.server.appmaster.web.rest.RestPaths;
 import org.apache.slider.server.services.security.CertificateManager;
-import org.apache.slider.server.services.security.FsDelegationTokenManager;
+//import org.apache.slider.server.services.security.FsDelegationTokenManager;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
 import org.apache.slider.server.appmaster.management.MetricsBindingService;
 import org.apache.slider.server.services.utility.WebAppService;
@@ -376,9 +377,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private String agentOpsUrl;
   private String agentStatusUrl;
   private YarnRegistryViewForProviders yarnRegistryOperations;
-  private FsDelegationTokenManager fsDelegationTokenManager;
+  //private FsDelegationTokenManager fsDelegationTokenManager;
   private RegisterApplicationMasterResponse amRegistrationData;
   private PortScanner portScanner;
+  private SecurityConfiguration securityConfiguration;
 
   /**
    * Service Constructor
@@ -584,7 +586,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     Configuration serviceConf = getConfig();
 
-    SecurityConfiguration securityConfiguration = new SecurityConfiguration(
+    securityConfiguration = new SecurityConfiguration(
         serviceConf, instanceDefinition, clustername);
     // obtain security state
     boolean securityEnabled = securityConfiguration.isSecurityEnabled();
@@ -765,25 +767,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       appInformation.put(ResourceKeys.YARN_CORES, Integer.toString(containerMaxCores));
       appInformation.put(ResourceKeys.YARN_MEMORY, Integer.toString(containerMaxMemory));
 
-      // process the initial user to obtain the set of user
-      // supplied credentials (tokens were passed in by client). Remove AMRM
-      // token and HDFS delegation token, the latter because we will provide an
-      // up to date token for container launches (getContainerCredentials()).
-      UserGroupInformation currentUser = UserGroupInformation.getCurrentUser();
-      Credentials credentials = currentUser.getCredentials();
-      Iterator<Token<? extends TokenIdentifier>> iter =
-          credentials.getAllTokens().iterator();
-      while (iter.hasNext()) {
-        Token<? extends TokenIdentifier> token = iter.next();
-        log.info("Token {}", token.getKind());
-        if (token.getKind().equals(AMRMTokenIdentifier.KIND_NAME)  ||
-            token.getKind().equals(DelegationTokenIdentifier.HDFS_DELEGATION_KIND)) {
-          iter.remove();
-        }
-      }
-      // at this point this credentials map is probably clear, but leaving this
-      // code to allow for future tokens...
-      containerCredentials = credentials;
+      processAMCredentials(securityConfiguration);
 
       if (securityEnabled) {
         secretManager.setMasterKey(
@@ -793,17 +777,19 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         //tell the server what the ACLs are
         rpcService.getServer().refreshServiceAcl(serviceConf,
             new SliderAMPolicyProvider());
-        // perform keytab based login to establish kerberos authenticated
-        // principal.  Can do so now since AM registration with RM above required
-        // tokens associated to principal
-        String principal = securityConfiguration.getPrincipal();
-        File localKeytabFile =
-            securityConfiguration.getKeytabFile(instanceDefinition);
-        // Now log in...
-        login(principal, localKeytabFile);
-        // obtain new FS reference that should be kerberos based and different
-        // than the previously cached reference
-        fs = getClusterFS();
+        if (securityConfiguration.isKeytabProvided()) {
+          // perform keytab based login to establish kerberos authenticated
+          // principal.  Can do so now since AM registration with RM above required
+          // tokens associated to principal
+          String principal = securityConfiguration.getPrincipal();
+          File localKeytabFile =
+              securityConfiguration.getKeytabFile(instanceDefinition);
+          // Now log in...
+          login(principal, localKeytabFile);
+          // obtain new FS reference that should be kerberos based and different
+          // than the previously cached reference
+          fs = getClusterFS();
+        }
       }
 
       // extract container list
@@ -881,7 +867,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     maybeStartMonkey();
 
     // setup token renewal and expiry handling for long lived apps
-//    if (SliderUtils.isHadoopClusterSecure(getConfig())) {
+//    if (!securityConfiguration.isKeytabProvided() &&
+//        SliderUtils.isHadoopClusterSecure(getConfig())) {
 //      fsDelegationTokenManager = new FsDelegationTokenManager(actionQueues);
 //      fsDelegationTokenManager.acquireDelegationToken(getConfig());
 //    }
@@ -927,6 +914,37 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
     //shutdown time
     return finish();
+  }
+
+  private void processAMCredentials(SecurityConfiguration securityConfiguration)
+      throws IOException {
+    // process the initial user to obtain the set of user
+    // supplied credentials (tokens were passed in by client). Remove AMRM
+    // token and HDFS delegation token, the latter because we will provide an
+    // up to date token for container launches (getContainerCredentials()).
+    UserGroupInformation currentUser = UserGroupInformation.getCurrentUser();
+    Credentials credentials = currentUser.getCredentials();
+    List<Text> filteredTokens = new ArrayList<Text>();
+    filteredTokens.add(AMRMTokenIdentifier.KIND_NAME);
+
+    boolean keytabProvided = securityConfiguration.isKeytabProvided();
+    log.info("Slider AM Security Mode: {}", keytabProvided ? "KEYTAB" : "TOKEN");
+    if (keytabProvided) {
+      filteredTokens.add(DelegationTokenIdentifier.HDFS_DELEGATION_KIND);
+    }
+    Iterator<Token<? extends TokenIdentifier>> iter =
+        credentials.getAllTokens().iterator();
+    while (iter.hasNext()) {
+      Token<? extends TokenIdentifier> token = iter.next();
+      log.info("Token {}", token.getKind());
+      if (filteredTokens.contains(token.getKind())) {
+        log.debug("Filtering token {} from AM tokens", token.getKind());
+        iter.remove();
+      }
+    }
+    // at this point this credentials map is probably clear, but leaving this
+    // code to allow for future tokens...
+    containerCredentials = credentials;
   }
 
   private int getPortToRequest(AggregateConf instanceDefinition)
@@ -2034,10 +2052,13 @@ the registry with/without the new record format
     // the login is via a keytab (see above)
     Credentials credentials = new Credentials(containerCredentials);
     ByteBuffer tokens = null;
-    Token<? extends TokenIdentifier>[] hdfsTokens =
-        getClusterFS().getFileSystem().addDelegationTokens(
-            UserGroupInformation.getLoginUser().getShortUserName(), credentials);
-    if (hdfsTokens.length > 0) {
+    if (securityConfiguration.isKeytabProvided()) {
+      Token<? extends TokenIdentifier>[] hdfsTokens =
+          getClusterFS().getFileSystem().addDelegationTokens(
+              UserGroupInformation.getLoginUser().getShortUserName(),
+              credentials);
+    }
+    if (credentials.getAllTokens().size() > 0) {
       DataOutputBuffer dob = new DataOutputBuffer();
       credentials.writeTokenStorageToStream(dob);
       dob.close();

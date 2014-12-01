@@ -99,15 +99,6 @@ public class SecurityConfiguration {
       String keytabName = instanceDefinition.getAppConfOperations()
           .getComponent(SliderKeys.COMPONENT_AM)
           .get(SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME);
-      if (SliderUtils.isUnset(keytabFullPath) && SliderUtils.isUnset(keytabName)) {
-        throw new SliderException(SliderExitCodes.EXIT_BAD_CONFIGURATION,
-                                  "Either a keytab path on the cluster host (%s) or a"
-                                  + " keytab to be retrieved from HDFS (%s) are"
-                                  + " required.  Please configure one of the keytab"
-                                  + " retrieval mechanisms.",
-                                  SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH,
-                                  SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME);
-      }
       if (SliderUtils.isSet(keytabFullPath) && SliderUtils.isSet(keytabName)) {
         throw new SliderException(SliderExitCodes.EXIT_BAD_CONFIGURATION,
                                   "Both a keytab on the cluster host (%s) and a"
@@ -139,6 +130,17 @@ public class SecurityConfiguration {
     }
 
     return principal;
+  }
+
+  public boolean isKeytabProvided() {
+    boolean keytabProvided = instanceDefinition.getAppConfOperations()
+                    .getComponent(SliderKeys.COMPONENT_AM)
+                    .get(SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH) != null ||
+                instanceDefinition.getAppConfOperations()
+                    .getComponent(SliderKeys.COMPONENT_AM).
+                    get(SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME) != null;
+    return keytabProvided;
+
   }
 
   public File getKeytabFile(AggregateConf instanceDefinition)
