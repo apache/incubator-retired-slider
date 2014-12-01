@@ -175,7 +175,6 @@ public class SliderAMClientProvider extends AbstractClientProvider
     Map<String, LocalResource> providerResources =
         new HashMap<String, LocalResource>();
 
-
     ProviderUtils.addProviderJar(providerResources,
         this,
         SLIDER_JAR,
@@ -193,9 +192,10 @@ public class SliderAMClientProvider extends AbstractClientProvider
                                          libdir,
                                          libDirProp);
     addKeytabResourceIfNecessary(fileSystem,
-                                 launcher,
                                  instanceDescription,
                                  providerResources);
+
+    launcher.addLocalResources(providerResources);
 
     //also pick up all env variables from a map
     launcher.copyEnvVars(
@@ -208,13 +208,11 @@ public class SliderAMClientProvider extends AbstractClientProvider
    * authentication, add this keytab as a local resource for the AM launch.
    *
    * @param fileSystem
-   * @param launcher
    * @param instanceDescription
    * @param providerResources
    * @throws IOException
    */
   protected void addKeytabResourceIfNecessary(SliderFileSystem fileSystem,
-                                              AbstractLauncher launcher,
                                               AggregateConf instanceDescription,
                                               Map<String, LocalResource> providerResources)
       throws IOException {
@@ -231,14 +229,20 @@ public class SliderAMClientProvider extends AbstractClientProvider
                 SliderXmlConfKeys.KEY_HDFS_KEYTAB_DIR);
         Path keytabPath = fileSystem.buildKeytabPath(keytabDir, amKeytabName,
                                                      instanceDescription.getName());
-        LocalResource keytabRes = fileSystem.createAmResource(keytabPath,
-                                                LocalResourceType.FILE);
+        if (fileSystem.getFileSystem().exists(keytabPath)) {
+          LocalResource keytabRes = fileSystem.createAmResource(keytabPath,
+                                                  LocalResourceType.FILE);
 
-         providerResources.put(SliderKeys.KEYTAB_DIR + "/" +
-                               amKeytabName, keytabRes);
+          providerResources.put(SliderKeys.KEYTAB_DIR + "/" +
+                                 amKeytabName, keytabRes);
+        } else {
+          log.warn("No keytab file was found at {}.  The AM will be "
+                   + "started without a kerberos authenticated identity. "
+                   + "The application is therefore not guaranteed to remain "
+                   + "operational beyond 24 hours.", keytabPath);
+        }
       }
     }
-    launcher.addLocalResources(providerResources);
   }
 
   /**

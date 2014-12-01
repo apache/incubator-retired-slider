@@ -21,6 +21,9 @@ package org.apache.slider.core.launch;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.security.SecurityUtil;
+import org.apache.hadoop.security.token.Token;
+import org.apache.hadoop.security.token.TokenIdentifier;
+import org.apache.hadoop.security.token.delegation.AbstractDelegationTokenIdentifier;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationSubmissionContext;
 import org.apache.hadoop.yarn.api.records.Priority;
@@ -37,6 +40,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.text.DateFormat;
+import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 
@@ -218,8 +223,21 @@ public class AppMasterLauncher extends AbstractLauncher {
 
     // For now, only getting tokens for the default file-system.
     FileSystem fs = coreFileSystem.getFileSystem();
-    fs.addDelegationTokens(tokenRenewer, credentials);
-  }
+    Token<? extends TokenIdentifier>[] tokens = fs.addDelegationTokens(tokenRenewer,
+                                                             credentials);
+    // obtain the token expiry from the first token - should be the same for all
+    // HDFS tokens
+    if (tokens != null && tokens.length > 0) {
+      AbstractDelegationTokenIdentifier id =
+        (AbstractDelegationTokenIdentifier)tokens[0].decodeIdentifier();
+      Date d = new Date(id.getIssueDate() + 24*60*60*1000);
+      log.info("HDFS delegation tokens for AM launch context require renewal by {}",
+               DateFormat.getDateTimeInstance().format(d));
+    } else {
+      log.warn("No HDFS delegation tokens obtained for AM launch context");
+    }
+
+   }
 
   /**
    * Submit the application. 

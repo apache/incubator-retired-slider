@@ -118,21 +118,6 @@ public class SecurityConfigurationTest {
     }
 
     @Test
-    public void testNoKeytabMechanismConfigured() throws Throwable {
-        Configuration config = new Configuration()
-        config.set(CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHENTICATION, "kerberos")
-        AggregateConf aggregateConf = new AggregateConf();
-        MapOperations compOps =
-            aggregateConf.appConfOperations.getOrAddComponent(SliderKeys.COMPONENT_AM)
-        compOps.put(SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL, "test")
-
-        shouldFail(SliderException) {
-            SecurityConfiguration securityConfiguration =
-                new SecurityConfiguration(config, aggregateConf, "testCluster")
-        }
-    }
-
-    @Test
     public void testMissingPrincipalButLoginWithDistributedConfig() throws Throwable {
         Configuration config = new Configuration()
         config.set(CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHENTICATION, "kerberos")
