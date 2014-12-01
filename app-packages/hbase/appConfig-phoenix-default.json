@@ -1,0 +1,49 @@
+{
+    "schema": "http://example.org/specification/v2.0.0",
+    "metadata": {
+    },
+    "global": {
+        "application.def": ".slider/package/HBASE/slider-hbase-app-package-${pkg.version}.zip",
+        "create.default.zookeeper.node": "true",
+        "java_home": "/usr/jdk64/jdk1.7.0_67",
+        "system_configs": "core-site",
+
+        "site.global.app_user": "yarn",
+        "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/hbase-${pkg.version}",
+
+        "site.global.ganglia_server_host": "${NN_HOST}",
+        "site.global.ganglia_server_port": "8667",
+        "site.global.ganglia_server_id": "Application1",
+        "site.global.ganglia_enabled":"true",
+
+        "site.global.hbase_instance_name": "instancename",
+        "site.global.hbase_root_password": "secret",
+        "site.global.user_group": "hadoop",
+        "site.global.monitor_protocol": "http",
+        "site.global.hbase_thrift_port": "${HBASE_THRIFT.ALLOCATED_PORT}",
+        "site.global.hbase_thrift2_port": "${HBASE_THRIFT2.ALLOCATED_PORT}",
+        "site.global.hbase_rest_port": "${HBASE_REST.ALLOCATED_PORT}",
+
+        "site.hbase-env.hbase_master_heapsize": "1024m",
+        "site.hbase-env.hbase_regionserver_heapsize": "1024m",
+
+        "site.hbase-site.hbase.rootdir": "${DEFAULT_DATA_DIR}",
+        "site.hbase-site.hbase.superuser": "${USER_NAME}",
+        "site.hbase-site.hbase.tmp.dir": "${AGENT_WORK_ROOT}/work/app/tmp",
+        "site.hbase-site.hbase.local.dir": "${hbase.tmp.dir}/local",
+        "site.hbase-site.hbase.zookeeper.quorum": "${ZK_HOST}",
+        "site.hbase-site.zookeeper.znode.parent": "${DEFAULT_ZK_PATH}",
+        "site.hbase-site.hbase.regionserver.info.port": "0",
+        "site.hbase-site.hbase.defaults.for.version.skip": "true",
+        "site.hbase-site.hbase.region.server.rpc.scheduler.factory.class": "org.apache.phoenix.hbase.index.ipc.PhoenixIndexRpcSchedulerFactory",
+        "site.hbase-site.hbase.regionserver.wal.codec": "org.apache.hadoop.hbase.regionserver.wal.IndexedWALEditCodec",
+        "site.hbase-site.hbase.master.info.port": "${HBASE_MASTER.ALLOCATED_PORT}",
+        "site.hbase-site.hbase.regionserver.port": "0",
+        "site.hbase-site.hbase.master.port": "0"
+    },
+    "components": {
+        "slider-appmaster": {
+            "jvm.heapsize": "1024M"
+        }
+    }
+}

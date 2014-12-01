@@ -51,6 +51,11 @@ You need the HBase version available on local maven repo to create the Slider Ap
 Download the tarball for HBase:
   e.g. path to tarball `~/Downloads/hbase-0.98.3-hadoop2-bin.tar.gz`
 
+Note for Phoenix user:
+If you want Phoenix to be deployed, you should repackage HBase tarball such that phoenix-server.jar is contained in the lib directory of the tarball.
+e.g. for hbase-0.98.4.2.2.0.0-1799-hadoop2.tar.gz, phoenix-server.jar should be copied to:
+ hbase-0.98.4.2.2.0.0-1799-hadoop2/lib
+
 The version of HBase used for the app package can be adjusted by adding a
 flag such as
 
