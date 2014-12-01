@@ -115,7 +115,6 @@ public class AgentWebApp implements Closeable {
       AgentWebApp webApp = new AgentWebApp();
       webApp.setPort(getConnectorPort(agentServer, 0));
       webApp.setSecuredPort(getConnectorPort(agentServer, 1));
-
       return webApp;
 
     }

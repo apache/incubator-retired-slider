@@ -153,8 +153,9 @@ public class SecurityUtils {
       File dbDir = new File(secDirFile, "db");
       File newCertsDir = new File(dbDir, "newcerts");
       newCertsDir.mkdirs();
+      RawLocalFileSystem fileSystem = null;
       try {
-        RawLocalFileSystem fileSystem = new RawLocalFileSystem();
+        fileSystem = new RawLocalFileSystem();
         FsPermission permissions = new FsPermission(FsAction.ALL, FsAction.NONE,
                                                     FsAction.NONE);
         fileSystem.setPermission(new Path(dbDir.getAbsolutePath()),
@@ -164,11 +165,18 @@ public class SecurityUtils {
                                  permissions);
         File indexFile = new File(dbDir, "index.txt");
         indexFile.createNewFile();
-
         SecurityUtils.writeCaConfigFile(secDirFile.getAbsolutePath().replace('\\', '/'));
 
       } catch (IOException e) {
         LOG.error("Unable to create SSL configuration directories/files", e);
+      } finally {
+        if (fileSystem != null) {
+          try {
+            fileSystem.close();
+          } catch (IOException e) {
+            LOG.warn("Unable to close fileSystem", e);
+          }
+        }
       }
       // need to create the password
     }

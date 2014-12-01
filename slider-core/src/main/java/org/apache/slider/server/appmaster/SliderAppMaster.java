@@ -19,6 +19,7 @@
 package org.apache.slider.server.appmaster;
 
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.health.HealthCheckRegistry;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.BlockingService;
@@ -32,6 +33,7 @@ import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenIdentifier;
 import org.apache.hadoop.http.HttpConfig;
 import org.apache.hadoop.io.DataOutputBuffer;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.ipc.ProtocolSignature;
 import org.apache.hadoop.registry.client.binding.RegistryUtils;
 import org.apache.hadoop.security.Credentials;
@@ -123,6 +125,8 @@ import org.apache.slider.server.appmaster.actions.RenewingAction;
 import org.apache.slider.server.appmaster.actions.ResetFailureWindow;
 import org.apache.slider.server.appmaster.actions.ReviewAndFlexApplicationSize;
 import org.apache.slider.server.appmaster.actions.UnregisterComponentInstance;
+import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
+import org.apache.slider.server.appmaster.management.YarnServiceHealthCheck;
 import org.apache.slider.server.appmaster.monkey.ChaosKillAM;
 import org.apache.slider.server.appmaster.monkey.ChaosKillContainer;
 import org.apache.slider.server.appmaster.monkey.ChaosMonkeyService;
@@ -147,8 +151,9 @@ import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.WebAppApiImpl;
 import org.apache.slider.server.appmaster.web.rest.RestPaths;
 import org.apache.slider.server.services.security.CertificateManager;
-import org.apache.slider.server.services.security.FsDelegationTokenManager;
+//import org.apache.slider.server.services.security.FsDelegationTokenManager;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
+import org.apache.slider.server.appmaster.management.MetricsBindingService;
 import org.apache.slider.server.services.utility.WebAppService;
 import org.apache.slider.server.services.workflow.ServiceThreadFactory;
 import org.apache.slider.server.services.workflow.WorkflowExecutorService;
@@ -204,20 +209,17 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public static final String SERVICE_CLASSNAME =
       "org.apache.slider.server.appmaster." + SERVICE_CLASSNAME_SHORT;
 
-
-  /**
-   * time to wait from shutdown signal being rx'd to telling
-   * the AM: {@value}
-   */
-  public static final int TERMINATION_SIGNAL_PROPAGATION_DELAY = 1000;
-
   public static final int HEARTBEAT_INTERVAL = 1000;
   public static final int NUM_RPC_HANDLERS = 5;
 
   /**
-   * Singleton of metrics registry
+   * Metrics and monitoring services
    */
-  public static final MetricRegistry metrics = new MetricRegistry();
+  private final MetricsAndMonitoring metricsAndMonitoring = new MetricsAndMonitoring(); 
+  /**
+   * metrics registry
+   */
+  public MetricRegistry metrics;
   public static final String E_TRIGGERED_LAUNCH_FAILURE =
       "Chaos monkey triggered launch failure";
 
@@ -276,7 +278,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * Ongoing state of the cluster: containers, nodes they
    * live on, etc.
    */
-  private final AppState appState = new AppState(new ProtobufRecordFactory());
+  private final AppState appState =
+      new AppState(new ProtobufRecordFactory(), metricsAndMonitoring);
 
   private final ProviderAppState stateForProviders =
       new ProviderAppState("undefined", appState);
@@ -374,9 +377,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private String agentOpsUrl;
   private String agentStatusUrl;
   private YarnRegistryViewForProviders yarnRegistryOperations;
-  private FsDelegationTokenManager fsDelegationTokenManager;
+  //private FsDelegationTokenManager fsDelegationTokenManager;
   private RegisterApplicationMasterResponse amRegistrationData;
   private PortScanner portScanner;
+  private SecurityConfiguration securityConfiguration;
 
   /**
    * Service Constructor
@@ -441,12 +445,18 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
             false);
     SliderUtils.validateSliderServerEnvironment(log, dependencyChecks);
 
+    // create app state and monitoring
+    addService(metricsAndMonitoring);
+    metrics = metricsAndMonitoring.getMetrics();
+
+    
     executorService = new WorkflowExecutorService<ExecutorService>("AmExecutor",
         Executors.newFixedThreadPool(2,
             new ServiceThreadFactory("AmExecutor", true)));
     addService(executorService);
 
     addService(actionQueues);
+    
     //init all child services
     super.serviceInit(conf);
   }
@@ -454,6 +464,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   @Override
   protected void serviceStart() throws Exception {
     super.serviceStart();
+    HealthCheckRegistry health = metricsAndMonitoring.getHealth();
+    health.register("AM Health", new YarnServiceHealthCheck(this));
   }
 
   /**
@@ -547,6 +559,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
   /**
    * Create and run the cluster.
+   * @param clustername
    * @return exit code
    * @throws Throwable on a failure
    */
@@ -573,7 +586,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     Configuration serviceConf = getConfig();
 
-    SecurityConfiguration securityConfiguration = new SecurityConfiguration(
+    securityConfiguration = new SecurityConfiguration(
         serviceConf, instanceDefinition, clustername);
     // obtain security state
     boolean securityEnabled = securityConfiguration.isSecurityEnabled();
@@ -704,12 +717,15 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       int port = getPortToRequest(instanceDefinition);
 
-      webApp = new SliderAMWebApp(registryOperations);
+      WebAppApi webAppApi = new WebAppApiImpl(this,
+          stateForProviders,
+          providerService,
+          certificateManager,
+          registryOperations,
+          metricsAndMonitoring);
+      webApp = new SliderAMWebApp(webAppApi);
       WebApps.$for(SliderAMWebApp.BASE_PATH, WebAppApi.class,
-                   new WebAppApiImpl(this,
-                                     stateForProviders,
-                                     providerService,
-                                     certificateManager, registryOperations),
+                   webAppApi,
                    RestPaths.WS_CONTEXT)
                       .withHttpPolicy(serviceConf, HttpConfig.Policy.HTTP_ONLY)
                       .at(port)
@@ -751,25 +767,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       appInformation.put(ResourceKeys.YARN_CORES, Integer.toString(containerMaxCores));
       appInformation.put(ResourceKeys.YARN_MEMORY, Integer.toString(containerMaxMemory));
 
-      // process the initial user to obtain the set of user
-      // supplied credentials (tokens were passed in by client). Remove AMRM
-      // token and HDFS delegation token, the latter because we will provide an
-      // up to date token for container launches (getContainerCredentials()).
-      UserGroupInformation currentUser = UserGroupInformation.getCurrentUser();
-      Credentials credentials = currentUser.getCredentials();
-      Iterator<Token<? extends TokenIdentifier>> iter =
-          credentials.getAllTokens().iterator();
-      while (iter.hasNext()) {
-        Token<? extends TokenIdentifier> token = iter.next();
-        log.info("Token {}", token.getKind());
-        if (token.getKind().equals(AMRMTokenIdentifier.KIND_NAME)  ||
-            token.getKind().equals(DelegationTokenIdentifier.HDFS_DELEGATION_KIND)) {
-          iter.remove();
-        }
-      }
-      // at this point this credentials map is probably clear, but leaving this
-      // code to allow for future tokens...
-      containerCredentials = credentials;
+      processAMCredentials(securityConfiguration);
 
       if (securityEnabled) {
         secretManager.setMasterKey(
@@ -779,17 +777,19 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         //tell the server what the ACLs are
         rpcService.getServer().refreshServiceAcl(serviceConf,
             new SliderAMPolicyProvider());
-        // perform keytab based login to establish kerberos authenticated
-        // principal.  Can do so now since AM registration with RM above required
-        // tokens associated to principal
-        String principal = securityConfiguration.getPrincipal();
-        File localKeytabFile =
-            securityConfiguration.getKeytabFile(instanceDefinition);
-        // Now log in...
-        login(principal, localKeytabFile);
-        // obtain new FS reference that should be kerberos based and different
-        // than the previously cached reference
-        fs = getClusterFS();
+        if (securityConfiguration.isKeytabProvided()) {
+          // perform keytab based login to establish kerberos authenticated
+          // principal.  Can do so now since AM registration with RM above required
+          // tokens associated to principal
+          String principal = securityConfiguration.getPrincipal();
+          File localKeytabFile =
+              securityConfiguration.getKeytabFile(instanceDefinition);
+          // Now log in...
+          login(principal, localKeytabFile);
+          // obtain new FS reference that should be kerberos based and different
+          // than the previously cached reference
+          fs = getClusterFS();
+        }
       }
 
       // extract container list
@@ -867,7 +867,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     maybeStartMonkey();
 
     // setup token renewal and expiry handling for long lived apps
-//    if (SliderUtils.isHadoopClusterSecure(getConfig())) {
+//    if (!securityConfiguration.isKeytabProvided() &&
+//        SliderUtils.isHadoopClusterSecure(getConfig())) {
 //      fsDelegationTokenManager = new FsDelegationTokenManager(actionQueues);
 //      fsDelegationTokenManager.acquireDelegationToken(getConfig());
 //    }
@@ -913,6 +914,37 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
     //shutdown time
     return finish();
+  }
+
+  private void processAMCredentials(SecurityConfiguration securityConfiguration)
+      throws IOException {
+    // process the initial user to obtain the set of user
+    // supplied credentials (tokens were passed in by client). Remove AMRM
+    // token and HDFS delegation token, the latter because we will provide an
+    // up to date token for container launches (getContainerCredentials()).
+    UserGroupInformation currentUser = UserGroupInformation.getCurrentUser();
+    Credentials credentials = currentUser.getCredentials();
+    List<Text> filteredTokens = new ArrayList<Text>();
+    filteredTokens.add(AMRMTokenIdentifier.KIND_NAME);
+
+    boolean keytabProvided = securityConfiguration.isKeytabProvided();
+    log.info("Slider AM Security Mode: {}", keytabProvided ? "KEYTAB" : "TOKEN");
+    if (keytabProvided) {
+      filteredTokens.add(DelegationTokenIdentifier.HDFS_DELEGATION_KIND);
+    }
+    Iterator<Token<? extends TokenIdentifier>> iter =
+        credentials.getAllTokens().iterator();
+    while (iter.hasNext()) {
+      Token<? extends TokenIdentifier> token = iter.next();
+      log.info("Token {}", token.getKind());
+      if (filteredTokens.contains(token.getKind())) {
+        log.debug("Filtering token {} from AM tokens", token.getKind());
+        iter.remove();
+      }
+    }
+    // at this point this credentials map is probably clear, but leaving this
+    // code to allow for future tokens...
+    containerCredentials = credentials;
   }
 
   private int getPortToRequest(AggregateConf instanceDefinition)
@@ -999,12 +1031,15 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // Start up the agent web app and track the URL for it
     AgentWebApp agentWebApp = AgentWebApp.$for(AgentWebApp.BASE_PATH,
                      new WebAppApiImpl(this,
-                                       stateForProviders,
-                                       providerService,
-                                       certificateManager, registryOperations),
+                         stateForProviders,
+                         providerService,
+                         certificateManager,
+                         registryOperations,
+                         metricsAndMonitoring),
                      RestPaths.AGENT_WS_CONTEXT)
         .withComponentConfig(getInstanceDefinition().getAppConfOperations()
-                                 .getComponent(SliderKeys.COMPONENT_AM))
+                                                    .getComponent(
+                                                        SliderKeys.COMPONENT_AM))
         .start();
     agentOpsUrl =
         "https://" + appMasterHostname + ":" + agentWebApp.getSecuredPort();
@@ -1113,6 +1148,7 @@ the registry with/without the new record format
    * Register/re-register an ephemeral container that is already in the app state
    * @param id the component
    * @param description
+   * @return true if the component is registered
    */
   public boolean registerComponent(ContainerId id, String description) throws
       IOException {
@@ -1133,6 +1169,7 @@ the registry with/without the new record format
     } catch (IOException e) {
       log.warn("Failed to register container {}/{}: {}",
           id, description, e, e);
+      return false;
     }
     return true;
   }
@@ -1837,6 +1874,9 @@ the registry with/without the new record format
       throws IOException, YarnException {
     int signal = request.getSignal();
     String text = request.getText();
+    if (text == null) {
+      text = "";
+    }
     int delay = request.getDelay();
     log.info("AM Suicide with signal {}, message {} delay = {}", signal, text, delay);
     ActionHalt action = new ActionHalt(signal, text, delay,
@@ -2012,10 +2052,13 @@ the registry with/without the new record format
     // the login is via a keytab (see above)
     Credentials credentials = new Credentials(containerCredentials);
     ByteBuffer tokens = null;
-    Token<? extends TokenIdentifier>[] hdfsTokens =
-        getClusterFS().getFileSystem().addDelegationTokens(
-            UserGroupInformation.getLoginUser().getShortUserName(), credentials);
-    if (hdfsTokens.length > 0) {
+    if (securityConfiguration.isKeytabProvided()) {
+      Token<? extends TokenIdentifier>[] hdfsTokens =
+          getClusterFS().getFileSystem().addDelegationTokens(
+              UserGroupInformation.getLoginUser().getShortUserName(),
+              credentials);
+    }
+    if (credentials.getAllTokens().size() > 0) {
       DataOutputBuffer dob = new DataOutputBuffer();
       credentials.writeTokenStorageToStream(dob);
       dob.close();

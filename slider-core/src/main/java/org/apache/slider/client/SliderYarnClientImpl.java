@@ -195,35 +195,38 @@ public class SliderYarnClientImpl extends YarnClientImpl {
               duration.limit,
               desiredState);
     duration.start();
-    while (true) {
+    try {
+      while (true) {
+        // Get application report for the appId we are interested in
 
-      // Get application report for the appId we are interested in
+        ApplicationReport r = getApplicationReport(appId);
 
-      ApplicationReport r = getApplicationReport(appId);
-
-      log.debug("queried status is\n{}",
-                new SliderUtils.OnDemandReportStringifier(r));
-
-      YarnApplicationState state = r.getYarnApplicationState();
-      if (state.ordinal() >= desiredState.ordinal()) {
-        log.debug("App in desired state (or higher) :{}", state);
-        return r;
-      }
-      if (duration.getLimitExceeded()) {
-        log.debug(
-          "Wait limit of {} millis to get to state {}, exceeded; app status\n {}",
-          duration.limit,
-          desiredState,
+        log.debug("queried status is\n{}",
           new SliderUtils.OnDemandReportStringifier(r));
-        return null;
-      }
 
-      // sleep 1s.
-      try {
-        Thread.sleep(1000);
-      } catch (InterruptedException ignored) {
-        log.debug("Thread sleep in monitoring loop interrupted");
+        YarnApplicationState state = r.getYarnApplicationState();
+        if (state.ordinal() >= desiredState.ordinal()) {
+          log.debug("App in desired state (or higher) :{}", state);
+          return r;
+        }
+        if (duration.getLimitExceeded()) {
+          log.debug(
+            "Wait limit of {} millis to get to state {}, exceeded; app status\n {}",
+            duration.limit,
+            desiredState,
+            new SliderUtils.OnDemandReportStringifier(r));
+          return null;
+        }
+
+        // sleep 1s.
+        try {
+          Thread.sleep(1000);
+        } catch (InterruptedException ignored) {
+          log.debug("Thread sleep in monitoring loop interrupted");
+        }
       }
+    } finally {
+      duration.close();
     }
   }
 

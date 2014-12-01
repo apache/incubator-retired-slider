@@ -18,5 +18,5 @@
 
 package org.apache.slider.funtest;
 
-class StubToForceGroovySrcToCompile {
+public class StubToForceGroovySrcToCompile {
 }

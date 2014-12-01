@@ -19,6 +19,7 @@ package org.apache.slider.server.appmaster.web;
 import org.apache.hadoop.registry.client.api.RegistryOperations;
 import org.apache.slider.api.SliderClusterProtocol;
 import org.apache.slider.providers.ProviderService;
+import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
 import org.apache.slider.server.appmaster.state.RoleStatus;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
@@ -43,12 +44,14 @@ public class WebAppApiImpl implements WebAppApi {
   protected final ProviderService provider;
   protected final CertificateManager certificateManager;
   private final RegistryOperations registryOperations;
+  private final MetricsAndMonitoring metricsAndMonitoring;
 
   public WebAppApiImpl(SliderClusterProtocol clusterProto,
       StateAccessForProviders appState,
       ProviderService provider,
       CertificateManager certificateManager,
-      RegistryOperations registryOperations) {
+      RegistryOperations registryOperations,
+      MetricsAndMonitoring metricsAndMonitoring) {
     this.registryOperations = registryOperations;
     checkNotNull(clusterProto);
     checkNotNull(appState);
@@ -58,19 +61,14 @@ public class WebAppApiImpl implements WebAppApi {
     this.appState = appState;
     this.provider = provider;
     this.certificateManager = certificateManager;
+    this.metricsAndMonitoring = metricsAndMonitoring;
   }
 
-  /* (non-Javadoc)
-   * @see org.apache.slider.server.appmaster.web.WebAppApi#getAppState()
-   */
   @Override
   public StateAccessForProviders getAppState() {
     return appState;
   }
 
-  /* (non-Javadoc)
-   * @see org.apache.slider.server.appmaster.web.WebAppApi#getProviderService()
-   */
   @Override
   public ProviderService getProviderService() {
     return provider;
@@ -81,21 +79,15 @@ public class WebAppApiImpl implements WebAppApi {
     return certificateManager;
   }
 
-  /* (non-Javadoc)
-     * @see org.apache.slider.server.appmaster.web.WebAppApi#getClusterProtocol()
-     */
   @Override
   public SliderClusterProtocol getClusterProtocol() {
     return clusterProto;
   }
   
-  /* (non-Javadoc)
-   * @see org.apache.slider.server.appmaster.web.WebAppApi#getRoleStatusByName()
-   */
   @Override
   public Map<String,RoleStatus> getRoleStatusByName() {
     List<RoleStatus> roleStatuses = appState.cloneRoleStatusList();
-    TreeMap<String, RoleStatus> map =
+    Map<String, RoleStatus> map =
         new TreeMap<String, RoleStatus>();
     for (RoleStatus status : roleStatuses) {
       map.put(status.getName(), status);
@@ -111,5 +103,10 @@ public class WebAppApiImpl implements WebAppApi {
   @Override
   public RegistryOperations getRegistryOperations() {
     return registryOperations;
+  }
+
+  @Override
+  public MetricsAndMonitoring getMetricsAndMonitoring() {
+    return metricsAndMonitoring;
   }
 }

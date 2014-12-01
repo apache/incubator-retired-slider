@@ -34,28 +34,6 @@ public interface SliderXmlConfKeys {
   String KEY_PROVIDER = PREFIX_PROVIDER + ".%s";
 
   /**
-   * HBase provider key (derived from {@link #KEY_PROVIDER}
-   * and so not found in the code itself
-   * {@value}
-   */
-  String KEY_PROVIDER_HBASE = PREFIX_PROVIDER + ".hbase";
-
-  /**
-   * Accumulo provider key (derived from {@link #KEY_PROVIDER}
-   * and so not found in the code itself
-   * {@value}
-   */
-  String KEY_PROVIDER_ACCUMULO =
-    PREFIX_PROVIDER + ".accumulo";
-
-  /**
-   * Accumulo agent key (derived from {@link #KEY_PROVIDER}
-   * and so not found in the code itself
-   * {@value}
-   */
-  String KEY_PROVIDER_AGENT = PREFIX_PROVIDER + ".agent";
-
-  /**
    * conf option set to point to where the config came from
    * {@value}
    */
@@ -109,34 +87,38 @@ public interface SliderXmlConfKeys {
    */
   String CLUSTER_DIRECTORY_PERMISSIONS =
     "slider.cluster.directory.permissions";
+
   /**
    * Default value for the permissions :{@value}
    */
   String DEFAULT_CLUSTER_DIRECTORY_PERMISSIONS = "750";
-  /**: {@value}
-   * Option for the permissions for the data directory itself
+
+  /**
+   * 
+   * Option for the permissions for the data directory itself: {@value}
    */
   String DATA_DIRECTORY_PERMISSIONS = "slider.data.directory.permissions";
+
   /**
    * Default value for the data directory permissions: {@value}
    */
   String DEFAULT_DATA_DIRECTORY_PERMISSIONS = "750";
 
-
+  /**
+   *
+   * Use {@link RegistryConstants#KEY_REGISTRY_ZK_ROOT}
+   *
+   */
+  @Deprecated
   String REGISTRY_PATH = "slider.registry.path";
 
   /**
-   * Default value for the registry: {@value}
+   * 
+   * @Deprecated use {@link RegistryConstants#KEY_REGISTRY_ZK_QUORUM}
+   * 
    */
-  String DEFAULT_REGISTRY_PATH = RegistryConstants.DEFAULT_ZK_REGISTRY_ROOT;
-
-
+  @Deprecated
   String REGISTRY_ZK_QUORUM = "slider.zookeeper.quorum";
-
-  /**
-   * Default value for the registry: {@value}
-   */
-  String DEFAULT_REGISTRY_ZK_QUORUM = "localhost:2181";
 
 
   String IPC_CLIENT_FALLBACK_TO_SIMPLE_AUTH =

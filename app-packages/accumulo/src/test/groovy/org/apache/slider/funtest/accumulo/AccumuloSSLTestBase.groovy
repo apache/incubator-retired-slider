@@ -85,7 +85,6 @@ class AccumuloSSLTestBase extends AccumuloBasicIT {
     String provider = tree.global.get(PROVIDER_PROPERTY)
     provider = provider.replace("hdfs/user",
       conf.get("fs.defaultFS").replace("://", "@") + "/user")
-    System.out.println("provider after "+provider)
     File rootKeyStoreFile = new File(TEST_APP_PKG_DIR, "root.jks")
 
     if (!rootKeyStoreFile.exists() && !trustStoreFile.exists()) {

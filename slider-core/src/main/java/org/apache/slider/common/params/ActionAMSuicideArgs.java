@@ -33,7 +33,7 @@ public class ActionAMSuicideArgs extends AbstractActionArgs {
   
   @Parameter(names = {ARG_MESSAGE},
              description = "reason for the action")
-  public String message;
+  public String message = "";
   
   @Parameter(names = {ARG_EXITCODE},
              description = "exit code")

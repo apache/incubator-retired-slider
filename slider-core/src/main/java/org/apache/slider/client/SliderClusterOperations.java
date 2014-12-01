@@ -312,7 +312,9 @@ public class SliderClusterOperations {
                                   IOException {
     Messages.AMSuicideRequestProto.Builder builder =
       Messages.AMSuicideRequestProto.newBuilder();
-    builder.setText(text);
+    if (text != null) {
+      builder.setText(text);
+    }
     builder.setSignal(signal);
     builder.setDelay(delay);
     Messages.AMSuicideRequestProto req =

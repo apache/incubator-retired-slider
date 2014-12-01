@@ -18,6 +18,7 @@
 package org.apache.slider.server.appmaster.model.mock
 
 import org.apache.slider.providers.ProviderRole
+import org.apache.slider.server.appmaster.management.MetricsAndMonitoring
 import org.apache.slider.server.appmaster.state.AbstractRecordFactory
 import org.apache.slider.server.appmaster.state.AppState
 
@@ -27,7 +28,7 @@ import org.apache.slider.server.appmaster.state.AppState
 class MockAppState extends AppState {
 
   public MockAppState(AbstractRecordFactory recordFactory) {
-    super(recordFactory);
+    super(recordFactory, new MetricsAndMonitoring());
   }
 
   long time = 0;
@@ -36,7 +37,7 @@ class MockAppState extends AppState {
    * Instance with a mock record factory
    */
   public MockAppState() {
-    super(new MockRecordFactory());
+    super(new MockRecordFactory(), new MetricsAndMonitoring());
   }
 
   public Map<String, ProviderRole> getRoleMap() {

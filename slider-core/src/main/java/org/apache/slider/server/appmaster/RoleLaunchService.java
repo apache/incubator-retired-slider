@@ -237,7 +237,7 @@ public class RoleLaunchService
                                                       TimeUnit.SECONDS));
       } catch (Exception e) {
         log.error("Exception thrown while trying to start {}: {}",
-            containerRole, e);
+            containerRole, e, e);
         raisedException = e;
       }
     }

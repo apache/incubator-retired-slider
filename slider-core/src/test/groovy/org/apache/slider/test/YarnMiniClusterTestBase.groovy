@@ -26,6 +26,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.FileUtil
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.hdfs.DFSConfigKeys
 import org.apache.hadoop.hdfs.MiniDFSCluster
 import org.apache.hadoop.service.ServiceOperations
 import org.apache.hadoop.util.Shell
@@ -102,14 +103,6 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
   public int freezeWaitTime = DEFAULT_TEST_FREEZE_WAIT_TIME_SECONDS * 1000
   public int sliderTestTimeout = DEFAULT_TEST_TIMEOUT_SECONDS * 1000
   public boolean teardownKillall = DEFAULT_TEARDOWN_KILLALL
-  
-  
-  public boolean accumuloTestsEnabled = true
-  public int accumuloLaunchWaitTime = DEFAULT_ACCUMULO_LAUNCH_TIME_SECONDS * 1000
-  
-  public boolean hbaseTestsEnabled = true
-  public int hbaseLaunchWaitTime = DEFAULT_HBASE_LAUNCH_TIME_SECONDS * 1000
-  
 
   protected MiniDFSCluster hdfsCluster
   protected MiniYARNCluster miniCluster
@@ -174,17 +167,6 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
         testConf.getBoolean(KEY_TEST_TEARDOWN_KILLALL,
             teardownKillall)
 
-    hbaseTestsEnabled =
-        testConf.getBoolean(KEY_TEST_HBASE_ENABLED, hbaseTestsEnabled)
-    hbaseLaunchWaitTime = getTimeOptionMillis(testConf,
-        KEY_TEST_HBASE_LAUNCH_TIME,
-        hbaseLaunchWaitTime)
-
-    accumuloTestsEnabled =
-        testConf.getBoolean(KEY_TEST_ACCUMULO_ENABLED, accumuloTestsEnabled)
-    accumuloLaunchWaitTime = getTimeOptionMillis(testConf,
-        KEY_ACCUMULO_LAUNCH_TIME,
-        accumuloLaunchWaitTime)
   }
 
   @After
@@ -299,6 +281,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     assertNativeLibrariesPresent();
     conf.setInt(YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_MB, 64);
     conf.set(YarnConfiguration.RM_SCHEDULER, FIFO_SCHEDULER);
+    patchDiskCapacityLimits(conf)
     SliderUtils.patchConfiguration(conf)
     name = buildClustername(name)
     miniCluster = new MiniYARNCluster(
@@ -308,10 +291,30 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
         numLogDirs)
     miniCluster.init(conf)
     miniCluster.start();
+    // health check
+    assertMiniClusterDisksHealthy(miniCluster)
     if (startHDFS) {
       createMiniHDFSCluster(name, conf)
     }
     return name
+  }
+
+  public patchDiskCapacityLimits(YarnConfiguration conf) {
+    conf.setFloat(
+        YarnConfiguration.NM_MAX_PER_DISK_UTILIZATION_PERCENTAGE,
+        99.0f)
+    conf.setInt(DFSConfigKeys.DFS_NAMENODE_DU_RESERVED_KEY, 2 * 1024 * 1024)
+  }
+
+  /**
+   * Probe for the disks being healthy in a mini cluster. Only the first
+   * NM is checked
+   * @param miniCluster
+   */
+  public static void assertMiniClusterDisksHealthy(MiniYARNCluster miniCluster) {
+    def healthy = miniCluster.getNodeManager(
+        0).nodeHealthChecker.diskHandler.areDisksHealthy()
+    assert healthy, "Disks on test cluster unhealthy —may be full"
   }
 
   /**

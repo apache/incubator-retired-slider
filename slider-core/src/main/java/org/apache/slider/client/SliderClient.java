@@ -153,16 +153,19 @@ import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -183,6 +186,9 @@ import static org.apache.slider.common.params.SliderActions.*;
 public class SliderClient extends AbstractSliderLaunchedService implements RunService,
     SliderExitCodes, SliderKeys, ErrorStrings, SliderClientAPI {
   private static final Logger log = LoggerFactory.getLogger(SliderClient.class);
+
+  // value should not be changed without updating string find in slider.py
+  private static final String PASSWORD_PROMPT = "Enter password for";
 
   private ClientArgs serviceArgs;
   public ApplicationId applicationId;
@@ -633,24 +639,66 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       return;
     }
 
-    for (Entry<String, List<String>> cred : tree.credentials.entrySet()) {
-      String provider = cred.getKey();
-      List<String> aliases = cred.getValue();
-      if (aliases == null || aliases.size()==0) {
-        continue;
-      }
-      Configuration c = new Configuration(conf);
-      c.set(CredentialProviderFactory.CREDENTIAL_PROVIDER_PATH, provider);
-      CredentialProvider credentialProvider =
-          CredentialProviderFactory.getProviders(c).get(0);
-      Set<String> existingAliases = new HashSet<String>(credentialProvider.getAliases());
-      for (String alias : aliases) {
-        if (!existingAliases.contains(alias.toLowerCase(Locale.ENGLISH))) {
-          throw new IOException("Specified credentials have not been " +
-              "initialized in provider " + provider + ": " + alias);
+    BufferedReader br = null;
+    try {
+      for (Entry<String, List<String>> cred : tree.credentials.entrySet()) {
+        String provider = cred.getKey();
+        List<String> aliases = cred.getValue();
+        if (aliases == null || aliases.size() == 0) {
+          continue;
+        }
+        Configuration c = new Configuration(conf);
+        c.set(CredentialProviderFactory.CREDENTIAL_PROVIDER_PATH, provider);
+        CredentialProvider credentialProvider =
+            CredentialProviderFactory.getProviders(c).get(0);
+        Set<String> existingAliases =
+            new HashSet<String>(credentialProvider.getAliases());
+        for (String alias : aliases) {
+          if (existingAliases.contains(alias.toLowerCase(Locale.ENGLISH))) {
+            log.info("Credentials for " + alias + " found in " + provider);
+          } else {
+            if (br == null) {
+              br = new BufferedReader(new InputStreamReader(System.in));
+            }
+            char[] pass = readPassword(alias, br);
+            if (pass == null)
+              throw new IOException("Could not read credentials for " + alias +
+                  " from stdin");
+            credentialProvider.createCredentialEntry(alias, pass);
+            credentialProvider.flush();
+            Arrays.fill(pass, ' ');
+          }
         }
       }
+    } finally {
+      if (br != null) {
+        br.close();
+      }
     }
+  }
+
+  // using a normal reader instead of a secure one,
+  // because stdin is not hooked up to the command line
+  private char[] readPassword(String alias, BufferedReader br)
+      throws IOException {
+    char[] cred = null;
+
+    boolean noMatch;
+    do {
+      log.info(String.format("%s %s: ", PASSWORD_PROMPT, alias));
+      char[] newPassword1 = br.readLine().toCharArray();
+      log.info(String.format("%s %s again: ", PASSWORD_PROMPT, alias));
+      char[] newPassword2 = br.readLine().toCharArray();
+      noMatch = !Arrays.equals(newPassword1, newPassword2);
+      if (noMatch) {
+        if (newPassword1 != null) Arrays.fill(newPassword1, ' ');
+        log.info(String.format("Passwords don't match. Try again."));
+      } else {
+        cred = newPassword1;
+      }
+      if (newPassword2 != null) Arrays.fill(newPassword2, ' ');
+    } while (noMatch);
+    return cred;
   }
 
   @Override
@@ -1357,8 +1405,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     /**
      * pass the registry binding
      */
-    addConfOptionToCLI(commandLine, config, REGISTRY_PATH,
-        DEFAULT_REGISTRY_PATH);
+    addConfOptionToCLI(commandLine, config,
+        RegistryConstants.KEY_REGISTRY_ZK_ROOT,
+        RegistryConstants.DEFAULT_ZK_REGISTRY_ROOT);
     addMandatoryConfOptionToCLI(commandLine, config,
         RegistryConstants.KEY_REGISTRY_ZK_QUORUM);
 
@@ -3313,6 +3362,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
           serviceclassPath(currentUser(), SliderKeys.APP_TYPE));
       return new ArrayList<String>(recordMap.keySet());
 /// JDK7    } catch (YarnException | IOException e) {
+    } catch (PathNotFoundException e) {
+      log.debug("No registry path for slider instances for current user: {}", e, e);
+      // no entries: return an empty list
+      return new ArrayList<String>(0);
     } catch (IOException e) {
       throw e;
     } catch (YarnException e) {

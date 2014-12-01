@@ -40,10 +40,6 @@
     <module>slider-agent</module>
     <module>slider-assembly</module>
     <module>slider-funtest</module>
-    <module>slider-providers/hbase/slider-hbase-provider</module>
-    <module>slider-providers/hbase/hbase-funtests</module>
-    <module>slider-providers/accumulo/slider-accumulo-provider</module>
-    <module>slider-providers/accumulo/accumulo-funtests</module>
   </modules>
 
   <licenses>
@@ -184,37 +180,46 @@
     <zookeeper.version>3.4.6</zookeeper.version>
 
 
-    <!--  Plugin versions    -->
+    <!-- artifacts used in plugins -->
+    <apache-resources.version>1.0.4</apache-resources.version>
+    <apache-source-release-assembly-descriptor.version>1.0.4</apache-source-release-assembly-descriptor.version>
     <gmavenVersion>1.5</gmavenVersion>
     <gmavenProviderSelection>2.0</gmavenProviderSelection>
     <groovy-eclipse-compiler.version>2.8.0-01</groovy-eclipse-compiler.version>
     <groovy-eclipse-batch.version>2.1.3-01</groovy-eclipse-batch.version>
     <buildnumber-maven-plugin.version>1.2</buildnumber-maven-plugin.version>
-    
+  
     
     <maven.version.range>[3.0.0,)</maven.version.range>
-    
+
+    <!--  Plugin versions    -->  
     <maven-antrun-plugin.version>1.7</maven-antrun-plugin.version>
     <maven-assembly-plugin.version>2.4</maven-assembly-plugin.version>
     <maven.cobertura.version>2.5.2</maven.cobertura.version>
     <maven-compiler-plugin.version>3.1</maven-compiler-plugin.version>
     <maven-dependency-plugin.version>2.8</maven-dependency-plugin.version>
-    <maven-deploy-plugin.version>2.7</maven-deploy-plugin.version>
+    <maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
     <maven-doxia-module-markdown.version>1.4</maven-doxia-module-markdown.version>
-    <maven-enforcer-plugin.version>1.0</maven-enforcer-plugin.version>
+    <maven-enforcer-plugin.version>1.3.1</maven-enforcer-plugin.version>
     <maven-exec-plugin.version>1.2.1</maven-exec-plugin.version>
-    <maven-jar-plugin.version>2.3.1</maven-jar-plugin.version>
-    <maven.javadoc.version>2.8</maven.javadoc.version>
+    <maven-install-plugin.version>2.5.2</maven-install-plugin.version>
+    <maven-gpg-plugin.version>1.5</maven-gpg-plugin.version>
+    <maven-groovydoc-plugin.version>1.3</maven-groovydoc-plugin.version>
+    <maven-jar-plugin.version>2.5</maven-jar-plugin.version>
+    <maven.javadoc.version>2.10.1</maven.javadoc.version>
     <maven.project.version>2.4</maven.project.version>
     <maven.properties.version>1.0-alpha-2</maven.properties.version>
     <maven-project-info-reports-plugin.version>2.7</maven-project-info-reports-plugin.version>
+    <maven-release-plugin.version>2.5.1</maven-release-plugin.version>
+    <maven-remote-resources-plugin.version>1.5</maven-remote-resources-plugin.version>
+    <maven-resources-plugin.version>2.6</maven-resources-plugin.version>
     <maven-rpm-plugin.version>2.1-alpha-4</maven-rpm-plugin.version>
-    <maven-site-plugin.version>3.3</maven-site-plugin.version>
-    <maven-source-plugin.version>2.2.1</maven-source-plugin.version>
-    <maven-surefire-plugin.version>2.16</maven-surefire-plugin.version>
-    <maven-surefire-report-plugin.version>2.16</maven-surefire-report-plugin.version>
-    <maven-failsafe-plugin.version>2.16</maven-failsafe-plugin.version>
-    <apache-rat-plugin.version>0.10</apache-rat-plugin.version>
+    <maven-site-plugin.version>3.4</maven-site-plugin.version>
+    <maven-source-plugin.version>2.3</maven-source-plugin.version>
+    <maven-surefire-plugin.version>2.17</maven-surefire-plugin.version>
+    <maven-surefire-report-plugin.version>${maven-surefire-plugin.version}</maven-surefire-report-plugin.version>
+    <maven-failsafe-plugin.version>${maven-surefire-plugin.version}</maven-failsafe-plugin.version>
+    <apache-rat-plugin.version>0.11</apache-rat-plugin.version>
 
     <!-- build options-->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -312,7 +317,7 @@
           </execution>
         </executions>
       </plugin>
-      
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-site-plugin</artifactId>
@@ -351,6 +356,24 @@
         </executions>
       </plugin>
 
+      <!-- We want to package up license resources in the JARs produced -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-remote-resources-plugin</artifactId>
+        <version>${maven-remote-resources-plugin.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>process</goal>
+            </goals>
+            <configuration>
+              <resourceBundles>
+                <resourceBundle>org.apache:apache-jar-resource-bundle:1.4</resourceBundle>
+              </resourceBundles>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
 
   </plugins>
   </build>
@@ -509,6 +532,10 @@
             <groupId>com.sun.jersey.jersey-test-framework</groupId>
             <artifactId>jersey-test-framework-grizzly2</artifactId>
           </exclusion>
+          <exclusion>
+            <groupId>net.java.dev.jets3t</groupId>
+            <artifactId>jets3t</artifactId>
+          </exclusion>
         </exclusions>
       </dependency>
 
@@ -613,7 +640,19 @@
           </exclusion>
         </exclusions>
       </dependency>
-      
+
+      <dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpclient</artifactId>
+        <version>4.2.5</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpcore</artifactId>
+        <version>4.2.5</version>
+      </dependency>
+  
       <!-- ======================================================== -->
       <!-- HBASE -->
       <!-- ======================================================== -->
@@ -1064,18 +1103,6 @@
       </dependency>
 
       <dependency>
-        <groupId>org.apache.curator</groupId>
-        <artifactId>curator-x-discovery</artifactId>
-        <version>${curator.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>org.apache.curator</groupId>
-        <artifactId>curator-x-discovery-server</artifactId>
-        <version>${curator.version}</version>
-      </dependency>
-      
-      <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
         <version>${guava.version}</version>
@@ -1221,6 +1248,18 @@
       <dependency>
         <groupId>com.codahale.metrics</groupId>
         <artifactId>metrics-core</artifactId>
+        <version>${metrics.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.codahale.metrics</groupId>
+        <artifactId>metrics-ganglia</artifactId>
+        <version>${metrics.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.codahale.metrics</groupId>
+        <artifactId>metrics-servlets</artifactId>
         <version>${metrics.version}</version>
       </dependency>
 
@@ -1390,6 +1429,7 @@
                 <exclude>**/dfs.exclude</exclude>
                 <exclude>**/*.iml</exclude>
                 <exclude>**/rat.txt</exclude>
+                <exclude>**/test_password_file</exclude>
                 <exclude>DISCLAIMER</exclude>
                 <exclude>app-packages/hbase/target/**</exclude>
                 <exclude>target/*</exclude>
@@ -1403,6 +1443,9 @@
       <id>apache-release</id>
       <build>
         <plugins>
+          <!-- Create a source-release artifact that contains the fully buildable 
+          project directory source structure. This is the artifact which is 
+          the official subject of any release vote. -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-assembly-plugin</artifactId>
@@ -1411,7 +1454,7 @@
               <dependency>
                 <groupId>org.apache.apache.resources</groupId>
                 <artifactId>apache-source-release-assembly-descriptor</artifactId>
-                <version>1.0.4</version>
+                <version>${apache-source-release-assembly-descriptor.version}</version>
               </dependency>
             </dependencies>
             <executions>
@@ -1432,7 +1475,77 @@
               </execution>
             </executions>
           </plugin>
-        </plugins>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>${maven-source-plugin.version}</version>
+            <executions>
+              <execution>
+              <id>attach-sources</id>
+                <goals>
+                <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>${maven.javadoc.version}</version>
+            <executions>
+              <execution>
+              <id>attach-javadocs</id>
+              <goals>
+                <goal>jar</goal>
+              </goals>
+              </execution>
+            </executions>
+          </plugin>
+            <!--
+            <plugin>
+              <groupId>com.bluetrainsoftware.maven</groupId>
+              <artifactId>maven-groovydoc-plugin</artifactId>
+              <version>${maven-groovydoc-plugin.version}</version>
+              <executions>
+                <execution>
+                  <id>attach-javadocs</id>
+                  <goals>
+                    <goal>attach-docs</goal>
+                  </goals>
+                </execution>
+              </executions>
+            </plugin>
+            -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>${maven-gpg-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <!-- We want to deploy the artifact to a staging location for perusal -->
+          <!--
+          <plugin>
+            <inherited>true</inherited>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-deploy-plugin</artifactId>
+            <version>${maven-deploy-plugin.version}</version>
+            <configuration>
+              <updateReleaseInfo>true</updateReleaseInfo>
+            </configuration>
+          </plugin>        
+            -->
+          </plugins>
       </build>
     </profile>
 
@@ -1494,53 +1607,6 @@
     </profile>
 
     <profile>
-      <!-- anything for a github release -->
-      <!-- see https://github.com/github/maven-plugins-->
-      <!-- this doesn't seem to work and is not in active us-->
-      <id>github</id>
-      <properties>
-        <maven-site-plugin.skipDeploy>false</maven-site-plugin.skipDeploy>
-      </properties>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>com.github.github</groupId>
-            <artifactId>site-maven-plugin</artifactId>
-            <version>${github.site.plugin.version}</version>
-            <inherited>true</inherited>
-            <configuration>
-              <message>Creating site for ${project.version}</message>
-              <dryRun>false</dryRun>
-              <repositoryName>slider</repositoryName>
-              <repositoryOwner>hortonworks</repositoryOwner>
-            </configuration>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>site</goal>
-                </goals>
-                <phase>site-deploy</phase>
-              </execution>
-            </executions>
-          </plugin>
-
-          <plugin>
-            <artifactId>maven-deploy-plugin</artifactId>
-            <version>${maven-deploy-plugin.version}</version>
-            <configuration>
-              <altDeploymentRepository>
-                internal.repo::default::file://${project.build.directory}/mvn-repo
-              </altDeploymentRepository>
-            </configuration>
-          </plugin>
-
-  
-        </plugins>
-      </build>
-
-    </profile>
-    
-    <profile>
     <id>strict</id>
     <!--enable this if you want to get told off about dependency conflict-->
     <build>
@@ -1575,6 +1641,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
+            <version>${maven-gpg-plugin.version}</version>
             <executions>
               <execution>
                 <id>sign-artifacts</id>
@@ -1611,7 +1678,51 @@
         </repository>
       </repositories>
     </profile>
-  </profiles>
 
+    <!-- see https://github.com/rvowles/maven-groovydoc-plugin -->
+    <profile>
+      <id>groovydoc</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.bluetrainsoftware.maven</groupId>
+            <artifactId>maven-groovydoc-plugin</artifactId>
+            <version>${maven-groovydoc-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>attach-docs</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>attach-docs</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    
+    <profile>
+      <id>javadoc</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>${maven.javadoc.version}</version>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+  </profiles>
 
 </project>

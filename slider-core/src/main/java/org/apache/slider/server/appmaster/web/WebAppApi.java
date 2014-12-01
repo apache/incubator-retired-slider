@@ -19,6 +19,7 @@ package org.apache.slider.server.appmaster.web;
 import org.apache.hadoop.registry.client.api.RegistryOperations;
 import org.apache.slider.api.SliderClusterProtocol;
 import org.apache.slider.providers.ProviderService;
+import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
 import org.apache.slider.server.appmaster.state.AppState;
 import org.apache.slider.server.appmaster.state.RoleStatus;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
@@ -35,35 +36,37 @@ public interface WebAppApi {
   /**
    * The {@link AppState} for the current cluster
    */
-  public StateAccessForProviders getAppState();
+  StateAccessForProviders getAppState();
   
   /**
    * The {@link ProviderService} for the current cluster
    */
-  public ProviderService getProviderService();
+  ProviderService getProviderService();
 
 
   /**
    * The {@link CertificateManager} for the current cluster
    */
-  public CertificateManager getCertificateManager();
+  CertificateManager getCertificateManager();
 
   /**
    * The {@link SliderClusterProtocol} for the current cluster
    */
-  public SliderClusterProtocol getClusterProtocol();
+  SliderClusterProtocol getClusterProtocol();
   
   /**
    * Generate a mapping from role name to its {@link RoleStatus}. Be aware that this
    * is a computed value and not just a getter
    */
-  public Map<String, RoleStatus> getRoleStatusByName();
+  Map<String, RoleStatus> getRoleStatusByName();
 
   /**
    * Returns an interface that can support the agent-based REST operations.
    */
-  public AgentRestOperations getAgentRestOperations();
+  AgentRestOperations getAgentRestOperations();
 
 
   RegistryOperations getRegistryOperations();
+
+  MetricsAndMonitoring getMetricsAndMonitoring();
 }

@@ -34,6 +34,8 @@ import org.apache.slider.test.YarnZKMiniClusterTestBase
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.rules.TemporaryFolder
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * test base for agent clusters
@@ -42,6 +44,7 @@ import org.junit.rules.TemporaryFolder
 @Slf4j
 public abstract class AgentMiniClusterTestBase
 extends YarnZKMiniClusterTestBase {
+  private static Logger LOG = LoggerFactory.getLogger(AgentMiniClusterTestBase)
   protected static File agentConf
   protected static File agentDef
   protected static Map<String, String> agentDefOptions
@@ -100,7 +103,6 @@ extends YarnZKMiniClusterTestBase {
       log.warn("Temp folder deletion failed: $e")
     }
   }
-
 
   @Override
   public String getTestConfigurationPath() {

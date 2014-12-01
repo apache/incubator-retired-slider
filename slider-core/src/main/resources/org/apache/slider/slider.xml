@@ -24,14 +24,6 @@
     <value>true</value>
   </property>
   <property>
-    <name>slider.provider.hbase</name>
-    <value>org.apache.slider.providers.hbase.HBaseProviderFactory</value>
-  </property>
-  <property>
-    <name>slider.provider.accumulo</name>
-    <value>org.apache.slider.providers.accumulo.AccumuloProviderFactory</value>
-  </property>
-  <property>
     <name>slider.provider.agent</name>
     <value>org.apache.slider.providers.agent.AgentProviderFactory</value>
   </property>

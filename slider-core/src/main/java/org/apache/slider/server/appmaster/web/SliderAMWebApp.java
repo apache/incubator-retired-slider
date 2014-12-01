@@ -16,17 +16,23 @@
  */
 package org.apache.slider.server.appmaster.web;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.servlets.HealthCheckServlet;
+import com.codahale.metrics.servlets.MetricsServlet;
+import com.codahale.metrics.servlets.PingServlet;
+import com.codahale.metrics.servlets.ThreadDumpServlet;
 import com.google.common.base.Preconditions;
 import com.sun.jersey.api.container.filter.GZIPContentEncodingFilter;
 import com.sun.jersey.api.core.ResourceConfig;
 import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 import com.sun.jersey.spi.container.servlet.ServletContainer;
-import org.apache.hadoop.registry.client.api.RegistryOperations;
 import org.apache.hadoop.yarn.webapp.Dispatcher;
 import org.apache.hadoop.yarn.webapp.GenericExceptionHandler;
 import org.apache.hadoop.yarn.webapp.WebApp;
+import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
 import org.apache.slider.server.appmaster.web.rest.AMWadlGeneratorConfig;
 import org.apache.slider.server.appmaster.web.rest.AMWebServices;
+import static org.apache.slider.server.appmaster.web.rest.RestPaths.*;
 import org.apache.slider.server.appmaster.web.rest.SliderJacksonJaxbJsonProvider;
 
 import java.util.HashMap;
@@ -42,11 +48,11 @@ public class SliderAMWebApp extends WebApp {
   public static final String CONTAINER_STATS = "/stats";
   public static final String CLUSTER_SPEC = "/spec";
 
-  private final RegistryOperations registry;
+  private final WebAppApi webAppApi;
 
-  public SliderAMWebApp(RegistryOperations registry) {
-    Preconditions.checkArgument(registry != null, "registry null");
-    this.registry = registry;
+  public SliderAMWebApp(WebAppApi webAppApi) {
+    Preconditions.checkArgument(webAppApi != null, "webAppApi null");
+    this.webAppApi = webAppApi;
   }
 
   @Override
@@ -76,8 +82,16 @@ public class SliderAMWebApp extends WebApp {
       serve(path).with(Dispatcher.class);
     }
 
+    // metrics
+    MetricsAndMonitoring monitoring =
+        webAppApi.getMetricsAndMonitoring();
+    serve(SYSTEM_HEALTHCHECK).with(new HealthCheckServlet(monitoring.getHealth()));
+    serve(SYSTEM_METRICS).with(new MetricsServlet(monitoring.getMetrics()));
+    serve(SYSTEM_PING).with(new PingServlet());
+    serve(SYSTEM_THREADS).with(new ThreadDumpServlet());
+
     String regex = "(?!/ws)";
-    serveRegex(regex).with(SliderDefaultWrapperServlet.class);
+    serveRegex(regex).with(SliderDefaultWrapperServlet.class); 
 
     Map<String, String> params = new HashMap<String, String>();
     params.put(ResourceConfig.FEATURE_IMPLICIT_VIEWABLES, "true");

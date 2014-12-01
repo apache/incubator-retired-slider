@@ -30,6 +30,7 @@ import org.apache.slider.api.ClusterNode
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.params.ActionRegistryArgs
+import org.apache.slider.common.tools.Duration
 import org.apache.slider.core.build.InstanceBuilder
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.exceptions.SliderException
@@ -43,6 +44,13 @@ import org.junit.Test
 @CompileStatic
 @Slf4j
 class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
+
+  public static final String PORT_RANGE = "60000-60010"
+
+  @After
+  void fixclientname() {
+    sliderClientClassName = DEFAULT_SLIDER_CLIENT
+  }
   
   @After
   void fixclientname() {
@@ -65,8 +73,8 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
 
     ApplicationReport report = waitForClusterLive(client)
     URI uri = new URI(report.originalTrackingUrl)
-    assert uri.port in [60000, 60001, 60002, 60003]
-    assert report.rpcPort in [60000, 60001, 60002, 60003]
+    assert uri.port in 60000..60010
+    assert report.rpcPort in 60000..60010
 
     logReport(report)
     List<ApplicationReport> apps = client.applications;
@@ -110,9 +118,20 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     //switch to the slider ZK-based registry
     describe "service registry instance IDs"
 
-    def instanceIds = client.listRegisteredSliderInstances()
+    // iterate waiting for registry to come up
+    List<String> instanceIds = []
+    Duration duration = new Duration(10000)
+    duration.start()
+
+    while (!duration.limitExceeded && instanceIds.size() < 1) {
+      instanceIds = client.listRegisteredSliderInstances()
+      if (!instanceIds.size()) {
+        sleep(500)
+      }
+    }
 
     log.info("number of instanceIds: ${instanceIds.size()}")
+    assert instanceIds.size() >= 1
     instanceIds.each { String it -> log.info(it) }
 
     describe "Yarn registry"
@@ -155,7 +174,7 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
 
     // do a quick registry listing here expecting a usage failure.
     ActionRegistryArgs registryArgs = new ActionRegistryArgs()
-    registryArgs.name=clustername;
+    registryArgs.name = clustername;
     def exitCode = client.actionRegistry(registryArgs)
     assert LauncherExitCodes.EXIT_USAGE == exitCode 
 
@@ -191,7 +210,7 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
     throws IOException, SliderException, LockAcquireFailedException {
       AggregateConf conf = builder.instanceDescription
       conf.appConfOperations.
-          globalOptions[SliderKeys.KEY_ALLOWED_PORT_RANGE]= "60000-60003"
+          globalOptions[SliderKeys.KEY_ALLOWED_PORT_RANGE]= PORT_RANGE
       super.persistInstanceDefinition(overwrite, appconfdir, builder)
     }
 
@@ -202,7 +221,7 @@ class TestStandaloneAgentAM  extends AgentMiniClusterTestBase {
                                           boolean debugAM)
     throws YarnException, IOException {
       instanceDefinition.appConfOperations.
-          globalOptions[SliderKeys.KEY_ALLOWED_PORT_RANGE] ="60000-60003"
+          globalOptions[SliderKeys.KEY_ALLOWED_PORT_RANGE] =PORT_RANGE
       return super.launchApplication(clustername, clusterDirectory, instanceDefinition, debugAM)
     }
   }
