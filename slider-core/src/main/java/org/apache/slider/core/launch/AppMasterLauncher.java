@@ -221,10 +221,14 @@ public class AppMasterLauncher extends AbstractLauncher {
       );
     }
 
-    // For now, only getting tokens for the default file-system.
-    FileSystem fs = coreFileSystem.getFileSystem();
-    Token<? extends TokenIdentifier>[] tokens = fs.addDelegationTokens(tokenRenewer,
-                                                             credentials);
+    Token<? extends TokenIdentifier>[] tokens = null;
+    boolean tokensProvided =
+        this.getConf().get("mapreduce.job.credentials.binary") != null;
+    if (!tokensProvided) {
+        // For now, only getting tokens for the default file-system.
+        FileSystem fs = coreFileSystem.getFileSystem();
+        tokens = fs.addDelegationTokens(tokenRenewer, credentials);
+    }
     // obtain the token expiry from the first token - should be the same for all
     // HDFS tokens
     if (tokens != null && tokens.length > 0) {
@@ -234,7 +238,13 @@ public class AppMasterLauncher extends AbstractLauncher {
       log.info("HDFS delegation tokens for AM launch context require renewal by {}",
                DateFormat.getDateTimeInstance().format(d));
     } else {
-      log.warn("No HDFS delegation tokens obtained for AM launch context");
+      if (!tokensProvided) {
+        log.warn("No HDFS delegation tokens obtained for AM launch context");
+      } else {
+        log.info("Tokens provided via mapreduce.job.credentials.binary property "
+                 + "being leveraged for AM launch");
+      }
+
     }
 
    }
