@@ -23,6 +23,7 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
+  <groupId>org.apache.slider.packages</groupId>
   <artifactId>slider-accumulo-app-package</artifactId>
   <packaging>jar</packaging>
   <name>Slider Accumulo App Package</name>

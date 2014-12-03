@@ -24,11 +24,11 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
+  <groupId>org.apache.slider.packages</groupId>
   <artifactId>slider-storm-app-package</artifactId>
   <packaging>pom</packaging>
   <name>Slider Storm App Package</name>
   <description>Slider Storm App Package</description>
-  <version>${pkg.version}</version>
   <properties>
     <work.dir>package-tmp</work.dir>
   </properties>
