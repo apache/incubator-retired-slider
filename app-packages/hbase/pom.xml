@@ -24,6 +24,7 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
+  <groupId>org.apache.slider.packages</groupId>
   <artifactId>slider-hbase-app-package</artifactId>
   <packaging>pom</packaging>
   <name>Slider HBase App Package</name>
