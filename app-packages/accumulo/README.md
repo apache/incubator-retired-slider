@@ -53,7 +53,7 @@ applicable for other versions of the app package.
 
 Note also that the sample `appConfig-default.json` provided only works with Accumulo 1.6.
 For Accumulo 1.5 the instance.volumes property must be replaced with
-instance.dfs.dir (and it cannot use the provided variable `${DEFAULT_DATA_DIR}`
+`instance.dfs.dir` (and it cannot use the provided variable `${DEFAULT_DATA_DIR}`
 which is an HDFS URI).
 
 A less descriptive file name can be specified with
