@@ -18,18 +18,16 @@
    limitations under the License.
 -->
   <parent>
-    <groupId>org.apache.slider</groupId>
-    <artifactId>slider</artifactId>
+    <groupId>org.apache.slider.packages</groupId>
+    <artifactId>slider-app-packages</artifactId>
     <version>0.60.0-incubating</version>
-    <relativePath>../../pom.xml</relativePath>
+    <relativePath>../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.apache.slider.packages</groupId>
   <artifactId>slider-storm-app-win-package</artifactId>
   <packaging>pom</packaging>
   <name>Slider Storm App Package</name>
-  <description>Slider Storm App Package</description>
-  <version>${pkg.version}</version>
+  <description>Slider Storm Windows App Package</description>
   <properties>
     <work.dir>package-tmp</work.dir>
   </properties>
@@ -43,7 +41,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-antrun-plugin</artifactId>
-            <version>1.7</version>
+            <version>${maven-antrun-plugin.version}</version>
             <executions>
               <execution>
                 <id>copy</id>
@@ -62,6 +60,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-assembly-plugin</artifactId>
+            <version>${maven-assembly-plugin.version}</version>
             <configuration>
               <tarLongFileMode>gnu</tarLongFileMode>
               <descriptor>src/assembly/storm.xml</descriptor>

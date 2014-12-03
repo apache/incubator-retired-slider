@@ -18,13 +18,12 @@
    limitations under the License.
 -->
   <parent>
-    <groupId>org.apache.slider</groupId>
-    <artifactId>slider</artifactId>
+    <groupId>org.apache.slider.packages</groupId>
+    <artifactId>slider-app-packages</artifactId>
     <version>0.60.0-incubating</version>
-    <relativePath>../../pom.xml</relativePath>
+    <relativePath>../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.apache.slider.packages</groupId>
   <artifactId>slider-storm-app-package</artifactId>
   <packaging>pom</packaging>
   <name>Slider Storm App Package</name>
