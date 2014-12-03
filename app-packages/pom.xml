@@ -27,20 +27,46 @@
   <groupId>org.apache.slider.packages</groupId>
   <artifactId>slider-app-packages</artifactId>
   <packaging>pom</packaging>
-  <name>Slider Storm App Package</name>
-  <description>Slider Storm App Packages: Zip files containing applications that slider can deploy</description>
+  <name>Slider App Packages</name>
+  <description>Slider App Packages: Zip files containing applications that slider can deploy</description>
   
   <modules>
-    <module>hbase</module>
-    <module>accumulo</module>
-    <module>storm</module>
+
   </modules>
   
     <build>
     </build>
 
-    <dependencies>
-    </dependencies>
+    <profiles>
+
+      <profile>
+        <id>Non-Windows</id>
+        <activation>
+          <os>
+            <family>!windows</family>
+          </os>
+        </activation>
+        <modules>
+          <module>accumulo</module>
+          <module>hbase</module>
+          <module>storm</module>
+        </modules>
+      </profile>
+    
+      <profile>
+        <id>Windows</id>
+        <activation>
+          <os>
+            <family>windows</family>
+          </os>
+        </activation>
+        <modules>
+          <module>hbase-win</module>
+          <module>storm-win</module>
+        </modules>
+      </profile>
+    </profiles>
+
 
   </project>
   
