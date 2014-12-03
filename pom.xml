@@ -1391,9 +1391,11 @@
         </os>
       </activation>
       <modules>
+<!--
         <module>app-packages/accumulo</module>
         <module>app-packages/hbase</module>
         <module>app-packages/storm</module>
+-->
       </modules>
     </profile>
     
@@ -1405,8 +1407,10 @@
         </os>
       </activation>
       <modules>
+<!--
         <module>app-packages/hbase-win</module>
         <module>app-packages/storm-win</module>
+-->
       </modules>
     </profile>
     <profile>
