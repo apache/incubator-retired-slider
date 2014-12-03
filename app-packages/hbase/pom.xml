@@ -18,18 +18,16 @@
    limitations under the License.
 -->
   <parent>
-    <groupId>org.apache.slider</groupId>
-    <artifactId>slider</artifactId>
+    <groupId>org.apache.slider.packages</groupId>
+    <artifactId>slider-app-packages</artifactId>
     <version>0.61.0-SNAPSHOT</version>
-    <relativePath>../../pom.xml</relativePath>
+    <relativePath>../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.apache.slider.packages</groupId>
   <artifactId>slider-hbase-app-package</artifactId>
   <packaging>pom</packaging>
   <name>Slider HBase App Package</name>
   <description>Slider HBase App Package</description>
-  <version>${pkg.version}</version>
   <properties>
     <work.dir>package-tmp</work.dir>
     <app.package.name>${project.artifactId}-${project.version}</app.package.name>
@@ -62,6 +60,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-assembly-plugin</artifactId>
+            <version>${maven-assembly-plugin.version}</version>
             <configuration>
               <tarLongFileMode>gnu</tarLongFileMode>
               <descriptor>src/assembly/hbase.xml</descriptor>

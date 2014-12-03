@@ -18,13 +18,12 @@
    limitations under the License.
 -->
   <parent>
-    <groupId>org.apache.slider</groupId>
-    <artifactId>slider</artifactId>
+    <groupId>org.apache.slider.packages</groupId>
+    <artifactId>slider-app-packages</artifactId>
     <version>0.61.0-SNAPSHOT</version>
-    <relativePath>../../pom.xml</relativePath>
+    <relativePath>../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.apache.slider.packages</groupId>
   <artifactId>slider-hbase-app-win-package</artifactId>
   <packaging>pom</packaging>
   <name>Slider HBase App Package for Windows</name>
