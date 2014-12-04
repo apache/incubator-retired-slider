@@ -44,6 +44,7 @@
     <module>slider-providers/hbase/hbase-funtests</module>
     <module>slider-providers/accumulo/slider-accumulo-provider</module>
     <module>slider-providers/accumulo/accumulo-funtests</module>
+    <module>app-packages</module>
   </modules>
 
   <licenses>
