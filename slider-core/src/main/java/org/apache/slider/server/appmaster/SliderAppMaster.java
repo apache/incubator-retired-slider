@@ -893,6 +893,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     log.info("Application Master Initialization Completed");
     initCompleted.set(true);
 
+    scheduleFailureWindowResets(instanceDefinition.getResources());
+
 
     try {
       // start handling any scheduled events
