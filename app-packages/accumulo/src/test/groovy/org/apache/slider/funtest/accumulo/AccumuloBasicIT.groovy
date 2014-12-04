@@ -26,7 +26,6 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.security.alias.CredentialProvider
 import org.apache.hadoop.security.alias.CredentialProviderFactory
 import org.apache.hadoop.registry.client.types.ServiceRecord
-import org.apache.slider.accumulo.CustomAuthenticator
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderKeys
@@ -116,6 +115,18 @@ class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
     return "test_accumulo_basic"
   }
 
+  protected Map<String, Integer> getRoleMap() {
+    // must match the values in src/test/resources/resources.json
+    return [
+      "ACCUMULO_MASTER" : 1,
+      "ACCUMULO_TSERVER" : 2,
+      "ACCUMULO_MONITOR": 1,
+      "ACCUMULO_GC": 0,
+      "ACCUMULO_TRACER" : 0,
+      "ACCUMULO_PROXY" : 0
+    ];
+  }
+
   @Test
   public void testAccumuloClusterCreate() throws Throwable {
 
@@ -136,15 +147,6 @@ class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
 
     ensureApplicationIsUp(getClusterName())
 
-    // must match the values in src/test/resources/resources.json
-    Map<String, Integer> roleMap = [
-      "ACCUMULO_MASTER" : 1,
-      "ACCUMULO_TSERVER" : 2,
-      "ACCUMULO_MONITOR": 1,
-      "ACCUMULO_GC": 0,
-      "ACCUMULO_TRACER" : 0
-    ];
-
     //get a slider client against the cluster
     SliderClient sliderClient = bondToCluster(SLIDER_CONFIG, getClusterName())
     ClusterDescription cd = sliderClient.clusterDescription
@@ -153,7 +155,7 @@ class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
     log.info("Connected via Client {}", sliderClient.toString())
 
     //wait for the role counts to be reached
-    waitForRoleCount(sliderClient, roleMap, ACCUMULO_LAUNCH_WAIT_TIME)
+    waitForRoleCount(sliderClient, getRoleMap(), ACCUMULO_LAUNCH_WAIT_TIME)
 
     sleep(ACCUMULO_GO_LIVE_TIME)
 
@@ -165,18 +167,26 @@ class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
     return "Create a working Accumulo cluster $clusterName"
   }
 
+  public static PublishedConfiguration getExport(SliderClient sliderClient,
+                                                 String clusterName,
+                                                 String exportName) {
+    String path = servicePath(currentUser(),
+      SliderKeys.APP_TYPE,
+      clusterName);
+    ServiceRecord instance = sliderClient.resolve(path)
+    RegistryRetriever retriever = new RegistryRetriever(instance)
+    PublishedConfiguration configuration = retriever.retrieveConfiguration(
+      retriever.getConfigurations(true), exportName, true)
+    return configuration
+  }
+
   public static String getMonitorUrl(SliderClient sliderClient, String clusterName) {
     int tries = 5
     Exception caught;
     while (true) {
       try {
-        String path = servicePath(currentUser(),
-            SliderKeys.APP_TYPE,
-            clusterName);
-        ServiceRecord instance = sliderClient.resolve(path)
-        RegistryRetriever retriever = new RegistryRetriever(instance)
-        PublishedConfiguration configuration = retriever.retrieveConfiguration(
-          retriever.getConfigurations(true), "quicklinks", true)
+        PublishedConfiguration configuration = getExport(sliderClient,
+          clusterName, "quicklinks")
 
         // must match name set in metainfo.xml
         String monitorUrl = configuration.entries.get("org.apache.slider.monitor")

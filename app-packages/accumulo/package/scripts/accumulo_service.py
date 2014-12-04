@@ -30,7 +30,10 @@ def accumulo_service( name,
     pid_exists = format("ls {pid_file} >/dev/null 2>&1 && ps `cat {pid_file}` >/dev/null 2>&1")
 
     if action == 'start':
-      daemon_cmd = format("{daemon_script} {role} --address {params.hostname} > {log_dir}/accumulo-{accumulo_user}-{role}.out 2>{log_dir}/accumulo-{accumulo_user}-{role}.err & echo $! > {pid_file}")
+      if role == 'proxy':
+        daemon_cmd = format("{daemon_script} {role} -p {params.proxy_conf} > {log_dir}/accumulo-{accumulo_user}-{role}.out 2>{log_dir}/accumulo-{accumulo_user}-{role}.err & echo $! > {pid_file}")
+      else:
+        daemon_cmd = format("{daemon_script} {role} --address {params.hostname} > {log_dir}/accumulo-{accumulo_user}-{role}.out 2>{log_dir}/accumulo-{accumulo_user}-{role}.err & echo $! > {pid_file}")
       Execute ( daemon_cmd,
         not_if=pid_exists,
         user=params.accumulo_user

@@ -77,6 +77,10 @@
         <command>ACCUMULO_TRACER-START</command>
         <requires>ACCUMULO_TSERVER-STARTED</requires>
       </commandOrder>
+      <commandOrder>
+        <command>ACCUMULO_PROXY-START</command>
+        <requires>ACCUMULO_TSERVER-STARTED</requires>
+      </commandOrder>
     </commandOrders>
     <components>
       <component>
@@ -131,6 +135,21 @@
       </component>
 
       <component>
+        <name>ACCUMULO_PROXY</name>
+        <category>CLIENT</category>
+        <componentExports>
+          <componentExport>
+            <name>proxies</name>
+            <value>${THIS_HOST}:${site.proxy.port}</value>
+          </componentExport>
+        </componentExports>
+        <commandScript>
+          <script>scripts/accumulo_proxy.py</script>
+          <scriptType>PYTHON</scriptType>
+        </commandScript>
+      </component>
+
+      <component>
         <name>ACCUMULO_CLIENT</name>
         <category>CLIENT</category>
         <commandScript>
@@ -167,6 +186,11 @@
         <type>properties</type>
         <fileName>client.conf</fileName>
         <dictionaryName>client</dictionaryName>
+      </configFile>
+      <configFile>
+        <type>properties</type>
+        <fileName>proxy.properties</fileName>
+        <dictionaryName>proxy</dictionaryName>
       </configFile>
     </configFiles>
 

@@ -33,6 +33,11 @@
       "yarn.role.priority": "5",
       "yarn.component.instances": "1",
       "yarn.memory": "256"
+    },
+    "ACCUMULO_PROXY": {
+      "yarn.role.priority": "6",
+      "yarn.component.instances": "1",
+      "yarn.memory": "128"
     }
   }
 }

@@ -48,6 +48,7 @@ accumulo_root = config['configurations']['global']['app_root']
 conf_dir = format("{accumulo_root}/conf")
 log_dir = config['configurations']['global']['app_log_dir']
 daemon_script = format("{accumulo_root}/bin/accumulo")
+proxy_conf = format("{conf_dir}/proxy.properties")
 
 # accumulo monitor certificate properties
 monitor_security_enabled = config['configurations']['global']['monitor_protocol'] == "https"
