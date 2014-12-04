@@ -87,6 +87,20 @@ public class AgentLaunchFailureIT extends AgentCommandTestBase
     describe("Awaiting failure")
     try {
       ensureYarnApplicationIsUp(appId)
+      /*
+       Under certain scenarios the app reaches the RUNNING state and gets
+       probed in that state as well. The timings and delays in this test
+       and the delays between scheduling of ChaosKillAM action cannot
+       ensure that the app will never reach RUNNING state. Since, the
+       target of this test is to check that chaos monkey kills the app,
+       calling this twice will ensure that the app reaches the FINISHED
+       state if chaos monkey is doing its job. If the app reaches FINISHED
+       state in the first call itself then this second call will never be
+       made. If this second call succeeds as well then chaos monkey is not
+       doing its job and the test should fail.
+       */
+      describe("app is running is checked twice")
+      ensureYarnApplicationIsUp(appId)
       fail("application is up")
     } catch (AssertionError e) {
       if(!e.toString().contains(SliderAppMaster.E_TRIGGERED_LAUNCH_FAILURE)) {
