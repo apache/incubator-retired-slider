@@ -65,6 +65,33 @@
           <module>storm-win</module>
         </modules>
       </profile>
+      <profile>
+        <id>rat</id>
+        <build>
+          <plugins>
+            <plugin>
+              <groupId>org.apache.rat</groupId>
+              <artifactId>apache-rat-plugin</artifactId>
+              <version>${apache-rat-plugin.version}</version>
+              <executions>
+                <execution>
+                  <id>check-licenses</id>
+                  <goals>
+                    <goal>check</goal>
+                  </goals>
+                </execution>
+              </executions>
+              <configuration>
+                <excludes>
+                  <exclude>**/*.json</exclude>
+                  <exclude>**/test_password_file</exclude>
+                  <exclude>command-logger/**</exclude>
+                </excludes>
+              </configuration>
+            </plugin>
+          </plugins>
+        </build>
+      </profile>
     </profiles>
 
 
