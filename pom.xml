@@ -1573,7 +1573,7 @@
               <id>enforce</id>
               <configuration>
                 <rules>
-                  <DependencyConvergence/>
+                  <DependencyConvergence />
                 </rules>
               </configuration>
               <goals>
