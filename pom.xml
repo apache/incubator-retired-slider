@@ -44,7 +44,7 @@
     <module>slider-providers/hbase/hbase-funtests</module>
     <module>slider-providers/accumulo/slider-accumulo-provider</module>
     <module>slider-providers/accumulo/accumulo-funtests</module>
-    <module>app-packages</module>
+    <!-- the app-packages module is added as a profile-->
   </modules>
 
   <licenses>
@@ -82,9 +82,7 @@
       <name>${distMgmtSnapshotsName}</name>
       <url>${distMgmtSnapshotsUrl}</url>
     </snapshotRepository>
-
-
-
+    
   </distributionManagement>
   
   <mailingLists>
@@ -1363,6 +1361,22 @@
           </plugin>
         </plugins>
       </build>
+    </profile>
+
+    <profile>
+      <id>all-modules</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <modules>
+        <module>app-packages</module>
+      </modules>
+    </profile>
+
+    <profile>
+      <id>no-app-packages</id>
+      <modules>
+      </modules>
     </profile>
 
     <profile>
