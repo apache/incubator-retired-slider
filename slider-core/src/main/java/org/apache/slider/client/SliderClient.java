@@ -2548,8 +2548,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
   /**
-   * The configuration used for deployment (after resolution)
-   * @return
+   * The configuration used for deployment (after resolution).
+   * Non-null only after the client has launched the application
+   * @return the resolved configuration or null
    */
   @VisibleForTesting
   public AggregateConf getLaunchedInstanceDefinition() {

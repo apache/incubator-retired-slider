@@ -267,7 +267,7 @@ public class ClusterDescription implements Cloneable {
   public void save(File file) throws IOException {
     log.debug("Saving to {}", file.getAbsolutePath());
     if (!file.getParentFile().mkdirs()) {
-      log.warn("Failed to mkdirs for " + file.getParentFile());
+      log.warn("Failed to mkdirs for {}", file.getParentFile());
     }
     DataOutputStream dataOutputStream = new DataOutputStream(new FileOutputStream(file));
     writeJsonAsBytes(dataOutputStream);
@@ -365,7 +365,7 @@ public class ClusterDescription implements Cloneable {
         try {
             return mapper.readValue(is, ClusterDescription.class);
         } catch (IOException e) {
-            log.error("Exception while parsing input stream : " + e, e);
+            log.error("Exception while parsing input stream : {}", e, e);
       throw e;
     }
   }
@@ -431,9 +431,9 @@ public class ClusterDescription implements Cloneable {
   /**
    * Get a cluster option or value
    *
-   * @param key
-   * @param defVal
-   * @return
+   * @param key option key
+   * @param defVal option val
+   * @return resolved value or default
    */
   public String getOption(String key, String defVal) {
     String val = options.get(key);
@@ -443,7 +443,7 @@ public class ClusterDescription implements Cloneable {
   /**
    * Get a cluster option or value
    *
-   * @param key
+   * @param key mandatory key
    * @return the value
    * @throws BadConfigException if the option is missing
    */
@@ -471,7 +471,7 @@ public class ClusterDescription implements Cloneable {
 
   /**
    * Verify that an option is set: that is defined AND non-empty
-   * @param key
+   * @param key key to verify
    * @throws BadConfigException
    */
   public void verifyOptionSet(String key) throws BadConfigException {

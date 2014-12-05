@@ -76,7 +76,7 @@ public interface ResourceKeys {
    */
   String YARN_LABEL_EXPRESSION = "yarn.label.expression";
 
-  /** {@value} */
+  /** default label expression: */
   String DEF_YARN_LABEL_EXPRESSION = null;
 
 

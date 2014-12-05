@@ -247,7 +247,6 @@ public class InstanceBuilder {
    * @throws IOException
    * @throws SliderException
    * @throws LockAcquireFailedException
-   * @param appconfdir dir to persist the conf to
    */
   public void persist(Path appconfdir, boolean overwrite) throws
       IOException,

@@ -104,7 +104,7 @@ public class ZKIntegration implements Watcher, Closeable {
    * @param clustername
    * @param canBeReadOnly
    * @param watchEventHandler
-   * @return
+   * @return the new instance
    * @throws IOException
    */
   public static ZKIntegration newInstance(String zkConnection, String username, String clustername, boolean createClusterPath, boolean canBeReadOnly, Watcher watchEventHandler) throws IOException {
@@ -230,10 +230,9 @@ public class ZKIntegration implements Watcher, Closeable {
 
   /**
    * Recursive path create
-   * @param path
-   * @param data
-   * @param acl
-   * @param createMode
+   * @param paths path list
+   * @param acl acl list
+   * @param createMode create modes
    */
   public void mkPath(List<String> paths,
                      List<ACL> acl,
