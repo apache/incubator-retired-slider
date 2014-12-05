@@ -593,9 +593,9 @@ public class AgentProviderService extends AbstractProviderService implements
   /**
    * Handle registration calls from the agents
    *
-   * @param registration
+   * @param registration registration entry
    *
-   * @return
+   * @return response
    */
   @Override
   public RegistrationResponse handleRegistration(Register registration) {
@@ -965,12 +965,12 @@ public class AgentProviderService extends AbstractProviderService implements
   /**
    * Read all default configs
    *
-   * @param fileSystem
-   * @param appDef
-   * @param metainfo
+   * @param fileSystem fs
+   * @param appDef app default path
+   * @param metainfo metadata
    *
-   * @return
-   *
+   * @return configuration maps
+   * 
    * @throws IOException
    */
   protected Map<String, DefaultConfig> initializeDefaultConfigs(SliderFileSystem fileSystem,
@@ -1029,7 +1029,7 @@ public class AgentProviderService extends AbstractProviderService implements
   /**
    * Get a list of all hosts for all role/container per role
    *
-   * @return
+   * @return the map of role->node
    */
   protected Map<String, Map<String, ClusterNode>> getRoleClusterNodeMapping() {
     amState.refreshClusterStatus();
@@ -1451,9 +1451,9 @@ public class AgentProviderService extends AbstractProviderService implements
   /**
    * Return Component based on name
    *
-   * @param roleName
+   * @param roleName component name
    *
-   * @return
+   * @return the component entry or null for no match
    */
   protected Component getApplicationComponent(String roleName) {
     return getMetainfo().getApplicationComponent(roleName);
@@ -1462,9 +1462,9 @@ public class AgentProviderService extends AbstractProviderService implements
   /**
    * Extract script path from the application metainfo
    *
-   * @param roleName
+   * @param roleName  component name
    *
-   * @return
+   * @return the script path or null for no match
    */
   protected CommandScript getScriptPathFromMetainfo(String roleName) {
     Component component = getApplicationComponent(roleName);
@@ -1477,9 +1477,9 @@ public class AgentProviderService extends AbstractProviderService implements
   /**
    * Is the role of type MASTER
    *
-   * @param roleName
+   * @param roleName  component name
    *
-   * @return
+   * @return true if the role category is MASTER
    */
   protected boolean isMaster(String roleName) {
     Component component = getApplicationComponent(roleName);
@@ -1494,9 +1494,9 @@ public class AgentProviderService extends AbstractProviderService implements
   /**
    * Can the role publish configuration
    *
-   * @param roleName
+   * @param roleName  component name
    *
-   * @return
+   * @return true if it can be pubished
    */
   protected boolean canPublishConfig(String roleName) {
     Component component = getApplicationComponent(roleName);
@@ -1509,9 +1509,9 @@ public class AgentProviderService extends AbstractProviderService implements
   /**
    * Checks if the role is marked auto-restart
    *
-   * @param roleName
+   * @param roleName  component name
    *
-   * @return
+   * @return true if it is auto-restart
    */
   protected boolean isMarkedAutoRestart(String roleName) {
     Component component = getApplicationComponent(roleName);
@@ -1524,7 +1524,7 @@ public class AgentProviderService extends AbstractProviderService implements
   /**
    * Can any master publish config explicitly, if not a random master is used
    *
-   * @return
+   * @return true if the condition holds
    */
   protected boolean canAnyMasterPublishConfig() {
     if (canAnyMasterPublish == null) {

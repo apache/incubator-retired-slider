@@ -71,7 +71,7 @@ public class PublishedExports {
    * Is the configuration empty. This means either that it has not been given any values, or it is stripped down copy
    * set down over the wire.
    *
-   * @return
+   * @return true if it is empty
    */
   public boolean isEmpty() {
     return entries.isEmpty();
@@ -102,9 +102,9 @@ public class PublishedExports {
   /**
    * Return the values as json string
    *
-   * @return
+   * @return the JSON form
    *
-   * @throws IOException
+   * @throws IOException mapping problems
    */
   public String asJson() throws IOException {
     ObjectMapper mapper = new ObjectMapper();

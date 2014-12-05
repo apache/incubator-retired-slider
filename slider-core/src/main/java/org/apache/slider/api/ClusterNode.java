@@ -171,7 +171,7 @@ public class ClusterNode {
   /**
    * Build from a protobuf response
    * @param message
-   * @return
+   * @return the deserialized node
    */
   public static ClusterNode fromProtobuf(Messages.RoleInstanceState message) {
     ClusterNode node = new ClusterNode();

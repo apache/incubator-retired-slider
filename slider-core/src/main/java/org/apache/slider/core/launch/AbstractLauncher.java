@@ -394,8 +394,8 @@ public abstract class AbstractLauncher extends Configured {
 
   /**
    * Return the label expression and if not set null
-   * @param map
-   * @return
+   * @param map map to look up
+   * @return extracted label or null
    */
   public String extractLabelExpression(Map<String, String> map) {
     if (map != null) {

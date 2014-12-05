@@ -232,7 +232,6 @@ public class SliderClusterOperations {
 
   /**
    * Wait for an instance of a named role to be live (or past it in the lifecycle)
-   * @param clustername cluster
    * @param role role to look for
    * @param timeout time to wait
    * @return the state. If still in CREATED, the cluster didn't come up

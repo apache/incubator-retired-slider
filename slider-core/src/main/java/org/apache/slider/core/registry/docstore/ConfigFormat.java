@@ -44,7 +44,7 @@ public enum ConfigFormat {
   /**
    * Get a matching format or null
    * @param type
-   * @return
+   * @return the format
    */
   public static ConfigFormat resolve(String type) {
     for (ConfigFormat format: values()) {

@@ -176,8 +176,8 @@ public class JsonSerDeser<T> {
   /**
    * Deserialize from a byte array
    * @param b
-   * @return
-   * @throws IOException
+   * @return the deserialized value
+   * @throws IOException parse problems
    */
   public T fromBytes(byte[] b) throws IOException {
     String json = new String(b, 0, b.length, UTF_8);

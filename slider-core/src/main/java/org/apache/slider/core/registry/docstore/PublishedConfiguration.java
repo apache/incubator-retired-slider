@@ -90,7 +90,7 @@ public class PublishedConfiguration {
    * Is the configuration empty. This means either that it has not
    * been given any values, or it is stripped down copy set down over the
    * wire.
-   * @return
+   * @return true if it is empty
    */
   public boolean isEmpty() {
     return entries.isEmpty();
@@ -122,7 +122,7 @@ public class PublishedConfiguration {
 
   /**
    * Convert to Hadoop XML
-   * @return
+   * @return the configuration as a Hadoop Configuratin
    */
   public Configuration asConfiguration() {
     Configuration conf = new Configuration(false);
