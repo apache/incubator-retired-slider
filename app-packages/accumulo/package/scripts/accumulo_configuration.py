@@ -133,6 +133,14 @@ def setup_conf_dir(name=None): # 'master' or 'tserver' or 'monitor' or 'gc' or '
        group = params.user_group
   )
 
+  if name == "proxy":
+    # create proxy.properties file
+    PropertiesFile(params.proxy_conf,
+                   properties = params.config['configurations']['proxy'],
+                   owner = params.accumulo_user,
+                   group = params.user_group
+    )
+
   # create host files
   accumulo_StaticFile( 'masters')
   accumulo_StaticFile( 'slaves')
