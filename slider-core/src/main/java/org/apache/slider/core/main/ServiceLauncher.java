@@ -348,7 +348,7 @@ public class ServiceLauncher<S extends Service>
    * Exit the code.
    * This is method can be overridden for testing, throwing an 
    * exception instead. Any subclassed method MUST raise an 
-   * {@link ExitUtil.ExitException} instance.
+   * <code>ExitUtil.ExitException</code> instance.
    * The service launcher code assumes that after this method is invoked,
    * no other code in the same method is called.
    * @param exitCode code to exit

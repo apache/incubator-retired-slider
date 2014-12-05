@@ -65,7 +65,7 @@ public class AMWebClient {
 
   /**
    * Get the Jersey Client
-   * @return
+   * @return the client
    */
   public static Client getClient() {
     return client;

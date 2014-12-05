@@ -113,7 +113,7 @@ public class ProviderUtils implements RoleKeys {
    * @param tarName
    * @param sliderFileSystem
    * @param agentDir
-   * @return
+   * @return true the location could be determined and the file added
    * @throws IOException
    */
   public static boolean addAgentTar(Object provider,

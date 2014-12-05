@@ -78,7 +78,7 @@ public abstract class PublishedConfigurationOutputter {
   }
   /**
    * Convert to a string
-   * @return
+   * @return the string form
    * @throws IOException
    */
   public abstract String asString() throws IOException;

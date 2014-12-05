@@ -1597,9 +1597,9 @@ public final class SliderUtils {
   /**
    * Truncate the given string to a maximum length provided
    * with a pad (...) added to the end if expected size if more than 10.
-   * @param toTruncate
-   * @param maxSize
-   * @return
+   * @param toTruncate string to truncate; may be null
+   * @param maxSize maximum size
+   * @return the truncated/padded string. 
    */
   public static String truncate(String toTruncate, int maxSize) {
     if (toTruncate == null || maxSize < 1

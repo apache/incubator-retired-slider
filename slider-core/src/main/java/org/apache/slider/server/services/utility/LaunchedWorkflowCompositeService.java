@@ -49,7 +49,7 @@ public class LaunchedWorkflowCompositeService extends WorkflowCompositeService
   /**
    * Implementation of set-ness, groovy definition of true/false for a string
    * @param s
-   * @return
+   * @return true iff the string is non-null and non-empty
    */
   protected static boolean isUnset(String s) {
     return StringUtils.isEmpty(s);

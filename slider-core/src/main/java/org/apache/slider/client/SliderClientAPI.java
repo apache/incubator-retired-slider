@@ -238,10 +238,7 @@ public interface SliderClientAPI extends Service {
   /**
    * diagnostic operation
    *
-   * @param clusterName
-   *            application name
-   * @param diagosticArgs
-   *            diagnostic Arguments
+   * @param diagosticArgs diagnostic Arguments
    * @return 0 for success, -1 for some issues that aren't errors, just
    *         failures to retrieve information (e.g. no application name
    *         specified)

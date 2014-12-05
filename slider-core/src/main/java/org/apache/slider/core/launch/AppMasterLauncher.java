@@ -68,12 +68,10 @@ public class AppMasterLauncher extends AbstractLauncher {
   /**
    * Build the AM Launcher
    * @param name app name
-   * @param type applicatin type
+   * @param type application type
    * @param conf hadoop config
    * @param fs filesystem binding
    * @param yarnClient yarn client
-   * @param secureCluster is the cluster secure?
-   * -the map is not retained.
    * @param secureCluster flag to indicate secure cluster
    * @param options map of options. All values are extracted in this constructor only
    * @param resourceGlobalOptions global options

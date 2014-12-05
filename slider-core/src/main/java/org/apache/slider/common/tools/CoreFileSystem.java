@@ -262,14 +262,12 @@ public class CoreFileSystem {
    *
    * @param clustername      name of the cluster
    * @param clusterDirectory actual directory to look for
-   * @return the path to the cluster directory
-   * @throws IOException                      trouble with FS
+   * @throws IOException trouble with FS
    * @throws SliderException If the directory exists
    */
   public void verifyClusterDirectoryNonexistent(String clustername,
-                                                Path clusterDirectory) throws
-          IOException,
-      SliderException {
+                                                Path clusterDirectory)
+      throws IOException, SliderException {
     if (fileSystem.exists(clusterDirectory)) {
       throw new SliderException(SliderExitCodes.EXIT_INSTANCE_EXISTS,
               ErrorStrings.PRINTF_E_INSTANCE_ALREADY_EXISTS, clustername,
@@ -412,7 +410,8 @@ public class CoreFileSystem {
   /**
    * Get the base path
    *
-   * @return the base path optionally configured by {@value SliderXmlConfKeys#KEY_SLIDER_BASE_PATH}
+   * @return the base path optionally configured by 
+   * {@link SliderXmlConfKeys#KEY_SLIDER_BASE_PATH}
    */
   public Path getBaseApplicationPath() {
     String configuredBasePath = configuration.get(SliderXmlConfKeys.KEY_SLIDER_BASE_PATH);
