@@ -37,7 +37,7 @@ class TarballProvider(Provider):
         zf = zipfile.ZipFile(package_name)
         path = location
         for member in zf.infolist():
-          zf.extract(member, path)
+          zf.extract(member, '\\\\?\\' + os.path.abspath(path))
     else:
       Logger.info("Unsupported archive %s" % (package_name,))
 
