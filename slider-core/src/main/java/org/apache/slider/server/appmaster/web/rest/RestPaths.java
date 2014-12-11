@@ -25,7 +25,15 @@ public class RestPaths {
 
   public static final String WS_CONTEXT = "ws";
   public static final String AGENT_WS_CONTEXT = "ws";
+
+  /**
+   * Root path for the web services context: {@value}
+   */
   public static final String WS_CONTEXT_ROOT = "/" + WS_CONTEXT;
+
+  /**
+   * agent content root: {@value}
+   */
   public static final String WS_AGENT_CONTEXT_ROOT = "/" + AGENT_WS_CONTEXT;
   public static final String SLIDER_CONTEXT_ROOT = WS_CONTEXT_ROOT +"/v1/slider";
   public static final String SLIDER_AGENT_CONTEXT_ROOT = WS_AGENT_CONTEXT_ROOT +"/v1/slider";
@@ -34,22 +42,33 @@ public class RestPaths {
   public static final String SLIDER_SUBPATH_AGENTS = "/agents";
   public static final String SLIDER_SUBPATH_PUBLISHER = "/publisher";
 
+
+  /**
+   * management path: {@value}
+   */
   public static final String SLIDER_PATH_MANAGEMENT = SLIDER_CONTEXT_ROOT
                                       + SLIDER_SUBPATH_MANAGEMENT;
+
+  /**
+   * Agents: {@value}
+   */
   public static final String SLIDER_PATH_AGENTS = SLIDER_AGENT_CONTEXT_ROOT
                                       + SLIDER_SUBPATH_AGENTS;
   
+  /**
+   * Publisher: {@value}
+   */
   public static final String SLIDER_PATH_PUBLISHER = SLIDER_CONTEXT_ROOT
                                       + SLIDER_SUBPATH_PUBLISHER;
 
   public static final String SLIDER_SUBPATH_REGISTRY = "/registry";
+
+  /**
+   * Registry: {@value}
+   */
   public static final String SLIDER_PATH_REGISTRY = SLIDER_CONTEXT_ROOT
                                                     + SLIDER_SUBPATH_REGISTRY;
 
-  @Deprecated
-  public static final String REGISTRY_SERVICE = "v1/service";
-  @Deprecated
-  public static final String REGISTRY_ANYSERVICE = "v1/anyservice";
 
   /**
    * The regular expressions used to define valid configuration names/url path
@@ -65,10 +84,32 @@ public class RestPaths {
   public static final String SLIDER_EXPORTS = "exports";
 
   public static final String SLIDER_CLASSPATH = "classpath";
+
+  /**
+   * Codahale Metrics - base path: {@value}
+   */
+
   public static final String SYSTEM = "/system";
+
+
+  /**
+   * Codahale Metrics - health: {@value}
+   */
   public static final String SYSTEM_HEALTHCHECK = SYSTEM + "/health";
+  /**
+   * Codahale Metrics - metrics: {@value}
+   */
   public static final String SYSTEM_METRICS = SYSTEM + "/metrics";
+  /**
+   * Codahale Metrics - metrics as JSON: {@value}
+   */
   public static final String SYSTEM_METRICS_JSON = SYSTEM_METRICS + "?format=json";
+  /**
+   * Codahale Metrics - ping: {@value}
+   */
   public static final String SYSTEM_PING = SYSTEM + "/ping";
+  /**
+   * Codahale Metrics - thread dump: {@value}
+   */
   public static final String SYSTEM_THREADS = SYSTEM + "/threads";
 }
