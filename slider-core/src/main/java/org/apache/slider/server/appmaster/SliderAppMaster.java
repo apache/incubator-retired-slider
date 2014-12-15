@@ -151,9 +151,7 @@ import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.WebAppApiImpl;
 import org.apache.slider.server.appmaster.web.rest.RestPaths;
 import org.apache.slider.server.services.security.CertificateManager;
-//import org.apache.slider.server.services.security.FsDelegationTokenManager;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
-import org.apache.slider.server.appmaster.management.MetricsBindingService;
 import org.apache.slider.server.services.utility.WebAppService;
 import org.apache.slider.server.services.workflow.ServiceThreadFactory;
 import org.apache.slider.server.services.workflow.WorkflowExecutorService;
@@ -381,6 +379,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private RegisterApplicationMasterResponse amRegistrationData;
   private PortScanner portScanner;
   private SecurityConfiguration securityConfiguration;
+  private int webAppPort;
 
   /**
    * Service Constructor
@@ -715,32 +714,12 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       startAgentWebApp(appInformation, serviceConf);
 
-      int port = getPortToRequest(instanceDefinition);
-
-      WebAppApi webAppApi = new WebAppApiImpl(this,
-          stateForProviders,
-          providerService,
-          certificateManager,
-          registryOperations,
-          metricsAndMonitoring);
-      webApp = new SliderAMWebApp(webAppApi);
-      WebApps.$for(SliderAMWebApp.BASE_PATH, WebAppApi.class,
-                   webAppApi,
-                   RestPaths.WS_CONTEXT)
-                      .withHttpPolicy(serviceConf, HttpConfig.Policy.HTTP_ONLY)
-                      .at(port)
-                      .start(webApp);
+      webAppPort = getPortToRequest(instanceDefinition);
       String scheme = WebAppUtils.HTTP_PREFIX;
-      appMasterTrackingUrl = scheme  + appMasterHostname + ":" + webApp.port();
-      WebAppService<SliderAMWebApp> webAppService =
-        new WebAppService<SliderAMWebApp>("slider", webApp);
-
-      webAppService.init(serviceConf);
-      webAppService.start();
-      addService(webAppService);
+      appMasterTrackingUrl = scheme + appMasterHostname + ":" + webAppPort;
 
       appInformation.put(StatusKeys.INFO_AM_WEB_URL, appMasterTrackingUrl + "/");
-      appInformation.set(StatusKeys.INFO_AM_WEB_PORT, webApp.port());
+      appInformation.set(StatusKeys.INFO_AM_WEB_PORT, webAppPort);
 
       // Register self with ResourceManager
       // This will start heartbeating to the RM
@@ -828,8 +807,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       
       appState.buildAppMasterNode(appMasterContainerID,
                                   appMasterHostname,
-                                  webApp.port(),
-                                  appMasterHostname + ":" + webApp.port());
+          webAppPort,
+                                  appMasterHostname + ":" + webAppPort);
 
       // build up environment variables that the AM wants set in every container
       // irrespective of provider and role.
@@ -901,6 +880,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       startQueueProcessing();
 
+      deployWebApplication(serviceConf, webAppPort);
+
+
       // Start the Slider AM provider
       sliderAMProvider.start();
 
@@ -916,6 +898,40 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
     //shutdown time
     return finish();
+  }
+
+  /**
+   * Deploy the web application.
+   * <p>
+   *   Creates and starts the web application, and adds a
+   *   <code>WebAppService</code> service under the AM, to ensure
+   *   a managed web application shutdown.
+   * 
+   * @param serviceConf AM configuration
+   * @param port port to deploy the web application on
+   */
+  private void deployWebApplication(Configuration serviceConf, int port) {
+    WebAppApi webAppApi = new WebAppApiImpl(this,
+        stateForProviders,
+        providerService,
+        certificateManager,
+        registryOperations,
+        metricsAndMonitoring);
+    webApp = new SliderAMWebApp(webAppApi);
+    WebApps.$for(SliderAMWebApp.BASE_PATH,
+        WebAppApi.class,
+        webAppApi,
+        RestPaths.WS_CONTEXT)
+           .withHttpPolicy(serviceConf, HttpConfig.Policy.HTTP_ONLY)
+           .at(port)
+           .start(webApp);
+
+    WebAppService<SliderAMWebApp> webAppService =
+      new WebAppService<SliderAMWebApp>("slider", webApp);
+
+    webAppService.init(serviceConf);
+    webAppService.start();
+    addService(webAppService);
   }
 
   private void processAMCredentials(SecurityConfiguration securityConfiguration)
@@ -949,6 +965,18 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     containerCredentials = credentials;
   }
 
+  /**
+   * Locate a port to request for a service such as RPC or web/REST.
+   * This uses port range definitions in the <code>instanceDefinition</code>
+   * to fix the port range —if one is set.
+   * <p>
+   * The port returned is available at the time of the request; there are
+   * no guarantees as to how long that situation will last.
+   * @param instanceDefinition instance definition containing port range 
+   * restrictions in in the application configuration
+   * @return the port to request.
+   * @throws SliderException
+   */
   private int getPortToRequest(AggregateConf instanceDefinition)
       throws SliderException {
     int portToRequest = 0;
@@ -984,7 +1012,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
 
     fs.getFileSystem().setPermission(destPath,
-      new FsPermission(FsAction.READ, FsAction.NONE, FsAction.NONE));
+        new FsPermission(FsAction.READ, FsAction.NONE, FsAction.NONE));
   }
 
   protected void login(String principal, File localKeytabFile)
