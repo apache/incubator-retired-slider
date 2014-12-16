@@ -25,6 +25,7 @@ import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.client.SliderClient
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.server.appmaster.web.rest.RestPaths
+import static org.apache.slider.server.appmaster.web.rest.RestPaths.*;
 import org.junit.Test
 
 import static org.apache.slider.server.appmaster.management.MetricsKeys.*
@@ -52,8 +53,10 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
 
     ApplicationReport report = waitForClusterLive(client)
     def realappmaster = report.originalTrackingUrl
-    GET(realappmaster)
-    def metrics = GET(realappmaster, RestPaths.SYSTEM_METRICS)
+    execHttpRequest(30000) {
+      GET(realappmaster)
+    } 
+    def metrics = GET(realappmaster, SYSTEM_METRICS)
     log.info metrics
     
     sleep(5000)
@@ -61,21 +64,27 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
 
     GET(appmaster)
 
-    log.info GET(appmaster, RestPaths.SYSTEM_PING)
-    log.info GET(appmaster, RestPaths.SYSTEM_THREADS)
-    log.info GET(appmaster, RestPaths.SYSTEM_HEALTHCHECK)
-    log.info GET(appmaster, RestPaths.SYSTEM_METRICS_JSON)
+    log.info GET(appmaster, SYSTEM_PING)
+    log.info GET(appmaster, SYSTEM_THREADS)
+    log.info GET(appmaster, SYSTEM_HEALTHCHECK)
+    log.info GET(appmaster, SYSTEM_METRICS_JSON)
     
-    describe "Hadoop HTTP operations"
+    describe "Codahale operations"
     // now switch to the Hadoop URL connection, with SPNEGO escalation
     getWebPage(conf, appmaster)
-    getWebPage(conf, appmaster, RestPaths.SYSTEM_THREADS)
-    getWebPage(conf, appmaster, RestPaths.SYSTEM_HEALTHCHECK)
-    getWebPage(conf, appmaster, RestPaths.SYSTEM_METRICS_JSON)
+    getWebPage(conf, appmaster, SYSTEM_THREADS)
+    getWebPage(conf, appmaster, SYSTEM_HEALTHCHECK)
+    getWebPage(conf, appmaster, SYSTEM_METRICS_JSON)
     
-    log.info getWebPage(conf, realappmaster, RestPaths.SYSTEM_METRICS_JSON)
+    log.info getWebPage(conf, realappmaster, SYSTEM_METRICS_JSON)
 
     
+    // now some REST gets
+    describe "Application REST GETs"
+
+    getWebPage(conf, appmaster, SLIDER_PATH_APPLICATION + LIVE_RESOURCES)
+
+
   }
 
 
