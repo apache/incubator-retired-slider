@@ -378,6 +378,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private RegisterApplicationMasterResponse amRegistrationData;
   private PortScanner portScanner;
   private SecurityConfiguration securityConfiguration;
+
+  /**
+   * The port for the web application
+   */
   private int webAppPort;
 
   /**
@@ -679,6 +683,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         }
       }
       //bring up the Slider RPC service
+
+      buildPortScanner(instanceDefinition);
       startSliderRPCServer(instanceDefinition);
 
       rpcServiceAddress = rpcService.getConnectAddress();
@@ -705,7 +711,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
           .getComponent(SliderKeys.COMPONENT_AM);
       certificateManager.initialize(component);
       certificateManager.setPassphrase(instanceDefinition.getPassphrase());
-
+ 
       if (component.getOptionBool(
           AgentKeys.KEY_AGENT_TWO_WAY_SSL_ENABLED, false)) {
         uploadServerCertForLocalization(clustername, fs);
@@ -713,7 +719,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       startAgentWebApp(appInformation, serviceConf);
 
-      webAppPort = getPortToRequest(instanceDefinition);
+      webAppPort = getPortToRequest();
+      if (webAppPort == 0) {
+        // failure to find a port
+        throw new BadConfigException("Failed to fix a web application port");
+      }
       String scheme = WebAppUtils.HTTP_PREFIX;
       appMasterTrackingUrl = scheme + appMasterHostname + ":" + webAppPort;
 
@@ -965,32 +975,31 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   }
 
   /**
+   * Build up the port scanner. This may include setting a port range.
+   */
+  private void buildPortScanner(AggregateConf instanceDefinition) {
+    portScanner = new PortScanner();
+    String portRange = instanceDefinition.
+        getAppConfOperations().getGlobalOptions().
+          getOption(SliderKeys.KEY_ALLOWED_PORT_RANGE, "0");
+    if (!"0".equals(portRange)) {
+        portScanner.setPortRange(portRange);
+    }
+  }
+  
+  /**
    * Locate a port to request for a service such as RPC or web/REST.
    * This uses port range definitions in the <code>instanceDefinition</code>
    * to fix the port range —if one is set.
    * <p>
    * The port returned is available at the time of the request; there are
    * no guarantees as to how long that situation will last.
-   * @param instanceDefinition instance definition containing port range 
-   * restrictions in in the application configuration
    * @return the port to request.
    * @throws SliderException
    */
-  private int getPortToRequest(AggregateConf instanceDefinition)
+  private int getPortToRequest()
       throws SliderException {
-    int portToRequest = 0;
-    String portRange = instanceDefinition.
-        getAppConfOperations().getGlobalOptions().
-          getOption(SliderKeys.KEY_ALLOWED_PORT_RANGE, "0");
-    if (!"0".equals(portRange)) {
-      if (portScanner == null) {
-        portScanner = new PortScanner();
-        portScanner.setPortRange(portRange);
-      }
-      portToRequest = portScanner.getAvailablePort();
-    }
-
-    return portToRequest;
+    return portScanner.getAvailablePort();
   }
 
   private void uploadServerCertForLocalization(String clustername,
@@ -1427,7 +1436,7 @@ the registry with/without the new record format
         .newReflectiveBlockingService(
             protobufRelay);
 
-    int port = getPortToRequest(instanceDefinition);
+    int port = getPortToRequest();
     rpcService =
         new WorkflowRpcService("SliderRPC", RpcBinder.createProtobufServer(
             new InetSocketAddress("0.0.0.0", port),
