@@ -19,16 +19,45 @@
 package org.apache.slider.server.appmaster.web.rest;
 
 import org.apache.slider.server.appmaster.web.WebAppApi;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
+import java.net.URI;
+import java.net.URL;
 
 /**
  * Abstract resource base class for REST resources
  * that use the slider WebAppApi
  */
 public abstract class AbstractSliderResource {
-
+  private static final Logger log =
+      LoggerFactory.getLogger(AbstractSliderResource.class);
   protected final WebAppApi slider;
 
   public AbstractSliderResource(WebAppApi slider) {
     this.slider = slider;
   }
+
+
+  /**
+   * Generate a redirect to the WASL
+   * @param request to base the URL on
+   * @return a 302 response
+   */
+  protected Response redirectToAppWadl(HttpServletRequest request) {
+    try {
+      URI location = new URL(request.getScheme(),
+          request.getServerName(),
+          request.getServerPort(),
+          RestPaths.APPLICATION_WADL).toURI();
+      return Response.temporaryRedirect(location).build();
+    } catch (Exception e) {
+      log.error("Error during redirect to WADL", e);
+      throw new WebApplicationException(Response.serverError().build());
+    }
+  }
+
 }

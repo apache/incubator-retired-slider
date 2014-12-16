@@ -61,6 +61,9 @@ public class RestPaths {
   public static final String SLIDER_PATH_PUBLISHER = SLIDER_CONTEXT_ROOT
                                       + SLIDER_SUBPATH_PUBLISHER;
 
+  /**
+   * Registry subpath: {@value} 
+   */
   public static final String SLIDER_SUBPATH_REGISTRY = "/registry";
 
   /**
@@ -112,4 +115,20 @@ public class RestPaths {
    * Codahale Metrics - thread dump: {@value}
    */
   public static final String SYSTEM_THREADS = SYSTEM + "/threads";
+
+
+  /**
+   * application subpath
+   */
+  public static final String SLIDER_SUBPATH_APPLICATION = "/application";
+
+
+  /**
+   * management path: {@value}
+   */
+  public static final String SLIDER_PATH_APPLICATION =
+      SLIDER_CONTEXT_ROOT + SLIDER_SUBPATH_APPLICATION;
+
+
+  public static final String APPLICATION_WADL = "/application.wadl";
 }

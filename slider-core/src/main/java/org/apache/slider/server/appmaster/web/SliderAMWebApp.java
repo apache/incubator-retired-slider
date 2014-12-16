@@ -16,7 +16,6 @@
  */
 package org.apache.slider.server.appmaster.web;
 
-import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.servlets.HealthCheckServlet;
 import com.codahale.metrics.servlets.MetricsServlet;
 import com.codahale.metrics.servlets.PingServlet;
