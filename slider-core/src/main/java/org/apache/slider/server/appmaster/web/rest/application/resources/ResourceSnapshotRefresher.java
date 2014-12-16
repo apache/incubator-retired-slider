@@ -18,19 +18,15 @@
 
 package org.apache.slider.server.appmaster.web.rest.application.resources;
 
-import org.apache.slider.api.StatusKeys;
 import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.conf.ConfTreeOperations;
-import org.apache.slider.server.appmaster.state.RoleStatus;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 
-import java.util.Map;
-
-public class LiveResourcesRefresher implements ResourceRefresher<ConfTree> {
+public class ResourceSnapshotRefresher implements ResourceRefresher<ConfTree> {
 
   private final StateAccessForProviders state;
 
-  public LiveResourcesRefresher(StateAccessForProviders state) {
+  public ResourceSnapshotRefresher(StateAccessForProviders state) {
     this.state = state;
   }
 
@@ -39,30 +35,6 @@ public class LiveResourcesRefresher implements ResourceRefresher<ConfTree> {
 
     // snapshot resources
     ConfTreeOperations resources = state.getResourcesSnapshot();
-    // then add actual values
-    Map<Integer, RoleStatus> roleStatusMap = state.getRoleStatusMap();
-    
-    for (RoleStatus status : roleStatusMap.values()) {
-      String name = status.getName();
-      resources.setComponentOpt(name,
-          StatusKeys.COMPONENT_INSTANCES_REQUESTED,
-          status.getRequested());
-      resources.setComponentOpt(name,
-          StatusKeys.COMPONENT_INSTANCES_ACTUAL,
-          status.getActual());
-      resources.setComponentOpt(name,
-          StatusKeys.COMPONENT_INSTANCES_RELEASING,
-          status.getReleasing());
-      resources.setComponentOpt(name,
-          StatusKeys.COMPONENT_INSTANCES_FAILED,
-          status.getFailed());
-      resources.setComponentOpt(name,
-          StatusKeys.COMPONENT_INSTANCES_COMPLETED,
-          status.getCompleted());
-      resources.setComponentOpt(name,
-          StatusKeys.COMPONENT_INSTANCES_STARTED,
-          status.getStarted());
-    }
-    return resources.getConfTree();
+      return resources.getConfTree();
   }
 }

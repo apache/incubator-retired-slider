@@ -22,6 +22,7 @@ import com.google.common.collect.Lists;
 import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.rest.AbstractSliderResource;
+import org.apache.slider.server.appmaster.web.rest.RestPaths;
 import org.apache.slider.server.appmaster.web.rest.application.resources.CachedContent;
 import org.apache.slider.server.appmaster.web.rest.application.resources.ContentCache;
 import org.apache.slider.server.appmaster.web.rest.application.resources.LiveResourcesRefresher;
@@ -37,14 +38,13 @@ import java.util.List;
 public class ApplicationResource extends AbstractSliderResource {
   private static final Logger log =
       LoggerFactory.getLogger(ApplicationResource.class);
-  public static final String LIVE_RESOURCES_JSON = "/live/resources.json";
 
-  ContentCache cache = new ContentCache();
   public static final int LIFESPAN = 1000;
+  private final ContentCache cache = new ContentCache();
 
   public ApplicationResource(WebAppApi slider) {
     super(slider);
-    cache.put(LIVE_RESOURCES_JSON,
+    cache.put(RestPaths.LIVE_RESOURCES,
         new CachedContent<ConfTree>(LIFESPAN,
             new LiveResourcesRefresher(slider.getAppState())));
   }
@@ -99,10 +99,10 @@ public class ApplicationResource extends AbstractSliderResource {
   }
 
   @GET
-  @Path(LIVE_RESOURCES_JSON)
+  @Path(RestPaths.LIVE_RESOURCES)
   @Produces({MediaType.APPLICATION_JSON})
   public Object getLiveResources() {
-    return cache.get(LIVE_RESOURCES_JSON).get();
+    return cache.get(RestPaths.LIVE_RESOURCES).get();
   }
 
 }
