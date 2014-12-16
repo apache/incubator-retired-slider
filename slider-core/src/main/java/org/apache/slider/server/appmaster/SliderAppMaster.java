@@ -20,7 +20,6 @@ package org.apache.slider.server.appmaster;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.BlockingService;
 import org.apache.hadoop.conf.Configuration;
@@ -530,7 +529,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
     */
     if (action.equals(SliderActions.ACTION_HELP)) {
-      log.info(getName() + serviceArgs.usage());
+      log.info("{}: {}", getName(), serviceArgs.usage());
       exitCode = SliderExitCodes.EXIT_USAGE;
     } else if (action.equals(SliderActions.ACTION_CREATE)) {
       exitCode = createAndRunCluster(actionArgs.get(0));
@@ -1177,7 +1176,7 @@ the registry with/without the new record format
    * Handler for {@link RegisterComponentInstance action}
    * Register/re-register an ephemeral container that is already in the app state
    * @param id the component
-   * @param description
+   * @param description component description
    * @return true if the component is registered
    */
   public boolean registerComponent(ContainerId id, String description) throws
@@ -1215,7 +1214,7 @@ the registry with/without the new record format
     log.info("Unregistering component {}", id);
     if (yarnRegistryOperations == null) {
       log.warn("Processing unregister component event before initialization " +
-               "completed; init flag =" + initCompleted);
+               "completed; init flag ={}", initCompleted);
       return;
     }
     String cid = RegistryPathUtils.encodeYarnID(id.toString());
@@ -1392,12 +1391,12 @@ the registry with/without the new record format
     }
 */
     } catch (IOException e) {
-      log.info("Failed to unregister application: " + e, e);
+      log.info("Failed to unregister application: {}", e, e);
     } catch (InvalidApplicationMasterRequestException e) {
       log.info("Application not found in YARN application list;" +
-               " it may have been terminated/YARN shutdown in progress: " + e, e);
+               " it may have been terminated/YARN shutdown in progress: {}", e, e);
     } catch (YarnException e) {
-      log.info("Failed to unregister application: " + e, e);
+      log.info("Failed to unregister application: {}", e, e);
     }
     return exitCode;
   }
@@ -1494,7 +1493,7 @@ the registry with/without the new record format
     
     //for all the operations, exec them
     executeRMOperations(operations);
-    log.info("Diagnostics: " + getContainerDiagnosticInfo());
+    log.info("Diagnostics: {}", getContainerDiagnosticInfo());
   }
 
   @Override //AMRMClientAsync
@@ -1585,7 +1584,7 @@ the registry with/without the new record format
   
   /**
    * Look at where the current node state is -and whether it should be changed
-   * @param reason
+   * @param reason reason for operation
    */
   private synchronized void reviewRequestAndReleaseNodes(String reason) {
     log.debug("reviewRequestAndReleaseNodes({})", reason);
@@ -1685,7 +1684,7 @@ the registry with/without the new record format
   @Override //AMRMClientAsync
   public void onError(Throwable e) {
     //callback says it's time to finish
-    LOG_YARN.error("AMRMClientAsync.onError() received " + e, e);
+    LOG_YARN.error("AMRMClientAsync.onError() received {}", e, e);
     signalAMComplete(new ActionStopSlider("stop",
         EXIT_EXCEPTION_THROWN,
         FinalApplicationStatus.FAILED,
@@ -1890,14 +1889,6 @@ the registry with/without the new record format
     rmOperationHandler.execute(operations);
   }
 
-  /**
-   * Get the RM operations handler for direct scheduling of work.
-   */
-  @VisibleForTesting
-  public RMOperationHandler getRmOperationHandler() {
-    return rmOperationHandler;
-  }
-
   @Override
   public Messages.AMSuicideResponseProto amSuicide(
       Messages.AMSuicideRequestProto request)
@@ -2088,7 +2079,7 @@ the registry with/without the new record format
               UserGroupInformation.getLoginUser().getShortUserName(),
               credentials);
     }
-    if (credentials.getAllTokens().size() > 0) {
+    if (!credentials.getAllTokens().isEmpty()) {
       DataOutputBuffer dob = new DataOutputBuffer();
       credentials.writeTokenStorageToStream(dob);
       dob.close();
@@ -2151,16 +2142,6 @@ the registry with/without the new record format
   @Override //  NMClientAsync.CallbackHandler 
   public void onStopContainerError(ContainerId containerId, Throwable t) {
     LOG_YARN.warn("Failed to stop Container {}", containerId);
-  }
-
-  /**
-   The cluster description published to callers
-   This is used as a synchronization point on activities that update
-   the CD, and also to update some of the structures that
-   feed in to the CD
-   */
-  public ClusterDescription getClusterSpec() {
-    return appState.getClusterSpec();
   }
 
   public AggregateConf getInstanceDefinition() {
