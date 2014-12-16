@@ -345,6 +345,15 @@ abstract class CommandTestBase extends SliderTestUtils {
     freeze(name, [ARG_FORCE, ARG_WAIT, "10000"])
   }
 
+  /**
+   * Non-forced stop, wait some seconds
+   * @param name
+   * @return
+   */
+  static SliderShell stop(String name) {
+    freeze(name, [ARG_WAIT, "10000"])
+  }
+
   static SliderShell killContainer(String name, String containerID) {
     slider(0,
         [
