@@ -45,7 +45,7 @@ public class LiveResourcesRefresher implements ResourceRefresher<ConfTree> {
     for (RoleStatus status : roleStatusMap.values()) {
       String name = status.getName();
       resources.setComponentOpt(name,
-          StatusKeys.COMPONENT_INSTANCES_REQUESTED,
+          StatusKeys.COMPONENT_INSTANCES_REQUESTING,
           status.getRequested());
       resources.setComponentOpt(name,
           StatusKeys.COMPONENT_INSTANCES_ACTUAL,

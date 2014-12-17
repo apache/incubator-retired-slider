@@ -82,7 +82,7 @@ public interface StatusKeys {
    * info: #of instances of a component requested: {@value}
    *
    */
-  String COMPONENT_INSTANCES_REQUESTED = COMPONENT_INSTANCES + ".requested";
+  String COMPONENT_INSTANCES_REQUESTING = COMPONENT_INSTANCES + ".requesting";
 
   /**
    * info: #of instances of a component being released: {@value}

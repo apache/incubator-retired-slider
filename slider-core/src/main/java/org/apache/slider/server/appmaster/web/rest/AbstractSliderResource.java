@@ -18,6 +18,11 @@
 
 package org.apache.slider.server.appmaster.web.rest;
 
+import org.apache.hadoop.fs.PathNotFoundException;
+import org.apache.hadoop.registry.client.exceptions.AuthenticationFailedException;
+import org.apache.hadoop.registry.client.exceptions.NoPathPermissionsException;
+import org.apache.hadoop.yarn.webapp.ForbiddenException;
+import org.apache.hadoop.yarn.webapp.NotFoundException;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,4 +65,29 @@ public abstract class AbstractSliderResource {
     }
   }
 
+  /**
+   * Convert any exception caught into a web application
+   * exception for rethrowing
+   * @param path path of request
+   * @param ex exception
+   * @return an exception to throw
+   */
+  public WebApplicationException buildException(String path,
+      Exception ex) {
+    try {
+      throw ex;
+    } catch (WebApplicationException e) {
+      // rethrow direct
+      throw e;
+    } catch (PathNotFoundException e) {
+      return new NotFoundException("Not found: " + path);
+    } catch (AuthenticationFailedException e) {
+      return new ForbiddenException(path);
+    } catch (NoPathPermissionsException e) {
+      return new ForbiddenException(path);
+    } catch (Exception e) {
+      log.error("Error during generation of response: {}", e, e);
+      return new WebApplicationException(e);
+    }
+  }
 }

@@ -21,10 +21,16 @@ package org.apache.slider.agent.standalone
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.ApplicationReport
+import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.agent.AgentMiniClusterTestBase
+import static org.apache.slider.api.ResourceKeys.*
+import static org.apache.slider.api.StatusKeys.*
 import org.apache.slider.client.SliderClient
+import static org.apache.slider.common.SliderKeys.*;
+import org.apache.slider.core.conf.ConfTreeOperations
 import org.apache.slider.core.main.ServiceLauncher
-import org.apache.slider.server.appmaster.web.rest.RestPaths
+import org.apache.slider.core.persist.ConfTreeSerDeser
+
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.*;
 import org.junit.Test
 
@@ -33,8 +39,7 @@ import static org.apache.slider.server.appmaster.management.MetricsKeys.*
 @CompileStatic
 @Slf4j
 class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
-
-  
+ 
   @Test
   public void testStandaloneAgentWeb() throws Throwable {
 
@@ -55,9 +60,11 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
     def realappmaster = report.originalTrackingUrl
     execHttpRequest(30000) {
       GET(realappmaster)
-    } 
-    def metrics = GET(realappmaster, SYSTEM_METRICS)
-    log.info metrics
+    }
+    execHttpRequest(30000) {
+      def metrics = GET(realappmaster, SYSTEM_METRICS)
+      log.info metrics
+    }
     
     sleep(5000)
     def appmaster = report.trackingUrl
@@ -82,9 +89,34 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
     // now some REST gets
     describe "Application REST GETs"
 
-    getWebPage(conf, appmaster, SLIDER_PATH_APPLICATION + LIVE_RESOURCES)
+    ConfTreeOperations tree = fetchConfigTree(conf, appmaster, LIVE_RESOURCES)
 
+    log.info tree.toString()
+    def liveAM = tree.getComponent(COMPONENT_AM)
+    def desiredInstances = liveAM.getMandatoryOptionInt(COMPONENT_INSTANCES);
+    assert desiredInstances == liveAM.getMandatoryOptionInt(COMPONENT_INSTANCES_ACTUAL)
 
+    assert 1 == liveAM.getMandatoryOptionInt(COMPONENT_INSTANCES_STARTED)
+    assert 0 == liveAM.getMandatoryOptionInt(COMPONENT_INSTANCES_REQUESTING)
+    assert 0 == liveAM.getMandatoryOptionInt(COMPONENT_INSTANCES_FAILED)
+    assert 0 == liveAM.getMandatoryOptionInt(COMPONENT_INSTANCES_COMPLETED)
+    assert 0 == liveAM.getMandatoryOptionInt(COMPONENT_INSTANCES_RELEASING)
+
+  }
+
+  public ConfTreeOperations fetchConfigTree(
+      YarnConfiguration conf,
+      String appmaster,
+      String subpath) {
+    ConfTreeSerDeser serDeser = new ConfTreeSerDeser()
+
+    def json = getWebPage(
+        conf,
+        appmaster,
+        SLIDER_PATH_APPLICATION + subpath)
+    def ctree = serDeser.fromJson(json)
+    ConfTreeOperations tree = new ConfTreeOperations(ctree)
+    return tree
   }
 
 

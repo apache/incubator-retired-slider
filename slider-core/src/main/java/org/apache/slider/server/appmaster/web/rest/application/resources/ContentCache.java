@@ -21,6 +21,11 @@ package org.apache.slider.server.appmaster.web.rest.application.resources;
 import java.util.HashMap;
 
 public class ContentCache extends HashMap<String, CachedContent> {
-  
-  
+
+  public ContentCache(int initialCapacity) {
+    super(initialCapacity);
+  }
+
+  public ContentCache() {
+  }
 }

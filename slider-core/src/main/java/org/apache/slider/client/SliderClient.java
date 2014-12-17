@@ -2296,7 +2296,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     int exitCode = EXIT_FALSE;
     // save the specification
     try {
-      InstanceIO.updateInstanceDefinition(sliderFileSystem, clusterDirectory, instanceDefinition);
+      InstanceIO.saveInstanceDefinition(sliderFileSystem, clusterDirectory,
+          instanceDefinition);
     } catch (LockAcquireFailedException e) {
       // lock failure
       log.debug("Failed to lock dir {}", clusterDirectory, e);

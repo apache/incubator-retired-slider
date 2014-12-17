@@ -69,12 +69,16 @@ public class CachedContent<T> {
    * @return true if a refresh took place.
    */
   public boolean maybeRefresh() {
-    long now = Time.monotonicNow();
-    if (now > expires) {
+    long now = now();
+    if (cachedValue == null || now > expires) {
       forceRefresh();
       return true;
     }
     return false;
+  }
+
+  protected long now() {
+    return Time.monotonicNow();
   }
 
   /**
@@ -85,7 +89,7 @@ public class CachedContent<T> {
     T updated = refresh.refresh();
     Preconditions.checkNotNull(updated);
     cachedValue = updated;
-    expires = Time.monotonicNow() + lifespan;
+    expires = now() + lifespan;
     return updated;
   }
   

@@ -933,6 +933,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         RestPaths.WS_CONTEXT)
            .withHttpPolicy(serviceConf, HttpConfig.Policy.HTTP_ONLY)
            .at(port)
+           .inDevMode()
            .start(webApp);
 
     WebAppService<SliderAMWebApp> webAppService =

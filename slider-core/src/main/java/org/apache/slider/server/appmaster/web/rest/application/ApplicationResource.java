@@ -29,12 +29,14 @@ import org.apache.slider.server.appmaster.web.rest.application.resources.LiveRes
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Singleton;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 
+@Singleton
 public class ApplicationResource extends AbstractSliderResource {
   private static final Logger log =
       LoggerFactory.getLogger(ApplicationResource.class);
@@ -73,13 +75,6 @@ public class ApplicationResource extends AbstractSliderResource {
   }
 
   @GET
-  @Path("/model/")
-  @Produces({MediaType.APPLICATION_JSON})
-  public List<String> getModelSlash() {
-    return getModel();
-  }
-
-  @GET
   @Path("/live")
   @Produces({MediaType.APPLICATION_JSON})
   public List<String> getLive() {
@@ -92,17 +87,14 @@ public class ApplicationResource extends AbstractSliderResource {
   }
 
   @GET
-  @Path("/live/")
-  @Produces({MediaType.APPLICATION_JSON})
-  public List<String> getLiveSlash() {
-    return getLive();
-  }
-
-  @GET
   @Path(RestPaths.LIVE_RESOURCES)
   @Produces({MediaType.APPLICATION_JSON})
   public Object getLiveResources() {
-    return cache.get(RestPaths.LIVE_RESOURCES).get();
+    try {
+      return cache.get(RestPaths.LIVE_RESOURCES).get();
+    } catch (Exception e) {
+      throw buildException(RestPaths.LIVE_RESOURCES, e);
+    }
   }
 
 }

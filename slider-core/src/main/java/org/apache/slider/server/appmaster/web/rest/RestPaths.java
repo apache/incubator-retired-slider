@@ -121,8 +121,7 @@ public class RestPaths {
    * application subpath
    */
   public static final String SLIDER_SUBPATH_APPLICATION = "/application";
-
-
+  
   /**
    * management path: {@value}
    */
