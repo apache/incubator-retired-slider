@@ -23,6 +23,7 @@ import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.agent.AgentMiniClusterTestBase
+
 import static org.apache.slider.api.ResourceKeys.*
 import static org.apache.slider.api.StatusKeys.*
 import org.apache.slider.client.SliderClient
@@ -58,6 +59,11 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
 
     ApplicationReport report = waitForClusterLive(client)
     def realappmaster = report.originalTrackingUrl
+
+    // set up url config to match
+    initConnectionFactory(launcher.configuration)
+
+
     execHttpRequest(30000) {
       GET(realappmaster)
     }
@@ -78,14 +84,19 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
     
     describe "Codahale operations"
     // now switch to the Hadoop URL connection, with SPNEGO escalation
-    getWebPage(conf, appmaster)
-    getWebPage(conf, appmaster, SYSTEM_THREADS)
-    getWebPage(conf, appmaster, SYSTEM_HEALTHCHECK)
-    getWebPage(conf, appmaster, SYSTEM_METRICS_JSON)
+    getWebPage(appmaster)
+    getWebPage(appmaster, SYSTEM_THREADS)
+    getWebPage(appmaster, SYSTEM_HEALTHCHECK)
+    getWebPage(appmaster, SYSTEM_METRICS_JSON)
     
-    log.info getWebPage(conf, realappmaster, SYSTEM_METRICS_JSON)
+    log.info getWebPage(realappmaster, SYSTEM_METRICS_JSON)
 
-    
+    // get the root page, including some checks for connectivity
+    getWebPage(appmaster, {
+      HttpURLConnection conn ->
+        assertConnectionNotCaching(conn)
+    })
+
     // now some REST gets
     describe "Application REST GETs"
 
@@ -111,7 +122,6 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
     ConfTreeSerDeser serDeser = new ConfTreeSerDeser()
 
     def json = getWebPage(
-        conf,
         appmaster,
         SLIDER_PATH_APPLICATION + subpath)
     def ctree = serDeser.fromJson(json)

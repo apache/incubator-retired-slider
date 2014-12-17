@@ -52,10 +52,12 @@ import org.apache.slider.core.exceptions.WaitTimeoutException
 import org.apache.slider.core.main.ServiceLaunchException
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.registry.docstore.PublishedConfigSet
+import org.apache.slider.server.appmaster.web.HttpCacheHeaders
 import org.apache.slider.server.services.workflow.ForkedProcessService
 import org.junit.Assert
 import org.junit.Assume
 
+import javax.ws.rs.core.HttpHeaders
 import java.util.concurrent.TimeoutException
 
 import static Arguments.ARG_OPTION
@@ -531,11 +533,9 @@ class SliderTestUtils extends Assert {
    * @param page
    * @return body of response
    */
-  public static String getWebPage(Configuration conf,
-      String base,
-      String path) {
+  public static String getWebPage(String base, String path) {
     String s = appendToURL(base, path)
-    return getWebPage(conf, s)
+    return getWebPage(s)
   }
 
   /**
@@ -561,21 +561,33 @@ class SliderTestUtils extends Assert {
     throw ex;
   } 
 
+  static URLConnectionFactory connectionFactory
+
+  public static def initConnectionFactory(Configuration conf) {
+    connectionFactory = URLConnectionFactory
+        .newDefaultURLConnectionFactory(conf);
+  }
+
+
   /**
    * Fetches a web page asserting that the response code is between 200 and 400.
    * Will error on 400 and 500 series response codes and let 200 and 300 through.
    * 
    * if security is enabled, this uses SPNEGO to auth
-   * @param page
+   * <p>
+   *   Relies on {@link #initConnectionFactory(org.apache.hadoop.conf.Configuration)} 
+   *   to have been called.
+   *   
+   * @param path path to page
+   * @param connectionChecks optional closure to run against an open connection
    * @return body of response
    */
-  public static String getWebPage(Configuration conf, String page) {
-    assert null != page
+  public static String getWebPage(String path, Closure connectionChecks = null) {
+    assert path
+    assert null != connectionFactory
 
-    log.info("Fetching HTTP content at " + page);
-    URLConnectionFactory connectionFactory = URLConnectionFactory
-        .newDefaultURLConnectionFactory(conf);
-    URL url = new URL(page)
+    log.info("Fetching HTTP content at " + path);
+    URL url = new URL(path)
     assert url.port != 0
     HttpURLConnection conn = null;
     int resultCode = 0
@@ -584,8 +596,14 @@ class SliderTestUtils extends Assert {
       conn = (HttpURLConnection) connectionFactory.openConnection(url);
       conn.instanceFollowRedirects = true;
       conn.connect()
+      
 
       resultCode = conn.responseCode
+      
+      if (connectionChecks) {
+        connectionChecks(conn)
+      }
+      
       InputStream stream = conn.errorStream;
       if (stream == null) {
         stream = conn.inputStream;
@@ -597,11 +615,21 @@ class SliderTestUtils extends Assert {
     } finally {
       conn?.disconnect()
     }
-    uprateFaults(page, resultCode, body)
+    uprateFaults(path, resultCode, body)
     return body;
   }
-  
-  
+
+  /**
+   * Assert that a connection is not caching by looking at the headers
+   * @param conn connection to examine
+   */
+  public static void assertConnectionNotCaching(HttpURLConnection conn) {
+    assert conn.expiration <= conn.date
+    assert conn.getHeaderField(HttpHeaders.CACHE_CONTROL) ==
+           HttpCacheHeaders.HTTP_HEADER_CACHE_CONTROL_NONE
+    assert conn.getHeaderField(HttpCacheHeaders.HTTP_HEADER_PRAGMA) ==
+           HttpCacheHeaders.HTTP_HEADER_CACHE_CONTROL_NONE
+  }
 
 /**
    * Assert that a service operation succeeded
