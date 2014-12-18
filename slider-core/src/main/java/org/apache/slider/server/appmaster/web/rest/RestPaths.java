@@ -131,6 +131,7 @@ public class RestPaths {
 
   public static final String APPLICATION_WADL = "/application.wadl";
   public static final String LIVE_RESOURCES = "/live/resources";
+  public static final String LIVE_CONTAINERS = "/live/containers";
   public static final String MODEL_DESIRED = "/model/desired";
   public static final String MODEL_DESIRED_APPCONF = MODEL_DESIRED +"/appconf";
   public static final String MODEL_DESIRED_RESOURCES = MODEL_DESIRED +"/resources";

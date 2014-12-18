@@ -18,9 +18,12 @@
 
 package org.apache.slider.server.appmaster.web.rest.application.resources;
 
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
-public class ContentCache extends HashMap<String, CachedContent> {
+/**
+ * Cache of content
+ */
+public class ContentCache extends ConcurrentHashMap<String, CachedContent> {
 
   public ContentCache(int initialCapacity) {
     super(initialCapacity);

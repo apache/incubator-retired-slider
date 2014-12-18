@@ -96,5 +96,15 @@ public class ApplicationResource extends AbstractSliderResource {
       throw buildException(RestPaths.LIVE_RESOURCES, e);
     }
   }
+  @GET
+  @Path(RestPaths.LIVE_CONTAINERS)
+  @Produces({MediaType.APPLICATION_JSON})
+  public Object getLiveContainers() {
+    try {
+      return cache.get(RestPaths.LIVE_RESOURCES).get();
+    } catch (Exception e) {
+      throw buildException(RestPaths.LIVE_RESOURCES, e);
+    }
+  }
 
 }

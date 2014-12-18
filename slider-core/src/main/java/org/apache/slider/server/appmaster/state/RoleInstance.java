@@ -27,6 +27,7 @@ import org.apache.hadoop.registry.client.types.Endpoint;
 import org.apache.hadoop.registry.client.types.ProtocolTypes;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.proto.Messages;
+import org.apache.slider.api.types.SerializedContainerInformation;
 import org.apache.slider.common.tools.SliderUtils;
 
 import java.util.ArrayList;
@@ -40,8 +41,7 @@ public final class RoleInstance implements Cloneable {
 
   public Container container;
   /**
-   * UUID of container used in Slider RPC to refer to instances. 
-   * The string value of the container ID is used here.
+   * Container ID
    */
   public final String id;
   public long createTime;
@@ -233,5 +233,11 @@ public final class RoleInstance implements Cloneable {
             ProtocolTypes.PROTOCOL_TCP, host, port);
     addEndpoint(epr);
   }
-  
+ 
+  public SerializedContainerInformation serialize() {
+    SerializedContainerInformation info = new SerializedContainerInformation();
+    info.containerId = id;
+    
+    return info;
+  }
 }

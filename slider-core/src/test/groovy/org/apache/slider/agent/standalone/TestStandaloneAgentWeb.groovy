@@ -91,7 +91,7 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
     
     log.info getWebPage(realappmaster, SYSTEM_METRICS_JSON)
 
-    // get the root page, including some checks for connectivity
+    // get the root page, including some checks for cache disabled
     getWebPage(appmaster, {
       HttpURLConnection conn ->
         assertConnectionNotCaching(conn)
