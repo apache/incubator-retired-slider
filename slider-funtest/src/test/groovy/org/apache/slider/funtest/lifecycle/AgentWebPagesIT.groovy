@@ -79,6 +79,12 @@ public class AgentWebPagesIT extends AgentCommandTestBase
     assert report.url
 
     def root = report.url
+
+    // get the root page, including some checks for cache disabled
+    getWebPage(root, {
+      HttpURLConnection conn ->
+        assertConnectionNotCaching(conn)
+    })
     log.info getWebPage(root, RestPaths.SYSTEM_METRICS)
     log.info getWebPage(root, RestPaths.SYSTEM_THREADS)
     log.info getWebPage(root, RestPaths.SYSTEM_HEALTHCHECK)
