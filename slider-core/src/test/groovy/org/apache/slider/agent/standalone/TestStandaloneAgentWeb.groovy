@@ -21,9 +21,12 @@ package org.apache.slider.agent.standalone
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.ApplicationReport
+import org.apache.hadoop.yarn.webapp.NotFoundException
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.api.StateValues
+import org.apache.slider.api.types.SerializedComponentInformation
 import org.apache.slider.api.types.SerializedContainerInformation
+import org.apache.slider.server.appmaster.web.rest.application.ApplicationResource
 
 import static org.apache.slider.api.ResourceKeys.*
 import static org.apache.slider.api.StatusKeys.*
@@ -118,21 +121,65 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
 
     describe "Application REST ${LIVE_CONTAINERS}"
 
-    Map<String, SerializedContainerInformation> map =
+    Map<String, SerializedContainerInformation> containers =
         fetchType(HashMap, appmaster, LIVE_CONTAINERS)
-    assert map.size() == 1
-    log.info "${map}"
-    SerializedContainerInformation info = (SerializedContainerInformation) map.values()[0]
-    assert info.containerId
-    assert map[info.containerId]
+    assert containers.size() == 1
+    log.info "${containers}"
+    SerializedContainerInformation amContainerInfo = (SerializedContainerInformation) containers.values()[0]
+    assert amContainerInfo.containerId
 
-    assert info.component == COMPONENT_AM
-    assert info.createTime > 0
-    assert info.exitCode == null
-    assert info.output == null
-    assert info.released == null
-    assert info.state == StateValues.STATE_LIVE
+    def amContainerId = amContainerInfo.containerId
+    assert containers[amContainerId]
+
+    assert amContainerInfo.component == COMPONENT_AM
+    assert amContainerInfo.createTime > 0
+    assert amContainerInfo.exitCode == null
+    assert amContainerInfo.output == null
+    assert amContainerInfo.released == null
+    assert amContainerInfo.state == StateValues.STATE_LIVE
+   
+    describe "base entry lists"
+    def list = fetchType(ArrayList, appmaster, LIVE)
+
+    def live_entries = ApplicationResource.LIVE_ENTRIES
+    assert list.size() == live_entries.size()
+    live_entries.containsAll(list)
     
+    describe "containers"
+
+    SerializedContainerInformation retrievedContainerInfo =
+        fetchType(SerializedContainerInformation, appmaster,
+            LIVE_CONTAINERS +"/${amContainerId}")
+    assert retrievedContainerInfo.containerId == amContainerId
+    
+    // fetch missing
+    try {
+      def result = fetchType(SerializedContainerInformation, appmaster,
+          LIVE_CONTAINERS + "/unknown")
+      fail("expected an error, got $result")
+    } catch (NotFoundException e) {
+      // expected
+    }
+
+    describe "components"
+
+    Map<String, SerializedComponentInformation> components =
+        fetchType(HashMap, appmaster, LIVE_COMPONENTS)
+    // two components
+    assert components.size() == 1
+    log.info "${components}"
+
+    SerializedComponentInformation amComponentInfo =
+        (SerializedComponentInformation)components[COMPONENT_AM]
+
+    SerializedComponentInformation amFullInfo = fetchType(
+        SerializedComponentInformation,
+        appmaster,
+        LIVE_COMPONENTS +"/${COMPONENT_AM}")
+
+    assert amFullInfo.containers.size() == 1
+    assert amFullInfo.containers[0] == amContainerId
+
   }
 
 

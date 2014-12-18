@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
+import java.io.FileNotFoundException;
 import java.net.URI;
 import java.net.URL;
 
@@ -79,6 +80,8 @@ public abstract class AbstractSliderResource {
     } catch (WebApplicationException e) {
       // rethrow direct
       throw e;
+    } catch (FileNotFoundException e) {
+      return new NotFoundException("Not found: " + path);
     } catch (PathNotFoundException e) {
       return new NotFoundException("Not found: " + path);
     } catch (AuthenticationFailedException e) {

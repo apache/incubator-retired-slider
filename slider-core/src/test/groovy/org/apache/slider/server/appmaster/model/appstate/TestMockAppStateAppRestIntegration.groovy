@@ -19,10 +19,6 @@
 package org.apache.slider.server.appmaster.model.appstate
 
 import groovy.util.logging.Slf4j
-import org.apache.hadoop.ipc.ProtocolSignature
-import org.apache.hadoop.yarn.exceptions.YarnException
-import org.apache.slider.api.SliderClusterProtocol
-import org.apache.slider.api.proto.Messages
 import org.apache.slider.api.types.SerializedContainerInformation
 import org.apache.slider.core.persist.JsonSerDeser
 import org.apache.slider.server.appmaster.management.MetricsAndMonitoring
@@ -36,7 +32,7 @@ import org.apache.slider.server.appmaster.web.WebAppApi
 import org.apache.slider.server.appmaster.web.WebAppApiImpl
 import org.apache.slider.server.appmaster.web.rest.application.ApplicationResource
 import org.apache.slider.server.appmaster.web.rest.application.resources.CachedContent
-import org.apache.slider.server.appmaster.web.rest.application.resources.ContainerListRefresher
+import org.apache.slider.server.appmaster.web.rest.application.resources.LiveContainersRefresher
 import org.apache.slider.server.appmaster.web.rest.application.resources.ContentCache
 import org.apache.slider.server.appmaster.web.rest.application.resources.ResourceRefresher
 import org.junit.Test
@@ -73,7 +69,7 @@ class TestMockAppStateAppRestIntegration extends BaseMockAppStateTest implements
 
   @Test
   public void testContainerListRefresher() throws Throwable {
-    ContainerListRefresher clr = new ContainerListRefresher(stateAccess)
+    LiveContainersRefresher clr = new LiveContainersRefresher(stateAccess)
     def map = clr.refresh()
     assert map.size() == 0
     List<RoleInstance> instances = startNodes()

@@ -29,11 +29,11 @@ import java.util.Map;
 /**
  * Refresh the container list.
  */
-public class ContainerListRefresher implements ResourceRefresher<Map<String, SerializedContainerInformation>> {
+public class LiveContainersRefresher implements ResourceRefresher<Map<String, SerializedContainerInformation>> {
 
   private final StateAccessForProviders state;
 
-  public ContainerListRefresher(StateAccessForProviders state) {
+  public LiveContainersRefresher(StateAccessForProviders state) {
     this.state = state;
   }
 

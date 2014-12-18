@@ -839,8 +839,7 @@ public class AppState {
     }
     return rs;
   }
-
-
+  
   public RoleStatus lookupRoleStatus(Container c) throws YarnRuntimeException {
     return lookupRoleStatus(ContainerPriority.extractRole(c));
   }
