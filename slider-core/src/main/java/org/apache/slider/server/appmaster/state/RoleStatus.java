@@ -285,7 +285,7 @@ public final class RoleStatus implements Cloneable {
     return stats;
   }
 
-  public SerializedComponentInformation serialize() {
+  public synchronized SerializedComponentInformation serialize() {
     SerializedComponentInformation info = new SerializedComponentInformation();
     info.name = name;
     info.priority = getPriority();
