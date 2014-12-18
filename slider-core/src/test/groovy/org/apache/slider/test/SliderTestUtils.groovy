@@ -54,7 +54,6 @@ import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.exceptions.WaitTimeoutException
 import org.apache.slider.core.main.ServiceLaunchException
 import org.apache.slider.core.main.ServiceLauncher
-import org.apache.slider.core.persist.ConfTreeSerDeser
 import org.apache.slider.core.persist.JsonSerDeser
 import org.apache.slider.core.registry.docstore.PublishedConfigSet
 import org.apache.slider.server.appmaster.web.HttpCacheHeaders

@@ -233,11 +233,26 @@ public final class RoleInstance implements Cloneable {
             ProtocolTypes.PROTOCOL_TCP, host, port);
     addEndpoint(epr);
   }
- 
+
+  /**
+   * Serialize. Some data structures (e.g output)
+   * may be shared
+   * @return a serialized form for marshalling as JSON
+   */
   public SerializedContainerInformation serialize() {
     SerializedContainerInformation info = new SerializedContainerInformation();
     info.containerId = id;
-    
+    info.component = role;
+    info.startTime = startTime;
+    info.createTime = createTime;
+    info.diagnostics = diagnostics;
+    info.state = state;
+    info.host = host;
+    info.hostURL = hostURL;
+    info.released = released ? Boolean.TRUE : null;
+    if (output != null) {
+      info.output = output;
+    }
     return info;
   }
 }

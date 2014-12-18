@@ -18,6 +18,7 @@
 
 package org.apache.slider.api.types;
 
+import org.apache.hadoop.registry.client.binding.JsonSerDeser;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 
@@ -43,14 +44,14 @@ public class SerializedContainerInformation {
    * or the log cannot be picked up
    */
   public String[] output;
+  public String host;
+  public String hostURL;
 
   @Override
   public String toString() {
-    final StringBuilder sb =
-        new StringBuilder("SerializedContainerInformation{");
-    sb.append("containerId='").append(containerId).append('\'');
-    sb.append(", component='").append(component).append('\'');
-    sb.append('}');
-    return sb.toString();
+    JsonSerDeser<SerializedContainerInformation> serDeser =
+        new JsonSerDeser<SerializedContainerInformation>(
+            SerializedContainerInformation.class);
+    return serDeser.toString(this);
   }
 }

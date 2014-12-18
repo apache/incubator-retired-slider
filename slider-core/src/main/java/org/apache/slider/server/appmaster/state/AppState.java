@@ -791,9 +791,13 @@ public class AppState {
     container.setNodeHttpAddress(nodeHttpAddress);
     RoleInstance am = new RoleInstance(container);
     am.role = SliderKeys.COMPONENT_AM;
+    am.roleId = SliderKeys.ROLE_AM_PRIORITY_INDEX;
+    am.createTime = System.currentTimeMillis();
+    am.startTime = System.currentTimeMillis();
     appMasterNode = am;
     //it is also added to the set of live nodes
     getLiveNodes().put(containerId, am);
+    putOwnedContainer(containerId, am);
     
     // patch up the role status
     RoleStatus roleStatus = roleStatusMap.get(
@@ -1860,6 +1864,10 @@ public class AppState {
     List<AbstractRMOperation> operations =
       new ArrayList<AbstractRMOperation>(targets.size());
     for (RoleInstance instance : targets) {
+      if (instance.roleId == SliderKeys.ROLE_AM_PRIORITY_INDEX) {
+        // don't worry about the AM
+        continue;
+      }
       Container possible = instance.container;
       ContainerId id = possible.getId();
       if (!instance.released) {

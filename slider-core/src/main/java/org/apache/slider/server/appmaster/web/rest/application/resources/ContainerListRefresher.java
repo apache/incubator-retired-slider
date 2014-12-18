@@ -19,7 +19,6 @@
 package org.apache.slider.server.appmaster.web.rest.application.resources;
 
 import org.apache.slider.api.types.SerializedContainerInformation;
-import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.server.appmaster.state.RoleInstance;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 

@@ -21,9 +21,9 @@ package org.apache.slider.agent.standalone
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.ApplicationReport
-import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.api.StateValues
+import org.apache.slider.api.types.SerializedContainerInformation
 
 import static org.apache.slider.api.ResourceKeys.*
 import static org.apache.slider.api.StatusKeys.*
@@ -31,7 +31,6 @@ import org.apache.slider.client.SliderClient
 import static org.apache.slider.common.SliderKeys.*;
 import org.apache.slider.core.conf.ConfTreeOperations
 import org.apache.slider.core.main.ServiceLauncher
-import org.apache.slider.core.persist.ConfTreeSerDeser
 
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.*;
 import org.junit.Test
@@ -41,7 +40,9 @@ import static org.apache.slider.server.appmaster.management.MetricsKeys.*
 @CompileStatic
 @Slf4j
 class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
- 
+  
+  public static final int WEB_STARTUP_TIME = 30000
+
   @Test
   public void testStandaloneAgentWeb() throws Throwable {
 
@@ -65,10 +66,11 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
     initConnectionFactory(launcher.configuration)
 
 
-    execHttpRequest(30000) {
+    execHttpRequest(WEB_STARTUP_TIME) {
       GET(realappmaster)
     }
-    execHttpRequest(30000) {
+    
+    execHttpRequest(WEB_STARTUP_TIME) {
       def metrics = GET(realappmaster, SYSTEM_METRICS)
       log.info metrics
     }
@@ -99,7 +101,7 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
     })
 
     // now some REST gets
-    describe "Application REST GETs"
+    describe "Application REST ${LIVE_RESOURCES}"
 
     ConfTreeOperations tree = fetchConfigTree(conf, appmaster, LIVE_RESOURCES)
 
@@ -114,20 +116,23 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
     assert 0 == liveAM.getMandatoryOptionInt(COMPONENT_INSTANCES_COMPLETED)
     assert 0 == liveAM.getMandatoryOptionInt(COMPONENT_INSTANCES_RELEASING)
 
-  }
+    describe "Application REST ${LIVE_CONTAINERS}"
 
-  public ConfTreeOperations fetchConfigTree(
-      YarnConfiguration conf,
-      String appmaster,
-      String subpath) {
-    ConfTreeSerDeser serDeser = new ConfTreeSerDeser()
+    Map<String, SerializedContainerInformation> map =
+        fetchType(HashMap, appmaster, LIVE_CONTAINERS)
+    assert map.size() == 1
+    log.info "${map}"
+    SerializedContainerInformation info = (SerializedContainerInformation) map.values()[0]
+    assert info.containerId
+    assert map[info.containerId]
 
-    def json = getWebPage(
-        appmaster,
-        SLIDER_PATH_APPLICATION + subpath)
-    def ctree = serDeser.fromJson(json)
-    ConfTreeOperations tree = new ConfTreeOperations(ctree)
-    return tree
+    assert info.component == COMPONENT_AM
+    assert info.createTime > 0
+    assert info.exitCode == null
+    assert info.output == null
+    assert info.released == null
+    assert info.state == StateValues.STATE_LIVE
+    
   }
 
 
