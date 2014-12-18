@@ -53,7 +53,7 @@ class TestActionList extends AgentMiniClusterTestBase {
    */
 
   @Test
-  public void testSuite() throws Throwable {
+  public void testActionListSuite() throws Throwable {
     testListThisUserNoClusters()
     testListLiveCluster()
     testListMissingCluster()

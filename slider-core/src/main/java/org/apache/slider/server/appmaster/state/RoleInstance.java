@@ -27,6 +27,7 @@ import org.apache.hadoop.registry.client.types.Endpoint;
 import org.apache.hadoop.registry.client.types.ProtocolTypes;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.proto.Messages;
+import org.apache.slider.api.types.SerializedContainerInformation;
 import org.apache.slider.common.tools.SliderUtils;
 
 import java.util.ArrayList;
@@ -40,8 +41,7 @@ public final class RoleInstance implements Cloneable {
 
   public Container container;
   /**
-   * UUID of container used in Slider RPC to refer to instances. 
-   * The string value of the container ID is used here.
+   * Container ID
    */
   public final String id;
   public long createTime;
@@ -59,7 +59,7 @@ public final class RoleInstance implements Cloneable {
   public int roleId;
 
   /**
-   * state from {@link ClusterDescription}
+   * state from {@link StateValues}
    */
   public int state;
 
@@ -233,5 +233,26 @@ public final class RoleInstance implements Cloneable {
             ProtocolTypes.PROTOCOL_TCP, host, port);
     addEndpoint(epr);
   }
-  
+
+  /**
+   * Serialize. Some data structures (e.g output)
+   * may be shared
+   * @return a serialized form for marshalling as JSON
+   */
+  public SerializedContainerInformation serialize() {
+    SerializedContainerInformation info = new SerializedContainerInformation();
+    info.containerId = id;
+    info.component = role;
+    info.startTime = startTime;
+    info.createTime = createTime;
+    info.diagnostics = diagnostics;
+    info.state = state;
+    info.host = host;
+    info.hostURL = hostURL;
+    info.released = released ? Boolean.TRUE : null;
+    if (output != null) {
+      info.output = output;
+    }
+    return info;
+  }
 }

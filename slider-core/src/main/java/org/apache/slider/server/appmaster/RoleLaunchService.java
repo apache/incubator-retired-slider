@@ -131,7 +131,7 @@ public class RoleLaunchService
       new RoleLaunchService.RoleLauncher(container,
          role.getProviderRole(),
          clusterSpec,
-         clusterSpec.getResourceOperations() .getOrAddComponent(roleName),
+         clusterSpec.getResourceOperations().getOrAddComponent(roleName),
          clusterSpec.getAppConfOperations().getOrAddComponent(roleName));
     execute(launcher);
   }

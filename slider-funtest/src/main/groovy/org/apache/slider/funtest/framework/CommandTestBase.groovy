@@ -345,6 +345,15 @@ abstract class CommandTestBase extends SliderTestUtils {
     freeze(name, [ARG_FORCE, ARG_WAIT, "10000"])
   }
 
+  /**
+   * Non-forced stop, wait some seconds
+   * @param name
+   * @return
+   */
+  static SliderShell stop(String name) {
+    freeze(name, [ARG_WAIT, "10000"])
+  }
+
   static SliderShell killContainer(String name, String containerID) {
     slider(0,
         [
@@ -1271,6 +1280,7 @@ abstract class CommandTestBase extends SliderTestUtils {
    */
   protected static Outcome isRootWebPageUp(
       Map<String, String> args) {
+
     assert args['applicationId'] != null
     String applicationId = args['applicationId'];
     def sar = lookupApplication(applicationId)
@@ -1279,7 +1289,7 @@ abstract class CommandTestBase extends SliderTestUtils {
       return Outcome.Retry;
     }
     try {
-      GET(sar.url)
+      getWebPage(sar.url)
       return Outcome.Success
     } catch (Exception e) {
       return Outcome.Retry;
@@ -1292,8 +1302,7 @@ abstract class CommandTestBase extends SliderTestUtils {
    * @param launch_timeout launch timeout
    */
   void expectRootWebPageUp(
-      String applicationId,
-      int launch_timeout) {
+      String applicationId, int launch_timeout) {
 
     repeatUntilSuccess(
         "await root web page",
@@ -1310,7 +1319,7 @@ abstract class CommandTestBase extends SliderTestUtils {
       assert sar != null;
       assert sar.url
       // this is the final failure cause
-      GET(sar.url)
+      getWebPage(sar.url)
     }
   }
 }

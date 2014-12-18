@@ -159,14 +159,16 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     describe "Teardown app instance " + applicationName
     // forced freeze with wait
+    SliderShell shell
+    shell = stop(applicationName)
     teardown(applicationName)
-    SliderShell shell = slider([
+
+    shell = slider([
         ACTION_DESTROY,
         applicationName])
 
     if (shell.ret != 0 && shell.ret != EXIT_UNKNOWN_INSTANCE) {
-      logShell(shell)
-      assert fail("Old cluster either should not exist or should get destroyed; destroy exit code = ${shell.ret}")
+      assertExitCode(shell, 0)
     }
   }
 

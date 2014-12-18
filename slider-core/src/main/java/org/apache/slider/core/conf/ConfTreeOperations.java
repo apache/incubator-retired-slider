@@ -429,9 +429,8 @@ public class ConfTreeOperations {
    * @param option option name
    * @param val integer value
    */
-  public void setRoleOpt(String role, String option, int val) {
+  public void setComponentOpt(String role, String option, int val) {
     setComponentOpt(role, option, Integer.toString(val));
   }
 
-  
 }

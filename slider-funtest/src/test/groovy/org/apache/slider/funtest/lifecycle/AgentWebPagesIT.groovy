@@ -20,24 +20,16 @@ package org.apache.slider.funtest.lifecycle
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.hadoop.registry.client.binding.RegistryUtils
-import org.apache.hadoop.registry.client.types.Endpoint
-import org.apache.hadoop.registry.client.types.ServiceRecord
-import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.slider.common.SliderExitCodes
-import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
 import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
 import org.apache.slider.server.appmaster.web.rest.RestPaths
-import org.apache.slider.test.Outcome
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-
-import static org.apache.slider.core.registry.info.CustomRegistryConstants.*
 
 @CompileStatic
 @Slf4j
@@ -73,6 +65,10 @@ public class AgentWebPagesIT extends AgentCommandTestBase
 
     logShell(shell)
 
+    def conf = SLIDER_CONFIG
+
+    initConnectionFactory(conf)
+
     def appId = ensureYarnApplicationIsUp(launchReportFile)
     assert appId
     expectRootWebPageUp(appId, instanceLaunchTime)
@@ -82,12 +78,17 @@ public class AgentWebPagesIT extends AgentCommandTestBase
     def report = loadAppReport(liveReportFile)
     assert report.url
 
-    def conf = SLIDER_CONFIG
     def root = report.url
-    log.info getWebPage (conf, root, RestPaths.SYSTEM_METRICS)
-    log.info getWebPage(conf, root, RestPaths.SYSTEM_THREADS)
-    log.info getWebPage(conf, root, RestPaths.SYSTEM_HEALTHCHECK)
-    log.info getWebPage(conf, root, RestPaths.SYSTEM_PING)
+
+    // get the root page, including some checks for cache disabled
+    getWebPage(root, {
+      HttpURLConnection conn ->
+        assertConnectionNotCaching(conn)
+    })
+    log.info getWebPage(root, RestPaths.SYSTEM_METRICS)
+    log.info getWebPage(root, RestPaths.SYSTEM_THREADS)
+    log.info getWebPage(root, RestPaths.SYSTEM_HEALTHCHECK)
+    log.info getWebPage(root, RestPaths.SYSTEM_PING)
   }
 
 }

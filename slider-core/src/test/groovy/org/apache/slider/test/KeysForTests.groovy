@@ -34,4 +34,5 @@ public interface KeysForTests extends SliderKeys, SliderXMLConfKeysForTesting {
   String WAIT_TIME_ARG = WAIT_TIME.toString()
 
   String SLIDER_TEST_XML = "slider-test.xml"
+
 }

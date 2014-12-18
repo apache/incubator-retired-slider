@@ -16,9 +16,25 @@
  * limitations under the License.
  */
 
-package org.apache.slider.core.registry.docstore;
+package org.apache.slider.server.appmaster.web.rest.application.resources;
 
-public class PublishedContent {
-  
-  
+import org.apache.slider.core.conf.ConfTree;
+import org.apache.slider.core.conf.ConfTreeOperations;
+import org.apache.slider.server.appmaster.state.StateAccessForProviders;
+
+public class ResourceSnapshotRefresher implements ResourceRefresher<ConfTree> {
+
+  private final StateAccessForProviders state;
+
+  public ResourceSnapshotRefresher(StateAccessForProviders state) {
+    this.state = state;
+  }
+
+  @Override
+  public ConfTree refresh() {
+
+    // snapshot resources
+    ConfTreeOperations resources = state.getResourcesSnapshot();
+      return resources.getConfTree();
+  }
 }

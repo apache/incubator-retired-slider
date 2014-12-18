@@ -47,26 +47,29 @@ public interface SliderClusterProtocol extends VersionedProtocol {
   /**
    * Flex the cluster. 
    */
-  Messages.FlexClusterResponseProto flexCluster(Messages.FlexClusterRequestProto request) throws IOException,
-                                                                                                 YarnException;
+  Messages.FlexClusterResponseProto flexCluster(Messages.FlexClusterRequestProto request)
+      throws IOException, YarnException;
 
 
   /**
    * Get the current cluster status
    */
-  Messages.GetJSONClusterStatusResponseProto getJSONClusterStatus(Messages.GetJSONClusterStatusRequestProto request) throws IOException, YarnException;
+  Messages.GetJSONClusterStatusResponseProto getJSONClusterStatus(Messages.GetJSONClusterStatusRequestProto request)
+      throws IOException, YarnException;
 
 
   /**
    * List all running nodes in a role
    */
-  Messages.ListNodeUUIDsByRoleResponseProto listNodeUUIDsByRole(Messages.ListNodeUUIDsByRoleRequestProto request) throws IOException, YarnException;
+  Messages.ListNodeUUIDsByRoleResponseProto listNodeUUIDsByRole(Messages.ListNodeUUIDsByRoleRequestProto request)
+      throws IOException, YarnException;
 
 
   /**
    * Get the details on a node
    */
-  Messages.GetNodeResponseProto getNode(Messages.GetNodeRequestProto request) throws IOException, YarnException;
+  Messages.GetNodeResponseProto getNode(Messages.GetNodeRequestProto request)
+      throws IOException, YarnException;
 
   /**
    * Get the 
@@ -74,7 +77,8 @@ public interface SliderClusterProtocol extends VersionedProtocol {
    * Unknown nodes are not returned
    * <i>Important: the order of the results are undefined</i>
    */
-  Messages.GetClusterNodesResponseProto getClusterNodes(Messages.GetClusterNodesRequestProto request) throws IOException, YarnException;
+  Messages.GetClusterNodesResponseProto getClusterNodes(Messages.GetClusterNodesRequestProto request)
+      throws IOException, YarnException;
 
   /**
    * Echo back the submitted text (after logging it).
@@ -94,7 +98,8 @@ public interface SliderClusterProtocol extends VersionedProtocol {
    * @throws IOException
    * @throws YarnException
    */
-  Messages.KillContainerResponseProto killContainer(Messages.KillContainerRequestProto request) throws IOException, YarnException;
+  Messages.KillContainerResponseProto killContainer(Messages.KillContainerRequestProto request)
+      throws IOException, YarnException;
 
   /**
    * AM to commit suicide. If the Hadoop halt entry point has not been disabled,
@@ -104,9 +109,8 @@ public interface SliderClusterProtocol extends VersionedProtocol {
    * @throws IOException
    * @throws YarnException
    */
-  Messages.AMSuicideResponseProto amSuicide(Messages.AMSuicideRequestProto request) throws
-                                                                                    IOException,
-                                                                                    YarnException;
+  Messages.AMSuicideResponseProto amSuicide(Messages.AMSuicideRequestProto request)
+      throws IOException, YarnException;
 
   /**
    * Get the instance definition

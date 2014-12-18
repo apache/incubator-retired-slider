@@ -20,7 +20,6 @@ package org.apache.slider.server.appmaster;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.BlockingService;
 import org.apache.hadoop.conf.Configuration;
@@ -151,9 +150,7 @@ import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.WebAppApiImpl;
 import org.apache.slider.server.appmaster.web.rest.RestPaths;
 import org.apache.slider.server.services.security.CertificateManager;
-//import org.apache.slider.server.services.security.FsDelegationTokenManager;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
-import org.apache.slider.server.appmaster.management.MetricsBindingService;
 import org.apache.slider.server.services.utility.WebAppService;
 import org.apache.slider.server.services.workflow.ServiceThreadFactory;
 import org.apache.slider.server.services.workflow.WorkflowExecutorService;
@@ -383,6 +380,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private SecurityConfiguration securityConfiguration;
 
   /**
+   * The port for the web application
+   */
+  private int webAppPort;
+
+  /**
    * Service Constructor
    */
   public SliderAppMaster() {
@@ -531,7 +533,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
     */
     if (action.equals(SliderActions.ACTION_HELP)) {
-      log.info(getName() + serviceArgs.usage());
+      log.info("{}: {}", getName(), serviceArgs.usage());
       exitCode = SliderExitCodes.EXIT_USAGE;
     } else if (action.equals(SliderActions.ACTION_CREATE)) {
       exitCode = createAndRunCluster(actionArgs.get(0));
@@ -681,6 +683,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         }
       }
       //bring up the Slider RPC service
+
+      buildPortScanner(instanceDefinition);
       startSliderRPCServer(instanceDefinition);
 
       rpcServiceAddress = rpcService.getConnectAddress();
@@ -707,7 +711,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
           .getComponent(SliderKeys.COMPONENT_AM);
       certificateManager.initialize(component);
       certificateManager.setPassphrase(instanceDefinition.getPassphrase());
-
+ 
       if (component.getOptionBool(
           AgentKeys.KEY_AGENT_TWO_WAY_SSL_ENABLED, false)) {
         uploadServerCertForLocalization(clustername, fs);
@@ -715,32 +719,16 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       startAgentWebApp(appInformation, serviceConf);
 
-      int port = getPortToRequest(instanceDefinition);
-
-      WebAppApi webAppApi = new WebAppApiImpl(this,
-          stateForProviders,
-          providerService,
-          certificateManager,
-          registryOperations,
-          metricsAndMonitoring);
-      webApp = new SliderAMWebApp(webAppApi);
-      WebApps.$for(SliderAMWebApp.BASE_PATH, WebAppApi.class,
-                   webAppApi,
-                   RestPaths.WS_CONTEXT)
-                      .withHttpPolicy(serviceConf, HttpConfig.Policy.HTTP_ONLY)
-                      .at(port)
-                      .start(webApp);
+      webAppPort = getPortToRequest();
+      if (webAppPort == 0) {
+        // failure to find a port
+        throw new BadConfigException("Failed to fix a web application port");
+      }
       String scheme = WebAppUtils.HTTP_PREFIX;
-      appMasterTrackingUrl = scheme  + appMasterHostname + ":" + webApp.port();
-      WebAppService<SliderAMWebApp> webAppService =
-        new WebAppService<SliderAMWebApp>("slider", webApp);
-
-      webAppService.init(serviceConf);
-      webAppService.start();
-      addService(webAppService);
+      appMasterTrackingUrl = scheme + appMasterHostname + ":" + webAppPort;
 
       appInformation.put(StatusKeys.INFO_AM_WEB_URL, appMasterTrackingUrl + "/");
-      appInformation.set(StatusKeys.INFO_AM_WEB_PORT, webApp.port());
+      appInformation.set(StatusKeys.INFO_AM_WEB_PORT, webAppPort);
 
       // Register self with ResourceManager
       // This will start heartbeating to the RM
@@ -828,8 +816,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       
       appState.buildAppMasterNode(appMasterContainerID,
                                   appMasterHostname,
-                                  webApp.port(),
-                                  appMasterHostname + ":" + webApp.port());
+          webAppPort,
+                                  appMasterHostname + ":" + webAppPort);
 
       // build up environment variables that the AM wants set in every container
       // irrespective of provider and role.
@@ -901,6 +889,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       startQueueProcessing();
 
+      deployWebApplication(serviceConf, webAppPort);
+
+
       // Start the Slider AM provider
       sliderAMProvider.start();
 
@@ -916,6 +907,41 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
     //shutdown time
     return finish();
+  }
+
+  /**
+   * Deploy the web application.
+   * <p>
+   *   Creates and starts the web application, and adds a
+   *   <code>WebAppService</code> service under the AM, to ensure
+   *   a managed web application shutdown.
+   * 
+   * @param serviceConf AM configuration
+   * @param port port to deploy the web application on
+   */
+  private void deployWebApplication(Configuration serviceConf, int port) {
+    WebAppApi webAppApi = new WebAppApiImpl(this,
+        stateForProviders,
+        providerService,
+        certificateManager,
+        registryOperations,
+        metricsAndMonitoring);
+    webApp = new SliderAMWebApp(webAppApi);
+    WebApps.$for(SliderAMWebApp.BASE_PATH,
+        WebAppApi.class,
+        webAppApi,
+        RestPaths.WS_CONTEXT)
+           .withHttpPolicy(serviceConf, HttpConfig.Policy.HTTP_ONLY)
+           .at(port)
+           .inDevMode()
+           .start(webApp);
+
+    WebAppService<SliderAMWebApp> webAppService =
+      new WebAppService<SliderAMWebApp>("slider", webApp);
+
+    webAppService.init(serviceConf);
+    webAppService.start();
+    addService(webAppService);
   }
 
   private void processAMCredentials(SecurityConfiguration securityConfiguration)
@@ -949,21 +975,32 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     containerCredentials = credentials;
   }
 
-  private int getPortToRequest(AggregateConf instanceDefinition)
-      throws SliderException {
-    int portToRequest = 0;
+  /**
+   * Build up the port scanner. This may include setting a port range.
+   */
+  private void buildPortScanner(AggregateConf instanceDefinition) {
+    portScanner = new PortScanner();
     String portRange = instanceDefinition.
         getAppConfOperations().getGlobalOptions().
           getOption(SliderKeys.KEY_ALLOWED_PORT_RANGE, "0");
     if (!"0".equals(portRange)) {
-      if (portScanner == null) {
-        portScanner = new PortScanner();
         portScanner.setPortRange(portRange);
-      }
-      portToRequest = portScanner.getAvailablePort();
     }
-
-    return portToRequest;
+  }
+  
+  /**
+   * Locate a port to request for a service such as RPC or web/REST.
+   * This uses port range definitions in the <code>instanceDefinition</code>
+   * to fix the port range —if one is set.
+   * <p>
+   * The port returned is available at the time of the request; there are
+   * no guarantees as to how long that situation will last.
+   * @return the port to request.
+   * @throws SliderException
+   */
+  private int getPortToRequest()
+      throws SliderException {
+    return portScanner.getAvailablePort();
   }
 
   private void uploadServerCertForLocalization(String clustername,
@@ -984,7 +1021,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
 
     fs.getFileSystem().setPermission(destPath,
-      new FsPermission(FsAction.READ, FsAction.NONE, FsAction.NONE));
+        new FsPermission(FsAction.READ, FsAction.NONE, FsAction.NONE));
   }
 
   protected void login(String principal, File localKeytabFile)
@@ -1149,7 +1186,7 @@ the registry with/without the new record format
    * Handler for {@link RegisterComponentInstance action}
    * Register/re-register an ephemeral container that is already in the app state
    * @param id the component
-   * @param description
+   * @param description component description
    * @return true if the component is registered
    */
   public boolean registerComponent(ContainerId id, String description) throws
@@ -1187,7 +1224,7 @@ the registry with/without the new record format
     log.info("Unregistering component {}", id);
     if (yarnRegistryOperations == null) {
       log.warn("Processing unregister component event before initialization " +
-               "completed; init flag =" + initCompleted);
+               "completed; init flag ={}", initCompleted);
       return;
     }
     String cid = RegistryPathUtils.encodeYarnID(id.toString());
@@ -1364,12 +1401,12 @@ the registry with/without the new record format
     }
 */
     } catch (IOException e) {
-      log.info("Failed to unregister application: " + e, e);
+      log.info("Failed to unregister application: {}", e, e);
     } catch (InvalidApplicationMasterRequestException e) {
       log.info("Application not found in YARN application list;" +
-               " it may have been terminated/YARN shutdown in progress: " + e, e);
+               " it may have been terminated/YARN shutdown in progress: {}", e, e);
     } catch (YarnException e) {
-      log.info("Failed to unregister application: " + e, e);
+      log.info("Failed to unregister application: {}", e, e);
     }
     return exitCode;
   }
@@ -1400,7 +1437,7 @@ the registry with/without the new record format
         .newReflectiveBlockingService(
             protobufRelay);
 
-    int port = getPortToRequest(instanceDefinition);
+    int port = getPortToRequest();
     rpcService =
         new WorkflowRpcService("SliderRPC", RpcBinder.createProtobufServer(
             new InetSocketAddress("0.0.0.0", port),
@@ -1466,7 +1503,7 @@ the registry with/without the new record format
     
     //for all the operations, exec them
     executeRMOperations(operations);
-    log.info("Diagnostics: " + getContainerDiagnosticInfo());
+    log.info("Diagnostics: {}", getContainerDiagnosticInfo());
   }
 
   @Override //AMRMClientAsync
@@ -1557,7 +1594,7 @@ the registry with/without the new record format
   
   /**
    * Look at where the current node state is -and whether it should be changed
-   * @param reason
+   * @param reason reason for operation
    */
   private synchronized void reviewRequestAndReleaseNodes(String reason) {
     log.debug("reviewRequestAndReleaseNodes({})", reason);
@@ -1657,7 +1694,7 @@ the registry with/without the new record format
   @Override //AMRMClientAsync
   public void onError(Throwable e) {
     //callback says it's time to finish
-    LOG_YARN.error("AMRMClientAsync.onError() received " + e, e);
+    LOG_YARN.error("AMRMClientAsync.onError() received {}", e, e);
     signalAMComplete(new ActionStopSlider("stop",
         EXIT_EXCEPTION_THROWN,
         FinalApplicationStatus.FAILED,
@@ -1862,14 +1899,6 @@ the registry with/without the new record format
     rmOperationHandler.execute(operations);
   }
 
-  /**
-   * Get the RM operations handler for direct scheduling of work.
-   */
-  @VisibleForTesting
-  public RMOperationHandler getRmOperationHandler() {
-    return rmOperationHandler;
-  }
-
   @Override
   public Messages.AMSuicideResponseProto amSuicide(
       Messages.AMSuicideRequestProto request)
@@ -2060,7 +2089,7 @@ the registry with/without the new record format
               UserGroupInformation.getLoginUser().getShortUserName(),
               credentials);
     }
-    if (credentials.getAllTokens().size() > 0) {
+    if (!credentials.getAllTokens().isEmpty()) {
       DataOutputBuffer dob = new DataOutputBuffer();
       credentials.writeTokenStorageToStream(dob);
       dob.close();
@@ -2123,16 +2152,6 @@ the registry with/without the new record format
   @Override //  NMClientAsync.CallbackHandler 
   public void onStopContainerError(ContainerId containerId, Throwable t) {
     LOG_YARN.warn("Failed to stop Container {}", containerId);
-  }
-
-  /**
-   The cluster description published to callers
-   This is used as a synchronization point on activities that update
-   the CD, and also to update some of the structures that
-   feed in to the CD
-   */
-  public ClusterDescription getClusterSpec() {
-    return appState.getClusterSpec();
   }
 
   public AggregateConf getInstanceDefinition() {
