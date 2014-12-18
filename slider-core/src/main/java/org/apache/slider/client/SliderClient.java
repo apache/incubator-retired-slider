@@ -65,6 +65,7 @@ import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.OptionKeys;
 import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.SliderClusterProtocol;
+import org.apache.slider.api.StateValues;
 import org.apache.slider.api.proto.Messages;
 import org.apache.slider.common.Constants;
 import org.apache.slider.common.SliderExitCodes;
@@ -2769,7 +2770,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         .getClusterDescription();
     log.info("Slider AppMaster is accessible");
 
-    if (clusterDescription.state == ClusterDescription.STATE_LIVE) {
+    if (clusterDescription.state == StateValues.STATE_LIVE) {
       AggregateConf instanceDefinition = clusterOperations
           .getInstanceDefinition();
       String imagePath = instanceDefinition.getInternalOperations().get(

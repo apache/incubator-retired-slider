@@ -23,6 +23,7 @@ import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterNode;
 import org.apache.slider.api.SliderClusterProtocol;
+import org.apache.slider.api.StateValues;
 import org.apache.slider.api.proto.Messages;
 import org.apache.slider.common.tools.Duration;
 import org.apache.slider.core.conf.AggregateConf;
@@ -245,7 +246,7 @@ public class SliderClusterOperations {
     throws WaitTimeoutException, IOException, YarnException {
     Duration duration = new Duration(timeout).start();
     boolean live = false;
-    int state = ClusterDescription.STATE_CREATED;
+    int state = StateValues.STATE_CREATED;
 
     log.info("Waiting {} millis for a live node in role {}", timeout, role);
     while (!live) {
@@ -260,7 +261,7 @@ public class SliderClusterOperations {
         roleInstance = getNode(containers[0]);
         if (roleInstance != null) {
           state = roleInstance.state;
-          live = state >= ClusterDescription.STATE_LIVE;
+          live = state >= StateValues.STATE_LIVE;
         }
       }
       if (!live) {

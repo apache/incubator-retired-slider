@@ -27,6 +27,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Refresh the container list.
+ */
 public class ContainerListRefresher implements ResourceRefresher<Map<String, SerializedContainerInformation>> {
 
   private final StateAccessForProviders state;

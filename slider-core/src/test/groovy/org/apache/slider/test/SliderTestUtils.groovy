@@ -41,18 +41,24 @@ import org.apache.hadoop.yarn.webapp.NotFoundException
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.ClusterNode
 import org.apache.slider.api.RoleKeys
+import org.apache.slider.api.StateValues
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.tools.Duration
 import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.core.conf.AggregateConf
+import org.apache.slider.core.conf.ConfTree
+import org.apache.slider.core.conf.ConfTreeOperations
 import org.apache.slider.core.exceptions.BadClusterStateException
 import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.exceptions.WaitTimeoutException
 import org.apache.slider.core.main.ServiceLaunchException
 import org.apache.slider.core.main.ServiceLauncher
+import org.apache.slider.core.persist.ConfTreeSerDeser
+import org.apache.slider.core.persist.JsonSerDeser
 import org.apache.slider.core.registry.docstore.PublishedConfigSet
 import org.apache.slider.server.appmaster.web.HttpCacheHeaders
+import org.apache.slider.server.appmaster.web.rest.RestPaths
 import org.apache.slider.server.services.workflow.ForkedProcessService
 import org.junit.Assert
 import org.junit.Assume
@@ -367,7 +373,7 @@ class SliderTestUtils extends Assert {
       String role)
   throws WaitTimeoutException, IOException, SliderException {
     int state = client.waitForRoleInstanceLive(role, spintime);
-    return state == ClusterDescription.STATE_LIVE;
+    return state == StateValues.STATE_LIVE;
   }
 
   public static ClusterDescription dumpClusterStatus(
@@ -1162,4 +1168,21 @@ class SliderTestUtils extends Assert {
     }
   }
 
+  public <T> T fetchType(
+      Class<T> clazz, String appmaster, String subpath) {
+    JsonSerDeser serDeser = new JsonSerDeser(clazz)
+
+    def json = getWebPage(
+        appmaster,
+        RestPaths.SLIDER_PATH_APPLICATION + subpath)
+    T ctree = (T) serDeser.fromJson(json)
+    return ctree
+  }
+  
+  public ConfTreeOperations fetchConfigTree(
+      YarnConfiguration conf, String appmaster, String subpath) {
+    ConfTree ctree = fetchType(ConfTree, appmaster, subpath)
+    ConfTreeOperations tree = new ConfTreeOperations(ctree)
+    return tree
+  }
 }

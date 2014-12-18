@@ -59,7 +59,7 @@ public final class RoleInstance implements Cloneable {
   public int roleId;
 
   /**
-   * state from {@link ClusterDescription}
+   * state from {@link StateValues}
    */
   public int state;
 
