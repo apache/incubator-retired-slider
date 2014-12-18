@@ -44,7 +44,7 @@ public interface ResourceKeys {
 
 
   /**
-   * #of instances of a component
+   * #of instances of a component: {@value}
    *
   */
   String COMPONENT_INSTANCES = "yarn.component.instances";

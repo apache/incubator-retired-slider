@@ -64,17 +64,17 @@ public class InstanceIO {
 
 
   /**
-   * Update an instance definition
-   * @param coreFS
-   * @param dir
-   * @param instanceDefinition
+   * Update a persisted instance definition
+   * @param coreFS filesystem
+   * @param dir directory to load from
+   * @param instanceDefinition instance definition to save do
    * @throws SliderException
    * @throws IOException
    * @throws LockAcquireFailedException
    */
-  public static void updateInstanceDefinition(CoreFileSystem coreFS,
-                                              Path dir,
-                                              AggregateConf instanceDefinition)
+  public static void saveInstanceDefinition(CoreFileSystem coreFS,
+      Path dir,
+      AggregateConf instanceDefinition)
       throws SliderException, IOException, LockAcquireFailedException {
     ConfPersister persister =
       new ConfPersister(coreFS, dir);

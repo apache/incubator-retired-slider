@@ -52,11 +52,11 @@ public class WebAppApiImpl implements WebAppApi {
       CertificateManager certificateManager,
       RegistryOperations registryOperations,
       MetricsAndMonitoring metricsAndMonitoring) {
-    this.registryOperations = registryOperations;
     checkNotNull(clusterProto);
     checkNotNull(appState);
     checkNotNull(provider);
-    
+
+    this.registryOperations = registryOperations;
     this.clusterProto = clusterProto;
     this.appState = appState;
     this.provider = provider;

@@ -19,6 +19,7 @@
 package org.apache.slider.server.appmaster.state;
 
 import org.apache.slider.api.StatusKeys;
+import org.apache.slider.api.types.SerializedComponentInformation;
 import org.apache.slider.providers.PlacementPolicy;
 import org.apache.slider.providers.ProviderRole;
 
@@ -37,8 +38,7 @@ public final class RoleStatus implements Cloneable {
   private final String name;
 
   /**
-   * Role key in the container details stored in the AM,
-   * currently mapped to priority
+   * Role priority
    */
   private final int key;
 
@@ -47,23 +47,6 @@ public final class RoleStatus implements Cloneable {
   private int desired, actual, requested, releasing;
   private int failed, started, startFailed, completed, totalRequested;
 
-  /**
-   * value to use when specifiying "no limit" for instances: {@value}
-   */
-  public static final int UNLIMITED_INSTANCES = 1;
-
-  /**
-   * minimum number of instances of a role permitted in a valid
-   * configuration. Default: 0.
-   */
-  private int minimum = 0;
-
-  /**
-   * maximum number of instances of a role permitted in a valid
-   * configuration. Default: unlimited.
-   */
-  private int maximum = UNLIMITED_INSTANCES;
-  
   private String failureMessage = "";
 
   public RoleStatus(ProviderRole providerRole) {
@@ -260,8 +243,6 @@ public final class RoleStatus implements Cloneable {
     return "RoleStatus{" +
            "name='" + name + '\'' +
            ", key=" + key +
-           ", minimum=" + minimum +
-           ", maximum=" + maximum +
            ", desired=" + desired +
            ", actual=" + actual +
            ", requested=" + requested +
@@ -304,6 +285,22 @@ public final class RoleStatus implements Cloneable {
     return stats;
   }
 
+  public SerializedComponentInformation serialize() {
+    SerializedComponentInformation info = new SerializedComponentInformation();
+    info.name = name;
+    info.priority = getPriority();
+    info.desired = desired;
+    info.actual = actual;
+    info.requested = requested;
+    info.releasing = releasing;
+    info.failed = failed;
+    info.startFailed = startFailed;
+    info.requested = requested;
+    info.placementPolicy = getPlacementPolicy();
+    info.failureMessage = failureMessage;
+    return info;
+  }
+  
   /**
    * Compare two role status entries by name
    */

@@ -28,6 +28,7 @@ import org.apache.hadoop.registry.client.exceptions.NoRecordException;
 import org.apache.hadoop.yarn.webapp.ForbiddenException;
 import org.apache.hadoop.yarn.webapp.NotFoundException;
 import org.apache.slider.server.appmaster.web.WebAppApi;
+import org.apache.slider.server.appmaster.web.rest.AbstractSliderResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +54,7 @@ import java.io.IOException;
  * 
  */
 @Singleton
-public class RegistryResource {
+public class RegistryResource extends AbstractSliderResource {
   protected static final Logger log =
       LoggerFactory.getLogger(RegistryResource.class);
   public static final String SERVICE_PATH =
@@ -66,9 +67,11 @@ public class RegistryResource {
    * @param slider slider API
    */
   public RegistryResource(WebAppApi slider) {
+    super(slider);
     this.registry = slider.getRegistryOperations();
   }
 
+  
   /**
    * Internal init code, per request
    * @param request incoming request 
@@ -114,18 +117,9 @@ public class RegistryResource {
         log.debug("Resolved:\n{}", pathEntry);
       }
       return pathEntry;
-    } catch (WebApplicationException e) {
-      // rethrow direct
-      throw e;
-    } catch (PathNotFoundException e) {
-      throw new NotFoundException("Not found: " + path);
-    } catch (AuthenticationFailedException e) {
-      throw new ForbiddenException(path);
-    } catch (NoPathPermissionsException e) {
-      throw new ForbiddenException(path);
+   
     } catch (Exception e) {
-      log.error("Error during generation of response: {}", e, e);
-      throw new WebApplicationException(e);
+      throw buildException(path, e);
     }
   }
 

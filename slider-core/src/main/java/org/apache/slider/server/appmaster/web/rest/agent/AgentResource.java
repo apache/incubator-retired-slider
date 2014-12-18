@@ -19,6 +19,7 @@ package org.apache.slider.server.appmaster.web.rest.agent;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.services.security.SignCertResponse;
 import org.apache.slider.server.services.security.SignMessage;
+import org.apache.slider.server.appmaster.web.rest.AbstractSliderResource;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 
@@ -39,13 +40,12 @@ import javax.ws.rs.core.Response;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
-public class AgentResource {
+public class AgentResource extends AbstractSliderResource {
 
-  private final WebAppApi slider;
   private String agent_name;
 
   public AgentResource(WebAppApi slider) {
-    this.slider = slider;
+    super(slider);
   }
 
   private void init(HttpServletResponse res) {

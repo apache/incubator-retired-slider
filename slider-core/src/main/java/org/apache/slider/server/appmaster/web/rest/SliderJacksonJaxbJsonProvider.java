@@ -42,7 +42,6 @@ import javax.ws.rs.ext.Provider;
 public class SliderJacksonJaxbJsonProvider extends JacksonJaxbJsonProvider {
 
   public SliderJacksonJaxbJsonProvider() {
-    super();
   }
 
   @Override

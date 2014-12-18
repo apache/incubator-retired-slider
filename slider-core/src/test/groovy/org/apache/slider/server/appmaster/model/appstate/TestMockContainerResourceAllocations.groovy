@@ -47,8 +47,8 @@ class TestMockContainerResourceAllocations extends BaseMockAppStateTest {
     ConfTree clusterSpec = factory.newConfTree(1, 0, 0)
     ConfTreeOperations cto = new ConfTreeOperations(clusterSpec)
 
-    cto.setRoleOpt(MockRoles.ROLE0, ResourceKeys.YARN_MEMORY, 512)
-    cto.setRoleOpt(MockRoles.ROLE0, ResourceKeys.YARN_CORES, 2)
+    cto.setComponentOpt(MockRoles.ROLE0, ResourceKeys.YARN_MEMORY, 512)
+    cto.setComponentOpt(MockRoles.ROLE0, ResourceKeys.YARN_CORES, 2)
     appState.updateResourceDefinitions(clusterSpec)
     List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()
     assert ops.size() == 1
@@ -65,7 +65,7 @@ class TestMockContainerResourceAllocations extends BaseMockAppStateTest {
 
     cto.setComponentOpt(MockRoles.ROLE0, ResourceKeys.YARN_MEMORY,
                            ResourceKeys.YARN_RESOURCE_MAX)
-    cto.setRoleOpt(MockRoles.ROLE0, ResourceKeys.YARN_CORES, 2)
+    cto.setComponentOpt(MockRoles.ROLE0, ResourceKeys.YARN_CORES, 2)
     appState.updateResourceDefinitions(clusterSpec)
     List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()
     assert ops.size() == 1
@@ -79,7 +79,7 @@ class TestMockContainerResourceAllocations extends BaseMockAppStateTest {
   public void testMaxCoreAllocations() throws Throwable {
     ConfTree clusterSpec = factory.newConfTree(1, 0, 0)
     ConfTreeOperations cto = new ConfTreeOperations(clusterSpec)
-    cto.setRoleOpt(MockRoles.ROLE0, ResourceKeys.YARN_MEMORY,
+    cto.setComponentOpt(MockRoles.ROLE0, ResourceKeys.YARN_MEMORY,
         512)
     cto.setComponentOpt(MockRoles.ROLE0, ResourceKeys.YARN_CORES,
         ResourceKeys.YARN_RESOURCE_MAX)

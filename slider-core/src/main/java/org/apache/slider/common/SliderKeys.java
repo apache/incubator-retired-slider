@@ -24,11 +24,13 @@ package org.apache.slider.common;
  */
 public interface SliderKeys extends SliderXmlConfKeys {
 
-  
+  /**
+   * This is the name of the slider appmaster in configurations :{@value}
+   */
   String COMPONENT_AM = "slider-appmaster";
   
   /**
-   * Slider role is "special"
+   * Slider role is "special":{@value}
    */
   int ROLE_AM_PRIORITY_INDEX = 0;
   

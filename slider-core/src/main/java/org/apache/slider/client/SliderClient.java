@@ -65,6 +65,7 @@ import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.OptionKeys;
 import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.SliderClusterProtocol;
+import org.apache.slider.api.StateValues;
 import org.apache.slider.api.proto.Messages;
 import org.apache.slider.common.Constants;
 import org.apache.slider.common.SliderExitCodes;
@@ -2296,7 +2297,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     int exitCode = EXIT_FALSE;
     // save the specification
     try {
-      InstanceIO.updateInstanceDefinition(sliderFileSystem, clusterDirectory, instanceDefinition);
+      InstanceIO.saveInstanceDefinition(sliderFileSystem, clusterDirectory,
+          instanceDefinition);
     } catch (LockAcquireFailedException e) {
       // lock failure
       log.debug("Failed to lock dir {}", clusterDirectory, e);
@@ -2428,18 +2430,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     return createClusterOperations().listClusterNodes(uuids);
   }
 
-  /**
-   * Get a node from the AM
-   * @param uuid uuid of node
-   * @return deserialized node
-   * @throws IOException IO problems
-   * @throws NoSuchNodeException if the node isn't found
-   */
-  @VisibleForTesting
-  public ClusterNode getNode(String uuid) throws IOException, YarnException {
-    return createClusterOperations().getNode(uuid);
-  }
-  
   /**
    * Get the instance definition from the far end
    */
@@ -2780,7 +2770,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         .getClusterDescription();
     log.info("Slider AppMaster is accessible");
 
-    if (clusterDescription.state == ClusterDescription.STATE_LIVE) {
+    if (clusterDescription.state == StateValues.STATE_LIVE) {
       AggregateConf instanceDefinition = clusterOperations
           .getInstanceDefinition();
       String imagePath = instanceDefinition.getInternalOperations().get(

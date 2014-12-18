@@ -18,6 +18,7 @@ package org.apache.slider.server.appmaster.web.rest.management;
 
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.server.appmaster.web.WebAppApi;
+import org.apache.slider.server.appmaster.web.rest.AbstractSliderResource;
 import org.apache.slider.server.appmaster.web.rest.RestPaths;
 import org.apache.slider.server.appmaster.web.rest.management.resources.AggregateConfResource;
 import org.apache.slider.server.appmaster.web.rest.management.resources.ConfTreeResource;
@@ -36,18 +37,20 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.net.URI;
 import java.net.URL;
 
 /**
  *
  */
-public class ManagementResource {
+public class ManagementResource extends AbstractSliderResource {
   protected static final Logger log =
       LoggerFactory.getLogger(ManagementResource.class);
-  private final WebAppApi slider;
+  public static final String CONFIG = "config";
+  public static final String APP_UNDER_MANAGEMENT = "/app";
 
   public ManagementResource(WebAppApi slider) {
-    this.slider = slider;
+    super(slider);
   }
 
   private void init(HttpServletResponse res) {
@@ -56,16 +59,7 @@ public class ManagementResource {
 
   @GET
   public Response getWadl (@Context HttpServletRequest request) {
-    try {
-      java.net.URI location = new URL(request.getScheme(),
-                                      request.getServerName(),
-                                      request.getServerPort(),
-                                      "/application.wadl").toURI();
-      return Response.temporaryRedirect(location).build();
-    } catch (Exception e) {
-      log.error("Error during redirect to WADL", e);
-      throw new WebApplicationException(Response.serverError().build());
-    }
+    return redirectToAppWadl(request);
   }
 
   @GET
@@ -79,17 +73,17 @@ public class ManagementResource {
   }
 
   @GET
-  @Path("/app/configurations/{config}")
+  @Path(APP_UNDER_MANAGEMENT+"/configurations/{config}")
   @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
-  public ConfTreeResource getConfTreeResource(@PathParam("config") String config,
+  public ConfTreeResource getConfTreeResource(@PathParam(CONFIG) String config,
                                               @Context UriInfo uriInfo,
                                               @Context HttpServletResponse res) {
     init(res);
     AggregateConfResource aggregateConf =
         ResourceFactory.createAggregateConfResource(getAggregateConf(),
-                                                    uriInfo.getBaseUriBuilder()
-                                                    .path(RestPaths.SLIDER_CONTEXT_ROOT).path(
-                                                    "mgmt/app"));
+      uriInfo.getBaseUriBuilder()
+      .path(RestPaths.SLIDER_CONTEXT_ROOT)
+      .path(RestPaths.MANAGEMENT + APP_UNDER_MANAGEMENT));
     return aggregateConf.getConfTree(config);
   }
 

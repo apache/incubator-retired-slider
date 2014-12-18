@@ -35,6 +35,7 @@ import org.apache.hadoop.yarn.api.records.impl.pb.ContainerPBImpl;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
+import static org.apache.slider.api.StateValues.*;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterDescriptionKeys;
 import org.apache.slider.api.ClusterDescriptionOperations;
@@ -552,7 +553,7 @@ public class AppState {
   public void initClusterStatus() {
     //copy into cluster status. 
     ClusterDescription status = ClusterDescription.copy(clusterSpec);
-    status.state = ClusterDescription.STATE_CREATED;
+    status.state = STATE_CREATED;
     MapOperations infoOps = new MapOperations("info", status.info);
     infoOps.mergeWithoutOverwrite(applicationInfo);
     SliderUtils.addBuildInfo(infoOps, "status");
@@ -572,7 +573,7 @@ public class AppState {
           StatusKeys.INFO_CREATE_TIME_MILLIS,
           now);
     }
-    status.state = ClusterDescription.STATE_LIVE;
+    status.state = STATE_LIVE;
 
       //set the app state to this status
     setClusterStatus(status);
@@ -790,9 +791,13 @@ public class AppState {
     container.setNodeHttpAddress(nodeHttpAddress);
     RoleInstance am = new RoleInstance(container);
     am.role = SliderKeys.COMPONENT_AM;
+    am.roleId = SliderKeys.ROLE_AM_PRIORITY_INDEX;
+    am.createTime = System.currentTimeMillis();
+    am.startTime = System.currentTimeMillis();
     appMasterNode = am;
     //it is also added to the set of live nodes
     getLiveNodes().put(containerId, am);
+    putOwnedContainer(containerId, am);
     
     // patch up the role status
     RoleStatus roleStatus = roleStatusMap.get(
@@ -819,7 +824,7 @@ public class AppState {
    * indicating the spawned process is up and running.
    */
   public void noteAMLive() {
-    appMasterNode.state = ClusterDescription.STATE_LIVE;
+    appMasterNode.state = STATE_LIVE;
   }
 
   public RoleInstance getAppMasterNode() {
@@ -834,8 +839,7 @@ public class AppState {
     }
     return rs;
   }
-
-
+  
   public RoleStatus lookupRoleStatus(Container c) throws YarnRuntimeException {
     return lookupRoleStatus(ContainerPriority.extractRole(c));
   }
@@ -1074,7 +1078,7 @@ public class AppState {
    */
   public void containerStartSubmitted(Container container,
                                       RoleInstance instance) {
-    instance.state = ClusterDescription.STATE_SUBMITTED;
+    instance.state = STATE_SUBMITTED;
     instance.container = container;
     instance.createTime = now();
     getStartingNodes().put(container.getId(), instance);
@@ -1275,7 +1279,7 @@ public class AppState {
       throw new YarnRuntimeException(
         "Container "+ containerId +"%s is already started");
     }
-    instance.state = ClusterDescription.STATE_LIVE;
+    instance.state = STATE_LIVE;
     RoleStatus roleStatus = lookupRoleStatus(instance.roleId);
     roleStatus.incStarted();
     Container container = instance.container;
@@ -1463,7 +1467,7 @@ public class AppState {
     log.info("Removing node ID {}", id);
     RoleInstance node = getLiveNodes().remove(id);
     if (node != null) {
-      node.state = ClusterDescription.STATE_DESTROYED;
+      node.state = STATE_DESTROYED;
       node.exitCode = status.getExitStatus();
       node.diagnostics = status.getDiagnostics();
       getCompletedNodes().put(id, node);
@@ -1859,6 +1863,10 @@ public class AppState {
     List<AbstractRMOperation> operations =
       new ArrayList<AbstractRMOperation>(targets.size());
     for (RoleInstance instance : targets) {
+      if (instance.roleId == SliderKeys.ROLE_AM_PRIORITY_INDEX) {
+        // don't worry about the AM
+        continue;
+      }
       Container possible = instance.container;
       ContainerId id = possible.getId();
       if (!instance.released) {
@@ -2007,7 +2015,7 @@ public class AppState {
     instance.environment = new String[0];
     instance.container = container;
     instance.createTime = now();
-    instance.state = ClusterDescription.STATE_LIVE;
+    instance.state = STATE_LIVE;
     putOwnedContainer(cid, instance);
     //role history gets told
     roleHistory.onContainerAssigned(container);

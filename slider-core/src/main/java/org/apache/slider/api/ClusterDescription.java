@@ -107,28 +107,28 @@ public class ClusterDescription implements Cloneable {
    * Specification is incomplete & cannot
    * be used: {@value}
    */
-  public static final int STATE_INCOMPLETE = 0;
+  public static final int STATE_INCOMPLETE = StateValues.STATE_INCOMPLETE;
 
   /**
    * Spec has been submitted: {@value}
    */
-  public static final int STATE_SUBMITTED = 1;
+  public static final int STATE_SUBMITTED = StateValues.STATE_SUBMITTED;
   /**
    * Cluster created: {@value}
    */
-  public static final int STATE_CREATED = 2;
+  public static final int STATE_CREATED = StateValues.STATE_CREATED;
   /**
    * Live: {@value}
    */
-  public static final int STATE_LIVE = 3;
+  public static final int STATE_LIVE = StateValues.STATE_LIVE;
   /**
    * Stopped
    */
-  public static final int STATE_STOPPED = 4;
+  public static final int STATE_STOPPED = StateValues.STATE_STOPPED;
   /**
    * destroyed
    */
-  public static final int STATE_DESTROYED = 5;
+  public static final int STATE_DESTROYED = StateValues.STATE_DESTROYED;
   
   /**
    * When was the cluster specification created?

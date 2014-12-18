@@ -20,39 +20,53 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentResource;
+import org.apache.slider.server.appmaster.web.rest.application.ApplicationResource;
 import org.apache.slider.server.appmaster.web.rest.management.ManagementResource;
 import org.apache.slider.server.appmaster.web.rest.publisher.PublisherResource;
 import org.apache.slider.server.appmaster.web.rest.registry.RegistryResource;
 
 import javax.ws.rs.Path;
 
-/** The available REST services exposed by a slider AM. */
+/**
+ *  The available REST services exposed by a slider AM. 
+ */
 @Singleton
 @Path(RestPaths.SLIDER_CONTEXT_ROOT)
 public class AMWebServices {
   
   /** AM/WebApp info object */
   private WebAppApi slider;
+  private final ManagementResource managementResource;
+  private final PublisherResource publisherResource;
+  private final RegistryResource registryResource;
+  private final ApplicationResource applicationResource;
 
   @Inject
   public AMWebServices(WebAppApi slider) {
     this.slider = slider;
+    managementResource = new ManagementResource(slider);
+    publisherResource = new PublisherResource(slider);
+    registryResource = new RegistryResource(slider);
+    applicationResource = new ApplicationResource(slider);
   }
 
   @Path(RestPaths.SLIDER_SUBPATH_MANAGEMENT)
   public ManagementResource getManagementResource() {
-    return new ManagementResource(slider);
+    return managementResource;
   }
 
   @Path(RestPaths.SLIDER_SUBPATH_PUBLISHER)
   public PublisherResource getPublisherResource() {
-    return new PublisherResource(slider);
+    return publisherResource;
   }
  
   @Path(RestPaths.SLIDER_SUBPATH_REGISTRY)
   public RegistryResource getRegistryResource() {
-    return new RegistryResource(slider);
+    return registryResource;
   }
   
-  
+  @Path(RestPaths.SLIDER_SUBPATH_APPLICATION)
+  public ApplicationResource getApplicationResource() {
+    return applicationResource;
+  }
 }

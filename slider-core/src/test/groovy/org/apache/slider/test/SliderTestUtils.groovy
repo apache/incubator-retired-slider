@@ -23,36 +23,46 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.commons.httpclient.HttpClient
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager
+import org.apache.commons.httpclient.URI
 import org.apache.commons.httpclient.methods.GetMethod
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileStatus
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.hdfs.web.URLConnectionFactory
-import org.apache.hadoop.io.IOUtils
+import org.apache.hadoop.net.NetUtils
 import org.apache.hadoop.service.ServiceStateException
 import org.apache.hadoop.util.Shell
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.registry.client.types.ServiceRecord
+import org.apache.hadoop.yarn.webapp.ForbiddenException
+import org.apache.hadoop.yarn.webapp.NotFoundException
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.ClusterNode
 import org.apache.slider.api.RoleKeys
+import org.apache.slider.api.StateValues
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.tools.Duration
 import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.core.conf.AggregateConf
+import org.apache.slider.core.conf.ConfTree
+import org.apache.slider.core.conf.ConfTreeOperations
 import org.apache.slider.core.exceptions.BadClusterStateException
 import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.exceptions.WaitTimeoutException
 import org.apache.slider.core.main.ServiceLaunchException
 import org.apache.slider.core.main.ServiceLauncher
+import org.apache.slider.core.persist.JsonSerDeser
 import org.apache.slider.core.registry.docstore.PublishedConfigSet
+import org.apache.slider.server.appmaster.web.HttpCacheHeaders
+import org.apache.slider.server.appmaster.web.rest.RestPaths
 import org.apache.slider.server.services.workflow.ForkedProcessService
 import org.junit.Assert
 import org.junit.Assume
 
+import javax.ws.rs.core.HttpHeaders
 import java.util.concurrent.TimeoutException
 
 import static Arguments.ARG_OPTION
@@ -362,7 +372,7 @@ class SliderTestUtils extends Assert {
       String role)
   throws WaitTimeoutException, IOException, SliderException {
     int state = client.waitForRoleInstanceLive(role, spintime);
-    return state == ClusterDescription.STATE_LIVE;
+    return state == StateValues.STATE_LIVE;
   }
 
   public static ClusterDescription dumpClusterStatus(
@@ -480,17 +490,44 @@ class SliderTestUtils extends Assert {
     def client = new HttpClient(new MultiThreadedHttpConnectionManager());
     client.httpConnectionManager.params.connectionTimeout = 10000;
     GetMethod get = new GetMethod(url);
+    URI destURI = get.getURI()
+    assert destURI.port != 0
+    assert destURI.host
+
 
     get.followRedirects = true;
-    int resultCode = client.executeMethod(get);
+    int resultCode
+    try {
+      resultCode = client.executeMethod(get);
+    } catch (IOException e) {
+      throw NetUtils.wrapException(url, 0, null, 0, e)
+    }
 
     def body = get.responseBodyAsString
+
+    uprateFaults(url, resultCode, body)
+    return body;
+  }
+
+  /**
+   *  uprate some faults
+   * @param url
+   * @param resultCode
+   * @param body
+   */
+  public static void uprateFaults(String url, int resultCode, String body) {
+
+    if (resultCode == 404) {
+      throw new NotFoundException(url)
+    }
+    if (resultCode == 401) {
+      throw new ForbiddenException(url)
+    }
     if (!(resultCode >= 200 && resultCode < 400)) {
       def message = "Request to $url failed with exit code $resultCode, body length ${body?.length()}:\n$body"
       log.error(message)
-      fail(message)
+      throw new IOException(message)
     }
-    return body;
   }
 
   /**
@@ -501,54 +538,105 @@ class SliderTestUtils extends Assert {
    * @param page
    * @return body of response
    */
-  public static String getWebPage(Configuration conf,
-      String base,
-      String path) {
+  public static String getWebPage(String base, String path) {
     String s = appendToURL(base, path)
-    return getWebPage(conf, s)
+    return getWebPage(s)
   }
 
-    /**
+  /**
+   * Execute any of the http requests, swallowing exceptions until
+   * eventually they time out
+   * @param timeout
+   * @param operation
+   * @return
+   */
+  public static String execHttpRequest(int timeout, Closure operation) {
+    Duration duration = new Duration(timeout).start()
+    Exception ex = new IOException("limit exceeded before starting");
+    while (!duration.limitExceeded) {
+      try {
+        String result = operation();
+        return result;
+      } catch (Exception e) {
+        ex = e;
+        sleep(1000)
+      }
+    }
+    // timeout
+    throw ex;
+  } 
+
+  static URLConnectionFactory connectionFactory
+
+  public static def initConnectionFactory(Configuration conf) {
+    connectionFactory = URLConnectionFactory
+        .newDefaultURLConnectionFactory(conf);
+  }
+
+
+  /**
    * Fetches a web page asserting that the response code is between 200 and 400.
    * Will error on 400 and 500 series response codes and let 200 and 300 through.
    * 
    * if security is enabled, this uses SPNEGO to auth
-   * @param page
+   * <p>
+   *   Relies on {@link #initConnectionFactory(org.apache.hadoop.conf.Configuration)} 
+   *   to have been called.
+   *   
+   * @param path path to page
+   * @param connectionChecks optional closure to run against an open connection
    * @return body of response
    */
-  public static String getWebPage(Configuration conf, String page) {
-    assert null != page
+  public static String getWebPage(String path, Closure connectionChecks = null) {
+    assert path
+    assert null != connectionFactory
 
-    log.info("Fetching HTTP content at " + page);
-    URLConnectionFactory connectionFactory = URLConnectionFactory
-        .newDefaultURLConnectionFactory(conf);
-    URL url = new URL(page)
-    HttpURLConnection conn =
-        (HttpURLConnection) connectionFactory.openConnection(url);
+    log.info("Fetching HTTP content at " + path);
+    URL url = new URL(path)
+    assert url.port != 0
+    HttpURLConnection conn = null;
+    int resultCode = 0
+    def body = ""
     try {
+      conn = (HttpURLConnection) connectionFactory.openConnection(url);
       conn.instanceFollowRedirects = true;
       conn.connect()
+      
 
-      int resultCode = conn.responseCode
+      resultCode = conn.responseCode
+      
+      if (connectionChecks) {
+        connectionChecks(conn)
+      }
+      
       InputStream stream = conn.errorStream;
       if (stream == null) {
         stream = conn.inputStream;
       }
 
-      def body = stream ? stream.text : "(no body)"
-      if (!(resultCode >= 200 && resultCode < 400)) {
-        def message = "Request to $url failed with ${conn.responseMessage}, body length ${body?.length()}:\n$body"
-        log.error(message)
-        fail(message)
-      }
-      return body;
+      body = stream ? stream.text : "(no body)"
+    } catch (IOException e) {
+      throw NetUtils.wrapException(url.toString(), 0, null, 0, e)
     } finally {
       conn?.disconnect()
-      
     }
+    uprateFaults(path, resultCode, body)
+    return body;
   }
 
   /**
+   * Assert that a connection is not caching by looking at the headers
+   * @param conn connection to examine
+   */
+  public static void assertConnectionNotCaching(HttpURLConnection conn) {
+    assert conn.expiration <= conn.date
+    assert conn.getHeaderField(HttpHeaders.CACHE_CONTROL) ==
+           HttpCacheHeaders.HTTP_HEADER_CACHE_CONTROL_NONE
+    assert conn.getHeaderField(HttpCacheHeaders.HTTP_HEADER_PRAGMA) ==
+           HttpCacheHeaders.HTTP_HEADER_CACHE_CONTROL_NONE
+  }
+
+/**
    * Assert that a service operation succeeded
    * @param service service
    */
@@ -1079,4 +1167,21 @@ class SliderTestUtils extends Assert {
     }
   }
 
+  public <T> T fetchType(
+      Class<T> clazz, String appmaster, String subpath) {
+    JsonSerDeser serDeser = new JsonSerDeser(clazz)
+
+    def json = getWebPage(
+        appmaster,
+        RestPaths.SLIDER_PATH_APPLICATION + subpath)
+    T ctree = (T) serDeser.fromJson(json)
+    return ctree
+  }
+  
+  public ConfTreeOperations fetchConfigTree(
+      YarnConfiguration conf, String appmaster, String subpath) {
+    ConfTree ctree = fetchType(ConfTree, appmaster, subpath)
+    ConfTreeOperations tree = new ConfTreeOperations(ctree)
+    return tree
+  }
 }

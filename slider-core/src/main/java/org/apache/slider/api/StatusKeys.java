@@ -17,7 +17,7 @@
  */
 
 package org.apache.slider.api;
-
+import static org.apache.slider.api.ResourceKeys.COMPONENT_INSTANCES;
 /**
  * Contains status and statistics keys
  */
@@ -71,4 +71,43 @@ public interface StatusKeys {
   String INFO_AM_AGENT_OPS_PORT = "info.am.agent.ops.port";
   String INFO_AM_AGENT_OPS_URL = "info.am.agent.ops.url";
   String INFO_AM_AGENT_STATUS_URL = "info.am.agent.status.url";
+
+      /**
+       * info: #of instances of a component requested: {@value}
+       *
+       */
+  String COMPONENT_INSTANCES_ACTUAL = COMPONENT_INSTANCES + ".actual";
+
+  /**
+   * info: #of instances of a component requested: {@value}
+   *
+   */
+  String COMPONENT_INSTANCES_REQUESTING = COMPONENT_INSTANCES + ".requesting";
+
+  /**
+   * info: #of instances of a component being released: {@value}
+   *
+   */
+  String COMPONENT_INSTANCES_RELEASING = COMPONENT_INSTANCES + ".releasing";
+
+  /**
+   * info: #of instances of a component failed: {@value}
+   *
+   */
+  String COMPONENT_INSTANCES_FAILED = COMPONENT_INSTANCES + ".failed";
+
+  /**
+   * info: #of instances of a component started: {@value}
+   *
+   */
+  String COMPONENT_INSTANCES_STARTED = COMPONENT_INSTANCES + ".started";
+
+
+  /**
+   * info: #of instances of a component completed: {@value}
+   *
+   */
+  String COMPONENT_INSTANCES_COMPLETED = COMPONENT_INSTANCES + ".completed";
+
+
 }

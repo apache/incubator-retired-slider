@@ -38,7 +38,7 @@ public class AggregateConfResource {
   public AggregateConfResource(AggregateConf conf, UriBuilder uriBuilder) {
     if (uriBuilder != null) {
       this.href =
-          uriBuilder.build(null).toASCIIString();
+          uriBuilder.build().toASCIIString();
       resources =
           ResourceFactory.createConfTreeResource(conf.getAppConf(),
                                                  uriBuilder.clone().path(
