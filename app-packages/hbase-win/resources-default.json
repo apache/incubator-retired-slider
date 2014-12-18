@@ -23,16 +23,19 @@
     "HBASE_REST": {
       "yarn.role.priority": "3",
       "yarn.component.instances": "1",
+      "yarn.component.placement.policy": "1",
       "yarn.memory": "512"
     },
     "HBASE_THRIFT": {
       "yarn.role.priority": "4",
       "yarn.component.instances": "1",
+      "yarn.component.placement.policy": "1",
       "yarn.memory": "512"
     },
     "HBASE_THRIFT2": {
       "yarn.role.priority": "5",
       "yarn.component.instances": "0",
+      "yarn.component.placement.policy": "1",
       "yarn.memory": "512"
     }
   }

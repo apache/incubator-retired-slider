@@ -38,7 +38,19 @@ def hbase_service(
       if name == 'rest':
         daemon_cmd = format("{daemon_cmd} -p {rest_port}")
       elif name == 'thrift':
-        daemon_cmd = format("{daemon_cmd} -p {thrift_port}")
+        queue = ""
+        if not thrift_queue == "":
+          queue = " -q {thrift_queue}"
+        workers = ""
+        if not thrift_workers == "":
+          workers = " -w {thrift_workers}"
+        compact = ""
+        if not thrift_compact == "":
+          compact = " -c"
+        framed = ""
+        if not thrift_framed == "":
+          framed = " -f"
+        daemon_cmd = format("{daemon_cmd} -p {thrift_port}" + queue + workers + compact + framed)
       elif name == 'thrift2':
         daemon_cmd = format("{daemon_cmd} -p {thrift2_port}")
       no_op_test = format("ls {pid_file} >/dev/null 2>&1 && ps `cat {pid_file}` >/dev/null 2>&1")
