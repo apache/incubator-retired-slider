@@ -18,6 +18,9 @@
 
 package org.apache.slider.server.appmaster.web.rest.application.resources;
 
+import com.google.common.base.Preconditions;
+import org.apache.slider.server.appmaster.web.rest.RestPaths;
+
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -30,5 +33,11 @@ public class ContentCache extends ConcurrentHashMap<String, CachedContent> {
   }
 
   public ContentCache() {
+  }
+  
+  public Object lookup(String key) {
+    CachedContent content = get(key);
+    Preconditions.checkNotNull(content, "no content for path " + key);
+    return content.get();
   }
 }

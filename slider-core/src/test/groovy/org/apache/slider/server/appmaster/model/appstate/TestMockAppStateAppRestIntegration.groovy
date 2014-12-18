@@ -19,13 +19,22 @@
 package org.apache.slider.server.appmaster.model.appstate
 
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.ipc.ProtocolSignature
+import org.apache.hadoop.yarn.exceptions.YarnException
+import org.apache.slider.api.SliderClusterProtocol
+import org.apache.slider.api.proto.Messages
 import org.apache.slider.api.types.SerializedContainerInformation
 import org.apache.slider.core.persist.JsonSerDeser
+import org.apache.slider.server.appmaster.management.MetricsAndMonitoring
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
+import org.apache.slider.server.appmaster.model.mock.MockProviderService
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.state.ProviderAppState
 import org.apache.slider.server.appmaster.state.RoleInstance
 import org.apache.slider.server.appmaster.state.StateAccessForProviders
+import org.apache.slider.server.appmaster.web.WebAppApi
+import org.apache.slider.server.appmaster.web.WebAppApiImpl
+import org.apache.slider.server.appmaster.web.rest.application.ApplicationResource
 import org.apache.slider.server.appmaster.web.rest.application.resources.CachedContent
 import org.apache.slider.server.appmaster.web.rest.application.resources.ContainerListRefresher
 import org.apache.slider.server.appmaster.web.rest.application.resources.ContentCache
@@ -64,18 +73,11 @@ class TestMockAppStateAppRestIntegration extends BaseMockAppStateTest implements
 
   @Test
   public void testContainerListRefresher() throws Throwable {
-    int r0 = 1
-    int r1 = 2
-    int r2 = 3
-    role0Status.desired = r0
-    role1Status.desired = r1
-    role2Status.desired = r2
     ContainerListRefresher clr = new ContainerListRefresher(stateAccess)
     def map = clr.refresh()
     assert map.size() == 0
-    List<RoleInstance> instances = createAndStartNodes()
+    List<RoleInstance> instances = startNodes()
     map = clr.refresh()
-    assert instances.size() == r0 + r1 + r2
     assert map.size() == instances.size()
     log.info("$map")
     JsonSerDeser<SerializedContainerInformation> serDeser =
@@ -85,9 +87,43 @@ class TestMockAppStateAppRestIntegration extends BaseMockAppStateTest implements
     }
   }
 
-  public ProviderAppState getStateAccess() {
+  public List<RoleInstance> startNodes() {
+    int r0 = 1
+    int r1 = 2
+    int r2 = 3
+    role0Status.desired = r0
+    role1Status.desired = r1
+    role2Status.desired = r2
+    List<RoleInstance> instances = createAndStartNodes()
+    assert instances.size() == r0 + r1 + r2
+    return instances
+  }
+
+  @Test
+  public void testApplicationResource() throws Throwable {
+    def instances = startNodes()
+    ApplicationResource applicationResource =
+        new ApplicationResource(webAppApi)
+    def containers = applicationResource.liveContainers
+    assert containers.size() == instances.size()
+    
+  }
+  /**
+   * Get a state accessor for the appState field
+   * @return something to hand down to refreshers and resources
+   */
+  public StateAccessForProviders getStateAccess() {
     StateAccessForProviders state = new ProviderAppState("name", appState)
     return state
+  }
+
+  public WebAppApi getWebAppApi() {
+    WebAppApi api = new WebAppApiImpl(new StubSliderClusterProtocol(),
+        stateAccess,
+        new MockProviderService(),
+        null, null,
+        new MetricsAndMonitoring("metrics"))
+    return api
   }
 
   /**

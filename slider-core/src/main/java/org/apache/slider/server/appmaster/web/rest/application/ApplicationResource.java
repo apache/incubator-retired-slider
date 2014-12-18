@@ -19,11 +19,14 @@
 package org.apache.slider.server.appmaster.web.rest.application;
 
 import com.google.common.collect.Lists;
+import org.apache.slider.api.types.SerializedContainerInformation;
 import org.apache.slider.core.conf.ConfTree;
+import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.rest.AbstractSliderResource;
 import org.apache.slider.server.appmaster.web.rest.RestPaths;
 import org.apache.slider.server.appmaster.web.rest.application.resources.CachedContent;
+import org.apache.slider.server.appmaster.web.rest.application.resources.ContainerListRefresher;
 import org.apache.slider.server.appmaster.web.rest.application.resources.ContentCache;
 import org.apache.slider.server.appmaster.web.rest.application.resources.LiveResourcesRefresher;
 import org.slf4j.Logger;
@@ -35,6 +38,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
+import java.util.Map;
 
 @Singleton
 public class ApplicationResource extends AbstractSliderResource {
@@ -46,9 +50,13 @@ public class ApplicationResource extends AbstractSliderResource {
 
   public ApplicationResource(WebAppApi slider) {
     super(slider);
+    StateAccessForProviders state = slider.getAppState();
     cache.put(RestPaths.LIVE_RESOURCES,
         new CachedContent<ConfTree>(LIFESPAN,
-            new LiveResourcesRefresher(slider.getAppState())));
+            new LiveResourcesRefresher(state)));
+    cache.put(RestPaths.LIVE_CONTAINERS,
+        new CachedContent<Map<String, SerializedContainerInformation>>(LIFESPAN,
+            new ContainerListRefresher(state)));
   }
 
   /**
@@ -91,7 +99,7 @@ public class ApplicationResource extends AbstractSliderResource {
   @Produces({MediaType.APPLICATION_JSON})
   public Object getLiveResources() {
     try {
-      return cache.get(RestPaths.LIVE_RESOURCES).get();
+      return cache.lookup(RestPaths.LIVE_RESOURCES);
     } catch (Exception e) {
       throw buildException(RestPaths.LIVE_RESOURCES, e);
     }
@@ -99,11 +107,12 @@ public class ApplicationResource extends AbstractSliderResource {
   @GET
   @Path(RestPaths.LIVE_CONTAINERS)
   @Produces({MediaType.APPLICATION_JSON})
-  public Object getLiveContainers() {
+  public Map<String, SerializedContainerInformation> getLiveContainers() {
     try {
-      return cache.get(RestPaths.LIVE_RESOURCES).get();
+      return (Map<String, SerializedContainerInformation>)cache.lookup(
+          RestPaths.LIVE_CONTAINERS);
     } catch (Exception e) {
-      throw buildException(RestPaths.LIVE_RESOURCES, e);
+      throw buildException(RestPaths.LIVE_CONTAINERS, e);
     }
   }
 
