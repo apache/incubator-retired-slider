@@ -62,6 +62,10 @@ ganglia_server_port = default('/configurations/global/ganglia_server_port', '866
 
 rest_port = config['configurations']['global']['hbase_rest_port']
 thrift_port = config['configurations']['global']['hbase_thrift_port']
+thrift_keepalive_sec = config['configurations']['global']['hbase_thrift_keepalive_sec']
+thrift_infoport = config['configurations']['global']['hbase_thrift_infoport']
+thrift_nonblocking = config['configurations']['global']['hbase_thrift_nonblocking']
+thrift_minWorkers = config['configurations']['global']['hbase_thrift_minWorkers']
 thrift_queue = config['configurations']['global']['hbase_thrift_queue']
 if is_empty(thrift_queue):
   thrift_queue = ""
