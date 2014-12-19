@@ -50,7 +50,19 @@ def hbase_service(
         framed = ""
         if not thrift_framed == "":
           framed = " -f"
-        daemon_cmd = format("{daemon_cmd} -p {thrift_port}" + queue + workers + compact + framed)
+        infoport = ""
+        if not thrift_infoport == "":
+          infoport = " --infoport {thrift_infoport}"
+        keepalive_sec = ""
+        if not thrift_keepalive_sec == "":
+          keepalive_sec = " --keepAliveSec {thrift_keepalive_sec}"
+        minWorkers = ""
+        if not thrift_minWorkers == "":
+          minWorkers = " --minWorkers {thrift_minWorkers}"
+        nonblocking = ""
+        if not thrift_nonblocking == "":
+          nonblocking = " -nonblocking"
+        daemon_cmd = format("{daemon_cmd} -p {thrift_port}" + queue + workers + compact + framed + infoport + keepalive_sec + minWorkers + nonblocking)
       elif name == 'thrift2':
         daemon_cmd = format("{daemon_cmd} -p {thrift2_port}")
       no_op_test = format("ls {pid_file} >/dev/null 2>&1 && ps `cat {pid_file}` >/dev/null 2>&1")
