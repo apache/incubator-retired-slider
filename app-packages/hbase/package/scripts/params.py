@@ -61,6 +61,9 @@ ganglia_server_host = default('/configurations/global/ganglia_server_host', '')
 ganglia_server_port = default('/configurations/global/ganglia_server_port', '8663')
 
 rest_port = config['configurations']['global']['hbase_rest_port']
+rest_infoport = config['configurations']['global']['hbase_rest_infoport']
+rest_readonly = config['configurations']['global']['hbase_rest_readonly']
+
 thrift_port = config['configurations']['global']['hbase_thrift_port']
 thrift_keepalive_sec = config['configurations']['global']['hbase_thrift_keepalive_sec']
 thrift_infoport = config['configurations']['global']['hbase_thrift_infoport']

@@ -36,7 +36,13 @@ def hbase_service(
     if action == 'start':
       daemon_cmd = format("env HBASE_IDENT_STRING={hbase_user} {cmd} start {role}")
       if name == 'rest':
-        daemon_cmd = format("{daemon_cmd} -p {rest_port}")
+        infoport = ""
+        if not rest_infoport == "":
+          infoport = " --infoport {rest_infoport}"
+        readonly = ""
+        if not rest_readonly == "":
+          readonly = " --readonly"
+        daemon_cmd = format("{daemon_cmd} -p {rest_port}" + infoport + readonly)
       elif name == 'thrift':
         queue = ""
         if not thrift_queue == "":
