@@ -24,8 +24,10 @@ import com.google.common.base.Preconditions;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathNotFoundException;
+import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.hadoop.fs.permission.FsAction;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
@@ -82,6 +84,7 @@ import org.apache.slider.common.params.ActionCreateArgs;
 import org.apache.slider.common.params.ActionEchoArgs;
 import org.apache.slider.common.params.ActionFlexArgs;
 import org.apache.slider.common.params.ActionFreezeArgs;
+import org.apache.slider.common.params.ActionKeytabArgs;
 import org.apache.slider.common.params.ActionKillContainerArgs;
 import org.apache.slider.common.params.ActionListArgs;
 import org.apache.slider.common.params.ActionLookupArgs;
@@ -377,13 +380,15 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       exitCode = actionInstallPkg(serviceArgs.getActionInstallPackageArgs());
     } else if (ACTION_INSTALL_KEYTAB.equals(action)) {
       exitCode = actionInstallKeytab(serviceArgs.getActionInstallKeytabArgs());
+    } else if (ACTION_KEYTAB.equals(action)) {
+      exitCode = actionKeytab(serviceArgs.getActionKeytabArgs());
     } else if (ACTION_BUILD.equals(action)) {
       exitCode = actionBuild(clusterName, serviceArgs.getActionBuildArgs());
     } else if (ACTION_CREATE.equals(action)) {
       exitCode = actionCreate(clusterName, serviceArgs.getActionCreateArgs());
     } else if (ACTION_FREEZE.equals(action)) {
       exitCode = actionFreeze(clusterName,
-            serviceArgs.getActionFreezeArgs());
+                              serviceArgs.getActionFreezeArgs());
     } else if (ACTION_THAW.equals(action)) {
       exitCode = actionThaw(clusterName, serviceArgs.getActionThawArgs());
     } else if (ACTION_DESTROY.equals(action)) {
@@ -392,17 +397,17 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       exitCode = actionDiagnostic(serviceArgs.getActionDiagnosticArgs());
     } else if (ACTION_EXISTS.equals(action)) {
       exitCode = actionExists(clusterName,
-          serviceArgs.getActionExistsArgs());
+                              serviceArgs.getActionExistsArgs());
     } else if (ACTION_FLEX.equals(action)) {
       exitCode = actionFlex(clusterName, serviceArgs.getActionFlexArgs());
     } else if (ACTION_HELP.equals(action)) {
       log.info(serviceArgs.usage());
     } else if (ACTION_KILL_CONTAINER.equals(action)) {
       exitCode = actionKillContainer(clusterName,
-          serviceArgs.getActionKillContainerArgs());
+                                     serviceArgs.getActionKillContainerArgs());
     } else if (ACTION_AM_SUICIDE.equals(action)) {
       exitCode = actionAmSuicide(clusterName,
-          serviceArgs.getActionAMSuicideArgs());
+                                 serviceArgs.getActionAMSuicideArgs());
     } else if (ACTION_LIST.equals(action)) {
       exitCode = actionList(clusterName, serviceArgs.getActionListArgs());
     } else if (ACTION_LOOKUP.equals(action)) {
@@ -413,7 +418,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       exitCode = actionResolve(serviceArgs.getActionResolveArgs());
     } else if (ACTION_STATUS.equals(action)) {
       exitCode = actionStatus(clusterName,
-          serviceArgs.getActionStatusArgs());
+                              serviceArgs.getActionStatusArgs());
     } else if (ACTION_UPDATE.equals(action)) {
       exitCode = actionUpdate(clusterName, serviceArgs.getActionUpdateArgs());
     } else if (ACTION_VERSION.equals(action)) {
@@ -713,20 +718,73 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
   @Override
-  public int actionInstallKeytab(ActionInstallKeytabArgs installKeytabInfo)
+  public int actionKeytab(ActionKeytabArgs keytabInfo)
       throws YarnException, IOException {
-
-    Path srcFile = null;
-    if (StringUtils.isEmpty(installKeytabInfo.folder)) {
+    if (keytabInfo.install) {
+      return actionInstallKeytab(keytabInfo);
+    } else if (keytabInfo.delete) {
+      return actionDeleteKeytab(keytabInfo);
+    } else if (keytabInfo.list) {
+      return actionListKeytab(keytabInfo);
+    } else {
       throw new BadCommandArgumentsException(
-          "A valid destination keytab sub-folder name is required (e.g. 'security').\n"
-              + CommonArgs.usage(serviceArgs, ACTION_INSTALL_KEYTAB));
+          "Keytab option specified not found.\n"
+          + CommonArgs.usage(serviceArgs, ACTION_KEYTAB));
+    }
+  }
+
+  private int actionListKeytab(ActionKeytabArgs keytabInfo) throws IOException {
+    String folder = keytabInfo.folder != null ? keytabInfo.folder : StringUtils.EMPTY;
+    Path keytabPath = sliderFileSystem.buildKeytabInstallationDirPath(folder);
+    RemoteIterator<LocatedFileStatus> files =
+        sliderFileSystem.getFileSystem().listFiles(keytabPath, true);
+    log.info("Keytabs:");
+    while (files.hasNext()) {
+      log.info("\t" + files.next().getPath().toString());
     }
 
-    if (StringUtils.isEmpty(installKeytabInfo.keytabUri)) {
+    return EXIT_SUCCESS;
+  }
+
+  private int actionDeleteKeytab(ActionKeytabArgs keytabInfo)
+      throws BadCommandArgumentsException, IOException {
+    if (StringUtils.isEmpty(keytabInfo.folder)) {
+      throw new BadCommandArgumentsException(
+          "A valid destination keytab sub-folder name is required (e.g. 'security').\n"
+          + CommonArgs.usage(serviceArgs, ACTION_KEYTAB));
+    }
+
+    if (StringUtils.isEmpty(keytabInfo.keytab)) {
+      throw new BadCommandArgumentsException("A keytab name is required.");
+    }
+
+    Path pkgPath = sliderFileSystem.buildKeytabInstallationDirPath(keytabInfo.folder);
+
+    Path fileInFs = new Path(pkgPath, keytabInfo.keytab );
+    log.info("Deleting keytab {}", fileInFs);
+    if (!sliderFileSystem.getFileSystem().exists(fileInFs)) {
+      throw new BadCommandArgumentsException("No keytab to delete found at " +
+                                             fileInFs.toUri().toString());
+    }
+
+    sliderFileSystem.getFileSystem().delete(fileInFs, false);
+
+    return EXIT_SUCCESS;
+  }
+
+  private int actionInstallKeytab(ActionKeytabArgs keytabInfo)
+      throws BadCommandArgumentsException, IOException {
+    Path srcFile = null;
+    if (StringUtils.isEmpty(keytabInfo.folder)) {
+      throw new BadCommandArgumentsException(
+          "A valid destination keytab sub-folder name is required (e.g. 'security').\n"
+          + CommonArgs.usage(serviceArgs, ACTION_KEYTAB));
+    }
+
+    if (StringUtils.isEmpty(keytabInfo.keytab)) {
       throw new BadCommandArgumentsException("A valid local keytab location is required.");
     } else {
-      File keytabFile = new File(installKeytabInfo.keytabUri);
+      File keytabFile = new File(keytabInfo.keytab);
       if (!keytabFile.exists() || keytabFile.isDirectory()) {
         throw new BadCommandArgumentsException("Unable to access supplied keytab file at " +
                                                keytabFile.getAbsolutePath());
@@ -735,24 +793,31 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       }
     }
 
-    Path pkgPath = sliderFileSystem.buildKeytabInstallationDirPath(installKeytabInfo.folder);
+    Path pkgPath = sliderFileSystem.buildKeytabInstallationDirPath(keytabInfo.folder);
     sliderFileSystem.getFileSystem().mkdirs(pkgPath);
     sliderFileSystem.getFileSystem().setPermission(pkgPath, new FsPermission(
         FsAction.ALL, FsAction.NONE, FsAction.NONE));
 
     Path fileInFs = new Path(pkgPath, srcFile.getName());
-    log.info("Installing keytab {} at {} and overwrite is {}.", srcFile, fileInFs, installKeytabInfo.overwrite);
-    if (sliderFileSystem.getFileSystem().exists(fileInFs) && !installKeytabInfo.overwrite) {
+    log.info("Installing keytab {} at {} and overwrite is {}.", srcFile, fileInFs, keytabInfo.overwrite);
+    if (sliderFileSystem.getFileSystem().exists(fileInFs) && !keytabInfo.overwrite) {
       throw new BadCommandArgumentsException("Keytab exists at " +
                                              fileInFs.toUri().toString() +
                                              ". Use --overwrite to overwrite.");
     }
 
-    sliderFileSystem.getFileSystem().copyFromLocalFile(false, installKeytabInfo.overwrite, srcFile, fileInFs);
+    sliderFileSystem.getFileSystem().copyFromLocalFile(false, keytabInfo.overwrite, srcFile, fileInFs);
     sliderFileSystem.getFileSystem().setPermission(fileInFs, new FsPermission(
         FsAction.READ_WRITE, FsAction.NONE, FsAction.NONE));
 
     return EXIT_SUCCESS;
+  }
+
+  @Override
+  public int actionInstallKeytab(ActionInstallKeytabArgs installKeytabInfo)
+      throws YarnException, IOException {
+    log.warn("The 'install-keytab' option has been deprecated.  Please use 'keytab --install'.");
+    return actionKeytab(new ActionKeytabArgs(installKeytabInfo));
   }
 
   @Override

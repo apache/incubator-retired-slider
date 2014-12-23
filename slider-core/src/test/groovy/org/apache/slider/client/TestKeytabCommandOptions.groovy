@@ -22,7 +22,11 @@ import org.apache.commons.io.FileUtils
 import org.apache.hadoop.fs.FileUtil
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.fs.RawLocalFileSystem
+import org.apache.hadoop.util.StringUtils
 import org.apache.hadoop.yarn.conf.YarnConfiguration
+import org.apache.log4j.AppenderSkeleton
+import org.apache.log4j.Logger
+import org.apache.log4j.spi.LoggingEvent
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.ClientArgs
 import org.apache.slider.common.tools.SliderFileSystem
@@ -37,7 +41,7 @@ import org.junit.Test
 /**
  * Test a keytab installation
  */
-class TestInstallKeytab extends ServiceLauncherBaseTest {
+class TestKeytabCommandOptions extends ServiceLauncherBaseTest {
   final shouldFail = new GroovyTestCase().&shouldFail
 
   private static SliderFileSystem testFileSystem
@@ -48,10 +52,37 @@ class TestInstallKeytab extends ServiceLauncherBaseTest {
     YarnConfiguration configuration = SliderUtils.createConfiguration()
     fileSystem.setConf(configuration)
     testFileSystem = new SliderFileSystem(fileSystem, configuration)
+    File testFolderDir = new File(testFileSystem.buildKeytabInstallationDirPath("").toUri().path)
+    testFolderDir.deleteDir()
+
   }
 
   @Test
   public void testInstallKeytab() throws Throwable {
+    // create a mock keytab file
+    File localKeytab =
+      FileUtil.createLocalTempFile(tempLocation, "test", true);
+    String contents = UUID.randomUUID().toString()
+    FileUtils.write(localKeytab, contents);
+    YarnConfiguration conf = SliderUtils.createConfiguration()
+    ServiceLauncher launcher = launch(TestSliderClient,
+                                      conf,
+                                      [
+                                          ClientArgs.ACTION_KEYTAB,
+                                          ClientArgs.ARG_KEYTABINSTALL,
+                                          ClientArgs.ARG_KEYTAB,
+                                          localKeytab.absolutePath,
+                                          Arguments.ARG_FOLDER,
+                                          "testFolder"])
+    Path installedPath = new Path(testFileSystem.buildKeytabInstallationDirPath("testFolder"), localKeytab.getName())
+    File installedKeytab = new File(installedPath.toUri().path)
+    assert installedKeytab.exists()
+    assert FileUtils.readFileToString(installedKeytab).equals(
+        FileUtils.readFileToString(localKeytab))
+  }
+
+  @Test
+  public void testInstallThenDeleteKeytab() throws Throwable {
     // create a mock keytab file
     File localKeytab =
       FileUtil.createLocalTempFile(tempLocation, "test", true);
@@ -71,46 +102,23 @@ class TestInstallKeytab extends ServiceLauncherBaseTest {
     assert installedKeytab.exists()
     assert FileUtils.readFileToString(installedKeytab).equals(
         FileUtils.readFileToString(localKeytab))
+
+    launcher = launch(TestSliderClient,
+                      conf,
+                      [
+                          ClientArgs.ACTION_KEYTAB,
+                          ClientArgs.ARG_KEYTABDELETE,
+                          ClientArgs.ARG_KEYTAB,
+                          localKeytab.name,
+                          Arguments.ARG_FOLDER,
+                          "testFolder"])
+
+    assert !installedKeytab.exists()
+
   }
 
   @Test
-  public void testInstallKeytabWithNoFolder() throws Throwable {
-    // create a mock keytab file
-    File localKeytab =
-      FileUtil.createLocalTempFile(tempLocation, "test", true);
-    String contents = UUID.randomUUID().toString()
-    FileUtils.write(localKeytab, contents);
-    YarnConfiguration conf = SliderUtils.createConfiguration()
-    shouldFail(BadCommandArgumentsException) {
-      ServiceLauncher launcher = launch(TestSliderClient,
-                                        conf,
-                                        [
-                                            ClientArgs.ACTION_INSTALL_KEYTAB,
-                                            ClientArgs.ARG_KEYTAB,
-                                            localKeytab.absolutePath])
-    }
-  }
-
-  @Test
-  public void testInstallKeytabWithNoKeytab() throws Throwable {
-    // create a mock keytab file
-    File localKeytab =
-      FileUtil.createLocalTempFile(tempLocation, "test", true);
-    String contents = UUID.randomUUID().toString()
-    FileUtils.write(localKeytab, contents);
-    YarnConfiguration conf = SliderUtils.createConfiguration()
-    shouldFail(BadCommandArgumentsException) {
-      ServiceLauncher launcher = launch(TestSliderClient,
-                                        conf,
-                                        [
-                                            ClientArgs.ACTION_INSTALL_KEYTAB,
-                                            ClientArgs.ARG_FOLDER,
-                                            "testFolder"])
-    }
-  }
-
-  @Test
-  public void testInstallKeytabAllowingOverwrite() throws Throwable {
+  public void testInstallThenListKeytab() throws Throwable {
     // create a mock keytab file
     File localKeytab =
       FileUtil.createLocalTempFile(tempLocation, "test", true);
@@ -128,11 +136,141 @@ class TestInstallKeytab extends ServiceLauncherBaseTest {
     Path installedPath = new Path(testFileSystem.buildKeytabInstallationDirPath("testFolder"), localKeytab.getName())
     File installedKeytab = new File(installedPath.toUri().path)
     assert installedKeytab.exists()
-    assert FileUtils.readFileToString(installedKeytab).equals(FileUtils.readFileToString(localKeytab))
+    assert FileUtils.readFileToString(installedKeytab).equals(
+        FileUtils.readFileToString(localKeytab))
+
+    // install an additional copy into another folder to test listing
     launcher = launch(TestSliderClient,
                       conf,
                       [
                           ClientArgs.ACTION_INSTALL_KEYTAB,
+                          ClientArgs.ARG_KEYTAB,
+                          localKeytab.absolutePath,
+                          Arguments.ARG_FOLDER,
+                          "testFolder2"])
+
+    TestAppender testAppender = new TestAppender();
+
+    Logger.getLogger(SliderClient.class).addAppender(testAppender);
+
+    try {
+      launcher = launch(TestSliderClient,
+                        conf,
+                        [
+                            ClientArgs.ACTION_KEYTAB,
+                            ClientArgs.ARG_KEYTABLIST]
+      )
+      assert testAppender.events.size() == 3
+      assert testAppender.events.get(1).message ==
+             "\tfile:/Users/jmaron/.slider/keytabs/testFolder/" + installedKeytab.name
+      assert testAppender.events.get(2).message ==
+             "\tfile:/Users/jmaron/.slider/keytabs/testFolder2/" + installedKeytab.name
+    } finally {
+      Logger.getLogger(SliderClient.class).removeAppender(testAppender);
+    }
+
+    // now listing while specifying the folder name
+    testAppender = new TestAppender();
+
+    Logger.getLogger(SliderClient.class).addAppender(testAppender);
+
+    try {
+      launcher = launch(TestSliderClient,
+                        conf,
+                        [
+                            ClientArgs.ACTION_KEYTAB,
+                            ClientArgs.ARG_KEYTABLIST,
+                            Arguments.ARG_FOLDER,
+                            "testFolder"])
+      assert testAppender.events.size() == 2
+      assert testAppender.events.get(1).message ==
+             "\tfile:/Users/jmaron/.slider/keytabs/testFolder/" + installedKeytab.name
+    } finally {
+      Logger.getLogger(SliderClient.class).removeAppender(testAppender);
+    }
+  }
+
+  @Test
+  public void testDeleteNonExistentKeytab() throws Throwable {
+    // create a mock keytab file
+    YarnConfiguration conf = SliderUtils.createConfiguration()
+    shouldFail(BadCommandArgumentsException) {
+      ServiceLauncher launcher = launch(TestSliderClient,
+                                        conf,
+                                        [
+                                            ClientArgs.ACTION_KEYTAB,
+                                            ClientArgs.ARG_KEYTABDELETE,
+                                            ClientArgs.ARG_KEYTAB,
+                                            "HeyIDontExist.keytab",
+                                            Arguments.ARG_FOLDER,
+                                            "testFolder"])
+    }
+  }
+
+  @Test
+  public void testInstallKeytabWithNoFolder() throws Throwable {
+    // create a mock keytab file
+    File localKeytab =
+      FileUtil.createLocalTempFile(tempLocation, "test", true);
+    String contents = UUID.randomUUID().toString()
+    FileUtils.write(localKeytab, contents);
+    YarnConfiguration conf = SliderUtils.createConfiguration()
+    shouldFail(BadCommandArgumentsException) {
+      ServiceLauncher launcher = launch(TestSliderClient,
+                                        conf,
+                                        [
+                                            ClientArgs.ACTION_KEYTAB,
+                                            ClientArgs.ARG_KEYTABINSTALL,
+                                            ClientArgs.ARG_KEYTAB,
+                                            localKeytab.absolutePath])
+    }
+  }
+
+  @Test
+  public void testInstallKeytabWithNoKeytab() throws Throwable {
+    // create a mock keytab file
+    File localKeytab =
+      FileUtil.createLocalTempFile(tempLocation, "test", true);
+    String contents = UUID.randomUUID().toString()
+    FileUtils.write(localKeytab, contents);
+    YarnConfiguration conf = SliderUtils.createConfiguration()
+    shouldFail(BadCommandArgumentsException) {
+      ServiceLauncher launcher = launch(TestSliderClient,
+                                        conf,
+                                        [
+                                            ClientArgs.ACTION_KEYTAB,
+                                            ClientArgs.ARG_KEYTABINSTALL,
+                                            ClientArgs.ARG_FOLDER,
+                                            "testFolder"])
+    }
+  }
+
+  @Test
+  public void testInstallKeytabAllowingOverwrite() throws Throwable {
+    // create a mock keytab file
+    File localKeytab =
+      FileUtil.createLocalTempFile(tempLocation, "test", true);
+    String contents = UUID.randomUUID().toString()
+    FileUtils.write(localKeytab, contents);
+    YarnConfiguration conf = SliderUtils.createConfiguration()
+    ServiceLauncher launcher = launch(TestSliderClient,
+                                      conf,
+                                      [
+                                          ClientArgs.ACTION_KEYTAB,
+                                          ClientArgs.ARG_KEYTABINSTALL,
+                                          ClientArgs.ARG_KEYTAB,
+                                          localKeytab.absolutePath,
+                                          Arguments.ARG_FOLDER,
+                                          "testFolder"])
+    Path installedPath = new Path(testFileSystem.buildKeytabInstallationDirPath("testFolder"), localKeytab.getName())
+    File installedKeytab = new File(installedPath.toUri().path)
+    assert installedKeytab.exists()
+    assert FileUtils.readFileToString(installedKeytab).equals(FileUtils.readFileToString(localKeytab))
+    launcher = launch(TestSliderClient,
+                      conf,
+                      [
+                          ClientArgs.ACTION_KEYTAB,
+                          ClientArgs.ARG_KEYTABINSTALL,
                           ClientArgs.ARG_KEYTAB,
                           localKeytab.absolutePath,
                           Arguments.ARG_FOLDER,
@@ -155,7 +293,8 @@ class TestInstallKeytab extends ServiceLauncherBaseTest {
     ServiceLauncher launcher = launch(TestSliderClient,
                                       conf,
                                       [
-                                          ClientArgs.ACTION_INSTALL_KEYTAB,
+                                          ClientArgs.ACTION_KEYTAB,
+                                          ClientArgs.ARG_KEYTABINSTALL,
                                           ClientArgs.ARG_KEYTAB,
                                           localKeytab.absolutePath,
                                           Arguments.ARG_FOLDER,
@@ -168,7 +307,8 @@ class TestInstallKeytab extends ServiceLauncherBaseTest {
       launcher = launch(TestSliderClient,
                         conf,
                         [
-                            ClientArgs.ACTION_INSTALL_KEYTAB,
+                            ClientArgs.ACTION_KEYTAB,
+                            ClientArgs.ARG_KEYTABINSTALL,
                             ClientArgs.ARG_KEYTAB,
                             localKeytab.absolutePath,
                             Arguments.ARG_FOLDER,
@@ -184,7 +324,8 @@ class TestInstallKeytab extends ServiceLauncherBaseTest {
       ServiceLauncher launcher = launch(TestSliderClient,
                                         conf,
                                         [
-                                            ClientArgs.ACTION_INSTALL_KEYTAB,
+                                            ClientArgs.ACTION_KEYTAB,
+                                            ClientArgs.ARG_KEYTABINSTALL,
                                             ClientArgs.ARG_KEYTAB,
                                             "HeyIDontExist.keytab",
                                             Arguments.ARG_FOLDER,
@@ -207,4 +348,13 @@ class TestInstallKeytab extends ServiceLauncherBaseTest {
     }
 
   }
-}
+
+  static class TestAppender extends AppenderSkeleton{
+    public List<LoggingEvent> events = new ArrayList<LoggingEvent>();
+    public void close() {}
+    public boolean requiresLayout() {return false;}
+    @Override
+    protected void append(LoggingEvent event) {
+      events.add(event);
+    }
+  }}

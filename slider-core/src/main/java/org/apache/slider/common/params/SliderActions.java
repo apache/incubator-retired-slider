@@ -47,6 +47,7 @@ public interface SliderActions {
   String ACTION_DIAGNOSTICS = "diagnostics";
   String ACTION_INSTALL_PACKAGE = "install-package";
   String ACTION_INSTALL_KEYTAB = "install-keytab";
+  String ACTION_KEYTAB = "keytab";
   String DESCRIBE_ACTION_AM_SUICIDE =
     "Tell the Slider Application Master to simulate a process failure by terminating itself";
   String DESCRIBE_ACTION_BUILD =
@@ -85,6 +86,7 @@ public interface SliderActions {
                         "Print the Slider version information";
   String DESCRIBE_ACTION_INSTALL_PACKAGE = "Install the application package in the home directory under sub-folder packages";
   String DESCRIBE_ACTION_INSTALL_KEYTAB = "Install the Kerberos keytab file in the sub-folder 'keytabs' of the user's Slider base directory";
+  String DESCRIBE_ACTION_KEYTAB = "Manage a Kerberos keytab file (install, delete, list) in the sub-folder 'keytabs' of the user's Slider base directory";
   String DESCRIBE_ACTION_DIAGNOSTIC = "Diagnose the configuration of the running slider application and slider client";
   
 }

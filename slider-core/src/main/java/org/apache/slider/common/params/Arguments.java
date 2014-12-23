@@ -60,6 +60,9 @@ public interface Arguments {
   String ARG_IMAGE = "--image";
   String ARG_INTERNAL = "--internal";
   String ARG_KEYTAB = "--keytab";
+  String ARG_KEYTABINSTALL = "--install";
+  String ARG_KEYTABDELETE = "--delete";
+  String ARG_KEYTABLIST = "--list";
   String ARG_LEVEL = "--level";
   String ARG_LIST = "--list";
   String ARG_LISTCONF = "--listconf";
