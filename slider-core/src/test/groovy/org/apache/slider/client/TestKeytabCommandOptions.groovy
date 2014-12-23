@@ -161,10 +161,10 @@ class TestKeytabCommandOptions extends ServiceLauncherBaseTest {
                             ClientArgs.ARG_KEYTABLIST]
       )
       assert testAppender.events.size() == 3
-      assert testAppender.events.get(1).message ==
-             "\tfile:/Users/jmaron/.slider/keytabs/testFolder/" + installedKeytab.name
-      assert testAppender.events.get(2).message ==
-             "\tfile:/Users/jmaron/.slider/keytabs/testFolder2/" + installedKeytab.name
+      assert testAppender.events.get(1).message.contains(
+             "/.slider/keytabs/testFolder/" + installedKeytab.name)
+      assert testAppender.events.get(2).message.contains(
+             "/.slider/keytabs/testFolder2/" + installedKeytab.name)
     } finally {
       Logger.getLogger(SliderClient.class).removeAppender(testAppender);
     }
@@ -183,8 +183,8 @@ class TestKeytabCommandOptions extends ServiceLauncherBaseTest {
                             Arguments.ARG_FOLDER,
                             "testFolder"])
       assert testAppender.events.size() == 2
-      assert testAppender.events.get(1).message ==
-             "\tfile:/Users/jmaron/.slider/keytabs/testFolder/" + installedKeytab.name
+      assert testAppender.events.get(1).message.contains(
+             "/.slider/keytabs/testFolder/" + installedKeytab.name)
     } finally {
       Logger.getLogger(SliderClient.class).removeAppender(testAppender);
     }
