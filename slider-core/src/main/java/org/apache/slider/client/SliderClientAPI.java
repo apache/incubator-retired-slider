@@ -32,6 +32,7 @@ import org.apache.slider.common.params.ActionFlexArgs;
 import org.apache.slider.common.params.ActionFreezeArgs;
 import org.apache.slider.common.params.ActionInstallKeytabArgs;
 import org.apache.slider.common.params.ActionInstallPackageArgs;
+import org.apache.slider.common.params.ActionKeytabArgs;
 import org.apache.slider.common.params.ActionKillContainerArgs;
 import org.apache.slider.common.params.ActionListArgs;
 import org.apache.slider.common.params.ActionRegistryArgs;
@@ -94,8 +95,21 @@ public interface SliderClientAPI extends Service {
    * @throws YarnException Yarn problems
    * @throws IOException other problems
    * @throws BadCommandArgumentsException bad arguments.
+   * @deperecated use #actionKeytab
    */
   int actionInstallKeytab(ActionInstallKeytabArgs installKeytabInfo)
+      throws YarnException, IOException;
+
+  /**
+   * Manage keytabs leveraged by slider
+   *
+   * @param keytabInfo the arguments needed to manage the keytab
+   * @throws YarnException Yarn problems
+   * @throws IOException other problems
+   * @throws BadCommandArgumentsException bad arguments.
+   * @deperecated use #actionKeytab
+   */
+  int actionKeytab(ActionKeytabArgs keytabInfo)
       throws YarnException, IOException;
 
   /**
