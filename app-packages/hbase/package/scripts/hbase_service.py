@@ -70,7 +70,19 @@ def hbase_service(
           nonblocking = " -nonblocking"
         daemon_cmd = format("{daemon_cmd} -p {thrift_port}" + queue + workers + compact + framed + infoport + keepalive_sec + minWorkers + nonblocking)
       elif name == 'thrift2':
-        daemon_cmd = format("{daemon_cmd} -p {thrift2_port}")
+        compact = ""
+        if not thrift2_compact == "":
+          compact = " -c"
+        framed = ""
+        if not thrift2_framed == "":
+          framed = " -f"
+        infoport = ""
+        if not thrift2_infoport == "":
+          infoport = " --infoport {thrift2_infoport}"
+        nonblocking = ""
+        if not thrift2_nonblocking == "":
+          nonblocking = " -nonblocking"
+        daemon_cmd = format("{daemon_cmd} -p {thrift2_port}" + compact + framed + infoport + nonblocking)
       no_op_test = format("ls {pid_file} >/dev/null 2>&1 && ps `cat {pid_file}` >/dev/null 2>&1")
     elif action == 'stop':
       daemon_cmd = format("env HBASE_IDENT_STRING={hbase_user} {cmd} stop {role} && rm -f {pid_file}")

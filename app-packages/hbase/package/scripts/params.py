@@ -76,6 +76,10 @@ thrift_workers = config['configurations']['global']['hbase_thrift_workers']
 thrift_compact = config['configurations']['global']['hbase_thrift_compact']
 thrift_framed = config['configurations']['global']['hbase_thrift_framed']
 thrift2_port = config['configurations']['global']['hbase_thrift2_port']
+thrift2_compact = config['configurations']['global']['hbase_thrift2_compact']
+thrift2_framed = config['configurations']['global']['hbase_thrift2_framed']
+thrift2_infoport = config['configurations']['global']['hbase_thrift2_infoport']
+thrift2_nonblocking = config['configurations']['global']['hbase_thrift2_nonblocking']
 
 if security_enabled:
   _hostname_lowercase = config['hostname'].lower()
