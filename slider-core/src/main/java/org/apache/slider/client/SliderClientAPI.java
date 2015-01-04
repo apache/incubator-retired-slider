@@ -33,6 +33,7 @@ import org.apache.slider.common.params.ActionFreezeArgs;
 import org.apache.slider.common.params.ActionInstallKeytabArgs;
 import org.apache.slider.common.params.ActionInstallPackageArgs;
 import org.apache.slider.common.params.ActionKeytabArgs;
+import org.apache.slider.common.params.ActionPackageArgs;
 import org.apache.slider.common.params.ActionKillContainerArgs;
 import org.apache.slider.common.params.ActionListArgs;
 import org.apache.slider.common.params.ActionRegistryArgs;
@@ -121,6 +122,17 @@ public interface SliderClientAPI extends Service {
    * @throws BadCommandArgumentsException bad arguments.
    */
   int actionInstallPkg(ActionInstallPackageArgs installPkgInfo)
+      throws YarnException, IOException;
+
+  /**
+   * Managing slider application package
+   *
+   * @param pkgInfo the arguments needed to upload, delete or list the package
+   * @throws YarnException Yarn problems
+   * @throws IOException other problems
+   * @throws BadCommandArgumentsException bad arguments.
+   */
+  int actionPackage(ActionPackageArgs pkgInfo)
       throws YarnException, IOException;
 
   /**

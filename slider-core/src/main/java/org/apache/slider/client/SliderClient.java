@@ -23,6 +23,7 @@ import com.google.common.base.Preconditions;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
@@ -79,6 +80,7 @@ import org.apache.slider.common.params.ActionDiagnosticArgs;
 import org.apache.slider.common.params.ActionExistsArgs;
 import org.apache.slider.common.params.ActionInstallKeytabArgs;
 import org.apache.slider.common.params.ActionInstallPackageArgs;
+import org.apache.slider.common.params.ActionPackageArgs;
 import org.apache.slider.common.params.ActionAMSuicideArgs;
 import org.apache.slider.common.params.ActionCreateArgs;
 import org.apache.slider.common.params.ActionEchoArgs;
@@ -173,6 +175,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -376,7 +379,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     int exitCode = EXIT_SUCCESS;
     String clusterName = serviceArgs.getClusterName();
     // actions
-    if (ACTION_INSTALL_PACKAGE.equals(action)) {
+    if (ACTION_PACKAGE.equals(action)) {
+      exitCode = actionPackage(serviceArgs.getActionPackageArgs());
+    } else if (ACTION_INSTALL_PACKAGE.equals(action)) {
       exitCode = actionInstallPkg(serviceArgs.getActionInstallPackageArgs());
     } else if (ACTION_INSTALL_KEYTAB.equals(action)) {
       exitCode = actionInstallKeytab(serviceArgs.getActionInstallKeytabArgs());
@@ -857,6 +862,157 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     sliderFileSystem.getFileSystem().copyFromLocalFile(false, installPkgInfo.replacePkg, srcFile, fileInFs);
     return EXIT_SUCCESS;
+  }
+
+  @Override
+  public int actionPackage(ActionPackageArgs actionPackageInfo)
+      throws YarnException, IOException {
+    if (actionPackageInfo.install) {
+      return actionPackageInstall(actionPackageInfo);
+    }
+    if (actionPackageInfo.delete) {
+      return actionPackageDelete(actionPackageInfo);
+    }
+    if (actionPackageInfo.list) {
+      return actionPackageList();
+    }
+    if (actionPackageInfo.instances) {
+      return actionPackageInstances();
+    }
+    throw new BadCommandArgumentsException(
+        "Select valid package operation option");
+  }
+
+  private int actionPackageInstances() throws YarnException, IOException {
+    Map<String, Path> persistentInstances = sliderFileSystem
+        .listPersistentInstances();
+    if(persistentInstances.isEmpty()) {
+      log.info("No slider cluster specification available");
+      return EXIT_SUCCESS;
+    }
+    String pkgPathValue = sliderFileSystem
+        .buildPackageDirPath(StringUtils.EMPTY).toUri().getPath();
+    FileSystem fs = sliderFileSystem.getFileSystem();
+    Iterator<Map.Entry<String, Path>> instanceItr = persistentInstances
+        .entrySet().iterator();
+    log.info("List of application with its package name and path");
+    while(instanceItr.hasNext()) {
+      Map.Entry<String, Path> entry = instanceItr.next();
+      String clusterName = entry.getKey();
+      Path clusterPath = entry.getValue();
+      AggregateConf instanceDefinition = loadInstanceDefinitionUnresolved(
+          clusterName, clusterPath);
+      Path appDefPath = new Path(instanceDefinition.getAppConfOperations()
+          .getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF));
+      try {
+        if (appDefPath.toString().contains(pkgPathValue)
+            && fs.isFile(appDefPath)) {
+          String packageName = appDefPath.getParent().getName();
+          println("\t" + clusterName + "\t" + packageName + "\t"
+              + appDefPath.toString());
+        }
+      } catch(IOException e) {
+        if(log.isDebugEnabled()) {
+          log.debug(clusterName + " application definition path "
+              + appDefPath.toString() + " is not found.");
+        }
+      }
+    }
+    return EXIT_SUCCESS;
+  }
+
+  private int actionPackageList() throws IOException {
+    Path pkgPath = sliderFileSystem.buildPackageDirPath(StringUtils.EMPTY);
+    log.info("Package install path : " + pkgPath);
+    if (!sliderFileSystem.getFileSystem().isDirectory(pkgPath)) {
+      log.info("No package(s) installed");
+      return EXIT_SUCCESS;
+    }
+    FileStatus[] fileStatus = sliderFileSystem.getFileSystem().listStatus(
+        pkgPath);
+    boolean hasPackage = false;
+    StringBuilder sb = new StringBuilder();
+    sb.append("List of installed packages:\n");
+    for (FileStatus fstat : fileStatus) {
+      if (fstat.isDirectory()) {
+        sb.append("\t" + fstat.getPath().getName());
+        sb.append("\n");
+        hasPackage = true;
+      }
+    }
+    if (hasPackage) {
+      println(sb.toString());
+    } else {
+      log.info("No package(s) installed");
+    }
+    return EXIT_SUCCESS;
+  }
+
+  private int actionPackageInstall(ActionPackageArgs actionPackageArgs) throws
+      YarnException,
+      IOException {
+
+    Path srcFile = null;
+    if (StringUtils.isEmpty(actionPackageArgs.name)) {
+      throw new BadCommandArgumentsException(
+          "A valid application type name is required (e.g. HBASE).\n"
+              + CommonArgs.usage(serviceArgs, ACTION_PACKAGE));
+    }
+
+    if (StringUtils.isEmpty(actionPackageArgs.packageURI)) {
+      throw new BadCommandArgumentsException(
+          "A valid application package location required.");
+    } else {
+      File pkgFile = new File(actionPackageArgs.packageURI);
+      if (!pkgFile.exists() || pkgFile.isDirectory()) {
+        throw new BadCommandArgumentsException(
+            "Unable to access supplied pkg file at "
+                + pkgFile.getAbsolutePath());
+      } else {
+        srcFile = new Path(pkgFile.toURI());
+      }
+    }
+
+    Path pkgPath = sliderFileSystem.buildPackageDirPath(actionPackageArgs.name);
+    sliderFileSystem.getFileSystem().mkdirs(pkgPath);
+
+    Path fileInFs = new Path(pkgPath, srcFile.getName());
+    log.info("Installing package {} at {} and overwrite is {}.", srcFile,
+        fileInFs, actionPackageArgs.replacePkg);
+    if (sliderFileSystem.getFileSystem().exists(fileInFs)
+        && !actionPackageArgs.replacePkg) {
+      throw new BadCommandArgumentsException("Pkg exists at " +
+                                             fileInFs.toUri().toString() +
+                                             ". Use --replacepkg to overwrite.");
+    }
+
+    sliderFileSystem.getFileSystem().copyFromLocalFile(false,
+        actionPackageArgs.replacePkg, srcFile, fileInFs);
+    return EXIT_SUCCESS;
+  }
+
+  private int actionPackageDelete(ActionPackageArgs actionPackageArgs) throws
+      YarnException, IOException {
+    if (StringUtils.isEmpty(actionPackageArgs.name)) {
+      throw new BadCommandArgumentsException(
+          "A valid application type name is required (e.g. HBASE).\n"
+              + CommonArgs.usage(serviceArgs, ACTION_PACKAGE));
+    }
+
+    Path pkgPath = sliderFileSystem.buildPackageDirPath(actionPackageArgs.name);
+    if (!sliderFileSystem.getFileSystem().exists(pkgPath)) {
+      throw new BadCommandArgumentsException("Package does not exists at "
+          + pkgPath.toUri().toString());
+    }
+    log.info("Deleting package {} at {}.", actionPackageArgs.name, pkgPath);
+
+    if(sliderFileSystem.getFileSystem().delete(pkgPath, true)) {
+      log.info("Deleted package {} " + actionPackageArgs.name);
+      return EXIT_SUCCESS;
+    } else {
+      log.warn("Package deletion failed.");
+      return EXIT_NOT_FOUND;
+    }
   }
 
   @Override

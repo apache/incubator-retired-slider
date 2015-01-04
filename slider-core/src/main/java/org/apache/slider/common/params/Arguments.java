@@ -80,6 +80,10 @@ public interface Arguments {
   String ARG_OVERWRITE = "--overwrite";
   String ARG_PACKAGE = "--package";
   String ARG_PATH = "--path";
+  String ARG_PKGDELETE = "--delete";
+  String ARG_PKGINSTALL = "--install";
+  String ARG_PKGINSTANCES = "--instances";
+  String ARG_PKGLIST = "--list";
   String ARG_PROVIDER = "--provider";
   String ARG_QUEUE = "--queue";
   String ARG_REPLACE_PKG = "--replacepkg";

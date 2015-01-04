@@ -46,6 +46,7 @@ public interface SliderActions {
   String ACTION_VERSION = "version";
   String ACTION_DIAGNOSTICS = "diagnostics";
   String ACTION_INSTALL_PACKAGE = "install-package";
+  String ACTION_PACKAGE = "package";
   String ACTION_INSTALL_KEYTAB = "install-keytab";
   String ACTION_KEYTAB = "keytab";
   String DESCRIBE_ACTION_AM_SUICIDE =
