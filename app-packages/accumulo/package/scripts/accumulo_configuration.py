@@ -133,6 +133,13 @@ def setup_conf_dir(name=None): # 'master' or 'tserver' or 'monitor' or 'gc' or '
        group = params.user_group
   )
 
+  # create metrics2 properties file
+  PropertiesFile(format("{params.conf_dir}/hadoop-metrics2-accumulo.properties"),
+                 properties = params.config['configurations']['metrics2'],
+                 owner = params.accumulo_user,
+                 group = params.user_group
+  )
+
   if name == "proxy":
     # create proxy.properties file
     PropertiesFile(params.proxy_conf,
