@@ -49,7 +49,7 @@ public class CachedContent<T> {
    * Get the value, triggering a refresh if needed
    * @return the cached or latest value.
    */
-  public T get() {
+  public T get() throws Exception {
     maybeRefresh();
     return getCachedValue();
   }
@@ -78,7 +78,7 @@ public class CachedContent<T> {
    * Maybe refresh the content
    * @return true if a refresh took place.
    */
-  public synchronized boolean maybeRefresh() {
+  public synchronized boolean maybeRefresh() throws Exception {
     long now = now();
     if (cachedValue == null || now >= expires) {
       log.debug("Refreshing at time {}", now);
@@ -97,7 +97,7 @@ public class CachedContent<T> {
    * Force a refresh and reset the expiry counter
    * @return the new value
    */
-  protected synchronized T forceRefresh() {
+  protected synchronized T forceRefresh() throws Exception {
     refreshCounter ++;
     T updated = refresh.refresh();
     Preconditions.checkNotNull(updated);

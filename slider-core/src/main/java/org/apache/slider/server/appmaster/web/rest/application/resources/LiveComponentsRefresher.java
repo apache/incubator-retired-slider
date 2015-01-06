@@ -35,7 +35,8 @@ public class LiveComponentsRefresher
   }
 
   @Override
-  public Map<String, SerializedComponentInformation> refresh() {
+  public Map<String, SerializedComponentInformation> refresh() throws
+      Exception {
 
     Map<Integer, RoleStatus> roleStatusMap = state.getRoleStatusMap();
     Map<String, SerializedComponentInformation> results =

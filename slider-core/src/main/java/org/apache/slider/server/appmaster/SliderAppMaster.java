@@ -596,8 +596,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     instanceDefinition.getAppConfOperations().set(
         KEY_SECURITY_ENABLED, securityEnabled);
 
-    // triggers resolution and snapshotting in agent
-    appState.updateInstanceDefinition(instanceDefinition);
+    // triggers resolution and snapshotting for agent
+    appState.setInitialInstanceDefinition(instanceDefinition);
 
     File confDir = getLocalConfDir();
     if (!confDir.exists() || !confDir.isDirectory()) {

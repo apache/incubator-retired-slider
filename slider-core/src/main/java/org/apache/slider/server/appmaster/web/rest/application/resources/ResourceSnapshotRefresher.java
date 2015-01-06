@@ -31,7 +31,7 @@ public class ResourceSnapshotRefresher implements ResourceRefresher<ConfTree> {
   }
 
   @Override
-  public ConfTree refresh() {
+  public ConfTree refresh() throws Exception {
 
     // snapshot resources
     ConfTreeOperations resources = state.getResourcesSnapshot();

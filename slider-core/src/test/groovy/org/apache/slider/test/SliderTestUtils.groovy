@@ -1184,4 +1184,21 @@ class SliderTestUtils extends Assert {
     ConfTreeOperations tree = new ConfTreeOperations(ctree)
     return tree
   }
+
+  /**
+   * Fetch a list of URLs, all of which must be of the same type
+   * @param clazz class of resolved values
+   * @param appmaster URL to app master
+   * @param subpaths list of subpaths
+   * @return a list of values in the same order as the paths passed in
+   */
+  public <T> List<T> fetchTypeList(
+      Class<T> clazz, String appmaster, List<String> subpaths
+      ) {
+    List<T> results = []
+    subpaths.each { String it ->
+      results.add(fetchType(clazz, appmaster, it))
+    }
+    return results;
+  }
 }

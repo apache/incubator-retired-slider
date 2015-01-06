@@ -117,7 +117,17 @@ public interface StateAccessForProviders {
 
   long getSnapshotTime();
 
+  /**
+   * Get a snapshot of the entire aggregate configuration
+   * @return the aggregate configuration
+   */
   AggregateConf getInstanceDefinitionSnapshot();
+
+  /**
+   * Get the desired/unresolved value
+   * @return unresolved
+   */
+  AggregateConf getUnresolvedInstanceDefinition();
 
   /**
    * Look up a role from its key -or fail 

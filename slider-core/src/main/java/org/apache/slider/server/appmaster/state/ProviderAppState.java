@@ -154,6 +154,11 @@ public class ProviderAppState implements StateAccessForProviders {
   public AggregateConf getInstanceDefinitionSnapshot() {
     return appState.getInstanceDefinitionSnapshot();
   }
+  
+  @Override
+  public AggregateConf getUnresolvedInstanceDefinition() {
+    return appState.getUnresolvedInstanceDefinition();
+  }
 
   @Override
   public RoleStatus lookupRoleStatus(int key) {

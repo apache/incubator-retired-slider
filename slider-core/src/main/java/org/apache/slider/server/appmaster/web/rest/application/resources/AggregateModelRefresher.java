@@ -18,35 +18,30 @@
 
 package org.apache.slider.server.appmaster.web.rest.application.resources;
 
-import org.apache.slider.api.types.SerializedContainerInformation;
-import org.apache.slider.server.appmaster.state.RoleInstance;
+import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 /**
- * Refresh the container list.
+ * Refresh the aggregate desired model via
+ * {@link StateAccessForProviders#getInstanceDefinitionSnapshot()}
  */
-public class LiveContainersRefresher implements ResourceRefresher<Map<String, SerializedContainerInformation>> {
+public class AggregateModelRefresher
+    implements ResourceRefresher<AggregateConf> {
 
   private final StateAccessForProviders state;
+  private final boolean resolved;
 
-  public LiveContainersRefresher(StateAccessForProviders state) {
+  public AggregateModelRefresher(StateAccessForProviders state,
+      boolean resolved) {
     this.state = state;
+    this.resolved = resolved;
   }
 
   @Override
-  public Map<String, SerializedContainerInformation> refresh() throws
-      Exception {
-    List<RoleInstance> containerList = state.cloneOwnedContainerList();
-
-    Map<String, SerializedContainerInformation> map = new HashMap<String, SerializedContainerInformation>();
-    for (RoleInstance instance : containerList) {
-      SerializedContainerInformation serialized = instance.serialize();
-      map.put(serialized.containerId, serialized);
-    }
-    return map;
+  public AggregateConf refresh() throws Exception {
+    return
+        resolved ?
+          state.getInstanceDefinitionSnapshot()
+          : state.getUnresolvedInstanceDefinition();
   }
 }

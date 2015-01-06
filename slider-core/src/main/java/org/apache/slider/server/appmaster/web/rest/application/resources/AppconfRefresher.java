@@ -18,35 +18,38 @@
 
 package org.apache.slider.server.appmaster.web.rest.application.resources;
 
-import org.apache.slider.api.types.SerializedContainerInformation;
-import org.apache.slider.server.appmaster.state.RoleInstance;
+import org.apache.slider.core.conf.AggregateConf;
+import org.apache.slider.core.conf.ConfTree;
+import org.apache.slider.core.persist.ConfTreeSerDeser;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 /**
- * Refresh the container list.
+ * refresher for resources and application configuration
  */
-public class LiveContainersRefresher implements ResourceRefresher<Map<String, SerializedContainerInformation>> {
+public class AppconfRefresher
+    implements ResourceRefresher<ConfTree> {
 
   private final StateAccessForProviders state;
+  private final boolean unresolved;
+  private final boolean resources;
 
-  public LiveContainersRefresher(StateAccessForProviders state) {
+  public AppconfRefresher(StateAccessForProviders state,
+      boolean unresolved,
+      boolean resources) {
     this.state = state;
+    this.unresolved = unresolved;
+    this.resources = resources;
   }
 
-  @Override
-  public Map<String, SerializedContainerInformation> refresh() throws
-      Exception {
-    List<RoleInstance> containerList = state.cloneOwnedContainerList();
 
-    Map<String, SerializedContainerInformation> map = new HashMap<String, SerializedContainerInformation>();
-    for (RoleInstance instance : containerList) {
-      SerializedContainerInformation serialized = instance.serialize();
-      map.put(serialized.containerId, serialized);
-    }
-    return map;
+  @Override
+  public ConfTree refresh() throws Exception {
+    AggregateConf aggregateConf =
+        unresolved ?
+        state.getUnresolvedInstanceDefinition():
+        state.getInstanceDefinitionSnapshot();
+    ConfTree ct = resources ? aggregateConf.getResources() 
+                            : aggregateConf.getResources();
+    return new ConfTreeSerDeser().fromInstance(ct);
   }
 }
