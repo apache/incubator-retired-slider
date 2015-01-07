@@ -143,4 +143,9 @@ public interface SliderXmlConfKeys {
    * The path to the python executable utilized to launch the agent.
    */
   String PYTHON_EXECUTABLE_PATH = "agent.python.exec.path";
+
+  /**
+   * Flag to enable the insecure AM filter: {@value}
+   */
+  String X_DEV_INSECURE_WS = "slider.dev.ws.insecure";
 }

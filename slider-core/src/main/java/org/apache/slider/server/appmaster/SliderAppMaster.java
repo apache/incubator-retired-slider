@@ -146,6 +146,7 @@ import org.apache.slider.server.appmaster.state.RoleInstance;
 import org.apache.slider.server.appmaster.state.RoleStatus;
 import org.apache.slider.server.appmaster.state.SimpleReleaseSelector;
 import org.apache.slider.server.appmaster.web.AgentService;
+import org.apache.slider.server.appmaster.web.rest.InsecureAmFilterInitializer;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentWebApp;
 import org.apache.slider.server.appmaster.web.SliderAMWebApp;
 import org.apache.slider.server.appmaster.web.WebAppApi;
@@ -385,6 +386,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * The port for the web application
    */
   private int webAppPort;
+  private boolean securityEnabled;
 
   /**
    * Service Constructor
@@ -593,7 +595,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     securityConfiguration = new SecurityConfiguration(
         serviceConf, instanceDefinition, clustername);
     // obtain security state
-    boolean securityEnabled = securityConfiguration.isSecurityEnabled();
+    securityEnabled = securityConfiguration.isSecurityEnabled();
     // set the global security flag for the instance definition
     instanceDefinition.getAppConfOperations().set(
         KEY_SECURITY_ENABLED, securityEnabled);
@@ -607,9 +609,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       File parentFile = confDir.getParentFile();
       log.info("Parent dir {}:\n{}", parentFile, SliderUtils.listDir(parentFile));
     }
-
-    // IP filtering
-    serviceConf.set(HADOOP_HTTP_FILTER_INITIALIZERS, AM_FILTER_NAME);
     
     //get our provider
     MapOperations globalInternalOptions = getGlobalInternalOptions();
@@ -655,6 +654,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     Map<String, String> envVars;
     List<Container> liveContainers;
+    
     /**
      * It is critical this section is synchronized, to stop async AM events
      * arriving while registering a restarting AM.
@@ -719,7 +719,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         uploadServerCertForLocalization(clustername, fs);
       }
 
-      startAgentWebApp(appInformation, serviceConf);
 
       webAppPort = getPortToRequest();
       if (webAppPort == 0) {
@@ -795,7 +794,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       providerService.validateApplicationConfiguration(instanceDefinition, 
                                                        confDir,
-                                                       securityEnabled);
+          securityEnabled);
 
       //determine the location for the role history data
       Path historyDir = new Path(clusterDirPath, HISTORY_DIR_NAME);
@@ -815,11 +814,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
           instanceDefinition.getName(), appState.getRolePriorityMap());
 
       // add the AM to the list of nodes in the cluster
-      
+
       appState.buildAppMasterNode(appMasterContainerID,
-                                  appMasterHostname,
+          appMasterHostname,
           webAppPort,
-                                  appMasterHostname + ":" + webAppPort);
+          appMasterHostname + ":" + webAppPort);
 
       // build up environment variables that the AM wants set in every container
       // irrespective of provider and role.
@@ -872,13 +871,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     service_user_name = RegistryUtils.currentUser();
     log.info("Registry service username ={}", service_user_name);
 
-    // now do the registration
-    registerServiceInstance(clustername, appid);
 
-    // log the YARN and web UIs
-    log.info("RM Webapp address {}", serviceConf.get(YarnConfiguration.RM_WEBAPP_ADDRESS));
-    log.info("slider Webapp address {}", appMasterTrackingUrl);
-    
     // declare the cluster initialized
     log.info("Application Master Initialization Completed");
     initCompleted.set(true);
@@ -891,8 +884,28 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       startQueueProcessing();
 
-      deployWebApplication(serviceConf, webAppPort);
+      // Web service endpoints: initialize
 
+      WebAppApiImpl webAppApi =
+          new WebAppApiImpl(this,
+              stateForProviders,
+              providerService,
+              certificateManager,
+              registryOperations,
+              metricsAndMonitoring);
+      initAMFilterOptions(serviceConf);
+
+      // start the agent web app
+      startAgentWebApp(appInformation, serviceConf, webAppApi);
+      deployWebApplication(serviceConf, webAppPort, webAppApi);
+
+      // YARN Registry do the registration
+      registerServiceInstance(clustername, appid);
+
+      // log the YARN and web UIs
+      log.info("RM Webapp address {}",
+          serviceConf.get(YarnConfiguration.RM_WEBAPP_ADDRESS));
+      log.info("slider Webapp address {}", appMasterTrackingUrl);
 
       // Start the Slider AM provider
       sliderAMProvider.start();
@@ -917,17 +930,13 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    *   Creates and starts the web application, and adds a
    *   <code>WebAppService</code> service under the AM, to ensure
    *   a managed web application shutdown.
-   * 
-   * @param serviceConf AM configuration
+   *  @param serviceConf AM configuration
    * @param port port to deploy the web application on
+   * @param webAppApi web app API instance
    */
-  private void deployWebApplication(Configuration serviceConf, int port) {
-    WebAppApi webAppApi = new WebAppApiImpl(this,
-        stateForProviders,
-        providerService,
-        certificateManager,
-        registryOperations,
-        metricsAndMonitoring);
+  private void deployWebApplication(Configuration serviceConf,
+      int port, WebAppApiImpl webAppApi) {
+
     webApp = new SliderAMWebApp(webAppApi);
     WebApps.$for(SliderAMWebApp.BASE_PATH,
         WebAppApi.class,
@@ -1061,26 +1070,31 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
   }
 
+  /**
+   * Set up and start the agent web application 
+   * @param appInformation application information
+   * @param serviceConf service configuration
+   * @param webAppApi web app API instance to bind to
+   * @throws IOException
+   */
   private void startAgentWebApp(MapOperations appInformation,
-                                Configuration serviceConf) throws IOException {
+      Configuration serviceConf, WebAppApiImpl webAppApi) throws IOException {
     URL[] urls = ((URLClassLoader) AgentWebApp.class.getClassLoader() ).getURLs();
     StringBuilder sb = new StringBuilder("AM classpath:");
     for (URL url : urls) {
       sb.append("\n").append(url.toString());
     }
-    LOG_YARN.info(sb.append("\n").toString());
+    LOG_YARN.debug(sb.append("\n").toString());
+    initAMFilterOptions(serviceConf);
+
+
     // Start up the agent web app and track the URL for it
+    MapOperations appMasterConfig = getInstanceDefinition()
+        .getAppConfOperations().getComponent(SliderKeys.COMPONENT_AM);
     AgentWebApp agentWebApp = AgentWebApp.$for(AgentWebApp.BASE_PATH,
-                     new WebAppApiImpl(this,
-                         stateForProviders,
-                         providerService,
-                         certificateManager,
-                         registryOperations,
-                         metricsAndMonitoring),
+        webAppApi,
                      RestPaths.AGENT_WS_CONTEXT)
-        .withComponentConfig(getInstanceDefinition().getAppConfOperations()
-                                                    .getComponent(
-                                                        SliderKeys.COMPONENT_AM))
+        .withComponentConfig(appMasterConfig)
         .start();
     agentOpsUrl =
         "https://" + appMasterHostname + ":" + agentWebApp.getSecuredPort();
@@ -1099,6 +1113,24 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
                        agentWebApp.getPort());
     appInformation.set(StatusKeys.INFO_AM_AGENT_OPS_PORT,
                        agentWebApp.getSecuredPort());
+  }
+
+  /**
+   * Set up the AM filter 
+   * @param serviceConf configuration to patch
+   */
+  private void initAMFilterOptions(Configuration serviceConf) {
+    // IP filtering
+    String amFilterName = AM_FILTER_NAME;
+
+    // This is here until YARN supports proxy & redirect operations
+    // on verbs other than GET, and is only supported for testing
+    if (serviceConf.getBoolean(SliderXmlConfKeys.X_DEV_INSECURE_WS, false)) {
+      log.warn("Insecure filter enabled: REST operations are unauthenticated");
+      amFilterName = InsecureAmFilterInitializer.NAME;
+    }
+
+    serviceConf.set(HADOOP_HTTP_FILTER_INITIALIZERS, amFilterName);
   }
 
   /**

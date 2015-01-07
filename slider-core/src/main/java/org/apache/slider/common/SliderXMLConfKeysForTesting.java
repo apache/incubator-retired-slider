@@ -22,14 +22,7 @@ package org.apache.slider.common;
  * Keys shared across tests
  */
 public interface SliderXMLConfKeysForTesting {
-
-  String KEY_TEST_HBASE_HOME = "slider.test.hbase.home";
-  String KEY_TEST_HBASE_TAR = "slider.test.hbase.tar";
-  String KEY_TEST_HBASE_APPCONF = "slider.test.hbase.appconf";
-  String KEY_TEST_ACCUMULO_HOME = "slider.test.accumulo.home";
-  String KEY_TEST_ACCUMULO_TAR = "slider.test.accumulo.tar";
-  String KEY_TEST_ACCUMULO_APPCONF = "slider.test.accumulo.appconf";
-
+  
   String KEY_TEST_THAW_WAIT_TIME = "slider.test.thaw.wait.seconds";
 
   int DEFAULT_THAW_WAIT_TIME_SECONDS = 60;
