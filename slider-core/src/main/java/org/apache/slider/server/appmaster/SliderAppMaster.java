@@ -34,6 +34,7 @@ import org.apache.hadoop.http.HttpConfig;
 import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.ipc.ProtocolSignature;
+import org.apache.hadoop.registry.client.binding.RegistryTypeUtils;
 import org.apache.hadoop.registry.client.binding.RegistryUtils;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.UserGroupInformation;
@@ -106,6 +107,7 @@ import org.apache.slider.core.main.LauncherExitCodes;
 import org.apache.slider.core.main.RunService;
 import org.apache.slider.core.main.ServiceLauncher;
 import org.apache.slider.core.persist.ConfTreeSerDeser;
+import org.apache.slider.core.registry.info.CustomRegistryConstants;
 import org.apache.slider.providers.ProviderCompleted;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderService;
@@ -1132,15 +1134,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         PersistencePolicies.APPLICATION);
     serviceRecord.description = "Slider Application Master";
 
-/* SLIDER-531: disable this addition so things compile against versions of
-the registry with/without the new record format
-
     serviceRecord.addExternalEndpoint(
         RegistryTypeUtils.ipcEndpoint(
             CustomRegistryConstants.AM_IPC_PROTOCOL,
             rpcServiceAddress));
             
-    */
     // internal services
     sliderAMProvider.applyInitialRegistryDefinitions(amWebURI,
         agentOpsURI,
