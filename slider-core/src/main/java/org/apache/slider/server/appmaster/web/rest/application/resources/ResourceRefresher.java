@@ -27,5 +27,5 @@ public interface ResourceRefresher<T> {
    * Build an up to date version of the data
    * @return a new instance of the (JSON serializable) data
    */
-  T refresh();
+  T refresh() throws Exception;
 }

@@ -26,6 +26,9 @@ import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.api.StateValues
 import org.apache.slider.api.types.SerializedComponentInformation
 import org.apache.slider.api.types.SerializedContainerInformation
+import org.apache.slider.common.params.Arguments
+import org.apache.slider.core.conf.AggregateConf
+import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.server.appmaster.web.rest.application.ApplicationResource
 
 import static org.apache.slider.api.ResourceKeys.*
@@ -45,6 +48,8 @@ import static org.apache.slider.server.appmaster.management.MetricsKeys.*
 class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
   
   public static final int WEB_STARTUP_TIME = 30000
+  public static final String TEST_GLOBAL_OPTION = "test.global.option"
+  public static final String TEST_GLOBAL_OPTION_PRESENT = "present"
 
   @Test
   public void testStandaloneAgentWeb() throws Throwable {
@@ -58,7 +63,10 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
 
 
     ServiceLauncher<SliderClient> launcher =
-        createStandaloneAM(clustername, true, false)
+        createStandaloneAMWithArgs(clustername,
+            [Arguments.ARG_OPTION,
+             TEST_GLOBAL_OPTION, TEST_GLOBAL_OPTION_PRESENT],
+            true, false)
     SliderClient client = launcher.service
     addToTeardown(client);
 
@@ -139,11 +147,8 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
     assert amContainerInfo.state == StateValues.STATE_LIVE
    
     describe "base entry lists"
-    def list = fetchType(ArrayList, appmaster, LIVE)
 
-    def live_entries = ApplicationResource.LIVE_ENTRIES
-    assert list.size() == live_entries.size()
-    live_entries.containsAll(list)
+    assertPathServesList(appmaster, LIVE, ApplicationResource.LIVE_ENTRIES)
     
     describe "containers"
 
@@ -180,6 +185,55 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
     assert amFullInfo.containers.size() == 1
     assert amFullInfo.containers[0] == amContainerId
 
+    testRESTModel(appmaster)
+    
+    
+  }
+
+  public void testRESTModel(String appmaster) {
+    describe "model"
+
+    assertPathServesList(appmaster,
+        MODEL,
+        ApplicationResource.MODEL_ENTRIES)
+
+    def unresolvedConf = fetchType(AggregateConf, appmaster, MODEL_DESIRED)
+    log.info "Unresolved \n$unresolvedConf"
+    def unresolvedAppConf = unresolvedConf.appConfOperations
+
+    def sam = "slider-appmaster"
+    assert unresolvedAppConf.getComponentOpt(sam,
+        TEST_GLOBAL_OPTION, "") == ""
+    def resolvedConf = fetchType(AggregateConf, appmaster, MODEL_RESOLVED)
+    log.info "Resolved \n$resolvedConf"
+    assert resolvedConf.appConfOperations.getComponentOpt(
+        sam, TEST_GLOBAL_OPTION, "") == TEST_GLOBAL_OPTION_PRESENT
+
+    def unresolved = fetchTypeList(ConfTree, appmaster,
+        [MODEL_DESIRED_APPCONF, MODEL_DESIRED_RESOURCES])
+    assert unresolved[0].components[sam][TEST_GLOBAL_OPTION] == null
+
+
+    def resolved = fetchTypeList(ConfTree, appmaster,
+        [MODEL_RESOLVED_APPCONF, MODEL_RESOLVED_RESOURCES])
+    assert resolved[0].components[sam][TEST_GLOBAL_OPTION] ==
+           TEST_GLOBAL_OPTION_PRESENT
+  }
+
+  /**
+   * Assert that a path resolves to an array list that contains
+   * those entries (and only those entries) expected
+   * @param appmaster AM ref
+   * @param path path under AM
+   * @param entries entries to assert the presence of
+   */
+  public void assertPathServesList(
+      String appmaster,
+      String path,
+      List<String> entries) {
+    def list = fetchType(ArrayList, appmaster, path)
+    assert list.size() == entries.size()
+    assert entries.containsAll(list)
   }
 
 

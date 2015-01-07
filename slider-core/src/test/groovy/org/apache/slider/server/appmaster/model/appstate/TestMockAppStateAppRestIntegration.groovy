@@ -128,7 +128,7 @@ class TestMockAppStateAppRestIntegration extends BaseMockAppStateTest implements
   class IntRefresher implements ResourceRefresher<Integer>   {
     int count ;
     @Override
-    Integer refresh() {
+    Integer refresh() throws Exception {
       log.info("Refresh at $count")
       def result = count
       count += 1;

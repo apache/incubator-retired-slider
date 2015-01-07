@@ -59,6 +59,8 @@ import org.apache.slider.core.exceptions.ErrorStrings;
 import org.apache.slider.core.exceptions.NoSuchNodeException;
 import org.apache.slider.core.exceptions.SliderInternalStateException;
 import org.apache.slider.core.exceptions.TriggerClusterTeardownException;
+import org.apache.slider.core.persist.AggregateConfSerDeser;
+import org.apache.slider.core.persist.ConfTreeSerDeser;
 import org.apache.slider.providers.PlacementPolicy;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
@@ -109,14 +111,28 @@ public class AppState {
 
   /**
    * The definition of the instance. Flexing updates the resources section
-   This is used as a synchronization point on activities that update
-   the CD, and also to update some of the structures that
-   feed in to the CD
+   * This is used as a synchronization point on activities that update
+   * the CD, and also to update some of the structures that
+   * feed in to the CD
    */
   private AggregateConf instanceDefinition;
-  
+
+  /**
+   * Time the instance definition snapshots were created
+   */
   private long snapshotTime;
+
+  /**
+   * Snapshot of the instance definition. This is fully
+   * resolved.
+   */
   private AggregateConf instanceDefinitionSnapshot;
+
+  /**
+   * Snapshot of the raw instance definition; unresolved and
+   * without any patch of an AM into it.
+   */
+  private AggregateConf unresolvedInstanceDefinition;
 
   /**
    * snapshot of resources as of last update time
@@ -379,13 +395,18 @@ public class AppState {
    * 
    * Important: this is for early binding and must not be used after the build
    * operation is complete. 
-   * @param definition
+   * @param definition initial definition
    * @throws BadConfigException
    */
-  public synchronized void updateInstanceDefinition(AggregateConf definition) throws
-                                                                              BadConfigException,
-                                                                              IOException {
-    this.instanceDefinition = definition;
+  public synchronized void setInitialInstanceDefinition(AggregateConf definition)
+      throws BadConfigException, IOException {
+    log.debug("Setting initial instance definition");
+    // snapshot the definition
+    AggregateConfSerDeser serDeser = new AggregateConfSerDeser();
+
+    unresolvedInstanceDefinition = serDeser.fromInstance(definition);
+    
+    this.instanceDefinition = serDeser.fromInstance(definition);
     onInstanceDefinitionUpdated();
   }
 
@@ -453,6 +474,10 @@ public class AppState {
     return instanceDefinitionSnapshot;
   }
 
+  public AggregateConf getUnresolvedInstanceDefinition() {
+    return unresolvedInstanceDefinition;
+  }
+
   /**
    * Build up the application state
    * @param instanceDefinition definition of the applicatin instance
@@ -462,8 +487,8 @@ public class AppState {
    * @param fs filesystem
    * @param historyDir directory containing history files
    * @param liveContainers list of live containers supplied on an AM restart
-   * @param applicationInfo
-   * @param releaseSelector
+   * @param applicationInfo app info to retain for web views
+   * @param releaseSelector selector of containers to release
    */
   public synchronized void buildInstance(AggregateConf instanceDefinition,
       Configuration appmasterConfig,
@@ -478,6 +503,7 @@ public class AppState {
     Preconditions.checkArgument(instanceDefinition != null);
     Preconditions.checkArgument(releaseSelector != null);
 
+    log.debug("Building application state");
     this.publishedProviderConf = publishedProviderConf;
     this.applicationInfo = applicationInfo != null ? applicationInfo
                                                    : new HashMap<String, String>();
@@ -496,7 +522,7 @@ public class AppState {
 
     // set the cluster specification (once its dependency the client properties
     // is out the way
-    updateInstanceDefinition(instanceDefinition);
+    setInitialInstanceDefinition(instanceDefinition);
 
     //build the initial role list
     for (ProviderRole providerRole : providerRoles) {
@@ -544,8 +570,8 @@ public class AppState {
     rebuildModelFromRestart(liveContainers);
 
     // any am config options to pick up
-
     logServerURL = appmasterConfig.get(YarnConfiguration.YARN_LOG_SERVER_URL, "");
+    
     //mark as live
     applicationLive = true;
   }
@@ -607,13 +633,26 @@ public class AppState {
 
   /**
    * Actions to perform when an instance definition is updated
-   * Currently: resolve the configuration
-   *  updated the cluster spec derivative
+   * Currently: 
+   * <ol>
+   *   <li>
+   *     resolve the configuration
+   *   </li>
+   *   <li>
+   *     update the cluster spec derivative
+   *   </li>
+   * </ol>
+   *  
    * @throws BadConfigException
    */
   private synchronized void onInstanceDefinitionUpdated() throws
                                                           BadConfigException,
                                                           IOException {
+    log.debug("Instance definition updated");
+    //note the time 
+    snapshotTime = now();
+    
+    // resolve references if not already done
     instanceDefinition.resolve();
 
     // force in the AM desired state values
@@ -624,8 +663,7 @@ public class AppState {
           SliderKeys.COMPONENT_AM, ResourceKeys.COMPONENT_INSTANCES, "1");
     }
 
-    //note the time 
-    snapshotTime = now();
+
     //snapshot all three sectons
     resourcesSnapshot =
       ConfTreeOperations.fromInstance(instanceDefinition.getResources());
@@ -660,11 +698,16 @@ public class AppState {
   public synchronized List<ProviderRole> updateResourceDefinitions(ConfTree resources)
       throws BadConfigException, IOException {
     log.debug("Updating resources to {}", resources);
-    
-    instanceDefinition.setResources(resources);
+    // snapshot the (possibly unresolved) values
+    ConfTreeSerDeser serDeser = new ConfTreeSerDeser();
+    unresolvedInstanceDefinition.setResources(
+        serDeser.fromInstance(resources));
+    // assign another copy under the instance definition for resolving
+    // and then driving application size
+    instanceDefinition.setResources(serDeser.fromInstance(resources));
     onInstanceDefinitionUpdated();
  
-    //propagate the role table
+    // propagate the role table
     Map<String, Map<String, String>> updated = resources.components;
     getClusterStatus().roles = SliderUtils.deepClone(updated);
     getClusterStatus().updateTime = now();
@@ -952,14 +995,12 @@ public class AppState {
     return findNodeInCollection(containerId, nodes);
   }
 
-  
-  
   /**
    * Iterate through a collection of role instances to find one with a
    * specific (string) container ID
    * @param containerId container ID as a string
    * @param nodes collection
-   * @return 
+   * @return the found node 
    * @throws NoSuchNodeException if there was no match
    */
   private RoleInstance findNodeInCollection(String containerId,
