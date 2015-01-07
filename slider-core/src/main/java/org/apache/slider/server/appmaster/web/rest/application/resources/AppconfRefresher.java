@@ -49,7 +49,7 @@ public class AppconfRefresher
         state.getUnresolvedInstanceDefinition():
         state.getInstanceDefinitionSnapshot();
     ConfTree ct = resources ? aggregateConf.getResources() 
-                            : aggregateConf.getResources();
+                            : aggregateConf.getAppConf();
     return new ConfTreeSerDeser().fromInstance(ct);
   }
 }

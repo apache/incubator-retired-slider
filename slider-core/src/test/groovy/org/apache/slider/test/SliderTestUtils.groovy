@@ -1190,14 +1190,14 @@ class SliderTestUtils extends Assert {
    * @param clazz class of resolved values
    * @param appmaster URL to app master
    * @param subpaths list of subpaths
-   * @return a list of values in the same order as the paths passed in
+   * @return a map of paths to values
    */
-  public <T> List<T> fetchTypeList(
+  public <T> Map<String, T> fetchTypeList(
       Class<T> clazz, String appmaster, List<String> subpaths
       ) {
-    List<T> results = []
+    Map < String, T > results = [:]
     subpaths.each { String it ->
-      results.add(fetchType(clazz, appmaster, it))
+      results[it] = (fetchType(clazz, appmaster, it))
     }
     return results;
   }
