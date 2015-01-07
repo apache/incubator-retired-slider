@@ -30,6 +30,7 @@ import org.apache.slider.common.params.Arguments
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.server.appmaster.web.rest.application.ApplicationResource
+import org.apache.slider.server.appmaster.web.rest.application.resources.PingResource
 
 import static org.apache.slider.api.ResourceKeys.*
 import static org.apache.slider.api.StatusKeys.*
@@ -186,6 +187,7 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
     assert amFullInfo.containers[0] == amContainerId
 
     testRESTModel(appmaster)
+    testPing(appmaster)
     
     
   }
@@ -236,5 +238,12 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
     assert entries.containsAll(list)
   }
 
+  public void testPing(String appmaster) {
+    describe "ping"
+    def pinged = fetchType(PingResource, appmaster, ACTION_PING)
+    log.info "Ping: $pinged"
+    
+
+  }
 
 }

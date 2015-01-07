@@ -18,9 +18,7 @@
 
 package org.apache.slider.common;
 
-import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.registry.client.api.RegistryConstants;
-import org.apache.hadoop.yarn.conf.YarnConfiguration;
 
 /**
  * These are the keys that can be added to <code>conf/slider-client.xml</code>.

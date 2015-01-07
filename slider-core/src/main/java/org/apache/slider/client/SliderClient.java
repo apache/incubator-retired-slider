@@ -252,8 +252,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
   @Override
   protected void serviceInit(Configuration conf) throws Exception {
-    Configuration clientConf = SliderUtils.loadClientConfigurationResource();
-    ConfigHelper.mergeConfigurations(conf, clientConf, CLIENT_RESOURCE, true);
+    Configuration clientConf = SliderUtils.loadSliderClientXML();
+    ConfigHelper.mergeConfigurations(conf, clientConf, SLIDER_CLIENT_XML, true);
     serviceArgs.applyDefinitions(conf);
     serviceArgs.applyFileSystemBinding(conf);
     // init security with our conf
@@ -1437,8 +1437,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     String libdir = "lib";
     Path libPath = new Path(tempPath, libdir);
     sliderFileSystem.getFileSystem().mkdirs(libPath);
-    log.debug("FS={}, tempPath={}, libdir={}", sliderFileSystem.toString(),
-              tempPath, libPath);
+    log.debug("FS={}, tempPath={}, libdir={}",
+        sliderFileSystem, tempPath, libPath);
+ 
     // set local resources for the application master
     // local files or archives as needed
     // In this scenario, the jar file for the application master is part of the local resources
@@ -1593,7 +1594,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     JavaCommandLineBuilder commandLine = new JavaCommandLineBuilder();
     // insert any JVM options);
     sliderAM.addJVMOptions(instanceDefinition, commandLine);
-    // enable asserts if the text option is set
+    // enable asserts
     commandLine.enableJavaAssertions();
     
     // if the conf dir has a log4j-server.properties, switch to that
@@ -3044,7 +3045,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   private void actionDiagnosticCredentials() throws BadConfigException,
       IOException {
     if (SliderUtils.isHadoopClusterSecure(SliderUtils
-        .loadClientConfigurationResource())) {
+        .loadSliderClientXML())) {
       String credentialCacheFileDescription = null;
       try {
         credentialCacheFileDescription = SliderUtils.checkCredentialCacheFile();

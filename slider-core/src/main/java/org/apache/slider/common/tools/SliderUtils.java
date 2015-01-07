@@ -1304,23 +1304,22 @@ public final class SliderUtils {
 
   /**
    * Register the client resource in
-   * {@link SliderKeys#CLIENT_RESOURCE}
+   * {@link SliderKeys#SLIDER_CLIENT_XML}
    * for Configuration instances.
    *
    * @return true if the resource could be loaded
    */
   public static URL registerClientResource() {
-    return ConfigHelper.registerDefaultResource(SliderKeys.CLIENT_RESOURCE);
+    return ConfigHelper.registerDefaultResource(SliderKeys.SLIDER_CLIENT_XML);
   }
-
-
+  
   /**
    * Attempt to load the slider client resource. If the
    * resource is not on the CP an empty config is returned.
    * @return a config
    */
-  public static Configuration loadClientConfigurationResource() {
-    return ConfigHelper.loadFromResource(SliderKeys.CLIENT_RESOURCE);
+  public static Configuration loadSliderClientXML() {
+    return ConfigHelper.loadFromResource(SliderKeys.SLIDER_CLIENT_XML);
   }
 
   /**
@@ -2025,7 +2024,7 @@ public final class SliderUtils {
    */
   public static String getClientConfigPath() {
     URL path = ConfigHelper.class.getClassLoader().getResource(
-        SliderKeys.CLIENT_RESOURCE);
+        SliderKeys.SLIDER_CLIENT_XML);
     return path.toString();
   }
 
@@ -2037,7 +2036,7 @@ public final class SliderUtils {
    */
   public static void validateClientConfigFile() throws IOException {
     URL resURL = SliderVersionInfo.class.getClassLoader().getResource(
-        SliderKeys.CLIENT_RESOURCE);
+        SliderKeys.SLIDER_CLIENT_XML);
     if (resURL == null) {
       throw new IOException(
           "slider-client.xml doesn't exist on the path: "

@@ -489,8 +489,7 @@ public class ConfigHelper {
    * @return the URL or null
    */
   public static URL registerDefaultResource(String resource) {
-    URL resURL = ConfigHelper.class.getClassLoader()
-                                .getResource(resource);
+    URL resURL = getResourceUrl(resource);
     if (resURL != null) {
       Configuration.addDefaultResource(resource);
     }
@@ -505,8 +504,7 @@ public class ConfigHelper {
    */
   public static Configuration loadFromResource(String resource) {
     Configuration conf = new Configuration(false);
-    URL resURL = ConfigHelper.class.getClassLoader()
-                                .getResource(resource);
+    URL resURL = getResourceUrl(resource);
     if (resURL != null) {
       log.debug("loaded resources from {}", resURL);
       conf.addResource(resource);
@@ -518,7 +516,17 @@ public class ConfigHelper {
   }
 
   /**
-   * Load a resource that must be there
+   * Get the URL to a resource, null if not on the CP
+   * @param resource resource to look for
+   * @return the URL or null
+   */
+  public static URL getResourceUrl(String resource) {
+    return ConfigHelper.class.getClassLoader()
+                                  .getResource(resource);
+  }
+
+  /**
+   * Load a resource that must be on the classpath
    * @param resource the resource name
    * @return the loaded configuration
    * @throws FileNotFoundException if the resource is missing
@@ -526,8 +534,7 @@ public class ConfigHelper {
   public static Configuration loadMandatoryResource(String resource)
       throws FileNotFoundException {
     Configuration conf = new Configuration(false);
-    URL resURL = ConfigHelper.class.getClassLoader()
-                                .getResource(resource);
+    URL resURL = getResourceUrl(resource);
     if (resURL != null) {
       log.debug("loaded resources from {}", resURL);
       conf.addResource(resource);

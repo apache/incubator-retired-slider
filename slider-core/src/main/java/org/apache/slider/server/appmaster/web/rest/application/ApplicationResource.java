@@ -40,15 +40,19 @@ import org.apache.slider.server.appmaster.web.rest.application.resources.LiveCon
 import org.apache.slider.server.appmaster.web.rest.application.resources.ContentCache;
 import org.apache.slider.server.appmaster.web.rest.application.resources.LiveComponentsRefresher;
 import org.apache.slider.server.appmaster.web.rest.application.resources.LiveResourcesRefresher;
+import org.apache.slider.server.appmaster.web.rest.application.actions.RestActionPing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Singleton;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -73,6 +77,12 @@ public class ApplicationResource extends AbstractSliderResource {
   public static final List<String> MODEL_ENTRIES =
       toJsonList("desired", "resolved");
 
+  /**
+   * This is the cache of all content ... each entry is
+   * designed to be self-refreshing on get operations, 
+   * so is never very out of date, yet many GETs don't
+   * overload the rest of the system.
+   */
   private final ContentCache cache = new ContentCache();
   private final StateAccessForProviders state;
 
@@ -285,4 +295,11 @@ public class ApplicationResource extends AbstractSliderResource {
     }
   }
 
+  @GET
+  @Path(ACTION_PING)
+  @Produces({MediaType.APPLICATION_JSON})
+  public Object actionPing(@Context HttpServletRequest request,
+      @Context UriInfo uriInfo) {
+    return new RestActionPing().ping(request, uriInfo);
+  }
 }

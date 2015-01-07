@@ -405,11 +405,17 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public synchronized void serviceInit(Configuration conf) throws Exception {
     // slider client if found
     
-    Configuration customConf = SliderUtils.loadClientConfigurationResource();
+    Configuration customConf = SliderUtils.loadSliderClientXML();
     // Load in the server configuration - if it is actually on the Classpath
-    Configuration serverConf =
-      ConfigHelper.loadFromResource(SERVER_RESOURCE);
-    ConfigHelper.mergeConfigurations(customConf, serverConf, SERVER_RESOURCE, true);
+    URL serverXmlUrl = ConfigHelper.getResourceUrl(SLIDER_SERVER_XML);
+    if (serverXmlUrl != null) {
+
+      log.info("Loading {} at {}", SLIDER_SERVER_XML, serverXmlUrl);
+      Configuration serverConf =
+          ConfigHelper.loadFromResource(SLIDER_SERVER_XML);
+      ConfigHelper.mergeConfigurations(customConf, serverConf,
+          SLIDER_SERVER_XML, true);
+    }
     serviceArgs.applyDefinitions(customConf);
     serviceArgs.applyFileSystemBinding(customConf);
     // conf now contains all customizations
@@ -420,14 +426,14 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // sort out the location of the AM
     String rmAddress = createAction.getRmAddress();
     if (rmAddress != null) {
-      log.debug("Setting rm address from the command line: {}", rmAddress);
+      log.debug("Setting RM address from the command line: {}", rmAddress);
       SliderUtils.setRmSchedulerAddress(customConf, rmAddress);
     }
 
     log.info("AM configuration:\n{}",
         ConfigHelper.dumpConfigToString(customConf));
 
-    ConfigHelper.mergeConfigurations(conf, customConf, CLIENT_RESOURCE, true);
+    ConfigHelper.mergeConfigurations(conf, customConf, SLIDER_CLIENT_XML, true);
     //init security with our conf
     if (SliderUtils.isHadoopClusterSecure(conf)) {
       log.info("Secure mode with kerberos realm {}",
@@ -495,11 +501,14 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   @Override // RunService
   public Configuration bindArgs(Configuration config, String... args) throws
                                                                       Exception {
+    // let the superclass process it
+    Configuration superConf = super.bindArgs(config, args);
+    //yarn-ify
     YarnConfiguration yarnConfiguration = new YarnConfiguration(
-        super.bindArgs(config, args));
+        superConf);
     serviceArgs = new SliderAMArgs(args);
     serviceArgs.parse();
-    //yarn-ify
+
     return SliderUtils.patchConfiguration(yarnConfiguration);
   }
 
