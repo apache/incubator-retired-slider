@@ -211,12 +211,12 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
 
     def unresolved = fetchTypeList(ConfTree, appmaster,
         [MODEL_DESIRED_APPCONF, MODEL_DESIRED_RESOURCES])
-    assert unresolved[0].components[sam][TEST_GLOBAL_OPTION] == null
+    assert unresolved[MODEL_DESIRED_APPCONF].components[sam][TEST_GLOBAL_OPTION] == null
 
 
     def resolved = fetchTypeList(ConfTree, appmaster,
         [MODEL_RESOLVED_APPCONF, MODEL_RESOLVED_RESOURCES])
-    assert resolved[0].components[sam][TEST_GLOBAL_OPTION] ==
+    assert resolved[MODEL_RESOLVED_APPCONF].components[sam][TEST_GLOBAL_OPTION] ==
            TEST_GLOBAL_OPTION_PRESENT
   }
 
