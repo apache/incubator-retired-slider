@@ -56,6 +56,7 @@ import org.apache.slider.core.main.ServiceLaunchException
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.persist.JsonSerDeser
 import org.apache.slider.core.registry.docstore.PublishedConfigSet
+import org.apache.slider.core.restclient.UrlConnectionOperations
 import org.apache.slider.server.appmaster.web.HttpCacheHeaders
 import org.apache.slider.server.appmaster.web.rest.RestPaths
 import org.apache.slider.server.services.workflow.ForkedProcessService
@@ -500,7 +501,7 @@ class SliderTestUtils extends Assert {
     try {
       resultCode = client.executeMethod(get);
     } catch (IOException e) {
-      throw NetUtils.wrapException(url, 0, null, 0, e)
+      throw NetUtils.wrapException(url, destURI.port, "localhost", 0, e)
     }
 
     def body = get.responseBodyAsString
@@ -518,15 +519,18 @@ class SliderTestUtils extends Assert {
   public static void uprateFaults(String url, int resultCode, String body) {
 
     if (resultCode == 404) {
-      throw new NotFoundException(url)
+      throw new NotFoundException(url);
     }
     if (resultCode == 401) {
-      throw new ForbiddenException(url)
+      throw new ForbiddenException(url);
     }
     if (!(resultCode >= 200 && resultCode < 400)) {
-      def message = "Request to $url failed with exit code $resultCode, body length ${body?.length()}:\n$body"
-      log.error(message)
-      throw new IOException(message)
+      String message = "Request to " + url +
+                       " failed with exit code " +
+                       resultCode + ", body length " +
+                       body?.length() + ":\n" + "body;"
+      log.error(message);
+      throw new IOException(message);
     }
   }
 
@@ -566,11 +570,10 @@ class SliderTestUtils extends Assert {
     throw ex;
   } 
 
-  static URLConnectionFactory connectionFactory
+  static UrlConnectionOperations connectionFactory
 
   public static def initConnectionFactory(Configuration conf) {
-    connectionFactory = URLConnectionFactory
-        .newDefaultURLConnectionFactory(conf);
+    connectionFactory = new UrlConnectionOperations(conf);
   }
 
 
@@ -593,34 +596,8 @@ class SliderTestUtils extends Assert {
 
     log.info("Fetching HTTP content at " + path);
     URL url = new URL(path)
-    assert url.port != 0
-    HttpURLConnection conn = null;
-    int resultCode = 0
-    def body = ""
-    try {
-      conn = (HttpURLConnection) connectionFactory.openConnection(url);
-      conn.instanceFollowRedirects = true;
-      conn.connect()
-      
-
-      resultCode = conn.responseCode
-      
-      if (connectionChecks) {
-        connectionChecks(conn)
-      }
-      
-      InputStream stream = conn.errorStream;
-      if (stream == null) {
-        stream = conn.inputStream;
-      }
-
-      body = stream ? stream.text : "(no body)"
-    } catch (IOException e) {
-      throw NetUtils.wrapException(url.toString(), 0, null, 0, e)
-    } finally {
-      conn?.disconnect()
-    }
-    uprateFaults(path, resultCode, body)
+    def bytes = connectionFactory.execGet(url, false)
+    String body = new String(bytes)
     return body;
   }
 
