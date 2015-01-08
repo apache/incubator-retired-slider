@@ -16,29 +16,14 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster.web.rest.application.resources;
+package org.apache.slider.core.restclient;
 
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
-import org.codehaus.jackson.map.annotate.JsonSerialize;
-
-@JsonIgnoreProperties(ignoreUnknown = true)
-@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
-public class PingResource {
-  public long time;
-  public String text;
-  public String verb;
-  public String body;
-
-  @Override
-  public String toString() {
-    
-    final StringBuilder sb =
-        new StringBuilder("PingResource{");
-    sb.append("time=").append(time);
-    sb.append(", verb=").append(verb);
-    sb.append(", text='").append(text).append('\'');
-    sb.append(", body='").append(body).append('\'');
-    sb.append('}');
-    return sb.toString();
-  }
+/**
+ * A response for use as a return value from operations
+ */
+public class HttpOperationResponse {
+  
+  public int responseCode;
+  public String contentType;
+  public byte[] data;
 }

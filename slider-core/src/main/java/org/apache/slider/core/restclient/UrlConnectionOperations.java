@@ -30,8 +30,10 @@ import org.apache.hadoop.yarn.webapp.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -45,10 +47,22 @@ public class UrlConnectionOperations extends Configured {
 
   private URLConnectionFactory connectionFactory;
 
+  private boolean useSpnego = false;
+
   public UrlConnectionOperations(Configuration conf) {
     super(conf);
     connectionFactory = URLConnectionFactory
-        .newDefaultURLConnectionFactory(conf);  }
+        .newDefaultURLConnectionFactory(conf);
+  }
+
+
+  public boolean isUseSpnego() {
+    return useSpnego;
+  }
+
+  public void setUseSpnego(boolean useSpnego) {
+    this.useSpnego = useSpnego;
+  }
 
   /**
    * Opens a url with read and connect timeouts
@@ -58,28 +72,59 @@ public class UrlConnectionOperations extends Configured {
    * @return URLConnection
    * @throws IOException
    */
-  public HttpURLConnection openConnection(URL url, boolean spnego) throws
+  public HttpURLConnection openConnection(URL url) throws
       IOException,
       AuthenticationException {
     Preconditions.checkArgument(url.getPort() != 0, "no port");
     HttpURLConnection conn =
-        (HttpURLConnection) connectionFactory.openConnection(url, spnego);
+        (HttpURLConnection) connectionFactory.openConnection(url, useSpnego);
     conn.setUseCaches(false);
     conn.setInstanceFollowRedirects(true);
     return conn;
   }
 
-  public byte[] execGet(URL url, boolean spnego) throws
+  public HttpOperationResponse execGet(URL url) throws
       IOException,
       AuthenticationException {
+    return execHttpOperation(HttpVerb.GET, url, null, "");
+  }
+
+  public HttpOperationResponse execHttpOperation(HttpVerb verb,
+      URL url,
+      byte[] payload,
+      String contentType)
+      throws IOException, AuthenticationException {
     HttpURLConnection conn = null;
+    HttpOperationResponse outcome = new HttpOperationResponse();
     int resultCode;
     byte[] body = null;
-    log.debug("GET {} spnego={}", url, spnego);
+    log.debug("{} {} spnego={}", verb, url, useSpnego);
 
+    boolean doOutput = verb.hasUploadBody();
+    if (doOutput) {
+      Preconditions.checkArgument(payload !=null,
+          "Null payload on a verb which expects one");
+    }
     try {
-      conn = openConnection(url, spnego);
+      conn = openConnection(url);
+      conn.setRequestMethod(verb.getVerb());
+      conn.setDoOutput(doOutput);
+      if (doOutput) {
+        conn.setRequestProperty("Content-Type", contentType);
+      }
+      
+
+      // now do the connection
+      conn.connect();
+      
+      if (doOutput) {
+        OutputStream output = conn.getOutputStream();
+        IOUtils.write(payload, output);
+        output.close();
+      }
+      
       resultCode = conn.getResponseCode();
+      outcome.contentType = conn.getContentType();
       InputStream stream = conn.getErrorStream();
       if (stream == null) {
         stream = conn.getInputStream();
@@ -93,11 +138,11 @@ public class UrlConnectionOperations extends Configured {
 
       }
     } catch (IOException e) {
-      throw NetUtils.wrapException(url.toString(), 
+      throw NetUtils.wrapException(url.toString(),
           url.getPort(), "localhost", 0, e);
 
     } catch (AuthenticationException e) {
-      throw new IOException("From " + url + ": " + e.toString(), e);
+      throw new IOException("From " + url + ": " + e, e);
 
     } finally {
       if (conn != null) {
@@ -105,7 +150,9 @@ public class UrlConnectionOperations extends Configured {
       }
     }
     uprateFaults(url.toString(), resultCode, body);
-    return body;
+    outcome.responseCode = resultCode;
+    outcome.data = body;
+    return outcome;
   }
 
   /**

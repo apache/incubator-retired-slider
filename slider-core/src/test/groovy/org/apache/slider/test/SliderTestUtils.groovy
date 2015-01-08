@@ -29,7 +29,6 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileStatus
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.hdfs.web.URLConnectionFactory
 import org.apache.hadoop.net.NetUtils
 import org.apache.hadoop.service.ServiceStateException
 import org.apache.hadoop.util.Shell
@@ -596,8 +595,8 @@ class SliderTestUtils extends Assert {
 
     log.info("Fetching HTTP content at " + path);
     URL url = new URL(path)
-    def bytes = connectionFactory.execGet(url, false)
-    String body = new String(bytes)
+    def outcome = connectionFactory.execGet(url)
+    String body = new String(outcome.data)
     return body;
   }
 
@@ -1144,14 +1143,32 @@ class SliderTestUtils extends Assert {
     }
   }
 
+  /**
+   * Get a web page and deserialize the supplied JSON into
+   * an instance of the specific class.
+   * @param clazz class to deserialize to
+   * @param appmaster URL to base AM
+   * @param subpath subpath under AM
+   * @return the parsed data type
+   */
   public <T> T fetchType(
       Class<T> clazz, String appmaster, String subpath) {
-    JsonSerDeser serDeser = new JsonSerDeser(clazz)
 
     def json = getWebPage(
         appmaster,
         RestPaths.SLIDER_PATH_APPLICATION + subpath)
+    return (T) deser(clazz, json);
+  }
+
+  public <T> T deser(Class<T> clazz, String json) {
+    JsonSerDeser serDeser = new JsonSerDeser(clazz)
     T ctree = (T) serDeser.fromJson(json)
+    return ctree
+  }
+
+  public <T> T deser(Class<T> clazz, byte[] data) {
+    JsonSerDeser serDeser = new JsonSerDeser(clazz)
+    T ctree = (T) serDeser.fromBytes(data)
     return ctree
   }
   

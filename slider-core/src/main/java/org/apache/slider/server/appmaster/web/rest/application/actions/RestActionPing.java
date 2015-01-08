@@ -34,15 +34,17 @@ public class RestActionPing {
   public RestActionPing() {
   }
   
-  public Object ping(@Context HttpServletRequest request,
-      @Context UriInfo uriInfo) {
-    log.info("Ping {}", request.getMethod());
+  public Object ping(HttpServletRequest request, UriInfo uriInfo, String body) {
+    String verb = request.getMethod();
+    log.info("Ping {}", verb);
     PingResource pingResource = new PingResource();
     pingResource.time = System.currentTimeMillis();
+    pingResource.verb = verb;
+    pingResource.body = body;
     String text = 
         String.format(Locale.ENGLISH,
             "Ping verb %s received at %tc",
-            request.getMethod(), pingResource.time);
+            verb, pingResource.time);
     pingResource.text = text;
     return pingResource;
   }

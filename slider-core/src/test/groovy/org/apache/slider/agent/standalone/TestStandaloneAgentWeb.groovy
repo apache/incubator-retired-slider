@@ -29,8 +29,12 @@ import org.apache.slider.api.types.SerializedContainerInformation
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.conf.ConfTree
+import org.apache.slider.core.restclient.HttpOperationResponse
+import org.apache.slider.core.restclient.HttpVerb
 import org.apache.slider.server.appmaster.web.rest.application.ApplicationResource
 import org.apache.slider.server.appmaster.web.rest.application.resources.PingResource
+
+import javax.ws.rs.core.MediaType
 
 import static org.apache.slider.api.ResourceKeys.*
 import static org.apache.slider.api.StatusKeys.*
@@ -51,6 +55,7 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
   public static final int WEB_STARTUP_TIME = 30000
   public static final String TEST_GLOBAL_OPTION = "test.global.option"
   public static final String TEST_GLOBAL_OPTION_PRESENT = "present"
+  public static final byte[] NO_BYTES = new byte[0]
 
   @Test
   public void testStandaloneAgentWeb() throws Throwable {
@@ -187,9 +192,11 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
     assert amFullInfo.containers[0] == amContainerId
 
     testRESTModel(appmaster)
-    testPing(appmaster)
     
-    
+    // PUT & POST &c must go direct for now
+    String wsroot = appendToURL(realappmaster, SLIDER_CONTEXT_ROOT)
+    testPing(realappmaster)
+
   }
 
   public void testRESTModel(String appmaster) {
@@ -200,14 +207,14 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
         ApplicationResource.MODEL_ENTRIES)
 
     def unresolvedConf = fetchType(AggregateConf, appmaster, MODEL_DESIRED)
-    log.info "Unresolved \n$unresolvedConf"
+//    log.info "Unresolved \n$unresolvedConf"
     def unresolvedAppConf = unresolvedConf.appConfOperations
 
     def sam = "slider-appmaster"
     assert unresolvedAppConf.getComponentOpt(sam,
         TEST_GLOBAL_OPTION, "") == ""
     def resolvedConf = fetchType(AggregateConf, appmaster, MODEL_RESOLVED)
-    log.info "Resolved \n$resolvedConf"
+//    log.info "Resolved \n$resolvedConf"
     assert resolvedConf.appConfOperations.getComponentOpt(
         sam, TEST_GLOBAL_OPTION, "") == TEST_GLOBAL_OPTION_PRESENT
 
@@ -239,11 +246,41 @@ class TestStandaloneAgentWeb extends AgentMiniClusterTestBase {
   }
 
   public void testPing(String appmaster) {
-    describe "ping"
-    def pinged = fetchType(PingResource, appmaster, ACTION_PING)
-    log.info "Ping: $pinged"
+    // GET
+    String ping = appendToURL(appmaster, SLIDER_PATH_APPLICATION, ACTION_PING)
+    describe "ping to AM URL $appmaster, ping URL $ping"
+    def pinged = fetchType(PingResource, appmaster,  ACTION_PING +"?body=hello")
+    log.info "Ping GET: $pinged"
     
+    // POST
+    URL pingUrl = new URL(ping)
 
+
+    def message = "hello"
+    pingAction(HttpVerb.POST, pingUrl, message)
+    pingAction(HttpVerb.PUT, pingUrl, message)
+    pingAction(HttpVerb.DELETE, pingUrl, message)
+    pingAction(HttpVerb.HEAD, pingUrl, message)
+
+  }
+
+  public HttpOperationResponse pingAction(HttpVerb verb, URL pingUrl, String payload) {
+    def pinged
+    def outcome = connectionFactory.execHttpOperation(
+        verb,
+        pingUrl,
+        payload.bytes,
+        MediaType.TEXT_PLAIN)
+    byte[] bytes = outcome.data
+    if (verb.hasResponseBody()) {
+      assert bytes.length > 0, "0 bytes from ping $verb.verb"
+      pinged = deser(PingResource, bytes)
+      log.info "Ping $verb.verb: $pinged"
+      assert verb.verb == pinged.verb
+    } else {
+      assert bytes.length == 0, "${bytes.length} bytes of data from ping $verb.verb"
+    }
+    return outcome
   }
 
 }

@@ -46,12 +46,18 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.HEAD;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
+
+import static javax.ws.rs.core.MediaType.*;
 import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
 import java.util.List;
@@ -129,7 +135,7 @@ public class ApplicationResource extends AbstractSliderResource {
 
   @GET
   @Path("/")
-  @Produces({MediaType.APPLICATION_JSON})
+  @Produces({APPLICATION_JSON})
   public List<String> getRoot() {
     return ROOT_ENTRIES;
   }
@@ -140,70 +146,70 @@ public class ApplicationResource extends AbstractSliderResource {
    */
   @GET
   @Path(MODEL)
-  @Produces({MediaType.APPLICATION_JSON})
+  @Produces({APPLICATION_JSON})
   public List<String> getModel() {
     return MODEL_ENTRIES;
   }
 
   @GET
   @Path(MODEL_DESIRED)
-  @Produces({MediaType.APPLICATION_JSON})
+  @Produces({APPLICATION_JSON})
   public AggregateConf getModelDesired() {
     return lookupAggregateConf(MODEL_DESIRED);
   }
   
   @GET
   @Path(MODEL_DESIRED_APPCONF)
-  @Produces({MediaType.APPLICATION_JSON})
+  @Produces({APPLICATION_JSON})
   public ConfTree getModelDesiredAppconf() {
     return lookupConfTree(MODEL_DESIRED_APPCONF);
   }
 
   @GET
   @Path(MODEL_DESIRED_RESOURCES)
-  @Produces({MediaType.APPLICATION_JSON})
+  @Produces({APPLICATION_JSON})
   public ConfTree getModelDesiredResources() {
     return lookupConfTree(MODEL_DESIRED_RESOURCES);
   }
   
   @GET
   @Path(MODEL_RESOLVED)
-  @Produces({MediaType.APPLICATION_JSON})
+  @Produces({APPLICATION_JSON})
   public AggregateConf getModelResolved() {
     return lookupAggregateConf(MODEL_RESOLVED);
   }
 
   @GET
   @Path(MODEL_RESOLVED_APPCONF)
-  @Produces({MediaType.APPLICATION_JSON})
+  @Produces({APPLICATION_JSON})
   public ConfTree getModelResolvedAppconf() {
     return lookupConfTree(MODEL_RESOLVED_APPCONF);
   }
 
   @GET
   @Path(MODEL_RESOLVED_RESOURCES)
-  @Produces({MediaType.APPLICATION_JSON})
+  @Produces({APPLICATION_JSON})
   public ConfTree getModelResolvedResources() {
     return lookupConfTree(MODEL_RESOLVED_RESOURCES);
   }
   
   @GET
   @Path(LIVE)
-  @Produces({MediaType.APPLICATION_JSON})
+  @Produces({APPLICATION_JSON})
   public List<String> getLive() {
     return LIVE_ENTRIES;
   }
 
   @GET
   @Path(LIVE_RESOURCES)
-  @Produces({MediaType.APPLICATION_JSON})
+  @Produces({APPLICATION_JSON})
   public Object getLiveResources() {
     return lookupConfTree(LIVE_RESOURCES);
   }
   
   @GET
   @Path(LIVE_CONTAINERS)
-  @Produces({MediaType.APPLICATION_JSON})
+  @Produces({APPLICATION_JSON})
   public Map<String, SerializedContainerInformation> getLiveContainers() {
     try {
       return (Map<String, SerializedContainerInformation>)cache.lookup(
@@ -215,7 +221,7 @@ public class ApplicationResource extends AbstractSliderResource {
 
   @GET
   @Path(LIVE_CONTAINERS + "/{containerId}")
-  @Produces({MediaType.APPLICATION_JSON})
+  @Produces({APPLICATION_JSON})
   public SerializedContainerInformation getLiveContainer(
       @PathParam("containerId") String containerId) {
     try {
@@ -230,7 +236,7 @@ public class ApplicationResource extends AbstractSliderResource {
 
   @GET
   @Path(LIVE_COMPONENTS)
-  @Produces({MediaType.APPLICATION_JSON})
+  @Produces({APPLICATION_JSON})
   public Map<String, SerializedComponentInformation> getLiveComponents() {
     try {
       return (Map<String, SerializedComponentInformation>) cache.lookup(
@@ -242,7 +248,7 @@ public class ApplicationResource extends AbstractSliderResource {
   
   @GET
   @Path(LIVE_COMPONENTS + "/{component}")
-  @Produces({MediaType.APPLICATION_JSON})
+  @Produces({APPLICATION_JSON})
   public SerializedComponentInformation getLiveComponent(
       @PathParam("component") String component) {
     try {
@@ -297,9 +303,46 @@ public class ApplicationResource extends AbstractSliderResource {
 
   @GET
   @Path(ACTION_PING)
-  @Produces({MediaType.APPLICATION_JSON})
-  public Object actionPing(@Context HttpServletRequest request,
+  @Produces({APPLICATION_JSON})
+  public Object actionPingGet(@Context HttpServletRequest request,
       @Context UriInfo uriInfo) {
-    return new RestActionPing().ping(request, uriInfo);
+    return new RestActionPing().ping(request, uriInfo, "");
   }
+  
+  @POST
+  @Path(ACTION_PING)
+  @Produces({APPLICATION_JSON})
+  public Object actionPingPost(@Context HttpServletRequest request,
+      @Context UriInfo uriInfo,
+      String body) {
+    return new RestActionPing().ping(request, uriInfo, body);
+  }
+  
+  @PUT
+  @Path(ACTION_PING)
+  @Consumes({TEXT_PLAIN})
+  @Produces({APPLICATION_JSON})
+  public Object actionPingPut(@Context HttpServletRequest request,
+      @Context UriInfo uriInfo,
+      String body) {
+    return new RestActionPing().ping(request, uriInfo, body);
+  }
+  
+  @DELETE
+  @Path(ACTION_PING)
+  @Consumes({APPLICATION_JSON})
+  @Produces({APPLICATION_JSON})
+  public Object actionPingDelete(@Context HttpServletRequest request,
+      @Context UriInfo uriInfo) {
+    return new RestActionPing().ping(request, uriInfo, "");
+  }
+  
+  @HEAD
+  @Path(ACTION_PING)
+  @Produces({APPLICATION_JSON})
+  public Object actionPingHead(@Context HttpServletRequest request,
+      @Context UriInfo uriInfo) {
+    return new RestActionPing().ping(request, uriInfo, "");
+  }
+  
 }

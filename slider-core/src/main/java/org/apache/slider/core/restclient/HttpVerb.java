@@ -18,26 +18,40 @@
 
 package org.apache.slider.core.restclient;
 
+/**
+ * Http verbs with details on what they support in terms of submit and
+ * response bodies.
+ * <p>
+ * Those verbs which do support bodies in the response MAY NOT return it;
+ * if the response code is 204 then the answer is "no body", but the operation
+ * is considered a success.
+ */
 public enum HttpVerb {
-  GET("GET", false),
-  POST("POST", true),
-  PUT("POST", true),
-  DELETE("DELETE", false),
-  HEAD("HEAD", false);
+  GET("GET", false, true),
+  POST("POST", true, true),
+  PUT("PUT", true, true),
+  DELETE("DELETE", false, true),
+  HEAD("HEAD", false, false);
   
   private final String verb;
   private final boolean hasUploadBody;
+  private final boolean hasResponseBody;
 
-  HttpVerb(String verb, boolean hasUploadBody) {
+  HttpVerb(String verb, boolean hasUploadBody, boolean hasResponseBody) {
     this.verb = verb;
     this.hasUploadBody = hasUploadBody;
+    this.hasResponseBody = hasResponseBody;
   }
 
   public String getVerb() {
     return verb;
   }
 
-  public boolean isHasUploadBody() {
+  public boolean hasUploadBody() {
     return hasUploadBody;
+  }
+
+  public boolean hasResponseBody() {
+    return hasResponseBody;
   }
 }
