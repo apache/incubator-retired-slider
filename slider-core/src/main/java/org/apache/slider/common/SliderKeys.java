@@ -112,7 +112,7 @@ public interface SliderKeys extends SliderXmlConfKeys {
    * {@value}
    */
   String SLIDER_XML = "org/apache/slider/slider.xml";
-
+  
   String CLUSTER_DIRECTORY = "cluster";
 
   String PACKAGE_DIRECTORY = "package";
@@ -158,13 +158,12 @@ public interface SliderKeys extends SliderXmlConfKeys {
    * name of the Slider client resource
    * loaded when the service is loaded.
    */
-  String CLIENT_RESOURCE = "slider-client.xml";
+  String SLIDER_CLIENT_XML = "slider-client.xml";
 
   /**
    * The name of the resource to put on the classpath
-   * This only goes up on a real cluster, not a test run.
    */
-  String SERVER_RESOURCE = "slider-server.xml";
+  String SLIDER_SERVER_XML = "slider-server.xml";
 
   String TMP_LOGDIR_PREFIX = "/tmp/slider-";
   String TMP_DIR_PREFIX = "tmp";
@@ -210,7 +209,12 @@ public interface SliderKeys extends SliderXmlConfKeys {
   String AM_FILTER_NAME =
       "org.apache.hadoop.yarn.server.webproxy.amfilter.AmFilterInitializer";
 
+  /**
+   * Allowed port range. This MUST be set in app_conf/global.
+   * {@value}
+   */
   String KEY_ALLOWED_PORT_RANGE = "site.global.slider.allowed.ports";
+  
   /**
    * Allowed port range
    */

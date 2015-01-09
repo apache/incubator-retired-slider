@@ -103,6 +103,7 @@ abstract class CommandTestBase extends SliderTestUtils {
    */
   static {
     new HdfsConfiguration()
+    ConfigHelper.injectSliderXMLResource()
     ConfigHelper.registerDeprecatedConfigItems();
     SLIDER_CONFIG = ConfLoader.loadSliderConf(SLIDER_CONF_XML, true);
     THAW_WAIT_TIME = getTimeOptionMillis(SLIDER_CONFIG,

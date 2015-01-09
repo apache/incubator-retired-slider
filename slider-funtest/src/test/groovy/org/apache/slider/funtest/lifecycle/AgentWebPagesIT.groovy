@@ -20,9 +20,12 @@ package org.apache.slider.funtest.lifecycle
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.slider.agent.rest.RestTestDelegates
 import org.apache.slider.common.SliderExitCodes
+import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
+import org.apache.slider.common.tools.ConfigHelper
 import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
@@ -41,7 +44,6 @@ public class AgentWebPagesIT extends AgentCommandTestBase
 
   static String APP_RESOURCE2 = "../slider-core/src/test/app_packages/test_command_log/resources_no_role.json"
 
-
   @Before
   public void prepareCluster() {
     setupCluster(CLUSTER)
@@ -55,12 +57,25 @@ public class AgentWebPagesIT extends AgentCommandTestBase
   @Test
   public void testAgentWeb() throws Throwable {
     describe("Create a 0-role cluster and make web queries against it")
+    
+    // verify the ws/ path is open for all HTTP verbs
+    def sliderConfiguration = ConfigHelper.loadSliderConfiguration();
+
+    def wsBackDoorRequired = SLIDER_CONFIG.getBoolean(
+        SliderXmlConfKeys.X_DEV_INSECURE_WS,
+        true)
+    assert wsBackDoorRequired ==
+        sliderConfiguration.getBoolean(
+            SliderXmlConfKeys.X_DEV_INSECURE_WS,
+            false)
     def clusterpath = buildClusterPath(CLUSTER)
     File launchReportFile = createTempJsonFile();
     SliderShell shell = createTemplatedSliderApplication(CLUSTER,
         APP_TEMPLATE,
         APP_RESOURCE2,
-        [],
+        [Arguments.ARG_OPTION,
+         RestTestDelegates.TEST_GLOBAL_OPTION,
+         RestTestDelegates.TEST_GLOBAL_OPTION_PRESENT],
         launchReportFile)
 
     logShell(shell)
@@ -78,17 +93,34 @@ public class AgentWebPagesIT extends AgentCommandTestBase
     def report = loadAppReport(liveReportFile)
     assert report.url
 
-    def root = report.url
+    def appmaster = report.url
 
-    // get the root page, including some checks for cache disabled
-    getWebPage(root, {
-      HttpURLConnection conn ->
-        assertConnectionNotCaching(conn)
-    })
-    log.info getWebPage(root, RestPaths.SYSTEM_METRICS)
-    log.info getWebPage(root, RestPaths.SYSTEM_THREADS)
-    log.info getWebPage(root, RestPaths.SYSTEM_HEALTHCHECK)
-    log.info getWebPage(root, RestPaths.SYSTEM_PING)
+    // get the root page, 
+    getWebPage(appmaster)
+    
+    // query Coda Hale metrics
+    log.info getWebPage(appmaster, RestPaths.SYSTEM_METRICS)
+    log.info getWebPage(appmaster, RestPaths.SYSTEM_THREADS)
+    log.info getWebPage(appmaster, RestPaths.SYSTEM_HEALTHCHECK)
+    log.info getWebPage(appmaster, RestPaths.SYSTEM_PING)
+
+    def realappmaster = report.origTrackingUrl;
+    // now attempt direct-to-AM pings
+    RestTestDelegates proxied = new RestTestDelegates(appmaster)
+    RestTestDelegates direct = new RestTestDelegates(realappmaster)
+
+    proxied.testCodahaleOperations()
+    direct.testCodahaleOperations()
+    proxied.testLiveResources()
+
+    proxied.testRESTModel()
+
+    // PUT & POST &c direct
+    direct.testPing()
+    if (!wsBackDoorRequired) {
+      // and via the proxy
+      proxied.testRESTModel()
+    }
   }
 
 }

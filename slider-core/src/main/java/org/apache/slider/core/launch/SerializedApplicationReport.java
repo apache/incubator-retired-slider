@@ -82,7 +82,7 @@ public class SerializedApplicationReport {
     this.finalStatus = appStatus == null ? "" : appStatus.toString();
     this.progress = report.getProgress();
     this.url = report.getTrackingUrl();
-    this.origTrackingUrl= report.getTrackingUrl();
+    this.origTrackingUrl= report.getOriginalTrackingUrl();
   }
 
   @Override

@@ -152,11 +152,9 @@ class TestAgentAMManagementWS extends AgentTestBase {
         log.info("stacks is ${liveURL}stacks")
         log.info("conf   is ${liveURL}conf")
 
-
-        def sleeptime = 10
-        log.info "sleeping for $sleeptime seconds"
-        Thread.sleep(sleeptime * 1000)
-
+        execHttpRequest(WEB_STARTUP_TIME) {
+          GET(agent_url)
+        }
 
         String page = fetchWebPageWithoutError(agent_url);
         log.info(page);
