@@ -505,7 +505,7 @@ class SliderTestUtils extends Assert {
 
     def body = get.responseBodyAsString
 
-    uprateFaults("GET", url, resultCode, body)
+    updateFaults("GET", url, resultCode, body)
     return body;
   }
 
@@ -516,7 +516,7 @@ class SliderTestUtils extends Assert {
    * @param resultCode result code
    * @param body any body
    */
-  public static void uprateFaults(
+  public static void updateFaults(
       String verb,
       String url,
       int resultCode,
