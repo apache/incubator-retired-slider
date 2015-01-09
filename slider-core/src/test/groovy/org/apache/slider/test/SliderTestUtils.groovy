@@ -1173,7 +1173,7 @@ class SliderTestUtils extends Assert {
   }
   
   public ConfTreeOperations fetchConfigTree(
-      YarnConfiguration conf, String appmaster, String subpath) {
+      String appmaster, String subpath) {
     ConfTree ctree = fetchType(ConfTree, appmaster, subpath)
     ConfTreeOperations tree = new ConfTreeOperations(ctree)
     return tree
@@ -1194,5 +1194,21 @@ class SliderTestUtils extends Assert {
       results[it] = (fetchType(clazz, appmaster, it))
     }
     return results;
+  }
+
+  /**
+   * Assert that a path resolves to an array list that contains
+   * those entries (and only those entries) expected
+   * @param appmaster AM ref
+   * @param path path under AM
+   * @param entries entries to assert the presence of
+   */
+  public void assertPathServesList(
+      String appmaster,
+      String path,
+      List<String> entries) {
+    def list = fetchType(ArrayList, appmaster, path)
+    assert list.size() == entries.size()
+    assert entries.containsAll(list)
   }
 }

@@ -43,7 +43,9 @@ public abstract class SliderTestBase extends SliderTestUtils {
    * Singleton metric registry
    */
   public static final MetricsAndMonitoring metrics = new MetricsAndMonitoring()
-  
+  public static final int WEB_STARTUP_TIME = 30000
+  public static final byte[] NO_BYTES = new byte[0]
+
   @Rule
   public TestName methodName = new TestName();
 

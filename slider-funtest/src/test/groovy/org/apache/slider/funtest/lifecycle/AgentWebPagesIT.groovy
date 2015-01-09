@@ -20,6 +20,7 @@ package org.apache.slider.funtest.lifecycle
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.slider.agent.rest.RestTestDelegates
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
@@ -60,7 +61,9 @@ public class AgentWebPagesIT extends AgentCommandTestBase
     SliderShell shell = createTemplatedSliderApplication(CLUSTER,
         APP_TEMPLATE,
         APP_RESOURCE2,
-        [],
+        [Arguments.ARG_OPTION,
+         RestTestDelegates.TEST_GLOBAL_OPTION,
+         RestTestDelegates.TEST_GLOBAL_OPTION_PRESENT],
         launchReportFile)
 
     logShell(shell)
@@ -78,17 +81,30 @@ public class AgentWebPagesIT extends AgentCommandTestBase
     def report = loadAppReport(liveReportFile)
     assert report.url
 
-    def root = report.url
+    def appmaster = report.url
 
-    // get the root page, including some checks for cache disabled
-    getWebPage(root, {
-      HttpURLConnection conn ->
-        assertConnectionNotCaching(conn)
-    })
-    log.info getWebPage(root, RestPaths.SYSTEM_METRICS)
-    log.info getWebPage(root, RestPaths.SYSTEM_THREADS)
-    log.info getWebPage(root, RestPaths.SYSTEM_HEALTHCHECK)
-    log.info getWebPage(root, RestPaths.SYSTEM_PING)
+    // get the root page, 
+    getWebPage(appmaster)
+    
+    // query Coda Hale metrics
+    log.info getWebPage(appmaster, RestPaths.SYSTEM_METRICS)
+    log.info getWebPage(appmaster, RestPaths.SYSTEM_THREADS)
+    log.info getWebPage(appmaster, RestPaths.SYSTEM_HEALTHCHECK)
+    log.info getWebPage(appmaster, RestPaths.SYSTEM_PING)
+
+    def realappmaster = report.origTrackingUrl;
+    // now attempt direct-to-AM pings
+    RestTestDelegates proxied = new RestTestDelegates(appmaster)
+    RestTestDelegates direct = new RestTestDelegates(realappmaster)
+
+    proxied.testCodahaleOperations()
+    direct.testCodahaleOperations()
+    proxied.testLiveResources()
+
+    proxied.testRESTModel(appmaster)
+
+    // PUT & POST &c must go direct for now
+    direct.testPing(realappmaster)
   }
 
 }
