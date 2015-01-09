@@ -22,6 +22,7 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.slider.agent.AgentMiniClusterTestBase
+import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.server.appmaster.web.rest.application.ApplicationResource
 import org.apache.slider.client.SliderClient
@@ -83,6 +84,10 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
     log.info GET(appmaster, SYSTEM_HEALTHCHECK)
     log.info GET(appmaster, SYSTEM_METRICS_JSON)
 
+    def wsBackDoorRequired = conf.getBoolean(
+        SliderXmlConfKeys.X_DEV_INSECURE_WS,
+        true)
+    
     RestTestDelegates proxied = new RestTestDelegates(appmaster)
     RestTestDelegates direct = new RestTestDelegates(realappmaster)
     
@@ -97,11 +102,16 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
     describe "Application REST ${LIVE_RESOURCES}"
     proxied.testLiveResources()
 
-    proxied.testRESTModel(appmaster)
+    proxied.testRESTModel()
     
     // PUT & POST &c must go direct for now
-    direct.testPing(realappmaster)
-
+    direct.testPing()
+    // PUT & POST &c direct
+    direct.testPing()
+    if (!wsBackDoorRequired) {
+      // and via the proxy
+      proxied.testRESTModel()
+    }
   }
 
 

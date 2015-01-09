@@ -25,6 +25,7 @@ import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
+import org.apache.slider.common.tools.ConfigHelper
 import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
@@ -58,7 +59,15 @@ public class AgentWebPagesIT extends AgentCommandTestBase
     describe("Create a 0-role cluster and make web queries against it")
     
     // verify the ws/ path is open for all HTTP verbs
-    assert SLIDER_CONFIG.getBoolean(SliderXmlConfKeys.X_DEV_INSECURE_WS, false)
+    def sliderConfiguration = ConfigHelper.loadSliderConfiguration();
+
+    def wsBackDoorRequired = SLIDER_CONFIG.getBoolean(
+        SliderXmlConfKeys.X_DEV_INSECURE_WS,
+        true)
+    assert wsBackDoorRequired ==
+        sliderConfiguration.getBoolean(
+            SliderXmlConfKeys.X_DEV_INSECURE_WS,
+            false)
     def clusterpath = buildClusterPath(CLUSTER)
     File launchReportFile = createTempJsonFile();
     SliderShell shell = createTemplatedSliderApplication(CLUSTER,
@@ -104,10 +113,14 @@ public class AgentWebPagesIT extends AgentCommandTestBase
     direct.testCodahaleOperations()
     proxied.testLiveResources()
 
-    proxied.testRESTModel(appmaster)
+    proxied.testRESTModel()
 
-    // PUT & POST &c must go direct for now
-    direct.testPing(realappmaster)
+    // PUT & POST &c direct
+    direct.testPing()
+    if (!wsBackDoorRequired) {
+      // and via the proxy
+      proxied.testRESTModel()
+    }
   }
 
 }

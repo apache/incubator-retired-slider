@@ -150,7 +150,7 @@ class RestTestDelegates extends SliderTestUtils {
    * with the global option
    * @param appmaster
    */
-  public void testRESTModel(String appmaster) {
+  public void testRESTModel() {
     describe "model"
 
     assertPathServesList(appmaster,
@@ -182,7 +182,7 @@ class RestTestDelegates extends SliderTestUtils {
     TEST_GLOBAL_OPTION_PRESENT
   }
 
-  public void testPing(String appmaster) {
+  public void testPing() {
     // GET
     String ping = appendToURL(appmaster, SLIDER_PATH_APPLICATION, ACTION_PING)
     describe "ping to AM URL $appmaster, ping URL $ping"
@@ -203,14 +203,14 @@ class RestTestDelegates extends SliderTestUtils {
   }
 
 
-  public HttpOperationResponse pingAction(
+  private HttpOperationResponse pingAction(
       HttpVerb verb,
       URL pingUrl,
       String payload) {
     return pingAction(connectionFactory, verb, pingUrl, payload)
   }
 
-  public HttpOperationResponse pingAction(
+  private HttpOperationResponse pingAction(
       UrlConnectionOperations ops, HttpVerb verb, URL pingUrl, String payload) {
     def pinged
     def outcome = ops.execHttpOperation(
