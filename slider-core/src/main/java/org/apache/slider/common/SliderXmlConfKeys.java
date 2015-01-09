@@ -18,9 +18,7 @@
 
 package org.apache.slider.common;
 
-import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.registry.client.api.RegistryConstants;
-import org.apache.hadoop.yarn.conf.YarnConfiguration;
 
 /**
  * These are the keys that can be added to <code>conf/slider-client.xml</code>.
@@ -143,4 +141,9 @@ public interface SliderXmlConfKeys {
    * The path to the python executable utilized to launch the agent.
    */
   String PYTHON_EXECUTABLE_PATH = "agent.python.exec.path";
+
+  /**
+   * Flag to enable the insecure AM filter: {@value}
+   */
+  String X_DEV_INSECURE_WS = "slider.dev.ws.insecure";
 }

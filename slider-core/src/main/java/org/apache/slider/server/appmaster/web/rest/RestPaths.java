@@ -142,4 +142,7 @@ public class RestPaths {
   public static final String MODEL_RESOLVED_APPCONF = MODEL_RESOLVED +"/appconf";
   public static final String MODEL_RESOLVED_RESOURCES = MODEL_RESOLVED +"/resources";
   public static final String MODEL_INTERNAL = "/model/internal";
+
+  public static final String ACTION = "/action";
+  public static final String ACTION_PING = ACTION + "/ping";
 }

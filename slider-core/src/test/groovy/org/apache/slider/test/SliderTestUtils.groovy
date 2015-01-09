@@ -29,7 +29,6 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileStatus
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.hdfs.web.URLConnectionFactory
 import org.apache.hadoop.net.NetUtils
 import org.apache.hadoop.service.ServiceStateException
 import org.apache.hadoop.util.Shell
@@ -56,6 +55,7 @@ import org.apache.slider.core.main.ServiceLaunchException
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.persist.JsonSerDeser
 import org.apache.slider.core.registry.docstore.PublishedConfigSet
+import org.apache.slider.core.restclient.UrlConnectionOperations
 import org.apache.slider.server.appmaster.web.HttpCacheHeaders
 import org.apache.slider.server.appmaster.web.rest.RestPaths
 import org.apache.slider.server.services.workflow.ForkedProcessService
@@ -500,33 +500,41 @@ class SliderTestUtils extends Assert {
     try {
       resultCode = client.executeMethod(get);
     } catch (IOException e) {
-      throw NetUtils.wrapException(url, 0, null, 0, e)
+      throw NetUtils.wrapException(url, destURI.port, "localhost", 0, e)
     }
 
     def body = get.responseBodyAsString
 
-    uprateFaults(url, resultCode, body)
+    uprateFaults("GET", url, resultCode, body)
     return body;
   }
 
   /**
    *  uprate some faults
-   * @param url
-   * @param resultCode
-   * @param body
+   * @param verb HTTP verb
+   * @param url URL
+   * @param resultCode result code
+   * @param body any body
    */
-  public static void uprateFaults(String url, int resultCode, String body) {
+  public static void uprateFaults(
+      String verb,
+      String url,
+      int resultCode,
+      String body) {
 
     if (resultCode == 404) {
-      throw new NotFoundException(url)
+      throw new NotFoundException(url);
     }
     if (resultCode == 401) {
-      throw new ForbiddenException(url)
+      throw new ForbiddenException(url);
     }
     if (!(resultCode >= 200 && resultCode < 400)) {
-      def message = "Request to $url failed with exit code $resultCode, body length ${body?.length()}:\n$body"
-      log.error(message)
-      throw new IOException(message)
+      String message = "$verb to $url " +
+                       " failed with exit code " +
+                       resultCode + ", body length " +
+                       body?.length() + ":\n" + body
+      log.error(message);
+      throw new IOException(message);
     }
   }
 
@@ -566,11 +574,10 @@ class SliderTestUtils extends Assert {
     throw ex;
   } 
 
-  static URLConnectionFactory connectionFactory
+  static UrlConnectionOperations connectionFactory
 
   public static def initConnectionFactory(Configuration conf) {
-    connectionFactory = URLConnectionFactory
-        .newDefaultURLConnectionFactory(conf);
+    connectionFactory = new UrlConnectionOperations(conf);
   }
 
 
@@ -593,34 +600,8 @@ class SliderTestUtils extends Assert {
 
     log.info("Fetching HTTP content at " + path);
     URL url = new URL(path)
-    assert url.port != 0
-    HttpURLConnection conn = null;
-    int resultCode = 0
-    def body = ""
-    try {
-      conn = (HttpURLConnection) connectionFactory.openConnection(url);
-      conn.instanceFollowRedirects = true;
-      conn.connect()
-      
-
-      resultCode = conn.responseCode
-      
-      if (connectionChecks) {
-        connectionChecks(conn)
-      }
-      
-      InputStream stream = conn.errorStream;
-      if (stream == null) {
-        stream = conn.inputStream;
-      }
-
-      body = stream ? stream.text : "(no body)"
-    } catch (IOException e) {
-      throw NetUtils.wrapException(url.toString(), 0, null, 0, e)
-    } finally {
-      conn?.disconnect()
-    }
-    uprateFaults(path, resultCode, body)
+    def outcome = connectionFactory.execGet(url)
+    String body = new String(outcome.data)
     return body;
   }
 
@@ -1167,19 +1148,37 @@ class SliderTestUtils extends Assert {
     }
   }
 
+  /**
+   * Get a web page and deserialize the supplied JSON into
+   * an instance of the specific class.
+   * @param clazz class to deserialize to
+   * @param appmaster URL to base AM
+   * @param subpath subpath under AM
+   * @return the parsed data type
+   */
   public <T> T fetchType(
       Class<T> clazz, String appmaster, String subpath) {
-    JsonSerDeser serDeser = new JsonSerDeser(clazz)
 
     def json = getWebPage(
         appmaster,
         RestPaths.SLIDER_PATH_APPLICATION + subpath)
+    return (T) deser(clazz, json);
+  }
+
+  public <T> T deser(Class<T> clazz, String json) {
+    JsonSerDeser serDeser = new JsonSerDeser(clazz)
     T ctree = (T) serDeser.fromJson(json)
+    return ctree
+  }
+
+  public <T> T deser(Class<T> clazz, byte[] data) {
+    JsonSerDeser serDeser = new JsonSerDeser(clazz)
+    T ctree = (T) serDeser.fromBytes(data)
     return ctree
   }
   
   public ConfTreeOperations fetchConfigTree(
-      YarnConfiguration conf, String appmaster, String subpath) {
+      String appmaster, String subpath) {
     ConfTree ctree = fetchType(ConfTree, appmaster, subpath)
     ConfTreeOperations tree = new ConfTreeOperations(ctree)
     return tree
@@ -1200,5 +1199,21 @@ class SliderTestUtils extends Assert {
       results[it] = (fetchType(clazz, appmaster, it))
     }
     return results;
+  }
+
+  /**
+   * Assert that a path resolves to an array list that contains
+   * those entries (and only those entries) expected
+   * @param appmaster AM ref
+   * @param path path under AM
+   * @param entries entries to assert the presence of
+   */
+  public void assertPathServesList(
+      String appmaster,
+      String path,
+      List<String> entries) {
+    def list = fetchType(ArrayList, appmaster, path)
+    assert list.size() == entries.size()
+    assert entries.containsAll(list)
   }
 }

@@ -87,7 +87,7 @@ class TestClientResourceRegistration {
    */
   @Test
   public void testLoadRes() throws Throwable {
-    Configuration conf = SliderUtils.loadClientConfigurationResource()
+    Configuration conf = SliderUtils.loadSliderClientXML()
     assert conf.get(KEY_RESOURCE_ORIGIN) == "test/resources"
     String hostname = "nosuchhost:0"
     conf.set(YarnConfiguration.RM_ADDRESS, hostname)

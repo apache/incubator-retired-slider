@@ -97,6 +97,11 @@ public abstract class SliderProviderFactory extends Configured {
                               ex);
   }
 
+  /**
+   * Load a configuration with the {@link SliderKeys#SLIDER_XML} resource
+   * included
+   * @return a configuration instance
+   */
   public static Configuration loadSliderConfiguration() {
     Configuration conf = new Configuration();
     conf.addResource(SliderKeys.SLIDER_XML);
