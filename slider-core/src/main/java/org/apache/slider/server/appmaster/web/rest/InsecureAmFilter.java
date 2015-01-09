@@ -51,6 +51,9 @@ public class InsecureAmFilter extends AmIpFilter {
   public void init(FilterConfig conf) throws ServletException {
     super.init(conf);
     wsContextRoot = conf.getInitParameter(WS_CONTEXT_ROOT);
+    if (wsContextRoot == null) {
+      throw new ServletException("No value set for " + WS_CONTEXT_ROOT);
+    }
   }
 
   private void rejectNonHttpRequests(ServletRequest req) throws
@@ -69,7 +72,8 @@ public class InsecureAmFilter extends AmIpFilter {
     HttpServletResponse httpResp = (HttpServletResponse) resp;
 
 
-    if (!httpReq.getRequestURI().startsWith(wsContextRoot)) {
+    String requestURI = httpReq.getRequestURI();
+    if (requestURI == null || !requestURI.startsWith(wsContextRoot)) {
       // hand off to the AM filter if it is not the context root
       super.doFilter(req, resp, chain);
       return;

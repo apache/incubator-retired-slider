@@ -46,7 +46,7 @@ public class InsecureAmFilterInitializer extends FilterInitializer {
   private Configuration configuration;
 
   public static final String NAME =
-      "org.apache.slider.server.appmaster.web.InsecureAmFilterInitializer";
+      "org.apache.slider.server.appmaster.web.rest.InsecureAmFilterInitializer";
 
   @Override
   public void initFilter(FilterContainer container, Configuration conf) {
@@ -59,8 +59,7 @@ public class InsecureAmFilterInitializer extends FilterInitializer {
     params.put(InsecureAmFilter.PROXY_URI_BASE, getHttpSchemePrefix()
                                                 + proxy +
                                                 getApplicationWebProxyBase());
-    params.put(InsecureAmFilter.WS_CONTEXT_ROOT,
-        conf.get(InsecureAmFilter.WS_CONTEXT_ROOT));
+    params.put(InsecureAmFilter.WS_CONTEXT_ROOT, RestPaths.WS_CONTEXT_ROOT);
     container.addFilter(FILTER_NAME, FILTER_CLASS, params);
   }
 

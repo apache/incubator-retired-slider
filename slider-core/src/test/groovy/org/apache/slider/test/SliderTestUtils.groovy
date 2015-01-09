@@ -505,17 +505,22 @@ class SliderTestUtils extends Assert {
 
     def body = get.responseBodyAsString
 
-    uprateFaults(url, resultCode, body)
+    uprateFaults("GET", url, resultCode, body)
     return body;
   }
 
   /**
    *  uprate some faults
-   * @param url
-   * @param resultCode
-   * @param body
+   * @param verb HTTP verb
+   * @param url URL
+   * @param resultCode result code
+   * @param body any body
    */
-  public static void uprateFaults(String url, int resultCode, String body) {
+  public static void uprateFaults(
+      String verb,
+      String url,
+      int resultCode,
+      String body) {
 
     if (resultCode == 404) {
       throw new NotFoundException(url);
@@ -524,10 +529,10 @@ class SliderTestUtils extends Assert {
       throw new ForbiddenException(url);
     }
     if (!(resultCode >= 200 && resultCode < 400)) {
-      String message = "Request to " + url +
+      String message = "$verb to $url " +
                        " failed with exit code " +
                        resultCode + ", body length " +
-                       body?.length() + ":\n" + "body;"
+                       body?.length() + ":\n" + body
       log.error(message);
       throw new IOException(message);
     }

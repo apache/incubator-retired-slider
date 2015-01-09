@@ -51,6 +51,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Methods to aid in config, both in the Configuration class and
@@ -62,6 +63,11 @@ import java.util.TreeSet;
 public class ConfigHelper {
   private static final Logger log = LoggerFactory.getLogger(ConfigHelper.class);
 
+  private static AtomicBoolean sliderResourceInjected =
+      new AtomicBoolean(false);
+  private static AtomicBoolean sliderResourceInjectionAttempted =
+      new AtomicBoolean(false);
+  
   /**
    * Dump the (sorted) configuration
    * @param conf config
@@ -615,4 +621,38 @@ public class ConfigHelper {
         RegistryConstants.KEY_REGISTRY_ZK_ROOT);
     
   }
+
+  /**
+   * Load a configuration with the {@link SliderKeys#SLIDER_XML} resource
+   * included
+   * @return a configuration instance
+   */
+  public static Configuration loadSliderConfiguration() {
+    Configuration conf = new Configuration();
+    conf.addResource(SliderKeys.SLIDER_XML);
+    return conf;
+  }
+
+  /**
+   * Inject the {@link SliderKeys#SLIDER_XML} resource
+   * into the configuration resources <i>of all configurations</i>.
+   * <p>
+   *   This operation is idempotent.
+   * <p>
+   * If the resource is not on the classpath, downgrades, rather than
+   * fails.
+   * @return true if the resource was found and loaded.
+   */
+  public static synchronized boolean injectSliderXMLResource() {
+    if (sliderResourceInjectionAttempted.getAndSet(true)) {
+      return sliderResourceInjected.get();
+    }
+    URL resourceUrl = getResourceUrl(SliderKeys.SLIDER_XML);
+    if (resourceUrl != null) {
+      Configuration.addDefaultResource(SliderKeys.SLIDER_XML);
+      sliderResourceInjected.set(true);
+    }
+    return sliderResourceInjected.get();
+  }
+  
 }

@@ -503,6 +503,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
                                                                       Exception {
     // let the superclass process it
     Configuration superConf = super.bindArgs(config, args);
+    // add the slider XML config
+    ConfigHelper.injectSliderXMLResource();
+
     //yarn-ify
     YarnConfiguration yarnConfiguration = new YarnConfiguration(
         superConf);
@@ -574,7 +577,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
   /**
    * Create and run the cluster.
-   * @param clustername
+   * @param clustername cluster name
    * @return exit code
    * @throws Throwable on a failure
    */
@@ -2171,7 +2174,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
   @Override //  NMClientAsync.CallbackHandler 
   public void onStartContainerError(ContainerId containerId, Throwable t) {
-    LOG_YARN.error("Failed to start Container " + containerId, t);
+    LOG_YARN.error("Failed to start Container {}", containerId, t);
     appState.onNodeManagerContainerStartFailed(containerId, t);
   }
 

@@ -30,7 +30,6 @@ import org.apache.hadoop.yarn.webapp.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -149,7 +148,7 @@ public class UrlConnectionOperations extends Configured {
         conn.disconnect();
       }
     }
-    uprateFaults(url.toString(), resultCode, body);
+    uprateFaults(HttpVerb.GET, url, resultCode, body);
     outcome.responseCode = resultCode;
     outcome.data = body;
     return outcome;
@@ -159,12 +158,14 @@ public class UrlConnectionOperations extends Configured {
    * Uprate error codes 400 and up into faults; 
    * 404 is converted to a {@link NotFoundException},
    * 401 to {@link ForbiddenException}
+   *
+   * @param verb HTTP Verb used
    * @param url URL as string
    * @param resultCode response from the request
    * @param body optional body of the request
    * @throws IOException if the result was considered a failure
    */
-  public static void uprateFaults(String url,
+  public static void uprateFaults(HttpVerb verb, URL url,
       int resultCode, byte[] body)
       throws IOException {
 
@@ -172,11 +173,12 @@ public class UrlConnectionOperations extends Configured {
       //success
       return;
     }
+    String msg = verb.toString() +" "+ url.toString();
     if (resultCode == 404) {
-      throw new NotFoundException(url);
+      throw new NotFoundException(msg);
     }
     if (resultCode == 401) {
-      throw new ForbiddenException(url);
+      throw new ForbiddenException(msg);
     }
     // all other error codes
     String bodyAsString;
@@ -185,7 +187,7 @@ public class UrlConnectionOperations extends Configured {
     } else {
       bodyAsString = "";
     }
-    String message = "Request to " + url +
+    String message =  msg +
                      " failed with exit code " + resultCode
                      + ", body length " + bodyAsString.length()
                      + ":\n" + bodyAsString;

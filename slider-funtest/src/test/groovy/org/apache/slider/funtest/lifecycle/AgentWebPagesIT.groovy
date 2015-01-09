@@ -22,6 +22,7 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.slider.agent.rest.RestTestDelegates
 import org.apache.slider.common.SliderExitCodes
+import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
 import org.apache.slider.funtest.framework.AgentCommandTestBase
@@ -42,7 +43,6 @@ public class AgentWebPagesIT extends AgentCommandTestBase
 
   static String APP_RESOURCE2 = "../slider-core/src/test/app_packages/test_command_log/resources_no_role.json"
 
-
   @Before
   public void prepareCluster() {
     setupCluster(CLUSTER)
@@ -56,6 +56,9 @@ public class AgentWebPagesIT extends AgentCommandTestBase
   @Test
   public void testAgentWeb() throws Throwable {
     describe("Create a 0-role cluster and make web queries against it")
+    
+    // verify the ws/ path is open for all HTTP verbs
+    assert SLIDER_CONFIG.getBoolean(SliderXmlConfKeys.X_DEV_INSECURE_WS, false)
     def clusterpath = buildClusterPath(CLUSTER)
     File launchReportFile = createTempJsonFile();
     SliderShell shell = createTemplatedSliderApplication(CLUSTER,

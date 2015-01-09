@@ -245,6 +245,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     config = super.bindArgs(config, args);
     serviceArgs = new ClientArgs(args);
     serviceArgs.parse();
+    // add the slider XML config
+    ConfigHelper.injectSliderXMLResource();
     // yarn-ify
     YarnConfiguration yarnConfiguration = new YarnConfiguration(config);
     return SliderUtils.patchConfiguration(yarnConfiguration);
