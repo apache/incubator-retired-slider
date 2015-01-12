@@ -691,7 +691,20 @@ class SliderTestUtils extends Assert {
     process
   }
 
-  public static boolean doesWindowsAppExist(List<String> commands) {
+  /**
+   * Does an application exist? Run the commands and if the
+   * operation fails with a FileNotFoundException, then
+   * this method returns false.
+   * <p>
+   *   Run something harmless like a -version command, something
+   *   which must return 0
+   *   
+   * @param commands
+   * @return true if the command sequence succeeded
+   * false if they failed with no file
+   * @throws Exception on any other failure cause
+   */
+  public static boolean doesAppExist(List<String> commands) {
     try {
       exec(0, commands)
       return true;
@@ -701,6 +714,66 @@ class SliderTestUtils extends Assert {
       }
       return false;
     }
+  }
+
+  /**
+   * Locate an executable on the path
+   * @param exe executable name. If it is an absolute path which
+   * exists then it will returned direct
+   * @return the path to an exe or null for no match
+   */
+  public static File locateExecutable(String exe) {
+    File exeNameAsPath = new File(exe).absoluteFile
+    if (exeNameAsPath.exists()) {
+      return exeNameAsPath
+    }
+    
+    File exepath = null
+    String path = extractPath()
+    String[] dirs = path.split(System.getProperty("path.separator"));
+    dirs.each { String dirname ->
+      File dir = new File(dirname)
+
+      File possible = new File(dir, exe)
+      if (possible.exists()) {
+        exepath = possible
+      }
+    }
+    return exepath
+  }
+
+  /**
+   * Lookup the PATH env var
+   * @return the path or null
+   */
+  public static String extractPath() {
+    return extractEnvVar("PATH")
+  }
+  
+  /**
+   * Find an environment variable. Uses case independent checking for
+   * the benefit of windows.
+   * Will fail if the var is not found.
+   * @param var path variable <i>in upper case</i>
+   * @return the env var
+   */
+  public static String extractEnvVar(String var) {
+    String realkey = "";
+
+    System.getenv().keySet().each { String it ->
+      if (it.toUpperCase(Locale.ENGLISH).equals(var)) {
+        realkey = it;
+      }
+    }
+
+    if (!realkey) {
+      fail("No environment variable $var found")
+    }
+    assert realkey
+    def val = System.getenv(realkey)
+    
+    log.info("$realkey = $val")
+    return val
   }
 
   /**
