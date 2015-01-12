@@ -147,7 +147,7 @@ public class CertificateManager {
       StreamConsumer outputConsumer =
           new StreamConsumer(process.getInputStream(), true);
       StreamConsumer errorConsumer =
-          new StreamConsumer(process.getErrorStream());
+          new StreamConsumer(process.getErrorStream(), true);
 
       outputConsumer.start();
       errorConsumer.start();
