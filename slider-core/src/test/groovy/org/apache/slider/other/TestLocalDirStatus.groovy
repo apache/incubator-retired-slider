@@ -30,24 +30,71 @@ import org.junit.Test
 class TestLocalDirStatus extends SliderTestUtils {
 
 
-  public static final int SIZE = 0x100000
-
+  public static final int SIZE = 0x200000
+  
   @Test
   public void testTempDir() throws Throwable {
-    File tmpf = File.createTempFile("testl",".bin")
-    createAndReadFile(tmpf, SIZE)
-    tmpf.delete()
-    assert !tmpf.exists()
+    File tmpf = null
+    try {
+      tmpf = File.createTempFile("testl", ".bin")
+      createAndReadFile(tmpf, SIZE)
+      tmpf.delete()
+      assert !tmpf.exists()
+    } finally {
+      tmpf?.delete()
+    }
   }
   
   @Test
   public void testTargetDir() throws Throwable {
+    File target = target()
+    File tmpf = null
+    try {
+      tmpf = File.createTempFile("testl", ".bin", target)
+      createAndReadFile(tmpf, SIZE)
+      tmpf.delete()
+      assert !tmpf.exists()
+    } finally {
+      tmpf?.delete()
+    }
+  }
+
+  public File target() {
     File target = new File("target").absoluteFile
     assert target.exists()
-    File tmpf = File.createTempFile("testl", ".bin", target)
-    createAndReadFile(tmpf, SIZE)
-    tmpf.delete()
-    assert !tmpf.exists()
+    return target
+  }
+
+  @Test
+  public void testRenameInTargetDir() throws Throwable {
+    def target = target()
+    File tmpf = null, dst= null
+    try {
+      tmpf = File.createTempFile("testl", ".bin", target)
+      dst = File.createTempFile("test-dest", ".bin", target)
+      createRenameAndReadFile(tmpf, dst, SIZE)
+      assert !tmpf.exists()
+      dst.delete()
+    } finally {
+      tmpf?.delete()
+      dst?.delete()
+    } 
+  }
+  
+  @Test
+  public void testRenameInTmpDir() throws Throwable {
+    def target = target()
+    File tmpf = null, dst= null
+    try {
+      tmpf = File.createTempFile("testl", ".bin")
+      dst = File.createTempFile("test-dest", ".bin")
+      createRenameAndReadFile(tmpf, dst, SIZE)
+      assert !tmpf.exists()
+      dst.delete()
+    } finally {
+      tmpf?.delete()
+      dst?.delete()
+    } 
   }
   
   protected void createAndReadFile(File path, int len) {
@@ -56,6 +103,16 @@ class TestLocalDirStatus extends SliderTestUtils {
     assert path.exists()
     assert path.length() == len
     def persisted = readFile(path)
+    TestUtility.compareByteArrays(dataset, persisted, len)
+  }  
+  
+  protected void createRenameAndReadFile(File src, File dst , int len) {
+    byte[] dataset = TestUtility.dataset(len, 32, 128)
+    writeFile(src, dataset)
+    assert src.exists()
+    assert src.length() == len
+    assert src.renameTo(dst)
+    def persisted = readFile(dst)
     TestUtility.compareByteArrays(dataset, persisted, len)
   }
   
