@@ -136,7 +136,7 @@ class TestWindowsSupport extends YarnMiniClusterTestBase {
   @Test
   public void testExecNonexistentBinary2() throws Throwable {
     assumeWindows()
-    assert !doesWindowsAppExist(["undefined-application", "--version"])
+    assert !doesAppExist(["undefined-application", "--version"])
   }
 
   public assumeWindows() {
@@ -196,32 +196,4 @@ class TestWindowsSupport extends YarnMiniClusterTestBase {
     log.info "Hadoop DLL at: $exepath"
   }
 
-  public File locateExecutable(String exe) {
-    File exepath = null
-    String path = extractPath()
-    String[] dirs = path.split(System.getProperty("path.separator"));
-    dirs.each { String dirname ->
-      File dir = new File(dirname)
-
-      File possible = new File(dir, exe)
-      if (possible.exists()) {
-        exepath = possible
-      }
-    }
-    return exepath
-  }
-
-  public String extractPath() {
-    String pathkey = "";
-
-    System.getenv().keySet().each { String it ->
-      if (it.toLowerCase(Locale.ENGLISH).equals("path")) {
-        pathkey = it;
-      }
-    }
-    assert pathkey
-    log.info("Path env variable is $pathkey")
-    def path = System.getenv(pathkey)
-    return path
-  }
 }
