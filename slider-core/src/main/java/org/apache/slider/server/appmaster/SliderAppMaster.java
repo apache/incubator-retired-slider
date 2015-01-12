@@ -116,6 +116,7 @@ import org.apache.slider.providers.agent.AgentKeys;
 import org.apache.slider.providers.slideram.SliderAMClientProvider;
 import org.apache.slider.providers.slideram.SliderAMProviderService;
 import org.apache.slider.server.appmaster.actions.ActionKillContainer;
+import org.apache.slider.server.appmaster.actions.ActionRegisterServiceInstance;
 import org.apache.slider.server.appmaster.actions.RegisterComponentInstance;
 import org.apache.slider.server.appmaster.actions.QueueExecutor;
 import org.apache.slider.server.appmaster.actions.ActionHalt;
@@ -892,9 +893,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
 
     try {
-      // start handling any scheduled events
-
-      startQueueProcessing();
 
       // Web service endpoints: initialize
 
@@ -909,10 +907,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       // start the agent web app
       startAgentWebApp(appInformation, serviceConf, webAppApi);
-      deployWebApplication(serviceConf, webAppPort, webAppApi);
+      deployWebApplication(webAppPort, webAppApi);
 
-      // YARN Registry do the registration
-      registerServiceInstance(clustername, appid);
+      // schedule YARN Registry registration
+      queue(new ActionRegisterServiceInstance(clustername, appid));
 
       // log the YARN and web UIs
       log.info("RM Webapp address {}",
@@ -925,6 +923,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       // launch the real provider; this is expected to trigger a callback that
       // starts the node review process
       launchProviderService(instanceDefinition, confDir);
+
+      // start handling any scheduled events
+
+      startQueueProcessing();
 
       //now block waiting to be told to exit the process
       waitForAMCompletionSignal();
@@ -942,19 +944,19 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    *   Creates and starts the web application, and adds a
    *   <code>WebAppService</code> service under the AM, to ensure
    *   a managed web application shutdown.
-   *  @param serviceConf AM configuration
+   * @param serviceConf AM configuration
    * @param port port to deploy the web application on
    * @param webAppApi web app API instance
    */
-  private void deployWebApplication(Configuration serviceConf,
-      int port, WebAppApiImpl webAppApi) {
+  private void deployWebApplication(int port, WebAppApiImpl webAppApi) {
 
+    log.info("Creating and launching web application");
     webApp = new SliderAMWebApp(webAppApi);
     WebApps.$for(SliderAMWebApp.BASE_PATH,
         WebAppApi.class,
         webAppApi,
         RestPaths.WS_CONTEXT)
-           .withHttpPolicy(serviceConf, HttpConfig.Policy.HTTP_ONLY)
+           .withHttpPolicy(getConfig(), HttpConfig.Policy.HTTP_ONLY)
            .at(port)
            .inDevMode()
            .start(webApp);
@@ -962,9 +964,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     WebAppService<SliderAMWebApp> webAppService =
       new WebAppService<SliderAMWebApp>("slider", webApp);
 
-    webAppService.init(serviceConf);
-    webAppService.start();
-    addService(webAppService);
+    deployChildService(webAppService);
   }
 
   private void processAMCredentials(SecurityConfiguration securityConfiguration)
@@ -1148,11 +1148,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   /**
    * This registers the service instance and its external values
    * @param instanceName name of this instance
-   * @param appid application ID
+   * @param appId application ID
    * @throws IOException
    */
-  private void registerServiceInstance(String instanceName,
-      ApplicationId appid) throws IOException {
+  public void registerServiceInstance(String instanceName,
+      ApplicationId appId) throws IOException {
     
     
     // the registry is running, so register services
@@ -1173,7 +1173,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     // Yarn registry
     ServiceRecord serviceRecord = new ServiceRecord();
-    serviceRecord.set(YarnRegistryAttributes.YARN_ID, appid.toString());
+    serviceRecord.set(YarnRegistryAttributes.YARN_ID, appId.toString());
     serviceRecord.set(YarnRegistryAttributes.YARN_PERSISTENCE,
         PersistencePolicies.APPLICATION);
     serviceRecord.description = "Slider Application Master";
@@ -1573,7 +1573,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       //  known nodes trigger notifications
       if(!result.unknownNode) {
         getProviderService().notifyContainerCompleted(containerId);
-        queue(new UnregisterComponentInstance(containerId, 0, TimeUnit.MILLISECONDS));
+        queue(new UnregisterComponentInstance(containerId, 0,
+            TimeUnit.MILLISECONDS));
       }
     }
 
@@ -1751,7 +1752,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public ProtocolSignature getProtocolSignature(String protocol,
                                                 long clientVersion,
                                                 int clientMethodsHash) throws
-                                                                       IOException {
+      IOException {
     return ProtocolSignature.getProtocolSignature(
       this, protocol, clientVersion, clientMethodsHash);
   }
@@ -1882,7 +1883,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     RoleInstance instance = appState.getLiveInstanceByContainerID(
         request.getUuid());
     return Messages.GetNodeResponseProto.newBuilder()
-                   .setClusterNode(instance.toProtobuf())
+                                        .setClusterNode(instance.toProtobuf())
                    .build();
   }
 
@@ -1983,7 +1984,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
                                                     File confDir)
     throws IOException, SliderException {
     Map<String, String> env = new HashMap<String, String>();
-    boolean execStarted = providerService.exec(instanceDefinition, confDir, env, this);
+    boolean execStarted = providerService.exec(instanceDefinition, confDir, env,
+        this);
     if (execStarted) {
       providerService.registerServiceListener(this);
       providerService.start();
@@ -2150,7 +2152,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
   @Override //  NMClientAsync.CallbackHandler 
   public void onContainerStarted(ContainerId containerId,
-                                 Map<String, ByteBuffer> allServiceResponse) {
+      Map<String, ByteBuffer> allServiceResponse) {
     LOG_YARN.info("Started Container {} ", containerId);
     RoleInstance cinfo = appState.onNodeManagerContainerStarted(containerId);
     if (cinfo != null) {
@@ -2180,14 +2182,14 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
   @Override //  NMClientAsync.CallbackHandler 
   public void onContainerStatusReceived(ContainerId containerId,
-                                        ContainerStatus containerStatus) {
+      ContainerStatus containerStatus) {
     LOG_YARN.debug("Container Status: id={}, status={}", containerId,
         containerStatus);
   }
 
   @Override //  NMClientAsync.CallbackHandler 
   public void onGetContainerStatusError(
-    ContainerId containerId, Throwable t) {
+      ContainerId containerId, Throwable t) {
     LOG_YARN.error("Failed to query the status of Container {}", containerId);
   }
 

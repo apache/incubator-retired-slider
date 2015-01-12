@@ -23,12 +23,11 @@ import com.sun.jersey.api.client.WebResource
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.yarn.exceptions.YarnException
 import org.apache.slider.api.StatusKeys
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderKeys
-import org.apache.slider.common.SliderXmlConfKeys
+import static org.apache.slider.common.SliderXmlConfKeys.KEY_KEYSTORE_LOCATION
 import org.apache.slider.core.build.InstanceBuilder
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.conf.MapOperations
@@ -61,52 +60,61 @@ class TestAgentAMManagementWS extends AgentTestBase {
   private static String password;
 
   public static final String AGENT_URI = "ws/v1/slider/agents/";
-    final static Logger logger = LoggerFactory.getLogger(TestAgentAMManagementWS.class)
-    static {
-        //for localhost testing only
-        HttpsURLConnection.setDefaultHostnameVerifier(
-                new HostnameVerifier(){
-                    public boolean verify(String hostname,
-                                          SSLSession sslSession) {
-                        logger.info("verifying hostname ${hostname}")
-                        InetAddress[] addresses =
-                            InetAddress.getAllByName(hostname);
-                        if (hostname.equals("localhost")) {
-                            return true;
-                        }
-                        for (InetAddress address : addresses) {
-                            if (address.getHostName().equals(hostname) ||
-                                address.isAnyLocalAddress() ||
-                                address.isLoopbackAddress()) {
-                                return true;
-                            }
-                        }
-                        return false;
-                    }
-                });
+  final static Logger logger = LoggerFactory.getLogger(
+      TestAgentAMManagementWS.class)
+  static private String keystoreLocation
+  public static
+  final String SSL_SERVER_KEYSTORE_LOCATION = "ssl.server.keystore.location"
+  public static
+  final String SSL_SERVER_KEYSTORE_PASSWORD = "ssl.server.keystore.password"
+  static {
+    //for localhost testing only
+    HttpsURLConnection.setDefaultHostnameVerifier(
+        new HostnameVerifier() {
+          public boolean verify(String hostname,
+              SSLSession sslSession) {
+            logger.info("verifying hostname ${hostname}")
+            InetAddress[] addresses =
+                InetAddress.getAllByName(hostname);
+            if (hostname.equals("localhost")) {
+              return true;
+            }
+            for (InetAddress address : addresses) {
+              if (address.hostName == hostname ||
+                  address.anyLocalAddress ||
+                  address.loopbackAddress) {
+                return true;
+              }
+            }
+            return false;
+          }
+        });
 
-    }
+  }
 
-    @Override
-    @Before
-    void setup() {
-        super.setup()
-        MapOperations compOperations = new MapOperations();
-        compOperations.put(SliderXmlConfKeys.KEY_KEYSTORE_LOCATION, "/tmp/work/security/keystore.p12");
-        SecurityUtils.initializeSecurityParameters(compOperations, true);
-        CertificateManager certificateManager = new CertificateManager();
-        certificateManager.initialize(compOperations);
-        String keystoreFile = SecurityUtils.getSecurityDir() + File.separator + SliderKeys.KEYSTORE_FILE_NAME;
-        password = SecurityUtils.getKeystorePass();
-        System.setProperty("javax.net.ssl.trustStore", keystoreFile);
-        System.setProperty("javax.net.ssl.trustStorePassword", password);
-        System.setProperty("javax.net.ssl.trustStoreType", "PKCS12");
+  @Override
+  @Before
+  void setup() {
+    super.setup()
+    MapOperations compOperations = new MapOperations();
+    // set keystore demp file
+    keystoreLocation = "/tmp/work/security/keystore.p12" 
+    compOperations[KEY_KEYSTORE_LOCATION] = keystoreLocation
+    SecurityUtils.initializeSecurityParameters(compOperations, true);
+    CertificateManager certificateManager = new CertificateManager();
+    certificateManager.initialize(compOperations);
+    String keystoreFile = SecurityUtils.getSecurityDir() + File.separator +
+                          SliderKeys.KEYSTORE_FILE_NAME;
+    password = SecurityUtils.getKeystorePass();
+    System.setProperty("javax.net.ssl.trustStore", keystoreFile);
+    System.setProperty("javax.net.ssl.trustStorePassword", password);
+    System.setProperty("javax.net.ssl.trustStoreType", "PKCS12");
 
-    }
+  }
 
-    @Test
+  @Test
   public void testAgentAMManagementWS() throws Throwable {
-      String clustername = createMiniCluster("",
+    String clustername = createMiniCluster("",
         configuration,
         1,
         1,
@@ -124,87 +132,98 @@ class TestAgentAMManagementWS extends AgentTestBase {
     assert agt_ver_path.exists()
     assert agt_conf_path.exists()
     try {
-        sliderClientClassName = TestSliderClient.name
-        ServiceLauncher<SliderClient> launcher = buildAgentCluster(clustername,
-            roles,
-            [
-                ARG_OPTION, PACKAGE_PATH, slider_core.absolutePath,
-                ARG_OPTION, APP_DEF, toURIArg(app_def_path),
-                ARG_OPTION, AGENT_CONF, toURIArg(agt_conf_path),
-                ARG_OPTION, AGENT_VERSION, toURIArg(agt_ver_path),
-            ],
-            true, true,
-            true)
-        SliderClient sliderClient = launcher.service
-        def report = waitForClusterLive(sliderClient)
-        def trackingUrl = report.trackingUrl
-        log.info("tracking URL is $trackingUrl")
-        def agent_url = trackingUrl + AGENT_URI
+      sliderClientClassName = TestSliderClient.name
+      ServiceLauncher<SliderClient> launcher = buildAgentCluster(clustername,
+          roles,
+          [
+              ARG_OPTION, PACKAGE_PATH, slider_core.absolutePath,
+              ARG_OPTION, APP_DEF, toURIArg(app_def_path),
+              ARG_OPTION, AGENT_CONF, toURIArg(agt_conf_path),
+              ARG_OPTION, AGENT_VERSION, toURIArg(agt_ver_path),
+          ],
+          true, true,
+          true)
+      SliderClient sliderClient = launcher.service
+      def report = waitForClusterLive(sliderClient)
+      //def appmaster = report.trackingUrl
 
 
-        def status = dumpClusterStatus(sliderClient, "agent AM")
-        def liveURL = status.getInfo(StatusKeys.INFO_AM_AGENT_OPS_URL)
-        if (liveURL) {
-          agent_url = liveURL + AGENT_URI
-        }
+      def proxyAM = report.trackingUrl
 
-        log.info("Agent  is $agent_url")
-        log.info("stacks is ${liveURL}stacks")
-        log.info("conf   is ${liveURL}conf")
+      log.info("tracking URL is $proxyAM")
 
-        execHttpRequest(WEB_STARTUP_TIME) {
-          GET(agent_url)
-        }
+      // spin awaiting the agent web page coming up.
+      execHttpRequest(WEB_STARTUP_TIME) {
+        GET(proxyAM)
+      }
 
-        String page = fetchWebPageWithoutError(agent_url);
-        log.info(page);
-
-        //WS get
-        Client client = createTestClient();
+      def agent_url = proxyAM + AGENT_URI
 
 
-        WebResource webResource = client.resource(agent_url + "test/register");
-        RegistrationResponse response = webResource.type(MediaType.APPLICATION_JSON)
-                              .post(
-            RegistrationResponse.class,
-            createDummyJSONRegister());
+      def status = dumpClusterStatus(sliderClient, "agent AM")
+      def liveURL = status.getInfo(StatusKeys.INFO_AM_AGENT_OPS_URL)
+      if (liveURL) {
+        agent_url = liveURL + AGENT_URI
+      }
 
-        //TODO: assert failure as actual agent is not started. This test only starts the AM.
-        assert RegistrationStatus.FAILED == response.getResponseStatus();
+      log.info("Agent  is $agent_url")
+      log.info("stacks is ${liveURL}stacks")
+      log.info("conf   is ${liveURL}conf")
+
+      log.info "AM live, now fetching agent at $agent_url"
+      
+      // spin awaiting the agent web page coming up.
+      execHttpRequest(WEB_STARTUP_TIME) {
+        GET(agent_url)
+      }
+
+      String page = fetchWebPageRaisedErrorCodes(agent_url);
+      log.info(page);
+
+      //WS get
+      Client client = createTestClient();
+
+
+      WebResource webResource = client.resource(agent_url + "test/register");
+      RegistrationResponse response = webResource.type(MediaType.APPLICATION_JSON)
+                                      .post(RegistrationResponse.class,
+                                        createDummyJSONRegister());
+
+      // assert failure as actual agent is not started. This test only starts the AM.
+      assert RegistrationStatus.FAILED == response.responseStatus;
     } finally {
       sliderClientClassName = DEFAULT_SLIDER_CLIENT
     }
-    
+
   }
 
   static class TestSliderClient extends SliderClient {
-      @Override
-      protected void persistInstanceDefinition(boolean overwrite,
-                                               Path appconfdir,
-                                               InstanceBuilder builder)
-      throws IOException, SliderException, LockAcquireFailedException {
-          AggregateConf conf = builder.getInstanceDescription()
-          MapOperations component = conf.getAppConfOperations().getComponent("slider-appmaster")
-          component.put(
-                  "ssl.server.keystore.location",
-                  "/tmp/work/security/keystore.p12")
-          component.put("ssl.server.keystore.password", password)
-          super.persistInstanceDefinition(overwrite, appconfdir, builder)
-      }
+    @Override
+    protected void persistInstanceDefinition(boolean overwrite,
+        Path appconfdir,
+        InstanceBuilder builder)
+    throws IOException, SliderException, LockAcquireFailedException {
+      AggregateConf conf = builder.getInstanceDescription()
+      MapOperations component = conf.getAppConfOperations().getComponent(
+          "slider-appmaster")
+      component[SSL_SERVER_KEYSTORE_LOCATION] =
+          keystoreLocation
+      component[SSL_SERVER_KEYSTORE_PASSWORD] = password
+      super.persistInstanceDefinition(overwrite, appconfdir, builder)
+    }
 
-      @Override
-      LaunchedApplication launchApplication(String clustername,
-                                            Path clusterDirectory,
-                                            AggregateConf instanceDefinition,
-                                            boolean debugAM)
-      throws YarnException, IOException {
-        MapOperations component = instanceDefinition.getAppConfOperations().getComponent("slider-appmaster")
-        component.put(
-                  "ssl.server.keystore.location",
-                  "/tmp/work/security/keystore.p12")
-        component.put("ssl.server.keystore.password", password)
-        return super.launchApplication(clustername, clusterDirectory, instanceDefinition, debugAM)
-      }
+    @Override
+    LaunchedApplication launchApplication(String clustername,
+        Path clusterDirectory,
+        AggregateConf instanceDefinition,
+        boolean debugAM)
+    throws YarnException, IOException {
+      MapOperations component = instanceDefinition.appConfOperations.getComponent(
+          "slider-appmaster")
+      component[SSL_SERVER_KEYSTORE_LOCATION]= keystoreLocation
+      component[SSL_SERVER_KEYSTORE_PASSWORD]= password
+      return super.launchApplication(clustername, clusterDirectory, instanceDefinition, debugAM)
+    }
   }
 
 

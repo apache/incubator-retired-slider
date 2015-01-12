@@ -205,7 +205,7 @@ class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
   }
 
   public static void checkMonitorPage(String monitorUrl) {
-    String monitor = fetchWebPageWithoutError(monitorUrl);
+    String monitor = fetchWebPageRaisedErrorCodes(monitorUrl);
     assert monitor != null, "Monitor page null"
     assert monitor.length() > 100, "Monitor page too short"
     assert monitor.contains("Accumulo Overview"), "Monitor page didn't contain expected text"

@@ -425,7 +425,7 @@ class SliderTestUtils extends Assert {
    */
 
   public static String GET(URL url) {
-    return fetchWebPageWithoutError(url.toString())
+    return fetchWebPageRaisedErrorCodes(url.toString())
   }
 
   public static String GET(URL url, String path) {
@@ -438,7 +438,7 @@ class SliderTestUtils extends Assert {
   }
 
   def static String GET(String s) {
-    return fetchWebPageWithoutError(s)
+    return fetchWebPageRaisedErrorCodes(s)
   }
 
   public static String appendToURL(String base, String path) {
@@ -479,10 +479,13 @@ class SliderTestUtils extends Assert {
   /**
    * Fetches a web page asserting that the response code is between 200 and 400.
    * Will error on 400 and 500 series response codes and let 200 and 300 through. 
-   * @param url
-   * @return
+   * @param url URL to get as string
+   * @return body of response
+   * @throws IOException Network IO problems or exit code >= 400 not specifically handled
+   * @throws NotFoundException 404 received
+   * @throws ForbiddenException 401 received
    */
-  public static String fetchWebPageWithoutError(String url) {
+  public static String fetchWebPageRaisedErrorCodes(String url) {
     assert null != url
 
     log.info("Fetching HTTP content at " + url);
@@ -505,18 +508,22 @@ class SliderTestUtils extends Assert {
 
     def body = get.responseBodyAsString
 
-    updateFaults("GET", url, resultCode, body)
+    uprateFaults("GET", url, resultCode, body)
     return body;
   }
 
   /**
-   *  uprate some faults
+   * Generate exceptions from error codes >= 400. Some are converted
+   * into specific exceptions.
    * @param verb HTTP verb
    * @param url URL
    * @param resultCode result code
    * @param body any body
+   * @throws NotFoundException 404 received
+   * @throws ForbiddenException 401 received
+   * @throws IOException any other exit code
    */
-  public static void updateFaults(
+  public static void uprateFaults(
       String verb,
       String url,
       int resultCode,
