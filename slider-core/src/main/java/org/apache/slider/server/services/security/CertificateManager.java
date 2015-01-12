@@ -63,7 +63,7 @@ public class CertificateManager {
   /**
     * Verify that root certificate exists, generate it otherwise.
     */
-  public void initialize(MapOperations compOperations) {
+  public void initialize(MapOperations compOperations) throws SliderException {
     SecurityUtils.initializeSecurityParameters(compOperations);
 
     LOG.info("Initialization of root certificate");
@@ -195,7 +195,7 @@ public class CertificateManager {
     }
   }
 
-  private void generateServerCertificate(){
+  private void generateServerCertificate() throws SliderException {
     LOG.info("Generation of server certificate");
 
     String srvrKstrDir = SecurityUtils.getSecurityDir();
@@ -208,22 +208,17 @@ public class CertificateManager {
     Object[] scriptArgs = {srvrCrtPass, srvrKstrDir, srvrKeyName,
         srvrCrtName, kstrName, srvrCsrName};
 
-    try {
-      String command = MessageFormat.format(GEN_SRVR_KEY,scriptArgs);
-      runCommand(command);
+    String command = MessageFormat.format(GEN_SRVR_KEY, scriptArgs);
+    runCommand(command);
 
-      command = MessageFormat.format(GEN_SRVR_REQ,scriptArgs);
-      runCommand(command);
+    command = MessageFormat.format(GEN_SRVR_REQ, scriptArgs);
+    runCommand(command);
 
-      command = MessageFormat.format(SIGN_SRVR_CRT,scriptArgs);
-      runCommand(command);
+    command = MessageFormat.format(SIGN_SRVR_CRT, scriptArgs);
+    runCommand(command);
 
-      command = MessageFormat.format(EXPRT_KSTR,scriptArgs);
-      runCommand(command);
-    } catch (SliderException e) {
-      LOG.error("Error generating the server certificate", e);
-    }
-
+    command = MessageFormat.format(EXPRT_KSTR, scriptArgs);
+    runCommand(command);
   }
 
   /**

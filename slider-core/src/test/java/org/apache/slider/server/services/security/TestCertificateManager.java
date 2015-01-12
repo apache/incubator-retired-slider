@@ -49,13 +49,13 @@ public class TestCertificateManager {
   @Test
   public void testServerCertificateGenerated() throws Exception {
     File serverCrt = new File(secDir, SliderKeys.CRT_FILE_NAME);
-    Assert.assertTrue(serverCrt.exists());
+    Assert.assertTrue("Server CRD does not exist:" + serverCrt,serverCrt.exists());
   }
 
   @Test
   public void testKeystoreGenerated() throws Exception {
     File keystore = new File(secDir, SliderKeys.KEYSTORE_FILE_NAME);
-    Assert.assertTrue(keystore.exists());
+    Assert.assertTrue("Keystore does not exist: " + keystore,  keystore.exists());
   }
 
 }
