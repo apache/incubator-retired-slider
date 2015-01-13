@@ -111,7 +111,10 @@ class TestLocalDirStatus extends SliderTestUtils {
     writeFile(src, dataset)
     assert src.exists()
     assert src.length() == len
+    dst.delete()
+    assert !dst.exists()
     assert src.renameTo(dst)
+    assert dst.length() == len
     def persisted = readFile(dst)
     TestUtility.compareByteArrays(dataset, persisted, len)
   }
