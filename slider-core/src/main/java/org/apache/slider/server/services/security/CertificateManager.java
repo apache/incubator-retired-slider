@@ -42,7 +42,7 @@ public class CertificateManager {
   private static final String GEN_SRVR_KEY = "openssl genrsa -des3 " +
       "-passout pass:{0} -out {1}/{2} 4096 ";
   private static final String GEN_SRVR_REQ = "openssl req -passin pass:{0} " +
-      "-new -key {1}/{2} -out {1}/{5} -batch";
+      "-new -key {1}/{2} -out {1}/{5} -config {1}/ca.config -batch";
   private static final String SIGN_SRVR_CRT = "openssl ca -create_serial " +
     "-out {1}/{3} -days 365 -keyfile {1}/{2} -key {0} -selfsign " +
     "-extensions jdk7_ca -config {1}/ca.config -batch " +
