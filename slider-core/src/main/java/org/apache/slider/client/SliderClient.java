@@ -1463,8 +1463,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       }
       Path localConfDirPath = SliderUtils.createLocalPath(confDir);
       remoteConfPath = new Path(clusterDirectory, SliderKeys.SUBMITTED_CONF_DIR);
-      log.debug("Slider configuration directory is {}; remote to be {}",
-    		  localConfDirPath, remoteConfPath);
+      log.debug("Slider configuration directory is {}; remote to be {}", 
+          localConfDirPath, remoteConfPath);
       SliderUtils.copyDirectory(config, localConfDirPath, remoteConfPath, null);
 
       File log4jserver =
