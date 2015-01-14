@@ -888,7 +888,7 @@ public class AppState {
   }
 
   /**
-   * Get a clone of the role status list. Concurrent events may mean this
+   * Get a deep clone of the role status list. Concurrent events may mean this
    * list (or indeed, some of the role status entries) may be inconsistent
    * @return a snapshot of the role status entries
    */

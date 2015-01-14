@@ -24,6 +24,10 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.service.CompositeService;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * Class for all metrics and monitoring
  */
@@ -44,6 +48,10 @@ public class MetricsAndMonitoring extends CompositeService {
 
   final HealthCheckRegistry health = new HealthCheckRegistry();
 
+  private final Map<String, MeterAndCounter> meterAndCounterMap
+      = new ConcurrentHashMap<String, MeterAndCounter>();
+  
+  
   public MetricRegistry getMetrics() {
     return metrics;
   }
@@ -57,6 +65,39 @@ public class MetricsAndMonitoring extends CompositeService {
     addService(new MetricsBindingService("MetricsBindingService",
         metrics));
     super.serviceInit(conf);
-
   }
+
+  public MeterAndCounter getMeterAndCounter(String name) {
+    return meterAndCounterMap.get(name);
+  }
+
+  /**
+   * Get or create the meter/counter pair
+   * @param name name of instance
+   * @return an instance
+   */
+  public MeterAndCounter getOrCreateMeterAndCounter(String name) {
+    MeterAndCounter instance = meterAndCounterMap.get(name);
+    if (instance == null) {
+      synchronized (this) {
+        // check in a sync block
+        instance = meterAndCounterMap.get(name);
+        if (instance == null) {
+          instance = new MeterAndCounter(metrics, name);
+          meterAndCounterMap.put(name, instance);
+        }
+      }
+    }
+    return instance;
+  }
+
+  /**
+   * Get a specific meter and mark it
+   * @param name name of meter/counter
+   */
+  public void markMeterAndCounter(String name) {
+    MeterAndCounter meter = getOrCreateMeterAndCounter(name);
+    meter.mark();
+  }
+
 }

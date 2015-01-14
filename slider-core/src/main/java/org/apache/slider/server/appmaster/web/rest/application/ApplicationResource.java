@@ -33,6 +33,8 @@ import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.rest.AbstractSliderResource;
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.*;
 
+import org.apache.slider.server.appmaster.web.rest.application.actions.RestActionStop;
+import org.apache.slider.server.appmaster.web.rest.application.actions.StopResponse;
 import org.apache.slider.server.appmaster.web.rest.application.resources.AggregateModelRefresher;
 import org.apache.slider.server.appmaster.web.rest.application.resources.AppconfRefresher;
 import org.apache.slider.server.appmaster.web.rest.application.resources.CachedContent;
@@ -41,6 +43,7 @@ import org.apache.slider.server.appmaster.web.rest.application.resources.Content
 import org.apache.slider.server.appmaster.web.rest.application.resources.LiveComponentsRefresher;
 import org.apache.slider.server.appmaster.web.rest.application.resources.LiveResourcesRefresher;
 import org.apache.slider.server.appmaster.web.rest.application.actions.RestActionPing;
+import org.apache.slider.server.appmaster.web.rest.application.resources.PingResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -137,6 +140,7 @@ public class ApplicationResource extends AbstractSliderResource {
   @Path("/")
   @Produces({APPLICATION_JSON})
   public List<String> getRoot() {
+    markGet(SLIDER_SUBPATH_APPLICATION);
     return ROOT_ENTRIES;
   }
 
@@ -148,6 +152,7 @@ public class ApplicationResource extends AbstractSliderResource {
   @Path(MODEL)
   @Produces({APPLICATION_JSON})
   public List<String> getModel() {
+    markGet(SLIDER_SUBPATH_APPLICATION, MODEL);
     return MODEL_ENTRIES;
   }
 
@@ -155,6 +160,7 @@ public class ApplicationResource extends AbstractSliderResource {
   @Path(MODEL_DESIRED)
   @Produces({APPLICATION_JSON})
   public AggregateConf getModelDesired() {
+    markGet(SLIDER_SUBPATH_APPLICATION, MODEL_DESIRED);
     return lookupAggregateConf(MODEL_DESIRED);
   }
   
@@ -162,6 +168,7 @@ public class ApplicationResource extends AbstractSliderResource {
   @Path(MODEL_DESIRED_APPCONF)
   @Produces({APPLICATION_JSON})
   public ConfTree getModelDesiredAppconf() {
+    markGet(SLIDER_SUBPATH_APPLICATION, MODEL_DESIRED_APPCONF);
     return lookupConfTree(MODEL_DESIRED_APPCONF);
   }
 
@@ -169,6 +176,7 @@ public class ApplicationResource extends AbstractSliderResource {
   @Path(MODEL_DESIRED_RESOURCES)
   @Produces({APPLICATION_JSON})
   public ConfTree getModelDesiredResources() {
+    markGet(SLIDER_SUBPATH_APPLICATION, MODEL_DESIRED_RESOURCES);
     return lookupConfTree(MODEL_DESIRED_RESOURCES);
   }
   
@@ -176,6 +184,7 @@ public class ApplicationResource extends AbstractSliderResource {
   @Path(MODEL_RESOLVED)
   @Produces({APPLICATION_JSON})
   public AggregateConf getModelResolved() {
+    markGet(SLIDER_SUBPATH_APPLICATION, MODEL_RESOLVED);
     return lookupAggregateConf(MODEL_RESOLVED);
   }
 
@@ -183,6 +192,7 @@ public class ApplicationResource extends AbstractSliderResource {
   @Path(MODEL_RESOLVED_APPCONF)
   @Produces({APPLICATION_JSON})
   public ConfTree getModelResolvedAppconf() {
+    markGet(SLIDER_SUBPATH_APPLICATION, MODEL_RESOLVED_APPCONF);
     return lookupConfTree(MODEL_RESOLVED_APPCONF);
   }
 
@@ -190,6 +200,7 @@ public class ApplicationResource extends AbstractSliderResource {
   @Path(MODEL_RESOLVED_RESOURCES)
   @Produces({APPLICATION_JSON})
   public ConfTree getModelResolvedResources() {
+    markGet(SLIDER_SUBPATH_APPLICATION, MODEL_RESOLVED_RESOURCES);
     return lookupConfTree(MODEL_RESOLVED_RESOURCES);
   }
   
@@ -197,6 +208,7 @@ public class ApplicationResource extends AbstractSliderResource {
   @Path(LIVE)
   @Produces({APPLICATION_JSON})
   public List<String> getLive() {
+    markGet(SLIDER_SUBPATH_APPLICATION, LIVE);
     return LIVE_ENTRIES;
   }
 
@@ -204,6 +216,7 @@ public class ApplicationResource extends AbstractSliderResource {
   @Path(LIVE_RESOURCES)
   @Produces({APPLICATION_JSON})
   public Object getLiveResources() {
+    markGet(SLIDER_SUBPATH_APPLICATION, LIVE_RESOURCES);
     return lookupConfTree(LIVE_RESOURCES);
   }
   
@@ -211,6 +224,7 @@ public class ApplicationResource extends AbstractSliderResource {
   @Path(LIVE_CONTAINERS)
   @Produces({APPLICATION_JSON})
   public Map<String, SerializedContainerInformation> getLiveContainers() {
+    markGet(SLIDER_SUBPATH_APPLICATION, LIVE_CONTAINERS);
     try {
       return (Map<String, SerializedContainerInformation>)cache.lookup(
           LIVE_CONTAINERS);
@@ -224,6 +238,7 @@ public class ApplicationResource extends AbstractSliderResource {
   @Produces({APPLICATION_JSON})
   public SerializedContainerInformation getLiveContainer(
       @PathParam("containerId") String containerId) {
+    markGet(SLIDER_SUBPATH_APPLICATION, LIVE_CONTAINERS);
     try {
       RoleInstance id = state.getLiveInstanceByContainerID(containerId);
       return id.serialize();
@@ -238,6 +253,7 @@ public class ApplicationResource extends AbstractSliderResource {
   @Path(LIVE_COMPONENTS)
   @Produces({APPLICATION_JSON})
   public Map<String, SerializedComponentInformation> getLiveComponents() {
+    markGet(SLIDER_SUBPATH_APPLICATION, LIVE_COMPONENTS);
     try {
       return (Map<String, SerializedComponentInformation>) cache.lookup(
           LIVE_COMPONENTS);
@@ -251,6 +267,7 @@ public class ApplicationResource extends AbstractSliderResource {
   @Produces({APPLICATION_JSON})
   public SerializedComponentInformation getLiveComponent(
       @PathParam("component") String component) {
+    markGet(SLIDER_SUBPATH_APPLICATION, LIVE_COMPONENTS);
     try {
       RoleStatus roleStatus = state.lookupRoleStatus(component);
       SerializedComponentInformation info = roleStatus.serialize();
@@ -301,20 +318,28 @@ public class ApplicationResource extends AbstractSliderResource {
     }
   }
 
+  /* ************************************************************************
+  
+  ACTION PING
+  
+  **************************************************************************/
+  
   @GET
   @Path(ACTION_PING)
   @Produces({APPLICATION_JSON})
-  public Object actionPingGet(@Context HttpServletRequest request,
+  public PingResource actionPingGet(@Context HttpServletRequest request,
       @Context UriInfo uriInfo) {
+    markGet(SLIDER_SUBPATH_APPLICATION, ACTION_PING);
     return new RestActionPing().ping(request, uriInfo, "");
   }
   
   @POST
   @Path(ACTION_PING)
   @Produces({APPLICATION_JSON})
-  public Object actionPingPost(@Context HttpServletRequest request,
+  public PingResource actionPingPost(@Context HttpServletRequest request,
       @Context UriInfo uriInfo,
       String body) {
+    markPost(SLIDER_SUBPATH_APPLICATION, ACTION_PING);
     return new RestActionPing().ping(request, uriInfo, body);
   }
   
@@ -322,9 +347,10 @@ public class ApplicationResource extends AbstractSliderResource {
   @Path(ACTION_PING)
   @Consumes({TEXT_PLAIN})
   @Produces({APPLICATION_JSON})
-  public Object actionPingPut(@Context HttpServletRequest request,
+  public PingResource actionPingPut(@Context HttpServletRequest request,
       @Context UriInfo uriInfo,
       String body) {
+    markPut(SLIDER_SUBPATH_APPLICATION, ACTION_PING);
     return new RestActionPing().ping(request, uriInfo, body);
   }
   
@@ -332,8 +358,9 @@ public class ApplicationResource extends AbstractSliderResource {
   @Path(ACTION_PING)
   @Consumes({APPLICATION_JSON})
   @Produces({APPLICATION_JSON})
-  public Object actionPingDelete(@Context HttpServletRequest request,
+  public PingResource actionPingDelete(@Context HttpServletRequest request,
       @Context UriInfo uriInfo) {
+    markDelete(SLIDER_SUBPATH_APPLICATION, ACTION_PING);
     return new RestActionPing().ping(request, uriInfo, "");
   }
   
@@ -342,7 +369,25 @@ public class ApplicationResource extends AbstractSliderResource {
   @Produces({APPLICATION_JSON})
   public Object actionPingHead(@Context HttpServletRequest request,
       @Context UriInfo uriInfo) {
+    mark("HEAD", SLIDER_SUBPATH_APPLICATION, ACTION_PING);
     return new RestActionPing().ping(request, uriInfo, "");
   }
   
+  /* ************************************************************************
+  
+  ACTION STOP
+  
+  **************************************************************************/
+
+
+  @POST
+  @Path(ACTION_STOP)
+  @Produces({APPLICATION_JSON})
+  public StopResponse actionStop(@Context HttpServletRequest request,
+      @Context UriInfo uriInfo,
+      String body) {
+    markPost(SLIDER_SUBPATH_APPLICATION, ACTION_STOP);
+    return new RestActionStop(slider).stop(request, uriInfo, body);
+  }
+
 }

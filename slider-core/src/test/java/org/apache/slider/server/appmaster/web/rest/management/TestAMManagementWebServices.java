@@ -192,7 +192,8 @@ public class TestAMManagementWebServices extends JerseyTest {
             appState);
 
         slider = new WebAppApiImpl(new MockSliderClusterProtocol(), providerAppState,
-                                   new MockProviderService(), null, null, null);
+                                   new MockProviderService(), null, null, null,
+            null);
 
         bind(SliderJacksonJaxbJsonProvider.class);
         bind(MockSliderAMWebServices.class);
