@@ -23,6 +23,7 @@ import org.apache.hadoop.registry.client.exceptions.AuthenticationFailedExceptio
 import org.apache.hadoop.registry.client.exceptions.NoPathPermissionsException;
 import org.apache.hadoop.yarn.webapp.ForbiddenException;
 import org.apache.hadoop.yarn.webapp.NotFoundException;
+import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,9 +43,11 @@ public abstract class AbstractSliderResource {
   private static final Logger log =
       LoggerFactory.getLogger(AbstractSliderResource.class);
   protected final WebAppApi slider;
+  protected final MetricsAndMonitoring metricsAndMonitoring;
 
   public AbstractSliderResource(WebAppApi slider) {
     this.slider = slider;
+    metricsAndMonitoring = slider.getMetricsAndMonitoring();
   }
 
 
@@ -93,4 +96,59 @@ public abstract class AbstractSliderResource {
       return new WebApplicationException(e);
     }
   }
+
+  /**
+   * Mark an GET operation on a path
+   * @param verb HTTP Verb
+   * @param path path relative to slider API
+   */
+  protected void mark(String verb, String path) {
+    metricsAndMonitoring.markMeterAndCounter(verb + "-" + path);
+  }
+  /**
+   * Mark an GET operation on a path
+   * @param verb HTTP Verb
+   * @param path path relative to slider API
+   */
+  protected void mark(String verb, String path, String subpath) {
+    metricsAndMonitoring.markMeterAndCounter(verb + "-" + path + subpath);
+  }
+
+  /**
+   * Mark a GET operation on a path
+   * @param path path relative to slider API
+   */
+  protected void markGet(String path) {
+    mark("GET", path);
+  }
+
+  /**
+   * Mark a GET operation on a path
+   * @param path path relative to slider API
+   */
+  protected void markGet(String path, String subpath) {
+    mark("GET", path, subpath);
+  }
+  /**
+   * Mark a GET operation on a path
+   * @param path path relative to slider API
+   */
+  protected void markPost(String path, String subpath) {
+    mark("POST", path, subpath);
+  }
+  /**
+   * Mark a GET operation on a path
+   * @param path path relative to slider API
+   */
+  protected void markPut(String path, String subpath) {
+    mark("PUT", path, subpath);
+  }
+  /**
+   * Mark a GET operation on a path
+   * @param path path relative to slider API
+   */
+  protected void markDelete(String path, String subpath) {
+    mark("DELETE", path, subpath);
+  }
+  
 }

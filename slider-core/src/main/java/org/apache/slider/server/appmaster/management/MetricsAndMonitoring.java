@@ -91,4 +91,13 @@ public class MetricsAndMonitoring extends CompositeService {
     return instance;
   }
 
+  /**
+   * Get a specific meter and mark it
+   * @param name name of meter/counter
+   */
+  public void markMeterAndCounter(String name) {
+    MeterAndCounter meter = getOrCreateMeterAndCounter(name);
+    meter.mark();
+  }
+
 }
