@@ -32,8 +32,8 @@ import org.apache.slider.core.restclient.HttpVerb
 import org.apache.slider.core.restclient.UrlConnectionOperations
 import org.apache.slider.server.appmaster.web.rest.application.ApplicationResource
 import org.apache.slider.server.appmaster.web.rest.application.resources.PingResource
+import org.apache.slider.test.Outcome
 import org.apache.slider.test.SliderTestUtils
-import org.junit.Test
 
 import javax.ws.rs.core.MediaType
 
@@ -60,11 +60,17 @@ class RestTestDelegates extends SliderTestUtils {
 
   public void testCodahaleOperations() throws Throwable {
     describe "Codahale operations"
-    // now switch to the Hadoop URL connection, with SPNEGO escalation
     getWebPage(appmaster)
     getWebPage(appmaster, SYSTEM_THREADS)
     getWebPage(appmaster, SYSTEM_HEALTHCHECK)
+    getWebPage(appmaster, SYSTEM_PING)
     getWebPage(appmaster, SYSTEM_METRICS_JSON)
+  }
+  
+  public void logCodahaleMetrics() {
+    // query Coda Hale metrics
+    log.info getWebPage(appmaster, SYSTEM_HEALTHCHECK)
+    log.info getWebPage(appmaster, SYSTEM_METRICS)
   }
 
   public void testLiveResources() throws Throwable {
@@ -237,8 +243,6 @@ class RestTestDelegates extends SliderTestUtils {
   public void testStop() {
     String target = appendToURL(appmaster, SLIDER_PATH_APPLICATION, ACTION_STOP)
     describe "Stop URL $target"
-
-
     URL targetUrl = new URL(target)
     def outcome = connectionFactory.execHttpOperation(
         HttpVerb.POST,
@@ -247,8 +251,43 @@ class RestTestDelegates extends SliderTestUtils {
         MediaType.TEXT_PLAIN)
     log.info "Stopped: $outcome"
 
+    // await the shutdown
+    sleep(1000)
+    
+    // now a ping is expected to fail
+    String ping = appendToURL(appmaster, SLIDER_PATH_APPLICATION, ACTION_PING)
+    URL pingUrl = new URL(ping)
 
+    repeatUntilSuccess("probe for missing registry entry",
+        this.&probePingFailing, 30000, 500,
+        [url: ping],
+        true,
+        "AM failed to shut down") {
+      def pinged = fetchType(
+          PingResource,
+          appmaster,
+          ACTION_PING + "?body=hello")
+      fail("AM didn't shut down; Ping GET= $pinged")
+    }
+    
   }
 
+  /**
+   * Probe that spins until the url specified by "url") refuses
+   * connections
+   * @param args argument map
+   * @return the outcome
+   */
+  Outcome probePingFailing(Map args) {
+    String ping = args["url"]
+    URL pingUrl = new URL(ping)
+    try {
+      def response = pingAction(HttpVerb.HEAD, pingUrl, "should not be running")
+      return Outcome.Retry
+    } catch (IOException e) {
+      // expected
+      return Outcome.Success
+    }
+  }
 
 }

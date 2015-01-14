@@ -56,7 +56,7 @@ public class AgentWebPagesIT extends AgentCommandTestBase
 
   @Test
   public void testAgentWeb() throws Throwable {
-    describe("Create a 0-role cluster and make web queries against it")
+    describe("Web queries & REST operations against an AM")
     
     // verify the ws/ path is open for all HTTP verbs
     def sliderConfiguration = ConfigHelper.loadSliderConfiguration();
@@ -98,12 +98,6 @@ public class AgentWebPagesIT extends AgentCommandTestBase
     // get the root page, 
     getWebPage(appmaster)
     
-    // query Coda Hale metrics
-    log.info getWebPage(appmaster, RestPaths.SYSTEM_METRICS)
-    log.info getWebPage(appmaster, RestPaths.SYSTEM_THREADS)
-    log.info getWebPage(appmaster, RestPaths.SYSTEM_HEALTHCHECK)
-    log.info getWebPage(appmaster, RestPaths.SYSTEM_PING)
-
     def realappmaster = report.origTrackingUrl;
     // now attempt direct-to-AM pings
     RestTestDelegates proxied = new RestTestDelegates(appmaster)
@@ -121,6 +115,11 @@ public class AgentWebPagesIT extends AgentCommandTestBase
       // and via the proxy
       proxied.testRESTModel()
     }
+    
+    direct.logCodahaleMetrics();
+    
+    // finally, stop the AM
+    direct.testStop();
   }
 
 }

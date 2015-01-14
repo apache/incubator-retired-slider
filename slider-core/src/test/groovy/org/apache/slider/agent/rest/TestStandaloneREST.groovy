@@ -39,7 +39,7 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
 
 
   @Test
-  public void testStandaloneAgentWeb() throws Throwable {
+  public void testStandaloneREST() throws Throwable {
 
     describe "create a standalone AM then perform actions on it"
     //launch fake master
@@ -74,7 +74,6 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
       log.info metrics
     }
     
-    sleep(5000)
     def appmaster = report.trackingUrl
 
     GET(appmaster)
@@ -113,6 +112,7 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
       proxied.testRESTModel()
     }
     
+    direct.logCodahaleMetrics();
     direct.testStop();
   }
 

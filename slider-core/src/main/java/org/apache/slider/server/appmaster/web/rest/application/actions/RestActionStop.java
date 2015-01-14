@@ -54,12 +54,13 @@ public class RestActionStop {
     response.text = text;
     ActionStopSlider stopSlider =
         new ActionStopSlider(text,
-            1000, TimeUnit.MILLISECONDS,
+            500,
+            TimeUnit.MILLISECONDS,
             LauncherExitCodes.EXIT_SUCCESS,
             FinalApplicationStatus.SUCCEEDED,
             text);
     log.info("SliderAppMasterApi.stopCluster: {}", stopSlider);
-//    slider.schedule(stopSlider);
+    slider.getQueues().schedule(stopSlider);
     
     return response;
   }

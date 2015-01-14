@@ -1189,7 +1189,7 @@ class SliderTestUtils extends Assert {
     if (timeout < 1000) {
       fail("Timeout $timeout too low: milliseconds are expected, not seconds")
     }
-    int attemptCount = 0
+    int attemptCount = 1
     boolean succeeded = false;
     boolean completed = false;
     Duration duration = new Duration(timeout)
