@@ -19,6 +19,7 @@ package org.apache.slider.server.appmaster.web;
 import org.apache.hadoop.registry.client.api.RegistryOperations;
 import org.apache.slider.api.SliderClusterProtocol;
 import org.apache.slider.providers.ProviderService;
+import org.apache.slider.server.appmaster.actions.QueueAccess;
 import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
 import org.apache.slider.server.appmaster.state.AppState;
 import org.apache.slider.server.appmaster.state.RoleStatus;
@@ -66,7 +67,22 @@ public interface WebAppApi {
   AgentRestOperations getAgentRestOperations();
 
 
+  /**
+   * Registry operations accessor
+   * @return registry access
+   */
   RegistryOperations getRegistryOperations();
 
+  /**
+   * Metrics and monitoring service
+   * @return the (singleton) instance
+   */
   MetricsAndMonitoring getMetricsAndMonitoring();
+
+  /**
+   * Get the queue accessor
+   * @return the immediate and scheduled queues
+   */
+  QueueAccess getQueues();
+
 }

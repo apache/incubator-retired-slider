@@ -19,6 +19,7 @@ package org.apache.slider.server.appmaster.web;
 import org.apache.hadoop.registry.client.api.RegistryOperations;
 import org.apache.slider.api.SliderClusterProtocol;
 import org.apache.slider.providers.ProviderService;
+import org.apache.slider.server.appmaster.actions.QueueAccess;
 import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
 import org.apache.slider.server.appmaster.state.RoleStatus;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
@@ -45,16 +46,19 @@ public class WebAppApiImpl implements WebAppApi {
   protected final CertificateManager certificateManager;
   private final RegistryOperations registryOperations;
   private final MetricsAndMonitoring metricsAndMonitoring;
+  private final QueueAccess queues;
 
   public WebAppApiImpl(SliderClusterProtocol clusterProto,
       StateAccessForProviders appState,
       ProviderService provider,
       CertificateManager certificateManager,
       RegistryOperations registryOperations,
-      MetricsAndMonitoring metricsAndMonitoring) {
+      MetricsAndMonitoring metricsAndMonitoring,
+      QueueAccess queues) {
     checkNotNull(clusterProto);
     checkNotNull(appState);
     checkNotNull(provider);
+    this.queues = queues;
 
     this.registryOperations = registryOperations;
     this.clusterProto = clusterProto;
@@ -108,5 +112,10 @@ public class WebAppApiImpl implements WebAppApi {
   @Override
   public MetricsAndMonitoring getMetricsAndMonitoring() {
     return metricsAndMonitoring;
+  }
+
+  @Override
+  public QueueAccess getQueues() {
+    return queues;
   }
 }

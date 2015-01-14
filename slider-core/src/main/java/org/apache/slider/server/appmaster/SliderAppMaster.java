@@ -902,7 +902,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
               providerService,
               certificateManager,
               registryOperations,
-              metricsAndMonitoring);
+              metricsAndMonitoring,
+              actionQueues);
       initAMFilterOptions(serviceConf);
 
       // start the agent web app
