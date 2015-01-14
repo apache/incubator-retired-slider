@@ -112,6 +112,8 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
       // and via the proxy
       proxied.testRESTModel()
     }
+    
+    direct.testStop();
   }
 
 

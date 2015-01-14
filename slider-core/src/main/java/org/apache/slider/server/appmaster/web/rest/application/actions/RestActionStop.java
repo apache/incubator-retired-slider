@@ -18,34 +18,49 @@
 
 package org.apache.slider.server.appmaster.web.rest.application.actions;
 
+import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
+import org.apache.slider.core.main.LauncherExitCodes;
+import org.apache.slider.server.appmaster.actions.ActionStopSlider;
+import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.rest.application.resources.PingResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
-public class RestActionPing {
+public class RestActionStop {
   private static final Logger log =
-      LoggerFactory.getLogger(RestActionPing.class);
+      LoggerFactory.getLogger(RestActionStop.class);
 
-  public RestActionPing() {
+  private final WebAppApi slider;
+  
+  public RestActionStop(WebAppApi slider) {
+    this.slider = slider;
   }
   
-  public PingResource ping(HttpServletRequest request, UriInfo uriInfo, String body) {
+  public StopResponse stop(HttpServletRequest request, UriInfo uriInfo, String body) {
     String verb = request.getMethod();
     log.info("Ping {}", verb);
-    PingResource pingResource = new PingResource();
-    pingResource.time = System.currentTimeMillis();
-    pingResource.verb = verb;
-    pingResource.body = body;
+    StopResponse response = new StopResponse();
+    response.verb = verb;
+    long time = System.currentTimeMillis();
     String text = 
         String.format(Locale.ENGLISH,
-            "Ping verb %s received at %tc",
-            verb, pingResource.time);
-    pingResource.text = text;
-    return pingResource;
+            "Stopping action %s received at %tc",
+            verb, time);
+    response.text = text;
+    ActionStopSlider stopSlider =
+        new ActionStopSlider(text,
+            1000, TimeUnit.MILLISECONDS,
+            LauncherExitCodes.EXIT_SUCCESS,
+            FinalApplicationStatus.SUCCEEDED,
+            text);
+    log.info("SliderAppMasterApi.stopCluster: {}", stopSlider);
+//    slider.schedule(stopSlider);
+    
+    return response;
   }
 }

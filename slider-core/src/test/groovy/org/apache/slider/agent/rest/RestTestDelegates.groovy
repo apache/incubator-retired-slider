@@ -67,7 +67,6 @@ class RestTestDelegates extends SliderTestUtils {
     getWebPage(appmaster, SYSTEM_METRICS_JSON)
   }
 
-  @Test
   public void testLiveResources() throws Throwable {
     describe "Live Resources"
     ConfTreeOperations tree = fetchConfigTree(appmaster, LIVE_RESOURCES)
@@ -84,8 +83,7 @@ class RestTestDelegates extends SliderTestUtils {
     assert 0 == liveAM.getMandatoryOptionInt(COMPONENT_INSTANCES_COMPLETED)
     assert 0 == liveAM.getMandatoryOptionInt(COMPONENT_INSTANCES_RELEASING)
   }
-
-  @Test
+  
   public void testLiveContainers() throws Throwable {
     describe "Application REST ${LIVE_CONTAINERS}"
 
@@ -229,6 +227,27 @@ class RestTestDelegates extends SliderTestUtils {
              0, "${bytes.length} bytes of data from ping $verb.verb"
     }
     return outcome
+  }
+
+  /**
+   * Test the stop command.
+   * Important: once executed, the AM is no longer there.
+   * This must be the last test in the sequence.
+   */
+  public void testStop() {
+    String target = appendToURL(appmaster, SLIDER_PATH_APPLICATION, ACTION_STOP)
+    describe "Stop URL $target"
+
+
+    URL targetUrl = new URL(target)
+    def outcome = connectionFactory.execHttpOperation(
+        HttpVerb.POST,
+        targetUrl,
+        new byte[0],
+        MediaType.TEXT_PLAIN)
+    log.info "Stopped: $outcome"
+
+
   }
 
 

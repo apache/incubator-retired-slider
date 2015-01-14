@@ -145,4 +145,5 @@ public class RestPaths {
 
   public static final String ACTION = "/action";
   public static final String ACTION_PING = ACTION + "/ping";
+  public static final String ACTION_STOP = ACTION + "/stop";
 }

@@ -33,6 +33,8 @@ import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.rest.AbstractSliderResource;
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.*;
 
+import org.apache.slider.server.appmaster.web.rest.application.actions.RestActionStop;
+import org.apache.slider.server.appmaster.web.rest.application.actions.StopResponse;
 import org.apache.slider.server.appmaster.web.rest.application.resources.AggregateModelRefresher;
 import org.apache.slider.server.appmaster.web.rest.application.resources.AppconfRefresher;
 import org.apache.slider.server.appmaster.web.rest.application.resources.CachedContent;
@@ -41,6 +43,7 @@ import org.apache.slider.server.appmaster.web.rest.application.resources.Content
 import org.apache.slider.server.appmaster.web.rest.application.resources.LiveComponentsRefresher;
 import org.apache.slider.server.appmaster.web.rest.application.resources.LiveResourcesRefresher;
 import org.apache.slider.server.appmaster.web.rest.application.actions.RestActionPing;
+import org.apache.slider.server.appmaster.web.rest.application.resources.PingResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -301,10 +304,16 @@ public class ApplicationResource extends AbstractSliderResource {
     }
   }
 
+  /* ************************************************************************
+  
+  ACTION PING
+  
+  **************************************************************************/
+  
   @GET
   @Path(ACTION_PING)
   @Produces({APPLICATION_JSON})
-  public Object actionPingGet(@Context HttpServletRequest request,
+  public PingResource actionPingGet(@Context HttpServletRequest request,
       @Context UriInfo uriInfo) {
     return new RestActionPing().ping(request, uriInfo, "");
   }
@@ -312,7 +321,7 @@ public class ApplicationResource extends AbstractSliderResource {
   @POST
   @Path(ACTION_PING)
   @Produces({APPLICATION_JSON})
-  public Object actionPingPost(@Context HttpServletRequest request,
+  public PingResource actionPingPost(@Context HttpServletRequest request,
       @Context UriInfo uriInfo,
       String body) {
     return new RestActionPing().ping(request, uriInfo, body);
@@ -322,7 +331,7 @@ public class ApplicationResource extends AbstractSliderResource {
   @Path(ACTION_PING)
   @Consumes({TEXT_PLAIN})
   @Produces({APPLICATION_JSON})
-  public Object actionPingPut(@Context HttpServletRequest request,
+  public PingResource actionPingPut(@Context HttpServletRequest request,
       @Context UriInfo uriInfo,
       String body) {
     return new RestActionPing().ping(request, uriInfo, body);
@@ -332,7 +341,7 @@ public class ApplicationResource extends AbstractSliderResource {
   @Path(ACTION_PING)
   @Consumes({APPLICATION_JSON})
   @Produces({APPLICATION_JSON})
-  public Object actionPingDelete(@Context HttpServletRequest request,
+  public PingResource actionPingDelete(@Context HttpServletRequest request,
       @Context UriInfo uriInfo) {
     return new RestActionPing().ping(request, uriInfo, "");
   }
@@ -345,4 +354,20 @@ public class ApplicationResource extends AbstractSliderResource {
     return new RestActionPing().ping(request, uriInfo, "");
   }
   
+    /* ************************************************************************
+  
+  ACTION STOP
+  
+  **************************************************************************/
+
+
+  @POST
+  @Path(ACTION_STOP)
+  @Produces({APPLICATION_JSON})
+  public StopResponse actionStop(@Context HttpServletRequest request,
+      @Context UriInfo uriInfo,
+      String body) {
+    return new RestActionStop(slider).stop(request, uriInfo, body);
+  }
+
 }
