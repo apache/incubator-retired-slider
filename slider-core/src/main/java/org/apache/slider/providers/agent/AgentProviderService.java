@@ -318,6 +318,10 @@ public class AgentProviderService extends AbstractProviderService implements
     }
     // for 2-Way SSL
     launcher.setEnv(SLIDER_PASSPHRASE, instanceDefinition.getPassphrase());
+    //add english env
+    launcher.setEnv("LANG", "en_US.UTF-8");
+    launcher.setEnv("LC_ALL", "en_US.UTF-8");
+    launcher.setEnv("LANGUAGE", "en_US.UTF-8");
 
     //local resources
 
