@@ -1571,6 +1571,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         getConfig(),
         usingMiniMRCluster);
     amLauncher.setClasspath(classpath);
+    //add english env
+    amLauncher.setEnv("LANG", "en_US.UTF-8");
+    amLauncher.setEnv("LC_ALL", "en_US.UTF-8");
+    amLauncher.setEnv("LANGUAGE", "en_US.UTF-8");
     if (log.isDebugEnabled()) {
       log.debug("AM classpath={}", classpath);
       log.debug("Environment Map:\n{}",
