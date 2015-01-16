@@ -62,14 +62,14 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
     def realappmaster = report.originalTrackingUrl
 
     // set up url config to match
-    initConnectionFactory(launcher.configuration)
+    initHttpTestSupport(launcher.configuration)
 
 
-    execHttpRequest(WEB_STARTUP_TIME) {
+    execOperation(WEB_STARTUP_TIME) {
       GET(realappmaster)
     }
     
-    execHttpRequest(WEB_STARTUP_TIME) {
+    execOperation(WEB_STARTUP_TIME) {
       def metrics = GET(realappmaster, SYSTEM_METRICS)
       log.info metrics
     }
@@ -90,6 +90,7 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
     RestTestDelegates proxied = new RestTestDelegates(appmaster)
     RestTestDelegates direct = new RestTestDelegates(realappmaster)
     
+    direct.testRestletOperations();
     proxied.testCodahaleOperations()
     direct.testCodahaleOperations()
 

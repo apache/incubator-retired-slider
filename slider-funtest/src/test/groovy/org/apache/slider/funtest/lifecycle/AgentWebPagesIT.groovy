@@ -29,7 +29,6 @@ import org.apache.slider.common.tools.ConfigHelper
 import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
-import org.apache.slider.server.appmaster.web.rest.RestPaths
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -82,7 +81,7 @@ public class AgentWebPagesIT extends AgentCommandTestBase
 
     def conf = SLIDER_CONFIG
 
-    initConnectionFactory(conf)
+    initHttpTestSupport(conf)
 
     def appId = ensureYarnApplicationIsUp(launchReportFile)
     assert appId

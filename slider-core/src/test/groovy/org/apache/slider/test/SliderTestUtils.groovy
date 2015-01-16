@@ -18,6 +18,10 @@
 
 package org.apache.slider.test
 
+import com.sun.jersey.api.client.Client
+import com.sun.jersey.api.client.config.ClientConfig
+import com.sun.jersey.api.client.config.DefaultClientConfig
+import com.sun.jersey.api.json.JSONConfiguration
 import groovy.json.JsonOutput
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
@@ -55,6 +59,7 @@ import org.apache.slider.core.main.ServiceLaunchException
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.persist.JsonSerDeser
 import org.apache.slider.core.registry.docstore.PublishedConfigSet
+import org.apache.slider.core.restclient.UgiJerseyBinding
 import org.apache.slider.core.restclient.UrlConnectionOperations
 import org.apache.slider.server.appmaster.web.HttpCacheHeaders
 import org.apache.slider.server.appmaster.web.rest.RestPaths
@@ -450,7 +455,8 @@ class SliderTestUtils extends Assert {
   }
 
   /**
-   * Fetch a web page 
+   * Fetch a web page using HttpClient 3.1.
+   * This <i>DOES NOT</i> work with secure connections.
    * @param url URL
    * @return the response body
    */
@@ -478,6 +484,9 @@ class SliderTestUtils extends Assert {
 
   /**
    * Fetches a web page asserting that the response code is between 200 and 400.
+   * This <i>DOES NOT</i> work with secure connections.
+   * <p>
+   * 
    * Will error on 400 and 500 series response codes and let 200 and 300 through. 
    * @param url URL to get as string
    * @return body of response
@@ -548,7 +557,7 @@ class SliderTestUtils extends Assert {
   /**
    * Fetches a web page asserting that the response code is between 200 and 400.
    * Will error on 400 and 500 series response codes and let 200 and 300 through.
-   *
+   * <p>
    * if security is enabled, this uses SPNEGO to auth
    * @param page
    * @return body of response
@@ -559,13 +568,14 @@ class SliderTestUtils extends Assert {
   }
 
   /**
-   * Execute any of the http requests, swallowing exceptions until
-   * eventually they time out
+   * Execute any operation provided as a closure which returns a string, swallowing exceptions until
+   * eventually they time out.
+   * 
    * @param timeout
    * @param operation
    * @return
    */
-  public static String execHttpRequest(int timeout, Closure operation) {
+  public static String execOperation(int timeout, Closure operation) {
     Duration duration = new Duration(timeout).start()
     Exception ex = new IOException("limit exceeded before starting");
     while (!duration.limitExceeded) {
@@ -581,12 +591,41 @@ class SliderTestUtils extends Assert {
     throw ex;
   } 
 
-  static UrlConnectionOperations connectionFactory
+  /**
+  * Static factory for URL connections
+   */
+  static UrlConnectionOperations connectionOperations
+  static UgiJerseyBinding jerseyBinding;
 
-  public static def initConnectionFactory(Configuration conf) {
-    connectionFactory = new UrlConnectionOperations(conf);
+  
+  /**
+   * Static initializer of the connection operations
+   * @param conf config
+   */
+  public static synchronized void initHttpTestSupport(Configuration conf) {
+    connectionOperations = new UrlConnectionOperations(conf);
+    jerseyBinding = new UgiJerseyBinding(connectionOperations)
+    
   }
 
+  /**
+   * Check for the HTTP support being initialized
+   */
+  public static synchronized void assertHttpSupportInitialized() {
+    assert connectionOperations 
+    assert jerseyBinding 
+  }
+  
+  /**
+   * Create Jersey client
+   * @return
+   */
+  public static Client createJerseyClient() {
+    assertHttpSupportInitialized()
+    ClientConfig clientConfig = new DefaultClientConfig();
+    clientConfig.features[JSONConfiguration.FEATURE_POJO_MAPPING] =Boolean.TRUE;
+    return new Client(jerseyBinding.handler, clientConfig);
+  }
 
   /**
    * Fetches a web page asserting that the response code is between 200 and 400.
@@ -594,7 +633,7 @@ class SliderTestUtils extends Assert {
    * 
    * if security is enabled, this uses SPNEGO to auth
    * <p>
-   *   Relies on {@link #initConnectionFactory(org.apache.hadoop.conf.Configuration)} 
+   *   Relies on {@link #initHttpTestSupport(org.apache.hadoop.conf.Configuration)} 
    *   to have been called.
    *   
    * @param path path to page
@@ -603,11 +642,11 @@ class SliderTestUtils extends Assert {
    */
   public static String getWebPage(String path, Closure connectionChecks = null) {
     assert path
-    assert null != connectionFactory
+    assertHttpSupportInitialized()
 
     log.info("Fetching HTTP content at " + path);
     URL url = new URL(path)
-    def outcome = connectionFactory.execGet(url)
+    def outcome = connectionOperations.execGet(url)
     String body = new String(outcome.data)
     return body;
   }

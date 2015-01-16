@@ -40,7 +40,7 @@ import java.net.URL;
  * Operations on the JDK UrlConnection class. This uses WebHDFS
  * methods to set up the operations.
  */
-public class UrlConnectionOperations extends Configured {
+public class UrlConnectionOperations extends Configured  {
   private static final Logger log =
       LoggerFactory.getLogger(UrlConnectionOperations.class);
 

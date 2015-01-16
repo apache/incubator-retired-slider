@@ -18,6 +18,8 @@
 
 package org.apache.slider.agent.rest
 
+import com.sun.jersey.api.client.Client
+import com.sun.jersey.api.client.WebResource
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.webapp.NotFoundException
@@ -27,9 +29,11 @@ import org.apache.slider.api.types.SerializedContainerInformation
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.core.conf.ConfTreeOperations
+import org.apache.slider.core.registry.docstore.PublishedConfiguration
 import org.apache.slider.core.restclient.HttpOperationResponse
 import org.apache.slider.core.restclient.HttpVerb
 import org.apache.slider.core.restclient.UrlConnectionOperations
+import org.apache.slider.server.appmaster.web.rest.RestPaths
 import org.apache.slider.server.appmaster.web.rest.application.ApplicationResource
 import org.apache.slider.server.appmaster.web.rest.application.resources.PingResource
 import org.apache.slider.test.Outcome
@@ -53,11 +57,14 @@ class RestTestDelegates extends SliderTestUtils {
   public static final String TEST_GLOBAL_OPTION_PRESENT = "present"
 
   final String appmaster;
+  final String application;
 
   RestTestDelegates(String appmaster) {
     this.appmaster = appmaster
+    application = appendToURL(appmaster, RestPaths.SLIDER_PATH_APPLICATION)
   }
 
+  
   public void testCodahaleOperations() throws Throwable {
     describe "Codahale operations"
     getWebPage(appmaster)
@@ -88,6 +95,15 @@ class RestTestDelegates extends SliderTestUtils {
     assert 0 == liveAM.getMandatoryOptionInt(COMPONENT_INSTANCES_FAILED)
     assert 0 == liveAM.getMandatoryOptionInt(COMPONENT_INSTANCES_COMPLETED)
     assert 0 == liveAM.getMandatoryOptionInt(COMPONENT_INSTANCES_RELEASING)
+  }
+
+
+  public void testRestletOperations() throws Throwable {
+    Client client = createJerseyClient()
+    String path = appendToURL(application, LIVE_RESOURCES)
+    WebResource webResource = client.resource(path)
+    webResource.type(MediaType.APPLICATION_JSON)
+               .get(ConfTree.class);
   }
   
   public void testLiveContainers() throws Throwable {
@@ -211,7 +227,7 @@ class RestTestDelegates extends SliderTestUtils {
       HttpVerb verb,
       URL pingUrl,
       String payload) {
-    return pingAction(connectionFactory, verb, pingUrl, payload)
+    return pingAction(connectionOperations, verb, pingUrl, payload)
   }
 
   private HttpOperationResponse pingAction(
@@ -244,7 +260,7 @@ class RestTestDelegates extends SliderTestUtils {
     String target = appendToURL(appmaster, SLIDER_PATH_APPLICATION, ACTION_STOP)
     describe "Stop URL $target"
     URL targetUrl = new URL(target)
-    def outcome = connectionFactory.execHttpOperation(
+    def outcome = connectionOperations.execHttpOperation(
         HttpVerb.POST,
         targetUrl,
         new byte[0],
