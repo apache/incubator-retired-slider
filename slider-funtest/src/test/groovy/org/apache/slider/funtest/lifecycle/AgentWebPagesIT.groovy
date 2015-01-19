@@ -108,6 +108,9 @@ public class AgentWebPagesIT extends AgentCommandTestBase
 
     proxied.testRESTModel()
 
+    direct.testRestletGetOperations()
+    proxied.testRestletGetOperations()
+
     // PUT & POST &c direct
     direct.testPing()
     if (!wsBackDoorRequired) {
@@ -116,7 +119,7 @@ public class AgentWebPagesIT extends AgentCommandTestBase
     }
     
     direct.logCodahaleMetrics();
-    
+
     // finally, stop the AM
     direct.testStop();
   }

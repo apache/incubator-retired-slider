@@ -21,6 +21,7 @@ package org.apache.slider.core.restclient;
 import com.google.common.base.Preconditions;
 import com.sun.jersey.client.urlconnection.HttpURLConnectionFactory;
 import com.sun.jersey.client.urlconnection.URLConnectionClientHandler;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.authentication.client.AuthenticationException;
 
 import java.io.IOException;
@@ -33,7 +34,7 @@ import java.net.URL;
  *   Usage: create an instance, then when creating a Jersey <code>Client</code>
  *   pass in to the constructor the handler provided by {@link #getHandler()}
  *
- * @see https://jersey.java.net/apidocs/1.17/jersey/com/sun/jersey/client/urlconnection/HttpURLConnectionFactory.html
+ * see <a href="https://jersey.java.net/apidocs/1.17/jersey/com/sun/jersey/client/urlconnection/HttpURLConnectionFactory.html">Jersey docs</a>
  */
 public class UgiJerseyBinding implements
     HttpURLConnectionFactory {
@@ -49,6 +50,15 @@ public class UgiJerseyBinding implements
     Preconditions.checkArgument(operations != null, "Null operations");
     this.operations = operations;
     handler = new URLConnectionClientHandler(this);
+  }
+
+  /**
+   * Create an instance off the configuration. The SPNEGO policy
+   * is derived from the current UGI settings.
+   * @param conf config
+   */
+  public UgiJerseyBinding(Configuration conf) {
+    this(new UrlConnectionOperations(conf));
   }
 
   /**
@@ -74,6 +84,15 @@ public class UgiJerseyBinding implements
   public URLConnectionClientHandler getHandler() {
     return handler;
   }
+  
+  /**
+   * Get the SPNEGO flag (as found in the operations instance
+   * @return the spnego policy
+   */
+  public boolean isUseSpnego() {
+    return operations.isUseSpnego();
+  }
+
 }
 
 

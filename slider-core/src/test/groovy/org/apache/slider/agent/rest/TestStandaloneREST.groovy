@@ -90,7 +90,7 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
     RestTestDelegates proxied = new RestTestDelegates(appmaster)
     RestTestDelegates direct = new RestTestDelegates(realappmaster)
     
-    direct.testRestletOperations();
+    direct.testRestletGetOperations();
     proxied.testCodahaleOperations()
     direct.testCodahaleOperations()
 

@@ -605,7 +605,6 @@ class SliderTestUtils extends Assert {
   public static synchronized void initHttpTestSupport(Configuration conf) {
     connectionOperations = new UrlConnectionOperations(conf);
     jerseyBinding = new UgiJerseyBinding(connectionOperations)
-    
   }
 
   /**

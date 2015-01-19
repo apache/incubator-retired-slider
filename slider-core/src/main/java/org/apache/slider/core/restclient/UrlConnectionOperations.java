@@ -24,6 +24,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.hdfs.web.URLConnectionFactory;
 import org.apache.hadoop.net.NetUtils;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.authentication.client.AuthenticationException;
 import org.apache.hadoop.yarn.webapp.ForbiddenException;
 import org.apache.hadoop.yarn.webapp.NotFoundException;
@@ -48,10 +49,19 @@ public class UrlConnectionOperations extends Configured  {
 
   private boolean useSpnego = false;
 
+  /**
+   * Create an instance off the configuration. The SPNEGO policy
+   * is derived from the current UGI settings.
+   * @param conf config
+   */
   public UrlConnectionOperations(Configuration conf) {
     super(conf);
     connectionFactory = URLConnectionFactory
         .newDefaultURLConnectionFactory(conf);
+    if (UserGroupInformation.isSecurityEnabled()) {
+      log.debug("SPNEGO is enabled");
+      setUseSpnego(true);
+    }
   }
 
 
@@ -66,10 +76,10 @@ public class UrlConnectionOperations extends Configured  {
   /**
    * Opens a url with read and connect timeouts
    *
-   * @param url
-   *          to open
+   * @param url to open
    * @return URLConnection
    * @throws IOException
+   * @throws AuthenticationException authentication failure
    */
   public HttpURLConnection openConnection(URL url) throws
       IOException,

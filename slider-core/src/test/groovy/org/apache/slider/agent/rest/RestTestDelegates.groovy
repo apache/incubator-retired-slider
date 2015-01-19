@@ -97,15 +97,6 @@ class RestTestDelegates extends SliderTestUtils {
     assert 0 == liveAM.getMandatoryOptionInt(COMPONENT_INSTANCES_RELEASING)
   }
 
-
-  public void testRestletOperations() throws Throwable {
-    Client client = createJerseyClient()
-    String path = appendToURL(application, LIVE_RESOURCES)
-    WebResource webResource = client.resource(path)
-    webResource.type(MediaType.APPLICATION_JSON)
-               .get(ConfTree.class);
-  }
-  
   public void testLiveContainers() throws Throwable {
     describe "Application REST ${LIVE_CONTAINERS}"
 
@@ -200,6 +191,15 @@ class RestTestDelegates extends SliderTestUtils {
     assert resolved[MODEL_RESOLVED_APPCONF].components[sam]
     [TEST_GLOBAL_OPTION] ==
     TEST_GLOBAL_OPTION_PRESENT
+  }
+
+
+  public void testRestletGetOperations() throws Throwable {
+    Client client = createJerseyClient()
+    String path = appendToURL(application, LIVE_RESOURCES)
+    WebResource webResource = client.resource(path)
+    webResource.type(MediaType.APPLICATION_JSON)
+               .get(ConfTree.class);
   }
 
   public void testPing() {
