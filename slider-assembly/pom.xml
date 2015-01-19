@@ -102,7 +102,7 @@
         <executions>
           <execution>
             <id>copy-dependencies</id>
-            <phase>package</phase>
+            <phase>prepare-package</phase>
             <goals>
               <goal>copy-dependencies</goal>
             </goals>
@@ -117,7 +117,7 @@
           <execution>
             <!-- copy in the agent tar file -->
             <id>copy</id>
-            <phase>package</phase>
+            <phase>prepare-package</phase>
             <goals>
               <goal>copy</goal>
             </goals>
@@ -137,7 +137,7 @@
           <execution>
             <!-- copy in the agent tar file -->
             <id>copy-to-lib</id>
-            <phase>package</phase>
+            <phase>prepare-package</phase>
             <goals>
               <goal>copy</goal>
             </goals>
@@ -222,7 +222,25 @@
           </execution>
         </executions>
       </plugin>
-
+      
+      <!-- verification phase checks for files in the target assembly -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-verifier-plugin</artifactId>
+        <version>${maven-verifier-plugin.version}</version>
+        <configuration>
+          <verificationFile>src/assembly/verifications.xml</verificationFile>
+        </configuration>
+        <executions>
+          <execution>
+            <id>main</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
  
     </plugins>
     
