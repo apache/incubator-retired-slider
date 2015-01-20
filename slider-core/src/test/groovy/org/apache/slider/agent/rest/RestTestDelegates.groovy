@@ -193,15 +193,6 @@ class RestTestDelegates extends SliderTestUtils {
     TEST_GLOBAL_OPTION_PRESENT
   }
 
-
-  public void testRestletGetOperations() throws Throwable {
-    Client client = createJerseyClient()
-    String path = appendToURL(application, LIVE_RESOURCES)
-    WebResource webResource = client.resource(path)
-    webResource.type(MediaType.APPLICATION_JSON)
-               .get(ConfTree.class);
-  }
-
   public void testPing() {
     // GET
     String ping = appendToURL(appmaster, SLIDER_PATH_APPLICATION, ACTION_PING)
@@ -306,4 +297,16 @@ class RestTestDelegates extends SliderTestUtils {
     }
   }
 
+
+  public void testSuiteGetOperations() {
+
+    testCodahaleOperations()
+    testLiveResources()
+    testLiveContainers();
+    testRESTModel()
+  }
+
+  public void testSuiteComplexVerbs() {
+    testPing();
+  }
 }

@@ -100,36 +100,18 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
     RestTestDelegates proxied = new RestTestDelegates(proxyAM)
     RestTestDelegates direct = new RestTestDelegates(directAM)
     
-    direct.testRestletGetOperations();
-    proxied.testCodahaleOperations()
-    direct.testCodahaleOperations()
-
-    describe "base entry lists"
-
-    assertPathServesList(proxyAM, LIVE, ApplicationResource.LIVE_ENTRIES)
-
-    // now some REST gets
-    describe "Application REST ${LIVE_RESOURCES}"
-    proxied.testLiveResources()
-
-    proxied.testRESTModel()
-    
-    // PUT & POST &c must go direct for now
-    direct.testPing()
-    // PUT & POST &c direct
-    direct.testPing()
+    proxied.testSuiteGetOperations()
+    direct.testSuiteGetOperations()
+    direct.testSuiteComplexVerbs()
     if (!wsBackDoorRequired) {
       // and via the proxy
-      proxied.testRESTModel()
+      proxied.testSuiteComplexVerbs()
     }
     
     direct.logCodahaleMetrics();
 
     // this MUST be the final test
     direct.testStop();
-    
-    
-    
   }
 
 

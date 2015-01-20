@@ -363,34 +363,30 @@ class JerseyTestDelegates extends SliderTestUtils {
     jExec(HttpVerb.PUT, ACTION_PING, PingResource)
     jExec(HttpVerb.DELETE, ACTION_PING, PingResource)
     jExec(HttpVerb.POST, ACTION_PING, PingResource)
-    pingPut(ACTION_PING, "ping-text")
-
+    ping(HttpVerb.PUT, ACTION_PING, "ping-text")
+    ping(HttpVerb.POST, ACTION_PING, "ping-text")
+    ping(HttpVerb.DELETE, ACTION_PING, "ping-text")
   }
 
-  private PingResource pingPut(String subpath, String payload) {
-    def pinged
+  /**
+   * Execute a ping; assert that a response came back with the relevant
+   * verb if the verb has a response body
+   * @param method method to invoke
+   * @param subpath ping path
+   * @param payload payload
+   * @return the resource if the verb has a response
+   */
+  private PingResource ping(HttpVerb method, String subpath, Object payload) {
     def actionPing = applicationResource(ACTION_PING)
-    def response = actionPing.put(PingResource, payload)
-    
-/*
-    def outcome = ops.execHttpOperation(
-        verb,
-        pingUrl,
-        payload.bytes,
-        MediaType.TEXT_PLAIN)
-    byte[] bytes = outcome.data
-    if (verb.hasResponseBody()) {
-      assert bytes.length > 0, "0 bytes from ping $verb.verb"
-      pinged = deser(PingResource, bytes)
-      log.info "Ping $verb.verb: $pinged"
-      assert verb.verb == pinged.verb
+    def upload = method.hasUploadBody() ? payload : null
+    if (method.hasResponseBody()) {
+      def pinged = actionPing.method(method.verb, PingResource, upload)
+      assert method.verb == pinged.verb
+      return pinged
     } else {
-      assert bytes.length ==
-             0, "${bytes.length} bytes of data from ping $verb.verb"
+      actionPing.method(method.verb, upload)
+      return null
     }
-    return outcome
-*/
-    return response
   }
 
   /**
