@@ -20,6 +20,7 @@ package org.apache.slider.agent.rest
 
 import com.sun.jersey.api.client.Client
 import com.sun.jersey.api.client.WebResource
+import com.sun.jersey.api.client.UniformInterfaceException
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.webapp.NotFoundException
@@ -65,20 +66,42 @@ class JerseyTestDelegates extends SliderTestUtils {
 
   JerseyTestDelegates(String appmaster, Client jersey) {
     this.appmaster = appmaster
-    application = appendToURL(appmaster, RestPaths.SLIDER_PATH_APPLICATION)
+    this.application = appendToURL(appmaster, RestPaths.SLIDER_PATH_APPLICATION)
     this.jersey = jersey
   }
 
   /**
    * <T> T get(Class<T> c)
-   * Get operation against the EM
+   * Get operation against a path under the Application
+   * @param subpath path
+   * @return
+   */
+  public <T> T jGetApplicationResource(String subpath, Class<T> c) {
+    assert c
+    def appPath = appendToURL(SLIDER_PATH_APPLICATION, subpath)
+    WebResource webResource = buildResource(appPath)
+    (T)webResource.get(c)
+  }
+
+  /**
+   * <T> T get(Class<T> c)
+   * Get operation against a path under the AM
    * @param path path
    * @return
    */
-  public <T> T jerseyGet(String path, Class<T> c) {
+  public <T> T jGetAMResource(String path, Class<T> c) {
     assert c
     WebResource webResource = buildResource(path)
-    webResource.get(c)
+    (T)webResource.get(c)
+  }
+
+  /**
+   * Get operation against a path under the AM
+   * @param path path
+   * @return the string value
+   */
+  public String jerseyGet(String path) {
+    return jGetAMResource(path, String.class)
   }
 
   /**
@@ -88,7 +111,7 @@ class JerseyTestDelegates extends SliderTestUtils {
    */
   public WebResource buildResource(String path) {
     assert path
-    String fullpath = appendToURL(application, path)
+    String fullpath = appendToURL(appmaster, path)
     WebResource webResource = jersey.resource(fullpath)
     webResource.type(MediaType.APPLICATION_JSON)
     log.info("HTTP operation against $fullpath");
@@ -96,27 +119,39 @@ class JerseyTestDelegates extends SliderTestUtils {
   }
 
   public void testJerseyGetConftree() throws Throwable {
-    jerseyGet(LIVE_RESOURCES, ConfTree.class);
+    jGetApplicationResource(LIVE_RESOURCES, ConfTree.class);
   }
   public void testCodahaleOperations() throws Throwable {
     describe "Codahale operations"
     
-    jerseyGet(appmaster)
-    jerseyGet(appmaster, SYSTEM_THREADS)
-    jerseyGet(appmaster, SYSTEM_HEALTHCHECK)
-    jerseyGet(appmaster, SYSTEM_PING)
-    jerseyGet(appmaster, SYSTEM_METRICS_JSON)
+    jerseyGet("/")
+    jerseyGet(SYSTEM_THREADS)
+    jerseyGet(SYSTEM_HEALTHCHECK)
+    jerseyGet(SYSTEM_PING)
+    jerseyGet(SYSTEM_METRICS_JSON)
   }
   
   public void logCodahaleMetrics() {
     // query Coda Hale metrics
-    log.info jerseyGet(appmaster, SYSTEM_HEALTHCHECK)
-    log.info jerseyGet(appmaster, SYSTEM_METRICS)
+    log.info jerseyGet(SYSTEM_HEALTHCHECK)
+    log.info jerseyGet(SYSTEM_METRICS)
   }
 
-  public void testLiveResources() throws Throwable {
+  public <T> T fetchJType(
+      String subpath, Class<T> clazz) {
+    (T)jGetApplicationResource(subpath, clazz)
+  }
+
+  public ConfTreeOperations jGetConfigTree(
+      String path) {
+    ConfTree ctree = jGetApplicationResource(path, ConfTree)
+    ConfTreeOperations tree = new ConfTreeOperations(ctree)
+    return tree
+  }
+
+    public void testLiveResources() throws Throwable {
     describe "Live Resources"
-    ConfTreeOperations tree = fetchConfigTree(appmaster, LIVE_RESOURCES)
+    ConfTreeOperations tree = jGetConfigTree(LIVE_RESOURCES)
 
     log.info tree.toString()
     def liveAM = tree.getComponent(COMPONENT_AM)
@@ -135,7 +170,7 @@ class JerseyTestDelegates extends SliderTestUtils {
     describe "Application REST ${LIVE_CONTAINERS}"
 
     Map<String, SerializedContainerInformation> containers =
-        fetchType(HashMap, appmaster, LIVE_CONTAINERS)
+        jGetApplicationResource(LIVE_CONTAINERS, HashMap)
     assert containers.size() == 1
     log.info "${containers}"
     SerializedContainerInformation amContainerInfo =
@@ -155,16 +190,20 @@ class JerseyTestDelegates extends SliderTestUtils {
     describe "containers"
 
     SerializedContainerInformation retrievedContainerInfo =
-        fetchType(SerializedContainerInformation, appmaster,
-            LIVE_CONTAINERS + "/${amContainerId}")
+        fetchJType(
+            LIVE_CONTAINERS + "/${amContainerId}",
+            SerializedContainerInformation
+        )
     assert retrievedContainerInfo.containerId == amContainerId
 
     // fetch missing
     try {
-      def result = fetchType(SerializedContainerInformation, appmaster,
-          LIVE_CONTAINERS + "/unknown")
+      def result = fetchJType(
+          LIVE_CONTAINERS + "/unknown",
+          SerializedContainerInformation
+      )
       fail("expected an error, got $result")
-    } catch (NotFoundException e) {
+    } catch (UniformInterfaceException e) {
       // expected
     }
 
@@ -172,7 +211,7 @@ class JerseyTestDelegates extends SliderTestUtils {
     describe "components"
 
     Map<String, SerializedComponentInformation> components =
-        fetchType(HashMap, appmaster, LIVE_COMPONENTS)
+        fetchJType(LIVE_COMPONENTS, HashMap)
     // two components
     assert components.size() == 1
     log.info "${components}"
@@ -180,10 +219,10 @@ class JerseyTestDelegates extends SliderTestUtils {
     SerializedComponentInformation amComponentInfo =
         (SerializedComponentInformation) components[COMPONENT_AM]
 
-    SerializedComponentInformation amFullInfo = fetchType(
-        SerializedComponentInformation,
-        appmaster,
-        LIVE_COMPONENTS + "/${COMPONENT_AM}")
+    SerializedComponentInformation amFullInfo = fetchJType(
+        LIVE_COMPONENTS + "/${COMPONENT_AM}",
+        SerializedComponentInformation
+    )
 
     assert amFullInfo.containers.size() == 1
     assert amFullInfo.containers[0] == amContainerId
@@ -202,14 +241,14 @@ class JerseyTestDelegates extends SliderTestUtils {
         MODEL,
         ApplicationResource.MODEL_ENTRIES)
 
-    def unresolvedConf = fetchType(AggregateConf, appmaster, MODEL_DESIRED)
+    def unresolvedConf = fetchJType(MODEL_DESIRED, AggregateConf)
 //    log.info "Unresolved \n$unresolvedConf"
     def unresolvedAppConf = unresolvedConf.appConfOperations
 
     def sam = "slider-appmaster"
     assert unresolvedAppConf.getComponentOpt(sam,
         TEST_GLOBAL_OPTION, "") == ""
-    def resolvedConf = fetchType(AggregateConf, appmaster, MODEL_RESOLVED)
+    def resolvedConf = fetchJType(MODEL_RESOLVED, AggregateConf)
 //    log.info "Resolved \n$resolvedConf"
     assert resolvedConf.appConfOperations.getComponentOpt(
         sam, TEST_GLOBAL_OPTION, "") == TEST_GLOBAL_OPTION_PRESENT
@@ -240,7 +279,10 @@ class JerseyTestDelegates extends SliderTestUtils {
     // GET
     String ping = appendToURL(appmaster, SLIDER_PATH_APPLICATION, ACTION_PING)
     describe "ping to AM URL $appmaster, ping URL $ping"
-    def pinged = fetchType(PingResource, appmaster, ACTION_PING + "?body=hello")
+    def pinged = fetchJType(
+        ACTION_PING + "?body=hello",
+        PingResource
+    )
     log.info "Ping GET: $pinged"
 
     URL pingUrl = new URL(ping)
@@ -313,10 +355,9 @@ class JerseyTestDelegates extends SliderTestUtils {
         [url: ping],
         true,
         "AM failed to shut down") {
-      def pinged = fetchType(
-          PingResource,
-          appmaster,
-          ACTION_PING + "?body=hello")
+      def pinged = fetchJType(ACTION_PING + "?body=hello",
+          PingResource
+      )
       fail("AM didn't shut down; Ping GET= $pinged")
     }
     
@@ -340,4 +381,13 @@ class JerseyTestDelegates extends SliderTestUtils {
     }
   }
 
+  public void suite() {
+
+    testRestletGetOperations();
+    testCodahaleOperations()
+    testLiveResources()
+    testLiveContainers();
+
+    testRESTModel()
+  }
 }

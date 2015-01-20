@@ -59,36 +59,41 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
     addToTeardown(client);
 
     ApplicationReport report = waitForClusterLive(client)
-    def realappmaster = report.originalTrackingUrl
+    def directAM = report.originalTrackingUrl
 
     // set up url config to match
     initHttpTestSupport(launcher.configuration)
 
 
     execOperation(WEB_STARTUP_TIME) {
-      GET(realappmaster)
+      GET(directAM)
     }
     
     execOperation(WEB_STARTUP_TIME) {
-      def metrics = GET(realappmaster, SYSTEM_METRICS)
+      def metrics = GET(directAM, SYSTEM_METRICS)
       log.info metrics
     }
     
-    def appmaster = report.trackingUrl
+    def proxyAM = report.trackingUrl
 
-    GET(appmaster)
+    GET(proxyAM)
 
-    log.info GET(appmaster, SYSTEM_PING)
-    log.info GET(appmaster, SYSTEM_THREADS)
-    log.info GET(appmaster, SYSTEM_HEALTHCHECK)
-    log.info GET(appmaster, SYSTEM_METRICS_JSON)
+    log.info GET(proxyAM, SYSTEM_PING)
+    log.info GET(proxyAM, SYSTEM_THREADS)
+    log.info GET(proxyAM, SYSTEM_HEALTHCHECK)
+    log.info GET(proxyAM, SYSTEM_METRICS_JSON)
 
     def wsBackDoorRequired = conf.getBoolean(
         SliderXmlConfKeys.X_DEV_INSECURE_WS,
         true)
+
+
+    JerseyTestDelegates proxyJerseyTests =
+        new JerseyTestDelegates(proxyAM, createJerseyClient())
+    proxyJerseyTests.suite()
     
-    RestTestDelegates proxied = new RestTestDelegates(appmaster)
-    RestTestDelegates direct = new RestTestDelegates(realappmaster)
+    RestTestDelegates proxied = new RestTestDelegates(proxyAM)
+    RestTestDelegates direct = new RestTestDelegates(directAM)
     
     direct.testRestletGetOperations();
     proxied.testCodahaleOperations()
@@ -96,7 +101,7 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
 
     describe "base entry lists"
 
-    assertPathServesList(appmaster, LIVE, ApplicationResource.LIVE_ENTRIES)
+    assertPathServesList(proxyAM, LIVE, ApplicationResource.LIVE_ENTRIES)
 
     // now some REST gets
     describe "Application REST ${LIVE_RESOURCES}"
@@ -114,7 +119,12 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
     }
     
     direct.logCodahaleMetrics();
+
+    // this MUST be the final test
     direct.testStop();
+    
+    
+    
   }
 
 
