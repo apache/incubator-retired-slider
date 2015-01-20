@@ -90,7 +90,12 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
 
     JerseyTestDelegates proxyJerseyTests =
         new JerseyTestDelegates(proxyAM, createJerseyClient())
-    proxyJerseyTests.suite()
+    proxyJerseyTests.testSuiteGetOperations()
+
+    JerseyTestDelegates directJerseyTests =
+        new JerseyTestDelegates(directAM, createJerseyClient())
+    directJerseyTests.testSuiteGetOperations()
+    directJerseyTests.testSuiteComplexVerbs()
     
     RestTestDelegates proxied = new RestTestDelegates(proxyAM)
     RestTestDelegates direct = new RestTestDelegates(directAM)

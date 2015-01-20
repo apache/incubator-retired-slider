@@ -23,6 +23,7 @@ import com.sun.jersey.api.client.WebResource
 import com.sun.jersey.api.client.UniformInterfaceException
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.yarn.webapp.NotFoundException
 import org.apache.slider.api.StateValues
 import org.apache.slider.api.types.SerializedComponentInformation
 import org.apache.slider.api.types.SerializedContainerInformation
@@ -31,12 +32,12 @@ import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.core.conf.ConfTreeOperations
 import org.apache.slider.core.restclient.HttpOperationResponse
 import org.apache.slider.core.restclient.HttpVerb
-import org.apache.slider.core.restclient.UrlConnectionOperations
 import org.apache.slider.server.appmaster.web.rest.RestPaths
 import org.apache.slider.server.appmaster.web.rest.application.ApplicationResource
 import org.apache.slider.server.appmaster.web.rest.application.resources.PingResource
 import org.apache.slider.test.Outcome
 import org.apache.slider.test.SliderTestUtils
+import org.glassfish.grizzly.servlet.ver25.WebResourceCollectionType
 
 import javax.ws.rs.core.MediaType
 
@@ -61,12 +62,17 @@ class JerseyTestDelegates extends SliderTestUtils {
   final String appmaster;
   final String application;
   final Client jersey;
+  final WebResource amResource
+  final WebResource appResource
   
 
   JerseyTestDelegates(String appmaster, Client jersey) {
-    this.appmaster = appmaster
-    this.application = appendToURL(appmaster, RestPaths.SLIDER_PATH_APPLICATION)
     this.jersey = jersey
+    this.appmaster = appmaster
+    application = appendToURL(appmaster, SLIDER_PATH_APPLICATION)
+    amResource = jersey.resource(appmaster)
+    amResource.type(MediaType.APPLICATION_JSON)
+    appResource = amResource.path(SLIDER_PATH_APPLICATION)
   }
 
   /**
@@ -86,10 +92,43 @@ class JerseyTestDelegates extends SliderTestUtils {
    * @return
    */
   public <T> T jExec(HttpVerb  method, String subpath, Class<T> c) {
-    assert c
-    def appPath = appendToURL(SLIDER_PATH_APPLICATION, subpath)
-    WebResource webResource = buildResource(appPath)
-    (T) webResource.method(method.verb, c)
+    WebResource resource = applicationResource(subpath)
+    jExec(method, resource, c)
+  }
+
+  public <T> T jExec(HttpVerb method, WebResource resource, Class<T> c) {
+    try {
+      assert c
+      (T) resource.method(method.verb, c)
+    } catch (UniformInterfaceException ex) {
+      uprateFaults(method, resource, ex)
+    }
+  }
+
+  /**
+   * Create a resource under the application path
+   * @param subpath
+   * @return
+   */
+  public WebResource applicationResource(String subpath) {
+    return appResource.path(subpath)
+  }
+
+  /**
+   * Convert faults to exceptions; pass through 200 responses
+   * @param method
+   * @param webResource
+   * @param ex
+   * @return
+   */
+  public uprateFaults(
+      HttpVerb method,
+      WebResource webResource,
+      UniformInterfaceException ex) {
+    uprateFaults(method.verb,
+        webResource.URI.toString(),
+        ex.response.status,
+        ex.response.toString())
   }
 
   /**
@@ -218,7 +257,7 @@ class JerseyTestDelegates extends SliderTestUtils {
           SerializedContainerInformation
       )
       fail("expected an error, got $result")
-    } catch (UniformInterfaceException e) {
+    } catch (NotFoundException e) {
       // expected
     }
 
@@ -320,17 +359,20 @@ class JerseyTestDelegates extends SliderTestUtils {
     def pinged = jExec(HttpVerb.GET, ACTION_PING, PingResource)
     log.info "Ping GET: $pinged"
     // HEAD
-    jExec(HttpVerb.HEAD, ACTION_PING, PingResource)
+//    jExec(HttpVerb.HEAD, ACTION_PING, PingResource)
     jExec(HttpVerb.PUT, ACTION_PING, PingResource)
     jExec(HttpVerb.DELETE, ACTION_PING, PingResource)
     jExec(HttpVerb.POST, ACTION_PING, PingResource)
+    pingPut(ACTION_PING, "ping-text")
 
   }
 
-  private HttpOperationResponse pingAction(
-      HttpVerb verb, String subpath, String payload) {
+  private PingResource pingPut(String subpath, String payload) {
     def pinged
-    jExec(verb,subpath, PingResource)
+    def actionPing = applicationResource(ACTION_PING)
+    def response = actionPing.put(PingResource, payload)
+    
+/*
     def outcome = ops.execHttpOperation(
         verb,
         pingUrl,
@@ -347,6 +389,8 @@ class JerseyTestDelegates extends SliderTestUtils {
              0, "${bytes.length} bytes of data from ping $verb.verb"
     }
     return outcome
+*/
+    return response
   }
 
   /**
@@ -354,6 +398,8 @@ class JerseyTestDelegates extends SliderTestUtils {
    * Important: once executed, the AM is no longer there.
    * This must be the last test in the sequence.
    */
+/*
+
   public void testStop() {
     String target = appendToURL(appmaster, SLIDER_PATH_APPLICATION, ACTION_STOP)
     describe "Stop URL $target"
@@ -384,6 +430,7 @@ class JerseyTestDelegates extends SliderTestUtils {
     }
     
   }
+*/
 
   /**
    * Probe that spins until the url specified by "url") refuses
@@ -391,6 +438,7 @@ class JerseyTestDelegates extends SliderTestUtils {
    * @param args argument map
    * @return the outcome
    */
+/*
   Outcome probePingFailing(Map args) {
     String ping = args["url"]
     URL pingUrl = new URL(ping)
@@ -402,14 +450,17 @@ class JerseyTestDelegates extends SliderTestUtils {
       return Outcome.Success
     }
   }
+*/
 
-  public void suite() {
+  public void testSuiteGetOperations() {
 
     testCodahaleOperations()
     testLiveResources()
     testLiveContainers();
-    testPing();
-
     testRESTModel()
+  }
+
+  public void testSuiteComplexVerbs() {
+    testPing();
   }
 }
