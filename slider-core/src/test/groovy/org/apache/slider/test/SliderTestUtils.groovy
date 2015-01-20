@@ -643,7 +643,7 @@ class SliderTestUtils extends Assert {
     assert path
     assertHttpSupportInitialized()
 
-    log.info("Fetching HTTP content at " + path);
+    log.info("Fetching HTTP content at $path");
     URL url = new URL(path)
     def outcome = connectionOperations.execGet(url)
     String body = new String(outcome.data)
@@ -675,8 +675,7 @@ class SliderTestUtils extends Assert {
     log.info("Asserting component $component expected count $expected}",)
     int actual = extractLiveContainerCount(clusterDescription, component)
     if (expected != actual) {
-      log.warn(
-          "$component actual=$actual, expected $expected in \n$clusterDescription")
+      log.warn("$component actual=$actual, expected $expected in \n$clusterDescription")
     }
     assert expected == actual
   }
