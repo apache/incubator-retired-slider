@@ -101,17 +101,17 @@ class JerseyTestDelegates extends SliderTestUtils {
   public void testCodahaleOperations() throws Throwable {
     describe "Codahale operations"
     
-    getWebPage(appmaster)
-    getWebPage(appmaster, SYSTEM_THREADS)
-    getWebPage(appmaster, SYSTEM_HEALTHCHECK)
-    getWebPage(appmaster, SYSTEM_PING)
-    getWebPage(appmaster, SYSTEM_METRICS_JSON)
+    jerseyGet(appmaster)
+    jerseyGet(appmaster, SYSTEM_THREADS)
+    jerseyGet(appmaster, SYSTEM_HEALTHCHECK)
+    jerseyGet(appmaster, SYSTEM_PING)
+    jerseyGet(appmaster, SYSTEM_METRICS_JSON)
   }
   
   public void logCodahaleMetrics() {
     // query Coda Hale metrics
-    log.info getWebPage(appmaster, SYSTEM_HEALTHCHECK)
-    log.info getWebPage(appmaster, SYSTEM_METRICS)
+    log.info jerseyGet(appmaster, SYSTEM_HEALTHCHECK)
+    log.info jerseyGet(appmaster, SYSTEM_METRICS)
   }
 
   public void testLiveResources() throws Throwable {
