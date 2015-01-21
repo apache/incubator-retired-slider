@@ -107,7 +107,7 @@ class TestPublisherRestResources extends AgentTestBase {
     webResource = client.resource(sliderConfigset + "dummy-site");
 
 
-    execHttpRequest(30000) {
+    execOperation(30000) {
       GET(sliderConfigset)
     }
 

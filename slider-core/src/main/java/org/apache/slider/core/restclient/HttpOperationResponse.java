@@ -18,12 +18,17 @@
 
 package org.apache.slider.core.restclient;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * A response for use as a return value from operations
  */
 public class HttpOperationResponse {
   
   public int responseCode;
+  public long lastModified;
   public String contentType;
   public byte[] data;
+  public Map<String, List<String>> headers;
 }
