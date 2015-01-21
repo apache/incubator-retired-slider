@@ -18,20 +18,28 @@
 
 package org.apache.slider.agent.rest
 
+import com.sun.jersey.api.client.Client
+import com.sun.jersey.api.client.config.ClientConfig
+import com.sun.jersey.api.json.JSONConfiguration
+import com.sun.jersey.client.apache.ApacheHttpClient
+import com.sun.jersey.client.apache.ApacheHttpClientHandler
+import com.sun.jersey.client.apache.config.DefaultApacheHttpClientConfig
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.commons.httpclient.HttpClient
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.slider.agent.AgentMiniClusterTestBase
+import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.Arguments
-import org.apache.slider.server.appmaster.web.rest.application.ApplicationResource
-import org.apache.slider.client.SliderClient
 import org.apache.slider.core.main.ServiceLauncher
-
-import static org.apache.slider.server.appmaster.web.rest.RestPaths.*;
+import org.apache.slider.core.restclient.HttpOperationResponse
 import org.junit.Test
 
-import static org.apache.slider.server.appmaster.management.MetricsKeys.*
+import static org.apache.slider.server.appmaster.management.MetricsKeys.METRICS_LOGGING_ENABLED
+import static org.apache.slider.server.appmaster.management.MetricsKeys.METRICS_LOGGING_LOG_INTERVAL
+import static org.apache.slider.server.appmaster.web.rest.RestPaths.*
 
 @CompileStatic
 @Slf4j
@@ -59,63 +67,116 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
     addToTeardown(client);
 
     ApplicationReport report = waitForClusterLive(client)
-    def realappmaster = report.originalTrackingUrl
-
+    def proxyAM = report.trackingUrl
+    def directAM = report.originalTrackingUrl
+    
     // set up url config to match
-    initConnectionFactory(launcher.configuration)
+    initHttpTestSupport(launcher.configuration)
 
 
-    execHttpRequest(WEB_STARTUP_TIME) {
-      GET(realappmaster)
+    execOperation(WEB_STARTUP_TIME) {
+      GET(directAM)
     }
     
-    execHttpRequest(WEB_STARTUP_TIME) {
-      def metrics = GET(realappmaster, SYSTEM_METRICS)
+    execOperation(WEB_STARTUP_TIME) {
+      def metrics = GET(directAM, SYSTEM_METRICS)
       log.info metrics
     }
+
     
-    def appmaster = report.trackingUrl
+    GET(proxyAM)
 
-    GET(appmaster)
-
-    log.info GET(appmaster, SYSTEM_PING)
-    log.info GET(appmaster, SYSTEM_THREADS)
-    log.info GET(appmaster, SYSTEM_HEALTHCHECK)
-    log.info GET(appmaster, SYSTEM_METRICS_JSON)
+    log.info GET(proxyAM, SYSTEM_PING)
+    log.info GET(proxyAM, SYSTEM_THREADS)
+    log.info GET(proxyAM, SYSTEM_HEALTHCHECK)
+    log.info GET(proxyAM, SYSTEM_METRICS_JSON)
 
     def wsBackDoorRequired = conf.getBoolean(
         SliderXmlConfKeys.X_DEV_INSECURE_WS,
         true)
+
+    describe "Direct response headers from AM Web resources"
+    def liveResUrl = appendToURL(directAM,
+        SLIDER_PATH_APPLICATION, LIVE_RESOURCES);
+    HttpOperationResponse response = executeGet(liveResUrl)
+    response.headers.each { key, val -> log.info("$key $val") }
+    log.info "Content type: ${response.contentType}"
+
+    describe "proxied response headers from AM Web resources"
+    response = executeGet(appendToURL(proxyAM,
+        SLIDER_PATH_APPLICATION, LIVE_RESOURCES))
+    response.headers.each { key, val -> log.info("$key $val") }
+    log.info "Content type: ${response.contentType}"
+
     
-    RestTestDelegates proxied = new RestTestDelegates(appmaster)
-    RestTestDelegates direct = new RestTestDelegates(realappmaster)
     
-    proxied.testCodahaleOperations()
-    direct.testCodahaleOperations()
+    describe "Proxy Jersey Tests"
+    JerseyTestDelegates proxyJerseyTests =
+        new JerseyTestDelegates(proxyAM, createUGIJerseyClient())
+    proxyJerseyTests.testSuiteGetOperations()
 
-    describe "base entry lists"
+    describe "Direct Jersey Tests"
 
-    assertPathServesList(appmaster, LIVE, ApplicationResource.LIVE_ENTRIES)
+    JerseyTestDelegates directJerseyTests =
+        new JerseyTestDelegates(directAM, createUGIJerseyClient())
+    directJerseyTests.testSuiteGetOperations()
+    directJerseyTests.testSuiteComplexVerbs()
 
-    // now some REST gets
-    describe "Application REST ${LIVE_RESOURCES}"
-    proxied.testLiveResources()
+    describe "Direct Tests"
 
-    proxied.testRESTModel()
-    
-    // PUT & POST &c must go direct for now
-    direct.testPing()
-    // PUT & POST &c direct
-    direct.testPing()
+    RestTestDelegates direct = new RestTestDelegates(directAM)
+    direct.testSuiteGetOperations()
+    direct.testSuiteComplexVerbs()
+
+    describe "Proxy Tests"
+
+    RestTestDelegates proxied = new RestTestDelegates(proxyAM)
+    proxied.testSuiteGetOperations()
     if (!wsBackDoorRequired) {
       // and via the proxy
-      proxied.testRESTModel()
+      proxied.testSuiteComplexVerbs()
     }
     
+
+/*    DISABLED: this client does not pass the tests.
+    
+    // http client direct
+    describe "Proxied Jersey Apache HttpClient"
+    JerseyTestDelegates proxiedHttpClientJersey =
+        new JerseyTestDelegates(proxyAM, createJerseyClientHttpClient())
+    proxiedHttpClientJersey.testSuiteGetOperations()
+    
+    describe "Direct Jersey Apache HttpClient"
+    JerseyTestDelegates directHttpClientJersey =
+        new JerseyTestDelegates(directAM, createJerseyClientHttpClient())
+    directHttpClientJersey.testSuiteGetOperations()
+    directHttpClientJersey.testSuiteComplexVerbs()
+    */
+    createJerseyClientHttpClient()
+    // log the metrics to show what's up
     direct.logCodahaleMetrics();
+
+    // this MUST be the final test
     direct.testStop();
   }
 
+  /**
+   * Create Jersey client with URL handling by way
+   * of the Apache HttpClient classes. 
+   * @return a Jersey client
+   */
+  public static Client createJerseyClientHttpClient() {
 
+    def httpclient = new HttpClient(new MultiThreadedHttpConnectionManager());
+    httpclient.httpConnectionManager.params.connectionTimeout = 10000;
+    ClientConfig clientConfig = new DefaultApacheHttpClientConfig();
+    clientConfig.features[JSONConfiguration.FEATURE_POJO_MAPPING] = Boolean.TRUE;
+
+    def handler = new ApacheHttpClientHandler(httpclient, clientConfig);
+
+    def client = new ApacheHttpClient(handler)
+    client.followRedirects = true
+    return client;
+  }
  
 }

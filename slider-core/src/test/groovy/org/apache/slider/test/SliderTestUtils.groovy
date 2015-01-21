@@ -18,6 +18,11 @@
 
 package org.apache.slider.test
 
+import com.sun.jersey.api.client.Client
+import com.sun.jersey.api.client.config.ClientConfig
+import com.sun.jersey.api.client.config.DefaultClientConfig
+import com.sun.jersey.api.json.JSONConfiguration
+import com.sun.jersey.client.urlconnection.URLConnectionClientHandler
 import groovy.json.JsonOutput
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
@@ -30,11 +35,11 @@ import org.apache.hadoop.fs.FileStatus
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.net.NetUtils
+import org.apache.hadoop.registry.client.types.ServiceRecord
 import org.apache.hadoop.service.ServiceStateException
 import org.apache.hadoop.util.Shell
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.conf.YarnConfiguration
-import org.apache.hadoop.registry.client.types.ServiceRecord
 import org.apache.hadoop.yarn.webapp.ForbiddenException
 import org.apache.hadoop.yarn.webapp.NotFoundException
 import org.apache.slider.api.ClusterDescription
@@ -55,6 +60,8 @@ import org.apache.slider.core.main.ServiceLaunchException
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.persist.JsonSerDeser
 import org.apache.slider.core.registry.docstore.PublishedConfigSet
+import org.apache.slider.core.restclient.HttpOperationResponse
+import org.apache.slider.core.restclient.UgiJerseyBinding
 import org.apache.slider.core.restclient.UrlConnectionOperations
 import org.apache.slider.server.appmaster.web.HttpCacheHeaders
 import org.apache.slider.server.appmaster.web.rest.RestPaths
@@ -450,7 +457,8 @@ class SliderTestUtils extends Assert {
   }
 
   /**
-   * Fetch a web page 
+   * Fetch a web page using HttpClient 3.1.
+   * This <i>DOES NOT</i> work with secure connections.
    * @param url URL
    * @return the response body
    */
@@ -478,6 +486,9 @@ class SliderTestUtils extends Assert {
 
   /**
    * Fetches a web page asserting that the response code is between 200 and 400.
+   * This <i>DOES NOT</i> work with secure connections.
+   * <p>
+   * 
    * Will error on 400 and 500 series response codes and let 200 and 300 through. 
    * @param url URL to get as string
    * @return body of response
@@ -548,7 +559,7 @@ class SliderTestUtils extends Assert {
   /**
    * Fetches a web page asserting that the response code is between 200 and 400.
    * Will error on 400 and 500 series response codes and let 200 and 300 through.
-   *
+   * <p>
    * if security is enabled, this uses SPNEGO to auth
    * @param page
    * @return body of response
@@ -559,13 +570,14 @@ class SliderTestUtils extends Assert {
   }
 
   /**
-   * Execute any of the http requests, swallowing exceptions until
-   * eventually they time out
+   * Execute any operation provided as a closure which returns a string, swallowing exceptions until
+   * eventually they time out.
+   * 
    * @param timeout
    * @param operation
    * @return
    */
-  public static String execHttpRequest(int timeout, Closure operation) {
+  public static String execOperation(int timeout, Closure operation) {
     Duration duration = new Duration(timeout).start()
     Exception ex = new IOException("limit exceeded before starting");
     while (!duration.limitExceeded) {
@@ -581,12 +593,64 @@ class SliderTestUtils extends Assert {
     throw ex;
   } 
 
-  static UrlConnectionOperations connectionFactory
+  /**
+  * Static factory for URL connections
+   */
+  static UrlConnectionOperations connectionOperations
+  static UgiJerseyBinding jerseyBinding;
 
-  public static def initConnectionFactory(Configuration conf) {
-    connectionFactory = new UrlConnectionOperations(conf);
+  
+  /**
+   * Static initializer of the connection operations
+   * @param conf config
+   */
+  public static synchronized void initHttpTestSupport(Configuration conf) {
+    connectionOperations = new UrlConnectionOperations(conf);
+    jerseyBinding = new UgiJerseyBinding(connectionOperations)
   }
 
+  /**
+   * Check for the HTTP support being initialized
+   */
+  public static synchronized void assertHttpSupportInitialized() {
+    assert connectionOperations 
+    assert jerseyBinding 
+  }
+  
+  /**
+   * Create Jersey client with UGI integration
+   * @return
+   */
+  public static Client createUGIJerseyClient() {
+    assertHttpSupportInitialized()
+    ClientConfig clientConfig = createJerseyClientConfig()
+    return new Client(jerseyBinding.handler, clientConfig);
+  }
+
+  /**
+   * Create Jersey client with URL handling by way
+   * of the java.net classes. This DOES NOT have any SPNEGO
+   * integration. If used to query a secure cluster via the
+   * RM Proxy, it MUST fail.
+   * @return a basic Jersey client
+   */
+  public static Client createBasicJerseyClient() {
+    ClientConfig clientConfig = createJerseyClientConfig()
+    return new Client(new URLConnectionClientHandler(),
+        clientConfig);
+  }
+
+
+  /**
+   * Create a jersey client config with the settings needed for tests
+   * (e.g. POJO mappings)
+   * @return a client config
+   */
+  public static ClientConfig createJerseyClientConfig() {
+    ClientConfig clientConfig = new DefaultClientConfig();
+    clientConfig.features[JSONConfiguration.FEATURE_POJO_MAPPING] = Boolean.TRUE;
+    return clientConfig
+  }
 
   /**
    * Fetches a web page asserting that the response code is between 200 and 400.
@@ -594,7 +658,7 @@ class SliderTestUtils extends Assert {
    * 
    * if security is enabled, this uses SPNEGO to auth
    * <p>
-   *   Relies on {@link #initConnectionFactory(org.apache.hadoop.conf.Configuration)} 
+   *   Relies on {@link #initHttpTestSupport(org.apache.hadoop.conf.Configuration)} 
    *   to have been called.
    *   
    * @param path path to page
@@ -602,14 +666,18 @@ class SliderTestUtils extends Assert {
    * @return body of response
    */
   public static String getWebPage(String path, Closure connectionChecks = null) {
-    assert path
-    assert null != connectionFactory
+    HttpOperationResponse outcome = executeGet(path)
+    return new String(outcome.data);
+  }
 
-    log.info("Fetching HTTP content at " + path);
+  public static HttpOperationResponse executeGet(String path) {
+    assert path
+    assertHttpSupportInitialized()
+
+    log.info("Fetching HTTP content at $path");
     URL url = new URL(path)
-    def outcome = connectionFactory.execGet(url)
-    String body = new String(outcome.data)
-    return body;
+    def outcome = connectionOperations.execGet(url)
+    return outcome
   }
 
   /**
@@ -637,8 +705,7 @@ class SliderTestUtils extends Assert {
     log.info("Asserting component $component expected count $expected}",)
     int actual = extractLiveContainerCount(clusterDescription, component)
     if (expected != actual) {
-      log.warn(
-          "$component actual=$actual, expected $expected in \n$clusterDescription")
+      log.warn("$component actual=$actual, expected $expected in \n$clusterDescription")
     }
     assert expected == actual
   }

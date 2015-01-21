@@ -153,7 +153,7 @@ class TestAgentAMManagementWS extends AgentTestBase {
       log.info("tracking URL is $proxyAM")
 
       // spin awaiting the agent web page coming up.
-      execHttpRequest(WEB_STARTUP_TIME) {
+      execOperation(WEB_STARTUP_TIME) {
         GET(proxyAM)
       }
 
@@ -173,7 +173,7 @@ class TestAgentAMManagementWS extends AgentTestBase {
       log.info "AM live, now fetching agent at $agent_url"
       
       // spin awaiting the agent web page coming up.
-      execHttpRequest(WEB_STARTUP_TIME) {
+      execOperation(WEB_STARTUP_TIME) {
         GET(agent_url)
       }
 

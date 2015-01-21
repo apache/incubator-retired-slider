@@ -18,29 +18,26 @@
 
 package org.apache.slider.agent.rest
 
+import com.sun.jersey.api.client.Client
 import com.sun.jersey.api.client.ClientResponse
+import com.sun.jersey.api.client.UniformInterfaceException
 import com.sun.jersey.api.client.WebResource
+import com.sun.jersey.client.impl.ClientRequestImpl
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.webapp.NotFoundException
-import org.apache.http.entity.ContentType
 import org.apache.slider.api.StateValues
 import org.apache.slider.api.types.SerializedComponentInformation
 import org.apache.slider.api.types.SerializedContainerInformation
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.core.conf.ConfTreeOperations
-import org.apache.slider.core.restclient.HttpOperationResponse
 import org.apache.slider.core.restclient.HttpVerb
-import org.apache.slider.core.restclient.UrlConnectionOperations
-import org.apache.slider.server.appmaster.web.rest.RestPaths
 import org.apache.slider.server.appmaster.web.rest.application.ApplicationResource
 import org.apache.slider.server.appmaster.web.rest.application.resources.PingResource
-import org.apache.slider.test.Outcome
 import org.apache.slider.test.SliderTestUtils
 
 import javax.ws.rs.core.MediaType
-import java.nio.charset.Charset
 
 import static org.apache.slider.api.ResourceKeys.COMPONENT_INSTANCES
 import static org.apache.slider.api.StatusKeys.*
@@ -49,53 +46,178 @@ import static org.apache.slider.server.appmaster.web.rest.RestPaths.*
 
 /**
  * This class contains parts of tests that can be run
- * against a deployed AM: local or remote
+ * against a deployed AM: local or remote.
+ * It uses Jersey ... and must be passed a client that is either secure
+ * or not
+ * 
  */
 @CompileStatic
 @Slf4j
-class RestTestDelegates extends SliderTestUtils {
+class JerseyTestDelegates extends SliderTestUtils {
   public static final String TEST_GLOBAL_OPTION = "test.global.option"
   public static final String TEST_GLOBAL_OPTION_PRESENT = "present"
 
   final String appmaster;
   final String application;
+  final Client jersey;
+  final WebResource amResource
+  final WebResource appResource
+  
 
-  RestTestDelegates(String appmaster) {
+  JerseyTestDelegates(String appmaster, Client jersey) {
+    this.jersey = jersey
     this.appmaster = appmaster
-    application = appendToURL(appmaster, RestPaths.SLIDER_PATH_APPLICATION)
+    application = appendToURL(appmaster, SLIDER_PATH_APPLICATION)
+    amResource = jersey.resource(appmaster)
+    amResource.type(MediaType.APPLICATION_JSON)
+    appResource = amResource.path(SLIDER_PATH_APPLICATION)
   }
 
-  
+  /**
+   * <T> T get(Class<T> c)
+   * Get operation against a path under the Application
+   * @param subpath path
+   * @return
+   */
+  public <T> T jGetApplicationResource(String subpath, Class<T> c) {
+    return (T)jExec(HttpVerb.GET, subpath, c)
+  }
+
+  /**
+   * <T> T get(Class<T> c)
+   * Get operation against a path under the Application
+   * @param subpath path
+   * @return
+   */
+  public <T> T jExec(HttpVerb  method, String subpath, Class<T> c) {
+    WebResource resource = applicationResource(subpath)
+    jExec(method, resource, c)
+  }
+
+  public <T> T jExec(HttpVerb method, WebResource resource, Class<T> c) {
+    try {
+      assert c
+      resource.accept(MediaType.APPLICATION_JSON_TYPE)
+      (T) resource.method(method.verb, c)
+    } catch (UniformInterfaceException ex) {
+      uprateFaults(method, resource, ex)
+    }
+  }
+
+  /**
+   * Create a resource under the application path
+   * @param subpath
+   * @return
+   */
+  public WebResource applicationResource(String subpath) {
+    return appResource.path(subpath)
+  }
+
+  /**
+   * Convert faults to exceptions; pass through 200 responses
+   * @param method
+   * @param webResource
+   * @param ex
+   * @return
+   */
+  public uprateFaults(
+      HttpVerb method,
+      WebResource webResource,
+      UniformInterfaceException ex) {
+    uprateFaults(method.verb,
+        webResource.URI.toString(),
+        ex.response.status,
+        ex.response.toString())
+  }
+
+  /**
+   * <T> T get(Class<T> c)
+   * Get operation against a path under the AM
+   * @param path path
+   * @return
+   */
+  public <T> T jGetAMResource(String path, Class<T> c) {
+    assert c
+    WebResource webResource = buildResource(path)
+    (T)webResource.get(c)
+  }
+
+  /**
+   * Get operation against a path under the AM
+   * @param path path
+   * @return the string value
+   */
+  public String jerseyGet(String path) {
+    return jGetAMResource(path, String.class)
+  }
+
+  /**
+   * Build a resource against a path under the AM API
+   * @param path path
+   * @return a resource for use
+   */
+  public WebResource buildResource(String path) {
+    assert path
+    String fullpath = appendToURL(appmaster, path)
+    WebResource webResource = jersey.resource(fullpath)
+    webResource.type(MediaType.APPLICATION_JSON)
+    log.info("HTTP operation against $fullpath");
+    return webResource
+  }
+
+  public void testJerseyGetConftree() throws Throwable {
+    jGetApplicationResource(LIVE_RESOURCES, ConfTree.class);
+  }
   public void testCodahaleOperations() throws Throwable {
     describe "Codahale operations"
-    getWebPage(appmaster)
-    getWebPage(appmaster, SYSTEM_THREADS)
-    getWebPage(appmaster, SYSTEM_HEALTHCHECK)
-    getWebPage(appmaster, SYSTEM_PING)
-    getWebPage(appmaster, SYSTEM_METRICS_JSON)
+    
+    jerseyGet("/")
+    jerseyGet(SYSTEM_THREADS)
+    jerseyGet(SYSTEM_HEALTHCHECK)
+    jerseyGet(SYSTEM_PING)
+    jerseyGet(SYSTEM_METRICS_JSON)
   }
   
   public void logCodahaleMetrics() {
     // query Coda Hale metrics
-    log.info getWebPage(appmaster, SYSTEM_HEALTHCHECK)
-    log.info getWebPage(appmaster, SYSTEM_METRICS)
+    log.info jerseyGet(SYSTEM_HEALTHCHECK)
+    log.info jerseyGet(SYSTEM_METRICS)
+  }
+
+  /**
+   * Fetch a typed entry <i>under the application path</i>
+   * @param subpath
+   * @param clazz
+   * @return
+   */
+  public <T> T jFetchType(
+      String subpath, Class<T> clazz) {
+    (T)jGetApplicationResource(subpath, clazz)
+  }
+
+  public ConfTreeOperations jGetConfigTree(
+      String path) {
+    ConfTree ctree = jGetApplicationResource(path, ConfTree)
+    ConfTreeOperations tree = new ConfTreeOperations(ctree)
+    return tree
   }
 
 
   public void testMimeTypes() throws Throwable {
     describe "Mime Types"
-    HttpOperationResponse response= executeGet(
-        appendToURL(appmaster,
-        SLIDER_PATH_APPLICATION, LIVE_RESOURCES))
-    response.headers.each { key, val -> log.info("$key $val")}
-    log.info "Content type: ${response.contentType}"
-    assert response.contentType.contains(MediaType.APPLICATION_JSON_TYPE.toString())
-  }
 
+    WebResource resource = applicationResource(LIVE_RESOURCES)
+    def response = resource.get(ClientResponse)
+    response.headers.each {key, val -> log.info("$key: $val")}
+    log.info response.toString()
+    assert response.type.equals(MediaType.APPLICATION_JSON_TYPE)
+  }
+  
   
   public void testLiveResources() throws Throwable {
     describe "Live Resources"
-    ConfTreeOperations tree = fetchConfigTree(appmaster, LIVE_RESOURCES)
+
+    ConfTreeOperations tree = jGetConfigTree(LIVE_RESOURCES)
 
     log.info tree.toString()
     def liveAM = tree.getComponent(COMPONENT_AM)
@@ -114,7 +236,7 @@ class RestTestDelegates extends SliderTestUtils {
     describe "Application REST ${LIVE_CONTAINERS}"
 
     Map<String, SerializedContainerInformation> containers =
-        fetchType(HashMap, appmaster, LIVE_CONTAINERS)
+        jGetApplicationResource(LIVE_CONTAINERS, HashMap)
     assert containers.size() == 1
     log.info "${containers}"
     SerializedContainerInformation amContainerInfo =
@@ -134,14 +256,18 @@ class RestTestDelegates extends SliderTestUtils {
     describe "containers"
 
     SerializedContainerInformation retrievedContainerInfo =
-        fetchType(SerializedContainerInformation, appmaster,
-            LIVE_CONTAINERS + "/${amContainerId}")
+        jFetchType(
+            LIVE_CONTAINERS + "/${amContainerId}",
+            SerializedContainerInformation
+        )
     assert retrievedContainerInfo.containerId == amContainerId
 
     // fetch missing
     try {
-      def result = fetchType(SerializedContainerInformation, appmaster,
-          LIVE_CONTAINERS + "/unknown")
+      def result = jFetchType(
+          LIVE_CONTAINERS + "/unknown",
+          SerializedContainerInformation
+      )
       fail("expected an error, got $result")
     } catch (NotFoundException e) {
       // expected
@@ -151,7 +277,7 @@ class RestTestDelegates extends SliderTestUtils {
     describe "components"
 
     Map<String, SerializedComponentInformation> components =
-        fetchType(HashMap, appmaster, LIVE_COMPONENTS)
+        jFetchType(LIVE_COMPONENTS, HashMap)
     // two components
     assert components.size() >= 1
     log.info "${components}"
@@ -159,14 +285,47 @@ class RestTestDelegates extends SliderTestUtils {
     SerializedComponentInformation amComponentInfo =
         (SerializedComponentInformation) components[COMPONENT_AM]
 
-    SerializedComponentInformation amFullInfo = fetchType(
-        SerializedComponentInformation,
-        appmaster,
-        LIVE_COMPONENTS + "/${COMPONENT_AM}")
+    SerializedComponentInformation amFullInfo = jFetchType(
+        LIVE_COMPONENTS + "/${COMPONENT_AM}",
+        SerializedComponentInformation
+    )
 
     assert amFullInfo.containers.size() == 1
     assert amFullInfo.containers[0] == amContainerId
 
+  }
+
+  /**
+   * Assert that a path resolves to an array list that contains
+   * those entries (and only those entries) expected
+   * @param appmaster AM ref
+   * @param path path under AM
+   * @param entries entries to assert the presence of
+   */
+  public void assertPathServesList(
+      String appmaster,
+      String path,
+      List<String> entries) {
+    def list = jFetchType(path, ArrayList)
+    assert list.size() == entries.size()
+    assert entries.containsAll(list)
+  }
+
+  /**
+   * Fetch a list of URLs, all of which must be of the same type
+   * @param clazz class of resolved values
+   * @param appmaster URL to app master
+   * @param subpaths list of subpaths
+   * @return a map of paths to values
+   */
+  public <T> Map<String, T> fetchTypeList(
+      Class<T> clazz, String appmaster, List<String> subpaths
+                                         ) {
+    Map<String, T> results = [:]
+    subpaths.each { String it ->
+      results[it] = (jFetchType(it, clazz))
+    }
+    return results;
   }
 
   /**
@@ -181,14 +340,14 @@ class RestTestDelegates extends SliderTestUtils {
         MODEL,
         ApplicationResource.MODEL_ENTRIES)
 
-    def unresolvedConf = fetchType(AggregateConf, appmaster, MODEL_DESIRED)
+    def unresolvedConf = jFetchType(MODEL_DESIRED, AggregateConf)
 //    log.info "Unresolved \n$unresolvedConf"
     def unresolvedAppConf = unresolvedConf.appConfOperations
 
     def sam = "slider-appmaster"
     assert unresolvedAppConf.getComponentOpt(sam,
         TEST_GLOBAL_OPTION, "") == ""
-    def resolvedConf = fetchType(AggregateConf, appmaster, MODEL_RESOLVED)
+    def resolvedConf = jFetchType(MODEL_RESOLVED, AggregateConf)
 //    log.info "Resolved \n$resolvedConf"
     assert resolvedConf.appConfOperations.getComponentOpt(
         sam, TEST_GLOBAL_OPTION, "") == TEST_GLOBAL_OPTION_PRESENT
@@ -201,58 +360,45 @@ class RestTestDelegates extends SliderTestUtils {
 
     def resolved = fetchTypeList(ConfTree, appmaster,
         [MODEL_RESOLVED_APPCONF, MODEL_RESOLVED_RESOURCES])
-    assert resolved[MODEL_RESOLVED_APPCONF].components[sam]
-    [TEST_GLOBAL_OPTION] ==
-    TEST_GLOBAL_OPTION_PRESENT
+    assert resolved[MODEL_RESOLVED_APPCONF].
+               components[sam][TEST_GLOBAL_OPTION] == TEST_GLOBAL_OPTION_PRESENT
   }
 
   public void testPing() {
     // GET
-    String ping = appendToURL(appmaster, SLIDER_PATH_APPLICATION, ACTION_PING)
-    describe "ping to AM URL $appmaster, ping URL $ping"
-    def pinged = fetchType(PingResource, appmaster, ACTION_PING + "?body=hello")
+    describe "pinging"
+    
+    def pinged = jExec(HttpVerb.GET, ACTION_PING, PingResource)
     log.info "Ping GET: $pinged"
-
-    URL pingUrl = new URL(ping)
-    def message = "hello"
-
     // HEAD
-    pingAction(HttpVerb.HEAD, pingUrl, message)
-
-    // Other verbs
-    pingAction(HttpVerb.POST, pingUrl, message)
-    pingAction(HttpVerb.PUT, pingUrl, message)
-    pingAction(HttpVerb.DELETE, pingUrl, message)
-
+//    jExec(HttpVerb.HEAD, ACTION_PING, PingResource)
+    jExec(HttpVerb.PUT, ACTION_PING, PingResource)
+    jExec(HttpVerb.DELETE, ACTION_PING, PingResource)
+    jExec(HttpVerb.POST, ACTION_PING, PingResource)
+    ping(HttpVerb.PUT, ACTION_PING, "ping-text")
+    ping(HttpVerb.POST, ACTION_PING, "ping-text")
+    ping(HttpVerb.DELETE, ACTION_PING, "ping-text")
   }
 
-
-  private HttpOperationResponse pingAction(
-      HttpVerb verb,
-      URL pingUrl,
-      String payload) {
-    return pingAction(connectionOperations, verb, pingUrl, payload)
-  }
-
-  private HttpOperationResponse pingAction(
-      UrlConnectionOperations ops, HttpVerb verb, URL pingUrl, String payload) {
-    def pinged
-    def outcome = ops.execHttpOperation(
-        verb,
-        pingUrl,
-        payload.bytes,
-        MediaType.TEXT_PLAIN)
-    byte[] bytes = outcome.data
-    if (verb.hasResponseBody()) {
-      assert bytes.length > 0, "0 bytes from ping $verb.verb"
-      pinged = deser(PingResource, bytes)
-      log.info "Ping $verb.verb: $pinged"
-      assert verb.verb == pinged.verb
+  /**
+   * Execute a ping; assert that a response came back with the relevant
+   * verb if the verb has a response body
+   * @param method method to invoke
+   * @param subpath ping path
+   * @param payload payload
+   * @return the resource if the verb has a response
+   */
+  private PingResource ping(HttpVerb method, String subpath, Object payload) {
+    def actionPing = applicationResource(ACTION_PING)
+    def upload = method.hasUploadBody() ? payload : null
+    if (method.hasResponseBody()) {
+      def pinged = actionPing.method(method.verb, PingResource, upload)
+      assert method.verb == pinged.verb
+      return pinged
     } else {
-      assert bytes.length ==
-             0, "${bytes.length} bytes of data from ping $verb.verb"
+      actionPing.method(method.verb, upload)
+      return null
     }
-    return outcome
   }
 
   /**
@@ -260,6 +406,8 @@ class RestTestDelegates extends SliderTestUtils {
    * Important: once executed, the AM is no longer there.
    * This must be the last test in the sequence.
    */
+/*
+
   public void testStop() {
     String target = appendToURL(appmaster, SLIDER_PATH_APPLICATION, ACTION_STOP)
     describe "Stop URL $target"
@@ -283,14 +431,14 @@ class RestTestDelegates extends SliderTestUtils {
         [url: ping],
         true,
         "AM failed to shut down") {
-      def pinged = fetchType(
-          PingResource,
-          appmaster,
-          ACTION_PING + "?body=hello")
+      def pinged = jFetchType(ACTION_PING + "?body=hello",
+          PingResource
+      )
       fail("AM didn't shut down; Ping GET= $pinged")
     }
     
   }
+*/
 
   /**
    * Probe that spins until the url specified by "url") refuses
@@ -298,6 +446,7 @@ class RestTestDelegates extends SliderTestUtils {
    * @param args argument map
    * @return the outcome
    */
+/*
   Outcome probePingFailing(Map args) {
     String ping = args["url"]
     URL pingUrl = new URL(ping)
@@ -309,7 +458,7 @@ class RestTestDelegates extends SliderTestUtils {
       return Outcome.Success
     }
   }
-
+*/
 
   public void testSuiteGetOperations() {
 
