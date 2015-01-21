@@ -19,8 +19,10 @@
 package org.apache.slider.agent.rest
 
 import com.sun.jersey.api.client.Client
-import com.sun.jersey.api.client.WebResource
+import com.sun.jersey.api.client.ClientResponse
 import com.sun.jersey.api.client.UniformInterfaceException
+import com.sun.jersey.api.client.WebResource
+import com.sun.jersey.client.impl.ClientRequestImpl
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.webapp.NotFoundException
@@ -30,14 +32,10 @@ import org.apache.slider.api.types.SerializedContainerInformation
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.core.conf.ConfTreeOperations
-import org.apache.slider.core.restclient.HttpOperationResponse
 import org.apache.slider.core.restclient.HttpVerb
-import org.apache.slider.server.appmaster.web.rest.RestPaths
 import org.apache.slider.server.appmaster.web.rest.application.ApplicationResource
 import org.apache.slider.server.appmaster.web.rest.application.resources.PingResource
-import org.apache.slider.test.Outcome
 import org.apache.slider.test.SliderTestUtils
-import org.glassfish.grizzly.servlet.ver25.WebResourceCollectionType
 
 import javax.ws.rs.core.MediaType
 
@@ -99,6 +97,7 @@ class JerseyTestDelegates extends SliderTestUtils {
   public <T> T jExec(HttpVerb method, WebResource resource, Class<T> c) {
     try {
       assert c
+      resource.accept(MediaType.APPLICATION_JSON_TYPE)
       (T) resource.method(method.verb, c)
     } catch (UniformInterfaceException ex) {
       uprateFaults(method, resource, ex)
@@ -203,8 +202,21 @@ class JerseyTestDelegates extends SliderTestUtils {
     return tree
   }
 
+
+  public void testMimeTypes() throws Throwable {
+    describe "Mime Types"
+
+    WebResource resource = applicationResource(LIVE_RESOURCES)
+    def response = resource.get(ClientResponse)
+    response.headers.each {key, val -> log.info("$key: $val")}
+    log.info response.toString()
+    assert response.type.equals(MediaType.APPLICATION_JSON_TYPE)
+  }
+  
+  
   public void testLiveResources() throws Throwable {
     describe "Live Resources"
+
     ConfTreeOperations tree = jGetConfigTree(LIVE_RESOURCES)
 
     log.info tree.toString()
@@ -267,7 +279,7 @@ class JerseyTestDelegates extends SliderTestUtils {
     Map<String, SerializedComponentInformation> components =
         jFetchType(LIVE_COMPONENTS, HashMap)
     // two components
-    assert components.size() == 1
+    assert components.size() >= 1
     log.info "${components}"
 
     SerializedComponentInformation amComponentInfo =
@@ -451,6 +463,7 @@ class JerseyTestDelegates extends SliderTestUtils {
   public void testSuiteGetOperations() {
 
     testCodahaleOperations()
+    testMimeTypes()
     testLiveResources()
     testLiveContainers();
     testRESTModel()

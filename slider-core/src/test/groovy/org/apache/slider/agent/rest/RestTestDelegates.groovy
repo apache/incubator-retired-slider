@@ -18,18 +18,18 @@
 
 package org.apache.slider.agent.rest
 
-import com.sun.jersey.api.client.Client
+import com.sun.jersey.api.client.ClientResponse
 import com.sun.jersey.api.client.WebResource
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.webapp.NotFoundException
+import org.apache.http.entity.ContentType
 import org.apache.slider.api.StateValues
 import org.apache.slider.api.types.SerializedComponentInformation
 import org.apache.slider.api.types.SerializedContainerInformation
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.core.conf.ConfTreeOperations
-import org.apache.slider.core.registry.docstore.PublishedConfiguration
 import org.apache.slider.core.restclient.HttpOperationResponse
 import org.apache.slider.core.restclient.HttpVerb
 import org.apache.slider.core.restclient.UrlConnectionOperations
@@ -40,6 +40,7 @@ import org.apache.slider.test.Outcome
 import org.apache.slider.test.SliderTestUtils
 
 import javax.ws.rs.core.MediaType
+import java.nio.charset.Charset
 
 import static org.apache.slider.api.ResourceKeys.COMPONENT_INSTANCES
 import static org.apache.slider.api.StatusKeys.*
@@ -80,6 +81,18 @@ class RestTestDelegates extends SliderTestUtils {
     log.info getWebPage(appmaster, SYSTEM_METRICS)
   }
 
+
+  public void testMimeTypes() throws Throwable {
+    describe "Mime Types"
+    HttpOperationResponse response= executeGet(
+        appendToURL(appmaster,
+        SLIDER_PATH_APPLICATION, LIVE_RESOURCES))
+    response.headers.each { key, val -> log.info("$key $val")}
+    log.info "Content type: ${response.contentType}"
+    assert response.contentType.contains(MediaType.APPLICATION_JSON_TYPE.toString())
+  }
+
+  
   public void testLiveResources() throws Throwable {
     describe "Live Resources"
     ConfTreeOperations tree = fetchConfigTree(appmaster, LIVE_RESOURCES)
@@ -140,7 +153,7 @@ class RestTestDelegates extends SliderTestUtils {
     Map<String, SerializedComponentInformation> components =
         fetchType(HashMap, appmaster, LIVE_COMPONENTS)
     // two components
-    assert components.size() == 1
+    assert components.size() >= 1
     log.info "${components}"
 
     SerializedComponentInformation amComponentInfo =
@@ -301,6 +314,7 @@ class RestTestDelegates extends SliderTestUtils {
   public void testSuiteGetOperations() {
 
     testCodahaleOperations()
+    testMimeTypes()
     testLiveResources()
     testLiveContainers();
     testRESTModel()

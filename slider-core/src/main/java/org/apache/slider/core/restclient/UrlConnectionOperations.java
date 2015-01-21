@@ -133,7 +133,9 @@ public class UrlConnectionOperations extends Configured  {
       }
       
       resultCode = conn.getResponseCode();
+      outcome.lastModified = conn.getLastModified();
       outcome.contentType = conn.getContentType();
+      outcome.headers = conn.getHeaderFields();
       InputStream stream = conn.getErrorStream();
       if (stream == null) {
         stream = conn.getInputStream();

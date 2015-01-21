@@ -20,6 +20,9 @@ package org.apache.slider.funtest.lifecycle
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.security.UserGroupInformation
+import org.apache.hadoop.yarn.webapp.ForbiddenException
+import org.apache.slider.agent.rest.JerseyTestDelegates
 import org.apache.slider.agent.rest.RestTestDelegates
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.SliderXmlConfKeys
@@ -72,7 +75,7 @@ public class AgentWebPagesIT extends AgentCommandTestBase
     SliderShell shell = createTemplatedSliderApplication(CLUSTER,
         APP_TEMPLATE,
         APP_RESOURCE2,
-        [Arguments.ARG_OPTION,
+        [ARG_OPTION,
          RestTestDelegates.TEST_GLOBAL_OPTION,
          RestTestDelegates.TEST_GLOBAL_OPTION_PRESENT],
         launchReportFile)
@@ -92,34 +95,55 @@ public class AgentWebPagesIT extends AgentCommandTestBase
     def report = loadAppReport(liveReportFile)
     assert report.url
 
-    def appmaster = report.url
+    def proxyAM = report.url
 
     // get the root page, 
-    getWebPage(appmaster)
+    getWebPage(proxyAM)
     
-    def realappmaster = report.origTrackingUrl;
+    def directAM = report.origTrackingUrl;
     // now attempt direct-to-AM pings
-    RestTestDelegates proxied = new RestTestDelegates(appmaster)
-    RestTestDelegates direct = new RestTestDelegates(realappmaster)
+    RestTestDelegates direct = new RestTestDelegates(directAM)
 
-    proxied.testCodahaleOperations()
-    direct.testCodahaleOperations()
-    proxied.testLiveResources()
+    direct.testSuiteGetOperations()
+    direct.testSuiteComplexVerbs()
 
-    proxied.testRESTModel()
-
-    direct.testRestletGetOperations()
-    proxied.testRestletGetOperations()
-
-    // PUT & POST &c direct
-    direct.testPing()
+    // and via the proxy
+    RestTestDelegates proxied = new RestTestDelegates(proxyAM)
+    proxied.testSuiteGetOperations()
     if (!wsBackDoorRequired) {
-      // and via the proxy
-      proxied.testRESTModel()
+      proxied.testSuiteComplexVerbs()
+    }
+    proxied.logCodahaleMetrics();
+
+    describe "Proxy Jersey Tests"
+
+    JerseyTestDelegates proxyJerseyTests =
+        new JerseyTestDelegates(proxyAM, createUGIJerseyClient())
+    proxyJerseyTests.testSuiteGetOperations()
+
+    describe "Direct Jersey Tests"
+    JerseyTestDelegates directJerseyTests =
+        new JerseyTestDelegates(directAM, createUGIJerseyClient())
+    directJerseyTests.testSuiteGetOperations()
+    directJerseyTests.testSuiteComplexVerbs()
+    
+    if (UserGroupInformation.securityEnabled) {
+      describe "Insecure Proxy Tests against a secure cluster"
+
+      try {
+        String rootpage = fetchWebPageRaisedErrorCodes(proxyAM);
+        fail(" expected a 401, got $rootpage")
+      } catch (ForbiddenException expected) {
+        // expected
+      }
+      
+      // these tests use the Jersey client without the Hadoop-specific
+      // SPNEGO
+      JerseyTestDelegates baseicJerseyClientTests =
+          new JerseyTestDelegates(proxyAM, createBasicJerseyClient())
+      baseicJerseyClientTests.testSuiteGetOperations()
     }
     
-    direct.logCodahaleMetrics();
-
     // finally, stop the AM
     direct.testStop();
   }

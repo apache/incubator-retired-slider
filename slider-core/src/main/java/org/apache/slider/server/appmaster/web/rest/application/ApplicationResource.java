@@ -366,7 +366,6 @@ public class ApplicationResource extends AbstractSliderResource {
   
   @HEAD
   @Path(ACTION_PING)
-  @Produces({APPLICATION_JSON})
   public Object actionPingHead(@Context HttpServletRequest request,
       @Context UriInfo uriInfo) {
     mark("HEAD", SLIDER_SUBPATH_APPLICATION, ACTION_PING);

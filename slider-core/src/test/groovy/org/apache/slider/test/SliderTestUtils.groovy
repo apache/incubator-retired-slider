@@ -22,6 +22,7 @@ import com.sun.jersey.api.client.Client
 import com.sun.jersey.api.client.config.ClientConfig
 import com.sun.jersey.api.client.config.DefaultClientConfig
 import com.sun.jersey.api.json.JSONConfiguration
+import com.sun.jersey.client.urlconnection.URLConnectionClientHandler
 import groovy.json.JsonOutput
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
@@ -34,11 +35,11 @@ import org.apache.hadoop.fs.FileStatus
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.net.NetUtils
+import org.apache.hadoop.registry.client.types.ServiceRecord
 import org.apache.hadoop.service.ServiceStateException
 import org.apache.hadoop.util.Shell
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.conf.YarnConfiguration
-import org.apache.hadoop.registry.client.types.ServiceRecord
 import org.apache.hadoop.yarn.webapp.ForbiddenException
 import org.apache.hadoop.yarn.webapp.NotFoundException
 import org.apache.slider.api.ClusterDescription
@@ -59,6 +60,7 @@ import org.apache.slider.core.main.ServiceLaunchException
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.persist.JsonSerDeser
 import org.apache.slider.core.registry.docstore.PublishedConfigSet
+import org.apache.slider.core.restclient.HttpOperationResponse
 import org.apache.slider.core.restclient.UgiJerseyBinding
 import org.apache.slider.core.restclient.UrlConnectionOperations
 import org.apache.slider.server.appmaster.web.HttpCacheHeaders
@@ -616,14 +618,38 @@ class SliderTestUtils extends Assert {
   }
   
   /**
-   * Create Jersey client
+   * Create Jersey client with UGI integration
    * @return
    */
-  public static Client createJerseyClient() {
+  public static Client createUGIJerseyClient() {
     assertHttpSupportInitialized()
-    ClientConfig clientConfig = new DefaultClientConfig();
-    clientConfig.features[JSONConfiguration.FEATURE_POJO_MAPPING] =Boolean.TRUE;
+    ClientConfig clientConfig = createJerseyClientConfig()
     return new Client(jerseyBinding.handler, clientConfig);
+  }
+
+  /**
+   * Create Jersey client with URL handling by way
+   * of the java.net classes. This DOES NOT have any SPNEGO
+   * integration. If used to query a secure cluster via the
+   * RM Proxy, it MUST fail.
+   * @return a basic Jersey client
+   */
+  public static Client createBasicJerseyClient() {
+    ClientConfig clientConfig = createJerseyClientConfig()
+    return new Client(new URLConnectionClientHandler(),
+        clientConfig);
+  }
+
+
+  /**
+   * Create a jersey client config with the settings needed for tests
+   * (e.g. POJO mappings)
+   * @return a client config
+   */
+  public static ClientConfig createJerseyClientConfig() {
+    ClientConfig clientConfig = new DefaultClientConfig();
+    clientConfig.features[JSONConfiguration.FEATURE_POJO_MAPPING] = Boolean.TRUE;
+    return clientConfig
   }
 
   /**
@@ -640,14 +666,18 @@ class SliderTestUtils extends Assert {
    * @return body of response
    */
   public static String getWebPage(String path, Closure connectionChecks = null) {
+    HttpOperationResponse outcome = executeGet(path)
+    return new String(outcome.data);
+  }
+
+  public static HttpOperationResponse executeGet(String path) {
     assert path
     assertHttpSupportInitialized()
 
     log.info("Fetching HTTP content at $path");
     URL url = new URL(path)
     def outcome = connectionOperations.execGet(url)
-    String body = new String(outcome.data)
-    return body;
+    return outcome
   }
 
   /**
