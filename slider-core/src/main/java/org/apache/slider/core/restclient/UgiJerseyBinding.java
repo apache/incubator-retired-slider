@@ -19,10 +19,19 @@
 package org.apache.slider.core.restclient;
 
 import com.google.common.base.Preconditions;
+import com.sun.jersey.api.client.ClientResponse;
+import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.client.urlconnection.HttpURLConnectionFactory;
 import com.sun.jersey.client.urlconnection.URLConnectionClientHandler;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.PathAccessDeniedException;
+import org.apache.hadoop.fs.PathIOException;
+import org.apache.hadoop.fs.PathNotFoundException;
 import org.apache.hadoop.security.authentication.client.AuthenticationException;
+import org.apache.hadoop.yarn.webapp.ForbiddenException;
+import org.apache.hadoop.yarn.webapp.NotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -38,6 +47,8 @@ import java.net.URL;
  */
 public class UgiJerseyBinding implements
     HttpURLConnectionFactory {
+  private static final Logger log =
+      LoggerFactory.getLogger(UgiJerseyBinding.class);
   private final UrlConnectionOperations operations;
   private final URLConnectionClientHandler handler;
 
@@ -93,6 +104,39 @@ public class UgiJerseyBinding implements
     return operations.isUseSpnego();
   }
 
+
+  /**
+   * Uprate error codes 400 and up into faults; 
+   * 404 is converted to a {@link NotFoundException},
+   * 401 to {@link ForbiddenException}
+   *
+   * @param verb HTTP Verb used
+   * @param url URL as string
+   * @param ex exception
+   */
+  public static IOException uprateFaults(HttpVerb verb, String url,
+      UniformInterfaceException ex)
+      throws IOException {
+
+    ClientResponse response = ex.getResponse();
+    int resultCode = response.getStatus();
+    String msg = verb.toString() + " " + url;
+    if (resultCode == 404) {
+      return (IOException) new PathNotFoundException(url).initCause(ex);
+    }
+    if (resultCode == 401) {
+      return (IOException) new PathAccessDeniedException(url).initCause(ex);
+    }
+    // all other error codes
+
+    
+    // get a string respnse
+    String message = msg +
+                     " failed with exit code " + resultCode
+                     + ", message " + ex.toString();
+    log.error(message, ex);
+    return (IOException) new PathIOException(url, message).initCause(ex);
+  }
 }
 
 

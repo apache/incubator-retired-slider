@@ -23,7 +23,6 @@ import com.sun.jersey.api.client.Client
 import com.sun.jersey.api.client.ClientResponse
 import com.sun.jersey.api.client.UniformInterfaceException
 import com.sun.jersey.api.client.WebResource
-import com.sun.jersey.client.impl.ClientRequestImpl
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.webapp.NotFoundException
@@ -55,7 +54,7 @@ import static org.apache.slider.server.appmaster.web.rest.RestPaths.*
  */
 @CompileStatic
 @Slf4j
-class JerseyTestDelegates extends SliderTestUtils {
+class SliderRestClientTestDelegates extends SliderTestUtils {
   public static final String TEST_GLOBAL_OPTION = "test.global.option"
   public static final String TEST_GLOBAL_OPTION_PRESENT = "present"
 
@@ -64,9 +63,9 @@ class JerseyTestDelegates extends SliderTestUtils {
   final Client jersey;
   final WebResource amResource
   final WebResource appResource
-  
 
-  JerseyTestDelegates(String appmaster, Client jersey) {
+
+  SliderRestClientTestDelegates(String appmaster, Client jersey) {
     this.jersey = jersey
     this.appmaster = appmaster
     application = appendToURL(appmaster, SLIDER_PATH_APPLICATION)

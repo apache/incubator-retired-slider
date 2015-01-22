@@ -215,7 +215,7 @@ public class ApplicationResource extends AbstractSliderResource {
   @GET
   @Path(LIVE_RESOURCES)
   @Produces({APPLICATION_JSON})
-  public Object getLiveResources() {
+  public ConfTree getLiveResources() {
     markGet(SLIDER_SUBPATH_APPLICATION, LIVE_RESOURCES);
     return lookupConfTree(LIVE_RESOURCES);
   }

@@ -160,7 +160,7 @@ public class UrlConnectionOperations extends Configured  {
         conn.disconnect();
       }
     }
-    uprateFaults(HttpVerb.GET, url, resultCode, body);
+    uprateFaults(HttpVerb.GET, url.toString(), resultCode, "", body);
     outcome.responseCode = resultCode;
     outcome.data = body;
     return outcome;
@@ -174,18 +174,18 @@ public class UrlConnectionOperations extends Configured  {
    * @param verb HTTP Verb used
    * @param url URL as string
    * @param resultCode response from the request
-   * @param body optional body of the request
-   * @throws IOException if the result was considered a failure
+   * @param bodyAsString
+   *@param body optional body of the request  @throws IOException if the result was considered a failure
    */
-  public static void uprateFaults(HttpVerb verb, URL url,
-      int resultCode, byte[] body)
+  public static void uprateFaults(HttpVerb verb, String url,
+      int resultCode, String bodyAsString, byte[] body)
       throws IOException {
 
     if (resultCode < 400) {
       //success
       return;
     }
-    String msg = verb.toString() +" "+ url.toString();
+    String msg = verb.toString() +" "+ url;
     if (resultCode == 404) {
       throw new NotFoundException(msg);
     }
@@ -193,11 +193,14 @@ public class UrlConnectionOperations extends Configured  {
       throw new ForbiddenException(msg);
     }
     // all other error codes
-    String bodyAsString;
-    if (body != null && body.length > 0) {
-      bodyAsString = new String(body);
-    } else {
-      bodyAsString = "";
+    
+    // get a string respnse
+    if (bodyAsString == null) {
+      if (body != null && body.length > 0) {
+        bodyAsString = new String(body);
+      } else {
+        bodyAsString = "";
+      }
     }
     String message =  msg +
                      " failed with exit code " + resultCode
