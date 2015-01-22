@@ -110,6 +110,20 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
 
     
     
+    
+    describe "Proxy SliderRestClient Tests"
+    SliderRestClientTestDelegates proxySliderRestClient =
+        new SliderRestClientTestDelegates(proxyAM, createUGIJerseyClient())
+    proxySliderRestClient.testSuiteGetOperations()
+
+    describe "Direct SliderRestClient Tests"
+    SliderRestClientTestDelegates directSliderRestClient =
+        new SliderRestClientTestDelegates(directAM, createUGIJerseyClient())
+    directSliderRestClient.testSuiteGetOperations()
+    directSliderRestClient.testSuiteComplexVerbs()
+
+    
+    
     describe "Proxy Jersey Tests"
     JerseyTestDelegates proxyJerseyTests =
         new JerseyTestDelegates(proxyAM, createUGIJerseyClient())

@@ -113,6 +113,9 @@ public class UgiJerseyBinding implements
    * @param verb HTTP Verb used
    * @param url URL as string
    * @param ex exception
+   * @throws PathNotFoundException for an unknown resource
+   * @throws PathAccessDeniedException for access denied
+   * @throws PathIOException for anything else
    */
   public static IOException uprateFaults(HttpVerb verb, String url,
       UniformInterfaceException ex)

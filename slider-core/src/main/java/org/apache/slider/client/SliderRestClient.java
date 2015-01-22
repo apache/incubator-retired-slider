@@ -24,6 +24,7 @@ import com.sun.jersey.api.client.GenericType;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.representation.Form;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.service.AbstractService;
 import org.apache.slider.api.types.SerializedComponentInformation;
 import org.apache.slider.api.types.SerializedContainerInformation;
@@ -55,6 +56,9 @@ public class SliderRestClient  extends AbstractService {
     super(name);
     Preconditions.checkNotNull(jersey, "null jersey");
     this.jersey = jersey;
+    if (appmaster !=null) {
+      bindToAppmaster(appmaster);
+    }
   }
   
   public SliderRestClient(Client jersey, WebResource appmaster) {
@@ -65,6 +69,10 @@ public class SliderRestClient  extends AbstractService {
     return jersey;
   }
 
+  /**
+   * Bind/rebind to the AM
+   * @param appmaster AM
+   */
   public void bindToAppmaster(WebResource appmaster) {
     this.appmaster = appmaster;
     this.appResource = appmaster.path(SLIDER_PATH_APPLICATION);
@@ -80,6 +88,9 @@ public class SliderRestClient  extends AbstractService {
    * @return an resource under the application path
    */
   public WebResource applicationResource(String subpath) {
+    Preconditions.checkArgument(!StringUtils.isEmpty(subpath),
+        "empty path");
+    Preconditions.checkNotNull(appResource, "Null app resource");
     return appResource.path(subpath);
   }
   
@@ -273,7 +284,7 @@ public class SliderRestClient  extends AbstractService {
    */
   public Map<String, SerializedContainerInformation> enumContainers() throws
       IOException {
-    return getApplicationResource(LIVE_RESOURCES,
+    return getApplicationResource(LIVE_CONTAINERS,
         new GenericType<Map<String, SerializedContainerInformation>>() {
         });
   }
