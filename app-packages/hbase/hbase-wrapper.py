@@ -104,6 +104,10 @@ def writePropertiesToConfigXMLFile(infile, outfile, propertyMap):
     writeToFile(xmldoc.toxml(), outfile)
 
 home = expanduser("~")
+if len(sys.argv) < 2:
+  print "the name of cluster instance is required"
+  sys.exit(1)
+
 cluster_instance=sys.argv[1]
 
 hbase_conf_dir="/etc/hbase/conf"
