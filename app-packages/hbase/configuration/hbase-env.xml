@@ -105,6 +105,7 @@ export HBASE_PID_DIR={{pid_dir}}
 
 # Tell HBase whether it should manage it's own instance of Zookeeper or not.
 export HBASE_MANAGES_ZK=false
+export HBASE_OPTS="$HBASE_OPTS {{hbase_opts}}"
 
 {% if security_enabled %}
 export HBASE_OPTS="$HBASE_OPTS -Djava.security.auth.login.config={{client_jaas_config_file}}"
