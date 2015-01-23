@@ -26,7 +26,7 @@ import org.apache.hadoop.fs.PathNotFoundException
 import org.apache.slider.api.StateValues
 import org.apache.slider.api.types.SerializedComponentInformation
 import org.apache.slider.api.types.SerializedContainerInformation
-import org.apache.slider.client.SliderRestClient
+import org.apache.slider.client.rest.SliderApplicationAPI
 import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.core.conf.ConfTreeOperations
 import org.apache.slider.server.appmaster.web.rest.application.ApplicationResource
@@ -55,7 +55,7 @@ class SliderRestClientTestDelegates extends SliderTestUtils {
   final String appmaster;
   final String application;
   final Client jersey;
-  final SliderRestClient restClient;
+  final SliderApplicationAPI appAPI;
 
 
   SliderRestClientTestDelegates(String appmaster, Client jersey) {
@@ -64,27 +64,27 @@ class SliderRestClientTestDelegates extends SliderTestUtils {
     application = appendToURL(appmaster, SLIDER_PATH_APPLICATION)
     WebResource amResource = jersey.resource(appmaster)
     amResource.type(MediaType.APPLICATION_JSON)
-    restClient = new SliderRestClient(jersey, amResource)
+    appAPI = new SliderApplicationAPI(jersey, amResource)
   }
 
 
   public void testGetDesiredModel() throws Throwable {
-      restClient.getDesiredModel()  
-      restClient.getDesiredAppconf()  
-      restClient.getDesiredYarnResources()  
+      appAPI.getDesiredModel()  
+      appAPI.getDesiredAppconf()  
+      appAPI.getDesiredYarnResources()  
   }
 
   public void testGetResolvedModel() throws Throwable {
-      restClient.getResolvedModel()  
-      restClient.getResolvedAppconf()  
-      restClient.getResolvedYarnResources()  
+      appAPI.getResolvedModel()  
+      appAPI.getResolvedAppconf()  
+      appAPI.getResolvedYarnResources()  
   }
 
   
   public void testLiveResources() throws Throwable {
     describe "Live Resources"
 
-    ConfTreeOperations tree = restClient.getLiveYarnResources()
+    ConfTreeOperations tree = appAPI.getLiveYarnResources()
 
     log.info tree.toString()
     def liveAM = tree.getComponent(COMPONENT_AM)
@@ -102,7 +102,7 @@ class SliderRestClientTestDelegates extends SliderTestUtils {
   public void testLiveContainers() throws Throwable {
     describe "Application REST ${LIVE_CONTAINERS}"
 
-    Map<String, SerializedContainerInformation> containers = restClient.enumContainers()
+    Map<String, SerializedContainerInformation> containers = appAPI.enumContainers()
     assert containers.size() == 1
     log.info "${containers}"
     SerializedContainerInformation amContainerInfo =
@@ -122,12 +122,12 @@ class SliderRestClientTestDelegates extends SliderTestUtils {
     describe "containers"
 
     SerializedContainerInformation amContainerInfo2 =
-        restClient.getContainer(amContainerId)
+        appAPI.getContainer(amContainerId)
     assert amContainerInfo2.containerId == amContainerId
 
     // fetch missing
     try {
-      def result = restClient.getContainer("/unknown")
+      def result = appAPI.getContainer("/unknown")
       fail("expected an error, got $result")
     } catch (PathNotFoundException e) {
       // expected
@@ -137,7 +137,7 @@ class SliderRestClientTestDelegates extends SliderTestUtils {
     describe "components"
 
     Map<String, SerializedComponentInformation> components =
-        restClient.enumComponents()
+        appAPI.enumComponents()
 
     // two components
     assert components.size() >= 1
@@ -146,7 +146,7 @@ class SliderRestClientTestDelegates extends SliderTestUtils {
     SerializedComponentInformation amComponentInfo =
         (SerializedComponentInformation) components[COMPONENT_AM]
 
-    SerializedComponentInformation amFullInfo = restClient.getComponent(COMPONENT_AM) 
+    SerializedComponentInformation amFullInfo = appAPI.getComponent(COMPONENT_AM) 
 
     assert amFullInfo.containers.size() == 1
     assert amFullInfo.containers[0] == amContainerId
@@ -166,14 +166,14 @@ class SliderRestClientTestDelegates extends SliderTestUtils {
         MODEL,
         ApplicationResource.MODEL_ENTRIES)
 
-    def unresolvedConf = restClient.getDesiredModel() 
+    def unresolvedConf = appAPI.getDesiredModel() 
 //    log.info "Unresolved \n$unresolvedConf"
     def unresolvedAppConf = unresolvedConf.appConfOperations
 
     def sam = "slider-appmaster"
     assert unresolvedAppConf.getComponentOpt(sam,
         TEST_GLOBAL_OPTION, "") == ""
-    def resolvedConf = restClient.getResolvedModel() 
+    def resolvedConf = appAPI.getResolvedModel() 
     assert resolvedConf.appConfOperations.getComponentOpt(
         sam, TEST_GLOBAL_OPTION, "") == TEST_GLOBAL_OPTION_PRESENT
 
@@ -184,7 +184,7 @@ class SliderRestClientTestDelegates extends SliderTestUtils {
 
 
     
-    def resolvedAppconf = restClient.getResolvedAppconf() 
+    def resolvedAppconf = appAPI.getResolvedAppconf() 
     assert resolvedAppconf.
                components[sam][TEST_GLOBAL_OPTION] == TEST_GLOBAL_OPTION_PRESENT
   }
@@ -193,7 +193,7 @@ class SliderRestClientTestDelegates extends SliderTestUtils {
     // GET
     describe "pinging"
     
-    restClient.ping("hello")
+    appAPI.ping("hello")
   }
 
 

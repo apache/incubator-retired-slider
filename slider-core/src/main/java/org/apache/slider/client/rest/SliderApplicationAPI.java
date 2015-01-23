@@ -16,57 +16,37 @@
  * limitations under the License.
  */
 
-package org.apache.slider.client;
+package org.apache.slider.client.rest;
 
 import com.google.common.base.Preconditions;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.GenericType;
-import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.representation.Form;
 import org.apache.commons.lang.StringUtils;
-import org.apache.hadoop.service.AbstractService;
 import org.apache.slider.api.types.SerializedComponentInformation;
 import org.apache.slider.api.types.SerializedContainerInformation;
-import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.conf.ConfTreeOperations;
 import org.apache.slider.core.restclient.HttpVerb;
-import org.apache.slider.core.restclient.UgiJerseyBinding;
 import org.apache.slider.server.appmaster.web.rest.application.resources.PingResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.MediaType;
-
 import java.io.IOException;
 import java.util.Map;
 
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.*;
 
-public class SliderRestClient  extends AbstractService {
+public class SliderApplicationAPI extends BaseRestClient {
   private static final Logger log =
-      LoggerFactory.getLogger(SliderRestClient.class);
-  private final Client jersey;
-  private WebResource appmaster;
+      LoggerFactory.getLogger(SliderApplicationAPI.class);
   private WebResource appResource;
-
-  public SliderRestClient(String name, Client jersey, WebResource appmaster) {
-    super(name);
-    Preconditions.checkNotNull(jersey, "null jersey");
-    this.jersey = jersey;
-    if (appmaster !=null) {
-      bindToAppmaster(appmaster);
-    }
-  }
   
-  public SliderRestClient(Client jersey, WebResource appmaster) {
-    this("SliderRestClient", jersey, appmaster);
-  }
-
-  public Client getJersey() {
-    return jersey;
+  public SliderApplicationAPI(Client jerseyClient, WebResource appmaster) {
+    super(jerseyClient, appmaster);
   }
 
   /**
@@ -74,12 +54,8 @@ public class SliderRestClient  extends AbstractService {
    * @param appmaster AM
    */
   public void bindToAppmaster(WebResource appmaster) {
-    this.appmaster = appmaster;
+    super.bindToAppmaster(appmaster);
     this.appResource = appmaster.path(SLIDER_PATH_APPLICATION);
-  }
-
-  public WebResource getAppmaster() {
-    return appmaster;
   }
 
   /**
@@ -150,51 +126,7 @@ public class SliderRestClient  extends AbstractService {
     WebResource resource = applicationResource(subpath);
     return exec(method, resource, t);
   }
-  
-  /**
-   * Execute the operation. Failures are raised as IOException subclasses
-   * @param method method to execute
-   * @param resource resource to work against
-   * @param c class to build
-   * @param <T> type expected
-   * @return an instance of the type T
-   * @throws IOException on any failure
-   */
-  public <T> T exec(HttpVerb method, WebResource resource, Class<T> c)
-      throws IOException {
-    try {
-      Preconditions.checkArgument(c != null);
-      resource.accept(MediaType.APPLICATION_JSON_TYPE);
-      return (T) resource.method(method.getVerb(), c);
-    } catch (UniformInterfaceException ex) {
-      throw UgiJerseyBinding.uprateFaults(method, resource.getURI().toString(),
-          ex);
-    }
-  }
-  
-  
-  /**
-   * Execute the operation. Failures are raised as IOException subclasses
-   * @param method method to execute
-   * @param resource resource to work against
-   * @param generic type to work with
-   * @param <T> type expected
-   * @return an instance of the type T
-   * @throws IOException on any failure
-   */
-  public <T> T exec(HttpVerb method, WebResource resource, GenericType<T> t)
-      throws IOException {
-    try {
-      Preconditions.checkArgument(t != null);
-      resource.accept(MediaType.APPLICATION_JSON_TYPE);
-      return resource.method(method.getVerb(), t);
-    } catch (UniformInterfaceException ex) {
-      throw UgiJerseyBinding.uprateFaults(method, resource.getURI().toString(),
-          ex);
-    }
-  }
-  
-  
+
 
   /**
    * Get the aggregate desired model
@@ -205,8 +137,7 @@ public class SliderRestClient  extends AbstractService {
   public AggregateConf getDesiredModel() throws IOException {
     return getApplicationResource(MODEL_DESIRED, AggregateConf.class);
   }
-
-
+  
   /**
    * Get the desired application configuration
    * @return the application configuration asked for
