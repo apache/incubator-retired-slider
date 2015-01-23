@@ -28,12 +28,17 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.commons.httpclient.HttpClient
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager
+import org.apache.hadoop.registry.client.api.RegistryOperations
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.client.SliderClient
+import org.apache.slider.client.rest.RestClientFactory
+import org.apache.slider.client.rest.SliderApplicationAPI
+import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.core.main.ServiceLauncher
+import org.apache.slider.core.registry.info.CustomRegistryConstants
 import org.apache.slider.core.restclient.HttpOperationResponse
 import org.junit.Test
 
@@ -109,16 +114,30 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
     log.info "Content type: ${response.contentType}"
 
     
+    def ugiClient = createUGIJerseyClient();
+    
+    describe "Proxy SliderRestClient Tests"
+    SliderRestClientTestDelegates proxySliderRestClient =
+        new SliderRestClientTestDelegates(proxyAM, ugiClient)
+    proxySliderRestClient.testSuiteGetOperations()
+
+    describe "Direct SliderRestClient Tests"
+    SliderRestClientTestDelegates directSliderRestClient =
+        new SliderRestClientTestDelegates(directAM, ugiClient)
+    directSliderRestClient.testSuiteGetOperations()
+    directSliderRestClient.testSuiteComplexVerbs()
+
+    
     
     describe "Proxy Jersey Tests"
     JerseyTestDelegates proxyJerseyTests =
-        new JerseyTestDelegates(proxyAM, createUGIJerseyClient())
+        new JerseyTestDelegates(proxyAM, ugiClient)
     proxyJerseyTests.testSuiteGetOperations()
 
     describe "Direct Jersey Tests"
 
     JerseyTestDelegates directJerseyTests =
-        new JerseyTestDelegates(directAM, createUGIJerseyClient())
+        new JerseyTestDelegates(directAM, ugiClient)
     directJerseyTests.testSuiteGetOperations()
     directJerseyTests.testSuiteComplexVerbs()
 
@@ -136,7 +155,19 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
       // and via the proxy
       proxied.testSuiteComplexVerbs()
     }
-    
+
+    // create the Rest client via the registry
+
+    RegistryOperations operations = client.registryOperations;
+    def restClientFactory = new RestClientFactory(
+        operations,
+        ugiClient,
+        "~", SliderKeys.APP_TYPE,
+        clustername)
+    def sliderApplicationApi = restClientFactory.createSliderApplicationApi();
+    sliderApplicationApi.desiredModel
+    sliderApplicationApi.resolvedModel
+    sliderApplicationApi.ping("registry located")
 
 /*    DISABLED: this client does not pass the tests.
     

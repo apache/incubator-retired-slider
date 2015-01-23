@@ -152,6 +152,11 @@ public class SliderAMProviderService extends AbstractProviderService implements
       serviceRecord.addExternalEndpoint(
           RegistryTypeUtils.webEndpoint(
               CustomRegistryConstants.WEB_UI, amWebURI.toURI()));
+      
+      serviceRecord.addExternalEndpoint(
+          RegistryTypeUtils.webEndpoint(
+              CustomRegistryConstants.AM_REST_BASE, amWebURI.toURI()));
+      
       serviceRecord.addExternalEndpoint(
           RegistryTypeUtils.restEndpoint(
               CustomRegistryConstants.MANAGEMENT_REST_API,

@@ -21,7 +21,10 @@ package org.apache.slider.core.exceptions;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import org.apache.hadoop.fs.PathAccessDeniedException;
+import org.apache.hadoop.fs.PathIOException;
+import org.apache.hadoop.yarn.webapp.*;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
@@ -32,19 +35,27 @@ import java.io.IOException;
 public class ExceptionConverter {
 
   /**
-   * Convert a Jersey Exception into an IOE or subclass
+   * Uprate error codes 400 and up into faults; 
+   * 404 is converted to a {@link FileNotFoundException},
+   * 401 to {@link ForbiddenException}
+   * FileNotFoundException for an unknown resource
+   * PathAccessDeniedException for access denied
+   * PathIOException for anything else
+   * @param verb HTTP Verb used
    * @param targetURL URL being targeted 
    * @param exception original exception
    * @return a new exception, the original one nested as a cause
    */
-  public static IOException convertJerseyException(String targetURL,
+  public static IOException convertJerseyException(String verb,
+      String targetURL,
       UniformInterfaceException exception) {
 
     IOException ioe = null;
     ClientResponse response = exception.getResponse();
     if (response != null) {
       int status = response.getStatus();
-      if (status == 401) {
+      if (status == HttpServletResponse.SC_UNAUTHORIZED
+          || status == HttpServletResponse.SC_FORBIDDEN) {
         ioe = new PathAccessDeniedException(targetURL);
       }
       if (status >= 400 && status < 500) {
@@ -53,7 +64,8 @@ public class ExceptionConverter {
     }
 
     if (ioe == null) {
-      ioe = new IOException("Failed to GET " + targetURL + ": " + exception);
+      ioe = new PathIOException(targetURL, 
+          verb + " " + targetURL + " failed: " + exception);
     }
     ioe.initCause(exception);
     return ioe; 

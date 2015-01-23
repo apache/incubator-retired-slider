@@ -285,6 +285,10 @@ public final class RoleStatus implements Cloneable {
     return stats;
   }
 
+  /**
+   * Produced a serialized form which can be served up as JSON
+   * @return a summary of the current role status.
+   */
   public synchronized SerializedComponentInformation serialize() {
     SerializedComponentInformation info = new SerializedComponentInformation();
     info.name = name;
@@ -298,6 +302,7 @@ public final class RoleStatus implements Cloneable {
     info.requested = requested;
     info.placementPolicy = getPlacementPolicy();
     info.failureMessage = failureMessage;
+    info.totalRequested = totalRequested;
     return info;
   }
   

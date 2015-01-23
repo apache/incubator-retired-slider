@@ -48,7 +48,10 @@ public class CustomRegistryConstants {
       "classpath:org.apache.slider.agents.oneway";
 
   public static final String AM_IPC_PROTOCOL =
-      "classpath:org.apache.slider.appmaster";
+      "classpath:org.apache.slider.appmaster.ipc";
+
+  public static final String AM_REST_BASE =
+      "classpath:org.apache.slider.client.rest";
 
   public static final String WEB_UI = "http://";
 }

@@ -21,23 +21,21 @@ package org.apache.slider.core.registry.retrieve;
 import com.beust.jcommander.Strings;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
-import org.apache.hadoop.registry.client.binding.RegistryTypeUtils;
 import org.apache.hadoop.registry.client.exceptions.RegistryIOException;
-import org.apache.hadoop.registry.client.types.Endpoint;
 import org.apache.hadoop.registry.client.types.ServiceRecord;
+import static org.apache.slider.client.rest.RestClientRegistryBinder.*;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.ExceptionConverter;
 import org.apache.slider.core.registry.docstore.PublishedConfigSet;
 import org.apache.slider.core.registry.docstore.PublishedConfiguration;
 import org.apache.slider.core.registry.docstore.PublishedExports;
 import org.apache.slider.core.registry.docstore.PublishedExportsSet;
-import org.apache.slider.core.registry.info.CustomRegistryConstants;
+import static org.apache.slider.core.registry.info.CustomRegistryConstants.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.List;
 
 /**
  * Registry retriever. 
@@ -69,51 +67,14 @@ public class RegistryRetriever extends AMWebClient {
    * not match that expected (i.e. not a list of URLs), missing endpoint...
    */
   public RegistryRetriever(ServiceRecord record) throws RegistryIOException {
-    Endpoint internal = record.getInternalEndpoint(
-        CustomRegistryConstants.PUBLISHER_CONFIGURATIONS_API);
-    String url = null;
-    if (internal != null) {
-      List<String> addresses = RegistryTypeUtils.retrieveAddressesUriType(
-          internal);
-      if (addresses != null && !addresses.isEmpty()) {
-        url = addresses.get(0);
-      }
-    }
-    internalConfigurationURL = url;
-    Endpoint external = record.getExternalEndpoint(
-        CustomRegistryConstants.PUBLISHER_CONFIGURATIONS_API);
-    url = null;
-    if (external != null) {
-      List<String> addresses =
-          RegistryTypeUtils.retrieveAddressesUriType(external);
-      if (addresses != null && !addresses.isEmpty()) {
-        url = addresses.get(0);
-      }
-    }
-    externalConfigurationURL = url;
-
-    internal = record.getInternalEndpoint(
-        CustomRegistryConstants.PUBLISHER_EXPORTS_API);
-    url = null;
-    if (internal != null) {
-      List<String> addresses = RegistryTypeUtils.retrieveAddressesUriType(
-          internal);
-      if (addresses != null && !addresses.isEmpty()) {
-        url = addresses.get(0);
-      }
-    }
-    internalExportsURL = url;
-    external = record.getExternalEndpoint(
-        CustomRegistryConstants.PUBLISHER_EXPORTS_API);
-    url = null;
-    if (external != null) {
-      List<String> addresses =
-          RegistryTypeUtils.retrieveAddressesUriType(external);
-      if (addresses != null && !addresses.isEmpty()) {
-        url = addresses.get(0);
-      }
-    }
-    externalExportsURL = url;
+    internalConfigurationURL = lookupRestAPI(record,
+        PUBLISHER_CONFIGURATIONS_API, true);
+    externalConfigurationURL = lookupRestAPI(record,
+        PUBLISHER_CONFIGURATIONS_API, false);
+    externalExportsURL = lookupRestAPI(record,
+        PUBLISHER_EXPORTS_API, true);
+    internalExportsURL = lookupRestAPI(record,
+        PUBLISHER_EXPORTS_API, false);
   }
 
   /**
@@ -141,7 +102,7 @@ public class RegistryRetriever extends AMWebClient {
       PublishedConfigSet configSet = webResource.get(PublishedConfigSet.class);
       return configSet;
     } catch (UniformInterfaceException e) {
-      throw ExceptionConverter.convertJerseyException(confURL, e);
+      throw ExceptionConverter.convertJerseyException("GET", confURL, e);
     }
   }
 
@@ -176,7 +137,7 @@ public class RegistryRetriever extends AMWebClient {
       PublishedExportsSet exportSet = webResource.get(PublishedExportsSet.class);
       return exportSet;
     } catch (UniformInterfaceException e) {
-      throw ExceptionConverter.convertJerseyException(exportsUrl, e);
+      throw ExceptionConverter.convertJerseyException("GET", exportsUrl, e);
     }
   }
 
@@ -203,7 +164,7 @@ public class RegistryRetriever extends AMWebClient {
           webResource.get(PublishedConfiguration.class);
       return publishedConf;
     } catch (UniformInterfaceException e) {
-      throw ExceptionConverter.convertJerseyException(confURL, e);
+      throw ExceptionConverter.convertJerseyException("GET", confURL, e);
     }
   }
 
@@ -229,7 +190,7 @@ public class RegistryRetriever extends AMWebClient {
           webResource.get(PublishedExports.class);
       return publishedExports;
     } catch (UniformInterfaceException e) {
-      throw ExceptionConverter.convertJerseyException(exportsURL, e);
+      throw ExceptionConverter.convertJerseyException("GET", exportsURL, e);
     }
   }
 

@@ -19,11 +19,23 @@
 package org.apache.slider.core.restclient;
 
 import com.google.common.base.Preconditions;
+import com.sun.jersey.api.client.ClientResponse;
+import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.client.urlconnection.HttpURLConnectionFactory;
 import com.sun.jersey.client.urlconnection.URLConnectionClientHandler;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.PathAccessDeniedException;
+import org.apache.hadoop.fs.PathIOException;
+import org.apache.hadoop.fs.PathNotFoundException;
 import org.apache.hadoop.security.authentication.client.AuthenticationException;
+import org.apache.hadoop.yarn.webapp.ForbiddenException;
+import org.apache.hadoop.yarn.webapp.NotFoundException;
+import org.apache.slider.core.exceptions.ExceptionConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -38,6 +50,8 @@ import java.net.URL;
  */
 public class UgiJerseyBinding implements
     HttpURLConnectionFactory {
+  private static final Logger log =
+      LoggerFactory.getLogger(UgiJerseyBinding.class);
   private final UrlConnectionOperations operations;
   private final URLConnectionClientHandler handler;
 
@@ -63,7 +77,7 @@ public class UgiJerseyBinding implements
 
   /**
    * Get a URL connection. 
-   * @param url
+   * @param url URL to connect to
    * @return the connection
    * @throws IOException any problem. {@link AuthenticationException} 
    * errors are wrapped
@@ -71,6 +85,10 @@ public class UgiJerseyBinding implements
   @Override
   public HttpURLConnection getHttpURLConnection(URL url) throws IOException {
     try {
+      // open a connection handling status codes and so redirections
+      // but as it opens a connection, it's less useful than you think.
+//      return operations.openConnectionRedirecting(url);
+      
       return operations.openConnection(url);
     } catch (AuthenticationException e) {
       throw new IOException(e);
@@ -93,6 +111,18 @@ public class UgiJerseyBinding implements
     return operations.isUseSpnego();
   }
 
+
+  /**
+   * Uprate error codes 400 and up into faults; 
+   * <p>
+   * see {@link ExceptionConverter#convertJerseyException(String, String, UniformInterfaceException)}
+   */
+  public static IOException uprateFaults(HttpVerb verb, String url,
+      UniformInterfaceException ex)
+      throws IOException {
+    return ExceptionConverter.convertJerseyException(verb.getVerb(),
+        url, ex);
+  }
 }
 
 
