@@ -127,9 +127,9 @@ class SliderRestClientTestDelegates extends SliderTestUtils {
 
     // fetch missing
     try {
-      def result = appAPI.getContainer("/unknown")
+      def result = appAPI.getContainer("unknown")
       fail("expected an error, got $result")
-    } catch (PathNotFoundException e) {
+    } catch (FileNotFoundException e) {
       // expected
     }
 
