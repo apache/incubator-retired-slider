@@ -41,6 +41,8 @@ metric_prop_file_name = "hadoop-metrics2-hbase.properties"
 java64_home = config['hostLevelParams']['java_home']
 
 log_dir = config['configurations']['global']['app_log_dir']
+#configuration for HBASE_OPTS
+hbase_opts = default('/configurations/hbase-env/hbase_opts', '')
 master_heapsize = config['configurations']['hbase-env']['hbase_master_heapsize']
 
 regionserver_heapsize = config['configurations']['hbase-env']['hbase_regionserver_heapsize']
