@@ -24,6 +24,7 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.webapp.ForbiddenException
 import org.apache.slider.agent.rest.JerseyTestDelegates
 import org.apache.slider.agent.rest.RestTestDelegates
+import org.apache.slider.agent.rest.SliderRestClientTestDelegates
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.Arguments
@@ -126,7 +127,22 @@ public class AgentWebPagesIT extends AgentCommandTestBase
         new JerseyTestDelegates(directAM, createUGIJerseyClient())
     directJerseyTests.testSuiteGetOperations()
     directJerseyTests.testSuiteComplexVerbs()
-    
+
+    describe "Proxy SliderRestClient Tests"
+    SliderRestClientTestDelegates proxySliderRestClient =
+        new SliderRestClientTestDelegates(proxyAM, createUGIJerseyClient())
+    proxySliderRestClient.testSuiteGetOperations()
+    if (!wsBackDoorRequired) {
+      proxySliderRestClient.testSuiteComplexVerbs()
+    }
+    describe "Direct SliderRestClient Tests"
+    SliderRestClientTestDelegates directSliderRestClient =
+        new SliderRestClientTestDelegates(directAM, createUGIJerseyClient())
+    directSliderRestClient.testSuiteGetOperations()
+    directSliderRestClient.testSuiteComplexVerbs()
+
+
+
     if (UserGroupInformation.securityEnabled) {
       describe "Insecure Proxy Tests against a secure cluster"
 
