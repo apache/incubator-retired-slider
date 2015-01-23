@@ -33,6 +33,7 @@ import org.apache.hadoop.yarn.webapp.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -74,7 +75,7 @@ public class UgiJerseyBinding implements
 
   /**
    * Get a URL connection. 
-   * @param url
+   * @param url URL to connect to
    * @return the connection
    * @throws IOException any problem. {@link AuthenticationException} 
    * errors are wrapped
@@ -82,6 +83,10 @@ public class UgiJerseyBinding implements
   @Override
   public HttpURLConnection getHttpURLConnection(URL url) throws IOException {
     try {
+      // open a connection handling status codes and so redirections
+      // but as it opens a connection, it's less useful than you think.
+//      return operations.openConnectionRedirecting(url);
+      
       return operations.openConnection(url);
     } catch (AuthenticationException e) {
       throw new IOException(e);
@@ -124,10 +129,11 @@ public class UgiJerseyBinding implements
     ClientResponse response = ex.getResponse();
     int resultCode = response.getStatus();
     String msg = verb.toString() + " " + url;
-    if (resultCode == 404) {
+    if (resultCode == HttpServletResponse.SC_NOT_FOUND) {
       return (IOException) new PathNotFoundException(url).initCause(ex);
     }
-    if (resultCode == 401) {
+    if (resultCode == HttpServletResponse.SC_UNAUTHORIZED
+        || resultCode == HttpServletResponse.SC_FORBIDDEN) {
       return (IOException) new PathAccessDeniedException(url).initCause(ex);
     }
     // all other error codes

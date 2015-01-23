@@ -31,10 +31,13 @@ import org.apache.hadoop.yarn.webapp.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.HttpHeaders;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 
 /**
@@ -74,7 +77,8 @@ public class UrlConnectionOperations extends Configured  {
   }
 
   /**
-   * Opens a url with read and connect timeouts
+   * Opens a url with cache disabled, redirect handled in 
+   * (JDK) implementation.
    *
    * @param url to open
    * @return URLConnection
@@ -84,12 +88,68 @@ public class UrlConnectionOperations extends Configured  {
   public HttpURLConnection openConnection(URL url) throws
       IOException,
       AuthenticationException {
-    Preconditions.checkArgument(url.getPort() != 0, "no port");
-    HttpURLConnection conn =
-        (HttpURLConnection) connectionFactory.openConnection(url, useSpnego);
+
+    HttpURLConnection conn = innerOpenConnection(url);
     conn.setUseCaches(false);
     conn.setInstanceFollowRedirects(true);
     return conn;
+  }
+
+
+  /**
+   * Opens a url.
+   * <p>
+   *   This implementation
+   *   <ol>
+   *     <li>Handles protocol switching during redirects</li>
+   *     <li>Handles 307 responses "redirect with same verb"</li>
+   *   </ol>
+   *
+   * @param url to open
+   * @return URLConnection
+   * @throws IOException
+   * @throws AuthenticationException authentication failure
+   */
+  public HttpURLConnection openConnectionRedirecting(URL url) throws
+      IOException,
+      AuthenticationException {
+    HttpURLConnection connection = innerOpenConnection(url);
+    connection.setUseCaches(false);
+    int responseCode = connection.getResponseCode();
+    if (responseCode == HttpServletResponse.SC_MOVED_TEMPORARILY 
+        || responseCode == HttpServletResponse.SC_TEMPORARY_REDIRECT) {
+      log.debug("Redirected with response {}", responseCode);
+      // is a redirect - are we changing schemes?
+      String redirectLocation = connection.getHeaderField(HttpHeaders.LOCATION);
+      String originalScheme = url.getProtocol();
+      String redirectScheme = URI.create(redirectLocation).getScheme();
+      boolean buildNewUrl = false;
+      if (!originalScheme.equals(redirectScheme)) {
+        // need to fake it out by doing redirect ourselves
+        log.debug("Protocol change during redirect");
+        buildNewUrl = true;
+      } else if (responseCode == HttpServletResponse.SC_TEMPORARY_REDIRECT) {
+        // 307 response
+        buildNewUrl = true;
+      }
+
+      if (buildNewUrl) {
+        // perform redirect ourselves
+        log.debug("Redirecting {} to URL {}",
+            url, redirectLocation);
+        URL redirectURL = new URL(redirectLocation);
+        connection = innerOpenConnection(url);
+      }
+    }
+
+    return connection;
+  }
+
+  protected HttpURLConnection innerOpenConnection(URL url) throws
+      IOException,
+      AuthenticationException {
+    Preconditions.checkArgument(url.getPort() != 0, "no port");
+    return (HttpURLConnection) connectionFactory.openConnection(url, useSpnego);
   }
 
   public HttpOperationResponse execGet(URL url) throws
@@ -121,7 +181,6 @@ public class UrlConnectionOperations extends Configured  {
       if (doOutput) {
         conn.setRequestProperty("Content-Type", contentType);
       }
-      
 
       // now do the connection
       conn.connect();
