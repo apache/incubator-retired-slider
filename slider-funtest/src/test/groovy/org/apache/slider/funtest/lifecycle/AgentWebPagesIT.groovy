@@ -18,13 +18,19 @@
 
 package org.apache.slider.funtest.lifecycle
 
+import com.sun.jersey.api.client.Client
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.registry.client.api.RegistryOperations
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.webapp.ForbiddenException
 import org.apache.slider.agent.rest.JerseyTestDelegates
 import org.apache.slider.agent.rest.RestTestDelegates
+import org.apache.slider.agent.rest.SliderRestClientTestDelegates
+import org.apache.slider.client.SliderClient
+import org.apache.slider.client.rest.RestClientFactory
 import org.apache.slider.common.SliderExitCodes
+import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
@@ -117,16 +123,32 @@ public class AgentWebPagesIT extends AgentCommandTestBase
 
     describe "Proxy Jersey Tests"
 
+    Client ugiClient = createUGIJerseyClient()
     JerseyTestDelegates proxyJerseyTests =
-        new JerseyTestDelegates(proxyAM, createUGIJerseyClient())
+        new JerseyTestDelegates(proxyAM, ugiClient)
     proxyJerseyTests.testSuiteGetOperations()
 
     describe "Direct Jersey Tests"
     JerseyTestDelegates directJerseyTests =
-        new JerseyTestDelegates(directAM, createUGIJerseyClient())
+        new JerseyTestDelegates(directAM, ugiClient)
     directJerseyTests.testSuiteGetOperations()
     directJerseyTests.testSuiteComplexVerbs()
-    
+
+    describe "Proxy SliderRestClient Tests"
+    SliderRestClientTestDelegates proxySliderRestClient =
+        new SliderRestClientTestDelegates(proxyAM, ugiClient)
+    proxySliderRestClient.testSuiteGetOperations()
+    if (!wsBackDoorRequired) {
+      proxySliderRestClient.testSuiteComplexVerbs()
+    }
+    describe "Direct SliderRestClient Tests"
+    SliderRestClientTestDelegates directSliderRestClient =
+        new SliderRestClientTestDelegates(directAM, ugiClient)
+    directSliderRestClient.testSuiteGetOperations()
+    directSliderRestClient.testSuiteComplexVerbs()
+
+
+
     if (UserGroupInformation.securityEnabled) {
       describe "Insecure Proxy Tests against a secure cluster"
 
@@ -139,10 +161,24 @@ public class AgentWebPagesIT extends AgentCommandTestBase
       
       // these tests use the Jersey client without the Hadoop-specific
       // SPNEGO
-      JerseyTestDelegates baseicJerseyClientTests =
+      JerseyTestDelegates basicJerseyClientTests =
           new JerseyTestDelegates(proxyAM, createBasicJerseyClient())
-      baseicJerseyClientTests.testSuiteGetOperations()
+      basicJerseyClientTests.testSuiteGetOperations()
     }
+
+    // create the Rest client via the registry
+
+    //get a slider client against the cluster
+
+    SliderClient sliderClient = bondToCluster(SLIDER_CONFIG, CLUSTER)
+    RegistryOperations operations = sliderClient.registryOperations;
+    def restClientFactory = new RestClientFactory(
+        operations, ugiClient,
+        "~", SliderKeys.APP_TYPE, CLUSTER)
+    def sliderApplicationApi = restClientFactory.createSliderApplicationApi();
+    sliderApplicationApi.desiredModel
+    sliderApplicationApi.resolvedModel
+    sliderApplicationApi.ping("registry located")
     
     // finally, stop the AM
     direct.testStop();

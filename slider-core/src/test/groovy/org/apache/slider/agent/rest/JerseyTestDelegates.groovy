@@ -18,6 +18,7 @@
 
 package org.apache.slider.agent.rest
 
+import com.google.common.base.Preconditions
 import com.sun.jersey.api.client.Client
 import com.sun.jersey.api.client.ClientResponse
 import com.sun.jersey.api.client.UniformInterfaceException
@@ -29,6 +30,7 @@ import org.apache.hadoop.yarn.webapp.NotFoundException
 import org.apache.slider.api.StateValues
 import org.apache.slider.api.types.SerializedComponentInformation
 import org.apache.slider.api.types.SerializedContainerInformation
+import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.core.conf.ConfTreeOperations
@@ -80,7 +82,7 @@ class JerseyTestDelegates extends SliderTestUtils {
    * @return
    */
   public <T> T jGetApplicationResource(String subpath, Class<T> c) {
-    return (T)jExec(HttpVerb.GET, subpath, c)
+    return (T)jExec(HttpVerb.GET, subpath, c);
   }
 
   /**
@@ -90,17 +92,17 @@ class JerseyTestDelegates extends SliderTestUtils {
    * @return
    */
   public <T> T jExec(HttpVerb  method, String subpath, Class<T> c) {
-    WebResource resource = applicationResource(subpath)
-    jExec(method, resource, c)
+    WebResource resource = applicationResource(subpath);
+    jExec(method, resource, c);
   }
 
   public <T> T jExec(HttpVerb method, WebResource resource, Class<T> c) {
     try {
-      assert c
-      resource.accept(MediaType.APPLICATION_JSON_TYPE)
-      (T) resource.method(method.verb, c)
+      Preconditions.checkArgument(c != null);
+      resource.accept(MediaType.APPLICATION_JSON_TYPE);
+      (T) resource.method(method.verb, c);
     } catch (UniformInterfaceException ex) {
-      uprateFaults(method, resource, ex)
+      uprateFaults(method, resource, ex);
     }
   }
 
@@ -158,11 +160,11 @@ class JerseyTestDelegates extends SliderTestUtils {
    */
   public WebResource buildResource(String path) {
     assert path
-    String fullpath = appendToURL(appmaster, path)
-    WebResource webResource = jersey.resource(fullpath)
-    webResource.type(MediaType.APPLICATION_JSON)
+    String fullpath = SliderUtils.appendToURL(appmaster, path);
+    WebResource webResource = jersey.resource(fullpath);
+    webResource.type(MediaType.APPLICATION_JSON);
     log.info("HTTP operation against $fullpath");
-    return webResource
+    return webResource;
   }
 
   public void testJerseyGetConftree() throws Throwable {
