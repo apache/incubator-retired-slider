@@ -373,23 +373,6 @@
                   </sources>
                 </mapping>
 
-                <!-- agent -->
-                <mapping>
-                  <directory>${rpm.agentdir}</directory>
-                  <filemode>0755</filemode>
-                  <username>${rpm.username}</username>
-                  <groupname>${rpm.groupname}</groupname>
-                  <directoryIncluded>false</directoryIncluded>
-                  <sources>
-                    <source>
-                      <location>${project.build.directory}/agent</location>
-                      <includes>
-                        <include>slider-agent.tar.gz</include>
-                      </includes>
-                    </source>
-                  </sources>
-                </mapping>
-
                 <!-- agent.ini -->
                 <mapping>
                   <directory>${rpm.agentdir}/conf</directory>

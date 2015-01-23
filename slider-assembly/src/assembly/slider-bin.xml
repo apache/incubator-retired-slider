@@ -78,11 +78,6 @@
       <source>${project.build.directory}/agent/slider-agent.tar.gz</source>
       <outputDirectory>lib</outputDirectory>
     </file>
-
-    <file>
-      <source>${project.build.directory}/agent/slider-agent.tar.gz</source>
-      <outputDirectory>agent</outputDirectory>
-    </file>
     
   </files>
   <dependencySets>

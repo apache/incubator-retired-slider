@@ -26,9 +26,5 @@
       <location>target/lib/slider-agent.tar.gz</location>
       <exists>true</exists>
     </file>
-    <file>
-      <location>target/agent/slider-agent.tar.gz</location>
-      <exists>true</exists>
-    </file>
   </files>
 </verifications>
