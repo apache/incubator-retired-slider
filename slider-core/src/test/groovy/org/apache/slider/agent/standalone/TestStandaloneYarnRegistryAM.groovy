@@ -158,6 +158,7 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     assert serviceRecords.size() == 1
 
     def serviceRecord = serviceRecords[0]
+    describe "service record"
     log.info(serviceRecord.toString())
 
     assert serviceRecord[YarnRegistryAttributes.YARN_ID] != null

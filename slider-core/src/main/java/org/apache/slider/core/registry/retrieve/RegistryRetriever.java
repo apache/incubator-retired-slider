@@ -67,9 +67,9 @@ public class RegistryRetriever extends AMWebClient {
    * not match that expected (i.e. not a list of URLs), missing endpoint...
    */
   public RegistryRetriever(ServiceRecord record) throws RegistryIOException {
-    internalConfigurationURL = lookupRestAPI(record,
-        PUBLISHER_CONFIGURATIONS_API, true);
     externalConfigurationURL = lookupRestAPI(record,
+        PUBLISHER_CONFIGURATIONS_API, true);
+    internalConfigurationURL = lookupRestAPI(record,
         PUBLISHER_CONFIGURATIONS_API, false);
     externalExportsURL = lookupRestAPI(record,
         PUBLISHER_EXPORTS_API, true);
@@ -196,10 +196,17 @@ public class RegistryRetriever extends AMWebClient {
 
   @Override
   public String toString() {
-    return super.toString() 
-           + ":  internal URL: \"" + internalConfigurationURL
-           + "\";  external \"" + externalConfigurationURL +"\"";
+    final StringBuilder sb =
+        new StringBuilder("RegistryRetriever{");
+    sb.append("externalConfigurationURL='")
+      .append(externalConfigurationURL)
+      .append('\'');
+    sb.append(", internalConfigurationURL='")
+      .append(internalConfigurationURL)
+      .append('\'');
+    sb.append(", externalExportsURL='").append(externalExportsURL).append('\'');
+    sb.append(", internalExportsURL='").append(internalExportsURL).append('\'');
+    sb.append('}');
+    return sb.toString();
   }
-  
-  
 }
