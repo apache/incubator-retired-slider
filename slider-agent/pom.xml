@@ -134,6 +134,7 @@
             </executions>
             <configuration>
               <excludes>
+                <exclude>DEPENDENCIES</exclude>
                 <exclude>src/test/python/agent/dummy_output_error.txt</exclude>
                 <exclude>src/test/python/agent/dummy_output_good.txt</exclude>
                 <!-- jinja2 files (BSD license) -->

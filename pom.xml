@@ -208,6 +208,7 @@
     <maven-groovydoc-plugin.version>1.3</maven-groovydoc-plugin.version>
     <maven-jar-plugin.version>2.5</maven-jar-plugin.version>
     <maven.javadoc.version>2.10.1</maven.javadoc.version>
+    <maven.license.version>1.8</maven.license.version>
     <maven.project.version>2.4</maven.project.version>
     <maven.properties.version>1.0-alpha-2</maven.properties.version>
     <maven-project-info-reports-plugin.version>2.7</maven-project-info-reports-plugin.version>
@@ -377,6 +378,37 @@
         </executions>
       </plugin>
 
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <version>${maven.license.version}</version>
+        <executions>
+<!--
+          <execution>
+            <id>download-licenses</id>
+            <goals>
+              <goal>download-licenses</goal>
+            </goals>
+          </execution>
+-->
+          <execution>
+            <id>default-cli</id>
+            <configuration>
+              <licenseMerges>
+                <licenseMerge>The Apache Software License, Version 2.0|Apache License, Version 2.0</licenseMerge>
+                <licenseMerge>The Apache Software License, Version 2.0|Apache License 2.0</licenseMerge>
+                <licenseMerge>The Apache Software License, Version 2.0|Apache Public License 2.0</licenseMerge>
+                <licenseMerge>The Apache Software License, Version 2.0|Apache 2</licenseMerge>
+                <licenseMerge>The Apache Software License, Version 2.0|ASF 2.0</licenseMerge>
+                <licenseMerge>The Apache Software License, Version 2.0|Apache License Version 2</licenseMerge>
+                <licenseMerge>The Apache Software License, Version 2.0|Apache Software License - Version 2.0</licenseMerge>
+                <licenseMerge>New BSD License|New BSD license</licenseMerge>
+                <licenseMerge>GNU Lesser General Public License (LGPL), Version 2.1|LGPL 2.1</licenseMerge>
+              </licenseMerges>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
   </plugins>
   </build>
 
@@ -1414,6 +1446,7 @@
               <excludes>
                 <exclude>**/*.json</exclude>
                 <exclude>**/*.tar</exclude>
+                <exclude>**/THIRD-PARTY.properties</exclude>
                 <exclude>**/build.properties</exclude>
                 <exclude>**/regionservers</exclude>
                 <exclude>**/slaves</exclude>
