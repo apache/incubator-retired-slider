@@ -56,16 +56,6 @@
     </fileSet>
 
     <fileSet>
-      <directory>..</directory>
-      <outputDirectory>/</outputDirectory>
-      <includes>
-        <include>README*</include>
-        <include>LICENSE*</include>
-      </includes>
-    </fileSet>
-
-
-    <fileSet>
       <directory>../target/staging</directory>
       <outputDirectory>/doc</outputDirectory>
     </fileSet>
@@ -73,13 +63,31 @@
   </fileSets>
 
   <files>
+    <file>
+      <source>../README.md</source>
+      <outputDirectory>/</outputDirectory>
+    </file>
+    <file>
+      <source>../LICENSE</source>
+      <outputDirectory>/</outputDirectory>
+    </file>
 
     <file>
       <source>${project.build.directory}/agent/slider-agent.tar.gz</source>
       <outputDirectory>lib</outputDirectory>
     </file>
     
+    <file>
+      <source>${project.build.directory}/maven-shared-archive-resources/META-INF/DEPENDENCIES</source>
+      <outputDirectory>/</outputDirectory>
+    </file>
+    <file>
+      <source>${project.build.directory}/maven-shared-archive-resources/META-INF/NOTICE</source>
+      <outputDirectory>/</outputDirectory>
+    </file>
+
   </files>
+
   <dependencySets>
     <dependencySet>
       <scope>runtime</scope>
