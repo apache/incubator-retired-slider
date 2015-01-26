@@ -547,6 +547,7 @@
                 <exclude>**/*.json</exclude>
                 <exclude>src/test/python/agent.ini</exclude>
                 <exclude>src/test/python/version</exclude>
+                <exclude>**/THIRD-PARTY.properties</exclude>
                 <exclude>src/main/resources/webapps/slideram/.keep</exclude>
                 <exclude>src/main/resources/webapps/slideragent/.keep</exclude>
                 <exclude>src/main/resources/webapps/static/yarn.dt.plugins.js</exclude>

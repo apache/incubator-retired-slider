@@ -313,6 +313,7 @@
                   <exclude>**/*.json</exclude>
                   <exclude>**/httpfs-signature.secret</exclude>
                   <exclude>**/regionservers</exclude>
+                  <exclude>**/THIRD-PARTY.properties</exclude>
                 </excludes>
               </configuration>
             </plugin>

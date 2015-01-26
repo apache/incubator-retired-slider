@@ -32,4 +32,23 @@
       <outputDirectory>command-logger-app</outputDirectory>
     </fileSet>
   </fileSets>
+
+  <files>
+    <file>
+      <source>${project.build.directory}/maven-shared-archive-resources/META-INF/DEPENDENCIES</source>
+      <outputDirectory>/</outputDirectory>
+    </file>
+    <file>
+      <source>${project.build.directory}/maven-shared-archive-resources/META-INF/NOTICE</source>
+      <outputDirectory>/</outputDirectory>
+    </file>
+    <file>
+      <source>${project.build.directory}/maven-shared-archive-resources/META-INF/LICENSE</source>
+      <outputDirectory>/</outputDirectory>
+    </file>
+    <file>
+      <source>${project.build.directory}/maven-shared-archive-resources/META-INF/NOTICE</source>
+      <outputDirectory>/</outputDirectory>
+    </file>
+  </files>
 </assembly>

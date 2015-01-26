@@ -46,6 +46,21 @@
       <filtered>true</filtered>
       <fileMode>0755</fileMode>
     </file>
+
+    <file>
+      <source>../../../LICENSE</source>
+      <outputDirectory>/</outputDirectory>
+    </file>
+  
+    <file>
+      <source>../../../NOTICE</source>
+      <outputDirectory>/</outputDirectory>
+    </file>
+
+    <file>
+      <source>${project.build.directory}/maven-shared-archive-resources/META-INF/NOTICE</source>
+      <outputDirectory>/</outputDirectory>
+    </file>
   </files>
 
   <fileSets>
@@ -75,4 +90,6 @@
     </fileSet>
 
   </fileSets>
+
+
 </assembly>
