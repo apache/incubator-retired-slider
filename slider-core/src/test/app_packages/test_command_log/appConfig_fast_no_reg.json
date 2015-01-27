@@ -5,7 +5,7 @@
     "global": {
         "heartbeat.monitor.interval": "20000",
         "agent.instance.debug.data": "ANY:DO_NOT_REGISTER:NONE",
-        "application.def": ".slider/package/CMD_LOGGER/apache-slider-command-logger.zip",
+        "application.def": ".slider/package/CMD_LOGGER/command-logger-slider-package.zip",
         "java_home": "/usr/jdk64/jdk1.7.0_67",
         "site.global.application_id": "CommandLogger",
         "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/command-logger",
