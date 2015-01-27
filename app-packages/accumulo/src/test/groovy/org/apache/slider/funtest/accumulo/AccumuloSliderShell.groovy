@@ -21,37 +21,20 @@ package org.apache.slider.funtest.framework
 import org.apache.bigtop.itest.shell.Shell
 import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.common.tools.SliderUtils
-import org.junit.BeforeClass
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 
-class SliderShell extends ShellBase {
-  /**
-   * Configuration directory, shared across all instances. Not marked as volatile,
-   * assumed set up during @BeforeClass
-   */
-  public static File confDir;
+class AccumuloSliderShell extends ShellBase {
 
   public static File scriptFile;
-
-  public static final List<String> slider_classpath_extra = []
 
   /**
    * Build the command
    * @param commands
    */
-  SliderShell(Collection<String> commands) {
+  AccumuloSliderShell(Collection<String> commands) {
     super(scriptFile.absolutePath + " " + commands.join(" "))
-    assert confDir != null;
-
-    setEnv(FuntestProperties.ENV_SLIDER_CONF_DIR, confDir)
-    if (!slider_classpath_extra.empty) {
-      setEnv(FuntestProperties.ENV_SLIDER_CLASSPATH_EXTRA,
-        SliderUtils.join(slider_classpath_extra,
-          pathElementSeparator,
-          false))
-    }
   }
 
   /**
@@ -60,9 +43,10 @@ class SliderShell extends ShellBase {
    * @param commands
    * @return the shell
    */
-  public static SliderShell run(int exitCode, Collection<String> commands) {
-    SliderShell shell = new SliderShell(commands)
+  public static AccumuloSliderShell run(int exitCode, String command) {
+    AccumuloSliderShell shell = new AccumuloSliderShell([command])
     shell.execute(exitCode);
     return shell
   }
+
 }

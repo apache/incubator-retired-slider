@@ -38,6 +38,7 @@
     <slider.bin.dir>../../slider-assembly/target/slider-${project.version}-all/slider-${project.version}</slider.bin.dir>
     <test.app.pkg.dir>${project.build.directory}</test.app.pkg.dir>
     <test.app.resources.dir>${project.build.directory}/test-config</test.app.resources.dir>
+    <test.app.scripts.dir>${project.build.directory}/${app.package.name}</test.app.scripts.dir>
     <!-- these properties are used in the default and the test appConfigs -->
     <hadoop.dir>/usr/lib/hadoop</hadoop.dir>
     <hdfs.dir>/usr/lib/hadoop-hdfs</hdfs.dir>
@@ -214,6 +215,7 @@
                 <test.app.pkg.file>${app.package.name}.zip</test.app.pkg.file>
                 <test.app.pkg.name>ACCUMULO</test.app.pkg.name>
                 <test.app.resources.dir>${test.app.resources.dir}</test.app.resources.dir>
+                <test.app.scripts.dir>${test.app.scripts.dir}</test.app.scripts.dir>
               </systemPropertyVariables>
             </configuration>
           </plugin>

@@ -15,20 +15,18 @@
    limitations under the License.
 -->
 
-# How to create a Slider package for Accumulo?
+# Creating a Slider app package for Accumulo
 
     mvn clean package -DskipTests -Paccumulo-app-package-maven
-  
+
 OR
 
     mvn clean package -DskipTests -Paccumulo-app-package -Dpkg.version=1.6.1 \
       -Dpkg.name=accumulo-1.6.1-bin.tar.gz -Dpkg.src=/local/path/to/tarball
 
-App package can be found in
+The app package can be found in
 
     app-packages/accumulo/target/slider-accumulo-app-package-*.zip
-    
-    
 
 In the first case, the version number of the app package will match the
 slider version, and in the second case it will match the `pkg.version`
@@ -38,26 +36,49 @@ Verify the content using
 
     zip -Tv slider-accumulo-app-package*.zip
 
-`appConfig-default.json` and `resources-default.json` are not required to be packaged.
-These files are included as reference configuration for Slider apps and are suitable
-for a one-node cluster.
+`appConfig-default.json` and `resources-default.json` are not required to be
+packaged.  These files are included as reference configuration for Slider apps
+and are suitable for a one-node cluster.
 
 In the maven packaging case, the version of Accumulo used for the app package
 can be adjusted by adding a flag such as
 
     -Daccumulo.version=1.5.1
 
-**Note that the LICENSE.txt and NOTICE.txt that are bundled with the app
+**Note** that the LICENSE.txt and NOTICE.txt that are bundled with the app
 package are designed for Accumulo 1.6.0 only and may need to be modified to be
 applicable for other versions of the app package.
 
-Note also that the sample `appConfig-default.json` provided only works with Accumulo 1.6.
-For Accumulo 1.5 the instance.volumes property must be replaced with
-`instance.dfs.dir` (and it cannot use the provided variable `${DEFAULT_DATA_DIR}`
-which is an HDFS URI).
+Note also that the sample `appConfig-default.json` provided only works with
+Accumulo 1.6 or greater.  For Accumulo 1.5 the instance.volumes property must be
+replaced with `instance.dfs.dir` (and it cannot use the provided variable
+`${DEFAULT_DATA_DIR}` which is an HDFS URI).
 
 A less descriptive file name can be specified with
-`-Dapp.package.name=accumulo_160` which would create a file `accumulo_160.zip`
+`-Dapp.package.name=accumulo_160` which would create a file `accumulo_160.zip`.
+
+# Installing an Accumulo Client
+
+The Accumulo app package provides scripts to assist in client interactions with
+an Accumulo instance running on Slider.  These can be extracted as follows.
+
+    unzip slider-accumulo-app-package*zip accumulo-slider
+    unzip slider-accumulo-app-package*zip accumulo-slider.py
+
+To install an Accumulo client, use the following command:
+
+    SLIDER_HOME=</path/to/slider> ./accumulo-slider --app <clusterName> install <dir>
+
+If the SLIDER_CONF_DIR is not at $SLIDER_HOME/conf, it should also be set.
+The dir specified will then contain an Accumulo installation that can be used
+to connect to the cluster.
+
+Examples of other commands that may be issued are:
+
+    SLIDER_HOME=</path/to/slider> ACCUMULO_HOME=</path/to/accumulo> ./accumulo-slider --app <clusterName> shell
+    SLIDER_HOME=</path/to/slider> ACCUMULO_HOME=</path/to/accumulo> ./accumulo-slider --app <clusterName> --appconf <accumulo_conf_dir> getconf
+    SLIDER_HOME=</path/to/slider> ACCUMULO_HOME=</path/to/accumulo> ./accumulo-slider --app <clusterName> quicklinks
+    SLIDER_HOME=</path/to/slider> ACCUMULO_HOME=</path/to/accumulo> ./accumulo-slider --app <clusterName> proxies
 
 # Building Native Libraries
 
@@ -88,8 +109,8 @@ currently reside may have restrictions on the import, possession, use, and/or
 re-export to another country, of encryption software. BEFORE using any
 encryption software, please check your country's laws, regulations and
 policies concerning the import, possession, or use, and re-export of encryption
-software, to see if this is permitted. See [http://www.wassenaar.org/](http://www.wassenaar.org/) for more
-information.
+software, to see if this is permitted. See
+[http://www.wassenaar.org/](http://www.wassenaar.org/) for more information.
 
 The U.S. Government Department of Commerce, Bureau of Industry and Security
 (BIS), has classified this software as Export Commodity Control Number (ECCN)
