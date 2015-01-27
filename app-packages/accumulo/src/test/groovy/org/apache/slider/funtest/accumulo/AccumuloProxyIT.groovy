@@ -71,7 +71,7 @@ class AccumuloProxyIT extends AccumuloBasicIT {
         return proxies
       } catch (Exception e) {
         caught = e;
-        log.info("Got exception trying to read quicklinks")
+        log.info("Got exception trying to read proxies")
         if (tries-- == 0) {
           break
         }
