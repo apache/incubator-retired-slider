@@ -11,10 +11,9 @@
         "site.global.app_user": "yarn",
         "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/hbase-${hbase.version}",
 
-        "site.global.ganglia_server_host": "${NN_HOST}",
-        "site.global.ganglia_server_port": "8667",
-        "site.global.ganglia_server_id": "Application1",
-        "site.global.ganglia_enabled":"true",
+        "site.global.metric_collector_host": "${NN_HOST}",
+        "site.global.metric_collector_port": "6188",
+        "site.global.metric_collector_lib": "",
 
         "site.global.hbase_instance_name": "instancename",
         "site.global.hbase_root_password": "secret",
