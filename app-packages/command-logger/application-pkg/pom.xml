@@ -23,12 +23,16 @@
     <relativePath>../../../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>command-logger</artifactId>
+  <artifactId>command-logger-sample</artifactId>
   <packaging>pom</packaging>
-  <name>Command Logger</name>
-  <description>Command Logger</description>
+  <name>Command Logger Sample Application</name>
+  <description>
+    Command logger is a simple application that does not have any moving parts.
+    Its sole purpose is to get packaged as a tarball that includes some static files
+    suggesting how commands may be logged, for use in test deployments.  
+  </description>
   <properties>
-    <app.package.name>command-logger</app.package.name>
+    <app.package.name>command-logger-sample</app.package.name>
   </properties>
 
   <build>
