@@ -9,7 +9,7 @@
         "system_configs": "core-site",
 
         "site.global.app_user": "yarn",
-        "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/hbase-${hbase.version}",
+        "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/hbase-${pkg.version}",
 
         "site.global.metric_collector_host": "${NN_HOST}",
         "site.global.metric_collector_port": "6188",
@@ -33,6 +33,9 @@
         "site.hbase-site.hbase.zookeeper.quorum": "${ZK_HOST}",
         "site.hbase-site.zookeeper.znode.parent": "${DEFAULT_ZK_PATH}",
         "site.hbase-site.hbase.regionserver.info.port": "0",
+        "site.hbase-site.hbase.defaults.for.version.skip": "true",
+        "site.hbase-site.hbase.region.server.rpc.scheduler.factory.class": "org.apache.phoenix.hbase.index.ipc.PhoenixIndexRpcSchedulerFactory",
+        "site.hbase-site.hbase.regionserver.wal.codec": "org.apache.hadoop.hbase.regionserver.wal.IndexedWALEditCodec",
         "site.hbase-site.hbase.master.info.port": "${HBASE_MASTER.ALLOCATED_PORT}",
         "site.hbase-site.hbase.regionserver.port": "0",
         "site.hbase-site.hbase.master.port": "0"

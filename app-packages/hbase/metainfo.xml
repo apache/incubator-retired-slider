@@ -55,11 +55,7 @@
           </export>
           <export>
             <name>org.apache.slider.metrics</name>
-            <value>http://${site.global.ganglia_server_host}/cgi-bin/rrd.py?c=${site.global.ganglia_server_id}</value>
-          </export>
-          <export>
-            <name>org.apache.slider.metrics.ui</name>
-            <value>http://${site.global.ganglia_server_host}/ganglia?c=${site.global.ganglia_server_id}</value>
+            <value>http://${site.global.metric_collector_host}:${site.global.metric_collector_port}/ws/v1/timeline/metrics</value>
           </export>
         </exports>
       </exportGroup>
@@ -81,7 +77,7 @@
         <name>HBASE_MASTER</name>
         <category>MASTER</category>
         <minInstanceCount>1</minInstanceCount>
-        <appExports>QuickLinks-org.apache.slider.jmx,QuickLinks-org.apache.slider.monitor,QuickLinks-org.apache.slider.metrics,QuickLinks-org.apache.slider.metrics.ui</appExports>
+        <appExports>QuickLinks-org.apache.slider.jmx,QuickLinks-org.apache.slider.monitor,QuickLinks-org.apache.slider.metrics</appExports>
         <componentExports>
           <componentExport>
             <name>org.apache.slider.jmx</name>

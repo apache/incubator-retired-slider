@@ -28,26 +28,48 @@
 # If this variable is left out, then the default is no expiration.
 hbase.extendedperiod = 3600
 
+{% if has_metric_collector %}
+
+*.timeline.plugin.urls=file://{{metric_collector_lib}}
+hbase.class=org.apache.hadoop.metrics2.sink.timeline.HadoopTimelineMetricsSink
+hbase.period=10
+hbase.collector={{metric_collector_host}}:{{metric_collector_port}}
+
+jvm.class=org.apache.hadoop.metrics2.sink.timeline.HadoopTimelineMetricsSink
+jvm.period=10
+jvm.collector={{metric_collector_host}}:{{metric_collector_port}}
+
+rpc.class=org.apache.hadoop.metrics2.sink.timeline.HadoopTimelineMetricsSink
+rpc.period=10
+rpc.collector={{metric_collector_host}}:{{metric_collector_port}}
+
+hbase.sink.timeline.class=org.apache.hadoop.metrics2.sink.timeline.HadoopTimelineMetricsSink
+hbase.sink.timeline.period=10
+hbase.sink.timeline.collector={{metric_collector_host}}:{{metric_collector_port}}
+hbase.sink.timeline.serviceName-prefix={{app_name}}-rs
+
+{% else %}
+
 # Configuration of the "hbase" context for ganglia
 # Pick one: Ganglia 3.0 (former) or Ganglia 3.1 (latter)
 # hbase.class=org.apache.hadoop.metrics.ganglia.GangliaContext
 hbase.class=org.apache.hadoop.metrics.ganglia.GangliaContext31
 hbase.period=10
-hbase.servers={{ganglia_server_host}}:{{ganglia_server_port}}
+hbase.servers={{metric_collector_host}}:{{metric_collector_port}}
 
 # Configuration of the "jvm" context for ganglia
 # Pick one: Ganglia 3.0 (former) or Ganglia 3.1 (latter)
 # jvm.class=org.apache.hadoop.metrics.ganglia.GangliaContext
 jvm.class=org.apache.hadoop.metrics.ganglia.GangliaContext31
 jvm.period=10
-jvm.servers={{ganglia_server_host}}:{{ganglia_server_port}}
+jvm.servers={{metric_collector_host}}:{{metric_collector_port}}
 
 # Configuration of the "rpc" context for ganglia
 # Pick one: Ganglia 3.0 (former) or Ganglia 3.1 (latter)
 # rpc.class=org.apache.hadoop.metrics.ganglia.GangliaContext
 rpc.class=org.apache.hadoop.metrics.ganglia.GangliaContext31
 rpc.period=10
-rpc.servers={{ganglia_server_host}}:{{ganglia_server_port}}
+rpc.servers={{metric_collector_host}}:{{metric_collector_port}}
 
 #Ganglia following hadoop example
 hbase.sink.ganglia.class=org.apache.hadoop.metrics2.sink.ganglia.GangliaSink31
@@ -59,4 +81,6 @@ hbase.sink.ganglia.period=10
 .sink.ganglia.slope=jvm.metrics.gcCount=zero,jvm.metrics.memHeapUsedM=both
 .sink.ganglia.dmax=jvm.metrics.threadsBlocked=70,jvm.metrics.memHeapUsedM=40
 
-hbase.sink.ganglia.servers={{ganglia_server_host}}:{{ganglia_server_port}}
+hbase.sink.ganglia.servers={{metric_collector_host}}:{{metric_collector_port}}
+
+{% endif %}
