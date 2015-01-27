@@ -25,20 +25,7 @@ public interface AgentKeys {
 
   String PROVIDER_AGENT = "agent";
   String ROLE_NODE = "echo";
-  /**
-   * {@value}
-   */
-  String REGION_SERVER = "regionserver";
-  /**
-   * What is the command for hbase to print a version: {@value}
-   */
-  String COMMAND_VERSION = "version";
-  String ACTION_START = "start";
-  String ACTION_STOP = "stop";
-  /**
-   * Config directory : {@value}
-   */
-  String ARG_CONFIG = "--config";
+
   /**
    * Template stored in the slider classpath -to use if there is
    * no site-specific template
@@ -100,6 +87,7 @@ public interface AgentKeys {
   String KEY_AGENT_TWO_WAY_SSL_ENABLED = "ssl.server.client.auth";
   String CERT_FILE_LOCALIZATION_PATH = "certs/ca.crt";
   String KEY_CONTAINER_LAUNCH_DELAY = "container.launch.delay.sec";
+  String TEST_RELAX_VERIFICATION = "test.relax.validation";
 }
 
 

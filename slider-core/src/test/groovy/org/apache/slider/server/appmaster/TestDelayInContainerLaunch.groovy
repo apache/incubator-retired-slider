@@ -107,6 +107,7 @@ class TestDelayInContainerLaunch extends AgentTestBase {
             ARG_RES_COMP_OPT, role, ResourceKeys.COMPONENT_PRIORITY, "1",
             ARG_COMP_OPT, role, SCRIPT_PATH, echo_py,
             ARG_COMP_OPT, role, SERVICE_NAME, "Agent",
+            ARG_COMP_OPT, role, TEST_RELAX_VERIFICATION, "true",
         ],
         true, true,
         true)

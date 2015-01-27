@@ -496,6 +496,136 @@ public class TestAgentProviderService {
   }
 
   @Test
+  public void testThreeInstallFailures() throws IOException, SliderException {
+    InputStream metainfo_1 = new ByteArrayInputStream(metainfo_1_str.getBytes());
+    Metainfo metainfo = new MetainfoParser().parse(metainfo_1);
+    ConfTree tree = new ConfTree();
+    tree.global.put(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH, ".");
+
+    Configuration conf = new Configuration();
+    AgentProviderService aps = createAgentProviderService(conf);
+    YarnRegistryViewForProviders registryViewForProviders = aps.getYarnRegistry();
+    assertNotNull(registryViewForProviders);
+
+    ContainerLaunchContext ctx = createNiceMock(ContainerLaunchContext.class);
+    AggregateConf instanceDefinition = new AggregateConf();
+
+    instanceDefinition.setInternal(tree);
+    instanceDefinition.setAppConf(tree);
+    instanceDefinition.getAppConfOperations().getGlobalOptions().put(AgentKeys.APP_DEF, ".");
+    instanceDefinition.getAppConfOperations().getGlobalOptions().put(AgentKeys.AGENT_CONF, ".");
+    instanceDefinition.getAppConfOperations().getGlobalOptions().put(AgentKeys.AGENT_VERSION, ".");
+
+    Container container = createNiceMock(Container.class);
+    String role_hm = "HBASE_MASTER";
+    SliderFileSystem sliderFileSystem = createNiceMock(SliderFileSystem.class);
+    ContainerLauncher launcher = createNiceMock(ContainerLauncher.class);
+    Path generatedConfPath = new Path(".", "test");
+    MapOperations resourceComponent = new MapOperations();
+    MapOperations appComponent = new MapOperations();
+    Path containerTmpDirPath = new Path(".", "test");
+    FilterFileSystem mockFs = createNiceMock(FilterFileSystem.class);
+    expect(sliderFileSystem.getFileSystem())
+        .andReturn(mockFs).anyTimes();
+    expect(mockFs.exists(anyObject(Path.class))).andReturn(true).anyTimes();
+    expect(sliderFileSystem.createAmResource(anyObject(Path.class),
+                                             anyObject(LocalResourceType.class)))
+        .andReturn(createNiceMock(LocalResource.class)).anyTimes();
+    expect(container.getId()).andReturn(new MockContainerId(1)).anyTimes();
+    expect(container.getNodeId()).andReturn(new MockNodeId("localhost")).anyTimes();
+    StateAccessForProviders access = createNiceMock(StateAccessForProviders.class);
+
+    AgentProviderService mockAps = Mockito.spy(aps);
+    doReturn(access).when(mockAps).getAmState();
+    doReturn(metainfo).when(mockAps).getApplicationMetainfo(any(SliderFileSystem.class), anyString());
+    doReturn(new HashMap<String, DefaultConfig>()).when(mockAps).
+        initializeDefaultConfigs(any(SliderFileSystem.class), anyString(), any(Metainfo.class));
+
+
+    try {
+      doReturn(true).when(mockAps).isMaster(anyString());
+      doNothing().when(mockAps).addInstallCommand(
+          anyString(),
+          anyString(),
+          any(HeartBeatResponse.class),
+          anyString(),
+          Mockito.anyLong());
+      doReturn(conf).when(mockAps).getConfig();
+    } catch (SliderException e) {
+    }
+
+    expect(access.isApplicationLive()).andReturn(true).anyTimes();
+    ClusterDescription desc = new ClusterDescription();
+    desc.setOption(OptionKeys.ZOOKEEPER_QUORUM, "host1:2181");
+    desc.setInfo(OptionKeys.APPLICATION_NAME, "HBASE");
+    expect(access.getClusterStatus()).andReturn(desc).anyTimes();
+
+    AggregateConf aggConf = new AggregateConf();
+    ConfTreeOperations treeOps = aggConf.getAppConfOperations();
+    treeOps.getOrAddComponent("HBASE_MASTER").put(AgentKeys.WAIT_HEARTBEAT, "0");
+    treeOps.set(OptionKeys.APPLICATION_NAME, "HBASE");
+    expect(access.getInstanceDefinitionSnapshot()).andReturn(aggConf).anyTimes();
+    expect(access.getInternalsSnapshot()).andReturn(treeOps).anyTimes();
+    replay(access, ctx, container, sliderFileSystem, mockFs);
+
+    try {
+      mockAps.buildContainerLaunchContext(launcher,
+                                          instanceDefinition,
+                                          container,
+                                          role_hm,
+                                          sliderFileSystem,
+                                          generatedConfPath,
+                                          resourceComponent,
+                                          appComponent,
+                                          containerTmpDirPath);
+
+      Register reg = new Register();
+      reg.setResponseId(0);
+      reg.setLabel("mockcontainer_1___HBASE_MASTER");
+      RegistrationResponse resp = mockAps.handleRegistration(reg);
+      Assert.assertEquals(0, resp.getResponseId());
+      Assert.assertEquals(RegistrationStatus.OK, resp.getResponseStatus());
+
+      HeartBeat hb = new HeartBeat();
+      hb.setResponseId(1);
+      hb.setHostname("mockcontainer_1___HBASE_MASTER");
+      HeartBeatResponse hbr = mockAps.handleHeartBeat(hb);
+      Assert.assertEquals(2, hbr.getResponseId());
+      Assert.assertFalse(hbr.isTerminateAgent());
+
+      hb.setResponseId(2);
+      CommandReport cr = new CommandReport();
+      cr.setRole("HBASE_MASTER");
+      cr.setRoleCommand("INSTALL");
+      cr.setStatus("FAILED");
+      hb.setReports(Arrays.asList(cr));
+      hbr = mockAps.handleHeartBeat(hb);
+      Assert.assertEquals(3, hbr.getResponseId());
+      Assert.assertFalse(hbr.isTerminateAgent());
+
+      hb.setResponseId(3);
+      hbr = mockAps.handleHeartBeat(hb);
+      Assert.assertEquals(4, hbr.getResponseId());
+      Assert.assertFalse(hbr.isTerminateAgent());
+
+      //Third failure triggers a stop to the agent
+      hb.setResponseId(4);
+      hbr = mockAps.handleHeartBeat(hb);
+      Assert.assertEquals(5, hbr.getResponseId());
+      Assert.assertTrue(hbr.isTerminateAgent());
+      Mockito.verify(mockAps, Mockito.times(3)).addInstallCommand(anyString(),
+                                                                  anyString(),
+                                                                  any(HeartBeatResponse.class),
+                                                                  anyString(),
+                                                                  Mockito.anyLong());
+    } catch (SliderException he) {
+      log.warn(he.getMessage());
+    } catch (IOException he) {
+      log.warn(he.getMessage());
+    }
+  }
+
+  @Test
   public void testAgentStateStarted() throws IOException, SliderException {
     AggregateConf instanceDefinition = prepareConfForAgentStateTests();
     AgentProviderService mockAps = prepareProviderServiceForAgentStateTests();
@@ -1056,7 +1186,7 @@ public class TestAgentProviderService {
     FilterFileSystem mockFs = createNiceMock(FilterFileSystem.class);
     expect(sliderFileSystem.getFileSystem())
         .andReturn(mockFs).anyTimes();
-    expect(mockFs.exists(anyObject(Path.class))).andReturn(true);
+    expect(mockFs.exists(anyObject(Path.class))).andReturn(true).anyTimes();
     expect(sliderFileSystem.createAmResource(anyObject(Path.class),
                                              anyObject(LocalResourceType.class)))
         .andReturn(createNiceMock(LocalResource.class)).anyTimes();
