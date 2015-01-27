@@ -353,13 +353,21 @@ public class AgentProviderService extends AbstractProviderService implements
        agentImagePath = new Path(agentImage);
     }
 
-    // TODO: throw exception when agent tarball is not available
-
     if (fileSystem.getFileSystem().exists(agentImagePath)) {
       LocalResource agentImageRes = fileSystem.createAmResource(agentImagePath, LocalResourceType.ARCHIVE);
       launcher.addLocalResource(AgentKeys.AGENT_INSTALL_DIR, agentImageRes);
     } else {
-      log.error("Required agent image slider-agent.tar.gz is unavailable.");
+      String msg =
+          String.format("Required agent image slider-agent.tar.gz is unavailable at %s", agentImagePath.toString());
+      MapOperations compOps = instanceDefinition.
+          getAppConfOperations().getComponent(role);
+      boolean relaxVerificationForTest = compOps != null ? Boolean.valueOf(compOps.
+          getOptionBool(AgentKeys.TEST_RELAX_VERIFICATION, false)) : false;
+      log.error(msg);
+
+      if (!relaxVerificationForTest) {
+        throw new SliderException(SliderExitCodes.EXIT_DEPLOYMENT_FAILED, msg);
+      }
     }
 
     log.info("Using {} for agent.", scriptPath);
@@ -750,6 +758,13 @@ public class AgentProviderService extends AbstractProviderService implements
           && command == Command.NOP && isMarkedAutoRestart(roleName)) {
         response.setRestartEnabled(true);
       }
+
+      //If INSTALL_FAILED and no INSTALL is scheduled let the agent fail
+      if(componentStatus.getState() == State.INSTALL_FAILED && command == command.NOP) {
+        log.warn("Sending terminate signal to container that failed installation: {}", label);
+        response.setTerminateAgent(true);
+      }
+
     } catch (SliderException e) {
       log.warn("Component instance failed operation.", e);
       componentStatus.applyCommandResult(CommandResult.FAILED, command);

@@ -99,7 +99,9 @@ class TestAgentEcho extends AgentTestBase {
             ARG_COMP_OPT, role, SCRIPT_PATH, echo_py,
             ARG_COMP_OPT, role, SERVICE_NAME, "Agent",
             ARG_DEFINE, 
-            SliderXmlConfKeys.KEY_SLIDER_AM_DEPENDENCY_CHECKS_DISABLED + "=false" 
+            SliderXmlConfKeys.KEY_SLIDER_AM_DEPENDENCY_CHECKS_DISABLED + "=false",
+            ARG_COMP_OPT, role, TEST_RELAX_VERIFICATION, "true",
+
         ],
         true, true,
         true)
