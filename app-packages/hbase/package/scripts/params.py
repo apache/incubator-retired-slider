@@ -26,6 +26,7 @@ import status_params
 config = Script.get_config()
 
 hbase_root = config['configurations']['global']['app_root']
+app_name = config['clusterName']
 conf_dir = format("{hbase_root}/conf")
 daemon_script = format("{hbase_root}/bin/hbase-daemon.sh")
 
@@ -59,8 +60,12 @@ client_jaas_config_file = default('hbase_client_jaas_config_file', format("{conf
 master_jaas_config_file = default('hbase_master_jaas_config_file', format("{conf_dir}/hbase_master_jaas.conf"))
 regionserver_jaas_config_file = default('hbase_regionserver_jaas_config_file', format("{conf_dir}/hbase_regionserver_jaas.conf"))
 
-ganglia_server_host = default('/configurations/global/ganglia_server_host', '')
-ganglia_server_port = default('/configurations/global/ganglia_server_port', '8663')
+metric_collector_host = config['configurations']['global']['metric_collector_host']
+metric_collector_port = config['configurations']['global']['metric_collector_port']
+metric_collector_lib = config['configurations']['global']['metric_collector_lib']
+has_metric_collector = 1
+if not metric_collector_lib:
+  has_metric_collector = 0
 
 rest_port = config['configurations']['global']['hbase_rest_port']
 rest_infoport = config['configurations']['global']['hbase_rest_infoport']
@@ -88,7 +93,7 @@ if security_enabled:
   master_jaas_princ = config['configurations']['hbase-site']['hbase.master.kerberos.principal'].replace('_HOST',_hostname_lowercase)
   regionserver_jaas_princ = config['configurations']['hbase-site']['hbase.regionserver.kerberos.principal'].replace('_HOST',_hostname_lowercase)
 
-    
+
 master_keytab_path = config['configurations']['hbase-site']['hbase.master.keytab.file']
 regionserver_keytab_path = config['configurations']['hbase-site']['hbase.regionserver.keytab.file']
 kinit_path_local = functions.get_kinit_path([default("kinit_path_local",None), "/usr/bin", "/usr/kerberos/bin", "/usr/sbin"])
