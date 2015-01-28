@@ -132,6 +132,16 @@ public class NodeInstance {
     return active;
   }
 
+
+  /**
+   * run through each entry resetting the failure count
+   */
+  public synchronized void resetFailedRecently() {
+    for (NodeEntry entry : nodeEntries) {
+      entry.resetFailedRecently();
+    }
+  }
+  
   @Override
   public String toString() {
     return hostname;

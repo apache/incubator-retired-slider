@@ -1711,9 +1711,11 @@ public class AppState {
   public void resetFailureCounts() {
     for (RoleStatus roleStatus : getRoleStatusMap().values()) {
       int failed = roleStatus.resetFailed();
-      log.debug("Resetting failure count of {}; was {}", roleStatus.getName(),
+      log.info("Resetting failure count of {}; was {}",
+          roleStatus.getName(),
           failed);
     }
+    roleHistory.resetFailedRecently();
   }
   
   /**
