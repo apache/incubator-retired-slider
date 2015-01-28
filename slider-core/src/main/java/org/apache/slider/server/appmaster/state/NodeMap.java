@@ -102,6 +102,17 @@ public class NodeMap extends HashMap<String, NodeInstance> {
     }
     return purged;
   }
+  
+  
+  /**
+   * reset the failed recently counters
+   */
+  public void resetFailedRecently() {
+    for (Map.Entry<String, NodeInstance> entry : entrySet()) {
+      NodeInstance ni = entry.getValue();
+      ni.resetFailedRecently();
+    }
+  }
 
   /**
    * Clone point

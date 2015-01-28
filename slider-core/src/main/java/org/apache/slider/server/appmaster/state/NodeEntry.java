@@ -53,6 +53,11 @@ public class NodeEntry {
   private int startFailed;
   private int failed;
   /**
+   * Counter of "failed recently" events. These are all failures
+   * which have happened since it was last reset.
+   */
+  private int failedRecently;
+  /**
    * Number of live nodes. 
    */
   private int live;
@@ -104,7 +109,7 @@ public class NodeEntry {
     live = v;
   }
   
-  private void incLive() {
+  private synchronized void incLive() {
     ++live;
   }
 
@@ -132,6 +137,7 @@ public class NodeEntry {
   public synchronized boolean onStartFailed() {
     decStarting();
     ++startFailed;
+    ++failedRecently;
     return containerCompleted(false);
   }
   
@@ -183,6 +189,7 @@ public class NodeEntry {
       releasing = RoleHistoryUtils.decToFloor(releasing);
     } else {
       ++failed;
+      ++failedRecently;
     }
     decLive();
     return isAvailable();
@@ -199,12 +206,23 @@ public class NodeEntry {
     this.lastUsed = lastUsed;
   }
 
-  public int getStartFailed() {
+  public synchronized int getStartFailed() {
     return startFailed;
   }
 
   public synchronized int getFailed() {
     return failed;
+  }
+
+  public synchronized int getFailedRecently() {
+    return failedRecently;
+  }
+
+  /**
+   * Reset the failed recently count.
+   */
+  public void resetFailedRecently() {
+    failedRecently = 0;
   }
 
   @Override
@@ -214,10 +232,10 @@ public class NodeEntry {
     sb.append(", requested=").append(requested);
     sb.append(", starting=").append(starting);
     sb.append(", live=").append(live);
-    sb.append(", failed=").append(failed);
-    sb.append(", startFailed=").append(startFailed);
     sb.append(", releasing=").append(releasing);
     sb.append(", lastUsed=").append(lastUsed);
+    sb.append(", failedRecently=").append(failedRecently);
+    sb.append(", startFailed=").append(startFailed);
     sb.append('}');
     return sb.toString();
   }

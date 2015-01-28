@@ -310,6 +310,14 @@ public class RoleHistory {
   }
 
   /**
+   * reset the failed recently counters
+   */
+  public synchronized void resetFailedRecently() {
+    log.info("Resetting failure history");
+    nodemap.resetFailedRecently();
+  }
+
+  /**
    * Get the path used for history files
    * @return the directory used for history files
    */
@@ -480,18 +488,23 @@ public class RoleHistory {
     }
     int roleKey = role.getKey();
     NodeInstance nodeInstance = null;
-    
+    // get the list of possible targets
     List<NodeInstance> targets = getNodesForRoleId(roleKey);
-    int cnt = targets == null ? 0 : targets.size();
+    if (targets == null) {
+      // add an empty list here for ease downstream
+      targets = new ArrayList<NodeInstance>(0);
+    }
+    int cnt = targets.size();
     log.debug("There are {} node(s) to consider for {}", cnt, role.getName());
-    while (targets != null && !targets.isEmpty() && nodeInstance == null) {
+    // spin until there's a candidate
+    while (!targets.isEmpty() && nodeInstance == null) {
       NodeInstance head = targets.remove(0);
       if (head.getActiveRoleInstances(roleKey) == 0) {
         nodeInstance = head;
       }
     }
     if (nodeInstance == null) {
-      log.debug("No historical node found for {}", role.getName());
+      log.info("No historical node found for {}", role.getName());
     }
     return nodeInstance;
   }
