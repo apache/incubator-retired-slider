@@ -70,6 +70,7 @@ import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.SliderClusterProtocol;
 import org.apache.slider.api.StateValues;
 import org.apache.slider.api.proto.Messages;
+import org.apache.slider.api.types.SliderInstanceDescription;
 import org.apache.slider.common.Constants;
 import org.apache.slider.common.SliderExitCodes;
 import org.apache.slider.common.SliderKeys;
@@ -213,7 +214,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * Yarn client service
    */
   private SliderYarnClientImpl yarnClient;
-  private YarnAppListClient YarnAppListClient;
+  private YarnAppListClient yarnAppListClient;
   private AggregateConf launchedInstanceDefinition;
 
   /**
@@ -457,7 +458,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       yarnClient.start();
     }
     addService(yarnClient);
-    YarnAppListClient =
+    yarnAppListClient =
         new YarnAppListClient(yarnClient, getUsername(), getConfig());
     // create the filesystem
     sliderFileSystem = new SliderFileSystem(getConfig());    
@@ -1993,10 +1994,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @param user user: "" means all users, null means "default"
    * @return a possibly empty list of Slider AMs
    */
-  @VisibleForTesting
+
   public List<ApplicationReport> listSliderInstances(String user)
     throws YarnException, IOException {
-    return YarnAppListClient.listInstances(user);
+    return yarnAppListClient.listInstances(user);
   }
 
   /**
@@ -2023,7 +2024,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * was named but it was not found
    */
   @Override
-  @VisibleForTesting
   public int actionList(String clustername, ActionListArgs args)
       throws IOException, YarnException {
     verifyBindingsDefined();
@@ -2092,7 +2092,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         // list the details if all were requested, or the filtering contained
         // a report
         listed++;
-        String details = instanceDetailsToString(name, report, verbose);
+        String details = SliderUtils.instanceDetailsToString(name,
+            report,
+            verbose);
         print(details);
       }
     }
@@ -2101,40 +2103,27 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
   /**
-   * Convert the instance details of an application to a string
-   * @param name instance name
-   * @param report the application report
-   * @param verbose verbose output
-   * @return a string
+   * Enumerate slider instances for the current user, and the
+   * most recent app report, where available.
+   * @param listOnlyInState boolean to indicate that the instances should
+   * only include those in a YARN state
+   * <code> minAppState &lt;= currentState &lt;= maxAppState </code>
+   *
+   * @param minAppState minimum application state to include in enumeration.
+   * @param maxAppState maximum application state to include
+   * @return a map of application instance name to description
+   * @throws IOException Any IO problem
+   * @throws YarnException YARN problems
    */
-  String instanceDetailsToString(String name,
-      ApplicationReport report,
-      boolean verbose) {
-    // format strings
-    String staticf = "%-30s";
-    String reportedf = staticf + "  %10s  %-40s";
-    String livef = reportedf + " %s";
-    StringBuilder builder = new StringBuilder(200);
-    if (report == null) {
-      builder.append(String.format(staticf, name));
-    } else {
-      // there's a report to look at
-      String appId = report.getApplicationId().toString();
-      String state = report.getYarnApplicationState().toString();
-      if (report.getYarnApplicationState() == YarnApplicationState.RUNNING) {
-        // running: there's a URL
-        builder.append(String.format(livef, name, state, appId ,report.getTrackingUrl()));
-      } else {
-        builder.append(String.format(reportedf, name, state, appId));
-      }
-      if (verbose) {
-        builder.append('\n');
-        builder.append(SliderUtils.appReportToString(report, "\n  "));
-      }
-    }
-
-    builder.append('\n');
-    return builder.toString();
+  @Override
+  public Map<String, SliderInstanceDescription> enumSliderInstances(
+      boolean listOnlyInState,
+      YarnApplicationState minAppState,
+      YarnApplicationState maxAppState)
+      throws IOException, YarnException {
+    return yarnAppListClient.enumSliderInstances(listOnlyInState,
+        minAppState,
+        maxAppState);
   }
 
   /**
@@ -2233,7 +2222,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
             appstate.ordinal() < YarnApplicationState.FINISHED.ordinal();
     } else {
       // scan for instance in single --state state
-      List<ApplicationReport> userInstances = yarnClient.listInstances("");
+      List<ApplicationReport> userInstances = yarnClient.listDeployedInstances("");
       state = state.toUpperCase(Locale.ENGLISH);
       YarnApplicationState desiredState = extractYarnApplicationState(state);
       ApplicationReport foundInstance =
@@ -2300,7 +2289,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @return registry client -valid after the service is inited.
    */
   public YarnAppListClient getYarnAppListClient() {
-    return YarnAppListClient;
+    return yarnAppListClient;
   }
 
   /**
@@ -2312,7 +2301,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    */
   private ApplicationReport findInstance(String appname)
       throws YarnException, IOException {
-    return YarnAppListClient.findInstance(appname);
+    return yarnAppListClient.findInstance(appname);
   }
   
   private RunningApplication findApplication(String appname)
@@ -2331,7 +2320,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   private List<ApplicationReport> findAllLiveInstances(String appname)
     throws YarnException, IOException {
     
-    return YarnAppListClient.findAllLiveInstances(appname);
+    return yarnAppListClient.findAllLiveInstances(appname);
   }
 
   /**

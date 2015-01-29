@@ -18,8 +18,9 @@
 
 package org.apache.slider.client;
 
-import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import org.apache.commons.lang.StringUtils;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.ApplicationClientProtocol;
 import org.apache.hadoop.yarn.api.protocolrecords.KillApplicationRequest;
@@ -32,7 +33,9 @@ import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
 import org.apache.slider.common.SliderKeys;
+import org.apache.slider.common.tools.CoreFileSystem;
 import org.apache.slider.common.tools.Duration;
+import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.slf4j.Logger;
@@ -43,6 +46,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -55,6 +59,13 @@ public class SliderYarnClientImpl extends YarnClientImpl {
     log = LoggerFactory.getLogger(SliderYarnClientImpl.class);
 
   /**
+   * Keyword to use in the {@link #emergencyForceKill(String)}
+   * operation to force kill <i>all</i> application instances belonging
+   * to a specific user
+   */
+  public static final String KILL_ALL = "all";
+
+  /**
    * Get the RM Client RPC interface
    * @return an RPC interface valid after initialization and authentication
    */
@@ -64,12 +75,28 @@ public class SliderYarnClientImpl extends YarnClientImpl {
 
 
   /**
-   * List Slider instances belonging to a specific user
+   * List Slider <i>running</i>instances belonging to a specific user.
+   * @deprecated use {@link #listDeployedInstances(String)}
    * @param user user: "" means all users
    * @return a possibly empty list of Slider AMs
    */
   public List<ApplicationReport> listInstances(String user)
     throws YarnException, IOException {
+    return listDeployedInstances(user);
+  }
+
+  /**
+   * List Slider <i>deployed</i>instances belonging to a specific user.
+   * <p>
+   *   Deployed means: known about in the YARN cluster; it will include
+   *   any that are in the failed/finished state, as well as those queued
+   *   for starting.
+   * @param user user: "" means all users
+   * @return a possibly empty list of Slider AMs
+   */
+  public List<ApplicationReport> listDeployedInstances(String user)
+    throws YarnException, IOException {
+    Preconditions.checkArgument(user != null, "Null User");
     Set<String> types = new HashSet<String>(1);
     types.add(SliderKeys.APP_TYPE);
     List<ApplicationReport> allApps = getApplications(types);
@@ -84,18 +111,19 @@ public class SliderYarnClientImpl extends YarnClientImpl {
 
 
   /**
-   * find all instances of a specific app -if there is >1 in the cluster,
+   * find all instances of a specific app -if there is more than one in the
+   * YARN cluster,
    * this returns them all
-   * @param user user
+   * @param user user; use "" for all users
    * @param appname application name
    * @return the list of all matching application instances
    */
-  @VisibleForTesting
   public List<ApplicationReport> findAllInstances(String user,
-                                                  String appname) throws
-                                                                  IOException,
-                                                                  YarnException {
-    List<ApplicationReport> instances = listInstances(user);
+                                                  String appname)
+      throws IOException, YarnException {
+    Preconditions.checkArgument(appname != null, "Null application name");
+
+    List<ApplicationReport> instances = listDeployedInstances(user);
     List<ApplicationReport> results =
       new ArrayList<ApplicationReport>(instances.size());
     for (ApplicationReport report : instances) {
@@ -113,6 +141,8 @@ public class SliderYarnClientImpl extends YarnClientImpl {
    * @return true if the application is considered live
    */
   public boolean isApplicationLive(ApplicationReport app) {
+    Preconditions.checkArgument(app != null, "Null app report");
+
     return app.getYarnApplicationState().ordinal() <=
            YarnApplicationState.RUNNING.ordinal();
   }
@@ -120,15 +150,16 @@ public class SliderYarnClientImpl extends YarnClientImpl {
 
   /**
    * Kill a running application
-   * @param applicationId
+   * @param applicationId app Id
+   * @param reason reason: reason for log
    * @return the response
    * @throws YarnException YARN problems
    * @throws IOException IO problems
    */
   public  KillApplicationResponse killRunningApplication(ApplicationId applicationId,
-                                                         String reason) throws
-                                                                        YarnException,
-                                                                        IOException {
+                                                         String reason)
+      throws YarnException, IOException {
+    Preconditions.checkArgument(applicationId != null, "Null application Id");
     log.info("Killing application {} - {}", applicationId.getClusterTimestamp(),
              reason);
     KillApplicationRequest request =
@@ -140,19 +171,23 @@ public class SliderYarnClientImpl extends YarnClientImpl {
   private String getUsername() throws IOException {
     return UserGroupInformation.getCurrentUser().getShortUserName();
   }
+  
   /**
    * Force kill a yarn application by ID. No niceities here
+   * @param applicationId app Id. "all" means "kill all instances of the current user
+   * 
    */
-  public void emergencyForceKill(String applicationId) throws
-                                                            YarnException,
-                                                            IOException {
-    
+  public void emergencyForceKill(String applicationId)
+      throws YarnException, IOException {
 
-    if ("all".equals(applicationId)) {
+    Preconditions.checkArgument(StringUtils.isNotEmpty(applicationId),
+        "Null/empty application Id");
+
+    if (KILL_ALL.equals(applicationId)) {
       // user wants all instances killed
       String user = getUsername();
       log.info("Killing all applications belonging to {}", user);
-      Collection<ApplicationReport> instances = listInstances(user);
+      Collection<ApplicationReport> instances = listDeployedInstances(user);
       for (ApplicationReport instance : instances) {
         if (isApplicationLive(instance)) {
           ApplicationId appId = instance.getApplicationId();
@@ -241,7 +276,9 @@ public class SliderYarnClientImpl extends YarnClientImpl {
                                                       String appname) throws
                                                                       YarnException,
                                                                       IOException {
-    List<ApplicationReport> instances = listInstances(user);
+    Preconditions.checkArgument(StringUtils.isNotEmpty(appname),
+        "Null/empty application name");
+    List<ApplicationReport> instances = listDeployedInstances(user);
     List<ApplicationReport> results =
       new ArrayList<ApplicationReport>(instances.size());
     for (ApplicationReport app : instances) {
@@ -262,6 +299,9 @@ public class SliderYarnClientImpl extends YarnClientImpl {
    */
   public ApplicationReport findClusterInInstanceList(List<ApplicationReport> instances,
                                                      String appname) {
+    Preconditions.checkArgument(instances != null, "Null instances list");
+    Preconditions.checkArgument(StringUtils.isNotEmpty(appname),
+        "Null/empty application name");
     // sort by most recent
     SliderUtils.sortApplicationsByMostRecent(instances);
     ApplicationReport found = null;
@@ -287,6 +327,10 @@ public class SliderYarnClientImpl extends YarnClientImpl {
   public ApplicationReport findAppInInstanceList(List<ApplicationReport> instances,
       String appname,
       YarnApplicationState desiredState) {
+    Preconditions.checkArgument(instances != null, "Null instances list");
+    Preconditions.checkArgument(StringUtils.isNotEmpty(appname),
+        "Null/empty application name");
+    Preconditions.checkArgument(desiredState != null, "Null desiredState");
     ApplicationReport found = null;
     ApplicationReport foundAndLive = null;
     log.debug("Searching {} records for instance name {} in state '{}'",
@@ -307,6 +351,4 @@ public class SliderYarnClientImpl extends YarnClientImpl {
     log.debug("No match");
     return null;
   }
-
-
 }

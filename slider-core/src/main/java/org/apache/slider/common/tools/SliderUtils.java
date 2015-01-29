@@ -633,6 +633,43 @@ public final class SliderUtils {
     return builder.toString();
   }
 
+  /**
+   * Convert the instance details of an application to a string
+   * @param name instance name
+   * @param report the application report
+   * @param verbose verbose output
+   * @return a string
+   */
+  public static String instanceDetailsToString(String name,
+      ApplicationReport report,
+      boolean verbose) {
+    // format strings
+    String staticf = "%-30s";
+    String reportedf = staticf + "  %10s  %-40s";
+    String livef = reportedf + " %s";
+    StringBuilder builder = new StringBuilder(200);
+    if (report == null) {
+      builder.append(String.format(staticf, name));
+    } else {
+      // there's a report to look at
+      String appId = report.getApplicationId().toString();
+      String state = report.getYarnApplicationState().toString();
+      if (report.getYarnApplicationState() == YarnApplicationState.RUNNING) {
+        // running: there's a URL
+        builder.append(
+            String.format(livef, name, state, appId, report.getTrackingUrl()));
+      } else {
+        builder.append(String.format(reportedf, name, state, appId));
+      }
+      if (verbose) {
+        builder.append('\n');
+        builder.append(SliderUtils.appReportToString(report, "\n  "));
+      }
+    }
+
+    builder.append('\n');
+    return builder.toString();
+  }
 
   /**
    * Sorts the given list of application reports, most recently started 

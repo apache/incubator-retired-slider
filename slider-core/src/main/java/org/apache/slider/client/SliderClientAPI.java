@@ -23,7 +23,9 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.registry.client.api.RegistryOperations;
 import org.apache.hadoop.service.Service;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
+import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.exceptions.YarnException;
+import org.apache.slider.api.types.SliderInstanceDescription;
 import org.apache.slider.common.params.AbstractClusterBuildingActionArgs;
 import org.apache.slider.common.params.ActionAMSuicideArgs;
 import org.apache.slider.common.params.ActionDiagnosticArgs;
@@ -46,6 +48,7 @@ import org.apache.slider.providers.AbstractClientProvider;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Interface of those method calls in the slider API that are intended
@@ -168,6 +171,25 @@ public interface SliderClientAPI extends Service {
    * @return exit code of 0 if a list was created
    */
   int actionList(String clustername, ActionListArgs args) throws IOException, YarnException;
+
+  /**
+   * Enumerate slider instances for the current user, and the
+   * most recent app report, where available.
+   * @param listOnlyInState boolean to indicate that the instances should
+   * only include those in a YARN state
+   * <code> minAppState &lt;= currentState &lt;= maxAppState </code>
+   *
+   * @param minAppState minimum application state to include in enumeration.
+   * @param maxAppState maximum application state to include
+   * @return a map of application instance name to description
+   * @throws IOException Any IO problem
+   * @throws YarnException YARN problems
+   */
+  Map<String, SliderInstanceDescription> enumSliderInstances(
+      boolean listOnlyInState,
+      YarnApplicationState minAppState,
+      YarnApplicationState maxAppState)
+      throws IOException, YarnException;
 
   /**
    * Implement the islive action: probe for a cluster of the given name existing
