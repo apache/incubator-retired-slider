@@ -20,12 +20,21 @@ package org.apache.slider.core.registry;
 
 import com.google.common.base.Preconditions;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
+import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.slider.client.SliderYarnClientImpl;
+import org.apache.slider.api.types.SliderInstanceDescription;
+import org.apache.slider.common.tools.CoreFileSystem;
+import org.apache.slider.common.tools.SliderUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Client code for interacting with a list of service instances.
@@ -33,9 +42,11 @@ import java.util.List;
  */
 public class YarnAppListClient {
 
-  final SliderYarnClientImpl yarnClient;
-  final String username;
-  final Configuration conf;
+  private final SliderYarnClientImpl yarnClient;
+  private final String username;
+  private final Configuration conf;
+  private static final Logger log =
+      LoggerFactory.getLogger(YarnAppListClient.class);
 
   public YarnAppListClient(SliderYarnClientImpl yarnClient,
       String username,
@@ -97,8 +108,82 @@ public class YarnAppListClient {
   public List<ApplicationReport> listInstances(String user)
       throws YarnException, IOException {
     String listUser = user == null ? username : user;
-    return yarnClient.listInstances(listUser);
+    return yarnClient.listDeployedInstances(listUser);
   }
 
+  /**
+   * Enumerate slider instances for the current user, and the
+   * most recent app report, where available.
+   * @param listOnlyInState boolean to indicate that the instances should
+   * only include those in a YARN state
+   * <code> minAppState &lt;= currentState &lt;= maxAppState </code>
+   * 
+   * @param minAppState minimum application state to include in enumeration.
+   * @param maxAppState maximum application state to include
+   * @return a map of application instance name to description
+   * @throws IOException Any IO problem
+   * @throws YarnException YARN problems
+   */
+  public Map<String, SliderInstanceDescription> enumSliderInstances(
+      boolean listOnlyInState,
+      YarnApplicationState minAppState,
+      YarnApplicationState maxAppState)
+      throws IOException, YarnException {
+
+    CoreFileSystem sliderFileSystem = new CoreFileSystem(conf);
+    Preconditions.checkArgument(!listOnlyInState || minAppState != null,
+        "null minAppState when listOnlyInState set");
+    Preconditions.checkArgument(!listOnlyInState || maxAppState != null,
+        "null maxAppState when listOnlyInState set");
+    if (!listOnlyInState) {
+      // if there's not filtering, ask for the entire range of states
+      minAppState = YarnApplicationState.NEW;
+      maxAppState = YarnApplicationState.KILLED;
+    }
+    // get the complete list of persistent instances
+    Map<String, Path> persistentInstances =
+        sliderFileSystem.listPersistentInstances();
+    Map<String, SliderInstanceDescription> descriptions =
+        new HashMap<String, SliderInstanceDescription>(persistentInstances.size());
+
+    if (persistentInstances.isEmpty()) {
+      // an empty listing is a success if no cluster was named
+      log.debug("No application instances found");
+      return descriptions;
+    }
+
+    // enum those the RM knows about
+    List<ApplicationReport> rmInstances = listInstances();
+    SliderUtils.sortApplicationsByMostRecent(rmInstances);
+    Map<String, ApplicationReport> reportMap =
+        SliderUtils.buildApplicationReportMap(rmInstances, minAppState,
+            maxAppState);
+    log.debug("Persisted {} deployed {} filtered[{}-{}] & de-duped to {}",
+        persistentInstances.size(),
+        rmInstances.size(),
+        minAppState, maxAppState,
+        reportMap.size());
+
+    // at this point there is a list of all persistent instances, and
+    // a (possibly filtered) list of application reports
+
+    for (Map.Entry<String, Path> entry : persistentInstances.entrySet()) {
+      // loop through the persistent values
+      String name = entry.getKey();
+
+      // look up any report from the (possibly filtered) report set
+      ApplicationReport report = reportMap.get(name);
+      if (!listOnlyInState || report != null) {
+        // if the enum wants to filter in state, only add it if there is
+        // a report in that range. Otherwise: include all values
+        SliderInstanceDescription sid = new SliderInstanceDescription(
+            name, entry.getValue(), report);
+        descriptions.put(name, sid);
+      }
+    }
+
+    return descriptions;
+
+  }
 
 }

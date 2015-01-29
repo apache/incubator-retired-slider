@@ -73,7 +73,7 @@ public class YarnApplicationProbe extends Probe {
     try {
 
       List<ApplicationReport> instances =
-        yarnClient.listInstances(username);
+        yarnClient.listDeployedInstances(username);
       ApplicationReport instance =
         yarnClient.findClusterInInstanceList(instances, clustername);
       if (null == instance) {
