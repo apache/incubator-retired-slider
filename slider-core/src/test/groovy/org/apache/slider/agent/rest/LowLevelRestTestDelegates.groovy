@@ -18,18 +18,21 @@
 
 package org.apache.slider.agent.rest
 
-import com.sun.jersey.api.client.Client
-import com.sun.jersey.api.client.WebResource
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.yarn.webapp.NotFoundException
 import org.apache.slider.api.StateValues
 import org.apache.slider.api.types.ComponentInformation
 import org.apache.slider.api.types.ContainerInformation
-import org.apache.slider.client.rest.SliderApplicationAPI
+import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.core.conf.ConfTreeOperations
+import org.apache.slider.core.restclient.HttpOperationResponse
+import org.apache.slider.core.restclient.HttpVerb
+import org.apache.slider.core.restclient.UrlConnectionOperations
 import org.apache.slider.server.appmaster.web.rest.application.ApplicationResource
-import org.apache.slider.test.SliderTestUtils
+import org.apache.slider.api.types.PingResource
+import org.apache.slider.test.Outcome
 
 import javax.ws.rs.core.MediaType
 
@@ -39,51 +42,53 @@ import static org.apache.slider.common.SliderKeys.COMPONENT_AM
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.*
 
 /**
- * This class contains parts of tests that can be run
- * against a deployed AM: local or remote.
- * It uses Jersey ... and must be passed a client that is either secure
- * or not
- * 
+ * Low-level operations
  */
 @CompileStatic
 @Slf4j
-class SliderRestClientTestDelegates extends SliderTestUtils {
-  public static final String TEST_GLOBAL_OPTION = "test.global.option"
-  public static final String TEST_GLOBAL_OPTION_PRESENT = "present"
+class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
 
-  final String appmaster;
-  final String application;
-  final Client jersey;
-  final SliderApplicationAPI appAPI;
+  private final String appmaster;
+  private final String application;
+  // flag to indicate complex verbs are enabled
 
-
-  SliderRestClientTestDelegates(String appmaster, Client jersey) {
-    this.jersey = jersey
+  LowLevelRestTestDelegates(String appmaster, boolean enableComplexVerbs = true) {
+    super(enableComplexVerbs)
     this.appmaster = appmaster
     application = appendToURL(appmaster, SLIDER_PATH_APPLICATION)
-    WebResource amResource = jersey.resource(appmaster)
-    amResource.type(MediaType.APPLICATION_JSON)
-    appAPI = new SliderApplicationAPI(jersey, amResource)
   }
 
 
-  public void testGetDesiredModel() throws Throwable {
-      appAPI.getDesiredModel()  
-      appAPI.getDesiredAppconf()  
-      appAPI.getDesiredYarnResources()  
+  public void testCodahaleOperations() throws Throwable {
+    describe "Codahale operations"
+    getWebPage(appmaster)
+    getWebPage(appmaster, SYSTEM_THREADS)
+    getWebPage(appmaster, SYSTEM_HEALTHCHECK)
+    getWebPage(appmaster, SYSTEM_PING)
+    getWebPage(appmaster, SYSTEM_METRICS_JSON)
+  }
+  
+  public void logCodahaleMetrics() {
+    // query Coda Hale metrics
+    log.info getWebPage(appmaster, SYSTEM_HEALTHCHECK)
+    log.info getWebPage(appmaster, SYSTEM_METRICS)
   }
 
-  public void testGetResolvedModel() throws Throwable {
-      appAPI.getResolvedModel()  
-      appAPI.getResolvedAppconf()  
-      appAPI.getResolvedYarnResources()  
+
+  public void testMimeTypes() throws Throwable {
+    describe "Mime Types"
+    HttpOperationResponse response= executeGet(
+        appendToURL(appmaster,
+        SLIDER_PATH_APPLICATION, LIVE_RESOURCES))
+    response.headers.each { key, val -> log.info("$key $val")}
+    log.info "Content type: ${response.contentType}"
+    assert response.contentType.contains(MediaType.APPLICATION_JSON_TYPE.toString())
   }
 
   
   public void testLiveResources() throws Throwable {
     describe "Live Resources"
-
-    ConfTreeOperations tree = appAPI.getLiveYarnResources()
+    ConfTreeOperations tree = fetchConfigTree(appmaster, LIVE_RESOURCES)
 
     log.info tree.toString()
     def liveAM = tree.getComponent(COMPONENT_AM)
@@ -101,7 +106,8 @@ class SliderRestClientTestDelegates extends SliderTestUtils {
   public void testLiveContainers() throws Throwable {
     describe "Application REST ${LIVE_CONTAINERS}"
 
-    Map<String, ContainerInformation> containers = appAPI.enumContainers()
+    Map<String, ContainerInformation> containers =
+        fetchType(HashMap, appmaster, LIVE_CONTAINERS)
     assert containers.size() == 1
     log.info "${containers}"
     ContainerInformation amContainerInfo =
@@ -120,15 +126,17 @@ class SliderRestClientTestDelegates extends SliderTestUtils {
 
     describe "containers"
 
-    ContainerInformation amContainerInfo2 =
-        appAPI.getContainer(amContainerId)
-    assert amContainerInfo2.containerId == amContainerId
+    ContainerInformation retrievedContainerInfo =
+        fetchType(ContainerInformation, appmaster,
+            LIVE_CONTAINERS + "/${amContainerId}")
+    assert retrievedContainerInfo.containerId == amContainerId
 
     // fetch missing
     try {
-      def result = appAPI.getContainer("unknown")
+      def result = fetchType(ContainerInformation, appmaster,
+          LIVE_CONTAINERS + "/unknown")
       fail("expected an error, got $result")
-    } catch (FileNotFoundException e) {
+    } catch (NotFoundException e) {
       // expected
     }
 
@@ -136,8 +144,7 @@ class SliderRestClientTestDelegates extends SliderTestUtils {
     describe "components"
 
     Map<String, ComponentInformation> components =
-        appAPI.enumComponents()
-
+        fetchType(HashMap, appmaster, LIVE_COMPONENTS)
     // two components
     assert components.size() >= 1
     log.info "${components}"
@@ -145,14 +152,16 @@ class SliderRestClientTestDelegates extends SliderTestUtils {
     ComponentInformation amComponentInfo =
         (ComponentInformation) components[COMPONENT_AM]
 
-    ComponentInformation amFullInfo = appAPI.getComponent(COMPONENT_AM) 
+    ComponentInformation amFullInfo = fetchType(
+        ComponentInformation,
+        appmaster,
+        LIVE_COMPONENTS + "/${COMPONENT_AM}")
 
     assert amFullInfo.containers.size() == 1
     assert amFullInfo.containers[0] == amContainerId
 
   }
 
- 
   /**
    * Test the rest model. For this to work the cluster has to be configured
    * with the global option
@@ -165,14 +174,15 @@ class SliderRestClientTestDelegates extends SliderTestUtils {
         MODEL,
         ApplicationResource.MODEL_ENTRIES)
 
-    def unresolvedConf = appAPI.getDesiredModel() 
+    def unresolvedConf = fetchType(AggregateConf, appmaster, MODEL_DESIRED)
 //    log.info "Unresolved \n$unresolvedConf"
     def unresolvedAppConf = unresolvedConf.appConfOperations
 
     def sam = "slider-appmaster"
     assert unresolvedAppConf.getComponentOpt(sam,
         TEST_GLOBAL_OPTION, "") == ""
-    def resolvedConf = appAPI.getResolvedModel() 
+    def resolvedConf = fetchType(AggregateConf, appmaster, MODEL_RESOLVED)
+//    log.info "Resolved \n$resolvedConf"
     assert resolvedConf.appConfOperations.getComponentOpt(
         sam, TEST_GLOBAL_OPTION, "") == TEST_GLOBAL_OPTION_PRESENT
 
@@ -182,27 +192,70 @@ class SliderRestClientTestDelegates extends SliderTestUtils {
     [TEST_GLOBAL_OPTION] == null
 
 
-    
-    def resolvedAppconf = appAPI.getResolvedAppconf() 
-    assert resolvedAppconf.
-               components[sam][TEST_GLOBAL_OPTION] == TEST_GLOBAL_OPTION_PRESENT
+    def resolved = fetchTypeList(ConfTree, appmaster,
+        [MODEL_RESOLVED_APPCONF, MODEL_RESOLVED_RESOURCES])
+    assert resolved[MODEL_RESOLVED_APPCONF].components[sam]
+    [TEST_GLOBAL_OPTION] ==
+    TEST_GLOBAL_OPTION_PRESENT
   }
 
+  /**
+   * Test the various ping operations
+   */
   public void testPing() {
     // GET
-    describe "pinging"
-    
-    appAPI.ping("hello")
+    String ping = appendToURL(appmaster, SLIDER_PATH_APPLICATION, ACTION_PING)
+    describe "ping to AM URL $appmaster, ping URL $ping"
+    def pinged = fetchType(PingResource, appmaster, ACTION_PING + "?body=hello")
+    log.info "Ping GET: $pinged"
+
+    URL pingUrl = new URL(ping)
+    def message = "hello"
+
+    // HEAD
+    pingAction(HttpVerb.HEAD, pingUrl, message)
+
+    // Other verbs
+    pingAction(HttpVerb.POST, pingUrl, message)
+    pingAction(HttpVerb.PUT, pingUrl, message)
+    pingAction(HttpVerb.DELETE, pingUrl, message)
+
   }
 
+
+  private HttpOperationResponse pingAction(
+      HttpVerb verb,
+      URL pingUrl,
+      String payload) {
+    return pingAction(connectionOperations, verb, pingUrl, payload)
+  }
+
+  private HttpOperationResponse pingAction(
+      UrlConnectionOperations ops, HttpVerb verb, URL pingUrl, String payload) {
+    def pinged
+    def outcome = ops.execHttpOperation(
+        verb,
+        pingUrl,
+        payload.bytes,
+        MediaType.TEXT_PLAIN)
+    byte[] bytes = outcome.data
+    if (verb.hasResponseBody()) {
+      assert bytes.length > 0, "0 bytes from ping $verb.verb"
+      pinged = deser(PingResource, bytes)
+      log.info "Ping $verb.verb: $pinged"
+      assert verb.verb == pinged.verb
+    } else {
+      assert bytes.length ==
+             0, "${bytes.length} bytes of data from ping $verb.verb"
+    }
+    return outcome
+  }
 
   /**
    * Test the stop command.
    * Important: once executed, the AM is no longer there.
    * This must be the last test in the sequence.
    */
-/*
-
   public void testStop() {
     String target = appendToURL(appmaster, SLIDER_PATH_APPLICATION, ACTION_STOP)
     describe "Stop URL $target"
@@ -226,24 +279,45 @@ class SliderRestClientTestDelegates extends SliderTestUtils {
         [url: ping],
         true,
         "AM failed to shut down") {
-      def pinged = jFetchType(ACTION_PING + "?body=hello",
-          PingResource
-      )
+      def pinged = fetchType(
+          PingResource,
+          appmaster,
+          ACTION_PING + "?body=hello")
       fail("AM didn't shut down; Ping GET= $pinged")
     }
     
   }
-*/
 
+  /**
+   * Probe that spins until the url specified by "url") refuses
+   * connections
+   * @param args argument map
+   * @return the outcome
+   */
+  Outcome probePingFailing(Map args) {
+    String ping = args["url"]
+    URL pingUrl = new URL(ping)
+    try {
+      def response = pingAction(HttpVerb.HEAD, pingUrl, "should not be running")
+      return Outcome.Retry
+    } catch (IOException e) {
+      // expected
+      return Outcome.Success
+    }
+  }
+
+
+  @Override
   public void testSuiteGetOperations() {
 
-    testGetDesiredModel()
-    testGetResolvedModel()
+    testCodahaleOperations()
+    testMimeTypes()
     testLiveResources()
     testLiveContainers();
     testRESTModel()
   }
 
+  @Override
   public void testSuiteComplexVerbs() {
     testPing();
   }

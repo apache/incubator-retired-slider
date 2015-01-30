@@ -36,7 +36,6 @@ import org.apache.slider.core.conf.ConfTreeOperations
 import org.apache.slider.core.restclient.HttpVerb
 import org.apache.slider.server.appmaster.web.rest.application.ApplicationResource
 import org.apache.slider.api.types.PingResource
-import org.apache.slider.test.SliderTestUtils
 
 import javax.ws.rs.core.MediaType
 
@@ -48,15 +47,15 @@ import static org.apache.slider.server.appmaster.web.rest.RestPaths.*
 /**
  * This class contains parts of tests that can be run
  * against a deployed AM: local or remote.
- * It uses Jersey ... and must be passed a client that is either secure
- * or not
+ * It uses Jersey WebResource... and must be passed a client
+ * that is either secure or not
+ * {@link WebResource}
+ * 
  * 
  */
 @CompileStatic
 @Slf4j
-class JerseyTestDelegates extends SliderTestUtils {
-  public static final String TEST_GLOBAL_OPTION = "test.global.option"
-  public static final String TEST_GLOBAL_OPTION_PRESENT = "present"
+class JerseyTestDelegates extends AbstractRestTestDelegate {
 
   final String appmaster;
   final String application;
@@ -65,7 +64,9 @@ class JerseyTestDelegates extends SliderTestUtils {
   final WebResource appResource
   
 
-  JerseyTestDelegates(String appmaster, Client jersey) {
+  JerseyTestDelegates(String appmaster, Client jersey,
+      boolean enableComplexVerbs = true) {
+    super(enableComplexVerbs)
     this.jersey = jersey
     this.appmaster = appmaster
     application = appendToURL(appmaster, SLIDER_PATH_APPLICATION)
@@ -473,4 +474,5 @@ class JerseyTestDelegates extends SliderTestUtils {
   public void testSuiteComplexVerbs() {
     testPing();
   }
+
 }

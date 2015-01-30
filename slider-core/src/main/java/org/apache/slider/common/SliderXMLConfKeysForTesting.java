@@ -73,4 +73,5 @@ public interface SliderXMLConfKeysForTesting {
    * Local path to AM keytab: {@value}
    */
   String KEY_TEST_AM_KEYTAB = "slider.test.am.keytab.local";
+
 }

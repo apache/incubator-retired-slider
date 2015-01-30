@@ -145,5 +145,19 @@ public interface SliderXmlConfKeys {
   /**
    * Flag to enable the insecure AM filter: {@value}
    */
-  String X_DEV_INSECURE_WS = "slider.dev.ws.insecure";
+  String X_DEV_INSECURE_WS = "slider.feature.ws.insecure";
+
+  /**
+   * Flag to indicate the insecure AM filter is enabled by default: {@value}.
+   */
+  boolean X_DEV_INSECURE_DEFAULT = true;
+
+
+  /**
+   * Flag to indicate the insecure AM filter is required: {@value}.
+   * When Slider switches to being Hadoop 2.7+ only, this flag
+   * can be set to false
+   */
+  boolean X_DEV_INSECURE_REQUIRED = true;
+
 }
