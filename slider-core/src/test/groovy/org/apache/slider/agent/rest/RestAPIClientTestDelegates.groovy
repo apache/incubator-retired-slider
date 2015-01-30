@@ -240,9 +240,18 @@ class RestAPIClientTestDelegates extends AbstractRestTestDelegate {
     testLiveResources()
     testLiveContainers();
     testRESTModel()
+    testAppLiveness()
   }
 
   public void testSuiteComplexVerbs() {
     testPing();
+  }
+  
+  public void testAppLiveness() {
+    def liveness = appAPI.applicationLiveness
+    describe "Liveness:\n$liveness"
+    
+    assert liveness.allRequestsSatisfied
+    assert !liveness.requested
   }
 }

@@ -24,6 +24,7 @@ import com.sun.jersey.api.client.GenericType;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.representation.Form;
 import org.apache.commons.lang.StringUtils;
+import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.ContainerInformation;
 import org.apache.slider.core.conf.AggregateConf;
@@ -271,4 +272,13 @@ public class SliderApplicationAPI extends BaseRestClient {
     return pingOut.post(PingResource.class, f);
   }
 
+  /**
+   * Get the application liveness
+   * @return current liveness information
+   * @throws IOException
+   */
+  public ApplicationLivenessInformation getApplicationLiveness() throws IOException {
+    return getApplicationResource(LIVE_LIVENESS,
+        ApplicationLivenessInformation.class);
+  }
 }

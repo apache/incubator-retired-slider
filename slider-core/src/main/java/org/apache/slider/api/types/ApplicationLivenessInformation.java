@@ -32,7 +32,16 @@ import org.codehaus.jackson.map.annotate.JsonSerialize;
 public class ApplicationLivenessInformation {
   public boolean allRequestsSatisfied;
   public int requested;
-  
+
+  @Override
+  public String toString() {
+    final StringBuilder sb =
+        new StringBuilder("ApplicationLivenessInformation{");
+    sb.append("allRequestsSatisfied=").append(allRequestsSatisfied);
+    sb.append(", requested=").append(requested);
+    sb.append('}');
+    return sb.toString();
+  }
 }
 
 
