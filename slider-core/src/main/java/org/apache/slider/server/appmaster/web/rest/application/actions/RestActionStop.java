@@ -51,9 +51,10 @@ public class RestActionStop {
             "Stopping action %s received at %tc",
             verb, time);
     response.text = text;
+    log.info(text);
     ActionStopSlider stopSlider =
         new ActionStopSlider(text,
-            500,
+            1000,
             TimeUnit.MILLISECONDS,
             LauncherExitCodes.EXIT_SUCCESS,
             FinalApplicationStatus.SUCCEEDED,

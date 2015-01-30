@@ -124,14 +124,14 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
     def ugiClient = createUGIJerseyClient();
     
     describe "Proxy SliderRestClient Tests"
-    RestAPIClientTestDelegates proxySliderRestClient =
+    RestAPIClientTestDelegates proxySliderRestAPI =
         new RestAPIClientTestDelegates(proxyAM, ugiClient, proxyComplexVerbs)
-    proxySliderRestClient.testSuiteGetOperations()
+    proxySliderRestAPI.testSuiteGetOperations()
 
     describe "Direct SliderRestClient Tests"
-    RestAPIClientTestDelegates directSliderRestClient =
+    RestAPIClientTestDelegates directSliderRestAPI =
         new RestAPIClientTestDelegates(directAM, ugiClient, directComplexVerbs)
-    directSliderRestClient.testSuiteAll()
+    directSliderRestAPI.testSuiteAll()
     
     
     describe "Proxy Jersey Tests"
@@ -169,26 +169,14 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
     sliderApplicationApi.resolvedModel
     sliderApplicationApi.ping("registry located")
 
-/*    DISABLED: this client does not pass the tests.
-    
-    // http client direct
-    describe "Proxied Jersey Apache HttpClient"
-    JerseyTestDelegates proxiedHttpClientJersey =
-        new JerseyTestDelegates(proxyAM, createJerseyClientHttpClient())
-    proxiedHttpClientJersey.testSuiteGetOperations()
-    
-    describe "Direct Jersey Apache HttpClient"
-    JerseyTestDelegates directHttpClientJersey =
-        new JerseyTestDelegates(directAM, createJerseyClientHttpClient())
-    directHttpClientJersey.testSuiteGetOperations()
-    directHttpClientJersey.testSuiteComplexVerbs()
-    */
-    createJerseyClientHttpClient()
     // log the metrics to show what's up
     direct.logCodahaleMetrics();
 
-    // this MUST be the final test
-    direct.testStop();
+    // finally, stop the AM
+    if (directComplexVerbs) {
+      describe "Stopping AM via REST API"
+      directSliderRestAPI.testStop();
+    }
   }
 
   /**

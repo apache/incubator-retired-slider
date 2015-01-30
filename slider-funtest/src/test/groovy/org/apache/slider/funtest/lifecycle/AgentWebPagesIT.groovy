@@ -138,14 +138,14 @@ public class AgentWebPagesIT extends AgentCommandTestBase
     directJerseyTests.testSuiteAll()
 
     describe "Proxy SliderRestClient Tests"
-    RestAPIClientTestDelegates proxySliderRestClient =
+    RestAPIClientTestDelegates proxySliderRestAPI =
         new RestAPIClientTestDelegates(proxyAM, ugiClient, proxyComplexVerbs)
-    proxySliderRestClient.testSuiteAll()
+    proxySliderRestAPI.testSuiteAll()
 
     describe "Direct SliderRestClient Tests"
-    RestAPIClientTestDelegates directSliderRestClient =
+    RestAPIClientTestDelegates directSliderRestAPI =
         new RestAPIClientTestDelegates(directAM, ugiClient, directComplexVerbs)
-    directSliderRestClient.testSuiteAll()
+    directSliderRestAPI.testSuiteAll()
 
     if (UserGroupInformation.securityEnabled) {
       describe "Insecure Proxy Tests against a secure cluster"
@@ -176,10 +176,15 @@ public class AgentWebPagesIT extends AgentCommandTestBase
     def sliderApplicationApi = restClientFactory.createSliderApplicationApi();
     sliderApplicationApi.desiredModel
     sliderApplicationApi.resolvedModel
-    sliderApplicationApi.ping("registry located")
+    if (proxyComplexVerbs) {
+      sliderApplicationApi.ping("registry located")
+    }
     
     // finally, stop the AM
-    direct.testStop();
+    if (directComplexVerbs) {
+      describe "Stopping AM via REST API"
+      directSliderRestAPI.testStop();
+    }
   }
 
 }

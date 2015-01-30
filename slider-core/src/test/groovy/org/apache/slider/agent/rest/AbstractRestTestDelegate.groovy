@@ -26,6 +26,8 @@ import org.apache.slider.test.SliderTestUtils
 abstract class AbstractRestTestDelegate extends SliderTestUtils {
   public static final String TEST_GLOBAL_OPTION = "test.global.option"
   public static final String TEST_GLOBAL_OPTION_PRESENT = "present"
+  public static final int STOP_WAIT_TIME = 30000
+  public static final int STOP_PROBE_INTERVAL = 500
   public final boolean enableComplexVerbs
 
   AbstractRestTestDelegate(boolean enableComplexVerbs) {

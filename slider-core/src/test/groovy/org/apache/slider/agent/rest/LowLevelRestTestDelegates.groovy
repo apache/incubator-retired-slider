@@ -267,12 +267,9 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
         MediaType.TEXT_PLAIN)
     log.info "Stopped: $outcome"
 
-    // await the shutdown
-    sleep(1000)
     
     // now a ping is expected to fail
     String ping = appendToURL(appmaster, SLIDER_PATH_APPLICATION, ACTION_PING)
-    URL pingUrl = new URL(ping)
 
     repeatUntilSuccess("probe for missing registry entry",
         this.&probePingFailing, 30000, 500,

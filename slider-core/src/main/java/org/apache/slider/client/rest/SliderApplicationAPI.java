@@ -60,15 +60,18 @@ public class SliderApplicationAPI extends BaseRestClient {
   }
 
   /**
-   * Create a resource under the application path
-   * @param subpath
-   * @return an resource under the application path
+   * Create a resource under the application path set up to accept
+   * JSON
+   * @param subpath path under application
+   * @return a resource under the application path
    */
   public WebResource applicationResource(String subpath) {
     Preconditions.checkArgument(!StringUtils.isEmpty(subpath),
         "empty path");
     Preconditions.checkNotNull(appResource, "Null app resource");
-    return appResource.path(subpath);
+    WebResource resource = appResource.path(subpath);
+    resource.accept(MediaType.APPLICATION_JSON_TYPE);
+    return resource;
   }
   
   /**
@@ -258,18 +261,49 @@ public class SliderApplicationAPI extends BaseRestClient {
   }
 
   /**
-   * Ping as a post
+   * Ping as a GET
    * @param text text to include
    * @return the response
    * @throws IOException on any failure
    */
   public PingResource ping(String text) throws IOException {
-    WebResource pingOut = applicationResource(ACTION_PING);
-    pingOut.accept(MediaType.APPLICATION_JSON_TYPE);
-    pingOut.type(MediaType.APPLICATION_JSON_TYPE);
+    return pingPost(text);
+  }
+  
+  /**
+   * Ping as a GET
+   * @param text text to include
+   * @return the response
+   * @throws IOException on any failure
+   */
+  public PingResource pingGet(String text) throws IOException {
+    WebResource pingResource = applicationResource(ACTION_PING);
+    pingResource.getUriBuilder().queryParam("body", text);
+    return pingResource.get(PingResource.class);
+  }
+  
+  /**
+   * Ping as a POST
+   * @param text text to include
+   * @return the response
+   * @throws IOException on any failure
+   */
+  public PingResource pingPost(String text) throws IOException {
+    WebResource pingResource = applicationResource(ACTION_PING);
+    pingResource.type(MediaType.APPLICATION_JSON_TYPE);
     Form f = new Form();
     f.add("text", text);
-    return pingOut.post(PingResource.class, f);
+    return pingResource.post(PingResource.class, f);
+  }
+
+  /**
+   * Stop the AM (async operation)
+   * @param text text to include
+   * @throws IOException on any failure
+   */
+  public void stop(String text) throws IOException {
+    WebResource resource = applicationResource(ACTION_STOP);
+    resource.post(text);
   }
 
   /**

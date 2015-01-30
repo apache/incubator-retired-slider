@@ -20,9 +20,11 @@ package org.apache.slider.client.rest;
 
 import com.google.common.base.Preconditions;
 import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.ClientHandlerException;
 import com.sun.jersey.api.client.GenericType;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
+import org.apache.slider.core.exceptions.ExceptionConverter;
 import org.apache.slider.core.restclient.HttpVerb;
 import org.apache.slider.core.restclient.UgiJerseyBinding;
 import org.slf4j.Logger;
@@ -34,7 +36,7 @@ import java.net.URI;
 
 
 /**
- * This is a base class for Jersey Rest clients in Slider.
+ * This is a base class for Jersey REST clients in Slider.
  * It supports bonding to an AM and the execution of operations —with
  * exceptions uprated to IOExceptions when needed.
  * <p>
@@ -89,6 +91,10 @@ public class BaseRestClient  {
       Preconditions.checkArgument(c != null);
       resource.accept(MediaType.APPLICATION_JSON_TYPE);
       return (T) resource.method(method.getVerb(), c);
+    } catch (ClientHandlerException ex) {
+      throw ExceptionConverter.convertJerseyException(method.getVerb(),
+          resource.getURI().toString(),
+          ex);
     } catch (UniformInterfaceException ex) {
       throw UgiJerseyBinding.uprateFaults(method,
           resource.getURI().toString(),
@@ -111,6 +117,10 @@ public class BaseRestClient  {
       Preconditions.checkArgument(t != null);
       resource.accept(MediaType.APPLICATION_JSON_TYPE);
       return resource.method(method.getVerb(), t);
+    } catch (ClientHandlerException ex) {
+      throw ExceptionConverter.convertJerseyException(method.getVerb(),
+          resource.getURI().toString(),
+          ex);
     } catch (UniformInterfaceException ex) {
       throw UgiJerseyBinding.uprateFaults(method, resource.getURI().toString(),
           ex);

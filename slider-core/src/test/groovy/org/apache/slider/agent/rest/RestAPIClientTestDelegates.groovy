@@ -29,6 +29,7 @@ import org.apache.slider.client.rest.SliderApplicationAPI
 import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.core.conf.ConfTreeOperations
 import org.apache.slider.server.appmaster.web.rest.application.ApplicationResource
+import org.apache.slider.test.Outcome
 
 import javax.ws.rs.core.MediaType
 
@@ -44,8 +45,6 @@ import static org.apache.slider.server.appmaster.web.rest.RestPaths.*
 @CompileStatic
 @Slf4j
 class RestAPIClientTestDelegates extends AbstractRestTestDelegate {
-  public static final String TEST_GLOBAL_OPTION = "test.global.option"
-  public static final String TEST_GLOBAL_OPTION_PRESENT = "present"
 
   final String appmaster;
   final String application;
@@ -176,14 +175,14 @@ class RestAPIClientTestDelegates extends AbstractRestTestDelegate {
 
     def unresolved = fetchTypeList(ConfTree, appmaster,
         [MODEL_DESIRED_APPCONF, MODEL_DESIRED_RESOURCES])
-    assert unresolved[MODEL_DESIRED_APPCONF].components[sam]
-    [TEST_GLOBAL_OPTION] == null
+    assert null == 
+           unresolved[MODEL_DESIRED_APPCONF].components[sam][TEST_GLOBAL_OPTION] 
 
 
     
     def resolvedAppconf = appAPI.getResolvedAppconf() 
-    assert resolvedAppconf.
-               components[sam][TEST_GLOBAL_OPTION] == TEST_GLOBAL_OPTION_PRESENT
+    assert TEST_GLOBAL_OPTION_PRESENT==
+           resolvedAppconf. components[sam][TEST_GLOBAL_OPTION]
   }
 
   public void testPing() {
@@ -199,39 +198,35 @@ class RestAPIClientTestDelegates extends AbstractRestTestDelegate {
    * Important: once executed, the AM is no longer there.
    * This must be the last test in the sequence.
    */
-/*
 
   public void testStop() {
-    String target = appendToURL(appmaster, SLIDER_PATH_APPLICATION, ACTION_STOP)
-    describe "Stop URL $target"
-    URL targetUrl = new URL(target)
-    def outcome = connectionOperations.execHttpOperation(
-        HttpVerb.POST,
-        targetUrl,
-        new byte[0],
-        MediaType.TEXT_PLAIN)
-    log.info "Stopped: $outcome"
 
-    // await the shutdown
-    sleep(1000)
-    
-    // now a ping is expected to fail
-    String ping = appendToURL(appmaster, SLIDER_PATH_APPLICATION, ACTION_PING)
-    URL pingUrl = new URL(ping)
+    appAPI.stop("stop")
 
-    repeatUntilSuccess("probe for missing registry entry",
-        this.&probePingFailing, 30000, 500,
-        [url: ping],
+    repeatUntilSuccess("probe for liveness",
+        this.&probeForLivenessFailing, STOP_WAIT_TIME, STOP_PROBE_INTERVAL,
+        [:],
         true,
         "AM failed to shut down") {
-      def pinged = jFetchType(ACTION_PING + "?body=hello",
-          PingResource
-      )
-      fail("AM didn't shut down; Ping GET= $pinged")
+      appAPI.getApplicationLiveness()
     }
     
   }
-*/
+
+  /**
+   * Probe that spins until the liveness query fails
+   * @param args argument map
+   * @return the outcome
+   */
+  Outcome probeForLivenessFailing(Map args) {
+    try {
+      appAPI.getApplicationLiveness()
+      return Outcome.Retry
+    } catch (IOException e) {
+      // expected
+      return Outcome.Success
+    }
+  }
 
   public void testSuiteGetOperations() {
 
