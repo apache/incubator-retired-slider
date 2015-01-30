@@ -88,3 +88,18 @@ A less descriptive file name can be specified with
 Verify the content using
 
     zip -Tv apache-slider-hbase-*.zip
+
+# Extracting an HBase Client
+
+The HBase app package provides scripts to assist in client interactions with
+an HBase instance running on Slider.  These can be extracted to the HBase bin directory as follows.
+
+    unzip slider-hbase-app-package*zip hbase-slider
+    unzip slider-hbase-app-package*zip hbase-wrapper.py
+
+The dir will then contain an HBase client that can be used
+to connect to the cluster.
+
+Example of command that invokes HBase shell is:
+
+    SLIDER_HOME=</path/to/slider> ./hbase-slider <clusterName>
