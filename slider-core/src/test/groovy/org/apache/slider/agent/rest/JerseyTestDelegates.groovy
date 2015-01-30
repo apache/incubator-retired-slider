@@ -23,20 +23,19 @@ import com.sun.jersey.api.client.Client
 import com.sun.jersey.api.client.ClientResponse
 import com.sun.jersey.api.client.UniformInterfaceException
 import com.sun.jersey.api.client.WebResource
-import com.sun.jersey.client.impl.ClientRequestImpl
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.webapp.NotFoundException
 import org.apache.slider.api.StateValues
-import org.apache.slider.api.types.SerializedComponentInformation
-import org.apache.slider.api.types.SerializedContainerInformation
+import org.apache.slider.api.types.ComponentInformation
+import org.apache.slider.api.types.ContainerInformation
 import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.core.conf.ConfTreeOperations
 import org.apache.slider.core.restclient.HttpVerb
 import org.apache.slider.server.appmaster.web.rest.application.ApplicationResource
-import org.apache.slider.server.appmaster.web.rest.application.resources.PingResource
+import org.apache.slider.api.types.PingResource
 import org.apache.slider.test.SliderTestUtils
 
 import javax.ws.rs.core.MediaType
@@ -237,12 +236,12 @@ class JerseyTestDelegates extends SliderTestUtils {
   public void testLiveContainers() throws Throwable {
     describe "Application REST ${LIVE_CONTAINERS}"
 
-    Map<String, SerializedContainerInformation> containers =
+    Map<String, ContainerInformation> containers =
         jGetApplicationResource(LIVE_CONTAINERS, HashMap)
     assert containers.size() == 1
     log.info "${containers}"
-    SerializedContainerInformation amContainerInfo =
-        (SerializedContainerInformation) containers.values()[0]
+    ContainerInformation amContainerInfo =
+        (ContainerInformation) containers.values()[0]
     assert amContainerInfo.containerId
 
     def amContainerId = amContainerInfo.containerId
@@ -257,10 +256,10 @@ class JerseyTestDelegates extends SliderTestUtils {
 
     describe "containers"
 
-    SerializedContainerInformation retrievedContainerInfo =
+    ContainerInformation retrievedContainerInfo =
         jFetchType(
             LIVE_CONTAINERS + "/${amContainerId}",
-            SerializedContainerInformation
+            ContainerInformation
         )
     assert retrievedContainerInfo.containerId == amContainerId
 
@@ -268,7 +267,7 @@ class JerseyTestDelegates extends SliderTestUtils {
     try {
       def result = jFetchType(
           LIVE_CONTAINERS + "/unknown",
-          SerializedContainerInformation
+          ContainerInformation
       )
       fail("expected an error, got $result")
     } catch (NotFoundException e) {
@@ -278,18 +277,18 @@ class JerseyTestDelegates extends SliderTestUtils {
 
     describe "components"
 
-    Map<String, SerializedComponentInformation> components =
+    Map<String, ComponentInformation> components =
         jFetchType(LIVE_COMPONENTS, HashMap)
     // two components
     assert components.size() >= 1
     log.info "${components}"
 
-    SerializedComponentInformation amComponentInfo =
-        (SerializedComponentInformation) components[COMPONENT_AM]
+    ComponentInformation amComponentInfo =
+        (ComponentInformation) components[COMPONENT_AM]
 
-    SerializedComponentInformation amFullInfo = jFetchType(
+    ComponentInformation amFullInfo = jFetchType(
         LIVE_COMPONENTS + "/${COMPONENT_AM}",
-        SerializedComponentInformation
+        ComponentInformation
     )
 
     assert amFullInfo.containers.size() == 1

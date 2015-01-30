@@ -24,13 +24,13 @@ import com.sun.jersey.api.client.GenericType;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.representation.Form;
 import org.apache.commons.lang.StringUtils;
-import org.apache.slider.api.types.SerializedComponentInformation;
-import org.apache.slider.api.types.SerializedContainerInformation;
+import org.apache.slider.api.types.ComponentInformation;
+import org.apache.slider.api.types.ContainerInformation;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.conf.ConfTreeOperations;
 import org.apache.slider.core.restclient.HttpVerb;
-import org.apache.slider.server.appmaster.web.rest.application.resources.PingResource;
+import org.apache.slider.api.types.PingResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -213,10 +213,10 @@ public class SliderApplicationAPI extends BaseRestClient {
    * @return a possibly empty list of serialized containers
    * @throws IOException on any failure
    */
-  public Map<String, SerializedContainerInformation> enumContainers() throws
+  public Map<String, ContainerInformation> enumContainers() throws
       IOException {
     return getApplicationResource(LIVE_CONTAINERS,
-        new GenericType<Map<String, SerializedContainerInformation>>() {
+        new GenericType<Map<String, ContainerInformation>>() {
         });
   }
 
@@ -226,10 +226,10 @@ public class SliderApplicationAPI extends BaseRestClient {
    * @return the container information
    * @throws IOException on any failure
    */
-  public SerializedContainerInformation getContainer( String containerId) throws
+  public ContainerInformation getContainer( String containerId) throws
       IOException {
     return getApplicationResource(LIVE_CONTAINERS + "/" + containerId,
-        SerializedContainerInformation.class);
+        ContainerInformation.class);
   }
 
   /**
@@ -237,10 +237,10 @@ public class SliderApplicationAPI extends BaseRestClient {
    * @return a possibly empty map of components
    * @throws IOException on any failure
    */
-  public Map<String, SerializedComponentInformation> enumComponents() throws
+  public Map<String, ComponentInformation> enumComponents() throws
       IOException {
     return getApplicationResource(LIVE_COMPONENTS,
-        new GenericType<Map<String, SerializedComponentInformation>>() {
+        new GenericType<Map<String, ComponentInformation>>() {
         });
   }
 
@@ -250,10 +250,10 @@ public class SliderApplicationAPI extends BaseRestClient {
    * @return the component details
    * @throws IOException on any failure
    */
-  public SerializedComponentInformation getComponent(String componentName) throws
+  public ComponentInformation getComponent(String componentName) throws
       IOException {
     return getApplicationResource(LIVE_COMPONENTS + "/" + componentName,
-        SerializedComponentInformation.class);
+        ComponentInformation.class);
   }
 
   /**

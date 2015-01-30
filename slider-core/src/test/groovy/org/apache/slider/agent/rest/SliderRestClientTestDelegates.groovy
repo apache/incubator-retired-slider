@@ -22,10 +22,9 @@ import com.sun.jersey.api.client.Client
 import com.sun.jersey.api.client.WebResource
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.hadoop.fs.PathNotFoundException
 import org.apache.slider.api.StateValues
-import org.apache.slider.api.types.SerializedComponentInformation
-import org.apache.slider.api.types.SerializedContainerInformation
+import org.apache.slider.api.types.ComponentInformation
+import org.apache.slider.api.types.ContainerInformation
 import org.apache.slider.client.rest.SliderApplicationAPI
 import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.core.conf.ConfTreeOperations
@@ -102,11 +101,11 @@ class SliderRestClientTestDelegates extends SliderTestUtils {
   public void testLiveContainers() throws Throwable {
     describe "Application REST ${LIVE_CONTAINERS}"
 
-    Map<String, SerializedContainerInformation> containers = appAPI.enumContainers()
+    Map<String, ContainerInformation> containers = appAPI.enumContainers()
     assert containers.size() == 1
     log.info "${containers}"
-    SerializedContainerInformation amContainerInfo =
-        (SerializedContainerInformation) containers.values()[0]
+    ContainerInformation amContainerInfo =
+        (ContainerInformation) containers.values()[0]
     assert amContainerInfo.containerId
 
     def amContainerId = amContainerInfo.containerId
@@ -121,7 +120,7 @@ class SliderRestClientTestDelegates extends SliderTestUtils {
 
     describe "containers"
 
-    SerializedContainerInformation amContainerInfo2 =
+    ContainerInformation amContainerInfo2 =
         appAPI.getContainer(amContainerId)
     assert amContainerInfo2.containerId == amContainerId
 
@@ -136,17 +135,17 @@ class SliderRestClientTestDelegates extends SliderTestUtils {
 
     describe "components"
 
-    Map<String, SerializedComponentInformation> components =
+    Map<String, ComponentInformation> components =
         appAPI.enumComponents()
 
     // two components
     assert components.size() >= 1
     log.info "${components}"
 
-    SerializedComponentInformation amComponentInfo =
-        (SerializedComponentInformation) components[COMPONENT_AM]
+    ComponentInformation amComponentInfo =
+        (ComponentInformation) components[COMPONENT_AM]
 
-    SerializedComponentInformation amFullInfo = appAPI.getComponent(COMPONENT_AM) 
+    ComponentInformation amFullInfo = appAPI.getComponent(COMPONENT_AM) 
 
     assert amFullInfo.containers.size() == 1
     assert amFullInfo.containers[0] == amContainerId

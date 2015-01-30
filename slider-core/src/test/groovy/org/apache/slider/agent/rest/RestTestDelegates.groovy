@@ -18,15 +18,12 @@
 
 package org.apache.slider.agent.rest
 
-import com.sun.jersey.api.client.ClientResponse
-import com.sun.jersey.api.client.WebResource
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.webapp.NotFoundException
-import org.apache.http.entity.ContentType
 import org.apache.slider.api.StateValues
-import org.apache.slider.api.types.SerializedComponentInformation
-import org.apache.slider.api.types.SerializedContainerInformation
+import org.apache.slider.api.types.ComponentInformation
+import org.apache.slider.api.types.ContainerInformation
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.core.conf.ConfTreeOperations
@@ -35,12 +32,11 @@ import org.apache.slider.core.restclient.HttpVerb
 import org.apache.slider.core.restclient.UrlConnectionOperations
 import org.apache.slider.server.appmaster.web.rest.RestPaths
 import org.apache.slider.server.appmaster.web.rest.application.ApplicationResource
-import org.apache.slider.server.appmaster.web.rest.application.resources.PingResource
+import org.apache.slider.api.types.PingResource
 import org.apache.slider.test.Outcome
 import org.apache.slider.test.SliderTestUtils
 
 import javax.ws.rs.core.MediaType
-import java.nio.charset.Charset
 
 import static org.apache.slider.api.ResourceKeys.COMPONENT_INSTANCES
 import static org.apache.slider.api.StatusKeys.*
@@ -113,12 +109,12 @@ class RestTestDelegates extends SliderTestUtils {
   public void testLiveContainers() throws Throwable {
     describe "Application REST ${LIVE_CONTAINERS}"
 
-    Map<String, SerializedContainerInformation> containers =
+    Map<String, ContainerInformation> containers =
         fetchType(HashMap, appmaster, LIVE_CONTAINERS)
     assert containers.size() == 1
     log.info "${containers}"
-    SerializedContainerInformation amContainerInfo =
-        (SerializedContainerInformation) containers.values()[0]
+    ContainerInformation amContainerInfo =
+        (ContainerInformation) containers.values()[0]
     assert amContainerInfo.containerId
 
     def amContainerId = amContainerInfo.containerId
@@ -133,14 +129,14 @@ class RestTestDelegates extends SliderTestUtils {
 
     describe "containers"
 
-    SerializedContainerInformation retrievedContainerInfo =
-        fetchType(SerializedContainerInformation, appmaster,
+    ContainerInformation retrievedContainerInfo =
+        fetchType(ContainerInformation, appmaster,
             LIVE_CONTAINERS + "/${amContainerId}")
     assert retrievedContainerInfo.containerId == amContainerId
 
     // fetch missing
     try {
-      def result = fetchType(SerializedContainerInformation, appmaster,
+      def result = fetchType(ContainerInformation, appmaster,
           LIVE_CONTAINERS + "/unknown")
       fail("expected an error, got $result")
     } catch (NotFoundException e) {
@@ -150,17 +146,17 @@ class RestTestDelegates extends SliderTestUtils {
 
     describe "components"
 
-    Map<String, SerializedComponentInformation> components =
+    Map<String, ComponentInformation> components =
         fetchType(HashMap, appmaster, LIVE_COMPONENTS)
     // two components
     assert components.size() >= 1
     log.info "${components}"
 
-    SerializedComponentInformation amComponentInfo =
-        (SerializedComponentInformation) components[COMPONENT_AM]
+    ComponentInformation amComponentInfo =
+        (ComponentInformation) components[COMPONENT_AM]
 
-    SerializedComponentInformation amFullInfo = fetchType(
-        SerializedComponentInformation,
+    ComponentInformation amFullInfo = fetchType(
+        ComponentInformation,
         appmaster,
         LIVE_COMPONENTS + "/${COMPONENT_AM}")
 

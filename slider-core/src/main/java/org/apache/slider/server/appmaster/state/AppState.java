@@ -18,6 +18,7 @@
 
 package org.apache.slider.server.appmaster.state;
 
+import com.codahale.metrics.Counter;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import org.apache.hadoop.conf.Configuration;
@@ -45,6 +46,8 @@ import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.RoleKeys;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.api.proto.Messages;
+import org.apache.slider.api.types.ApplicationLivenessInformation;
+import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.common.SliderExitCodes;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.tools.ConfigHelper;
@@ -158,12 +161,9 @@ public class AppState {
   private Map<String, String> clientProperties = new HashMap<String, String>();
 
   /**
-   The cluster description published to callers
-   This is used as a synchronization point on activities that update
-   the CD, and also to update some of the structures that
-   feed in to the CD
+   * This is a template of the cluster status
    */
-  private ClusterDescription clusterSpec = new ClusterDescription();
+  private ClusterDescription clusterStatusTemplate = new ClusterDescription();
 
   private final Map<Integer, RoleStatus> roleStatusMap =
     new ConcurrentHashMap<Integer, RoleStatus>();
@@ -219,6 +219,12 @@ public class AppState {
    * Track the number of surplus containers received and discarded
    */
   private final AtomicInteger surplusContainers = new AtomicInteger();
+
+
+  /**
+   * Track the number of requested Containers
+   */
+  private final Counter requestedContainerCount = new Counter();
 
 
   /**
@@ -278,7 +284,10 @@ public class AppState {
   private int failureThreshold = 10;
   
   private String logServerURL = "";
-  
+
+  /**
+   * Selector of containers to release; application wide.
+   */
   private ContainerReleaseSelector containerReleaseSelector;
 
   /**
@@ -372,20 +381,15 @@ public class AppState {
   }
 
   /**
-   * Get the desired cluster state
-   * @return the specification of the cluter
+   * Get the dynamcally created view of the cluster status
+   * @return
    */
-  public ClusterDescription getClusterSpec() {
-    return clusterSpec;
-  }
-
-
-  public ClusterDescription getClusterStatus() {
+  public synchronized ClusterDescription getClusterStatus() {
     return clusterStatus;
   }
 
   @VisibleForTesting
-  protected void setClusterStatus(ClusterDescription clusterDesc) {
+  protected synchronized void setClusterStatus(ClusterDescription clusterDesc) {
     this.clusterStatus = clusterDesc;
   }
 
@@ -458,17 +462,13 @@ public class AppState {
     return internalsSnapshot;
   }
 
-
   public boolean isApplicationLive() {
     return applicationLive;
   }
 
-
-
   public long getSnapshotTime() {
     return snapshotTime;
   }
-
 
   public AggregateConf getInstanceDefinitionSnapshot() {
     return instanceDefinitionSnapshot;
@@ -578,7 +578,7 @@ public class AppState {
 
   public void initClusterStatus() {
     //copy into cluster status. 
-    ClusterDescription status = ClusterDescription.copy(clusterSpec);
+    ClusterDescription status = ClusterDescription.copy(clusterStatusTemplate);
     status.state = STATE_CREATED;
     MapOperations infoOps = new MapOperations("info", status.info);
     infoOps.mergeWithoutOverwrite(applicationInfo);
@@ -677,14 +677,14 @@ public class AppState {
                                                    internalsSnapshot.confTree);
     instanceDefinitionSnapshot.setName(instanceDefinition.getName());
 
-    clusterSpec =
+    clusterStatusTemplate =
       ClusterDescriptionOperations.buildFromInstanceDefinition(
         instanceDefinition);
     
 
 //     Add the -site configuration properties
     for (Map.Entry<String, String> prop : clientProperties.entrySet()) {
-      clusterSpec.clientProperties.put(prop.getKey(), prop.getValue());
+      clusterStatusTemplate.clientProperties.put(prop.getKey(), prop.getValue());
     }
     
   }
@@ -1165,7 +1165,7 @@ public class AppState {
    * @param capability a resource to set up
    * @return the request for a new container
    */
-  public AMRMClient.ContainerRequest buildContainerResourceAndRequest(
+  private AMRMClient.ContainerRequest buildContainerResourceAndRequest(
         RoleStatus role,
         Resource capability) {
     buildResourceRequirements(role, capability);
@@ -1185,16 +1185,38 @@ public class AppState {
    * @param labelExpression label expression to satisfy
    * @return the container request to submit
    */
-  public AMRMClient.ContainerRequest createContainerRequest(RoleStatus role,
+  private AMRMClient.ContainerRequest createContainerRequest(RoleStatus role,
                                                             Resource resource,
                                                             String labelExpression) {
     
     
     AMRMClient.ContainerRequest request;
     request = roleHistory.requestNode(role, resource, labelExpression);
-    role.incRequested();
+    incrementRequestCount(role);
 
     return request;
+  }
+
+  /**
+   * Increment the request count of a role.
+   * <p>
+   *   Also updates application state counters
+   * @param role role being requested.
+   */
+  protected void incrementRequestCount(RoleStatus role) {
+    role.incRequested();
+    requestedContainerCount.inc();
+  }
+
+  /**
+   * dec requested count of a role
+   * <p>
+   *   Also updates application state counters
+   * @param role role to decrement
+   */
+  protected void decrementRequestCount(RoleStatus role) {
+    role.decRequested();
+    requestedContainerCount.dec();
   }
 
 
@@ -1558,6 +1580,8 @@ public class AppState {
   }
 
 
+  
+  
   /**
    * Return the percentage done that Slider is to have YARN display in its
    * Web UI
@@ -1630,12 +1654,36 @@ public class AppState {
       cd.statistics.put(rolename, stats);
     }
 
+    Map<String, Integer> sliderstats = getLiveStatistics();
+    cd.statistics.put(SliderKeys.COMPONENT_AM, sliderstats);
+    return cd;
+  }
+
+  /**
+   * get application liveness information
+   * @return a snapshot of the current liveness information
+   */  
+  public ApplicationLivenessInformation getApplicationLivenessInformation() {
+    ApplicationLivenessInformation li = new ApplicationLivenessInformation();
+    int outstanding = (int) requestedContainerCount.getCount();
+    li.requested = outstanding;
+    li.allRequestsSatisfied = outstanding == 0;
+    return li;
+  }
+  
+  /**
+   * Get the live statistics map
+   * @return a map of statistics values, defined in the {@link StatusKeys}
+   * keylist.
+   */
+  protected Map<String, Integer> getLiveStatistics() {
     Map<String, Integer> sliderstats = new HashMap<String, Integer>();
     sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_COMPLETED,
         completedContainerCount.get());
     sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_FAILED,
         failedContainerCount.get());
-    sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_LIVE, liveNodes.size());
+    sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_LIVE, 
+        liveNodes.size());
     sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_STARTED,
         startedContainers.get());
     sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_START_FAILED,
@@ -1644,8 +1692,29 @@ public class AppState {
         surplusContainers.get());
     sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_UNKNOWN_COMPLETED,
         completionOfUnknownContainerEvent.get());
-    cd.statistics.put(SliderKeys.COMPONENT_AM, sliderstats);
-    return cd;
+    return sliderstats;
+  }
+
+  /**
+   * Get a snapshot of component information.
+   * <p>
+   *   This does <i>not</i> include any container list, which 
+   *   is more expensive to create.
+   * @return a map of current role status values.
+   */
+  public Map<String, ComponentInformation> getComponentInfoSnapshot() {
+
+    Map<Integer, RoleStatus> statusMap = getRoleStatusMap();
+    Map<String, ComponentInformation> results =
+        new HashMap<String, ComponentInformation>(
+            statusMap.size());
+
+    for (RoleStatus status : statusMap.values()) {
+      String name = status.getName();
+      ComponentInformation info = status.serialize();
+      results.put(name, info);
+    }
+    return results;
   }
 
   /**
@@ -1720,8 +1789,11 @@ public class AppState {
   
   /**
    * Look at the allocation status of one role, and trigger add/release
-   * actions if the number of desired role instances doesnt equal 
-   * (actual+pending)
+   * actions if the number of desired role instances doesn't equal 
+   * (actual+pending).
+   * <p>
+   * MUST be executed from within a synchronized method
+   * <p>
    * @param role role
    * @return a list of operations
    * @throws SliderInternalStateException if the operation reveals that
@@ -1952,7 +2024,7 @@ public class AppState {
       
 
       //dec requested count
-      role.decRequested();
+      decrementRequestCount(role);
       //inc allocated count -this may need to be dropped in a moment,
       // but us needed to update the logic below
       allocated = role.incActual();

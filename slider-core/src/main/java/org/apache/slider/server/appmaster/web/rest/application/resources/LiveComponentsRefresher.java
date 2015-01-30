@@ -18,15 +18,13 @@
 
 package org.apache.slider.server.appmaster.web.rest.application.resources;
 
-import org.apache.slider.api.types.SerializedComponentInformation;
-import org.apache.slider.server.appmaster.state.RoleStatus;
+import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public class LiveComponentsRefresher
-    implements ResourceRefresher<Map<String, SerializedComponentInformation>> {
+    implements ResourceRefresher<Map<String, ComponentInformation>> {
 
   private final StateAccessForProviders state;
 
@@ -35,19 +33,7 @@ public class LiveComponentsRefresher
   }
 
   @Override
-  public Map<String, SerializedComponentInformation> refresh() throws
-      Exception {
-
-    Map<Integer, RoleStatus> roleStatusMap = state.getRoleStatusMap();
-    Map<String, SerializedComponentInformation> results =
-        new HashMap<String, SerializedComponentInformation>(
-            roleStatusMap.size());
-
-    for (RoleStatus status : roleStatusMap.values()) {
-      String name = status.getName();
-      SerializedComponentInformation info = status.serialize();
-      results.put(name, info);
-    }
-    return results;
+  public Map<String, ComponentInformation> refresh() {
+    return state.getComponentInfoSnapshot();
   }
 }
