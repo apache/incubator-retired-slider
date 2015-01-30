@@ -23,7 +23,7 @@ public interface MetricsKeys {
   /**
    * Prefix for metrics configuration options: {@value}
    */
-  String METRICS_PREFIX = "metrics.codahale.";
+  String METRICS_PREFIX = "slider.metrics.";
   
   /**
    * Boolean to enable Ganglia metrics reporting
@@ -42,7 +42,7 @@ public interface MetricsKeys {
   /**
    * {@value}
    */
-  String METRICS_GANGLIA_VERSION_31 = METRICS_PREFIX + "ganglia.version.31";
+  String METRICS_GANGLIA_VERSION_31 = METRICS_PREFIX + "ganglia.version-31";
   /**
    * {@value}
    */
@@ -65,12 +65,13 @@ public interface MetricsKeys {
    * {@value}
    */
   String METRICS_LOGGING_LOG =
-      METRICS_PREFIX + "logging.log";
+      METRICS_PREFIX + "logging.log.name";
 
   /**
    * Default log name: {@value}
    */
-  String METRICS_DEFAULT_LOG = "org.apache.hadoop.metrics.log";
+  String METRICS_DEFAULT_LOG = 
+      "org.apache.slider.metrics.log";
 
 
   /**
@@ -78,7 +79,7 @@ public interface MetricsKeys {
    * {@value}
    */
   String METRICS_LOGGING_LOG_INTERVAL =
-      METRICS_PREFIX + "logging.interval";
+      METRICS_PREFIX + "logging.interval.minutes";
 
 
   /**
@@ -86,8 +87,6 @@ public interface MetricsKeys {
    * This is a big interval as in a long lived service, log overflows are easy
    * to create. 
    */
-  int METRICS_DEFAULT_LOG_INTERVAL = 60 * 10;
-
-
+  int METRICS_DEFAULT_LOG_INTERVAL = 60;
   
 }

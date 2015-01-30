@@ -1,0 +1,76 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!--
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to You under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+
+<!--
+  This is an optional configuration file.
+
+  Properties set here are picked up in the slider Application Master, 
+  supplementing configuration options in core-site.xml and yarn-site.xml.
+  
+  These options are NOT read in the client
+-->
+<configuration>
+
+
+  <!--
+    <property>
+      <name>slider.metrics.ganglia.enabled</name>
+      <value>true</value>
+      <description>Boolean to enable Ganglia metrics reporting</description>
+    </property>
+
+    <property>
+      <name>slider.metrics.ganglia.host</name>
+      <value>localhost</value>
+      <description>Ganglia hostname</description>
+    </property>
+    
+    <property>
+      <name>slider.metrics.ganglia.port</name>
+      <value>8649</value>
+      <description>Ganglia port</description>
+    </property>
+    
+    <property>
+      <name>slider.metrics.ganglia.version-31</name>
+      <value>true</value>
+      <description>protocol version true=v3.1, false=v3.0</description>
+    </property>
+  -->
+
+  <!--
+  Options to enable metrics to slf4j
+  
+  <property>
+    <name>slider.metrics.logging.enabled</name>
+    <value>true</value>
+    <description>Boolean to enable SL4J metrics reporting at
+    scheduled intervals</description>
+  </property>
+
+
+  <property>
+    <name>slider.metrics.logging.log.name</name>
+    <value>org.apache.slider.metrics.log</value>
+    <description>name of log</description>
+  </property>
+  
+  -->
+
+</configuration>

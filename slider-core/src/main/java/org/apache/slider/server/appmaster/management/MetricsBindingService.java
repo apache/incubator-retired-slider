@@ -125,7 +125,7 @@ public class MetricsBindingService extends CompositeService
                               .outputTo(LoggerFactory.getLogger(logName))
                               .convertDurationsTo(TimeUnit.MILLISECONDS)
                               .build();
-      reporter.start(interval, TimeUnit.SECONDS);
+      reporter.start(interval, TimeUnit.MINUTES);
       addService(new ClosingService<ScheduledReporter>(reporter));
       summary.append(String.format(", SLF4J to log %s interval=%d",
           logName, interval));
