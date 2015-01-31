@@ -76,6 +76,15 @@ public final class RoleStatus implements Cloneable {
     return providerRole.placementPolicy;
   }
 
+  /**
+   * The number of failures on a specific node that can be tolerated
+   * before selecting a different node for placement
+   * @return
+   */
+  public int getNodeFailureThreshold() {
+    return providerRole.nodeFailureThreshold;
+  }
+
   public boolean getExcludeFromFlexing() {
     return 0 != (getPlacementPolicy() & PlacementPolicy.EXCLUDE_FROM_FLEXING);
   }

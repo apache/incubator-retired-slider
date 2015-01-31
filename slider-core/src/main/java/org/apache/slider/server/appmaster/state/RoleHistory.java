@@ -443,7 +443,7 @@ public class RoleHistory {
   /**
    * Get the nodes for an ID -may be null
    * @param id role ID
-   * @return potenially null list
+   * @return potentially null list
    */
   @VisibleForTesting
   public List<NodeInstance> getNodesForRoleId(int id) {
@@ -755,7 +755,7 @@ public class RoleHistory {
                                                        boolean wasReleased,
                                                        boolean shortLived) {
     NodeEntry nodeEntry = getOrCreateNodeEntry(container);
-    log.debug("Finished container for node {}, released={}, shortlived={}",
+    log.info("Finished container for node {}, released={}, shortlived={}",
         nodeEntry.rolePriority, wasReleased, shortLived);
     boolean available;
     if (shortLived) {

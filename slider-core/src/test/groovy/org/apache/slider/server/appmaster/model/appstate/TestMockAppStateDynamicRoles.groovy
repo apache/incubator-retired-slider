@@ -84,6 +84,8 @@ class TestMockAppStateDynamicRoles extends BaseMockAppStateTest
         (ResourceKeys.COMPONENT_INSTANCES): "1",
         (ResourceKeys.COMPONENT_PLACEMENT_POLICY):
             Integer.toString(PlacementPolicy.STRICT),
+        (ResourceKeys.NODE_FAILURE_THRESHOLD):
+            Integer.toString(2),
     ]
 
     instance.resourceOperations.components[ROLE5]= opts5
@@ -144,6 +146,13 @@ class TestMockAppStateDynamicRoles extends BaseMockAppStateTest
   public void testPolicyPropagation() throws Throwable {
     assert !(appState.lookupRoleStatus(ROLE4).placementPolicy & PlacementPolicy.STRICT)
     assert (appState.lookupRoleStatus(ROLE5).placementPolicy & PlacementPolicy.STRICT)
+
+  }
+
+  @Test
+  public void testNodeFailureThresholdPropagation() throws Throwable {
+    assert (appState.lookupRoleStatus(ROLE4).nodeFailureThreshold == 3)
+    assert (appState.lookupRoleStatus(ROLE5).nodeFailureThreshold == 2)
 
   }
 

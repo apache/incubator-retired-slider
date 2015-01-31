@@ -100,7 +100,11 @@ public interface ResourceKeys {
    */
   String COMPONENT_PLACEMENT_POLICY = "yarn.component.placement.policy";
 
-  
+  /**
+   * Maximum number of node failures that can be tolerated by a component on a specific node
+   */
+  String NODE_FAILURE_THRESHOLD =
+      "yarn.node.failure.threshold";
 
   /**
    * maximum number of failed containers (in a single role)
@@ -128,6 +132,13 @@ public interface ResourceKeys {
    * Default failure threshold: {@value}
    */
   int DEFAULT_CONTAINER_FAILURE_THRESHOLD = 5;
+
+  /**
+   * Default node failure threshold for a component instance: {@value}
+   * Should to be lower than default component failure threshold to allow
+   * the component to start elsewhere
+   */
+  int DEFAULT_NODE_FAILURE_THRESHOLD = 3;
 
   /**
    * Log aggregation include, exclude patterns

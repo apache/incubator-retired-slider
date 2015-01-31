@@ -945,7 +945,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    *   Creates and starts the web application, and adds a
    *   <code>WebAppService</code> service under the AM, to ensure
    *   a managed web application shutdown.
-   * @param serviceConf AM configuration
    * @param port port to deploy the web application on
    * @param webAppApi web app API instance
    */

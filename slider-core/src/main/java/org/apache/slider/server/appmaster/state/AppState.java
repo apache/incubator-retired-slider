@@ -276,6 +276,7 @@ public class AppState {
   private long startTimeThreshold;
   
   private int failureThreshold = 10;
+  private int nodeFailureThreshold = 3;
   
   private String logServerURL = "";
   
@@ -559,6 +560,9 @@ public class AppState {
     failureThreshold = globalResOpts.getOptionInt(
         ResourceKeys.CONTAINER_FAILURE_THRESHOLD,
         ResourceKeys.DEFAULT_CONTAINER_FAILURE_THRESHOLD);
+    nodeFailureThreshold = globalResOpts.getOptionInt(
+        ResourceKeys.NODE_FAILURE_THRESHOLD,
+        ResourceKeys.DEFAULT_NODE_FAILURE_THRESHOLD);
     initClusterStatus();
 
 
@@ -625,7 +629,8 @@ public class AppState {
     int placement = SliderUtils.parseAndValidate("value of " + name + " " +
         ResourceKeys.COMPONENT_PLACEMENT_POLICY,
         placementOpt, 0, 0, -1);
-    ProviderRole newRole = new ProviderRole(name, priority, placement);
+    ProviderRole newRole = new ProviderRole(name, priority, placement,
+                                            getNodeFailureThresholdForRole(name));
     log.info("New {} ", newRole);
     return newRole;
   }
@@ -1376,6 +1381,7 @@ public class AppState {
     if (started > 0) {
       long duration = time - started;
       shortlived = duration < (startTimeThreshold * 1000);
+      log.info("Duration {} and startTimeThreshold {}", duration, startTimeThreshold);
     } else {
       // never even saw a start event
       shortlived = true;
@@ -1704,7 +1710,21 @@ public class AppState {
         ResourceKeys.CONTAINER_FAILURE_THRESHOLD,
         failureThreshold);
   }
-  
+
+  /**
+   * Get the node failure threshold for a specific role, falling back to
+   * the global one if not
+   * @param roleName role name
+   * @return the threshold for failures
+   */
+  private int getNodeFailureThresholdForRole(String roleName) {
+    ConfTreeOperations resources =
+        instanceDefinition.getResourceOperations();
+    return resources.getComponentOptInt(roleName,
+                                        ResourceKeys.NODE_FAILURE_THRESHOLD,
+                                        nodeFailureThreshold);
+  }
+
   /**
    * Reset the failure counts of all roles
    */
@@ -1712,7 +1732,7 @@ public class AppState {
     for (RoleStatus roleStatus : getRoleStatusMap().values()) {
       int failed = roleStatus.resetFailed();
       log.info("Resetting failure count of {}; was {}",
-          roleStatus.getName(),
+               roleStatus.getName(),
           failed);
     }
     roleHistory.resetFailedRecently();

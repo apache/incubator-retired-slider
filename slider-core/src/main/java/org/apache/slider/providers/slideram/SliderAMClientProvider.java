@@ -88,7 +88,8 @@ public class SliderAMClientProvider extends AbstractClientProvider
 
   public static final ProviderRole APPMASTER =
       new ProviderRole(COMPONENT_AM, KEY_AM,
-          PlacementPolicy.EXCLUDE_FROM_FLEXING);
+          PlacementPolicy.EXCLUDE_FROM_FLEXING,
+          ResourceKeys.DEFAULT_NODE_FAILURE_THRESHOLD);
 
   /**
    * Initialize role list
