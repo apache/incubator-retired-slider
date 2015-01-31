@@ -100,12 +100,26 @@ public final class OutstandingRequest {
    * @param labelExpression label to satisfy
    * @return the request to raise
    */
-  public AMRMClient.ContainerRequest buildContainerRequest(Resource resource,
-      RoleStatus role, long time, String labelExpression) {
+  public AMRMClient.ContainerRequest buildContainerRequest(
+      Resource resource, RoleStatus role, long time, String labelExpression) {
     String[] hosts;
     boolean relaxLocality;
     requestedTime = time;
-    if (node != null) {
+    boolean usePlacementHistory = role.isStrictPlacement();
+    if (!usePlacementHistory) {
+      // If strict placement does not mandate using placement then check
+      // that the recent failures on this node is not higher than threshold
+      if (node != null) {
+        int numFailuresOnLastHost = node.get(role.getKey()).getFailedRecently();
+        usePlacementHistory = numFailuresOnLastHost <= role.getNodeFailureThreshold();
+        if(!usePlacementHistory) {
+          log.info("Recent node failures {} is higher than threshold {}. Dropping host {} from preference.",
+                   numFailuresOnLastHost, role.getNodeFailureThreshold(), node.hostname);
+        }
+      }
+    }
+
+    if (node != null && usePlacementHistory) {
       hosts = new String[1];
       hosts[0] = node.hostname;
       relaxLocality = !role.isStrictPlacement();

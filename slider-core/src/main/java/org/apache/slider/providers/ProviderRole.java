@@ -18,6 +18,8 @@
 
 package org.apache.slider.providers;
 
+import org.apache.slider.api.ResourceKeys;
+
 /**
  * Provider role and key for use in app requests.
  * 
@@ -28,15 +30,17 @@ public final class ProviderRole {
   public final String name;
   public final int id;
   public final int placementPolicy;
+  public final int nodeFailureThreshold;
 
   public ProviderRole(String name, int id) {
-    this(name, id, PlacementPolicy.DEFAULT);
+    this(name, id, PlacementPolicy.DEFAULT, ResourceKeys.DEFAULT_NODE_FAILURE_THRESHOLD);
   }
 
-  public ProviderRole(String name, int id, int policy) {
+  public ProviderRole(String name, int id, int policy, int nodeFailureThreshold) {
     this.name = name;
     this.id = id;
     this.placementPolicy = policy;
+    this.nodeFailureThreshold = nodeFailureThreshold;
   }
 
   @Override
@@ -59,10 +63,11 @@ public final class ProviderRole {
 
   @Override
   public String toString() {
-    return "ProviderRole{" +
+    return "ProviderRole {" +
            "name='" + name + '\'' +
            ", id=" + id +
            ", policy=" + placementPolicy +
+           ", nodeFailureThreshold=" + nodeFailureThreshold +
            '}';
   }
 }

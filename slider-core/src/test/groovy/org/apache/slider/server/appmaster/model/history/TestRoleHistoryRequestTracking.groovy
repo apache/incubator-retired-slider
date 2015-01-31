@@ -82,7 +82,34 @@ class TestRoleHistoryRequestTracking extends BaseMockAppStateTest {
     List<NodeInstance> a2 = roleHistory.cloneAvailableList(0)
     assertListEquals([age2Active0], a2)
   }
-  
+
+  @Test
+  public void testRequestedNodeOffListWithFailures() throws Throwable {
+    NodeInstance ni = roleHistory.findNodeForNewInstance(roleStatus)
+    assert age3Active0 == ni
+    AMRMClient.ContainerRequest req = roleHistory.requestInstanceOnNode(ni,
+        roleStatus,
+        resource,
+        "")
+    assert 1 == req.nodes.size()
+    List<NodeInstance> a2 = roleHistory.cloneAvailableList(0)
+    assertListEquals([age2Active0], a2)
+
+    age3Active0.get(0).failedRecently = 4
+    req = roleHistory.requestInstanceOnNode(ni,
+        roleStatus,
+        resource,
+        "")
+    assertNull(req.nodes)
+
+    age3Active0.get(0).failedRecently = 0
+    req = roleHistory.requestInstanceOnNode(ni,
+        roleStatus,
+        resource,
+        "")
+    assert 1 == req.nodes.size()
+  }
+
   @Test
   public void testFindAndRequestNode() throws Throwable {
     AMRMClient.ContainerRequest req = roleHistory.requestNode(roleStatus, resource)
