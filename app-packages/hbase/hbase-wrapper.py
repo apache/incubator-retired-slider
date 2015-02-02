@@ -120,5 +120,6 @@ call(["slider", "registry", "--getconf", "hbase-site", "--user", "hbase", "--for
 HBaseConfFile=os.path.join(local_conf_dir, "hbase-site.xml")
 propertyMap = {'hbase.tmp.dir' : '/tmp/hbase-tmp', "instance" : cluster_instance}
 writePropertiesToConfigXMLFile(tmpHBaseConfFile, HBaseConfFile, propertyMap)
+print "hbase configuration is saved in " + HBaseConfFile
 
 call(["hbase", "--config", local_conf_dir, "shell"])
