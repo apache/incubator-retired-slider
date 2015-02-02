@@ -164,10 +164,13 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
         ugiClient,
         "~", SliderKeys.APP_TYPE,
         clustername)
-    def sliderApplicationApi = restClientFactory.createSliderApplicationApi();
+    def sliderApplicationApi = restClientFactory.createSliderAppApiClient();
     sliderApplicationApi.desiredModel
     sliderApplicationApi.resolvedModel
-    sliderApplicationApi.ping("registry located")
+
+    if (directComplexVerbs) {
+      sliderApplicationApi.ping("registry located")
+    }
 
     // log the metrics to show what's up
     direct.logCodahaleMetrics();

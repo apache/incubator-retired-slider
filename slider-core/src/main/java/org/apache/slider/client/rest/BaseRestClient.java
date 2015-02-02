@@ -37,7 +37,7 @@ import java.net.URI;
 
 /**
  * This is a base class for Jersey REST clients in Slider.
- * It supports bonding to an AM and the execution of operations —with
+ * It supports the execution of operations —with
  * exceptions uprated to IOExceptions when needed.
  * <p>
  * Subclasses can use these operations to provide an API-like view
@@ -47,33 +47,19 @@ public class BaseRestClient  {
   private static final Logger log =
       LoggerFactory.getLogger(BaseRestClient.class);
   private final Client client;
-  private WebResource appmaster;
 
   public BaseRestClient(
-      Client client,
-      WebResource appmaster) {
+      Client client) {
     Preconditions.checkNotNull(client, "null jersey client");
     this.client = client;
-    if (appmaster != null) {
-      bindToAppmaster(appmaster);
-    }
-  }
-  
-  public Client getClient() {
-    return client;
   }
 
   /**
-   * Bind/rebind to the AM
-   * @param appmaster AM
+   * Get the jersey client
+   * @return jersey client
    */
-  public void bindToAppmaster(WebResource appmaster) {
-    Preconditions.checkArgument(appmaster != null, " Null appmaster");
-    this.appmaster = appmaster;
-  }
-
-  public WebResource getAppmaster() {
-    return appmaster;
+  public Client getClient() {
+    return client;
   }
 
   /**

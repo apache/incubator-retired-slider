@@ -173,7 +173,7 @@ public class AgentWebPagesIT extends AgentCommandTestBase
     def restClientFactory = new RestClientFactory(
         operations, ugiClient,
         "~", SliderKeys.APP_TYPE, CLUSTER)
-    def sliderApplicationApi = restClientFactory.createSliderApplicationApi();
+    def sliderApplicationApi = restClientFactory.createSliderAppApiClient();
     sliderApplicationApi.desiredModel
     sliderApplicationApi.resolvedModel
     if (proxyComplexVerbs) {
