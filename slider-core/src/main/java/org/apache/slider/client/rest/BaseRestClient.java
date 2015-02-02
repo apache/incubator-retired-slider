@@ -20,9 +20,11 @@ package org.apache.slider.client.rest;
 
 import com.google.common.base.Preconditions;
 import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.ClientHandlerException;
 import com.sun.jersey.api.client.GenericType;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
+import org.apache.slider.core.exceptions.ExceptionConverter;
 import org.apache.slider.core.restclient.HttpVerb;
 import org.apache.slider.core.restclient.UgiJerseyBinding;
 import org.slf4j.Logger;
@@ -34,8 +36,8 @@ import java.net.URI;
 
 
 /**
- * This is a base class for Jersey Rest clients in Slider.
- * It supports bonding to an AM and the execution of operations —with
+ * This is a base class for Jersey REST clients in Slider.
+ * It supports the execution of operations —with
  * exceptions uprated to IOExceptions when needed.
  * <p>
  * Subclasses can use these operations to provide an API-like view
@@ -45,33 +47,19 @@ public class BaseRestClient  {
   private static final Logger log =
       LoggerFactory.getLogger(BaseRestClient.class);
   private final Client client;
-  private WebResource appmaster;
 
   public BaseRestClient(
-      Client client,
-      WebResource appmaster) {
+      Client client) {
     Preconditions.checkNotNull(client, "null jersey client");
     this.client = client;
-    if (appmaster != null) {
-      bindToAppmaster(appmaster);
-    }
-  }
-  
-  public Client getClient() {
-    return client;
   }
 
   /**
-   * Bind/rebind to the AM
-   * @param appmaster AM
+   * Get the jersey client
+   * @return jersey client
    */
-  public void bindToAppmaster(WebResource appmaster) {
-    Preconditions.checkArgument(appmaster != null, " Null appmaster");
-    this.appmaster = appmaster;
-  }
-
-  public WebResource getAppmaster() {
-    return appmaster;
+  public Client getClient() {
+    return client;
   }
 
   /**
@@ -89,6 +77,10 @@ public class BaseRestClient  {
       Preconditions.checkArgument(c != null);
       resource.accept(MediaType.APPLICATION_JSON_TYPE);
       return (T) resource.method(method.getVerb(), c);
+    } catch (ClientHandlerException ex) {
+      throw ExceptionConverter.convertJerseyException(method.getVerb(),
+          resource.getURI().toString(),
+          ex);
     } catch (UniformInterfaceException ex) {
       throw UgiJerseyBinding.uprateFaults(method,
           resource.getURI().toString(),
@@ -111,6 +103,10 @@ public class BaseRestClient  {
       Preconditions.checkArgument(t != null);
       resource.accept(MediaType.APPLICATION_JSON_TYPE);
       return resource.method(method.getVerb(), t);
+    } catch (ClientHandlerException ex) {
+      throw ExceptionConverter.convertJerseyException(method.getVerb(),
+          resource.getURI().toString(),
+          ex);
     } catch (UniformInterfaceException ex) {
       throw UgiJerseyBinding.uprateFaults(method, resource.getURI().toString(),
           ex);

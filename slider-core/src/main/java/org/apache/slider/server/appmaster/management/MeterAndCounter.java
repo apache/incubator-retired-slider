@@ -93,4 +93,12 @@ public class MeterAndCounter {
   public int hashCode() {
     return name.hashCode();
   }
+
+  /**
+   * Get the count.
+   * @return the current count
+   */
+  public long getCount() {
+    return counter.getCount();
+  }
 }

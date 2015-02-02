@@ -22,15 +22,14 @@ import com.sun.jersey.api.client.Client
 import com.sun.jersey.api.client.WebResource
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.hadoop.fs.PathNotFoundException
 import org.apache.slider.api.StateValues
-import org.apache.slider.api.types.SerializedComponentInformation
-import org.apache.slider.api.types.SerializedContainerInformation
-import org.apache.slider.client.rest.SliderApplicationAPI
+import org.apache.slider.api.types.ComponentInformation
+import org.apache.slider.api.types.ContainerInformation
+import org.apache.slider.client.rest.SliderApplicationApiImpl
 import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.core.conf.ConfTreeOperations
 import org.apache.slider.server.appmaster.web.rest.application.ApplicationResource
-import org.apache.slider.test.SliderTestUtils
+import org.apache.slider.test.Outcome
 
 import javax.ws.rs.core.MediaType
 
@@ -40,31 +39,29 @@ import static org.apache.slider.common.SliderKeys.COMPONENT_AM
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.*
 
 /**
- * This class contains parts of tests that can be run
- * against a deployed AM: local or remote.
- * It uses Jersey ... and must be passed a client that is either secure
- * or not
- * 
+ * Uses the Slider Application API for the tests.
+ * {@link SliderApplicationApiImpl}
  */
 @CompileStatic
 @Slf4j
-class SliderRestClientTestDelegates extends SliderTestUtils {
-  public static final String TEST_GLOBAL_OPTION = "test.global.option"
-  public static final String TEST_GLOBAL_OPTION_PRESENT = "present"
+class RestAPIClientTestDelegates extends AbstractRestTestDelegate {
 
   final String appmaster;
   final String application;
   final Client jersey;
-  final SliderApplicationAPI appAPI;
+  final SliderApplicationApiImpl appAPI;
 
 
-  SliderRestClientTestDelegates(String appmaster, Client jersey) {
+  RestAPIClientTestDelegates(String appmaster, Client jersey,
+      boolean enableComplexVerbs = true) {
+    super(enableComplexVerbs)
     this.jersey = jersey
     this.appmaster = appmaster
     application = appendToURL(appmaster, SLIDER_PATH_APPLICATION)
     WebResource amResource = jersey.resource(appmaster)
     amResource.type(MediaType.APPLICATION_JSON)
-    appAPI = new SliderApplicationAPI(jersey, amResource)
+    def appResource = amResource.path(SLIDER_PATH_APPLICATION);
+    appAPI = new SliderApplicationApiImpl(jersey, appResource)
   }
 
 
@@ -102,11 +99,11 @@ class SliderRestClientTestDelegates extends SliderTestUtils {
   public void testLiveContainers() throws Throwable {
     describe "Application REST ${LIVE_CONTAINERS}"
 
-    Map<String, SerializedContainerInformation> containers = appAPI.enumContainers()
+    Map<String, ContainerInformation> containers = appAPI.enumContainers()
     assert containers.size() == 1
     log.info "${containers}"
-    SerializedContainerInformation amContainerInfo =
-        (SerializedContainerInformation) containers.values()[0]
+    ContainerInformation amContainerInfo =
+        (ContainerInformation) containers.values()[0]
     assert amContainerInfo.containerId
 
     def amContainerId = amContainerInfo.containerId
@@ -121,7 +118,7 @@ class SliderRestClientTestDelegates extends SliderTestUtils {
 
     describe "containers"
 
-    SerializedContainerInformation amContainerInfo2 =
+    ContainerInformation amContainerInfo2 =
         appAPI.getContainer(amContainerId)
     assert amContainerInfo2.containerId == amContainerId
 
@@ -136,17 +133,17 @@ class SliderRestClientTestDelegates extends SliderTestUtils {
 
     describe "components"
 
-    Map<String, SerializedComponentInformation> components =
+    Map<String, ComponentInformation> components =
         appAPI.enumComponents()
 
     // two components
     assert components.size() >= 1
     log.info "${components}"
 
-    SerializedComponentInformation amComponentInfo =
-        (SerializedComponentInformation) components[COMPONENT_AM]
+    ComponentInformation amComponentInfo =
+        (ComponentInformation) components[COMPONENT_AM]
 
-    SerializedComponentInformation amFullInfo = appAPI.getComponent(COMPONENT_AM) 
+    ComponentInformation amFullInfo = appAPI.getComponent(COMPONENT_AM) 
 
     assert amFullInfo.containers.size() == 1
     assert amFullInfo.containers[0] == amContainerId
@@ -179,14 +176,14 @@ class SliderRestClientTestDelegates extends SliderTestUtils {
 
     def unresolved = fetchTypeList(ConfTree, appmaster,
         [MODEL_DESIRED_APPCONF, MODEL_DESIRED_RESOURCES])
-    assert unresolved[MODEL_DESIRED_APPCONF].components[sam]
-    [TEST_GLOBAL_OPTION] == null
+    assert null == 
+           unresolved[MODEL_DESIRED_APPCONF].components[sam][TEST_GLOBAL_OPTION] 
 
 
     
     def resolvedAppconf = appAPI.getResolvedAppconf() 
-    assert resolvedAppconf.
-               components[sam][TEST_GLOBAL_OPTION] == TEST_GLOBAL_OPTION_PRESENT
+    assert TEST_GLOBAL_OPTION_PRESENT==
+           resolvedAppconf. components[sam][TEST_GLOBAL_OPTION]
   }
 
   public void testPing() {
@@ -202,39 +199,35 @@ class SliderRestClientTestDelegates extends SliderTestUtils {
    * Important: once executed, the AM is no longer there.
    * This must be the last test in the sequence.
    */
-/*
 
   public void testStop() {
-    String target = appendToURL(appmaster, SLIDER_PATH_APPLICATION, ACTION_STOP)
-    describe "Stop URL $target"
-    URL targetUrl = new URL(target)
-    def outcome = connectionOperations.execHttpOperation(
-        HttpVerb.POST,
-        targetUrl,
-        new byte[0],
-        MediaType.TEXT_PLAIN)
-    log.info "Stopped: $outcome"
 
-    // await the shutdown
-    sleep(1000)
-    
-    // now a ping is expected to fail
-    String ping = appendToURL(appmaster, SLIDER_PATH_APPLICATION, ACTION_PING)
-    URL pingUrl = new URL(ping)
+    appAPI.stop("stop")
 
-    repeatUntilSuccess("probe for missing registry entry",
-        this.&probePingFailing, 30000, 500,
-        [url: ping],
+    repeatUntilSuccess("probe for liveness",
+        this.&probeForLivenessFailing, STOP_WAIT_TIME, STOP_PROBE_INTERVAL,
+        [:],
         true,
         "AM failed to shut down") {
-      def pinged = jFetchType(ACTION_PING + "?body=hello",
-          PingResource
-      )
-      fail("AM didn't shut down; Ping GET= $pinged")
+      appAPI.getApplicationLiveness()
     }
     
   }
-*/
+
+  /**
+   * Probe that spins until the liveness query fails
+   * @param args argument map
+   * @return the outcome
+   */
+  Outcome probeForLivenessFailing(Map args) {
+    try {
+      appAPI.getApplicationLiveness()
+      return Outcome.Retry
+    } catch (IOException e) {
+      // expected
+      return Outcome.Success
+    }
+  }
 
   public void testSuiteGetOperations() {
 
@@ -243,9 +236,18 @@ class SliderRestClientTestDelegates extends SliderTestUtils {
     testLiveResources()
     testLiveContainers();
     testRESTModel()
+    testAppLiveness()
   }
 
   public void testSuiteComplexVerbs() {
     testPing();
+  }
+  
+  public void testAppLiveness() {
+    def liveness = appAPI.applicationLiveness
+    describe "Liveness:\n$liveness"
+    
+    assert liveness.allRequestsSatisfied
+    assert !liveness.requestsOutstanding
   }
 }

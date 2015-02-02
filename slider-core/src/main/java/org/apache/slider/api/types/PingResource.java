@@ -21,21 +21,27 @@ package org.apache.slider.api.types;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 
-import java.util.List;
-
 /**
- * Serializable version of component data
+ * Serialized information to/from Ping operations
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
+public class PingResource {
+  public long time;
+  public String text;
+  public String verb;
+  public String body;
 
-public class SerializedComponentInformation {
-  
-  public String name;
-  public int priority;
-  public int desired, actual, requested, releasing;
-  public int failed, started, startFailed, completed, totalRequested;
-  public String failureMessage;
-  public int placementPolicy;
-  public List<String> containers;
+  @Override
+  public String toString() {
+    
+    final StringBuilder sb =
+        new StringBuilder("PingResource{");
+    sb.append("time=").append(time);
+    sb.append(", verb=").append(verb);
+    sb.append(", text='").append(text).append('\'');
+    sb.append(", body='").append(body).append('\'');
+    sb.append('}');
+    return sb.toString();
+  }
 }

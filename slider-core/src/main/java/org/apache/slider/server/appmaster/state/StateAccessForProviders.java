@@ -22,6 +22,9 @@ import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
 import org.apache.slider.api.ClusterDescription;
+import org.apache.slider.api.StatusKeys;
+import org.apache.slider.api.types.ApplicationLivenessInformation;
+import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTreeOperations;
 import org.apache.slider.core.exceptions.NoSuchNodeException;
@@ -37,6 +40,10 @@ import java.util.Map;
  */
 public interface StateAccessForProviders {
 
+  /**
+   * Get a map of role status entries by role Id
+   * @return the map of currently defined roles.
+   */
   Map<Integer, RoleStatus> getRoleStatusMap();
 
   /**
@@ -77,8 +84,17 @@ public interface StateAccessForProviders {
    */
   List<String> listConfigSets();
 
+  /**
+   * Get a map of all the failed nodes
+   * @return map of recorded failed notes
+   */
   Map<ContainerId, RoleInstance> getFailedNodes();
 
+  /**
+   * Get the live nodes.
+   * 
+   * @return the live nodes
+   */
   Map<ContainerId, RoleInstance> getLiveNodes();
 
   /**
@@ -220,4 +236,26 @@ public interface StateAccessForProviders {
    * @return a snapshot of the role status entries
    */
   List<RoleStatus> cloneRoleStatusList();
+
+  /**
+   * get application liveness information
+   * @return a snapshot of the current liveness information
+   */
+  ApplicationLivenessInformation getApplicationLivenessInformation();
+
+  /**
+   * Get the live statistics map
+   * @return a map of statistics values, defined in the {@link StatusKeys}
+   * keylist.
+   */
+  Map<String, Integer> getLiveStatistics();
+
+  /**
+   * Get a snapshot of component information.
+   * <p>
+   *   This does <i>not</i> include any container list, which 
+   *   is more expensive to create.
+   * @return a map of current role status values.
+   */
+  Map<String, ComponentInformation> getComponentInfoSnapshot();
 }

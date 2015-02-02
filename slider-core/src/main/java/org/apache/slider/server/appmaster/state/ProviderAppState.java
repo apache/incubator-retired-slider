@@ -22,6 +22,8 @@ import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
 import org.apache.slider.api.ClusterDescription;
+import org.apache.slider.api.types.ApplicationLivenessInformation;
+import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTreeOperations;
 import org.apache.slider.core.exceptions.NoSuchNodeException;
@@ -219,5 +221,20 @@ public class ProviderAppState implements StateAccessForProviders {
   @Override
   public List<RoleStatus> cloneRoleStatusList() {
     return appState.cloneRoleStatusList();
+  }
+
+  @Override
+  public ApplicationLivenessInformation getApplicationLivenessInformation() {
+    return appState.getApplicationLivenessInformation();
+  }
+
+  @Override
+  public Map<String, Integer> getLiveStatistics() {
+    return appState.getLiveStatistics();
+  }
+
+  @Override
+  public Map<String, ComponentInformation> getComponentInfoSnapshot() {
+    return appState.getComponentInfoSnapshot();
   }
 }

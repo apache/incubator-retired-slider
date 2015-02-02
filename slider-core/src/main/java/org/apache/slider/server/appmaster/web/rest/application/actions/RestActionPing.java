@@ -18,12 +18,11 @@
 
 package org.apache.slider.server.appmaster.web.rest.application.actions;
 
-import org.apache.slider.server.appmaster.web.rest.application.resources.PingResource;
+import org.apache.slider.api.types.PingResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
 import java.util.Locale;
 

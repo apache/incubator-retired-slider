@@ -18,40 +18,30 @@
 
 package org.apache.slider.api.types;
 
-import org.apache.hadoop.registry.client.binding.JsonSerDeser;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 
-
 /**
- * Serializable version of role instance data
+ * Serialized information about liveness
+ * <p>
+ *   If true liveness probes are implemented, this
+ *   datatype can be extended to publish their details.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
-public class SerializedContainerInformation {
-  
-  public String containerId;
-  public String component;
-  public Boolean released;
-  public int state;
-  public Integer exitCode;
-  public String diagnostics;
-  public long createTime;
-  public long startTime;
-
-  /**
-   * What is the tail output from the executed process (or [] if not started
-   * or the log cannot be picked up
-   */
-  public String[] output;
-  public String host;
-  public String hostURL;
+public class ApplicationLivenessInformation {
+  public boolean allRequestsSatisfied;
+  public int requestsOutstanding;
 
   @Override
   public String toString() {
-    JsonSerDeser<SerializedContainerInformation> serDeser =
-        new JsonSerDeser<SerializedContainerInformation>(
-            SerializedContainerInformation.class);
-    return serDeser.toString(this);
+    final StringBuilder sb =
+        new StringBuilder("ApplicationLivenessInformation{");
+    sb.append("allRequestsSatisfied=").append(allRequestsSatisfied);
+    sb.append(", requestsOutstanding=").append(requestsOutstanding);
+    sb.append('}');
+    return sb.toString();
   }
 }
+
+

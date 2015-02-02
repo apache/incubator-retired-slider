@@ -83,7 +83,7 @@ import org.apache.slider.api.proto.Messages;
 import org.apache.slider.api.proto.SliderClusterAPI;
 import org.apache.slider.common.SliderExitCodes;
 import org.apache.slider.common.SliderKeys;
-import org.apache.slider.common.SliderXmlConfKeys;
+import static org.apache.slider.common.SliderXmlConfKeys.*;
 import org.apache.slider.common.params.AbstractActionArgs;
 import org.apache.slider.common.params.SliderAMArgs;
 import org.apache.slider.common.params.SliderAMCreateAction;
@@ -692,9 +692,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       if (securityEnabled) {
         // fix up the ACLs if they are not set
-        String acls = getConfig().get(SliderXmlConfKeys.KEY_PROTOCOL_ACL);
+        String acls = getConfig().get(KEY_PROTOCOL_ACL);
         if (acls == null) {
-          getConfig().set(SliderXmlConfKeys.KEY_PROTOCOL_ACL, "*");
+          getConfig().set(KEY_PROTOCOL_ACL, "*");
         }
       }
       //bring up the Slider RPC service
@@ -1137,7 +1137,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     // This is here until YARN supports proxy & redirect operations
     // on verbs other than GET, and is only supported for testing
-    if (serviceConf.getBoolean(SliderXmlConfKeys.X_DEV_INSECURE_WS, false)) {
+    if (X_DEV_INSECURE_REQUIRED && serviceConf.getBoolean(X_DEV_INSECURE_WS, 
+        X_DEV_INSECURE_DEFAULT)) {
       log.warn("Insecure filter enabled: REST operations are unauthenticated");
       amFilterName = InsecureAmFilterInitializer.NAME;
     }
@@ -1499,11 +1500,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     boolean authorization = getConfig().getBoolean(
         CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION,
         false);
-    String acls = getConfig().get(SliderXmlConfKeys.KEY_PROTOCOL_ACL);
+    String acls = getConfig().get(KEY_PROTOCOL_ACL);
     if (authorization && SliderUtils.isUnset(acls)) {
       throw new BadConfigException("Application has IPC authorization enabled in " +
           CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION +
-          " but no ACLs in " + SliderXmlConfKeys.KEY_PROTOCOL_ACL);
+          " but no ACLs in " + KEY_PROTOCOL_ACL);
     }
   }
 

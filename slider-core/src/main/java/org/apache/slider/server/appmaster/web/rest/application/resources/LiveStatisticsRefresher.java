@@ -18,35 +18,22 @@
 
 package org.apache.slider.server.appmaster.web.rest.application.resources;
 
-import org.apache.slider.api.types.ContainerInformation;
-import org.apache.slider.server.appmaster.state.RoleInstance;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-/**
- * Refresh the container list.
- */
-public class LiveContainersRefresher implements ResourceRefresher<Map<String, ContainerInformation>> {
+public class LiveStatisticsRefresher implements ResourceRefresher<Map<String,Integer>> {
 
   private final StateAccessForProviders state;
 
-  public LiveContainersRefresher(StateAccessForProviders state) {
+  public LiveStatisticsRefresher(StateAccessForProviders state) {
     this.state = state;
   }
 
   @Override
-  public Map<String, ContainerInformation> refresh() throws
-      Exception {
-    List<RoleInstance> containerList = state.cloneOwnedContainerList();
+  public Map<String, Integer> refresh() throws Exception {
 
-    Map<String, ContainerInformation> map = new HashMap<String, ContainerInformation>();
-    for (RoleInstance instance : containerList) {
-      ContainerInformation serialized = instance.serialize();
-      map.put(serialized.containerId, serialized);
-    }
-    return map;
+    // snapshot resources
+    return state.getLiveStatistics();
   }
 }

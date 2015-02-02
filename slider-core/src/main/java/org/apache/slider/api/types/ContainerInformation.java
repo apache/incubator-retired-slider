@@ -16,29 +16,42 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster.web.rest.application.resources;
+package org.apache.slider.api.types;
 
+import org.apache.hadoop.registry.client.binding.JsonSerDeser;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 
+
+/**
+ * Serializable version of component instance data
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
-public class PingResource {
-  public long time;
-  public String text;
-  public String verb;
-  public String body;
+public class ContainerInformation {
+  
+  public String containerId;
+  public String component;
+  public Boolean released;
+  public int state;
+  public Integer exitCode;
+  public String diagnostics;
+  public long createTime;
+  public long startTime;
+
+  /**
+   * What is the tail output from the executed process (or [] if not started
+   * or the log cannot be picked up
+   */
+  public String[] output;
+  public String host;
+  public String hostURL;
 
   @Override
   public String toString() {
-    
-    final StringBuilder sb =
-        new StringBuilder("PingResource{");
-    sb.append("time=").append(time);
-    sb.append(", verb=").append(verb);
-    sb.append(", text='").append(text).append('\'');
-    sb.append(", body='").append(body).append('\'');
-    sb.append('}');
-    return sb.toString();
+    JsonSerDeser<ContainerInformation> serDeser =
+        new JsonSerDeser<ContainerInformation>(
+            ContainerInformation.class);
+    return serDeser.toString(this);
   }
 }
