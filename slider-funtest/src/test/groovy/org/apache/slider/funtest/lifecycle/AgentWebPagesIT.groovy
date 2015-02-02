@@ -115,13 +115,13 @@ public class AgentWebPagesIT extends AgentCommandTestBase
     def directAM = report.origTrackingUrl;
     // now attempt direct-to-AM pings
     LowLevelRestTestDelegates direct = new LowLevelRestTestDelegates(directAM,
-        proxyComplexVerbs)
+        directComplexVerbs)
 
     direct.testSuiteAll()
 
     // and via the proxy
     LowLevelRestTestDelegates proxied = new LowLevelRestTestDelegates(proxyAM,
-        directComplexVerbs)
+        proxyComplexVerbs)
     proxied.testSuiteAll()
     proxied.logCodahaleMetrics();
 
