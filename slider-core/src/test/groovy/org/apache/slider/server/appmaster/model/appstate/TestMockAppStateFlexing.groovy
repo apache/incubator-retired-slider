@@ -20,6 +20,7 @@ package org.apache.slider.server.appmaster.model.appstate
 
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.Container
+import org.apache.slider.api.ClusterDescription
 import org.apache.slider.core.exceptions.TriggerClusterTeardownException
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockRoles
@@ -93,6 +94,10 @@ class TestMockAppStateFlexing extends BaseMockAppStateTest implements MockRoles 
     def liveness = appState.applicationLivenessInformation
     assert 1 == liveness.requestsOutstanding
     assert !liveness.allRequestsSatisfied
+
+    appState.refreshClusterStatus(null)
+    def cd = appState.clusterStatus
+    assert 1 == cd.liveness.requestsOutstanding
 
   }
 
