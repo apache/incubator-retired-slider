@@ -18,14 +18,12 @@
 
 package org.apache.slider.server.appmaster.state;
 
-import org.apache.slider.api.StatusKeys;
-import org.apache.slider.api.types.SerializedComponentInformation;
+import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.providers.PlacementPolicy;
 import org.apache.slider.providers.ProviderRole;
 
 import java.io.Serializable;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Map;
 
 
@@ -281,25 +279,17 @@ public final class RoleStatus implements Cloneable {
    * Build the statistics map from the current data
    * @return a map for use in statistics reports
    */
-  public synchronized Map<String, Integer> buildStatistics() {
-    Map<String, Integer> stats = new HashMap<String, Integer>();
-    stats.put(StatusKeys.STATISTICS_CONTAINERS_ACTIVE_REQUESTS, getRequested());
-    stats.put(StatusKeys.STATISTICS_CONTAINERS_COMPLETED, getCompleted());
-    stats.put(StatusKeys.STATISTICS_CONTAINERS_DESIRED, getDesired());
-    stats.put(StatusKeys.STATISTICS_CONTAINERS_FAILED, getFailed());
-    stats.put(StatusKeys.STATISTICS_CONTAINERS_LIVE, getActual());
-    stats.put(StatusKeys.STATISTICS_CONTAINERS_REQUESTED, getTotalRequested());
-    stats.put(StatusKeys.STATISTICS_CONTAINERS_STARTED, getStarted());
-    stats.put(StatusKeys.STATISTICS_CONTAINERS_START_FAILED, getStartFailed());
-    return stats;
+  public Map<String, Integer> buildStatistics() {
+    ComponentInformation componentInformation = serialize();
+    return componentInformation.buildStatistics();
   }
 
   /**
    * Produced a serialized form which can be served up as JSON
    * @return a summary of the current role status.
    */
-  public synchronized SerializedComponentInformation serialize() {
-    SerializedComponentInformation info = new SerializedComponentInformation();
+  public synchronized ComponentInformation serialize() {
+    ComponentInformation info = new ComponentInformation();
     info.name = name;
     info.priority = getPriority();
     info.desired = desired;
@@ -308,7 +298,6 @@ public final class RoleStatus implements Cloneable {
     info.releasing = releasing;
     info.failed = failed;
     info.startFailed = startFailed;
-    info.requested = requested;
     info.placementPolicy = getPlacementPolicy();
     info.failureMessage = failureMessage;
     info.totalRequested = totalRequested;

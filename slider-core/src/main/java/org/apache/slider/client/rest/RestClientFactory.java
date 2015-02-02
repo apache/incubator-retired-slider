@@ -25,6 +25,8 @@ import org.apache.slider.core.registry.info.CustomRegistryConstants;
 
 import java.io.IOException;
 
+import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_APPLICATION;
+
 public class RestClientFactory {
 
   private final RestClientRegistryBinder binder;
@@ -53,9 +55,28 @@ public class RestClientFactory {
         CustomRegistryConstants.AM_REST_BASE);
     return jerseyClient.resource(restAPI);
   }
-  
-  public SliderApplicationAPI createSliderApplicationApi() throws IOException {
-    return new SliderApplicationAPI(jerseyClient, locateAppmaster());
+
+  /**
+   * Locate the slider AM then instantiate a client instance against
+   * its Application API.
+   * @return the instance
+   * @throws IOException on any failure
+   */
+  public SliderApplicationApi createSliderAppApiClient() throws IOException {
+    WebResource appmaster = locateAppmaster();
+    return createSliderAppApiClient(appmaster);
   }
-  
+
+   /**
+   * Create a Slider application API client instance against
+   * its Application API.
+   * @param appmaster The AM to work against.
+   * @return the instance
+   * @throws IOException on any failure
+   */
+  public SliderApplicationApi createSliderAppApiClient(WebResource appmaster) {
+    WebResource appResource = appmaster.path(SLIDER_PATH_APPLICATION);
+    return new SliderApplicationApiClient(jerseyClient, appResource);
+  }
+
 }

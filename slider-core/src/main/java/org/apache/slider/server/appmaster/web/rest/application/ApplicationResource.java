@@ -21,8 +21,9 @@ package org.apache.slider.server.appmaster.web.rest.application;
 import com.google.common.collect.Lists;
 import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
 import org.apache.hadoop.yarn.webapp.NotFoundException;
-import org.apache.slider.api.types.SerializedComponentInformation;
-import org.apache.slider.api.types.SerializedContainerInformation;
+import org.apache.slider.api.types.ApplicationLivenessInformation;
+import org.apache.slider.api.types.ComponentInformation;
+import org.apache.slider.api.types.ContainerInformation;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.exceptions.NoSuchNodeException;
@@ -43,7 +44,8 @@ import org.apache.slider.server.appmaster.web.rest.application.resources.Content
 import org.apache.slider.server.appmaster.web.rest.application.resources.LiveComponentsRefresher;
 import org.apache.slider.server.appmaster.web.rest.application.resources.LiveResourcesRefresher;
 import org.apache.slider.server.appmaster.web.rest.application.actions.RestActionPing;
-import org.apache.slider.server.appmaster.web.rest.application.resources.PingResource;
+import org.apache.slider.api.types.PingResource;
+import org.apache.slider.server.appmaster.web.rest.application.resources.LiveStatisticsRefresher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,6 +60,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 
 import static javax.ws.rs.core.MediaType.*;
@@ -72,7 +75,7 @@ public class ApplicationResource extends AbstractSliderResource {
   private static final Logger log =
       LoggerFactory.getLogger(ApplicationResource.class);
 
-  public static final int LIFESPAN = 1000;
+  public static final int LIFESPAN = 500;
   public static final List<String> LIVE_ENTRIES = toJsonList("resources",
       "containers",
       "components",
@@ -102,10 +105,10 @@ public class ApplicationResource extends AbstractSliderResource {
         new CachedContent<ConfTree>(LIFESPAN,
             new LiveResourcesRefresher(state)));
     cache.put(LIVE_CONTAINERS,
-        new CachedContent<Map<String, SerializedContainerInformation>>(LIFESPAN,
+        new CachedContent<Map<String, ContainerInformation>>(LIFESPAN,
             new LiveContainersRefresher(state)));
     cache.put(LIVE_COMPONENTS,
-        new CachedContent<Map<String, SerializedComponentInformation>> (LIFESPAN,
+        new CachedContent<Map<String, ComponentInformation>> (LIFESPAN,
             new LiveComponentsRefresher(state)));
     cache.put(MODEL_DESIRED,
         new CachedContent<AggregateConf>(LIFESPAN,
@@ -125,6 +128,9 @@ public class ApplicationResource extends AbstractSliderResource {
     cache.put(MODEL_DESIRED_RESOURCES,
         new CachedContent<ConfTree>(LIFESPAN,
             new AppconfRefresher(state, true, true)));
+    cache.put(LIVE_STATISTICS,
+        new CachedContent<Map<String, Integer>>(LIFESPAN,
+            new LiveStatisticsRefresher(state)));
   }
 
   /**
@@ -223,10 +229,10 @@ public class ApplicationResource extends AbstractSliderResource {
   @GET
   @Path(LIVE_CONTAINERS)
   @Produces({APPLICATION_JSON})
-  public Map<String, SerializedContainerInformation> getLiveContainers() {
+  public Map<String, ContainerInformation> getLiveContainers() {
     markGet(SLIDER_SUBPATH_APPLICATION, LIVE_CONTAINERS);
     try {
-      return (Map<String, SerializedContainerInformation>)cache.lookup(
+      return (Map<String, ContainerInformation>)cache.lookup(
           LIVE_CONTAINERS);
     } catch (Exception e) {
       throw buildException(LIVE_CONTAINERS, e);
@@ -236,7 +242,7 @@ public class ApplicationResource extends AbstractSliderResource {
   @GET
   @Path(LIVE_CONTAINERS + "/{containerId}")
   @Produces({APPLICATION_JSON})
-  public SerializedContainerInformation getLiveContainer(
+  public ContainerInformation getLiveContainer(
       @PathParam("containerId") String containerId) {
     markGet(SLIDER_SUBPATH_APPLICATION, LIVE_CONTAINERS);
     try {
@@ -252,10 +258,10 @@ public class ApplicationResource extends AbstractSliderResource {
   @GET
   @Path(LIVE_COMPONENTS)
   @Produces({APPLICATION_JSON})
-  public Map<String, SerializedComponentInformation> getLiveComponents() {
+  public Map<String, ComponentInformation> getLiveComponents() {
     markGet(SLIDER_SUBPATH_APPLICATION, LIVE_COMPONENTS);
     try {
-      return (Map<String, SerializedComponentInformation>) cache.lookup(
+      return (Map<String, ComponentInformation>) cache.lookup(
           LIVE_COMPONENTS);
     } catch (Exception e) {
       throw buildException(LIVE_COMPONENTS, e);
@@ -265,12 +271,12 @@ public class ApplicationResource extends AbstractSliderResource {
   @GET
   @Path(LIVE_COMPONENTS + "/{component}")
   @Produces({APPLICATION_JSON})
-  public SerializedComponentInformation getLiveComponent(
+  public ComponentInformation getLiveComponent(
       @PathParam("component") String component) {
     markGet(SLIDER_SUBPATH_APPLICATION, LIVE_COMPONENTS);
     try {
       RoleStatus roleStatus = state.lookupRoleStatus(component);
-      SerializedComponentInformation info = roleStatus.serialize();
+      ComponentInformation info = roleStatus.serialize();
       List<RoleInstance> containers = lookupRoleContainers(component);
       info.containers = new ArrayList<String>(containers.size());
       for (RoleInstance container : containers) {
@@ -280,10 +286,65 @@ public class ApplicationResource extends AbstractSliderResource {
     } catch (YarnRuntimeException e) {
       throw new NotFoundException("Unknown component: " + component);
     } catch (Exception e) {
+      throw buildException(LIVE_CONTAINERS +"/" + component, e);
+    }
+  }
+
+  /**
+   * Liveness information for the application as a whole
+   * @return snapshot of liveness
+   */
+  @GET
+  @Path(LIVE_LIVENESS)
+  @Produces({APPLICATION_JSON})
+  public ApplicationLivenessInformation getLivenessInformation() {
+    markGet(SLIDER_SUBPATH_APPLICATION, LIVE_LIVENESS);
+    try {
+      return state.getApplicationLivenessInformation();
+    } catch (Exception e) {
       throw buildException(LIVE_CONTAINERS, e);
     }
   }
 
+/*
+TODO: decide what structure to return here, then implement
+
+  @GET
+  @Path(LIVE_LIVENESS + "/{component}")
+  @Produces({APPLICATION_JSON})
+  public ApplicationLivenessInformation getLivenessForComponent(
+      @PathParam("component") String component) {
+    markGet(SLIDER_SUBPATH_APPLICATION, LIVE_COMPONENTS);
+    try {
+      RoleStatus roleStatus = state.lookupRoleStatus(component);
+      ApplicationLivenessInformation info = new ApplicationLivenessInformation();
+      info.requested = roleStatus.getRequested();
+      info.allRequestsSatisfied = info.requested == 0;
+      return info;
+    } catch (YarnRuntimeException e) {
+      throw new NotFoundException("Unknown component: " + component);
+    } catch (Exception e) {
+      throw buildException(LIVE_LIVENESS + "/" + component, e);
+    }
+  }
+*/
+
+  /**
+   * Statistics of the application
+   * @return snapshot statistics
+   */
+  @GET
+  @Path(LIVE_STATISTICS)
+  @Produces({APPLICATION_JSON})
+  public Map<String, Integer> getLiveStatistics() {
+    markGet(SLIDER_SUBPATH_APPLICATION, LIVE_LIVENESS);
+    try {
+      return (Map<String, Integer>) cache.lookup(LIVE_STATISTICS);
+    } catch (Exception e) {
+      throw buildException(LIVE_STATISTICS, e);
+    }
+  }
+  
   /**
    * Look up all containers of a specific component name 
    * @param component component/role name
@@ -302,6 +363,13 @@ public class ApplicationResource extends AbstractSliderResource {
     return matching;
   }
 
+  /**
+   * Helper method; look up an aggregate configuration in the cache from
+   * a key, or raise an exception
+   * @param key key to resolve
+   * @return the configuration
+   * @throws WebApplicationException on a failure
+   */
   protected AggregateConf lookupAggregateConf(String key) {
     try {
       return (AggregateConf) cache.lookup(key);

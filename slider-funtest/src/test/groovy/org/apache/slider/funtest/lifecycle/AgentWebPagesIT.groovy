@@ -25,8 +25,9 @@ import org.apache.hadoop.registry.client.api.RegistryOperations
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.webapp.ForbiddenException
 import org.apache.slider.agent.rest.JerseyTestDelegates
-import org.apache.slider.agent.rest.RestTestDelegates
-import org.apache.slider.agent.rest.SliderRestClientTestDelegates
+import org.apache.slider.agent.rest.AbstractRestTestDelegate
+import org.apache.slider.agent.rest.LowLevelRestTestDelegates
+import org.apache.slider.agent.rest.RestAPIClientTestDelegates
 import org.apache.slider.client.SliderClient
 import org.apache.slider.client.rest.RestClientFactory
 import org.apache.slider.common.SliderExitCodes
@@ -69,21 +70,26 @@ public class AgentWebPagesIT extends AgentCommandTestBase
     // verify the ws/ path is open for all HTTP verbs
     def sliderConfiguration = ConfigHelper.loadSliderConfiguration();
 
-    def wsBackDoorRequired = SLIDER_CONFIG.getBoolean(
+    /*
+    Is the back door required? If so, don't test complex verbs via the proxy
+    */
+    def proxyComplexVerbs = !SliderXmlConfKeys.X_DEV_INSECURE_REQUIRED
+
+    /*
+     * Only do direct complex verbs if the no back door is needed, or if
+     * it is enabled
+     */
+    def directComplexVerbs = proxyComplexVerbs || SLIDER_CONFIG.getBoolean(
         SliderXmlConfKeys.X_DEV_INSECURE_WS,
-        true)
-    assert wsBackDoorRequired ==
-        sliderConfiguration.getBoolean(
-            SliderXmlConfKeys.X_DEV_INSECURE_WS,
-            false)
+        SliderXmlConfKeys.X_DEV_INSECURE_DEFAULT)
     def clusterpath = buildClusterPath(CLUSTER)
     File launchReportFile = createTempJsonFile();
     SliderShell shell = createTemplatedSliderApplication(CLUSTER,
         APP_TEMPLATE,
         APP_RESOURCE2,
         [ARG_OPTION,
-         RestTestDelegates.TEST_GLOBAL_OPTION,
-         RestTestDelegates.TEST_GLOBAL_OPTION_PRESENT],
+         AbstractRestTestDelegate.TEST_GLOBAL_OPTION,
+         AbstractRestTestDelegate.TEST_GLOBAL_OPTION_PRESENT],
         launchReportFile)
 
     logShell(shell)
@@ -108,46 +114,38 @@ public class AgentWebPagesIT extends AgentCommandTestBase
     
     def directAM = report.origTrackingUrl;
     // now attempt direct-to-AM pings
-    RestTestDelegates direct = new RestTestDelegates(directAM)
+    LowLevelRestTestDelegates direct = new LowLevelRestTestDelegates(directAM,
+        directComplexVerbs)
 
-    direct.testSuiteGetOperations()
-    direct.testSuiteComplexVerbs()
+    direct.testSuiteAll()
 
     // and via the proxy
-    RestTestDelegates proxied = new RestTestDelegates(proxyAM)
-    proxied.testSuiteGetOperations()
-    if (!wsBackDoorRequired) {
-      proxied.testSuiteComplexVerbs()
-    }
+    LowLevelRestTestDelegates proxied = new LowLevelRestTestDelegates(proxyAM,
+        proxyComplexVerbs)
+    proxied.testSuiteAll()
     proxied.logCodahaleMetrics();
 
     describe "Proxy Jersey Tests"
 
     Client ugiClient = createUGIJerseyClient()
     JerseyTestDelegates proxyJerseyTests =
-        new JerseyTestDelegates(proxyAM, ugiClient)
+        new JerseyTestDelegates(proxyAM, ugiClient, proxyComplexVerbs)
     proxyJerseyTests.testSuiteGetOperations()
 
     describe "Direct Jersey Tests"
     JerseyTestDelegates directJerseyTests =
-        new JerseyTestDelegates(directAM, ugiClient)
-    directJerseyTests.testSuiteGetOperations()
-    directJerseyTests.testSuiteComplexVerbs()
+        new JerseyTestDelegates(directAM, ugiClient, directComplexVerbs)
+    directJerseyTests.testSuiteAll()
 
     describe "Proxy SliderRestClient Tests"
-    SliderRestClientTestDelegates proxySliderRestClient =
-        new SliderRestClientTestDelegates(proxyAM, ugiClient)
-    proxySliderRestClient.testSuiteGetOperations()
-    if (!wsBackDoorRequired) {
-      proxySliderRestClient.testSuiteComplexVerbs()
-    }
+    RestAPIClientTestDelegates proxySliderRestAPI =
+        new RestAPIClientTestDelegates(proxyAM, ugiClient, proxyComplexVerbs)
+    proxySliderRestAPI.testSuiteAll()
+
     describe "Direct SliderRestClient Tests"
-    SliderRestClientTestDelegates directSliderRestClient =
-        new SliderRestClientTestDelegates(directAM, ugiClient)
-    directSliderRestClient.testSuiteGetOperations()
-    directSliderRestClient.testSuiteComplexVerbs()
-
-
+    RestAPIClientTestDelegates directSliderRestAPI =
+        new RestAPIClientTestDelegates(directAM, ugiClient, directComplexVerbs)
+    directSliderRestAPI.testSuiteAll()
 
     if (UserGroupInformation.securityEnabled) {
       describe "Insecure Proxy Tests against a secure cluster"
@@ -175,13 +173,18 @@ public class AgentWebPagesIT extends AgentCommandTestBase
     def restClientFactory = new RestClientFactory(
         operations, ugiClient,
         "~", SliderKeys.APP_TYPE, CLUSTER)
-    def sliderApplicationApi = restClientFactory.createSliderApplicationApi();
+    def sliderApplicationApi = restClientFactory.createSliderAppApiClient();
     sliderApplicationApi.desiredModel
     sliderApplicationApi.resolvedModel
-    sliderApplicationApi.ping("registry located")
+    if (proxyComplexVerbs) {
+      sliderApplicationApi.ping("registry located")
+    }
     
     // finally, stop the AM
-    direct.testStop();
+    if (directComplexVerbs) {
+      describe "Stopping AM via REST API"
+      directSliderRestAPI.testStop();
+    }
   }
 
 }

@@ -23,21 +23,19 @@ import com.sun.jersey.api.client.Client
 import com.sun.jersey.api.client.ClientResponse
 import com.sun.jersey.api.client.UniformInterfaceException
 import com.sun.jersey.api.client.WebResource
-import com.sun.jersey.client.impl.ClientRequestImpl
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.webapp.NotFoundException
 import org.apache.slider.api.StateValues
-import org.apache.slider.api.types.SerializedComponentInformation
-import org.apache.slider.api.types.SerializedContainerInformation
+import org.apache.slider.api.types.ComponentInformation
+import org.apache.slider.api.types.ContainerInformation
 import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.core.conf.ConfTreeOperations
 import org.apache.slider.core.restclient.HttpVerb
 import org.apache.slider.server.appmaster.web.rest.application.ApplicationResource
-import org.apache.slider.server.appmaster.web.rest.application.resources.PingResource
-import org.apache.slider.test.SliderTestUtils
+import org.apache.slider.api.types.PingResource
 
 import javax.ws.rs.core.MediaType
 
@@ -49,15 +47,15 @@ import static org.apache.slider.server.appmaster.web.rest.RestPaths.*
 /**
  * This class contains parts of tests that can be run
  * against a deployed AM: local or remote.
- * It uses Jersey ... and must be passed a client that is either secure
- * or not
+ * It uses Jersey WebResource... and must be passed a client
+ * that is either secure or not
+ * {@link WebResource}
+ * 
  * 
  */
 @CompileStatic
 @Slf4j
-class JerseyTestDelegates extends SliderTestUtils {
-  public static final String TEST_GLOBAL_OPTION = "test.global.option"
-  public static final String TEST_GLOBAL_OPTION_PRESENT = "present"
+class JerseyTestDelegates extends AbstractRestTestDelegate {
 
   final String appmaster;
   final String application;
@@ -66,7 +64,9 @@ class JerseyTestDelegates extends SliderTestUtils {
   final WebResource appResource
   
 
-  JerseyTestDelegates(String appmaster, Client jersey) {
+  JerseyTestDelegates(String appmaster, Client jersey,
+      boolean enableComplexVerbs = true) {
+    super(enableComplexVerbs)
     this.jersey = jersey
     this.appmaster = appmaster
     application = appendToURL(appmaster, SLIDER_PATH_APPLICATION)
@@ -237,12 +237,12 @@ class JerseyTestDelegates extends SliderTestUtils {
   public void testLiveContainers() throws Throwable {
     describe "Application REST ${LIVE_CONTAINERS}"
 
-    Map<String, SerializedContainerInformation> containers =
+    Map<String, ContainerInformation> containers =
         jGetApplicationResource(LIVE_CONTAINERS, HashMap)
     assert containers.size() == 1
     log.info "${containers}"
-    SerializedContainerInformation amContainerInfo =
-        (SerializedContainerInformation) containers.values()[0]
+    ContainerInformation amContainerInfo =
+        (ContainerInformation) containers.values()[0]
     assert amContainerInfo.containerId
 
     def amContainerId = amContainerInfo.containerId
@@ -257,10 +257,10 @@ class JerseyTestDelegates extends SliderTestUtils {
 
     describe "containers"
 
-    SerializedContainerInformation retrievedContainerInfo =
+    ContainerInformation retrievedContainerInfo =
         jFetchType(
             LIVE_CONTAINERS + "/${amContainerId}",
-            SerializedContainerInformation
+            ContainerInformation
         )
     assert retrievedContainerInfo.containerId == amContainerId
 
@@ -268,7 +268,7 @@ class JerseyTestDelegates extends SliderTestUtils {
     try {
       def result = jFetchType(
           LIVE_CONTAINERS + "/unknown",
-          SerializedContainerInformation
+          ContainerInformation
       )
       fail("expected an error, got $result")
     } catch (NotFoundException e) {
@@ -278,18 +278,18 @@ class JerseyTestDelegates extends SliderTestUtils {
 
     describe "components"
 
-    Map<String, SerializedComponentInformation> components =
+    Map<String, ComponentInformation> components =
         jFetchType(LIVE_COMPONENTS, HashMap)
     // two components
     assert components.size() >= 1
     log.info "${components}"
 
-    SerializedComponentInformation amComponentInfo =
-        (SerializedComponentInformation) components[COMPONENT_AM]
+    ComponentInformation amComponentInfo =
+        (ComponentInformation) components[COMPONENT_AM]
 
-    SerializedComponentInformation amFullInfo = jFetchType(
+    ComponentInformation amFullInfo = jFetchType(
         LIVE_COMPONENTS + "/${COMPONENT_AM}",
-        SerializedComponentInformation
+        ComponentInformation
     )
 
     assert amFullInfo.containers.size() == 1
@@ -474,4 +474,5 @@ class JerseyTestDelegates extends SliderTestUtils {
   public void testSuiteComplexVerbs() {
     testPing();
   }
+
 }

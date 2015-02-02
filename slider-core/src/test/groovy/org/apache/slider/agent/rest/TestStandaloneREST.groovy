@@ -33,12 +33,10 @@ import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.client.SliderClient
 import org.apache.slider.client.rest.RestClientFactory
-import org.apache.slider.client.rest.SliderApplicationAPI
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.core.main.ServiceLauncher
-import org.apache.slider.core.registry.info.CustomRegistryConstants
 import org.apache.slider.core.restclient.HttpOperationResponse
 import org.junit.Test
 
@@ -65,8 +63,8 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
     ServiceLauncher<SliderClient> launcher =
         createStandaloneAMWithArgs(clustername,
             [Arguments.ARG_OPTION,
-             RestTestDelegates.TEST_GLOBAL_OPTION, 
-             RestTestDelegates.TEST_GLOBAL_OPTION_PRESENT],
+             AbstractRestTestDelegate.TEST_GLOBAL_OPTION, 
+             AbstractRestTestDelegate.TEST_GLOBAL_OPTION_PRESENT],
             true, false)
     SliderClient client = launcher.service
     addToTeardown(client);
@@ -96,9 +94,18 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
     log.info GET(proxyAM, SYSTEM_HEALTHCHECK)
     log.info GET(proxyAM, SYSTEM_METRICS_JSON)
 
-    def wsBackDoorRequired = conf.getBoolean(
+    /*
+    Is the back door required? If so, don't test complex verbs via the proxy
+    */
+    def proxyComplexVerbs = !SliderXmlConfKeys.X_DEV_INSECURE_REQUIRED
+
+    /*
+     * Only do direct complex verbs if the no back door is needed, or if
+     * it is enabled
+     */
+    def directComplexVerbs = proxyComplexVerbs || SLIDER_CONFIG.getBoolean(
         SliderXmlConfKeys.X_DEV_INSECURE_WS,
-        true)
+        SliderXmlConfKeys.X_DEV_INSECURE_DEFAULT)
 
     describe "Direct response headers from AM Web resources"
     def liveResUrl = appendToURL(directAM,
@@ -117,44 +124,37 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
     def ugiClient = createUGIJerseyClient();
     
     describe "Proxy SliderRestClient Tests"
-    SliderRestClientTestDelegates proxySliderRestClient =
-        new SliderRestClientTestDelegates(proxyAM, ugiClient)
-    proxySliderRestClient.testSuiteGetOperations()
+    RestAPIClientTestDelegates proxySliderRestAPI =
+        new RestAPIClientTestDelegates(proxyAM, ugiClient, proxyComplexVerbs)
+    proxySliderRestAPI.testSuiteGetOperations()
 
     describe "Direct SliderRestClient Tests"
-    SliderRestClientTestDelegates directSliderRestClient =
-        new SliderRestClientTestDelegates(directAM, ugiClient)
-    directSliderRestClient.testSuiteGetOperations()
-    directSliderRestClient.testSuiteComplexVerbs()
-
+    RestAPIClientTestDelegates directSliderRestAPI =
+        new RestAPIClientTestDelegates(directAM, ugiClient, directComplexVerbs)
+    directSliderRestAPI.testSuiteAll()
     
     
     describe "Proxy Jersey Tests"
     JerseyTestDelegates proxyJerseyTests =
-        new JerseyTestDelegates(proxyAM, ugiClient)
+        new JerseyTestDelegates(proxyAM, ugiClient, proxyComplexVerbs)
     proxyJerseyTests.testSuiteGetOperations()
 
     describe "Direct Jersey Tests"
 
     JerseyTestDelegates directJerseyTests =
         new JerseyTestDelegates(directAM, ugiClient)
-    directJerseyTests.testSuiteGetOperations()
-    directJerseyTests.testSuiteComplexVerbs()
+    directJerseyTests.testSuiteAll()
 
     describe "Direct Tests"
 
-    RestTestDelegates direct = new RestTestDelegates(directAM)
-    direct.testSuiteGetOperations()
-    direct.testSuiteComplexVerbs()
+    LowLevelRestTestDelegates direct =
+        new LowLevelRestTestDelegates(directAM, directComplexVerbs)
+    direct.testSuiteAll()
 
     describe "Proxy Tests"
 
-    RestTestDelegates proxied = new RestTestDelegates(proxyAM)
-    proxied.testSuiteGetOperations()
-    if (!wsBackDoorRequired) {
-      // and via the proxy
-      proxied.testSuiteComplexVerbs()
-    }
+    LowLevelRestTestDelegates proxied = new LowLevelRestTestDelegates(proxyAM, proxyComplexVerbs)
+    proxied.testSuiteAll()
 
     // create the Rest client via the registry
 
@@ -164,31 +164,22 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
         ugiClient,
         "~", SliderKeys.APP_TYPE,
         clustername)
-    def sliderApplicationApi = restClientFactory.createSliderApplicationApi();
+    def sliderApplicationApi = restClientFactory.createSliderAppApiClient();
     sliderApplicationApi.desiredModel
     sliderApplicationApi.resolvedModel
-    sliderApplicationApi.ping("registry located")
 
-/*    DISABLED: this client does not pass the tests.
-    
-    // http client direct
-    describe "Proxied Jersey Apache HttpClient"
-    JerseyTestDelegates proxiedHttpClientJersey =
-        new JerseyTestDelegates(proxyAM, createJerseyClientHttpClient())
-    proxiedHttpClientJersey.testSuiteGetOperations()
-    
-    describe "Direct Jersey Apache HttpClient"
-    JerseyTestDelegates directHttpClientJersey =
-        new JerseyTestDelegates(directAM, createJerseyClientHttpClient())
-    directHttpClientJersey.testSuiteGetOperations()
-    directHttpClientJersey.testSuiteComplexVerbs()
-    */
-    createJerseyClientHttpClient()
+    if (directComplexVerbs) {
+      sliderApplicationApi.ping("registry located")
+    }
+
     // log the metrics to show what's up
     direct.logCodahaleMetrics();
 
-    // this MUST be the final test
-    direct.testStop();
+    // finally, stop the AM
+    if (directComplexVerbs) {
+      describe "Stopping AM via REST API"
+      directSliderRestAPI.testStop();
+    }
   }
 
   /**

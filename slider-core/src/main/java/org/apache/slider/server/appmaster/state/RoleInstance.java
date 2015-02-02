@@ -25,9 +25,8 @@ import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.hadoop.registry.client.binding.RegistryTypeUtils;
 import org.apache.hadoop.registry.client.types.Endpoint;
 import org.apache.hadoop.registry.client.types.ProtocolTypes;
-import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.proto.Messages;
-import org.apache.slider.api.types.SerializedContainerInformation;
+import org.apache.slider.api.types.ContainerInformation;
 import org.apache.slider.common.tools.SliderUtils;
 
 import java.util.ArrayList;
@@ -56,10 +55,14 @@ public final class RoleInstance implements Cloneable {
    * Name of the role
    */
   public String role;
+
+  /**
+   * Role Id; matches priority in resources.json
+   */
   public int roleId;
 
   /**
-   * state from {@link StateValues}
+   * state from StateValues
    */
   public int state;
 
@@ -239,8 +242,8 @@ public final class RoleInstance implements Cloneable {
    * may be shared
    * @return a serialized form for marshalling as JSON
    */
-  public SerializedContainerInformation serialize() {
-    SerializedContainerInformation info = new SerializedContainerInformation();
+  public ContainerInformation serialize() {
+    ContainerInformation info = new ContainerInformation();
     info.containerId = id;
     info.component = role;
     info.startTime = startTime;

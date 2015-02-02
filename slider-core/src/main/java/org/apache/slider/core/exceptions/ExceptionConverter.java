@@ -18,6 +18,7 @@
 
 package org.apache.slider.core.exceptions;
 
+import com.sun.jersey.api.client.ClientHandlerException;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import org.apache.hadoop.fs.PathAccessDeniedException;
@@ -70,4 +71,29 @@ public class ExceptionConverter {
     ioe.initCause(exception);
     return ioe; 
   }
+
+  /**
+   * Handle a client-side Jersey exception.
+   * <p>
+   * If there's an inner IOException, return that.
+   * <p>
+   * Otherwise: create a new wrapper IOE including verb and target details
+   * @param verb HTTP Verb used
+   * @param targetURL URL being targeted 
+   * @param exception original exception
+   * @return an exception to throw
+   */
+  public static IOException convertJerseyException(String verb,
+      String targetURL,
+      ClientHandlerException exception) {
+    if (exception.getCause() instanceof IOException) {
+      return (IOException)exception.getCause();
+    } else {
+      IOException ioe = new IOException(
+          verb + " " + targetURL + " failed: " + exception);
+      ioe.initCause(exception);
+      return ioe;
+    } 
+  }
+  
 }

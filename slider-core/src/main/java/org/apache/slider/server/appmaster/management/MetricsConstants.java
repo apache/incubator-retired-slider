@@ -16,24 +16,12 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster.web.rest.application.resources;
+package org.apache.slider.server.appmaster.management;
 
-import org.apache.slider.api.types.ComponentInformation;
-import org.apache.slider.server.appmaster.state.StateAccessForProviders;
-
-import java.util.Map;
-
-public class LiveComponentsRefresher
-    implements ResourceRefresher<Map<String, ComponentInformation>> {
-
-  private final StateAccessForProviders state;
-
-  public LiveComponentsRefresher(StateAccessForProviders state) {
-    this.state = state;
-  }
-
-  @Override
-  public Map<String, ComponentInformation> refresh() {
-    return state.getComponentInfoSnapshot();
-  }
+/**
+ * Constants used in slider for metrics registration and lookup
+ */
+public class MetricsConstants {
+  public static final String CONTAINERS_OUTSTANDING_REQUESTS =
+      "containers.outstanding-requests";
 }

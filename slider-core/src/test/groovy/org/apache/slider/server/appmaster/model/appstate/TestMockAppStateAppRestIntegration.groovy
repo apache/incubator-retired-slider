@@ -19,7 +19,7 @@
 package org.apache.slider.server.appmaster.model.appstate
 
 import groovy.util.logging.Slf4j
-import org.apache.slider.api.types.SerializedContainerInformation
+import org.apache.slider.api.types.ContainerInformation
 import org.apache.slider.core.persist.JsonSerDeser
 import org.apache.slider.server.appmaster.management.MetricsAndMonitoring
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
@@ -76,8 +76,8 @@ class TestMockAppStateAppRestIntegration extends BaseMockAppStateTest implements
     map = clr.refresh()
     assert map.size() == instances.size()
     log.info("$map")
-    JsonSerDeser<SerializedContainerInformation> serDeser =
-        new JsonSerDeser<>(SerializedContainerInformation)
+    JsonSerDeser<ContainerInformation> serDeser =
+        new JsonSerDeser<>(ContainerInformation)
     map.each { key, value ->
       log.info("$key -> ${serDeser.toJson(value)}")
     }
