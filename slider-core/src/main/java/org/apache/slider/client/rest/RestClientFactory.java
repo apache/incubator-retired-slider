@@ -76,7 +76,7 @@ public class RestClientFactory {
    */
   public SliderApplicationApi createSliderAppApiClient(WebResource appmaster) {
     WebResource appResource = appmaster.path(SLIDER_PATH_APPLICATION);
-    return new SliderApplicationApiImpl(jerseyClient, appResource);
+    return new SliderApplicationApiClient(jerseyClient, appResource);
   }
 
 }

@@ -25,7 +25,7 @@ import groovy.util.logging.Slf4j
 import org.apache.slider.api.StateValues
 import org.apache.slider.api.types.ComponentInformation
 import org.apache.slider.api.types.ContainerInformation
-import org.apache.slider.client.rest.SliderApplicationApiImpl
+import org.apache.slider.client.rest.SliderApplicationApiClient
 import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.core.conf.ConfTreeOperations
 import org.apache.slider.server.appmaster.web.rest.application.ApplicationResource
@@ -40,7 +40,7 @@ import static org.apache.slider.server.appmaster.web.rest.RestPaths.*
 
 /**
  * Uses the Slider Application API for the tests.
- * {@link SliderApplicationApiImpl}
+ * {@link SliderApplicationApiClient}
  */
 @CompileStatic
 @Slf4j
@@ -49,7 +49,7 @@ class RestAPIClientTestDelegates extends AbstractRestTestDelegate {
   final String appmaster;
   final String application;
   final Client jersey;
-  final SliderApplicationApiImpl appAPI;
+  final SliderApplicationApiClient appAPI;
 
 
   RestAPIClientTestDelegates(String appmaster, Client jersey,
@@ -61,7 +61,7 @@ class RestAPIClientTestDelegates extends AbstractRestTestDelegate {
     WebResource amResource = jersey.resource(appmaster)
     amResource.type(MediaType.APPLICATION_JSON)
     def appResource = amResource.path(SLIDER_PATH_APPLICATION);
-    appAPI = new SliderApplicationApiImpl(jersey, appResource)
+    appAPI = new SliderApplicationApiClient(jersey, appResource)
   }
 
 
