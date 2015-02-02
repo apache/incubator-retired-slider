@@ -248,6 +248,6 @@ class RestAPIClientTestDelegates extends AbstractRestTestDelegate {
     describe "Liveness:\n$liveness"
     
     assert liveness.allRequestsSatisfied
-    assert !liveness.requested
+    assert !liveness.requestsOutstanding
   }
 }

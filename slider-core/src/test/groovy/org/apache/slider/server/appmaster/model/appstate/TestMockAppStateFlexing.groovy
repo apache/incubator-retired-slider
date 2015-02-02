@@ -39,9 +39,19 @@ class TestMockAppStateFlexing extends BaseMockAppStateTest implements MockRoles 
 
   @Test
   public void testFlexDuringLaunchPhase() throws Throwable {
+    
+    // ask for one instance of role0
     role0Status.desired = 1
 
     List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()
+    
+    // at this point there's now one request in the list
+    assert 1 == ops.size()
+    // and in a liveness check, one outstanding
+    def liveness = appState.applicationLivenessInformation
+    assert 1 == liveness.requestsOutstanding
+    assert !liveness.allRequestsSatisfied
+    
     List<Container> allocations = engine.execute(ops)
     List<ContainerAssignment> assignments = [];
     List<AbstractRMOperation> releases = []
@@ -53,6 +63,10 @@ class TestMockAppStateFlexing extends BaseMockAppStateTest implements MockRoles 
 
     ops = appState.reviewRequestAndReleaseNodes()
     assert ops.empty
+
+    liveness = appState.applicationLivenessInformation
+    assert 0 == liveness.requestsOutstanding
+    assert liveness.allRequestsSatisfied
 
     //now this is the start point.
     appState.containerStartSubmitted(target, ri);
@@ -69,8 +83,17 @@ class TestMockAppStateFlexing extends BaseMockAppStateTest implements MockRoles 
 
     List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()
     assert !ops.empty
+
+    // second scan will find the first run outstanding, so not re-issue
+    // any more container requests
     List<AbstractRMOperation> ops2 = appState.reviewRequestAndReleaseNodes()
     assert ops2.empty
+
+    // and in a liveness check, one outstanding
+    def liveness = appState.applicationLivenessInformation
+    assert 1 == liveness.requestsOutstanding
+    assert !liveness.allRequestsSatisfied
+
   }
 
 
@@ -104,7 +127,7 @@ class TestMockAppStateFlexing extends BaseMockAppStateTest implements MockRoles 
     
     
     // now shrink again
-    role0Status.desired = r0 = 1
+    role0Status.desired = 1
     completionResults = []
     instances = createStartAndStopNodes(completionResults)
     assert instances.size() == 0

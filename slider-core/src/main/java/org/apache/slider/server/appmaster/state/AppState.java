@@ -19,6 +19,7 @@
 package org.apache.slider.server.appmaster.state;
 
 import com.codahale.metrics.Counter;
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import org.apache.hadoop.conf.Configuration;
@@ -67,6 +68,7 @@ import org.apache.slider.core.persist.ConfTreeSerDeser;
 import org.apache.slider.providers.PlacementPolicy;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
+import org.apache.slider.server.appmaster.management.MetricsConstants;
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
 import org.apache.slider.server.appmaster.operations.CancelRequestOperation;
 import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation;
@@ -224,8 +226,7 @@ public class AppState {
   /**
    * Track the number of requested Containers
    */
-  private final Counter requestedContainerCount = new Counter();
-
+  private final Counter outstandingContainerRequests = new Counter();
 
   /**
    * Map of requested nodes. This records the command used to start it,
@@ -295,9 +296,17 @@ public class AppState {
    * @param recordFactory factory for YARN records
    * @param metricsAndMonitoring metrics and monitoring services
    */
-  public AppState(AbstractRecordFactory recordFactory, MetricsAndMonitoring metricsAndMonitoring) {
+  public AppState(AbstractRecordFactory recordFactory,
+      MetricsAndMonitoring metricsAndMonitoring) {
     this.recordFactory = recordFactory;
-    this.metricsAndMonitoring = metricsAndMonitoring; 
+    this.metricsAndMonitoring = metricsAndMonitoring;
+    
+    // register any metrics
+    MetricRegistry metrics = metricsAndMonitoring.getMetrics();
+    metrics.register(
+        MetricRegistry.name(AppState.class,
+            MetricsConstants.CONTAINERS_OUTSTANDING_REQUESTS),
+        outstandingContainerRequests);
   }
 
   public int getFailedCountainerCount() {
@@ -381,8 +390,15 @@ public class AppState {
   }
 
   /**
-   * Get the dynamcally created view of the cluster status
-   * @return
+   * Get the current view of the cluster status.
+   * <p>
+   *   Calls to {@link #refreshClusterStatus()} trigger a
+   *   refresh of this field.
+   * <p>
+   * This is read-only
+   * to the extent that changes here do not trigger updates in the
+   * application state. 
+   * @return the cluster status
    */
   public synchronized ClusterDescription getClusterStatus() {
     return clusterStatus;
@@ -617,7 +633,7 @@ public class AppState {
                                                         BadConfigException {
     String priOpt = component.getMandatoryOption(ResourceKeys.COMPONENT_PRIORITY);
     int priority = SliderUtils.parseAndValidate("value of " + name + " " +
-        ResourceKeys.COMPONENT_PRIORITY,
+                                                ResourceKeys.COMPONENT_PRIORITY,
         priOpt, 0, 1, -1);
     String placementOpt = component.getOption(
       ResourceKeys.COMPONENT_PLACEMENT_POLICY,
@@ -1205,7 +1221,7 @@ public class AppState {
    */
   protected void incrementRequestCount(RoleStatus role) {
     role.incRequested();
-    requestedContainerCount.inc();
+    outstandingContainerRequests.inc();
   }
 
   /**
@@ -1216,7 +1232,7 @@ public class AppState {
    */
   protected void decrementRequestCount(RoleStatus role) {
     role.decRequested();
-    requestedContainerCount.dec();
+    outstandingContainerRequests.dec();
   }
 
 
@@ -1603,13 +1619,16 @@ public class AppState {
     return percentage;
   }
 
+  /**
+   * Update the cluster description with the current application state
+   */
 
   public void refreshClusterStatus() {
     refreshClusterStatus(null);
   }
   
   /**
-   * Update the cluster description with anything interesting
+   * Update the cluster description with the current application state
    * @param providerStatus status from the provider for the cluster info section
    */
   public synchronized ClusterDescription refreshClusterStatus(Map<String, String> providerStatus) {
@@ -1654,8 +1673,13 @@ public class AppState {
       cd.statistics.put(rolename, stats);
     }
 
+    
     Map<String, Integer> sliderstats = getLiveStatistics();
     cd.statistics.put(SliderKeys.COMPONENT_AM, sliderstats);
+    
+    // liveness
+    cd.liveness = getApplicationLivenessInformation();
+    
     return cd;
   }
 
@@ -1665,8 +1689,8 @@ public class AppState {
    */  
   public ApplicationLivenessInformation getApplicationLivenessInformation() {
     ApplicationLivenessInformation li = new ApplicationLivenessInformation();
-    int outstanding = (int) requestedContainerCount.getCount();
-    li.requested = outstanding;
+    int outstanding = (int) outstandingContainerRequests.getCount();
+    li.requestsOutstanding = outstanding;
     li.allRequestsSatisfied = outstanding == 0;
     return li;
   }

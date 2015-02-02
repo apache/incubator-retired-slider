@@ -31,14 +31,14 @@ import org.codehaus.jackson.map.annotate.JsonSerialize;
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 public class ApplicationLivenessInformation {
   public boolean allRequestsSatisfied;
-  public int requested;
+  public int requestsOutstanding;
 
   @Override
   public String toString() {
     final StringBuilder sb =
         new StringBuilder("ApplicationLivenessInformation{");
     sb.append("allRequestsSatisfied=").append(allRequestsSatisfied);
-    sb.append(", requested=").append(requested);
+    sb.append(", requestsOutstanding=").append(requestsOutstanding);
     sb.append('}');
     return sb.toString();
   }
