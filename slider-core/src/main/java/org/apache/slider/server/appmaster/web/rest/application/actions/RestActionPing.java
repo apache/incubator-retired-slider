@@ -18,7 +18,7 @@
 
 package org.apache.slider.server.appmaster.web.rest.application.actions;
 
-import org.apache.slider.api.types.PingResource;
+import org.apache.slider.api.types.PingInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,18 +33,18 @@ public class RestActionPing {
   public RestActionPing() {
   }
   
-  public PingResource ping(HttpServletRequest request, UriInfo uriInfo, String body) {
+  public PingInformation ping(HttpServletRequest request, UriInfo uriInfo, String body) {
     String verb = request.getMethod();
     log.info("Ping {}", verb);
-    PingResource pingResource = new PingResource();
-    pingResource.time = System.currentTimeMillis();
-    pingResource.verb = verb;
-    pingResource.body = body;
+    PingInformation pingInformation = new PingInformation();
+    pingInformation.time = System.currentTimeMillis();
+    pingInformation.verb = verb;
+    pingInformation.body = body;
     String text = 
         String.format(Locale.ENGLISH,
             "Ping verb %s received at %tc",
-            verb, pingResource.time);
-    pingResource.text = text;
-    return pingResource;
+            verb, pingInformation.time);
+    pingInformation.text = text;
+    return pingInformation;
   }
 }

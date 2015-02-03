@@ -35,7 +35,7 @@ import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.core.conf.ConfTreeOperations
 import org.apache.slider.core.restclient.HttpVerb
 import org.apache.slider.server.appmaster.web.rest.application.ApplicationResource
-import org.apache.slider.api.types.PingResource
+import org.apache.slider.api.types.PingInformation
 
 import javax.ws.rs.core.MediaType
 
@@ -370,13 +370,13 @@ class JerseyTestDelegates extends AbstractRestTestDelegate {
     // GET
     describe "pinging"
     
-    def pinged = jExec(HttpVerb.GET, ACTION_PING, PingResource)
+    def pinged = jExec(HttpVerb.GET, ACTION_PING, PingInformation)
     log.info "Ping GET: $pinged"
     // HEAD
 //    jExec(HttpVerb.HEAD, ACTION_PING, PingResource)
-    jExec(HttpVerb.PUT, ACTION_PING, PingResource)
-    jExec(HttpVerb.DELETE, ACTION_PING, PingResource)
-    jExec(HttpVerb.POST, ACTION_PING, PingResource)
+    jExec(HttpVerb.PUT, ACTION_PING, PingInformation)
+    jExec(HttpVerb.DELETE, ACTION_PING, PingInformation)
+    jExec(HttpVerb.POST, ACTION_PING, PingInformation)
     ping(HttpVerb.PUT, ACTION_PING, "ping-text")
     ping(HttpVerb.POST, ACTION_PING, "ping-text")
     ping(HttpVerb.DELETE, ACTION_PING, "ping-text")
@@ -390,11 +390,11 @@ class JerseyTestDelegates extends AbstractRestTestDelegate {
    * @param payload payload
    * @return the resource if the verb has a response
    */
-  private PingResource ping(HttpVerb method, String subpath, Object payload) {
+  private PingInformation ping(HttpVerb method, String subpath, Object payload) {
     def actionPing = applicationResource(ACTION_PING)
     def upload = method.hasUploadBody() ? payload : null
     if (method.hasResponseBody()) {
-      def pinged = actionPing.method(method.verb, PingResource, upload)
+      def pinged = actionPing.method(method.verb, PingInformation, upload)
       assert method.verb == pinged.verb
       return pinged
     } else {
