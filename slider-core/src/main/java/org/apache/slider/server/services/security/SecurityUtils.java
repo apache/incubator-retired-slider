@@ -77,7 +77,7 @@ public class SecurityUtils {
                                             + "default_keyfile        = privkey.pem\n"
                                             + "distinguished_name     = req_distinguished_name\n"
                                             + "attributes             = req_attributes\n"
-                                            + "x509_extensions        = v3_ca# The extentions to add to the self signed cert\n"
+                                            + "x509_extensions        = jdk7_ca# The extentions to add to the self signed cert\n"
                                             + "\n"
                                             + "string_mask            = utf8only\n"
                                             + "\n"
@@ -116,12 +116,6 @@ public class SecurityUtils {
                                             + "[ jdk7_ca ]\n"
                                             + "subjectKeyIdentifier = hash\n"
                                             + "authorityKeyIdentifier = keyid:always,issuer:always\n"
-                                            + "basicConstraints = CA:true\n"
-                                            + "[ v3_ca ]\n"
-                                            + "subjectKeyIdentifier=hash\n"
-                                            + "\n"
-                                            + "authorityKeyIdentifier=keyid:always,issuer:always\n"
-                                            + "\n"
                                             + "basicConstraints = CA:true";
 
   private static final String PASS_TOKEN = "pass:";
@@ -189,7 +183,7 @@ public class SecurityUtils {
     return securityDir;
   }
 
-  public static void initializeSecurityParameters(MapOperations configMap) {
+  public static void    initializeSecurityParameters(MapOperations configMap) {
     initializeSecurityParameters(configMap, false);
   }
 

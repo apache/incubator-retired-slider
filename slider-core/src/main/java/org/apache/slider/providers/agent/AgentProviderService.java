@@ -463,7 +463,7 @@ public class AgentProviderService extends AbstractProviderService implements
       CertificateManager certMgr = new CertificateManager();
       String hostname = container.getNodeId().getHost();
       String containerId = container.getId().toString();
-      certMgr.generateAgentCertificate(hostname, containerId);
+      certMgr.generateContainerCertificate(hostname, containerId);
       LocalResource agentCertResource = fileSystem.createAmResource(
           uploadSecurityResource(
             CertificateManager.getAgentCertficateFilePath(containerId),
