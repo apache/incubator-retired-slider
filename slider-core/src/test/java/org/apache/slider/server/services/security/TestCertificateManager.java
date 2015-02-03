@@ -75,7 +75,8 @@ public class TestCertificateManager {
       String password = SecurityUtils.getKeystorePass();
       keystore.load(is, password.toCharArray());
 
-      Certificate certificate = keystore.getCertificate("1");
+      Certificate certificate = keystore.getCertificate(
+          keystore.aliases().nextElement());
       Assert.assertNotNull(certificate);
 
       if (certificate instanceof X509Certificate) {
@@ -124,7 +125,8 @@ public class TestCertificateManager {
       String password = "password";
       keystore.load(is, password.toCharArray());
 
-      Certificate certificate = keystore.getCertificate("1");
+      Certificate certificate = keystore.getCertificate(
+          keystore.aliases().nextElement());
       Assert.assertNotNull(certificate);
 
       if (certificate instanceof X509Certificate) {
