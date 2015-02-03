@@ -115,12 +115,12 @@ public class IndexBlock extends HtmlBlock {
 
     Hamlet.TABLE<DIV<Hamlet>> table = div.table();
     table.tr()
-         .th("Component")
-         .th("Desired")
-         .th("Actual")
-         .th("Outstanding Requests")
-         .th("Failed")
-         .th("Failed to start")
+         .td("Component")
+         .td("Desired")
+         .td("Actual")
+         .td("Outstanding Requests")
+         .td("Failed")
+         .td("Failed to start")
          ._();
 
     List<RoleStatus> roleStatuses = appView.cloneRoleStatusList();
