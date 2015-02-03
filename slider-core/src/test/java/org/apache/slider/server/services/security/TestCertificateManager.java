@@ -26,6 +26,14 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.KeyStore;
+import java.security.Principal;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.util.Enumeration;
 
 /**
  *
@@ -34,10 +42,11 @@ public class TestCertificateManager {
   @Rule
   public TemporaryFolder workDir = new TemporaryFolder();
   private File secDir;
+  private CertificateManager certMan;
 
   @Before
   public void setup() throws Exception {
-    CertificateManager certMan = new CertificateManager();
+    certMan = new CertificateManager();
     MapOperations compOperations = new MapOperations();
     secDir = new File(workDir.getRoot(), SliderKeys.SECURITY_DIR);
     File keystoreFile = new File(secDir, SliderKeys.KEYSTORE_FILE_NAME);
@@ -49,13 +58,96 @@ public class TestCertificateManager {
   @Test
   public void testServerCertificateGenerated() throws Exception {
     File serverCrt = new File(secDir, SliderKeys.CRT_FILE_NAME);
-    Assert.assertTrue("Server CRD does not exist:" + serverCrt,serverCrt.exists());
+    Assert.assertTrue("Server CRD does not exist:" + serverCrt,
+                      serverCrt.exists());
   }
 
   @Test
-  public void testKeystoreGenerated() throws Exception {
-    File keystore = new File(secDir, SliderKeys.KEYSTORE_FILE_NAME);
-    Assert.assertTrue("Keystore does not exist: " + keystore,  keystore.exists());
+  public void testAMKeystoreGenerated() throws Exception {
+    File keystoreFile = new File(secDir, SliderKeys.KEYSTORE_FILE_NAME);
+    Assert.assertTrue("Keystore does not exist: " + keystoreFile,
+                      keystoreFile.exists());
+    InputStream is = null;
+    try {
+
+      is = new FileInputStream(keystoreFile);
+      KeyStore keystore = KeyStore.getInstance("pkcs12");
+      String password = SecurityUtils.getKeystorePass();
+      keystore.load(is, password.toCharArray());
+
+      Certificate certificate = keystore.getCertificate("1");
+      Assert.assertNotNull(certificate);
+
+      if (certificate instanceof X509Certificate) {
+        X509Certificate x509cert = (X509Certificate) certificate;
+
+        // Get subject
+        Principal principal = x509cert.getSubjectDN();
+        String subjectDn = principal.getName();
+        Assert.assertEquals("wrong DN",
+                            "O=Default Company Ltd, L=Default City, ST=Default Province, C=XX",
+                            subjectDn);
+
+        // Get issuer
+        principal = x509cert.getIssuerDN();
+        String issuerDn = principal.getName();
+        Assert.assertEquals("wrong Issuer DN",
+                            "O=Default Company Ltd, L=Default City, ST=Default Province, C=XX",
+                            issuerDn);
+      }
+    } finally {
+      if(null != is) {
+        is.close();
+      }
+    }
+  }
+
+  @Test
+  public void testContainerCertificateGeneration() throws Exception {
+    certMan.generateContainerCertificate("localhost", "container1");
+    Assert.assertTrue("container certificate not generated",
+                      new File(secDir, "container1.crt").exists());
+  }
+
+  @Test
+  public void testContainerKeystoreGeneration() throws Exception {
+    certMan.generateContainerKeystore("localhost", "container1", "password");
+    File keystoreFile = new File(secDir, "localhost-container1.p12");
+    Assert.assertTrue("container keystore not generated",
+                      keystoreFile.exists());
+
+    InputStream is = null;
+    try {
+
+      is = new FileInputStream(keystoreFile);
+      KeyStore keystore = KeyStore.getInstance("pkcs12");
+      String password = "password";
+      keystore.load(is, password.toCharArray());
+
+      Certificate certificate = keystore.getCertificate("1");
+      Assert.assertNotNull(certificate);
+
+      if (certificate instanceof X509Certificate) {
+        X509Certificate x509cert = (X509Certificate) certificate;
+
+        // Get subject
+        Principal principal = x509cert.getSubjectDN();
+        String subjectDn = principal.getName();
+        Assert.assertEquals("wrong DN", "CN=container1, OU=localhost",
+                            subjectDn);
+
+        // Get issuer
+        principal = x509cert.getIssuerDN();
+        String issuerDn = principal.getName();
+        Assert.assertEquals("wrong Issuer DN",
+                            "O=Default Company Ltd, L=Default City, ST=Default Province, C=XX",
+                            issuerDn);
+      }
+    } finally {
+      if(null != is) {
+        is.close();
+      }
+    }
   }
 
 }

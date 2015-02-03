@@ -71,7 +71,7 @@ public class CertificateManager {
     LOG.info("Certificate exists:" + certExists);
 
     if (!certExists) {
-      generateServerCertificate();
+      generateAMKeystore();
     }
 
   }
@@ -178,11 +178,12 @@ public class CertificateManager {
 
   }
 
-  public synchronized void generateAgentCertificate(String agentHostname, String containerId) {
-    LOG.info("Generation of agent certificate for {}", agentHostname);
+  public synchronized void generateContainerCertificate(String hostname,
+                                                        String containerId) {
+    LOG.info("Generation of agent certificate for {}", hostname);
 
     String srvrKstrDir = SecurityUtils.getSecurityDir();
-    Object[] scriptArgs = {srvrKstrDir, agentHostname, containerId};
+    Object[] scriptArgs = {srvrKstrDir, hostname, containerId};
 
     try {
       String command = MessageFormat.format(GEN_AGENT_KEY, scriptArgs);
@@ -195,7 +196,29 @@ public class CertificateManager {
     }
   }
 
-  private void generateServerCertificate() throws SliderException {
+  public synchronized void generateContainerKeystore(String hostname,
+                                                     String containerId,
+                                                     String keystorePass)
+      throws SliderException {
+    LOG.info("Generation of container keystore for container {} on {}",
+             containerId, hostname);
+
+    generateContainerCertificate(hostname, containerId);
+
+    // come up with correct args to invoke keystore command
+    String srvrKstrDir = SecurityUtils.getSecurityDir();
+    String containerCrtName = containerId + ".crt";
+    String containerKeyName = containerId + ".key";
+    String kstrName = String.format("%s-%s.p12", hostname, containerId);
+
+    Object[] scriptArgs = {keystorePass, srvrKstrDir, containerKeyName,
+        containerCrtName, kstrName};
+
+    String command = MessageFormat.format(EXPRT_KSTR, scriptArgs);
+    runCommand(command);
+  }
+
+  private void generateAMKeystore() throws SliderException {
     LOG.info("Generation of server certificate");
 
     String srvrKstrDir = SecurityUtils.getSecurityDir();
@@ -344,6 +367,11 @@ public class CertificateManager {
     String srvrKeyName = SliderKeys.KEY_FILE_NAME;
     String agentCrtReqName = containerId + ".csr";
     String agentCrtName = containerId + ".crt";
+
+    // server certificate must exist already
+    if (!(new File(srvrKstrDir, srvrCrtName).exists())) {
+      throw new SliderException("CA certificate not generated");
+    }
 
     Object[] scriptArgs = {srvrKstrDir, agentCrtReqName, agentCrtName,
         srvrCrtPass, srvrKeyName, srvrCrtName};
