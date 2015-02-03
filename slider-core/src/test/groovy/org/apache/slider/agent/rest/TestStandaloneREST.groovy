@@ -85,7 +85,6 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
       def metrics = GET(directAM, SYSTEM_METRICS)
       log.info metrics
     }
-
     
     GET(proxyAM)
 

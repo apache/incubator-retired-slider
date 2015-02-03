@@ -53,6 +53,11 @@ import org.apache.slider.server.services.yarnregistry.YarnRegistryViewForProvide
 class MockProviderService implements ProviderService {
 
   @Override
+  String getHumanName() {
+    return null
+  }
+
+  @Override
   public String getName() {
     return null;
   }

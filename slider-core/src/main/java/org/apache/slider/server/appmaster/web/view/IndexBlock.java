@@ -24,6 +24,7 @@ import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.UL;
 import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.StatusKeys;
+import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.providers.ProviderService;
 import org.apache.slider.server.appmaster.state.RoleStatus;
@@ -64,26 +65,51 @@ public class IndexBlock extends HtmlBlock {
   @VisibleForTesting
   protected void doIndex(Hamlet html, String providerName) {
     ClusterDescription clusterStatus = appView.getClusterStatus();
+    String name = clusterStatus.name;
+    if (name.startsWith(" ") || name.endsWith(" ")) {
+      name = "'" + name + "'";
+    } 
     DIV<Hamlet> div = html.div("general_info")
                           .h1("index_header",
-                              "Application: '" + clusterStatus.name + "'");
+                              "Application: " + name);
 
-    UL<DIV<Hamlet>> ul = div.ul();
+    ApplicationLivenessInformation liveness =
+        appView.getApplicationLivenessInformation();
+    String livestatus =
+        liveness.allRequestsSatisfied
+        ? "all containers allocated"
+        : String.format("Awaiting %d containers", liveness.requestsOutstanding);
+    Hamlet.TABLE<DIV<Hamlet>> table1 = div.table();
+    table1.tr()
+          .td("Status")
+          .td(livestatus)
+          ._();
+    table1.tr()
+          .td("Total number of containers")
+          .td(Integer.toString(appView.getNumOwnedContainers()))
+          ._();
+    table1.tr()
+          .td("Create time: ")
+          .td(getInfoAvoidingNulls(StatusKeys.INFO_CREATE_TIME_HUMAN))
+          ._();
+    table1.tr()
+          .td("Running since: ")
+          .td(getInfoAvoidingNulls(StatusKeys.INFO_LIVE_TIME_HUMAN))
+          ._();
+    table1.tr()
+          .td("Time last flexed: ")
+          .td(getInfoAvoidingNulls(StatusKeys.INFO_FLEX_TIME_HUMAN))
+          ._();
+    table1.tr()
+          .td("Application storage path: ")
+          .td(clusterStatus.dataPath)
+          ._();
+    table1.tr()
+          .td("Application configuration path: ")
+          .td(clusterStatus.originConfigurationPath)
+          ._();
+    table1._()._();
 
-    ul.li("Total number of containers for application: " + appView.getNumOwnedContainers());
-    ul.li("Application created: " +
-          getInfoAvoidingNulls(StatusKeys.INFO_CREATE_TIME_HUMAN));
-    ul.li("Application last flexed: " + getInfoAvoidingNulls(StatusKeys.INFO_FLEX_TIME_HUMAN));
-    ul.li("Application running since: " + getInfoAvoidingNulls(StatusKeys.INFO_LIVE_TIME_HUMAN));
-    ul.li("Application HDFS storage path: " + clusterStatus.dataPath);
-    ul.li("Application configuration path: " + clusterStatus.originConfigurationPath);
-
-    ul._()._();
-
-    html.div("provider_info").h3(providerName + " specific information");
-    ul = div.ul();
-    addProviderServiceOptions(providerService, ul, clusterStatus);
-    ul._()._();
 
     html.div("container_instances").h3("Component Instances");
 
@@ -102,20 +128,28 @@ public class IndexBlock extends HtmlBlock {
     for (RoleStatus status : roleStatuses) {
       table.tr()
            .td(status.getName())
-           .th(String.format("%d", status.getDesired()))
-           .th(String.format("%d", status.getActual()))
-           .th(String.format("%d", status.getRequested()))
-           .th(String.format("%d", status.getFailed()))
-           .th(String.format("%d", status.getStartFailed()))
+           .td(String.format("%d", status.getDesired()))
+           .td(String.format("%d", status.getActual()))
+           .td(String.format("%d", status.getRequested()))
+           .td(String.format("%d", status.getFailed()))
+           .td(String.format("%d", status.getStartFailed()))
             ._();
     }
 
     table._()._();
+
+    // some spacing
+    html.p()._();
+    html.p()._();
+
+    html.div("provider_info").h3(providerName + " information");
+    UL<DIV<Hamlet>> ul = div.ul();
+    addProviderServiceOptions(providerService, ul, clusterStatus);
+    ul._()._();
   }
 
   private String getProviderName() {
-    String providerServiceName = providerService.getName().toLowerCase(Locale.ENGLISH);
-    return providerServiceName;
+    return providerService.getHumanName();
   }
 
   private String getInfoAvoidingNulls(String key) {
