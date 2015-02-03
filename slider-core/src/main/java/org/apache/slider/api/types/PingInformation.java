@@ -26,7 +26,7 @@ import org.codehaus.jackson.map.annotate.JsonSerialize;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
-public class PingResource {
+public class PingInformation {
   public long time;
   public String text;
   public String verb;

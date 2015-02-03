@@ -44,7 +44,7 @@ import org.apache.slider.server.appmaster.web.rest.application.resources.Content
 import org.apache.slider.server.appmaster.web.rest.application.resources.LiveComponentsRefresher;
 import org.apache.slider.server.appmaster.web.rest.application.resources.LiveResourcesRefresher;
 import org.apache.slider.server.appmaster.web.rest.application.actions.RestActionPing;
-import org.apache.slider.api.types.PingResource;
+import org.apache.slider.api.types.PingInformation;
 import org.apache.slider.server.appmaster.web.rest.application.resources.LiveStatisticsRefresher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -395,7 +395,7 @@ TODO: decide what structure to return here, then implement
   @GET
   @Path(ACTION_PING)
   @Produces({APPLICATION_JSON})
-  public PingResource actionPingGet(@Context HttpServletRequest request,
+  public PingInformation actionPingGet(@Context HttpServletRequest request,
       @Context UriInfo uriInfo) {
     markGet(SLIDER_SUBPATH_APPLICATION, ACTION_PING);
     return new RestActionPing().ping(request, uriInfo, "");
@@ -404,7 +404,7 @@ TODO: decide what structure to return here, then implement
   @POST
   @Path(ACTION_PING)
   @Produces({APPLICATION_JSON})
-  public PingResource actionPingPost(@Context HttpServletRequest request,
+  public PingInformation actionPingPost(@Context HttpServletRequest request,
       @Context UriInfo uriInfo,
       String body) {
     markPost(SLIDER_SUBPATH_APPLICATION, ACTION_PING);
@@ -415,7 +415,7 @@ TODO: decide what structure to return here, then implement
   @Path(ACTION_PING)
   @Consumes({TEXT_PLAIN})
   @Produces({APPLICATION_JSON})
-  public PingResource actionPingPut(@Context HttpServletRequest request,
+  public PingInformation actionPingPut(@Context HttpServletRequest request,
       @Context UriInfo uriInfo,
       String body) {
     markPut(SLIDER_SUBPATH_APPLICATION, ACTION_PING);
@@ -426,7 +426,7 @@ TODO: decide what structure to return here, then implement
   @Path(ACTION_PING)
   @Consumes({APPLICATION_JSON})
   @Produces({APPLICATION_JSON})
-  public PingResource actionPingDelete(@Context HttpServletRequest request,
+  public PingInformation actionPingDelete(@Context HttpServletRequest request,
       @Context UriInfo uriInfo) {
     markDelete(SLIDER_SUBPATH_APPLICATION, ACTION_PING);
     return new RestActionPing().ping(request, uriInfo, "");

@@ -31,7 +31,7 @@ import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.conf.ConfTreeOperations;
 import org.apache.slider.core.restclient.HttpVerb;
-import org.apache.slider.api.types.PingResource;
+import org.apache.slider.api.types.PingInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -211,7 +211,7 @@ public class SliderApplicationApiClient extends BaseRestClient
   }
 
   @Override
-  public PingResource ping(String text) throws IOException {
+  public PingInformation ping(String text) throws IOException {
     return pingPost(text);
   }
   
@@ -221,10 +221,10 @@ public class SliderApplicationApiClient extends BaseRestClient
    * @return the response
    * @throws IOException on any failure
    */
-  public PingResource pingGet(String text) throws IOException {
+  public PingInformation pingGet(String text) throws IOException {
     WebResource pingResource = applicationResource(ACTION_PING);
     pingResource.getUriBuilder().queryParam("body", text);
-    return pingResource.get(PingResource.class);
+    return pingResource.get(PingInformation.class);
   }
   
   /**
@@ -233,12 +233,12 @@ public class SliderApplicationApiClient extends BaseRestClient
    * @return the response
    * @throws IOException on any failure
    */
-  public PingResource pingPost(String text) throws IOException {
+  public PingInformation pingPost(String text) throws IOException {
     WebResource pingResource = applicationResource(ACTION_PING);
     pingResource.type(MediaType.APPLICATION_JSON_TYPE);
     Form f = new Form();
     f.add("text", text);
-    return pingResource.post(PingResource.class, f);
+    return pingResource.post(PingInformation.class, f);
   }
 
   @Override

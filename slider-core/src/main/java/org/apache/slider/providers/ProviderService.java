@@ -156,6 +156,12 @@ public interface ProviderService extends ProviderCore,
    */
   Map<String, String> buildMonitorDetails(ClusterDescription clusterSpec);
 
+  /**
+   * Get a human friendly name for web UIs and messages
+   * @return a name string. Default is simply the service instance name.
+   */
+  String getHumanName();
+
   public void bind(StateAccessForProviders stateAccessor,
       QueueAccess queueAccess,
       List<Container> liveContainers);

@@ -21,7 +21,7 @@ package org.apache.slider.client.rest;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.ContainerInformation;
-import org.apache.slider.api.types.PingResource;
+import org.apache.slider.api.types.PingInformation;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTreeOperations;
 
@@ -127,7 +127,7 @@ public interface SliderApplicationApi {
    * @return the response
    * @throws IOException on any failure
    */
-  PingResource ping(String text) throws IOException;
+  PingInformation ping(String text) throws IOException;
 
   /**
    * Stop the AM (async operation)

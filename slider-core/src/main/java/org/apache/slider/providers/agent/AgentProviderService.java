@@ -196,6 +196,11 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   @Override
+  public String getHumanName() {
+    return "Slider Agent";
+  }
+
+  @Override
   public List<ProviderRole> getRoles() {
     return AgentRoles.getRoles();
   }

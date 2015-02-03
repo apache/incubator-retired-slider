@@ -31,7 +31,7 @@ import org.apache.slider.core.restclient.HttpOperationResponse
 import org.apache.slider.core.restclient.HttpVerb
 import org.apache.slider.core.restclient.UrlConnectionOperations
 import org.apache.slider.server.appmaster.web.rest.application.ApplicationResource
-import org.apache.slider.api.types.PingResource
+import org.apache.slider.api.types.PingInformation
 import org.apache.slider.test.Outcome
 
 import javax.ws.rs.core.MediaType
@@ -206,7 +206,7 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
     // GET
     String ping = appendToURL(appmaster, SLIDER_PATH_APPLICATION, ACTION_PING)
     describe "ping to AM URL $appmaster, ping URL $ping"
-    def pinged = fetchType(PingResource, appmaster, ACTION_PING + "?body=hello")
+    def pinged = fetchType(PingInformation, appmaster, ACTION_PING + "?body=hello")
     log.info "Ping GET: $pinged"
 
     URL pingUrl = new URL(ping)
@@ -241,7 +241,7 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
     byte[] bytes = outcome.data
     if (verb.hasResponseBody()) {
       assert bytes.length > 0, "0 bytes from ping $verb.verb"
-      pinged = deser(PingResource, bytes)
+      pinged = deser(PingInformation, bytes)
       log.info "Ping $verb.verb: $pinged"
       assert verb.verb == pinged.verb
     } else {
@@ -277,7 +277,7 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
         true,
         "AM failed to shut down") {
       def pinged = fetchType(
-          PingResource,
+          PingInformation,
           appmaster,
           ACTION_PING + "?body=hello")
       fail("AM didn't shut down; Ping GET= $pinged")
