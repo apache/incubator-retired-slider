@@ -66,7 +66,7 @@ public class IndexBlock extends HtmlBlock {
   protected void doIndex(Hamlet html, String providerName) {
     ClusterDescription clusterStatus = appView.getClusterStatus();
     String name = clusterStatus.name;
-    if (name.startsWith(" ") || name.endsWith(" ")) {
+    if (name != null && (name.startsWith(" ") || name.endsWith(" "))) {
       name = "'" + name + "'";
     } 
     DIV<Hamlet> div = html.div("general_info")
