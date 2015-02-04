@@ -2429,10 +2429,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         log.debug("Cluster stop command issued");
 
       } catch (YarnException e) {
-        log.warn("Exception while trying to terminate {}: {}", clustername, e);
+        log.warn("Exception while trying to terminate {}", clustername, e);
         return EXIT_FALSE;
       } catch (IOException e) {
-        log.warn("Exception while trying to terminate {}: {}", clustername, e);
+        log.warn("Exception while trying to terminate {}", clustername, e);
         return EXIT_FALSE;
       }
     }
