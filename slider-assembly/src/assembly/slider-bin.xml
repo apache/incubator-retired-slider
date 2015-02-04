@@ -71,6 +71,14 @@
       <source>../LICENSE</source>
       <outputDirectory>/</outputDirectory>
     </file>
+    <file>
+      <source>../DISCLAIMER</source>
+      <outputDirectory>/</outputDirectory>
+    </file>
+    <file>
+      <source>../NOTICE</source>
+      <outputDirectory>/</outputDirectory>
+    </file>
 
     <file>
       <source>${project.build.directory}/agent/slider-agent.tar.gz</source>
