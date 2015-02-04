@@ -150,11 +150,12 @@ public interface SliderXmlConfKeys {
   /**
    * Flag to indicate the insecure AM filter is enabled by default: {@value}.
    */
-  boolean X_DEV_INSECURE_DEFAULT = true;
+  boolean X_DEV_INSECURE_DEFAULT = false;
 
 
   /**
-   * Flag to indicate the insecure AM filter is required: {@value}.
+   * Flag to indicate the insecure AM filter is required for
+   * complex REST Verbs: {@value}.
    * When Slider switches to being Hadoop 2.7+ only, this flag
    * can be set to false
    */
