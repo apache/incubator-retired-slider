@@ -703,18 +703,19 @@ public class AgentProviderService extends AbstractProviderService implements
     publishConfigAndExportGroups(heartBeat, componentStatus, roleName);
 
     List<CommandReport> reports = heartBeat.getReports();
-    if (reports != null && !reports.isEmpty()) {
+    if (SliderUtils.isNotEmpty(reports)) {
       CommandReport report = reports.get(0);
       Map<String, String> ports = report.getAllocatedPorts();
-      if (ports != null && !ports.isEmpty()) {
+      if (SliderUtils.isNotEmpty(ports)) {
         processAllocatedPorts(heartBeat.getFqdn(), roleName, containerId, ports);
       }
       CommandResult result = CommandResult.getCommandResult(report.getStatus());
       Command command = Command.getCommand(report.getRoleCommand());
       componentStatus.applyCommandResult(result, command);
-      log.info("Component operation. Status: {}", result);
+      log.info("Component operation. Status: {}; new container state: {}",
+          result, componentStatus.getContainerState());
 
-      if (command == Command.INSTALL && report.getFolders() != null && report.getFolders().size() > 0) {
+      if (command == Command.INSTALL && SliderUtils.isNotEmpty(report.getFolders())) {
         publishFolderPaths(report.getFolders(), containerId, roleName, heartBeat.getFqdn());
       }
     }
