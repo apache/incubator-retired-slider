@@ -1058,10 +1058,7 @@ public class AgentProviderService extends AbstractProviderService implements
    * @return the map of role->node
    */
   protected Map<String, Map<String, ClusterNode>> getRoleClusterNodeMapping() {
-    amState.refreshClusterStatus();
-    return (Map<String, Map<String, ClusterNode>>)
-        amState.getClusterStatus().status.get(
-            ClusterDescriptionKeys.KEY_CLUSTER_LIVE);
+    return amState.getRoleClusterNodeMapping();
   }
 
   private String getContainerLabel(Container container, String role) {

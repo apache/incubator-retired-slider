@@ -161,7 +161,7 @@ public final class SliderUtils {
    */
 
   public static boolean isNotEmpty(List l) {
-    return l == null || l.isEmpty();
+    return l != null && !l.isEmpty();
   }
 
   /**
@@ -170,7 +170,7 @@ public final class SliderUtils {
    * @return true if the reference is valid and it contains map entries
    */
   public static boolean isNotEmpty(Map m) {
-    return m == null || m.isEmpty();
+    return m != null && !m.isEmpty();
   }
   
   /*

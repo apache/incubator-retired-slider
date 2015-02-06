@@ -1112,11 +1112,14 @@ public class AppState {
     }
     return map;
   }
+  
+  
   /**
-   * Build an instance map to send over the wire
-   * @return the map of Role name to list of Cluster Nodes, ready
+   * Build a map of role->nodename->node-info
+   * 
+   * @return the map of Role name to list of Cluster Nodes
    */
-  private synchronized Map<String, Map<String, ClusterNode>> createRoleToClusterNodeMap() {
+  public synchronized Map<String, Map<String, ClusterNode>> createRoleToClusterNodeMap() {
     Map<String, Map<String, ClusterNode>> map = new HashMap<String, Map<String, ClusterNode>>();
     for (RoleInstance node : getLiveNodes().values()) {
       
@@ -1125,8 +1128,7 @@ public class AppState {
         containers = new HashMap<String, ClusterNode>();
         map.put(node.role, containers);
       }
-      Messages.RoleInstanceState pbuf = node.toProtobuf();
-      ClusterNode clusterNode = ClusterNode.fromProtobuf(pbuf);
+      ClusterNode clusterNode = node.toClusterNode();
       containers.put(clusterNode.name, clusterNode);
     }
     return map;

@@ -22,6 +22,7 @@ import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
 import org.apache.slider.api.ClusterDescription;
+import org.apache.slider.api.ClusterNode;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
@@ -258,4 +259,10 @@ public interface StateAccessForProviders {
    * @return a map of current role status values.
    */
   Map<String, ComponentInformation> getComponentInfoSnapshot();
+
+  /**
+   * Find out about the nodes for specific roles
+   * @return 
+   */
+  Map<String, Map<String, ClusterNode>> getRoleClusterNodeMapping();
 }
