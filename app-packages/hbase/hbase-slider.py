@@ -45,6 +45,18 @@ import hashlib
 import random
 import httplib, ssl
 
+SLIDER_DIR = os.getenv('SLIDER_HOME', None)
+if SLIDER_DIR == None or (not os.path.exists(SLIDER_DIR)):
+  print "Unable to find SLIDER_HOME. Please configure SLIDER_HOME before running hbase-slider"
+  sys.exit(1)
+SLIDER_CMD = os.path.join(SLIDER_DIR, 'bin', 'slider.py')
+
+def call(cmd):
+  print "Running: " + " ".join(cmd)
+  retcode = subprocess.call(cmd)
+  if retcode != 0:
+    raise Exception("return code from running %s was %d" % (cmd[0], retcode))
+
 # Write text into a file
 # wtext - Text to write
 def writeToFile(wtext, outfile, isAppend=False):
@@ -103,12 +115,28 @@ def writePropertiesToConfigXMLFile(infile, outfile, propertyMap):
         cfgnode.appendChild(pn)
     writeToFile(xmldoc.toxml(), outfile)
 
+def quicklinks(app_name):
+  """Syntax: [hbase-slider appname quicklinks]
+  Prints the quicklinks information of hbase-slider registry
+  """
+  cmd = [SLIDER_CMD, "registry", "--getconf", "quicklinks", "--format", "json",
+         "--name", app_name]
+
+  call(cmd)
+
 home = expanduser("~")
 if len(sys.argv) < 2:
-  print "the name of cluster instance is required"
+  print "the name of cluster instance is required as the first parameter"
+  print "second parameter can be:"
+  print "  shell (default) - activates hbase shell based on retrieved hbase-site.xml"
+  print "  quicklinks      - prints quicklinks from registry"
   sys.exit(1)
 
 cluster_instance=sys.argv[1]
+if len(sys.argv) > 2:
+  if sys.argv[2] == 'quicklinks':
+    quicklinks(cluster_instance)
+    sys.exit(0)
 
 hbase_conf_dir="/etc/hbase/conf"
 local_conf_dir=os.path.join(home, cluster_instance, 'conf')

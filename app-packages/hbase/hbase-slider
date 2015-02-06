@@ -50,4 +50,4 @@ fi
 
 HBASE_SLIDER_BIN_DIR=`dirname ${PRG}`
 
-$PYTHON ${HBASE_SLIDER_BIN_DIR}/hbase-wrapper.py $@
+$PYTHON ${HBASE_SLIDER_BIN_DIR}/hbase-slider.py $@
