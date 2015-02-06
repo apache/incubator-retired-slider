@@ -25,6 +25,7 @@ import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.hadoop.registry.client.binding.RegistryTypeUtils;
 import org.apache.hadoop.registry.client.types.Endpoint;
 import org.apache.hadoop.registry.client.types.ProtocolTypes;
+import org.apache.slider.api.ClusterNode;
 import org.apache.slider.api.proto.Messages;
 import org.apache.slider.api.types.ContainerInformation;
 import org.apache.slider.common.tools.SliderUtils;
@@ -192,6 +193,40 @@ public final class RoleInstance implements Cloneable {
     return builder.build();
   }
 
+  /**
+   * Build a serializable ClusterNode structure from this instance.
+   * This operation is unsynchronized.
+   * @return a serialized value.
+   */
+  public ClusterNode toClusterNode() {
+    ClusterNode node;
+    if (container != null) {
+      node = new ClusterNode(container.getId());
+    } else {
+      node = new ClusterNode();
+      node.name = "unallocated instance";
+    }
+    node.command = command;
+    node.createTime = createTime;
+    node.diagnostics = diagnostics;
+    if (environment != null) {
+      node.environment = Arrays.copyOf(environment, environment.length);
+    }
+    node.exitCode = exitCode;
+    node.host = host;
+    node.hostUrl = hostURL;
+    if (output != null) {
+      node.output = Arrays.copyOf(output, output.length);
+    }
+    node.released = released;
+    node.role = role;
+    node.roleId = roleId;
+    node.startTime = startTime ;
+    node.state = state;
+    
+    return node;
+  }
+  
   /**
    * Clone operation clones all the simple values but shares the 
    * Container object into the cloned copy -same with the output,

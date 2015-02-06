@@ -36,7 +36,7 @@ import java.io.IOException;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL )
-public class ClusterNode {
+public final class ClusterNode implements Cloneable {
   protected static final Logger
     LOG = LoggerFactory.getLogger(ClusterDescription.class);
   
@@ -102,11 +102,13 @@ public class ClusterNode {
 
   /**
    * server-side ctor takes the container ID and builds the name from it
-   * @param containerId container ID
+   * @param containerId container ID; can be null
    */
   public ClusterNode(ContainerId containerId) {
-    this.containerId = containerId;
-    this.name = containerId.toString();
+    if (containerId != null) {
+      this.containerId = containerId;
+      this.name = containerId.toString();
+    }
   }
 
   /**
@@ -194,10 +196,24 @@ public class ClusterNode {
     node.roleId = message.getRoleId();
     node.state = message.getState();
     node.host = message.getHost();
-//    node.hostUrl = message.getHostURL();
+    node.hostUrl = message.getHostURL();
     node.createTime = message.getCreateTime();
     node.startTime = message.getStartTime();
     node.released = message.getReleased();
     return node;
+  }
+
+  @Override
+  public Object clone() throws CloneNotSupportedException {
+    return super.clone();
+  }
+  
+  public ClusterNode doClone() {
+    try {
+      return (ClusterNode)clone();
+    } catch (CloneNotSupportedException e) {
+      //not going to happen. This is a final class
+      return null;
+    }
   }
 }

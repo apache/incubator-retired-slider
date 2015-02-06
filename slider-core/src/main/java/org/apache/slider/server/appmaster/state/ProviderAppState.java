@@ -22,6 +22,7 @@ import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
 import org.apache.slider.api.ClusterDescription;
+import org.apache.slider.api.ClusterNode;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.core.conf.AggregateConf;
@@ -236,5 +237,10 @@ public class ProviderAppState implements StateAccessForProviders {
   @Override
   public Map<String, ComponentInformation> getComponentInfoSnapshot() {
     return appState.getComponentInfoSnapshot();
+  }
+
+  @Override
+  public Map<String, Map<String, ClusterNode>> getRoleClusterNodeMapping() {
+    return appState.createRoleToClusterNodeMap();
   }
 }

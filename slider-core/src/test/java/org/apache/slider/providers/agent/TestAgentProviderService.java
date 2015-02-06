@@ -340,6 +340,10 @@ public class TestAgentProviderService {
     desc.setOption(OptionKeys.ZOOKEEPER_QUORUM, "host1:2181");
     desc.setInfo(OptionKeys.APPLICATION_NAME, "HBASE");
     expect(access.getClusterStatus()).andReturn(desc).anyTimes();
+    Map<String, Map<String, ClusterNode>> cnMap =
+        new HashMap<String, Map<String, ClusterNode>>();
+    expect(access.getRoleClusterNodeMapping()).andReturn(cnMap).anyTimes();
+
 
     AggregateConf aggConf = new AggregateConf();
     ConfTreeOperations treeOps = aggConf.getAppConfOperations();
@@ -752,6 +756,18 @@ public class TestAgentProviderService {
       public ClusterDescription getClusterStatus() {
         ClusterDescription cd = new ClusterDescription();
         cd.status = new HashMap<String, Object>();
+
+        cd.status.put(ClusterDescriptionKeys.KEY_CLUSTER_LIVE, buildRoleMap());
+
+        return cd;
+      }
+
+      @Override
+      public Map<String, Map<String, ClusterNode>> getRoleClusterNodeMapping() {
+        return buildRoleMap();
+      }
+
+      public Map<String, Map<String, ClusterNode>> buildRoleMap() {
         Map<String, Map<String, ClusterNode>> roleMap = new HashMap<String, Map<String, ClusterNode>>();
         ClusterNode cn1 = new ClusterNode(new MockContainerId(1));
         cn1.host = "FIRST_HOST";
@@ -767,10 +783,7 @@ public class TestAgentProviderService {
 
         roleMap.put("FIRST_ROLE", map1);
         roleMap.put("SECOND_ROLE", map2);
-
-        cd.status.put(ClusterDescriptionKeys.KEY_CLUSTER_LIVE, roleMap);
-
-        return cd;
+        return roleMap;
       }
 
       @Override
