@@ -58,9 +58,9 @@ client_jaas_config_file = default('hbase_client_jaas_config_file', format("{conf
 master_jaas_config_file = default('hbase_master_jaas_config_file', format("{conf_dir}/hbase_master_jaas.conf"))
 regionserver_jaas_config_file = default('hbase_regionserver_jaas_config_file', format("{conf_dir}/hbase_regionserver_jaas.conf"))
 
-metric_collector_host = config['configurations']['global']['metric_collector_host']
-metric_collector_port = config['configurations']['global']['metric_collector_port']
-metric_collector_lib = config['configurations']['global']['metric_collector_lib']
+metric_collector_host = default('/configurations/global/metric_collector_host', '')
+metric_collector_port = default('/configurations/global/metric_collector_port', '')
+metric_collector_lib = default('/configurations/global/metric_collector_lib', '')
 has_metric_collector = 1
 if not metric_collector_lib:
   has_metric_collector = 0

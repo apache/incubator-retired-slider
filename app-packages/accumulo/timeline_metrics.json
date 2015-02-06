@@ -1,0 +1,38 @@
+{
+    "Component": {
+        "ACCUMULO_MASTER": {
+            "master_files_pending_repl_avg_time": {
+                "metric": "master.MasterReplication.FilesPendingReplicationAvgTime",
+                "pointInTime": false,
+                "temporal": true
+            },
+            "master_max_repl_threads_avg_time": {
+                "metric": "master.MasterReplication.MaxReplicationThreadsAvgTime",
+                "pointInTime": false,
+                "temporal": true
+            },
+            "master_num_peers_avg_time": {
+                "metric": "master.MasterReplication.NumPeersAvgTime",
+                "pointInTime": false,
+                "temporal": true
+            }
+        },
+        "ACCUMULO_TSERVER": {
+            "tserver_entries": {
+                "metric": "tserver.general.entries",
+                "pointInTime": false,
+                "temporal": true
+            },
+            "tserver_minc_avg_count": {
+                "metric": "tserver.MinorCompactions.MincAvgCount",
+                "pointInTime": false,
+                "temporal": true
+            },
+            "tserver_scans_result_avg_count": {
+                "metric": "tserver.Scans.ResultAvgCount",
+                "pointInTime": false,
+                "temporal": true
+            }
+        }
+    }
+}

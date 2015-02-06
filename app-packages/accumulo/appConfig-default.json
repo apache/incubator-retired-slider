@@ -9,6 +9,9 @@
     "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/accumulo-${accumulo.version}",
     "site.global.app_user": "${app.user}",
     "site.global.user_group": "${app.user.group}",
+    "site.global.metric_collector_host": "${NN_HOST}",
+    "site.global.metric_collector_port": "6188",
+    "site.global.metric_collector_lib": "",
 
     "site.accumulo-env.java_home": "${JAVA_HOME}",
     "site.accumulo-env.tserver_heapsize": "256m",
@@ -21,6 +24,8 @@
     "site.accumulo-env.zookeeper_home": "${zk.dir}",
 
     "site.client.instance.name": "${USER}-${CLUSTER_NAME}",
+
+    "site.proxy.port": "${ACCUMULO_PROXY.ALLOCATED_PORT}{PER_CONTAINER}",
 
     "site.global.accumulo_root_password": "NOT_USED",
     "site.global.ssl_cert_dir": "ssl",

@@ -133,6 +133,17 @@ def setup_conf_dir(name=None): # 'master' or 'tserver' or 'monitor' or 'gc' or '
        group = params.user_group
   )
 
+  # create metrics2 properties file
+  accumulo_TemplateConfig('hadoop-metrics2-accumulo.properties')
+
+  if name == "proxy":
+    # create proxy.properties file
+    PropertiesFile(params.proxy_conf,
+                   properties = params.config['configurations']['proxy'],
+                   owner = params.accumulo_user,
+                   group = params.user_group
+    )
+
   # create host files
   accumulo_StaticFile( 'masters')
   accumulo_StaticFile( 'slaves')
@@ -155,7 +166,6 @@ def setup_conf_dir(name=None): # 'master' or 'tserver' or 'monitor' or 'gc' or '
   accumulo_StaticFile("auditLog.xml")
   accumulo_StaticFile("generic_logger.xml")
   accumulo_StaticFile("monitor_logger.xml")
-  accumulo_StaticFile("accumulo-metrics.xml")
 
   # create the policy file
   if 'accumulo-policy' in params.config['configurations']:
