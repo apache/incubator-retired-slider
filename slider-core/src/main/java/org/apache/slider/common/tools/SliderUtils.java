@@ -154,6 +154,25 @@ public final class SliderUtils {
     return !isUnset(s);
   }
 
+  /**
+   * Probe for a list existing and not being empty
+   * @param l list
+   * @return true if the reference is valid and it contains entries
+   */
+
+  public static boolean isNotEmpty(List l) {
+    return l == null || l.isEmpty();
+  }
+
+  /**
+   * Probe for a map existing and not being empty
+   * @param m map
+   * @return true if the reference is valid and it contains map entries
+   */
+  public static boolean isNotEmpty(Map m) {
+    return m == null || m.isEmpty();
+  }
+  
   /*
    * Validates whether num is an integer
    * @param num
