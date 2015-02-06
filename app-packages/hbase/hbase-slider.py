@@ -20,7 +20,6 @@
 """Invokes hbase shell after retrieving effective hbase-site.xml from a live Slider HBase cluster
 First argument is the name of cluster instance
 """
-from subprocess import call
 import os
 from os.path import expanduser
 from os.path import exists
@@ -144,7 +143,7 @@ if not exists(local_conf_dir):
   shutil.copytree(hbase_conf_dir, local_conf_dir)
 tmpHBaseConfFile=os.path.join('/tmp', "hbase-site.xml")
 
-call(["slider", "registry", "--getconf", "hbase-site", "--user", "hbase", "--format", "xml", "--dest", tmpHBaseConfFile, "--name", cluster_instance])
+call([SLIDER_CMD, "registry", "--getconf", "hbase-site", "--user", "hbase", "--format", "xml", "--dest", tmpHBaseConfFile, "--name", cluster_instance])
 HBaseConfFile=os.path.join(local_conf_dir, "hbase-site.xml")
 propertyMap = {'hbase.tmp.dir' : '/tmp/hbase-tmp', "instance" : cluster_instance}
 writePropertiesToConfigXMLFile(tmpHBaseConfFile, HBaseConfFile, propertyMap)
