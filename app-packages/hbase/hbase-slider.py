@@ -24,6 +24,7 @@ import os
 from os.path import expanduser
 from os.path import exists
 import glob
+import getopt
 import re
 import fnmatch
 import shutil
@@ -125,20 +126,33 @@ def quicklinks(app_name):
 
 home = expanduser("~")
 if len(sys.argv) < 2:
-  print "the name of cluster instance is required as the first parameter"
-  print "second parameter can be:"
+  print "optionally you can specify the directory for conf dir using:"
+  print "  --appconf=<dir>"
+  print "the name of cluster instance is required as the first parameter following options"
+  print "the second parameter can be:"
   print "  shell (default) - activates hbase shell based on retrieved hbase-site.xml"
   print "  quicklinks      - prints quicklinks from registry"
   sys.exit(1)
 
-cluster_instance=sys.argv[1]
-if len(sys.argv) > 2:
-  if sys.argv[2] == 'quicklinks':
+try:
+  opts, args = getopt.getopt(sys.argv[1:], "", ["appconf="])
+except getopt.GetoptError as err:
+  # print help information and exit:
+  print str(err)
+  sys.exit(2)
+
+local_conf_dir=os.path.join(home, cluster_instance, 'conf')
+for o, a in opts:
+  if o == "--appconf":
+    local_conf_dir = a
+
+cluster_instance=args[0]
+if len(args) > 1:
+  if args[1] == 'quicklinks':
     quicklinks(cluster_instance)
     sys.exit(0)
 
 hbase_conf_dir="/etc/hbase/conf"
-local_conf_dir=os.path.join(home, cluster_instance, 'conf')
 if not exists(local_conf_dir):
   shutil.copytree(hbase_conf_dir, local_conf_dir)
 tmpHBaseConfFile=os.path.join('/tmp', "hbase-site.xml")
