@@ -151,6 +151,8 @@ if len(sys.argv) < 2:
   print "  --appconf=<dir>"
   print "optionally you can specify the (existing) directory for hbase conf files (as template) using:"
   print "  --hbaseconf=<dir>"
+  print "optionally you can specify the age in number of hours beyond which hbase-site.xml would be retrieved from slider cluster"
+  print "  --ttl=<age of hbase-site.xml>"
   print "the name of cluster instance is required as the first parameter following options"
   print "the second parameter can be:"
   print "  shell (default) - activates hbase shell based on retrieved hbase-site.xml"
@@ -158,7 +160,7 @@ if len(sys.argv) < 2:
   sys.exit(1)
 
 try:
-  opts, args = getopt.getopt(sys.argv[1:], "", ["appconf=", "hbaseconf="])
+  opts, args = getopt.getopt(sys.argv[1:], "", ["appconf=", "hbaseconf=", "ttl="])
 except getopt.GetoptError as err:
   # print help information and exit:
   print str(err)
@@ -166,11 +168,14 @@ except getopt.GetoptError as err:
 
 local_conf_dir=os.path.join(home, cluster_instance, 'conf')
 hbase_conf_dir="/etc/hbase/conf"
+ttl=0
 for o, a in opts:
   if o == "--appconf":
     local_conf_dir = a
   elif o == "--hbaseconf":
     hbase_conf_dir = a
+  elif o == "--ttl":
+    ttl = a
 
 cluster_instance=args[0]
 if len(args) > 1:
@@ -178,14 +183,24 @@ if len(args) > 1:
     quicklinks(cluster_instance)
     sys.exit(0)
 
+needToRetrieve=True
+HBaseConfFile=os.path.join(local_conf_dir, "hbase-site.xml")
 if not exists(local_conf_dir):
   shutil.copytree(hbase_conf_dir, local_conf_dir)
-tmpHBaseConfFile=os.path.join('/tmp', "hbase-site.xml")
+else:
+  if exists(HBaseConfFile):
+    diff = os.path.getmtime(HBaseConfFile)-int(time.time())
+    diff = diff / 60 / 60
+    print HBaseConfFile + " is " + str(diff) + " hours old"
+    if diff < ttl:
+      needToRetrieve=False
 
-call([SLIDER_CMD, "registry", "--getconf", "hbase-site", "--user", "hbase", "--format", "xml", "--dest", tmpHBaseConfFile, "--name", cluster_instance])
-HBaseConfFile=os.path.join(local_conf_dir, "hbase-site.xml")
-propertyMap = {'hbase.tmp.dir' : '/tmp/hbase-tmp', "instance" : cluster_instance}
-writePropertiesToConfigXMLFile(tmpHBaseConfFile, HBaseConfFile, propertyMap)
-print "hbase configuration is saved in " + HBaseConfFile
+if needToRetrieve:
+  tmpHBaseConfFile=os.path.join(tempfile.gettempdir(), "hbase-site.xml")
+
+  call([SLIDER_CMD, "registry", "--getconf", "hbase-site", "--user", "hbase", "--format", "xml", "--dest", tmpHBaseConfFile, "--name", cluster_instance])
+  propertyMap = {'hbase.tmp.dir' : '/tmp/hbase-tmp', "instance" : cluster_instance}
+  writePropertiesToConfigXMLFile(tmpHBaseConfFile, HBaseConfFile, propertyMap)
+  print "hbase configuration is saved in " + HBaseConfFile
 
 call(["hbase", "--config", local_conf_dir, "shell"])
