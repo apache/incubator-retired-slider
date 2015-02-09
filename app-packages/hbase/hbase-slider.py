@@ -47,10 +47,31 @@ import httplib, ssl
 
 SLIDER_DIR = os.getenv('SLIDER_HOME', None)
 if SLIDER_DIR == None or (not os.path.exists(SLIDER_DIR)):
-  print "Unable to find SLIDER_HOME. Please configure SLIDER_HOME before running hbase-slider"
-  sys.exit(1)
-SLIDER_CMD = os.path.join(SLIDER_DIR, 'bin', 'slider.py')
+  SLIDER_CMD = which("slider")
+  if SLIDER_DIR == None:
+    print "Unable to find SLIDER_HOME or slider command. Please configure SLIDER_HOME before running hbase-slider"
+    sys.exit(1)
+else:
+  SLIDER_CMD = os.path.join(SLIDER_DIR, 'bin', 'slider.py')
 
+# find path to given command
+def which(program):
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            path = path.strip('"')
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+    return None
+
+# call slider command
 def call(cmd):
   print "Running: " + " ".join(cmd)
   retcode = subprocess.call(cmd)
@@ -126,8 +147,10 @@ def quicklinks(app_name):
 
 home = expanduser("~")
 if len(sys.argv) < 2:
-  print "optionally you can specify the directory for conf dir using:"
+  print "optionally you can specify the output directory for conf dir using:"
   print "  --appconf=<dir>"
+  print "optionally you can specify the (existing) directory for hbase conf files (as template) using:"
+  print "  --hbaseconf=<dir>"
   print "the name of cluster instance is required as the first parameter following options"
   print "the second parameter can be:"
   print "  shell (default) - activates hbase shell based on retrieved hbase-site.xml"
@@ -135,16 +158,19 @@ if len(sys.argv) < 2:
   sys.exit(1)
 
 try:
-  opts, args = getopt.getopt(sys.argv[1:], "", ["appconf="])
+  opts, args = getopt.getopt(sys.argv[1:], "", ["appconf=", "hbaseconf="])
 except getopt.GetoptError as err:
   # print help information and exit:
   print str(err)
   sys.exit(2)
 
 local_conf_dir=os.path.join(home, cluster_instance, 'conf')
+hbase_conf_dir="/etc/hbase/conf"
 for o, a in opts:
   if o == "--appconf":
     local_conf_dir = a
+  elif o == "--hbaseconf":
+    hbase_conf_dir = a
 
 cluster_instance=args[0]
 if len(args) > 1:
@@ -152,7 +178,6 @@ if len(args) > 1:
     quicklinks(cluster_instance)
     sys.exit(0)
 
-hbase_conf_dir="/etc/hbase/conf"
 if not exists(local_conf_dir):
   shutil.copytree(hbase_conf_dir, local_conf_dir)
 tmpHBaseConfFile=os.path.join('/tmp', "hbase-site.xml")
