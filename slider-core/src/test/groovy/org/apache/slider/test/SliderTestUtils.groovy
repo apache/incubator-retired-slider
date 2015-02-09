@@ -547,10 +547,11 @@ class SliderTestUtils extends Assert {
       throw new ForbiddenException(url);
     }
     if (!(resultCode >= 200 && resultCode < 400)) {
-      String message = "$verb to $url " +
-                       " failed with exit code " +
-                       resultCode + ", body length " +
-                       body?.length() + ":\n" + body
+      String bodyDetails = (body == null ?
+                            "(no body)"  :
+                            "body length ${body?.length()}:\n:$body")
+      String message = "$verb to $url failed with exit code $resultCode; $bodyDetails"
+
       log.error(message);
       throw new IOException(message);
     }
@@ -961,10 +962,8 @@ class SliderTestUtils extends Assert {
   throws Throwable {
     try {
       ServiceLauncher launch = launch(serviceClass, conf, args);
-      throw new AssertionError(
-          "Expected an exception with text containing " + expectedText
-              + " -but the service completed with exit code "
-              + launch.serviceExitCode);
+      fail("Expected an exception with text containing $expectedText "+
+               " -but the service completed with exit code ${launch.serviceExitCode}");
     } catch (Throwable thrown) {
       if (expectedText && !thrown.toString().contains(expectedText)) {
         //not the right exception -rethrow

@@ -36,7 +36,7 @@ import org.junit.Before
 import org.junit.Test
 
 @Slf4j
-@CompileStatic
+//@CompileStatic
 public class TestClusterSpecificationBlock {
 
   private ClusterSpecificationBlock clusterSpecBlock;

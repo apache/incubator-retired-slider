@@ -91,13 +91,13 @@ class FileUploader {
   }
 
 
-  public def getFileSystem(
+  public HadoopFS getFileSystem(
       UserGroupInformation user, final Path path) {
     return getFileSystem(user, path.toUri())
 
   }
 
-  public def getFileSystem(
+  public HadoopFS getFileSystem(
       UserGroupInformation user, final URI uri) {
 
     SudoClosure.sudo(user) {
@@ -105,7 +105,7 @@ class FileUploader {
     }
   }
 
-  public def getFileSystemAsUserName(String username) {
+  public HadoopFS getFileSystemAsUserName(String username) {
 
     def user = UserGroupInformation.createRemoteUser(username)
     getFileSystem(user, HadoopFS.getDefaultUri(conf))

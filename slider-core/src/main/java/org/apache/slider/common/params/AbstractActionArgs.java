@@ -133,14 +133,16 @@ public abstract class AbstractActionArgs extends ArgOps implements Arguments {
       maxArgs = minArgs;
     }
     if (actionArgSize > maxArgs) {
-      String message = String.format("%s for action %s: limit is %d but saw %d",
+      String message = String.format("%s for action %s: limit is %d but saw %d: ",
                                      ErrorStrings.ERROR_TOO_MANY_ARGUMENTS,
                                      getActionName(), maxArgs,
                                      actionArgSize);
+      
       log.error(message);
       int index = 1;
       for (String actionArg : parameters) {
         log.error("[{}] \"{}\"", index++, actionArg);
+        message += " \"" + actionArg + "\" ";
       }
       throw new BadCommandArgumentsException(message);
     }
