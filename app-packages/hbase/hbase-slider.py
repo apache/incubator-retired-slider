@@ -54,6 +54,8 @@ if SLIDER_DIR == None or (not os.path.exists(SLIDER_DIR)):
 else:
   SLIDER_CMD = os.path.join(SLIDER_DIR, 'bin', 'slider.py')
 
+HBASE_TMP_DIR=os.path.join(tempfile.gettempdir(), "hbase-temp")
+
 # find path to given command
 def which(program):
     def is_exe(fpath):
@@ -136,6 +138,58 @@ def writePropertiesToConfigXMLFile(infile, outfile, propertyMap):
         cfgnode.appendChild(pn)
     writeToFile(xmldoc.toxml(), outfile)
 
+def install(cluster_instance, dir):
+  """Syntax: [hbase-slider cluster_instance install dir]
+  Installs a fully configured hbase client in the specified dir
+  The resulting client may be used on its own without hbase-slider
+  """
+  if os.path.exists(dir):
+    raise Exception("Install dir must not exist: " + dir)
+
+  workdir = os.path.join(tempfile.gettempdir(), 'install-work-dir')
+
+  statusfile = os.path.join(workdir, 'status.json')
+  cmd = [SLIDER_CMD, "status", cluster_instance, "--out", statusfile]
+  call(cmd)
+
+  infile = open(statusfile)
+  try:
+    content = json.load(infile)
+  finally:
+    infile.close()
+
+  appdef = content['options']['application.def']
+  appdeffile = appdef[appdef.rfind('/')+1:]
+  cmd = ["hadoop", "fs", "-copyToLocal", appdef, workdir]
+  call(cmd)
+
+  cmd = ["unzip", os.path.join(workdir, appdeffile), "-d", workdir]
+  call(cmd)
+
+  gzfile = glob.glob(os.path.join(workdir, 'package', 'files',  'hbase*gz'))
+  if len(gzfile) != 1:
+    raise Exception("got " + gzfile + " from glob")
+  cmd = ["tar", "xvzf", gzfile[0], '-C', workdir]
+  call(cmd)
+
+  tmp_hbase = glob.glob(os.path.join(workdir, 'hbase-[.0-9]*'))
+  if len(tmp_hbase) != 1:
+    raise Exception("got " + tmp_hbase + " from glob")
+  tmp_hbase = tmp_hbase[0]
+
+  confdir = os.path.join(tmp_hbase, 'conf')
+  tmpHBaseConfFile=os.path.join(tempfile.gettempdir(), "hbase-site.xml")
+
+  call([SLIDER_CMD, "registry", "--getconf", "hbase-site", "--user", "hbase", "--format", "xml", "--dest", tmpHBaseConfFile, "--name", cluster_instance])
+  global HBASE_TMP_DIR
+  propertyMap = {'hbase.tmp.dir' : HBASE_TMP_DIR, "instance" : cluster_instance}
+  writePropertiesToConfigXMLFile(tmpHBaseConfFile, os.path.join(confdir, "hbase-site.xml"), propertyMap)
+
+  libdir = os.path.join(tmp_hbase, 'lib')
+  for jar in glob.glob(os.path.join(workdir, 'package', 'files', '*jar')):
+    shutil.move(jar, libdir)
+  shutil.move(tmp_hbase, dir)
+
 def quicklinks(app_name):
   """Syntax: [hbase-slider appname quicklinks]
   Prints the quicklinks information of hbase-slider registry
@@ -157,6 +211,7 @@ if len(sys.argv) < 2:
   print "the second parameter can be:"
   print "  shell (default) - activates hbase shell based on retrieved hbase-site.xml"
   print "  quicklinks      - prints quicklinks from registry"
+  print "  install <dir>   - installs hbase client into <dir>"
   sys.exit(1)
 
 try:
@@ -182,6 +237,9 @@ if len(args) > 1:
   if args[1] == 'quicklinks':
     quicklinks(cluster_instance)
     sys.exit(0)
+  elif args[1] == 'install':
+    install(cluster_instance, args[2])
+    sys.exit(0)
 
 needToRetrieve=True
 HBaseConfFile=os.path.join(local_conf_dir, "hbase-site.xml")
@@ -199,7 +257,7 @@ if needToRetrieve:
   tmpHBaseConfFile=os.path.join(tempfile.gettempdir(), "hbase-site.xml")
 
   call([SLIDER_CMD, "registry", "--getconf", "hbase-site", "--user", "hbase", "--format", "xml", "--dest", tmpHBaseConfFile, "--name", cluster_instance])
-  propertyMap = {'hbase.tmp.dir' : '/tmp/hbase-tmp', "instance" : cluster_instance}
+  propertyMap = {'hbase.tmp.dir' : HBASE_TMP_DIR, "instance" : cluster_instance}
   writePropertiesToConfigXMLFile(tmpHBaseConfFile, HBaseConfFile, propertyMap)
   print "hbase configuration is saved in " + HBaseConfFile
 
