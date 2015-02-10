@@ -56,7 +56,7 @@ public class TestIndexBlock extends BaseMockAppStateTest {
         providerAppState,
         providerService,
         null,
-        null, metrics, null);
+        null, metrics, null, null);
 
     Injector injector = Guice.createInjector(new AbstractModule() {
           @Override

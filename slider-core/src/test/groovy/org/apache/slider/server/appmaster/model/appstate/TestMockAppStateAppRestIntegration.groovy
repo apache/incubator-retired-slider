@@ -118,7 +118,7 @@ class TestMockAppStateAppRestIntegration extends BaseMockAppStateTest implements
         stateAccess,
         new MockProviderService(),
         null, null,
-        new MetricsAndMonitoring("metrics"), null)
+        new MetricsAndMonitoring("metrics"), null, null)
     return api
   }
 

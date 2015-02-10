@@ -792,8 +792,9 @@ public class TestAgentProviderService {
       }
 
       @Override
-      public void refreshClusterStatus() {
+      public ClusterDescription refreshClusterStatus() {
         // do nothing
+        return null;
       }
     };
 

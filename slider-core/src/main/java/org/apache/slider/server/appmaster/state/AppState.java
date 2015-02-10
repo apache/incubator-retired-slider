@@ -1631,8 +1631,8 @@ public class AppState {
    * Update the cluster description with the current application state
    */
 
-  public void refreshClusterStatus() {
-    refreshClusterStatus(null);
+  public ClusterDescription refreshClusterStatus() {
+    return refreshClusterStatus(null);
   }
   
   /**

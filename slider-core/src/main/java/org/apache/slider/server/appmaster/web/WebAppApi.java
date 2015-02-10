@@ -19,6 +19,7 @@ package org.apache.slider.server.appmaster.web;
 import org.apache.hadoop.registry.client.api.RegistryOperations;
 import org.apache.slider.api.SliderClusterProtocol;
 import org.apache.slider.providers.ProviderService;
+import org.apache.slider.server.appmaster.AppMasterActionOperations;
 import org.apache.slider.server.appmaster.actions.QueueAccess;
 import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
 import org.apache.slider.server.appmaster.state.AppState;
@@ -65,8 +66,7 @@ public interface WebAppApi {
    * Returns an interface that can support the agent-based REST operations.
    */
   AgentRestOperations getAgentRestOperations();
-
-
+  
   /**
    * Registry operations accessor
    * @return registry access
@@ -85,4 +85,5 @@ public interface WebAppApi {
    */
   QueueAccess getQueues();
 
+  AppMasterActionOperations getAMOperations();
 }

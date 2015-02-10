@@ -37,7 +37,7 @@ public class CancelRequestOperation extends AbstractRMOperation {
   }
 
   @Override
-  public void execute(RMOperationHandler handler) {
+  public void execute(RMOperationHandlerActions handler) {
     handler.cancelContainerRequests(priority1, priority2, count);
   }
 

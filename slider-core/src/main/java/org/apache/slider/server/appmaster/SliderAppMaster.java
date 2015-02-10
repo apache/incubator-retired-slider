@@ -54,7 +54,9 @@ import org.apache.hadoop.yarn.api.records.ContainerState;
 import org.apache.hadoop.yarn.api.records.ContainerStatus;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.hadoop.yarn.api.records.NodeReport;
+import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.Resource;
+import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.hadoop.yarn.client.api.async.AMRMClientAsync;
 import org.apache.hadoop.yarn.client.api.async.NMClientAsync;
 import org.apache.hadoop.yarn.client.api.async.impl.NMClientAsyncImpl;
@@ -83,7 +85,6 @@ import org.apache.slider.api.proto.Messages;
 import org.apache.slider.api.proto.SliderClusterAPI;
 import org.apache.slider.common.SliderExitCodes;
 import org.apache.slider.common.SliderKeys;
-import static org.apache.slider.common.SliderXmlConfKeys.*;
 import org.apache.slider.common.params.AbstractActionArgs;
 import org.apache.slider.common.params.SliderAMArgs;
 import org.apache.slider.common.params.SliderAMCreateAction;
@@ -138,6 +139,7 @@ import org.apache.slider.server.appmaster.rpc.RpcBinder;
 import org.apache.slider.server.appmaster.rpc.SliderAMPolicyProvider;
 import org.apache.slider.server.appmaster.rpc.SliderClusterProtocolPBImpl;
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
+import org.apache.slider.server.appmaster.rpc.SliderClusterProtocolService;
 import org.apache.slider.server.appmaster.security.SecurityConfiguration;
 import org.apache.slider.server.appmaster.state.AppState;
 import org.apache.slider.server.appmaster.state.ContainerAssignment;
@@ -195,7 +197,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     SliderClusterProtocol,
     ServiceStateChangeListener,
     RoleKeys,
-    ProviderCompleted {
+    ProviderCompleted,
+    AppMasterActionOperations {
 
   protected static final Logger log =
     LoggerFactory.getLogger(SliderAppMaster.class);
@@ -246,6 +249,13 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   private Credentials containerCredentials;
 
+  /**
+   * Slider IPC: Real service handler
+   */
+  private SliderClusterProtocolService sliderIPCService;
+  /**
+   * Slider IPC: binding
+   */
   private WorkflowRpcService rpcService;
 
   /**
@@ -744,9 +754,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       appInformation.put(StatusKeys.INFO_AM_WEB_URL, appMasterTrackingUrl + "/");
       appInformation.set(StatusKeys.INFO_AM_WEB_PORT, webAppPort);
 
+      // *****************************************************
       // Register self with ResourceManager
       // This will start heartbeating to the RM
       // address = SliderUtils.getRmSchedulerAddress(asyncRMClient.getConfig());
+      // *****************************************************
       log.info("Connecting to RM at {},address tracking URL={}",
                appMasterRpcPort, appMasterTrackingUrl);
       amRegistrationData = asyncRMClient
@@ -805,8 +817,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       providerService
           .initializeApplicationConfiguration(instanceDefinition, fs);
 
-      providerService.validateApplicationConfiguration(instanceDefinition, 
-                                                       confDir,
+      providerService.validateApplicationConfiguration(instanceDefinition,
+          confDir,
           securityEnabled);
 
       //determine the location for the role history data
@@ -903,13 +915,17 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
               certificateManager,
               registryOperations,
               metricsAndMonitoring,
-              actionQueues);
+              actionQueues,
+              this);
       initAMFilterOptions(serviceConf);
 
       // start the agent web app
       startAgentWebApp(appInformation, serviceConf, webAppApi);
       deployWebApplication(webAppPort, webAppApi);
 
+      // bind the IPC service to the API
+      sliderIPCService.bind(webAppApi);
+      
       // schedule YARN Registry registration
       queue(new ActionRegisterServiceInstance(clustername, appid));
 
@@ -1473,9 +1489,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       throws IOException, SliderException {
     verifyIPCAccess();
 
+    sliderIPCService = new SliderClusterProtocolService();
 
+    deployChildService(sliderIPCService);
     SliderClusterProtocolPBImpl protobufRelay =
-        new SliderClusterProtocolPBImpl(this);
+        new SliderClusterProtocolPBImpl(sliderIPCService);
     BlockingService blockingService = SliderClusterAPI.SliderClusterProtocolPB
         .newReflectiveBlockingService(
             protobufRelay);
@@ -1545,7 +1563,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
     
     //for all the operations, exec them
-    executeRMOperations(operations);
+    execute(operations);
     log.info("Diagnostics: {}", getContainerDiagnosticInfo());
   }
 
@@ -1590,7 +1608,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * @throws SliderException slider problems, including invalid configs
    * @throws IOException IO problems
    */
-  private void flexCluster(ConfTree resources)
+  public void flexCluster(ConfTree resources)
       throws IOException, SliderException {
 
     AggregateConf newConf =
@@ -1685,7 +1703,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       // tell the provider
       providerRMOperationHandler.execute(allOperations);
       //now apply the operations
-      executeRMOperations(allOperations);
+      execute(allOperations);
     } catch (TriggerClusterTeardownException e) {
       //App state has decided that it is time to exit
       log.error("Cluster teardown triggered {}", e, e);
@@ -1698,7 +1716,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   private void releaseAllContainers() {
     //now apply the operations
-    executeRMOperations(appState.releaseAllContainers());
+    execute(appState.releaseAllContainers());
   }
 
   /**
@@ -1939,8 +1957,26 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     return builder.build();
   }
 
-  public void executeRMOperations(List<AbstractRMOperation> operations) {
+  @Override
+  public void execute(List<AbstractRMOperation> operations) {
     rmOperationHandler.execute(operations);
+  }
+
+  @Override
+  public void releaseAssignedContainer(ContainerId containerId) {
+    rmOperationHandler.releaseAssignedContainer(containerId);
+  }
+
+  @Override
+  public void addContainerRequest(AMRMClient.ContainerRequest req) {
+    rmOperationHandler.addContainerRequest(req);
+  }
+
+  @Override
+  public int cancelContainerRequests(Priority priority1,
+      Priority priority2,
+      int count) {
+    return rmOperationHandler.cancelContainerRequests(priority1, priority2, count);
   }
 
   @Override
@@ -2030,7 +2066,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         containerId);
     RoleInstance activeContainer = appState.getOwnedContainer(containerId);
     if (activeContainer != null) {
-      executeRMOperations(appState.releaseContainer(containerId));
+      execute(appState.releaseContainer(containerId));
       // ask for more containers if needed
       log.info("Container released; triggering review");
       reviewRequestAndReleaseNodes("Loss of container");

@@ -215,8 +215,8 @@ public class ProviderAppState implements StateAccessForProviders {
   }
 
   @Override
-  public void refreshClusterStatus() {
-    appState.refreshClusterStatus();
+  public ClusterDescription refreshClusterStatus() {
+    return appState.refreshClusterStatus();
   }
 
   @Override
@@ -243,4 +243,18 @@ public class ProviderAppState implements StateAccessForProviders {
   public Map<String, Map<String, ClusterNode>> getRoleClusterNodeMapping() {
     return appState.createRoleToClusterNodeMap();
   }
+
+  @Override
+  public List<RoleInstance> enumLiveNodesInRole(String role) {
+    List<RoleInstance> nodes = new ArrayList<RoleInstance>();
+    Collection<RoleInstance> allRoleInstances = cloneLiveContainerInfoList();
+        getLiveNodes().values();
+    for (RoleInstance node : allRoleInstances) {
+      if (role.isEmpty() || role.equals(node.role)) {
+        nodes.add(node);
+      }
+    }
+    return nodes;
+  }
+
 }

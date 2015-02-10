@@ -20,6 +20,8 @@ package org.apache.slider.server.appmaster.rpc;
 
 import com.google.protobuf.BlockingService;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.retry.RetryPolicy;
+import org.apache.hadoop.io.retry.RetryUtils;
 import org.apache.hadoop.ipc.ProtobufRpcEngine;
 import org.apache.hadoop.ipc.ProtocolProxy;
 import org.apache.hadoop.ipc.RPC;
@@ -43,7 +45,11 @@ import org.apache.slider.common.SliderExitCodes;
 import org.apache.slider.common.tools.Duration;
 import org.apache.slider.core.exceptions.BadClusterStateException;
 import org.apache.slider.core.exceptions.ErrorStrings;
+import org.apache.slider.core.exceptions.ServiceNotReadyException;
 import org.apache.slider.core.exceptions.SliderException;
+
+import static org.apache.slider.common.SliderXmlConfKeys.*; 
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,6 +118,15 @@ public class RpcBinder {
   }
 
 
+  /**
+   * Connect to a server. May include setting up retry policies
+   * @param addr
+   * @param currentUser
+   * @param conf
+   * @param rpcTimeout
+   * @return
+   * @throws IOException
+   */
   public static SliderClusterProtocol connectToServer(InetSocketAddress addr,
                                                     UserGroupInformation currentUser,
                                                     Configuration conf,
@@ -119,16 +134,24 @@ public class RpcBinder {
     Class<SliderClusterProtocolPB> sliderClusterAPIClass = registerSliderAPI(
         conf);
 
+    final RetryPolicy retryPolicy =
+        RetryUtils.getDefaultRetryPolicy(
+            conf,
+            KEY_IPC_CLIENT_RETRY_POLICY_ENABLED,
+            IPC_CLIENT_RETRY_POLICY_ENABLED_DEFAULT,
+            KEY_IPC_CLIENT_RETRY_POLICY_SPEC,
+            IPC_CLIENT_RETRY_POLICY_SPEC_DEFAULT,
+            ServiceNotReadyException.class);
     log.debug("Connecting to Slider AM at {}", addr);
     ProtocolProxy<SliderClusterProtocolPB> protoProxy =
-      RPC.getProtocolProxy(sliderClusterAPIClass,
-                           1,
-                           addr,
-                           currentUser,
-                           conf,
-                           NetUtils.getDefaultSocketFactory(conf),
-                           rpcTimeout,
-                           null);
+        RPC.getProtocolProxy(sliderClusterAPIClass,
+            1,
+            addr,
+            currentUser,
+            conf,
+            NetUtils.getDefaultSocketFactory(conf),
+            rpcTimeout,
+            retryPolicy);
     SliderClusterProtocolPB endpoint = protoProxy.getProxy();
     return new SliderClusterProtocolProxy(endpoint, addr);
   }

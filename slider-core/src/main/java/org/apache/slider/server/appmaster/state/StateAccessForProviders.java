@@ -229,7 +229,7 @@ public interface StateAccessForProviders {
   /**
    * Update the cluster description with anything interesting
    */
-  void refreshClusterStatus();
+  ClusterDescription refreshClusterStatus();
 
   /**
    * Get a deep clone of the role status list. Concurrent events may mean this
@@ -265,4 +265,11 @@ public interface StateAccessForProviders {
    * @return 
    */
   Map<String, Map<String, ClusterNode>> getRoleClusterNodeMapping();
+
+  /**
+   * Enum all nodes by role. 
+   * @param role role, or "" for all roles
+   * @return a list of nodes, may be empty
+   */
+  List<RoleInstance> enumLiveNodesInRole(String role);
 }

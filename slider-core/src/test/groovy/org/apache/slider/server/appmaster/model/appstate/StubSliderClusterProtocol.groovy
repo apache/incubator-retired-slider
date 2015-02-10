@@ -23,6 +23,9 @@ import org.apache.hadoop.yarn.exceptions.YarnException
 import org.apache.slider.api.SliderClusterProtocol
 import org.apache.slider.api.proto.Messages
 
+/**
+ * Stub implementation of the Protobuf <code>SliderClusterProtocol</code>
+ */
 class StubSliderClusterProtocol implements SliderClusterProtocol {
   @Override
   Messages.StopClusterResponseProto stopCluster(
