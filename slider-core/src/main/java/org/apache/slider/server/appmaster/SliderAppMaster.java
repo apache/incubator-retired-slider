@@ -139,7 +139,7 @@ import org.apache.slider.server.appmaster.rpc.RpcBinder;
 import org.apache.slider.server.appmaster.rpc.SliderAMPolicyProvider;
 import org.apache.slider.server.appmaster.rpc.SliderClusterProtocolPBImpl;
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
-import org.apache.slider.server.appmaster.rpc.SliderClusterProtocolService;
+import org.apache.slider.server.appmaster.rpc.SliderIPCService;
 import org.apache.slider.server.appmaster.security.SecurityConfiguration;
 import org.apache.slider.server.appmaster.state.AppState;
 import org.apache.slider.server.appmaster.state.ContainerAssignment;
@@ -253,7 +253,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   /**
    * Slider IPC: Real service handler
    */
-  private SliderClusterProtocolService sliderIPCService;
+  private SliderIPCService sliderIPCService;
   /**
    * Slider IPC: binding
    */
@@ -1498,7 +1498,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       throws IOException, SliderException {
     verifyIPCAccess();
 
-    sliderIPCService = new SliderClusterProtocolService(
+    sliderIPCService = new SliderIPCService(
         this,
         stateForProviders,
         actionQueues,

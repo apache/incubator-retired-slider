@@ -51,7 +51,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Implement the {@link SliderClusterProtocol}.
  */
-public class SliderClusterProtocolService extends AbstractService
+public class SliderIPCService extends AbstractService
     implements SliderClusterProtocol {
 
   protected static final Logger log =
@@ -65,8 +65,8 @@ public class SliderClusterProtocolService extends AbstractService
   /**
    * This is the prefix used for metrics
    */
-  public static final String PROTOCOL_PREFIX =
-      "org.apache.slider.api.SliderClusterProtocol.";
+  public static final String METRICS_PREFIX =
+      "org.apache.slider.api.SliderIPCService.";
 
   /**
    * Constructor
@@ -75,11 +75,11 @@ public class SliderClusterProtocolService extends AbstractService
    * @param actionQueues queues for actions
    * @param metricsAndMonitoring metrics
    */
-  public SliderClusterProtocolService(AppMasterActionOperations amOperations,
+  public SliderIPCService(AppMasterActionOperations amOperations,
       StateAccessForProviders appState,
       QueueAccess actionQueues,
       MetricsAndMonitoring metricsAndMonitoring) {
-    super("SliderClusterProtocolService");
+    super("SliderIPCService");
     Preconditions.checkArgument(amOperations != null, "null amOperations");
     Preconditions.checkArgument(appState != null, "null appState");
     Preconditions.checkArgument(actionQueues != null, "null actionQueues");
@@ -114,7 +114,7 @@ public class SliderClusterProtocolService extends AbstractService
    */
   protected void onRpcCall(String operation) throws IOException {
     log.debug("Received call to {}", operation);
-    metricsAndMonitoring.markMeterAndCounter(PROTOCOL_PREFIX + operation);
+    metricsAndMonitoring.markMeterAndCounter(METRICS_PREFIX + operation);
   }
 
   /**
