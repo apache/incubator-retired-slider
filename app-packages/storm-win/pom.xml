@@ -28,6 +28,7 @@
   <packaging>pom</packaging>
   <name>Slider Storm App Package</name>
   <description>Slider Storm Windows App Package</description>
+  <version>${pkg.version}</version>
   <properties>
     <work.dir>package-tmp</work.dir>
   </properties>
