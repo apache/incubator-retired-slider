@@ -60,7 +60,6 @@ public class TestContainerStatsBlock extends BaseMockAppStateTest {
         appState)
 
     WebAppApiImpl inst = new WebAppApiImpl(
-        clusterProto,
         providerAppState,
         providerService,
         null,

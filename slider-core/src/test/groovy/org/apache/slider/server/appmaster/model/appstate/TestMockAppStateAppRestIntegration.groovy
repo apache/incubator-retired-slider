@@ -114,8 +114,7 @@ class TestMockAppStateAppRestIntegration extends BaseMockAppStateTest implements
   }
 
   public WebAppApi getWebAppApi() {
-    WebAppApi api = new WebAppApiImpl(new StubSliderClusterProtocol(),
-        stateAccess,
+    WebAppApi api = new WebAppApiImpl(stateAccess,
         new MockProviderService(),
         null, null,
         new MetricsAndMonitoring("metrics"), null, null)

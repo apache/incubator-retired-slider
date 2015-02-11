@@ -53,7 +53,6 @@ public class TestClusterSpecificationBlock {
     ProviderService providerService = new MockProviderService();
 
     WebAppApiImpl inst = new WebAppApiImpl(
-        clusterProto,
         providerAppState,
         providerService,
         null,

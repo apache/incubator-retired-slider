@@ -52,7 +52,6 @@ public class TestIndexBlock extends BaseMockAppStateTest {
         appState)
 
     WebAppApiImpl inst = new WebAppApiImpl(
-        clusterProto,
         providerAppState,
         providerService,
         null,

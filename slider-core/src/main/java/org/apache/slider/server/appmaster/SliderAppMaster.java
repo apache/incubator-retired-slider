@@ -922,7 +922,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       // Web service endpoints: initialize
 
       WebAppApiImpl webAppApi =
-          new WebAppApiImpl(this,
+          new WebAppApiImpl(
               stateForProviders,
               providerService,
               certificateManager,

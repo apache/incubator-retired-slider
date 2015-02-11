@@ -29,13 +29,14 @@ import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.TR;
 import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterNode;
-import org.apache.slider.client.SliderClusterOperations;
+import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.server.appmaster.state.RoleInstance;
-import org.apache.slider.server.appmaster.state.RoleStatus;
+import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -55,12 +56,10 @@ public class ContainerStatsBlock extends HtmlBlock {
   protected static final Function<Entry<String,String>,Entry<TableContent,String>> stringStringPairFunc = toTableContentFunction();
 
   private WebAppApi slider;
-  private SliderClusterOperations clusterOps;
 
   @Inject
   public ContainerStatsBlock(WebAppApi slider) {
     this.slider = slider;
-    clusterOps = new SliderClusterOperations(slider.getClusterProtocol());
   }
 
   /**
@@ -94,29 +93,33 @@ public class ContainerStatsBlock extends HtmlBlock {
 
   @Override
   protected void render(Block html) {
-    // TODO Probably better to just get a copy of this list for us to avoid the repeated synchronization?
-    // does this change if we have 50 node, 100node, 500 node clusters?
-    final Map<String,RoleInstance> containerInstances = getContainerInstances(slider.getAppState().cloneOwnedContainerList());
+    StateAccessForProviders appState = slider.getAppState();
+    final Map<String,RoleInstance> containerInstances = getContainerInstances(
+        appState.cloneOwnedContainerList());
 
-    for (Entry<String,RoleStatus> entry : slider.getRoleStatusByName().entrySet()) {
+    Map<String, Map<String, ClusterNode>> clusterNodeMap =
+        appState.getRoleClusterNodeMapping();
+    Map<String, ComponentInformation> componentInfoMap = appState.getComponentInfoSnapshot();
+
+    for (Entry<String, Map<String, ClusterNode>> entry : clusterNodeMap.entrySet()) {
       final String name = entry.getKey();
-      final RoleStatus roleStatus = entry.getValue();
+      Map<String, ClusterNode> clusterNodesInRole = entry.getValue();
+      //final RoleStatus roleStatus = entry.getValue();
 
       DIV<Hamlet> div = html.div("role-info ui-widget-content ui-corner-all");
 
-      List<ClusterNode> nodesInRole;
-      try {
-        nodesInRole = clusterOps.listClusterNodesInRole(name);
-      } catch (Exception e) {
-        log.error("Could not fetch containers for role: " + name, e);
-        nodesInRole = Collections.emptyList();
-      }
+      List<ClusterNode> nodesInRole =
+          new ArrayList<ClusterNode>(clusterNodesInRole.values());
 
       div.h2(BOLD, StringUtils.capitalize(name));
 
       // Generate the details on this role
-      Iterable<Entry<String,Integer>> stats = roleStatus.buildStatistics().entrySet();
-      generateRoleDetails(div,"role-stats-wrap", "Specifications", Iterables.transform(stats, stringIntPairFunc));
+      ComponentInformation componentInfo = componentInfoMap.get(name);
+      if (componentInfo != null) {
+        Iterable<Entry<String,Integer>> stats = componentInfo.buildStatistics().entrySet();
+        generateRoleDetails(div,"role-stats-wrap", "Specifications", 
+            Iterables.transform(stats, stringIntPairFunc));
+      }
 
       // Sort the ClusterNodes by their name (containerid)
       Collections.sort(nodesInRole, new ClusterNodeNameComparator());
@@ -133,7 +136,8 @@ public class ContainerStatsBlock extends HtmlBlock {
                 RoleInstance roleInst = containerInstances.get(containerId);
                 if (roleInst.container.getNodeHttpAddress() != null) {
                   return Maps.<TableContent,String> immutableEntry(
-                    new TableAnchorContent(containerId, buildNodeUrlForContainer(roleInst.container.getNodeHttpAddress(), containerId)), null);
+                    new TableAnchorContent(containerId,
+                        buildNodeUrlForContainer(roleInst.container.getNodeHttpAddress(), containerId)), null);
                 }
               }
               return Maps.immutableEntry(new TableContent(input.name), null);
@@ -141,9 +145,9 @@ public class ContainerStatsBlock extends HtmlBlock {
 
           }));
 
-      ClusterDescription desc = slider.getAppState().getClusterStatus();
-      Map<String,String> options = desc.getRole(name);
-      Iterable<Entry<TableContent,String>> tableContent;
+      ClusterDescription desc = appState.getClusterStatus();
+      Map<String, String> options = desc.getRole(name);
+      Iterable<Entry<TableContent, String>> tableContent;
       
       // Generate the pairs of data in the expected form
       if (null != options) {

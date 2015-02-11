@@ -52,11 +52,6 @@ public interface WebAppApi {
   CertificateManager getCertificateManager();
 
   /**
-   * The {@link SliderClusterProtocol} for the current cluster
-   */
-  SliderClusterProtocol getClusterProtocol();
-  
-  /**
    * Generate a mapping from role name to its {@link RoleStatus}. Be aware that this
    * is a computed value and not just a getter
    */
