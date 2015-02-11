@@ -217,7 +217,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public static final int NUM_RPC_HANDLERS = 5;
 
   /**
-   * Metrics and monitoring services
+   * Metrics and monitoring services.
+   * Deployed in {@link #serviceInit(Configuration)}
    */
   private final MetricsAndMonitoring metricsAndMonitoring = new MetricsAndMonitoring(); 
   /**
@@ -292,6 +293,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private final AppState appState =
       new AppState(new ProtobufRecordFactory(), metricsAndMonitoring);
 
+  /**
+   * App state for external objects. This is almost entirely
+   * a read-only view of the application state. To change the state,
+   * Providers (or anything else) are expected to queue async changes.
+   */
   private final ProviderAppState stateForProviders =
       new ProviderAppState("undefined", appState);
 
@@ -302,12 +308,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private final ReentrantLock AMExecutionStateLock = new ReentrantLock();
   private final Condition isAMCompleted = AMExecutionStateLock.newCondition();
 
-  /**
-   * Exit code for the AM to return
-   */
-  @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
-  private int amExitCode =  0;
-  
   /**
    * Flag set if the AM is to be shutdown
    */
@@ -382,8 +382,16 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private SliderAMProviderService sliderAMProvider;
   private CertificateManager certificateManager;
 
+  /**
+   * Executor.
+   * Assigned in {@link #serviceInit(Configuration)}
+   */
   private WorkflowExecutorService<ExecutorService> executorService;
-  
+
+  /**
+   * Action queues. Created at instance creation, but
+   * added as a child and inited in {@link #serviceInit(Configuration)}
+   */
   private final QueueService actionQueues = new QueueService();
   private String agentOpsUrl;
   private String agentStatusUrl;
@@ -397,6 +405,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * The port for the web application
    */
   private int webAppPort;
+
+  /**
+   * Is security enabled?
+   * Set early on in the {@link #createAndRunCluster(String)} operation.
+   */
   private boolean securityEnabled;
 
   /**
@@ -923,9 +936,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       startAgentWebApp(appInformation, serviceConf, webAppApi);
       deployWebApplication(webAppPort, webAppApi);
 
-      // bind the IPC service to the API
-      sliderIPCService.bind(webAppApi);
-      
       // schedule YARN Registry registration
       queue(new ActionRegisterServiceInstance(clustername, appid));
 
@@ -1425,7 +1435,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     String appMessage = stopAction.getMessage();
     //stop the daemon & grab its exit code
     int exitCode = stopAction.getExitCode();
-    amExitCode = exitCode;
 
     appStatus = stopAction.getFinalApplicationStatus();
     if (!spawnedProcessExitedBeforeShutdownTriggered) {
@@ -1489,7 +1498,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       throws IOException, SliderException {
     verifyIPCAccess();
 
-    sliderIPCService = new SliderClusterProtocolService();
+    sliderIPCService = new SliderClusterProtocolService(
+        this,
+        stateForProviders,
+        actionQueues,
+        metricsAndMonitoring);
 
     deployChildService(sliderIPCService);
     SliderClusterProtocolPBImpl protobufRelay =

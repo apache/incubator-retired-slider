@@ -18,6 +18,7 @@
 
 package org.apache.slider.server.appmaster.rpc;
 
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.ipc.ProtocolSignature;
 import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
@@ -30,6 +31,7 @@ import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.exceptions.ServiceNotReadyException;
 import org.apache.slider.core.main.LauncherExitCodes;
 import org.apache.slider.core.persist.ConfTreeSerDeser;
+import org.apache.slider.server.appmaster.AppMasterActionOperations;
 import org.apache.slider.server.appmaster.actions.ActionFlexCluster;
 import org.apache.slider.server.appmaster.actions.ActionHalt;
 import org.apache.slider.server.appmaster.actions.ActionKillContainer;
@@ -39,7 +41,6 @@ import org.apache.slider.server.appmaster.actions.QueueAccess;
 import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
 import org.apache.slider.server.appmaster.state.RoleInstance;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
-import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,8 +50,6 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Implement the {@link SliderClusterProtocol}.
- * Important: not live until {@link #bind(WebAppApi)}
- * is invoked. Until then all RPC calls will raise an exception.
  */
 public class SliderClusterProtocolService extends AbstractService
     implements SliderClusterProtocol {
@@ -58,28 +57,38 @@ public class SliderClusterProtocolService extends AbstractService
   protected static final Logger log =
       LoggerFactory.getLogger(SliderClusterProtocol.class);
 
-  private WebAppApi appmaster;
-  private QueueAccess actionQueues;
-  private StateAccessForProviders appState;
-  private MetricsAndMonitoring metricsAndMonitoring;
+  private final QueueAccess actionQueues;
+  private final StateAccessForProviders appState;
+  private final MetricsAndMonitoring metricsAndMonitoring;
+  private final AppMasterActionOperations amOperations;
+  
+  /**
+   * This is the prefix used for metrics
+   */
   public static final String PROTOCOL_PREFIX =
       "org.apache.slider.api.SliderClusterProtocol.";
 
-  public SliderClusterProtocolService() {
-    super("SliderClusterProtocolService");
-  }
-
   /**
-   * Bind to the AM API
-   * @param appmaster api binding.
+   * Constructor
+   * @param amOperations access to any AM operations
+   * @param appState state view
+   * @param actionQueues queues for actions
+   * @param metricsAndMonitoring metrics
    */
-  public void bind(WebAppApi appmaster) {
-    this.appmaster = appmaster;
-    actionQueues = appmaster.getQueues();
-    appState = appmaster.getAppState();
-    metricsAndMonitoring = appmaster.getMetricsAndMonitoring();
+  public SliderClusterProtocolService(AppMasterActionOperations amOperations,
+      StateAccessForProviders appState,
+      QueueAccess actionQueues,
+      MetricsAndMonitoring metricsAndMonitoring) {
+    super("SliderClusterProtocolService");
+    Preconditions.checkArgument(amOperations != null, "null amOperations");
+    Preconditions.checkArgument(appState != null, "null appState");
+    Preconditions.checkArgument(actionQueues != null, "null actionQueues");
+    Preconditions.checkArgument(metricsAndMonitoring != null, "null metricsAndMonitoring");
+    this.appState = appState;
+    this.actionQueues = actionQueues;
+    this.metricsAndMonitoring = metricsAndMonitoring;
+    this.amOperations = amOperations;
   }
-  
 
   @Override   //SliderClusterProtocol
   public ProtocolSignature getProtocolSignature(String protocol,
@@ -105,11 +114,6 @@ public class SliderClusterProtocolService extends AbstractService
    */
   protected void onRpcCall(String operation) throws IOException {
     log.debug("Received call to {}", operation);
-    if (appmaster == null) {
-      // fail fast if the service is not ready
-      log.warn("Rejecting {} as service is not ready", operation);
-      throw new ServiceNotReadyException(ServiceNotReadyException.E_NOT_READY);
-    }
     metricsAndMonitoring.markMeterAndCounter(PROTOCOL_PREFIX + operation);
   }
 
@@ -270,7 +274,7 @@ public class SliderClusterProtocolService extends AbstractService
     RoleInstance instance =
         appState.getLiveInstanceByContainerID(containerID);
     queue(new ActionKillContainer(instance.getId(), 0, TimeUnit.MILLISECONDS,
-        appmaster.getAMOperations()));
+        amOperations));
     Messages.KillContainerResponseProto.Builder builder =
         Messages.KillContainerResponseProto.newBuilder();
     builder.setSuccess(true);
