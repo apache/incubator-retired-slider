@@ -33,7 +33,6 @@ import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenIdentifie
 import org.apache.hadoop.http.HttpConfig;
 import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.ipc.ProtocolSignature;
 import org.apache.hadoop.registry.client.binding.RegistryTypeUtils;
 import org.apache.hadoop.registry.client.binding.RegistryUtils;
 import org.apache.hadoop.security.Credentials;
@@ -79,9 +78,7 @@ import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.RoleKeys;
-import org.apache.slider.api.SliderClusterProtocol;
 import org.apache.slider.api.StatusKeys;
-import org.apache.slider.api.proto.Messages;
 import org.apache.slider.api.proto.SliderClusterAPI;
 import org.apache.slider.common.SliderExitCodes;
 import org.apache.slider.common.SliderKeys;
@@ -107,7 +104,6 @@ import org.apache.slider.core.main.ExitCodeProvider;
 import org.apache.slider.core.main.LauncherExitCodes;
 import org.apache.slider.core.main.RunService;
 import org.apache.slider.core.main.ServiceLauncher;
-import org.apache.slider.core.persist.ConfTreeSerDeser;
 import org.apache.slider.core.registry.info.CustomRegistryConstants;
 import org.apache.slider.providers.ProviderCompleted;
 import org.apache.slider.providers.ProviderRole;
@@ -116,11 +112,9 @@ import org.apache.slider.providers.SliderProviderFactory;
 import org.apache.slider.providers.agent.AgentKeys;
 import org.apache.slider.providers.slideram.SliderAMClientProvider;
 import org.apache.slider.providers.slideram.SliderAMProviderService;
-import org.apache.slider.server.appmaster.actions.ActionKillContainer;
 import org.apache.slider.server.appmaster.actions.ActionRegisterServiceInstance;
 import org.apache.slider.server.appmaster.actions.RegisterComponentInstance;
 import org.apache.slider.server.appmaster.actions.QueueExecutor;
-import org.apache.slider.server.appmaster.actions.ActionHalt;
 import org.apache.slider.server.appmaster.actions.QueueService;
 import org.apache.slider.server.appmaster.actions.ActionStopSlider;
 import org.apache.slider.server.appmaster.actions.AsyncAction;
@@ -194,7 +188,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     RunService,
     SliderExitCodes,
     SliderKeys,
-    SliderClusterProtocol,
     ServiceStateChangeListener,
     RoleKeys,
     ProviderCompleted,
@@ -1777,199 +1770,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   }
   
 /* =================================================================== */
-/* SliderClusterProtocol */
+/* RMOperationHandlerActions */
 /* =================================================================== */
 
-  @Override   //SliderClusterProtocol
-  public ProtocolSignature getProtocolSignature(String protocol,
-                                                long clientVersion,
-                                                int clientMethodsHash) throws
-      IOException {
-    return ProtocolSignature.getProtocolSignature(
-      this, protocol, clientVersion, clientMethodsHash);
-  }
-
-
-
-  @Override   //SliderClusterProtocol
-  public long getProtocolVersion(String protocol, long clientVersion) throws
-                                                                      IOException {
-    return SliderClusterProtocol.versionID;
-  }
-
-  
-/* =================================================================== */
-/* SliderClusterProtocol */
-/* =================================================================== */
-
-  /**
-   * General actions to perform on a slider RPC call coming in
-   * @param operation operation to log
-   * @throws IOException problems
-   */
-  protected void onRpcCall(String operation) throws IOException {
-    // it's not clear why this is here —it has been present since the
-    // code -> git change. Leaving it in
-    SliderUtils.getCurrentUser();
-    log.debug("Received call to {}", operation);
-  }
-
-  @Override //SliderClusterProtocol
-  public Messages.StopClusterResponseProto stopCluster(Messages.StopClusterRequestProto request) throws
-                                                                                                 IOException,
-                                                                                                 YarnException {
-    onRpcCall("stopCluster()");
-    String message = request.getMessage();
-    if (message == null) {
-      message = "application frozen by client";
-    }
-    ActionStopSlider stopSlider =
-        new ActionStopSlider(message,
-            1000, TimeUnit.MILLISECONDS,
-            LauncherExitCodes.EXIT_SUCCESS,
-            FinalApplicationStatus.SUCCEEDED,
-            message);
-    log.info("SliderAppMasterApi.stopCluster: {}", stopSlider);
-    schedule(stopSlider);
-    return Messages.StopClusterResponseProto.getDefaultInstance();
-  }
-
-  @Override //SliderClusterProtocol
-  public Messages.FlexClusterResponseProto flexCluster(Messages.FlexClusterRequestProto request) throws
-                                                                                                 IOException,
-                                                                                                 YarnException {
-    onRpcCall("flexCluster()");
-    String payload = request.getClusterSpec();
-    ConfTreeSerDeser confTreeSerDeser = new ConfTreeSerDeser();
-    ConfTree updatedResources = confTreeSerDeser.fromJson(payload);
-    flexCluster(updatedResources);
-    return Messages.FlexClusterResponseProto.newBuilder().setResponse(
-        true).build();
-  }
-
-  @Override //SliderClusterProtocol
-  public Messages.GetJSONClusterStatusResponseProto getJSONClusterStatus(
-    Messages.GetJSONClusterStatusRequestProto request) throws
-                                                       IOException,
-                                                       YarnException {
-    onRpcCall("getJSONClusterStatus()");
-    String result;
-    //quick update
-    //query and json-ify
-    ClusterDescription cd = updateClusterStatus();
-    result = cd.toJsonString();
-    String stat = result;
-    return Messages.GetJSONClusterStatusResponseProto.newBuilder()
-      .setClusterSpec(stat)
-      .build();
-  }
-
-  @Override
-  public Messages.GetInstanceDefinitionResponseProto getInstanceDefinition(
-    Messages.GetInstanceDefinitionRequestProto request) throws
-                                                        IOException,
-                                                        YarnException {
-
-    onRpcCall("getInstanceDefinition()");
-    String internal;
-    String resources;
-    String app;
-    synchronized (appState) {
-      AggregateConf instanceDefinition = appState.getInstanceDefinition();
-      internal = instanceDefinition.getInternal().toJson();
-      resources = instanceDefinition.getResources().toJson();
-      app = instanceDefinition.getAppConf().toJson();
-    }
-    assert internal != null;
-    assert resources != null;
-    assert app != null;
-    log.debug("Generating getInstanceDefinition Response");
-    Messages.GetInstanceDefinitionResponseProto.Builder builder =
-      Messages.GetInstanceDefinitionResponseProto.newBuilder();
-    builder.setInternal(internal);
-    builder.setResources(resources);
-    builder.setApplication(app);
-    return builder.build();
-  }
-
-  @Override //SliderClusterProtocol
-  public Messages.ListNodeUUIDsByRoleResponseProto listNodeUUIDsByRole(Messages.ListNodeUUIDsByRoleRequestProto request) throws
-                                                                                                                         IOException,
-                                                                                                                         YarnException {
-    onRpcCall("listNodeUUIDsByRole()");
-    String role = request.getRole();
-    Messages.ListNodeUUIDsByRoleResponseProto.Builder builder =
-      Messages.ListNodeUUIDsByRoleResponseProto.newBuilder();
-    List<RoleInstance> nodes = appState.enumLiveNodesInRole(role);
-    for (RoleInstance node : nodes) {
-      builder.addUuid(node.id);
-    }
-    return builder.build();
-  }
-
-  @Override //SliderClusterProtocol
-  public Messages.GetNodeResponseProto getNode(Messages.GetNodeRequestProto request) throws
-                                                                                     IOException,
-                                                                                     YarnException {
-    onRpcCall("getNode()");
-    RoleInstance instance = appState.getLiveInstanceByContainerID(
-        request.getUuid());
-    return Messages.GetNodeResponseProto.newBuilder()
-                                        .setClusterNode(instance.toProtobuf())
-                   .build();
-  }
-
-  @Override //SliderClusterProtocol
-  public Messages.GetClusterNodesResponseProto getClusterNodes(Messages.GetClusterNodesRequestProto request) throws
-                                                                                                             IOException,
-                                                                                                             YarnException {
-    onRpcCall("getClusterNodes()");
-    List<RoleInstance>
-      clusterNodes = appState.getLiveInstancesByContainerIDs(
-        request.getUuidList());
-
-    Messages.GetClusterNodesResponseProto.Builder builder =
-      Messages.GetClusterNodesResponseProto.newBuilder();
-    for (RoleInstance node : clusterNodes) {
-      builder.addClusterNode(node.toProtobuf());
-    }
-    //at this point: a possibly empty list of nodes
-    return builder.build();
-  }
-
-  @Override
-  public Messages.EchoResponseProto echo(Messages.EchoRequestProto request) throws
-                                                                            IOException,
-                                                                            YarnException {
-    onRpcCall("echo()");
-    Messages.EchoResponseProto.Builder builder =
-      Messages.EchoResponseProto.newBuilder();
-    String text = request.getText();
-    log.info("Echo request size ={}", text.length());
-    log.info(text);
-    //now return it
-    builder.setText(text);
-    return builder.build();
-  }
-
-  @Override
-  public Messages.KillContainerResponseProto killContainer(Messages.KillContainerRequestProto request) throws
-                                                                                                       IOException,
-                                                                                                       YarnException {
-    onRpcCall("killContainer()");
-    String containerID = request.getId();
-    log.info("Kill Container {}", containerID);
-    //throws NoSuchNodeException if it is missing
-    RoleInstance instance =
-      appState.getLiveInstanceByContainerID(containerID);
-    queue(new ActionKillContainer(instance.getId(), 0, TimeUnit.MILLISECONDS,
-        rmOperationHandler));
-    Messages.KillContainerResponseProto.Builder builder =
-      Messages.KillContainerResponseProto.newBuilder();
-    builder.setSuccess(true);
-    return builder.build();
-  }
-
+ 
   @Override
   public void execute(List<AbstractRMOperation> operations) {
     rmOperationHandler.execute(operations);
@@ -1992,23 +1796,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     return rmOperationHandler.cancelContainerRequests(priority1, priority2, count);
   }
 
-  @Override
-  public Messages.AMSuicideResponseProto amSuicide(
-      Messages.AMSuicideRequestProto request)
-      throws IOException, YarnException {
-    int signal = request.getSignal();
-    String text = request.getText();
-    if (text == null) {
-      text = "";
-    }
-    int delay = request.getDelay();
-    log.info("AM Suicide with signal {}, message {} delay = {}", signal, text, delay);
-    ActionHalt action = new ActionHalt(signal, text, delay,
-        TimeUnit.MILLISECONDS);
-    schedule(action);
-    return Messages.AMSuicideResponseProto.getDefaultInstance();
-  }
-
+ 
 /* =================================================================== */
 /* END */
 /* =================================================================== */
