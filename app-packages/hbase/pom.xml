@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <!--
    Licensed to the Apache Software Foundation (ASF) under one or more
    contributor license agreements.  See the NOTICE file distributed with
@@ -18,17 +17,16 @@
    limitations under the License.
 -->
   <parent>
-    <groupId>org.apache.slider</groupId>
-    <artifactId>slider</artifactId>
-    <version>0.61-incubating</version>
-    <relativePath>../../pom.xml</relativePath>
+    <groupId>org.apache.slider.packages</groupId>
+    <artifactId>slider-app-packages</artifactId>
+    <version>0.61.0-incubating</version>
+    <relativePath>../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>slider-hbase-app-package</artifactId>
   <packaging>pom</packaging>
   <name>Slider HBase App Package</name>
   <description>Slider HBase App Package</description>
-  <version>${pkg.version}</version>
   <properties>
     <work.dir>package-tmp</work.dir>
     <app.package.name>${project.artifactId}-${project.version}</app.package.name>
@@ -49,7 +47,7 @@
                 <phase>validate</phase>
                 <configuration>
                   <target name="copy and rename file">
-                    <copy file="${pkg.src}/${pkg.name}" tofile="${project.build.directory}/${pkg.name}"/>
+                    <copy file="${pkg.src}/${pkg.name}" tofile="${project.build.directory}/${pkg.name}" />
                   </target>
                 </configuration>
                 <goals>
@@ -61,6 +59,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-assembly-plugin</artifactId>
+            <version>${maven-assembly-plugin.version}</version>
             <configuration>
               <tarLongFileMode>gnu</tarLongFileMode>
               <descriptor>src/assembly/hbase.xml</descriptor>
@@ -99,6 +98,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-assembly-plugin</artifactId>
+            <version>${maven-assembly-plugin.version}</version>
             <configuration>
               <descriptor>src/assembly/hbase.xml</descriptor>
               <appendAssemblyId>false</appendAssemblyId>
@@ -139,6 +139,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
+            <version>${maven-failsafe-plugin.version}</version>
             <executions>
               <execution>
                 <id>run-integration-tests</id>
@@ -165,6 +166,7 @@
           </plugin>
           <plugin>
             <artifactId>maven-compiler-plugin</artifactId>
+            <version>${maven-compiler-plugin.version}</version>
             <dependencies>
               <dependency>
                 <groupId>org.codehaus.groovy</groupId>
@@ -182,6 +184,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>
+            <version>${maven-surefire-plugin.version}</version>
             <configuration>
               <!-- can't figure out how to get the surefire plugin not to pick up the ITs, so skip it entirely -->
               <skip>true</skip>

@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <!--
    Licensed to the Apache Software Foundation (ASF) under one or more
    contributor license agreements.  See the NOTICE file distributed with
@@ -20,17 +19,17 @@
   <parent>
     <groupId>org.apache.slider</groupId>
     <artifactId>slider</artifactId>
-    <version>0.61-incubating</version>
+    <version>0.61.0-incubating</version>
     <relativePath>../../../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>apache-slider-command-logger</artifactId>
+  <artifactId>command-logger-slider-package</artifactId>
   <packaging>pom</packaging>
-  <name>Slider Command Logger App Package</name>
+  <name>Slider Command Logger Slider App Package</name>
   <description>Slider Command Logger App Package</description>
   <properties>
     <work.dir>package-tmp</work.dir>
-    <app.package.name>apache-slider-command-logger</app.package.name>
+    <app.package.name>command-logger-slider-package</app.package.name>
   </properties>
 
   <build>
@@ -38,6 +37,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
+        <version>${maven-assembly-plugin.version}</version>
         <configuration>
           <descriptor>src/assembly/command-logger.xml</descriptor>
           <appendAssemblyId>false</appendAssemblyId>
@@ -66,7 +66,7 @@
               <goal>copy-dependencies</goal>
             </goals>
             <configuration>
-              <includeArtifactIds>command-logger</includeArtifactIds>
+              <includeArtifactIds>command-logger-sample</includeArtifactIds>
               <includeTypes>tar</includeTypes>
               <outputDirectory>${project.build.directory}/${work.dir}</outputDirectory>
             </configuration>
@@ -81,7 +81,7 @@
               <artifactItems>
                 <artifactItem>
                   <groupId>org.apache.slider</groupId>
-                  <artifactId>command-logger</artifactId>
+                  <artifactId>command-logger-sample</artifactId>
                   <type>tar</type>
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}/${work.dir}</outputDirectory>
@@ -99,7 +99,7 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.slider</groupId>
-      <artifactId>command-logger</artifactId>
+      <artifactId>command-logger-sample</artifactId>
       <version>${project.version}</version>
       <type>tar</type>
     </dependency>

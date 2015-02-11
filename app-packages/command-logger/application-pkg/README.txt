@@ -14,7 +14,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 -->
-Command logger is a simple application that does not have any moving parts yet.
+Command logger is a simple application that does not have any moving parts.
 Its sole purpose is to get packaged as a tarball that includes some static files
 suggesting how commands may be logged.
 

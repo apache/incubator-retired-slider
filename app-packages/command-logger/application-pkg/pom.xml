@@ -19,16 +19,20 @@
   <parent>
     <groupId>org.apache.slider</groupId>
     <artifactId>slider</artifactId>
-    <version>0.61-incubating</version>
+    <version>0.61.0-incubating</version>
     <relativePath>../../../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>command-logger</artifactId>
+  <artifactId>command-logger-sample</artifactId>
   <packaging>pom</packaging>
-  <name>Command Logger</name>
-  <description>Command Logger</description>
+  <name>Command Logger Sample Application</name>
+  <description>
+    Command logger is a simple application that does not have any moving parts.
+    Its sole purpose is to get packaged as a tarball that includes some static files
+    suggesting how commands may be logged, for use in test deployments.  
+  </description>
   <properties>
-    <app.package.name>command-logger</app.package.name>
+    <app.package.name>command-logger-sample</app.package.name>
   </properties>
 
   <build>
@@ -37,6 +41,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
+        <version>${maven-assembly-plugin.version}</version>
         <configuration>
           <tarLongFileMode>gnu</tarLongFileMode>
           <descriptor>src/packages/tarball/all.xml</descriptor>

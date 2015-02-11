@@ -16,3 +16,6 @@ release.properties
 *.versionsBackup
 slider-test.xml
 build.properties
+pom.xml.tag
+pom.xml.next
+pom.xml.releaseBackup

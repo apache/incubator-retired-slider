@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.slider</groupId>
     <artifactId>slider</artifactId>
-    <version>0.61-incubating</version>
+    <version>0.61.0-incubating</version>
   </parent>
   <properties>
     <work.dir>package-tmp</work.dir>
@@ -67,6 +67,7 @@
       
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven-compiler-plugin.version}</version>
         <dependencies>
           <dependency>
             <groupId>org.codehaus.groovy</groupId>
@@ -118,11 +119,11 @@
             <slider.conf.dir>${slider.conf.dir}</slider.conf.dir>
             <slider.bin.dir>../slider-assembly/target/slider-${project.version}-all/slider-${project.version}</slider.bin.dir>
             <test.app.pkg.dir>../app-packages/command-logger/slider-pkg/target</test.app.pkg.dir>
-            <test.app.pkg.file>apache-slider-command-logger.zip</test.app.pkg.file>
+            <test.app.pkg.file>command-logger-slider-package.zip</test.app.pkg.file>
             <test.app.pkg.name>CMD_LOGGER</test.app.pkg.name>
             <test.app.resource>../slider-core/src/test/app_packages/test_command_log/resources.json</test.app.resource>
             <test.app.template>../slider-core/src/test/app_packages/test_command_log/appConfig.json</test.app.template>
-            <vagrant.current.working.dir></vagrant.current.working.dir>
+            <vagrant.current.working.dir />
           </systemPropertyVariables>
         </configuration>
       </plugin>
@@ -154,11 +155,11 @@
               <artifactItems>
                 <artifactItem>
                   <groupId>org.apache.slider</groupId>
-                  <artifactId>apache-slider-command-logger</artifactId>
+                  <artifactId>command-logger-slider-package</artifactId>
                   <type>zip</type>
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}/${work.dir}</outputDirectory>
-                  <destFileName>apache-slider-command-logger.zip</destFileName>
+                  <destFileName>command-logger-slider-package.zip</destFileName>
                 </artifactItem>
               </artifactItems>
             </configuration>
@@ -212,7 +213,6 @@
        <artifactId>hbase-client</artifactId>
     </dependency>
 
-
     <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-minicluster</artifactId>
@@ -221,47 +221,11 @@
 
     <dependency>
       <groupId>org.apache.slider</groupId>
-      <artifactId>apache-slider-command-logger</artifactId>
+      <artifactId>command-logger-slider-package</artifactId>
       <version>${project.version}</version>
       <type>zip</type>
     </dependency>
 
-    <dependency>
-      <groupId>org.apache.hbase</groupId>
-      <artifactId>hbase-server</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.hbase</groupId>
-      <artifactId>hbase-common</artifactId>
-      <classifier>tests</classifier>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.hbase</groupId>
-      <artifactId>hbase-it</artifactId>
-      <classifier>tests</classifier>
-        <exclusions>
-          <exclusion>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-client</artifactId>
-          </exclusion>
-        </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.hbase</groupId>
-      <artifactId>hbase-hadoop-compat</artifactId>
-      <classifier>tests</classifier>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.hbase</groupId>
-      <artifactId>hbase-hadoop2-compat</artifactId>
-      <classifier>tests</classifier>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.hbase</groupId>
-      <artifactId>hbase-server</artifactId>
-      <classifier>tests</classifier>
-    </dependency>
-    
     <dependency>
       <groupId>org.apache.bigtop.itest</groupId>
       <artifactId>itest-common</artifactId>
@@ -284,14 +248,14 @@
       <artifactId>junit</artifactId>
     </dependency>
 
-      <dependency>
-        <groupId>org.codehaus.groovy</groupId>
-        <artifactId>groovy-all</artifactId>
-      </dependency>
+    <dependency>
+      <groupId>org.codehaus.groovy</groupId>
+      <artifactId>groovy-all</artifactId>
+    </dependency>
+
     <dependency>
       <groupId>com.jcraft</groupId>
       <artifactId>jsch</artifactId>
-      <version>0.1.51</version>
     </dependency>
 
   </dependencies>
@@ -349,6 +313,7 @@
                   <exclude>**/*.json</exclude>
                   <exclude>**/httpfs-signature.secret</exclude>
                   <exclude>**/regionservers</exclude>
+                  <exclude>**/THIRD-PARTY.properties</exclude>
                 </excludes>
               </configuration>
             </plugin>

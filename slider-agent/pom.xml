@@ -19,7 +19,7 @@
   <parent>
     <groupId>org.apache.slider</groupId>
     <artifactId>slider</artifactId>
-    <version>0.61-incubating</version>
+    <version>0.61.0-incubating</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>slider-agent</artifactId>
@@ -134,6 +134,7 @@
             </executions>
             <configuration>
               <excludes>
+                <exclude>DEPENDENCIES</exclude>
                 <exclude>src/test/python/agent/dummy_output_error.txt</exclude>
                 <exclude>src/test/python/agent/dummy_output_good.txt</exclude>
                 <!-- jinja2 files (BSD license) -->
