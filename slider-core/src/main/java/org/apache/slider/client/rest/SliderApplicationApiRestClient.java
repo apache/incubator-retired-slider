@@ -44,10 +44,10 @@ import static org.apache.slider.server.appmaster.web.rest.RestPaths.*;
 /**
  * Implementation of the {@link SliderApplicationApi}
  */
-public class SliderApplicationApiClient extends BaseRestClient
+public class SliderApplicationApiRestClient extends BaseRestClient
       implements SliderApplicationApi {
   private static final Logger log =
-      LoggerFactory.getLogger(SliderApplicationApiClient.class);
+      LoggerFactory.getLogger(SliderApplicationApiRestClient.class);
   private WebResource appResource;
 
   /**
@@ -55,7 +55,7 @@ public class SliderApplicationApiClient extends BaseRestClient
    * @param jerseyClient jersey client for operations
    * @param appResource resource of application API
    */
-  public SliderApplicationApiClient(Client jerseyClient,
+  public SliderApplicationApiRestClient(Client jerseyClient,
       WebResource appResource) {
     super(jerseyClient);
     this.appResource = appResource;
