@@ -189,6 +189,90 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.GetLiveComponentRequestProto request,
           com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.ComponentInformationProto> done);
 
+      /**
+       * <code>rpc getModelDesired(.org.apache.slider.api.EmptyPayloadProto) returns (.org.apache.slider.api.WrappedJsonProto);</code>
+       *
+       * <pre>
+       * AggregateConf getModelDesired()
+       * </pre>
+       */
+      public abstract void getModelDesired(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
+          com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done);
+
+      /**
+       * <code>rpc getModelDesiredAppconf(.org.apache.slider.api.EmptyPayloadProto) returns (.org.apache.slider.api.WrappedJsonProto);</code>
+       *
+       * <pre>
+       * ConfTree getModelDesiredAppconf
+       * </pre>
+       */
+      public abstract void getModelDesiredAppconf(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
+          com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done);
+
+      /**
+       * <code>rpc getModelDesiredResources(.org.apache.slider.api.EmptyPayloadProto) returns (.org.apache.slider.api.WrappedJsonProto);</code>
+       *
+       * <pre>
+       * ConfTree getModelDesiredResources
+       * </pre>
+       */
+      public abstract void getModelDesiredResources(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
+          com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done);
+
+      /**
+       * <code>rpc getModelResolved(.org.apache.slider.api.EmptyPayloadProto) returns (.org.apache.slider.api.WrappedJsonProto);</code>
+       *
+       * <pre>
+       * AggregateConf getModelResolved()
+       * </pre>
+       */
+      public abstract void getModelResolved(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
+          com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done);
+
+      /**
+       * <code>rpc getModelResolvedAppconf(.org.apache.slider.api.EmptyPayloadProto) returns (.org.apache.slider.api.WrappedJsonProto);</code>
+       *
+       * <pre>
+       * ConfTree getModelResolvedAppconf
+       * </pre>
+       */
+      public abstract void getModelResolvedAppconf(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
+          com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done);
+
+      /**
+       * <code>rpc getModelResolvedResources(.org.apache.slider.api.EmptyPayloadProto) returns (.org.apache.slider.api.WrappedJsonProto);</code>
+       *
+       * <pre>
+       * ConfTree getModelResolvedResources
+       * </pre>
+       */
+      public abstract void getModelResolvedResources(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
+          com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done);
+
+      /**
+       * <code>rpc getLiveResources(.org.apache.slider.api.EmptyPayloadProto) returns (.org.apache.slider.api.WrappedJsonProto);</code>
+       *
+       * <pre>
+       * ConfTree getLiveResources
+       * </pre>
+       */
+      public abstract void getLiveResources(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
+          com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done);
+
     }
 
     public static com.google.protobuf.Service newReflectiveService(
@@ -314,6 +398,62 @@ public final class SliderClusterAPI {
           impl.getLiveComponent(controller, request, done);
         }
 
+        @java.lang.Override
+        public  void getModelDesired(
+            com.google.protobuf.RpcController controller,
+            org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
+            com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done) {
+          impl.getModelDesired(controller, request, done);
+        }
+
+        @java.lang.Override
+        public  void getModelDesiredAppconf(
+            com.google.protobuf.RpcController controller,
+            org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
+            com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done) {
+          impl.getModelDesiredAppconf(controller, request, done);
+        }
+
+        @java.lang.Override
+        public  void getModelDesiredResources(
+            com.google.protobuf.RpcController controller,
+            org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
+            com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done) {
+          impl.getModelDesiredResources(controller, request, done);
+        }
+
+        @java.lang.Override
+        public  void getModelResolved(
+            com.google.protobuf.RpcController controller,
+            org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
+            com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done) {
+          impl.getModelResolved(controller, request, done);
+        }
+
+        @java.lang.Override
+        public  void getModelResolvedAppconf(
+            com.google.protobuf.RpcController controller,
+            org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
+            com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done) {
+          impl.getModelResolvedAppconf(controller, request, done);
+        }
+
+        @java.lang.Override
+        public  void getModelResolvedResources(
+            com.google.protobuf.RpcController controller,
+            org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
+            com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done) {
+          impl.getModelResolvedResources(controller, request, done);
+        }
+
+        @java.lang.Override
+        public  void getLiveResources(
+            com.google.protobuf.RpcController controller,
+            org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
+            com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done) {
+          impl.getLiveResources(controller, request, done);
+        }
+
       };
     }
 
@@ -366,6 +506,20 @@ public final class SliderClusterAPI {
               return impl.getLiveComponents(controller, (org.apache.slider.api.proto.Messages.GetLiveComponentsRequestProto)request);
             case 14:
               return impl.getLiveComponent(controller, (org.apache.slider.api.proto.Messages.GetLiveComponentRequestProto)request);
+            case 15:
+              return impl.getModelDesired(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request);
+            case 16:
+              return impl.getModelDesiredAppconf(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request);
+            case 17:
+              return impl.getModelDesiredResources(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request);
+            case 18:
+              return impl.getModelResolved(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request);
+            case 19:
+              return impl.getModelResolvedAppconf(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request);
+            case 20:
+              return impl.getModelResolvedResources(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request);
+            case 21:
+              return impl.getLiveResources(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request);
             default:
               throw new java.lang.AssertionError("Can't get here.");
           }
@@ -410,6 +564,20 @@ public final class SliderClusterAPI {
               return org.apache.slider.api.proto.Messages.GetLiveComponentsRequestProto.getDefaultInstance();
             case 14:
               return org.apache.slider.api.proto.Messages.GetLiveComponentRequestProto.getDefaultInstance();
+            case 15:
+              return org.apache.slider.api.proto.Messages.EmptyPayloadProto.getDefaultInstance();
+            case 16:
+              return org.apache.slider.api.proto.Messages.EmptyPayloadProto.getDefaultInstance();
+            case 17:
+              return org.apache.slider.api.proto.Messages.EmptyPayloadProto.getDefaultInstance();
+            case 18:
+              return org.apache.slider.api.proto.Messages.EmptyPayloadProto.getDefaultInstance();
+            case 19:
+              return org.apache.slider.api.proto.Messages.EmptyPayloadProto.getDefaultInstance();
+            case 20:
+              return org.apache.slider.api.proto.Messages.EmptyPayloadProto.getDefaultInstance();
+            case 21:
+              return org.apache.slider.api.proto.Messages.EmptyPayloadProto.getDefaultInstance();
             default:
               throw new java.lang.AssertionError("Can't get here.");
           }
@@ -454,6 +622,20 @@ public final class SliderClusterAPI {
               return org.apache.slider.api.proto.Messages.GetLiveComponentsResponseProto.getDefaultInstance();
             case 14:
               return org.apache.slider.api.proto.Messages.ComponentInformationProto.getDefaultInstance();
+            case 15:
+              return org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance();
+            case 16:
+              return org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance();
+            case 17:
+              return org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance();
+            case 18:
+              return org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance();
+            case 19:
+              return org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance();
+            case 20:
+              return org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance();
+            case 21:
+              return org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance();
             default:
               throw new java.lang.AssertionError("Can't get here.");
           }
@@ -630,6 +812,90 @@ public final class SliderClusterAPI {
         org.apache.slider.api.proto.Messages.GetLiveComponentRequestProto request,
         com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.ComponentInformationProto> done);
 
+    /**
+     * <code>rpc getModelDesired(.org.apache.slider.api.EmptyPayloadProto) returns (.org.apache.slider.api.WrappedJsonProto);</code>
+     *
+     * <pre>
+     * AggregateConf getModelDesired()
+     * </pre>
+     */
+    public abstract void getModelDesired(
+        com.google.protobuf.RpcController controller,
+        org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
+        com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done);
+
+    /**
+     * <code>rpc getModelDesiredAppconf(.org.apache.slider.api.EmptyPayloadProto) returns (.org.apache.slider.api.WrappedJsonProto);</code>
+     *
+     * <pre>
+     * ConfTree getModelDesiredAppconf
+     * </pre>
+     */
+    public abstract void getModelDesiredAppconf(
+        com.google.protobuf.RpcController controller,
+        org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
+        com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done);
+
+    /**
+     * <code>rpc getModelDesiredResources(.org.apache.slider.api.EmptyPayloadProto) returns (.org.apache.slider.api.WrappedJsonProto);</code>
+     *
+     * <pre>
+     * ConfTree getModelDesiredResources
+     * </pre>
+     */
+    public abstract void getModelDesiredResources(
+        com.google.protobuf.RpcController controller,
+        org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
+        com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done);
+
+    /**
+     * <code>rpc getModelResolved(.org.apache.slider.api.EmptyPayloadProto) returns (.org.apache.slider.api.WrappedJsonProto);</code>
+     *
+     * <pre>
+     * AggregateConf getModelResolved()
+     * </pre>
+     */
+    public abstract void getModelResolved(
+        com.google.protobuf.RpcController controller,
+        org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
+        com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done);
+
+    /**
+     * <code>rpc getModelResolvedAppconf(.org.apache.slider.api.EmptyPayloadProto) returns (.org.apache.slider.api.WrappedJsonProto);</code>
+     *
+     * <pre>
+     * ConfTree getModelResolvedAppconf
+     * </pre>
+     */
+    public abstract void getModelResolvedAppconf(
+        com.google.protobuf.RpcController controller,
+        org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
+        com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done);
+
+    /**
+     * <code>rpc getModelResolvedResources(.org.apache.slider.api.EmptyPayloadProto) returns (.org.apache.slider.api.WrappedJsonProto);</code>
+     *
+     * <pre>
+     * ConfTree getModelResolvedResources
+     * </pre>
+     */
+    public abstract void getModelResolvedResources(
+        com.google.protobuf.RpcController controller,
+        org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
+        com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done);
+
+    /**
+     * <code>rpc getLiveResources(.org.apache.slider.api.EmptyPayloadProto) returns (.org.apache.slider.api.WrappedJsonProto);</code>
+     *
+     * <pre>
+     * ConfTree getLiveResources
+     * </pre>
+     */
+    public abstract void getLiveResources(
+        com.google.protobuf.RpcController controller,
+        org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
+        com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done);
+
     public static final
         com.google.protobuf.Descriptors.ServiceDescriptor
         getDescriptor() {
@@ -727,6 +993,41 @@ public final class SliderClusterAPI {
             com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.ComponentInformationProto>specializeCallback(
               done));
           return;
+        case 15:
+          this.getModelDesired(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request,
+            com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.WrappedJsonProto>specializeCallback(
+              done));
+          return;
+        case 16:
+          this.getModelDesiredAppconf(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request,
+            com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.WrappedJsonProto>specializeCallback(
+              done));
+          return;
+        case 17:
+          this.getModelDesiredResources(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request,
+            com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.WrappedJsonProto>specializeCallback(
+              done));
+          return;
+        case 18:
+          this.getModelResolved(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request,
+            com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.WrappedJsonProto>specializeCallback(
+              done));
+          return;
+        case 19:
+          this.getModelResolvedAppconf(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request,
+            com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.WrappedJsonProto>specializeCallback(
+              done));
+          return;
+        case 20:
+          this.getModelResolvedResources(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request,
+            com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.WrappedJsonProto>specializeCallback(
+              done));
+          return;
+        case 21:
+          this.getLiveResources(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request,
+            com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.WrappedJsonProto>specializeCallback(
+              done));
+          return;
         default:
           throw new java.lang.AssertionError("Can't get here.");
       }
@@ -771,6 +1072,20 @@ public final class SliderClusterAPI {
           return org.apache.slider.api.proto.Messages.GetLiveComponentsRequestProto.getDefaultInstance();
         case 14:
           return org.apache.slider.api.proto.Messages.GetLiveComponentRequestProto.getDefaultInstance();
+        case 15:
+          return org.apache.slider.api.proto.Messages.EmptyPayloadProto.getDefaultInstance();
+        case 16:
+          return org.apache.slider.api.proto.Messages.EmptyPayloadProto.getDefaultInstance();
+        case 17:
+          return org.apache.slider.api.proto.Messages.EmptyPayloadProto.getDefaultInstance();
+        case 18:
+          return org.apache.slider.api.proto.Messages.EmptyPayloadProto.getDefaultInstance();
+        case 19:
+          return org.apache.slider.api.proto.Messages.EmptyPayloadProto.getDefaultInstance();
+        case 20:
+          return org.apache.slider.api.proto.Messages.EmptyPayloadProto.getDefaultInstance();
+        case 21:
+          return org.apache.slider.api.proto.Messages.EmptyPayloadProto.getDefaultInstance();
         default:
           throw new java.lang.AssertionError("Can't get here.");
       }
@@ -815,6 +1130,20 @@ public final class SliderClusterAPI {
           return org.apache.slider.api.proto.Messages.GetLiveComponentsResponseProto.getDefaultInstance();
         case 14:
           return org.apache.slider.api.proto.Messages.ComponentInformationProto.getDefaultInstance();
+        case 15:
+          return org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance();
+        case 16:
+          return org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance();
+        case 17:
+          return org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance();
+        case 18:
+          return org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance();
+        case 19:
+          return org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance();
+        case 20:
+          return org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance();
+        case 21:
+          return org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance();
         default:
           throw new java.lang.AssertionError("Can't get here.");
       }
@@ -1060,6 +1389,111 @@ public final class SliderClusterAPI {
             org.apache.slider.api.proto.Messages.ComponentInformationProto.class,
             org.apache.slider.api.proto.Messages.ComponentInformationProto.getDefaultInstance()));
       }
+
+      public  void getModelDesired(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
+          com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done) {
+        channel.callMethod(
+          getDescriptor().getMethods().get(15),
+          controller,
+          request,
+          org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance(),
+          com.google.protobuf.RpcUtil.generalizeCallback(
+            done,
+            org.apache.slider.api.proto.Messages.WrappedJsonProto.class,
+            org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance()));
+      }
+
+      public  void getModelDesiredAppconf(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
+          com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done) {
+        channel.callMethod(
+          getDescriptor().getMethods().get(16),
+          controller,
+          request,
+          org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance(),
+          com.google.protobuf.RpcUtil.generalizeCallback(
+            done,
+            org.apache.slider.api.proto.Messages.WrappedJsonProto.class,
+            org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance()));
+      }
+
+      public  void getModelDesiredResources(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
+          com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done) {
+        channel.callMethod(
+          getDescriptor().getMethods().get(17),
+          controller,
+          request,
+          org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance(),
+          com.google.protobuf.RpcUtil.generalizeCallback(
+            done,
+            org.apache.slider.api.proto.Messages.WrappedJsonProto.class,
+            org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance()));
+      }
+
+      public  void getModelResolved(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
+          com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done) {
+        channel.callMethod(
+          getDescriptor().getMethods().get(18),
+          controller,
+          request,
+          org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance(),
+          com.google.protobuf.RpcUtil.generalizeCallback(
+            done,
+            org.apache.slider.api.proto.Messages.WrappedJsonProto.class,
+            org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance()));
+      }
+
+      public  void getModelResolvedAppconf(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
+          com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done) {
+        channel.callMethod(
+          getDescriptor().getMethods().get(19),
+          controller,
+          request,
+          org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance(),
+          com.google.protobuf.RpcUtil.generalizeCallback(
+            done,
+            org.apache.slider.api.proto.Messages.WrappedJsonProto.class,
+            org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance()));
+      }
+
+      public  void getModelResolvedResources(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
+          com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done) {
+        channel.callMethod(
+          getDescriptor().getMethods().get(20),
+          controller,
+          request,
+          org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance(),
+          com.google.protobuf.RpcUtil.generalizeCallback(
+            done,
+            org.apache.slider.api.proto.Messages.WrappedJsonProto.class,
+            org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance()));
+      }
+
+      public  void getLiveResources(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
+          com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done) {
+        channel.callMethod(
+          getDescriptor().getMethods().get(21),
+          controller,
+          request,
+          org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance(),
+          com.google.protobuf.RpcUtil.generalizeCallback(
+            done,
+            org.apache.slider.api.proto.Messages.WrappedJsonProto.class,
+            org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance()));
+      }
     }
 
     public static BlockingInterface newBlockingStub(
@@ -1141,6 +1575,41 @@ public final class SliderClusterAPI {
       public org.apache.slider.api.proto.Messages.ComponentInformationProto getLiveComponent(
           com.google.protobuf.RpcController controller,
           org.apache.slider.api.proto.Messages.GetLiveComponentRequestProto request)
+          throws com.google.protobuf.ServiceException;
+
+      public org.apache.slider.api.proto.Messages.WrappedJsonProto getModelDesired(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.EmptyPayloadProto request)
+          throws com.google.protobuf.ServiceException;
+
+      public org.apache.slider.api.proto.Messages.WrappedJsonProto getModelDesiredAppconf(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.EmptyPayloadProto request)
+          throws com.google.protobuf.ServiceException;
+
+      public org.apache.slider.api.proto.Messages.WrappedJsonProto getModelDesiredResources(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.EmptyPayloadProto request)
+          throws com.google.protobuf.ServiceException;
+
+      public org.apache.slider.api.proto.Messages.WrappedJsonProto getModelResolved(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.EmptyPayloadProto request)
+          throws com.google.protobuf.ServiceException;
+
+      public org.apache.slider.api.proto.Messages.WrappedJsonProto getModelResolvedAppconf(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.EmptyPayloadProto request)
+          throws com.google.protobuf.ServiceException;
+
+      public org.apache.slider.api.proto.Messages.WrappedJsonProto getModelResolvedResources(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.EmptyPayloadProto request)
+          throws com.google.protobuf.ServiceException;
+
+      public org.apache.slider.api.proto.Messages.WrappedJsonProto getLiveResources(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.EmptyPayloadProto request)
           throws com.google.protobuf.ServiceException;
     }
 
@@ -1330,6 +1799,90 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.ComponentInformationProto.getDefaultInstance());
       }
 
+
+      public org.apache.slider.api.proto.Messages.WrappedJsonProto getModelDesired(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.EmptyPayloadProto request)
+          throws com.google.protobuf.ServiceException {
+        return (org.apache.slider.api.proto.Messages.WrappedJsonProto) channel.callBlockingMethod(
+          getDescriptor().getMethods().get(15),
+          controller,
+          request,
+          org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance());
+      }
+
+
+      public org.apache.slider.api.proto.Messages.WrappedJsonProto getModelDesiredAppconf(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.EmptyPayloadProto request)
+          throws com.google.protobuf.ServiceException {
+        return (org.apache.slider.api.proto.Messages.WrappedJsonProto) channel.callBlockingMethod(
+          getDescriptor().getMethods().get(16),
+          controller,
+          request,
+          org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance());
+      }
+
+
+      public org.apache.slider.api.proto.Messages.WrappedJsonProto getModelDesiredResources(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.EmptyPayloadProto request)
+          throws com.google.protobuf.ServiceException {
+        return (org.apache.slider.api.proto.Messages.WrappedJsonProto) channel.callBlockingMethod(
+          getDescriptor().getMethods().get(17),
+          controller,
+          request,
+          org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance());
+      }
+
+
+      public org.apache.slider.api.proto.Messages.WrappedJsonProto getModelResolved(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.EmptyPayloadProto request)
+          throws com.google.protobuf.ServiceException {
+        return (org.apache.slider.api.proto.Messages.WrappedJsonProto) channel.callBlockingMethod(
+          getDescriptor().getMethods().get(18),
+          controller,
+          request,
+          org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance());
+      }
+
+
+      public org.apache.slider.api.proto.Messages.WrappedJsonProto getModelResolvedAppconf(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.EmptyPayloadProto request)
+          throws com.google.protobuf.ServiceException {
+        return (org.apache.slider.api.proto.Messages.WrappedJsonProto) channel.callBlockingMethod(
+          getDescriptor().getMethods().get(19),
+          controller,
+          request,
+          org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance());
+      }
+
+
+      public org.apache.slider.api.proto.Messages.WrappedJsonProto getModelResolvedResources(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.EmptyPayloadProto request)
+          throws com.google.protobuf.ServiceException {
+        return (org.apache.slider.api.proto.Messages.WrappedJsonProto) channel.callBlockingMethod(
+          getDescriptor().getMethods().get(20),
+          controller,
+          request,
+          org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance());
+      }
+
+
+      public org.apache.slider.api.proto.Messages.WrappedJsonProto getLiveResources(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.EmptyPayloadProto request)
+          throws com.google.protobuf.ServiceException {
+        return (org.apache.slider.api.proto.Messages.WrappedJsonProto) channel.callBlockingMethod(
+          getDescriptor().getMethods().get(21),
+          controller,
+          request,
+          org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance());
+      }
+
     }
 
     // @@protoc_insertion_point(class_scope:org.apache.slider.api.SliderClusterProtocolPB)
@@ -1346,7 +1899,7 @@ public final class SliderClusterAPI {
     java.lang.String[] descriptorData = {
       "\n\033SliderClusterProtocol.proto\022\025org.apach" +
       "e.slider.api\032\033SliderClusterMessages.prot" +
-      "o2\306\016\n\027SliderClusterProtocolPB\022n\n\013stopClu" +
+      "o2\264\024\n\027SliderClusterProtocolPB\022n\n\013stopClu" +
       "ster\022..org.apache.slider.api.StopCluster" +
       "RequestProto\032/.org.apache.slider.api.Sto" +
       "pClusterResponseProto\022n\n\013flexCluster\022..o" +
@@ -1392,9 +1945,27 @@ public final class SliderClusterAPI {
       "ComponentsResponseProto\022y\n\020getLiveCompon" +
       "ent\0223.org.apache.slider.api.GetLiveCompo" +
       "nentRequestProto\0320.org.apache.slider.api" +
-      ".ComponentInformationProtoB5\n\033org.apache" +
-      ".slider.api.protoB\020SliderClusterAPI\210\001\001\240\001",
-      "\001"
+      ".ComponentInformationProto\022d\n\017getModelDe" +
+      "sired\022(.org.apache.slider.api.EmptyPaylo",
+      "adProto\032\'.org.apache.slider.api.WrappedJ" +
+      "sonProto\022k\n\026getModelDesiredAppconf\022(.org" +
+      ".apache.slider.api.EmptyPayloadProto\032\'.o" +
+      "rg.apache.slider.api.WrappedJsonProto\022m\n" +
+      "\030getModelDesiredResources\022(.org.apache.s" +
+      "lider.api.EmptyPayloadProto\032\'.org.apache" +
+      ".slider.api.WrappedJsonProto\022e\n\020getModel" +
+      "Resolved\022(.org.apache.slider.api.EmptyPa" +
+      "yloadProto\032\'.org.apache.slider.api.Wrapp" +
+      "edJsonProto\022l\n\027getModelResolvedAppconf\022(",
+      ".org.apache.slider.api.EmptyPayloadProto" +
+      "\032\'.org.apache.slider.api.WrappedJsonProt" +
+      "o\022n\n\031getModelResolvedResources\022(.org.apa" +
+      "che.slider.api.EmptyPayloadProto\032\'.org.a" +
+      "pache.slider.api.WrappedJsonProto\022e\n\020get" +
+      "LiveResources\022(.org.apache.slider.api.Em" +
+      "ptyPayloadProto\032\'.org.apache.slider.api." +
+      "WrappedJsonProtoB5\n\033org.apache.slider.ap" +
+      "i.protoB\020SliderClusterAPI\210\001\001\240\001\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {

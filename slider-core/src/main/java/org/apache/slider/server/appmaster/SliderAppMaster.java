@@ -149,6 +149,8 @@ import org.apache.slider.server.appmaster.web.SliderAMWebApp;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.WebAppApiImpl;
 import org.apache.slider.server.appmaster.web.rest.RestPaths;
+import org.apache.slider.server.appmaster.web.rest.application.ApplicationResouceContentCacheFactory;
+import org.apache.slider.server.appmaster.web.rest.application.resources.ContentCache;
 import org.apache.slider.server.services.security.CertificateManager;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
 import org.apache.slider.server.services.utility.WebAppService;
@@ -404,6 +406,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * Set early on in the {@link #createAndRunCluster(String)} operation.
    */
   private boolean securityEnabled;
+  private ContentCache contentCache;
 
   /**
    * Service Constructor
@@ -478,7 +481,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     addService(metricsAndMonitoring);
     metrics = metricsAndMonitoring.getMetrics();
 
-    
+
+    contentCache = ApplicationResouceContentCacheFactory.createContentCache(
+        stateForProviders);
+
+
     executorService = new WorkflowExecutorService<ExecutorService>("AmExecutor",
         Executors.newFixedThreadPool(2,
             new ServiceThreadFactory("AmExecutor", true)));
@@ -713,8 +720,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
           getConfig().set(KEY_PROTOCOL_ACL, "*");
         }
       }
+      
       //bring up the Slider RPC service
-
       buildPortScanner(instanceDefinition);
       startSliderRPCServer(instanceDefinition);
 
@@ -922,7 +929,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
               registryOperations,
               metricsAndMonitoring,
               actionQueues,
-              this);
+              this,
+              contentCache);
       initAMFilterOptions(serviceConf);
 
       // start the agent web app
@@ -1495,7 +1503,8 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         this,
         stateForProviders,
         actionQueues,
-        metricsAndMonitoring);
+        metricsAndMonitoring,
+        contentCache);
 
     deployChildService(sliderIPCService);
     SliderClusterProtocolPBImpl protobufRelay =

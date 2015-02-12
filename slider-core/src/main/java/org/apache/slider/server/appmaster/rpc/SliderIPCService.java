@@ -19,19 +19,23 @@
 package org.apache.slider.server.appmaster.rpc;
 
 import com.google.common.base.Preconditions;
+import com.google.protobuf.RpcController;
 import org.apache.hadoop.ipc.ProtocolSignature;
 import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.hadoop.yarn.exceptions.YarnException;
+import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.SliderClusterProtocol;
 import org.apache.slider.api.proto.Messages;
-
 import org.apache.slider.api.types.ApplicationLivenessInformation;
+import org.apache.slider.api.types.ComponentInformation;
+import org.apache.slider.api.types.ContainerInformation;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.exceptions.ServiceNotReadyException;
 import org.apache.slider.core.main.LauncherExitCodes;
+import org.apache.slider.core.persist.AggregateConfSerDeser;
 import org.apache.slider.core.persist.ConfTreeSerDeser;
 import org.apache.slider.server.appmaster.AppMasterActionOperations;
 import org.apache.slider.server.appmaster.actions.ActionFlexCluster;
@@ -43,18 +47,32 @@ import org.apache.slider.server.appmaster.actions.QueueAccess;
 import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
 import org.apache.slider.server.appmaster.state.RoleInstance;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
+import org.apache.slider.server.appmaster.web.rest.application.resources.ContentCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static org.apache.slider.api.proto.RestTypeMarshalling.*;
+import static org.apache.slider.api.proto.RestTypeMarshalling.marshall;
+import static org.apache.slider.server.appmaster.web.rest.RestPaths.LIVE_COMPONENTS;
+import static org.apache.slider.server.appmaster.web.rest.RestPaths.LIVE_CONTAINERS;
+import static org.apache.slider.server.appmaster.web.rest.RestPaths.LIVE_RESOURCES;
+import static org.apache.slider.server.appmaster.web.rest.RestPaths.MODEL_DESIRED;
+import static org.apache.slider.server.appmaster.web.rest.RestPaths.MODEL_DESIRED_APPCONF;
+import static org.apache.slider.server.appmaster.web.rest.RestPaths.MODEL_DESIRED_RESOURCES;
+import static org.apache.slider.server.appmaster.web.rest.RestPaths.MODEL_RESOLVED;
+import static org.apache.slider.server.appmaster.web.rest.RestPaths.MODEL_RESOLVED_APPCONF;
+import static org.apache.slider.server.appmaster.web.rest.RestPaths.MODEL_RESOLVED_RESOURCES;
 
 /**
  * Implement the {@link SliderClusterProtocol}.
  */
+@SuppressWarnings("unchecked")
+
 public class SliderIPCService extends AbstractService
     implements SliderClusterProtocol {
 
@@ -65,7 +83,8 @@ public class SliderIPCService extends AbstractService
   private final StateAccessForProviders state;
   private final MetricsAndMonitoring metricsAndMonitoring;
   private final AppMasterActionOperations amOperations;
-  
+  private final ContentCache cache;
+
   /**
    * This is the prefix used for metrics
    */
@@ -78,20 +97,24 @@ public class SliderIPCService extends AbstractService
    * @param state state view
    * @param actionQueues queues for actions
    * @param metricsAndMonitoring metrics
+   * @param cache
    */
   public SliderIPCService(AppMasterActionOperations amOperations,
       StateAccessForProviders state,
       QueueAccess actionQueues,
-      MetricsAndMonitoring metricsAndMonitoring) {
+      MetricsAndMonitoring metricsAndMonitoring, ContentCache cache) {
     super("SliderIPCService");
     Preconditions.checkArgument(amOperations != null, "null amOperations");
     Preconditions.checkArgument(state != null, "null appState");
     Preconditions.checkArgument(actionQueues != null, "null actionQueues");
-    Preconditions.checkArgument(metricsAndMonitoring != null, "null metricsAndMonitoring");
+    Preconditions.checkArgument(metricsAndMonitoring != null,
+        "null metricsAndMonitoring");
+    Preconditions.checkArgument(cache != null, "null cache");
     this.state = state;
     this.actionQueues = actionQueues;
     this.metricsAndMonitoring = metricsAndMonitoring;
     this.amOperations = amOperations;
+    this.cache = cache;
   }
 
   @Override   //SliderClusterProtocol
@@ -312,4 +335,139 @@ public class SliderIPCService extends AbstractService
         state.getApplicationLivenessInformation();
     return marshall(info);
   }
+
+  @Override
+  public Messages.GetLiveContainersResponseProto getLiveContainers(
+      Messages.GetLiveContainersRequestProto request)
+      throws IOException {
+    Map<String, ContainerInformation> infoMap =
+        (Map<String, ContainerInformation>) cache.lookupWithIOE(
+            LIVE_CONTAINERS);
+    Messages.GetLiveContainersResponseProto.Builder builder =
+        Messages.GetLiveContainersResponseProto.newBuilder();
+
+    for (Map.Entry<String, ContainerInformation> entry : infoMap
+        .entrySet()) {
+      builder.addNames(entry.getKey());
+      builder.addContainers(marshall(entry.getValue()));
+    }
+    return builder.build();
+  }
+
+  @Override
+  public Messages.ContainerInformationProto getLiveContainer(Messages.GetLiveContainerRequestProto request) throws
+      IOException {
+    String containerId = request.getContainerId();
+    RoleInstance id = state.getLiveInstanceByContainerID(containerId);
+    ContainerInformation containerInformation = id.serialize();
+    return marshall(containerInformation);
+  }
+
+  @Override
+  public Messages.GetLiveComponentsResponseProto getLiveComponents(Messages.GetLiveComponentsRequestProto request) throws
+      IOException {
+    Map<String, ComponentInformation> infoMap =
+        (Map<String, ComponentInformation>) cache.lookupWithIOE(
+            LIVE_COMPONENTS);
+    Messages.GetLiveComponentsResponseProto.Builder builder =
+        Messages.GetLiveComponentsResponseProto.newBuilder();
+
+    for (Map.Entry<String, ComponentInformation> entry : infoMap
+        .entrySet()) {
+      builder.addNames(entry.getKey());
+      builder.addComponents(marshall(entry.getValue()));
+    }
+    return builder.build();
+  }
+
+  @Override
+  public Messages.WrappedJsonProto getModelDesired(RpcController controller,
+      Messages.EmptyPayloadProto request) throws IOException {
+    return lookupAggregateConf(MODEL_DESIRED);
+  }
+
+  @Override
+  public Messages.WrappedJsonProto getModelDesiredAppconf(RpcController controller,
+      Messages.EmptyPayloadProto request) throws IOException {
+    return lookupConfTree(MODEL_DESIRED_APPCONF);
+  }
+
+  @Override
+  public Messages.WrappedJsonProto getModelDesiredResources(RpcController controller,
+      Messages.EmptyPayloadProto request) throws IOException {
+    return lookupConfTree(MODEL_DESIRED_RESOURCES);
+  }
+
+  @Override
+  public Messages.WrappedJsonProto getModelResolved(RpcController controller,
+      Messages.EmptyPayloadProto request) throws IOException {
+    return lookupAggregateConf(MODEL_RESOLVED);
+  }
+
+  @Override
+  public Messages.WrappedJsonProto getModelResolvedAppconf(RpcController controller,
+      Messages.EmptyPayloadProto request) throws IOException {
+    return lookupConfTree(MODEL_RESOLVED_APPCONF);
+  }
+
+  @Override
+  public Messages.WrappedJsonProto getModelResolvedResources(RpcController controller,
+      Messages.EmptyPayloadProto request) throws IOException {
+    return lookupConfTree(MODEL_RESOLVED_RESOURCES);
+  }
+
+  @Override
+  public Messages.WrappedJsonProto getLiveResources(RpcController controller,
+      Messages.EmptyPayloadProto request) throws IOException {
+    return lookupConfTree(LIVE_RESOURCES);
+  }
+
+  @Override
+  public Messages.ComponentInformationProto getLiveComponent(Messages.GetLiveComponentRequestProto request) throws
+      IOException {
+    String name = request.getName();
+    try {
+      return marshall(state.getComponentInformation(name));
+    } catch (YarnRuntimeException e) {
+      throw new FileNotFoundException("Unknown component: " + name);
+    }
+  }
+
+  /**
+   * Helper method; look up an aggregate configuration in the cache from
+   * a key, or raise an exception
+   * @param key key to resolve
+   * @return the configuration
+   * @throws IOException on a failure
+   */
+
+  protected Messages.WrappedJsonProto lookupAggregateConf(String key) throws
+      IOException {
+    AggregateConf aggregateConf = (AggregateConf) cache.lookupWithIOE(key);
+    String json = AggregateConfSerDeser.toString(aggregateConf);
+    return wrap(json);
+  }
+
+  /**
+   * Helper method; look up an conf tree in the cache from
+   * a key, or raise an exception
+   * @param key key to resolve
+   * @return the configuration
+   * @throws IOException on a failure
+   */
+  protected Messages.WrappedJsonProto lookupConfTree(String key) throws
+      IOException {
+    ConfTree conf = (ConfTree) cache.lookupWithIOE(key);
+    String json = ConfTreeSerDeser.toString(conf);
+    return wrap(json);
+  }
+
+  private Messages.WrappedJsonProto wrap(String json) {
+    Messages.WrappedJsonProto.Builder builder =
+        Messages.WrappedJsonProto.newBuilder();
+    builder.setJson(json);
+    return builder.build();
+  }
+
+
 }

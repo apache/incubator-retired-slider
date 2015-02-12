@@ -18,11 +18,11 @@
 
 package org.apache.slider.api;
 
+import com.google.protobuf.RpcController;
 import org.apache.hadoop.ipc.VersionedProtocol;
 import org.apache.hadoop.security.KerberosInfo;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.slider.api.proto.Messages;
-import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.common.SliderXmlConfKeys;
 
 import java.io.IOException;
@@ -34,7 +34,7 @@ import java.io.IOException;
 @KerberosInfo(
   serverPrincipal = SliderXmlConfKeys.KEY_KERBEROS_PRINCIPAL)
 public interface SliderClusterProtocol extends VersionedProtocol {
-  public static final long versionID = 0x01;
+  long versionID = 0x01;
 
   /**
    * Stop the cluster
@@ -129,4 +129,44 @@ public interface SliderClusterProtocol extends VersionedProtocol {
       Messages.GetApplicationLivenessRequestProto request
   ) throws IOException;
 
+  Messages.GetLiveContainersResponseProto getLiveContainers(
+      Messages.GetLiveContainersRequestProto request
+  ) throws IOException;
+
+  Messages.ContainerInformationProto getLiveContainer(
+      Messages.GetLiveContainerRequestProto request
+  ) throws IOException;
+
+  Messages.GetLiveComponentsResponseProto getLiveComponents(
+      Messages.GetLiveComponentsRequestProto request
+  ) throws IOException;
+
+  Messages.ComponentInformationProto getLiveComponent(
+      Messages.GetLiveComponentRequestProto request
+  ) throws IOException;
+
+  
+  Messages.WrappedJsonProto getModelDesired(RpcController controller,
+      Messages.EmptyPayloadProto request) throws IOException;
+
+  
+  Messages.WrappedJsonProto getModelDesiredAppconf(RpcController controller,
+      Messages.EmptyPayloadProto request) throws IOException;
+    
+  Messages.WrappedJsonProto getModelDesiredResources(RpcController controller,
+      Messages.EmptyPayloadProto request) throws IOException;
+   
+  Messages.WrappedJsonProto getModelResolved(RpcController controller,
+      Messages.EmptyPayloadProto request) throws IOException;
+  
+  Messages.WrappedJsonProto getModelResolvedAppconf(RpcController controller,
+      Messages.EmptyPayloadProto request) throws IOException;
+  
+  Messages.WrappedJsonProto getModelResolvedResources(RpcController controller,
+      Messages.EmptyPayloadProto request) throws IOException;
+   
+  Messages.WrappedJsonProto getLiveResources(RpcController controller,
+      Messages.EmptyPayloadProto request) throws IOException;
+    
+  
 }

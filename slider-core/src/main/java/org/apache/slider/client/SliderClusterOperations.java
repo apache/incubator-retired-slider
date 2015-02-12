@@ -335,8 +335,7 @@ public class SliderClusterOperations {
         Messages.GetApplicationLivenessRequestProto.newBuilder();
     Messages.ApplicationLivenessInformationProto wire =
         appMaster.getLivenessInformation(builder.build());
-    ApplicationLivenessInformation result = unmarshall(wire);
-    return result;
+    return unmarshall(wire);
 
   }
 

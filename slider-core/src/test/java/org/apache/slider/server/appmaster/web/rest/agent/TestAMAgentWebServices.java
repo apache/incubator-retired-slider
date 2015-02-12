@@ -144,7 +144,7 @@ public class TestAMAgentWebServices {
 
     slider = new WebAppApiImpl(providerAppState,
                                new MockProviderService(), null, null, null,
-        null, null);
+        null, null, null);
 
     MapOperations compOperations = new MapOperations();
 

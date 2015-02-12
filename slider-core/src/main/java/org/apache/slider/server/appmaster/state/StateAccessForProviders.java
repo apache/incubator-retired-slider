@@ -272,4 +272,13 @@ public interface StateAccessForProviders {
    * @return a list of nodes, may be empty
    */
   List<RoleInstance> enumLiveNodesInRole(String role);
+
+  /**
+   * Look up all containers of a specific component name 
+   * @param component component/role name
+   * @return list of instances. This is a snapshot
+   */
+  List<RoleInstance> lookupRoleContainers(String component);
+
+  ComponentInformation getComponentInformation(String component);
 }

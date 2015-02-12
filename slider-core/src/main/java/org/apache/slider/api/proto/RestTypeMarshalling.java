@@ -67,7 +67,7 @@ public class RestTypeMarshalling {
     builder.setStartFailed(info.startFailed);
     builder.setCompleted(info.completed);
     builder.setTotalRequested(info.totalRequested);
-    if (info.failureMessage !=null) {
+    if (info.failureMessage != null) {
       builder.setFailureMessage(info.failureMessage);
     }
     if (info.containers != null) {
@@ -81,23 +81,27 @@ public class RestTypeMarshalling {
     ContainerInformation info = new ContainerInformation();
     info.containerId = wire.getContainerId();
     info.component = wire.getComponent();
-    info.released = wire.getReleased();
+    info.state = wire.getState();
     if (wire.hasReleased()) {
+      info.released = wire.getReleased();
     }
-    info.state = wire.getDesired();
-    info.exitCode = wire.getActual();
-    info.released = wire.getReleasing();
-    info.diagnostics = wire.getRequested();
-    info.createTime = wire.getFailed();
-    info.startTime = wire.getStarted();
-    info.host = wire.getStartFailed();
-    info.hostURL = wire.getCompleted();
-    info.totalRequested = wire.getTotalRequested();
-    if (wire.hasFailureMessage()) {
-      info.failureMessage = wire.getFailureMessage();
+    if (wire.hasExitCode()) {
+      info.exitCode = wire.getExitCode();
     }
-    info.output = Collections.a 
-        new ArrayList<String>(wire.getOutputList());
+    if (wire.hasDiagnostics()) {
+      info.diagnostics = wire.getDiagnostics();
+    }
+    if (wire.hasHost()) {
+      info.host = wire.getHost();
+    }
+    if (wire.hasHostURL()) {
+      info.host = wire.getHostURL();
+    }
+    info.createTime = wire.getCreateTime();
+    info.startTime = wire.getStartTime();
+    info.output = wire.getOutputList().toArray(
+        new String[wire.getOutputCount()]
+    );
     return info;
   }
 
@@ -106,28 +110,31 @@ public class RestTypeMarshalling {
 
     Messages.ContainerInformationProto.Builder builder =
         Messages.ContainerInformationProto.newBuilder();
+    if (info.containerId != null) {
+      builder.setContainerId(info.containerId);
+    }
+    if (info.component != null) {
+      builder.setComponent(info.component);
+    }
+    if (info.diagnostics != null) {
+      builder.setDiagnostics(info.diagnostics);
+    }
+    if (info.host != null) {
+      builder.setHost(info.host);
+    }
+    if (info.hostURL != null) {
+      builder.setHostURL(info.hostURL);
+    }
+    if (info.released != null) {
+      builder.setReleased(info.released);
+    }
+    if (info.output != null) {
+      builder.addAllOutput(Arrays.asList(info.output));
+    }
+    builder.setCreateTime(info.createTime);
+    builder.setStartTime(info.startTime);
     return builder.build();
   }
 
-  public static ContainerInformation
-  unmarshall(Messages.ContainerInformationProto wire) {
-    ContainerInformation info = new ContainerInformation();
-    info.name = wire.getName();
-    info.priority = wire.getPriority();
-    info.placementPolicy = wire.getPlacementPolicy();
-    info.desired = wire.getDesired();
-    info.actual = wire.getActual();
-    info.releasing = wire.getReleasing();
-    info.requested = wire.getRequested();
-    info.failed = wire.getFailed();
-    info.started = wire.getStarted();
-    info.startFailed = wire.getStartFailed();
-    info.completed = wire.getCompleted();
-    info.totalRequested = wire.getTotalRequested();
-    if (wire.hasFailureMessage()) {
-      info.failureMessage = wire.getFailureMessage();
-    }
-    info.containers = new ArrayList<String>(wire.getContainersList());
-    return info;
-  }
+
 }

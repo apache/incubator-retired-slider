@@ -308,3 +308,13 @@ message GetLiveComponentRequestProto {
 
 message GetApplicationLivenessRequestProto {
 }
+
+message EmptyPayloadProto {
+}
+
+/**
+  Generic JSON, often containing data structures serialized as a string
+*/
+message WrappedJsonProto {
+  required string json = 1;
+}

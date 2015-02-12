@@ -201,5 +201,117 @@ public class SliderClusterProtocolProxy implements SliderClusterProtocol {
       return endpoint.getLivenessInformation(NULL_CONTROLLER, request);
     } catch (ServiceException e) {
       throw convert(e);
-    } }
+    }
+  }
+
+  @Override
+  public Messages.GetLiveContainersResponseProto getLiveContainers(Messages.GetLiveContainersRequestProto request) throws
+      IOException {
+    try {
+      return endpoint.getLiveContainers(NULL_CONTROLLER, request);
+    } catch (ServiceException e) {
+      throw convert(e);
+    }
+  }
+
+  @Override
+  public Messages.ContainerInformationProto getLiveContainer(Messages.GetLiveContainerRequestProto request) throws
+      IOException {
+    try {
+      return endpoint.getLiveContainer(NULL_CONTROLLER, request);
+    } catch (ServiceException e) {
+      throw convert(e);
+    }
+  }
+
+  @Override
+  public Messages.GetLiveComponentsResponseProto getLiveComponents(Messages.GetLiveComponentsRequestProto request) throws
+      IOException {
+    try {
+      return endpoint.getLiveComponents(NULL_CONTROLLER, request);
+    } catch (ServiceException e) {
+      throw convert(e);
+    }
+  }
+
+  @Override
+  public Messages.ComponentInformationProto getLiveComponent(Messages.GetLiveComponentRequestProto request) throws
+      IOException {
+    try {
+      return endpoint.getLiveComponent(NULL_CONTROLLER, request);
+    } catch (ServiceException e) {
+      throw convert(e);
+    }
+  }
+
+  @Override
+  public Messages.WrappedJsonProto getModelDesired(RpcController controller,
+      Messages.EmptyPayloadProto request) throws IOException {
+    try {
+      return endpoint.getModelDesired(NULL_CONTROLLER, request);
+    } catch (ServiceException e) {
+      throw convert(e);
+    }
+  }
+
+  @Override
+  public Messages.WrappedJsonProto getModelDesiredAppconf(RpcController controller,
+      Messages.EmptyPayloadProto request) throws IOException {
+    try {
+      return endpoint.getModelDesiredAppconf(NULL_CONTROLLER, request);
+    } catch (ServiceException e) {
+      throw convert(e);
+    }
+  }
+
+  @Override
+  public Messages.WrappedJsonProto getModelDesiredResources(RpcController controller,
+      Messages.EmptyPayloadProto request) throws IOException {
+    try {
+      return endpoint.getModelDesiredResources(NULL_CONTROLLER, request);
+    } catch (ServiceException e) {
+      throw convert(e);
+    }
+  }
+
+  @Override
+  public Messages.WrappedJsonProto getModelResolved(RpcController controller,
+      Messages.EmptyPayloadProto request) throws IOException {
+    try {
+      return endpoint.getModelResolved(NULL_CONTROLLER, request);
+    } catch (ServiceException e) {
+      throw convert(e);
+    }
+  }
+
+  @Override
+  public Messages.WrappedJsonProto getModelResolvedAppconf(RpcController controller,
+      Messages.EmptyPayloadProto request) throws IOException {
+    try {
+      return endpoint.getModelResolvedAppconf(NULL_CONTROLLER, request);
+    } catch (ServiceException e) {
+      throw convert(e);
+    }
+  }
+
+  @Override
+  public Messages.WrappedJsonProto getModelResolvedResources(RpcController controller,
+      Messages.EmptyPayloadProto request) throws IOException {
+    try {
+      return endpoint.getModelResolvedResources(NULL_CONTROLLER, request);
+    } catch (ServiceException e) {
+      throw convert(e);
+    }
+  }
+
+  @Override
+  public Messages.WrappedJsonProto getLiveResources(RpcController controller,
+      Messages.EmptyPayloadProto request) throws IOException {
+    try {
+      return endpoint.getLiveResources(NULL_CONTROLLER, request);
+    } catch (ServiceException e) {
+      throw convert(e);
+    }
+
+  }
 }

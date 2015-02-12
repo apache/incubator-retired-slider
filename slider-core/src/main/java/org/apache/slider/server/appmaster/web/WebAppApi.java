@@ -26,6 +26,7 @@ import org.apache.slider.server.appmaster.state.AppState;
 import org.apache.slider.server.appmaster.state.RoleStatus;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
+import org.apache.slider.server.appmaster.web.rest.application.resources.ContentCache;
 import org.apache.slider.server.services.security.CertificateManager;
 
 import java.util.Map;
@@ -81,4 +82,6 @@ public interface WebAppApi {
   QueueAccess getQueues();
 
   AppMasterActionOperations getAMOperations();
+
+  ContentCache getContentCache();
 }

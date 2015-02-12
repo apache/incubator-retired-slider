@@ -18,8 +18,8 @@
 
 package org.apache.slider.server.appmaster.web.rest.application.resources;
 
-import com.google.common.base.Preconditions;
-
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -33,10 +33,35 @@ public class ContentCache extends ConcurrentHashMap<String, CachedContent> {
 
   public ContentCache() {
   }
-  
+
+
   public Object lookup(String key) throws Exception {
     CachedContent content = get(key);
-    Preconditions.checkNotNull(content, "no content for path " + key);
+    if (content == null) {
+      throw new FileNotFoundException("no content for path " + key);
+    }
     return content.get();
   }
+
+
+  /**
+   * Lookup a cached item. If an exception is raised on the refresh...
+   * <ol>
+   *   <li>IOExceptions are thrown directly</li>
+   *   <li>Other exceptions are wrapped with an IOExceptions</li>
+   * </ol>
+   * @param key
+   * @return
+   * @throws IOException
+   */
+  public Object lookupWithIOE(String key) throws IOException {
+    try {
+      return lookup(key);
+    } catch (IOException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new IOException("Looking up " + key + ": " + e, e);
+    }
+  }
+
 }

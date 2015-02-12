@@ -117,7 +117,7 @@ class TestMockAppStateAppRestIntegration extends BaseMockAppStateTest implements
     WebAppApi api = new WebAppApiImpl(stateAccess,
         new MockProviderService(),
         null, null,
-        new MetricsAndMonitoring("metrics"), null, null)
+        new MetricsAndMonitoring("metrics"), null, null, null)
     return api
   }
 

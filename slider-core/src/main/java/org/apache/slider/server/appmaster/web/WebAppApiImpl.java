@@ -24,6 +24,7 @@ import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
 import org.apache.slider.server.appmaster.state.RoleStatus;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
+import org.apache.slider.server.appmaster.web.rest.application.resources.ContentCache;
 import org.apache.slider.server.services.security.CertificateManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +48,7 @@ public class WebAppApiImpl implements WebAppApi {
   private final MetricsAndMonitoring metricsAndMonitoring;
   private final QueueAccess queues;
   private final AppMasterActionOperations appMasterOperations;
+  private final ContentCache contentCache;
 
   public WebAppApiImpl(StateAccessForProviders appState,
       ProviderService provider,
@@ -54,8 +56,10 @@ public class WebAppApiImpl implements WebAppApi {
       RegistryOperations registryOperations,
       MetricsAndMonitoring metricsAndMonitoring,
       QueueAccess queues,
-      AppMasterActionOperations appMasterOperations) {
+      AppMasterActionOperations appMasterOperations,
+      ContentCache contentCache) {
     this.appMasterOperations = appMasterOperations;
+    this.contentCache = contentCache;
     checkNotNull(appState);
     checkNotNull(provider);
     this.queues = queues;
@@ -116,5 +120,10 @@ public class WebAppApiImpl implements WebAppApi {
   @Override
   public AppMasterActionOperations getAMOperations() {
     return appMasterOperations;
+  }
+
+  @Override
+  public ContentCache getContentCache() {
+    return contentCache;
   }
 }

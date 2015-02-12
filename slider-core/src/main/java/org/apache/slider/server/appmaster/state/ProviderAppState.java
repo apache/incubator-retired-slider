@@ -257,4 +257,32 @@ public class ProviderAppState implements StateAccessForProviders {
     return nodes;
   }
 
+  @Override
+  public List<RoleInstance> lookupRoleContainers(String component) {
+    RoleStatus roleStatus = lookupRoleStatus(component);
+    List<RoleInstance> ownedContainerList = cloneOwnedContainerList();
+    List<RoleInstance> matching =
+        new ArrayList<RoleInstance>(ownedContainerList.size());
+    int roleId = roleStatus.getPriority();
+    for (RoleInstance instance : ownedContainerList) {
+      if (instance.roleId == roleId) {
+        matching.add(instance);
+      }
+    }
+    return matching;
+  }
+  
+  @Override
+  public ComponentInformation getComponentInformation(String component) {
+    RoleStatus roleStatus = lookupRoleStatus(component);
+    ComponentInformation info = roleStatus.serialize();
+    List<RoleInstance> containers = lookupRoleContainers(component);
+    info.containers = new ArrayList<String>(containers.size());
+    for (RoleInstance container : containers) {
+      info.containers.add(container.id);
+    }
+    return info;
+
+  }
+
 }
