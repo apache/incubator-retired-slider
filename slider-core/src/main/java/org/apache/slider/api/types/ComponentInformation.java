@@ -37,10 +37,10 @@ public class ComponentInformation {
   public String name;
   public int priority;
   public int desired, actual, releasing;
+  public int placementPolicy;
   public int requested;
   public int failed, started, startFailed, completed, totalRequested;
   public String failureMessage;
-  public int placementPolicy;
   public List<String> containers;
 
   /**

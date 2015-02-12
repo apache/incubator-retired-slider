@@ -43,6 +43,31 @@ public class SliderClusterProtocolProxy implements SliderClusterProtocol {
     this.address = address;
   }
 
+
+  @Override
+  public ProtocolSignature getProtocolSignature(String protocol,
+      long clientVersion,
+      int clientMethodsHash)
+      throws IOException {
+    if (!protocol.equals(RPC.getProtocolName(SliderClusterProtocolPB.class))) {
+      throw new IOException("Serverside implements " +
+                            RPC.getProtocolName(SliderClusterProtocolPB.class) +
+                            ". The following requested protocol is unknown: " +
+                            protocol);
+    }
+
+    return ProtocolSignature.getProtocolSignature(clientMethodsHash,
+        RPC.getProtocolVersion(
+            SliderClusterProtocol.class),
+        SliderClusterProtocol.class);
+  }
+
+  @Override
+  public long getProtocolVersion(String protocol, long clientVersion)
+      throws IOException {
+    return SliderClusterProtocol.versionID;
+  }
+  
   private IOException convert(ServiceException se) {
     IOException ioe = ProtobufHelper.getRemoteException(se);
     if (ioe instanceof RemoteException) {
@@ -170,26 +195,11 @@ public class SliderClusterProtocolProxy implements SliderClusterProtocol {
   }
 
   @Override
-  public ProtocolSignature getProtocolSignature(String protocol,
-                                                long clientVersion,
-                                                int clientMethodsHash) throws
-                                                                       IOException {
-    if (!protocol.equals(RPC.getProtocolName(SliderClusterProtocolPB.class))) {
-      throw new IOException("Serverside implements " +
-                            RPC.getProtocolName(SliderClusterProtocolPB.class) +
-                            ". The following requested protocol is unknown: " +
-                            protocol);
-    }
-
-    return ProtocolSignature.getProtocolSignature(clientMethodsHash,
-                                                  RPC.getProtocolVersion(
-                                                    SliderClusterProtocol.class),
-                                                  SliderClusterProtocol.class);
-  }
-
-  @Override
-  public long getProtocolVersion(String protocol, long clientVersion) throws
-                                                                      IOException {
-    return SliderClusterProtocol.versionID;
-  }
+  public Messages.ApplicationLivenessInformationProto getLivenessInformation(
+      Messages.GetApplicationLivenessRequestProto request) throws IOException {
+    try {
+      return endpoint.getLivenessInformation(NULL_CONTROLLER, request);
+    } catch (ServiceException e) {
+      throw convert(e);
+    } }
 }

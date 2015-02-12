@@ -161,5 +161,15 @@ public class SliderClusterProtocolPBImpl implements SliderClusterProtocolPB {
       throw wrap(e);
     }
   }
-  
+
+  @Override
+  public Messages.ApplicationLivenessInformationProto getLivenessInformation(
+      RpcController controller,
+      Messages.GetApplicationLivenessRequestProto request) throws
+      ServiceException {
+    try {
+      return real.getLivenessInformation(request);
+    } catch (Exception e) {
+      throw wrap(e);
+    }  }
 }

@@ -26,6 +26,8 @@ import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.SliderClusterProtocol;
 import org.apache.slider.api.proto.Messages;
+
+import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.exceptions.ServiceNotReadyException;
@@ -48,6 +50,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static org.apache.slider.api.proto.RestTypeMarshalling.*;
+
 /**
  * Implement the {@link SliderClusterProtocol}.
  */
@@ -58,7 +62,7 @@ public class SliderIPCService extends AbstractService
       LoggerFactory.getLogger(SliderClusterProtocol.class);
 
   private final QueueAccess actionQueues;
-  private final StateAccessForProviders appState;
+  private final StateAccessForProviders state;
   private final MetricsAndMonitoring metricsAndMonitoring;
   private final AppMasterActionOperations amOperations;
   
@@ -71,20 +75,20 @@ public class SliderIPCService extends AbstractService
   /**
    * Constructor
    * @param amOperations access to any AM operations
-   * @param appState state view
+   * @param state state view
    * @param actionQueues queues for actions
    * @param metricsAndMonitoring metrics
    */
   public SliderIPCService(AppMasterActionOperations amOperations,
-      StateAccessForProviders appState,
+      StateAccessForProviders state,
       QueueAccess actionQueues,
       MetricsAndMonitoring metricsAndMonitoring) {
     super("SliderIPCService");
     Preconditions.checkArgument(amOperations != null, "null amOperations");
-    Preconditions.checkArgument(appState != null, "null appState");
+    Preconditions.checkArgument(state != null, "null appState");
     Preconditions.checkArgument(actionQueues != null, "null actionQueues");
     Preconditions.checkArgument(metricsAndMonitoring != null, "null metricsAndMonitoring");
-    this.appState = appState;
+    this.state = state;
     this.actionQueues = actionQueues;
     this.metricsAndMonitoring = metricsAndMonitoring;
     this.amOperations = amOperations;
@@ -173,7 +177,7 @@ public class SliderIPCService extends AbstractService
     String result;
     //quick update
     //query and json-ify
-    ClusterDescription cd = appState.refreshClusterStatus();
+    ClusterDescription cd = state.refreshClusterStatus();
     result = cd.toJsonString();
     String stat = result;
     return Messages.GetJSONClusterStatusResponseProto.newBuilder()
@@ -191,7 +195,7 @@ public class SliderIPCService extends AbstractService
     String resources;
     String app;
     AggregateConf instanceDefinition =
-        appState.getInstanceDefinitionSnapshot();
+        state.getInstanceDefinitionSnapshot();
     internal = instanceDefinition.getInternal().toJson();
     resources = instanceDefinition.getResources().toJson();
     app = instanceDefinition.getAppConf().toJson();
@@ -214,7 +218,7 @@ public class SliderIPCService extends AbstractService
     String role = request.getRole();
     Messages.ListNodeUUIDsByRoleResponseProto.Builder builder =
         Messages.ListNodeUUIDsByRoleResponseProto.newBuilder();
-    List<RoleInstance> nodes = appState.enumLiveNodesInRole(role);
+    List<RoleInstance> nodes = state.enumLiveNodesInRole(role);
     for (RoleInstance node : nodes) {
       builder.addUuid(node.id);
     }
@@ -225,7 +229,7 @@ public class SliderIPCService extends AbstractService
   public Messages.GetNodeResponseProto getNode(Messages.GetNodeRequestProto request)
       throws IOException, YarnException {
     onRpcCall("getnode");
-    RoleInstance instance = appState.getLiveInstanceByContainerID(
+    RoleInstance instance = state.getLiveInstanceByContainerID(
         request.getUuid());
     return Messages.GetNodeResponseProto.newBuilder()
                                         .setClusterNode(instance.toProtobuf())
@@ -238,7 +242,7 @@ public class SliderIPCService extends AbstractService
       throws IOException, YarnException {
     onRpcCall("getclusternodes");
     List<RoleInstance>
-        clusterNodes = appState.getLiveInstancesByContainerIDs(
+        clusterNodes = state.getLiveInstancesByContainerIDs(
         request.getUuidList());
 
     Messages.GetClusterNodesResponseProto.Builder builder =
@@ -272,7 +276,7 @@ public class SliderIPCService extends AbstractService
     log.info("Kill Container {}", containerID);
     //throws NoSuchNodeException if it is missing
     RoleInstance instance =
-        appState.getLiveInstanceByContainerID(containerID);
+        state.getLiveInstanceByContainerID(containerID);
     queue(new ActionKillContainer(instance.getId(), 0, TimeUnit.MILLISECONDS,
         amOperations));
     Messages.KillContainerResponseProto.Builder builder =
@@ -299,5 +303,13 @@ public class SliderIPCService extends AbstractService
         TimeUnit.MILLISECONDS);
     schedule(action);
     return Messages.AMSuicideResponseProto.getDefaultInstance();
+  }
+
+  @Override
+  public Messages.ApplicationLivenessInformationProto getLivenessInformation(
+      Messages.GetApplicationLivenessRequestProto request) throws IOException {
+    ApplicationLivenessInformation info =
+        state.getApplicationLivenessInformation();
+    return marshall(info);
   }
 }

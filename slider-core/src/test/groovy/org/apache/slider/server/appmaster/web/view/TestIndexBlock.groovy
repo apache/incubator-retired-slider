@@ -45,7 +45,6 @@ public class TestIndexBlock extends BaseMockAppStateTest {
   public void setup() {
     super.setup()
     assert appState
-    SliderClusterProtocol clusterProto = new MockSliderClusterProtocol();
     ProviderService providerService = new MockProviderService();
     ProviderAppState providerAppState = new ProviderAppState(
         "undefined",

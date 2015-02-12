@@ -22,6 +22,7 @@ import org.apache.hadoop.ipc.VersionedProtocol;
 import org.apache.hadoop.security.KerberosInfo;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.slider.api.proto.Messages;
+import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.common.SliderXmlConfKeys;
 
 import java.io.IOException;
@@ -118,4 +119,14 @@ public interface SliderClusterProtocol extends VersionedProtocol {
   Messages.GetInstanceDefinitionResponseProto getInstanceDefinition(
     Messages.GetInstanceDefinitionRequestProto request)
     throws IOException, YarnException;
+
+  /**
+   * Get the application liveness
+   * @return current liveness information
+   * @throws IOException
+   */
+  Messages.ApplicationLivenessInformationProto getLivenessInformation(
+      Messages.GetApplicationLivenessRequestProto request
+  ) throws IOException;
+
 }

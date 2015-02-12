@@ -25,6 +25,9 @@ import org.apache.slider.api.ClusterNode;
 import org.apache.slider.api.SliderClusterProtocol;
 import org.apache.slider.api.StateValues;
 import org.apache.slider.api.proto.Messages;
+
+import static org.apache.slider.api.proto.RestTypeMarshalling.*;
+import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.common.tools.Duration;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
@@ -307,9 +310,8 @@ public class SliderClusterOperations {
    * @throws YarnException
    * @throws IOException
    */
-  public void amSuicide(String text, int signal, int delay) throws
-                                  YarnException,
-                                  IOException {
+  public void amSuicide(String text, int signal, int delay)
+      throws YarnException, IOException {
     Messages.AMSuicideRequestProto.Builder builder =
       Messages.AMSuicideRequestProto.newBuilder();
     if (text != null) {
@@ -321,6 +323,21 @@ public class SliderClusterOperations {
       builder.build();
     Messages.AMSuicideResponseProto response =
       appMaster.amSuicide(req);
+  }
+
+  /**
+   * Get the application liveness
+   * @return current liveness information
+   * @throws IOException
+   */
+  public ApplicationLivenessInformation getLivenessInformation() throws IOException {
+    Messages.GetApplicationLivenessRequestProto.Builder builder =
+        Messages.GetApplicationLivenessRequestProto.newBuilder();
+    Messages.ApplicationLivenessInformationProto wire =
+        appMaster.getLivenessInformation(builder.build());
+    ApplicationLivenessInformation result = unmarshall(wire);
+    return result;
+
   }
 
 
