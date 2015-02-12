@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.slider.client;
+package org.apache.slider.client.ipc;
 
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.hadoop.yarn.exceptions.YarnException;
