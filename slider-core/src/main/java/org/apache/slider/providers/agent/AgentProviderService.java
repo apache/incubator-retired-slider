@@ -30,6 +30,7 @@ import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.registry.client.types.Endpoint;
 import org.apache.hadoop.registry.client.types.ProtocolTypes;
 import org.apache.hadoop.registry.client.types.ServiceRecord;
+import org.apache.hadoop.security.alias.CredentialProviderFactory;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.records.Container;
@@ -94,6 +95,7 @@ import org.apache.slider.server.appmaster.web.rest.agent.RegistrationResponse;
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationStatus;
 import org.apache.slider.server.appmaster.web.rest.agent.StatusCommand;
 import org.apache.slider.server.services.security.CertificateManager;
+import org.apache.slider.server.services.security.StoresGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -411,6 +413,13 @@ public class AgentProviderService extends AbstractProviderService implements
       localizeContainerSSLResources(launcher, container, fileSystem);
     }
 
+    MapOperations compOps = instanceDefinition.
+        getAppConfOperations().getComponent(role);
+    if (areStoresRequested(compOps)) {
+      localizeContainerSecurityStores(launcher, container, role, fileSystem,
+                                      instanceDefinition);
+    }
+
     //add the configuration resources
     launcher.addLocalResources(fileSystem.submitDirectory(
         generatedConfPath,
@@ -450,14 +459,47 @@ public class AgentProviderService extends AbstractProviderService implements
                                    getClusterInfoPropertyValue(OptionKeys.APPLICATION_NAME)));
   }
 
+  private void localizeContainerSecurityStores(ContainerLauncher launcher,
+                                               Container container,
+                                               String role,
+                                               SliderFileSystem fileSystem,
+                                               AggregateConf instanceDefinition)
+      throws SliderException, IOException {
+    MapOperations compOps = instanceDefinition.getAppConfOperations()
+        .getComponent(role);
+    // generate and localize security stores
+    File[] stores = generateSecurityStores(container, role,
+                                           instanceDefinition, compOps);
+    for (File store : stores) {
+      LocalResource keystoreResource = fileSystem.createAmResource(
+          uploadSecurityResource(store, fileSystem), LocalResourceType.FILE);
+      launcher.addLocalResource(String.format("secstores/%s.p12", role),
+                                keystoreResource);
+    }
+  }
+
+  private File[] generateSecurityStores(Container container,
+                                      String role,
+                                      AggregateConf instanceDefinition,
+                                      MapOperations compOps)
+      throws SliderException, IOException {
+    return StoresGenerator.generateSecurityStores(container.getNodeId().getHost(),
+                                           container.getId().toString(), role,
+                                           instanceDefinition, compOps);
+  }
+
+  private boolean areStoresRequested(MapOperations compOps) {
+    return compOps != null ? Boolean.valueOf(compOps.
+        getOptionBool(SliderKeys.COMP_STORES_REQUIRED_KEY, false)) : false;
+  }
+
   private void localizeContainerSSLResources(ContainerLauncher launcher,
                                              Container container,
                                              SliderFileSystem fileSystem)
       throws SliderException {
     try {
       // localize server cert
-      Path certsDir = new Path(fileSystem.buildClusterDirPath(
-          getClusterName()), "certs");
+      Path certsDir = fileSystem.buildClusterSecurityDirPath(getClusterName());
       LocalResource certResource = fileSystem.createAmResource(
           new Path(certsDir, SliderKeys.CRT_FILE_NAME),
             LocalResourceType.FILE);
@@ -492,8 +534,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
   private Path uploadSecurityResource(File resource, SliderFileSystem fileSystem)
       throws IOException {
-    Path certsDir = new Path(fileSystem.buildClusterDirPath(getClusterName()),
-                             "certs");
+    Path certsDir = fileSystem.buildClusterSecurityDirPath(getClusterName());
     if (!fileSystem.getFileSystem().exists(certsDir)) {
       fileSystem.getFileSystem().mkdirs(certsDir,
         new FsPermission(FsAction.ALL, FsAction.NONE, FsAction.NONE));

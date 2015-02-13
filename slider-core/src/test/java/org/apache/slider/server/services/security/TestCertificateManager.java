@@ -16,24 +16,41 @@
  */
 package org.apache.slider.server.services.security;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.security.alias.CredentialProvider;
+import org.apache.hadoop.security.alias.CredentialProviderFactory;
+import org.apache.hadoop.security.alias.JavaKeyStoreProvider;
+import org.apache.slider.Slider;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.SliderXmlConfKeys;
+import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.MapOperations;
+import org.apache.slider.core.exceptions.SliderException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Enumeration;
+import java.util.ArrayList;
+import java.util.Arrays;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  *
@@ -112,8 +129,15 @@ public class TestCertificateManager {
 
   @Test
   public void testContainerKeystoreGeneration() throws Exception {
-    certMan.generateContainerKeystore("localhost", "container1", "password");
-    File keystoreFile = new File(secDir, "localhost-container1.p12");
+    File keystoreFile = certMan.generateContainerKeystore("localhost",
+                                      "container1",
+                                      "component1",
+                                      "password");
+    validateKeystore(keystoreFile);
+  }
+
+  private void validateKeystore(File keystoreFile)
+      throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
     Assert.assertTrue("container keystore not generated",
                       keystoreFile.exists());
 
@@ -148,6 +172,318 @@ public class TestCertificateManager {
     } finally {
       if(null != is) {
         is.close();
+      }
+    }
+  }
+
+  @Test
+  public void testContainerKeystoreGenerationViaStoresGenerator() throws Exception {
+    AggregateConf instanceDefinition = new AggregateConf();
+    MapOperations compOps = new MapOperations();
+    instanceDefinition.getAppConf().components.put("component1", compOps);
+    compOps.put(SliderKeys.COMP_KEYSTORE_PASSWORD_PROPERTY_KEY,
+                "app1.component1.password.property");
+    compOps.put(SliderKeys.COMP_STORES_REQUIRED_KEY, "true");
+    instanceDefinition.getAppConf().global.put(
+        "app1.component1.password.property", "password");
+    instanceDefinition.resolve();
+    File[] files = StoresGenerator.generateSecurityStores("localhost", "container1",
+                                           "component1", instanceDefinition,
+                                           compOps);
+    assertEquals("wrong number of stores", 1, files.length);
+    validateKeystore(files[0]);
+  }
+
+  @Test
+  public void testContainerKeystoreGenerationViaStoresGeneratorOverrideGlobalSetting() throws Exception {
+    AggregateConf instanceDefinition = new AggregateConf();
+    MapOperations compOps = setupComponentOptions(true, null,
+                                                  "app1.component1.password.property",
+                                                  null, null);
+    instanceDefinition.getAppConf().components.put("component1", compOps);
+    instanceDefinition.getAppConf().global.put(
+        "app1.component1.password.property", "password");
+    instanceDefinition.getAppConf().global.put(SliderKeys.COMP_STORES_REQUIRED_KEY, "false");
+    instanceDefinition.resolve();
+    File[] files = StoresGenerator.generateSecurityStores("localhost", "container1",
+                                                          "component1", instanceDefinition,
+                                                          compOps);
+    assertEquals("wrong number of stores", 1, files.length);
+    validateKeystore(files[0]);
+  }
+
+  @Test
+  public void testContainerTrusttoreGeneration() throws Exception {
+    File keystoreFile =
+        certMan.generateContainerKeystore("localhost",
+                                          "container1",
+                                          "component1",
+                                          "keypass");
+    Assert.assertTrue("container keystore not generated",
+                      keystoreFile.exists());
+    File truststoreFile =
+        certMan.generateContainerTruststore("container1",
+                                            "component1", "trustpass"
+        );
+    Assert.assertTrue("container truststore not generated",
+                      truststoreFile.exists());
+
+    validateTruststore(keystoreFile, truststoreFile);
+  }
+
+  @Test
+  public void testContainerGenerationUsingStoresGeneratorNoTruststore() throws Exception {
+    AggregateConf instanceDefinition = new AggregateConf();
+    MapOperations compOps = new MapOperations();
+    compOps.put(SliderKeys.COMP_STORES_REQUIRED_KEY, "true");
+    compOps.put(SliderKeys.COMP_KEYSTORE_PASSWORD_ALIAS_KEY,
+                "test.keystore.password");
+
+    setupCredentials(instanceDefinition, "test.keystore.password", null);
+
+    File[] files = StoresGenerator.generateSecurityStores("localhost", "container1",
+                                                          "component1", instanceDefinition,
+                                                          compOps);
+    assertEquals("wrong number of stores", 1, files.length);
+    File keystoreFile = CertificateManager.getContainerKeystoreFilePath(
+        "container1", "component1");
+    Assert.assertTrue("container keystore not generated",
+                      keystoreFile.exists());
+    Assert.assertTrue("keystore not in returned list",
+                      Arrays.asList(files).contains(keystoreFile));
+    File truststoreFile =
+        CertificateManager.getContainerTruststoreFilePath("component1",
+                                                          "container1");
+    Assert.assertFalse("container truststore generated",
+                      truststoreFile.exists());
+    Assert.assertFalse("truststore in returned list",
+                      Arrays.asList(files).contains(truststoreFile));
+
+  }
+
+  @Test
+  public void testContainerGenerationUsingStoresGeneratorJustTruststoreWithDefaultAlias() throws Exception {
+    AggregateConf instanceDefinition = new AggregateConf();
+    MapOperations compOps = setupComponentOptions(true);
+
+    setupCredentials(instanceDefinition, null,
+                     SliderKeys.COMP_TRUSTSTORE_PASSWORD_ALIAS_DEFAULT);
+
+    File[] files = StoresGenerator.generateSecurityStores("localhost", "container1",
+                                                          "component1", instanceDefinition,
+                                                          compOps);
+    assertEquals("wrong number of stores", 1, files.length);
+    File keystoreFile = CertificateManager.getContainerKeystoreFilePath(
+        "container1", "component1");
+    Assert.assertFalse("container keystore generated",
+                       keystoreFile.exists());
+    Assert.assertFalse("keystore in returned list",
+                       Arrays.asList(files).contains(keystoreFile));
+    File truststoreFile =
+        CertificateManager.getContainerTruststoreFilePath("component1",
+                                                          "container1");
+    Assert.assertTrue("container truststore not generated",
+                      truststoreFile.exists());
+    Assert.assertTrue("truststore not in returned list",
+                      Arrays.asList(files).contains(truststoreFile));
+
+  }
+
+  @Test
+  public void testContainerTrusttoreGenerationUsingStoresGenerator() throws Exception {
+    AggregateConf instanceDefinition = new AggregateConf();
+    MapOperations compOps = setupComponentOptions(true,
+                                                  "test.keystore.password",
+                                                  null,
+                                                  "test.truststore.password",
+                                                  null);
+
+    setupCredentials(instanceDefinition, "test.keystore.password",
+                     "test.truststore.password");
+
+    File[] files = StoresGenerator.generateSecurityStores("localhost", "container1",
+                                           "component1", instanceDefinition,
+                                           compOps);
+    assertEquals("wrong number of stores", 2, files.length);
+    File keystoreFile = CertificateManager.getContainerKeystoreFilePath(
+        "container1", "component1");
+    Assert.assertTrue("container keystore not generated",
+                      keystoreFile.exists());
+    Assert.assertTrue("keystore not in returned list",
+                      Arrays.asList(files).contains(keystoreFile));
+    File truststoreFile =
+        CertificateManager.getContainerTruststoreFilePath("component1",
+                                                          "container1");
+    Assert.assertTrue("container truststore not generated",
+                      truststoreFile.exists());
+    Assert.assertTrue("truststore not in returned list",
+                      Arrays.asList(files).contains(truststoreFile));
+
+    validateTruststore(keystoreFile, truststoreFile);
+  }
+
+  private void setupCredentials(AggregateConf instanceDefinition,
+                                String keyAlias, String trustAlias)
+      throws Exception {
+    Configuration conf = new Configuration();
+    final Path jksPath = new Path(SecurityUtils.getSecurityDir(), "test.jks");
+    final String ourUrl =
+        JavaKeyStoreProvider.SCHEME_NAME + "://file" + jksPath.toUri();
+
+    File file = new File(SecurityUtils.getSecurityDir(), "test.jks");
+    file.delete();
+    conf.set(CredentialProviderFactory.CREDENTIAL_PROVIDER_PATH, ourUrl);
+
+    instanceDefinition.getAppConf().credentials.put(ourUrl, new ArrayList<String>());
+
+    CredentialProvider provider =
+        CredentialProviderFactory.getProviders(conf).get(0);
+
+    // create new aliases
+    try {
+
+      if (keyAlias != null) {
+        char[] storepass = {'k', 'e', 'y', 'p', 'a', 's', 's'};
+        provider.createCredentialEntry(
+            keyAlias, storepass);
+      }
+
+      if (trustAlias != null) {
+        char[] trustpass = {'t', 'r', 'u', 's', 't', 'p', 'a', 's', 's'};
+        provider.createCredentialEntry(
+            trustAlias, trustpass);
+      }
+
+      // write out so that it can be found in checks
+      provider.flush();
+    } catch (Exception e) {
+      e.printStackTrace();
+      throw e;
+    }
+  }
+
+  private MapOperations setupComponentOptions(boolean storesRequired) {
+    return this.setupComponentOptions(storesRequired, null, null, null, null);
+  }
+
+  private MapOperations setupComponentOptions(boolean storesRequired,
+                                              String keyAlias,
+                                              String keyPwd,
+                                              String trustAlias,
+                                              String trustPwd) {
+    MapOperations compOps = new MapOperations();
+    compOps.put(SliderKeys.COMP_STORES_REQUIRED_KEY,
+                Boolean.toString(storesRequired));
+    if (keyAlias != null) {
+      compOps.put(SliderKeys.COMP_KEYSTORE_PASSWORD_ALIAS_KEY,
+                  "test.keystore.password");
+    }
+    if (trustAlias != null) {
+      compOps.put(SliderKeys.COMP_TRUSTSTORE_PASSWORD_ALIAS_KEY,
+                  "test.truststore.password");
+    }
+    if (keyPwd != null) {
+      compOps.put(SliderKeys.COMP_KEYSTORE_PASSWORD_PROPERTY_KEY,
+                  keyPwd);
+    }
+    if (trustPwd != null) {
+      compOps.put(SliderKeys.COMP_TRUSTSTORE_PASSWORD_PROPERTY_KEY,
+                  trustPwd);
+    }
+    return compOps;
+  }
+
+  @Test
+  public void testContainerStoresGenerationKeystoreOnly() throws Exception {
+    AggregateConf instanceDefinition = new AggregateConf();
+    MapOperations compOps = new MapOperations();
+    compOps.put(SliderKeys.COMP_STORES_REQUIRED_KEY, "true");
+
+    setupCredentials(instanceDefinition,
+                     SliderKeys.COMP_KEYSTORE_PASSWORD_ALIAS_DEFAULT, null);
+
+    File[] files = StoresGenerator.generateSecurityStores("localhost", "container1",
+                                                          "component1", instanceDefinition,
+                                                          compOps);
+    assertEquals("wrong number of stores", 1, files.length);
+    File keystoreFile = CertificateManager.getContainerKeystoreFilePath(
+        "container1", "component1");
+    Assert.assertTrue("container keystore not generated",
+                      keystoreFile.exists());
+    Assert.assertTrue("keystore not in returned list",
+                      Arrays.asList(files).contains(keystoreFile));
+    File truststoreFile =
+        CertificateManager.getContainerTruststoreFilePath("component1",
+                                                          "container1");
+    Assert.assertFalse("container truststore generated",
+                       truststoreFile.exists());
+    Assert.assertFalse("truststore in returned list",
+                       Arrays.asList(files).contains(truststoreFile));
+
+  }
+
+  @Test
+  public void testContainerStoresGenerationMisconfiguration() throws Exception {
+    AggregateConf instanceDefinition = new AggregateConf();
+    MapOperations compOps = new MapOperations();
+    compOps.put(SliderKeys.COMP_STORES_REQUIRED_KEY, "true");
+
+    setupCredentials(instanceDefinition, "cant.be.found", null);
+
+    try {
+      File[] files = StoresGenerator.generateSecurityStores("localhost", "container1",
+                                                            "component1", instanceDefinition,
+                                                            compOps);
+      Assert.fail("SliderException should have been generated");
+    } catch (SliderException e) {
+      // ignore - should be thrown
+    }
+  }
+
+  private void validateTruststore(File keystoreFile, File truststoreFile)
+      throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
+    InputStream keyis = null;
+    InputStream trustis = null;
+    try {
+
+      // create keystore
+      keyis = new FileInputStream(keystoreFile);
+      KeyStore keystore = KeyStore.getInstance("pkcs12");
+      String password = "keypass";
+      keystore.load(keyis, password.toCharArray());
+
+      // obtain server cert
+      Certificate certificate = keystore.getCertificate(
+          keystore.aliases().nextElement());
+      Assert.assertNotNull(certificate);
+
+      // create trust store from generated trust store file
+      trustis = new FileInputStream(truststoreFile);
+      KeyStore truststore = KeyStore.getInstance("pkcs12");
+      password = "trustpass";
+      truststore.load(trustis, password.toCharArray());
+
+      // validate keystore cert using trust store
+      TrustManagerFactory
+          trustManagerFactory =
+          TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+      trustManagerFactory.init(truststore);
+
+      for (TrustManager trustManager: trustManagerFactory.getTrustManagers()) {
+        if (trustManager instanceof X509TrustManager) {
+          X509TrustManager x509TrustManager = (X509TrustManager)trustManager;
+          x509TrustManager.checkServerTrusted(
+              new X509Certificate[] {(X509Certificate) certificate},
+              "RSA_EXPORT");
+        }
+      }
+
+    } finally {
+      if(null != keyis) {
+        keyis.close();
+      }
+      if(null != trustis) {
+        trustis.close();
       }
     }
   }

@@ -132,9 +132,14 @@ public class SecurityUtils {
   }
 
   public static String hideOpenSslPassword(String command){
-    int start = command.indexOf(PASS_TOKEN)+PASS_TOKEN.length();
-    CharSequence cs = command.subSequence(start, command.indexOf(" ", start));
-    return command.replace(cs, "****");
+    int start = command.indexOf(PASS_TOKEN);
+    while (start >= 0) {
+      start += PASS_TOKEN.length();
+      CharSequence cs = command.subSequence(start, command.indexOf(" ", start));
+      command = command.replace(cs, "****");
+      start = command.indexOf(PASS_TOKEN, start + 1);
+    }
+    return command;
   }
 
   public static String getOpenSslCommandResult(String command, int exitCode) {

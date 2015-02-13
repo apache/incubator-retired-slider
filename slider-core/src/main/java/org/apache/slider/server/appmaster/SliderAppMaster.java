@@ -1029,8 +1029,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   private void uploadServerCertForLocalization(String clustername,
                                                SliderFileSystem fs)
       throws IOException {
-    Path certsDir = new Path(fs.buildClusterDirPath(clustername),
-                             "certs");
+    Path certsDir = fs.buildClusterSecurityDirPath(clustername);
     if (!fs.getFileSystem().exists(certsDir)) {
       fs.getFileSystem().mkdirs(certsDir,
         new FsPermission(FsAction.ALL, FsAction.NONE, FsAction.NONE));
