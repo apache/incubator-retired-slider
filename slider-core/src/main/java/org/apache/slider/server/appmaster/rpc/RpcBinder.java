@@ -18,6 +18,7 @@
 
 package org.apache.slider.server.appmaster.rpc;
 
+import com.google.common.base.Preconditions;
 import com.google.protobuf.BlockingService;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.retry.RetryPolicy;
@@ -248,10 +249,36 @@ public class RpcBinder {
 
     String host = application.getHost();
     int port = application.getRpcPort();
+    org.apache.hadoop.yarn.api.records.Token clientToAMToken =
+        application.getClientToAMToken();
+    return createProxy(conf, host, port, clientToAMToken, rpcTimeout);
+  }
+
+  /**
+   *
+   * @param conf config to use
+   * @param host hosname
+   * @param port port
+   * @param clientToAMToken auth token: only used in a secure cluster.
+   * converted via {@link ConverterUtils#convertFromYarn(org.apache.hadoop.yarn.api.records.Token, InetSocketAddress)}
+   * @param rpcTimeout timeout in RPC operations
+   * @return the proxy
+   * @throws SliderException
+   * @throws IOException
+   * @throws InterruptedException
+   */
+  public static SliderClusterProtocol createProxy(final Configuration conf,
+      String host,
+      int port,
+      org.apache.hadoop.yarn.api.records.Token clientToAMToken,
+      final int rpcTimeout) throws
+      SliderException,
+      IOException,
+      InterruptedException {
     String address = host + ":" + port;
     if (SliderUtils.isUnset(host) || 0 == port) {
       throw new SliderException(SliderExitCodes.EXIT_CONNECTIVITY_PROBLEM,
-                              "Slider instance " + application.getName()
+                              "Slider instance "
                               + " isn't providing a valid address for the" +
                               " Slider RPC protocol: " + address);
     }
@@ -265,8 +292,8 @@ public class RpcBinder {
 
     log.debug("Connecting to {}", serviceAddr);
     if (UserGroupInformation.isSecurityEnabled()) {
-      org.apache.hadoop.yarn.api.records.Token clientToAMToken =
-        application.getClientToAMToken();
+      Preconditions.checkArgument(clientToAMToken != null,
+          "Null clientToAMToken");
       Token<ClientToAMTokenIdentifier> token =
         ConverterUtils.convertFromYarn(clientToAMToken, serviceAddr);
       newUgi.addToken(token);
