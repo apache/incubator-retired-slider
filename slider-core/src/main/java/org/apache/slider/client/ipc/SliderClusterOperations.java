@@ -28,9 +28,13 @@ import org.apache.slider.api.proto.Messages;
 
 import static org.apache.slider.api.proto.RestTypeMarshalling.*;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
+import org.apache.slider.api.types.ComponentInformation;
+import org.apache.slider.api.types.ContainerInformation;
+import org.apache.slider.api.types.PingInformation;
 import org.apache.slider.common.tools.Duration;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
+import org.apache.slider.core.conf.ConfTreeOperations;
 import org.apache.slider.core.exceptions.NoSuchNodeException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.exceptions.WaitTimeoutException;
@@ -43,7 +47,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Cluster operations at a slightly higher level than the RPC code
@@ -53,6 +59,10 @@ public class SliderClusterOperations {
     log = LoggerFactory.getLogger(SliderClusterOperations.class);
   
   private final SliderClusterProtocol appMaster;
+  private static final Messages.EmptyPayloadProto EMPTY;
+  static {
+    EMPTY = Messages.EmptyPayloadProto.newBuilder().build(); 
+  }
 
   public SliderClusterOperations(SliderClusterProtocol appMaster) {
     this.appMaster = appMaster;
@@ -311,7 +321,7 @@ public class SliderClusterOperations {
    * @throws IOException
    */
   public void amSuicide(String text, int signal, int delay)
-      throws YarnException, IOException {
+      throws IOException {
     Messages.AMSuicideRequestProto.Builder builder =
       Messages.AMSuicideRequestProto.newBuilder();
     if (text != null) {
@@ -337,6 +347,134 @@ public class SliderClusterOperations {
         appMaster.getLivenessInformation(builder.build());
     return unmarshall(wire);
 
+  }
+
+  
+  
+  public AggregateConf getModelDesired() throws IOException {
+    return unmarshallToAggregateConf(appMaster.getModelDesired(EMPTY));
+  }
+
+  
+  public ConfTreeOperations getModelDesiredAppconf() throws IOException {
+    return unmarshallToCTO(
+        appMaster.getModelDesiredAppconf(EMPTY));
+  }
+
+  
+  public ConfTreeOperations getModelDesiredResources() throws IOException {
+    return unmarshallToCTO(
+        appMaster.getModelDesiredResources(EMPTY));
+  }
+
+  
+  public AggregateConf getModelResolved() throws IOException {
+    return unmarshallToAggregateConf(
+        appMaster.getModelResolved(EMPTY));
+  }
+
+  
+  public ConfTreeOperations getModelResolvedAppconf() throws IOException {
+    return unmarshallToCTO(
+        appMaster.getModelResolvedAppconf(EMPTY));
+  }
+
+  
+  public ConfTreeOperations getModelResolvedResources() throws IOException {
+    return unmarshallToCTO(
+        appMaster.getModelDesiredResources(EMPTY));
+  }
+
+  
+  public ConfTreeOperations getLiveResources() throws IOException {
+    return unmarshallToCTO(
+        appMaster.getLiveResources(EMPTY));
+  }
+
+  
+  public Map<String, ContainerInformation> enumContainers() throws IOException {
+    Messages.GetLiveContainersResponseProto response =
+        appMaster.getLiveContainers(
+            Messages.GetLiveContainersRequestProto.newBuilder().build());
+
+    int namesCount = response.getNamesCount();
+    int records = response.getContainersCount();
+    if (namesCount != records) {
+      throw new IOException("Number of names returned (" + namesCount
+                      + ") does not match the number of records returned: " 
+                      + records);
+    }
+    Map<String, ContainerInformation> map =
+        new HashMap<String, ContainerInformation>(namesCount);
+    for (int i = 0; i < namesCount; i++) {
+      map.put(response.getNames(i), unmarshall(response.getContainers(i)));
+    }
+    return map;
+  }
+
+  
+  public ContainerInformation getContainer(String containerId) throws
+      IOException {
+    Messages.ContainerInformationProto response =
+        appMaster.getLiveContainer(
+            Messages.GetLiveContainerRequestProto.newBuilder()
+                                                 .setContainerId(containerId)
+                                                 .build());
+    return unmarshall(response);
+  }
+
+  
+  public Map<String, ComponentInformation> enumComponents() throws IOException {
+    Messages.GetLiveComponentsResponseProto response =
+        appMaster.getLiveComponents(
+            Messages.GetLiveComponentsRequestProto.newBuilder().build());
+
+    int namesCount = response.getNamesCount();
+    int records = response.getComponentsCount();
+    if (namesCount != records) {
+      throw new IOException("Number of names returned (" + namesCount
+                            +
+                            ") does not match the number of records returned: "
+                            + records);
+    }
+    Map<String, ComponentInformation> map =
+        new HashMap<String, ComponentInformation>(namesCount);
+    for (int i = 0; i < namesCount; i++) {
+      map.put(response.getNames(i), unmarshall(response.getComponents(i)));
+    }
+    return map;
+  }
+
+  
+  public ComponentInformation getComponent(String componentName)
+      throws IOException {
+    Messages.GetLiveComponentRequestProto.Builder builder =
+        Messages.GetLiveComponentRequestProto.newBuilder();
+    builder.setName(componentName);
+    Messages.ComponentInformationProto proto =
+        appMaster.getLiveComponent(builder.build());
+    
+    return unmarshall(proto);
+  }
+
+  
+  public PingInformation ping(String text) throws IOException {
+    return null;
+  }
+
+  
+  public void stop(String text) throws IOException {
+    amSuicide(text, 3, 0);
+  }
+
+  
+  public ApplicationLivenessInformation getApplicationLiveness() throws
+      IOException {
+    Messages.ApplicationLivenessInformationProto proto =
+        appMaster.getLivenessInformation(
+            Messages.GetApplicationLivenessRequestProto.newBuilder().build()
+        );
+    return unmarshall(proto);
   }
 
 

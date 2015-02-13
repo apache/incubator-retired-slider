@@ -68,20 +68,20 @@ class RestAPIClientTestDelegates extends AbstractRestTestDelegate {
   public void testGetDesiredModel() throws Throwable {
       appAPI.getDesiredModel()  
       appAPI.getDesiredAppconf()  
-      appAPI.getDesiredYarnResources()  
+      appAPI.getDesiredResources()  
   }
 
   public void testGetResolvedModel() throws Throwable {
       appAPI.getResolvedModel()  
       appAPI.getResolvedAppconf()  
-      appAPI.getResolvedYarnResources()  
+      appAPI.getResolvedResources()  
   }
 
   
   public void testLiveResources() throws Throwable {
     describe "Live Resources"
 
-    ConfTreeOperations tree = appAPI.getLiveYarnResources()
+    ConfTreeOperations tree = appAPI.getLiveResources()
 
     log.info tree.toString()
     def liveAM = tree.getComponent(COMPONENT_AM)

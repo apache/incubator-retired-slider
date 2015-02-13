@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.slider.client.rest;
+package org.apache.slider.api;
 
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * API exported by the slider client REST API
+ * API exported by the slider remote REST/IPC endpoints.
  */
 public interface SliderApplicationApi {
   /**
@@ -54,7 +54,7 @@ public interface SliderApplicationApi {
    * —before resolution has taken place
    * @throws IOException on any failure
    */
-  ConfTreeOperations getDesiredYarnResources() throws IOException;
+  ConfTreeOperations getDesiredResources() throws IOException;
 
   /**
    * Get the aggregate resolved model
@@ -78,14 +78,14 @@ public interface SliderApplicationApi {
    * —after resolution has taken place
    * @throws IOException on any failure
    */
-  ConfTreeOperations getResolvedYarnResources() throws IOException;
+  ConfTreeOperations getResolvedResources() throws IOException;
 
   /**
    * Get the live YARN resources
    * @return the live set of resources in the cluster
    * @throws IOException on any failure
    */
-  ConfTreeOperations getLiveYarnResources() throws IOException;
+  ConfTreeOperations getLiveResources() throws IOException;
 
   /**
    * Get a map of live containers [containerId:info]

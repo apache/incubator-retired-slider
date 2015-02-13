@@ -27,6 +27,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.ContainerInformation;
+import org.apache.slider.api.SliderApplicationApi;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.conf.ConfTreeOperations;
@@ -147,7 +148,7 @@ public class SliderApplicationApiRestClient extends BaseRestClient
   }
 
   @Override
-  public ConfTreeOperations getDesiredYarnResources() throws IOException {
+  public ConfTreeOperations getDesiredResources() throws IOException {
     ConfTree resource =
         getApplicationResource(MODEL_DESIRED_RESOURCES, ConfTree.class);
     return new ConfTreeOperations(resource); 
@@ -167,14 +168,14 @@ public class SliderApplicationApiRestClient extends BaseRestClient
   }
 
   @Override
-  public ConfTreeOperations getResolvedYarnResources() throws IOException {
+  public ConfTreeOperations getResolvedResources() throws IOException {
     ConfTree resource =
         getApplicationResource(MODEL_RESOLVED_RESOURCES, ConfTree.class);
     return new ConfTreeOperations(resource); 
   }
 
   @Override
-  public ConfTreeOperations getLiveYarnResources() throws IOException {
+  public ConfTreeOperations getLiveResources() throws IOException {
     ConfTree resource =
         getApplicationResource(LIVE_RESOURCES, ConfTree.class);
     return new ConfTreeOperations(resource); 

@@ -19,7 +19,6 @@
 package org.apache.slider.server.appmaster.rpc;
 
 import com.google.common.base.Preconditions;
-import com.google.protobuf.RpcController;
 import org.apache.hadoop.ipc.ProtocolSignature;
 import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
@@ -312,7 +311,7 @@ public class SliderIPCService extends AbstractService
   @Override
   public Messages.AMSuicideResponseProto amSuicide(
       Messages.AMSuicideRequestProto request)
-      throws IOException, YarnException {
+      throws IOException {
     onRpcCall("amsuicide");
     int signal = request.getSignal();
     String text = request.getText();
@@ -381,44 +380,37 @@ public class SliderIPCService extends AbstractService
   }
 
   @Override
-  public Messages.WrappedJsonProto getModelDesired(RpcController controller,
-      Messages.EmptyPayloadProto request) throws IOException {
+  public Messages.WrappedJsonProto getModelDesired(Messages.EmptyPayloadProto request) throws IOException {
     return lookupAggregateConf(MODEL_DESIRED);
   }
 
   @Override
-  public Messages.WrappedJsonProto getModelDesiredAppconf(RpcController controller,
-      Messages.EmptyPayloadProto request) throws IOException {
+  public Messages.WrappedJsonProto getModelDesiredAppconf(Messages.EmptyPayloadProto request) throws IOException {
     return lookupConfTree(MODEL_DESIRED_APPCONF);
   }
 
   @Override
-  public Messages.WrappedJsonProto getModelDesiredResources(RpcController controller,
-      Messages.EmptyPayloadProto request) throws IOException {
+  public Messages.WrappedJsonProto getModelDesiredResources(Messages.EmptyPayloadProto request) throws IOException {
     return lookupConfTree(MODEL_DESIRED_RESOURCES);
   }
 
   @Override
-  public Messages.WrappedJsonProto getModelResolved(RpcController controller,
-      Messages.EmptyPayloadProto request) throws IOException {
+  public Messages.WrappedJsonProto getModelResolved(Messages.EmptyPayloadProto request) throws IOException {
     return lookupAggregateConf(MODEL_RESOLVED);
   }
 
   @Override
-  public Messages.WrappedJsonProto getModelResolvedAppconf(RpcController controller,
-      Messages.EmptyPayloadProto request) throws IOException {
+  public Messages.WrappedJsonProto getModelResolvedAppconf(Messages.EmptyPayloadProto request) throws IOException {
     return lookupConfTree(MODEL_RESOLVED_APPCONF);
   }
 
   @Override
-  public Messages.WrappedJsonProto getModelResolvedResources(RpcController controller,
-      Messages.EmptyPayloadProto request) throws IOException {
+  public Messages.WrappedJsonProto getModelResolvedResources(Messages.EmptyPayloadProto request) throws IOException {
     return lookupConfTree(MODEL_RESOLVED_RESOURCES);
   }
 
   @Override
-  public Messages.WrappedJsonProto getLiveResources(RpcController controller,
-      Messages.EmptyPayloadProto request) throws IOException {
+  public Messages.WrappedJsonProto getLiveResources(Messages.EmptyPayloadProto request) throws IOException {
     return lookupConfTree(LIVE_RESOURCES);
   }
 

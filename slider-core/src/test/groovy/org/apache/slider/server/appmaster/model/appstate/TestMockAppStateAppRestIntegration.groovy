@@ -30,6 +30,7 @@ import org.apache.slider.server.appmaster.state.RoleInstance
 import org.apache.slider.server.appmaster.state.StateAccessForProviders
 import org.apache.slider.server.appmaster.web.WebAppApi
 import org.apache.slider.server.appmaster.web.WebAppApiImpl
+import org.apache.slider.server.appmaster.web.rest.application.ApplicationResouceContentCacheFactory
 import org.apache.slider.server.appmaster.web.rest.application.ApplicationResource
 import org.apache.slider.server.appmaster.web.rest.application.resources.CachedContent
 import org.apache.slider.server.appmaster.web.rest.application.resources.LiveContainersRefresher
@@ -117,7 +118,9 @@ class TestMockAppStateAppRestIntegration extends BaseMockAppStateTest implements
     WebAppApi api = new WebAppApiImpl(stateAccess,
         new MockProviderService(),
         null, null,
-        new MetricsAndMonitoring("metrics"), null, null, null)
+        new MetricsAndMonitoring("metrics"), null,null,
+        ApplicationResouceContentCacheFactory.createContentCache(stateAccess)
+    )
     return api
   }
 

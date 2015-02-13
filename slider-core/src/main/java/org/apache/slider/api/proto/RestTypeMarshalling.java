@@ -21,7 +21,14 @@ package org.apache.slider.api.proto;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.ContainerInformation;
+import org.apache.slider.core.conf.AggregateConf;
+import org.apache.slider.core.conf.ConfTree;
+import org.apache.slider.core.conf.ConfTreeOperations;
+import org.apache.slider.core.persist.AggregateConfSerDeser;
+import org.apache.slider.core.persist.ConfTreeSerDeser;
+import org.codehaus.jackson.JsonParseException;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -50,6 +57,31 @@ public class RestTypeMarshalling {
     return info;
   }
 
+  public static ComponentInformation
+  unmarshall(Messages.ComponentInformationProto wire) {
+    ComponentInformation info = new ComponentInformation();
+    info.name = wire.getName();
+    info.priority = wire.getPriority();
+    info.placementPolicy = wire.getPlacementPolicy();
+    
+    info.actual = wire.getActual();
+    info.completed = wire.getCompleted();
+    info.desired = wire.getDesired();
+    info.failed = wire.getFailed();
+    info.releasing = wire.getReleasing();
+    info.requested = wire.getRequested();
+    info.started = wire.getStarted();
+    info.startFailed = wire.getStartFailed();
+    info.totalRequested = wire.getTotalRequested();
+    info.containers = new ArrayList<String>(wire.getContainersList());
+    if (wire.hasFailureMessage()) {
+      info.failureMessage = wire.getFailureMessage();
+    }
+
+    return info;
+  }
+
+
   public static Messages.ComponentInformationProto
   marshall(ComponentInformation info) {
 
@@ -58,14 +90,15 @@ public class RestTypeMarshalling {
     builder.setName(info.name);
     builder.setPriority(info.priority);
     builder.setPlacementPolicy(info.placementPolicy);
-    builder.setDesired(info.desired);
+    
     builder.setActual(info.actual);
+    builder.setCompleted(info.completed);
+    builder.setDesired(info.desired);
+    builder.setFailed(info.failed);
     builder.setReleasing(info.releasing);
     builder.setRequested(info.requested);
-    builder.setFailed(info.failed);
     builder.setStarted(info.started);
     builder.setStartFailed(info.startFailed);
-    builder.setCompleted(info.completed);
     builder.setTotalRequested(info.totalRequested);
     if (info.failureMessage != null) {
       builder.setFailureMessage(info.failureMessage);
@@ -106,7 +139,7 @@ public class RestTypeMarshalling {
   }
 
   public static Messages.ContainerInformationProto
-  marshall(ContainerInformation info) {
+     marshall(ContainerInformation info) {
 
     Messages.ContainerInformationProto.Builder builder =
         Messages.ContainerInformationProto.newBuilder();
@@ -136,5 +169,24 @@ public class RestTypeMarshalling {
     return builder.build();
   }
 
+  public static String
+    unmarshall(Messages.WrappedJsonProto wire) {
+    return wire.getJson();
+  }
+
+  public static ConfTree unmarshallToConfTree(Messages.WrappedJsonProto wire) throws
+      IOException {
+    return new ConfTreeSerDeser().fromJson(wire.getJson());
+  }
+  
+  public static ConfTreeOperations unmarshallToCTO(Messages.WrappedJsonProto wire) throws
+      IOException {
+    return new ConfTreeOperations(new ConfTreeSerDeser().fromJson(wire.getJson()));
+  }
+
+  public static AggregateConf unmarshallToAggregateConf(Messages.WrappedJsonProto wire) throws
+      IOException {
+    return new AggregateConfSerDeser().fromJson(wire.getJson());
+  }
 
 }

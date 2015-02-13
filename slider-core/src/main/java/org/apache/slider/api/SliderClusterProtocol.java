@@ -111,7 +111,7 @@ public interface SliderClusterProtocol extends VersionedProtocol {
    * @throws YarnException
    */
   Messages.AMSuicideResponseProto amSuicide(Messages.AMSuicideRequestProto request)
-      throws IOException, YarnException;
+      throws IOException;
 
   /**
    * Get the instance definition
@@ -146,27 +146,20 @@ public interface SliderClusterProtocol extends VersionedProtocol {
   ) throws IOException;
 
   
-  Messages.WrappedJsonProto getModelDesired(RpcController controller,
-      Messages.EmptyPayloadProto request) throws IOException;
+  Messages.WrappedJsonProto getModelDesired(Messages.EmptyPayloadProto request) throws IOException;
 
   
-  Messages.WrappedJsonProto getModelDesiredAppconf(RpcController controller,
-      Messages.EmptyPayloadProto request) throws IOException;
+  Messages.WrappedJsonProto getModelDesiredAppconf(Messages.EmptyPayloadProto request) throws IOException;
     
-  Messages.WrappedJsonProto getModelDesiredResources(RpcController controller,
-      Messages.EmptyPayloadProto request) throws IOException;
+  Messages.WrappedJsonProto getModelDesiredResources(Messages.EmptyPayloadProto request) throws IOException;
    
-  Messages.WrappedJsonProto getModelResolved(RpcController controller,
-      Messages.EmptyPayloadProto request) throws IOException;
+  Messages.WrappedJsonProto getModelResolved(Messages.EmptyPayloadProto request) throws IOException;
   
-  Messages.WrappedJsonProto getModelResolvedAppconf(RpcController controller,
-      Messages.EmptyPayloadProto request) throws IOException;
+  Messages.WrappedJsonProto getModelResolvedAppconf(Messages.EmptyPayloadProto request) throws IOException;
   
-  Messages.WrappedJsonProto getModelResolvedResources(RpcController controller,
-      Messages.EmptyPayloadProto request) throws IOException;
+  Messages.WrappedJsonProto getModelResolvedResources(Messages.EmptyPayloadProto request) throws IOException;
    
-  Messages.WrappedJsonProto getLiveResources(RpcController controller,
-      Messages.EmptyPayloadProto request) throws IOException;
+  Messages.WrappedJsonProto getLiveResources(Messages.EmptyPayloadProto request) throws IOException;
     
   
 }

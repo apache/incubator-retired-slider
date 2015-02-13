@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.slider.client.rest;
+package org.apache.slider.client;
 
 import com.google.common.base.Preconditions;
 import org.apache.hadoop.fs.PathNotFoundException;
@@ -42,13 +42,13 @@ import static org.apache.hadoop.registry.client.binding.RegistryUtils.servicePat
 /**
  * Generic code to get the URLs for clients via the registry
  */
-public class RestClientRegistryBinder {
+public class ClientRegistryBinder {
   private static final Logger log =
-      LoggerFactory.getLogger(RestClientRegistryBinder.class);
+      LoggerFactory.getLogger(ClientRegistryBinder.class);
 
   private final RegistryOperations operations;
 
-  public RestClientRegistryBinder(RegistryOperations operations) {
+  public ClientRegistryBinder(RegistryOperations operations) {
     this.operations = operations;
   }
 

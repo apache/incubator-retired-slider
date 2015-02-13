@@ -185,8 +185,7 @@ public class SliderClusterProtocolProxy implements SliderClusterProtocol {
 
   @Override
   public Messages.AMSuicideResponseProto amSuicide(Messages.AMSuicideRequestProto request) throws
-                                                                                           IOException,
-                                                                                           YarnException {
+                                                                                           IOException {
     try {
       return endpoint.amSuicide(NULL_CONTROLLER, request);
     } catch (ServiceException e) {
@@ -245,8 +244,7 @@ public class SliderClusterProtocolProxy implements SliderClusterProtocol {
   }
 
   @Override
-  public Messages.WrappedJsonProto getModelDesired(RpcController controller,
-      Messages.EmptyPayloadProto request) throws IOException {
+  public Messages.WrappedJsonProto getModelDesired(Messages.EmptyPayloadProto request) throws IOException {
     try {
       return endpoint.getModelDesired(NULL_CONTROLLER, request);
     } catch (ServiceException e) {
@@ -255,8 +253,7 @@ public class SliderClusterProtocolProxy implements SliderClusterProtocol {
   }
 
   @Override
-  public Messages.WrappedJsonProto getModelDesiredAppconf(RpcController controller,
-      Messages.EmptyPayloadProto request) throws IOException {
+  public Messages.WrappedJsonProto getModelDesiredAppconf(Messages.EmptyPayloadProto request) throws IOException {
     try {
       return endpoint.getModelDesiredAppconf(NULL_CONTROLLER, request);
     } catch (ServiceException e) {
@@ -265,8 +262,7 @@ public class SliderClusterProtocolProxy implements SliderClusterProtocol {
   }
 
   @Override
-  public Messages.WrappedJsonProto getModelDesiredResources(RpcController controller,
-      Messages.EmptyPayloadProto request) throws IOException {
+  public Messages.WrappedJsonProto getModelDesiredResources(Messages.EmptyPayloadProto request) throws IOException {
     try {
       return endpoint.getModelDesiredResources(NULL_CONTROLLER, request);
     } catch (ServiceException e) {
@@ -275,8 +271,7 @@ public class SliderClusterProtocolProxy implements SliderClusterProtocol {
   }
 
   @Override
-  public Messages.WrappedJsonProto getModelResolved(RpcController controller,
-      Messages.EmptyPayloadProto request) throws IOException {
+  public Messages.WrappedJsonProto getModelResolved(Messages.EmptyPayloadProto request) throws IOException {
     try {
       return endpoint.getModelResolved(NULL_CONTROLLER, request);
     } catch (ServiceException e) {
@@ -285,8 +280,7 @@ public class SliderClusterProtocolProxy implements SliderClusterProtocol {
   }
 
   @Override
-  public Messages.WrappedJsonProto getModelResolvedAppconf(RpcController controller,
-      Messages.EmptyPayloadProto request) throws IOException {
+  public Messages.WrappedJsonProto getModelResolvedAppconf(Messages.EmptyPayloadProto request) throws IOException {
     try {
       return endpoint.getModelResolvedAppconf(NULL_CONTROLLER, request);
     } catch (ServiceException e) {
@@ -295,8 +289,7 @@ public class SliderClusterProtocolProxy implements SliderClusterProtocol {
   }
 
   @Override
-  public Messages.WrappedJsonProto getModelResolvedResources(RpcController controller,
-      Messages.EmptyPayloadProto request) throws IOException {
+  public Messages.WrappedJsonProto getModelResolvedResources(Messages.EmptyPayloadProto request) throws IOException {
     try {
       return endpoint.getModelResolvedResources(NULL_CONTROLLER, request);
     } catch (ServiceException e) {
@@ -305,8 +298,7 @@ public class SliderClusterProtocolProxy implements SliderClusterProtocol {
   }
 
   @Override
-  public Messages.WrappedJsonProto getLiveResources(RpcController controller,
-      Messages.EmptyPayloadProto request) throws IOException {
+  public Messages.WrappedJsonProto getLiveResources(Messages.EmptyPayloadProto request) throws IOException {
     try {
       return endpoint.getLiveResources(NULL_CONTROLLER, request);
     } catch (ServiceException e) {

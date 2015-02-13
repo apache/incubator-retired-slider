@@ -23,7 +23,7 @@ import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
 import org.apache.hadoop.registry.client.exceptions.RegistryIOException;
 import org.apache.hadoop.registry.client.types.ServiceRecord;
-import static org.apache.slider.client.rest.RestClientRegistryBinder.*;
+import static org.apache.slider.client.ClientRegistryBinder.*;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.ExceptionConverter;
 import org.apache.slider.core.registry.docstore.PublishedConfigSet;
