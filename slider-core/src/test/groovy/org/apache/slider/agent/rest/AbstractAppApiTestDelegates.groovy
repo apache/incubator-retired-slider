@@ -68,7 +68,7 @@ public abstract class AbstractAppApiTestDelegates extends AbstractRestTestDelega
   }
 
   public void testLiveResources() throws Throwable {
-    describe "Live Resources"
+    describe "Live Resources via $appAPI"
 
     ConfTreeOperations tree = appAPI.getLiveResources()
 
@@ -87,7 +87,7 @@ public abstract class AbstractAppApiTestDelegates extends AbstractRestTestDelega
 
 
   public void testLiveContainers() throws Throwable {
-    describe "Application REST /live/containers"
+    describe "Application /live/containers from $appAPI"
 
     Map<String, ContainerInformation> containers = appAPI.enumContainers()
     assert containers.size() == 1
@@ -106,7 +106,7 @@ public abstract class AbstractAppApiTestDelegates extends AbstractRestTestDelega
     assert amContainerInfo.released == null
     assert amContainerInfo.state == StateValues.STATE_LIVE
 
-    describe "containers"
+    describe "containers via $appAPI"
 
     ContainerInformation amContainerInfo2 =
         appAPI.getContainer(amContainerId)
@@ -121,7 +121,7 @@ public abstract class AbstractAppApiTestDelegates extends AbstractRestTestDelega
     }
 
 
-    describe "components"
+    describe "components via $appAPI"
 
     Map<String, ComponentInformation> components =
         appAPI.enumComponents()
@@ -145,7 +145,7 @@ public abstract class AbstractAppApiTestDelegates extends AbstractRestTestDelega
    * @param appmaster
    */
   public void testRESTModel() {
-    describe "model"
+    describe "model via $appAPI"
 
     def unresolvedConf = appAPI.getDesiredModel() 
 //    log.info "Unresolved \n$unresolvedConf"
@@ -170,7 +170,7 @@ public abstract class AbstractAppApiTestDelegates extends AbstractRestTestDelega
 
   public void testPing() {
     // GET
-    describe "pinging"
+    describe "pinging via $appAPI"
     
     appAPI.ping("hello")
   }
@@ -194,9 +194,10 @@ public abstract class AbstractAppApiTestDelegates extends AbstractRestTestDelega
   }
 
   public void testAppLiveness() {
+    describe "Liveness: check via $appAPI"
     def liveness = appAPI.applicationLiveness
     describe "Liveness:\n$liveness"
-    
+
     assert liveness.allRequestsSatisfied
     assert !liveness.requestsOutstanding
   }
@@ -210,7 +211,7 @@ public abstract class AbstractAppApiTestDelegates extends AbstractRestTestDelega
     try {
       appAPI.getApplicationLiveness()
       return Outcome.Retry
-    } catch (IOException expected) {
+    } catch (IOException success) {
       // expected
       return Outcome.Success
     }
