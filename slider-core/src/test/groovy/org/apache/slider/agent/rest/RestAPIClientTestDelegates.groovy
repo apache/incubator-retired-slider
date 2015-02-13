@@ -22,13 +22,12 @@ import com.sun.jersey.api.client.Client
 import com.sun.jersey.api.client.WebResource
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.slider.api.SliderApplicationApi
 import org.apache.slider.api.StateValues
 import org.apache.slider.api.types.ComponentInformation
 import org.apache.slider.api.types.ContainerInformation
 import org.apache.slider.client.rest.SliderApplicationApiRestClient
-import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.core.conf.ConfTreeOperations
-import org.apache.slider.server.appmaster.web.rest.application.ApplicationResource
 import org.apache.slider.test.Outcome
 
 import javax.ws.rs.core.MediaType
@@ -36,7 +35,8 @@ import javax.ws.rs.core.MediaType
 import static org.apache.slider.api.ResourceKeys.COMPONENT_INSTANCES
 import static org.apache.slider.api.StatusKeys.*
 import static org.apache.slider.common.SliderKeys.COMPONENT_AM
-import static org.apache.slider.server.appmaster.web.rest.RestPaths.*
+import static org.apache.slider.server.appmaster.web.rest.RestPaths.LIVE_CONTAINERS
+import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_APPLICATION
 
 /**
  * Uses the Slider Application API for the tests.
@@ -46,18 +46,13 @@ import static org.apache.slider.server.appmaster.web.rest.RestPaths.*
 @Slf4j
 class RestAPIClientTestDelegates extends AbstractRestTestDelegate {
 
-  final String appmaster;
-  final String application;
-  final Client jersey;
-  final SliderApplicationApiRestClient appAPI;
+ 
+  final SliderApplicationApi appAPI;
 
 
   RestAPIClientTestDelegates(String appmaster, Client jersey,
       boolean enableComplexVerbs = true) {
     super(enableComplexVerbs)
-    this.jersey = jersey
-    this.appmaster = appmaster
-    application = appendToURL(appmaster, SLIDER_PATH_APPLICATION)
     WebResource amResource = jersey.resource(appmaster)
     amResource.type(MediaType.APPLICATION_JSON)
     def appResource = amResource.path(SLIDER_PATH_APPLICATION);
@@ -150,7 +145,6 @@ class RestAPIClientTestDelegates extends AbstractRestTestDelegate {
 
   }
 
- 
   /**
    * Test the rest model. For this to work the cluster has to be configured
    * with the global option
@@ -158,10 +152,6 @@ class RestAPIClientTestDelegates extends AbstractRestTestDelegate {
    */
   public void testRESTModel() {
     describe "model"
-
-    assertPathServesList(appmaster,
-        MODEL,
-        ApplicationResource.MODEL_ENTRIES)
 
     def unresolvedConf = appAPI.getDesiredModel() 
 //    log.info "Unresolved \n$unresolvedConf"
@@ -174,12 +164,10 @@ class RestAPIClientTestDelegates extends AbstractRestTestDelegate {
     assert resolvedConf.appConfOperations.getComponentOpt(
         sam, TEST_GLOBAL_OPTION, "") == TEST_GLOBAL_OPTION_PRESENT
 
-    def unresolved = fetchTypeList(ConfTree, appmaster,
-        [MODEL_DESIRED_APPCONF, MODEL_DESIRED_RESOURCES])
+    def unresolved = appAPI.getDesiredModel() 
     assert null == 
-           unresolved[MODEL_DESIRED_APPCONF].components[sam][TEST_GLOBAL_OPTION] 
-
-
+           unresolved.resources.components[sam][TEST_GLOBAL_OPTION] 
+    
     
     def resolvedAppconf = appAPI.getResolvedAppconf() 
     assert TEST_GLOBAL_OPTION_PRESENT==
@@ -230,7 +218,6 @@ class RestAPIClientTestDelegates extends AbstractRestTestDelegate {
   }
 
   public void testSuiteGetOperations() {
-
     testGetDesiredModel()
     testGetResolvedModel()
     testLiveResources()
