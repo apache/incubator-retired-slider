@@ -35,15 +35,25 @@ import static org.apache.slider.common.SliderKeys.COMPONENT_AM
 @Slf4j
 public abstract class AbstractAppApiTestDelegates extends AbstractRestTestDelegate {
 
-  protected SliderApplicationApi appAPI;
+  private SliderApplicationApi appAPI;
 
   AbstractAppApiTestDelegates(
       boolean enableComplexVerbs,
       SliderApplicationApi appAPI) {
     super(enableComplexVerbs)
-    this.appAPI = appAPI
+    if (appAPI) {
+      setAppAPI(appAPI)
+    }
   }
 
+  SliderApplicationApi getAppAPI() {
+    return appAPI
+  }
+
+  protected void setAppAPI(SliderApplicationApi appAPI) {
+    log.info("Setting API implementation to $appAPI")
+    this.appAPI = appAPI
+  }
 
   public void testGetDesiredModel() throws Throwable {
     appAPI.getDesiredModel()
@@ -92,7 +102,7 @@ public abstract class AbstractAppApiTestDelegates extends AbstractRestTestDelega
     assert amContainerInfo.component == COMPONENT_AM
     assert amContainerInfo.createTime > 0
     assert amContainerInfo.exitCode == null
-    assert amContainerInfo.output == null
+    assert amContainerInfo.output == null || !amContainerInfo.output.length
     assert amContainerInfo.released == null
     assert amContainerInfo.state == StateValues.STATE_LIVE
 
@@ -205,4 +215,20 @@ public abstract class AbstractAppApiTestDelegates extends AbstractRestTestDelega
       return Outcome.Success
     }
   }
+  
+  @Override
+  public void testSuiteGetOperations() {
+    testGetDesiredModel()
+    testGetResolvedModel()
+    testLiveResources()
+    testLiveContainers();
+    testRESTModel()
+    testAppLiveness()
+  }
+
+  @Override
+  public void testSuiteComplexVerbs() {
+    testPing();
+  }
+
 }

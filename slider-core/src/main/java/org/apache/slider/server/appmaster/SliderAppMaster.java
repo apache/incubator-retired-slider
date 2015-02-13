@@ -1514,11 +1514,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
             protobufRelay);
 
     int port = getPortToRequest();
+    InetSocketAddress rpcAddress = new InetSocketAddress("0.0.0.0", port);
     rpcService =
-        new WorkflowRpcService("SliderRPC", RpcBinder.createProtobufServer(
-            new InetSocketAddress("0.0.0.0", port),
-            getConfig(),
-            secretManager,
+        new WorkflowRpcService("SliderRPC",
+            RpcBinder.createProtobufServer(rpcAddress, getConfig(),
+                secretManager,
             NUM_RPC_HANDLERS,
             blockingService,
             null));

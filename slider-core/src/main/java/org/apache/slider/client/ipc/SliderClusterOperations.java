@@ -68,6 +68,15 @@ public class SliderClusterOperations {
     this.appMaster = appMaster;
   }
 
+  @Override
+  public String toString() {
+    final StringBuilder sb =
+        new StringBuilder("SliderClusterOperations{");
+    sb.append("IPC binding=").append(appMaster);
+    sb.append('}');
+    return sb.toString();
+  }
+
   /**
    * Get a node from the AM
    * @param uuid uuid of node

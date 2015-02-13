@@ -149,8 +149,7 @@ public class SliderClusterProtocolPBImpl implements SliderClusterProtocolPB {
       throw wrap(e);
     }
   }
-
-
+  
   @Override
   public Messages.AMSuicideResponseProto amSuicide(RpcController controller,
                                                    Messages.AMSuicideRequestProto request) throws
@@ -173,8 +172,7 @@ public class SliderClusterProtocolPBImpl implements SliderClusterProtocolPB {
       throw wrap(e);
     }
   }
-
-
+  
   @Override
   public Messages.GetLiveContainersResponseProto getLiveContainers(RpcController controller,
       Messages.GetLiveContainersRequestProto request) throws ServiceException {
@@ -218,42 +216,69 @@ public class SliderClusterProtocolPBImpl implements SliderClusterProtocolPB {
   @Override
   public Messages.WrappedJsonProto getModelDesired(RpcController controller,
       Messages.EmptyPayloadProto request) throws ServiceException {
-    return null;
+    try {
+      return real.getModelDesired(request);
+    } catch (Exception e) {
+      throw wrap(e);
+    }
   }
 
   @Override
   public Messages.WrappedJsonProto getModelDesiredAppconf(RpcController controller,
       Messages.EmptyPayloadProto request) throws ServiceException {
-    return null;
-  }
+    try {
+      return real.getModelDesiredAppconf(request);
+    } catch (Exception e) {
+      throw wrap(e);
+    }  }
 
   @Override
   public Messages.WrappedJsonProto getModelDesiredResources(RpcController controller,
       Messages.EmptyPayloadProto request) throws ServiceException {
-    return null;
+    try {
+      return real.getModelDesiredResources(request);
+    } catch (Exception e) {
+      throw wrap(e);
+    }
   }
 
   @Override
   public Messages.WrappedJsonProto getModelResolved(RpcController controller,
       Messages.EmptyPayloadProto request) throws ServiceException {
-    return null;
+    try {
+      return real.getModelResolved(request);
+    } catch (Exception e) {
+      throw wrap(e);
+    }
   }
 
   @Override
   public Messages.WrappedJsonProto getModelResolvedAppconf(RpcController controller,
       Messages.EmptyPayloadProto request) throws ServiceException {
-    return null;
+    try {
+      return real.getModelResolvedAppconf(request);
+    } catch (Exception e) {
+      throw wrap(e);
+    }
   }
 
   @Override
   public Messages.WrappedJsonProto getModelResolvedResources(RpcController controller,
       Messages.EmptyPayloadProto request) throws ServiceException {
-    return null;
+    try {
+      return real.getModelResolvedResources(request);
+    } catch (Exception e) {
+      throw wrap(e);
+    }
   }
 
   @Override
   public Messages.WrappedJsonProto getLiveResources(RpcController controller,
       Messages.EmptyPayloadProto request) throws ServiceException {
-    return null;
+    try {
+      return real.getLiveResources(request);
+    } catch (Exception e) {
+      throw wrap(e);
+    }
   }
 }

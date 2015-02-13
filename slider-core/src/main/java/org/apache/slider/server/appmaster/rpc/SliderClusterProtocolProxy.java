@@ -18,6 +18,7 @@
 
 package org.apache.slider.server.appmaster.rpc;
 
+import com.google.common.base.Preconditions;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 import org.apache.hadoop.ipc.ProtobufHelper;
@@ -39,10 +40,20 @@ public class SliderClusterProtocolProxy implements SliderClusterProtocol {
 
   public SliderClusterProtocolProxy(SliderClusterProtocolPB endpoint,
       InetSocketAddress address) {
+    Preconditions.checkArgument(endpoint != null, "null endpoint");
+    Preconditions.checkNotNull(address != null, "null address");
     this.endpoint = endpoint;
     this.address = address;
   }
 
+  @Override
+  public String toString() {
+    final StringBuilder sb =
+        new StringBuilder("SliderClusterProtocolProxy{");
+    sb.append("address=").append(address);
+    sb.append('}');
+    return sb.toString();
+  }
 
   @Override
   public ProtocolSignature getProtocolSignature(String protocol,
@@ -72,9 +83,7 @@ public class SliderClusterProtocolProxy implements SliderClusterProtocol {
     IOException ioe = ProtobufHelper.getRemoteException(se);
     if (ioe instanceof RemoteException) {
       RemoteException remoteException = (RemoteException) ioe;
-      return new RemoteException(
-          remoteException.getClassName(),
-          address.toString() + ": " + remoteException.getMessage());
+      return remoteException.unwrapRemoteException();
     }
     return ioe;
   }

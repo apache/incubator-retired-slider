@@ -32,6 +32,7 @@ import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.ContainerInformation;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
+import org.apache.slider.core.exceptions.NoSuchNodeException;
 import org.apache.slider.core.exceptions.ServiceNotReadyException;
 import org.apache.slider.core.main.LauncherExitCodes;
 import org.apache.slider.core.persist.AggregateConfSerDeser;

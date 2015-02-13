@@ -62,6 +62,15 @@ public class SliderApplicationApiRestClient extends BaseRestClient
     this.appResource = appResource;
   }
 
+  @Override
+  public String toString() {
+    final StringBuilder sb =
+        new StringBuilder("SliderApplicationApiRestClient{");
+    sb.append("appResource=").append(appResource);
+    sb.append('}');
+    return sb.toString();
+  }
+
   /**
    * Create a resource under the application path set up to accept
    * JSON

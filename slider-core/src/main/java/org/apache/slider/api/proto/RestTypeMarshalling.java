@@ -149,6 +149,7 @@ public class RestTypeMarshalling {
     if (info.component != null) {
       builder.setComponent(info.component);
     }
+    builder.setCreateTime(info.createTime);
     if (info.diagnostics != null) {
       builder.setDiagnostics(info.diagnostics);
     }
@@ -158,14 +159,14 @@ public class RestTypeMarshalling {
     if (info.hostURL != null) {
       builder.setHostURL(info.hostURL);
     }
-    if (info.released != null) {
-      builder.setReleased(info.released);
-    }
     if (info.output != null) {
       builder.addAllOutput(Arrays.asList(info.output));
     }
-    builder.setCreateTime(info.createTime);
+    if (info.released != null) {
+      builder.setReleased(info.released);
+    }
     builder.setStartTime(info.startTime);
+    builder.setState(info.state);
     return builder.build();
   }
 

@@ -16,17 +16,14 @@
  * limitations under the License.
  */
 
-package org.apache.slider.core.exceptions;
+package org.apache.slider.agent.rest;
 
-import java.io.IOException;
+import org.apache.slider.api.SliderApplicationApi;
 
-/**
- * Exception raised when a node cannot be found in the structure
- * that is being examined.
- */
-public class NoSuchNodeException extends IOException {
+public class IpcApiClientTestDelegates extends AbstractAppApiTestDelegates {
 
-  public NoSuchNodeException(String uuid) {
-    super(uuid);
+  public IpcApiClientTestDelegates(SliderApplicationApi appAPI) {
+    super(true, appAPI);
   }
+  
 }

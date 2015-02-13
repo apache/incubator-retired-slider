@@ -36,7 +36,12 @@ import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_
 @Slf4j
 class RestAPIClientTestDelegates extends AbstractAppApiTestDelegates {
 
-
+  /**
+   * constructor
+   * @param appmaster AM URL
+   * @param jersey jersey impl
+   * @param enableComplexVerbs flag to enable complex verbs
+   */
   RestAPIClientTestDelegates(String appmaster, Client jersey,
       boolean enableComplexVerbs = true) {
     super(enableComplexVerbs, null)
@@ -46,18 +51,5 @@ class RestAPIClientTestDelegates extends AbstractAppApiTestDelegates {
     appAPI = new SliderApplicationApiRestClient(jersey, appResource)
   }
 
-
-  public void testSuiteGetOperations() {
-    testGetDesiredModel()
-    testGetResolvedModel()
-    testLiveResources()
-    testLiveContainers();
-    testRESTModel()
-    testAppLiveness()
-  }
-
-  public void testSuiteComplexVerbs() {
-    testPing();
-  }
 
 }
