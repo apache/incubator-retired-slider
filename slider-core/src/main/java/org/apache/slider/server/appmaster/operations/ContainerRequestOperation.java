@@ -34,7 +34,7 @@ public class ContainerRequestOperation extends AbstractRMOperation {
   }
 
   @Override
-  public void execute(RMOperationHandler handler) {
+  public void execute(RMOperationHandlerActions handler) {
     handler.addContainerRequest(request);
   }
 

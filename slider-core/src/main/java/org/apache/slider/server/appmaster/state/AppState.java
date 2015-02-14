@@ -1037,7 +1037,7 @@ public class AppState {
       return found;
     } else {
       //at this point: no node
-      throw new NoSuchNodeException(containerId);
+      throw new NoSuchNodeException("Unknown node: " + containerId);
     }
   }
 
@@ -1631,8 +1631,8 @@ public class AppState {
    * Update the cluster description with the current application state
    */
 
-  public void refreshClusterStatus() {
-    refreshClusterStatus(null);
+  public ClusterDescription refreshClusterStatus() {
+    return refreshClusterStatus(null);
   }
   
   /**

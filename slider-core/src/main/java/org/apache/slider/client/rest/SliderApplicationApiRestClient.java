@@ -27,6 +27,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.ContainerInformation;
+import org.apache.slider.api.SliderApplicationApi;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.conf.ConfTreeOperations;
@@ -44,10 +45,10 @@ import static org.apache.slider.server.appmaster.web.rest.RestPaths.*;
 /**
  * Implementation of the {@link SliderApplicationApi}
  */
-public class SliderApplicationApiClient extends BaseRestClient
+public class SliderApplicationApiRestClient extends BaseRestClient
       implements SliderApplicationApi {
   private static final Logger log =
-      LoggerFactory.getLogger(SliderApplicationApiClient.class);
+      LoggerFactory.getLogger(SliderApplicationApiRestClient.class);
   private WebResource appResource;
 
   /**
@@ -55,10 +56,19 @@ public class SliderApplicationApiClient extends BaseRestClient
    * @param jerseyClient jersey client for operations
    * @param appResource resource of application API
    */
-  public SliderApplicationApiClient(Client jerseyClient,
+  public SliderApplicationApiRestClient(Client jerseyClient,
       WebResource appResource) {
     super(jerseyClient);
     this.appResource = appResource;
+  }
+
+  @Override
+  public String toString() {
+    final StringBuilder sb =
+        new StringBuilder("SliderApplicationApiRestClient{");
+    sb.append("appResource=").append(appResource);
+    sb.append('}');
+    return sb.toString();
   }
 
   /**
@@ -147,7 +157,7 @@ public class SliderApplicationApiClient extends BaseRestClient
   }
 
   @Override
-  public ConfTreeOperations getDesiredYarnResources() throws IOException {
+  public ConfTreeOperations getDesiredResources() throws IOException {
     ConfTree resource =
         getApplicationResource(MODEL_DESIRED_RESOURCES, ConfTree.class);
     return new ConfTreeOperations(resource); 
@@ -167,14 +177,14 @@ public class SliderApplicationApiClient extends BaseRestClient
   }
 
   @Override
-  public ConfTreeOperations getResolvedYarnResources() throws IOException {
+  public ConfTreeOperations getResolvedResources() throws IOException {
     ConfTree resource =
         getApplicationResource(MODEL_RESOLVED_RESOURCES, ConfTree.class);
     return new ConfTreeOperations(resource); 
   }
 
   @Override
-  public ConfTreeOperations getLiveYarnResources() throws IOException {
+  public ConfTreeOperations getLiveResources() throws IOException {
     ConfTree resource =
         getApplicationResource(LIVE_RESOURCES, ConfTree.class);
     return new ConfTreeOperations(resource); 

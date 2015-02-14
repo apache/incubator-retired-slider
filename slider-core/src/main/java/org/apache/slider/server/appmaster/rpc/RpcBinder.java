@@ -18,8 +18,11 @@
 
 package org.apache.slider.server.appmaster.rpc;
 
+import com.google.common.base.Preconditions;
 import com.google.protobuf.BlockingService;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.retry.RetryPolicy;
+import org.apache.hadoop.io.retry.RetryUtils;
 import org.apache.hadoop.ipc.ProtobufRpcEngine;
 import org.apache.hadoop.ipc.ProtocolProxy;
 import org.apache.hadoop.ipc.RPC;
@@ -41,9 +44,14 @@ import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.slider.api.SliderClusterProtocol;
 import org.apache.slider.common.SliderExitCodes;
 import org.apache.slider.common.tools.Duration;
+import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadClusterStateException;
 import org.apache.slider.core.exceptions.ErrorStrings;
+import org.apache.slider.core.exceptions.ServiceNotReadyException;
 import org.apache.slider.core.exceptions.SliderException;
+
+import static org.apache.slider.common.SliderXmlConfKeys.*; 
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,6 +63,17 @@ public class RpcBinder {
   protected static final Logger log =
     LoggerFactory.getLogger(RpcBinder.class);
 
+  /**
+   * Create a protobuf server bonded to the specific socket address
+   * @param addr address to listen to; 0.0.0.0 as hostname acceptable
+   * @param conf config
+   * @param secretManager token secret handler
+   * @param numHandlers threads to service requests
+   * @param blockingService service to handle
+   * @param portRangeConfig range of ports
+   * @return the IPC server itself
+   * @throws IOException
+   */
   public static Server createProtobufServer(InetSocketAddress addr,
                                             Configuration conf,
                                             SecretManager<? extends TokenIdentifier> secretManager,
@@ -83,7 +102,7 @@ public class RpcBinder {
 
   /**
    * Add the protobuf engine to the configuration. Harmless and inexpensive
-   * if repeated
+   * if repeated.
    * @param conf configuration to patch
    * @return the protocol class
    */
@@ -103,7 +122,7 @@ public class RpcBinder {
    * Verify that the conf is set up for protobuf transport of Slider RPC
    * @param conf configuration
    * @param sliderClusterAPIClass class for the API
-   * @return
+   * @return true if the RPC engine is protocol buffers
    */
   public static boolean verifyBondedToProtobuf(Configuration conf,
                                                 Class<SliderClusterProtocolPB> sliderClusterAPIClass) {
@@ -112,23 +131,40 @@ public class RpcBinder {
   }
 
 
+  /**
+   * Connect to a server. May include setting up retry policies
+   * @param addr
+   * @param currentUser
+   * @param conf
+   * @param rpcTimeout
+   * @return
+   * @throws IOException
+   */
   public static SliderClusterProtocol connectToServer(InetSocketAddress addr,
                                                     UserGroupInformation currentUser,
                                                     Configuration conf,
                                                     int rpcTimeout) throws IOException {
-    Class<SliderClusterProtocolPB> sliderClusterAPIClass = registerSliderAPI(
-        conf);
+    Class<SliderClusterProtocolPB> sliderClusterAPIClass =
+        registerSliderAPI(conf);
 
+    final RetryPolicy retryPolicy =
+        RetryUtils.getDefaultRetryPolicy(
+            conf,
+            KEY_IPC_CLIENT_RETRY_POLICY_ENABLED,
+            IPC_CLIENT_RETRY_POLICY_ENABLED_DEFAULT,
+            KEY_IPC_CLIENT_RETRY_POLICY_SPEC,
+            IPC_CLIENT_RETRY_POLICY_SPEC_DEFAULT,
+            ServiceNotReadyException.class);
     log.debug("Connecting to Slider AM at {}", addr);
     ProtocolProxy<SliderClusterProtocolPB> protoProxy =
-      RPC.getProtocolProxy(sliderClusterAPIClass,
-                           1,
-                           addr,
-                           currentUser,
-                           conf,
-                           NetUtils.getDefaultSocketFactory(conf),
-                           rpcTimeout,
-                           null);
+        RPC.getProtocolProxy(sliderClusterAPIClass,
+            1,
+            addr,
+            currentUser,
+            conf,
+            NetUtils.getDefaultSocketFactory(conf),
+            rpcTimeout,
+            retryPolicy);
     SliderClusterProtocolPB endpoint = protoProxy.getProxy();
     return new SliderClusterProtocolProxy(endpoint, addr);
   }
@@ -155,20 +191,17 @@ public class RpcBinder {
                                       final ApplicationClientProtocol rmClient,
                                       ApplicationReport application,
                                       final int connectTimeout,
-                                      
-                                      final int rpcTimeout) throws
-                                                            IOException,
-                                                            YarnException,
-                                                            InterruptedException {
+                                      final int rpcTimeout)
+      throws IOException, YarnException, InterruptedException {
     ApplicationId appId;
     appId = application.getApplicationId();
     Duration timeout = new Duration(connectTimeout);
     timeout.start();
     Exception exception = null;
     YarnApplicationState state = null;
-    while (application != null && 
-           (state= application.getYarnApplicationState()).equals(
-             YarnApplicationState.RUNNING)) {
+    while (application != null &&
+           (state = application.getYarnApplicationState()).equals(
+               YarnApplicationState.RUNNING)) {
 
       try {
         return getProxy(conf, application, rpcTimeout);
@@ -182,7 +215,6 @@ public class RpcBinder {
           throw e;
         }
         exception = e;
-
       }
       //at this point: app failed to work
       log.debug("Could not connect to {}. Waiting for getting the latest AM address...",
@@ -190,8 +222,8 @@ public class RpcBinder {
       Thread.sleep(1000);
       //or get the app report
       application =
-        rmClient.getApplicationReport(GetApplicationReportRequest.newInstance(
-          appId)).getApplicationReport();
+        rmClient.getApplicationReport(
+            GetApplicationReportRequest.newInstance(appId)).getApplicationReport();
     }
     //get here if the app is no longer running. Raise a specific
     //exception but init it with the previous failure
@@ -200,19 +232,53 @@ public class RpcBinder {
                             ErrorStrings.E_FINISHED_APPLICATION, appId, state );
   }
 
+  /**
+   * Get a proxy from the application report
+   * @param conf config to use
+   * @param application app report
+   * @param rpcTimeout timeout in RPC operations
+   * @return the proxy
+   * @throws IOException
+   * @throws SliderException
+   * @throws InterruptedException
+   */
   public static SliderClusterProtocol getProxy(final Configuration conf,
-      ApplicationReport application,
-      final int rpcTimeout) throws
-      IOException,
-      SliderException,
-      InterruptedException {
+      final ApplicationReport application,
+      final int rpcTimeout)
+      throws IOException, SliderException, InterruptedException {
 
     String host = application.getHost();
     int port = application.getRpcPort();
+    org.apache.hadoop.yarn.api.records.Token clientToAMToken =
+        application.getClientToAMToken();
+    return createProxy(conf, host, port, clientToAMToken, rpcTimeout);
+  }
+
+  /**
+   *
+   * @param conf config to use
+   * @param host hosname
+   * @param port port
+   * @param clientToAMToken auth token: only used in a secure cluster.
+   * converted via {@link ConverterUtils#convertFromYarn(org.apache.hadoop.yarn.api.records.Token, InetSocketAddress)}
+   * @param rpcTimeout timeout in RPC operations
+   * @return the proxy
+   * @throws SliderException
+   * @throws IOException
+   * @throws InterruptedException
+   */
+  public static SliderClusterProtocol createProxy(final Configuration conf,
+      String host,
+      int port,
+      org.apache.hadoop.yarn.api.records.Token clientToAMToken,
+      final int rpcTimeout) throws
+      SliderException,
+      IOException,
+      InterruptedException {
     String address = host + ":" + port;
-    if (host == null || 0 == port) {
+    if (SliderUtils.isUnset(host) || 0 == port) {
       throw new SliderException(SliderExitCodes.EXIT_CONNECTIVITY_PROBLEM,
-                              "Slider instance " + application.getName()
+                              "Slider instance "
                               + " isn't providing a valid address for the" +
                               " Slider RPC protocol: " + address);
     }
@@ -220,14 +286,14 @@ public class RpcBinder {
     UserGroupInformation currentUser = UserGroupInformation.getCurrentUser();
     final UserGroupInformation newUgi = UserGroupInformation.createRemoteUser(
       currentUser.getUserName());
-    final InetSocketAddress serviceAddr = NetUtils.createSocketAddrForHost(
-      application.getHost(), application.getRpcPort());
+    final InetSocketAddress serviceAddr =
+        NetUtils.createSocketAddrForHost(host, port);
     SliderClusterProtocol realProxy;
 
     log.debug("Connecting to {}", serviceAddr);
     if (UserGroupInformation.isSecurityEnabled()) {
-      org.apache.hadoop.yarn.api.records.Token clientToAMToken =
-        application.getClientToAMToken();
+      Preconditions.checkArgument(clientToAMToken != null,
+          "Null clientToAMToken");
       Token<ClientToAMTokenIdentifier> token =
         ConverterUtils.convertFromYarn(clientToAMToken, serviceAddr);
       newUgi.addToken(token);
@@ -239,7 +305,7 @@ public class RpcBinder {
           }
         });
     } else {
-      return connectToServer(serviceAddr, newUgi, conf, rpcTimeout);
+      realProxy = connectToServer(serviceAddr, newUgi, conf, rpcTimeout);
     }
     return realProxy;
   }

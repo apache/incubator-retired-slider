@@ -16,29 +16,14 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster.operations;
+package org.apache.slider.agent.rest;
 
-import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.slider.api.SliderApplicationApi;
 
-public class ContainerReleaseOperation extends AbstractRMOperation {
+public class IpcApiClientTestDelegates extends AbstractAppApiTestDelegates {
 
-  private final ContainerId containerId;
-
-  public ContainerReleaseOperation(ContainerId containerId) {
-    this.containerId = containerId;
+  public IpcApiClientTestDelegates(SliderApplicationApi appAPI) {
+    super(true, appAPI);
   }
-
-  public ContainerId getContainerId() {
-    return containerId;
-  }
-
-  @Override
-  public void execute(RMOperationHandlerActions handler) {
-    handler.releaseAssignedContainer(containerId);
-  }
-
-  @Override
-  public String toString() {
-    return "release container " + containerId;
-  }
+  
 }

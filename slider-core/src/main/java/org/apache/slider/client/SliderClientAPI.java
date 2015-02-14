@@ -18,8 +18,6 @@
 
 package org.apache.slider.client;
 
-import com.google.common.annotations.VisibleForTesting;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.registry.client.api.RegistryOperations;
 import org.apache.hadoop.service.Service;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
@@ -47,7 +45,6 @@ import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.providers.AbstractClientProvider;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 
 /**

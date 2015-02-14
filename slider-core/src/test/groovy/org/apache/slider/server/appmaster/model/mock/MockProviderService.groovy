@@ -39,6 +39,7 @@ import org.apache.slider.providers.ProviderCompleted
 import org.apache.slider.providers.ProviderRole
 import org.apache.slider.providers.ProviderService
 import org.apache.slider.server.appmaster.actions.QueueAccess
+import org.apache.slider.server.appmaster.operations.AbstractRMOperation
 import org.apache.slider.server.appmaster.state.ContainerReleaseSelector
 import org.apache.slider.server.appmaster.state.MostRecentContainerReleaseSelector
 import org.apache.slider.server.appmaster.state.StateAccessForProviders
@@ -272,6 +273,11 @@ class MockProviderService implements ProviderService {
   @Override
   public void addContainerRequest(AMRMClient.ContainerRequest req) {
     // no-op
+  }
+
+  @Override
+  void execute(List<AbstractRMOperation> operations) {
+
   }
 
   @Override

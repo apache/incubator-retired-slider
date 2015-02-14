@@ -16,29 +16,28 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster.operations;
+package org.apache.slider.core.exceptions;
 
-import org.apache.hadoop.yarn.api.records.ContainerId;
+import java.io.IOException;
 
-public class ContainerReleaseOperation extends AbstractRMOperation {
+/**
+ * This is an exception raised when the service does not consider itself
+ * live (yet)
+ */
+public class ServiceNotReadyException extends IOException {
 
-  private final ContainerId containerId;
+  public static final String E_NOT_READY =
+      "Service not ready for access: please retry";
 
-  public ContainerReleaseOperation(ContainerId containerId) {
-    this.containerId = containerId;
+  public ServiceNotReadyException(String message) {
+    super(message);
   }
 
-  public ContainerId getContainerId() {
-    return containerId;
+  public ServiceNotReadyException(String message, Throwable cause) {
+    super(message, cause);
   }
 
-  @Override
-  public void execute(RMOperationHandlerActions handler) {
-    handler.releaseAssignedContainer(containerId);
-  }
-
-  @Override
-  public String toString() {
-    return "release container " + containerId;
+  public ServiceNotReadyException(Throwable cause) {
+    super(cause);
   }
 }

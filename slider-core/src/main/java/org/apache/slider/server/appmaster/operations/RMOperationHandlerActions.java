@@ -22,6 +22,8 @@ import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
 
+import java.util.List;
+
 public interface RMOperationHandlerActions {
   void releaseAssignedContainer(ContainerId containerId);
 
@@ -34,4 +36,10 @@ public interface RMOperationHandlerActions {
    * @param count number to remove
    */
   int cancelContainerRequests(Priority priority1, Priority priority2, int count);
+
+  /**
+   * Execute an entire list of operations
+   * @param operations ops
+   */
+  void execute(List<AbstractRMOperation> operations);
 }

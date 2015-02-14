@@ -29,7 +29,6 @@ import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.TABLE
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.TR
 import org.apache.hadoop.yarn.webapp.hamlet.HamletImpl.EImp
 import org.apache.slider.api.ClusterNode
-import org.apache.slider.api.SliderClusterProtocol
 import org.apache.slider.providers.ProviderService
 import org.apache.slider.server.appmaster.model.mock.*
 import org.apache.slider.server.appmaster.state.ProviderAppState
@@ -53,18 +52,16 @@ public class TestContainerStatsBlock extends BaseMockAppStateTest {
 
   @Before
   public void setup() {
-    SliderClusterProtocol clusterProto = new MockSliderClusterProtocol();
     ProviderService providerService = new MockProviderService();
     ProviderAppState providerAppState = new ProviderAppState(
         "undefined",
         appState)
 
     WebAppApiImpl inst = new WebAppApiImpl(
-        clusterProto,
         providerAppState,
         providerService,
         null,
-        null, metrics, null);
+        null, metrics, null, null, null);
 
     Injector injector = Guice.createInjector(new AbstractModule() {
           @Override

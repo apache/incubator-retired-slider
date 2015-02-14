@@ -16,29 +16,29 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster.operations;
+package org.apache.slider.server.appmaster.actions;
 
-import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.slider.core.conf.ConfTree;
+import org.apache.slider.server.appmaster.SliderAppMaster;
+import org.apache.slider.server.appmaster.state.AppState;
 
-public class ContainerReleaseOperation extends AbstractRMOperation {
+import java.util.concurrent.TimeUnit;
 
-  private final ContainerId containerId;
+public class ActionFlexCluster extends AsyncAction {
 
-  public ContainerReleaseOperation(ContainerId containerId) {
-    this.containerId = containerId;
-  }
-
-  public ContainerId getContainerId() {
-    return containerId;
+  public final ConfTree resources;
+  
+  public ActionFlexCluster(String name,
+      long delay,
+      TimeUnit timeUnit, ConfTree resources) {
+    super(name, delay, timeUnit, ATTR_CHANGES_APP_SIZE);
+    this.resources = resources;
   }
 
   @Override
-  public void execute(RMOperationHandlerActions handler) {
-    handler.releaseAssignedContainer(containerId);
-  }
-
-  @Override
-  public String toString() {
-    return "release container " + containerId;
+  public void execute(SliderAppMaster appMaster,
+      QueueAccess queueService,
+      AppState appState) throws Exception {
+    appMaster.flexCluster(resources);
   }
 }

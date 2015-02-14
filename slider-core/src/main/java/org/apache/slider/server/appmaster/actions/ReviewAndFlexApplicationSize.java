@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Tell the AM to execute the full flex review operation
  */
-public class ReviewAndFlexApplicationSize extends AsyncAction{
+public class ReviewAndFlexApplicationSize extends AsyncAction {
 
   public ReviewAndFlexApplicationSize(String name,
       long delay,

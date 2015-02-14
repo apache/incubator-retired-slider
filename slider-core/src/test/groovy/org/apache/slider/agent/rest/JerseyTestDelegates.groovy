@@ -103,6 +103,8 @@ class JerseyTestDelegates extends AbstractRestTestDelegate {
       (T) resource.method(method.verb, c);
     } catch (UniformInterfaceException ex) {
       uprateFaults(method, resource, ex);
+      // never reached as the uprate throws the new exception
+      return null;
     }
   }
 
@@ -122,7 +124,7 @@ class JerseyTestDelegates extends AbstractRestTestDelegate {
    * @param ex
    * @return
    */
-  public uprateFaults(
+  public void uprateFaults(
       HttpVerb method,
       WebResource webResource,
       UniformInterfaceException ex) {
@@ -170,6 +172,7 @@ class JerseyTestDelegates extends AbstractRestTestDelegate {
   public void testJerseyGetConftree() throws Throwable {
     jGetApplicationResource(LIVE_RESOURCES, ConfTree.class);
   }
+  
   public void testCodahaleOperations() throws Throwable {
     describe "Codahale operations"
     
@@ -466,6 +469,7 @@ class JerseyTestDelegates extends AbstractRestTestDelegate {
 
     testCodahaleOperations()
     testMimeTypes()
+    testJerseyGetConftree()
     testLiveResources()
     testLiveContainers();
     testRESTModel()

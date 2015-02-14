@@ -39,13 +39,13 @@ public class ContainerInformation {
   public long createTime;
   public long startTime;
 
+  public String host;
+  public String hostURL;
   /**
    * What is the tail output from the executed process (or [] if not started
    * or the log cannot be picked up
    */
   public String[] output;
-  public String host;
-  public String hostURL;
 
   @Override
   public String toString() {

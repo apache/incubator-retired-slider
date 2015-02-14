@@ -24,6 +24,7 @@ import org.apache.slider.server.appmaster.SliderAppMaster;
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
 import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation;
 import org.apache.slider.server.appmaster.operations.RMOperationHandler;
+import org.apache.slider.server.appmaster.operations.RMOperationHandlerActions;
 import org.apache.slider.server.appmaster.state.AppState;
 
 import java.util.LinkedList;
@@ -43,7 +44,7 @@ public class ActionKillContainer extends AsyncAction {
   /**
    *  handler for the operation
    */
-  private final RMOperationHandler operationHandler;
+  private final RMOperationHandlerActions operationHandler;
 
   /**
    * Kill a container
@@ -56,7 +57,7 @@ public class ActionKillContainer extends AsyncAction {
       ContainerId containerId,
       long delay,
       TimeUnit timeUnit,
-      RMOperationHandler operationHandler) {
+      RMOperationHandlerActions operationHandler) {
     super("kill container", delay, timeUnit, ATTR_CHANGES_APP_SIZE);
     this.operationHandler = operationHandler;
     Preconditions.checkArgument(containerId != null);

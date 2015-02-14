@@ -73,7 +73,6 @@ public class SliderYarnClientImpl extends YarnClientImpl {
     return rmClient;
   }
 
-
   /**
    * List Slider <i>running</i>instances belonging to a specific user.
    * @deprecated use {@link #listDeployedInstances(String)}

@@ -21,15 +21,22 @@ package org.apache.slider.client.rest;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
 import org.apache.hadoop.registry.client.api.RegistryOperations;
+import org.apache.slider.client.ClientRegistryBinder;
+import org.apache.slider.api.SliderApplicationApi;
 import org.apache.slider.core.registry.info.CustomRegistryConstants;
 
 import java.io.IOException;
 
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_APPLICATION;
 
+/**
+ * Factory for the Rest cilent; hides the lookup and instantiation.
+ * <p>
+ * 
+ */
 public class RestClientFactory {
 
-  private final RestClientRegistryBinder binder;
+  private final ClientRegistryBinder binder;
   private final Client jerseyClient;
   private final String user, serviceclass, instance;
 
@@ -42,7 +49,7 @@ public class RestClientFactory {
     this.user = user;
     this.serviceclass = serviceclass;
     this.instance = instance;
-    binder = new RestClientRegistryBinder(operations);
+    binder = new ClientRegistryBinder(operations);
   }
 
   /**
@@ -50,7 +57,7 @@ public class RestClientFactory {
    * @return a resource to the AM
    * @throws IOException any failure to resolve to the AM
    */
-  WebResource locateAppmaster() throws IOException {
+  private WebResource locateAppmaster() throws IOException {
     String restAPI = binder.lookupExternalRestAPI(user, serviceclass, instance,
         CustomRegistryConstants.AM_REST_BASE);
     return jerseyClient.resource(restAPI);
@@ -76,7 +83,7 @@ public class RestClientFactory {
    */
   public SliderApplicationApi createSliderAppApiClient(WebResource appmaster) {
     WebResource appResource = appmaster.path(SLIDER_PATH_APPLICATION);
-    return new SliderApplicationApiClient(jerseyClient, appResource);
+    return new SliderApplicationApiRestClient(jerseyClient, appResource);
   }
 
 }

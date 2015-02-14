@@ -23,12 +23,16 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.registry.client.api.RegistryOperations
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.hadoop.yarn.api.ApplicationClientProtocol
+import org.apache.hadoop.yarn.client.ClientRMProxy
 import org.apache.hadoop.yarn.webapp.ForbiddenException
+import org.apache.slider.agent.rest.IpcApiClientTestDelegates
 import org.apache.slider.agent.rest.JerseyTestDelegates
 import org.apache.slider.agent.rest.AbstractRestTestDelegate
 import org.apache.slider.agent.rest.LowLevelRestTestDelegates
 import org.apache.slider.agent.rest.RestAPIClientTestDelegates
 import org.apache.slider.client.SliderClient
+import org.apache.slider.client.ipc.SliderApplicationIpcClient
 import org.apache.slider.client.rest.RestClientFactory
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.SliderKeys
@@ -39,6 +43,7 @@ import org.apache.slider.common.tools.ConfigHelper
 import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
+import org.apache.slider.server.appmaster.rpc.RpcBinder
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -179,7 +184,32 @@ public class AgentWebPagesIT extends AgentCommandTestBase
     if (proxyComplexVerbs) {
       sliderApplicationApi.ping("registry located")
     }
-    
+
+
+    // maybe execute IPC operations.
+    // these are skipped when security is enabled, until
+    // there's some code set up to do the tokens properly
+    if (!UserGroupInformation.isSecurityEnabled()) {
+      describe("IPC equivalent operations")
+/*
+      def rmClient = ClientRMProxy.createRMProxy(conf,
+          ApplicationClientProtocol.class);
+*/
+      def sliderClusterProtocol =
+          RpcBinder.createProxy(conf,
+              report.host,
+              report.rpcPort,
+              null,
+              1000)
+      SliderApplicationIpcClient ipcClient =
+          new SliderApplicationIpcClient(sliderClusterProtocol)
+      IpcApiClientTestDelegates ipcDelegates =
+          new IpcApiClientTestDelegates(ipcClient)
+      ipcDelegates.testSuiteAll()
+    } else {
+      describe( "skipping IPC API operations against secure cluster")
+    }
+
     // finally, stop the AM
     if (directComplexVerbs) {
       describe "Stopping AM via REST API"

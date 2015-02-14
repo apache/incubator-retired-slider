@@ -16,19 +16,6 @@
  * limitations under the License.
  */
 
-/**
- * These .proto interfaces are private and stable.
- * Please see http://wiki.apache.org/hadoop/Compatibility
- * for what changes are allowed for a *stable* .proto interface.
- *
- * The generated java files are checked in to the Slider code base, so
- * if this file is changed, the java must be generated again with
- * mvn clean package -Pcompile-protobuf -DskipTests
- */
-
-// This file contains protocol buffers that are used throughout HDFS -- i.e.
-// by the client, server, and data transfer protocols.
-
 option java_package = "org.apache.slider.api.proto";
 option java_outer_classname = "Messages";
 option java_generic_services = true;
@@ -202,4 +189,132 @@ message GetInstanceDefinitionResponseProto {
   required string internal = 1;
   required string resources = 2;
   required string application = 3;
+}
+
+
+  /* ************************************************************************
+  
+  REST model and operations.
+  Below here the operations and payloads designed to mimic
+  the REST API. That API is now the source of those
+  specificatations; this is simply a derivative.
+  
+  **************************************************************************/
+
+/**
+ * See org.apache.slider.api.types.ApplicationLivenessInformation
+ */
+message ApplicationLivenessInformationProto {
+  optional bool allRequestsSatisfied = 1;
+  optional int32 requestsOutstanding = 2;
+}
+
+/*
+ * see org.apache.slider.api.types.ComponentInformation
+ */
+message ComponentInformationProto {
+  optional string name =  1;
+  optional int32 priority =  2;
+  optional int32 desired =  3;
+  optional int32 actual =  4;
+  optional int32 releasing =  5;
+  optional int32 requested =  6;
+  optional int32 failed =  7;
+  optional int32 started =  8;
+  optional int32 startFailed = 9;
+  optional int32 completed =  10;
+  optional int32 totalRequested =  11;
+  optional string failureMessage = 12  ;
+  optional int32 placementPolicy =  13;
+  repeated string containers =  14;   
+}
+
+/*
+ * see org.apache.slider.api.types.ContainerInformation
+ */
+message ContainerInformationProto {
+  optional string containerId = 1;
+  optional string component = 2;
+  optional bool released = 3;
+  optional int32 state = 4;
+  optional int32 exitCode = 5;
+  optional string diagnostics = 6;
+  optional int64 createTime = 7;
+  optional int64 startTime = 8;
+  repeated string output = 9;
+  optional string host = 10;
+  optional string hostURL = 11;
+}
+
+
+/*
+ * see org.apache.slider.api.types.PingInformation
+ */
+message PingInformationProto {
+  optional string text = 1;
+  optional string verb = 2;
+  optional string body = 3;
+  optional int64 time = 4;
+}
+
+
+
+message GetModelRequestProto {
+}
+
+message GetModelDesiredRequestProto {
+}
+
+message GetModelDesiredAppconfRequestProto {
+}
+
+message GetModelDesiredResourcesRequestProto {
+}
+
+message GetModelResolvedAppconfRequestProto {
+}
+
+message GetModelResolvedResourcesRequestProto {
+}
+
+message GetModelLiveResourcesRequestProto {
+}
+
+message GetLiveContainersRequestProto {
+}
+
+message GetLiveContainersResponseProto {
+  repeated string names = 1;
+  repeated ContainerInformationProto containers = 2;
+}
+
+message GetLiveContainerRequestProto {
+  required string containerId = 1;
+}
+
+
+message GetLiveComponentsRequestProto {
+}
+
+message GetLiveComponentsResponseProto {
+
+  repeated string names = 1;
+  repeated ComponentInformationProto components = 2;
+}
+
+message GetLiveComponentRequestProto {
+  required string name = 1;
+}
+
+message GetApplicationLivenessRequestProto {
+}
+
+message EmptyPayloadProto {
+}
+
+/**
+  Generic JSON, often containing data structures serialized as a string
+*/
+message WrappedJsonProto {
+  required string json = 1;
 }

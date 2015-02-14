@@ -18,6 +18,7 @@
 
 package org.apache.slider.server.appmaster.rpc;
 
+import com.google.common.base.Preconditions;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 import org.apache.hadoop.ipc.ProtobufHelper;
@@ -39,17 +40,50 @@ public class SliderClusterProtocolProxy implements SliderClusterProtocol {
 
   public SliderClusterProtocolProxy(SliderClusterProtocolPB endpoint,
       InetSocketAddress address) {
+    Preconditions.checkArgument(endpoint != null, "null endpoint");
+    Preconditions.checkNotNull(address != null, "null address");
     this.endpoint = endpoint;
     this.address = address;
   }
 
+  @Override
+  public String toString() {
+    final StringBuilder sb =
+        new StringBuilder("SliderClusterProtocolProxy{");
+    sb.append("address=").append(address);
+    sb.append('}');
+    return sb.toString();
+  }
+
+  @Override
+  public ProtocolSignature getProtocolSignature(String protocol,
+      long clientVersion,
+      int clientMethodsHash)
+      throws IOException {
+    if (!protocol.equals(RPC.getProtocolName(SliderClusterProtocolPB.class))) {
+      throw new IOException("Serverside implements " +
+                            RPC.getProtocolName(SliderClusterProtocolPB.class) +
+                            ". The following requested protocol is unknown: " +
+                            protocol);
+    }
+
+    return ProtocolSignature.getProtocolSignature(clientMethodsHash,
+        RPC.getProtocolVersion(
+            SliderClusterProtocol.class),
+        SliderClusterProtocol.class);
+  }
+
+  @Override
+  public long getProtocolVersion(String protocol, long clientVersion)
+      throws IOException {
+    return SliderClusterProtocol.versionID;
+  }
+  
   private IOException convert(ServiceException se) {
     IOException ioe = ProtobufHelper.getRemoteException(se);
     if (ioe instanceof RemoteException) {
       RemoteException remoteException = (RemoteException) ioe;
-      return new RemoteException(
-          remoteException.getClassName(),
-          address.toString() + ": " + remoteException.getMessage());
+      return remoteException.unwrapRemoteException();
     }
     return ioe;
   }
@@ -160,8 +194,7 @@ public class SliderClusterProtocolProxy implements SliderClusterProtocol {
 
   @Override
   public Messages.AMSuicideResponseProto amSuicide(Messages.AMSuicideRequestProto request) throws
-                                                                                           IOException,
-                                                                                           YarnException {
+                                                                                           IOException {
     try {
       return endpoint.amSuicide(NULL_CONTROLLER, request);
     } catch (ServiceException e) {
@@ -170,26 +203,116 @@ public class SliderClusterProtocolProxy implements SliderClusterProtocol {
   }
 
   @Override
-  public ProtocolSignature getProtocolSignature(String protocol,
-                                                long clientVersion,
-                                                int clientMethodsHash) throws
-                                                                       IOException {
-    if (!protocol.equals(RPC.getProtocolName(SliderClusterProtocolPB.class))) {
-      throw new IOException("Serverside implements " +
-                            RPC.getProtocolName(SliderClusterProtocolPB.class) +
-                            ". The following requested protocol is unknown: " +
-                            protocol);
+  public Messages.ApplicationLivenessInformationProto getLivenessInformation(
+      Messages.GetApplicationLivenessRequestProto request) throws IOException {
+    try {
+      return endpoint.getLivenessInformation(NULL_CONTROLLER, request);
+    } catch (ServiceException e) {
+      throw convert(e);
     }
-
-    return ProtocolSignature.getProtocolSignature(clientMethodsHash,
-                                                  RPC.getProtocolVersion(
-                                                    SliderClusterProtocol.class),
-                                                  SliderClusterProtocol.class);
   }
 
   @Override
-  public long getProtocolVersion(String protocol, long clientVersion) throws
-                                                                      IOException {
-    return SliderClusterProtocol.versionID;
+  public Messages.GetLiveContainersResponseProto getLiveContainers(Messages.GetLiveContainersRequestProto request) throws
+      IOException {
+    try {
+      return endpoint.getLiveContainers(NULL_CONTROLLER, request);
+    } catch (ServiceException e) {
+      throw convert(e);
+    }
+  }
+
+  @Override
+  public Messages.ContainerInformationProto getLiveContainer(Messages.GetLiveContainerRequestProto request) throws
+      IOException {
+    try {
+      return endpoint.getLiveContainer(NULL_CONTROLLER, request);
+    } catch (ServiceException e) {
+      throw convert(e);
+    }
+  }
+
+  @Override
+  public Messages.GetLiveComponentsResponseProto getLiveComponents(Messages.GetLiveComponentsRequestProto request) throws
+      IOException {
+    try {
+      return endpoint.getLiveComponents(NULL_CONTROLLER, request);
+    } catch (ServiceException e) {
+      throw convert(e);
+    }
+  }
+
+  @Override
+  public Messages.ComponentInformationProto getLiveComponent(Messages.GetLiveComponentRequestProto request) throws
+      IOException {
+    try {
+      return endpoint.getLiveComponent(NULL_CONTROLLER, request);
+    } catch (ServiceException e) {
+      throw convert(e);
+    }
+  }
+
+  @Override
+  public Messages.WrappedJsonProto getModelDesired(Messages.EmptyPayloadProto request) throws IOException {
+    try {
+      return endpoint.getModelDesired(NULL_CONTROLLER, request);
+    } catch (ServiceException e) {
+      throw convert(e);
+    }
+  }
+
+  @Override
+  public Messages.WrappedJsonProto getModelDesiredAppconf(Messages.EmptyPayloadProto request) throws IOException {
+    try {
+      return endpoint.getModelDesiredAppconf(NULL_CONTROLLER, request);
+    } catch (ServiceException e) {
+      throw convert(e);
+    }
+  }
+
+  @Override
+  public Messages.WrappedJsonProto getModelDesiredResources(Messages.EmptyPayloadProto request) throws IOException {
+    try {
+      return endpoint.getModelDesiredResources(NULL_CONTROLLER, request);
+    } catch (ServiceException e) {
+      throw convert(e);
+    }
+  }
+
+  @Override
+  public Messages.WrappedJsonProto getModelResolved(Messages.EmptyPayloadProto request) throws IOException {
+    try {
+      return endpoint.getModelResolved(NULL_CONTROLLER, request);
+    } catch (ServiceException e) {
+      throw convert(e);
+    }
+  }
+
+  @Override
+  public Messages.WrappedJsonProto getModelResolvedAppconf(Messages.EmptyPayloadProto request) throws IOException {
+    try {
+      return endpoint.getModelResolvedAppconf(NULL_CONTROLLER, request);
+    } catch (ServiceException e) {
+      throw convert(e);
+    }
+  }
+
+  @Override
+  public Messages.WrappedJsonProto getModelResolvedResources(Messages.EmptyPayloadProto request) throws IOException {
+    try {
+      return endpoint.getModelResolvedResources(NULL_CONTROLLER, request);
+    } catch (ServiceException e) {
+      throw convert(e);
+    }
+  }
+
+  @Override
+  public Messages.WrappedJsonProto getLiveResources(Messages.EmptyPayloadProto request) throws IOException {
+    try {
+      return endpoint.getLiveResources(NULL_CONTROLLER, request);
+    } catch (ServiceException e) {
+      throw convert(e);
+    }
+
   }
 }

@@ -37,10 +37,10 @@ public class ComponentInformation {
   public String name;
   public int priority;
   public int desired, actual, releasing;
+  public int placementPolicy;
   public int requested;
   public int failed, started, startFailed, completed, totalRequested;
   public String failureMessage;
-  public int placementPolicy;
   public List<String> containers;
 
   /**
@@ -60,4 +60,27 @@ public class ComponentInformation {
     return stats;
   }
 
+  @Override
+  public String toString() {
+    final StringBuilder sb =
+        new StringBuilder("ComponentInformation{");
+    sb.append("failureMessage='").append(failureMessage).append('\'');
+    sb.append(", totalRequested=").append(totalRequested);
+    sb.append(", completed=").append(completed);
+    sb.append(", startFailed=").append(startFailed);
+    sb.append(", started=").append(started);
+    sb.append(", failed=").append(failed);
+    sb.append(", requested=").append(requested);
+    sb.append(", placementPolicy=").append(placementPolicy);
+    sb.append(", releasing=").append(releasing);
+    sb.append(", actual=").append(actual);
+    sb.append(", desired=").append(desired);
+    sb.append(", priority=").append(priority);
+    sb.append(", name='").append(name).append('\'');
+    sb.append(", container count='")
+      .append(containers== null ? 0: containers.size())
+      .append('\'');
+    sb.append('}');
+    return sb.toString();
+  }
 }

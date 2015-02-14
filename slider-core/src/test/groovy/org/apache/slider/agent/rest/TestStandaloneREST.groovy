@@ -32,12 +32,14 @@ import org.apache.hadoop.registry.client.api.RegistryOperations
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.client.SliderClient
+import org.apache.slider.client.ipc.SliderApplicationIpcClient
 import org.apache.slider.client.rest.RestClientFactory
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.restclient.HttpOperationResponse
+import org.apache.slider.server.appmaster.rpc.RpcBinder
 import org.junit.Test
 
 import static org.apache.slider.server.appmaster.management.MetricsKeys.METRICS_LOGGING_ENABLED
@@ -72,6 +74,7 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
     ApplicationReport report = waitForClusterLive(client)
     def proxyAM = report.trackingUrl
     def directAM = report.originalTrackingUrl
+    
     
     // set up url config to match
     initHttpTestSupport(launcher.configuration)
@@ -171,6 +174,15 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
       sliderApplicationApi.ping("registry located")
     }
 
+    describe( "IPC equivalent operations")
+    def sliderClusterProtocol = RpcBinder.getProxy(conf, report, 1000)
+    SliderApplicationIpcClient ipcClient =
+        new SliderApplicationIpcClient(sliderClusterProtocol)
+    IpcApiClientTestDelegates ipcDelegates =
+        new IpcApiClientTestDelegates(ipcClient)
+    ipcDelegates.testSuiteAll()
+    
+    
     // log the metrics to show what's up
     direct.logCodahaleMetrics();
 

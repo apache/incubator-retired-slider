@@ -39,6 +39,7 @@ import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.main.ExitCodeProvider;
 import org.apache.slider.server.appmaster.actions.QueueAccess;
+import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
 import org.apache.slider.server.appmaster.state.ContainerReleaseSelector;
 import org.apache.slider.server.appmaster.state.MostRecentContainerReleaseSelector;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
@@ -180,9 +181,8 @@ public abstract class AbstractProviderService
   @Override
   public void validateApplicationConfiguration(AggregateConf instance,
                                                File confDir,
-                                               boolean secure) throws
-      IOException,
-      SliderException {
+                                               boolean secure)
+      throws IOException, SliderException {
 
   }
 
@@ -411,6 +411,12 @@ public abstract class AbstractProviderService
     return 0;
   }
 
+  @Override
+  public void execute(List<AbstractRMOperation> operations) {
+    for (AbstractRMOperation operation : operations) {
+      operation.execute(this);
+    }
+  }
   /**
    * No-op implementation of this method.
    */
