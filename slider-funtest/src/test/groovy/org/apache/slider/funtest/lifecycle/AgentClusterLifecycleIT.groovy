@@ -149,13 +149,18 @@ public class AgentClusterLifecycleIT extends AgentCommandTestBase
       //condition returns false if it is required to be live
       exists(EXIT_FALSE, CLUSTER, true)
 
+      // list cluster state
+      // it is known about
       list( 0, [CLUSTER])
+      // it has finished
       list( 0, [CLUSTER, ARG_STATE, "FINISHED"])
+      // it is not live
       list(-1, [CLUSTER, ARG_LIVE])
+      // it is not running
       list(-1, [CLUSTER, ARG_STATE, "running"])
 
-      list(-1, [ARG_LIVE])
-      list(-1, [ARG_STATE, "running"])
+      // therefore, there is at least one cluster
+      // that has finished
       list( 0, [ARG_STATE, "FINISHED"])
 
       def thawReport = createTempJsonFile()
