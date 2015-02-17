@@ -27,6 +27,9 @@ import org.apache.slider.api.types.ContainerInformation;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.exceptions.NoSuchNodeException;
+import org.apache.slider.server.appmaster.actions.ActionFlexCluster;
+import org.apache.slider.server.appmaster.actions.AsyncAction;
+import org.apache.slider.server.appmaster.actions.QueueAccess;
 import org.apache.slider.server.appmaster.state.RoleInstance;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.WebAppApi;
@@ -56,10 +59,12 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 
 import static javax.ws.rs.core.MediaType.*;
+
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Singleton
 @SuppressWarnings("unchecked")
@@ -88,11 +93,13 @@ public class ApplicationResource extends AbstractSliderResource {
    */
   private final ContentCache cache;
   private final StateAccessForProviders state;
+  private final QueueAccess actionQueues;
 
   public ApplicationResource(WebAppApi slider) {
     super(slider);
     state = slider.getAppState();
     cache = slider.getContentCache();
+    actionQueues = slider.getQueues();
   }
 
   /**
@@ -146,6 +153,23 @@ public class ApplicationResource extends AbstractSliderResource {
   public ConfTree getModelDesiredResources() {
     markGet(SLIDER_SUBPATH_APPLICATION, MODEL_DESIRED_RESOURCES);
     return lookupConfTree(MODEL_DESIRED_RESOURCES);
+  }
+  
+  @PUT
+  @Path(MODEL_DESIRED_RESOURCES)
+  @Produces({APPLICATION_JSON})
+  @Consumes({APPLICATION_JSON})
+  public ConfTree putModelDesiredResources(
+      ConfTree updated) {
+    markPut(SLIDER_SUBPATH_APPLICATION, MODEL_DESIRED_RESOURCES);
+    log.info("PUT {}:\n{}", MODEL_DESIRED_RESOURCES, 
+        updated);
+    queue(new ActionFlexCluster("flex",
+        1, TimeUnit.MILLISECONDS,
+        updated));
+    // return the updated value, even though it potentially hasn't yet
+    // been executed
+    return updated;
   }
   
   @GET
@@ -402,4 +426,20 @@ TODO: decide what structure to return here, then implement
     return new RestActionStop(slider).stop(request, uriInfo, body);
   }
 
+  /**
+   * Schedule an action
+   * @param action for delayed execution
+   */
+  public void schedule(AsyncAction action) {
+    actionQueues.schedule(action);
+  }
+
+  /**
+   * Put an action on the immediate queue -to be executed when the queue
+   * reaches it.
+   * @param action action to queue
+   */
+  public void queue(AsyncAction action) {
+    actionQueues.put(action);
+  }
 }

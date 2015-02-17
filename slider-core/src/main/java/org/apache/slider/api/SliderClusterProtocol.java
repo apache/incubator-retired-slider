@@ -49,7 +49,7 @@ public interface SliderClusterProtocol extends VersionedProtocol {
    * Flex the cluster. 
    */
   Messages.FlexClusterResponseProto flexCluster(Messages.FlexClusterRequestProto request)
-      throws IOException, YarnException;
+      throws IOException;
 
 
   /**

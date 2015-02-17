@@ -23,6 +23,7 @@ import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.ContainerInformation;
 import org.apache.slider.api.types.PingInformation;
 import org.apache.slider.core.conf.AggregateConf;
+import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.conf.ConfTreeOperations;
 
 import java.io.IOException;
@@ -55,6 +56,14 @@ public interface SliderApplicationApi {
    * @throws IOException on any failure
    */
   ConfTreeOperations getDesiredResources() throws IOException;
+
+  /**
+   * Put an updated resources structure. This triggers a cluster flex
+   * operation
+   * @param updated updated resources
+   * @throws IOException on any problem.
+   */
+  void putDesiredResources(ConfTree updated) throws IOException;
 
   /**
    * Get the aggregate resolved model

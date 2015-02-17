@@ -227,9 +227,31 @@ public abstract class AbstractAppApiTestDelegates extends AbstractRestTestDelega
     testAppLiveness()
   }
 
+  public void testFlexOperation() {
+    // no-op flex; get current state and push out again.
+    def current = appAPI.getDesiredResources()
+
+    def uuid = UUID.randomUUID()
+    current.set("yarn.test.noop", uuid)
+    appAPI.putDesiredResources(current.confTree)
+    
+    
+    
+  }
+
+  /**
+   * Get the resolved value and push that out as the new state
+   * 
+   */
+  public void testFlexToResolved() {
+    def resolved = appAPI.getResolvedResources()
+    appAPI.putDesiredResources(resolved.confTree)
+  }
+  
   @Override
   public void testSuiteComplexVerbs() {
     testPing();
+    testFlexOperation();
   }
 
 }
