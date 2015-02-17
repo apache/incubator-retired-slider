@@ -174,6 +174,7 @@ public abstract class AbstractAppApiTestDelegates extends AbstractRestTestDelega
     
     appAPI.ping("hello")
   }
+  
   /**
    * Test the stop command.
    * Important: once executed, the AM is no longer there.
@@ -228,15 +229,41 @@ public abstract class AbstractAppApiTestDelegates extends AbstractRestTestDelega
   }
 
   public void testFlexOperation() {
-    // no-op flex; get current state and push out again.
+    // get current state
     def current = appAPI.getDesiredResources()
 
+    // create a guaranteed unique field
     def uuid = UUID.randomUUID()
-    current.set("yarn.test.noop", uuid)
+    def field = "yarn.test.flex.uuid"
+    current.set(field, uuid)
     appAPI.putDesiredResources(current.confTree)
-    
-    
-    
+    repeatUntilSuccess("probe for liveness",
+        this.&probeForResolveConfValues, 
+        5000, 200,
+        [
+            "key": field,
+            "val": uuid
+        ],
+        true,
+        "Flex resources failed to propagate") {
+      def resolved = appAPI.getResolvedResources()
+      fail("Did not find field $field=$uuid in\n$resolved")
+    }
+  }
+
+  /**
+   * Probe that spins until the field has desired value
+   * in the resolved resource
+   * @param args argument map. key=field, val=value
+   * @return the outcome
+   */
+  Outcome probeForResolveConfValues(Map args) {
+    assert args["key"]
+    assert args["val"]
+    String key = args["key"]
+    String val  = args["val"]
+    def resolved = appAPI.getResolvedResources()
+    return Outcome.fromBool(resolved.get(key)==val)
   }
 
   /**

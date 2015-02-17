@@ -171,15 +171,16 @@ public class SliderApplicationApiRestClient extends BaseRestClient
   public void putDesiredResources(ConfTree updated) throws IOException {
     WebResource resource = applicationResource(MODEL_DESIRED_RESOURCES);
     try {
+      resource.accept(MediaType.APPLICATION_JSON_TYPE);
       // entity to put
       resource.entity(updated, MediaType.APPLICATION_JSON_TYPE);
-      
+
       // put operation. The result is discarded; it does help validate
       // that the operation returned a JSON data structure as well as a 200
       // response.
-      //resource.put(ConfTree.class);
-      resource.put(ClientResponse.class);
-      } catch (ClientHandlerException ex) {
+      resource.put(ConfTree.class);
+      //ClientResponse response = resource.put(ClientResponse.class);
+    } catch (ClientHandlerException ex) {
         throw ExceptionConverter.convertJerseyException("PUT",
             resource.getURI().toString(),
             ex);
@@ -288,7 +289,7 @@ public class SliderApplicationApiRestClient extends BaseRestClient
     pingResource.type(MediaType.APPLICATION_JSON_TYPE);
     Form f = new Form();
     f.add("text", text);
-    return pingResource.post(PingInformation.class, f);
+    return pingResource.put(PingInformation.class, f);
   }
 
   @Override
