@@ -154,15 +154,15 @@ public class ApplicationResource extends AbstractSliderResource {
     markGet(SLIDER_SUBPATH_APPLICATION, MODEL_DESIRED_RESOURCES);
     return lookupConfTree(MODEL_DESIRED_RESOURCES);
   }
-  
+
   @PUT
   @Path(MODEL_DESIRED_RESOURCES)
-  @Produces({APPLICATION_JSON})
   @Consumes({APPLICATION_JSON})
+  @Produces({APPLICATION_JSON})
   public ConfTree putModelDesiredResources(
       ConfTree updated) {
     markPut(SLIDER_SUBPATH_APPLICATION, MODEL_DESIRED_RESOURCES);
-    log.info("PUT {}:\n{}", MODEL_DESIRED_RESOURCES, 
+    log.info("PUT {}:\n{}", MODEL_DESIRED_RESOURCES,
         updated);
     queue(new ActionFlexCluster("flex",
         1, TimeUnit.MILLISECONDS,
@@ -171,7 +171,7 @@ public class ApplicationResource extends AbstractSliderResource {
     // been executed
     return updated;
   }
-  
+
   @GET
   @Path(MODEL_RESOLVED)
   @Produces({APPLICATION_JSON})
