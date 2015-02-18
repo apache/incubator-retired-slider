@@ -27,6 +27,7 @@ import org.apache.slider.api.types.ContainerInformation
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.core.conf.ConfTreeOperations
+import org.apache.slider.core.persist.ConfTreeSerDeser
 import org.apache.slider.core.restclient.HttpOperationResponse
 import org.apache.slider.core.restclient.HttpVerb
 import org.apache.slider.core.restclient.UrlConnectionOperations
@@ -194,17 +195,18 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
 
     def resolved = fetchTypeList(ConfTree, appmaster,
         [MODEL_RESOLVED_APPCONF, MODEL_RESOLVED_RESOURCES])
-    assert resolved[MODEL_RESOLVED_APPCONF].components[sam]
-    [TEST_GLOBAL_OPTION] ==
-    TEST_GLOBAL_OPTION_PRESENT
+    assert resolved[MODEL_RESOLVED_APPCONF].components[sam][TEST_GLOBAL_OPTION] ==
+        TEST_GLOBAL_OPTION_PRESENT
   }
 
+  
   /**
    * Test the various ping operations
    */
   public void testPing() {
     // GET
-    String ping = appendToURL(appmaster, SLIDER_PATH_APPLICATION, ACTION_PING)
+
+    String ping = applicationURL(ACTION_PING)
     describe "ping to AM URL $appmaster, ping URL $ping"
     def pinged = fetchType(PingInformation, appmaster, ACTION_PING + "?body=hello")
     log.info "Ping GET: $pinged"
@@ -220,6 +222,15 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
     pingAction(HttpVerb.PUT, pingUrl, message)
     pingAction(HttpVerb.DELETE, pingUrl, message)
 
+  }
+
+  /**
+   * Create a URL under the application/ resources
+   * @param subpath
+   * @return
+   */
+  public String applicationURL(String subpath) {
+    return appendToURL(appmaster, SLIDER_PATH_APPLICATION, subpath)
   }
 
 
@@ -317,5 +328,22 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
   @Override
   public void testSuiteComplexVerbs() {
     testPing();
+    testPutDesiredResources()
+  }
+
+
+  public void testPutDesiredResources() throws Throwable {
+    describe "testPutDesiredResources"
+    ConfTreeOperations current = fetchConfigTree(appmaster, MODEL_DESIRED_RESOURCES)
+    ConfTreeSerDeser serDeser = new ConfTreeSerDeser()
+    
+    def uuid = UUID.randomUUID()
+    def field = "yarn.test.flex.uuid"
+    current.set(field, uuid)
+    def outcome = connectionOperations.execHttpOperation(
+        HttpVerb.PUT,
+        new URL(applicationURL(MODEL_DESIRED_RESOURCES)),
+        serDeser.toJson(current.confTree).bytes,
+        MediaType.APPLICATION_JSON)
   }
 }

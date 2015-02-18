@@ -278,7 +278,7 @@ public abstract class AbstractAppApiTestDelegates extends AbstractRestTestDelega
   @Override
   public void testSuiteComplexVerbs() {
     testPing();
-    testFlexOperation();
+//    testFlexOperation();
   }
 
 }

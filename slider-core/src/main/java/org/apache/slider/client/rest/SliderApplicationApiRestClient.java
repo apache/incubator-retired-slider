@@ -35,6 +35,7 @@ import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.conf.ConfTreeOperations;
 import org.apache.slider.core.exceptions.ExceptionConverter;
+import org.apache.slider.core.persist.ConfTreeSerDeser;
 import org.apache.slider.core.restclient.HttpVerb;
 import org.apache.slider.api.types.PingInformation;
 import org.slf4j.Logger;
@@ -171,9 +172,12 @@ public class SliderApplicationApiRestClient extends BaseRestClient
   public void putDesiredResources(ConfTree updated) throws IOException {
     WebResource resource = applicationResource(MODEL_DESIRED_RESOURCES);
     try {
+      ConfTreeSerDeser serDeser = new ConfTreeSerDeser();
+      String json = serDeser.toJson(updated);
+
       resource.accept(MediaType.APPLICATION_JSON_TYPE);
       // entity to put
-      resource.entity(updated, MediaType.APPLICATION_JSON_TYPE);
+      resource.entity(json, MediaType.APPLICATION_JSON_TYPE);
 
       // put operation. The result is discarded; it does help validate
       // that the operation returned a JSON data structure as well as a 200

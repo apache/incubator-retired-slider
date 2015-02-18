@@ -27,6 +27,7 @@ import org.apache.slider.api.types.ContainerInformation;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.exceptions.NoSuchNodeException;
+import org.apache.slider.core.persist.ConfTreeSerDeser;
 import org.apache.slider.server.appmaster.actions.ActionFlexCluster;
 import org.apache.slider.server.appmaster.actions.AsyncAction;
 import org.apache.slider.server.appmaster.actions.QueueAccess;
@@ -62,6 +63,7 @@ import static javax.ws.rs.core.MediaType.*;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -160,16 +162,22 @@ public class ApplicationResource extends AbstractSliderResource {
   @Consumes({APPLICATION_JSON})
   @Produces({APPLICATION_JSON})
   public ConfTree putModelDesiredResources(
-      ConfTree updated) {
+      String json) {
     markPut(SLIDER_SUBPATH_APPLICATION, MODEL_DESIRED_RESOURCES);
     log.info("PUT {}:\n{}", MODEL_DESIRED_RESOURCES,
-        updated);
-    queue(new ActionFlexCluster("flex",
-        1, TimeUnit.MILLISECONDS,
-        updated));
-    // return the updated value, even though it potentially hasn't yet
-    // been executed
-    return updated;
+        json);
+    try {
+      ConfTreeSerDeser serDeser = new ConfTreeSerDeser();
+      ConfTree updated = serDeser.fromJson(json);
+      queue(new ActionFlexCluster("flex",
+          1, TimeUnit.MILLISECONDS,
+          updated));
+      // return the updated value, even though it potentially hasn't yet
+      // been executed
+      return updated;
+    } catch (Exception e) {
+      throw buildException("PUT to "+ MODEL_DESIRED_RESOURCES , e);
+    }
   }
 
   @GET
