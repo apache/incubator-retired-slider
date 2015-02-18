@@ -27,6 +27,6 @@ import java.io.IOException;
 public class NoSuchNodeException extends IOException {
 
   public NoSuchNodeException(String uuid) {
-    super("Unknown node: " + uuid);
+    super(uuid);
   }
 }

@@ -48,8 +48,8 @@ public class CertificateManager {
     "-extensions jdk7_ca -config {1}/ca.config -batch " +
     "-infiles {1}/{5}";
   private static final String EXPRT_KSTR = "openssl pkcs12 -export" +
-      " -in {1}/{3} -inkey {1}/{2} -certfile {1}/{3} -out {1}/{4} " +
-      "-password pass:{0} -passin pass:{0} \n";
+      " -in {2}/{4} -inkey {2}/{3} -certfile {2}/{4} -out {2}/{5} " +
+      "-password pass:{1} -passin pass:{0} \n";
   private static final String REVOKE_AGENT_CRT = "openssl ca " +
       "-config {0}/ca.config -keyfile {0}/{4} -revoke {0}/{2} -batch " +
       "-passin pass:{3} -cert {0}/{5}";
@@ -71,7 +71,7 @@ public class CertificateManager {
     LOG.info("Certificate exists:" + certExists);
 
     if (!certExists) {
-      generateServerCertificate();
+      generateAMKeystore();
     }
 
   }
@@ -178,11 +178,12 @@ public class CertificateManager {
 
   }
 
-  public synchronized void generateAgentCertificate(String agentHostname, String containerId) {
-    LOG.info("Generation of agent certificate for {}", agentHostname);
+  public synchronized void generateContainerCertificate(String hostname,
+                                                        String containerId) {
+    LOG.info("Generation of agent certificate for {}", hostname);
 
     String srvrKstrDir = SecurityUtils.getSecurityDir();
-    Object[] scriptArgs = {srvrKstrDir, agentHostname, containerId};
+    Object[] scriptArgs = {srvrKstrDir, hostname, containerId};
 
     try {
       String command = MessageFormat.format(GEN_AGENT_KEY, scriptArgs);
@@ -195,7 +196,38 @@ public class CertificateManager {
     }
   }
 
-  private void generateServerCertificate() throws SliderException {
+  public synchronized File generateContainerKeystore(String hostname,
+                                                     String containerId,
+                                                     String role,
+                                                     String keystorePass)
+      throws SliderException {
+    LOG.info("Generation of container keystore for container {} on {}",
+             containerId, hostname);
+
+    generateContainerCertificate(hostname, containerId);
+
+    // come up with correct args to invoke keystore command
+    String srvrCrtPass = SecurityUtils.getKeystorePass();
+    String srvrKstrDir = SecurityUtils.getSecurityDir();
+    String containerCrtName = containerId + ".crt";
+    String containerKeyName = containerId + ".key";
+    String kstrName = getKeystoreFileName(containerId, role);
+
+    Object[] scriptArgs = {srvrCrtPass, keystorePass, srvrKstrDir,
+        containerKeyName, containerCrtName, kstrName};
+
+    String command = MessageFormat.format(EXPRT_KSTR, scriptArgs);
+    runCommand(command);
+
+    return new File(srvrKstrDir, kstrName);
+  }
+
+  private static String getKeystoreFileName(String containerId,
+                                            String role) {
+    return String.format("keystore-%s-%s.p12", containerId, role);
+  }
+
+  private void generateAMKeystore() throws SliderException {
     LOG.info("Generation of server certificate");
 
     String srvrKstrDir = SecurityUtils.getSecurityDir();
@@ -217,8 +249,34 @@ public class CertificateManager {
     command = MessageFormat.format(SIGN_SRVR_CRT, scriptArgs);
     runCommand(command);
 
-    command = MessageFormat.format(EXPRT_KSTR, scriptArgs);
+    Object[] keystoreArgs = {srvrCrtPass, srvrCrtPass, srvrKstrDir, srvrKeyName,
+        srvrCrtName, kstrName, srvrCsrName};
+    command = MessageFormat.format(EXPRT_KSTR, keystoreArgs);
     runCommand(command);
+  }
+
+  public File generateContainerTruststore(String containerId, String role,
+                                          String truststorePass)
+      throws SliderException {
+
+    String srvrKstrDir = SecurityUtils.getSecurityDir();
+    String srvrCrtName = SliderKeys.CRT_FILE_NAME;
+    String srvrCsrName = SliderKeys.CSR_FILE_NAME;
+    String srvrKeyName = SliderKeys.KEY_FILE_NAME;
+    String kstrName = getTruststoreFileName(role, containerId);
+    String srvrCrtPass = SecurityUtils.getKeystorePass();
+
+    Object[] scriptArgs = {srvrCrtPass, truststorePass, srvrKstrDir, srvrKeyName,
+        srvrCrtName, kstrName, srvrCsrName};
+
+    String command = MessageFormat.format(EXPRT_KSTR, scriptArgs);
+    runCommand(command);
+
+    return new File(srvrKstrDir, kstrName);
+  }
+
+  private static String getTruststoreFileName(String role, String containerId) {
+    return String.format("truststore-%s-%s.p12", containerId, role);
   }
 
   /**
@@ -237,18 +295,38 @@ public class CertificateManager {
   }
 
   public static File getServerCertficateFilePath() {
-    return new File(SecurityUtils.getSecurityDir() +
-          File.separator + SliderKeys.CRT_FILE_NAME);
+    return new File(String.format("%s%s%s",
+                                  SecurityUtils.getSecurityDir(),
+                                  File.separator,
+                                  SliderKeys.CRT_FILE_NAME));
   }
 
   public static File getAgentCertficateFilePath(String containerId) {
-    return new File(SecurityUtils.getSecurityDir() +
-                    File.separator + containerId + ".crt");
+    return new File(String.format("%s%s%s.crt",
+                                  SecurityUtils.getSecurityDir(),
+                                  File.separator,
+                                  containerId));
+  }
+
+  public static File getContainerKeystoreFilePath(String containerId,
+                                                  String role) {
+    return new File(SecurityUtils.getSecurityDir(), getKeystoreFileName(
+        containerId,
+        role
+    ));
+  }
+
+  public static File getContainerTruststoreFilePath(String role,
+                                                    String containerId) {
+    return new File(SecurityUtils.getSecurityDir(),
+                    getTruststoreFileName(role, containerId));
   }
 
   public static File getAgentKeyFilePath(String containerId) {
-    return new File(SecurityUtils.getSecurityDir() +
-                    File.separator + containerId + ".key");
+    return new File(String.format("%s%s%s.key",
+                                  SecurityUtils.getSecurityDir(),
+                                  File.separator,
+                                  containerId));
   }
 
   /**
@@ -344,6 +422,11 @@ public class CertificateManager {
     String srvrKeyName = SliderKeys.KEY_FILE_NAME;
     String agentCrtReqName = containerId + ".csr";
     String agentCrtName = containerId + ".crt";
+
+    // server certificate must exist already
+    if (!(new File(srvrKstrDir, srvrCrtName).exists())) {
+      throw new SliderException("CA certificate not generated");
+    }
 
     Object[] scriptArgs = {srvrKstrDir, agentCrtReqName, agentCrtName,
         srvrCrtPass, srvrKeyName, srvrCrtName};

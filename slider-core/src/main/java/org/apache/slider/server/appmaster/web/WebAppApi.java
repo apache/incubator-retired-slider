@@ -19,12 +19,14 @@ package org.apache.slider.server.appmaster.web;
 import org.apache.hadoop.registry.client.api.RegistryOperations;
 import org.apache.slider.api.SliderClusterProtocol;
 import org.apache.slider.providers.ProviderService;
+import org.apache.slider.server.appmaster.AppMasterActionOperations;
 import org.apache.slider.server.appmaster.actions.QueueAccess;
 import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
 import org.apache.slider.server.appmaster.state.AppState;
 import org.apache.slider.server.appmaster.state.RoleStatus;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
+import org.apache.slider.server.appmaster.web.rest.application.resources.ContentCache;
 import org.apache.slider.server.services.security.CertificateManager;
 
 import java.util.Map;
@@ -51,11 +53,6 @@ public interface WebAppApi {
   CertificateManager getCertificateManager();
 
   /**
-   * The {@link SliderClusterProtocol} for the current cluster
-   */
-  SliderClusterProtocol getClusterProtocol();
-  
-  /**
    * Generate a mapping from role name to its {@link RoleStatus}. Be aware that this
    * is a computed value and not just a getter
    */
@@ -65,8 +62,7 @@ public interface WebAppApi {
    * Returns an interface that can support the agent-based REST operations.
    */
   AgentRestOperations getAgentRestOperations();
-
-
+  
   /**
    * Registry operations accessor
    * @return registry access
@@ -85,4 +81,7 @@ public interface WebAppApi {
    */
   QueueAccess getQueues();
 
+  AppMasterActionOperations getAMOperations();
+
+  ContentCache getContentCache();
 }

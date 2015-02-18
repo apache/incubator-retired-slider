@@ -71,6 +71,7 @@ import org.apache.slider.api.SliderClusterProtocol;
 import org.apache.slider.api.StateValues;
 import org.apache.slider.api.proto.Messages;
 import org.apache.slider.api.types.SliderInstanceDescription;
+import org.apache.slider.client.ipc.SliderClusterOperations;
 import org.apache.slider.common.Constants;
 import org.apache.slider.common.SliderExitCodes;
 import org.apache.slider.common.SliderKeys;
@@ -2429,10 +2430,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         log.debug("Cluster stop command issued");
 
       } catch (YarnException e) {
-        log.warn("Exception while trying to terminate {}: {}", clustername, e);
+        log.warn("Exception while trying to terminate {}", clustername, e);
         return EXIT_FALSE;
       } catch (IOException e) {
-        log.warn("Exception while trying to terminate {}: {}", clustername, e);
+        log.warn("Exception while trying to terminate {}", clustername, e);
         return EXIT_FALSE;
       }
     }
@@ -2696,7 +2697,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @throws YarnException YARN issues
    * @throws IOException IO problems
    */
-  public SliderClusterOperations createClusterOperations() throws
+  private SliderClusterOperations createClusterOperations() throws
                                                          YarnException,
                                                          IOException {
     if (sliderClusterOperations == null) {

@@ -197,6 +197,21 @@ public interface SliderKeys extends SliderXmlConfKeys {
   String CRT_PASS_FILE_NAME = "pass.txt";
   String PASS_LEN = "50";
 
+  String COMP_STORES_REQUIRED_KEY =
+      "slider.component.security.stores.required";
+  String COMP_KEYSTORE_PASSWORD_PROPERTY_KEY =
+      "slider.component.keystore.password.property";
+  String COMP_KEYSTORE_PASSWORD_ALIAS_KEY =
+      "slider.component.keystore.credential.alias.property";
+  String COMP_KEYSTORE_PASSWORD_ALIAS_DEFAULT =
+      "component.keystore.credential.alias";
+  String COMP_TRUSTSTORE_PASSWORD_PROPERTY_KEY =
+      "slider.component.truststore.password.property";
+  String COMP_TRUSTSTORE_PASSWORD_ALIAS_KEY =
+      "slider.component.truststore.credential.alias.property";
+  String COMP_TRUSTSTORE_PASSWORD_ALIAS_DEFAULT =
+      "component.truststore.credential.alias";
+
   /**
    * Python specific
    */

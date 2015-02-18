@@ -150,14 +150,26 @@ public interface SliderXmlConfKeys {
   /**
    * Flag to indicate the insecure AM filter is enabled by default: {@value}.
    */
-  boolean X_DEV_INSECURE_DEFAULT = true;
+  boolean X_DEV_INSECURE_DEFAULT = false;
 
 
   /**
-   * Flag to indicate the insecure AM filter is required: {@value}.
+   * Flag to indicate the insecure AM filter is required for
+   * complex REST Verbs: {@value}.
    * When Slider switches to being Hadoop 2.7+ only, this flag
    * can be set to false
    */
   boolean X_DEV_INSECURE_REQUIRED = true;
+
+  /**
+   *
+   */
+  String KEY_IPC_CLIENT_RETRY_POLICY_ENABLED =
+      "slider.ipc.client.retry.enabled";
+  public static final boolean IPC_CLIENT_RETRY_POLICY_ENABLED_DEFAULT = true;
+  public static final String KEY_IPC_CLIENT_RETRY_POLICY_SPEC =
+      "slider.ipc.client.retry.policy.spec";
+  public static final String IPC_CLIENT_RETRY_POLICY_SPEC_DEFAULT =
+      "10000,6,60000,10"; //t1,n1,t2,n2,... 
 
 }

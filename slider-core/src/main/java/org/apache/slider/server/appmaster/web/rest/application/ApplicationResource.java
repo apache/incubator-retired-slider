@@ -28,7 +28,6 @@ import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.exceptions.NoSuchNodeException;
 import org.apache.slider.server.appmaster.state.RoleInstance;
-import org.apache.slider.server.appmaster.state.RoleStatus;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.WebAppApi;
 import org.apache.slider.server.appmaster.web.rest.AbstractSliderResource;
@@ -36,16 +35,9 @@ import static org.apache.slider.server.appmaster.web.rest.RestPaths.*;
 
 import org.apache.slider.server.appmaster.web.rest.application.actions.RestActionStop;
 import org.apache.slider.server.appmaster.web.rest.application.actions.StopResponse;
-import org.apache.slider.server.appmaster.web.rest.application.resources.AggregateModelRefresher;
-import org.apache.slider.server.appmaster.web.rest.application.resources.AppconfRefresher;
-import org.apache.slider.server.appmaster.web.rest.application.resources.CachedContent;
-import org.apache.slider.server.appmaster.web.rest.application.resources.LiveContainersRefresher;
 import org.apache.slider.server.appmaster.web.rest.application.resources.ContentCache;
-import org.apache.slider.server.appmaster.web.rest.application.resources.LiveComponentsRefresher;
-import org.apache.slider.server.appmaster.web.rest.application.resources.LiveResourcesRefresher;
 import org.apache.slider.server.appmaster.web.rest.application.actions.RestActionPing;
-import org.apache.slider.api.types.PingResource;
-import org.apache.slider.server.appmaster.web.rest.application.resources.LiveStatisticsRefresher;
+import org.apache.slider.api.types.PingInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,7 +67,6 @@ public class ApplicationResource extends AbstractSliderResource {
   private static final Logger log =
       LoggerFactory.getLogger(ApplicationResource.class);
 
-  public static final int LIFESPAN = 500;
   public static final List<String> LIVE_ENTRIES = toJsonList("resources",
       "containers",
       "components",
@@ -95,42 +86,13 @@ public class ApplicationResource extends AbstractSliderResource {
    * so is never very out of date, yet many GETs don't
    * overload the rest of the system.
    */
-  private final ContentCache cache = new ContentCache();
+  private final ContentCache cache;
   private final StateAccessForProviders state;
 
   public ApplicationResource(WebAppApi slider) {
     super(slider);
     state = slider.getAppState();
-    cache.put(LIVE_RESOURCES,
-        new CachedContent<ConfTree>(LIFESPAN,
-            new LiveResourcesRefresher(state)));
-    cache.put(LIVE_CONTAINERS,
-        new CachedContent<Map<String, ContainerInformation>>(LIFESPAN,
-            new LiveContainersRefresher(state)));
-    cache.put(LIVE_COMPONENTS,
-        new CachedContent<Map<String, ComponentInformation>> (LIFESPAN,
-            new LiveComponentsRefresher(state)));
-    cache.put(MODEL_DESIRED,
-        new CachedContent<AggregateConf>(LIFESPAN,
-            new AggregateModelRefresher(state, false)));
-    cache.put(MODEL_RESOLVED,
-        new CachedContent<AggregateConf>(LIFESPAN,
-            new AggregateModelRefresher(state, true)));
-    cache.put(MODEL_RESOLVED_APPCONF,
-        new CachedContent<ConfTree>(LIFESPAN,
-            new AppconfRefresher(state, false, false)));
-    cache.put(MODEL_RESOLVED_RESOURCES,
-        new CachedContent<ConfTree>(LIFESPAN,
-            new AppconfRefresher(state, false, true)));
-    cache.put(MODEL_DESIRED_APPCONF,
-        new CachedContent<ConfTree>(LIFESPAN,
-            new AppconfRefresher(state, true, false)));
-    cache.put(MODEL_DESIRED_RESOURCES,
-        new CachedContent<ConfTree>(LIFESPAN,
-            new AppconfRefresher(state, true, true)));
-    cache.put(LIVE_STATISTICS,
-        new CachedContent<Map<String, Integer>>(LIFESPAN,
-            new LiveStatisticsRefresher(state)));
+    cache = slider.getContentCache();
   }
 
   /**
@@ -275,14 +237,7 @@ public class ApplicationResource extends AbstractSliderResource {
       @PathParam("component") String component) {
     markGet(SLIDER_SUBPATH_APPLICATION, LIVE_COMPONENTS);
     try {
-      RoleStatus roleStatus = state.lookupRoleStatus(component);
-      ComponentInformation info = roleStatus.serialize();
-      List<RoleInstance> containers = lookupRoleContainers(component);
-      info.containers = new ArrayList<String>(containers.size());
-      for (RoleInstance container : containers) {
-        info.containers.add(container.id);
-      }
-      return info;
+      return state.getComponentInformation(component);
     } catch (YarnRuntimeException e) {
       throw new NotFoundException("Unknown component: " + component);
     } catch (Exception e) {
@@ -344,24 +299,6 @@ TODO: decide what structure to return here, then implement
       throw buildException(LIVE_STATISTICS, e);
     }
   }
-  
-  /**
-   * Look up all containers of a specific component name 
-   * @param component component/role name
-   * @return list of instances. This is a snapshot
-   */
-  private List<RoleInstance> lookupRoleContainers(String component) {
-    RoleStatus roleStatus = state.lookupRoleStatus(component);
-    List<RoleInstance> ownedContainerList = state.cloneOwnedContainerList();
-    List<RoleInstance> matching = new ArrayList<RoleInstance>(ownedContainerList.size());
-    int roleId = roleStatus.getPriority();
-    for (RoleInstance instance : ownedContainerList) {
-      if (instance.roleId == roleId) {
-        matching.add(instance);
-      }
-    }
-    return matching;
-  }
 
   /**
    * Helper method; look up an aggregate configuration in the cache from
@@ -378,6 +315,14 @@ TODO: decide what structure to return here, then implement
     }
   }
 
+
+  /**
+   * Helper method; look up an conf tree in the cache from
+   * a key, or raise an exception
+   * @param key key to resolve
+   * @return the configuration
+   * @throws WebApplicationException on a failure
+   */
   protected ConfTree lookupConfTree(String key) {
     try {
       return (ConfTree) cache.lookup(key);
@@ -395,7 +340,7 @@ TODO: decide what structure to return here, then implement
   @GET
   @Path(ACTION_PING)
   @Produces({APPLICATION_JSON})
-  public PingResource actionPingGet(@Context HttpServletRequest request,
+  public PingInformation actionPingGet(@Context HttpServletRequest request,
       @Context UriInfo uriInfo) {
     markGet(SLIDER_SUBPATH_APPLICATION, ACTION_PING);
     return new RestActionPing().ping(request, uriInfo, "");
@@ -404,7 +349,7 @@ TODO: decide what structure to return here, then implement
   @POST
   @Path(ACTION_PING)
   @Produces({APPLICATION_JSON})
-  public PingResource actionPingPost(@Context HttpServletRequest request,
+  public PingInformation actionPingPost(@Context HttpServletRequest request,
       @Context UriInfo uriInfo,
       String body) {
     markPost(SLIDER_SUBPATH_APPLICATION, ACTION_PING);
@@ -415,7 +360,7 @@ TODO: decide what structure to return here, then implement
   @Path(ACTION_PING)
   @Consumes({TEXT_PLAIN})
   @Produces({APPLICATION_JSON})
-  public PingResource actionPingPut(@Context HttpServletRequest request,
+  public PingInformation actionPingPut(@Context HttpServletRequest request,
       @Context UriInfo uriInfo,
       String body) {
     markPut(SLIDER_SUBPATH_APPLICATION, ACTION_PING);
@@ -426,7 +371,7 @@ TODO: decide what structure to return here, then implement
   @Path(ACTION_PING)
   @Consumes({APPLICATION_JSON})
   @Produces({APPLICATION_JSON})
-  public PingResource actionPingDelete(@Context HttpServletRequest request,
+  public PingInformation actionPingDelete(@Context HttpServletRequest request,
       @Context UriInfo uriInfo) {
     markDelete(SLIDER_SUBPATH_APPLICATION, ACTION_PING);
     return new RestActionPing().ping(request, uriInfo, "");

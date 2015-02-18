@@ -67,6 +67,11 @@ public class SliderAMProviderService extends AbstractProviderService implements
   }
 
   @Override
+  public String getHumanName() {
+    return "Slider Application";
+  }
+  
+  @Override
   public Configuration loadProviderConfigurationInformation(File confDir) throws
       BadCommandArgumentsException,
       IOException {

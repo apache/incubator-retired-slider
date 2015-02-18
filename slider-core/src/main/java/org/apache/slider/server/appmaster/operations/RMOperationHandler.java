@@ -18,16 +18,11 @@
 
 package org.apache.slider.server.appmaster.operations;
 
-import org.apache.hadoop.yarn.api.records.Priority;
-
 import java.util.List;
 
 public abstract class RMOperationHandler implements RMOperationHandlerActions {
 
-  /**
-   * Execute an entire list of operations
-   * @param operations ops
-   */
+  @Override
   public void execute(List<AbstractRMOperation> operations) {
     for (AbstractRMOperation operation : operations) {
       operation.execute(this);

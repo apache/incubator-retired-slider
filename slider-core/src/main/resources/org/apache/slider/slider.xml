@@ -27,10 +27,4 @@
     <name>slider.provider.agent</name>
     <value>org.apache.slider.providers.agent.AgentProviderFactory</value>
   </property>
-  <property>
-    <name>slider.dev.ws.insecure</name>
-    <description>switch to insecure WS path</description>
-    <value>true</value>
-  </property>
-  
 </configuration>

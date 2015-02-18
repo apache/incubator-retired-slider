@@ -22,6 +22,7 @@ import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
 import org.apache.slider.api.ClusterDescription;
+import org.apache.slider.api.ClusterNode;
 import org.apache.slider.api.StatusKeys;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
@@ -228,7 +229,7 @@ public interface StateAccessForProviders {
   /**
    * Update the cluster description with anything interesting
    */
-  void refreshClusterStatus();
+  ClusterDescription refreshClusterStatus();
 
   /**
    * Get a deep clone of the role status list. Concurrent events may mean this
@@ -258,4 +259,26 @@ public interface StateAccessForProviders {
    * @return a map of current role status values.
    */
   Map<String, ComponentInformation> getComponentInfoSnapshot();
+
+  /**
+   * Find out about the nodes for specific roles
+   * @return 
+   */
+  Map<String, Map<String, ClusterNode>> getRoleClusterNodeMapping();
+
+  /**
+   * Enum all nodes by role. 
+   * @param role role, or "" for all roles
+   * @return a list of nodes, may be empty
+   */
+  List<RoleInstance> enumLiveNodesInRole(String role);
+
+  /**
+   * Look up all containers of a specific component name 
+   * @param component component/role name
+   * @return list of instances. This is a snapshot
+   */
+  List<RoleInstance> lookupRoleContainers(String component);
+
+  ComponentInformation getComponentInformation(String component);
 }

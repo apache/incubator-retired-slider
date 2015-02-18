@@ -17,13 +17,14 @@
 package org.apache.slider.server.appmaster.web;
 
 import org.apache.hadoop.registry.client.api.RegistryOperations;
-import org.apache.slider.api.SliderClusterProtocol;
 import org.apache.slider.providers.ProviderService;
+import org.apache.slider.server.appmaster.AppMasterActionOperations;
 import org.apache.slider.server.appmaster.actions.QueueAccess;
 import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
 import org.apache.slider.server.appmaster.state.RoleStatus;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentRestOperations;
+import org.apache.slider.server.appmaster.web.rest.application.resources.ContentCache;
 import org.apache.slider.server.services.security.CertificateManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,28 +41,30 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class WebAppApiImpl implements WebAppApi {
   private static final Logger log = LoggerFactory.getLogger(WebAppApiImpl.class);
 
-  protected final SliderClusterProtocol clusterProto;
   protected final StateAccessForProviders appState;
   protected final ProviderService provider;
   protected final CertificateManager certificateManager;
   private final RegistryOperations registryOperations;
   private final MetricsAndMonitoring metricsAndMonitoring;
   private final QueueAccess queues;
+  private final AppMasterActionOperations appMasterOperations;
+  private final ContentCache contentCache;
 
-  public WebAppApiImpl(SliderClusterProtocol clusterProto,
-      StateAccessForProviders appState,
+  public WebAppApiImpl(StateAccessForProviders appState,
       ProviderService provider,
       CertificateManager certificateManager,
       RegistryOperations registryOperations,
       MetricsAndMonitoring metricsAndMonitoring,
-      QueueAccess queues) {
-    checkNotNull(clusterProto);
+      QueueAccess queues,
+      AppMasterActionOperations appMasterOperations,
+      ContentCache contentCache) {
+    this.appMasterOperations = appMasterOperations;
+    this.contentCache = contentCache;
     checkNotNull(appState);
     checkNotNull(provider);
     this.queues = queues;
 
     this.registryOperations = registryOperations;
-    this.clusterProto = clusterProto;
     this.appState = appState;
     this.provider = provider;
     this.certificateManager = certificateManager;
@@ -83,11 +86,6 @@ public class WebAppApiImpl implements WebAppApi {
     return certificateManager;
   }
 
-  @Override
-  public SliderClusterProtocol getClusterProtocol() {
-    return clusterProto;
-  }
-  
   @Override
   public Map<String,RoleStatus> getRoleStatusByName() {
     List<RoleStatus> roleStatuses = appState.cloneRoleStatusList();
@@ -117,5 +115,15 @@ public class WebAppApiImpl implements WebAppApi {
   @Override
   public QueueAccess getQueues() {
     return queues;
+  }
+
+  @Override
+  public AppMasterActionOperations getAMOperations() {
+    return appMasterOperations;
+  }
+
+  @Override
+  public ContentCache getContentCache() {
+    return contentCache;
   }
 }

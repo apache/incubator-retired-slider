@@ -45,6 +45,7 @@ env_sh_template = config['configurations']['accumulo-env']['content']
 
 # accumulo local directory structure
 accumulo_root = config['configurations']['global']['app_root']
+app_name = config['clusterName']
 conf_dir = format("{accumulo_root}/conf")
 log_dir = config['configurations']['global']['app_log_dir']
 daemon_script = format("{accumulo_root}/bin/accumulo")
@@ -84,3 +85,11 @@ if (('accumulo-log4j' in config['configurations']) and ('content' in config['con
   log4j_props = config['configurations']['accumulo-log4j']['content']
 else:
   log4j_props = None
+
+metric_collector_host = default('/configurations/global/metric_collector_host', '')
+metric_collector_port = default('/configurations/global/metric_collector_port', '')
+metric_collector_lib = default('/configurations/global/metric_collector_lib', '')
+has_metric_collector = 1
+if not metric_collector_lib:
+  has_metric_collector = 0
+

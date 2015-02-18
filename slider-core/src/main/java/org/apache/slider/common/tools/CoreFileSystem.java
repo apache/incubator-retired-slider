@@ -134,6 +134,18 @@ public class CoreFileSystem {
   }
 
   /**
+   * Build up the path string for package install location -no attempt to
+   * create the directory is made
+   *
+   * @return the path for persistent app package
+   */
+  public Path buildClusterSecurityDirPath(String clusterName) {
+    Preconditions.checkNotNull(clusterName);
+    Path path = buildClusterDirPath(clusterName);
+    return new Path(path, SliderKeys.SECURITY_DIR);
+  }
+
+  /**
    * Build up the path string for keytab install location -no attempt to
    * create the directory is made
    *

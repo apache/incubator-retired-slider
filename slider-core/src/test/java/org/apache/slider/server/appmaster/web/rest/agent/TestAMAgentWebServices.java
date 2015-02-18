@@ -38,7 +38,6 @@ import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
 import org.apache.slider.server.appmaster.model.mock.MockFactory;
 import org.apache.slider.server.appmaster.model.mock.MockProviderService;
 import org.apache.slider.server.appmaster.model.mock.MockRecordFactory;
-import org.apache.slider.server.appmaster.model.mock.MockSliderClusterProtocol;
 import org.apache.slider.server.appmaster.state.AppState;
 import org.apache.slider.server.appmaster.state.ProviderAppState;
 import org.apache.slider.server.appmaster.state.SimpleReleaseSelector;
@@ -143,9 +142,9 @@ public class TestAMAgentWebServices {
     ProviderAppState providerAppState = new ProviderAppState("undefined",
                                                              appState);
 
-    slider = new WebAppApiImpl(new MockSliderClusterProtocol(), providerAppState,
+    slider = new WebAppApiImpl(providerAppState,
                                new MockProviderService(), null, null, null,
-        null);
+        null, null, null);
 
     MapOperations compOperations = new MapOperations();
 

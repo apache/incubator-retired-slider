@@ -33,7 +33,7 @@ public class ContainerReleaseOperation extends AbstractRMOperation {
   }
 
   @Override
-  public void execute(RMOperationHandler handler) {
+  public void execute(RMOperationHandlerActions handler) {
     handler.releaseAssignedContainer(containerId);
   }
 

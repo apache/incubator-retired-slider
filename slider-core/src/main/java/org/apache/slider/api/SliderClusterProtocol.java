@@ -18,6 +18,7 @@
 
 package org.apache.slider.api;
 
+import com.google.protobuf.RpcController;
 import org.apache.hadoop.ipc.VersionedProtocol;
 import org.apache.hadoop.security.KerberosInfo;
 import org.apache.hadoop.yarn.exceptions.YarnException;
@@ -33,7 +34,7 @@ import java.io.IOException;
 @KerberosInfo(
   serverPrincipal = SliderXmlConfKeys.KEY_KERBEROS_PRINCIPAL)
 public interface SliderClusterProtocol extends VersionedProtocol {
-  public static final long versionID = 0x01;
+  long versionID = 0x01;
 
   /**
    * Stop the cluster
@@ -110,7 +111,7 @@ public interface SliderClusterProtocol extends VersionedProtocol {
    * @throws YarnException
    */
   Messages.AMSuicideResponseProto amSuicide(Messages.AMSuicideRequestProto request)
-      throws IOException, YarnException;
+      throws IOException;
 
   /**
    * Get the instance definition
@@ -118,4 +119,47 @@ public interface SliderClusterProtocol extends VersionedProtocol {
   Messages.GetInstanceDefinitionResponseProto getInstanceDefinition(
     Messages.GetInstanceDefinitionRequestProto request)
     throws IOException, YarnException;
+
+  /**
+   * Get the application liveness
+   * @return current liveness information
+   * @throws IOException
+   */
+  Messages.ApplicationLivenessInformationProto getLivenessInformation(
+      Messages.GetApplicationLivenessRequestProto request
+  ) throws IOException;
+
+  Messages.GetLiveContainersResponseProto getLiveContainers(
+      Messages.GetLiveContainersRequestProto request
+  ) throws IOException;
+
+  Messages.ContainerInformationProto getLiveContainer(
+      Messages.GetLiveContainerRequestProto request
+  ) throws IOException;
+
+  Messages.GetLiveComponentsResponseProto getLiveComponents(
+      Messages.GetLiveComponentsRequestProto request
+  ) throws IOException;
+
+  Messages.ComponentInformationProto getLiveComponent(
+      Messages.GetLiveComponentRequestProto request
+  ) throws IOException;
+
+  
+  Messages.WrappedJsonProto getModelDesired(Messages.EmptyPayloadProto request) throws IOException;
+
+  
+  Messages.WrappedJsonProto getModelDesiredAppconf(Messages.EmptyPayloadProto request) throws IOException;
+    
+  Messages.WrappedJsonProto getModelDesiredResources(Messages.EmptyPayloadProto request) throws IOException;
+   
+  Messages.WrappedJsonProto getModelResolved(Messages.EmptyPayloadProto request) throws IOException;
+  
+  Messages.WrappedJsonProto getModelResolvedAppconf(Messages.EmptyPayloadProto request) throws IOException;
+  
+  Messages.WrappedJsonProto getModelResolvedResources(Messages.EmptyPayloadProto request) throws IOException;
+   
+  Messages.WrappedJsonProto getLiveResources(Messages.EmptyPayloadProto request) throws IOException;
+    
+  
 }
