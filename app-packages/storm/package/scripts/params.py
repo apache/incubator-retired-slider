@@ -25,6 +25,7 @@ import status_params
 config = Script.get_config()
 
 app_root = config['configurations']['global']['app_root']
+app_name = config['clusterName']
 conf_dir = format("{app_root}/conf")
 storm_user = config['configurations']['global']['app_user']
 log_dir = config['configurations']['global']['app_log_dir']
@@ -39,11 +40,13 @@ rest_lib_dir = format("{app_root}/external/storm-rest")
 storm_bin = format("{app_root}/bin/storm.py")
 storm_env_sh_template = config['configurations']['storm-env']['content']
 
-ganglia_installed = config['configurations']['global']['ganglia_enabled']
-if ganglia_installed:
-  ganglia_report_interval = 60
-  ganglia_server = config['configurations']['global']['ganglia_server_host']
-  ganglia_port = config['configurations']['global']['ganglia_server_port']
+metric_collector_host = default('/configurations/global/metric_collector_host', '')
+metric_collector_port = default('/configurations/global/metric_collector_port', '')
+metric_collector_lib = default('/configurations/global/metric_collector_lib', '')
+
+has_metric_collector = 1
+if not metric_collector_lib:
+  has_metric_collector = 0
 
 security_enabled = config['configurations']['global']['security_enabled']
 
