@@ -237,7 +237,7 @@ public abstract class AbstractAppApiTestDelegates extends AbstractRestTestDelega
     def field = "yarn.test.flex.uuid"
     current.set(field, uuid)
     appAPI.putDesiredResources(current.confTree)
-    repeatUntilSuccess("probe for liveness",
+    repeatUntilSuccess("probe for resource PUT",
         this.&probeForResolveConfValues, 
         5000, 200,
         [
@@ -278,7 +278,7 @@ public abstract class AbstractAppApiTestDelegates extends AbstractRestTestDelega
   @Override
   public void testSuiteComplexVerbs() {
     testPing();
-//    testFlexOperation();
+    testFlexOperation();
   }
 
 }

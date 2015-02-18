@@ -61,7 +61,7 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
 
 
   public void testCodahaleOperations() throws Throwable {
-    describe "Codahale operations"
+    describe "Codahale operations  $this"
     getWebPage(appmaster)
     getWebPage(appmaster, SYSTEM_THREADS)
     getWebPage(appmaster, SYSTEM_HEALTHCHECK)
@@ -77,7 +77,7 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
 
 
   public void testMimeTypes() throws Throwable {
-    describe "Mime Types"
+    describe "Mime Types  $this"
     HttpOperationResponse response= executeGet(
         appendToURL(appmaster,
         SLIDER_PATH_APPLICATION, LIVE_RESOURCES))
@@ -88,7 +88,7 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
 
   
   public void testLiveResources() throws Throwable {
-    describe "Live Resources"
+    describe "Live Resources  $this"
     ConfTreeOperations tree = fetchConfigTree(appmaster, LIVE_RESOURCES)
 
     log.info tree.toString()
@@ -105,7 +105,7 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
   }
 
   public void testLiveContainers() throws Throwable {
-    describe "Application REST ${LIVE_CONTAINERS}"
+    describe "Application REST ${LIVE_CONTAINERS}  $this"
 
     Map<String, ContainerInformation> containers =
         fetchType(HashMap, appmaster, LIVE_CONTAINERS)
@@ -125,7 +125,7 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
     assert amContainerInfo.released == null
     assert amContainerInfo.state == StateValues.STATE_LIVE
 
-    describe "containers"
+    describe "containers $this"
 
     ContainerInformation retrievedContainerInfo =
         fetchType(ContainerInformation, appmaster,
@@ -142,7 +142,7 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
     }
 
 
-    describe "components"
+    describe "components  $this"
 
     Map<String, ComponentInformation> components =
         fetchType(HashMap, appmaster, LIVE_COMPONENTS)
@@ -169,7 +169,7 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
    * @param appmaster
    */
   public void testRESTModel() {
-    describe "model"
+    describe "model  $this"
 
     assertPathServesList(appmaster,
         MODEL,
@@ -333,7 +333,7 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
 
 
   public void testPutDesiredResources() throws Throwable {
-    describe "testPutDesiredResources"
+    describe "testPutDesiredResources $this"
     ConfTreeOperations current = fetchConfigTree(appmaster, MODEL_DESIRED_RESOURCES)
     ConfTreeSerDeser serDeser = new ConfTreeSerDeser()
     
@@ -345,5 +345,47 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
         new URL(applicationURL(MODEL_DESIRED_RESOURCES)),
         serDeser.toJson(current.confTree).bytes,
         MediaType.APPLICATION_JSON)
+    repeatUntilSuccess("probe for resource PUT",
+        this.&probeForResolveConfValues,
+        5000, 200,
+        [
+            "key": field,
+            "val": uuid
+        ],
+        true,
+        "Flex resources failed to propagate") {
+      def resolved = modelDesiredResolvedResources
+      fail("Did not find field $field=$uuid in\n$resolved")
+    }
+
+    def resolved = modelDesiredResolvedResources
+    log.info("Flexed cluster resources to $resolved")
+  }
+
+  /**
+   * Probe that spins until the field has desired value
+   * in the resolved resource
+   * @param args argument map. key=field, val=value
+   * @return the outcome
+   */
+  Outcome probeForResolveConfValues(Map args) {
+    assert args["key"]
+    assert args["val"]
+    String key = args["key"]
+    String val = args["val"]
+    ConfTreeOperations resolved = modelDesiredResolvedResources
+
+    return Outcome.fromBool(resolved.get(key) == val)
+  }
+
+  public ConfTreeOperations getModelDesiredResolvedResources() {
+    return fetchConfigTree(
+        appmaster,
+        MODEL_RESOLVED_RESOURCES)
+  }
+
+  @Override
+  public String toString() {
+    return "- low level REST to " + application
   }
 }
