@@ -77,8 +77,7 @@ public class SliderApplicationApiRestClient extends BaseRestClient
   }
 
   /**
-   * Create a resource under the application path set up to accept
-   * JSON
+   * Create a resource under the application path
    * @param subpath path under application
    * @return a resource under the application path
    */
@@ -86,9 +85,7 @@ public class SliderApplicationApiRestClient extends BaseRestClient
     Preconditions.checkArgument(!StringUtils.isEmpty(subpath),
         "empty path");
     Preconditions.checkNotNull(appResource, "Null app resource");
-    WebResource resource = appResource.path(subpath);
-    resource.accept(MediaType.APPLICATION_JSON_TYPE);
-    return resource;
+    return appResource.path(subpath);
   }
   
   /**
@@ -128,8 +125,7 @@ public class SliderApplicationApiRestClient extends BaseRestClient
    */
   public <T> T appResourceOperation(HttpVerb method, String subpath, Class<T> c)
       throws IOException {
-    WebResource resource = applicationResource(subpath);
-    return exec(method, resource, c);
+    return exec(method, applicationResource(subpath), c);
   }
   
   
@@ -144,8 +140,7 @@ public class SliderApplicationApiRestClient extends BaseRestClient
   public <T> T appResourceOperation(HttpVerb method, String subpath,
       GenericType<T> t)
       throws IOException {
-    WebResource resource = applicationResource(subpath);
-    return exec(method, resource, t);
+    return exec(method, applicationResource(subpath), t);
   }
 
 
@@ -172,18 +167,15 @@ public class SliderApplicationApiRestClient extends BaseRestClient
   public void putDesiredResources(ConfTree updated) throws IOException {
     WebResource resource = applicationResource(MODEL_DESIRED_RESOURCES);
     try {
-      ConfTreeSerDeser serDeser = new ConfTreeSerDeser();
-      String json = serDeser.toJson(updated);
-
-      resource.accept(MediaType.APPLICATION_JSON_TYPE);
-      // entity to put
-      resource.type(MediaType.APPLICATION_JSON_TYPE);
 
       // put operation. The result is discarded; it does help validate
       // that the operation returned a JSON data structure as well as a 200
       // response.
-      resource.put(ConfTree.class, json);
-      //ClientResponse response = resource.put(ClientResponse.class);
+
+      resource.accept(MediaType.APPLICATION_JSON_TYPE)
+              .type(MediaType.APPLICATION_JSON_TYPE)
+              .entity(updated)
+              .put(ConfTree.class);
     } catch (ClientHandlerException ex) {
         throw ExceptionConverter.convertJerseyException("PUT",
             resource.getURI().toString(),
@@ -276,10 +268,11 @@ public class SliderApplicationApiRestClient extends BaseRestClient
    */
   public PingInformation pingPost(String text) throws IOException {
     WebResource pingResource = applicationResource(ACTION_PING);
-    pingResource.type(MediaType.APPLICATION_JSON_TYPE);
     Form f = new Form();
     f.add("text", text);
-    return pingResource.post(PingInformation.class, f);
+    return pingResource
+        .type(MediaType.APPLICATION_JSON_TYPE)
+        .post(PingInformation.class, f);
   }
   
   /**
@@ -290,10 +283,10 @@ public class SliderApplicationApiRestClient extends BaseRestClient
    */
   public PingInformation pingPut(String text) throws IOException {
     WebResource pingResource = applicationResource(ACTION_PING);
-    pingResource.type(MediaType.APPLICATION_JSON_TYPE);
     Form f = new Form();
-    f.add("text", text);
-    return pingResource.put(PingInformation.class, f);
+    return pingResource
+        .type(MediaType.TEXT_PLAIN)
+        .put(PingInformation.class, text);
   }
 
   @Override
