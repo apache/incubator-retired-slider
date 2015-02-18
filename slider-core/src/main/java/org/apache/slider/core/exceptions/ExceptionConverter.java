@@ -21,6 +21,7 @@ package org.apache.slider.core.exceptions;
 import com.sun.jersey.api.client.ClientHandlerException;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.UniformInterfaceException;
+import org.apache.hadoop.fs.InvalidRequestException;
 import org.apache.hadoop.fs.PathAccessDeniedException;
 import org.apache.hadoop.fs.PathIOException;
 import org.apache.hadoop.yarn.webapp.*;
@@ -58,10 +59,20 @@ public class ExceptionConverter {
       if (status == HttpServletResponse.SC_UNAUTHORIZED
           || status == HttpServletResponse.SC_FORBIDDEN) {
         ioe = new PathAccessDeniedException(targetURL);
-      }
-      if (status >= 400 && status < 500) {
+      } else if (status == HttpServletResponse.SC_BAD_REQUEST
+          || status == HttpServletResponse.SC_NOT_ACCEPTABLE
+          || status == HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE) {
+        // bad request
+        ioe = new InvalidRequestException(
+            String.format("Bad %s request: status code %d against %s",
+                verb, status, targetURL));
+      } else if (status > 400 && status < 500) {
         ioe =  new FileNotFoundException(targetURL);
-      }
+      } else {
+        ioe = new PathIOException(targetURL,
+            String.format("%s failed: status code %d against %s",
+                verb, status, targetURL));
+        }
     }
 
     if (ioe == null) {

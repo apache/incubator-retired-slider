@@ -177,12 +177,12 @@ public class SliderApplicationApiRestClient extends BaseRestClient
 
       resource.accept(MediaType.APPLICATION_JSON_TYPE);
       // entity to put
-      resource.entity(json, MediaType.APPLICATION_JSON_TYPE);
+      resource.type(MediaType.APPLICATION_JSON_TYPE);
 
       // put operation. The result is discarded; it does help validate
       // that the operation returned a JSON data structure as well as a 200
       // response.
-      resource.put(ConfTree.class);
+      resource.put(ConfTree.class, json);
       //ClientResponse response = resource.put(ClientResponse.class);
     } catch (ClientHandlerException ex) {
         throw ExceptionConverter.convertJerseyException("PUT",

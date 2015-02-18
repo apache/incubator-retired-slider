@@ -69,6 +69,6 @@ class RestAPIClientTestDelegates extends AbstractAppApiTestDelegates {
 
   @Override
   void testFlexOperation() {
-//    super.testFlexOperation()
+    super.testFlexOperation()
   }
 }

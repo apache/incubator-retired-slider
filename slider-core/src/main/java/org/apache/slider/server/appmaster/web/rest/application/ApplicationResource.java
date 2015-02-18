@@ -20,6 +20,7 @@ package org.apache.slider.server.appmaster.web.rest.application;
 
 import com.google.common.collect.Lists;
 import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
+import org.apache.hadoop.yarn.webapp.BadRequestException;
 import org.apache.hadoop.yarn.webapp.NotFoundException;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
@@ -159,13 +160,20 @@ public class ApplicationResource extends AbstractSliderResource {
 
   @PUT
   @Path(MODEL_DESIRED_RESOURCES)
-  @Consumes({APPLICATION_JSON})
+  @Consumes({APPLICATION_JSON, TEXT_PLAIN})
   @Produces({APPLICATION_JSON})
-  public ConfTree putModelDesiredResources(
+  public ConfTree setModelDesiredResources(
       String json) {
     markPut(SLIDER_SUBPATH_APPLICATION, MODEL_DESIRED_RESOURCES);
-    log.info("PUT {}:\n{}", MODEL_DESIRED_RESOURCES,
+    int size = json != null ? json.length() : 0;
+    log.info("PUT {} {} bytes:\n{}", MODEL_DESIRED_RESOURCES,
+        size,
         json);
+    if (size == 0) {
+      log.warn("No JSON in PUT request; rejecting");
+      throw new BadRequestException("No JSON in PUT");
+    }
+    
     try {
       ConfTreeSerDeser serDeser = new ConfTreeSerDeser();
       ConfTree updated = serDeser.fromJson(json);
