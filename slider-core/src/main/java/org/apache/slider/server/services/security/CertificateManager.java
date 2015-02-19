@@ -40,24 +40,29 @@ public class CertificateManager {
       LoggerFactory.getLogger(CertificateManager.class);
 
   private static final String GEN_SRVR_KEY = "openssl genrsa -des3 " +
-      "-passout pass:{0} -out {1}/{2} 4096 ";
+      "-passout pass:{0} -out {1}" + File.separator + "{2} 4096 ";
   private static final String GEN_SRVR_REQ = "openssl req -passin pass:{0} " +
-      "-new -key {1}/{2} -out {1}/{5} -config {1}/ca.config -batch";
+      "-new -key {1}" + File.separator + "{2} -out {1}" + File.separator +
+      "{5} -config {1}" + File.separator + "ca.config -batch";
   private static final String SIGN_SRVR_CRT = "openssl ca -create_serial " +
-    "-out {1}/{3} -days 365 -keyfile {1}/{2} -key {0} -selfsign " +
-    "-extensions jdk7_ca -config {1}/ca.config -batch " +
-    "-infiles {1}/{5}";
+    "-out {1}" + File.separator + "{3} -days 365 -keyfile {1}" + File.separator
+    + "{2} -key {0} -selfsign -extensions jdk7_ca -config {1}" + File.separator
+    + "ca.config -batch -infiles {1}" + File.separator + "{5}";
   private static final String EXPRT_KSTR = "openssl pkcs12 -export" +
-      " -in {2}/{4} -inkey {2}/{3} -certfile {2}/{4} -out {2}/{5} " +
-      "-password pass:{1} -passin pass:{0} \n";
+      " -in {2}" + File.separator + "{4} -inkey {2}" + File.separator +
+      "{3} -certfile {2}" + File.separator + "{4} -out {2}" + File.separator +
+      "{5} -password pass:{1} -passin pass:{0} \n";
   private static final String REVOKE_AGENT_CRT = "openssl ca " +
-      "-config {0}/ca.config -keyfile {0}/{4} -revoke {0}/{2} -batch " +
-      "-passin pass:{3} -cert {0}/{5}";
+      "-config {0}" + File.separator + "ca.config -keyfile {0}" +
+      File.separator + "{4} -revoke {0}" + File.separator + "{2} -batch " +
+      "-passin pass:{3} -cert {0}" + File.separator + "{5}";
   private static final String SIGN_AGENT_CRT = "openssl ca -config " +
-      "{0}/ca.config -in {0}/{1} -out {0}/{2} -batch -passin pass:{3} " +
-      "-keyfile {0}/{4} -cert {0}/{5}";
+      "{0}" + File.separator + "ca.config -in {0}" + File.separator +
+      "{1} -out {0}" + File.separator + "{2} -batch -passin pass:{3} " +
+      "-keyfile {0}" + File.separator + "{4} -cert {0}" + File.separator + "{5}";
   private static final String GEN_AGENT_KEY="openssl req -new -newkey " +
-      "rsa:1024 -nodes -keyout {0}/{2}.key -subj /OU={1}/CN={2} -out {0}/{2}.csr";
+      "rsa:1024 -nodes -keyout {0}" + File.separator +
+      "{2}.key -subj /OU={1}/CN={2} -out {0}" + File.separator + "{2}.csr";
   private String passphrase;
 
   /**
