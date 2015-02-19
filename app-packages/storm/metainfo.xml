@@ -125,6 +125,16 @@
           <timeout>600</timeout>
         </commandScript>
       </component>
+
+      <component>
+        <name>STORM_CLIENT</name>
+        <category>CLIENT</category>
+        <commandScript>
+          <script>scripts/storm_client.py</script>
+          <scriptType>PYTHON</scriptType>
+          <timeout>600</timeout>
+        </commandScript>
+      </component>
     </components>
 
     <osSpecifics>

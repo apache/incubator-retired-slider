@@ -1,0 +1,7 @@
+{
+  "schema": "http://example.org/specification/v2.0.0",
+  "global": {
+    "java_home": "/usr/jdk64/jdk1.7.0_67",
+    "container_id": "cid_1"
+  }
+}

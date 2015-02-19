@@ -21,45 +21,37 @@ package org.apache.slider.common.params;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 
-@Parameters(commandNames = {SliderActions.ACTION_PACKAGE},
-            commandDescription = SliderActions.DESCRIBE_ACTION_PACKAGE)
+import java.io.File;
 
-public class ActionPackageArgs extends AbstractActionArgs {
+@Parameters(commandNames = {SliderActions.ACTION_CLIENT},
+    commandDescription = SliderActions.DESCRIBE_ACTION_CLIENT)
+
+public class ActionClientArgs extends AbstractActionArgs {
 
   @Override
   public String getActionName() {
-    return SliderActions.ACTION_PACKAGE;
+    return SliderActions.ACTION_CLIENT;
   }
 
   @Parameter(names = {ARG_INSTALL},
-      description = "Install package operation")
+      description = "Install client")
   public boolean install;
 
-  @Parameter(names = {ARG_PKGDELETE},
-      description = "Delete package operation")
-  public boolean delete;
-
-  @Parameter(names = {ARG_PKGLIST},
-      description = "List of package(s) installed")
-  public boolean list;
-
-  @Parameter(names = {ARG_PKGINSTANCES},
-      description = "Lists all application instances referring to package")
-  public boolean instances;
-
   @Parameter(names = {ARG_PACKAGE},
-             description = "Path to app package on local disk")
+      description = "Path to app package")
   public String packageURI;
 
-  @Parameter(names = {ARG_NAME},
-             description = "Package name")
-  public String name;
+  @Parameter(names = {ARG_DEST},
+      description = "The location where to install the client")
+  public File installLocation;
 
-  @Parameter(names = {ARG_REPLACE_PKG}, description = "Overwrite existing package")
-  public boolean replacePkg = false;
+  @Parameter(names = {ARG_CONFIG},
+      description = "Client configuration")
+  public File clientConfig;
 
   /**
    * Get the min #of params expected
+   *
    * @return the min number of params in the {@link #parameters} field
    */
   public int getMinParams() {

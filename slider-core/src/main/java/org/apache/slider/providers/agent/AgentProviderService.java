@@ -1663,11 +1663,10 @@ public class AgentProviderService extends AbstractProviderService implements
     response.addExecutionCommand(cmd);
   }
 
-  private String getPackageList() {
+  protected static String getPackageListFromApplication(Application application) {
     String pkgFormatString = "{\"type\":\"%s\",\"name\":\"%s\"}";
     String pkgListFormatString = "[%s]";
     List<String> packages = new ArrayList();
-    Application application = getMetainfo().getApplication();
     if (application != null) {
       List<OSSpecific> osSpecifics = application.getOSSpecifics();
       if (osSpecifics != null && osSpecifics.size() > 0) {
@@ -1686,6 +1685,10 @@ public class AgentProviderService extends AbstractProviderService implements
     } else {
       return "[]";
     }
+  }
+
+  private String getPackageList() {
+    return getPackageListFromApplication(getMetainfo().getApplication());
   }
 
   private void prepareExecutionCommand(ExecutionCommand cmd) {
