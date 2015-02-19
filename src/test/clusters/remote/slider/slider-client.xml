@@ -31,22 +31,22 @@
 
   <property>
     <name>slider.zookeeper.quorum</name>
-    <value>c6403.ambari.apache.org:2181</value>
+    <value>c6401.ambari.apache.org:2181</value>
   </property>
 
   <property>
     <name>yarn.resourcemanager.address</name>
-    <value>c6403.ambari.apache.org:8050</value>
+    <value>c6401.ambari.apache.org:8050</value>
   </property>
 
   <property>
     <name>yarn.resourcemanager.scheduler.address</name>
-    <value>c6403.ambari.apache.org:8030</value>
+    <value>c6401.ambari.apache.org:8030</value>
   </property>
 
   <property>
     <name>fs.defaultFS</name>
-    <value>hdfs://c6403.ambari.apache.org:8020</value>
+    <value>hdfs://c6401.ambari.apache.org:8020</value>
   </property>
 
   <property>
@@ -74,7 +74,7 @@
 
   <property>
     <name>slider.test.agent.tar</name>
-    <value>hdfs://c6403.ambari.apache.org:8020/slider/agent/slider-agent.tar.gz</value>
+    <value>hdfs://c6401.ambari.apache.org:8020/slider/agent/slider-agent.tar.gz</value>
   </property>
 
 </configuration>

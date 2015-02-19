@@ -28,9 +28,11 @@ import org.apache.slider.core.conf.MapOperations;
 import org.apache.slider.core.exceptions.BadClusterStateException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.AbstractLauncher;
+import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -216,6 +218,24 @@ public abstract class AbstractClientProvider extends Configured {
   public Set<String> getApplicationTags (SliderFileSystem fileSystem,
                                          String appDef) throws SliderException {
     return Collections.emptySet();
+  }
+
+  /**
+   * Process client operations for applications such as install, configure
+   * @param fileSystem
+   * @param operation
+   * @param config
+   * @param clientPackage
+   * @param clientInstallPath
+   * @throws SliderException
+   */
+  public void processClientOperation(SliderFileSystem fileSystem,
+                                     String operation,
+                                     File clientInstallPath,
+                                     File clientPackage,
+                                     JSONObject config)
+      throws SliderException {
+    throw new SliderException("Provider does not support client operations.");
   }
 
 }
