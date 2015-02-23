@@ -62,3 +62,6 @@ if security_enabled:
   storm_jaas_stormclient_servicename = storm_jaas_server_principal.split("/")[0]
   storm_server_keytab_path = config['configurations']['storm-env']['storm_server_keytab']
   kinit_path_local = functions.get_kinit_path(["/usr/bin", "/usr/kerberos/bin", "/usr/sbin"])
+
+metric_collector_sink_jar = "/usr/lib/storm/lib/ambari-metrics-storm-sink*.jar"
+storm_lib_dir = format("{app_root}/lib")
