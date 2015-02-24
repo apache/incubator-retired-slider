@@ -158,10 +158,13 @@ public class ApplicationResource extends AbstractSliderResource {
     return lookupConfTree(MODEL_DESIRED_RESOURCES);
   }
 
+/*
   @PUT
   @Path(MODEL_DESIRED_RESOURCES)
-  @Consumes({APPLICATION_JSON, TEXT_PLAIN})
+//  @Consumes({APPLICATION_JSON, TEXT_PLAIN})
+  @Consumes({TEXT_PLAIN})
   @Produces({APPLICATION_JSON})
+*/
   public ConfTree setModelDesiredResources(
       String json) {
     markPut(SLIDER_SUBPATH_APPLICATION, MODEL_DESIRED_RESOURCES);
@@ -187,6 +190,25 @@ public class ApplicationResource extends AbstractSliderResource {
       throw buildException("PUT to "+ MODEL_DESIRED_RESOURCES , e);
     }
   }
+  @PUT
+  @Path(MODEL_DESIRED_RESOURCES)
+  @Consumes({APPLICATION_JSON})
+  @Produces({APPLICATION_JSON})
+  public ConfTree setModelDesiredResources(
+      ConfTree updated) {
+    try {
+      queue(new ActionFlexCluster("flex",
+          1, TimeUnit.MILLISECONDS,
+          updated));
+      // return the updated value, even though it potentially hasn't yet
+      // been executed
+      return updated;
+    } catch (Exception e) {
+      throw buildException("PUT to "+ MODEL_DESIRED_RESOURCES , e);
+    }
+  }
+  
+  
 
   @GET
   @Path(MODEL_RESOLVED)
