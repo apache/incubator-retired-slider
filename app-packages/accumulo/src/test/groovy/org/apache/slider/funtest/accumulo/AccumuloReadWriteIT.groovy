@@ -28,7 +28,6 @@ import org.apache.accumulo.test.VerifyIngest
 import org.apache.hadoop.registry.client.api.RegistryConstants
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.client.SliderClient
-import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.funtest.framework.FuntestProperties
 
 import java.util.concurrent.atomic.AtomicBoolean
@@ -71,6 +70,7 @@ class AccumuloReadWriteIT extends AccumuloBasicIT {
 
   public static void ingest(Connector connector, int rows, int cols, int width, int offset) throws Exception {
     TestIngest.Opts opts = new TestIngest.Opts();
+    opts.setPrincipal(USER);
     opts.rows = rows;
     opts.cols = cols;
     opts.dataSize = width;
@@ -83,6 +83,7 @@ class AccumuloReadWriteIT extends AccumuloBasicIT {
   public static void verify(Connector connector, int rows, int cols, int width, int offset) throws Exception {
     ScannerOpts scannerOpts = new ScannerOpts();
     VerifyIngest.Opts opts = new VerifyIngest.Opts();
+    opts.setPrincipal(USER);
     opts.rows = rows;
     opts.cols = cols;
     opts.dataSize = width;

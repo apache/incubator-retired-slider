@@ -41,9 +41,4 @@
     <value>${@//site/accumulo-site/instance.rpc.ssl.clientAuth}</value>
     <description>SSL client auth enabled.</description>
   </property>
-  <property>
-    <name>general.security.credential.provider.paths</name>
-    <value>${@//site/accumulo-site/general.security.credential.provider.paths}</value>
-    <description>Client credential provider containing cert passwords.</description>
-  </property>
 </configuration>
