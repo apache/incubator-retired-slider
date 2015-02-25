@@ -104,7 +104,7 @@ public class TestCertificateManager {
         Principal principal = x509cert.getSubjectDN();
         String subjectDn = principal.getName();
         Assert.assertEquals("wrong DN",
-                            "CN=localhost",
+                            "CN=" + InetAddress.getLocalHost().getHostName(),
                             subjectDn);
 
         // Get issuer
