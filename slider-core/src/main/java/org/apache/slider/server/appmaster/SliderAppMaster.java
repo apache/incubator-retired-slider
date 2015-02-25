@@ -747,7 +747,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       certificateManager = new CertificateManager();
       MapOperations component = instanceDefinition.getAppConfOperations()
           .getComponent(SliderKeys.COMPONENT_AM);
-      certificateManager.initialize(component);
+      certificateManager.initialize(component, appMasterHostname,
+                                    appMasterContainerID.toString(),
+                                    clustername);
       certificateManager.setPassphrase(instanceDefinition.getPassphrase());
  
       if (component.getOptionBool(

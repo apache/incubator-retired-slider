@@ -223,20 +223,19 @@ def main():
   if options.debug:
     agentConfig.set(AgentConfig.AGENT_SECTION, AgentConfig.APP_DBG_CMD, options.debug)
 
-  # set the security directory to a subdirectory of the run dir
+  logFile = posixpath.join(agentConfig.getResolvedPath(AgentConfig.LOG_DIR), logFileName)
+  setup_logging(options.verbose, logFile)
+  update_log_level(agentConfig, logFile)
+
   secDir = posixpath.join(agentConfig.getResolvedPath(AgentConfig.RUN_DIR), "security")
   logger.info("Security/Keys directory: " + secDir)
   agentConfig.set(AgentConfig.SECURITY_SECTION, "keysdir", secDir)
-
-  logFile = posixpath.join(agentConfig.getResolvedPath(AgentConfig.LOG_DIR), logFileName)
 
   perform_prestart_checks(agentConfig)
   ensure_folder_layout(agentConfig)
   # create security dir if necessary
   ensure_path_exists(secDir)
 
-  setup_logging(options.verbose, logFile)
-  update_log_level(agentConfig, logFile)
   write_pid()
 
   logger.info("Using AGENT_WORK_ROOT = " + options.root_folder)
