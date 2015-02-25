@@ -19,7 +19,7 @@
   <groupId>org.apache.slider</groupId>
   <artifactId>slider</artifactId>
   <name>Slider</name>
-  <version>0.62.0-SNAPSHOT</version>
+  <version>0.72.0-incubating-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <description>
