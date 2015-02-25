@@ -30,6 +30,7 @@
   <description>Slider Storm Windows App Package</description>
   <properties>
     <work.dir>package-tmp</work.dir>
+    <app.package.name>${project.artifactId}-${pkg.version}</app.package.name>
   </properties>
 
   <profiles>
@@ -65,6 +66,7 @@
               <tarLongFileMode>gnu</tarLongFileMode>
               <descriptor>src/assembly/storm.xml</descriptor>
               <appendAssemblyId>false</appendAssemblyId>
+              <finalName>${app.package.name}</finalName>
             </configuration>
             <executions>
               <execution>
