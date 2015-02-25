@@ -106,6 +106,9 @@ public interface Arguments {
   String ARG_ZKPATH = "--zkpath";
   String ARG_ZKPORT = "--zkport";
   String ARG_CONFIG = "--config";
+  String ARG_METAINFO = "--metainfo";
+  String ARG_ADDON = "--addon";
+  String ARG_APPDEF = "--appdef";
 
 
   /**

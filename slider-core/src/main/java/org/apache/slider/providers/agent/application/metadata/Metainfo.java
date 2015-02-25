@@ -16,6 +16,7 @@
  */
 package org.apache.slider.providers.agent.application.metadata;
 
+import org.apache.slider.providers.agent.application.metadata.json.MetaInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,8 +29,15 @@ public class Metainfo {
 
   String schemaVersion;
   Application application;
+  MetaInfo jsonEncoded;
 
   public Metainfo() {
+  }
+
+  // TODO: Temporary code - the plan is to move to the json parsed MetaInfo
+  public Metainfo(MetaInfo jsonEncoded) {
+    jsonEncoded = jsonEncoded;
+    // initialize the class
   }
 
   public String getSchemaVersion() {
@@ -59,5 +67,9 @@ public class Metainfo {
       }
     }
     return null;
+  }
+
+  public static Metainfo fromJsonObject(MetaInfo jsonEncoded) {
+    return new Metainfo(jsonEncoded);
   }
 }

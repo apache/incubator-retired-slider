@@ -112,7 +112,7 @@
     <!-- 
     Java versions
     -->
-    <project.java.src.version>1.6</project.java.src.version>
+    <project.java.src.version>1.7</project.java.src.version>
     <enforced.java.version>${project.java.src.version}</enforced.java.version>
     <groovy.version>2.2.2</groovy.version>
     

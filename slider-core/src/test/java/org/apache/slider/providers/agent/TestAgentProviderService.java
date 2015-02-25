@@ -48,16 +48,17 @@ import org.apache.slider.core.registry.docstore.ExportEntry;
 import org.apache.slider.core.registry.docstore.PublishedExports;
 import org.apache.slider.core.registry.docstore.PublishedExportsSet;
 import org.apache.slider.providers.ProviderRole;
-import org.apache.slider.providers.agent.application.metadata.Application;
-import org.apache.slider.providers.agent.application.metadata.CommandOrder;
-import org.apache.slider.providers.agent.application.metadata.CommandScript;
-import org.apache.slider.providers.agent.application.metadata.Component;
+import org.apache.slider.providers.agent.application.metadata.json.Application;
+import org.apache.slider.providers.agent.application.metadata.json.CommandOrder;
+import org.apache.slider.providers.agent.application.metadata.json.CommandScript;
+import org.apache.slider.providers.agent.application.metadata.json.Component;
 import org.apache.slider.providers.agent.application.metadata.ComponentExport;
-import org.apache.slider.providers.agent.application.metadata.ConfigFile;
+import org.apache.slider.providers.agent.application.metadata.json.ConfigFile;
 import org.apache.slider.providers.agent.application.metadata.DefaultConfig;
-import org.apache.slider.providers.agent.application.metadata.Export;
-import org.apache.slider.providers.agent.application.metadata.ExportGroup;
-import org.apache.slider.providers.agent.application.metadata.Metainfo;
+import org.apache.slider.providers.agent.application.metadata.json.Export;
+import org.apache.slider.providers.agent.application.metadata.json.ExportGroup;
+import org.apache.slider.providers.agent.application.metadata.json.MetaInfo;
+import org.apache.slider.providers.agent.application.metadata.json.MetaInfoParser;
 import org.apache.slider.providers.agent.application.metadata.MetainfoParser;
 import org.apache.slider.providers.agent.application.metadata.PropertyInfo;
 import org.apache.slider.server.appmaster.model.mock.MockRegistryOperations;
@@ -264,7 +265,7 @@ public class TestAgentProviderService {
                                                + "</metainfo>";
 
   @Test
-  public void testRegistration() throws IOException {
+  public void testRegistration() throws Exception {
 
     ConfTree tree = new ConfTree();
     tree.global.put(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH, ".");
@@ -303,7 +304,7 @@ public class TestAgentProviderService {
     CommandScript cs = new CommandScript();
     cs.setScript("scripts/hbase_master.py");
     doReturn(cs).when(mockAps).getScriptPathFromMetainfo(anyString());
-    Metainfo metainfo = new Metainfo();
+    MetaInfo metainfo = new MetaInfo();
     metainfo.setApplication(new Application());
     doReturn(metainfo).when(mockAps).getApplicationMetainfo(any(SliderFileSystem.class), anyString());
 
@@ -422,7 +423,7 @@ public class TestAgentProviderService {
   }
 
   private AgentProviderService prepareProviderServiceForAgentStateTests()
-      throws IOException {
+      throws Exception {
     ContainerLaunchContext ctx = createNiceMock(ContainerLaunchContext.class);
     Container container = createNiceMock(Container.class);
     String role = "HBASE_MASTER";
@@ -450,12 +451,12 @@ public class TestAgentProviderService {
     cs.setScript("scripts/hbase_master.py");
     doReturn(cs).when(mockAps)
         .getScriptPathFromMetainfo(anyString());
-    Metainfo metainfo = new Metainfo();
+    MetaInfo metainfo = new MetaInfo();
     Application application = new Application();
     metainfo.setApplication(application);
     doReturn(metainfo).when(mockAps).getApplicationMetainfo(
         any(SliderFileSystem.class), anyString());
-    doReturn(metainfo).when(mockAps).getMetainfo();
+    doReturn(metainfo).when(mockAps).getMetaInfo();
 
 
 
@@ -502,7 +503,7 @@ public class TestAgentProviderService {
   @Test
   public void testThreeInstallFailures() throws IOException, SliderException {
     InputStream metainfo_1 = new ByteArrayInputStream(metainfo_1_str.getBytes());
-    Metainfo metainfo = new MetainfoParser().parse(metainfo_1);
+    MetaInfo metainfo = MetaInfo.upConverted(new MetainfoParser().parse(metainfo_1));
     ConfTree tree = new ConfTree();
     tree.global.put(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH, ".");
 
@@ -543,7 +544,7 @@ public class TestAgentProviderService {
     doReturn(access).when(mockAps).getAmState();
     doReturn(metainfo).when(mockAps).getApplicationMetainfo(any(SliderFileSystem.class), anyString());
     doReturn(new HashMap<String, DefaultConfig>()).when(mockAps).
-        initializeDefaultConfigs(any(SliderFileSystem.class), anyString(), any(Metainfo.class));
+        initializeDefaultConfigs(any(SliderFileSystem.class), anyString(), any(MetaInfo.class));
 
 
     try {
@@ -630,7 +631,7 @@ public class TestAgentProviderService {
   }
 
   @Test
-  public void testAgentStateStarted() throws IOException, SliderException {
+  public void testAgentStateStarted() throws Exception, SliderException {
     AggregateConf instanceDefinition = prepareConfForAgentStateTests();
     AgentProviderService mockAps = prepareProviderServiceForAgentStateTests();
     Register reg = new Register();
@@ -683,20 +684,20 @@ public class TestAgentProviderService {
   }
 
   @Test
-  public void testAgentStateInstalled() throws IOException, SliderException {
+  public void testAgentStateInstalled() throws Exception, SliderException {
     AggregateConf instanceDefinition = prepareConfForAgentStateTests();
     AgentProviderService mockAps = prepareProviderServiceForAgentStateTests();
 
-    Metainfo metainfo = new Metainfo();
+    MetaInfo metainfo = new MetaInfo();
     Application application = new Application();
     CommandOrder cmdOrder = new CommandOrder();
     cmdOrder.setCommand("HBASE_MASTER-START");
     cmdOrder.setRequires("HBASE_MASTER-INSTALLED");
-    application.addCommandOrder(cmdOrder);
+    application.getCommandOrders().add(cmdOrder);
     metainfo.setApplication(application);
     doReturn(metainfo).when(mockAps).getApplicationMetainfo(
         any(SliderFileSystem.class), anyString());
-    doReturn(metainfo).when(mockAps).getMetainfo();
+    doReturn(metainfo).when(mockAps).getMetaInfo();
     doNothing().when(mockAps).addRoleRelatedTokens(anyMap());
 
     Register reg = new Register();
@@ -807,54 +808,15 @@ public class TestAgentProviderService {
     aps.close();
   }
 
-  @Test
-  public void testComponentSpecificPublishes() throws Exception {
-    InputStream metainfo_1 = new ByteArrayInputStream(metainfo_1_str.getBytes());
-    Metainfo metainfo = new MetainfoParser().parse(metainfo_1);
-    AgentProviderService aps = createAgentProviderService(new Configuration());
-    AgentProviderService mockAps = Mockito.spy(aps);
-    doNothing().when(mockAps).publishApplicationInstanceData(anyString(), anyString(), anyCollection());
-    doReturn(metainfo).when(mockAps).getMetainfo();
-
-    Map<String, String> ports = new HashMap<String, String>();
-    ports.put("global.listen_port", "10010");
-    mockAps.processAndPublishComponentSpecificData(ports,
-                                                   "cid1",
-                                                   "host1",
-                                                   "HBASE_REGIONSERVER");
-    ArgumentCaptor<Collection> entriesCaptor = ArgumentCaptor.
-        forClass(Collection.class);
-    ArgumentCaptor<String> publishNameCaptor = ArgumentCaptor.
-        forClass(String.class);
-    Mockito.verify(mockAps, Mockito.times(1)).publishApplicationInstanceData(
-        anyString(),
-        publishNameCaptor.capture(),
-        entriesCaptor.capture());
-    assert entriesCaptor.getAllValues().size() == 1;
-    for (Collection coll : entriesCaptor.getAllValues()) {
-      Set<Map.Entry<String, String>> entrySet = (Set<Map.Entry<String, String>>) coll;
-      for (Map.Entry entry : entrySet) {
-        log.info("{}:{}", entry.getKey(), entry.getValue().toString());
-        if (entry.getKey().equals("PropertyA")) {
-          assert entry.getValue().toString().equals("host1:10010");
-        }
-      }
-    }
-    assert publishNameCaptor.getAllValues().size() == 1;
-    for (String coll : publishNameCaptor.getAllValues()) {
-      assert coll.equals("ComponentInstanceData");
-    }
-  }
-
 
   @Test
   public void testComponentSpecificPublishes2() throws Exception {
     InputStream metainfo_1 = new ByteArrayInputStream(metainfo_1_str.getBytes());
-    Metainfo metainfo = new MetainfoParser().parse(metainfo_1);
+    MetaInfo metainfo = MetaInfo.upConverted(new MetainfoParser().parse(metainfo_1));
     AgentProviderService aps = createAgentProviderService(new Configuration());
     AgentProviderService mockAps = Mockito.spy(aps);
     doNothing().when(mockAps).publishApplicationInstanceData(anyString(), anyString(), anyCollection());
-    doReturn(metainfo).when(mockAps).getMetainfo();
+    doReturn(metainfo).when(mockAps).getMetaInfo();
     StateAccessForProviders access = createNiceMock(StateAccessForProviders.class);
     doReturn(access).when(mockAps).getAmState();
     PublishedExportsSet pubExpSet = new PublishedExportsSet();
@@ -935,7 +897,7 @@ public class TestAgentProviderService {
   @Test
   public void testProcessConfig() throws Exception {
     InputStream metainfo_1 = new ByteArrayInputStream(metainfo_1_str.getBytes());
-    Metainfo metainfo = new MetainfoParser().parse(metainfo_1);
+    MetaInfo metainfo = MetaInfo.upConverted(new MetainfoParser().parse(metainfo_1));
     Assert.assertNotNull(metainfo.getApplication());
     AgentProviderService aps = createAgentProviderService(new Configuration());
     HeartBeat hb = new HeartBeat();
@@ -964,7 +926,7 @@ public class TestAgentProviderService {
         new MockContainerId(1), "cid");
     AgentProviderService mockAps = Mockito.spy(aps);
     doNothing().when(mockAps).publishApplicationInstanceData(anyString(), anyString(), anyCollection());
-    doReturn(metainfo).when(mockAps).getMetainfo();
+    doReturn(metainfo).when(mockAps).getMetaInfo();
     doReturn(roleClusterNodeMap).when(mockAps).getRoleClusterNodeMapping();
     StateAccessForProviders access = createNiceMock(StateAccessForProviders.class);
     doReturn(access).when(mockAps).getAmState();
@@ -1018,9 +980,9 @@ public class TestAgentProviderService {
   }
 
   @Test
-  public void testMetainfoParsing() throws Exception {
+  public void testMetaInfoParsing() throws Exception {
     InputStream metainfo_1 = new ByteArrayInputStream(metainfo_1_str.getBytes());
-    Metainfo metainfo = new MetainfoParser().parse(metainfo_1);
+    MetaInfo metainfo = MetaInfo.upConverted(new MetainfoParser().parse(metainfo_1));
     Assert.assertNotNull(metainfo.getApplication());
     Application application = metainfo.getApplication();
     log.info("Service: " + application.toString());
@@ -1032,31 +994,22 @@ public class TestAgentProviderService {
     for (Component component : components) {
       if (component.getName().equals("HBASE_MASTER")) {
         Assert.assertEquals(component.getAutoStartOnFailure(), "true");
-        Assert.assertEquals(component.getRequiresAutoRestart(), Boolean.TRUE);
+        Assert.assertEquals(component.getAutoStartOnFailure(), Boolean.TRUE);
         Assert.assertEquals(component.getMinInstanceCount(), "1");
         Assert.assertEquals(component.getMaxInstanceCount(), "2");
         Assert.assertEquals(component.getCommandScript().getScript(), "scripts/hbase_master.py");
         Assert.assertEquals(component.getCategory(), "MASTER");
-        Assert.assertEquals(component.getComponentExports().size(), 0);
         Assert.assertEquals(component.getAppExports(), "QuickLinks-JMX_Endpoint,QuickLinks-Master_Status");
         Assert.assertEquals(component.getCompExports(), "QuickLinks-Comp_Endpoint");
         found++;
       }
       if (component.getName().equals("HBASE_REGIONSERVER")) {
         Assert.assertEquals(component.getAutoStartOnFailure(), "Falsee");
-        Assert.assertEquals(component.getRequiresAutoRestart(), Boolean.FALSE);
+        Assert.assertEquals(component.getAutoStartOnFailure(), Boolean.FALSE);
         Assert.assertEquals(component.getMinInstanceCount(), "1");
         Assert.assertNull(component.getMaxInstanceCount());
         Assert.assertEquals(component.getCommandScript().getScript(), "scripts/hbase_regionserver.py");
         Assert.assertEquals(component.getCategory(), "SLAVE");
-        Assert.assertEquals(component.getComponentExports().size(), 2);
-        List<ComponentExport> es = component.getComponentExports();
-        ComponentExport e = es.get(0);
-        Assert.assertEquals(e.getName(), "PropertyA");
-        Assert.assertEquals(e.getValue(), "${THIS_HOST}:${site.global.listen_port}");
-        e = es.get(1);
-        Assert.assertEquals(e.getName(), "PropertyB");
-        Assert.assertEquals(e.getValue(), "AConstant");
         found++;
       }
     }
@@ -1083,10 +1036,10 @@ public class TestAgentProviderService {
     }
     Assert.assertEquals(found, 2);
 
-    List<CommandOrder> cmdOrders = application.getCommandOrder();
+    List<CommandOrder> cmdOrders = application.getCommandOrders();
     Assert.assertEquals(cmdOrders.size(), 2);
     found = 0;
-    for (CommandOrder co : application.getCommandOrder()) {
+    for (CommandOrder co : application.getCommandOrders()) {
       if (co.getCommand().equals("HBASE_REGIONSERVER-START")) {
         Assert.assertTrue(co.getRequires().equals("HBASE_MASTER-STARTED"));
         found++;
@@ -1117,7 +1070,7 @@ public class TestAgentProviderService {
 
     AgentProviderService aps = createAgentProviderService(new Configuration());
     AgentProviderService mockAps = Mockito.spy(aps);
-    doReturn(metainfo).when(mockAps).getMetainfo();
+    doReturn(metainfo).when(mockAps).getMetaInfo();
     CommandScript script = mockAps.getScriptPathFromMetainfo("HBASE_MASTER");
     Assert.assertEquals(script.getScript(), "scripts/hbase_master.py");
 
@@ -1131,25 +1084,25 @@ public class TestAgentProviderService {
                                 + "      </comment>\n";
 
     metainfo_1 = new ByteArrayInputStream(metainfo_1_str_bad.getBytes());
-    metainfo = new MetainfoParser().parse(metainfo_1);
+    metainfo = MetaInfo.upConverted(new MetainfoParser().parse(metainfo_1));
     Assert.assertNull(metainfo);
   }
 
   @Test
   public void testMetaInfoRelatedOperations() throws Exception {
     InputStream metainfo_1 = new ByteArrayInputStream(metainfo_1_str.getBytes());
-    Metainfo metainfo = new MetainfoParser().parse(metainfo_1);
+    MetaInfo metainfo = MetaInfo.upConverted(new MetainfoParser().parse(metainfo_1));
     InputStream metainfo_2 = new ByteArrayInputStream(metainfo_2_str.getBytes());
-    Metainfo metainfo2 = new MetainfoParser().parse(metainfo_2);
+    MetaInfo metainfo2 = MetaInfo.upConverted(new MetainfoParser().parse(metainfo_2));
     String role_hm = "HBASE_MASTER";
     String role_hrs = "HBASE_REGIONSERVER";
 
     AgentProviderService aps1 = createAgentProviderService(new Configuration());
     AgentProviderService mockAps = Mockito.spy(aps1);
-    doReturn(metainfo).when(mockAps).getMetainfo();
+    doReturn(metainfo).when(mockAps).getMetaInfo();
 
     AgentProviderService mockAps2 = Mockito.spy(aps1);
-    doReturn(metainfo2).when(mockAps2).getMetainfo();
+    doReturn(metainfo2).when(mockAps2).getMetaInfo();
 
     Assert.assertTrue(mockAps.isMaster(role_hm));
     Assert.assertFalse(mockAps.isMaster(role_hrs));
@@ -1165,11 +1118,11 @@ public class TestAgentProviderService {
   }
 
   @Test
-  public void testOrchestratedAppStart() throws IOException {
+  public void testOrchestratedAppStart() throws Exception {
     // App has two components HBASE_MASTER and HBASE_REGIONSERVER
     // Start of HBASE_RS depends on the start of HBASE_MASTER
     InputStream metainfo_1 = new ByteArrayInputStream(metainfo_1_str.getBytes());
-    Metainfo metainfo = new MetainfoParser().parse(metainfo_1);
+    MetaInfo metainfo = MetaInfo.upConverted(new MetainfoParser().parse(metainfo_1));
     ConfTree tree = new ConfTree();
     tree.global.put(InternalKeys.INTERNAL_APPLICATION_IMAGE_PATH, ".");
 
@@ -1212,7 +1165,7 @@ public class TestAgentProviderService {
     doReturn(access).when(mockAps).getAmState();
     doReturn(metainfo).when(mockAps).getApplicationMetainfo(any(SliderFileSystem.class), anyString());
     doReturn(new HashMap<String, DefaultConfig>()).when(mockAps).
-        initializeDefaultConfigs(any(SliderFileSystem.class), anyString(), any(Metainfo.class));
+        initializeDefaultConfigs(any(SliderFileSystem.class), anyString(), any(MetaInfo.class));
 
 
     try {
@@ -1542,7 +1495,7 @@ public class TestAgentProviderService {
   @Test
   public void testAddInstallCommand() throws Exception {
     InputStream metainfo_1 = new ByteArrayInputStream(metainfo_1_str.getBytes());
-    Metainfo metainfo = new MetainfoParser().parse(metainfo_1);
+    MetaInfo metainfo = MetaInfo.upConverted(new MetainfoParser().parse(metainfo_1));
     AgentProviderService aps = createAgentProviderService(new Configuration());
     HeartBeatResponse hbr = new HeartBeatResponse();
 
@@ -1563,7 +1516,7 @@ public class TestAgentProviderService {
     expect(access.isApplicationLive()).andReturn(true).anyTimes();
 
     doReturn("HOST1").when(mockAps).getClusterInfoPropertyValue(anyString());
-    doReturn(metainfo).when(mockAps).getMetainfo();
+    doReturn(metainfo).when(mockAps).getMetaInfo();
     doReturn(new HashMap<String, DefaultConfig>()).when(mockAps).getDefaultConfigs();
 
     Map<String, Map<String, ClusterNode>> roleClusterNodeMap = new HashMap<String, Map<String, ClusterNode>>();

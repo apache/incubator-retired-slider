@@ -68,6 +68,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -106,6 +107,8 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * These are slider-specific Util methods
@@ -1713,7 +1716,58 @@ public final class SliderUtils {
   }
 
   /**
-   * This wrapps ApplicationReports and generates a string version
+   * Given a source folder create zipped file
+   *
+   * @param srcFolder
+   * @param zipFile
+   *
+   * @throws IOException
+   */
+  public static void zipFolder(File srcFolder, File zipFile) throws IOException {
+    log.info("Zipping folder {} to {}", srcFolder.getAbsolutePath(), zipFile.getAbsolutePath());
+    List<String> files = new ArrayList<>();
+    generateFileList(files, srcFolder, srcFolder, true);
+
+    byte[] buffer = new byte[1024];
+
+    try (FileOutputStream fos = new FileOutputStream(zipFile)) {
+      try (ZipOutputStream zos = new ZipOutputStream(fos)) {
+
+        for (String file : files) {
+          ZipEntry ze = new ZipEntry(file);
+          zos.putNextEntry(ze);
+          try (FileInputStream in = new FileInputStream(srcFolder + File.separator + file)) {
+            int len;
+            while ((len = in.read(buffer)) > 0) {
+              zos.write(buffer, 0, len);
+            }
+          }
+        }
+      }
+    }
+  }
+
+
+  private static void generateFileList(List<String> fileList, File node, File rootFolder, Boolean relative) {
+    if (node.isFile()) {
+      String fileFullPath = node.toString();
+      if (relative) {
+        fileList.add(fileFullPath.substring(rootFolder.toString().length() + 1, fileFullPath.length()));
+      } else {
+        fileList.add(fileFullPath);
+      }
+    }
+
+    if (node.isDirectory()) {
+      String[] subNode = node.list();
+      for (String filename : subNode) {
+        generateFileList(fileList, new File(node, filename), rootFolder, relative);
+      }
+    }
+  }
+
+  /**
+   * This wraps ApplicationReports and generates a string version
    * iff the toString() operator is invoked
    */
   public static class OnDemandReportStringifier {

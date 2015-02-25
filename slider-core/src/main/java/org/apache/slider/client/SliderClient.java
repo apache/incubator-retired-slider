@@ -20,11 +20,13 @@ package org.apache.slider.client;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.io.Files;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathNotFoundException;
@@ -174,7 +176,6 @@ import java.io.Writer;
 import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -913,7 +914,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     JSONObject config = null;
     if(clientInfo.clientConfig != null) {
       try {
-        byte[] encoded = Files.readAllBytes(clientInfo.clientConfig.toPath());
+        byte[] encoded = Files.toByteArray(clientInfo.clientConfig);
         config = new JSONObject(new String(encoded, Charset.defaultCharset()));
       }catch(JSONException jsonEx) {
         log.error("Unable to read supplied config", jsonEx);
@@ -1163,6 +1164,89 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       }
     }
 
+    List<AppDefinition> appDefinitions = new ArrayList<>();
+    // if metainfo is provided add to the app instance
+    if(buildInfo.appMetaInfo != null) {
+      if(!buildInfo.appMetaInfo.canRead() || !buildInfo.appMetaInfo.isFile()) {
+        throw new BadConfigException("--metainfo file cannot be read.");
+      }
+
+      if(buildInfo.appDef != null) {
+        throw new BadConfigException("both --metainfo and --appdef may not be specified.");
+      }
+
+      if(SliderUtils.isSet(appConf.getGlobalOptions().get(AgentKeys.APP_DEF))) {
+        throw new BadConfigException("application.def must not be set if --metainfo is provided.");
+      }
+
+      File tempDir = Files.createTempDir();
+      File pkgSrcDir = new File(tempDir, "default");
+      pkgSrcDir.mkdirs();
+      Files.copy(buildInfo.appMetaInfo, new File(pkgSrcDir, "metainfo.json"));
+
+      Path appDirPath = sliderFileSystem.buildAppDefDirPath(clustername);
+      log.info("Using default app def path {}", appDirPath.toString());
+      AppDefinition ad = new AppDefinition();
+      ad.fileInFs = appDirPath;
+      ad.appDef = pkgSrcDir;
+      ad.pkgName = SliderKeys.DEFAULT_APP_PKG;
+      appDefinitions.add(ad);
+//      processDefinitionPackageOrFolder(
+//          appDirPath,
+//          pkgSrcDir,
+//          SliderKeys.DEFAULT_APP_PKG);
+      Path appDefPath = new Path(appDirPath, SliderKeys.DEFAULT_APP_PKG);
+      appConf.getGlobalOptions().set(AgentKeys.APP_DEF, appDefPath);
+      log.info("Setting app package to {}.", appDefPath);
+    }
+
+    if (buildInfo.appDef != null) {
+      if(SliderUtils.isSet(appConf.getGlobalOptions().get(AgentKeys.APP_DEF))) {
+        throw new BadConfigException("application.def must not be set if --appdef is provided.");
+      }
+
+      Path appDirPath = sliderFileSystem.buildAppDefDirPath(clustername);
+      AppDefinition ad = new AppDefinition();
+      ad.fileInFs = appDirPath;
+      ad.appDef = buildInfo.appDef;
+      ad.pkgName = SliderKeys.DEFAULT_APP_PKG;
+      appDefinitions.add(ad);
+//      processDefinitionPackageOrFolder(
+//          appDirPath,
+//          buildInfo.appDef,
+//          SliderKeys.DEFAULT_APP_PKG);
+      Path appDefPath = new Path(appDirPath, SliderKeys.DEFAULT_APP_PKG);
+      appConf.getGlobalOptions().set(AgentKeys.APP_DEF, appDefPath);
+      log.info("Setting app package to {}.", appDefPath);    }
+
+    if (buildInfo.addonDelegate.getAddonMap().size() > 0) {
+      List<String> addons = new ArrayList<String>();
+      Map<String, String> addonMap = buildInfo.addonDelegate.getAddonMap();
+      for (String key : addonMap.keySet()) {
+        Path addonPath = sliderFileSystem.buildAddonDirPath(clustername, key);
+        String addonPkgName = "addon_" + key + ".zip";
+        AppDefinition ad = new AppDefinition();
+        ad.fileInFs = addonPath;
+        ad.appDef = buildInfo.appDef;
+        ad.pkgName = addonPkgName;
+        appDefinitions.add(ad);
+//        processDefinitionPackageOrFolder(addonPath,
+//                                         buildInfo.appDef,
+//                                         addonPkgName);
+        String addOnKey = AgentKeys.ADDON_PREFIX + key;
+        Path addonPkgPath = new Path(addonPath, addonPkgName);
+        log.info("Setting addon package {} to {}.",addOnKey, addonPkgPath);
+        appConf.getGlobalOptions().set(addOnKey, addonPkgPath);
+      }
+
+      String existingList = appConf.getGlobalOptions().get(AgentKeys.ADDONS);
+      if(SliderUtils.isUnset(existingList)) {
+        existingList = "";
+      }
+      appConf.getGlobalOptions().set(AgentKeys.ADDONS, existingList + StringUtils.join(addons, ","));
+    }
+
+
     //get the command line options
     ConfTree cmdLineAppOptions = buildInfo.buildAppOptionsConfTree();
     ConfTree cmdLineResourceOptions = buildInfo.buildResourceOptionsConfTree();
@@ -1254,17 +1338,61 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // make any substitutions needed at this stage
     replaceTokens(appConf.getConfTree(), getUsername(), clustername);
 
-    // providers to validate what there is
-    AggregateConf instanceDescription = builder.getInstanceDescription();
-    validateInstanceDefinition(sliderAM, instanceDescription, sliderFileSystem);
-    validateInstanceDefinition(provider, instanceDescription, sliderFileSystem);
+    // TODO: Refactor the validation code and persistence code
     try {
       persistInstanceDefinition(overwrite, appconfdir, builder);
+      for(AppDefinition ad : appDefinitions) {
+        processDefinitionPackageOrFolder(ad.fileInFs,
+                                         ad.appDef,
+                                         ad.pkgName);
+      }
     } catch (LockAcquireFailedException e) {
       log.warn("Failed to get a Lock on {} : {}", builder, e);
       throw new BadClusterStateException("Failed to save " + clustername
                                          + ": " + e);
     }
+
+    // providers to validate what there is
+    AggregateConf instanceDescription = builder.getInstanceDescription();
+    validateInstanceDefinition(sliderAM, instanceDescription, sliderFileSystem);
+    validateInstanceDefinition(provider, instanceDescription, sliderFileSystem);
+  }
+
+  /**
+   * Process the application package or folder by copying it to the cluster path
+   * @param fileInFs  fileInFs folder
+   * @param appDef  definition package or folder
+   * @param pkgName package name when its a folder
+   * @throws BadConfigException
+   * @throws IOException
+   * @throws BadClusterStateException
+   */
+  private void processDefinitionPackageOrFolder(Path fileInFs,
+                                                File appDef,
+                                                String pkgName)
+      throws BadConfigException, IOException, BadClusterStateException {
+    if (!appDef.canRead()) {
+      throw new BadConfigException("Pkg/Folder cannot be accessed - " + appDef.getAbsolutePath());
+    }
+
+    File src = appDef;
+    String targetName = appDef.getName();
+
+    if (appDef.isDirectory()) {
+      log.info("Processing app package/folder {} for {}", appDef.getAbsolutePath(), pkgName);
+      File tmpDir = Files.createTempDir();
+      File zipFile = new File(tmpDir.getCanonicalPath(), File.separator + pkgName);
+      SliderUtils.zipFolder(appDef, zipFile);
+
+      src = zipFile;
+      targetName = pkgName;
+    }
+
+    sliderFileSystem.getFileSystem().copyFromLocalFile(
+        false,
+        false,
+        new Path(src.toURI()),
+        new Path(fileInFs, targetName));
   }
 
   protected void persistInstanceDefinition(boolean overwrite,
@@ -3727,6 +3855,13 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       throw new NotFoundException(notFound, notFound.toString());
     }
     return EXIT_SUCCESS;
+  }
+
+  // TODO: Refactor this
+  class AppDefinition {
+    Path fileInFs;
+    File appDef;
+    String pkgName;
   }
 }
 

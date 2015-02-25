@@ -66,17 +66,16 @@ import org.apache.slider.providers.AbstractProviderService;
 import org.apache.slider.providers.ProviderCore;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
-import org.apache.slider.providers.agent.application.metadata.Application;
-import org.apache.slider.providers.agent.application.metadata.CommandScript;
-import org.apache.slider.providers.agent.application.metadata.Component;
-import org.apache.slider.providers.agent.application.metadata.ComponentExport;
-import org.apache.slider.providers.agent.application.metadata.ConfigFile;
+import org.apache.slider.providers.agent.application.metadata.json.Application;
+import org.apache.slider.providers.agent.application.metadata.json.CommandScript;
+import org.apache.slider.providers.agent.application.metadata.json.Component;
+import org.apache.slider.providers.agent.application.metadata.json.ComponentCommand;
+import org.apache.slider.providers.agent.application.metadata.json.ConfigFile;
 import org.apache.slider.providers.agent.application.metadata.DefaultConfig;
-import org.apache.slider.providers.agent.application.metadata.Export;
-import org.apache.slider.providers.agent.application.metadata.ExportGroup;
-import org.apache.slider.providers.agent.application.metadata.Metainfo;
-import org.apache.slider.providers.agent.application.metadata.OSPackage;
-import org.apache.slider.providers.agent.application.metadata.OSSpecific;
+import org.apache.slider.providers.agent.application.metadata.json.Export;
+import org.apache.slider.providers.agent.application.metadata.json.ExportGroup;
+import org.apache.slider.providers.agent.application.metadata.json.MetaInfo;
+import org.apache.slider.providers.agent.application.metadata.json.Package;
 import org.apache.slider.providers.agent.application.metadata.PropertyInfo;
 import org.apache.slider.server.appmaster.actions.ProviderReportedContainerLoss;
 import org.apache.slider.server.appmaster.actions.RegisterComponentInstance;
@@ -156,7 +155,7 @@ public class AgentProviderService extends AbstractProviderService implements
   private int heartbeatMonitorInterval = 0;
   private AgentClientProvider clientProvider;
   private AtomicInteger taskId = new AtomicInteger(0);
-  private volatile Metainfo metainfo = null;
+  private volatile MetaInfo metaInfo = null;
   private Map<String, DefaultConfig> defaultConfigs = null;
   private ComponentCommandOrder commandOrder = null;
   private HeartbeatMonitor monitor;
@@ -232,7 +231,7 @@ public class AgentProviderService extends AbstractProviderService implements
     Set<String> names = resources.getComponentNames();
     names.remove(SliderKeys.COMPONENT_AM);
     for (String name : names) {
-      Component componentDef = getMetainfo().getApplicationComponent(name);
+      Component componentDef = getMetaInfo().getApplicationComponent(name);
       if (componentDef == null) {
         throw new BadConfigException(
             "Component %s is not a member of application.", name);
@@ -241,8 +240,8 @@ public class AgentProviderService extends AbstractProviderService implements
       MapOperations componentConfig = resources.getMandatoryComponent(name);
       int count =
           componentConfig.getMandatoryOptionInt(ResourceKeys.COMPONENT_INSTANCES);
-      int definedMinCount = componentDef.getMinInstanceCountInt();
-      int definedMaxCount = componentDef.getMaxInstanceCountInt();
+      int definedMinCount = componentDef.getMinInstanceCount();
+      int definedMaxCount = componentDef.getMaxInstanceCount();
       if (count < definedMinCount || count > definedMaxCount) {
         throw new BadConfigException("Component %s, %s value %d out of range. "
                                      + "Expected minimum is %d and maximum is %d",
@@ -261,21 +260,21 @@ public class AgentProviderService extends AbstractProviderService implements
     String appDef = instanceDefinition.getAppConfOperations()
         .getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
 
-    if (metainfo == null) {
+    if (metaInfo == null) {
       synchronized (syncLock) {
-        if (metainfo == null) {
+        if (metaInfo == null) {
           readAndSetHeartbeatMonitoringInterval(instanceDefinition);
           initializeAgentDebugCommands(instanceDefinition);
 
-          metainfo = getApplicationMetainfo(fileSystem, appDef);
-          if (metainfo == null || metainfo.getApplication() == null) {
+          metaInfo = getApplicationMetainfo(fileSystem, appDef);
+          if (metaInfo == null || metaInfo.getApplication() == null) {
             log.error("metainfo.xml is unavailable or malformed at {}.", appDef);
             throw new SliderException(
                 "metainfo.xml is required in app package.");
           }
-          commandOrder = new ComponentCommandOrder(metainfo.getApplication()
-                                                       .getCommandOrder());
-          defaultConfigs = initializeDefaultConfigs(fileSystem, appDef, metainfo);
+          commandOrder = new ComponentCommandOrder(metaInfo.getApplication()
+                                                       .getCommandOrders());
+          defaultConfigs = initializeDefaultConfigs(fileSystem, appDef, metaInfo);
           monitor = new HeartbeatMonitor(this, getHeartbeatMonitorInterval());
           monitor.start();
         }
@@ -715,15 +714,20 @@ public class AgentProviderService extends AbstractProviderService implements
 
     StateAccessForProviders accessor = getAmState();
     CommandScript cmdScript = getScriptPathFromMetainfo(roleName);
+    List<ComponentCommand> commands = getMetaInfo().getApplicationComponent(roleName).getCommands();
 
-    if (cmdScript == null || cmdScript.getScript() == null) {
+    if ((cmdScript == null || cmdScript.getScript() == null) && commands.size() == 0) {
       log.error("role.script is unavailable for {}. Commands will not be sent.",
           roleName);
       return response;
     }
 
-    String scriptPath = cmdScript.getScript();
-    long timeout = cmdScript.getTimeout();
+    String scriptPath = null;
+    long timeout = 600L;
+    if(cmdScript != null) {
+      scriptPath = cmdScript.getScript();
+      timeout = cmdScript.getTimeout();
+    }
 
     if (timeout == 0L) {
       timeout = 600L;
@@ -775,18 +779,49 @@ public class AgentProviderService extends AbstractProviderService implements
     try {
       if (Command.NOP != command) {
         if (command == Command.INSTALL) {
-          log.info("Installing {} on {}.", roleName, containerId);
-          addInstallCommand(roleName, containerId, response, scriptPath, timeout);
-          componentStatus.commandIssued(command);
-        } else if (command == Command.START) {
-          // check against dependencies
-          boolean canExecute = commandOrder.canExecute(roleName, command, getComponentStatuses().values());
-          if (canExecute) {
-            log.info("Starting {} on {}.", roleName, containerId);
-            addStartCommand(roleName, containerId, response, scriptPath, timeout, isMarkedAutoRestart(roleName));
+          if(scriptPath != null) {
+            log.info("Installing {} on {}.", roleName, containerId);
+            addInstallCommand(roleName, containerId, response, scriptPath, timeout);
             componentStatus.commandIssued(command);
           } else {
-            log.info("Start of {} on {} delayed as dependencies have not started.", roleName, containerId);
+            // commands
+            log.info("Installing {} on {}.", roleName, containerId);
+            ComponentCommand installCmd = null;
+            for(ComponentCommand compCmd : commands) {
+              if(compCmd.getName().equals("INSTALL")) {
+                installCmd = compCmd;
+              }
+            }
+            addInstallCommand2(roleName, containerId, response, installCmd, timeout);
+            componentStatus.commandIssued(command);
+          }
+        } else if (command == Command.START) {
+          if(scriptPath != null) {
+            // check against dependencies
+            boolean canExecute = commandOrder.canExecute(roleName, command, getComponentStatuses().values());
+            if (canExecute) {
+              log.info("Starting {} on {}.", roleName, containerId);
+              addStartCommand(roleName, containerId, response, scriptPath, timeout, isMarkedAutoRestart(roleName));
+              componentStatus.commandIssued(command);
+            } else {
+              log.info("Start of {} on {} delayed as dependencies have not started.", roleName, containerId);
+            }
+          } else {
+            // check against dependencies
+            boolean canExecute = commandOrder.canExecute(roleName, command, getComponentStatuses().values());
+            if (canExecute) {
+              log.info("Starting {} on {}.", roleName, containerId);
+              ComponentCommand startCmd = null;
+              for(ComponentCommand compCmd : commands) {
+                if(compCmd.getName().equals("START")) {
+                  startCmd = compCmd;
+                }
+              }
+              addStartCommand2(roleName, containerId, response, startCmd, timeout, false);
+              componentStatus.commandIssued(command);
+            } else {
+              log.info("Start of {} on {} delayed as dependencies have not started.", roleName, containerId);
+            }
           }
         }
       }
@@ -856,8 +891,6 @@ public class AgentProviderService extends AbstractProviderService implements
       }
     }
 
-    // component specific publishes
-    processAndPublishComponentSpecificData(ports, containerId, fqdn, roleName);
     processAndPublishComponentSpecificExports(ports, containerId, fqdn, roleName);
 
     // and update registration entries
@@ -1010,8 +1043,8 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   @VisibleForTesting
-  protected Metainfo getMetainfo() {
-    return this.metainfo;
+  protected MetaInfo getMetaInfo() {
+    return this.metaInfo;
   }
 
   @VisibleForTesting
@@ -1020,9 +1053,9 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   @VisibleForTesting
-  protected Metainfo getApplicationMetainfo(SliderFileSystem fileSystem,
-                                            String appDef) throws IOException {
-    return AgentUtils.getApplicationMetainfo(fileSystem, appDef);
+  protected MetaInfo getApplicationMetainfo(SliderFileSystem fileSystem,
+                                            String appDef) throws IOException, BadConfigException {
+    return AgentUtils.getApplicationMetaInfo(fileSystem, appDef);
   }
 
   @VisibleForTesting
@@ -1042,8 +1075,8 @@ public class AgentProviderService extends AbstractProviderService implements
    * @throws IOException
    */
   protected Map<String, DefaultConfig> initializeDefaultConfigs(SliderFileSystem fileSystem,
-                                                                String appDef, Metainfo metainfo) throws IOException {
-    Map<String, DefaultConfig> defaultConfigMap = new HashMap<String, DefaultConfig>();
+                                                                String appDef, MetaInfo metainfo) throws IOException {
+    Map<String, DefaultConfig> defaultConfigMap = new HashMap<>();
     if (SliderUtils.isNotEmpty(metainfo.getApplication().getConfigFiles())) {
       for (ConfigFile configFile : metainfo.getApplication().getConfigFiles()) {
         DefaultConfig config = null;
@@ -1224,7 +1257,7 @@ public class AgentProviderService extends AbstractProviderService implements
         log.info("Status report: {}", status.toString());
 
         if (status.getConfigs() != null) {
-          Application application = getMetainfo().getApplication();
+          Application application = getMetaInfo().getApplication();
 
           if (canAnyMasterPublishConfig() == false || canPublishConfig(componentName)) {
             // If no Master can explicitly publish then publish if its a master
@@ -1359,56 +1392,6 @@ public class AgentProviderService extends AbstractProviderService implements
     }
   }
 
-  /** Publish component instance specific data if the component demands it */
-  protected void processAndPublishComponentSpecificData(Map<String, String> ports,
-                                                        String containerId,
-                                                        String hostFqdn,
-                                                        String componentName) {
-    String portVarFormat = "${site.%s}";
-    String hostNamePattern = "${THIS_HOST}";
-    Map<String, String> toPublish = new HashMap<String, String>();
-
-    Application application = getMetainfo().getApplication();
-    for (Component component : application.getComponents()) {
-      if (component.getName().equals(componentName)) {
-        if (!component.getComponentExports().isEmpty()) {
-
-          for (ComponentExport export : component.getComponentExports()) {
-            String templateToExport = export.getValue();
-            for (String portName : ports.keySet()) {
-              boolean publishData = false;
-              String portValPattern = String.format(portVarFormat, portName);
-              if (templateToExport.contains(portValPattern)) {
-                templateToExport = templateToExport.replace(portValPattern, ports.get(portName));
-                publishData = true;
-              }
-              if (templateToExport.contains(hostNamePattern)) {
-                templateToExport = templateToExport.replace(hostNamePattern, hostFqdn);
-                publishData = true;
-              }
-              if (publishData) {
-                toPublish.put(export.getName(), templateToExport);
-                log.info("Publishing {} for name {} and container {}",
-                         templateToExport, export.getName(), containerId);
-              }
-            }
-          }
-        }
-      }
-    }
-
-    if (!toPublish.isEmpty()) {
-      Map<String, String> perContainerData = null;
-      if (!getComponentInstanceData().containsKey(containerId)) {
-        perContainerData = new ConcurrentHashMap<String, String>();
-      } else {
-        perContainerData = getComponentInstanceData().get(containerId);
-      }
-      perContainerData.putAll(toPublish);
-      getComponentInstanceData().put(containerId, perContainerData);
-      publishComponentInstanceData();
-    }
-  }
 
   /** Publish component instance specific data if the component demands it */
   protected void processAndPublishComponentSpecificExports(Map<String, String> ports,
@@ -1418,8 +1401,8 @@ public class AgentProviderService extends AbstractProviderService implements
     String portVarFormat = "${site.%s}";
     String hostNamePattern = "${" + compName + "_HOST}";
 
-    List<ExportGroup> appExportGroups = getMetainfo().getApplication().getExportGroups();
-    Component component = getMetainfo().getApplicationComponent(compName);
+    List<ExportGroup> appExportGroups = getMetaInfo().getApplication().getExportGroups();
+    Component component = getMetaInfo().getApplicationComponent(compName);
     if (component != null && SliderUtils.isSet(component.getCompExports())
         && SliderUtils.isNotEmpty(appExportGroups)) {
 
@@ -1521,7 +1504,7 @@ public class AgentProviderService extends AbstractProviderService implements
    * @return the component entry or null for no match
    */
   protected Component getApplicationComponent(String roleName) {
-    return getMetainfo().getApplicationComponent(roleName);
+    return getMetaInfo().getApplicationComponent(roleName);
   }
 
   /**
@@ -1581,7 +1564,7 @@ public class AgentProviderService extends AbstractProviderService implements
   protected boolean isMarkedAutoRestart(String roleName) {
     Component component = getApplicationComponent(roleName);
     if (component != null) {
-      return component.getRequiresAutoRestart();
+      return component.getAutoStartOnFailure();
     }
     return false;
   }
@@ -1593,7 +1576,7 @@ public class AgentProviderService extends AbstractProviderService implements
    */
   protected boolean canAnyMasterPublishConfig() {
     if (canAnyMasterPublish == null) {
-      Application application = getMetainfo().getApplication();
+      Application application = getMetaInfo().getApplication();
       if (application == null) {
         log.error("Malformed app definition: Expect application as root element in the metainfo.xml");
       } else {
@@ -1663,20 +1646,53 @@ public class AgentProviderService extends AbstractProviderService implements
     response.addExecutionCommand(cmd);
   }
 
+  @VisibleForTesting
+  protected void addInstallCommand2(String componentName,
+                                   String containerId,
+                                   HeartBeatResponse response,
+                                   ComponentCommand compCmd,
+                                   long timeout)
+      throws SliderException {
+    assert getAmState().isApplicationLive();
+    ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
+
+    ExecutionCommand cmd = new ExecutionCommand(AgentCommandType.EXECUTION_COMMAND);
+    prepareExecutionCommand(cmd);
+    String clusterName = getClusterName();
+    cmd.setClusterName(clusterName);
+    cmd.setRoleCommand(Command.INSTALL.toString());
+    cmd.setServiceName(clusterName);
+    cmd.setComponentName(componentName);
+    cmd.setRole(componentName);
+    Map<String, String> hostLevelParams = new TreeMap<String, String>();
+    hostLevelParams.put(PACKAGE_LIST, getPackageList());
+    hostLevelParams.put(CONTAINER_ID, containerId);
+    cmd.setHostLevelParams(hostLevelParams);
+
+    Map<String, Map<String, String>> configurations = buildCommandConfigurations(appConf, containerId, componentName);
+    cmd.setConfigurations(configurations);
+
+    ComponentCommand effectiveCommand = compCmd;
+    if(compCmd == null) {
+      effectiveCommand = new ComponentCommand();
+      effectiveCommand.setName("INSTALL");
+      effectiveCommand.setExec("DEFAULT");
+    }
+    cmd.setCommandParams(setCommandParameters(effectiveCommand, timeout, false));
+    configurations.get("global").put("exec_cmd", effectiveCommand.getExec());
+
+    cmd.setHostname(getClusterInfoPropertyValue(StatusKeys.INFO_AM_HOSTNAME));
+    response.addExecutionCommand(cmd);
+  }
+
   protected static String getPackageListFromApplication(Application application) {
     String pkgFormatString = "{\"type\":\"%s\",\"name\":\"%s\"}";
     String pkgListFormatString = "[%s]";
     List<String> packages = new ArrayList();
     if (application != null) {
-      List<OSSpecific> osSpecifics = application.getOSSpecifics();
-      if (osSpecifics != null && osSpecifics.size() > 0) {
-        for (OSSpecific osSpecific : osSpecifics) {
-          if (osSpecific.getOsType().equals("any")) {
-            for (OSPackage osPackage : osSpecific.getPackages()) {
-              packages.add(String.format(pkgFormatString, osPackage.getType(), osPackage.getName()));
-            }
-          }
-        }
+      List<Package> appPackages = application.getPackages();
+      for (Package appPackage : appPackages){
+        packages.add(String.format(pkgFormatString, appPackage.getType(), appPackage.getName()));
       }
     }
 
@@ -1688,7 +1704,7 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   private String getPackageList() {
-    return getPackageListFromApplication(getMetainfo().getApplication());
+    return getPackageListFromApplication(getMetaInfo().getApplication());
   }
 
   private void prepareExecutionCommand(ExecutionCommand cmd) {
@@ -1704,6 +1720,18 @@ public class AgentProviderService extends AbstractProviderService implements
     cmdParams.put("schema_version", "2.0");
     cmdParams.put("command_timeout", Long.toString(timeout));
     cmdParams.put("script_type", "PYTHON");
+    cmdParams.put("record_config", Boolean.toString(recordConfig));
+    return cmdParams;
+  }
+
+  private Map<String, String> setCommandParameters(ComponentCommand compCmd, long timeout, boolean recordConfig) {
+    Map<String, String> cmdParams = new TreeMap<String, String>();
+    cmdParams.put("service_package_folder",
+                  "${AGENT_WORK_ROOT}/work/app/definition/package");
+    cmdParams.put("command", compCmd.getExec());
+    cmdParams.put("schema_version", "2.0");
+    cmdParams.put("command_timeout", Long.toString(timeout));
+    cmdParams.put("script_type", compCmd.getType());
     cmdParams.put("record_config", Boolean.toString(recordConfig));
     return cmdParams;
   }
@@ -1830,6 +1858,42 @@ public class AgentProviderService extends AbstractProviderService implements
     response.addExecutionCommand(cmdStop);
   }
 
+  @VisibleForTesting
+  protected void addStartCommand2(String componentName, String containerId, HeartBeatResponse response,
+                                 ComponentCommand startCommand, long timeout, boolean isMarkedAutoRestart)
+      throws
+      SliderException {
+    assert getAmState().isApplicationLive();
+    ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
+    ConfTreeOperations internalsConf = getAmState().getInternalsSnapshot();
+
+    ExecutionCommand cmd = new ExecutionCommand(AgentCommandType.EXECUTION_COMMAND);
+    prepareExecutionCommand(cmd);
+    String clusterName = internalsConf.get(OptionKeys.APPLICATION_NAME);
+    String hostName = getClusterInfoPropertyValue(StatusKeys.INFO_AM_HOSTNAME);
+    cmd.setHostname(hostName);
+    cmd.setClusterName(clusterName);
+    cmd.setRoleCommand(Command.START.toString());
+    cmd.setServiceName(clusterName);
+    cmd.setComponentName(componentName);
+    cmd.setRole(componentName);
+    Map<String, String> hostLevelParams = new TreeMap<>();
+    hostLevelParams.put(CONTAINER_ID, containerId);
+    cmd.setHostLevelParams(hostLevelParams);
+
+    Map<String, String> roleParams = new TreeMap<>();
+    cmd.setRoleParams(roleParams);
+    cmd.getRoleParams().put("auto_restart", Boolean.toString(isMarkedAutoRestart));
+
+    cmd.setCommandParams(setCommandParameters(startCommand, timeout, true));
+
+    Map<String, Map<String, String>> configurations = buildCommandConfigurations(appConf, containerId, componentName);
+
+    cmd.setConfigurations(configurations);
+    configurations.get("global").put("exec_cmd", startCommand.getExec());
+    response.addExecutionCommand(cmd);
+  }
+
   protected Map<String, String> getAllocatedPorts() {
     return getAllocatedPorts(SHARED_PORT_TAG);
   }
@@ -1934,7 +1998,7 @@ public class AgentProviderService extends AbstractProviderService implements
     List<String> configList = new ArrayList<String>();
     configList.add(GLOBAL_CONFIG_TAG);
 
-    List<ConfigFile> configFiles = getMetainfo().getApplication().getConfigFiles();
+    List<ConfigFile> configFiles = getMetaInfo().getApplication().getConfigFiles();
     for (ConfigFile configFile : configFiles) {
       log.info("Expecting config type {}.", configFile.getDictionaryName());
       configList.add(configFile.getDictionaryName());

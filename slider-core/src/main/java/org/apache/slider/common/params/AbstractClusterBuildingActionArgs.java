@@ -74,13 +74,6 @@ public abstract class AbstractClusterBuildingActionArgs extends
       description = "Provider of the specific cluster application")
   public String provider = SliderProviderFactory.DEFAULT_CLUSTER_TYPE;
 
-  /*
-  
-    @Parameter(names = {ARG_PACKAGE},
-               description = "URI to a slider package",
-               converter = URIArgumentConverter.class  )
-    public URI packageURI; 
-  */
   @Parameter(names = {ARG_PACKAGE},
       description = "URI to a slider package")
   public String packageURI;
@@ -93,12 +86,23 @@ public abstract class AbstractClusterBuildingActionArgs extends
       description = "Template application configuration")
   public File template;
 
+  @Parameter(names = {ARG_METAINFO},
+      description = "Application meta info")
+  public File appMetaInfo;
+
+  @Parameter(names = {ARG_APPDEF},
+      description = "Application def (folder or a zip package)")
+  public File appDef;
+
   @Parameter(names = {ARG_QUEUE},
              description = "Queue to submit the application")
   public String queue;
 
   @ParametersDelegate
   public ComponentArgsDelegate componentDelegate = new ComponentArgsDelegate();
+
+  @ParametersDelegate
+  public AddonArgsDelegate addonDelegate = new AddonArgsDelegate();
 
 
   @ParametersDelegate
@@ -150,6 +154,19 @@ public abstract class AbstractClusterBuildingActionArgs extends
   public Map<String, String> getComponentMap() throws
       BadCommandArgumentsException {
     return componentDelegate.getComponentMap();
+  }
+
+  @VisibleForTesting
+  public List<String> getAddonTuples() {
+    return addonDelegate.getAddonTuples();
+  }
+
+  /**
+   * Get the list of addons (may be empty, but never null)
+   */
+  public Map<String, String> getAddonMap() throws
+      BadCommandArgumentsException {
+    return addonDelegate.getAddonMap();
   }
 
   public Path getConfdir() {

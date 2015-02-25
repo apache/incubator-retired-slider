@@ -122,6 +122,31 @@ public class CoreFileSystem {
   }
 
   /**
+   * Build up the path string for app def folder -no attempt to
+   * create the directory is made
+   *
+   * @param clustername name of the cluster
+   * @return the path for persistent data
+   */
+  public Path buildAppDefDirPath(String clustername) {
+    Path path = buildClusterDirPath(clustername);
+    return new Path(path, SliderKeys.APP_DEF_DIR);
+  }
+
+  /**
+   * Build up the path string for addon folder -no attempt to
+   * create the directory is made
+   *
+   * @param clustername name of the cluster
+   * @return the path for persistent data
+   */
+  public Path buildAddonDirPath(String clustername, String addonId) {
+    Preconditions.checkNotNull(addonId);
+    Path path = buildClusterDirPath(clustername);
+    return new Path(path, SliderKeys.ADDONS_DIR + "/" + addonId);
+  }
+
+  /**
    * Build up the path string for package install location -no attempt to
    * create the directory is made
    *
@@ -568,7 +593,7 @@ public class CoreFileSystem {
 
   /**
    * List all application instances persisted for this user, giving the 
-   * patha. The instance name is the last element in the path
+   * path. The instance name is the last element in the path
    * @return a possibly empty map of application instance names to paths
    */
   public Map<String, Path> listPersistentInstances() throws IOException {

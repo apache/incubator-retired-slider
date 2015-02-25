@@ -30,10 +30,9 @@ import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.providers.ProviderUtils;
-import org.apache.slider.providers.agent.application.metadata.Application;
-import org.apache.slider.providers.agent.application.metadata.Metainfo;
-import org.apache.slider.providers.agent.application.metadata.OSPackage;
-import org.apache.slider.providers.agent.application.metadata.OSSpecific;
+import org.apache.slider.providers.agent.application.metadata.json.Application;
+import org.apache.slider.providers.agent.application.metadata.json.MetaInfo;
+import org.apache.slider.providers.agent.application.metadata.json.Package;
 import org.codehaus.jettison.json.JSONObject;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -121,16 +120,13 @@ public class TestAgentClientProvider2 {
     global.put("d", "{app_install_dir}/d");
     inputConfig.put("global", global);
 
-    Metainfo metainfo = new Metainfo();
+    MetaInfo metainfo = new MetaInfo();
     Application app = new Application();
     metainfo.setApplication(app);
-    OSSpecific osSpecific = new OSSpecific();
-    osSpecific.setOsType("any");
-    app.addOSSpecific(osSpecific);
-    OSPackage pkg = new OSPackage();
-    osSpecific.addOSPackage(pkg);
+    Package pkg = new Package();
     pkg.setName("app.tar");
     pkg.setType("tarball");
+    app.getPackages().add(pkg);
 
     File clientInstallPath = new File("/tmp/file1");
 
