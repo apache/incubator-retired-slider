@@ -303,7 +303,7 @@
               <release>${project.version}</release>
 -->
               <!---->
-              <distribution></distribution>
+              <distribution />
               <group>Applications/Engineering</group>
               <!--<icon>src/main/resources/icon.gif</icon>-->
               <!--<packager>ASF</packager>-->
