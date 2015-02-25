@@ -40,7 +40,10 @@
     <profiles>
 
       <profile>
-        <id>Non-Windows</id>
+        <id>unix-packages</id>
+        <!--
+        Packages that are not for Windows.
+        -->
         <activation>
           <os>
             <family>!windows</family>
@@ -54,7 +57,10 @@
       </profile>
     
       <profile>
-        <id>Windows</id>
+        <id>windows-packages</id>
+        <!-- 
+        Windows only packages
+        -->
         <activation>
           <os>
             <family>windows</family>
@@ -65,8 +71,26 @@
           <module>storm-win</module>
         </modules>
       </profile>
+
+      <profile>
+      <id>all-packages</id>
+      <!--
+       These are all the packages across all the operating systems.
+       This profile is needed to update version numbers during the
+       release process.
+       -->
+        <modules>
+          <module>accumulo</module>
+          <module>hbase</module>
+          <module>storm</module>
+          <module>hbase-win</module>
+          <module>storm-win</module>
+        </modules>
+      </profile>
+      
       <profile>
         <id>rat</id>
+        <!-- RAT profile -->
         <build>
           <plugins>
             <plugin>
