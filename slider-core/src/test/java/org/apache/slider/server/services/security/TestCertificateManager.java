@@ -40,6 +40,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -110,7 +111,7 @@ public class TestCertificateManager {
         principal = x509cert.getIssuerDN();
         String issuerDn = principal.getName();
         Assert.assertEquals("wrong Issuer DN",
-                            "CN=localhost",
+                            "CN=" + InetAddress.getLocalHost().getHostName(),
                             issuerDn);
       }
     } finally {
@@ -166,7 +167,7 @@ public class TestCertificateManager {
         principal = x509cert.getIssuerDN();
         String issuerDn = principal.getName();
         Assert.assertEquals("wrong Issuer DN",
-                            "CN=localhost",
+                            "CN=" + InetAddress.getLocalHost().getHostName(),
                             issuerDn);
       }
     } finally {
