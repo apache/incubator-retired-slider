@@ -162,6 +162,8 @@ class CertificateManager():
     
     s = self.config.get('security', 'keysdir') + os.sep + "ca.crt"
 
+    logger.info("Checking for server cert at " + s)
+
     server_crt_exists = os.path.exists(s)
     
     if not server_crt_exists:
@@ -169,17 +171,17 @@ class CertificateManager():
       self.loadSrvrCrt()
     else:
       logger.info("Server certicate exists, ok")
-      
+
     agent_key_exists = os.path.exists(self.getAgentKeyName())
-    
+
     if not agent_key_exists:
       logger.info("Agent key not exists, generating request")
       self.genAgentCrtReq()
     else:
       logger.info("Agent key exists, ok")
-      
+
     agent_crt_exists = os.path.exists(self.getAgentCrtName())
-    
+
     if not agent_crt_exists:
       logger.info("Agent certificate not exists, sending sign request")
       self.reqSignCrt()

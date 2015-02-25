@@ -103,14 +103,14 @@ public class TestCertificateManager {
         Principal principal = x509cert.getSubjectDN();
         String subjectDn = principal.getName();
         Assert.assertEquals("wrong DN",
-                            "O=Default Company Ltd, L=Default City, ST=Default Province, C=XX",
+                            "CN=localhost",
                             subjectDn);
 
         // Get issuer
         principal = x509cert.getIssuerDN();
         String issuerDn = principal.getName();
         Assert.assertEquals("wrong Issuer DN",
-                            "O=Default Company Ltd, L=Default City, ST=Default Province, C=XX",
+                            "CN=localhost",
                             issuerDn);
       }
     } finally {
@@ -159,14 +159,14 @@ public class TestCertificateManager {
         // Get subject
         Principal principal = x509cert.getSubjectDN();
         String subjectDn = principal.getName();
-        Assert.assertEquals("wrong DN", "CN=container1, OU=localhost",
+        Assert.assertEquals("wrong DN", "CN=localhost, OU=container1",
                             subjectDn);
 
         // Get issuer
         principal = x509cert.getIssuerDN();
         String issuerDn = principal.getName();
         Assert.assertEquals("wrong Issuer DN",
-                            "O=Default Company Ltd, L=Default City, ST=Default Province, C=XX",
+                            "CN=localhost",
                             issuerDn);
       }
     } finally {

@@ -517,14 +517,14 @@ public class AgentProviderService extends AbstractProviderService implements
             fileSystem), LocalResourceType.FILE);
       // still using hostname as file name on the agent side, but the files
       // do end up under the specific container's file space
-      launcher.addLocalResource("certs/" + hostname + ".crt",
-                                agentCertResource);
+      launcher.addLocalResource(AgentKeys.INFRA_RUN_SECURITY_DIR + hostname +
+                                ".crt", agentCertResource);
       LocalResource agentKeyResource = fileSystem.createAmResource(
           uploadSecurityResource(
               CertificateManager.getAgentKeyFilePath(containerId), fileSystem),
             LocalResourceType.FILE);
-      launcher.addLocalResource("certs/" + hostname + ".key",
-                                agentKeyResource);
+      launcher.addLocalResource(AgentKeys.INFRA_RUN_SECURITY_DIR + hostname +
+                                ".key", agentKeyResource);
 
     } catch (Exception e) {
       throw new SliderException(SliderExitCodes.EXIT_DEPLOYMENT_FAILED, e,

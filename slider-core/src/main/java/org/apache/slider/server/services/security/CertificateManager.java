@@ -30,6 +30,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.text.MessageFormat;
 
@@ -43,7 +45,8 @@ public class CertificateManager {
       "-passout pass:{0} -out {1}" + File.separator + "{2} 4096 ";
   private static final String GEN_SRVR_REQ = "openssl req -passin pass:{0} " +
       "-new -key {1}" + File.separator + "{2} -out {1}" + File.separator +
-      "{5} -config {1}" + File.separator + "ca.config -batch";
+      "{5} -config {1}" + File.separator + "ca.config " +
+      "-subj {6} -batch";
   private static final String SIGN_SRVR_CRT = "openssl ca -create_serial " +
     "-out {1}" + File.separator + "{3} -days 365 -keyfile {1}" + File.separator
     + "{2} -key {0} -selfsign -extensions jdk7_ca -config {1}" + File.separator
@@ -62,21 +65,37 @@ public class CertificateManager {
       "-keyfile {0}" + File.separator + "{4} -cert {0}" + File.separator + "{5}";
   private static final String GEN_AGENT_KEY="openssl req -new -newkey " +
       "rsa:1024 -nodes -keyout {0}" + File.separator +
-      "{2}.key -subj /OU={1}/CN={2} -out {0}" + File.separator + "{2}.csr";
+      "{2}.key -subj {1} -out {0}" + File.separator + "{2}.csr";
   private String passphrase;
+  private String applicationName;
+
+
+  public void initialize(MapOperations compOperations) throws SliderException {
+    String hostname = null;
+    try {
+      hostname = InetAddress.getLocalHost().getCanonicalHostName();
+    } catch (UnknownHostException e) {
+      hostname = "localhost";
+    }
+    this.initialize(compOperations, hostname, null, null);
+  }
 
   /**
     * Verify that root certificate exists, generate it otherwise.
     */
-  public void initialize(MapOperations compOperations) throws SliderException {
+  public void initialize(MapOperations compOperations,
+                         String hostname, String containerId,
+                         String appName) throws SliderException {
     SecurityUtils.initializeSecurityParameters(compOperations);
 
     LOG.info("Initialization of root certificate");
     boolean certExists = isCertExists();
     LOG.info("Certificate exists:" + certExists);
 
+    this.applicationName = appName;
+
     if (!certExists) {
-      generateAMKeystore();
+      generateAMKeystore(hostname, containerId);
     }
 
   }
@@ -188,7 +207,8 @@ public class CertificateManager {
     LOG.info("Generation of agent certificate for {}", hostname);
 
     String srvrKstrDir = SecurityUtils.getSecurityDir();
-    Object[] scriptArgs = {srvrKstrDir, hostname, containerId};
+    Object[] scriptArgs = {srvrKstrDir, getSubjectDN(hostname, containerId,
+        this.applicationName), containerId};
 
     try {
       String command = MessageFormat.format(GEN_AGENT_KEY, scriptArgs);
@@ -232,7 +252,8 @@ public class CertificateManager {
     return String.format("keystore-%s-%s.p12", containerId, role);
   }
 
-  private void generateAMKeystore() throws SliderException {
+  private void generateAMKeystore(String hostname, String containerId)
+      throws SliderException {
     LOG.info("Generation of server certificate");
 
     String srvrKstrDir = SecurityUtils.getSecurityDir();
@@ -243,7 +264,8 @@ public class CertificateManager {
     String srvrCrtPass = SecurityUtils.getKeystorePass();
 
     Object[] scriptArgs = {srvrCrtPass, srvrKstrDir, srvrKeyName,
-        srvrCrtName, kstrName, srvrCsrName};
+        srvrCrtName, kstrName, srvrCsrName, getSubjectDN(hostname, containerId,
+        this.applicationName)};
 
     String command = MessageFormat.format(GEN_SRVR_KEY, scriptArgs);
     runCommand(command);
@@ -452,6 +474,16 @@ public class CertificateManager {
     runCommand(command);
 
     return agentCrtName;
+
+  }
+
+  private String getSubjectDN(String hostname, String containerId,
+                              String appName) {
+    return String.format("/CN=%s%s%s",
+                         hostname,
+                         containerId != null ? "/OU=" + containerId : "",
+                         appName != null ? "/OU=" + appName : "");
+
 
   }
 }
