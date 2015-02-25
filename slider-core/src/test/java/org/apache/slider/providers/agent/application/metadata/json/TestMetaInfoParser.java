@@ -66,6 +66,19 @@ public class TestMetaInfoParser {
                             +               "\"type\": \"PYTHON\","
                             +               "\"name\": \"CONFIGURE\""
                             +            "}"
+                            +          "],"
+                            +          "\"containers\": ["
+                            +            "{"
+                            +               "\"name\": \"redis\","
+                            +               "\"image\": \"dockerhub/redis\","
+                            +               "\"options\": \"-net=bridge\","
+                            +               "\"mounts\": ["
+                            +                 "{"
+                            +                   "\"containerMount\": \"/tmp/conf\","
+                            +                   "\"hostMount\": \"{$conf:@//site/global/app_root}/conf\""
+                            +                 "}"
+                            +               "]"
+                            +            "}"
                             +          "]"
                             +        "}"
                             +      "]"
@@ -111,5 +124,11 @@ public class TestMetaInfoParser {
     Assert.assertEquals("CONFIGURE", cmd.getName());
     Assert.assertEquals("PYTHON", cmd.getType());
     Assert.assertEquals("scripts/config.py", cmd.getExec());
+    Assert.assertEquals(1, c2.getContainers().size());
+    Container cont = c2.getContainers().get(0);
+    Assert.assertEquals("redis", cont.getName());
+    Assert.assertEquals(1, cont.getMounts().size());
+    ContainerMount mount = cont.getMounts().get(0);
+    Assert.assertEquals("{$conf:@//site/global/app_root}/conf", mount.getHostMount());
   }
 }

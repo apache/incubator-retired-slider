@@ -1643,6 +1643,8 @@ public class AgentProviderService extends AbstractProviderService implements
     cmd.setCommandParams(setCommandParameters(scriptPath, timeout, false));
 
     cmd.setHostname(getClusterInfoPropertyValue(StatusKeys.INFO_AM_HOSTNAME));
+
+    cmd.addContainerDetails(componentName, getMetaInfo());
     response.addExecutionCommand(cmd);
   }
 
@@ -1682,6 +1684,7 @@ public class AgentProviderService extends AbstractProviderService implements
     configurations.get("global").put("exec_cmd", effectiveCommand.getExec());
 
     cmd.setHostname(getClusterInfoPropertyValue(StatusKeys.INFO_AM_HOSTNAME));
+    cmd.addContainerDetails(componentName, getMetaInfo());
     response.addExecutionCommand(cmd);
   }
 
@@ -1824,6 +1827,7 @@ public class AgentProviderService extends AbstractProviderService implements
     Map<String, Map<String, String>> configurations = buildCommandConfigurations(appConf, containerId, componentName);
 
     cmd.setConfigurations(configurations);
+    cmd.addContainerDetails(componentName, getMetaInfo());
     response.addExecutionCommand(cmd);
     
     // With start command, the corresponding command for graceful stop needs to
@@ -1891,6 +1895,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
     cmd.setConfigurations(configurations);
     configurations.get("global").put("exec_cmd", startCommand.getExec());
+    cmd.addContainerDetails(componentName, getMetaInfo());
     response.addExecutionCommand(cmd);
   }
 

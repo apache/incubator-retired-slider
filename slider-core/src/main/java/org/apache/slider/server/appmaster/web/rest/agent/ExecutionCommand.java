@@ -18,11 +18,17 @@ package org.apache.slider.server.appmaster.web.rest.agent;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.slider.providers.agent.application.metadata.json.Component;
+import org.apache.slider.providers.agent.application.metadata.json.MetaInfo;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -31,7 +37,8 @@ import java.util.Map;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 public class ExecutionCommand {
-  private static Log LOG = LogFactory.getLog(ExecutionCommand.class);
+  protected static final Logger log =
+      LoggerFactory.getLogger(ExecutionCommand.class);
   private AgentCommandType commandType = AgentCommandType.EXECUTION_COMMAND;
   private String clusterName;
   private long taskId;
@@ -46,9 +53,16 @@ public class ExecutionCommand {
   private Map<String, String> commandParams;
   private String serviceName;
   private String componentName;
+  private String componentType;
+  private List<Container> containers = new ArrayList<>();
 
   public ExecutionCommand(AgentCommandType commandType) {
     this.commandType = commandType;
+  }
+
+  @JsonProperty("containers")
+  public List<Container> getContainers() {
+    return containers;
   }
 
   @JsonProperty("commandType")
@@ -121,6 +135,16 @@ public class ExecutionCommand {
     this.clusterName = clusterName;
   }
 
+  @JsonProperty("componentType")
+  public String getComponentType() {
+    return componentType;
+  }
+
+  @JsonProperty("componentType")
+  public void setComponentType(String componentType) {
+    this.componentType = componentType;
+  }
+
   @JsonProperty("hostname")
   public String getHostname() {
     return hostname;
@@ -130,7 +154,6 @@ public class ExecutionCommand {
   public void setHostname(String hostname) {
     this.hostname = hostname;
   }
-
   @JsonProperty("hostLevelParams")
   public Map<String, String> getHostLevelParams() {
     return hostLevelParams;
@@ -195,5 +218,34 @@ public class ExecutionCommand {
         .append(", serviceName=").append(serviceName)
         .append(", componentName=").append(componentName).append("]");
     return builder.toString();
+  }
+
+  public void addContainerDetails(String componentName, MetaInfo metaInfo) {
+    Component component = metaInfo.getApplicationComponent(componentName);
+    this.setComponentType(component.getType());
+    log.info("Adding container details for {}", componentName);
+    for(org.apache.slider.providers.agent.application.metadata.json.Container metaContainer: component.getContainers()) {
+      Container container = new Container();
+      container.setImage(metaContainer.getImage());
+      container.setName(metaContainer.getName());
+      container.setOptions(metaContainer.getOptions());
+      if(metaContainer.getMounts().size() > 0) {
+        for(org.apache.slider.providers.agent.application.metadata.json.ContainerMount metaContMount : metaContainer.getMounts()) {
+          ContainerMount contMnt = new ContainerMount();
+          contMnt.setContainerMount(metaContMount.getContainerMount());
+          contMnt.setHostMount(metaContMount.getHostMount());
+          container.getMounts().add(contMnt);
+        }
+      }
+      if(metaContainer.getPorts().size() > 0) {
+        for(org.apache.slider.providers.agent.application.metadata.json.ContainerPort metaCntPort : metaContainer.getPorts()) {
+          ContainerPort cntPort = new ContainerPort();
+          cntPort.setContainerPort(metaCntPort.getContainerPort());
+          cntPort.setHostPort(metaCntPort.getHostPort());
+          container.getPorts().add(cntPort);
+        }
+      }
+      this.getContainers().add(container);
+    }
   }
 }

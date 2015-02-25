@@ -40,12 +40,14 @@ public class Component {
   private String compExports;
   private String category = "MASTER";
   private String publishConfig;
+  private String type;
   private int minInstanceCount = 1;
   private int maxInstanceCount = Integer.MAX_VALUE;
   private Boolean autoStartOnFailure = false;
   private String appExports;
   private CommandScript commandScript;
   private List<ComponentCommand> commands = new ArrayList<ComponentCommand>();
+  private List<Container> containers = new ArrayList<Container>();
 
   public Component() {
   }
@@ -53,6 +55,11 @@ public class Component {
   @JsonProperty("commands")
   public List<ComponentCommand> getCommands() {
     return this.commands;
+  }
+
+  @JsonProperty("containers")
+  public List<Container> getContainers() {
+    return this.containers;
   }
 
   public CommandScript getCommandScript() {
@@ -125,5 +132,13 @@ public class Component {
 
   public void setAppExports(String appExports) {
     this.appExports = appExports;
+  }
+
+  public String getType() {
+    return type;
+  }
+
+  public void setType(String type) {
+    this.type = type;
   }
 }
