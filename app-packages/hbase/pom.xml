@@ -48,7 +48,7 @@
                 <phase>validate</phase>
                 <configuration>
                   <target name="copy and rename file">
-                    <copy file="${pkg.src}/${pkg.name}" tofile="${project.build.directory}/${pkg.name}"/>
+                    <copy file="${pkg.src}/${pkg.name}" tofile="${project.build.directory}/${pkg.name}" />
                   </target>
                 </configuration>
                 <goals>
