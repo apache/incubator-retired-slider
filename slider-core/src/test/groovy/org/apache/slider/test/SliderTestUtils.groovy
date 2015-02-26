@@ -962,8 +962,10 @@ class SliderTestUtils extends Assert {
   throws Throwable {
     try {
       ServiceLauncher launch = launch(serviceClass, conf, args);
-      fail("Expected an exception with text containing $expectedText "+
+      throw new AssertionError("Expected an exception with text containing $expectedText "+
                " -but the service completed with exit code ${launch.serviceExitCode}");
+    } catch (AssertionError error) {
+      throw error;
     } catch (Throwable thrown) {
       if (expectedText && !thrown.toString().contains(expectedText)) {
         //not the right exception -rethrow
