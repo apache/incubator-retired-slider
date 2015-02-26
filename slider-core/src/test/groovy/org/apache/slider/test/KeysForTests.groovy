@@ -18,12 +18,14 @@
 
 package org.apache.slider.test
 
+import groovy.transform.CompileStatic
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.SliderXMLConfKeysForTesting
 
 /**
  * Keys shared across tests
  */
+@CompileStatic
 public interface KeysForTests extends SliderKeys, SliderXMLConfKeysForTesting {
   /**
    * Username for all clusters, ZK, etc

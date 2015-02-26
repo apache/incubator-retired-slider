@@ -17,7 +17,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <artifactId>slider-assembly</artifactId>
-  <name>Apache Slider Binary Distributione</name>
+  <name>Apache Slider Binary Distribution</name>
   <packaging>pom</packaging>
   <description>Apache Slider is a tool for dynamically deploying distributed applications to an Apache YARN cluster. This module provides the binary redistributable.</description>
   <parent>

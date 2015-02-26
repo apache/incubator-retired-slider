@@ -33,7 +33,7 @@ import org.junit.Before
 import org.junit.Test
 
 @Slf4j
-@CompileStatic
+//@CompileStatic
 public class TestIndexBlock extends BaseMockAppStateTest {
 
   private IndexBlock indexBlock;
