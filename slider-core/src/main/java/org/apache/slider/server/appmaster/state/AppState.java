@@ -46,7 +46,6 @@ import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.RoleKeys;
 import org.apache.slider.api.StatusKeys;
-import org.apache.slider.api.proto.Messages;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.common.SliderExitCodes;
@@ -1228,18 +1227,39 @@ public class AppState {
    */
   protected void incrementRequestCount(RoleStatus role) {
     role.incRequested();
-    outstandingContainerRequests.inc();
+    incOutstandingContainerRequests();
   }
+
 
   /**
    * dec requested count of a role
    * <p>
-   *   Also updates application state counters
+   *   Also updates application state counters.
    * @param role role to decrement
    */
-  protected void decrementRequestCount(RoleStatus role) {
+  protected synchronized void decrementRequestCount(RoleStatus role) {
     role.decRequested();
-    outstandingContainerRequests.dec();
+  }
+
+  /**
+   * Inc #of outstanding requests.
+   */
+  private void incOutstandingContainerRequests() {
+    synchronized (outstandingContainerRequests) {
+      outstandingContainerRequests.inc();
+    }
+  }
+
+  /**
+   * Decrement the number of outstanding requests. This never goes below zero.
+   */
+  private void decOutstandingContainerRequests() {
+    synchronized (outstandingContainerRequests) {
+      if (outstandingContainerRequests.getCount() > 0) {
+        // decrement but never go below zero
+        outstandingContainerRequests.dec();
+      }
+    }
   }
 
 
@@ -1699,7 +1719,7 @@ public class AppState {
     ApplicationLivenessInformation li = new ApplicationLivenessInformation();
     int outstanding = (int) outstandingContainerRequests.getCount();
     li.requestsOutstanding = outstanding;
-    li.allRequestsSatisfied = outstanding == 0;
+    li.allRequestsSatisfied = outstanding <= 0;
     return li;
   }
   
@@ -2091,6 +2111,8 @@ public class AppState {
         role.decActual();
       } else {
 
+        // this is valid, so decrement the number of outstanding requests
+        decOutstandingContainerRequests();
         String roleName = role.getName();
         log.info("Assigning role {} to container" +
                  " {}," +
