@@ -155,6 +155,7 @@ public class MetaInfo {
             commandScript.setTimeout(xmlComp.getCommandScript().getTimeout());
             comp.setCommandScript(commandScript);
           }
+          app.getComponents().add(comp);
         }
       }
 

@@ -993,10 +993,10 @@ public class TestAgentProviderService {
     int found = 0;
     for (Component component : components) {
       if (component.getName().equals("HBASE_MASTER")) {
-        Assert.assertEquals(component.getAutoStartOnFailure(), "true");
         Assert.assertEquals(component.getAutoStartOnFailure(), Boolean.TRUE);
-        Assert.assertEquals(component.getMinInstanceCount(), "1");
-        Assert.assertEquals(component.getMaxInstanceCount(), "2");
+        Assert.assertEquals(component.getAutoStartOnFailure(), Boolean.TRUE);
+        Assert.assertEquals(component.getMinInstanceCount(), 1);
+        Assert.assertEquals(component.getMaxInstanceCount(), 2);
         Assert.assertEquals(component.getCommandScript().getScript(), "scripts/hbase_master.py");
         Assert.assertEquals(component.getCategory(), "MASTER");
         Assert.assertEquals(component.getAppExports(), "QuickLinks-JMX_Endpoint,QuickLinks-Master_Status");

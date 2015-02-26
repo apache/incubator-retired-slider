@@ -1644,7 +1644,6 @@ public class AgentProviderService extends AbstractProviderService implements
 
     cmd.setHostname(getClusterInfoPropertyValue(StatusKeys.INFO_AM_HOSTNAME));
 
-    cmd.addContainerDetails(componentName, getMetaInfo());
     response.addExecutionCommand(cmd);
   }
 
@@ -1827,7 +1826,6 @@ public class AgentProviderService extends AbstractProviderService implements
     Map<String, Map<String, String>> configurations = buildCommandConfigurations(appConf, containerId, componentName);
 
     cmd.setConfigurations(configurations);
-    cmd.addContainerDetails(componentName, getMetaInfo());
     response.addExecutionCommand(cmd);
     
     // With start command, the corresponding command for graceful stop needs to
