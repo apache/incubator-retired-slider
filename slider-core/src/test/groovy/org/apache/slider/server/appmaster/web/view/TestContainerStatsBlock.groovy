@@ -53,7 +53,6 @@ public class TestContainerStatsBlock extends BaseMockAppStateTest {
   @Before
   public void setup() {
     super.setup()
-    SliderClusterProtocol clusterProto = new MockSliderClusterProtocol();
     ProviderService providerService = new MockProviderService();
     ProviderAppState providerAppState = new ProviderAppState(
         "undefined",
