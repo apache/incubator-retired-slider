@@ -99,7 +99,6 @@
   </mailingLists>
 
   <properties>
-    <compileSource>1.7</compileSource>
     <distMgmtSnapshotsId>apache.snapshots.https</distMgmtSnapshotsId>
     <distMgmtSnapshotsName>Apache Development Snapshot Repository</distMgmtSnapshotsName>
     <distMgmtSnapshotsUrl>https://repository.apache.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
@@ -112,7 +111,7 @@
     <!-- 
     Java versions
     -->
-    <project.java.src.version>1.6</project.java.src.version>
+    <project.java.src.version>1.7</project.java.src.version>
     <enforced.java.version>${project.java.src.version}</enforced.java.version>
     <groovy.version>2.4.0</groovy.version>
     
