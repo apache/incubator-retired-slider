@@ -20,6 +20,7 @@ package org.apache.slider.agent.rest
 
 import com.sun.jersey.api.client.Client
 import com.sun.jersey.api.client.WebResource
+import com.sun.jersey.api.client.filter.LoggingFilter
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.slider.client.rest.SliderApplicationApiRestClient
@@ -35,6 +36,7 @@ import static org.apache.slider.server.appmaster.web.rest.RestPaths.SLIDER_PATH_
 @CompileStatic
 @Slf4j
 class RestAPIClientTestDelegates extends AbstractAppApiTestDelegates {
+  private SliderApplicationApiRestClient restClient
 
   /**
    * constructor
@@ -48,8 +50,25 @@ class RestAPIClientTestDelegates extends AbstractAppApiTestDelegates {
     WebResource amResource = jersey.resource(appmaster)
     amResource.type(MediaType.APPLICATION_JSON)
     def appResource = amResource.path(SLIDER_PATH_APPLICATION);
-    appAPI = new SliderApplicationApiRestClient(jersey, appResource)
+    // test runs log
+    jersey.addFilter(new LoggingFilter(System.out));
+    restClient = new SliderApplicationApiRestClient(
+        jersey,
+        appResource)
+    appAPI = restClient
   }
 
+  @Override
+  void testPing() {
+    super.testPing()
+    // test the other verbs
+    restClient.pingPut("Put!")
+    restClient.pingGet("Get!")
+    restClient.pingPost("Post!")
+  }
 
+  @Override
+  void testFlexOperation() {
+    super.testFlexOperation()
+  }
 }

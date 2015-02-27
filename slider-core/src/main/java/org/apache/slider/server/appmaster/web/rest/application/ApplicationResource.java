@@ -20,6 +20,7 @@ package org.apache.slider.server.appmaster.web.rest.application;
 
 import com.google.common.collect.Lists;
 import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
+import org.apache.hadoop.yarn.webapp.BadRequestException;
 import org.apache.hadoop.yarn.webapp.NotFoundException;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
@@ -27,6 +28,10 @@ import org.apache.slider.api.types.ContainerInformation;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.exceptions.NoSuchNodeException;
+import org.apache.slider.core.persist.ConfTreeSerDeser;
+import org.apache.slider.server.appmaster.actions.ActionFlexCluster;
+import org.apache.slider.server.appmaster.actions.AsyncAction;
+import org.apache.slider.server.appmaster.actions.QueueAccess;
 import org.apache.slider.server.appmaster.state.RoleInstance;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.WebAppApi;
@@ -56,10 +61,13 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 
 import static javax.ws.rs.core.MediaType.*;
+
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import java.util.ArrayList;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Singleton
 @SuppressWarnings("unchecked")
@@ -88,11 +96,13 @@ public class ApplicationResource extends AbstractSliderResource {
    */
   private final ContentCache cache;
   private final StateAccessForProviders state;
+  private final QueueAccess actionQueues;
 
   public ApplicationResource(WebAppApi slider) {
     super(slider);
     state = slider.getAppState();
     cache = slider.getContentCache();
+    actionQueues = slider.getQueues();
   }
 
   /**
@@ -147,7 +157,59 @@ public class ApplicationResource extends AbstractSliderResource {
     markGet(SLIDER_SUBPATH_APPLICATION, MODEL_DESIRED_RESOURCES);
     return lookupConfTree(MODEL_DESIRED_RESOURCES);
   }
+
+/*
+  @PUT
+  @Path(MODEL_DESIRED_RESOURCES)
+//  @Consumes({APPLICATION_JSON, TEXT_PLAIN})
+  @Consumes({TEXT_PLAIN})
+  @Produces({APPLICATION_JSON})
+*/
+  public ConfTree setModelDesiredResources(
+      String json) {
+    markPut(SLIDER_SUBPATH_APPLICATION, MODEL_DESIRED_RESOURCES);
+    int size = json != null ? json.length() : 0;
+    log.info("PUT {} {} bytes:\n{}", MODEL_DESIRED_RESOURCES,
+        size,
+        json);
+    if (size == 0) {
+      log.warn("No JSON in PUT request; rejecting");
+      throw new BadRequestException("No JSON in PUT");
+    }
+    
+    try {
+      ConfTreeSerDeser serDeser = new ConfTreeSerDeser();
+      ConfTree updated = serDeser.fromJson(json);
+      queue(new ActionFlexCluster("flex",
+          1, TimeUnit.MILLISECONDS,
+          updated));
+      // return the updated value, even though it potentially hasn't yet
+      // been executed
+      return updated;
+    } catch (Exception e) {
+      throw buildException("PUT to "+ MODEL_DESIRED_RESOURCES , e);
+    }
+  }
+  @PUT
+  @Path(MODEL_DESIRED_RESOURCES)
+  @Consumes({APPLICATION_JSON})
+  @Produces({APPLICATION_JSON})
+  public ConfTree setModelDesiredResources(
+      ConfTree updated) {
+    try {
+      queue(new ActionFlexCluster("flex",
+          1, TimeUnit.MILLISECONDS,
+          updated));
+      // return the updated value, even though it potentially hasn't yet
+      // been executed
+      return updated;
+    } catch (Exception e) {
+      throw buildException("PUT to "+ MODEL_DESIRED_RESOURCES , e);
+    }
+  }
   
+  
+
   @GET
   @Path(MODEL_RESOLVED)
   @Produces({APPLICATION_JSON})
@@ -402,4 +464,20 @@ TODO: decide what structure to return here, then implement
     return new RestActionStop(slider).stop(request, uriInfo, body);
   }
 
+  /**
+   * Schedule an action
+   * @param action for delayed execution
+   */
+  public void schedule(AsyncAction action) {
+    actionQueues.schedule(action);
+  }
+
+  /**
+   * Put an action on the immediate queue -to be executed when the queue
+   * reaches it.
+   * @param action action to queue
+   */
+  public void queue(AsyncAction action) {
+    actionQueues.put(action);
+  }
 }
