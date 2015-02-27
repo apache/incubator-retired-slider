@@ -1080,7 +1080,8 @@ public final class SliderUtils {
    * @param clusterRoleMap cluster role map to merge onto
    * @param commandOptions command opts
    */
-  public static void applyCommandLineRoleOptsToRoleMap(Map<String, Map<String, String>> clusterRoleMap,
+  public static void applyCommandLineRoleOptsToRoleMap(
+      Map<String, Map<String, String>> clusterRoleMap,
       Map<String, Map<String, String>> commandOptions) {
     for (Map.Entry<String, Map<String, String>> entry : commandOptions.entrySet()) {
       String key = entry.getKey();

@@ -244,7 +244,7 @@ public abstract class CommonArgs extends ArgOps implements SliderActions,
       coreAction.validate();
     } catch (BadCommandArgumentsException e) {
       StringBuilder badArgMsgBuilder = new StringBuilder();
-      badArgMsgBuilder.append(e.toString() + "\n");
+      badArgMsgBuilder.append(e.toString()).append("\n");
       badArgMsgBuilder.append(usage(this, coreAction.getActionName()));
       throw new BadCommandArgumentsException(badArgMsgBuilder.toString());
     } catch (UsageException e) {

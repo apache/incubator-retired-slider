@@ -19,7 +19,7 @@
   <parent>
     <groupId>org.apache.slider.packages</groupId>
     <artifactId>slider-app-packages</artifactId>
-    <version>0.62.0-SNAPSHOT</version>
+    <version>0.72.0-incubating-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
@@ -49,8 +49,8 @@
     <app.user>yarn</app.user>
     <app.user.group>hadoop</app.user.group>
     <!-- these are for accumulo processes -->
-    <accumulo.keytab></accumulo.keytab>
-    <accumulo.principal></accumulo.principal>
+    <accumulo.keytab />
+    <accumulo.principal />
     <!-- these are for the AM -->
     <accumulo.headless.keytab>${accumulo.keytab}</accumulo.headless.keytab>
     <accumulo.headless.principal>${accumulo.principal}</accumulo.headless.principal>

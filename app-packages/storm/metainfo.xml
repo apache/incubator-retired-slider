@@ -38,11 +38,7 @@
           </export>
           <export>
             <name>org.apache.slider.metrics</name>
-            <value>http://${site.global.ganglia_server_host}/cgi-bin/rrd.py?c=${site.global.ganglia_server_id}</value>
-          </export>
-          <export>
-            <name>org.apache.slider.metrics.ui</name>
-            <value>http://${site.global.ganglia_server_host}/ganglia?c=${site.global.ganglia_server_id}</value>
+            <value>http://${site.global.metric_collector_host}:${site.global.metric_collector_port}/ws/v1/timeline/metrics</value>
           </export>
           <export>
             <name>nimbus.host_port</name>
@@ -78,7 +74,7 @@
         <category>MASTER</category>
         <publishConfig>true</publishConfig>
         <autoStartOnFailure>true</autoStartOnFailure>
-        <appExports>QuickLinks-nimbus.host_port,QuickLinks-org.apache.slider.metrics.ui,QuickLinks-org.apache.slider.metrics</appExports>
+        <appExports>QuickLinks-nimbus.host_port,QuickLinks-org.apache.slider.metrics</appExports>
         <maxInstanceCount>1</maxInstanceCount>
         <commandScript>
           <script>scripts/nimbus.py</script>
@@ -125,6 +121,16 @@
         <maxInstanceCount>1</maxInstanceCount>
         <commandScript>
           <script>scripts/drpc_server.py</script>
+          <scriptType>PYTHON</scriptType>
+          <timeout>600</timeout>
+        </commandScript>
+      </component>
+
+      <component>
+        <name>STORM_CLIENT</name>
+        <category>CLIENT</category>
+        <commandScript>
+          <script>scripts/storm_client.py</script>
           <scriptType>PYTHON</scriptType>
           <timeout>600</timeout>
         </commandScript>

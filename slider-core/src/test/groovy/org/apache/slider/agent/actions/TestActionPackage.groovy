@@ -52,7 +52,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
           //varargs list of command line params
           [
               SliderActions.ACTION_PACKAGE,
-              Arguments.ARG_PKGINSTALL
+              Arguments.ARG_INSTALL
           ],
       )
       fail("expected an exception, got a status code " + launcher.serviceExitCode)
@@ -70,7 +70,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
           //varargs list of command line params
           [
               SliderActions.ACTION_PACKAGE,
-              Arguments.ARG_PKGINSTALL,
+              Arguments.ARG_INSTALL,
               Arguments.ARG_NAME, "hbase"
           ],
       )
@@ -89,7 +89,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
           //varargs list of command line params
           [
               SliderActions.ACTION_PACKAGE,
-              Arguments.ARG_PKGINSTALL,
+              Arguments.ARG_INSTALL,
               Arguments.ARG_NAME, "hbase",
               Arguments.ARG_PACKAGE, "src/test/resources/log4j.properties",
           ],
@@ -100,7 +100,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
           //varargs list of command line params
           [
               SliderActions.ACTION_PACKAGE,
-              Arguments.ARG_PKGINSTALL,
+              Arguments.ARG_INSTALL,
               Arguments.ARG_NAME, "hbase",
               Arguments.ARG_PACKAGE, "src/test/resources/log4j.properties",
           ],
@@ -120,7 +120,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
           //varargs list of command line params
           [
               SliderActions.ACTION_PACKAGE,
-              Arguments.ARG_PKGINSTALL,
+              Arguments.ARG_INSTALL,
               Arguments.ARG_NAME, "hbase",
               Arguments.ARG_PACKAGE, "unlikely_to_be_a_file_path",
           ],
@@ -140,7 +140,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
           //varargs list of command line params
           [
               SliderActions.ACTION_PACKAGE,
-              Arguments.ARG_PKGINSTALL,
+              Arguments.ARG_INSTALL,
               Arguments.ARG_NAME, "hbase",
               Arguments.ARG_PACKAGE, "src/test/resources/log4j.properties",
           ],
@@ -151,7 +151,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
           //varargs list of command line params
           [
               SliderActions.ACTION_PACKAGE,
-              Arguments.ARG_PKGINSTALL,
+              Arguments.ARG_INSTALL,
               Arguments.ARG_NAME, "hbase",
               Arguments.ARG_PACKAGE, "src/test/resources/log4j.properties",
               Arguments.ARG_REPLACE_PKG
@@ -171,7 +171,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
           //varargs list of command line params
           [
               SliderActions.ACTION_PACKAGE,
-              Arguments.ARG_PKGINSTALL,
+              Arguments.ARG_INSTALL,
               Arguments.ARG_PKGLIST
           ],
       )
@@ -189,7 +189,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
           //varargs list of command line params
           [
               SliderActions.ACTION_PACKAGE,
-              Arguments.ARG_PKGINSTALL,
+              Arguments.ARG_INSTALL,
               Arguments.ARG_PKGINSTANCES
           ],
       )
@@ -207,7 +207,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
           //varargs list of command line params
           [
               SliderActions.ACTION_PACKAGE,
-              Arguments.ARG_PKGINSTALL,
+              Arguments.ARG_INSTALL,
               Arguments.ARG_NAME, "storm",
               Arguments.ARG_PACKAGE, "src/test/resources/log4j.properties",
           ],

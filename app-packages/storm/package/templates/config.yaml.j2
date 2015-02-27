@@ -16,18 +16,33 @@
 nimbusHost: {{nimbus_host}}
 nimbusPort: {{nimbus_port}}
 
-{% if ganglia_installed %}
-enableGanglia: {{ganglia_installed}}
+{% if has_metric_collector %}
+enableGanglia: False
+
+ganglia:
+  reportInterval: 60
+
+enableMetricsSink: True
+
+metrics_collector:
+
+  reportInterval: 60
+
+  host: "{{metric_collector_host}}"
+  port: {{metric_collector_port}}
+
+{% else %}
+enableGanglia: True
 
 # ganglia configuration (necessary if ganglia reporting is enabled)
 ganglia:
 
   # how often to report to ganglia metrics (in seconds)
-  reportInterval: {{ganglia_report_interval}}
+  reportInterval: 60
 
   # the hostname of the gmond server where storm cluster metrics will be sent
-  host: {{ganglia_server}}
-  port: {{ganglia_port}}
+  host: {{metric_collector_host}}
+  port: {{metric_collector_port}}
 
   # address mode
   # default is MULTICAST

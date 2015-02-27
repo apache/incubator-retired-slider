@@ -26,6 +26,7 @@ import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.slider.api.types.SliderInstanceDescription;
 import org.apache.slider.common.params.AbstractClusterBuildingActionArgs;
 import org.apache.slider.common.params.ActionAMSuicideArgs;
+import org.apache.slider.common.params.ActionClientArgs;
 import org.apache.slider.common.params.ActionDiagnosticArgs;
 import org.apache.slider.common.params.ActionEchoArgs;
 import org.apache.slider.common.params.ActionFlexArgs;
@@ -123,6 +124,17 @@ public interface SliderClientAPI extends Service {
    */
   int actionInstallPkg(ActionInstallPackageArgs installPkgInfo)
       throws YarnException, IOException;
+
+  /**
+   * Perform client operations such as install or configure
+   *
+   * @param clientInfo the arguments needed for client operations
+   *
+   * @throws SliderException bad arguments.
+   * @throws IOException problems related to package and destination folders
+   */
+  int actionClient(ActionClientArgs clientInfo)
+      throws IOException, SliderException;
 
   /**
    * Managing slider application package
@@ -283,7 +295,7 @@ public interface SliderClientAPI extends Service {
   /**
    * diagnostic operation
    *
-   * @param diagosticArgs diagnostic Arguments
+   * @param diagnosticArgs diagnostic Arguments
    * @return 0 for success, -1 for some issues that aren't errors, just
    *         failures to retrieve information (e.g. no application name
    *         specified)

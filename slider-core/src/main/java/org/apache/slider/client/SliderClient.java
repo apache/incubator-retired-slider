@@ -78,6 +78,7 @@ import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.common.params.AbstractActionArgs;
 import org.apache.slider.common.params.AbstractClusterBuildingActionArgs;
+import org.apache.slider.common.params.ActionClientArgs;
 import org.apache.slider.common.params.ActionDiagnosticArgs;
 import org.apache.slider.common.params.ActionExistsArgs;
 import org.apache.slider.common.params.ActionInstallKeytabArgs;
@@ -172,6 +173,8 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -204,7 +207,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   
   private String deployedClusterName;
   /**
-   * Cluster opaerations against the deployed cluster -will be null
+   * Cluster operations against the deployed cluster -will be null
    * if no bonding has yet taken place
    */
   private SliderClusterOperations sliderClusterOperations;
@@ -385,6 +388,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // actions
     if (ACTION_PACKAGE.equals(action)) {
       exitCode = actionPackage(serviceArgs.getActionPackageArgs());
+    } else if (ACTION_CLIENT.equals(action)) {
+      exitCode = actionClient(serviceArgs.getActionClientArgs());
     } else if (ACTION_INSTALL_PACKAGE.equals(action)) {
       exitCode = actionInstallPkg(serviceArgs.getActionInstallPackageArgs());
     } else if (ACTION_INSTALL_KEYTAB.equals(action)) {
@@ -867,6 +872,65 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     sliderFileSystem.getFileSystem().copyFromLocalFile(false, installPkgInfo.replacePkg, srcFile, fileInFs);
     return EXIT_SUCCESS;
   }
+
+  @Override
+  public int actionClient(ActionClientArgs clientInfo) throws
+      SliderException,
+      IOException {
+
+    if(!clientInfo.install) {
+      throw new BadCommandArgumentsException(
+          "Only install command is supported for the client.\n"
+          + CommonArgs.usage(serviceArgs, ACTION_CLIENT));
+    }
+
+    if (clientInfo.installLocation == null) {
+      throw new BadCommandArgumentsException(
+          "A valid install location must be provided for the client.\n"
+          + CommonArgs.usage(serviceArgs, ACTION_CLIENT));
+    } else {
+      if (!clientInfo.installLocation.exists()) {
+        throw new BadCommandArgumentsException("Install path does not exist at " +
+                                               clientInfo.installLocation.getAbsolutePath());
+      }
+      if (!clientInfo.installLocation.isDirectory()) {
+        throw new BadCommandArgumentsException("Install path is not a valid directory " +
+                                               clientInfo.installLocation.getAbsolutePath());
+      }
+    }
+
+    File pkgFile;
+    if (StringUtils.isEmpty(clientInfo.packageURI)) {
+      throw new BadCommandArgumentsException("A valid application package location required.");
+    } else {
+      pkgFile = new File(clientInfo.packageURI);
+      if (!pkgFile.exists() || pkgFile.isDirectory()) {
+        throw new BadCommandArgumentsException("Unable to access supplied pkg file at " +
+                                               pkgFile.getAbsolutePath());
+      }
+    }
+
+    JSONObject config = null;
+    if(clientInfo.clientConfig != null) {
+      try {
+        byte[] encoded = Files.readAllBytes(clientInfo.clientConfig.toPath());
+        config = new JSONObject(new String(encoded, Charset.defaultCharset()));
+      }catch(JSONException jsonEx) {
+        log.error("Unable to read supplied config", jsonEx);
+        throw new SliderException("Invalid configuration. Must be a valid json file.", jsonEx);
+      }
+    }
+
+    // Only INSTALL is supported
+    AbstractClientProvider provider = createClientProvider(SliderProviderFactory.DEFAULT_CLUSTER_TYPE);
+    provider.processClientOperation(sliderFileSystem,
+                                    "INSTALL",
+                                    clientInfo.installLocation,
+                                    pkgFile,
+                                    config);
+    return EXIT_SUCCESS;
+  }
+
 
   @Override
   public int actionPackage(ActionPackageArgs actionPackageInfo)

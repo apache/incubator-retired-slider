@@ -42,6 +42,12 @@
       <fileMode>0755</fileMode>
     </file>
     <file>
+      <source>clientInstallConfig-default.json</source>
+      <outputDirectory>/</outputDirectory>
+      <filtered>true</filtered>
+      <fileMode>0755</fileMode>
+    </file>
+    <file>
       <source>metainfo.xml</source>
       <outputDirectory>/</outputDirectory>
       <filtered>true</filtered>
@@ -65,6 +71,7 @@
         <exclude>target/**</exclude>
         <exclude>appConfig-default.json</exclude>
         <exclude>appConfig-secured-default.json</exclude>
+        <exclude>clientInstallConfig-default.json</exclude>
         <exclude>metainfo.xml</exclude>
       </excludes>
       <fileMode>0755</fileMode>

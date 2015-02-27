@@ -121,9 +121,4 @@ public class AMWebClient {
     return resource;
   }
 
-  public WebResource jsonResource(String url) {
-    WebResource resource = resource(url);
-    resource.type(MediaType.APPLICATION_JSON);
-    return resource;
-  }
 }

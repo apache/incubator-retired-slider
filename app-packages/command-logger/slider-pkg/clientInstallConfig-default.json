@@ -1,0 +1,8 @@
+{ 
+  "schema":"http://example.org/specification/v2.0.0", 
+  "global":{
+    "client_root":"{app_install_dir}",
+    "application_id": "application_id_1"
+  }
+}
+

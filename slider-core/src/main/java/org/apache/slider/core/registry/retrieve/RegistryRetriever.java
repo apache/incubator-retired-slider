@@ -97,7 +97,7 @@ public class RegistryRetriever extends AMWebClient {
 
     String confURL = getConfigurationURL(external);
     try {
-      WebResource webResource = jsonResource(confURL);
+      WebResource webResource = resource(confURL);
       log.debug("GET {}", confURL);
       PublishedConfigSet configSet = webResource.get(PublishedConfigSet.class);
       return configSet;
@@ -132,7 +132,7 @@ public class RegistryRetriever extends AMWebClient {
 
     String exportsUrl = getExportURL(external);
     try {
-      WebResource webResource = jsonResource(exportsUrl);
+      WebResource webResource = resource(exportsUrl);
       log.debug("GET {}", exportsUrl);
       PublishedExportsSet exportSet = webResource.get(PublishedExportsSet.class);
       return exportSet;
@@ -159,7 +159,7 @@ public class RegistryRetriever extends AMWebClient {
     }
     confURL = SliderUtils.appendToURL(confURL, name);
     try {
-      WebResource webResource = jsonResource(confURL);
+      WebResource webResource = resource(confURL);
       PublishedConfiguration publishedConf =
           webResource.get(PublishedConfiguration.class);
       return publishedConf;
@@ -185,7 +185,7 @@ public class RegistryRetriever extends AMWebClient {
     String exportsURL = getExportURL(external);
     exportsURL = SliderUtils.appendToURL(exportsURL, name);
     try {
-      WebResource webResource = jsonResource(exportsURL);
+      WebResource webResource = resource(exportsURL);
       PublishedExports publishedExports =
           webResource.get(PublishedExports.class);
       return publishedExports;

@@ -58,6 +58,7 @@ public class ClientArgs extends CommonArgs {
   private final ActionHelpArgs actionHelpArgs = new ActionHelpArgs();
   private final ActionInstallPackageArgs actionInstallPackageArgs = new ActionInstallPackageArgs();
   private final ActionPackageArgs actionPackageArgs = new ActionPackageArgs();
+  private final ActionClientArgs actionClientArgs = new ActionClientArgs();
   private final ActionInstallKeytabArgs actionInstallKeytabArgs = new ActionInstallKeytabArgs();
   private final ActionKeytabArgs actionKeytabArgs = new ActionKeytabArgs();
   private final ActionKillContainerArgs actionKillContainerArgs =
@@ -96,6 +97,7 @@ public class ClientArgs extends CommonArgs {
         actionHelpArgs,
         actionInstallPackageArgs,
         actionPackageArgs,
+        actionClientArgs,
         actionInstallKeytabArgs,
         actionKeytabArgs,
         actionKillContainerArgs,
@@ -141,17 +143,15 @@ public class ClientArgs extends CommonArgs {
     return actionBuildArgs;
   }
 
-  public ActionInstallPackageArgs getActionInstallPackageArgs() {
-    return actionInstallPackageArgs; }
+  public ActionInstallPackageArgs getActionInstallPackageArgs() { return actionInstallPackageArgs; }
 
-  public ActionPackageArgs getActionPackageArgs() {
-    return actionPackageArgs; }
+  public ActionClientArgs getActionClientArgs() { return actionClientArgs; }
 
-  public ActionInstallKeytabArgs getActionInstallKeytabArgs() {
-    return actionInstallKeytabArgs; }
+  public ActionPackageArgs getActionPackageArgs() { return actionPackageArgs; }
 
-  public ActionKeytabArgs getActionKeytabArgs() {
-    return actionKeytabArgs; }
+  public ActionInstallKeytabArgs getActionInstallKeytabArgs() { return actionInstallKeytabArgs; }
+
+  public ActionKeytabArgs getActionKeytabArgs() { return actionKeytabArgs; }
 
   public ActionUpdateArgs getActionUpdateArgs() {
     return actionUpdateArgs;
@@ -256,6 +256,9 @@ public class ClientArgs extends CommonArgs {
 
     } else if (SliderActions.ACTION_PACKAGE.equals(action)) {
       bindCoreAction(actionPackageArgs);
+
+    } else if (SliderActions.ACTION_CLIENT.equals(action)) {
+      bindCoreAction(actionClientArgs);
 
     } else if (SliderActions.ACTION_INSTALL_KEYTAB.equals(action)) {
       bindCoreAction(actionInstallKeytabArgs);

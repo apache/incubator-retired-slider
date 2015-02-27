@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.slider</groupId>
     <artifactId>slider</artifactId>
-    <version>0.62.0-SNAPSHOT</version>
+    <version>0.72.0-incubating-SNAPSHOT</version>
   </parent>
   <properties>
     <work.dir>package-tmp</work.dir>
@@ -123,7 +123,7 @@
             <test.app.pkg.name>CMD_LOGGER</test.app.pkg.name>
             <test.app.resource>../slider-core/src/test/app_packages/test_command_log/resources.json</test.app.resource>
             <test.app.template>../slider-core/src/test/app_packages/test_command_log/appConfig.json</test.app.template>
-            <vagrant.current.working.dir></vagrant.current.working.dir>
+            <vagrant.current.working.dir />
           </systemPropertyVariables>
         </configuration>
       </plugin>

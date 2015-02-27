@@ -517,14 +517,14 @@ public class AgentProviderService extends AbstractProviderService implements
             fileSystem), LocalResourceType.FILE);
       // still using hostname as file name on the agent side, but the files
       // do end up under the specific container's file space
-      launcher.addLocalResource("certs/" + hostname + ".crt",
-                                agentCertResource);
+      launcher.addLocalResource(AgentKeys.INFRA_RUN_SECURITY_DIR + hostname +
+                                ".crt", agentCertResource);
       LocalResource agentKeyResource = fileSystem.createAmResource(
           uploadSecurityResource(
               CertificateManager.getAgentKeyFilePath(containerId), fileSystem),
             LocalResourceType.FILE);
-      launcher.addLocalResource("certs/" + hostname + ".key",
-                                agentKeyResource);
+      launcher.addLocalResource(AgentKeys.INFRA_RUN_SECURITY_DIR + hostname +
+                                ".key", agentKeyResource);
 
     } catch (Exception e) {
       throw new SliderException(SliderExitCodes.EXIT_DEPLOYMENT_FAILED, e,
@@ -1663,11 +1663,10 @@ public class AgentProviderService extends AbstractProviderService implements
     response.addExecutionCommand(cmd);
   }
 
-  private String getPackageList() {
+  protected static String getPackageListFromApplication(Application application) {
     String pkgFormatString = "{\"type\":\"%s\",\"name\":\"%s\"}";
     String pkgListFormatString = "[%s]";
     List<String> packages = new ArrayList();
-    Application application = getMetainfo().getApplication();
     if (application != null) {
       List<OSSpecific> osSpecifics = application.getOSSpecifics();
       if (osSpecifics != null && osSpecifics.size() > 0) {
@@ -1686,6 +1685,10 @@ public class AgentProviderService extends AbstractProviderService implements
     } else {
       return "[]";
     }
+  }
+
+  private String getPackageList() {
+    return getPackageListFromApplication(getMetainfo().getApplication());
   }
 
   private void prepareExecutionCommand(ExecutionCommand cmd) {

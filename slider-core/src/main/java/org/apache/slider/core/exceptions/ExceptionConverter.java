@@ -25,6 +25,8 @@ import org.apache.hadoop.fs.InvalidRequestException;
 import org.apache.hadoop.fs.PathAccessDeniedException;
 import org.apache.hadoop.fs.PathIOException;
 import org.apache.hadoop.yarn.webapp.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.FileNotFoundException;
@@ -35,6 +37,8 @@ import java.io.IOException;
  * extraction of details and finer-grained conversions.
  */
 public class ExceptionConverter {
+  private static final Logger
+      log = LoggerFactory.getLogger(ExceptionConverter.class);
 
   /**
    * Uprate error codes 400 and up into faults; 
@@ -56,6 +60,20 @@ public class ExceptionConverter {
     ClientResponse response = exception.getResponse();
     if (response != null) {
       int status = response.getStatus();
+      String body = "";
+      try {
+        if (response.hasEntity()) {
+          body = response.getEntity(String.class);
+          log.error("{} {} returned status {} and body\n{}",
+              verb, targetURL, status, body);
+        } else {
+          log.error("{} {} returned status {} and empty body",
+              verb, targetURL, status);
+        }
+      } catch (Exception e) {
+        log.warn("Failed to extract body from client response", e);
+      }
+      
       if (status == HttpServletResponse.SC_UNAUTHORIZED
           || status == HttpServletResponse.SC_FORBIDDEN) {
         ioe = new PathAccessDeniedException(targetURL);
@@ -68,14 +86,14 @@ public class ExceptionConverter {
                 verb, status, targetURL));
       } else if (status > 400 && status < 500) {
         ioe =  new FileNotFoundException(targetURL);
-      } else {
+      }
+      if (ioe == null) {
         ioe = new PathIOException(targetURL,
-            String.format("%s failed: status code %d against %s",
-                verb, status, targetURL));
-        }
-    }
-
-    if (ioe == null) {
+            verb + " " + targetURL
+            + " failed with status code : " + status
+            + ":" + exception);
+      }
+    } else {
       ioe = new PathIOException(targetURL, 
           verb + " " + targetURL + " failed: " + exception);
     }
