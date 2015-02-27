@@ -93,8 +93,8 @@ abstract class CommandTestBase extends SliderTestUtils {
    */
   public static final String TILDE
   public static final int CONTAINER_LAUNCH_TIMEOUT = 90000
-  public static final int PROBE_SLEEP_TIME = 4000
-  public static final int REGISTRY_STARTUP_TIMEOUT = 60000
+  public static final int PROBE_SLEEP_TIME = 2000
+  public static final int REGISTRY_STARTUP_TIMEOUT = 90000
   public static final String E_LAUNCH_FAIL = 'Application did not start'
 
   /*
@@ -828,17 +828,28 @@ abstract class CommandTestBase extends SliderTestUtils {
   /**
    * Spinning operation to perform a registry call
    * @param application application
+   * @param target target URL For diagnostics
    */
-  protected void ensureRegistryCallSucceeds(String application) {
+  protected void ensureRegistryCallSucceeds(String application, URL target) {
+    def failureText = "Application registry is not accessible at $target after $REGISTRY_STARTUP_TIMEOUT ms"
     repeatUntilSuccess("registry",
         this.&isRegistryAccessible,
         REGISTRY_STARTUP_TIMEOUT,
         PROBE_SLEEP_TIME,
         [application: application],
         true,
-        "Application registry is not accessible after $REGISTRY_STARTUP_TIMEOUT") {
-      describe "Not able to access registry after after $REGISTRY_STARTUP_TIMEOUT"
+        failureText) {
+      describe failureText
       exists(application, true).dumpOutput()
+      if (target != null) {
+        // GET the text of the target if provided
+        def body = target.text
+        def errorText = "Registry probe to $target failed with response:\n$body"
+        log.error(errorText)
+        fail(errorText)
+      }
+
+      // trigger a failure on registry lookup
       SliderShell shell = registry(0, [
               ARG_NAME,
               application,
