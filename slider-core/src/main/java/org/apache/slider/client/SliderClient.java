@@ -70,6 +70,7 @@ import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.api.SliderClusterProtocol;
 import org.apache.slider.api.StateValues;
 import org.apache.slider.api.proto.Messages;
+import org.apache.slider.api.types.ContainerInformation;
 import org.apache.slider.api.types.SliderInstanceDescription;
 import org.apache.slider.client.ipc.SliderClusterOperations;
 import org.apache.slider.common.Constants;
@@ -2135,11 +2136,17 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     boolean live = args.live;
     String state = args.state;
+    boolean listContainers = args.containers;
     boolean verbose = args.verbose;
 
     if (live && !state.isEmpty()) {
       throw new BadCommandArgumentsException(
           Arguments.ARG_LIVE + " and " + Arguments.ARG_STATE + " are exclusive");
+    }
+    if (listContainers && isUnset(clustername)) {
+      throw new BadCommandArgumentsException(
+          "Should specify an application instance with "
+              + Arguments.ARG_CONTAINERS);
     }
     // flag to indicate only services in a specific state are to be listed
     boolean listOnlyInState = live || !state.isEmpty();
@@ -2175,6 +2182,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         min, max,
         reportMap.size() );
 
+    List<ContainerInformation> containers = null;
     if (isSet(clustername)) {
       // only one instance is expected
       // resolve the persistent value
@@ -2185,7 +2193,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       // create a new map with only that instance in it.
       // this restricts the output of results to this instance
       persistentInstances = new HashMap<>();
-      persistentInstances.put(clustername, persistent);  
+      persistentInstances.put(clustername, persistent);
+      if (listContainers) {
+        containers = getContainers(clustername);
+      }
     }
     
     // at this point there is either the entire list or a stripped down instance
@@ -2197,14 +2208,28 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         // list the details if all were requested, or the filtering contained
         // a report
         listed++;
+        // containers will be non-null when only one instance is requested
         String details = SliderUtils.instanceDetailsToString(name,
             report,
+            containers,
             verbose);
         print(details);
       }
     }
     
     return listed > 0 ? EXIT_SUCCESS: EXIT_FALSE;
+  }
+
+  public List<ContainerInformation> getContainers(String name)
+      throws YarnException, IOException {
+    SliderClusterOperations clusterOps = new SliderClusterOperations(
+        bondToCluster(name));
+    try {
+      return clusterOps.getContainers();
+    } catch (NoSuchNodeException e) {
+      throw new BadClusterStateException(
+          "Containers not found for application instance %s", name);
+    }
   }
 
   /**

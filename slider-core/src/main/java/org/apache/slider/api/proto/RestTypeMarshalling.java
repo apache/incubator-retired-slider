@@ -26,12 +26,11 @@ import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.conf.ConfTreeOperations;
 import org.apache.slider.core.persist.AggregateConfSerDeser;
 import org.apache.slider.core.persist.ConfTreeSerDeser;
-import org.codehaus.jackson.JsonParseException;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.List;
 
 /**
  * Class to handle marshalling of REST
@@ -136,6 +135,17 @@ public class RestTypeMarshalling {
         new String[wire.getOutputCount()]
     );
     return info;
+  }
+
+  public static List<ContainerInformation> unmarshall(
+      Messages.GetLiveContainersResponseProto wire) {
+    List<ContainerInformation> infoList = new ArrayList<ContainerInformation>(
+        wire.getContainersList().size());
+    for (Messages.ContainerInformationProto container : wire
+        .getContainersList()) {
+      infoList.add(unmarshall(container));
+    }
+    return infoList;
   }
 
   public static Messages.ContainerInformationProto

@@ -451,7 +451,13 @@ public class SliderClusterOperations {
     return unmarshall(response);
   }
 
-  
+  public List<ContainerInformation> getContainers() throws IOException {
+    Messages.GetLiveContainersResponseProto response = appMaster
+        .getLiveContainers(Messages.GetLiveContainersRequestProto.newBuilder()
+            .build());
+    return unmarshall(response);
+  }
+
   public Map<String, ComponentInformation> enumComponents() throws IOException {
     Messages.GetLiveComponentsResponseProto response =
         appMaster.getLiveComponents(
