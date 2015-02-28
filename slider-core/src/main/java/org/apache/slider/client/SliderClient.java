@@ -366,9 +366,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   public int runService() throws Throwable {
     try {
       return exec();
-    } catch (FileNotFoundException nfe) {
-      throw new NotFoundException(nfe, nfe.toString());
-    } catch (PathNotFoundException nfe) {
+    } catch (FileNotFoundException | PathNotFoundException nfe) {
       throw new NotFoundException(nfe, nfe.toString());
     }
   }
@@ -382,69 +380,117 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     // choose the action
     String action = serviceArgs.getAction();
-
+    if (SliderUtils.isUnset(action)) {
+      throw new SliderException(EXIT_USAGE,
+          serviceArgs.usage());
+    }
+      
     int exitCode = EXIT_SUCCESS;
     String clusterName = serviceArgs.getClusterName();
     // actions
-    if (ACTION_PACKAGE.equals(action)) {
-      exitCode = actionPackage(serviceArgs.getActionPackageArgs());
-    } else if (ACTION_CLIENT.equals(action)) {
-      exitCode = actionClient(serviceArgs.getActionClientArgs());
-    } else if (ACTION_INSTALL_PACKAGE.equals(action)) {
-      exitCode = actionInstallPkg(serviceArgs.getActionInstallPackageArgs());
-    } else if (ACTION_INSTALL_KEYTAB.equals(action)) {
-      exitCode = actionInstallKeytab(serviceArgs.getActionInstallKeytabArgs());
-    } else if (ACTION_KEYTAB.equals(action)) {
-      exitCode = actionKeytab(serviceArgs.getActionKeytabArgs());
-    } else if (ACTION_BUILD.equals(action)) {
-      exitCode = actionBuild(clusterName, serviceArgs.getActionBuildArgs());
-    } else if (ACTION_CREATE.equals(action)) {
-      exitCode = actionCreate(clusterName, serviceArgs.getActionCreateArgs());
-    } else if (ACTION_FREEZE.equals(action)) {
-      exitCode = actionFreeze(clusterName,
-                              serviceArgs.getActionFreezeArgs());
-    } else if (ACTION_THAW.equals(action)) {
-      exitCode = actionThaw(clusterName, serviceArgs.getActionThawArgs());
-    } else if (ACTION_DESTROY.equals(action)) {
-      exitCode = actionDestroy(clusterName);
-    } else if (ACTION_DIAGNOSTICS.equals(action)) {
-      exitCode = actionDiagnostic(serviceArgs.getActionDiagnosticArgs());
-    } else if (ACTION_EXISTS.equals(action)) {
-      exitCode = actionExists(clusterName,
-                              serviceArgs.getActionExistsArgs());
-    } else if (ACTION_FLEX.equals(action)) {
-      exitCode = actionFlex(clusterName, serviceArgs.getActionFlexArgs());
-    } else if (ACTION_HELP.equals(action)) {
-      log.info(serviceArgs.usage());
-    } else if (ACTION_KILL_CONTAINER.equals(action)) {
-      exitCode = actionKillContainer(clusterName,
-                                     serviceArgs.getActionKillContainerArgs());
-    } else if (ACTION_AM_SUICIDE.equals(action)) {
-      exitCode = actionAmSuicide(clusterName,
-                                 serviceArgs.getActionAMSuicideArgs());
-    } else if (ACTION_LIST.equals(action)) {
-      exitCode = actionList(clusterName, serviceArgs.getActionListArgs());
-    } else if (ACTION_LOOKUP.equals(action)) {
-      exitCode = actionLookup(serviceArgs.getActionLookupArgs());
-    } else if (ACTION_REGISTRY.equals(action)) {
-      exitCode = actionRegistry(serviceArgs.getActionRegistryArgs());
-    } else if (ACTION_RESOLVE.equals(action)) {
-      exitCode = actionResolve(serviceArgs.getActionResolveArgs());
-    } else if (ACTION_STATUS.equals(action)) {
-      exitCode = actionStatus(clusterName,
-                              serviceArgs.getActionStatusArgs());
-    } else if (ACTION_UPDATE.equals(action)) {
-      exitCode = actionUpdate(clusterName, serviceArgs.getActionUpdateArgs());
-    } else if (ACTION_VERSION.equals(action)) {
-      exitCode = actionVersion();
-    } else if (SliderUtils.isUnset(action)) {
-        throw new SliderException(EXIT_USAGE,
-                serviceArgs.usage());
-    } else {
-      throw new SliderException(EXIT_UNIMPLEMENTED,
-          "Unimplemented: " + action);
-    }
 
+    switch (action) {
+      case ACTION_AM_SUICIDE:
+        exitCode = actionAmSuicide(clusterName,
+            serviceArgs.getActionAMSuicideArgs());
+        break;
+      
+      case ACTION_BUILD:
+        exitCode = actionBuild(clusterName, serviceArgs.getActionBuildArgs());
+        break;
+      
+      case ACTION_CLIENT:
+        exitCode = actionClient(serviceArgs.getActionClientArgs());
+        break;
+
+      case ACTION_CREATE:
+        exitCode = actionCreate(clusterName, serviceArgs.getActionCreateArgs());
+        break;
+
+      case ACTION_DESTROY:
+        exitCode = actionDestroy(clusterName);
+        break;
+
+      case ACTION_DIAGNOSTICS:
+        exitCode = actionDiagnostic(serviceArgs.getActionDiagnosticArgs());
+        break;
+      
+      case ACTION_EXISTS:
+        exitCode = actionExists(clusterName,
+            serviceArgs.getActionExistsArgs());
+        break;
+      
+      case ACTION_FLEX:
+        exitCode = actionFlex(clusterName, serviceArgs.getActionFlexArgs());
+        break;
+      
+      case ACTION_FREEZE:
+        exitCode = actionFreeze(clusterName, serviceArgs.getActionFreezeArgs());
+        break;
+      
+      case ACTION_HELP:
+        log.info(serviceArgs.usage());
+        break;
+      
+      case ACTION_KILL_CONTAINER:
+        exitCode = actionKillContainer(clusterName,
+            serviceArgs.getActionKillContainerArgs());
+        break;
+      
+      case ACTION_INSTALL_KEYTAB:
+        exitCode =
+            actionInstallKeytab(serviceArgs.getActionInstallKeytabArgs());
+        break;
+      
+      case ACTION_INSTALL_PACKAGE:
+        exitCode = actionInstallPkg(serviceArgs.getActionInstallPackageArgs());
+        break;
+      
+      case ACTION_KEYTAB:
+        exitCode = actionKeytab(serviceArgs.getActionKeytabArgs());
+        break;
+
+      case ACTION_LIST:
+        exitCode = actionList(clusterName, serviceArgs.getActionListArgs());
+        break;
+      
+      case ACTION_LOOKUP:
+        exitCode = actionLookup(serviceArgs.getActionLookupArgs());
+        break;
+
+      case ACTION_PACKAGE:
+        exitCode = actionPackage(serviceArgs.getActionPackageArgs());
+        break;
+
+      case ACTION_REGISTRY:
+        exitCode = actionRegistry(serviceArgs.getActionRegistryArgs());
+        break;
+      
+      case ACTION_RESOLVE:
+        exitCode = actionResolve(serviceArgs.getActionResolveArgs());
+        break;
+      
+      case ACTION_STATUS:
+        exitCode = actionStatus(clusterName, serviceArgs.getActionStatusArgs());
+        break;
+
+      case ACTION_THAW:
+        exitCode = actionThaw(clusterName, serviceArgs.getActionThawArgs());
+        break;
+
+      case ACTION_UPDATE:
+        exitCode = actionUpdate(clusterName, serviceArgs.getActionUpdateArgs());
+        break;
+      
+      case ACTION_VERSION:
+        exitCode = actionVersion();
+        break;
+      
+      default:
+        throw new SliderException(EXIT_UNIMPLEMENTED,
+            "Unimplemented: " + action);
+    }
+   
     return exitCode;
   }
 
@@ -489,11 +535,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         client.deleteRecursive(zkPath);
         return true;
       }
-    } catch (InterruptedException ignored) {
-      e = ignored;
-    } catch (KeeperException ignored) {
-      e = ignored;
-    } catch (BadConfigException ignored) {
+    } catch (InterruptedException | BadConfigException | KeeperException ignored) {
       e = ignored;
     }
     if (e != null) {
@@ -521,9 +563,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         client.createPath(zkPath, "", ZooDefs.Ids.OPEN_ACL_UNSAFE,
                           CreateMode.PERSISTENT);
         return zkPath;
-      } catch (InterruptedException e) {
-        log.warn("Unable to create default zk node {}", zkPath, e);
-      } catch (KeeperException e) {
+      } catch (InterruptedException | KeeperException e) {
         log.warn("Unable to create default zk node {}", zkPath, e);
       }
     }
@@ -664,7 +704,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       for (Entry<String, List<String>> cred : tree.credentials.entrySet()) {
         String provider = cred.getKey();
         List<String> aliases = cred.getValue();
-        if (aliases == null || aliases.size() == 0) {
+        if (aliases == null || aliases.isEmpty()) {
           continue;
         }
         Configuration c = new Configuration(conf);
@@ -672,7 +712,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         CredentialProvider credentialProvider =
             CredentialProviderFactory.getProviders(c).get(0);
         Set<String> existingAliases =
-            new HashSet<String>(credentialProvider.getAliases());
+            new HashSet<>(credentialProvider.getAliases());
         for (String alias : aliases) {
           if (existingAliases.contains(alias.toLowerCase(Locale.ENGLISH))) {
             log.info("Credentials for " + alias + " found in " + provider);
@@ -1277,16 +1317,16 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   @VisibleForTesting
   public static void replaceTokens(ConfTree conf,
       String userName, String clusterName) throws IOException {
-    Map<String,String> newglobal = new HashMap<String,String>();
+    Map<String,String> newglobal = new HashMap<>();
     for (Entry<String,String> entry : conf.global.entrySet()) {
       newglobal.put(entry.getKey(), replaceTokens(entry.getValue(),
           userName, clusterName));
     }
     conf.global.putAll(newglobal);
 
-    Map<String,List<String>> newcred = new HashMap<String,List<String>>();
+    Map<String,List<String>> newcred = new HashMap<>();
     for (Entry<String,List<String>> entry : conf.credentials.entrySet()) {
-      List<String> resultList = new ArrayList<String>();
+      List<String> resultList = new ArrayList<>();
       for (String v : entry.getValue()) {
         resultList.add(replaceTokens(v, userName, clusterName));
       }
@@ -2144,7 +2184,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       }
       // create a new map with only that instance in it.
       // this restricts the output of results to this instance
-      persistentInstances = new HashMap<String, Path>();
+      persistentInstances = new HashMap<>();
       persistentInstances.put(clustername, persistent);  
     }
     
@@ -2231,7 +2271,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     verifyBindingsDefined();
     SliderUtils.validateClusterName(name);
     log.debug("actionFlex({})", name);
-    Map<String, Integer> roleInstances = new HashMap<String, Integer>();
+    Map<String, Integer> roleInstances = new HashMap<>();
     Map<String, String> roleMap = args.getComponentMap();
     for (Map.Entry<String, String> roleEntry : roleMap.entrySet()) {
       String key = roleEntry.getKey();
@@ -2514,12 +2554,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
           return EXIT_FALSE;
         }
       }
-
-// JDK7    } catch (YarnException | IOException e) {
-    } catch (YarnException e) {
-      log.warn("Exception while waiting for the application {} to shut down: {}",
-               clustername, e);
-    } catch ( IOException e) {
+      
+    } catch (YarnException | IOException e) {
       log.warn("Exception while waiting for the application {} to shut down: {}",
                clustername, e);
     }
@@ -2707,7 +2743,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     if (uuids.length == 0) {
       // short cut on an empty list
-      return new LinkedList<ClusterNode>();
+      return new LinkedList<>();
     }
     return createClusterOperations().listClusterNodes(uuids);
   }
@@ -2857,8 +2893,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
           // treat the root directory as if if is always there
         
           if ("/".equals(path)) {
-            znodes = new HashMap<String, RegistryPathStatus>(0);
-            recordMap = new HashMap<String, ServiceRecord>(0);
+            znodes = new HashMap<>(0);
+            recordMap = new HashMap<>(0);
           } else {
             throw e;
           }
@@ -2989,7 +3025,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       }
     } else {
       ServiceRecord instance = lookupServiceRecord(registryArgs);
-      serviceRecords = new ArrayList<ServiceRecord>(1);
+      serviceRecords = new ArrayList<>(1);
       serviceRecords.add(instance);
     }
 
@@ -3084,10 +3120,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         log.info("Application package is properly installed");
       } catch (FileNotFoundException e) {
         log.error("can not find application package: {}", e);
-        return;
       } catch (IOException e) {
         log.error("can not open application package: {} ", e);
-        return;
       }
     }
   }
@@ -3297,10 +3331,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       }
 
       SliderUtils.validateSliderClientEnvironment(log);
-    } catch (SliderException e) {
-      log.error(e.toString());
-      throw e;
-    } catch (IOException e) {
+    } catch (SliderException | IOException e) {
       log.error(e.toString());
       throw e;
     }
@@ -3597,9 +3628,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       throws IOException, SliderException {
     try {
       return getRegistryOperations().resolve(path);
-    } catch (PathNotFoundException e) {
-      throw new NotFoundException(e.getPath().toString(), e);
-    } catch (NoRecordException e) {
+    } catch (PathNotFoundException | NoRecordException e) {
       throw new NotFoundException(e.getPath().toString(), e);
     }
   }
@@ -3633,15 +3662,12 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       Map<String, ServiceRecord> recordMap = listServiceRecords(
           getRegistryOperations(),
           serviceclassPath(currentUser(), SliderKeys.APP_TYPE));
-      return new ArrayList<String>(recordMap.keySet());
-/// JDK7    } catch (YarnException | IOException e) {
+      return new ArrayList<>(recordMap.keySet());
     } catch (PathNotFoundException e) {
       log.debug("No registry path for slider instances for current user: {}", e, e);
       // no entries: return an empty list
-      return new ArrayList<String>(0);
-    } catch (IOException e) {
-      throw e;
-    } catch (YarnException e) {
+      return new ArrayList<>(0);
+    } catch (IOException | YarnException e) {
       throw e;
     } catch (Exception e) {
       throw new IOException(e);
@@ -3721,9 +3747,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       }
     } catch (IllegalArgumentException e) {
       throw new BadCommandArgumentsException(e, "%s : %s", args, e);
-    } catch (ApplicationAttemptNotFoundException notFound) {
-      throw new NotFoundException(notFound, notFound.toString());
-    } catch (ApplicationNotFoundException notFound) {
+    } catch (ApplicationAttemptNotFoundException | ApplicationNotFoundException notFound) {
       throw new NotFoundException(notFound, notFound.toString());
     }
     return EXIT_SUCCESS;

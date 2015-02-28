@@ -848,7 +848,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
           historyDir,
           liveContainers,
           appInformation,
-          new SimpleReleaseSelector());
+          providerService.createContainerReleaseSelector());
 
       providerService.rebuildContainerDetails(liveContainers,
           instanceDefinition.getName(), appState.getRolePriorityMap());

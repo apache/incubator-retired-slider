@@ -514,7 +514,7 @@ public class AppState {
       Path historyDir,
       List<Container> liveContainers,
       Map<String, String> applicationInfo,
-      SimpleReleaseSelector releaseSelector)
+      ContainerReleaseSelector releaseSelector)
       throws  BadClusterStateException, BadConfigException, IOException {
     Preconditions.checkArgument(instanceDefinition != null);
     Preconditions.checkArgument(releaseSelector != null);
