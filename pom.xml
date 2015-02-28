@@ -99,7 +99,6 @@
   </mailingLists>
 
   <properties>
-    <compileSource>1.7</compileSource>
     <distMgmtSnapshotsId>apache.snapshots.https</distMgmtSnapshotsId>
     <distMgmtSnapshotsName>Apache Development Snapshot Repository</distMgmtSnapshotsName>
     <distMgmtSnapshotsUrl>https://repository.apache.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
@@ -112,9 +111,9 @@
     <!-- 
     Java versions
     -->
-    <project.java.src.version>1.6</project.java.src.version>
+    <project.java.src.version>1.7</project.java.src.version>
     <enforced.java.version>${project.java.src.version}</enforced.java.version>
-    <groovy.version>2.2.2</groovy.version>
+    <groovy.version>2.4.0</groovy.version>
     
     <!-- 
     test options
@@ -187,8 +186,8 @@
     <apache-source-release-assembly-descriptor.version>1.0.4</apache-source-release-assembly-descriptor.version>
     <gmavenVersion>1.5</gmavenVersion>
     <gmavenProviderSelection>2.0</gmavenProviderSelection>
-    <groovy-eclipse-compiler.version>2.8.0-01</groovy-eclipse-compiler.version>
-    <groovy-eclipse-batch.version>2.1.3-01</groovy-eclipse-batch.version>
+    <groovy-eclipse-compiler.version>2.9.1-01</groovy-eclipse-compiler.version>
+    <groovy-eclipse-batch.version>2.3.7-01</groovy-eclipse-batch.version>
     <buildnumber-maven-plugin.version>1.2</buildnumber-maven-plugin.version>
   
     

@@ -29,7 +29,7 @@ import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockAppState
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.model.mock.MockYarnEngine
-import org.apache.slider.server.appmaster.state.SimpleReleaseSelector
+import org.apache.slider.server.appmaster.state.MostRecentContainerReleaseSelector
 import org.apache.slider.server.avro.RoleHistoryWriter
 import org.junit.Test
 
@@ -78,7 +78,8 @@ class TestMockAppStateFlexDynamicRoles extends BaseMockAppStateTest
         factory.ROLES,
         fs,
         historyPath,
-        null, null, new SimpleReleaseSelector())
+        null, null,
+        new MostRecentContainerReleaseSelector())
   }
 
   
@@ -187,7 +188,8 @@ class TestMockAppStateFlexDynamicRoles extends BaseMockAppStateTest
         factory.ROLES,
         fs,
         historyPath2,
-        null, null, new SimpleReleaseSelector())
+        null, null,
+        new MostRecentContainerReleaseSelector())
     // on this read there won't be the right number of roles
     try {
       historyWriter.read(fs, history, appState.roleHistory)

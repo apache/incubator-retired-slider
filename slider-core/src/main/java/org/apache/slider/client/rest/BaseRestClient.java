@@ -75,8 +75,8 @@ public class BaseRestClient  {
       throws IOException {
     try {
       Preconditions.checkArgument(c != null);
-      resource.accept(MediaType.APPLICATION_JSON_TYPE);
-      return (T) resource.method(method.getVerb(), c);
+      return resource.accept(MediaType.APPLICATION_JSON_TYPE)
+              .method(method.getVerb(), c);
     } catch (ClientHandlerException ex) {
       throw ExceptionConverter.convertJerseyException(method.getVerb(),
           resource.getURI().toString(),

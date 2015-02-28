@@ -92,6 +92,12 @@ public class SliderClusterOperations {
     return ClusterNode.fromProtobuf(node.getClusterNode());
   }
 
+  /**
+   * Unmarshall a list of nodes from a protobud response
+   * @param nodes node list
+   * @return possibly empty list of cluster nodes
+   * @throws IOException
+   */
   public List<ClusterNode> convertNodeWireToClusterNodes(List<Messages.RoleInstanceState> nodes)
     throws IOException {
     List<ClusterNode> nodeList = new ArrayList<ClusterNode>(nodes.size());
@@ -144,6 +150,14 @@ public class SliderClusterOperations {
     }
   }
 
+  /**
+   * Get the AM instance definition.
+   * <p>
+   *   See {@link SliderClusterProtocol#getInstanceDefinition(Messages.GetInstanceDefinitionRequestProto)}
+   * @return current slider AM aggregate definition
+   * @throws YarnException
+   * @throws IOException
+   */
   public AggregateConf getInstanceDefinition()
     throws YarnException, IOException {
     Messages.GetInstanceDefinitionRequestProto.Builder builder =
@@ -308,8 +322,14 @@ public class SliderClusterOperations {
     }
     return state;
   }
-  
-  public boolean flex(ConfTree resources) throws IOException, YarnException {
+
+  /**
+   * Flex operation
+   * @param resources new resources
+   * @return the response
+   * @throws IOException
+   */
+  public boolean flex(ConfTree resources) throws IOException {
     Messages.FlexClusterRequestProto request =
       Messages.FlexClusterRequestProto.newBuilder()
               .setClusterSpec(resources.toJson())
@@ -358,8 +378,7 @@ public class SliderClusterOperations {
 
   }
 
-  
-  
+   
   public AggregateConf getModelDesired() throws IOException {
     return unmarshallToAggregateConf(appMaster.getModelDesired(EMPTY));
   }

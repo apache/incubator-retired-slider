@@ -26,6 +26,7 @@ import org.apache.slider.api.types.ContainerInformation;
 import org.apache.slider.api.types.PingInformation;
 import org.apache.slider.api.SliderApplicationApi;
 import org.apache.slider.core.conf.AggregateConf;
+import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.conf.ConfTreeOperations;
 import org.apache.slider.core.exceptions.NoSuchNodeException;
 import org.slf4j.Logger;
@@ -109,6 +110,17 @@ public class SliderApplicationIpcClient implements SliderApplicationApi {
     }
   }
 
+
+  @Override
+  public void putDesiredResources(ConfTree updated) throws IOException {
+    try {
+      operations.flex(updated);
+    } catch (IOException e) {
+      throw convert(e);
+    }
+  }
+
+  
   @Override
   public AggregateConf getResolvedModel() throws IOException {
     try {

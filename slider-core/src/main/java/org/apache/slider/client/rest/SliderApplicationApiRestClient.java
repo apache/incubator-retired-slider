@@ -20,7 +20,10 @@ package org.apache.slider.client.rest;
 
 import com.google.common.base.Preconditions;
 import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.ClientHandlerException;
+import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.GenericType;
+import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.representation.Form;
 import org.apache.commons.lang.StringUtils;
@@ -31,6 +34,8 @@ import org.apache.slider.api.SliderApplicationApi;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.conf.ConfTreeOperations;
+import org.apache.slider.core.exceptions.ExceptionConverter;
+import org.apache.slider.core.persist.ConfTreeSerDeser;
 import org.apache.slider.core.restclient.HttpVerb;
 import org.apache.slider.api.types.PingInformation;
 import org.slf4j.Logger;
@@ -72,8 +77,7 @@ public class SliderApplicationApiRestClient extends BaseRestClient
   }
 
   /**
-   * Create a resource under the application path set up to accept
-   * JSON
+   * Create a resource under the application path
    * @param subpath path under application
    * @return a resource under the application path
    */
@@ -81,9 +85,7 @@ public class SliderApplicationApiRestClient extends BaseRestClient
     Preconditions.checkArgument(!StringUtils.isEmpty(subpath),
         "empty path");
     Preconditions.checkNotNull(appResource, "Null app resource");
-    WebResource resource = appResource.path(subpath);
-    resource.accept(MediaType.APPLICATION_JSON_TYPE);
-    return resource;
+    return appResource.path(subpath);
   }
   
   /**
@@ -123,8 +125,7 @@ public class SliderApplicationApiRestClient extends BaseRestClient
    */
   public <T> T appResourceOperation(HttpVerb method, String subpath, Class<T> c)
       throws IOException {
-    WebResource resource = applicationResource(subpath);
-    return exec(method, resource, c);
+    return exec(method, applicationResource(subpath), c);
   }
   
   
@@ -139,8 +140,7 @@ public class SliderApplicationApiRestClient extends BaseRestClient
   public <T> T appResourceOperation(HttpVerb method, String subpath,
       GenericType<T> t)
       throws IOException {
-    WebResource resource = applicationResource(subpath);
-    return exec(method, resource, t);
+    return exec(method, applicationResource(subpath), t);
   }
 
 
@@ -161,6 +161,29 @@ public class SliderApplicationApiRestClient extends BaseRestClient
     ConfTree resource =
         getApplicationResource(MODEL_DESIRED_RESOURCES, ConfTree.class);
     return new ConfTreeOperations(resource); 
+  }
+
+  @Override
+  public void putDesiredResources(ConfTree updated) throws IOException {
+    WebResource resource = applicationResource(MODEL_DESIRED_RESOURCES);
+    try {
+
+      // put operation. The result is discarded; it does help validate
+      // that the operation returned a JSON data structure as well as a 200
+      // response.
+
+      resource.accept(MediaType.APPLICATION_JSON_TYPE)
+              .type(MediaType.APPLICATION_JSON_TYPE)
+              .entity(updated)
+              .put(ConfTree.class);
+    } catch (ClientHandlerException ex) {
+        throw ExceptionConverter.convertJerseyException("PUT",
+            resource.getURI().toString(),
+            ex);
+      } catch (UniformInterfaceException ex) {
+      throw ExceptionConverter.convertJerseyException("PUT",
+          resource.getURI().toString(), ex);
+      }
   }
 
   @Override
@@ -245,10 +268,25 @@ public class SliderApplicationApiRestClient extends BaseRestClient
    */
   public PingInformation pingPost(String text) throws IOException {
     WebResource pingResource = applicationResource(ACTION_PING);
-    pingResource.type(MediaType.APPLICATION_JSON_TYPE);
     Form f = new Form();
     f.add("text", text);
-    return pingResource.post(PingInformation.class, f);
+    return pingResource
+        .type(MediaType.APPLICATION_JSON_TYPE)
+        .post(PingInformation.class, f);
+  }
+  
+  /**
+   * Ping as a POST
+   * @param text text to include
+   * @return the response
+   * @throws IOException on any failure
+   */
+  public PingInformation pingPut(String text) throws IOException {
+    WebResource pingResource = applicationResource(ACTION_PING);
+    Form f = new Form();
+    return pingResource
+        .type(MediaType.TEXT_PLAIN)
+        .put(PingInformation.class, text);
   }
 
   @Override

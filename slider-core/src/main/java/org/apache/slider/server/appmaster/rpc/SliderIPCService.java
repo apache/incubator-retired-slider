@@ -181,7 +181,7 @@ public class SliderIPCService extends AbstractService
 
   @Override //SliderClusterProtocol
   public Messages.FlexClusterResponseProto flexCluster(Messages.FlexClusterRequestProto request)
-      throws IOException, YarnException {
+      throws IOException {
     onRpcCall("flex");
     String payload = request.getClusterSpec();
     ConfTreeSerDeser confTreeSerDeser = new ConfTreeSerDeser();

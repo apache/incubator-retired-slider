@@ -27,6 +27,7 @@ import org.apache.slider.api.types.ContainerInformation
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.core.conf.ConfTreeOperations
+import org.apache.slider.core.persist.ConfTreeSerDeser
 import org.apache.slider.core.restclient.HttpOperationResponse
 import org.apache.slider.core.restclient.HttpVerb
 import org.apache.slider.core.restclient.UrlConnectionOperations
@@ -60,7 +61,7 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
 
 
   public void testCodahaleOperations() throws Throwable {
-    describe "Codahale operations"
+    describe "Codahale operations  $this"
     getWebPage(appmaster)
     getWebPage(appmaster, SYSTEM_THREADS)
     getWebPage(appmaster, SYSTEM_HEALTHCHECK)
@@ -76,7 +77,7 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
 
 
   public void testMimeTypes() throws Throwable {
-    describe "Mime Types"
+    describe "Mime Types  $this"
     HttpOperationResponse response= executeGet(
         appendToURL(appmaster,
         SLIDER_PATH_APPLICATION, LIVE_RESOURCES))
@@ -87,7 +88,7 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
 
   
   public void testLiveResources() throws Throwable {
-    describe "Live Resources"
+    describe "Live Resources  $this"
     ConfTreeOperations tree = fetchConfigTree(appmaster, LIVE_RESOURCES)
 
     log.info tree.toString()
@@ -104,7 +105,7 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
   }
 
   public void testLiveContainers() throws Throwable {
-    describe "Application REST ${LIVE_CONTAINERS}"
+    describe "Application REST ${LIVE_CONTAINERS}  $this"
 
     Map<String, ContainerInformation> containers =
         fetchType(HashMap, appmaster, LIVE_CONTAINERS)
@@ -124,7 +125,7 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
     assert amContainerInfo.released == null
     assert amContainerInfo.state == StateValues.STATE_LIVE
 
-    describe "containers"
+    describe "containers $this"
 
     ContainerInformation retrievedContainerInfo =
         fetchType(ContainerInformation, appmaster,
@@ -141,7 +142,7 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
     }
 
 
-    describe "components"
+    describe "components  $this"
 
     Map<String, ComponentInformation> components =
         fetchType(HashMap, appmaster, LIVE_COMPONENTS)
@@ -168,7 +169,7 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
    * @param appmaster
    */
   public void testRESTModel() {
-    describe "model"
+    describe "model  $this"
 
     assertPathServesList(appmaster,
         MODEL,
@@ -194,17 +195,18 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
 
     def resolved = fetchTypeList(ConfTree, appmaster,
         [MODEL_RESOLVED_APPCONF, MODEL_RESOLVED_RESOURCES])
-    assert resolved[MODEL_RESOLVED_APPCONF].components[sam]
-    [TEST_GLOBAL_OPTION] ==
-    TEST_GLOBAL_OPTION_PRESENT
+    assert resolved[MODEL_RESOLVED_APPCONF].components[sam][TEST_GLOBAL_OPTION] ==
+        TEST_GLOBAL_OPTION_PRESENT
   }
 
+  
   /**
    * Test the various ping operations
    */
   public void testPing() {
     // GET
-    String ping = appendToURL(appmaster, SLIDER_PATH_APPLICATION, ACTION_PING)
+
+    String ping = applicationURL(ACTION_PING)
     describe "ping to AM URL $appmaster, ping URL $ping"
     def pinged = fetchType(PingInformation, appmaster, ACTION_PING + "?body=hello")
     log.info "Ping GET: $pinged"
@@ -220,6 +222,15 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
     pingAction(HttpVerb.PUT, pingUrl, message)
     pingAction(HttpVerb.DELETE, pingUrl, message)
 
+  }
+
+  /**
+   * Create a URL under the application/ resources
+   * @param subpath
+   * @return
+   */
+  public String applicationURL(String subpath) {
+    return appendToURL(appmaster, SLIDER_PATH_APPLICATION, subpath)
   }
 
 
@@ -317,5 +328,64 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
   @Override
   public void testSuiteComplexVerbs() {
     testPing();
+    testPutDesiredResources()
+  }
+
+
+  public void testPutDesiredResources() throws Throwable {
+    describe "testPutDesiredResources $this"
+    ConfTreeOperations current = fetchConfigTree(appmaster, MODEL_DESIRED_RESOURCES)
+    ConfTreeSerDeser serDeser = new ConfTreeSerDeser()
+    
+    def uuid = UUID.randomUUID()
+    def field = "yarn.test.flex.uuid"
+    current.set(field, uuid)
+    def outcome = connectionOperations.execHttpOperation(
+        HttpVerb.PUT,
+        new URL(applicationURL(MODEL_DESIRED_RESOURCES)),
+        serDeser.toJson(current.confTree).bytes,
+        MediaType.APPLICATION_JSON)
+    repeatUntilSuccess("probe for resource PUT",
+        this.&probeForResolveConfValues,
+        5000, 200,
+        [
+            "key": field,
+            "val": uuid
+        ],
+        true,
+        "Flex resources failed to propagate") {
+      def resolved = modelDesiredResolvedResources
+      fail("Did not find field $field=$uuid in\n$resolved")
+    }
+
+    def resolved = modelDesiredResolvedResources
+    log.info("Flexed cluster resources to $resolved")
+  }
+
+  /**
+   * Probe that spins until the field has desired value
+   * in the resolved resource
+   * @param args argument map. key=field, val=value
+   * @return the outcome
+   */
+  Outcome probeForResolveConfValues(Map args) {
+    assert args["key"]
+    assert args["val"]
+    String key = args["key"]
+    String val = args["val"]
+    ConfTreeOperations resolved = modelDesiredResolvedResources
+
+    return Outcome.fromBool(resolved.get(key) == val)
+  }
+
+  public ConfTreeOperations getModelDesiredResolvedResources() {
+    return fetchConfigTree(
+        appmaster,
+        MODEL_RESOLVED_RESOURCES)
+  }
+
+  @Override
+  public String toString() {
+    return "- low level REST to " + application
   }
 }

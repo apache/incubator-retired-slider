@@ -26,6 +26,7 @@ import org.apache.slider.common.params.SliderActions
 import org.apache.slider.funtest.framework.AgentCommandTestBase
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
+import org.apache.slider.server.appmaster.web.rest.RestPaths
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -86,9 +87,14 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     String amWebUrl = getInfoAmWebUrl(application)
     log.info("Dumping data from AM Web URL");
-    log.info(amWebUrl.toURL().text);
 
-    ensureRegistryCallSucceeds(application)
+    def appmasterURL = amWebUrl.toURL()
+    log.info(appmasterURL.text);
+    URL registryExportsURL = new URL(appmasterURL,
+        RestPaths.SLIDER_PATH_PUBLISHER
+            + "/" + RestPaths.SLIDER_EXPORTS)
+
+    ensureRegistryCallSucceeds(application, registryExportsURL)
     assertAppRunning(appId)
     def outfile = tmpFile(".txt")
 

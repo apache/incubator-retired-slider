@@ -27,11 +27,11 @@ import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockAppState
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
+import org.apache.slider.server.appmaster.state.MostRecentContainerReleaseSelector
 import org.apache.slider.server.appmaster.state.NodeEntry
 import org.apache.slider.server.appmaster.state.NodeInstance
 import org.apache.slider.server.appmaster.state.NodeMap
 import org.apache.slider.server.appmaster.state.RoleInstance
-import org.apache.slider.server.appmaster.state.SimpleReleaseSelector
 import org.junit.Test
 
 /**
@@ -82,7 +82,8 @@ class TestMockAppStateRebuildOnAMRestart extends BaseMockAppStateTest
         fs,
         historyPath,
         containers,
-        null, new SimpleReleaseSelector())
+        null,
+        new MostRecentContainerReleaseSelector())
 
     assert appState.getStartedCountainerCount() == clusterSize
 

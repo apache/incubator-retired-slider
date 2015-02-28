@@ -747,7 +747,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       certificateManager = new CertificateManager();
       MapOperations component = instanceDefinition.getAppConfOperations()
           .getComponent(SliderKeys.COMPONENT_AM);
-      certificateManager.initialize(component);
+      certificateManager.initialize(component, appMasterHostname,
+                                    appMasterContainerID.toString(),
+                                    clustername);
       certificateManager.setPassphrase(instanceDefinition.getPassphrase());
  
       if (component.getOptionBool(
@@ -846,7 +848,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
           historyDir,
           liveContainers,
           appInformation,
-          new SimpleReleaseSelector());
+          providerService.createContainerReleaseSelector());
 
       providerService.rebuildContainerDetails(liveContainers,
           instanceDefinition.getName(), appState.getRolePriorityMap());
