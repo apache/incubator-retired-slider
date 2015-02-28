@@ -50,6 +50,7 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.slider.Slider;
 import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.RoleKeys;
+import org.apache.slider.api.types.ContainerInformation;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.core.conf.MapOperations;
@@ -661,11 +662,12 @@ public final class SliderUtils {
    */
   public static String instanceDetailsToString(String name,
       ApplicationReport report,
+      List<ContainerInformation> containers,
       boolean verbose) {
     // format strings
     String staticf = "%-30s";
-    String reportedf = staticf + "  %10s  %-40s";
-    String livef = reportedf + " %s";
+    String reportedf = staticf + "  %10s  %-42s";
+    String livef = reportedf + "  %s";
     StringBuilder builder = new StringBuilder(200);
     if (report == null) {
       builder.append(String.format(staticf, name));
@@ -684,9 +686,25 @@ public final class SliderUtils {
         builder.append('\n');
         builder.append(SliderUtils.appReportToString(report, "\n  "));
       }
+      if (containers != null) {
+        builder.append('\n');
+        builder.append(SliderUtils.addContainersToString(containers));
+      }
     }
 
     builder.append('\n');
+    return builder.toString();
+  }
+
+  public static String addContainersToString(
+      List<ContainerInformation> containers) {
+    String containerf = "  %-40s  %40s  %-30s\n";
+    StringBuilder builder = new StringBuilder(512);
+    builder.append("Containers:\n");
+    for (ContainerInformation container : containers) {
+      builder.append(String.format(containerf, container.component,
+          container.containerId, container.host));
+    }
     return builder.toString();
   }
 
