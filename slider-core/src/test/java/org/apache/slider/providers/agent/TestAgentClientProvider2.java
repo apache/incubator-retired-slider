@@ -249,7 +249,7 @@ public class TestAgentClientProvider2 {
       client.actionClient(args);
     }catch(SliderException e) {
       log.info(e.getMessage());
-      Assert.assertTrue(e.getMessage().contains("Not a valid app package. Could not read metainfo.xml"));
+      Assert.assertTrue(e.getMessage().contains("Not a valid app package. Could not read metainfo"));
     }
   }
 }
