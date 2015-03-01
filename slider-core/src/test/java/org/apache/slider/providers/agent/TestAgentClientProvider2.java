@@ -30,9 +30,9 @@ import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.providers.ProviderUtils;
-import org.apache.slider.providers.agent.application.metadata.json.Application;
-import org.apache.slider.providers.agent.application.metadata.json.MetaInfo;
-import org.apache.slider.providers.agent.application.metadata.json.Package;
+import org.apache.slider.providers.agent.application.metadata.Application;
+import org.apache.slider.providers.agent.application.metadata.Metainfo;
+import org.apache.slider.providers.agent.application.metadata.Package;
 import org.codehaus.jettison.json.JSONObject;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -120,7 +120,7 @@ public class TestAgentClientProvider2 {
     global.put("d", "{app_install_dir}/d");
     inputConfig.put("global", global);
 
-    MetaInfo metainfo = new MetaInfo();
+    Metainfo metainfo = new Metainfo();
     Application app = new Application();
     metainfo.setApplication(app);
     Package pkg = new Package();

@@ -16,42 +16,45 @@
  *  limitations under the License.
  */
 
-package org.apache.slider.server.appmaster.web.rest.agent;
+package org.apache.slider.providers.agent.application.metadata;
 
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
-import org.codehaus.jackson.map.annotate.JsonSerialize;
+import org.apache.slider.core.exceptions.SliderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Represents a docker container port
+ * Represents package description.
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
-@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
-public class ContainerPort {
+public class Package implements Validate {
   protected static final Logger
-      log = LoggerFactory.getLogger(ContainerPort.class);
+      log = LoggerFactory.getLogger(Package.class);
 
 
-  private String containerPort;
-  private String hostPort;
+  private String name;
+  private String type;
 
-  public ContainerPort() {
+  public Package() {
   }
 
-  public String getContainerPort() {
-    return containerPort;
+
+  public void setName(String name) {
+    this.name = name;
   }
 
-  public void setContainerPort(String containerPort) {
-    this.containerPort = containerPort;
+  public String getName() {
+    return name;
   }
 
-  public String getHostPort() {
-    return hostPort;
+  public String getType() {
+    return type;
   }
 
-  public void setHostPort(String hostPort) {
-    this.hostPort = hostPort;
+  public void setType(String type) {
+    this.type = type;
+  }
+
+  public void validate(String version) throws SliderException {
+    Metainfo.checkNonNull(getName(), "name", "package");
+    Metainfo.checkNonNull(getType(), "type", "package");
   }
 }

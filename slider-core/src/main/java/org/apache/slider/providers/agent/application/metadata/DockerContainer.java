@@ -16,8 +16,9 @@
  *  limitations under the License.
  */
 
-package org.apache.slider.providers.agent.application.metadata.json;
+package org.apache.slider.providers.agent.application.metadata;
 
+import org.apache.slider.core.exceptions.SliderException;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,28 +29,28 @@ import java.util.List;
 /**
  * Represents a docker container
  */
-public class Container {
+public class DockerContainer implements Validate {
   protected static final Logger
-      log = LoggerFactory.getLogger(Container.class);
+      log = LoggerFactory.getLogger(DockerContainer.class);
 
 
   private String name;
   private String image;
   private String options;
-  private List<ContainerMount> mounts = new ArrayList<>();
-  private List<ContainerPort> ports = new ArrayList<>();
+  private List<DockerContainerMount> mounts = new ArrayList<>();
+  private List<DockerContainerPort> ports = new ArrayList<>();
 
 
-  public Container() {
+  public DockerContainer() {
   }
 
   @JsonProperty("mounts")
-  public List<ContainerMount> getMounts() {
+  public List<DockerContainerMount> getMounts() {
     return this.mounts;
   }
 
   @JsonProperty("ports")
-  public List<ContainerPort> getPorts() {
+  public List<DockerContainerPort> getPorts() {
     return this.ports;
   }
 
@@ -75,5 +76,16 @@ public class Container {
 
   public void setOptions(String options) {
     this.options = options;
+  }
+
+  public void validate(String version) throws SliderException {
+    Metainfo.checkNonNull(getName(), "name", "dockerContainer");
+    Metainfo.checkNonNull(getImage(), "image", "dockerContainer");
+    for (DockerContainerMount dcm : getMounts()) {
+      dcm.validate(version);
+    }
+    for (DockerContainerPort dcp : getPorts()) {
+      dcp.validate(version);
+    }
   }
 }

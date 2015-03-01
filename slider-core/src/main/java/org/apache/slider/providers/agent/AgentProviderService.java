@@ -66,16 +66,19 @@ import org.apache.slider.providers.AbstractProviderService;
 import org.apache.slider.providers.ProviderCore;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
-import org.apache.slider.providers.agent.application.metadata.json.Application;
-import org.apache.slider.providers.agent.application.metadata.json.CommandScript;
-import org.apache.slider.providers.agent.application.metadata.json.Component;
-import org.apache.slider.providers.agent.application.metadata.json.ComponentCommand;
-import org.apache.slider.providers.agent.application.metadata.json.ConfigFile;
+import org.apache.slider.providers.agent.application.metadata.Application;
+import org.apache.slider.providers.agent.application.metadata.CommandScript;
+import org.apache.slider.providers.agent.application.metadata.Component;
+import org.apache.slider.providers.agent.application.metadata.ComponentCommand;
+import org.apache.slider.providers.agent.application.metadata.ComponentExport;
+import org.apache.slider.providers.agent.application.metadata.ConfigFile;
 import org.apache.slider.providers.agent.application.metadata.DefaultConfig;
-import org.apache.slider.providers.agent.application.metadata.json.Export;
-import org.apache.slider.providers.agent.application.metadata.json.ExportGroup;
-import org.apache.slider.providers.agent.application.metadata.json.MetaInfo;
-import org.apache.slider.providers.agent.application.metadata.json.Package;
+import org.apache.slider.providers.agent.application.metadata.Export;
+import org.apache.slider.providers.agent.application.metadata.ExportGroup;
+import org.apache.slider.providers.agent.application.metadata.Metainfo;
+import org.apache.slider.providers.agent.application.metadata.OSPackage;
+import org.apache.slider.providers.agent.application.metadata.OSSpecific;
+import org.apache.slider.providers.agent.application.metadata.Package;
 import org.apache.slider.providers.agent.application.metadata.PropertyInfo;
 import org.apache.slider.server.appmaster.actions.ProviderReportedContainerLoss;
 import org.apache.slider.server.appmaster.actions.RegisterComponentInstance;
@@ -155,7 +158,7 @@ public class AgentProviderService extends AbstractProviderService implements
   private int heartbeatMonitorInterval = 0;
   private AgentClientProvider clientProvider;
   private AtomicInteger taskId = new AtomicInteger(0);
-  private volatile MetaInfo metaInfo = null;
+  private volatile Metainfo metaInfo = null;
   private Map<String, DefaultConfig> defaultConfigs = null;
   private ComponentCommandOrder commandOrder = null;
   private HeartbeatMonitor monitor;
@@ -240,8 +243,8 @@ public class AgentProviderService extends AbstractProviderService implements
       MapOperations componentConfig = resources.getMandatoryComponent(name);
       int count =
           componentConfig.getMandatoryOptionInt(ResourceKeys.COMPONENT_INSTANCES);
-      int definedMinCount = componentDef.getMinInstanceCount();
-      int definedMaxCount = componentDef.getMaxInstanceCount();
+      int definedMinCount = componentDef.getMinInstanceCountInt();
+      int definedMaxCount = componentDef.getMaxInstanceCountInt();
       if (count < definedMinCount || count > definedMaxCount) {
         throw new BadConfigException("Component %s, %s value %d out of range. "
                                      + "Expected minimum is %d and maximum is %d",
@@ -272,8 +275,7 @@ public class AgentProviderService extends AbstractProviderService implements
             throw new SliderException(
                 "metainfo.xml is required in app package.");
           }
-          commandOrder = new ComponentCommandOrder(metaInfo.getApplication()
-                                                       .getCommandOrders());
+          commandOrder = new ComponentCommandOrder(metaInfo.getApplication().getCommandOrders());
           defaultConfigs = initializeDefaultConfigs(fileSystem, appDef, metaInfo);
           monitor = new HeartbeatMonitor(this, getHeartbeatMonitorInterval());
           monitor.start();
@@ -891,6 +893,7 @@ public class AgentProviderService extends AbstractProviderService implements
       }
     }
 
+    processAndPublishComponentSpecificData(ports, containerId, fqdn, roleName);
     processAndPublishComponentSpecificExports(ports, containerId, fqdn, roleName);
 
     // and update registration entries
@@ -1043,7 +1046,7 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   @VisibleForTesting
-  protected MetaInfo getMetaInfo() {
+  protected Metainfo getMetaInfo() {
     return this.metaInfo;
   }
 
@@ -1053,9 +1056,9 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   @VisibleForTesting
-  protected MetaInfo getApplicationMetainfo(SliderFileSystem fileSystem,
+  protected Metainfo getApplicationMetainfo(SliderFileSystem fileSystem,
                                             String appDef) throws IOException, BadConfigException {
-    return AgentUtils.getApplicationMetaInfo(fileSystem, appDef);
+    return AgentUtils.getApplicationMetainfo(fileSystem, appDef);
   }
 
   @VisibleForTesting
@@ -1075,7 +1078,7 @@ public class AgentProviderService extends AbstractProviderService implements
    * @throws IOException
    */
   protected Map<String, DefaultConfig> initializeDefaultConfigs(SliderFileSystem fileSystem,
-                                                                String appDef, MetaInfo metainfo) throws IOException {
+                                                                String appDef, Metainfo metainfo) throws IOException {
     Map<String, DefaultConfig> defaultConfigMap = new HashMap<>();
     if (SliderUtils.isNotEmpty(metainfo.getApplication().getConfigFiles())) {
       for (ConfigFile configFile : metainfo.getApplication().getConfigFiles()) {
@@ -1392,6 +1395,56 @@ public class AgentProviderService extends AbstractProviderService implements
     }
   }
 
+  /** Publish component instance specific data if the component demands it */
+  protected void processAndPublishComponentSpecificData(Map<String, String> ports,
+                                                        String containerId,
+                                                        String hostFqdn,
+                                                        String componentName) {
+    String portVarFormat = "${site.%s}";
+    String hostNamePattern = "${THIS_HOST}";
+    Map<String, String> toPublish = new HashMap<String, String>();
+
+    Application application = getMetaInfo().getApplication();
+    for (Component component : application.getComponents()) {
+      if (component.getName().equals(componentName)) {
+        if (component.getComponentExports().size() > 0) {
+
+          for (ComponentExport export : component.getComponentExports()) {
+            String templateToExport = export.getValue();
+            for (String portName : ports.keySet()) {
+              boolean publishData = false;
+              String portValPattern = String.format(portVarFormat, portName);
+              if (templateToExport.contains(portValPattern)) {
+                templateToExport = templateToExport.replace(portValPattern, ports.get(portName));
+                publishData = true;
+              }
+              if (templateToExport.contains(hostNamePattern)) {
+                templateToExport = templateToExport.replace(hostNamePattern, hostFqdn);
+                publishData = true;
+              }
+              if (publishData) {
+                toPublish.put(export.getName(), templateToExport);
+                log.info("Publishing {} for name {} and container {}",
+                         templateToExport, export.getName(), containerId);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (toPublish.size() > 0) {
+      Map<String, String> perContainerData = null;
+      if (!getComponentInstanceData().containsKey(containerId)) {
+        perContainerData = new ConcurrentHashMap<String, String>();
+      } else {
+        perContainerData = getComponentInstanceData().get(containerId);
+      }
+      perContainerData.putAll(toPublish);
+      getComponentInstanceData().put(containerId, perContainerData);
+      publishComponentInstanceData();
+    }
+  }
 
   /** Publish component instance specific data if the component demands it */
   protected void processAndPublishComponentSpecificExports(Map<String, String> ports,
@@ -1564,7 +1617,7 @@ public class AgentProviderService extends AbstractProviderService implements
   protected boolean isMarkedAutoRestart(String roleName) {
     Component component = getApplicationComponent(roleName);
     if (component != null) {
-      return component.getAutoStartOnFailure();
+      return component.getAutoStartOnFailureBoolean();
     }
     return false;
   }
@@ -1692,9 +1745,22 @@ public class AgentProviderService extends AbstractProviderService implements
     String pkgListFormatString = "[%s]";
     List<String> packages = new ArrayList();
     if (application != null) {
-      List<Package> appPackages = application.getPackages();
-      for (Package appPackage : appPackages){
-        packages.add(String.format(pkgFormatString, appPackage.getType(), appPackage.getName()));
+      if (application.getPackages().size() > 0) {
+        List<Package> appPackages = application.getPackages();
+        for (Package appPackage : appPackages) {
+          packages.add(String.format(pkgFormatString, appPackage.getType(), appPackage.getName()));
+        }
+      } else {
+        List<OSSpecific> osSpecifics = application.getOSSpecifics();
+        if (osSpecifics != null && osSpecifics.size() > 0) {
+          for (OSSpecific osSpecific : osSpecifics) {
+            if (osSpecific.getOsType().equals("any")) {
+              for (OSPackage osPackage : osSpecific.getPackages()) {
+                packages.add(String.format(pkgFormatString, osPackage.getType(), osPackage.getName()));
+              }
+            }
+          }
+        }
       }
     }
 

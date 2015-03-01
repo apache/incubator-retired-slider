@@ -18,7 +18,7 @@
 
 package org.apache.slider.providers.agent;
 
-import org.apache.slider.providers.agent.application.metadata.json.CommandOrder;
+import org.apache.slider.providers.agent.application.metadata.CommandOrder;
 import org.apache.slider.server.appmaster.model.mock.MockContainerId;
 import org.junit.Assert;
 import org.junit.Test;

@@ -18,8 +18,11 @@ package org.apache.slider.server.appmaster.web.rest.agent;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.slider.providers.agent.application.metadata.json.Component;
-import org.apache.slider.providers.agent.application.metadata.json.MetaInfo;
+import org.apache.slider.providers.agent.application.metadata.Component;
+import org.apache.slider.providers.agent.application.metadata.DockerContainer;
+import org.apache.slider.providers.agent.application.metadata.DockerContainerMount;
+import org.apache.slider.providers.agent.application.metadata.DockerContainerPort;
+import org.apache.slider.providers.agent.application.metadata.Metainfo;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
@@ -54,14 +57,14 @@ public class ExecutionCommand {
   private String serviceName;
   private String componentName;
   private String componentType;
-  private List<Container> containers = new ArrayList<>();
+  private List<DockerContainer> containers = new ArrayList<>();
 
   public ExecutionCommand(AgentCommandType commandType) {
     this.commandType = commandType;
   }
 
   @JsonProperty("containers")
-  public List<Container> getContainers() {
+  public List<DockerContainer> getContainers() {
     return containers;
   }
 
@@ -220,26 +223,26 @@ public class ExecutionCommand {
     return builder.toString();
   }
 
-  public void addContainerDetails(String componentName, MetaInfo metaInfo) {
+  public void addContainerDetails(String componentName, Metainfo metaInfo) {
     Component component = metaInfo.getApplicationComponent(componentName);
     this.setComponentType(component.getType());
     log.info("Adding container details for {}", componentName);
-    for(org.apache.slider.providers.agent.application.metadata.json.Container metaContainer: component.getContainers()) {
-      Container container = new Container();
+    for(DockerContainer metaContainer: component.getDockerContainers()) {
+      DockerContainer container = new DockerContainer();
       container.setImage(metaContainer.getImage());
       container.setName(metaContainer.getName());
       container.setOptions(metaContainer.getOptions());
       if(metaContainer.getMounts().size() > 0) {
-        for(org.apache.slider.providers.agent.application.metadata.json.ContainerMount metaContMount : metaContainer.getMounts()) {
-          ContainerMount contMnt = new ContainerMount();
+        for(DockerContainerMount metaContMount : metaContainer.getMounts()) {
+          DockerContainerMount contMnt = new DockerContainerMount();
           contMnt.setContainerMount(metaContMount.getContainerMount());
           contMnt.setHostMount(metaContMount.getHostMount());
           container.getMounts().add(contMnt);
         }
       }
       if(metaContainer.getPorts().size() > 0) {
-        for(org.apache.slider.providers.agent.application.metadata.json.ContainerPort metaCntPort : metaContainer.getPorts()) {
-          ContainerPort cntPort = new ContainerPort();
+        for(DockerContainerPort metaCntPort : metaContainer.getPorts()) {
+          DockerContainerPort cntPort = new DockerContainerPort();
           cntPort.setContainerPort(metaCntPort.getContainerPort());
           cntPort.setHostPort(metaCntPort.getHostPort());
           container.getPorts().add(cntPort);

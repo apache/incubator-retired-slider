@@ -16,10 +16,12 @@
  */
 package org.apache.slider.providers.agent.application.metadata;
 
+import org.apache.slider.core.exceptions.SliderException;
+
 /**
  *
  */
-public class OSPackage {
+public class OSPackage implements Validate {
   String type;
   String name;
 
@@ -40,5 +42,10 @@ public class OSPackage {
 
   public void setName(String name) {
     this.name = name;
+  }
+
+  public void validate(String version) throws SliderException {
+    Metainfo.checkNonNull(getName(), "name", "osPackage");
+    Metainfo.checkNonNull(getType(), "type", "osPackage");
   }
 }

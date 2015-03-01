@@ -14,40 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.slider.providers.agent.application.metadata.json;
+package org.apache.slider.providers.agent.application.metadata;
+
+import org.apache.slider.core.exceptions.SliderException;
 
 /**
- *
+ * Implementer provides a validate method
  */
-public class ConfigFile {
-  String type;
-  String fileName;
-  String dictionaryName;
+public interface Validate {
 
-  public ConfigFile() {
-  }
-
-  public String getType() {
-    return type;
-  }
-
-  public void setType(String type) {
-    this.type = type;
-  }
-
-  public String getFileName() {
-    return fileName;
-  }
-
-  public void setFileName(String fileName) {
-    this.fileName = fileName;
-  }
-
-  public String getDictionaryName() {
-    return dictionaryName;
-  }
-
-  public void setDictionaryName(String dictionaryName) {
-    this.dictionaryName = dictionaryName;
-  }
+  public void validate(String version) throws SliderException;
 }

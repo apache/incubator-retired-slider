@@ -16,42 +16,57 @@
  *  limitations under the License.
  */
 
-package org.apache.slider.providers.agent.application.metadata.json;
+package org.apache.slider.providers.agent.application.metadata;
 
+import org.apache.slider.core.exceptions.SliderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Represents package description.
+ * Represents the metadata associated with the application.
  */
-public class CommandOrder {
+public class ComponentCommand implements Validate {
   protected static final Logger
-      log = LoggerFactory.getLogger(CommandOrder.class);
+      log = LoggerFactory.getLogger(ComponentCommand.class);
 
 
-  private String command;
-  private String requires;
+  private String exec;
+  private String name = "START";
+  private String type = "SHELL";
 
   /**
    * Creator.
    */
-  public CommandOrder() {
+  public ComponentCommand() {
   }
 
-
-  public void setCommand(String name) {
-    command = command;
+  public void setName(String name) {
+    this.name = name;
   }
 
-  public String getCommand() {
-    return command;
+  public String getName() {
+    return name;
   }
 
-  public void setRequires(String type) {
-    requires = requires;
+  public void setExec(String exec) {
+    this.exec = exec;
   }
 
-  public String getRequires() {
-    return requires;
+  public String getExec() {
+    return exec;
+  }
+
+  public void setType(String type) {
+    this.type = type;
+  }
+
+  public String getType() {
+    return type;
+  }
+
+  public void validate(String version) throws SliderException {
+    Metainfo.checkNonNull(getName(), "name", "componentCommand");
+
+    Metainfo.checkNonNull(getType(), "version", "application");
   }
 }

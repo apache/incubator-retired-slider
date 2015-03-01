@@ -18,7 +18,7 @@
 
 package org.apache.slider.providers.agent;
 
-import org.apache.slider.providers.agent.application.metadata.json.CommandOrder;
+import org.apache.slider.providers.agent.application.metadata.CommandOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

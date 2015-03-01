@@ -16,42 +16,44 @@
  *  limitations under the License.
  */
 
-package org.apache.slider.providers.agent.application.metadata.json;
+package org.apache.slider.providers.agent.application.metadata;
 
+import org.apache.slider.core.exceptions.SliderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Represents package description.
+ * Represents a docker container port
  */
-public class Export {
+public class DockerContainerPort implements Validate {
   protected static final Logger
-      log = LoggerFactory.getLogger(Export.class);
+      log = LoggerFactory.getLogger(DockerContainerPort.class);
 
 
-  private String name;
-  private String value;
+  private String containerPort;
+  private String hostPort;
 
-  /**
-   * Creator.
-   */
-  public Export() {
+  public DockerContainerPort() {
   }
 
-
-  public void setName(String name) {
-    this.name = name;
+  public String getContainerPort() {
+    return containerPort;
   }
 
-  public String getName() {
-    return name;
+  public void setContainerPort(String containerPort) {
+    this.containerPort = containerPort;
   }
 
-  public void setValue(String value) {
-    this.value = value;
+  public String getHostPort() {
+    return hostPort;
   }
 
-  public String getValue() {
-    return value;
+  public void setHostPort(String hostPort) {
+    this.hostPort = hostPort;
+  }
+
+  public void validate(String version) throws SliderException {
+    Metainfo.checkNonNull(getContainerPort(), "containerPort", "dockerContainerPort");
+    Metainfo.checkNonNull(getHostPort(), "hostPort", "dockerContainerPort");
   }
 }

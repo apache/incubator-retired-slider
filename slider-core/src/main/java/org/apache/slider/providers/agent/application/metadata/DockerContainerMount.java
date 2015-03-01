@@ -16,51 +16,44 @@
  *  limitations under the License.
  */
 
-package org.apache.slider.providers.agent.application.metadata.json;
+package org.apache.slider.providers.agent.application.metadata;
 
+import org.apache.slider.core.exceptions.SliderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Represents package description.
+ * Represents a docker container mount
  */
-public class CommandScript {
+public class DockerContainerMount implements Validate {
   protected static final Logger
-      log = LoggerFactory.getLogger(CommandScript.class);
+      log = LoggerFactory.getLogger(DockerContainerMount.class);
 
 
-  private String script;
-  private String scriptType;
-  private long timeout;
+  private String containerMount;
+  private String hostMount;
 
-  /**
-   * Creator.
-   */
-  public CommandScript() {
+  public DockerContainerMount() {
   }
 
-
-  public void setScript(String script) {
-    this.script = script;
+  public String getContainerMount() {
+    return containerMount;
   }
 
-  public String getScript() {
-    return script;
+  public void setContainerMount(String containerMount) {
+    this.containerMount = containerMount;
   }
 
-  public String getScriptType() {
-    return scriptType;
+  public String getHostMount() {
+    return hostMount;
   }
 
-  public void setScriptType(String scriptType) {
-    this.scriptType = scriptType;
+  public void setHostMount(String hostMount) {
+    this.hostMount = hostMount;
   }
 
-  public long getTimeout() {
-    return timeout;
-  }
-
-  public void setTimeout(long timeout) {
-    this.timeout = timeout;
+  public void validate(String version) throws SliderException {
+    Metainfo.checkNonNull(getContainerMount(), "containerMount", "dockerContainerMount");
+    Metainfo.checkNonNull(getHostMount(), "hostMount", "dockerContainerMount");
   }
 }

@@ -16,10 +16,12 @@
  */
 package org.apache.slider.providers.agent.application.metadata;
 
+import org.apache.slider.core.exceptions.SliderException;
+
 /**
  *
  */
-public class CommandOrder {
+public class CommandOrder implements Validate {
   String command;
   String requires;
 
@@ -50,5 +52,10 @@ public class CommandOrder {
     sb.append(",\n\"requires\": ").append(requires);
     sb.append('}');
     return sb.toString();
+  }
+
+  public void validate(String version) throws SliderException {
+    Metainfo.checkNonNull(getCommand(), "command", "package");
+    Metainfo.checkNonNull(getRequires(), "requires", "package");
   }
 }

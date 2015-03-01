@@ -16,7 +16,6 @@
  */
 package org.apache.slider.providers.agent;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.slider.common.tools.SliderFileSystem;
@@ -26,16 +25,12 @@ import org.apache.slider.providers.agent.application.metadata.DefaultConfig;
 import org.apache.slider.providers.agent.application.metadata.DefaultConfigParser;
 import org.apache.slider.providers.agent.application.metadata.Metainfo;
 import org.apache.slider.providers.agent.application.metadata.MetainfoParser;
-import org.apache.slider.providers.agent.application.metadata.json.MetaInfo;
-import org.apache.slider.providers.agent.application.metadata.json.MetaInfoParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.FileNotFoundException;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringWriter;
 
 /**
  *
@@ -43,33 +38,32 @@ import java.io.StringWriter;
 public class AgentUtils {
   private static final Logger log = LoggerFactory.getLogger(AgentUtils.class);
 
-  public static MetaInfo getApplicationMetaInfo(SliderFileSystem fileSystem,
-                                                String appDef) throws IOException, BadConfigException   {
+  public static Metainfo getApplicationMetainfo(SliderFileSystem fileSystem,
+                                                String appDef) throws IOException, BadConfigException {
     log.info("Reading metainfo at {}", appDef);
     FileSystem fs = fileSystem.getFileSystem();
     Path appPath = new Path(appDef);
 
-    MetaInfo metaInfo = null;
+    Metainfo metainfo = null;
+    MetainfoParser metainfoParser = new MetainfoParser();
     InputStream metainfoJsonStream = SliderUtils.getApplicationResourceInputStream(
         fs, appPath, "metainfo.json");
     if (metainfoJsonStream == null) {
       InputStream metainfoXMLStream = SliderUtils.getApplicationResourceInputStream(
           fs, appPath, "metainfo.xml");
       if (metainfoXMLStream != null) {
-        Metainfo metaInfoFromXML = new MetainfoParser().parse(metainfoXMLStream);
-        metaInfo = MetaInfo.upConverted(metaInfoFromXML);
+        metainfo = metainfoParser.fromXmlStream(metainfoXMLStream);
       }
     } else {
-      MetaInfoParser parser = new MetaInfoParser();
-      metaInfo = parser.fromInputStream(metainfoJsonStream);
+      metainfo = metainfoParser.fromJsonStream(metainfoJsonStream);
     }
 
-    if (metaInfo == null) {
+    if (metainfo == null) {
       log.error("metainfo is unavailable at {}.", appDef);
       throw new FileNotFoundException("metainfo.xml/json is required in app package. " +
                                       appPath);
     }
-    return metaInfo;
+    return metainfo;
   }
 
   static DefaultConfig getDefaultConfig(SliderFileSystem fileSystem,

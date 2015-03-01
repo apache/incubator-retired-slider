@@ -40,10 +40,10 @@ import org.apache.slider.core.launch.AbstractLauncher;
 import org.apache.slider.providers.AbstractClientProvider;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderUtils;
-import org.apache.slider.providers.agent.application.metadata.json.Application;
-import org.apache.slider.providers.agent.application.metadata.json.Component;
-import org.apache.slider.providers.agent.application.metadata.json.MetaInfo;
-import org.apache.slider.providers.agent.application.metadata.json.MetaInfoParser;
+import org.apache.slider.providers.agent.application.metadata.Application;
+import org.apache.slider.providers.agent.application.metadata.Component;
+import org.apache.slider.providers.agent.application.metadata.Metainfo;
+import org.apache.slider.providers.agent.application.metadata.MetainfoParser;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
@@ -164,10 +164,10 @@ public class AgentClientProvider extends AbstractClientProvider
     names.remove(SliderKeys.COMPONENT_AM);
     Map<Integer, String> priorityMap = new HashMap<Integer, String>();
 
-    MetaInfo metaInfo = null;
+    Metainfo metaInfo = null;
     if (fs != null) {
       try {
-        metaInfo = AgentUtils.getApplicationMetaInfo(fs, appDef);
+        metaInfo = AgentUtils.getApplicationMetainfo(fs, appDef);
       } catch (IOException ioe) {
         // Ignore missing metainfo file for now
         log.info("Missing metainfo {}", ioe.getMessage());
@@ -218,8 +218,8 @@ public class AgentClientProvider extends AbstractClientProvider
         MapOperations componentConfig = resources.getMandatoryComponent(name);
         int count =
             componentConfig.getMandatoryOptionInt(ResourceKeys.COMPONENT_INSTANCES);
-        int definedMinCount = componentDef.getMinInstanceCount();
-        int definedMaxCount = componentDef.getMaxInstanceCount();
+        int definedMinCount = componentDef.getMinInstanceCountInt();
+        int definedMaxCount = componentDef.getMaxInstanceCountInt();
         if (count < definedMinCount || count > definedMaxCount) {
           throw new BadConfigException("Component %s, %s value %d out of range. "
                                        + "Expected minimum is %d and maximum is %d",
@@ -265,9 +265,9 @@ public class AgentClientProvider extends AbstractClientProvider
   public Set<String> getApplicationTags(SliderFileSystem fileSystem,
                                         String appDef) throws SliderException {
     Set<String> tags;
-    MetaInfo metainfo;
+    Metainfo metainfo;
     try {
-      metainfo = AgentUtils.getApplicationMetaInfo(fileSystem, appDef);
+      metainfo = AgentUtils.getApplicationMetainfo(fileSystem, appDef);
     } catch (IOException e) {
       log.error("Error retrieving metainfo from {}", appDef, e);
       throw new SliderException("Error retrieving metainfo", e);
@@ -306,7 +306,7 @@ public class AgentClientProvider extends AbstractClientProvider
     File cmdDir = new File(tmpDir, "command");
     cmdDir.mkdir();
 
-    MetaInfo metaInfo = null;
+    Metainfo metaInfo = null;
     JSONObject defaultConfig = null;
     try {
       // expand app package into /app_pkg
@@ -326,7 +326,19 @@ public class AgentClientProvider extends AbstractClientProvider
                 while (offset < size) {
                   offset += zipInputStream.read(content, offset, size - offset);
                 }
-                metaInfo = new MetaInfoParser().fromInputStream(new ByteArrayInputStream(content));
+                metaInfo = new MetainfoParser().fromXmlStream(new ByteArrayInputStream(content));
+              }
+            } else if ("metainfo.json".equals(zipEntry.getName())) {
+              int size = (int) zipEntry.getSize();
+              if (size != -1) {
+                log.info("Reading {} of size {}", zipEntry.getName(),
+                         zipEntry.getSize());
+                byte[] content = new byte[size];
+                int offset = 0;
+                while (offset < size) {
+                  offset += zipInputStream.read(content, offset, size - offset);
+                }
+                metaInfo = new MetainfoParser().fromJsonStream(new ByteArrayInputStream(content));
               }
             } else if ("clientInstallConfig-default.json".equals(zipEntry.getName())) {
               int size = (int) zipEntry.getSize();
@@ -361,7 +373,7 @@ public class AgentClientProvider extends AbstractClientProvider
       }
 
       if (metaInfo == null) {
-        throw new SliderException("Not a valid app package. Could not read metainfo.xml.");
+        throw new SliderException("Not a valid app package. Could not read metainfo.");
       }
 
       expandAgentTar(agentPkgDir);
@@ -502,7 +514,7 @@ public class AgentClientProvider extends AbstractClientProvider
 
   protected JSONObject getCommandJson(JSONObject defaultConfig,
                                       JSONObject inputConfig,
-                                      MetaInfo metainfo,
+                                      Metainfo metainfo,
                                       File clientInstallPath) throws SliderException {
     try {
       JSONObject pkgList = new JSONObject();

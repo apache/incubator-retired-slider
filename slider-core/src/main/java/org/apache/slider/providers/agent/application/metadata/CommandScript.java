@@ -16,10 +16,12 @@
  */
 package org.apache.slider.providers.agent.application.metadata;
 
+import org.apache.slider.core.exceptions.SliderException;
+
 /**
- *
+ * CommandScript that implements all component commands
  */
-public class CommandScript {
+public class CommandScript implements Validate {
   String script;
   String scriptType;
   long timeout;
@@ -61,5 +63,10 @@ public class CommandScript {
     sb.append(",\n\"timeout\" :").append(timeout);
     sb.append('}');
     return sb.toString();
+  }
+
+  public void validate(String version) throws SliderException {
+    Metainfo.checkNonNull(getScript(), "script", "commandScript");
+    Metainfo.checkNonNull(getScriptType(), "scriptType", "commandScript");
   }
 }

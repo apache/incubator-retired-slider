@@ -16,7 +16,8 @@
  */
 package org.apache.slider.providers.agent.application.metadata;
 
-import org.apache.slider.providers.agent.application.metadata.json.MetaInfo;
+import org.apache.slider.common.tools.SliderUtils;
+import org.apache.slider.core.exceptions.SliderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,19 +27,11 @@ import org.slf4j.LoggerFactory;
 public class Metainfo {
   protected static final Logger log =
       LoggerFactory.getLogger(Metainfo.class);
+  public static String VERSION_TWO_ZERO = "2.0";
+  public static String VERSION_TWO_ONE = "2.1";
 
   String schemaVersion;
   Application application;
-  MetaInfo jsonEncoded;
-
-  public Metainfo() {
-  }
-
-  // TODO: Temporary code - the plan is to move to the json parsed MetaInfo
-  public Metainfo(MetaInfo jsonEncoded) {
-    jsonEncoded = jsonEncoded;
-    // initialize the class
-  }
 
   public String getSchemaVersion() {
     return schemaVersion;
@@ -58,7 +51,7 @@ public class Metainfo {
 
   public Component getApplicationComponent(String roleName) {
     if (application == null) {
-      log.error("Malformed app definition: Expect application as the top level element for metainfo.xml");
+      log.error("Malformed app definition: Expect application as the top level element for metainfo");
     } else {
       for (Component component : application.getComponents()) {
         if (component.getName().equals(roleName)) {
@@ -69,7 +62,18 @@ public class Metainfo {
     return null;
   }
 
-  public static Metainfo fromJsonObject(MetaInfo jsonEncoded) {
-    return new Metainfo(jsonEncoded);
+  public void validate() throws SliderException {
+    if (!VERSION_TWO_ONE.equals(schemaVersion) ||
+        !VERSION_TWO_ZERO.equals(schemaVersion)) {
+      throw new SliderException("Unsupported version " + getSchemaVersion());
+    }
+
+    application.validate(schemaVersion);
+  }
+
+  public static void checkNonNull(String value, String field, String type) throws SliderException {
+    if (SliderUtils.isUnset(value)) {
+      throw new SliderException(type + "." + field + " cannot be null");
+    }
   }
 }
