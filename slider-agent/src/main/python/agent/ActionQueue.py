@@ -31,7 +31,9 @@ from AgentToggleLogger import AgentToggleLogger
 from CommandStatusDict import CommandStatusDict
 from CustomServiceOrchestrator import CustomServiceOrchestrator
 import Constants
-
+import subprocess
+import getpass
+from DockerManager import DockerManager
 
 logger = logging.getLogger()
 installScriptHash = -1
@@ -51,6 +53,8 @@ class ActionQueue(threading.Thread):
 
   STORE_APPLIED_CONFIG = 'record_config'
   AUTO_RESTART = 'auto_restart'
+  
+  docker_mode = False
 
   def __init__(self, config, controller, agentToggleLogger):
     super(ActionQueue, self).__init__()
@@ -66,7 +70,8 @@ class ActionQueue(threading.Thread):
     self.customServiceOrchestrator = CustomServiceOrchestrator(config,
                                                                controller,
                                                                self.queueOutAgentToggleLogger)
-
+    self.dockerManager = DockerManager(self.tmpdir, config.getWorkRootPath(), self.customServiceOrchestrator)
+    
 
   def stop(self):
     self._stop.set()
@@ -157,7 +162,14 @@ class ActionQueue(threading.Thread):
       logger.info("Component has indicated auto-restart. Saving details from START command.")
 
     # running command
-    commandresult = self.customServiceOrchestrator.runCommand(command,
+    commandresult = None
+    logger.info("command fromhost: " + str(command))
+    
+    if 'configurations' in command and 'docker' in command['configurations']:
+        self.docker_mode = True
+        commandresult = self.dockerManager.execute_command(command, store_config or store_command)
+    else:
+        commandresult = self.customServiceOrchestrator.runCommand(command,
                                                               in_progress_status[
                                                                 'tmpout'],
                                                               in_progress_status[
@@ -214,7 +226,11 @@ class ActionQueue(threading.Thread):
       service = command['serviceName']
       component = command['componentName']
       reportResult = CommandStatusDict.shouldReportResult(command)
-      component_status = self.customServiceOrchestrator.requestComponentStatus(command)
+      component_status = None
+      if self.docker_mode:
+        component_status = self.dockerManager.query_status(command)
+      else:
+        component_status = self.customServiceOrchestrator.requestComponentStatus(command)
 
       result = {"componentName": component,
                 "msg": "",

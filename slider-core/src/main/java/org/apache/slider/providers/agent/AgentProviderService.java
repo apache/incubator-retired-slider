@@ -30,7 +30,6 @@ import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.registry.client.types.Endpoint;
 import org.apache.hadoop.registry.client.types.ProtocolTypes;
 import org.apache.hadoop.registry.client.types.ServiceRecord;
-import org.apache.hadoop.security.alias.CredentialProviderFactory;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.records.Container;
@@ -38,7 +37,6 @@ import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.LocalResourceType;
 import org.apache.slider.api.ClusterDescription;
-import org.apache.slider.api.ClusterDescriptionKeys;
 import org.apache.slider.api.ClusterNode;
 import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.OptionKeys;
@@ -73,6 +71,7 @@ import org.apache.slider.providers.agent.application.metadata.ComponentCommand;
 import org.apache.slider.providers.agent.application.metadata.ComponentExport;
 import org.apache.slider.providers.agent.application.metadata.ConfigFile;
 import org.apache.slider.providers.agent.application.metadata.DefaultConfig;
+import org.apache.slider.providers.agent.application.metadata.DockerContainer;
 import org.apache.slider.providers.agent.application.metadata.Export;
 import org.apache.slider.providers.agent.application.metadata.ExportGroup;
 import org.apache.slider.providers.agent.application.metadata.Metainfo;
@@ -718,11 +717,13 @@ public class AgentProviderService extends AbstractProviderService implements
     CommandScript cmdScript = getScriptPathFromMetainfo(roleName);
     List<ComponentCommand> commands = getMetaInfo().getApplicationComponent(roleName).getCommands();
 
+    /*
     if ((cmdScript == null || cmdScript.getScript() == null) && commands.size() == 0) {
       log.error("role.script is unavailable for {}. Commands will not be sent.",
           roleName);
       return response;
     }
+    */
 
     String scriptPath = null;
     long timeout = 600L;
@@ -794,7 +795,11 @@ public class AgentProviderService extends AbstractProviderService implements
                 installCmd = compCmd;
               }
             }
-            addInstallCommand2(roleName, containerId, response, installCmd, timeout);
+            if(isDockerContainer(roleName)){
+              addInstallDockerCommand2(roleName, containerId, response, installCmd, timeout);
+            } else {
+              addInstallCommand2(roleName, containerId, response, installCmd, timeout);
+            }
             componentStatus.commandIssued(command);
           }
         } else if (command == Command.START) {
@@ -819,7 +824,11 @@ public class AgentProviderService extends AbstractProviderService implements
                   startCmd = compCmd;
                 }
               }
-              addStartCommand2(roleName, containerId, response, startCmd, timeout, false);
+              if(isDockerContainer(roleName)){
+                addStartDockerCommand2(roleName, containerId, response, startCmd, timeout, false);
+              } else {
+                addStartCommand2(roleName, containerId, response, startCmd, timeout, false);
+              }
               componentStatus.commandIssued(command);
             } else {
               log.info("Start of {} on {} delayed as dependencies have not started.", roleName, containerId);
@@ -833,7 +842,11 @@ public class AgentProviderService extends AbstractProviderService implements
           && command == Command.NOP) {
         if (!componentStatus.getConfigReported()) {
           log.info("Requesting applied config for {} on {}.", roleName, containerId);
-          addGetConfigCommand(roleName, containerId, response);
+          if(isDockerContainer(roleName)){
+            addGetConfigDockerCommand(roleName, containerId, response);
+          } else {
+            addGetConfigCommand(roleName, containerId, response);
+          }
         }
       }
 
@@ -858,6 +871,14 @@ public class AgentProviderService extends AbstractProviderService implements
 
     log.debug("Heartbeat response: " + response);
     return response;
+  }
+
+  private boolean isDockerContainer(String roleName){
+    String type = getMetaInfo().getApplicationComponent(roleName).getType();
+    if(SliderUtils.isSet(type)) {
+      return type.toLowerCase().equals("docker");
+    }
+    return false;
   }
 
   protected void processAllocatedPorts(String fqdn,
@@ -1740,6 +1761,60 @@ public class AgentProviderService extends AbstractProviderService implements
     response.addExecutionCommand(cmd);
   }
 
+  @VisibleForTesting
+  protected void addInstallDockerCommand2(String componentName,
+                                   String containerId,
+                                   HeartBeatResponse response,
+                                   ComponentCommand compCmd,
+                                   long timeout)
+      throws SliderException {
+    assert getAmState().isApplicationLive();
+    ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
+
+    ExecutionCommand cmd = new ExecutionCommand(AgentCommandType.EXECUTION_COMMAND);
+    prepareExecutionCommand(cmd);
+    String clusterName = getClusterName();
+    cmd.setClusterName(clusterName);
+    cmd.setRoleCommand(Command.INSTALL.toString());
+    cmd.setServiceName(clusterName);
+    cmd.setComponentName(componentName);
+    cmd.setRole(componentName);
+    Map<String, String> hostLevelParams = new TreeMap<String, String>();
+    hostLevelParams.put(PACKAGE_LIST, getPackageList());
+    hostLevelParams.put(CONTAINER_ID, containerId);
+    cmd.setHostLevelParams(hostLevelParams);
+
+    Map<String, Map<String, String>> configurations = buildCommandConfigurations(appConf, containerId, componentName);
+    cmd.setConfigurations(configurations);
+
+    ComponentCommand effectiveCommand = compCmd;
+    if(compCmd == null) {
+      effectiveCommand = new ComponentCommand();
+      effectiveCommand.setName("INSTALL");
+      effectiveCommand.setExec("DEFAULT");
+    }
+    cmd.setCommandParams(setCommandParameters(effectiveCommand, timeout, false));
+    configurations.get("global").put("exec_cmd", effectiveCommand.getExec());
+
+    cmd.setHostname(getClusterInfoPropertyValue(StatusKeys.INFO_AM_HOSTNAME));
+    cmd.addContainerDetails(componentName, getMetaInfo());
+
+    log.info("bbb: " + getMetaInfo().toString());
+    log.info("bbb: " + getMetaInfo().getApplicationComponent(componentName).toString());
+    log.info("bbb: " + getMetaInfo().getApplicationComponent(componentName).getDockerContainers().get(0).getImage());
+    
+    Map<String, String> dockerConfig = new HashMap<String, String>();
+    dockerConfig.put("docker.command_path",
+        appConf.getGlobalOptions().get("site.docker.docker.command_path"));
+    dockerConfig.put("docker.image_name",
+        getConfigFromMetaInfo(componentName, "image"));
+    configurations.put("docker", dockerConfig);
+
+    log.info("bbb configuration" + cmd.toString());
+
+    response.addExecutionCommand(cmd);
+  }
+
   protected static String getPackageListFromApplication(Application application) {
     String pkgFormatString = "{\"type\":\"%s\",\"name\":\"%s\"}";
     String pkgListFormatString = "[%s]";
@@ -1811,6 +1886,12 @@ public class AgentProviderService extends AbstractProviderService implements
                                   String scriptPath,
                                   long timeout)
       throws SliderException {
+    
+    if(isDockerContainer(componentName)){
+      addStatusDockerCommand(componentName, containerId, response, scriptPath, timeout);
+      return;
+    }
+    
     assert getAmState().isApplicationLive();
     ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
 
@@ -1838,6 +1919,43 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   @VisibleForTesting
+  protected void addStatusDockerCommand(String componentName,
+                                  String containerId,
+                                  HeartBeatResponse response,
+                                  String scriptPath,
+                                  long timeout)
+      throws SliderException {
+    assert getAmState().isApplicationLive();
+    ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
+
+    StatusCommand cmd = new StatusCommand();
+    String clusterName = getClusterName();
+
+    cmd.setCommandType(AgentCommandType.STATUS_COMMAND);
+    cmd.setComponentName(componentName);
+    cmd.setServiceName(clusterName);
+    cmd.setClusterName(clusterName);
+    cmd.setRoleCommand(StatusCommand.STATUS_COMMAND);
+
+    Map<String, String> hostLevelParams = new TreeMap<String, String>();
+    hostLevelParams.put(JAVA_HOME, appConf.getGlobalOptions().getMandatoryOption(JAVA_HOME));
+    hostLevelParams.put(CONTAINER_ID, containerId);
+    cmd.setHostLevelParams(hostLevelParams);
+
+    cmd.setCommandParams(setCommandParameters(scriptPath, timeout, false));
+
+    Map<String, Map<String, String>> configurations = buildCommandConfigurations(
+        appConf, containerId, componentName);
+    Map<String, String> dockerConfig = new HashMap<String, String>();
+    dockerConfig.put("docker.status_command",
+        getConfigFromMetaInfo(componentName, "status_command"));
+    configurations.put("docker", dockerConfig);
+    cmd.setConfigurations(configurations);
+    log.info("bbb status" + cmd);
+    response.addStatusCommand(cmd);
+  }
+
+  @VisibleForTesting
   protected void addGetConfigCommand(String componentName, String containerId, HeartBeatResponse response)
       throws SliderException {
     assert getAmState().isApplicationLive();
@@ -1857,6 +1975,84 @@ public class AgentProviderService extends AbstractProviderService implements
     hostLevelParams.put(CONTAINER_ID, containerId);
 
     response.addStatusCommand(cmd);
+  }
+
+  @VisibleForTesting
+  protected void addGetConfigDockerCommand(String componentName, String containerId, HeartBeatResponse response)
+      throws SliderException {
+    assert getAmState().isApplicationLive();
+
+    StatusCommand cmd = new StatusCommand();
+    String clusterName = getClusterName();
+
+    cmd.setCommandType(AgentCommandType.STATUS_COMMAND);
+    cmd.setComponentName(componentName);
+    cmd.setServiceName(clusterName);
+    cmd.setClusterName(clusterName);
+    cmd.setRoleCommand(StatusCommand.GET_CONFIG_COMMAND);
+    Map<String, String> hostLevelParams = new TreeMap<String, String>();
+    hostLevelParams.put(CONTAINER_ID, containerId);
+    cmd.setHostLevelParams(hostLevelParams);
+
+    hostLevelParams.put(CONTAINER_ID, containerId);
+
+    ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
+    Map<String, Map<String, String>> configurations = buildCommandConfigurations(
+        appConf, containerId, componentName);
+    Map<String, String> dockerConfig = new HashMap<String, String>();
+    dockerConfig.put("docker.status_command",
+        getConfigFromMetaInfo(componentName, "status_command"));
+    configurations.put("docker", dockerConfig);
+
+    cmd.setConfigurations(configurations);
+    log.info("bbb getconfig command " + cmd);
+
+    response.addStatusCommand(cmd);
+  }
+
+  private String getConfigFromMetaInfo(String componentName,
+      String configName) {
+    String result = null;
+    DockerContainer container = getMetaInfo()
+        .getApplicationComponent(componentName).getDockerContainers().get(0);//to support multi container per component later
+    switch (configName){
+      case "image":
+        result = container.getImage();
+        break;
+      case "status_command":
+        result = container.getStatusCommand();
+        break;
+      case "docker_command_path":
+        result = container.getCommandPath();
+        break;
+      case "docker_run_option":
+        result = container.getOptions();
+        break;
+      case "container_port":
+        result = container.getPorts().get(0).getContainerPort();//to support multi port later
+        break;
+      case "host_port":
+        result = container.getPorts().get(0).getHostPort();//to support multi port later
+        break;
+      case "containerMount":
+        result = container.getMounts().get(0).getContainerMount();//to support multi port later
+        break;
+      case "hostMount":
+        result = container.getMounts().get(0).getHostMount();//to support multi port later
+        break;
+      case "additional_param":
+        result = container.getAdditionalParam();//to support multi port later
+        break;
+      case "input_file_container_mount":
+        result = container.getInputFiles().get(0).getContainerMount();//to support multi port later
+        break;
+      case "input_file_local_path":
+        result = container.getInputFiles().get(0).getFileLocalPath();//to support multi port later
+        break;
+      default:
+        break;
+    }
+    return result;
   }
 
   @VisibleForTesting
@@ -1956,6 +2152,77 @@ public class AgentProviderService extends AbstractProviderService implements
     cmd.setCommandParams(setCommandParameters(startCommand, timeout, true));
 
     Map<String, Map<String, String>> configurations = buildCommandConfigurations(appConf, containerId, componentName);
+
+    cmd.setConfigurations(configurations);
+    configurations.get("global").put("exec_cmd", startCommand.getExec());
+    cmd.addContainerDetails(componentName, getMetaInfo());
+    response.addExecutionCommand(cmd);
+  }
+
+  @VisibleForTesting
+  protected void addStartDockerCommand2(String componentName, String containerId, HeartBeatResponse response,
+                                 ComponentCommand startCommand, long timeout, boolean isMarkedAutoRestart)
+      throws
+      SliderException {
+    assert getAmState().isApplicationLive();
+    ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
+    ConfTreeOperations internalsConf = getAmState().getInternalsSnapshot();
+
+    ExecutionCommand cmd = new ExecutionCommand(AgentCommandType.EXECUTION_COMMAND);
+    prepareExecutionCommand(cmd);
+    String clusterName = internalsConf.get(OptionKeys.APPLICATION_NAME);
+    String hostName = getClusterInfoPropertyValue(StatusKeys.INFO_AM_HOSTNAME);
+    cmd.setHostname(hostName);
+    cmd.setClusterName(clusterName);
+    cmd.setRoleCommand(Command.START.toString());
+    cmd.setServiceName(clusterName);
+    cmd.setComponentName(componentName);
+    cmd.setRole(componentName);
+    Map<String, String> hostLevelParams = new TreeMap<>();
+    hostLevelParams.put(CONTAINER_ID, containerId);
+    cmd.setHostLevelParams(hostLevelParams);
+
+    Map<String, String> roleParams = new TreeMap<>();
+    cmd.setRoleParams(roleParams);
+    cmd.getRoleParams().put("auto_restart", Boolean.toString(isMarkedAutoRestart));
+
+    cmd.setCommandParams(setCommandParameters(startCommand, timeout, true));
+
+    Map<String, Map<String, String>> configurations = buildCommandConfigurations(
+        appConf, containerId, componentName);
+
+    log.info("bbb: " + getMetaInfo().toString());
+    log.info("bbb: " + getMetaInfo().getApplicationComponent(componentName).toString());
+    
+    Map<String, String> dockerConfig = new HashMap<String, String>();
+    String docker_command_path = getConfigFromMetaInfo(componentName, "docker_command_path");
+    if(docker_command_path == null){
+      docker_command_path = appConf.getGlobalOptions().get("site.docker.docker.command_path");
+    }
+    dockerConfig.put("docker.command_path",docker_command_path);
+    dockerConfig.put("docker.image_name",
+        getConfigFromMetaInfo(componentName, "image"));
+    String docker_run_options = getConfigFromMetaInfo(componentName, "docker_run_option");
+    if(docker_run_options == null){
+      docker_run_options = appConf.getGlobalOptions().get("site.docker.options");
+    }
+    dockerConfig.put("docker.options",docker_run_options);
+    dockerConfig.put("docker.container_port",
+        getConfigFromMetaInfo(componentName, "docker.container_port"));
+    dockerConfig.put("docker.host_port",
+        getConfigFromMetaInfo(componentName, "docker.host_port"));
+
+ //   dockerConfig
+ //       .put("docker.mounting_directory", getConfigFromMetaInfo(componentName, "containerMount"));
+ //   dockerConfig
+ //       .put("docker.host_mounting_directory", getConfigFromMetaInfo(componentName, "hostMount"));
+
+    dockerConfig.put("docker.additional_param",
+        getConfigFromMetaInfo(componentName, "additional_param"));
+
+ //   dockerConfig.put("docker.input_file.mount_path", getConfigFromMetaInfo(
+ //       componentName, "intpu_file_container_mount"));
+    configurations.put("docker", dockerConfig);
 
     cmd.setConfigurations(configurations);
     configurations.get("global").put("exec_cmd", startCommand.getExec());

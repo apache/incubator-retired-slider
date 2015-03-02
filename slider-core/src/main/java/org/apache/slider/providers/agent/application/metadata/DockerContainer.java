@@ -39,19 +39,26 @@ public class DockerContainer implements Validate {
   private String options;
   private List<DockerContainerMount> mounts = new ArrayList<>();
   private List<DockerContainerPort> ports = new ArrayList<>();
+  private String statusCommand;
+  private String commandPath;
+  private String additionalParam;
+  private List<DockerContainerInputFile> inputFiles = new ArrayList<>();
 
 
   public DockerContainer() {
   }
 
   @JsonProperty("mounts")
-  public List<DockerContainerMount> getMounts() {
-    return this.mounts;
-  }
+  public List<DockerContainerMount> getMounts() { return this.mounts; }
 
   @JsonProperty("ports")
   public List<DockerContainerPort> getPorts() {
     return this.ports;
+  }
+
+  @JsonProperty("inputFiles")
+  public List<DockerContainerInputFile> getInputFiles() {
+    return this.inputFiles;
   }
 
   public String getName() {
@@ -87,5 +94,29 @@ public class DockerContainer implements Validate {
     for (DockerContainerPort dcp : getPorts()) {
       dcp.validate(version);
     }
+  }
+
+  public String getStatusCommand() {
+    return statusCommand;
+  }
+
+  public void setStatusCommand(String statusCommand) {
+    this.statusCommand = statusCommand;
+  }
+
+  public String getCommandPath() {
+    return commandPath;
+  }
+
+  public void setCommandPath(String commandPath) {
+    this.commandPath = commandPath;
+  }
+
+  public String getAdditionalParam() {
+    return additionalParam;
+  }
+
+  public void setAdditionalParam(String additionalParam) {
+    this.additionalParam = additionalParam;
   }
 }

@@ -20,6 +20,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.slider.providers.agent.application.metadata.Component;
 import org.apache.slider.providers.agent.application.metadata.DockerContainer;
+import org.apache.slider.providers.agent.application.metadata.DockerContainerInputFile;
 import org.apache.slider.providers.agent.application.metadata.DockerContainerMount;
 import org.apache.slider.providers.agent.application.metadata.DockerContainerPort;
 import org.apache.slider.providers.agent.application.metadata.Metainfo;
@@ -232,6 +233,9 @@ public class ExecutionCommand {
       container.setImage(metaContainer.getImage());
       container.setName(metaContainer.getName());
       container.setOptions(metaContainer.getOptions());
+      container.setAdditionalParam(metaContainer.getAdditionalParam());
+      container.setCommandPath(metaContainer.getAdditionalParam());
+      container.setStatusCommand(metaContainer.getStatusCommand());
       if(metaContainer.getMounts().size() > 0) {
         for(DockerContainerMount metaContMount : metaContainer.getMounts()) {
           DockerContainerMount contMnt = new DockerContainerMount();
@@ -246,6 +250,14 @@ public class ExecutionCommand {
           cntPort.setContainerPort(metaCntPort.getContainerPort());
           cntPort.setHostPort(metaCntPort.getHostPort());
           container.getPorts().add(cntPort);
+        }
+      }
+      if(metaContainer.getInputFiles().size() > 0) {
+        for(DockerContainerInputFile metaInpFile : metaContainer.getInputFiles()) {
+          DockerContainerInputFile inpFile = new DockerContainerInputFile();
+          inpFile.setContainerMount(metaInpFile.getContainerMount());
+          inpFile.setFileLocalPath(metaInpFile.getFileLocalPath());
+          container.getInputFiles().add(inpFile);
         }
       }
       this.getContainers().add(container);
