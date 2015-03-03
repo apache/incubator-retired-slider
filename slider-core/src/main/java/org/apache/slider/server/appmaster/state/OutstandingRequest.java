@@ -27,12 +27,11 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Tracks an outstanding request. This is used to correlate an allocation response
- * with the
- * node and role used in the request.
- *
+ * with the node and role used in the request.
+ * <p>
  * The node identifier may be null -which indicates that a request was made without
  * a specific target node
- *
+ * <p>
  * Equality and the hash code are based <i>only</i> on the role and hostname,
  * which are fixed in the constructor. This means that a simple 
  * instance constructed with (role, hostname) can be used to look up

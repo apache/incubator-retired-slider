@@ -39,6 +39,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Implementation of {@link StateAccessForProviders}, which means
+ * state access for providers, web UI and IPC/REST views.
+ */
 public class ProviderAppState implements StateAccessForProviders {
 
 
