@@ -29,9 +29,11 @@ import java.io.IOException;
  */
 public interface SecurityStoreGenerator {
 
-  File generate(String hostname, String containerId,
-                AggregateConf instanceDefinition, MapOperations compOps,
-                String role)
+  SecurityStore generate(String hostname,
+                         String containerId,
+                         AggregateConf instanceDefinition,
+                         MapOperations compOps,
+                         String role)
       throws SliderException, IOException;
 
   boolean isStoreRequested(MapOperations compOps);
