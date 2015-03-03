@@ -35,18 +35,21 @@ public class StoresGenerator {
       new KeystoreGenerator(certMgr), new TruststoreGenerator(certMgr)
   };
 
-  public static File[] generateSecurityStores(String hostname,
-                                            String containerId,
-                                            String role,
-                                            AggregateConf instanceDefinition,
-                                            MapOperations compOps)
+  public static SecurityStore[] generateSecurityStores(String hostname,
+                                                       String containerId,
+                                                       String role,
+                                                       AggregateConf instanceDefinition,
+                                                       MapOperations compOps)
       throws SliderException, IOException {
     //discover which stores need generation based on the passwords configured
-    List<File> files = new ArrayList<File>();
+    List<SecurityStore> files = new ArrayList<SecurityStore>();
     for (SecurityStoreGenerator generator : GENERATORS) {
       if (generator.isStoreRequested(compOps)) {
-        File store = generator.generate(hostname, containerId,
-                                           instanceDefinition, compOps, role);
+        SecurityStore store = generator.generate(hostname,
+                                                 containerId,
+                                                 instanceDefinition,
+                                                 compOps,
+                                                 role);
         if (store != null) {
           files.add(store);
         }
@@ -59,7 +62,7 @@ public class StoresGenerator {
                                 + "passwords are configured for the components "
                                 + "requiring the stores.");
     }
-    return files.toArray(new File[files.size()]);
+    return files.toArray(new SecurityStore[files.size()]);
   }
 
 }

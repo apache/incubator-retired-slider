@@ -35,11 +35,11 @@ public class KeystoreGenerator extends AbstractSecurityStoreGenerator {
   }
 
   @Override
-  public File generate(String hostname, String containerId,
-                       AggregateConf instanceDefinition,
-                       MapOperations compOps, String role)
+  public SecurityStore generate(String hostname, String containerId,
+                                AggregateConf instanceDefinition,
+                                MapOperations compOps, String role)
       throws SliderException, IOException {
-    File keystore = null;
+    SecurityStore keystore = null;
     String password = getStorePassword(
         instanceDefinition.getAppConf().credentials, compOps, role);
     if (password != null) {
