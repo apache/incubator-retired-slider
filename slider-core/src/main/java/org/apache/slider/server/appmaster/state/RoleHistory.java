@@ -47,13 +47,13 @@ import com.google.common.annotations.VisibleForTesting;
 
 /**
  * The Role History.
- * 
+ * <p>
  * Synchronization policy: all public operations are synchronized.
  * Protected methods are in place for testing -no guarantees are made.
- * 
+ * <p>
  * Inner classes have no synchronization guarantees; they should be manipulated 
  * in these classes and not externally.
- * 
+ * <p>
  * Note that as well as some methods marked visible for testing, there
  * is the option for the time generator method, {@link #now()} to
  * be overridden so that a repeatable time series can be used.
@@ -573,6 +573,7 @@ public class RoleHistory {
    * Get the node entry of a container
    * @param container container to look up
    * @return the entry
+   * @throws RuntimeException if the container has no hostname
    */
   public NodeEntry getOrCreateNodeEntry(Container container) {
     NodeInstance node = getOrCreateNodeInstance(container);
@@ -583,6 +584,7 @@ public class RoleHistory {
    * Get the node instance of a container -always returns something
    * @param container container to look up
    * @return a (possibly new) node instance
+   * @throws RuntimeException if the container has no hostname
    */
   public synchronized NodeInstance getOrCreateNodeInstance(Container container) {
     String hostname = RoleHistoryUtils.hostnameOf(container);
@@ -593,9 +595,20 @@ public class RoleHistory {
    * Get the node instance of a host if defined
    * @param hostname hostname to look up
    * @return a node instance or null
+   * @throws RuntimeException if the container has no hostname
    */
   public synchronized NodeInstance getExistingNodeInstance(String hostname) {
     return nodemap.get(hostname);
+  }
+
+  /**
+   * Get the node instance of a container <i>if there's an entry in the history</i>
+   * @param container container to look up
+   * @return a node instance or null
+   * @throws RuntimeException if the container has no hostname
+   */
+  public synchronized NodeInstance getExistingNodeInstance(Container container) {
+    return nodemap.get(RoleHistoryUtils.hostnameOf(container));
   }
 
   /**
@@ -670,7 +683,7 @@ public class RoleHistory {
 
   /**
    * Container start event
-   * @param container
+   * @param container container that just started
    */
   public void onContainerStarted(Container container) {
     NodeEntry nodeEntry = getOrCreateNodeEntry(container);
