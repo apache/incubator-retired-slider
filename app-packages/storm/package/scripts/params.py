@@ -43,6 +43,7 @@ storm_env_sh_template = config['configurations']['storm-env']['content']
 metric_collector_host = default('/configurations/global/metric_collector_host', '')
 metric_collector_port = default('/configurations/global/metric_collector_port', '')
 metric_collector_lib = default('/configurations/global/metric_collector_lib', '')
+metric_collector_app_id = format("{app_name}")
 
 has_metric_collector = 1
 if not metric_collector_lib:
