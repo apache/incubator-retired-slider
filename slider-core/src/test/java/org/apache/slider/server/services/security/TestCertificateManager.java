@@ -130,11 +130,11 @@ public class TestCertificateManager {
 
   @Test
   public void testContainerKeystoreGeneration() throws Exception {
-    File keystoreFile = certMan.generateContainerKeystore("testhost",
-                                      "container1",
-                                      "component1",
-                                      "password");
-    validateKeystore(keystoreFile, "testhost", "cahost");
+    SecurityStore keystoreFile = certMan.generateContainerKeystore("testhost",
+                                                                   "container1",
+                                                                   "component1",
+                                                                   "password");
+    validateKeystore(keystoreFile.getFile(), "testhost", "cahost");
   }
 
   private void validateKeystore(File keystoreFile, String certHostname,
@@ -189,11 +189,35 @@ public class TestCertificateManager {
     instanceDefinition.getAppConf().global.put(
         "app1.component1.password.property", "password");
     instanceDefinition.resolve();
-    File[] files = StoresGenerator.generateSecurityStores("testhost", "container1",
-                                           "component1", instanceDefinition,
-                                           compOps);
+    SecurityStore[]
+        files = StoresGenerator.generateSecurityStores("testhost",
+                                                       "container1",
+                                                       "component1",
+                                                       instanceDefinition,
+                                                       compOps);
     assertEquals("wrong number of stores", 1, files.length);
-    validateKeystore(files[0], "testhost", "cahost");
+    validateKeystore(files[0].getFile(), "testhost", "cahost");
+  }
+
+  @Test
+  public void testContainerKeystoreGenerationViaStoresGeneratorUsingGlobalProps() throws Exception {
+    AggregateConf instanceDefinition = new AggregateConf();
+    MapOperations compOps = new MapOperations();
+    instanceDefinition.getAppConf().components.put("component1", compOps);
+    compOps.put(SliderKeys.COMP_KEYSTORE_PASSWORD_PROPERTY_KEY,
+                "app1.component1.password.property");
+    instanceDefinition.getAppConf().global.put(SliderKeys.COMP_STORES_REQUIRED_KEY, "true");
+    compOps.put(
+        "app1.component1.password.property", "password");
+    instanceDefinition.resolve();
+    SecurityStore[]
+        files = StoresGenerator.generateSecurityStores("testhost",
+                                                       "container1",
+                                                       "component1",
+                                                       instanceDefinition,
+                                                       compOps);
+    assertEquals("wrong number of stores", 1, files.length);
+    validateKeystore(files[0].getFile(), "testhost", "cahost");
   }
 
   @Test
@@ -207,30 +231,33 @@ public class TestCertificateManager {
         "app1.component1.password.property", "password");
     instanceDefinition.getAppConf().global.put(SliderKeys.COMP_STORES_REQUIRED_KEY, "false");
     instanceDefinition.resolve();
-    File[] files = StoresGenerator.generateSecurityStores("testhost", "container1",
-                                                          "component1", instanceDefinition,
-                                                          compOps);
+    SecurityStore[]
+        files = StoresGenerator.generateSecurityStores("testhost",
+                                                       "container1",
+                                                       "component1",
+                                                       instanceDefinition,
+                                                       compOps);
     assertEquals("wrong number of stores", 1, files.length);
-    validateKeystore(files[0], "testhost", "cahost");
+    validateKeystore(files[0].getFile(), "testhost", "cahost");
   }
 
   @Test
   public void testContainerTrusttoreGeneration() throws Exception {
-    File keystoreFile =
+    SecurityStore keystoreFile =
         certMan.generateContainerKeystore("testhost",
                                           "container1",
                                           "component1",
                                           "keypass");
     Assert.assertTrue("container keystore not generated",
-                      keystoreFile.exists());
-    File truststoreFile =
+                      keystoreFile.getFile().exists());
+    SecurityStore truststoreFile =
         certMan.generateContainerTruststore("container1",
                                             "component1", "trustpass"
         );
     Assert.assertTrue("container truststore not generated",
-                      truststoreFile.exists());
+                      truststoreFile.getFile().exists());
 
-    validateTruststore(keystoreFile, truststoreFile);
+    validateTruststore(keystoreFile.getFile(), truststoreFile.getFile());
   }
 
   @Test
@@ -243,23 +270,29 @@ public class TestCertificateManager {
 
     setupCredentials(instanceDefinition, "test.keystore.password", null);
 
-    File[] files = StoresGenerator.generateSecurityStores("testhost", "container1",
-                                                          "component1", instanceDefinition,
-                                                          compOps);
+    SecurityStore[]
+        files = StoresGenerator.generateSecurityStores("testhost",
+                                                       "container1",
+                                                       "component1",
+                                                       instanceDefinition,
+                                                       compOps);
     assertEquals("wrong number of stores", 1, files.length);
     File keystoreFile = CertificateManager.getContainerKeystoreFilePath(
         "container1", "component1");
     Assert.assertTrue("container keystore not generated",
                       keystoreFile.exists());
+
     Assert.assertTrue("keystore not in returned list",
-                      Arrays.asList(files).contains(keystoreFile));
+                      Arrays.asList(files).contains(new SecurityStore(keystoreFile,
+                                                    SecurityStore.StoreType.keystore)));
     File truststoreFile =
         CertificateManager.getContainerTruststoreFilePath("component1",
                                                           "container1");
     Assert.assertFalse("container truststore generated",
                       truststoreFile.exists());
     Assert.assertFalse("truststore in returned list",
-                      Arrays.asList(files).contains(truststoreFile));
+                      Arrays.asList(files).contains(new SecurityStore(truststoreFile,
+                                                    SecurityStore.StoreType.truststore)));
 
   }
 
@@ -271,9 +304,12 @@ public class TestCertificateManager {
     setupCredentials(instanceDefinition, null,
                      SliderKeys.COMP_TRUSTSTORE_PASSWORD_ALIAS_DEFAULT);
 
-    File[] files = StoresGenerator.generateSecurityStores("testhost", "container1",
-                                                          "component1", instanceDefinition,
-                                                          compOps);
+    SecurityStore[]
+        files = StoresGenerator.generateSecurityStores("testhost",
+                                                       "container1",
+                                                       "component1",
+                                                       instanceDefinition,
+                                                       compOps);
     assertEquals("wrong number of stores", 1, files.length);
     File keystoreFile = CertificateManager.getContainerKeystoreFilePath(
         "container1", "component1");
@@ -287,7 +323,8 @@ public class TestCertificateManager {
     Assert.assertTrue("container truststore not generated",
                       truststoreFile.exists());
     Assert.assertTrue("truststore not in returned list",
-                      Arrays.asList(files).contains(truststoreFile));
+                      Arrays.asList(files).contains(new SecurityStore(truststoreFile,
+                                                                      SecurityStore.StoreType.truststore)));
 
   }
 
@@ -303,23 +340,28 @@ public class TestCertificateManager {
     setupCredentials(instanceDefinition, "test.keystore.password",
                      "test.truststore.password");
 
-    File[] files = StoresGenerator.generateSecurityStores("testhost", "container1",
-                                           "component1", instanceDefinition,
-                                           compOps);
+    SecurityStore[]
+        files = StoresGenerator.generateSecurityStores("testhost",
+                                                       "container1",
+                                                       "component1",
+                                                       instanceDefinition,
+                                                       compOps);
     assertEquals("wrong number of stores", 2, files.length);
     File keystoreFile = CertificateManager.getContainerKeystoreFilePath(
         "container1", "component1");
     Assert.assertTrue("container keystore not generated",
                       keystoreFile.exists());
     Assert.assertTrue("keystore not in returned list",
-                      Arrays.asList(files).contains(keystoreFile));
+                      Arrays.asList(files).contains(new SecurityStore(keystoreFile,
+                                                                      SecurityStore.StoreType.keystore)));
     File truststoreFile =
         CertificateManager.getContainerTruststoreFilePath("component1",
                                                           "container1");
     Assert.assertTrue("container truststore not generated",
                       truststoreFile.exists());
     Assert.assertTrue("truststore not in returned list",
-                      Arrays.asList(files).contains(truststoreFile));
+                      Arrays.asList(files).contains(new SecurityStore(truststoreFile,
+                                                                      SecurityStore.StoreType.truststore)));
 
     validateTruststore(keystoreFile, truststoreFile);
   }
@@ -404,23 +446,28 @@ public class TestCertificateManager {
     setupCredentials(instanceDefinition,
                      SliderKeys.COMP_KEYSTORE_PASSWORD_ALIAS_DEFAULT, null);
 
-    File[] files = StoresGenerator.generateSecurityStores("testhost", "container1",
-                                                          "component1", instanceDefinition,
-                                                          compOps);
+    SecurityStore[]
+        files = StoresGenerator.generateSecurityStores("testhost",
+                                                       "container1",
+                                                       "component1",
+                                                       instanceDefinition,
+                                                       compOps);
     assertEquals("wrong number of stores", 1, files.length);
     File keystoreFile = CertificateManager.getContainerKeystoreFilePath(
         "container1", "component1");
     Assert.assertTrue("container keystore not generated",
                       keystoreFile.exists());
     Assert.assertTrue("keystore not in returned list",
-                      Arrays.asList(files).contains(keystoreFile));
+                      Arrays.asList(files).contains(new SecurityStore(keystoreFile,
+                                                                      SecurityStore.StoreType.keystore)));
     File truststoreFile =
         CertificateManager.getContainerTruststoreFilePath("component1",
                                                           "container1");
     Assert.assertFalse("container truststore generated",
                        truststoreFile.exists());
     Assert.assertFalse("truststore in returned list",
-                       Arrays.asList(files).contains(truststoreFile));
+                       Arrays.asList(files).contains(new SecurityStore(truststoreFile,
+                                                                       SecurityStore.StoreType.truststore)));
 
   }
 
@@ -433,7 +480,7 @@ public class TestCertificateManager {
     setupCredentials(instanceDefinition, "cant.be.found", null);
 
     try {
-      File[] files = StoresGenerator.generateSecurityStores("testhost", "container1",
+      StoresGenerator.generateSecurityStores("testhost", "container1",
                                                             "component1", instanceDefinition,
                                                             compOps);
       Assert.fail("SliderException should have been generated");
