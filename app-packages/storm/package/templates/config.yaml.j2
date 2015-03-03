@@ -27,9 +27,9 @@ enableMetricsSink: True
 metrics_collector:
 
   reportInterval: 60
-
   host: "{{metric_collector_host}}"
   port: {{metric_collector_port}}
+  appId: "{{metric_collector_app_id}}"
 
 {% else %}
 enableGanglia: True
