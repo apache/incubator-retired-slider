@@ -92,10 +92,13 @@ public final class OutstandingRequest {
   /**
    * Build a container request.
    * If the request has an address, it is set in the container request
-   * (with a flag to enable relaxed priorities)
+   * (with a flag to enable relaxed priorities).
+   * <p>
+   * This operation sets the requested time flag, used for tracking timeouts
+   * on outstanding requests
    * @param resource resource
    * @param role role
-   * @param time: time to record
+   * @param time time to record as request time
    * @param labelExpression label to satisfy
    * @return the request to raise
    */

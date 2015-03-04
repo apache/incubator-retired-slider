@@ -33,6 +33,7 @@ import java.util.Map;
 
 /**
  * Tracks outstanding requests made with a specific placement option.
+ * <p>
  * If an allocation comes in that is not in the map: either the allocation
  * was unplaced, or the placed allocation could not be met on the specified
  * host, and the RM/scheduler fell back to another location. 
@@ -42,13 +43,14 @@ public class OutstandingRequestTracker {
   protected static final Logger log =
     LoggerFactory.getLogger(OutstandingRequestTracker.class);
 
-  private Map<OutstandingRequest, OutstandingRequest> requests =
-    new HashMap<OutstandingRequest, OutstandingRequest>();
+  private Map<OutstandingRequest, OutstandingRequest> placedRequests =
+    new HashMap<>();
 
   /**
    * Create a new request for the specific role. If a
    * location is set, the request is added to the list of requests to track.
-   * if it isn't -it isn't.
+   * if it isn't, it is not tracked.
+   * <p>
    * This does not update the node instance's role's request count
    * @param instance node instance to manager
    * @param role role index
@@ -58,7 +60,7 @@ public class OutstandingRequestTracker {
     OutstandingRequest request =
       new OutstandingRequest(role, instance);
     if (request.isLocated()) {
-      requests.put(request, request);
+      placedRequests.put(request, request);
     }
     return request;
   }
@@ -70,7 +72,7 @@ public class OutstandingRequestTracker {
    * @return the request or null if there was no outstanding one
    */
   public synchronized OutstandingRequest lookup(int role, String hostname) {
-    return requests.get(new OutstandingRequest(role, hostname));
+    return placedRequests.get(new OutstandingRequest(role, hostname));
   }
 
   /**
@@ -79,7 +81,7 @@ public class OutstandingRequestTracker {
    * @return the request
    */
   public synchronized OutstandingRequest remove(OutstandingRequest request) {
-    return requests.remove(request);
+    return placedRequests.remove(request);
   }
 
   /**
@@ -91,7 +93,7 @@ public class OutstandingRequestTracker {
    */
   public synchronized boolean onContainerAllocated(int role, String hostname) {
     OutstandingRequest request =
-      requests.remove(new OutstandingRequest(role, hostname));
+      placedRequests.remove(new OutstandingRequest(role, hostname));
     if (request == null) {
       return false;
     } else {
@@ -100,14 +102,45 @@ public class OutstandingRequestTracker {
     }
     return true;
   }
-
+  
+  /**
+   * Determine which host was a role type most recently used on, so that
+   * if a choice is made of which (potentially surplus) containers to use,
+   * the most recent one is picked first. This operation <i>does not</i>
+   * change the role history, though it queries it.
+   */
   static class newerThan implements Comparator<Container>, Serializable {
     private RoleHistory rh;
     
     public newerThan(RoleHistory rh) {
       this.rh = rh;
     }
-    
+
+    /**
+     * Get the age of a container. If it is not known in the history, 
+     * return 0.
+     * @param c container
+     * @return age, null if 
+     */
+    private long getAgeOf(Container c) {
+      long age = 0;
+      NodeInstance node = rh.getExistingNodeInstance(c);
+      int role = ContainerPriority.extractRole(c);
+      if (node != null) {
+        NodeEntry nodeEntry = node.get(role);
+        if (nodeEntry != null) {
+          age = nodeEntry.getLastUsed();
+        }
+      }
+      return age;
+    }
+
+    /**
+     * Comparator: which host is more recent?
+     * @param c1 container 1
+     * @param c2 container 2
+     * @return 1 if c2 older-than c1, 0 if equal; -1 if c1 older-than c2
+     */
     @Override
     public int compare(Container c1, Container c2) {
       int role1 = ContainerPriority.extractRole(c1);
@@ -115,9 +148,8 @@ public class OutstandingRequestTracker {
       if (role1 < role2) return -1;
       if (role1 > role2) return 1;
 
-      NodeInstance o1 = rh.getOrCreateNodeInstance(c1), o2 = rh.getOrCreateNodeInstance(c2);
-      long age = o1.getOrCreate(role1).getLastUsed();
-      long age2 = o2.getOrCreate(role1).getLastUsed();
+      long age = getAgeOf(c1);
+      long age2 = getAgeOf(c2);
 
       if (age > age2) {
         return -1;
@@ -128,26 +160,28 @@ public class OutstandingRequestTracker {
       return 0;
     }
   }
+
   /**
    * Take a list of requests and split them into specific host requests and
    * generic assignments. This is to give requested hosts priority
    * in container assignments if more come back than expected
    * @param rh RoleHistory instance
-   * @param allocatedContainers the list of allocated containers
-   * @param requested empty list of requested locations 
-   * @param unrequested empty list of unrequested hosts
+   * @param inAllocated the list of allocated containers
+   * @param outRequested initially empty list of requested locations 
+   * @param outUnrequested initially empty list of unrequested hosts
    */
-  public synchronized void partitionRequests(RoleHistory rh, List<Container> allocatedContainers,
-                                                List<Container> requested,
-                                                List<Container> unrequested) {
-    Collections.sort(allocatedContainers, new newerThan(rh));
-    for (Container container : allocatedContainers) {
+  public synchronized void partitionRequests(RoleHistory rh,
+      List<Container> inAllocated,
+      List<Container> outRequested,
+      List<Container> outUnrequested) {
+    Collections.sort(inAllocated, new newerThan(rh));
+    for (Container container : inAllocated) {
       int role = ContainerPriority.extractRole(container);
       String hostname = RoleHistoryUtils.hostnameOf(container);
-      if (requests.containsKey(new OutstandingRequest(role, hostname))) {
-        requested.add(container);
+      if (placedRequests.containsKey(new OutstandingRequest(role, hostname))) {
+        outRequested.add(container);
       } else {
-        unrequested.add(container);
+        outUnrequested.add(container);
       }
     }
   }
@@ -161,9 +195,9 @@ public class OutstandingRequestTracker {
    * @return possibly empty list of hostnames
    */
   public synchronized List<NodeInstance> cancelOutstandingRequests(int role) {
-    List<NodeInstance> hosts = new ArrayList<NodeInstance>();
+    List<NodeInstance> hosts = new ArrayList<>();
     Iterator<Map.Entry<OutstandingRequest,OutstandingRequest>> iterator =
-      requests.entrySet().iterator();
+      placedRequests.entrySet().iterator();
     while (iterator.hasNext()) {
       Map.Entry<OutstandingRequest, OutstandingRequest> next =
         iterator.next();
@@ -176,8 +210,13 @@ public class OutstandingRequestTracker {
     }
     return hosts;
   }
-  
+
+  /**
+   * Get a list of outstanding requests. The list is cloned, but the contents
+   * are shared
+   * @return a list of the current outstanding requests
+   */
   public synchronized List<OutstandingRequest> listOutstandingRequests() {
-    return new ArrayList<OutstandingRequest>(requests.values());
+    return new ArrayList<>(placedRequests.values());
   }
 }

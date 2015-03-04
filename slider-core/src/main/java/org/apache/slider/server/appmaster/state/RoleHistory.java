@@ -513,9 +513,9 @@ public class RoleHistory {
    * Request an instance on a given node.
    * An outstanding request is created & tracked, with the 
    * relevant node entry for that role updated.
-   *
+   *<p>
    * The role status entries will also be tracked
-   * 
+   * <p>
    * Returns the request that is now being tracked.
    * If the node instance is not null, it's details about the role is incremented
    *

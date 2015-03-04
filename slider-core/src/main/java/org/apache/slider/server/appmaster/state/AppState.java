@@ -630,7 +630,6 @@ public class AppState {
    * @return a new provider role
    * @throws BadConfigException bad configuration
    */
-  @VisibleForTesting
   public ProviderRole createDynamicProviderRole(String name,
                                                 MapOperations component) throws
                                                         BadConfigException {
@@ -639,13 +638,19 @@ public class AppState {
                                                 ResourceKeys.COMPONENT_PRIORITY,
         priOpt, 0, 1, -1);
     String placementOpt = component.getOption(
-      ResourceKeys.COMPONENT_PLACEMENT_POLICY,
+        ResourceKeys.COMPONENT_PLACEMENT_POLICY,
         Integer.toString(PlacementPolicy.DEFAULT));
     int placement = SliderUtils.parseAndValidate("value of " + name + " " +
-        ResourceKeys.COMPONENT_PLACEMENT_POLICY,
+                                                 ResourceKeys.COMPONENT_PLACEMENT_POLICY,
         placementOpt, 0, 0, -1);
-    ProviderRole newRole = new ProviderRole(name, priority, placement,
-                                            getNodeFailureThresholdForRole(name));
+    int placementTimeout =
+        component.getOptionInt(ResourceKeys.PLACEMENT_RELAX_DELAY,
+            ResourceKeys.DEFAULT_PLACEMENT_RELAX_DELAY_SECONDS);
+    ProviderRole newRole = new ProviderRole(name,
+        priority,
+        placement,
+        getNodeFailureThresholdForRole(name),
+        placementTimeout);
     log.info("New {} ", newRole);
     return newRole;
   }

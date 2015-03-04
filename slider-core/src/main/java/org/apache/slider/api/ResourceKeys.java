@@ -140,6 +140,24 @@ public interface ResourceKeys {
    */
   int DEFAULT_NODE_FAILURE_THRESHOLD = 3;
 
+
+  /**
+   * Time in seconds to relax placement delay
+   */
+  String PLACEMENT_RELAX_DELAY = 
+      "yarn.placement.relax.delay.seconds";
+
+  /**
+   * Time to have a strict placement policy outstanding before 
+   * downgrading to a lax placement (for those components which permit that).
+   * <ol>
+   *   <li>For strictly placed components, there's no relaxation.</li>
+   *   <li>For components with no locality, there's no need to relax</li>
+   * </ol>
+   * 
+   */
+  int DEFAULT_PLACEMENT_RELAX_DELAY_SECONDS = 30;
+
   /**
    * Log aggregation include, exclude patterns
    */
