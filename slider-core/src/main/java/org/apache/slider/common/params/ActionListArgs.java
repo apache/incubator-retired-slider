@@ -42,6 +42,10 @@ public class ActionListArgs extends AbstractActionArgs {
       description = "print out information in details")
   public boolean verbose = false;
 
+  @Parameter(names = {ARG_CONTAINERS},
+      description = "List containers of an application instance")
+  public boolean containers;
+
   /**
    * Get the min #of params expected
    * @return the min number of params in the {@link #parameters} field

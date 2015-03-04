@@ -221,10 +221,10 @@ public class CertificateManager {
     }
   }
 
-  public synchronized File generateContainerKeystore(String hostname,
-                                                     String containerId,
-                                                     String role,
-                                                     String keystorePass)
+  public synchronized SecurityStore generateContainerKeystore(String hostname,
+                                                              String containerId,
+                                                              String role,
+                                                              String keystorePass)
       throws SliderException {
     LOG.info("Generation of container keystore for container {} on {}",
              containerId, hostname);
@@ -244,7 +244,8 @@ public class CertificateManager {
     String command = MessageFormat.format(EXPRT_KSTR, scriptArgs);
     runCommand(command);
 
-    return new File(srvrKstrDir, kstrName);
+    return new SecurityStore(new File(srvrKstrDir, kstrName),
+                             SecurityStore.StoreType.keystore);
   }
 
   private static String getKeystoreFileName(String containerId,
@@ -282,8 +283,9 @@ public class CertificateManager {
     runCommand(command);
   }
 
-  public File generateContainerTruststore(String containerId, String role,
-                                          String truststorePass)
+  public SecurityStore generateContainerTruststore(String containerId,
+                                                   String role,
+                                                   String truststorePass)
       throws SliderException {
 
     String srvrKstrDir = SecurityUtils.getSecurityDir();
@@ -299,7 +301,8 @@ public class CertificateManager {
     String command = MessageFormat.format(EXPRT_KSTR, scriptArgs);
     runCommand(command);
 
-    return new File(srvrKstrDir, kstrName);
+    return new SecurityStore(new File(srvrKstrDir, kstrName),
+                             SecurityStore.StoreType.truststore);
   }
 
   private static String getTruststoreFileName(String role, String containerId) {

@@ -21,7 +21,6 @@ import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.MapOperations;
 import org.apache.slider.core.exceptions.SliderException;
 
-import java.io.File;
 import java.io.IOException;
 
 /**
@@ -35,11 +34,11 @@ public class TruststoreGenerator extends AbstractSecurityStoreGenerator {
   }
 
   @Override
-  public File generate(String hostname, String containerId,
-                       AggregateConf instanceDefinition,
-                       MapOperations compOps, String role)
+  public SecurityStore generate(String hostname, String containerId,
+                                AggregateConf instanceDefinition,
+                                MapOperations compOps, String role)
       throws SliderException, IOException {
-    File truststore = null;
+    SecurityStore truststore = null;
     String password = getStorePassword(
         instanceDefinition.getAppConf().credentials, compOps, role);
     if (password != null) {

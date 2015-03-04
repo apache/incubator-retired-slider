@@ -95,6 +95,7 @@ import org.apache.slider.server.appmaster.web.rest.agent.RegistrationResponse;
 import org.apache.slider.server.appmaster.web.rest.agent.RegistrationStatus;
 import org.apache.slider.server.appmaster.web.rest.agent.StatusCommand;
 import org.apache.slider.server.services.security.CertificateManager;
+import org.apache.slider.server.services.security.SecurityStore;
 import org.apache.slider.server.services.security.StoresGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -468,20 +469,21 @@ public class AgentProviderService extends AbstractProviderService implements
     MapOperations compOps = instanceDefinition.getAppConfOperations()
         .getComponent(role);
     // generate and localize security stores
-    File[] stores = generateSecurityStores(container, role,
-                                           instanceDefinition, compOps);
-    for (File store : stores) {
+    SecurityStore[] stores = generateSecurityStores(container, role,
+                                                    instanceDefinition, compOps);
+    for (SecurityStore store : stores) {
       LocalResource keystoreResource = fileSystem.createAmResource(
-          uploadSecurityResource(store, fileSystem), LocalResourceType.FILE);
-      launcher.addLocalResource(String.format("secstores/%s.p12", role),
+          uploadSecurityResource(store.getFile(), fileSystem), LocalResourceType.FILE);
+      launcher.addLocalResource(String.format("secstores/%s-%s.p12",
+                                              store.getType(), role),
                                 keystoreResource);
     }
   }
 
-  private File[] generateSecurityStores(Container container,
-                                      String role,
-                                      AggregateConf instanceDefinition,
-                                      MapOperations compOps)
+  private SecurityStore[] generateSecurityStores(Container container,
+                                                 String role,
+                                                 AggregateConf instanceDefinition,
+                                                 MapOperations compOps)
       throws SliderException, IOException {
     return StoresGenerator.generateSecurityStores(container.getNodeId().getHost(),
                                            container.getId().toString(), role,
@@ -489,8 +491,8 @@ public class AgentProviderService extends AbstractProviderService implements
   }
 
   private boolean areStoresRequested(MapOperations compOps) {
-    return compOps != null ? Boolean.valueOf(compOps.
-        getOptionBool(SliderKeys.COMP_STORES_REQUIRED_KEY, false)) : false;
+    return compOps != null ? compOps.
+        getOptionBool(SliderKeys.COMP_STORES_REQUIRED_KEY, false) : false;
   }
 
   private void localizeContainerSSLResources(ContainerLauncher launcher,
