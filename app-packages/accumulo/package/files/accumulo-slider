@@ -48,6 +48,12 @@ if (( $numversion < 26 )); then
   exit 1
 fi
 
-ACCUMULO_SLIDER_BIN_DIR=`dirname ${PRG}`
+ACCUMULO_BIN_DIR=`dirname ${PRG}`
+ACCUMULO_HOME=`cd ${ACCUMULO_BIN_DIR}/..;pwd`
+ACCUMULO_CONF_DIR="${ACCUMULO_CONF_DIR:-$ACCUMULO_HOME/conf}"
 
-$PYTHON ${ACCUMULO_SLIDER_BIN_DIR}/accumulo-slider.py $@
+if [ -f "${ACCUMULO_CONF_DIR}/accumulo-slider-env.sh" ]; then
+  . "${ACCUMULO_CONF_DIR}/accumulo-slider-env.sh"
+fi
+
+$PYTHON ${ACCUMULO_BIN_DIR}/accumulo-slider.py $@

@@ -17,18 +17,25 @@
 package org.apache.slider.funtest.accumulo
 
 import groovy.util.logging.Slf4j
+import org.apache.accumulo.examples.simple.helloworld.InsertWithBatchWriter
+import org.apache.accumulo.examples.simple.helloworld.ReadData
+import org.apache.hadoop.registry.client.api.RegistryConstants
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.client.SliderClient
 import org.apache.slider.funtest.framework.AccumuloSliderShell
+import org.apache.slider.funtest.framework.FuntestProperties
+import org.apache.slider.funtest.framework.SliderShell
 import org.junit.BeforeClass
-
-import java.nio.ByteBuffer
 
 @Slf4j
 class AccumuloScriptIT extends AccumuloBasicIT {
-  public static final String RESOURCES_DIR = sysprop("test.app.resources.dir")
-  public static final String ACCUMULO_HOME = RESOURCES_DIR + "/install"
-  public static final String ACCUMULO_CONF = sysprop("test.app.resources.dir") + "/conf"
+  public static final String CLIENT_INSTALL_DIR = sysprop("test.client.install.dir")
+  public static final String CLIENT_HOME_DIR = sysprop("test.client.home.dir")
+  public static final String CLIENT_INSTALL_CONF = sysprop("test.app.resources.dir") + "/clientInstallConfig-test.json"
+
+  public static final File ACCUMULO_SLIDER_SCRIPT = new File(CLIENT_HOME_DIR + "/bin", "accumulo-slider").canonicalFile
+  public static final File ACCUMULO_SCRIPT = new File(CLIENT_HOME_DIR + "/bin", "accumulo").canonicalFile
+  public static final File ACCUMULO_TOOL_SCRIPT = new File(CLIENT_HOME_DIR + "/bin", "tool.sh").canonicalFile
 
   @Override
   public String getClusterName() {
@@ -42,47 +49,63 @@ class AccumuloScriptIT extends AccumuloBasicIT {
 
   @BeforeClass
   public static void setShell() {
-    AccumuloSliderShell.scriptFile = new File(sysprop("test.app.scripts.dir"),
-      "accumulo-slider").canonicalFile
     AccumuloSliderShell.setEnv("SLIDER_HOME", SLIDER_TAR_DIR)
     AccumuloSliderShell.setEnv("SLIDER_CONF_DIR", SLIDER_CONF_DIR)
-    AccumuloSliderShell.setEnv("ACCUMULO_HOME", ACCUMULO_HOME)
+  }
+
+  public static AccumuloSliderShell accumulo_slider(String cmd) {
+    AccumuloSliderShell.scriptFile = ACCUMULO_SLIDER_SCRIPT
+    return AccumuloSliderShell.run(0, cmd)
+  }
+
+  public static AccumuloSliderShell accumulo(String cmd) {
+    AccumuloSliderShell.scriptFile = ACCUMULO_SCRIPT
+    return AccumuloSliderShell.run(0, cmd)
+  }
+
+  public static AccumuloSliderShell tool(String cmd) {
+    AccumuloSliderShell.scriptFile = ACCUMULO_TOOL_SCRIPT
+    return AccumuloSliderShell.run(0, cmd)
   }
 
   @Override
   public void clusterLoadOperations(ClusterDescription cd, SliderClient sliderClient) {
     String clusterName = getClusterName()
-    AccumuloSliderShell.run(0, "--app $clusterName quicklinks")
-    AccumuloSliderShell.run(0, "--app $clusterName install $ACCUMULO_HOME")
-    AccumuloSliderShell.run(0, "--app $clusterName --appconf $ACCUMULO_CONF getconf")
-    runBoth("shell -u $USER -p $PASSWORD -e tables")
-    runBoth("login-info")
 
-    AccumuloSliderShell info = runOne("info")
+    SliderShell shell = slider(EXIT_SUCCESS,
+      [
+        ACTION_CLIENT, ARG_INSTALL,
+        ARG_PACKAGE, TEST_APP_PKG_DIR+"/"+TEST_APP_PKG_FILE,
+        ARG_DEST, CLIENT_INSTALL_DIR,
+        ARG_CONFIG, CLIENT_INSTALL_CONF
+      ])
+    logShell(shell)
+
+    accumulo_slider("--app $clusterName quicklinks")
+
+    accumulo("shell -u $USER -p $PASSWORD -e tables")
+    accumulo("login-info")
+
+    AccumuloSliderShell info = accumulo("info")
     String monitor = getMonitorUrl(sliderClient, getClusterName())
     assert info.outputContains(monitor.substring(monitor.indexOf("://")+3)),
       "accumulo info output did not contain monitor"
 
-    runOne("version")
-    runOne("classpath")
-    runOne("create-token -u $USER -p $PASSWORD -f $RESOURCES_DIR/token")
-    runOne("admin checkTablets")
-    runOne("admin listInstances")
-    runOne("admin ping")
-    runOne("admin dumpConfig -a -d $RESOURCES_DIR")
-    runOne("admin volumes")
+    accumulo("version")
+    accumulo("classpath")
+    accumulo("admin checkTablets")
+    accumulo("admin listInstances")
+    accumulo("admin ping")
+    accumulo("admin volumes")
 
-    // TODO: test tool, jar, classname, rfile-info
-    // runOne("shell -u $USER -p $PASSWORD -e \"createtable testtable\"")
-  }
-
-  public AccumuloSliderShell runOne(String cmd) {
-    return AccumuloSliderShell.run(0, "--appconf $ACCUMULO_CONF $cmd")
-  }
-
-  public void runBoth(String cmd) {
-    String clusterName = getClusterName()
-    AccumuloSliderShell.run(0, "--app $clusterName $cmd")
-    AccumuloSliderShell.run(0, "--appconf $ACCUMULO_CONF $cmd")
+    String zookeepers = SLIDER_CONFIG.get(
+      RegistryConstants.KEY_REGISTRY_ZK_QUORUM,
+      FuntestProperties.DEFAULT_SLIDER_ZK_HOSTS)
+    String instance = tree.global.get("site.client.instance.name")
+    accumulo("shell -u $USER -p $PASSWORD -e \"createtable test1\"")
+    accumulo(InsertWithBatchWriter.class.getName() + " -i $instance -z " +
+      "$zookeepers -u $USER -p $PASSWORD -t test1")
+    accumulo(ReadData.class.getName() + " -i $instance -z $zookeepers -u " +
+      "$USER -p $PASSWORD -t test1 --startKey row_0 --endKey row_101")
   }
 }
