@@ -18,22 +18,43 @@ limitations under the License.
 
 """
 
-import sys
 from resource_management import *
-
-from accumulo_configuration import setup_conf_dir
-
 
 class AccumuloClient(Script):
   def install(self, env):
+    import client_params
+    env.set_params(client_params)
     self.install_packages(env)
-    self.configure(env)
+    Directory(client_params.conf_dir,
+              content=format("{conf_dir}/templates"))
+    jarname = "SliderAccumuloUtils.jar"
+    File(format("{client_root}/lib/{jarname}"),
+         mode=0644,
+         content=StaticFile(jarname)
+    )
+    File(format("{bin_dir}/accumulo-slider"),
+         content=StaticFile("accumulo-slider"),
+         mode=0755
+    )
+    File(format("{bin_dir}/accumulo-slider.py"),
+         content=StaticFile("accumulo-slider.py"),
+         mode=0755
+    )
+    TemplateConfig(format("{conf_dir}/accumulo-slider-env.sh"),
+                   mode=0755
+    )
+    if client_params.app_name:
+      Execute( format("{bin_dir}/accumulo-slider "
+                      "--appconf {client_root}/conf --app {app_name} getconf "))
 
   def configure(self, env):
-    import params
-    env.set_params(params)
+    pass
 
-    setup_conf_dir(name='client')
+  def start(self, env):
+    pass
+
+  def stop(self, env):
+    pass
 
   def status(self, env):
     pass

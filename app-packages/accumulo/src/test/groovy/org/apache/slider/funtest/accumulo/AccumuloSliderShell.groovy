@@ -18,13 +18,6 @@
 
 package org.apache.slider.funtest.framework
 
-import org.apache.bigtop.itest.shell.Shell
-import org.apache.slider.core.exceptions.SliderException
-import org.apache.slider.common.tools.SliderUtils
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-
-
 class AccumuloSliderShell extends ShellBase {
 
   public static File scriptFile;
