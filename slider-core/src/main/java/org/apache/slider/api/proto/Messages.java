@@ -25129,6 +25129,1732 @@ public final class Messages {
     // @@protoc_insertion_point(class_scope:org.apache.slider.api.WrappedJsonProto)
   }
 
+  public interface SignCertificateRequestProtoOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+
+    // required string hostname = 1;
+    /**
+     * <code>required string hostname = 1;</code>
+     */
+    boolean hasHostname();
+    /**
+     * <code>required string hostname = 1;</code>
+     */
+    java.lang.String getHostname();
+    /**
+     * <code>required string hostname = 1;</code>
+     */
+    com.google.protobuf.ByteString
+        getHostnameBytes();
+
+    // required string certRequest = 2;
+    /**
+     * <code>required string certRequest = 2;</code>
+     */
+    boolean hasCertRequest();
+    /**
+     * <code>required string certRequest = 2;</code>
+     */
+    java.lang.String getCertRequest();
+    /**
+     * <code>required string certRequest = 2;</code>
+     */
+    com.google.protobuf.ByteString
+        getCertRequestBytes();
+
+    // required string passPhrase = 3;
+    /**
+     * <code>required string passPhrase = 3;</code>
+     */
+    boolean hasPassPhrase();
+    /**
+     * <code>required string passPhrase = 3;</code>
+     */
+    java.lang.String getPassPhrase();
+    /**
+     * <code>required string passPhrase = 3;</code>
+     */
+    com.google.protobuf.ByteString
+        getPassPhraseBytes();
+  }
+  /**
+   * Protobuf type {@code org.apache.slider.api.SignCertificateRequestProto}
+   */
+  public static final class SignCertificateRequestProto extends
+      com.google.protobuf.GeneratedMessage
+      implements SignCertificateRequestProtoOrBuilder {
+    // Use SignCertificateRequestProto.newBuilder() to construct.
+    private SignCertificateRequestProto(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
+    }
+    private SignCertificateRequestProto(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
+    private static final SignCertificateRequestProto defaultInstance;
+    public static SignCertificateRequestProto getDefaultInstance() {
+      return defaultInstance;
+    }
+
+    public SignCertificateRequestProto getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private SignCertificateRequestProto(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 10: {
+              bitField0_ |= 0x00000001;
+              hostname_ = input.readBytes();
+              break;
+            }
+            case 18: {
+              bitField0_ |= 0x00000002;
+              certRequest_ = input.readBytes();
+              break;
+            }
+            case 26: {
+              bitField0_ |= 0x00000004;
+              passPhrase_ = input.readBytes();
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_SignCertificateRequestProto_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_SignCertificateRequestProto_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.apache.slider.api.proto.Messages.SignCertificateRequestProto.class, org.apache.slider.api.proto.Messages.SignCertificateRequestProto.Builder.class);
+    }
+
+    public static com.google.protobuf.Parser<SignCertificateRequestProto> PARSER =
+        new com.google.protobuf.AbstractParser<SignCertificateRequestProto>() {
+      public SignCertificateRequestProto parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new SignCertificateRequestProto(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<SignCertificateRequestProto> getParserForType() {
+      return PARSER;
+    }
+
+    private int bitField0_;
+    // required string hostname = 1;
+    public static final int HOSTNAME_FIELD_NUMBER = 1;
+    private java.lang.Object hostname_;
+    /**
+     * <code>required string hostname = 1;</code>
+     */
+    public boolean hasHostname() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>required string hostname = 1;</code>
+     */
+    public java.lang.String getHostname() {
+      java.lang.Object ref = hostname_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          hostname_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string hostname = 1;</code>
+     */
+    public com.google.protobuf.ByteString
+        getHostnameBytes() {
+      java.lang.Object ref = hostname_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        hostname_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // required string certRequest = 2;
+    public static final int CERTREQUEST_FIELD_NUMBER = 2;
+    private java.lang.Object certRequest_;
+    /**
+     * <code>required string certRequest = 2;</code>
+     */
+    public boolean hasCertRequest() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <code>required string certRequest = 2;</code>
+     */
+    public java.lang.String getCertRequest() {
+      java.lang.Object ref = certRequest_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          certRequest_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string certRequest = 2;</code>
+     */
+    public com.google.protobuf.ByteString
+        getCertRequestBytes() {
+      java.lang.Object ref = certRequest_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        certRequest_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // required string passPhrase = 3;
+    public static final int PASSPHRASE_FIELD_NUMBER = 3;
+    private java.lang.Object passPhrase_;
+    /**
+     * <code>required string passPhrase = 3;</code>
+     */
+    public boolean hasPassPhrase() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    /**
+     * <code>required string passPhrase = 3;</code>
+     */
+    public java.lang.String getPassPhrase() {
+      java.lang.Object ref = passPhrase_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          passPhrase_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string passPhrase = 3;</code>
+     */
+    public com.google.protobuf.ByteString
+        getPassPhraseBytes() {
+      java.lang.Object ref = passPhrase_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        passPhrase_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    private void initFields() {
+      hostname_ = "";
+      certRequest_ = "";
+      passPhrase_ = "";
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+
+      if (!hasHostname()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasCertRequest()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasPassPhrase()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeBytes(1, getHostnameBytes());
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getCertRequestBytes());
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeBytes(3, getPassPhraseBytes());
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(1, getHostnameBytes());
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(2, getCertRequestBytes());
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(3, getPassPhraseBytes());
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof org.apache.slider.api.proto.Messages.SignCertificateRequestProto)) {
+        return super.equals(obj);
+      }
+      org.apache.slider.api.proto.Messages.SignCertificateRequestProto other = (org.apache.slider.api.proto.Messages.SignCertificateRequestProto) obj;
+
+      boolean result = true;
+      result = result && (hasHostname() == other.hasHostname());
+      if (hasHostname()) {
+        result = result && getHostname()
+            .equals(other.getHostname());
+      }
+      result = result && (hasCertRequest() == other.hasCertRequest());
+      if (hasCertRequest()) {
+        result = result && getCertRequest()
+            .equals(other.getCertRequest());
+      }
+      result = result && (hasPassPhrase() == other.hasPassPhrase());
+      if (hasPassPhrase()) {
+        result = result && getPassPhrase()
+            .equals(other.getPassPhrase());
+      }
+      result = result &&
+          getUnknownFields().equals(other.getUnknownFields());
+      return result;
+    }
+
+    private int memoizedHashCode = 0;
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptorForType().hashCode();
+      if (hasHostname()) {
+        hash = (37 * hash) + HOSTNAME_FIELD_NUMBER;
+        hash = (53 * hash) + getHostname().hashCode();
+      }
+      if (hasCertRequest()) {
+        hash = (37 * hash) + CERTREQUEST_FIELD_NUMBER;
+        hash = (53 * hash) + getCertRequest().hashCode();
+      }
+      if (hasPassPhrase()) {
+        hash = (37 * hash) + PASSPHRASE_FIELD_NUMBER;
+        hash = (53 * hash) + getPassPhrase().hashCode();
+      }
+      hash = (29 * hash) + getUnknownFields().hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static org.apache.slider.api.proto.Messages.SignCertificateRequestProto parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.slider.api.proto.Messages.SignCertificateRequestProto parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.slider.api.proto.Messages.SignCertificateRequestProto parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.slider.api.proto.Messages.SignCertificateRequestProto parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.slider.api.proto.Messages.SignCertificateRequestProto parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.slider.api.proto.Messages.SignCertificateRequestProto parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+    public static org.apache.slider.api.proto.Messages.SignCertificateRequestProto parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input);
+    }
+    public static org.apache.slider.api.proto.Messages.SignCertificateRequestProto parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+    }
+    public static org.apache.slider.api.proto.Messages.SignCertificateRequestProto parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.slider.api.proto.Messages.SignCertificateRequestProto parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.apache.slider.api.proto.Messages.SignCertificateRequestProto prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code org.apache.slider.api.SignCertificateRequestProto}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.apache.slider.api.proto.Messages.SignCertificateRequestProtoOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_SignCertificateRequestProto_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_SignCertificateRequestProto_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.apache.slider.api.proto.Messages.SignCertificateRequestProto.class, org.apache.slider.api.proto.Messages.SignCertificateRequestProto.Builder.class);
+      }
+
+      // Construct using org.apache.slider.api.proto.Messages.SignCertificateRequestProto.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        hostname_ = "";
+        bitField0_ = (bitField0_ & ~0x00000001);
+        certRequest_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
+        passPhrase_ = "";
+        bitField0_ = (bitField0_ & ~0x00000004);
+        return this;
+      }
+
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_SignCertificateRequestProto_descriptor;
+      }
+
+      public org.apache.slider.api.proto.Messages.SignCertificateRequestProto getDefaultInstanceForType() {
+        return org.apache.slider.api.proto.Messages.SignCertificateRequestProto.getDefaultInstance();
+      }
+
+      public org.apache.slider.api.proto.Messages.SignCertificateRequestProto build() {
+        org.apache.slider.api.proto.Messages.SignCertificateRequestProto result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public org.apache.slider.api.proto.Messages.SignCertificateRequestProto buildPartial() {
+        org.apache.slider.api.proto.Messages.SignCertificateRequestProto result = new org.apache.slider.api.proto.Messages.SignCertificateRequestProto(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        result.hostname_ = hostname_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.certRequest_ = certRequest_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.passPhrase_ = passPhrase_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.apache.slider.api.proto.Messages.SignCertificateRequestProto) {
+          return mergeFrom((org.apache.slider.api.proto.Messages.SignCertificateRequestProto)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(org.apache.slider.api.proto.Messages.SignCertificateRequestProto other) {
+        if (other == org.apache.slider.api.proto.Messages.SignCertificateRequestProto.getDefaultInstance()) return this;
+        if (other.hasHostname()) {
+          bitField0_ |= 0x00000001;
+          hostname_ = other.hostname_;
+          onChanged();
+        }
+        if (other.hasCertRequest()) {
+          bitField0_ |= 0x00000002;
+          certRequest_ = other.certRequest_;
+          onChanged();
+        }
+        if (other.hasPassPhrase()) {
+          bitField0_ |= 0x00000004;
+          passPhrase_ = other.passPhrase_;
+          onChanged();
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        if (!hasHostname()) {
+          
+          return false;
+        }
+        if (!hasCertRequest()) {
+          
+          return false;
+        }
+        if (!hasPassPhrase()) {
+          
+          return false;
+        }
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        org.apache.slider.api.proto.Messages.SignCertificateRequestProto parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.apache.slider.api.proto.Messages.SignCertificateRequestProto) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+      private int bitField0_;
+
+      // required string hostname = 1;
+      private java.lang.Object hostname_ = "";
+      /**
+       * <code>required string hostname = 1;</code>
+       */
+      public boolean hasHostname() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>required string hostname = 1;</code>
+       */
+      public java.lang.String getHostname() {
+        java.lang.Object ref = hostname_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          hostname_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string hostname = 1;</code>
+       */
+      public com.google.protobuf.ByteString
+          getHostnameBytes() {
+        java.lang.Object ref = hostname_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          hostname_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string hostname = 1;</code>
+       */
+      public Builder setHostname(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        hostname_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string hostname = 1;</code>
+       */
+      public Builder clearHostname() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        hostname_ = getDefaultInstance().getHostname();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string hostname = 1;</code>
+       */
+      public Builder setHostnameBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        hostname_ = value;
+        onChanged();
+        return this;
+      }
+
+      // required string certRequest = 2;
+      private java.lang.Object certRequest_ = "";
+      /**
+       * <code>required string certRequest = 2;</code>
+       */
+      public boolean hasCertRequest() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>required string certRequest = 2;</code>
+       */
+      public java.lang.String getCertRequest() {
+        java.lang.Object ref = certRequest_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          certRequest_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string certRequest = 2;</code>
+       */
+      public com.google.protobuf.ByteString
+          getCertRequestBytes() {
+        java.lang.Object ref = certRequest_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          certRequest_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string certRequest = 2;</code>
+       */
+      public Builder setCertRequest(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        certRequest_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string certRequest = 2;</code>
+       */
+      public Builder clearCertRequest() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        certRequest_ = getDefaultInstance().getCertRequest();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string certRequest = 2;</code>
+       */
+      public Builder setCertRequestBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        certRequest_ = value;
+        onChanged();
+        return this;
+      }
+
+      // required string passPhrase = 3;
+      private java.lang.Object passPhrase_ = "";
+      /**
+       * <code>required string passPhrase = 3;</code>
+       */
+      public boolean hasPassPhrase() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      /**
+       * <code>required string passPhrase = 3;</code>
+       */
+      public java.lang.String getPassPhrase() {
+        java.lang.Object ref = passPhrase_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          passPhrase_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string passPhrase = 3;</code>
+       */
+      public com.google.protobuf.ByteString
+          getPassPhraseBytes() {
+        java.lang.Object ref = passPhrase_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          passPhrase_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string passPhrase = 3;</code>
+       */
+      public Builder setPassPhrase(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000004;
+        passPhrase_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string passPhrase = 3;</code>
+       */
+      public Builder clearPassPhrase() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        passPhrase_ = getDefaultInstance().getPassPhrase();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string passPhrase = 3;</code>
+       */
+      public Builder setPassPhraseBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000004;
+        passPhrase_ = value;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:org.apache.slider.api.SignCertificateRequestProto)
+    }
+
+    static {
+      defaultInstance = new SignCertificateRequestProto(true);
+      defaultInstance.initFields();
+    }
+
+    // @@protoc_insertion_point(class_scope:org.apache.slider.api.SignCertificateRequestProto)
+  }
+
+  public interface SignCertificateResponseProtoOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+
+    // required string result = 1;
+    /**
+     * <code>required string result = 1;</code>
+     */
+    boolean hasResult();
+    /**
+     * <code>required string result = 1;</code>
+     */
+    java.lang.String getResult();
+    /**
+     * <code>required string result = 1;</code>
+     */
+    com.google.protobuf.ByteString
+        getResultBytes();
+
+    // required string signedCertificate = 2;
+    /**
+     * <code>required string signedCertificate = 2;</code>
+     */
+    boolean hasSignedCertificate();
+    /**
+     * <code>required string signedCertificate = 2;</code>
+     */
+    java.lang.String getSignedCertificate();
+    /**
+     * <code>required string signedCertificate = 2;</code>
+     */
+    com.google.protobuf.ByteString
+        getSignedCertificateBytes();
+
+    // required string signingMessage = 3;
+    /**
+     * <code>required string signingMessage = 3;</code>
+     */
+    boolean hasSigningMessage();
+    /**
+     * <code>required string signingMessage = 3;</code>
+     */
+    java.lang.String getSigningMessage();
+    /**
+     * <code>required string signingMessage = 3;</code>
+     */
+    com.google.protobuf.ByteString
+        getSigningMessageBytes();
+  }
+  /**
+   * Protobuf type {@code org.apache.slider.api.SignCertificateResponseProto}
+   */
+  public static final class SignCertificateResponseProto extends
+      com.google.protobuf.GeneratedMessage
+      implements SignCertificateResponseProtoOrBuilder {
+    // Use SignCertificateResponseProto.newBuilder() to construct.
+    private SignCertificateResponseProto(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
+    }
+    private SignCertificateResponseProto(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
+    private static final SignCertificateResponseProto defaultInstance;
+    public static SignCertificateResponseProto getDefaultInstance() {
+      return defaultInstance;
+    }
+
+    public SignCertificateResponseProto getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private SignCertificateResponseProto(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 10: {
+              bitField0_ |= 0x00000001;
+              result_ = input.readBytes();
+              break;
+            }
+            case 18: {
+              bitField0_ |= 0x00000002;
+              signedCertificate_ = input.readBytes();
+              break;
+            }
+            case 26: {
+              bitField0_ |= 0x00000004;
+              signingMessage_ = input.readBytes();
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_SignCertificateResponseProto_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_SignCertificateResponseProto_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.apache.slider.api.proto.Messages.SignCertificateResponseProto.class, org.apache.slider.api.proto.Messages.SignCertificateResponseProto.Builder.class);
+    }
+
+    public static com.google.protobuf.Parser<SignCertificateResponseProto> PARSER =
+        new com.google.protobuf.AbstractParser<SignCertificateResponseProto>() {
+      public SignCertificateResponseProto parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new SignCertificateResponseProto(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<SignCertificateResponseProto> getParserForType() {
+      return PARSER;
+    }
+
+    private int bitField0_;
+    // required string result = 1;
+    public static final int RESULT_FIELD_NUMBER = 1;
+    private java.lang.Object result_;
+    /**
+     * <code>required string result = 1;</code>
+     */
+    public boolean hasResult() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>required string result = 1;</code>
+     */
+    public java.lang.String getResult() {
+      java.lang.Object ref = result_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          result_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string result = 1;</code>
+     */
+    public com.google.protobuf.ByteString
+        getResultBytes() {
+      java.lang.Object ref = result_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        result_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // required string signedCertificate = 2;
+    public static final int SIGNEDCERTIFICATE_FIELD_NUMBER = 2;
+    private java.lang.Object signedCertificate_;
+    /**
+     * <code>required string signedCertificate = 2;</code>
+     */
+    public boolean hasSignedCertificate() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <code>required string signedCertificate = 2;</code>
+     */
+    public java.lang.String getSignedCertificate() {
+      java.lang.Object ref = signedCertificate_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          signedCertificate_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string signedCertificate = 2;</code>
+     */
+    public com.google.protobuf.ByteString
+        getSignedCertificateBytes() {
+      java.lang.Object ref = signedCertificate_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        signedCertificate_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // required string signingMessage = 3;
+    public static final int SIGNINGMESSAGE_FIELD_NUMBER = 3;
+    private java.lang.Object signingMessage_;
+    /**
+     * <code>required string signingMessage = 3;</code>
+     */
+    public boolean hasSigningMessage() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    /**
+     * <code>required string signingMessage = 3;</code>
+     */
+    public java.lang.String getSigningMessage() {
+      java.lang.Object ref = signingMessage_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          signingMessage_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string signingMessage = 3;</code>
+     */
+    public com.google.protobuf.ByteString
+        getSigningMessageBytes() {
+      java.lang.Object ref = signingMessage_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        signingMessage_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    private void initFields() {
+      result_ = "";
+      signedCertificate_ = "";
+      signingMessage_ = "";
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+
+      if (!hasResult()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasSignedCertificate()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasSigningMessage()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeBytes(1, getResultBytes());
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getSignedCertificateBytes());
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeBytes(3, getSigningMessageBytes());
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(1, getResultBytes());
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(2, getSignedCertificateBytes());
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(3, getSigningMessageBytes());
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof org.apache.slider.api.proto.Messages.SignCertificateResponseProto)) {
+        return super.equals(obj);
+      }
+      org.apache.slider.api.proto.Messages.SignCertificateResponseProto other = (org.apache.slider.api.proto.Messages.SignCertificateResponseProto) obj;
+
+      boolean result = true;
+      result = result && (hasResult() == other.hasResult());
+      if (hasResult()) {
+        result = result && getResult()
+            .equals(other.getResult());
+      }
+      result = result && (hasSignedCertificate() == other.hasSignedCertificate());
+      if (hasSignedCertificate()) {
+        result = result && getSignedCertificate()
+            .equals(other.getSignedCertificate());
+      }
+      result = result && (hasSigningMessage() == other.hasSigningMessage());
+      if (hasSigningMessage()) {
+        result = result && getSigningMessage()
+            .equals(other.getSigningMessage());
+      }
+      result = result &&
+          getUnknownFields().equals(other.getUnknownFields());
+      return result;
+    }
+
+    private int memoizedHashCode = 0;
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptorForType().hashCode();
+      if (hasResult()) {
+        hash = (37 * hash) + RESULT_FIELD_NUMBER;
+        hash = (53 * hash) + getResult().hashCode();
+      }
+      if (hasSignedCertificate()) {
+        hash = (37 * hash) + SIGNEDCERTIFICATE_FIELD_NUMBER;
+        hash = (53 * hash) + getSignedCertificate().hashCode();
+      }
+      if (hasSigningMessage()) {
+        hash = (37 * hash) + SIGNINGMESSAGE_FIELD_NUMBER;
+        hash = (53 * hash) + getSigningMessage().hashCode();
+      }
+      hash = (29 * hash) + getUnknownFields().hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static org.apache.slider.api.proto.Messages.SignCertificateResponseProto parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.slider.api.proto.Messages.SignCertificateResponseProto parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.slider.api.proto.Messages.SignCertificateResponseProto parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.slider.api.proto.Messages.SignCertificateResponseProto parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.slider.api.proto.Messages.SignCertificateResponseProto parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.slider.api.proto.Messages.SignCertificateResponseProto parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+    public static org.apache.slider.api.proto.Messages.SignCertificateResponseProto parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input);
+    }
+    public static org.apache.slider.api.proto.Messages.SignCertificateResponseProto parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+    }
+    public static org.apache.slider.api.proto.Messages.SignCertificateResponseProto parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.slider.api.proto.Messages.SignCertificateResponseProto parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.apache.slider.api.proto.Messages.SignCertificateResponseProto prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code org.apache.slider.api.SignCertificateResponseProto}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.apache.slider.api.proto.Messages.SignCertificateResponseProtoOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_SignCertificateResponseProto_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_SignCertificateResponseProto_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.apache.slider.api.proto.Messages.SignCertificateResponseProto.class, org.apache.slider.api.proto.Messages.SignCertificateResponseProto.Builder.class);
+      }
+
+      // Construct using org.apache.slider.api.proto.Messages.SignCertificateResponseProto.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        result_ = "";
+        bitField0_ = (bitField0_ & ~0x00000001);
+        signedCertificate_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
+        signingMessage_ = "";
+        bitField0_ = (bitField0_ & ~0x00000004);
+        return this;
+      }
+
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_SignCertificateResponseProto_descriptor;
+      }
+
+      public org.apache.slider.api.proto.Messages.SignCertificateResponseProto getDefaultInstanceForType() {
+        return org.apache.slider.api.proto.Messages.SignCertificateResponseProto.getDefaultInstance();
+      }
+
+      public org.apache.slider.api.proto.Messages.SignCertificateResponseProto build() {
+        org.apache.slider.api.proto.Messages.SignCertificateResponseProto result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public org.apache.slider.api.proto.Messages.SignCertificateResponseProto buildPartial() {
+        org.apache.slider.api.proto.Messages.SignCertificateResponseProto result = new org.apache.slider.api.proto.Messages.SignCertificateResponseProto(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        result.result_ = result_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.signedCertificate_ = signedCertificate_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.signingMessage_ = signingMessage_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.apache.slider.api.proto.Messages.SignCertificateResponseProto) {
+          return mergeFrom((org.apache.slider.api.proto.Messages.SignCertificateResponseProto)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(org.apache.slider.api.proto.Messages.SignCertificateResponseProto other) {
+        if (other == org.apache.slider.api.proto.Messages.SignCertificateResponseProto.getDefaultInstance()) return this;
+        if (other.hasResult()) {
+          bitField0_ |= 0x00000001;
+          result_ = other.result_;
+          onChanged();
+        }
+        if (other.hasSignedCertificate()) {
+          bitField0_ |= 0x00000002;
+          signedCertificate_ = other.signedCertificate_;
+          onChanged();
+        }
+        if (other.hasSigningMessage()) {
+          bitField0_ |= 0x00000004;
+          signingMessage_ = other.signingMessage_;
+          onChanged();
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        if (!hasResult()) {
+          
+          return false;
+        }
+        if (!hasSignedCertificate()) {
+          
+          return false;
+        }
+        if (!hasSigningMessage()) {
+          
+          return false;
+        }
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        org.apache.slider.api.proto.Messages.SignCertificateResponseProto parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.apache.slider.api.proto.Messages.SignCertificateResponseProto) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+      private int bitField0_;
+
+      // required string result = 1;
+      private java.lang.Object result_ = "";
+      /**
+       * <code>required string result = 1;</code>
+       */
+      public boolean hasResult() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>required string result = 1;</code>
+       */
+      public java.lang.String getResult() {
+        java.lang.Object ref = result_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          result_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string result = 1;</code>
+       */
+      public com.google.protobuf.ByteString
+          getResultBytes() {
+        java.lang.Object ref = result_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          result_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string result = 1;</code>
+       */
+      public Builder setResult(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        result_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string result = 1;</code>
+       */
+      public Builder clearResult() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        result_ = getDefaultInstance().getResult();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string result = 1;</code>
+       */
+      public Builder setResultBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        result_ = value;
+        onChanged();
+        return this;
+      }
+
+      // required string signedCertificate = 2;
+      private java.lang.Object signedCertificate_ = "";
+      /**
+       * <code>required string signedCertificate = 2;</code>
+       */
+      public boolean hasSignedCertificate() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>required string signedCertificate = 2;</code>
+       */
+      public java.lang.String getSignedCertificate() {
+        java.lang.Object ref = signedCertificate_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          signedCertificate_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string signedCertificate = 2;</code>
+       */
+      public com.google.protobuf.ByteString
+          getSignedCertificateBytes() {
+        java.lang.Object ref = signedCertificate_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          signedCertificate_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string signedCertificate = 2;</code>
+       */
+      public Builder setSignedCertificate(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        signedCertificate_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string signedCertificate = 2;</code>
+       */
+      public Builder clearSignedCertificate() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        signedCertificate_ = getDefaultInstance().getSignedCertificate();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string signedCertificate = 2;</code>
+       */
+      public Builder setSignedCertificateBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        signedCertificate_ = value;
+        onChanged();
+        return this;
+      }
+
+      // required string signingMessage = 3;
+      private java.lang.Object signingMessage_ = "";
+      /**
+       * <code>required string signingMessage = 3;</code>
+       */
+      public boolean hasSigningMessage() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      /**
+       * <code>required string signingMessage = 3;</code>
+       */
+      public java.lang.String getSigningMessage() {
+        java.lang.Object ref = signingMessage_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          signingMessage_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string signingMessage = 3;</code>
+       */
+      public com.google.protobuf.ByteString
+          getSigningMessageBytes() {
+        java.lang.Object ref = signingMessage_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          signingMessage_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string signingMessage = 3;</code>
+       */
+      public Builder setSigningMessage(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000004;
+        signingMessage_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string signingMessage = 3;</code>
+       */
+      public Builder clearSigningMessage() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        signingMessage_ = getDefaultInstance().getSigningMessage();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string signingMessage = 3;</code>
+       */
+      public Builder setSigningMessageBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000004;
+        signingMessage_ = value;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:org.apache.slider.api.SignCertificateResponseProto)
+    }
+
+    static {
+      defaultInstance = new SignCertificateResponseProto(true);
+      defaultInstance.initFields();
+    }
+
+    // @@protoc_insertion_point(class_scope:org.apache.slider.api.SignCertificateResponseProto)
+  }
+
   private static com.google.protobuf.Descriptors.Descriptor
     internal_static_org_apache_slider_api_RoleInstanceState_descriptor;
   private static
@@ -25334,6 +27060,16 @@ public final class Messages {
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_org_apache_slider_api_WrappedJsonProto_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_org_apache_slider_api_SignCertificateRequestProto_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_org_apache_slider_api_SignCertificateRequestProto_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_org_apache_slider_api_SignCertificateResponseProto_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_org_apache_slider_api_SignCertificateResponseProto_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -25412,8 +27148,13 @@ public final class Messages {
       "etLiveComponentRequestProto\022\014\n\004name\030\001 \002(" +
       "\t\"$\n\"GetApplicationLivenessRequestProto\"" +
       "\023\n\021EmptyPayloadProto\" \n\020WrappedJsonProto" +
-      "\022\014\n\004json\030\001 \002(\tB-\n\033org.apache.slider.api.",
-      "protoB\010Messages\210\001\001\240\001\001"
+      "\022\014\n\004json\030\001 \002(\t\"X\n\033SignCertificateRequest",
+      "Proto\022\020\n\010hostname\030\001 \002(\t\022\023\n\013certRequest\030\002" +
+      " \002(\t\022\022\n\npassPhrase\030\003 \002(\t\"a\n\034SignCertific" +
+      "ateResponseProto\022\016\n\006result\030\001 \002(\t\022\031\n\021sign" +
+      "edCertificate\030\002 \002(\t\022\026\n\016signingMessage\030\003 " +
+      "\002(\tB-\n\033org.apache.slider.api.protoB\010Mess" +
+      "ages\210\001\001\240\001\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -25666,6 +27407,18 @@ public final class Messages {
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_WrappedJsonProto_descriptor,
               new java.lang.String[] { "Json", });
+          internal_static_org_apache_slider_api_SignCertificateRequestProto_descriptor =
+            getDescriptor().getMessageTypes().get(41);
+          internal_static_org_apache_slider_api_SignCertificateRequestProto_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_org_apache_slider_api_SignCertificateRequestProto_descriptor,
+              new java.lang.String[] { "Hostname", "CertRequest", "PassPhrase", });
+          internal_static_org_apache_slider_api_SignCertificateResponseProto_descriptor =
+            getDescriptor().getMessageTypes().get(42);
+          internal_static_org_apache_slider_api_SignCertificateResponseProto_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_org_apache_slider_api_SignCertificateResponseProto_descriptor,
+              new java.lang.String[] { "Result", "SignedCertificate", "SigningMessage", });
           return null;
         }
       };

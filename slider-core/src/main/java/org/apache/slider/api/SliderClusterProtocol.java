@@ -160,6 +160,8 @@ public interface SliderClusterProtocol extends VersionedProtocol {
   Messages.WrappedJsonProto getModelResolvedResources(Messages.EmptyPayloadProto request) throws IOException;
    
   Messages.WrappedJsonProto getLiveResources(Messages.EmptyPayloadProto request) throws IOException;
-    
-  
+
+  Messages.SignCertificateResponseProto signCertificate(
+      Messages.SignCertificateRequestProto request) throws IOException;
+
 }

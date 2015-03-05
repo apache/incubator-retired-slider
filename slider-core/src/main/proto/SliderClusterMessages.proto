@@ -318,3 +318,15 @@ message EmptyPayloadProto {
 message WrappedJsonProto {
   required string json = 1;
 }
+
+message SignCertificateRequestProto {
+  required string hostname = 1;
+  required string certRequest = 2;
+  required string passPhrase = 3;
+}
+
+message SignCertificateResponseProto {
+  required string result = 1;
+  required string signedCertificate = 2;
+  required string signingMessage = 3;
+}

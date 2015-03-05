@@ -462,5 +462,9 @@ public class SliderIPCService extends AbstractService
     return builder.build();
   }
 
-
+  @Override
+  public Messages.SignCertificateResponseProto signCertificate(Messages.SignCertificateRequestProto request) throws
+      IOException {
+    return null;
+  }
 }

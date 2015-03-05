@@ -273,6 +273,14 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
           com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done);
 
+      /**
+       * <code>rpc signCertificate(.org.apache.slider.api.SignCertificateRequestProto) returns (.org.apache.slider.api.SignCertificateResponseProto);</code>
+       */
+      public abstract void signCertificate(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.SignCertificateRequestProto request,
+          com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.SignCertificateResponseProto> done);
+
     }
 
     public static com.google.protobuf.Service newReflectiveService(
@@ -454,6 +462,14 @@ public final class SliderClusterAPI {
           impl.getLiveResources(controller, request, done);
         }
 
+        @java.lang.Override
+        public  void signCertificate(
+            com.google.protobuf.RpcController controller,
+            org.apache.slider.api.proto.Messages.SignCertificateRequestProto request,
+            com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.SignCertificateResponseProto> done) {
+          impl.signCertificate(controller, request, done);
+        }
+
       };
     }
 
@@ -520,6 +536,8 @@ public final class SliderClusterAPI {
               return impl.getModelResolvedResources(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request);
             case 21:
               return impl.getLiveResources(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request);
+            case 22:
+              return impl.signCertificate(controller, (org.apache.slider.api.proto.Messages.SignCertificateRequestProto)request);
             default:
               throw new java.lang.AssertionError("Can't get here.");
           }
@@ -578,6 +596,8 @@ public final class SliderClusterAPI {
               return org.apache.slider.api.proto.Messages.EmptyPayloadProto.getDefaultInstance();
             case 21:
               return org.apache.slider.api.proto.Messages.EmptyPayloadProto.getDefaultInstance();
+            case 22:
+              return org.apache.slider.api.proto.Messages.SignCertificateRequestProto.getDefaultInstance();
             default:
               throw new java.lang.AssertionError("Can't get here.");
           }
@@ -636,6 +656,8 @@ public final class SliderClusterAPI {
               return org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance();
             case 21:
               return org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance();
+            case 22:
+              return org.apache.slider.api.proto.Messages.SignCertificateResponseProto.getDefaultInstance();
             default:
               throw new java.lang.AssertionError("Can't get here.");
           }
@@ -896,6 +918,14 @@ public final class SliderClusterAPI {
         org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
         com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done);
 
+    /**
+     * <code>rpc signCertificate(.org.apache.slider.api.SignCertificateRequestProto) returns (.org.apache.slider.api.SignCertificateResponseProto);</code>
+     */
+    public abstract void signCertificate(
+        com.google.protobuf.RpcController controller,
+        org.apache.slider.api.proto.Messages.SignCertificateRequestProto request,
+        com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.SignCertificateResponseProto> done);
+
     public static final
         com.google.protobuf.Descriptors.ServiceDescriptor
         getDescriptor() {
@@ -1028,6 +1058,11 @@ public final class SliderClusterAPI {
             com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.WrappedJsonProto>specializeCallback(
               done));
           return;
+        case 22:
+          this.signCertificate(controller, (org.apache.slider.api.proto.Messages.SignCertificateRequestProto)request,
+            com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.SignCertificateResponseProto>specializeCallback(
+              done));
+          return;
         default:
           throw new java.lang.AssertionError("Can't get here.");
       }
@@ -1086,6 +1121,8 @@ public final class SliderClusterAPI {
           return org.apache.slider.api.proto.Messages.EmptyPayloadProto.getDefaultInstance();
         case 21:
           return org.apache.slider.api.proto.Messages.EmptyPayloadProto.getDefaultInstance();
+        case 22:
+          return org.apache.slider.api.proto.Messages.SignCertificateRequestProto.getDefaultInstance();
         default:
           throw new java.lang.AssertionError("Can't get here.");
       }
@@ -1144,6 +1181,8 @@ public final class SliderClusterAPI {
           return org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance();
         case 21:
           return org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance();
+        case 22:
+          return org.apache.slider.api.proto.Messages.SignCertificateResponseProto.getDefaultInstance();
         default:
           throw new java.lang.AssertionError("Can't get here.");
       }
@@ -1494,6 +1533,21 @@ public final class SliderClusterAPI {
             org.apache.slider.api.proto.Messages.WrappedJsonProto.class,
             org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance()));
       }
+
+      public  void signCertificate(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.SignCertificateRequestProto request,
+          com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.SignCertificateResponseProto> done) {
+        channel.callMethod(
+          getDescriptor().getMethods().get(22),
+          controller,
+          request,
+          org.apache.slider.api.proto.Messages.SignCertificateResponseProto.getDefaultInstance(),
+          com.google.protobuf.RpcUtil.generalizeCallback(
+            done,
+            org.apache.slider.api.proto.Messages.SignCertificateResponseProto.class,
+            org.apache.slider.api.proto.Messages.SignCertificateResponseProto.getDefaultInstance()));
+      }
     }
 
     public static BlockingInterface newBlockingStub(
@@ -1610,6 +1664,11 @@ public final class SliderClusterAPI {
       public org.apache.slider.api.proto.Messages.WrappedJsonProto getLiveResources(
           com.google.protobuf.RpcController controller,
           org.apache.slider.api.proto.Messages.EmptyPayloadProto request)
+          throws com.google.protobuf.ServiceException;
+
+      public org.apache.slider.api.proto.Messages.SignCertificateResponseProto signCertificate(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.SignCertificateRequestProto request)
           throws com.google.protobuf.ServiceException;
     }
 
@@ -1883,6 +1942,18 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance());
       }
 
+
+      public org.apache.slider.api.proto.Messages.SignCertificateResponseProto signCertificate(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.SignCertificateRequestProto request)
+          throws com.google.protobuf.ServiceException {
+        return (org.apache.slider.api.proto.Messages.SignCertificateResponseProto) channel.callBlockingMethod(
+          getDescriptor().getMethods().get(22),
+          controller,
+          request,
+          org.apache.slider.api.proto.Messages.SignCertificateResponseProto.getDefaultInstance());
+      }
+
     }
 
     // @@protoc_insertion_point(class_scope:org.apache.slider.api.SliderClusterProtocolPB)
@@ -1899,7 +1970,7 @@ public final class SliderClusterAPI {
     java.lang.String[] descriptorData = {
       "\n\033SliderClusterProtocol.proto\022\025org.apach" +
       "e.slider.api\032\033SliderClusterMessages.prot" +
-      "o2\264\024\n\027SliderClusterProtocolPB\022n\n\013stopClu" +
+      "o2\260\025\n\027SliderClusterProtocolPB\022n\n\013stopClu" +
       "ster\022..org.apache.slider.api.StopCluster" +
       "RequestProto\032/.org.apache.slider.api.Sto" +
       "pClusterResponseProto\022n\n\013flexCluster\022..o" +
@@ -1964,8 +2035,11 @@ public final class SliderClusterAPI {
       "pache.slider.api.WrappedJsonProto\022e\n\020get" +
       "LiveResources\022(.org.apache.slider.api.Em" +
       "ptyPayloadProto\032\'.org.apache.slider.api." +
-      "WrappedJsonProtoB5\n\033org.apache.slider.ap" +
-      "i.protoB\020SliderClusterAPI\210\001\001\240\001\001"
+      "WrappedJsonProto\022z\n\017signCertificate\0222.or" +
+      "g.apache.slider.api.SignCertificateReque" +
+      "stProto\0323.org.apache.slider.api.SignCert",
+      "ificateResponseProtoB5\n\033org.apache.slide" +
+      "r.api.protoB\020SliderClusterAPI\210\001\001\240\001\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {

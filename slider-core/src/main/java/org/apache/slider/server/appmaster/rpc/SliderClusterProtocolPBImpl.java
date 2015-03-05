@@ -281,4 +281,15 @@ public class SliderClusterProtocolPBImpl implements SliderClusterProtocolPB {
       throw wrap(e);
     }
   }
+
+
+  @Override
+  public Messages.SignCertificateResponseProto signCertificate(RpcController controller,
+      Messages.SignCertificateRequestProto request) throws ServiceException {
+    try {
+      return real.signCertificate(request);
+    } catch (Exception e) {
+      throw wrap(e);
+    }
+  }
 }

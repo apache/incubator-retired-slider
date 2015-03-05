@@ -27,7 +27,7 @@ package org.apache.slider.api;
 Compiling
 
 Maven: How to do it as part of the build
- mvn -Pcompile-protobuf
+ mvn install -DskipTests -Pcompile-protobuf
 
 How to do it so as to get error messages
 
@@ -163,6 +163,9 @@ service SliderClusterProtocolPB {
     // ConfTree getLiveResources
   rpc getLiveResources(EmptyPayloadProto) 
     returns(WrappedJsonProto);
+
+  rpc signCertificate(SignCertificateRequestProto) 
+    returns(SignCertificateResponseProto);
 
   
   
