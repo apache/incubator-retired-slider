@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.slider.packages</groupId>
     <artifactId>slider-app-packages</artifactId>
-    <version>0.62.0-SNAPSHOT</version>
+    <version>0.70.0-incubating</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
