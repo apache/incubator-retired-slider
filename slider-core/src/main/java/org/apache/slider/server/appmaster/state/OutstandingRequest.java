@@ -56,10 +56,15 @@ public final class OutstandingRequest {
   public final String hostname;
 
   /**
-   * requested time -only valid after buildContainerRequest(Resource, long)}
+   * requested time -only valid after {@link #buildContainerRequest(Resource, RoleStatus, long, String)}
    */
   public long requestedTime;
 
+  /**
+   * Has the placement request been escalated by cancel and re-request
+   */
+  public boolean escalated;
+  
   /**
    * Create a request
    * @param roleId role
