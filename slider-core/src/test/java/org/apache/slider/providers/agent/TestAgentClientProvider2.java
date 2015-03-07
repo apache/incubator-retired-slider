@@ -204,13 +204,6 @@ public class TestAgentClientProvider2 {
     SliderClient client = new SliderClient();
     client.bindArgs(new Configuration(), "client", "--dest", "a_random_path/none", "--package", "a_random_pkg.zip");
     ActionClientArgs args = new ActionClientArgs();
-    args.install = false;
-    try {
-      client.actionClient(args);
-    }catch(BadCommandArgumentsException e) {
-      log.info(e.getMessage());
-      Assert.assertTrue(e.getMessage().contains("Only install command is supported for the client"));
-    }
 
     args.install = true;
     try {

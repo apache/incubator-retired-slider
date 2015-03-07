@@ -720,7 +720,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
           getConfig().set(KEY_PROTOCOL_ACL, "*");
         }
       }
-      
+
+      certificateManager = new CertificateManager();
+
       //bring up the Slider RPC service
       buildPortScanner(instanceDefinition);
       startSliderRPCServer(instanceDefinition);
@@ -744,7 +746,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       providerRoles.addAll(SliderAMClientProvider.ROLES);
 
       // Start up the WebApp and track the URL for it
-      certificateManager = new CertificateManager();
       MapOperations component = instanceDefinition.getAppConfOperations()
           .getComponent(SliderKeys.COMPONENT_AM);
       certificateManager.initialize(component, appMasterHostname,
@@ -1502,6 +1503,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     sliderIPCService = new SliderIPCService(
         this,
+        certificateManager,
         stateForProviders,
         actionQueues,
         metricsAndMonitoring,

@@ -134,7 +134,7 @@ public interface SliderClientAPI extends Service {
    * @throws IOException problems related to package and destination folders
    */
   int actionClient(ActionClientArgs clientInfo)
-      throws IOException, SliderException;
+      throws IOException, YarnException;
 
   /**
    * Managing slider application package
