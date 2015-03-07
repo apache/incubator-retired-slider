@@ -203,18 +203,18 @@ public class CertificateManager {
   }
 
   public synchronized void generateContainerCertificate(String hostname,
-                                                        String containerId) {
-    LOG.info("Generation of agent certificate for {}", hostname);
+                                                        String identifier) {
+    LOG.info("Generation of certificate for {}", hostname);
 
     String srvrKstrDir = SecurityUtils.getSecurityDir();
-    Object[] scriptArgs = {srvrKstrDir, getSubjectDN(hostname, containerId,
-        this.applicationName), containerId};
+    Object[] scriptArgs = {srvrKstrDir, getSubjectDN(hostname, identifier,
+        this.applicationName), identifier};
 
     try {
       String command = MessageFormat.format(GEN_AGENT_KEY, scriptArgs);
       runCommand(command);
 
-      signAgentCertificate(containerId);
+      signAgentCertificate(identifier);
 
     } catch (SliderException e) {
       LOG.error("Error generating the agent certificate", e);
@@ -222,21 +222,21 @@ public class CertificateManager {
   }
 
   public synchronized SecurityStore generateContainerKeystore(String hostname,
-                                                              String containerId,
+                                                              String requesterId,
                                                               String role,
                                                               String keystorePass)
       throws SliderException {
     LOG.info("Generation of container keystore for container {} on {}",
-             containerId, hostname);
+             requesterId, hostname);
 
-    generateContainerCertificate(hostname, containerId);
+    generateContainerCertificate(hostname, requesterId);
 
     // come up with correct args to invoke keystore command
     String srvrCrtPass = SecurityUtils.getKeystorePass();
     String srvrKstrDir = SecurityUtils.getSecurityDir();
-    String containerCrtName = containerId + ".crt";
-    String containerKeyName = containerId + ".key";
-    String kstrName = getKeystoreFileName(containerId, role);
+    String containerCrtName = requesterId + ".crt";
+    String containerKeyName = requesterId + ".key";
+    String kstrName = getKeystoreFileName(requesterId, role);
 
     Object[] scriptArgs = {srvrCrtPass, keystorePass, srvrKstrDir,
         containerKeyName, containerCrtName, kstrName};
@@ -250,7 +250,8 @@ public class CertificateManager {
 
   private static String getKeystoreFileName(String containerId,
                                             String role) {
-    return String.format("keystore-%s-%s.p12", containerId, role);
+    return String.format("keystore-%s-%s.p12", containerId,
+                         role != null ? role : "");
   }
 
   private void generateAMKeystore(String hostname, String containerId)
@@ -306,7 +307,8 @@ public class CertificateManager {
   }
 
   private static String getTruststoreFileName(String role, String containerId) {
-    return String.format("truststore-%s-%s.p12", containerId, role);
+    return String.format("truststore-%s-%s.p12", containerId,
+                         role != null ? role : "");
   }
 
   /**

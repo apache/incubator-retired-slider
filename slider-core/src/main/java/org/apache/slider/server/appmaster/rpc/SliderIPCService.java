@@ -34,6 +34,7 @@ import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.exceptions.NoSuchNodeException;
 import org.apache.slider.core.exceptions.ServiceNotReadyException;
+import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.main.LauncherExitCodes;
 import org.apache.slider.core.persist.AggregateConfSerDeser;
 import org.apache.slider.core.persist.ConfTreeSerDeser;
@@ -48,6 +49,9 @@ import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
 import org.apache.slider.server.appmaster.state.RoleInstance;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.application.resources.ContentCache;
+import org.apache.slider.server.services.security.CertificateManager;
+import org.apache.slider.server.services.security.KeystoreGenerator;
+import org.apache.slider.server.services.security.SecurityStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,6 +88,7 @@ public class SliderIPCService extends AbstractService
   private final MetricsAndMonitoring metricsAndMonitoring;
   private final AppMasterActionOperations amOperations;
   private final ContentCache cache;
+  private final CertificateManager certificateManager;
 
   /**
    * This is the prefix used for metrics
@@ -100,6 +105,7 @@ public class SliderIPCService extends AbstractService
    * @param cache
    */
   public SliderIPCService(AppMasterActionOperations amOperations,
+      CertificateManager certificateManager,
       StateAccessForProviders state,
       QueueAccess actionQueues,
       MetricsAndMonitoring metricsAndMonitoring, ContentCache cache) {
@@ -115,6 +121,7 @@ public class SliderIPCService extends AbstractService
     this.metricsAndMonitoring = metricsAndMonitoring;
     this.amOperations = amOperations;
     this.cache = cache;
+    this.certificateManager = certificateManager;
   }
 
   @Override   //SliderClusterProtocol
@@ -463,8 +470,33 @@ public class SliderIPCService extends AbstractService
   }
 
   @Override
-  public Messages.SignCertificateResponseProto signCertificate(Messages.SignCertificateRequestProto request) throws
+  public Messages.GetCertificateStoreResponseProto getClientCertificateStore(Messages.GetCertificateStoreRequestProto request) throws
       IOException {
-    return null;
+    String hostname = request.getHostname();
+    String clientId = request.getRequesterId();
+    String password = request.getPassword();
+    String type = request.getType();
+
+    SecurityStore store = null;
+    try {
+      if ( SecurityStore.StoreType.keystore.equals(
+          SecurityStore.StoreType.valueOf(type))) {
+        store = certificateManager.generateContainerKeystore(hostname,
+                                                             clientId,
+                                                             null,
+                                                             password);
+      } else if (SecurityStore.StoreType.truststore.equals(
+          SecurityStore.StoreType.valueOf(type))) {
+        store = certificateManager.generateContainerTruststore(clientId,
+                                                               null,
+                                                               password);
+
+      } else {
+        throw new IOException("Illegal store type");
+      }
+    } catch (SliderException e) {
+      throw new IOException(e);
+    }
+    return marshall(store);
   }
 }

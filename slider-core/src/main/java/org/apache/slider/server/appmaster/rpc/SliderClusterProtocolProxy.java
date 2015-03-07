@@ -316,10 +316,10 @@ public class SliderClusterProtocolProxy implements SliderClusterProtocol {
   }
 
   @Override
-  public Messages.SignCertificateResponseProto signCertificate(Messages.SignCertificateRequestProto request) throws
+  public Messages.GetCertificateStoreResponseProto getClientCertificateStore(Messages.GetCertificateStoreRequestProto request) throws
       IOException {
     try {
-      return endpoint.signCertificate(NULL_CONTROLLER, request);
+      return endpoint.getClientCertificateStore(NULL_CONTROLLER, request);
     } catch (ServiceException e) {
       throw convert(e);
     }

@@ -39,6 +39,7 @@ import org.apache.slider.core.exceptions.NoSuchNodeException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.exceptions.WaitTimeoutException;
 import org.apache.slider.core.persist.ConfTreeSerDeser;
+import org.apache.slider.server.services.security.SecurityStore;
 import org.apache.slider.server.services.security.SignCertResponse;
 import org.codehaus.jackson.JsonParseException;
 import org.slf4j.Logger;
@@ -512,18 +513,22 @@ public class SliderClusterOperations {
     return unmarshall(proto);
   }
 
-  public SignCertResponse signCertificate(String hostname, String request,
-      String passphrase) throws IOException {
-    Messages.SignCertificateRequestProto requestProto =
-        Messages.SignCertificateRequestProto.newBuilder()
-                                            .setHostname(hostname)
-                                            .setCertRequest(request)
-                                            .setPassPhrase(passphrase)
-                                            .build();
-    Messages.SignCertificateResponseProto response =
-        appMaster.signCertificate(requestProto);
-    // JON
-    return new SignCertResponse();
+  public byte[] getClientCertificateStore(String hostname, String clientId,
+      String password, String type) throws IOException {
+    Messages.GetCertificateStoreRequestProto.Builder
+        builder = Messages.GetCertificateStoreRequestProto.newBuilder();
+    if (hostname != null) {
+      builder.setHostname(hostname);
+    }
+    Messages.GetCertificateStoreRequestProto requestProto =
+        builder.setRequesterId(clientId)
+               .setPassword(password)
+               .setType(type)
+               .build();
+    Messages.GetCertificateStoreResponseProto response =
+        appMaster.getClientCertificateStore(requestProto);
+
+    return unmarshall(response);
   }
 
 }

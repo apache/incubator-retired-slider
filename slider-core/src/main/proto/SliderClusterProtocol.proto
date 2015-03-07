@@ -164,8 +164,8 @@ service SliderClusterProtocolPB {
   rpc getLiveResources(EmptyPayloadProto) 
     returns(WrappedJsonProto);
 
-  rpc signCertificate(SignCertificateRequestProto) 
-    returns(SignCertificateResponseProto);
+  rpc getClientCertificateStore(GetCertificateStoreRequestProto)
+    returns(GetCertificateStoreResponseProto);
 
   
   
