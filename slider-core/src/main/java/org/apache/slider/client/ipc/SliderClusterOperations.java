@@ -39,6 +39,8 @@ import org.apache.slider.core.exceptions.NoSuchNodeException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.exceptions.WaitTimeoutException;
 import org.apache.slider.core.persist.ConfTreeSerDeser;
+import org.apache.slider.server.services.security.SecurityStore;
+import org.apache.slider.server.services.security.SignCertResponse;
 import org.codehaus.jackson.JsonParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -454,7 +456,7 @@ public class SliderClusterOperations {
   public List<ContainerInformation> getContainers() throws IOException {
     Messages.GetLiveContainersResponseProto response = appMaster
         .getLiveContainers(Messages.GetLiveContainersRequestProto.newBuilder()
-            .build());
+                                                                 .build());
     return unmarshall(response);
   }
 
@@ -511,5 +513,22 @@ public class SliderClusterOperations {
     return unmarshall(proto);
   }
 
+  public byte[] getClientCertificateStore(String hostname, String clientId,
+      String password, String type) throws IOException {
+    Messages.GetCertificateStoreRequestProto.Builder
+        builder = Messages.GetCertificateStoreRequestProto.newBuilder();
+    if (hostname != null) {
+      builder.setHostname(hostname);
+    }
+    Messages.GetCertificateStoreRequestProto requestProto =
+        builder.setRequesterId(clientId)
+               .setPassword(password)
+               .setType(type)
+               .build();
+    Messages.GetCertificateStoreResponseProto response =
+        appMaster.getClientCertificateStore(requestProto);
+
+    return unmarshall(response);
+  }
 
 }
