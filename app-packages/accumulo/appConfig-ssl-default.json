@@ -6,9 +6,12 @@
     "application.def": ".slider/package/ACCUMULO/${app.package.name}.zip",
     "java_home": "${app.java.home}",
 
+    "slider.component.keystore.credential.alias.property": "rpc.javax.net.ssl.keyStorePassword",
+    "slider.component.truststore.credential.alias.property": "rpc.javax.net.ssl.trustStorePassword",
+
     "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/accumulo-${accumulo.version}",
-    "site.global.app_user": "${USER}",
-    "site.global.user_group": "${USER}",
+    "site.global.app_user": "${app.user}",
+    "site.global.user_group": "${app.user.group}",
 
     "site.global.metric_collector_host": "${NN_HOST}",
     "site.global.metric_collector_port": "6188",
@@ -36,10 +39,14 @@
     "site.accumulo-site.instance.security.authenticator": "org.apache.slider.accumulo.CustomAuthenticator",
 
     "site.accumulo-site.general.security.credential.provider.paths": "jceks://hdfs/user/${USER}/accumulo-${CLUSTER_NAME}.jceks",
-    "site.accumulo-site.instance.rpc.ssl.enabled": "false",
-    "site.accumulo-site.instance.rpc.ssl.clientAuth": "false",
-    "site.accumulo-site.general.kerberos.keytab": "${AGENT_WORK_ROOT}/keytabs/${USER_NAME}.ACCUMULO.service.keytab",
-    "site.accumulo-site.general.kerberos.principal": "${USER_NAME}/_HOST@EXAMPLE.COM",
+    "site.accumulo-site.instance.rpc.ssl.enabled": "true",
+    "site.accumulo-site.instance.rpc.ssl.clientAuth": "true",
+    "site.accumulo-site.general.kerberos.keytab": "${accumulo.keytab}",
+    "site.accumulo-site.general.kerberos.principal": "${accumulo.principal}",
+    "site.accumulo-site.rpc.javax.net.ssl.keyStore": "${AGENT_WORK_ROOT}/secstores/keystore-${COMPONENT_NAME}.p12",
+    "site.accumulo-site.rpc.javax.net.ssl.keyStoreType": "PKCS12",
+    "site.accumulo-site.rpc.javax.net.ssl.trustStore": "${AGENT_WORK_ROOT}/secstores/truststore-${COMPONENT_NAME}.p12",
+    "site.accumulo-site.rpc.javax.net.ssl.trustStoreType": "PKCS12",
 
     "site.accumulo-site.tserver.memory.maps.native.enabled": "false",
     "site.accumulo-site.tserver.memory.maps.max": "80M",
@@ -62,14 +69,31 @@
     "site.accumulo-site.general.classpaths": "$ACCUMULO_HOME/lib/accumulo-server.jar,\n$ACCUMULO_HOME/lib/accumulo-core.jar,\n$ACCUMULO_HOME/lib/accumulo-start.jar,\n$ACCUMULO_HOME/lib/accumulo-fate.jar,\n$ACCUMULO_HOME/lib/accumulo-proxy.jar,\n$ACCUMULO_HOME/lib/[^.].*.jar,\n$ZOOKEEPER_HOME/zookeeper[^.].*.jar,\n$HADOOP_CONF_DIR,\n${@//site/accumulo-env/hadoop_conf_dir},\n$HADOOP_PREFIX/[^.].*.jar,\n$HADOOP_PREFIX/lib/[^.].*.jar,\n$HADOOP_PREFIX/share/hadoop/common/.*.jar,\n$HADOOP_PREFIX/share/hadoop/common/lib/.*.jar,\n$HADOOP_PREFIX/share/hadoop/hdfs/.*.jar,\n$HADOOP_PREFIX/share/hadoop/mapreduce/.*.jar,\n$HADOOP_PREFIX/share/hadoop/yarn/.*.jar,\n${hadoop.dir}/.*.jar,\n${hadoop.dir}/lib/.*.jar,\n${hdfs.dir}/.*.jar,\n${mapred.dir}/.*.jar,\n${yarn.dir}/.*.jar,"
   },
   "credentials": {
-    "jceks://hdfs/user/${USER}/accumulo-${CLUSTER_NAME}.jceks": ["root.initial.password", "instance.secret", "trace.token.property.password"]
+    "jceks://hdfs/user/${USER}/accumulo-${CLUSTER_NAME}.jceks": ["root.initial.password", "instance.secret", "trace.token.property.password", "rpc.javax.net.ssl.keyStorePassword", "rpc.javax.net.ssl.trustStorePassword"]
   },
   "components": {
     "slider-appmaster": {
       "jvm.heapsize": "256M",
-      "slider.hdfs.keytab.dir": ".slider/keytabs/accumulo",
-      "slider.am.login.keytab.name": "${USER_NAME}.headless.keytab",
-      "slider.keytab.principal.name": "${USER_NAME}"
+      "slider.am.keytab.local.path": "${accumulo.headless.keytab}",
+      "slider.keytab.principal.name": "${accumulo.headless.principal}"
+    },
+    "ACCUMULO_MASTER": {
+      "slider.component.security.stores.required": "true"
+    },
+    "ACCUMULO_TSERVER": {
+      "slider.component.security.stores.required": "true"
+    },
+    "ACCUMULO_MONITOR": {
+      "slider.component.security.stores.required": "true"
+    },
+    "ACCUMULO_GC": {
+      "slider.component.security.stores.required": "true"
+    },
+    "ACCUMULO_TRACER": {
+      "slider.component.security.stores.required": "true"
+    },
+    "ACCUMULO_PROXY": {
+      "slider.component.security.stores.required": "true"
     }
   }
 }

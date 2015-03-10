@@ -1858,7 +1858,7 @@ public class AgentProviderService extends AbstractProviderService implements
 
     Map<String, Map<String, String>> configurations =
         new TreeMap<String, Map<String, String>>();
-    Map<String, String> tokens = getStandardTokenMap(appConf);
+    Map<String, String> tokens = getStandardTokenMap(appConf, componentName);
 
     Set<String> configs = new HashSet<String>();
     configs.addAll(getApplicationConfigurationTypes());
@@ -1900,7 +1900,8 @@ public class AgentProviderService extends AbstractProviderService implements
     }
   }
 
-  private Map<String, String> getStandardTokenMap(ConfTreeOperations appConf) throws SliderException {
+  private Map<String, String> getStandardTokenMap(ConfTreeOperations appConf,
+      String componentName) throws SliderException {
     Map<String, String> tokens = new HashMap<String, String>();
     String nnuri = appConf.get("site.fs.defaultFS");
     tokens.put("${NN_URI}", nnuri);
@@ -1912,6 +1913,7 @@ public class AgentProviderService extends AbstractProviderService implements
         .getGlobalOptions()
         .getMandatoryOption(InternalKeys.INTERNAL_DATA_DIR_PATH));
     tokens.put("${JAVA_HOME}", appConf.get(AgentKeys.JAVA_HOME));
+    tokens.put("${COMPONENT_NAME}", componentName);
     return tokens;
   }
 

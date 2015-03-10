@@ -242,6 +242,7 @@
         <targetPath>${test.app.resources.dir}</targetPath>
         <includes>
           <include>appConfig-default.json</include>
+          <include>appConfig-ssl-default.json</include>
         </includes>
       </resource>
     </resources>

@@ -28,7 +28,6 @@
     "site.proxy.port": "${ACCUMULO_PROXY.ALLOCATED_PORT}{PER_CONTAINER}",
 
     "site.global.accumulo_root_password": "NOT_USED",
-    "site.global.ssl_cert_dir": "ssl",
     "site.global.monitor_protocol": "http",
 
     "site.accumulo-site.instance.volumes": "${DEFAULT_DATA_DIR}/data",
