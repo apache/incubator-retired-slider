@@ -21,9 +21,15 @@ appConfig-default.json and resources-default.json are not required to be package
 These files are included as reference configuration for Slider apps and are suitable
 for a one-node cluster.
 
-
 To create the app package you will need the HBase tarball and invoke mvn command
 with appropriate parameters.
+
+Note: Post 0.94 versions of hbase, tarball filenames have a -bin suffix (e.g.
+      hbase-0.98.10.1-hadoop2-bin.tar.gz), although the untarred top level
+      directory does not (e.g hbase-0.98.10.1-hadoop2). We suggest renaming
+      the tar ball file to remove the -bin suffix before proceeding (e.g.
+      hbase-0.98.10.1-hadoop2.tar.gz). In fact the mvn command below assumes
+      you have done so, or else app create will fail.
 
 Command:
 mvn clean package -Phbase-app-package-win -Dpkg.version=<version>
@@ -31,7 +37,7 @@ mvn clean package -Phbase-app-package-win -Dpkg.version=<version>
 
 Example:
 mvn clean package -Phbase-app-package-win -Dpkg.version=0.98.5-hadoop2
-  -Dpkg.name=hbase-0.98.5-hadoop2-bin.zip
+  -Dpkg.name=hbase-0.98.5-hadoop2.zip
   -Dpkg.src=/Users/user1/Downloads
 
 App package can be found in
