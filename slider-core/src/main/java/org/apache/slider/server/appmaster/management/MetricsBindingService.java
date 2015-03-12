@@ -22,9 +22,7 @@ import com.codahale.metrics.JmxReporter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.ScheduledReporter;
 import com.codahale.metrics.Slf4jReporter;
-import com.codahale.metrics.ganglia.GangliaReporter;
 import com.google.common.base.Preconditions;
-import info.ganglia.gmetric4j.gmetric.GMetric;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.CompositeService;
 import org.apache.slider.server.services.workflow.ClosingService;
@@ -86,23 +84,26 @@ public class MetricsBindingService extends CompositeService
 
     // Ganglia
     if (conf.getBoolean(METRICS_GANGLIA_ENABLED, false)) {
-      GangliaReporter gangliaReporter;
+      log.warn("Ganglia integration is not implemented");
+/*
+      // This is all disabled due to transitive dependencies on an LGPL library
+      com.codahale.metrics.ganglia.GangliaReporter gangliaReporter;
       String host = conf.getTrimmed(METRICS_GANGLIA_HOST, "");
       int port = conf.getInt(METRICS_GANGLIA_PORT, DEFAULT_GANGLIA_PORT);
       int interval = conf.getInt(METRICS_GANGLIA_REPORT_INTERVAL, 60);
       int ttl = 1;
-      GMetric.UDPAddressingMode
-          mcast = GMetric.UDPAddressingMode.getModeForAddress(host);
+      info.ganglia.gmetric4j.gmetric.GMetric.UDPAddressingMode
+          mcast = info.ganglia.gmetric4j.gmetric.GMetric.UDPAddressingMode.getModeForAddress(host);
       boolean ganglia31 = conf.getBoolean(METRICS_GANGLIA_VERSION_31, true);
 
-      final GMetric ganglia =
-          new GMetric(
+      final info.ganglia.gmetric4j.gmetric.GMetric ganglia =
+          new info.ganglia.gmetric4j.gmetric.GMetric(
               host,
               port,
               mcast,
               ttl,
               ganglia31);
-      gangliaReporter = GangliaReporter.forRegistry(metrics)
+      gangliaReporter = com.codahale.metrics.ganglia.GangliaReporter.forRegistry(metrics)
                                        .convertRatesTo(TimeUnit.SECONDS)
                                        .convertDurationsTo(
                                            TimeUnit.MILLISECONDS)
@@ -111,6 +112,7 @@ public class MetricsBindingService extends CompositeService
       addService(new ClosingService<ScheduledReporter>(gangliaReporter));
       summary.append(String.format(", Ganglia at %s:%d interval=%d",
           host, port, interval));
+      */
     }
 
     // Logging

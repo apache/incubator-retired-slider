@@ -343,10 +343,12 @@
       <artifactId>metrics-core</artifactId>
     </dependency>
 
+<!--
     <dependency>
       <groupId>com.codahale.metrics</groupId>
       <artifactId>metrics-ganglia</artifactId>
     </dependency>
+-->
 
     <dependency>
       <groupId>com.codahale.metrics</groupId>
