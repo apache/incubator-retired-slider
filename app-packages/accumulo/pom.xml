@@ -48,8 +48,6 @@
     <app.java.home>${java.home}</app.java.home>
     <app.user>yarn</app.user>
     <app.user.group>hadoop</app.user.group>
-    <!-- default slider home for clientInstallConfig -->
-    <slider.dir>${slider.bin.dir}</slider.dir>
     <!-- these are for accumulo processes -->
     <accumulo.keytab />
     <accumulo.principal />
@@ -243,6 +241,7 @@
         <includes>
           <include>appConfig-default.json</include>
           <include>appConfig-ssl-default.json</include>
+          <include>clientInstallConfig-default.json</include>
         </includes>
       </resource>
     </resources>
