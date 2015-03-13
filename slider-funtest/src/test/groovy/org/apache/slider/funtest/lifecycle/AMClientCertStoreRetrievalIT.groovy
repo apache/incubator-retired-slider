@@ -148,6 +148,9 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
       UserGroupInformation.getCurrentUser().getShortUserName() + "/test-" +
       APPLICATION_NAME + ".jceks"
     Path providerPath = ProviderUtils.unnestUri(new URI(providerString))
+    if (clusterFS.exists(providerPath)) {
+      clusterFS.delete(providerPath, false)
+    }
 
     Configuration conf = loadSliderConf()
     conf.set(CredentialProviderFactory.CREDENTIAL_PROVIDER_PATH, providerString)
