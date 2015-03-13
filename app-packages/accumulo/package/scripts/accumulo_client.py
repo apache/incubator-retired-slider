@@ -62,7 +62,7 @@ class AccumuloClient(Script):
         for line in content:
           index = line.find("=")
           if index > 0:
-            configs[line[0:index]] = line[index+1:]
+            configs[line[0:index]] = line[index+1:].rstrip()
       if 'instance.rpc.ssl.enabled' in configs and configs['instance.rpc.ssl.enabled']=='true':
         Logger.info("Configuring client SSL")
         self.check_provider_contains(client_params.credential_provider,
