@@ -1067,7 +1067,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
                                     "INSTALL",
                                     clientInfo.installLocation,
                                     pkgFile,
-                                    config);
+                                    config,
+                                    clientInfo.name);
     return EXIT_SUCCESS;
   }
 
