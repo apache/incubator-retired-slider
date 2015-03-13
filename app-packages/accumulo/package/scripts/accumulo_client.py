@@ -21,12 +21,19 @@ limitations under the License.
 from resource_management import *
 
 class AccumuloClient(Script):
+  def check_provider_contains(self, provider, alias):
+    try:
+      Execute( format("hadoop credential list -provider {provider} | "
+                      "grep -i {alias}"))
+    except:
+      raise Fail(format("{provider} did not contain {alias}, try running "
+                        "'hadoop credential create {alias} -provider "
+                        "{provider}' or configure SSL certs manually"))
+
   def install(self, env):
     import client_params
     env.set_params(client_params)
     self.install_packages(env)
-    Directory(client_params.conf_dir,
-              content=format("{conf_dir}/templates"))
     jarname = "SliderAccumuloUtils.jar"
     File(format("{client_root}/lib/{jarname}"),
          mode=0644,
@@ -44,8 +51,45 @@ class AccumuloClient(Script):
                    mode=0755
     )
     if client_params.app_name:
+      Logger.info("Creating configs for app %s" % client_params.app_name)
+      Directory(client_params.conf_dir,
+                content=format("{conf_dir}/templates"))
       Execute( format("{bin_dir}/accumulo-slider "
                       "--appconf {client_root}/conf --app {app_name} getconf "))
+      configs = {}
+      with open(format("{client_root}/conf/client.conf"),"r") as fp:
+        content = fp.readlines()
+        for line in content:
+          index = line.find("=")
+          if index > 0:
+            configs[line[0:index]] = line[index+1:]
+      if 'instance.rpc.ssl.enabled' in configs and configs['instance.rpc.ssl.enabled']=='true':
+        Logger.info("Configuring client SSL")
+        self.check_provider_contains(client_params.credential_provider,
+                                     client_params.keystore_alias)
+        self.check_provider_contains(client_params.credential_provider,
+                                     client_params.truststore_alias)
+        configs['general.security.credential.provider.paths'] = client_params.credential_provider
+        configs['rpc.javax.net.ssl.keyStore'] = client_params.keystore_path
+        configs['rpc.javax.net.ssl.keyStoreType'] = client_params.store_type
+        configs['rpc.javax.net.ssl.trustStore'] = client_params.truststore_path
+        configs['rpc.javax.net.ssl.trustStoreType'] = client_params.store_type
+        PropertiesFile(format("{client_root}/conf/client.conf"),
+                       properties = configs
+        )
+        Execute( format("SLIDER_CONF_DIR={slider_conf_dir} "
+                        "{slider_home_dir}/bin/slider client --getcertstore "
+                        "--keystore {keystore_path} "
+                        "--name {app_name} --alias {keystore_alias} "
+                        "--provider {credential_provider}"))
+        Execute( format("SLIDER_CONF_DIR={slider_conf_dir} "
+                        "{slider_home_dir}/bin/slider client --getcertstore "
+                        "--truststore {truststore_path} "
+                        "--name {app_name} --alias {truststore_alias} "
+                        "--provider {credential_provider}"))
+    else:
+      Logger.info("No app name provided, leaving client install unconfigured")
+
 
   def configure(self, env):
     pass

@@ -697,7 +697,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     return startCluster(clustername, createArgs);
   }
 
-  private void checkForCredentials(Configuration conf,
+  private static void checkForCredentials(Configuration conf,
       ConfTree tree) throws IOException {
     if (tree.credentials == null || tree.credentials.size()==0) {
       log.info("No credentials requested");
@@ -726,9 +726,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
               br = new BufferedReader(new InputStreamReader(System.in));
             }
             char[] pass = readPassword(alias, br);
-            if (pass == null)
-              throw new IOException("Could not read credentials for " + alias +
-                  " from stdin");
             credentialProvider.createCredentialEntry(alias, pass);
             credentialProvider.flush();
             Arrays.fill(pass, ' ');
@@ -742,9 +739,21 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     }
   }
 
+  private static char[] readOnePassword(String alias) throws IOException {
+    BufferedReader br = null;
+    try {
+      br = new BufferedReader(new InputStreamReader(System.in));
+      return readPassword(alias, br);
+    } finally {
+      if (br != null) {
+        br.close();
+      }
+    }
+  }
+
   // using a normal reader instead of a secure one,
   // because stdin is not hooked up to the command line
-  private char[] readPassword(String alias, BufferedReader br)
+  private static char[] readPassword(String alias, BufferedReader br)
       throws IOException {
     char[] cred = null;
 
@@ -763,6 +772,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       }
       if (newPassword2 != null) Arrays.fill(newPassword2, ' ');
     } while (noMatch);
+    if (cred == null)
+      throw new IOException("Could not read credentials for " + alias +
+          " from stdin");
     return cred;
   }
 
@@ -944,7 +956,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     }
 
     if (clientInfo.name == null) {
-      throw new BadCommandArgumentsException("No applicaiton name specified\n"
+      throw new BadCommandArgumentsException("No application name specified\n"
                                              + CommonArgs.usage(serviceArgs,
                                                                 ACTION_CLIENT));
     }
@@ -975,14 +987,26 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     String password = clientInfo.password;
     if (password == null) {
-      // get a password
-      BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-      try {
-        password = String.valueOf(readPassword(type.name(), br));
-      } finally {
-        if (br != null) {
-          br.close();
+      String provider = clientInfo.provider;
+      String alias = clientInfo.alias;
+      if (provider != null && alias != null) {
+        Configuration conf = new Configuration(getConfig());
+        conf.set(CredentialProviderFactory.CREDENTIAL_PROVIDER_PATH, provider);
+        char[] chars = conf.getPassword(alias);
+        if (chars == null) {
+          CredentialProvider credentialProvider =
+              CredentialProviderFactory.getProviders(conf).get(0);
+          chars = readOnePassword(alias);
+          credentialProvider.createCredentialEntry(alias, chars);
+          credentialProvider.flush();
         }
+        password = String.valueOf(chars);
+        Arrays.fill(chars, ' ');
+      } else {
+        log.info("No password and no provider/alias pair were provided, " +
+            "prompting for password");
+        // get a password
+        password = String.valueOf(readOnePassword(type.name()));
       }
     }
 
@@ -1043,7 +1067,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
                                     "INSTALL",
                                     clientInfo.installLocation,
                                     pkgFile,
-                                    config);
+                                    config,
+                                    clientInfo.name);
     return EXIT_SUCCESS;
   }
 

@@ -57,8 +57,17 @@ public class ActionClientArgs extends AbstractActionArgs {
       description = "The name of the application")
   public String name;
 
+  @Parameter(names = {ARG_PROVIDER},
+      description = "The credential provider in which the password is stored")
+  public String provider;
+
+  @Parameter(names = {ARG_ALIAS},
+      description = "The credential provider alias associated with the password")
+  public String alias;
+
   @Parameter(names = {ARG_PASSWORD},
-      description = "The certificate store password")
+      description = "The certificate store password (alternative to " +
+          "provider/alias; if password is specified, those will be ignored)")
   public String password;
 
   @Parameter(names = {ARG_PACKAGE},
