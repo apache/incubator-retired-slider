@@ -27,6 +27,7 @@ package org.apache.slider.common.params;
  */
 public interface Arguments {
   String ARG_ALL = "--all";
+  String ARG_ALIAS = "--alias";
   String ARG_APPLICATION = "--application";
   String ARG_APP_HOME = "--apphome";
   String ARG_BASE_PATH = "--basepath";

@@ -18,15 +18,14 @@
 
 package org.apache.slider.funtest.lifecycle
 
-import com.jcraft.jsch.Session
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.bigtop.itest.shell.Shell
-import org.apache.chaos.remote.RemoteServer
-import org.apache.chaos.remote.SshCommands
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
+import org.apache.hadoop.security.ProviderUtils
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.hadoop.yarn.api.records.YarnApplicationState
-import org.apache.hadoop.yarn.conf.YarnConfiguration
+import org.apache.hadoop.security.alias.CredentialProvider
+import org.apache.hadoop.security.alias.CredentialProviderFactory
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
@@ -35,7 +34,6 @@ import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
 import org.junit.After
 import org.junit.Assert
-import org.junit.BeforeClass
 import org.junit.Test
 
 import javax.net.ssl.TrustManager
@@ -61,6 +59,21 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
   @After
   public void destroyCluster() {
     cleanup(APPLICATION_NAME)
+  }
+
+  private static KeyStore loadKeystoreFromFile(String filename,
+                                               char[] password) {
+    FileInputStream is = null
+    try {
+      is = new FileInputStream(filename)
+      KeyStore keystore = KeyStore.getInstance("pkcs12")
+      keystore.load(is, password)
+      return keystore
+    } finally {
+      if (is != null) {
+        is.close()
+      }
+    }
   }
 
   @Test
@@ -105,27 +118,9 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     assert new File(filename).exists()
 
-    FileInputStream is = new FileInputStream(filename);
-    KeyStore keystore = KeyStore.getInstance("pkcs12");
-    keystore.load(is, password.toCharArray());
+    KeyStore keystore = loadKeystoreFromFile(filename, password.toCharArray())
 
-    Certificate certificate = keystore.getCertificate(
-        keystore.aliases().nextElement());
-    Assert.assertNotNull(certificate);
-
-    String hostname = InetAddress.localHost.canonicalHostName;
-
-    if (certificate instanceof X509Certificate) {
-      X509Certificate x509cert = (X509Certificate) certificate;
-
-      // Get subject
-      Principal principal = x509cert.getSubjectDN();
-      String subjectDn = principal.getName();
-      Assert.assertEquals("wrong DN",
-                          "CN=" + hostname + ", OU=" + APPLICATION_NAME + ", OU=client",
-                          subjectDn);
-
-    }
+    validateKeystore(keystore)
 
     filename = "/tmp/test.truststore"
     // ensure file doesn't exist
@@ -142,15 +137,89 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     assert new File(filename).exists()
 
-    is = new FileInputStream(filename);
-    KeyStore truststore = KeyStore.getInstance("pkcs12");
-    truststore.load(is, password.toCharArray());
+    KeyStore truststore = loadKeystoreFromFile(filename, password.toCharArray())
+
+    validateTruststore(keystore, truststore);
+
+    // test retrieving using credential provider to provide password
+    filename = "/tmp/test.keystore"
+    String alias = "alias.for.password"
+    String providerString = "jceks://hdfs/user/" +
+      UserGroupInformation.getCurrentUser().getShortUserName() + "/test-" +
+      APPLICATION_NAME + ".jceks"
+    Path providerPath = ProviderUtils.unnestUri(new URI(providerString))
+
+    Configuration conf = loadSliderConf()
+    conf.set(CredentialProviderFactory.CREDENTIAL_PROVIDER_PATH, providerString)
+    CredentialProvider provider =
+      CredentialProviderFactory.getProviders(conf).get(0)
+    provider.createCredentialEntry(alias, password.toCharArray())
+    provider.flush()
+    assert clusterFS.exists(providerPath), "jks $providerString not created"
+    log.info("Created credential provider $providerString for test")
+
+    // ensure file doesn't exist
+    new File(filename).delete();
+
+    shell = slider(EXIT_SUCCESS,
+      [
+        ACTION_CLIENT,
+        ARG_GETCERTSTORE,
+        ARG_KEYSTORE, filename,
+        ARG_NAME, APPLICATION_NAME,
+        ARG_ALIAS, alias,
+        ARG_PROVIDER, providerString
+      ])
+
+    assert new File(filename).exists()
+
+    keystore = loadKeystoreFromFile(filename, password.toCharArray())
+
+    validateKeystore(keystore)
+
+    filename = "/tmp/test.truststore"
+    // ensure file doesn't exist
+    new File(filename).delete();
+
+    shell = slider(EXIT_SUCCESS,
+      [
+        ACTION_CLIENT,
+        ARG_GETCERTSTORE,
+        ARG_TRUSTSTORE, filename,
+        ARG_NAME, APPLICATION_NAME,
+        ARG_ALIAS, alias,
+        ARG_PROVIDER, providerString
+      ])
+
+    assert new File(filename).exists()
+
+    truststore = loadKeystoreFromFile(filename, password.toCharArray())
 
     validateTruststore(keystore, truststore);
 
   }
 
-  private void validateTruststore(KeyStore keystore, KeyStore truststore)
+  private static void validateKeystore(KeyStore keystore) {
+    Certificate certificate = keystore.getCertificate(
+      keystore.aliases().nextElement());
+    Assert.assertNotNull(certificate);
+
+    String hostname = InetAddress.localHost.canonicalHostName;
+
+    if (certificate instanceof X509Certificate) {
+      X509Certificate x509cert = (X509Certificate) certificate;
+
+      // Get subject
+      Principal principal = x509cert.getSubjectDN();
+      String subjectDn = principal.getName();
+      Assert.assertEquals("wrong DN",
+        "CN=" + hostname + ", OU=" + APPLICATION_NAME + ", OU=client",
+        subjectDn);
+
+    }
+  }
+
+  private static void validateTruststore(KeyStore keystore, KeyStore truststore)
       throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
     // obtain server cert
     Certificate certificate = keystore.getCertificate(
