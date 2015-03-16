@@ -30,7 +30,9 @@ import org.apache.slider.common.SliderXmlConfKeys;
 import java.lang.annotation.Annotation;
 
 /**
- * This is where security may go
+ * This is where security information goes.
+ * It is referred to in the <code>META-INF/services/org.apache.hadoop.security.SecurityInfo</code>
+ * resource of this JAR, which is used to find the binding info
  */
 public class SliderRPCSecurityInfo extends SecurityInfo {
 

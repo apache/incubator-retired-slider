@@ -69,7 +69,7 @@ public class PortScanner {
   }
 
   public int getAvailablePort() throws SliderException {
-    if (remainingPortsToCheck!=null) {
+    if (remainingPortsToCheck != null) {
       return getAvailablePortViaPortArray();
     } else {
       return getAvailablePortViaCounter();

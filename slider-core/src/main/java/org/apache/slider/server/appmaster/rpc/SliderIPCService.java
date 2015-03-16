@@ -108,7 +108,8 @@ public class SliderIPCService extends AbstractService
       CertificateManager certificateManager,
       StateAccessForProviders state,
       QueueAccess actionQueues,
-      MetricsAndMonitoring metricsAndMonitoring, ContentCache cache) {
+      MetricsAndMonitoring metricsAndMonitoring,
+      ContentCache cache) {
     super("SliderIPCService");
     Preconditions.checkArgument(amOperations != null, "null amOperations");
     Preconditions.checkArgument(state != null, "null appState");
