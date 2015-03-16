@@ -34,6 +34,11 @@ import java.util.Map;
 /**
  * Tracks outstanding requests made with a specific placement option.
  * <p>
+ *   <ol>
+ *     <li>Used to decide when to return a node to 'can request containers here' list</li>
+ *     <li>Used to identify requests where placement has timed out, and so issue relaxed requests</li>
+ *   </ol>
+ * <p>
  * If an allocation comes in that is not in the map: either the allocation
  * was unplaced, or the placed allocation could not be met on the specified
  * host, and the RM/scheduler fell back to another location. 
@@ -56,7 +61,7 @@ public class OutstandingRequestTracker {
    * @param role role index
    * @return a new request
    */
-  public synchronized OutstandingRequest addRequest(NodeInstance instance, int role) {
+  public synchronized OutstandingRequest newRequest(NodeInstance instance, int role) {
     OutstandingRequest request =
       new OutstandingRequest(role, instance);
     if (request.isLocated()) {
@@ -69,7 +74,7 @@ public class OutstandingRequestTracker {
    * Look up any oustanding request to a (role, hostname). 
    * @param role role index
    * @param hostname hostname
-   * @return the request or null if there was no outstanding one
+   * @return the request or null if there was no outstanding one in the {@link #placedRequests}
    */
   public synchronized OutstandingRequest lookup(int role, String hostname) {
     return placedRequests.get(new OutstandingRequest(role, hostname));
@@ -78,7 +83,7 @@ public class OutstandingRequestTracker {
   /**
    * Remove a request
    * @param request matching request to find
-   * @return the request
+   * @return the request or null for no match in the {@link #placedRequests}
    */
   public synchronized OutstandingRequest remove(OutstandingRequest request) {
     return placedRequests.remove(request);
@@ -86,10 +91,10 @@ public class OutstandingRequestTracker {
 
   /**
    * Notification that a container has been allocated -drop it
-   * from the list of outstanding roles if need be
+   * from the {@link #placedRequests} structure.
    * @param role role index
    * @param hostname hostname
-   * @return true if an entry was found and dropped
+   * @return true if an entry was found and removed
    */
   public synchronized boolean onContainerAllocated(int role, String hostname) {
     OutstandingRequest request =
@@ -167,21 +172,21 @@ public class OutstandingRequestTracker {
    * in container assignments if more come back than expected
    * @param rh RoleHistory instance
    * @param inAllocated the list of allocated containers
-   * @param outRequested initially empty list of requested locations 
-   * @param outUnrequested initially empty list of unrequested hosts
+   * @param outPlaceRequested initially empty list of requested locations 
+   * @param outUnplaced initially empty list of unrequested hosts
    */
   public synchronized void partitionRequests(RoleHistory rh,
       List<Container> inAllocated,
-      List<Container> outRequested,
-      List<Container> outUnrequested) {
+      List<Container> outPlaceRequested,
+      List<Container> outUnplaced) {
     Collections.sort(inAllocated, new newerThan(rh));
     for (Container container : inAllocated) {
       int role = ContainerPriority.extractRole(container);
       String hostname = RoleHistoryUtils.hostnameOf(container);
       if (placedRequests.containsKey(new OutstandingRequest(role, hostname))) {
-        outRequested.add(container);
+        outPlaceRequested.add(container);
       } else {
-        outUnrequested.add(container);
+        outUnplaced.add(container);
       }
     }
   }

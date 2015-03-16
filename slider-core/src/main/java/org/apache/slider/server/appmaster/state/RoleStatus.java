@@ -74,6 +74,10 @@ public final class RoleStatus implements Cloneable {
     return providerRole.placementPolicy;
   }
 
+  public long getPlacementTimeoutSeconds() {
+    return providerRole.placementTimeoutSeconds;
+  }
+  
   /**
    * The number of failures on a specific node that can be tolerated
    * before selecting a different node for placement

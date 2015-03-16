@@ -745,7 +745,7 @@ public class AppState {
    */
   private List<ProviderRole> buildRoleRequirementsFromResources() throws BadConfigException {
 
-    List<ProviderRole> newRoles = new ArrayList<ProviderRole>(0);
+    List<ProviderRole> newRoles = new ArrayList<>(0);
     
     //now update every role's desired count.
     //if there are no instance values, that role count goes to zero
@@ -992,7 +992,7 @@ public class AppState {
   public synchronized List<RoleInstance> cloneLiveContainerInfoList() {
     List<RoleInstance> allRoleInstances;
     Collection<RoleInstance> values = getLiveNodes().values();
-    allRoleInstances = new ArrayList<RoleInstance>(values);
+    allRoleInstances = new ArrayList<>(values);
     return allRoleInstances;
   }
 
@@ -1220,7 +1220,6 @@ public class AppState {
     AMRMClient.ContainerRequest request;
     request = roleHistory.requestNode(role, resource, labelExpression);
     incrementRequestCount(role);
-
     return request;
   }
 
@@ -1509,7 +1508,7 @@ public class AppState {
           actual,
           releasing,
           completedCount);
-      roleHistory.onReleaseCompleted(container, true);
+      roleHistory.onReleaseCompleted(container);
 
     } else if (surplusNodes.remove(containerId)) {
       //its a surplus one being purged
@@ -1873,7 +1872,7 @@ public class AppState {
   @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
   private List<AbstractRMOperation> reviewOneRole(RoleStatus role)
       throws SliderInternalStateException, TriggerClusterTeardownException {
-    List<AbstractRMOperation> operations = new ArrayList<AbstractRMOperation>();
+    List<AbstractRMOperation> operations = new ArrayList<>();
     int delta;
     String details;
     int expected;

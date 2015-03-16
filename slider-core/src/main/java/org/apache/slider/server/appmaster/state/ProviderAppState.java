@@ -47,7 +47,7 @@ public class ProviderAppState implements StateAccessForProviders {
 
 
   private final Map<String, PublishedConfigSet> publishedConfigSets =
-      new ConcurrentHashMap<String, PublishedConfigSet>(5);
+      new ConcurrentHashMap<>(5);
   private final PublishedExportsSet publishedExportsSets = new PublishedExportsSet();
   private static final PatternValidator validator = new PatternValidator(
       RestPaths.PUBLISHED_CONFIGURATION_SET_REGEXP);
@@ -106,7 +106,7 @@ public class ProviderAppState implements StateAccessForProviders {
   public List<String> listConfigSets() {
 
     synchronized (publishedConfigSets) {
-      List<String> sets = new ArrayList<String>(publishedConfigSets.keySet());
+      List<String> sets = new ArrayList<>(publishedConfigSets.keySet());
       return sets;
     }
   }
@@ -266,7 +266,7 @@ public class ProviderAppState implements StateAccessForProviders {
     RoleStatus roleStatus = lookupRoleStatus(component);
     List<RoleInstance> ownedContainerList = cloneOwnedContainerList();
     List<RoleInstance> matching =
-        new ArrayList<RoleInstance>(ownedContainerList.size());
+        new ArrayList<>(ownedContainerList.size());
     int roleId = roleStatus.getPriority();
     for (RoleInstance instance : ownedContainerList) {
       if (instance.roleId == roleId) {
@@ -281,7 +281,7 @@ public class ProviderAppState implements StateAccessForProviders {
     RoleStatus roleStatus = lookupRoleStatus(component);
     ComponentInformation info = roleStatus.serialize();
     List<RoleInstance> containers = lookupRoleContainers(component);
-    info.containers = new ArrayList<String>(containers.size());
+    info.containers = new ArrayList<>(containers.size());
     for (RoleInstance container : containers) {
       info.containers.add(container.id);
     }

@@ -16,37 +16,28 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster.state;
+package org.apache.slider.server.avro;
 
-import org.apache.slider.common.tools.Comparators;
+import org.apache.hadoop.fs.Path;
 
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
 
 /**
- * Sort the candidate list by the most recent container first.
+ * Compare two filenames by name; the more recent one comes first
  */
-public class MostRecentContainerReleaseSelector implements ContainerReleaseSelector {
+public class NewerFilesFirst implements Comparator<Path>, Serializable {
 
+  /**
+   * Takes the ordering of path names from the normal string comparison
+   * and negates it, so that names that come after other names in 
+   * the string sort come before here
+   * @param o1 leftmost 
+   * @param o2 rightmost
+   * @return positive if o1 &gt; o2 
+   */
   @Override
-  public List<RoleInstance> sortCandidates(int roleId,
-      List<RoleInstance> candidates,
-      int minimumToSelect) {
-    Collections.sort(candidates, new newerThan());
-    return candidates;
+  public int compare(Path o1, Path o2) {
+    return (o2.getName().compareTo(o1.getName()));
   }
-
-  private static class newerThan implements Comparator<RoleInstance>, Serializable {
-    private final Comparator<Long> innerComparator =
-        new Comparators.ComparatorReverser<>(new Comparators.LongComparator());
-    public int compare(RoleInstance o1, RoleInstance o2) {
-      return innerComparator.compare(o1.createTime, o2.createTime);
-
-    }
-    
-  }
-  
-  
 }

@@ -38,7 +38,7 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest {
 
   @Test
   public void testAddRetrieveEntry() throws Throwable {
-    OutstandingRequest request = tracker.addRequest(host1, 0)
+    OutstandingRequest request = tracker.newRequest(host1, 0)
     assert tracker.lookup(0, "host1").equals(request)
     assert tracker.remove(request).equals(request)
     assert !tracker.lookup(0, "host1")
@@ -46,9 +46,9 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest {
 
   @Test
   public void testAddCompleteEntry() throws Throwable {
-    tracker.addRequest(host1, 0)
-    tracker.addRequest(host2, 0)
-    tracker.addRequest(host1, 1)
+    tracker.newRequest(host1, 0)
+    tracker.newRequest(host2, 0)
+    tracker.newRequest(host1, 1)
     assert tracker.onContainerAllocated(1, "host1")
     assert !tracker.lookup(1, "host1")
     assert tracker.lookup(0, "host1")
@@ -56,9 +56,9 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest {
   
   @Test
   public void testCancelEntries() throws Throwable {
-    OutstandingRequest r1 = tracker.addRequest(host1, 0)
-    OutstandingRequest r2 = tracker.addRequest(host2, 0)
-    OutstandingRequest r3 = tracker.addRequest(host1, 1)
+    OutstandingRequest r1 = tracker.newRequest(host1, 0)
+    OutstandingRequest r2 = tracker.newRequest(host2, 0)
+    OutstandingRequest r3 = tracker.newRequest(host1, 1)
     List<NodeInstance> canceled = tracker.cancelOutstandingRequests(0)
     assert canceled.size() == 2
     assert canceled.contains(host1)

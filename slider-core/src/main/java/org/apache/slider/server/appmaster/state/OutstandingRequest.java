@@ -19,11 +19,16 @@
 package org.apache.slider.server.appmaster.state;
 
 
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Tracks an outstanding request. This is used to correlate an allocation response
@@ -50,18 +55,35 @@ public final class OutstandingRequest {
    * Node the request is for -may be null
    */
   public final NodeInstance node;
+  
   /**
    * hostname -will be null if node==null
    */
   public final String hostname;
 
   /**
-   * requested time -only valid after {@link #buildContainerRequest(Resource, RoleStatus, long, String)}
+   * Requested time in millis.
+   * <p>
+   * Only valid after {@link #buildContainerRequest(Resource, RoleStatus, long, String)}
    */
-  public long requestedTime;
+  public AMRMClient.ContainerRequest issuedRequest;
+  
+  /**
+   * Requested time in millis.
+   * <p>
+   * Only valid after {@link #buildContainerRequest(Resource, RoleStatus, long, String)}
+   */
+  public long requestedTimeMillis;
 
   /**
-   * Has the placement request been escalated by cancel and re-request
+   * Time in millis after which escalation should be triggered..
+   * <p>
+   * Only valid after {@link #buildContainerRequest(Resource, RoleStatus, long, String)}
+   */
+  public long escalationTimeoutMillis;
+
+  /**
+   * Has the placement request been escalated?
    */
   public boolean escalated;
   
@@ -91,9 +113,14 @@ public final class OutstandingRequest {
     this.hostname = hostname;
   }
 
+  /**
+   * Is the request located in the cluster, that is: does it have a node.
+   * @return
+   */
   public boolean isLocated() {
     return node != null;
   }
+  
   /**
    * Build a container request.
    * If the request has an address, it is set in the container request
@@ -103,7 +130,7 @@ public final class OutstandingRequest {
    * on outstanding requests
    * @param resource resource
    * @param role role
-   * @param time time to record as request time
+   * @param time time in millis to record as request time
    * @param labelExpression label to satisfy
    * @return the request to raise
    */
@@ -111,7 +138,8 @@ public final class OutstandingRequest {
       Resource resource, RoleStatus role, long time, String labelExpression) {
     String[] hosts;
     boolean relaxLocality;
-    requestedTime = time;
+    requestedTimeMillis = time;
+    escalationTimeoutMillis = time + role.getPlacementTimeoutSeconds() * 1000;
     boolean usePlacementHistory = role.isStrictPlacement();
     if (!usePlacementHistory) {
       // If strict placement does not mandate using placement then check
@@ -133,23 +161,56 @@ public final class OutstandingRequest {
       // tell the node it is in play
       node.getOrCreate(roleId);
       log.info("Submitting request for container on {}", hosts[0]);
+      escalated = false;
     } else {
+      // the placement is implicitly escalated.
+      escalated = true;
       hosts = null;
       relaxLocality = true;
     }
-    Priority pri = ContainerPriority.createPriority(roleId,
-                                                    !relaxLocality);
-    AMRMClient.ContainerRequest request =
-      new AMRMClient.ContainerRequest(resource,
+    Priority pri = ContainerPriority.createPriority(roleId, !relaxLocality);
+    issuedRequest = new AMRMClient.ContainerRequest(resource,
                                       hosts,
                                       null,
                                       pri,
                                       relaxLocality,
                                       labelExpression);
 
-    return request;
+    return issuedRequest;
   }
 
+
+  /**
+   * Build an escalated container request, updating {@link #issuedRequest} with
+   * the new value.
+   * @return the new container request, which has the same resource and label requirements
+   * as the original one, and the same host, but: relaxed placement, and a changed priority
+   * so as to place it into the relaxed list.
+   */
+  public AMRMClient.ContainerRequest buildEscalatedContainerRequest() {
+    escalated = true;
+    Preconditions.checkNotNull(issuedRequest, "issued request");
+    Priority pri = ContainerPriority.createPriority(roleId, true);
+    String[] nodes;
+    List<String> issuedRequestNodes = issuedRequest.getNodes();
+    if (issuedRequestNodes != null) {
+      nodes = issuedRequestNodes.toArray(new String[issuedRequestNodes.size()]);
+    } else {
+      nodes = null;
+    }
+
+
+    AMRMClient.ContainerRequest newRequest =
+        new AMRMClient.ContainerRequest(issuedRequest.getCapability(),
+            nodes,
+            null,
+            pri,
+            true,
+            issuedRequest.getNodeLabelExpression());
+    issuedRequest = newRequest;
+    return issuedRequest;
+  }
+      
   /**
    * Mark the request as completed (or canceled).
    */
@@ -202,7 +263,7 @@ public final class OutstandingRequest {
       new StringBuilder("OutstandingRequest{");
     sb.append("roleId=").append(roleId);
     sb.append(", node='").append(node).append('\'');
-    sb.append(", requestedTime=").append(requestedTime);
+    sb.append(", requestedTime=").append(requestedTimeMillis);
     sb.append('}');
     return sb.toString();
   }

@@ -26,6 +26,7 @@ import org.apache.slider.server.appmaster.model.mock.MockFactory
 import org.apache.slider.server.appmaster.state.NodeEntry
 import org.apache.slider.server.appmaster.state.NodeInstance
 import org.apache.slider.server.appmaster.state.RoleHistory
+import org.apache.slider.server.avro.NewerFilesFirst
 import org.apache.slider.server.avro.RoleHistoryWriter
 import org.junit.Test
 
@@ -119,7 +120,7 @@ class TestRoleHistoryRWOrdering extends BaseMockAppStateTest {
   @Test
   public void testPathnameComparator() throws Throwable {
 
-    def newerName = new RoleHistoryWriter.NewerFilesFirst()
+    def newerName = new NewerFilesFirst()
     
     log.info("$h_5fffa name is ${h_5fffa.getName()}")
     log.info("$h_0406c name is ${h_0406c.getName()}")

@@ -96,6 +96,22 @@ public class NodeInstance {
   }
 
   /**
+   * Query for a node being considered unreliable
+   * @param role role key
+   * @param threshold threshold above which a node is considered unreliable
+   * @return true if the node is considered unreliable
+   */
+  public boolean isConsideredUnreliable(int role, int threshold) {
+    NodeEntry entry = get(role);
+    
+    if (entry != null) {
+      return entry.getFailedRecently() > threshold;
+    } else {
+      return false;
+    }
+  }
+
+  /**
    * Get the entry for a role -and remove it if present
    * @param role the role index
    * @return the entry that WAS there
@@ -113,6 +129,7 @@ public class NodeInstance {
     nodeEntries.add(nodeEntry);
   }
 
+  
   /**
    * run through each entry; gc'ing & removing old ones
    * @param absoluteTime age in millis
@@ -185,28 +202,49 @@ public class NodeInstance {
   }
 
   /**
-   * A comparator for sorting entries where the role is newer than
-   * the other. 
-   * This sort only compares the lastUsed field, not whether the
-   * node is in use or not
+   * A comparator for sorting entries where the node is preferred over another.
+   * If there's no entry for an element then it's failure count is set to -1, age to 0
+   * for the purposes of the comparison
+   * <ol>
+   *   <li>Entry exists => end of list as unknown</li>
+   *   <li>Lowest failure count</li>
+   *   <li>Age</li>
+   * </ol>
+   * 
+   * @return +ve int if left is preferred to right; -ve if right over left, 0 for equal
    */
-  public static class newerThan implements Comparator<NodeInstance>,
+  public static class Preferred implements Comparator<NodeInstance>,
                                            Serializable {
 
     final int role;
 
-    public newerThan(int role) {
+    public Preferred(int role) {
       this.role = role;
     }
 
     @Override
     public int compare(NodeInstance o1, NodeInstance o2) {
-      long age = o1.getOrCreate(role).getLastUsed();
-      long age2 = o2.getOrCreate(role).getLastUsed();
+      NodeEntry left = o1.get(role);
+      NodeEntry right = o2.get(role);
+
+      // sort by failure count first
+      int failL = left != null ? left.getFailedRecently() : -1;
+      int failR = right != null ? right.getFailedRecently() : -1;
       
-      if (age > age2) {
+      if (failL < failR) {
+        return 1;
+      }
+      if (failR > failL) {
         return -1;
-      } else if (age < age2) {
+      }
+      
+      // failure counts are equal: compare age
+      long ageL = left != null ? left.getLastUsed() : 0;
+      long ageR = right != null ? right.getLastUsed() : 0;
+      
+      if (ageL > ageR) {
+        return -1;
+      } else if (ageL < ageR) {
         return 1;
       }
       // equal
@@ -220,12 +258,12 @@ public class NodeInstance {
    * This sort only compares the lastUsed field, not whether the
    * node is in use or not
    */
-  public static class moreActiveThan implements Comparator<NodeInstance>,
+  public static class MoreActiveThan implements Comparator<NodeInstance>,
                                            Serializable {
 
     final int role;
 
-    public moreActiveThan(int role) {
+    public MoreActiveThan(int role) {
       this.role = role;
     }
 
