@@ -51,29 +51,10 @@ log_dir = config['configurations']['global']['app_log_dir']
 daemon_script = format("{accumulo_root}/bin/accumulo")
 proxy_conf = format("{conf_dir}/proxy.properties")
 
-# accumulo monitor certificate properties
-monitor_security_enabled = config['configurations']['global']['monitor_protocol'] == "https"
-monitor_keystore_property = "monitor.ssl.keyStore"
-monitor_truststore_property = "monitor.ssl.trustStore"
-
-# accumulo ssl properties
-ssl_enabled = False
-if 'instance.rpc.ssl.enabled' in config['configurations']['accumulo-site']:
-  ssl_enabled = config['configurations']['accumulo-site']['instance.rpc.ssl.enabled']
+# accumulo clientauth
 clientauth_enabled = False
 if 'instance.rpc.ssl.clientAuth' in config['configurations']['accumulo-site']:
   clientauth_enabled = config['configurations']['accumulo-site']['instance.rpc.ssl.clientAuth']
-ssl_cert_dir = config['configurations']['global']['ssl_cert_dir']
-keystore_path = format("{conf_dir}/ssl/keystore.jks")
-truststore_path = format("{conf_dir}/ssl/truststore.jks")
-ssl_keystore_file_property = "rpc.javax.net.ssl.keyStore"
-ssl_truststore_file_property = "rpc.javax.net.ssl.trustStore"
-credential_provider = config['configurations']['accumulo-site']["general.security.credential.provider.paths"]
-#credential_provider = credential_provider.replace("${HOST}", hostname) # if enabled, must propagate to configuration
-if ssl_keystore_file_property in config['configurations']['accumulo-site']:
-  keystore_path = config['configurations']['accumulo-site'][ssl_keystore_file_property]
-if ssl_truststore_file_property in config['configurations']['accumulo-site']:
-  truststore_path = config['configurations']['accumulo-site'][ssl_truststore_file_property]
 
 # accumulo initialization parameters
 accumulo_instance_name = config['configurations']['client']['instance.name']

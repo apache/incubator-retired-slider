@@ -318,3 +318,14 @@ message EmptyPayloadProto {
 message WrappedJsonProto {
   required string json = 1;
 }
+
+message GetCertificateStoreRequestProto {
+  optional string hostname = 1;
+  required string requesterId = 2;
+  required string password = 3;
+  required string type = 4;
+}
+
+message GetCertificateStoreResponseProto {
+  required bytes store = 1;
+}

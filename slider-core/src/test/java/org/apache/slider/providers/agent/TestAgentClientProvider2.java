@@ -20,6 +20,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.registry.client.binding.RegistryUtils;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.slider.api.InternalKeys;
 import org.apache.slider.client.SliderClient;
@@ -60,7 +61,7 @@ import static org.easymock.EasyMock.expect;
  *
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ProviderUtils.class, ProcessBuilder.class, AgentClientProvider.class})
+@PrepareForTest({ProviderUtils.class, ProcessBuilder.class, AgentClientProvider.class, RegistryUtils.class})
 public class TestAgentClientProvider2 {
   protected static final Logger log =
       LoggerFactory.getLogger(TestAgentClientProvider2.class);
@@ -119,6 +120,7 @@ public class TestAgentClientProvider2 {
     JSONObject global = new JSONObject();
     global.put("a", "b");
     global.put("d", "{app_install_dir}/d");
+    global.put("e", "{app_name}");
     inputConfig.put("global", global);
 
     Metainfo metainfo = new Metainfo();
@@ -133,29 +135,42 @@ public class TestAgentClientProvider2 {
     pkg.setType("tarball");
 
     File clientInstallPath = new File("/tmp/file1");
+    String appName = "name";
+    String user = "username";
+
+    PowerMock.mockStaticPartial(RegistryUtils.class, "currentUser");
+    expect(RegistryUtils.currentUser()).andReturn(user).times(2);
+    PowerMock.replay(RegistryUtils.class);
 
     JSONObject output = provider.getCommandJson(defaultConfig,
                                                 inputConfig,
                                                 metainfo,
-                                                clientInstallPath);
+                                                clientInstallPath,
+                                                appName);
     JSONObject outConfigs = output.getJSONObject("configurations");
     Assert.assertNotNull(outConfigs);
     JSONObject outGlobal = outConfigs.getJSONObject("global");
     Assert.assertNotNull(outGlobal);
     Assert.assertEquals("b", outGlobal.getString("a"));
     Assert.assertEquals("/tmp/file1/d", outGlobal.getString("d"));
+    Assert.assertEquals("/tmp/file1", outGlobal.getString("app_install_dir"));
+    Assert.assertEquals("name", outGlobal.getString("e"));
+    Assert.assertEquals("name", outGlobal.getString("app_name"));
+    Assert.assertEquals(user, outGlobal.getString("app_user"));
 
     defaultConfig = new JSONObject();
     global = new JSONObject();
     global.put("a1", "b2");
     global.put("a", "b-not");
     global.put("d1", "{app_install_dir}/d");
+    global.put("e", "{app_name}");
     defaultConfig.put("global", global);
 
     output = provider.getCommandJson(defaultConfig,
                                      inputConfig,
                                      metainfo,
-                                     clientInstallPath);
+                                     clientInstallPath,
+                                     null);
     outConfigs = output.getJSONObject("configurations");
     Assert.assertNotNull(outConfigs);
     outGlobal = outConfigs.getJSONObject("global");
@@ -164,6 +179,12 @@ public class TestAgentClientProvider2 {
     Assert.assertEquals("/tmp/file1/d", outGlobal.getString("d"));
     Assert.assertEquals("b2", outGlobal.getString("a1"));
     Assert.assertEquals("/tmp/file1/d", outGlobal.getString("d1"));
+    Assert.assertEquals("/tmp/file1", outGlobal.getString("app_install_dir"));
+    Assert.assertEquals("{app_name}", outGlobal.getString("e"));
+    Assert.assertFalse(outGlobal.has("app_name"));
+    Assert.assertEquals(user, outGlobal.getString("app_user"));
+
+    PowerMock.verify(RegistryUtils.class);
   }
 
 
@@ -204,13 +225,6 @@ public class TestAgentClientProvider2 {
     SliderClient client = new SliderClient();
     client.bindArgs(new Configuration(), "client", "--dest", "a_random_path/none", "--package", "a_random_pkg.zip");
     ActionClientArgs args = new ActionClientArgs();
-    args.install = false;
-    try {
-      client.actionClient(args);
-    }catch(BadCommandArgumentsException e) {
-      log.info(e.getMessage());
-      Assert.assertTrue(e.getMessage().contains("Only install command is supported for the client"));
-    }
 
     args.install = true;
     try {

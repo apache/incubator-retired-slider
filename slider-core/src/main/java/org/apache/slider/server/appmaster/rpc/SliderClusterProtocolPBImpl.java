@@ -281,4 +281,16 @@ public class SliderClusterProtocolPBImpl implements SliderClusterProtocolPB {
       throw wrap(e);
     }
   }
+
+  @Override
+  public Messages.GetCertificateStoreResponseProto getClientCertificateStore(
+      RpcController controller,
+      Messages.GetCertificateStoreRequestProto request)
+      throws ServiceException {
+    try {
+      return real.getClientCertificateStore(request);
+    } catch (Exception e) {
+      throw wrap(e);
+    }
+  }
 }

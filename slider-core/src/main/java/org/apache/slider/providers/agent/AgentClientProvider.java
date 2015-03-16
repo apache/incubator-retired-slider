@@ -26,6 +26,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.registry.client.binding.RegistryUtils;
 import org.apache.slider.api.InternalKeys;
 import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.common.SliderKeys;
@@ -291,7 +292,8 @@ public class AgentClientProvider extends AbstractClientProvider
                                      String operation,
                                      File clientInstallPath,
                                      File appPackage,
-                                     JSONObject config) throws SliderException {
+                                     JSONObject config,
+                                     String name) throws SliderException {
     // create temp folder
     // create sub-folders app_pkg, agent_pkg, command
     File tmpDir = Files.createTempDir();
@@ -365,7 +367,7 @@ public class AgentClientProvider extends AbstractClientProvider
 
       expandAgentTar(agentPkgDir);
 
-      JSONObject commandJson = getCommandJson(defaultConfig, config, metaInfo, clientInstallPath);
+      JSONObject commandJson = getCommandJson(defaultConfig, config, metaInfo, clientInstallPath, name);
       FileWriter file = new FileWriter(new File(cmdDir, "command.json"));
       try {
         file.write(commandJson.toString());
@@ -502,7 +504,8 @@ public class AgentClientProvider extends AbstractClientProvider
   protected JSONObject getCommandJson(JSONObject defaultConfig,
                                       JSONObject inputConfig,
                                       Metainfo metainfo,
-                                      File clientInstallPath) throws SliderException {
+                                      File clientInstallPath,
+                                      String name) throws SliderException {
     try {
       JSONObject pkgList = new JSONObject();
       pkgList.put(AgentKeys.PACKAGE_LIST,
@@ -510,15 +513,20 @@ public class AgentClientProvider extends AbstractClientProvider
       JSONObject obj = new JSONObject();
       obj.put("hostLevelParams", pkgList);
 
+      String user = RegistryUtils.currentUser();
       JSONObject configuration = new JSONObject();
       JSONObject global = new JSONObject();
       global.put("app_install_dir", clientInstallPath.getAbsolutePath());
+      global.put("app_user", user);
+      if (name != null) {
+        global.put("app_name", name);
+      }
 
       if (defaultConfig != null) {
-        readConfigEntries(defaultConfig, clientInstallPath, global);
+        readConfigEntries(defaultConfig, clientInstallPath, global, name, user);
       }
       if (inputConfig != null) {
-        readConfigEntries(inputConfig, clientInstallPath, global);
+        readConfigEntries(inputConfig, clientInstallPath, global, name, user);
       }
 
       configuration.put("global", global);
@@ -532,7 +540,8 @@ public class AgentClientProvider extends AbstractClientProvider
 
   private void readConfigEntries(JSONObject inpConfig,
                                  File clientInstallPath,
-                                 JSONObject globalConfig)
+                                 JSONObject globalConfig,
+                                 String name, String user)
       throws JSONException {
     JSONObject globalSection = inpConfig.getJSONObject("global");
     Iterator it = globalSection.keys();
@@ -541,6 +550,10 @@ public class AgentClientProvider extends AbstractClientProvider
       String value = globalSection.getString(key);
       if (SliderUtils.isSet(value)) {
         value = value.replace("{app_install_dir}", clientInstallPath.getAbsolutePath());
+        value = value.replace("{app_user}", user);
+        if (name != null) {
+          value = value.replace("{app_name}", name);
+        }
       }
       if (globalConfig.has(key)) {
         // last one wins

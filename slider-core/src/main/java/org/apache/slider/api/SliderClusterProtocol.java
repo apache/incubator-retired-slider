@@ -18,7 +18,6 @@
 
 package org.apache.slider.api;
 
-import com.google.protobuf.RpcController;
 import org.apache.hadoop.ipc.VersionedProtocol;
 import org.apache.hadoop.security.KerberosInfo;
 import org.apache.hadoop.yarn.exceptions.YarnException;
@@ -160,6 +159,7 @@ public interface SliderClusterProtocol extends VersionedProtocol {
   Messages.WrappedJsonProto getModelResolvedResources(Messages.EmptyPayloadProto request) throws IOException;
    
   Messages.WrappedJsonProto getLiveResources(Messages.EmptyPayloadProto request) throws IOException;
-    
-  
+
+  Messages.GetCertificateStoreResponseProto getClientCertificateStore(Messages.GetCertificateStoreRequestProto request)
+      throws IOException;
 }

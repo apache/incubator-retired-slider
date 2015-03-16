@@ -224,16 +224,18 @@ public abstract class AbstractClientProvider extends Configured {
    * Process client operations for applications such as install, configure
    * @param fileSystem
    * @param operation
-   * @param config
-   * @param clientPackage
    * @param clientInstallPath
+   * @param clientPackage
+   * @param config
+   * @param name
    * @throws SliderException
    */
   public void processClientOperation(SliderFileSystem fileSystem,
                                      String operation,
                                      File clientInstallPath,
                                      File clientPackage,
-                                     JSONObject config)
+                                     JSONObject config,
+                                     String name)
       throws SliderException {
     throw new SliderException("Provider does not support client operations.");
   }

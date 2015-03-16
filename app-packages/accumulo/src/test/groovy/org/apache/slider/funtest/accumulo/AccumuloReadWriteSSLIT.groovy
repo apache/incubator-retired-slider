@@ -24,7 +24,6 @@ import org.apache.accumulo.core.client.security.tokens.PasswordToken
 import org.apache.hadoop.registry.client.api.RegistryConstants
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.client.SliderClient
-import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.funtest.framework.FuntestProperties
 
 import static org.apache.slider.funtest.accumulo.AccumuloReadWriteIT.ingest
@@ -32,6 +31,10 @@ import static org.apache.slider.funtest.accumulo.AccumuloReadWriteIT.interleaveT
 import static org.apache.slider.funtest.accumulo.AccumuloReadWriteIT.verify
 
 class AccumuloReadWriteSSLIT extends AccumuloSSLTestBase {
+  protected static final File trustStoreFile = new File(TEST_APP_PKG_DIR, "truststore.p12")
+  protected static final File clientKeyStoreFile = new File(TEST_APP_PKG_DIR, "keystore.p12")
+  public static final String STORE_TYPE = "PKCS12"
+
   @Override
   public String getClusterName() {
     return "test_read_write_ssl";
@@ -50,13 +53,31 @@ class AccumuloReadWriteSSLIT extends AccumuloSSLTestBase {
       .withInstance(tree.global.get("site.client.instance.name"))
       .withZkHosts(zookeepers)
       .withSsl(true)
-      .withKeystore(clientKeyStoreFile.toString(), KEY_PASS, null)
-      .withTruststore(trustStoreFile.toString(), TRUST_PASS, null)
+      .withKeystore(clientKeyStoreFile.toString(), KEY_PASS, STORE_TYPE)
+      .withTruststore(trustStoreFile.toString(), TRUST_PASS, STORE_TYPE)
     return new ZooKeeperInstance(conf)
   }
 
   @Override
   public void clusterLoadOperations(ClusterDescription cd, SliderClient sliderClient) {
+    slider(EXIT_SUCCESS,
+      [
+        ACTION_CLIENT,
+        ARG_GETCERTSTORE,
+        ARG_KEYSTORE, clientKeyStoreFile.getCanonicalPath(),
+        ARG_NAME, getClusterName(),
+        ARG_PASSWORD, KEY_PASS
+      ])
+
+    slider(EXIT_SUCCESS,
+      [
+        ACTION_CLIENT,
+        ARG_GETCERTSTORE,
+        ARG_TRUSTSTORE, trustStoreFile.getCanonicalPath(),
+        ARG_NAME, getClusterName(),
+        ARG_PASSWORD, TRUST_PASS
+      ])
+
     try {
       ZooKeeperInstance instance = getInstance()
       Connector connector = instance.getConnector(USER, new PasswordToken(PASSWORD))

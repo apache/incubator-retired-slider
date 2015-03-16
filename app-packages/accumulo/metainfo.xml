@@ -140,7 +140,7 @@
 
       <component>
         <name>ACCUMULO_PROXY</name>
-        <category>CLIENT</category>
+        <category>SLAVE</category>
         <componentExports>
           <componentExport>
             <name>proxies</name>

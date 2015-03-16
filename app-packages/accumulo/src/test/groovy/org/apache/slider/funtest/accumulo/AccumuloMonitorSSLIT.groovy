@@ -30,6 +30,14 @@ class AccumuloMonitorSSLIT extends AccumuloSSLTestBase {
 
   protected ConfTree modifyTemplate(ConfTree confTree) {
     confTree.global.put("site.global.monitor_protocol", "https")
+    confTree.global.put("site.accumulo-site.monitor.ssl.keyStore",
+      confTree.global.get("site.accumulo-site.rpc.javax.net.ssl.keyStore"))
+    confTree.global.put("site.accumulo-site.monitor.ssl.keyStoreType",
+      confTree.global.get("site.accumulo-site.rpc.javax.net.ssl.keyStoreType"))
+    confTree.global.put("site.accumulo-site.monitor.ssl.trustStore",
+      confTree.global.get("site.accumulo-site.rpc.javax.net.ssl.trustStore"))
+    confTree.global.put("site.accumulo-site.monitor.ssl.trustStoreType",
+      confTree.global.get("site.accumulo-site.rpc.javax.net.ssl.trustStoreType"))
     String jks = confTree.global.get(PROVIDER_PROPERTY)
     def keys = confTree.credentials.get(jks)
     keys.add("monitor.ssl.keyStorePassword")

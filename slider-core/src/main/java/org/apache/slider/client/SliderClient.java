@@ -21,6 +21,7 @@ package org.apache.slider.client;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -154,6 +155,7 @@ import org.apache.slider.providers.agent.AgentKeys;
 import org.apache.slider.providers.slideram.SliderAMClientProvider;
 import org.apache.slider.server.appmaster.SliderAppMaster;
 import org.apache.slider.server.appmaster.rpc.RpcBinder;
+import org.apache.slider.server.services.security.SecurityStore;
 import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -172,8 +174,10 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -693,7 +697,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     return startCluster(clustername, createArgs);
   }
 
-  private void checkForCredentials(Configuration conf,
+  private static void checkForCredentials(Configuration conf,
       ConfTree tree) throws IOException {
     if (tree.credentials == null || tree.credentials.size()==0) {
       log.info("No credentials requested");
@@ -722,9 +726,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
               br = new BufferedReader(new InputStreamReader(System.in));
             }
             char[] pass = readPassword(alias, br);
-            if (pass == null)
-              throw new IOException("Could not read credentials for " + alias +
-                  " from stdin");
             credentialProvider.createCredentialEntry(alias, pass);
             credentialProvider.flush();
             Arrays.fill(pass, ' ');
@@ -738,9 +739,21 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     }
   }
 
+  private static char[] readOnePassword(String alias) throws IOException {
+    BufferedReader br = null;
+    try {
+      br = new BufferedReader(new InputStreamReader(System.in));
+      return readPassword(alias, br);
+    } finally {
+      if (br != null) {
+        br.close();
+      }
+    }
+  }
+
   // using a normal reader instead of a secure one,
   // because stdin is not hooked up to the command line
-  private char[] readPassword(String alias, BufferedReader br)
+  private static char[] readPassword(String alias, BufferedReader br)
       throws IOException {
     char[] cred = null;
 
@@ -759,6 +772,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       }
       if (newPassword2 != null) Arrays.fill(newPassword2, ' ');
     } while (noMatch);
+    if (cred == null)
+      throw new IOException("Could not read credentials for " + alias +
+          " from stdin");
     return cred;
   }
 
@@ -916,14 +932,96 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
   @Override
   public int actionClient(ActionClientArgs clientInfo) throws
-      SliderException,
+      YarnException,
       IOException {
-
-    if(!clientInfo.install) {
+    if (clientInfo.install) {
+      return doClientInstall(clientInfo);
+    } else if (clientInfo.getCertStore) {
+      return doCertificateStoreRetrieval(clientInfo);
+    } else {
       throw new BadCommandArgumentsException(
-          "Only install command is supported for the client.\n"
+          "Only install, keystore, and truststore commands are supported for the client.\n"
+          + CommonArgs.usage(serviceArgs, ACTION_CLIENT));
+
+    }
+  }
+
+  private int doCertificateStoreRetrieval(ActionClientArgs clientInfo)
+      throws YarnException, IOException {
+    if (clientInfo.keystore != null && clientInfo.truststore != null) {
+      throw new BadCommandArgumentsException(
+          "Only one of either keystore or truststore can be retrieved at one time.  "
+          + "Retrieval of both should be done separately\n"
           + CommonArgs.usage(serviceArgs, ACTION_CLIENT));
     }
+
+    if (clientInfo.name == null) {
+      throw new BadCommandArgumentsException("No application name specified\n"
+                                             + CommonArgs.usage(serviceArgs,
+                                                                ACTION_CLIENT));
+    }
+
+    File storeFile = null;
+    SecurityStore.StoreType type;
+    if (clientInfo.keystore != null) {
+      storeFile = clientInfo.keystore;
+      type = SecurityStore.StoreType.keystore;
+    } else {
+      storeFile = clientInfo.truststore;
+      type = SecurityStore.StoreType.truststore;
+    }
+
+    if (storeFile.exists()) {
+      throw new BadCommandArgumentsException("File %s already exists.  "
+                                             + "Please remove that file or select a different file name.",
+                                             storeFile.getAbsolutePath());
+    }
+    String hostname = null;
+    if (type == SecurityStore.StoreType.keystore) {
+      hostname = clientInfo.hostname;
+      if (hostname == null) {
+        hostname = InetAddress.getLocalHost().getCanonicalHostName();
+        log.info("No hostname specified via command line. Using {}", hostname);
+      }
+    }
+
+    String password = clientInfo.password;
+    if (password == null) {
+      String provider = clientInfo.provider;
+      String alias = clientInfo.alias;
+      if (provider != null && alias != null) {
+        Configuration conf = new Configuration(getConfig());
+        conf.set(CredentialProviderFactory.CREDENTIAL_PROVIDER_PATH, provider);
+        char[] chars = conf.getPassword(alias);
+        if (chars == null) {
+          CredentialProvider credentialProvider =
+              CredentialProviderFactory.getProviders(conf).get(0);
+          chars = readOnePassword(alias);
+          credentialProvider.createCredentialEntry(alias, chars);
+          credentialProvider.flush();
+        }
+        password = String.valueOf(chars);
+        Arrays.fill(chars, ' ');
+      } else {
+        log.info("No password and no provider/alias pair were provided, " +
+            "prompting for password");
+        // get a password
+        password = String.valueOf(readOnePassword(type.name()));
+      }
+    }
+
+    byte[]
+        keystore =
+        createClusterOperations(clientInfo.name).getClientCertificateStore(
+            hostname, "client", password, type.name());
+    // persist to file
+    IOUtils.write(keystore, new FileOutputStream(storeFile));
+
+    return EXIT_SUCCESS;
+  }
+
+  private int doClientInstall(ActionClientArgs clientInfo)
+      throws IOException, SliderException {
 
     if (clientInfo.installLocation == null) {
       throw new BadCommandArgumentsException(
@@ -963,12 +1061,14 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     }
 
     // Only INSTALL is supported
-    AbstractClientProvider provider = createClientProvider(SliderProviderFactory.DEFAULT_CLUSTER_TYPE);
+    AbstractClientProvider
+        provider = createClientProvider(SliderProviderFactory.DEFAULT_CLUSTER_TYPE);
     provider.processClientOperation(sliderFileSystem,
                                     "INSTALL",
                                     clientInfo.installLocation,
                                     pkgFile,
-                                    config);
+                                    config,
+                                    clientInfo.name);
     return EXIT_SUCCESS;
   }
 

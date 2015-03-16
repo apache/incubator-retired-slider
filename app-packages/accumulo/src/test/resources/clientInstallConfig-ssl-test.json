@@ -1,0 +1,7 @@
+{
+  "schema":"http://example.org/specification/v2.0.0",
+  "global":{
+    "client_root": "{app_install_dir}/accumulo-${accumulo.version}",
+    "general.security.credential.provider.paths": "jceks://hdfs/user/{app_user}/accumulo-{app_name}-client.jceks"
+  }
+}

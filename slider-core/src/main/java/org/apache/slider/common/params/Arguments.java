@@ -27,6 +27,7 @@ package org.apache.slider.common.params;
  */
 public interface Arguments {
   String ARG_ALL = "--all";
+  String ARG_ALIAS = "--alias";
   String ARG_APPLICATION = "--application";
   String ARG_APP_HOME = "--apphome";
   String ARG_BASE_PATH = "--basepath";
@@ -52,14 +53,17 @@ public interface Arguments {
   String ARG_FOLDER = "--folder";
   String ARG_FORCE = "--force";
   String ARG_FORMAT = "--format";
+  String ARG_GETCERTSTORE = "--getcertstore";
   String ARG_GETCONF = "--getconf";
   String ARG_GETEXP = "--getexp";
   String ARG_GETFILES = "--getfiles";
   String ARG_HELP = "--help";
+  String ARG_HOSTNAME = "--hostname";
   String ARG_ID = "--id";
   String ARG_IMAGE = "--image";
   String ARG_INTERNAL = "--internal";
   String ARG_KEYTAB = "--keytab";
+  String ARG_KEYSTORE = "--keystore";
   String ARG_KEYTABINSTALL = "--install";
   String ARG_KEYTABDELETE = "--delete";
   String ARG_KEYTABLIST = "--list";
@@ -80,6 +84,7 @@ public interface Arguments {
   String ARG_OUTPUT_SHORT = "-o";
   String ARG_OVERWRITE = "--overwrite";
   String ARG_PACKAGE = "--package";
+  String ARG_PASSWORD = "--password";
   String ARG_PATH = "--path";
   String ARG_PKGDELETE = "--delete";
   String ARG_INSTALL = "--install";
@@ -99,6 +104,7 @@ public interface Arguments {
   String ARG_STATE = "--state";
   String ARG_SYSPROP = "-S";
   String ARG_TEMPLATE = "--template";
+  String ARG_TRUSTSTORE = "--truststore";
   String ARG_USER = "--user";
   String ARG_VERBOSE = "--verbose";
   String ARG_WAIT = "--wait";

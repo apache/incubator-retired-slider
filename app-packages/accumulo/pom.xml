@@ -38,7 +38,7 @@
     <slider.bin.dir>../../slider-assembly/target/slider-${project.version}-all/slider-${project.version}</slider.bin.dir>
     <test.app.pkg.dir>${project.build.directory}</test.app.pkg.dir>
     <test.app.resources.dir>${project.build.directory}/test-config</test.app.resources.dir>
-    <test.app.scripts.dir>${project.build.directory}/${app.package.name}</test.app.scripts.dir>
+    <test.client.install.dir>${project.build.directory}/${work.dir}</test.client.install.dir>
     <!-- these properties are used in the default and the test appConfigs -->
     <hadoop.dir>/usr/lib/hadoop</hadoop.dir>
     <hdfs.dir>/usr/lib/hadoop-hdfs</hdfs.dir>
@@ -65,6 +65,7 @@
         <yarn.dir>/usr/hdp/current/hadoop-yarn-client</yarn.dir>
         <mapred.dir>/usr/hdp/current/hadoop-mapreduce-client</mapred.dir>
         <zk.dir>/usr/hdp/current/zookeeper-client</zk.dir>
+        <slider.dir>/usr/hdp/current/slider-client</slider.dir>
       </properties>
     </profile>
     <profile>
@@ -215,7 +216,8 @@
                 <test.app.pkg.file>${app.package.name}.zip</test.app.pkg.file>
                 <test.app.pkg.name>ACCUMULO</test.app.pkg.name>
                 <test.app.resources.dir>${test.app.resources.dir}</test.app.resources.dir>
-                <test.app.scripts.dir>${test.app.scripts.dir}</test.app.scripts.dir>
+                <test.client.install.dir>${test.client.install.dir}</test.client.install.dir>
+                <test.client.home.dir>${test.client.install.dir}/accumulo-${accumulo.version}</test.client.home.dir>
               </systemPropertyVariables>
             </configuration>
           </plugin>
@@ -238,6 +240,8 @@
         <targetPath>${test.app.resources.dir}</targetPath>
         <includes>
           <include>appConfig-default.json</include>
+          <include>appConfig-ssl-default.json</include>
+          <include>clientInstallConfig-default.json</include>
         </includes>
       </resource>
     </resources>
@@ -286,6 +290,12 @@
     <dependency>
       <groupId>org.apache.accumulo</groupId>
       <artifactId>accumulo-proxy</artifactId>
+      <version>${accumulo.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.accumulo</groupId>
+      <artifactId>accumulo-examples-simple</artifactId>
       <version>${accumulo.version}</version>
       <scope>test</scope>
     </dependency>

@@ -24,6 +24,13 @@ for a one-node cluster.
 OPTION-I: Use a downloaded tarball
 OPTION-II: Use the tarball from the local repository
 
+Note: Post 0.94 versions of hbase, tarball filenames have a -bin suffix (e.g.
+      hbase-0.98.10.1-hadoop2-bin.tar.gz), although the untarred top level
+      directory does not (e.g hbase-0.98.10.1-hadoop2). We suggest renaming
+      the tar ball file to remove the -bin suffix before proceeding with either
+      of the below options (e.g. hbase-0.98.10.1-hadoop2.tar.gz). In fact all the
+      mvn commands below assumes you have done so, or else app create will fail.
+
 ## OPTION - I 
 
 To create the app package you will need the HBase tarball and invoke mvn command
@@ -37,7 +44,7 @@ Command:
 Example:
 
     mvn clean package -Phbase-app-package -Dpkg.version=0.98.5-hadoop2
-      -Dhbase.version=hbase-0.98.5-hadoop2-bin.tar.gz
+      -Dhbase.version=hbase-0.98.5-hadoop2.tar.gz
       -Dpkg.src=/Users/user1/Downloads/0.98.5-hadoop2
 
 App package can be found in
@@ -49,7 +56,7 @@ App package can be found in
 You need the HBase version available on local maven repo to create the Slider App Package for HBase.
 
 Download the tarball for HBase:
-  e.g. path to tarball `~/Downloads/hbase-0.98.3-hadoop2-bin.tar.gz`
+  e.g. path to tarball `~/Downloads/hbase-0.98.3-hadoop2.tar.gz`
 
 Note for Phoenix user:
 If you want Phoenix to be deployed, you should repackage HBase tarball such that phoenix-server.jar is contained in the lib directory of the tarball.

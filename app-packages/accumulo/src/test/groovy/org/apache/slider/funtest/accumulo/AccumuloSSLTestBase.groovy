@@ -17,14 +17,6 @@
  */
 package org.apache.slider.funtest.accumulo
 
-import groovy.json.JsonSlurper
-import org.apache.accumulo.core.conf.Property
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.Path
-import org.apache.hadoop.yarn.conf.YarnConfiguration
-import org.apache.slider.core.conf.ConfTree
-import org.apache.slider.funtest.framework.AgentUploads
-import org.junit.Before
 import org.junit.BeforeClass
 
 import javax.net.ssl.KeyManager
@@ -36,21 +28,13 @@ import java.security.cert.CertificateException
 import java.security.cert.X509Certificate
 
 class AccumuloSSLTestBase extends AccumuloBasicIT {
-  protected static final File trustStoreFile = new File(TEST_APP_PKG_DIR, "truststore.jks")
-  protected static final File clientKeyStoreFile = new File(TEST_APP_PKG_DIR, "keystore.jks")
 
   protected String templateName() {
     return sysprop("test.app.resources.dir") + "/appConfig_ssl.json"
   }
 
-  protected ConfTree modifyTemplate(ConfTree confTree) {
-    confTree.global.put("site.accumulo-site.instance.rpc.ssl.enabled", "true")
-    confTree.global.put("site.accumulo-site.instance.rpc.ssl.clientAuth", "true")
-    String jks = confTree.global.get(PROVIDER_PROPERTY)
-    def keys = confTree.credentials.get(jks)
-    keys.add("rpc.javax.net.ssl.keyStorePassword")
-    keys.add("rpc.javax.net.ssl.trustStorePassword")
-    return confTree
+  protected String getDefaultTemplate() {
+    return sysprop("test.app.resources.dir") + "/appConfig-ssl-default.json"
   }
 
   @Override
@@ -70,72 +54,6 @@ class AccumuloSSLTestBase extends AccumuloBasicIT {
     t[0] = new DefaultTrustManager();
     ctx.init(new KeyManager[0], t, new SecureRandom());
     SSLContext.setDefault(ctx);
-  }
-
-  @Before
-  public void createCerts() {
-    Path certDir = new Path(clusterFS.homeDirectory,
-      tree.global.get("site.global.ssl_cert_dir"))
-    if (clusterFS.exists(certDir)) {
-      clusterFS.delete(certDir, true)
-    }
-    clusterFS.mkdirs(certDir)
-
-    Configuration conf = loadSliderConf()
-    String provider = tree.global.get(PROVIDER_PROPERTY)
-    provider = provider.replace("hdfs/user",
-      conf.get("fs.defaultFS").replace("://", "@") + "/user")
-    File rootKeyStoreFile = new File(TEST_APP_PKG_DIR, "root.jks")
-
-    if (!rootKeyStoreFile.exists() && !trustStoreFile.exists()) {
-      CertUtil.createRootKeyPair(rootKeyStoreFile.toString(),
-        Property.INSTANCE_SECRET.toString(), trustStoreFile.toString(),
-        Property.RPC_SSL_TRUSTSTORE_PASSWORD.toString(), provider);
-    }
-
-    AgentUploads agentUploads = new AgentUploads(SLIDER_CONFIG)
-    agentUploads.uploader.copyIfOutOfDate(trustStoreFile, new Path(certDir,
-      "truststore.jks"), false)
-
-    for (node in getNodeList(conf)) {
-      File keyStoreFile = new File(TEST_APP_PKG_DIR, node + ".jks")
-      if (!keyStoreFile.exists()) {
-        CertUtil.createServerKeyPair(keyStoreFile.toString(),
-          Property.RPC_SSL_KEYSTORE_PASSWORD.toString(),
-          rootKeyStoreFile.toString(), Property.INSTANCE_SECRET.toString(),
-          provider, node);
-      }
-      agentUploads.uploader.copyIfOutOfDate(keyStoreFile, new Path(certDir,
-        node + ".jks"), false)
-    }
-
-    if (!clientKeyStoreFile.exists()) {
-      CertUtil.createServerKeyPair(clientKeyStoreFile.toString(),
-        Property.RPC_SSL_KEYSTORE_PASSWORD.toString(),
-        rootKeyStoreFile.toString(), Property.INSTANCE_SECRET.toString(),
-        provider, InetAddress.getLocalHost().getHostName());
-    }
-  }
-
-  def getNodeList(Configuration conf) {
-    String address
-    if (YarnConfiguration.useHttps(conf)) {
-      address = "https://" + conf.get(YarnConfiguration.RM_WEBAPP_HTTPS_ADDRESS,
-        YarnConfiguration.DEFAULT_RM_WEBAPP_HTTPS_ADDRESS);
-    } else {
-      address = "http://" + conf.get(YarnConfiguration.RM_WEBAPP_ADDRESS,
-        YarnConfiguration.DEFAULT_RM_WEBAPP_ADDRESS);
-    }
-    address = address.replace("0.0.0.0", conf.get(YarnConfiguration.RM_ADDRESS)
-      .split(":")[0])
-    address = address + "/ws/v1/cluster/nodes"
-    def slurper = new JsonSlurper()
-    def result = slurper.parse(new URL(address))
-    def hosts = []
-    for (host in result.nodes.node) {
-      hosts.add(host.nodeHostName)
-    }
-    return hosts.unique()
   }
 
   private static class DefaultTrustManager implements X509TrustManager {
