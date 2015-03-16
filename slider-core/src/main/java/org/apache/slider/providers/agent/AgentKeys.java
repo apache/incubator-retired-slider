@@ -73,6 +73,9 @@ public interface AgentKeys {
   String AGENT_CONF = "agent.conf";
   String ADDON_FOR_ALL_COMPONENTS = "ALL";
 
+  String APP_RESOURCES = "application.resources";
+  String APP_RESOURCES_DIR = "app/resources";
+
   String AGENT_INSTALL_DIR = "infra/agent";
   String APP_DEFINITION_DIR = "app/definition";
   String ADDON_DEFINITION_DIR = "addon/definition";

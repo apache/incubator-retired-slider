@@ -1,0 +1,241 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <!--
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to You under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+  <parent>
+    <groupId>org.apache.slider.packages</groupId>
+    <artifactId>slider-app-packages</artifactId>
+    <version>0.91.0-incubating-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>slider-tomcat-app-package</artifactId>
+  <packaging>jar</packaging>
+  <name>Slider Tomcat App Package</name>
+  <description>Slider Tomcat App Package</description>
+
+  <properties>
+    <work.dir>package-tmp</work.dir>
+    <app.package.name>${project.artifactId}-${pkg.version}</app.package.name>
+    <pkg.src>${project.build.directory}/${work.dir}</pkg.src>
+    <pkg.version>${project.version}</pkg.version>
+    <pkg.name>tomcat-${tomcat.version}.tar.gz</pkg.name>
+    <!-- the following properties are used for testing -->
+    <slider.bin.dir>../../slider-assembly/target/slider-${project.version}-all/slider-${project.version}</slider.bin.dir>
+    <test.app.pkg.dir>${project.build.directory}</test.app.pkg.dir>
+    <test-classes.dir>${project.build.directory}/test-classes</test-classes.dir>
+    <test.app.resources.dir>${project.build.directory}/test-config</test.app.resources.dir>
+    <test.client.install.dir>${project.build.directory}/${work.dir}</test.client.install.dir>
+    <!-- these properties are used in the default and the test appConfigs -->
+    <hadoop.dir>/usr/lib/hadoop</hadoop.dir>
+    <hdfs.dir>/usr/lib/hadoop-hdfs</hdfs.dir>
+    <yarn.dir>/usr/lib/hadoop-yarn</yarn.dir>
+    <mapred.dir>/usr/lib/hadoop-mapred</mapred.dir>
+    <zk.dir>/usr/lib/zookeeper</zk.dir>
+    <app.java.home>${java.home}</app.java.home>
+    <app.user>yarn</app.user>
+    <app.user.group>hadoop</app.user.group>
+
+    <tomcat.version>8.0.30</tomcat.version>
+  </properties>
+
+  <profiles>
+    <profile>
+      <id>hdp</id>
+      <properties>
+        <hadoop.dir>/usr/hdp/current/hadoop-client</hadoop.dir>
+        <hdfs.dir>/usr/hdp/current/hadoop-hdfs-client</hdfs.dir>
+        <yarn.dir>/usr/hdp/current/hadoop-yarn-client</yarn.dir>
+        <mapred.dir>/usr/hdp/current/hadoop-mapreduce-client</mapred.dir>
+        <zk.dir>/usr/hdp/current/zookeeper-client</zk.dir>
+        <slider.dir>/usr/hdp/current/slider-client</slider.dir>
+      </properties>
+    </profile>
+    <profile>
+      <id>tomcat-app-package</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <version>${maven-assembly-plugin.version}</version>
+            <configuration>
+              <descriptor>src/assembly/tomcat.xml</descriptor>
+              <appendAssemblyId>false</appendAssemblyId>
+              <finalName>${app.package.name}</finalName>
+            </configuration>
+            <executions>
+              <execution>
+                <id>build-app-package</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>single</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>tomcat-funtest</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <version>${maven-failsafe-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>run-integration-tests</id>
+                <goals>
+                  <goal>integration-test</goal>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <systemPropertyVariables>
+                <java.net.preferIPv4Stack>true</java.net.preferIPv4Stack>
+                <java.awt.headless>true</java.awt.headless>
+                <!-- this property must be supplied-->
+                <slider.conf.dir>${slider.conf.dir}</slider.conf.dir>
+                <slider.bin.dir>${slider.bin.dir}</slider.bin.dir>
+                <test.app.pkg.dir>${test.app.pkg.dir}</test.app.pkg.dir>
+                <test.app.pkg.file>${app.package.name}.zip</test.app.pkg.file>
+                <test.app.pkg.name>TOMCAT</test.app.pkg.name>
+                <test-classes.dir>${test-classes.dir}</test-classes.dir>
+                <test.app.resources.dir>${test.app.resources.dir}</test.app.resources.dir>
+                <test.client.install.dir>${test.client.install.dir}</test.client.install.dir>
+                <test.client.home.dir>${test.client.install.dir}/tomcat-${tomcat.version}</test.client.home.dir>
+              </systemPropertyVariables>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>rat</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.rat</groupId>
+            <artifactId>apache-rat-plugin</artifactId>
+            <version>${apache-rat-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>check-licenses</id>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <excludes>
+                <exclude>**/*.json</exclude>
+                <exclude>src/test/resources/slider-test.war</exclude>
+                <exclude>**/*.iml</exclude>
+              </excludes>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+  <build>
+    <!-- resources are filtered for dynamic updates. This gets build info in-->
+    <resources>
+      <resource>
+        <directory>src/test/resources</directory>
+        <filtering>true</filtering>
+        <targetPath>${test.app.resources.dir}</targetPath>
+      </resource>
+      <resource>
+        <directory>.</directory>
+        <filtering>true</filtering>
+        <targetPath>${test.app.resources.dir}</targetPath>
+        <includes>
+          <include>appConfig-default.json</include>
+          <include>resources-default.json</include>
+        </includes>
+      </resource>
+    </resources>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven-compiler-plugin.version}</version>
+        <dependencies>
+          <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-eclipse-compiler</artifactId>
+            <version>${groovy-eclipse-compiler.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-eclipse-batch</artifactId>
+            <version>${groovy-eclipse-batch.version}</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+    </plugins>
+  </build>
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.tomcat</groupId>
+      <artifactId>tomcat</artifactId>
+      <version>${tomcat.version}</version>
+      <type>tar.gz</type>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-client</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.slider</groupId>
+      <artifactId>slider-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.slider</groupId>
+      <artifactId>slider-core</artifactId>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.slider</groupId>
+      <artifactId>slider-funtest</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.groovy</groupId>
+      <artifactId>groovy-all</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

@@ -507,6 +507,26 @@ public class AgentProviderService extends AbstractProviderService implements
           packageMetainfo.toString());
     }    
 
+    // Additional files to localize in addition to the application def
+    String appResourcesString = instanceDefinition.getAppConfOperations()
+        .getGlobalOptions().getOption(AgentKeys.APP_RESOURCES, null);
+    log.info("Configuration value for extra resources to localize: {}", appResourcesString);
+    if (null != appResourcesString) {
+      try (Scanner scanner = new Scanner(appResourcesString).useDelimiter(",")) {
+        while (scanner.hasNext()) {
+          String resource = scanner.next();
+          Path resourcePath = new Path(resource);
+          LocalResource extraResource = fileSystem.createAmResource(
+              fileSystem.getFileSystem().resolvePath(resourcePath),
+              LocalResourceType.FILE);
+          String destination = AgentKeys.APP_RESOURCES_DIR + "/" + resourcePath.getName();
+          log.info("Localizing {} to {}", resourcePath, destination);
+          // TODO Can we try harder to avoid collisions?
+          launcher.addLocalResource(destination, extraResource);
+        }
+      }
+    }
+
     // initialize addon pkg states for all componentInstanceStatus
     Map<String, State> pkgStatuses = new TreeMap<>();
     for (Metainfo appPkg : packageMetainfo.values()) {
