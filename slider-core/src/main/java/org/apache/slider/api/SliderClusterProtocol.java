@@ -18,7 +18,6 @@
 
 package org.apache.slider.api;
 
-import com.google.protobuf.RpcController;
 import org.apache.hadoop.ipc.VersionedProtocol;
 import org.apache.hadoop.security.KerberosInfo;
 import org.apache.hadoop.yarn.exceptions.YarnException;
