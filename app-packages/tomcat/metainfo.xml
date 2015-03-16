@@ -1,0 +1,54 @@
+<metainfo>
+  <schemaVersion>2.0</schemaVersion>
+  <application>
+    <name>TOMCAT</name>
+    <comment>Apache Tomcat</comment>
+    <version>0.0.1</version>
+    <exportedConfigs>None</exportedConfigs>
+    <exportGroups>
+      <exportGroup>
+        <name>Servers</name>
+        <exports>
+          <export>
+            <name>host_port</name>
+            <value>${TOMCAT_HOST}:${site.global.listen_port}</value>
+          </export>
+        </exports>
+      </exportGroup>
+    </exportGroups>
+    <components>
+      <component>
+        <name>TOMCAT</name>
+        <category>MASTER</category>
+        <compExports>Servers-host_port</compExports>
+        <commandScript>
+          <script>scripts/tomcat.py</script>
+          <scriptType>PYTHON</scriptType>
+        </commandScript>
+      </component>
+    </components>
+    <osSpecifics>
+      <osSpecific>
+        <osType>any</osType>
+        <packages>
+          <package>
+            <type>tarball</type>
+            <name>files/apache-tomcat.tar.gz</name>
+          </package>
+        </packages>
+      </osSpecific>
+    </osSpecifics>
+
+    <exportGroups>
+      <exportGroup>
+        <name>QuickLinks</name>
+          <exports>
+            <export>
+              <name>HTTP</name>
+              <value>http://${TOMCAT_HOST}:${site.global.listen_port}</value>
+            </export>
+         </exports>
+      </exportGroup>
+    </exportGroups>
+  </application>
+</metainfo>

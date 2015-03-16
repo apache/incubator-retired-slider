@@ -53,6 +53,7 @@
           <module>accumulo</module>
           <module>hbase</module>
           <module>storm</module>
+          <module>tomcat</module>
         </modules>
       </profile>
     
@@ -85,6 +86,7 @@
           <module>storm</module>
           <module>hbase-win</module>
           <module>storm-win</module>
+          <module>tomcat</module>
         </modules>
       </profile>
       
