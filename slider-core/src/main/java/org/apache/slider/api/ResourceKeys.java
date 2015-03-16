@@ -145,7 +145,7 @@ public interface ResourceKeys {
    * Time in seconds to relax placement delay
    */
   String PLACEMENT_RELAX_DELAY = 
-      "yarn.placement.relax.delay.seconds";
+      "yarn.placement.relax.seconds";
 
   /**
    * Time to have a strict placement policy outstanding before 

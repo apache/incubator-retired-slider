@@ -19,6 +19,10 @@
 package org.apache.slider.server.appmaster.state;
 
 import org.apache.hadoop.yarn.api.records.Container;
+import org.apache.hadoop.yarn.client.api.AMRMClient;
+import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
+import org.apache.slider.server.appmaster.operations.CancelSingleRequest;
+import org.apache.slider.server.appmaster.operations.ContainerRequestOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,6 +52,11 @@ public class OutstandingRequestTracker {
   protected static final Logger log =
     LoggerFactory.getLogger(OutstandingRequestTracker.class);
 
+  /**
+   * no requests; saves creating a new list if not needed
+   */
+  private final List<AbstractRMOperation> NO_REQUESTS = new ArrayList<>(0);
+ 
   private Map<OutstandingRequest, OutstandingRequest> placedRequests =
     new HashMap<>();
 
@@ -122,10 +131,10 @@ public class OutstandingRequestTracker {
     }
 
     /**
-     * Get the age of a container. If it is not known in the history, 
+     * Get the age of a node hosting container. If it is not known in the history, 
      * return 0.
      * @param c container
-     * @return age, null if 
+     * @return age, null if there's no entry for it. 
      */
     private long getAgeOf(Container c) {
       long age = 0;
@@ -223,5 +232,30 @@ public class OutstandingRequestTracker {
    */
   public synchronized List<OutstandingRequest> listOutstandingRequests() {
     return new ArrayList<>(placedRequests.values());
+  }
+
+  /**
+   * Escalate operation as triggered by external timer.
+   * @return a (usually empty) list of cancel/request operations.
+   */
+  public synchronized List<AbstractRMOperation> escalateOutstandingRequests(long now) {
+    if (placedRequests.isEmpty()) {
+      return NO_REQUESTS;
+    }
+
+    List<AbstractRMOperation> operations = new ArrayList<>();
+    for (OutstandingRequest outstandingRequest : placedRequests.values()) {
+      if (outstandingRequest.shouldEscalate(now)) {
+
+        // time to escalate
+        CancelSingleRequest cancel = new CancelSingleRequest(outstandingRequest.issuedRequest);
+        operations.add(cancel);
+        AMRMClient.ContainerRequest escalated =
+            outstandingRequest.escalate();
+        operations.add(new ContainerRequestOperation(escalated));
+      }
+      
+    }
+    return operations;
   }
 }

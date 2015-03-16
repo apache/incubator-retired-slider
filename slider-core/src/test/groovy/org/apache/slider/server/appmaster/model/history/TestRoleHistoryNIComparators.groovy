@@ -63,7 +63,6 @@ class TestRoleHistoryNIComparators extends BaseMockAppStateTest  {
     def preferred = new NodeInstance.Preferred(0)
     assert preferred.compare(age6failing, age1failing) == -1
     assert preferred.compare(age1failing, age6failing) == 1
-    assert preferred.compare(age1failing, age1failing) == 0
   }
   
   @Test

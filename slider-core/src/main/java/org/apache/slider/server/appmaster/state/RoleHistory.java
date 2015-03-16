@@ -18,6 +18,22 @@
 
 package org.apache.slider.server.appmaster.state;
 
+import com.google.common.annotations.VisibleForTesting;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.yarn.api.records.Container;
+import org.apache.hadoop.yarn.api.records.NodeReport;
+import org.apache.hadoop.yarn.api.records.Resource;
+import org.apache.hadoop.yarn.client.api.AMRMClient;
+import org.apache.slider.common.tools.SliderUtils;
+import org.apache.slider.core.exceptions.BadConfigException;
+import org.apache.slider.providers.ProviderRole;
+import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
+import org.apache.slider.server.avro.RoleHistoryHeader;
+import org.apache.slider.server.avro.RoleHistoryWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,22 +44,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.yarn.api.records.Container;
-import org.apache.hadoop.yarn.api.records.NodeReport;
-import org.apache.hadoop.yarn.api.records.Resource;
-import org.apache.hadoop.yarn.client.api.AMRMClient;
-import org.apache.slider.common.tools.SliderUtils;
-import org.apache.slider.core.exceptions.BadConfigException;
-import org.apache.slider.providers.ProviderRole;
-import org.apache.slider.server.avro.RoleHistoryHeader;
-import org.apache.slider.server.avro.RoleHistoryWriter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.annotations.VisibleForTesting;
 
 /**
  * The Role History.
@@ -854,4 +854,14 @@ public class RoleHistory {
     return lst;
   }
 
+
+  /**
+   * Escalate operation as triggered by external timer.
+   * @return a (usually empty) list of cancel/request operations.
+   */
+  public List<AbstractRMOperation> escalateOutstandingRequests() {
+    long now = now();
+    return outstandingRequests.escalateOutstandingRequests(now);
+
+  }
 }

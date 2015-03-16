@@ -187,7 +187,7 @@ public final class OutstandingRequest {
    * as the original one, and the same host, but: relaxed placement, and a changed priority
    * so as to place it into the relaxed list.
    */
-  public AMRMClient.ContainerRequest buildEscalatedContainerRequest() {
+  public AMRMClient.ContainerRequest escalate() {
     escalated = true;
     Preconditions.checkNotNull(issuedRequest, "issued request");
     Priority pri = ContainerPriority.createPriority(roleId, true);
@@ -219,6 +219,15 @@ public final class OutstandingRequest {
     node.getOrCreate(roleId).requestCompleted();
   }
 
+  /**
+   * Query to see if the request is ready to be escalated
+   * @param time time to check against
+   * @return true if escalation should begin
+   */
+  public boolean shouldEscalate(long time) {
+    return !escalated && escalationTimeoutMillis < time;
+  }
+  
   /**
    * Equality is on hostname and role
    * @param o other

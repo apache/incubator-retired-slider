@@ -78,11 +78,17 @@ public class AsyncRMOperationHandler extends RMOperationHandler {
           break;
         }
         // a single release
-        client.removeContainerRequest(request);
+        cancelSingleRequest(request);
         remaining --;
       }
     }
     return remaining;
+  }
+
+  @Override
+  public void cancelSingleRequest(AMRMClient.ContainerRequest request) {
+    // a single release
+    client.removeContainerRequest(request);
   }
 
   @Override

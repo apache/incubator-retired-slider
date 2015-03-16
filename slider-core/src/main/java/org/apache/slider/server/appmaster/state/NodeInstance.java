@@ -41,7 +41,7 @@ public class NodeInstance {
    */
   public NodeInstance(String hostname, int roles) {
     this.hostname = hostname;
-    nodeEntries = new ArrayList<NodeEntry>(roles);
+    nodeEntries = new ArrayList<>(roles);
   }
 
   /**
@@ -103,12 +103,8 @@ public class NodeInstance {
    */
   public boolean isConsideredUnreliable(int role, int threshold) {
     NodeEntry entry = get(role);
-    
-    if (entry != null) {
-      return entry.getFailedRecently() > threshold;
-    } else {
-      return false;
-    }
+
+    return entry != null && entry.getFailedRecently() > threshold;
   }
 
   /**
@@ -131,7 +127,8 @@ public class NodeInstance {
 
   
   /**
-   * run through each entry; gc'ing & removing old ones
+   * run through each entry; gc'ing & removing old ones that don't have
+   * a recent failure count (we care about those)
    * @param absoluteTime age in millis
    * @return true if there are still entries left
    */
@@ -140,7 +137,7 @@ public class NodeInstance {
     ListIterator<NodeEntry> entries = nodeEntries.listIterator();
     while (entries.hasNext()) {
       NodeEntry entry = entries.next();
-      if (entry.notUsedSince(absoluteTime)) {
+      if (entry.notUsedSince(absoluteTime) && entry.getFailedRecently() == 0) {
         entries.remove();
       } else {
         active = true;
@@ -203,13 +200,8 @@ public class NodeInstance {
 
   /**
    * A comparator for sorting entries where the node is preferred over another.
-   * If there's no entry for an element then it's failure count is set to -1, age to 0
-   * for the purposes of the comparison
-   * <ol>
-   *   <li>Entry exists => end of list as unknown</li>
-   *   <li>Lowest failure count</li>
-   *   <li>Age</li>
-   * </ol>
+   * <p>
+   * The exact algorithm may change
    * 
    * @return +ve int if left is preferred to right; -ve if right over left, 0 for equal
    */
@@ -227,7 +219,8 @@ public class NodeInstance {
       NodeEntry left = o1.get(role);
       NodeEntry right = o2.get(role);
 
-      // sort by failure count first
+/*      
+      // sort by failure count 
       int failL = left != null ? left.getFailedRecently() : -1;
       int failR = right != null ? right.getFailedRecently() : -1;
       
@@ -237,7 +230,7 @@ public class NodeInstance {
       if (failR > failL) {
         return -1;
       }
-      
+    */  
       // failure counts are equal: compare age
       long ageL = left != null ? left.getLastUsed() : 0;
       long ageR = right != null ? right.getLastUsed() : 0;

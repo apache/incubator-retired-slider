@@ -89,6 +89,7 @@ public interface InternalKeys {
    * Default short life threshold: {@value}
    */
   int DEFAULT_INTERNAL_CONTAINER_FAILURE_SHORTLIFE = 60;
+  
   /**
    * Version of the app: {@value}
    */
@@ -177,5 +178,14 @@ public interface InternalKeys {
    * 100% for chaos values
    */
   int PROBABILITY_PERCENT_100 = 100 * PROBABILITY_PERCENT_1;
-  
+
+  /**
+   * interval between checks for escalation: {@value}
+   */
+  String ESCALATION_CHECK_INTERVAL = "escalation.check.interval.seconds";
+
+  /**
+   * default value: {@value}
+   */
+  int DEFAULT_ESCALATION_CHECK_INTERVAL = 30;
 }

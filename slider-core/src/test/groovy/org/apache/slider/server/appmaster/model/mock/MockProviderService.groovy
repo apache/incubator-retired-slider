@@ -276,6 +276,11 @@ class MockProviderService implements ProviderService {
   }
 
   @Override
+  void cancelSingleRequest(AMRMClient.ContainerRequest request) {
+
+  }
+
+  @Override
   void execute(List<AbstractRMOperation> operations) {
 
   }

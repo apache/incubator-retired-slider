@@ -18,38 +18,41 @@
 
 package org.apache.slider.server.appmaster.operations;
 
-import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.Priority;
-import org.apache.hadoop.yarn.client.api.AMRMClient;
+import org.apache.slider.server.appmaster.state.ContainerPriority;
 
-import java.util.List;
+/**
+ * Cancel a container request
+ */
+public class CancelSingleRequest extends AbstractRMOperation {
 
-public interface RMOperationHandlerActions {
-  void releaseAssignedContainer(ContainerId containerId);
+  private final Priority priority1;
+  private final Priority priority2;
+  private final int count;
+
+  public CancelSingleRequest(Priority priority1, Priority priority2, int count) {
+    this.priority1 = priority1;
+    this.priority2 = priority2;
+    this.count = count;
+  }
+
+  @Override
+  public void execute(RMOperationHandlerActions handler) {
+    handler.cancelContainerRequests(priority1, priority2, count);
+  }
+
+  @Override
+  public String toString() {
+    return "release " + count
+           + " requests for " + ContainerPriority.toString(priority1)
+           + " and " + ContainerPriority.toString(priority2);
+  }
 
   /**
-   * Issue a container request
-   * @param request
+   * Get the number to release
+   * @return the number of containers to release
    */
-  void addContainerRequest(AMRMClient.ContainerRequest request);
-
-  /**
-   * Cancel a specific request
-   * @param request request to cancel
-   */
-  void cancelSingleRequest(AMRMClient.ContainerRequest request);
-  
-  /**
-   * Remove a container request
-   * @param priority1 priority to remove at
-   * @param priority2 second priority to target
-   * @param count number to remove
-   */
-  int cancelContainerRequests(Priority priority1, Priority priority2, int count);
-
-  /**
-   * Execute an entire list of operations
-   * @param operations ops
-   */
-  void execute(List<AbstractRMOperation> operations);
+  public int getCount() {
+    return count;
+  }
 }

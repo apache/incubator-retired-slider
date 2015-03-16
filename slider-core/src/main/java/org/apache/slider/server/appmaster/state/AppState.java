@@ -37,7 +37,6 @@ import org.apache.hadoop.yarn.api.records.impl.pb.ContainerPBImpl;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
-import static org.apache.slider.api.StateValues.*;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterDescriptionKeys;
 import org.apache.slider.api.ClusterDescriptionOperations;
@@ -88,8 +87,20 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.apache.slider.api.ResourceKeys.*;
-import static org.apache.slider.api.RoleKeys.*;
+import static org.apache.slider.api.ResourceKeys.DEF_YARN_CORES;
+import static org.apache.slider.api.ResourceKeys.DEF_YARN_LABEL_EXPRESSION;
+import static org.apache.slider.api.ResourceKeys.DEF_YARN_MEMORY;
+import static org.apache.slider.api.ResourceKeys.YARN_CORES;
+import static org.apache.slider.api.ResourceKeys.YARN_LABEL_EXPRESSION;
+import static org.apache.slider.api.ResourceKeys.YARN_MEMORY;
+import static org.apache.slider.api.RoleKeys.ROLE_FAILED_INSTANCES;
+import static org.apache.slider.api.RoleKeys.ROLE_FAILED_STARTING_INSTANCES;
+import static org.apache.slider.api.RoleKeys.ROLE_RELEASING_INSTANCES;
+import static org.apache.slider.api.RoleKeys.ROLE_REQUESTED_INSTANCES;
+import static org.apache.slider.api.StateValues.STATE_CREATED;
+import static org.apache.slider.api.StateValues.STATE_DESTROYED;
+import static org.apache.slider.api.StateValues.STATE_LIVE;
+import static org.apache.slider.api.StateValues.STATE_SUBMITTED;
 
 
 /**
@@ -704,7 +715,7 @@ public class AppState {
 
     clusterStatusTemplate =
       ClusterDescriptionOperations.buildFromInstanceDefinition(
-        instanceDefinition);
+          instanceDefinition);
     
 
 //     Add the -site configuration properties
@@ -1286,7 +1297,7 @@ public class AppState {
                                      int maxVal) {
     
     String val = resources.getComponentOpt(name, option,
-                                           Integer.toString(defVal));
+        Integer.toString(defVal));
     Integer intVal;
     if (ResourceKeys.YARN_RESOURCE_MAX.equals(val)) {
       intVal = maxVal;
@@ -1856,11 +1867,19 @@ public class AppState {
     }
     roleHistory.resetFailedRecently();
   }
+
+  /**
+   * Escalate operation as triggered by external timer.
+   * @return a (usually empty) list of cancel/request operations.
+   */
+  public List<AbstractRMOperation> escalateOutstandingRequests() {
+    return roleHistory.escalateOutstandingRequests();
+  }
   
   /**
    * Look at the allocation status of one role, and trigger add/release
    * actions if the number of desired role instances doesn't equal 
-   * (actual+pending).
+   * (actual + pending).
    * <p>
    * MUST be executed from within a synchronized method
    * <p>
@@ -2046,7 +2065,7 @@ public class AppState {
     Collection<RoleInstance> targets = cloneOwnedContainerList();
     log.info("Releasing {} containers", targets.size());
     List<AbstractRMOperation> operations =
-      new ArrayList<AbstractRMOperation>(targets.size());
+      new ArrayList<>(targets.size());
     for (RoleInstance instance : targets) {
       if (instance.roleId == SliderKeys.ROLE_AM_PRIORITY_INDEX) {
         // don't worry about the AM
