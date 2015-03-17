@@ -18,5 +18,28 @@
 
 package org.apache.slider.server.appmaster.actions;
 
-public class EscalateOutstandingRequests {
+import org.apache.slider.server.appmaster.SliderAppMaster;
+import org.apache.slider.server.appmaster.state.AppState;
+
+import java.util.concurrent.TimeUnit;
+
+/**
+ * Escalate outstanding requests by asking AM
+ */
+public class EscalateOutstandingRequests extends AsyncAction {
+
+  public EscalateOutstandingRequests() {
+    super("EscalateOutstandingRequests");
+  }
+
+  public EscalateOutstandingRequests(long delay,
+      TimeUnit timeUnit) {
+    super("EscalateOutstandingRequests", delay, timeUnit, ATTR_REVIEWS_APP_SIZE);
+  }
+
+  @Override
+  public void execute(SliderAppMaster appMaster, QueueAccess queueService, AppState appState) throws
+      Exception {
+    appMaster.escalateOutstandingRequests();
+  }
 }
