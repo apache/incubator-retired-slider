@@ -30,7 +30,7 @@ import java.util.List;
  * Special support for JVM command buildup.
  */
 public class CommandLineBuilder {
-  protected final List<String> argumentList = new ArrayList<String>(20);
+  protected final List<String> argumentList = new ArrayList<>(20);
 
 
   /**
