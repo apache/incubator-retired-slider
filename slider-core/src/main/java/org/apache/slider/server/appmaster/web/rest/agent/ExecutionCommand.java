@@ -44,6 +44,7 @@ public class ExecutionCommand {
   private Map<String, String> roleParams = null;
   private String roleCommand;
   private Map<String, Map<String, String>> configurations;
+  private Map<String, Map<String, String>> componentConfigurations;
   private Map<String, String> commandParams;
   private String serviceName;
   private String componentName;
@@ -191,6 +192,15 @@ public class ExecutionCommand {
   @JsonProperty("componentName")
   public void setComponentName(String componentName) {
     this.componentName = componentName;
+  }
+
+  public Map<String, Map<String, String>> getComponentConfigurations() {
+    return componentConfigurations;
+  }
+
+  public void setComponentConfigurations(
+      Map<String, Map<String, String>> componentConfigurations) {
+    this.componentConfigurations = componentConfigurations;
   }
 
   @Override

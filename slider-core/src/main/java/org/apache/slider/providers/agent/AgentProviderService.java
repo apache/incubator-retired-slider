@@ -20,6 +20,7 @@ package org.apache.slider.providers.agent;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -1713,6 +1714,13 @@ public class AgentProviderService extends AbstractProviderService implements
     cmd.setHostname(getClusterInfoPropertyValue(StatusKeys.INFO_AM_HOSTNAME));
 
     response.addExecutionCommand(cmd);
+
+    log.debug("command looks like: " + cmd.toString());
+  }
+
+  private Map<String, Map<String, String>> buildComponentConfigurations(
+      ConfTreeOperations appConf) {
+    return appConf.getComponents();
   }
 
   protected static String getPackageListFromApplication(Application application) {
@@ -1878,7 +1886,8 @@ public class AgentProviderService extends AbstractProviderService implements
     }
 
     response.addExecutionCommand(cmd);
-    
+
+    log.debug("command looks like: " + cmd.toString());
     // With start command, the corresponding command for graceful stop needs to
     // be sent. This will be used when a particular container is lost as per RM,
     // but then the agent is still running and heart-beating to the Slider AM.
