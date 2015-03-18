@@ -1668,7 +1668,7 @@ public class AgentProviderService extends AbstractProviderService implements
     cmd.setHostname(getClusterInfoPropertyValue(StatusKeys.INFO_AM_HOSTNAME));
     response.addExecutionCommand(cmd);
 
-    log.debug("command looks like: " + cmd.toString());
+    log.debug("command looks like: {} ",  cmd);
   }
 
   private Map<String, Map<String, String>> buildComponentConfigurations(
@@ -1679,7 +1679,7 @@ public class AgentProviderService extends AbstractProviderService implements
   protected static String getPackageListFromApplication(Application application) {
     String pkgFormatString = "{\"type\":\"%s\",\"name\":\"%s\"}";
     String pkgListFormatString = "[%s]";
-    List<String> packages = new ArrayList();
+    List<String> packages = new ArrayList<>();
     if (application != null) {
       List<OSSpecific> osSpecifics = application.getOSSpecifics();
       if (osSpecifics != null && osSpecifics.size() > 0) {
@@ -1814,7 +1814,7 @@ public class AgentProviderService extends AbstractProviderService implements
     cmd.setConfigurations(configurations);
     response.addExecutionCommand(cmd);
 
-    log.debug("command looks like: " + cmd.toString());
+    log.debug("command looks like: {}", cmd);
     // With start command, the corresponding command for graceful stop needs to
     // be sent. This will be used when a particular container is lost as per RM,
     // but then the agent is still running and heart-beating to the Slider AM.
