@@ -863,7 +863,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       // build up environment variables that the AM wants set in every container
       // irrespective of provider and role.
-      envVars = new HashMap<String, String>();
+      envVars = new HashMap<>();
       if (hadoop_user_name != null) {
         envVars.put(HADOOP_USER_NAME, hadoop_user_name);
       }

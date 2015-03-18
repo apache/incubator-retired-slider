@@ -202,13 +202,13 @@ public class OutstandingRequestTracker {
   
 
   /**
-   * Cancel all outstanding requests for a role: return the hostnames
+   * Reset list all outstanding requests for a role: return the hostnames
    * of any canceled requests
    *
    * @param role role to cancel
    * @return possibly empty list of hostnames
    */
-  public synchronized List<NodeInstance> cancelOutstandingRequests(int role) {
+  public synchronized List<NodeInstance> resetOutstandingRequests(int role) {
     List<NodeInstance> hosts = new ArrayList<>();
     Iterator<Map.Entry<OutstandingRequest,OutstandingRequest>> iterator =
       placedRequests.entrySet().iterator();

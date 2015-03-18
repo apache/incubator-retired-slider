@@ -55,19 +55,23 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest {
   }
   
   @Test
-  public void testCancelEntries() throws Throwable {
+  public void testResetEntries() throws Throwable {
     OutstandingRequest r1 = tracker.newRequest(host1, 0)
     OutstandingRequest r2 = tracker.newRequest(host2, 0)
     OutstandingRequest r3 = tracker.newRequest(host1, 1)
-    List<NodeInstance> canceled = tracker.cancelOutstandingRequests(0)
+    List<NodeInstance> canceled = tracker.resetOutstandingRequests(0)
     assert canceled.size() == 2
     assert canceled.contains(host1)
     assert canceled.contains(host2)
     assert tracker.lookup(1, "host1")
     assert !tracker.lookup(0, "host1")
-    canceled = tracker.cancelOutstandingRequests(0)
+    canceled = tracker.resetOutstandingRequests(0)
     assert canceled.size() == 0
-    assert tracker.cancelOutstandingRequests(1).size() == 1
+    assert tracker.resetOutstandingRequests(1).size() == 1
   }
-  
+
+  @Test
+  public void testEscalation() throws Throwable {
+    OutstandingRequest r1 = tracker.newRequest(host1, 0)
+  }
 }

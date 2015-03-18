@@ -645,10 +645,10 @@ public class RoleHistory {
     boolean requestFound =
       outstandingRequests.onContainerAllocated(role, hostname);
     if (desiredCount <= actualCount) {
-      // all oustanding requests have been satisfied
+      // all outstanding requests have been satisfied
       // tag nodes as available
       List<NodeInstance>
-        hosts = outstandingRequests.cancelOutstandingRequests(role);
+        hosts = outstandingRequests.resetOutstandingRequests(role);
       if (!hosts.isEmpty()) {
         //add the list
         log.info("Adding {} hosts for role {}", hosts.size(), role);
