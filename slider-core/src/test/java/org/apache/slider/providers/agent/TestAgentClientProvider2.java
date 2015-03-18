@@ -225,7 +225,7 @@ public class TestAgentClientProvider2 {
     args.install = true;
     try {
       client.actionClient(args);
-    }catch(BadCommandArgumentsException e) {
+    } catch (BadCommandArgumentsException e) {
       log.info(e.getMessage());
       Assert.assertTrue(e.getMessage().contains("A valid install location must be provided for the client"));
     }
@@ -235,7 +235,7 @@ public class TestAgentClientProvider2 {
     args.installLocation = dest;
     try {
       client.actionClient(args);
-    }catch(BadCommandArgumentsException e) {
+    } catch (BadCommandArgumentsException e) {
       log.info(e.getMessage());
       Assert.assertTrue(e.getMessage().contains("Install path does not exist at"));
     }
@@ -243,7 +243,7 @@ public class TestAgentClientProvider2 {
     dest.mkdir();
     try {
       client.actionClient(args);
-    }catch(BadCommandArgumentsException e) {
+    } catch (BadCommandArgumentsException e) {
       log.info(e.getMessage());
       Assert.assertTrue(e.getMessage().contains("A valid application package location required"));
     }
@@ -253,7 +253,7 @@ public class TestAgentClientProvider2 {
     args.clientConfig = tmpFile;
     try {
       client.actionClient(args);
-    }catch(SliderException e) {
+    } catch (SliderException e) {
       log.info(e.getMessage());
       Assert.assertTrue(e.getMessage().contains("Invalid configuration. Must be a valid json file"));
     }
@@ -261,7 +261,7 @@ public class TestAgentClientProvider2 {
     args.clientConfig = null;
     try {
       client.actionClient(args);
-    }catch(SliderException e) {
+    } catch (SliderException e) {
       log.info(e.getMessage());
       Assert.assertTrue(e.getMessage().contains("Not a valid app package. Could not read metainfo"));
     }

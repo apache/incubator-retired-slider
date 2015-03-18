@@ -18,6 +18,7 @@
 
 package org.apache.slider.core.persist;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.io.Files;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.Path;
@@ -26,7 +27,6 @@ import org.apache.slider.common.params.AbstractClusterBuildingActionArgs;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.conf.ConfTreeOperations;
-import org.apache.slider.core.exceptions.BadClusterStateException;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.providers.agent.AgentKeys;
@@ -107,11 +107,23 @@ public class AppDefinitionPersister {
   }
 
   public void processSuppliedDefinitions(String clustername,
-                                          AbstractClusterBuildingActionArgs buildInfo,
-                                          ConfTreeOperations appConf)
+                                         AbstractClusterBuildingActionArgs buildInfo,
+                                         ConfTreeOperations appConf)
       throws BadConfigException, IOException, BadCommandArgumentsException {
     // if metainfo is provided add to the app instance
     if (buildInfo.appMetaInfo != null) {
+
+      if (!buildInfo.appMetaInfo.canRead() || !buildInfo.appMetaInfo.isFile()) {
+        throw new BadConfigException("--metainfo file cannot be read.");
+      }
+
+      if (buildInfo.appDef != null) {
+        throw new BadConfigException("both --metainfo and --appdef may not be specified.");
+      }
+      if (SliderUtils.isSet(appConf.getGlobalOptions().get(AgentKeys.APP_DEF))) {
+        throw new BadConfigException("application.def must not be set if --metainfo is provided.");
+      }
+
       File tempDir = Files.createTempDir();
       File pkgSrcDir = new File(tempDir, "default");
       pkgSrcDir.mkdirs();
@@ -127,6 +139,14 @@ public class AppDefinitionPersister {
     }
 
     if (buildInfo.appDef != null) {
+      if (SliderUtils.isSet(appConf.getGlobalOptions().get(AgentKeys.APP_DEF))) {
+        throw new BadConfigException("application.def must not be set if --appdef is provided.");
+      }
+
+      if (!buildInfo.appDef.exists()) {
+        throw new BadConfigException("--appdef is not a valid path.");
+      }
+
       Path appDirPath = sliderFileSystem.buildAppDefDirPath(clustername);
       appDefinitions.add(new AppDefinition(appDirPath, buildInfo.appDef, SliderKeys.DEFAULT_APP_PKG));
       Path appDefPath = new Path(appDirPath, SliderKeys.DEFAULT_APP_PKG);
@@ -135,16 +155,30 @@ public class AppDefinitionPersister {
     }
 
     if (buildInfo.addonDelegate.getAddonMap().size() > 0) {
+      if (SliderUtils.isUnset(appConf.getGlobalOptions().get(AgentKeys.APP_DEF))) {
+        throw new BadConfigException("addon package can only be specified if main app package is specified.");
+      }
+
       List<String> addons = new ArrayList<String>();
       Map<String, String> addonMap = buildInfo.addonDelegate.getAddonMap();
       for (String key : addonMap.keySet()) {
+        File defPath = new File(addonMap.get(key));
+        if (SliderUtils.isUnset(addonMap.get(key))) {
+          throw new BadConfigException("Invalid path for addon package " + key);
+        }
+
+        if (!defPath.exists()) {
+          throw new BadConfigException("addon folder or package path is not valid.");
+        }
+
         Path addonPath = sliderFileSystem.buildAddonDirPath(clustername, key);
         String addonPkgName = "addon_" + key + ".zip";
-        appDefinitions.add(new AppDefinition(addonPath, buildInfo.appDef, addonPkgName));
+        appDefinitions.add(new AppDefinition(addonPath, defPath, addonPkgName));
         String addOnKey = AgentKeys.ADDON_PREFIX + key;
         Path addonPkgPath = new Path(addonPath, addonPkgName);
         log.info("Setting addon package {} to {}.", addOnKey, addonPkgPath);
         appConf.getGlobalOptions().set(addOnKey, addonPkgPath);
+        addons.add(addOnKey);
       }
 
       String existingList = appConf.getGlobalOptions().get(AgentKeys.ADDONS);
@@ -156,19 +190,33 @@ public class AppDefinitionPersister {
   }
 
 
+  @VisibleForTesting
+  public List<AppDefinitionPersister.AppDefinition> getAppDefinitions() {
+    return appDefinitions;
+  }
+
   // Helper class to hold details for the app and addon packages
-  class AppDefinition {
+  public class AppDefinition {
     // The target folder where the package will be stored
-    Path targetFolderInFs;
+    public Path targetFolderInFs;
     // The on disk location of the app def package or folder
-    File appDefPkgOrFolder;
+    public File appDefPkgOrFolder;
     // Package name
-    String pkgName;
+    public String pkgName;
 
     public AppDefinition(Path targetFolderInFs, File appDefPkgOrFolder, String pkgName) {
       this.targetFolderInFs = targetFolderInFs;
       this.appDefPkgOrFolder = appDefPkgOrFolder;
       this.pkgName = pkgName;
+    }
+
+    @Override
+    public String toString() {
+      return new StringBuilder().append("targetFolderInFs").append(" : ").append(targetFolderInFs.toString())
+          .append(", ")
+          .append("appDefPkgOrFolder").append(" : ").append(appDefPkgOrFolder.toString())
+          .append(", ")
+          .append("pkgName").append(" : ").append(pkgName).toString();
     }
   }
 }
