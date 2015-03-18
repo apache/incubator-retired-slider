@@ -1203,7 +1203,7 @@ public class AppState {
    * @param capability a resource to set up
    * @return the request for a new container
    */
-  private AMRMClient.ContainerRequest buildContainerResourceAndRequest(
+  public AMRMClient.ContainerRequest buildContainerResourceAndRequest(
         RoleStatus role,
         Resource capability) {
     buildResourceRequirements(role, capability);

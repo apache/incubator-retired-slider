@@ -99,6 +99,14 @@ public final class RoleStatus implements Cloneable {
     return 0 != (getPlacementPolicy() & PlacementPolicy.STRICT);
   }
 
+  public boolean isAntiAffinePlacement() {
+    return 0 != (getPlacementPolicy() & PlacementPolicy.ANTI_AFFINITY_REQUIRED);
+  }
+
+  public boolean isStrictOrAntiAffinePlacement() {
+    return isStrictPlacement() || isAntiAffinePlacement();
+  }
+
   public synchronized int getDesired() {
     return desired;
   }

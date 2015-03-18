@@ -122,7 +122,7 @@ class TestRoleHistoryRequestTracking extends BaseMockAppStateTest {
   @Test
   public void testRequestedNodeIntoReqList() throws Throwable {
     AMRMClient.ContainerRequest req = roleHistory.requestNode(roleStatus, resource)
-    List<OutstandingRequest> requests = roleHistory.outstandingRequestList
+    List<OutstandingRequest> requests = roleHistory.listOutstandingPlacedRequests
     assert requests.size() == 1
     assert age3Active0.hostname == requests[0].hostname
   }
@@ -130,28 +130,28 @@ class TestRoleHistoryRequestTracking extends BaseMockAppStateTest {
   @Test
   public void testCompletedRequestDropsNode() throws Throwable {
     AMRMClient.ContainerRequest req = roleHistory.requestNode(roleStatus, resource)
-    List<OutstandingRequest> requests = roleHistory.outstandingRequestList
+    List<OutstandingRequest> requests = roleHistory.listOutstandingPlacedRequests
     assert requests.size() == 1
     String hostname = requests[0].hostname
     assert age3Active0.hostname == hostname
     assert hostname == req.nodes[0]
     MockContainer container = factory.newContainer(req, hostname)
     assert roleHistory.onContainerAllocated(container , 2, 1)
-    assert roleHistory.outstandingRequestList.empty
+    assert roleHistory.listOutstandingPlacedRequests.empty
   }
   
   @Test
   public void testTwoRequests() throws Throwable {
     AMRMClient.ContainerRequest req = roleHistory.requestNode(roleStatus, resource)
     AMRMClient.ContainerRequest req2 = roleHistory.requestNode(roleStatus, resource)
-    List<OutstandingRequest> requests = roleHistory.outstandingRequestList
+    List<OutstandingRequest> requests = roleHistory.listOutstandingPlacedRequests
     assert requests.size() == 2
     MockContainer container = factory.newContainer(req, req.nodes[0])
     assert roleHistory.onContainerAllocated(container , 2, 1)
-    assert roleHistory.outstandingRequestList.size() == 1
+    assert roleHistory.listOutstandingPlacedRequests.size() == 1
     container = factory.newContainer(req2, req2.nodes[0])
     assert roleHistory.onContainerAllocated(container, 2, 2)
-    assert roleHistory.outstandingRequestList.empty
+    assert roleHistory.listOutstandingPlacedRequests.empty
   }
 
     
@@ -160,22 +160,22 @@ class TestRoleHistoryRequestTracking extends BaseMockAppStateTest {
     AMRMClient.ContainerRequest req = roleHistory.requestNode(roleStatus, resource)
     AMRMClient.ContainerRequest req2 = roleHistory.requestNode(roleStatus, resource)
     AMRMClient.ContainerRequest req3 = roleHistory.requestNode(roleStatus, resource)
-    List<OutstandingRequest> requests = roleHistory.outstandingRequestList
+    List<OutstandingRequest> requests = roleHistory.listOutstandingPlacedRequests
     assert requests.size() == 2
     MockContainer container = factory.newContainer(req, req.nodes[0])
     assert roleHistory.onContainerAllocated(container , 2, 1)
-    assert roleHistory.outstandingRequestList.size() == 1
+    assert roleHistory.listOutstandingPlacedRequests.size() == 1
     
     container = factory.newContainer(req3, "three")
     assert !roleHistory.onContainerAllocated(container, 3, 2)
-    assert roleHistory.outstandingRequestList.size() == 1
+    assert roleHistory.listOutstandingPlacedRequests.size() == 1
     
     // the final allocation will trigger a cleanup
     container = factory.newContainer(req2, "four")
     // no node dropped
     assert !roleHistory.onContainerAllocated(container, 3, 3)
     // yet the list is now empty
-    assert roleHistory.outstandingRequestList.empty
+    assert roleHistory.listOutstandingPlacedRequests.empty
 
     // and the remainder goes onto the available list
     List<NodeInstance> a2 = roleHistory.cloneAvailableList(0)
@@ -189,17 +189,17 @@ class TestRoleHistoryRequestTracking extends BaseMockAppStateTest {
     AMRMClient.ContainerRequest req = roleHistory.requestNode(roleStatus, resource)
     AMRMClient.ContainerRequest req2 = roleHistory.requestNode(roleStatus, resource)
     AMRMClient.ContainerRequest req3 = roleHistory.requestNode(roleStatus, resource)
-    assert roleHistory.outstandingRequestList.size() == 2
+    assert roleHistory.listOutstandingPlacedRequests.size() == 2
     assert req3.nodes == null
     MockContainer container = factory.newContainer(req, req.nodes[0])
     assert roleHistory.onContainerAllocated(container , 3, 1)
-    assert roleHistory.outstandingRequestList.size() == 1
+    assert roleHistory.listOutstandingPlacedRequests.size() == 1
     container = factory.newContainer(req2, req2.nodes[0])
     assert roleHistory.onContainerAllocated(container, 3, 2)
-    assert roleHistory.outstandingRequestList.empty
+    assert roleHistory.listOutstandingPlacedRequests.empty
     container = factory.newContainer(req3, "three")
     assert !roleHistory.onContainerAllocated(container, 3, 3)
-    assert roleHistory.outstandingRequestList.empty
+    assert roleHistory.listOutstandingPlacedRequests.empty
   }
 
 }

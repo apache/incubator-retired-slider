@@ -140,7 +140,7 @@ public final class OutstandingRequest {
     boolean relaxLocality;
     requestedTimeMillis = time;
     escalationTimeoutMillis = time + role.getPlacementTimeoutSeconds() * 1000;
-    boolean usePlacementHistory = role.isStrictPlacement();
+    boolean usePlacementHistory = role.isStrictOrAntiAffinePlacement();
     if (!usePlacementHistory) {
       // If strict placement does not mandate using placement then check
       // that the recent failures on this node is not higher than threshold
@@ -157,7 +157,7 @@ public final class OutstandingRequest {
     if (node != null && usePlacementHistory) {
       hosts = new String[1];
       hosts[0] = node.hostname;
-      relaxLocality = !role.isStrictPlacement();
+      relaxLocality = !role.isStrictOrAntiAffinePlacement();
       // tell the node it is in play
       node.getOrCreate(roleId);
       log.info("Submitting request for container on {}", hosts[0]);
@@ -265,14 +265,16 @@ public final class OutstandingRequest {
     result = 31 * result + (hostname != null ? hostname.hashCode() : 0);
     return result;
   }
-  
+
   @Override
   public String toString() {
-    final StringBuilder sb =
-      new StringBuilder("OutstandingRequest{");
+    final StringBuilder sb = new StringBuilder("OutstandingRequest{");
     sb.append("roleId=").append(roleId);
-    sb.append(", node='").append(node).append('\'');
-    sb.append(", requestedTime=").append(requestedTimeMillis);
+    sb.append(", node=").append(node);
+    sb.append(", hostname='").append(hostname).append('\'');
+    sb.append(", requestedTimeMillis=").append(requestedTimeMillis);
+    sb.append(", escalationTimeoutMillis=").append(escalationTimeoutMillis);
+    sb.append(", escalated=").append(escalated);
     sb.append('}');
     return sb.toString();
   }

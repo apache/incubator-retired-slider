@@ -835,11 +835,11 @@ public class RoleHistory {
   }
 
   /**
-   * Get a snapshot of the outstanding request list
+   * Get a snapshot of the outstanding placed request list
    * @return a list of the requests outstanding at the time of requesting
    */
   @VisibleForTesting
-  public synchronized List<OutstandingRequest> getOutstandingRequestList() {
+  public synchronized List<OutstandingRequest> listOutstandingPlacedRequests() {
     return outstandingRequests.listOutstandingRequests();
   }
 

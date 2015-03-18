@@ -18,7 +18,14 @@
 
 package org.apache.slider.server.appmaster.model.history
 
+import org.apache.hadoop.yarn.api.records.Resource
+import org.apache.slider.providers.PlacementPolicy
+import org.apache.slider.providers.ProviderRole
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
+import org.apache.slider.server.appmaster.model.mock.MockResource
+import org.apache.slider.server.appmaster.operations.AbstractRMOperation
+import org.apache.slider.server.appmaster.operations.CancelSingleRequest
+import org.apache.slider.server.appmaster.operations.ContainerRequestOperation
 import org.apache.slider.server.appmaster.state.NodeInstance
 import org.apache.slider.server.appmaster.state.OutstandingRequest
 import org.apache.slider.server.appmaster.state.OutstandingRequestTracker
@@ -70,8 +77,52 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest {
     assert tracker.resetOutstandingRequests(1).size() == 1
   }
 
+/*
+  @Override
+  AggregateConf buildInstanceDefinition() {
+    def aggregateConf = super.buildInstanceDefinition()
+    def component0 = aggregateConf.resourceOperations.getMandatoryComponent(ROLE0)
+    component0.set(ResourceKeys.COMPONENT_PLACEMENT_POLICY, PlacementPolicy.STRICT)
+    return aggregateConf
+  }
+*/
+
   @Test
-  public void testEscalation() throws Throwable {
-    OutstandingRequest r1 = tracker.newRequest(host1, 0)
+  public void testEscalationOfStrictPlacement() throws Throwable {
+    final def roleStatus = role1Status
+
+
+    ProviderRole role = roleStatus.providerRole
+    assert role.placementPolicy == PlacementPolicy.STRICT;
+    Resource resource = new MockResource()
+
+    appState.buildResourceRequirements(roleStatus, resource)
+
+    // first requst
+    OutstandingRequest r1 = tracker.newRequest(host1, roleStatus.key)
+    final def initialRequest = r1.buildContainerRequest(resource, roleStatus, 0, null)
+    assert r1.issuedRequest != null;
+    assert r1.located
+    assert !r1.escalated
+
+    assert !initialRequest.relaxLocality
+    assert tracker.listOutstandingRequests().size() == 1
+
+    // simulate a few minutes; escalation MUST now be triggered
+    List<AbstractRMOperation> escalations = tracker.escalateOutstandingRequests(180 * 1000)
+
+    assert r1.escalated
+    // two entries
+    assert escalations.size() == 2;
+    final def e1 = escalations[0]
+    assert  e1 instanceof CancelSingleRequest
+    CancelSingleRequest cancel = (CancelSingleRequest) e1
+    assert initialRequest == cancel.request
+    final def e2 = escalations[1]
+    assert e2 instanceof ContainerRequestOperation;
+    final def escRequest = (ContainerRequestOperation) e2
+    def req2 = escRequest.request
+    assert req2.relaxLocality
+
   }
 }

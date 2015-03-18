@@ -36,6 +36,10 @@ public class CancelSingleRequest extends AbstractRMOperation {
     handler.cancelSingleRequest(request);
   }
 
+  public AMRMClient.ContainerRequest getRequest() {
+    return request;
+  }
+
   @Override
   public String toString() {
     return "cancel single request for container at " + request.getPriority().toString();
