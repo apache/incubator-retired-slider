@@ -26,8 +26,6 @@ import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -134,7 +132,7 @@ public final class OutstandingRequest {
    * @param labelExpression label to satisfy
    * @return the request to raise
    */
-  public AMRMClient.ContainerRequest buildContainerRequest(
+  public synchronized AMRMClient.ContainerRequest buildContainerRequest(
       Resource resource, RoleStatus role, long time, String labelExpression) {
     String[] hosts;
     boolean relaxLocality;
@@ -187,9 +185,9 @@ public final class OutstandingRequest {
    * as the original one, and the same host, but: relaxed placement, and a changed priority
    * so as to place it into the relaxed list.
    */
-  public AMRMClient.ContainerRequest escalate() {
+  public synchronized AMRMClient.ContainerRequest escalate() {
+    Preconditions.checkNotNull(issuedRequest, "cannot escalate if request not issued "+ this);
     escalated = true;
-    Preconditions.checkNotNull(issuedRequest, "issued request");
     Priority pri = ContainerPriority.createPriority(roleId, true);
     String[] nodes;
     List<String> issuedRequestNodes = issuedRequest.getNodes();
@@ -224,8 +222,8 @@ public final class OutstandingRequest {
    * @param time time to check against
    * @return true if escalation should begin
    */
-  public boolean shouldEscalate(long time) {
-    return !escalated && escalationTimeoutMillis < time;
+  public synchronized boolean shouldEscalate(long time) {
+    return issuedRequest != null && !escalated && escalationTimeoutMillis < time;
   }
   
   /**
@@ -267,7 +265,7 @@ public final class OutstandingRequest {
   }
 
   @Override
-  public String toString() {
+  public synchronized String toString() {
     final StringBuilder sb = new StringBuilder("OutstandingRequest{");
     sb.append("roleId=").append(roleId);
     sb.append(", node=").append(node);

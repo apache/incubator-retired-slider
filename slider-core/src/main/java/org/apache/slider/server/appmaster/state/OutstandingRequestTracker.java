@@ -245,14 +245,18 @@ public class OutstandingRequestTracker {
 
     List<AbstractRMOperation> operations = new ArrayList<>();
     for (OutstandingRequest outstandingRequest : placedRequests.values()) {
-      if (outstandingRequest.shouldEscalate(now)) {
+      synchronized (outstandingRequest) {
+        // sync escalation check with operation so that nothing can happen to state
+        // of the request during the escalation
+        if (outstandingRequest.shouldEscalate(now)) {
 
-        // time to escalate
-        CancelSingleRequest cancel = new CancelSingleRequest(outstandingRequest.issuedRequest);
-        operations.add(cancel);
-        AMRMClient.ContainerRequest escalated =
-            outstandingRequest.escalate();
-        operations.add(new ContainerRequestOperation(escalated));
+          // time to escalate
+          CancelSingleRequest cancel = new CancelSingleRequest(outstandingRequest.issuedRequest);
+          operations.add(cancel);
+          AMRMClient.ContainerRequest escalated =
+              outstandingRequest.escalate();
+          operations.add(new ContainerRequestOperation(escalated));
+        }
       }
       
     }

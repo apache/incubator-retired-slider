@@ -29,6 +29,7 @@ import org.apache.slider.server.appmaster.operations.ContainerRequestOperation
 import org.apache.slider.server.appmaster.state.NodeInstance
 import org.apache.slider.server.appmaster.state.OutstandingRequest
 import org.apache.slider.server.appmaster.state.OutstandingRequestTracker
+import org.apache.slider.server.appmaster.state.RoleStatus
 import org.junit.Test
 
 class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest {
@@ -88,30 +89,32 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest {
 */
 
   @Test
-  public void testEscalationOfStrictPlacement() throws Throwable {
-    final def roleStatus = role1Status
-
-
-    ProviderRole role = roleStatus.providerRole
-    assert role.placementPolicy == PlacementPolicy.STRICT;
-    Resource resource = new MockResource()
-
-    appState.buildResourceRequirements(roleStatus, resource)
-
-    // first requst
-    OutstandingRequest r1 = tracker.newRequest(host1, roleStatus.key)
-    final def initialRequest = r1.buildContainerRequest(resource, roleStatus, 0, null)
-    assert r1.issuedRequest != null;
-    assert r1.located
-    assert !r1.escalated
-
+  public void testEscalation() throws Throwable {
+    ProviderRole providerRole1 = role1Status.providerRole
+    assert providerRole1.placementPolicy == PlacementPolicy.STRICT;
+    // first request
+    final def (res1, outstanding1) = newRequest(role1Status)
+    final def initialRequest = outstanding1.buildContainerRequest(res1, role1Status, 0, null)
+    assert outstanding1.issuedRequest != null;
+    assert outstanding1.located
+    assert !outstanding1.escalated
     assert !initialRequest.relaxLocality
     assert tracker.listOutstandingRequests().size() == 1
 
-    // simulate a few minutes; escalation MUST now be triggered
-    List<AbstractRMOperation> escalations = tracker.escalateOutstandingRequests(180 * 1000)
+    // second. This one doesn't get launched. This is to verify that the escalation
+    // process skips entries which are in the list but have not been issued.
+    // ...which can be a race condition between request issuance & escalation.
+    // (not one observed outside test authoring, but retained for completeness)
+    assert role2Status.placementPolicy == PlacementPolicy.ANTI_AFFINITY_REQUIRED
+    def (res2, outstanding2) = newRequest(role2Status)
 
-    assert r1.escalated
+    // simulate some time escalation of role 1 MUST now be triggered
+    List<AbstractRMOperation> escalations =
+        tracker.escalateOutstandingRequests(providerRole1.placementTimeoutSeconds * 1000 + 500 )
+
+    assert outstanding1.escalated
+    assert !outstanding2.escalated
+
     // two entries
     assert escalations.size() == 2;
     final def e1 = escalations[0]
@@ -124,5 +127,18 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest {
     def req2 = escRequest.request
     assert req2.relaxLocality
 
+    def (res3, outstanding3) = newRequest(role2Status)
+    outstanding3.buildContainerRequest(res3, role2Status, 0, null)
+
+    List<AbstractRMOperation> escalations2 =
+        tracker.escalateOutstandingRequests(providerRole1.placementTimeoutSeconds * 1000 + 500)
+    assert escalations2.size() == 0
+  }
+
+  public def newRequest(RoleStatus r) {
+    final Resource res2 = new MockResource()
+    appState.buildResourceRequirements(r, res2)
+    final OutstandingRequest outstanding2 = tracker.newRequest(host1, r.key)
+    return [res2, outstanding2]
   }
 }
