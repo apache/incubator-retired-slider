@@ -16,10 +16,12 @@
  */
 package org.apache.slider.providers.agent.application.metadata;
 
+import org.apache.slider.core.exceptions.SliderException;
+
 /**
  *
  */
-public class Export {
+public class Export implements Validate {
   String name;
   String value;
 
@@ -50,5 +52,10 @@ public class Export {
     sb.append(",\n\"value\": ").append(value);
     sb.append('}');
     return sb.toString();
+  }
+
+  public void validate(String version) throws SliderException {
+    Metainfo.checkNonNull(getName(), "name", "export");
+    Metainfo.checkNonNull(getValue(), "value", "export");
   }
 }

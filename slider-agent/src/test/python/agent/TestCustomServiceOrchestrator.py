@@ -23,15 +23,13 @@ import pprint
 
 from unittest import TestCase
 import unittest
-import threading
 import tempfile
-import time
+import posixpath
 import logging
-from threading import Thread
 
 from PythonExecutor import PythonExecutor
 from CustomServiceOrchestrator import CustomServiceOrchestrator
-from mock.mock import MagicMock, patch
+from mock.mock import MagicMock, patch, call
 import StringIO
 import sys
 from socket import socket
@@ -438,13 +436,109 @@ class TestCustomServiceOrchestrator(TestCase):
     self.assertEqual.__self__.maxDiff = None
     self.assertEqual(ret['exitcode'], 0)
     self.assertTrue(run_file_mock.called)
-    self.assertEqual(orchestrator.stored_command, command)
 
     ret = orchestrator.requestComponentStatus(command_get)
     self.assertEqual(ret['configurations'], expected)
 
     ret = orchestrator.requestComponentStatus(command_get_specific)
     self.assertEqual(ret['configurations'], expected_specific)
+    pass
+
+  @patch("hostname.public_hostname")
+  @patch("os.path.isfile")
+  @patch("os.unlink")
+  @patch.object(PythonExecutor, "run_file")
+  def test_runCommand_with_shell_config(self,
+                                  run_file_mock,
+                                  unlink_mock,
+                                  isfile_mock,
+                                  hostname_mock):
+    hostname_mock.return_value = "test.hst"
+    isfile_mock.return_value = True
+    command = {
+      'role': 'MEMCACHED',
+      'componentName': 'MEMCACHED',
+      'hostLevelParams': {
+        'jdk_location': 'some_location'
+      },
+      'commandParams': {
+        'script_type': 'SHELL',
+        'command_timeout': '600'
+      },
+      'configurations': {
+        "memcached-site": {
+          "memcached.log": "${AGENT_LOG_ROOT}",
+          "memcached.number": "10485760"},
+        "memcached-log4j": {"a": "b"}
+      },
+      'taskId': '3',
+      'roleCommand': 'INSTALL',
+      'commandType': 'EXECUTION_COMMAND',
+      'commandId': '1-1'
+    }
+
+    command_get = {
+      'roleCommand': 'GET_CONFIG',
+      'commandType': 'STATUS_COMMAND'
+    }
+
+    command_get_specific = {
+      'roleCommand': 'GET_CONFIG',
+      'commandType': 'STATUS_COMMAND',
+      'commandParams': {
+        'config_type': 'memcached-site'
+      }
+    }
+
+    tempdir = tempfile.gettempdir()
+    config = MagicMock()
+    config.get.return_value = "something"
+    config.getResolvedPath.return_value = tempdir
+    config.getWorkRootPath.return_value = tempdir
+    config.getLogPath.return_value = tempdir
+
+    dummy_controller = MagicMock()
+    orchestrator = CustomServiceOrchestrator(config, dummy_controller, self.agentToggleLogger)
+    # normal run case
+    run_file_mock.return_value = {
+      'stdout': 'sss',
+      'stderr': 'eee',
+      'exitcode': 0,
+      }
+
+    expected = {
+      'memcached-site': {
+        'memcached.log': tempdir, 'memcached.number': '10485760'},
+      'memcached-log4j': {'a': 'b'}}
+
+    expected_specific = {
+      'memcached-site': {
+        'memcached.log': tempdir, 'memcached.number': '10485760'},
+      }
+
+    ret = orchestrator.runCommand(command, "out.txt", "err.txt", True, True)
+    self.assertEqual.__self__.maxDiff = None
+    self.assertEqual(ret['exitcode'], 0)
+    self.assertTrue(run_file_mock.called)
+
+    ret = orchestrator.requestComponentStatus(command_get)
+    self.assertEqual(ret['configurations'], expected)
+
+    ret = orchestrator.requestComponentStatus(command_get_specific)
+    self.assertEqual(ret['configurations'], expected_specific)
+
+    script_path = os.path.realpath(posixpath.join(tempdir,
+                                                  "infra", "agent", "slider-agent", "scripts",
+                                                  "shell_cmd", "basic_installer.py"))
+    run_file_mock.assert_has_calls([call(
+      script_path,
+      ['INSTALL', os.path.realpath(posixpath.join(tempdir, 'command-3.json')),
+       os.path.realpath(posixpath.join(tempdir, 'package'))],
+      'out.txt', 'err.txt', 600,
+      os.path.realpath(posixpath.join(tempdir, 'structured-out-3.json')),
+      'INFO', True,
+      [('PYTHONPATH', ":".join([os.path.realpath(posixpath.join(tempdir, 'infra', 'agent', 'slider-agent', 'jinja2')),
+                                os.path.realpath(posixpath.join(tempdir, 'infra', 'agent', 'slider-agent'))]))])])
     pass
 
   @patch.object(CustomServiceOrchestrator, "runCommand")

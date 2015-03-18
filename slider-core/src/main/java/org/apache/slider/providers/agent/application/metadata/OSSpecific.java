@@ -16,13 +16,15 @@
  */
 package org.apache.slider.providers.agent.application.metadata;
 
+import org.apache.slider.core.exceptions.SliderException;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  *
  */
-public class OSSpecific {
+public class OSSpecific implements Validate {
   String osType;
   List<OSPackage> packages;
 
@@ -44,5 +46,12 @@ public class OSSpecific {
 
   public List<OSPackage> getPackages() {
     return packages;
+  }
+
+  public void validate(String version) throws SliderException {
+    Metainfo.checkNonNull(getOsType(), "osType", "osSpecific");
+    for (OSPackage opkg : getPackages()) {
+      opkg.validate(version);
+    }
   }
 }

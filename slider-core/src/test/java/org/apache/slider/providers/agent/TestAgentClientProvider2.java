@@ -33,8 +33,7 @@ import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.providers.ProviderUtils;
 import org.apache.slider.providers.agent.application.metadata.Application;
 import org.apache.slider.providers.agent.application.metadata.Metainfo;
-import org.apache.slider.providers.agent.application.metadata.OSPackage;
-import org.apache.slider.providers.agent.application.metadata.OSSpecific;
+import org.apache.slider.providers.agent.application.metadata.Package;
 import org.codehaus.jettison.json.JSONObject;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -126,13 +125,10 @@ public class TestAgentClientProvider2 {
     Metainfo metainfo = new Metainfo();
     Application app = new Application();
     metainfo.setApplication(app);
-    OSSpecific osSpecific = new OSSpecific();
-    osSpecific.setOsType("any");
-    app.addOSSpecific(osSpecific);
-    OSPackage pkg = new OSPackage();
-    osSpecific.addOSPackage(pkg);
+    Package pkg = new Package();
     pkg.setName("app.tar");
     pkg.setType("tarball");
+    app.getPackages().add(pkg);
 
     File clientInstallPath = new File("/tmp/file1");
     String appName = "name";
@@ -267,7 +263,7 @@ public class TestAgentClientProvider2 {
       client.actionClient(args);
     }catch(SliderException e) {
       log.info(e.getMessage());
-      Assert.assertTrue(e.getMessage().contains("Not a valid app package. Could not read metainfo.xml"));
+      Assert.assertTrue(e.getMessage().contains("Not a valid app package. Could not read metainfo"));
     }
   }
 }

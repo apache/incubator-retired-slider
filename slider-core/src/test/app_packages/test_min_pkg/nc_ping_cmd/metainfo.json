@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "2.1",
+  "application": {
+    "name": "LISTENER",
+    "exportGroups": [
+      {
+        "name": "Servers",
+        "exports": [
+          {
+            "name": "host_port",
+            "value": "${LISTEN_HOST}:${site.global.port}"
+          }
+        ]
+      }
+    ],
+    "components": [
+      {
+        "name": "LISTEN",
+        "compExports": "Servers-host_port",
+        "commands": [
+          {
+            "exec": "nc -l {$conf:@//site/global/port}"
+          }
+        ]
+      }
+    ]
+  }
+}

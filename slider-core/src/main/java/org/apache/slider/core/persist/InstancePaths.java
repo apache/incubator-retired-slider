@@ -34,6 +34,8 @@ public class InstancePaths {
   public final Path dataPath;
   public final Path tmpPath;
   public final Path tmpPathAM;
+  public final Path appDefPath;
+  public final Path addonsPath;
 
   public InstancePaths(Path instanceDir) {
     this.instanceDir = instanceDir;
@@ -45,6 +47,8 @@ public class InstancePaths {
     dataPath = new Path(instanceDir, SliderKeys.DATA_DIR_NAME);
     tmpPath = new Path(instanceDir, SliderKeys.TMP_DIR_PREFIX);
     tmpPathAM = new Path(tmpPath, SliderKeys.AM_DIR_PREFIX);
+    appDefPath = new Path(tmpPath, SliderKeys.APP_DEF_DIR);
+    addonsPath = new Path(tmpPath, SliderKeys.ADDONS_DIR);
   }
 
   @Override

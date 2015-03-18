@@ -168,11 +168,21 @@ public interface SliderKeys extends SliderXmlConfKeys {
   String TMP_LOGDIR_PREFIX = "/tmp/slider-";
   String TMP_DIR_PREFIX = "tmp";
   String AM_DIR_PREFIX = "appmaster";
-  
+
+  /**
+   * Store the default app definition, e.g. metainfo file or content of a folder
+   */
+  String APP_DEF_DIR = "appdef";
+  /**
+   * Store additional app defs - co-processors
+   */
+  String ADDONS_DIR = "addons";
+
   String SLIDER_JAR = "slider.jar";
   String JCOMMANDER_JAR = "jcommander.jar";
   String GSON_JAR = "gson.jar";
   String AGENT_TAR = "slider-agent.tar.gz";
+  String DEFAULT_APP_PKG = "appPkg.zip";
 
   String DEFAULT_JVM_HEAP = "256M";
   int DEFAULT_YARN_MEMORY = 256;

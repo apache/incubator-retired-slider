@@ -152,6 +152,7 @@ public class AgentClientProvider extends AbstractClientProvider
     } catch (BadConfigException bce) {
       throw new BadConfigException("Application definition must be provided. " + bce.getMessage());
     }
+
     String appDef = instanceDefinition.getAppConfOperations().
         getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
     log.info("Validating app definition {}", appDef);
@@ -170,7 +171,7 @@ public class AgentClientProvider extends AbstractClientProvider
         metaInfo = AgentUtils.getApplicationMetainfo(fs, appDef);
       } catch (IOException ioe) {
         // Ignore missing metainfo file for now
-        log.info("Missing metainfo.xml {}", ioe.getMessage());
+        log.info("Missing metainfo {}", ioe.getMessage());
       }
     }
 
@@ -215,19 +216,31 @@ public class AgentClientProvider extends AbstractClientProvider
               "Component %s is not a member of application.", name);
         }
 
-        MapOperations componentConfig = resources.getMandatoryComponent(name);
-        int count =
-            componentConfig.getMandatoryOptionInt(ResourceKeys.COMPONENT_INSTANCES);
-        int definedMinCount = componentDef.getMinInstanceCountInt();
-        int definedMaxCount = componentDef.getMaxInstanceCountInt();
-        if (count < definedMinCount || count > definedMaxCount) {
-          throw new BadConfigException("Component %s, %s value %d out of range. "
-                                       + "Expected minimum is %d and maximum is %d",
-                                       name,
-                                       ResourceKeys.COMPONENT_INSTANCES,
-                                       count,
-                                       definedMinCount,
-                                       definedMaxCount);
+        // ensure that intance count is 0 for client components
+        if ("CLIENT".equals(componentDef.getCategory())) {
+          MapOperations componentConfig = resources.getMandatoryComponent(name);
+          int count =
+              componentConfig.getMandatoryOptionInt(ResourceKeys.COMPONENT_INSTANCES);
+          if (count > 0) {
+            throw new BadConfigException("Component %s is of type CLIENT and cannot be instantiated."
+                                         + " Use \"slider client install ...\" command instead.",
+                                         name);
+          }
+        } else {
+          MapOperations componentConfig = resources.getMandatoryComponent(name);
+          int count =
+              componentConfig.getMandatoryOptionInt(ResourceKeys.COMPONENT_INSTANCES);
+          int definedMinCount = componentDef.getMinInstanceCountInt();
+          int definedMaxCount = componentDef.getMaxInstanceCountInt();
+          if (count < definedMinCount || count > definedMaxCount) {
+            throw new BadConfigException("Component %s, %s value %d out of range. "
+                                         + "Expected minimum is %d and maximum is %d",
+                                         name,
+                                         ResourceKeys.COMPONENT_INSTANCES,
+                                         count,
+                                         definedMinCount,
+                                         definedMaxCount);
+          }
         }
       }
     }
@@ -327,7 +340,19 @@ public class AgentClientProvider extends AbstractClientProvider
                 while (offset < size) {
                   offset += zipInputStream.read(content, offset, size - offset);
                 }
-                metaInfo = new MetainfoParser().parse(new ByteArrayInputStream(content));
+                metaInfo = new MetainfoParser().fromXmlStream(new ByteArrayInputStream(content));
+              }
+            } else if ("metainfo.json".equals(zipEntry.getName())) {
+              int size = (int) zipEntry.getSize();
+              if (size != -1) {
+                log.info("Reading {} of size {}", zipEntry.getName(),
+                         zipEntry.getSize());
+                byte[] content = new byte[size];
+                int offset = 0;
+                while (offset < size) {
+                  offset += zipInputStream.read(content, offset, size - offset);
+                }
+                metaInfo = new MetainfoParser().fromJsonStream(new ByteArrayInputStream(content));
               }
             } else if ("clientInstallConfig-default.json".equals(zipEntry.getName())) {
               int size = (int) zipEntry.getSize();
@@ -362,7 +387,7 @@ public class AgentClientProvider extends AbstractClientProvider
       }
 
       if (metaInfo == null) {
-        throw new SliderException("Not a valid app package. Could not read metainfo.xml.");
+        throw new SliderException("Not a valid app package. Could not read metainfo.");
       }
 
       expandAgentTar(agentPkgDir);

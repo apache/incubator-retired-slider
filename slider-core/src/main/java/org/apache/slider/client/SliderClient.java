@@ -20,6 +20,7 @@ package org.apache.slider.client;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.io.Files;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -133,6 +134,7 @@ import org.apache.slider.core.launch.LaunchedApplication;
 import org.apache.slider.core.launch.RunningApplication;
 import org.apache.slider.core.launch.SerializedApplicationReport;
 import org.apache.slider.core.main.RunService;
+import org.apache.slider.core.persist.AppDefinitionPersister;
 import org.apache.slider.core.persist.ApplicationReportSerDeser;
 import org.apache.slider.core.persist.ConfPersister;
 import org.apache.slider.core.persist.LockAcquireFailedException;
@@ -179,7 +181,6 @@ import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1052,7 +1053,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     JSONObject config = null;
     if(clientInfo.clientConfig != null) {
       try {
-        byte[] encoded = Files.readAllBytes(clientInfo.clientConfig.toPath());
+        byte[] encoded = Files.toByteArray(clientInfo.clientConfig);
         config = new JSONObject(new String(encoded, Charset.defaultCharset()));
       }catch(JSONException jsonEx) {
         log.error("Unable to read supplied config", jsonEx);
@@ -1304,6 +1305,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       }
     }
 
+    AppDefinitionPersister appDefinitionPersister = new AppDefinitionPersister(sliderFileSystem);
+    appDefinitionPersister.processSuppliedDefinitions(clustername, buildInfo, appConf);
+
     //get the command line options
     ConfTree cmdLineAppOptions = buildInfo.buildAppOptionsConfTree();
     ConfTree cmdLineResourceOptions = buildInfo.buildResourceOptionsConfTree();
@@ -1395,18 +1399,24 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // make any substitutions needed at this stage
     replaceTokens(appConf.getConfTree(), getUsername(), clustername);
 
-    // providers to validate what there is
-    AggregateConf instanceDescription = builder.getInstanceDescription();
-    validateInstanceDefinition(sliderAM, instanceDescription, sliderFileSystem);
-    validateInstanceDefinition(provider, instanceDescription, sliderFileSystem);
+    // TODO: Refactor the validation code and persistence code
     try {
       persistInstanceDefinition(overwrite, appconfdir, builder);
+      appDefinitionPersister.persistPackages();
+
     } catch (LockAcquireFailedException e) {
       log.warn("Failed to get a Lock on {} : {}", builder, e);
       throw new BadClusterStateException("Failed to save " + clustername
                                          + ": " + e);
     }
+
+    // providers to validate what there is
+    // TODO: Validation should be done before persistence
+    AggregateConf instanceDescription = builder.getInstanceDescription();
+    validateInstanceDefinition(sliderAM, instanceDescription, sliderFileSystem);
+    validateInstanceDefinition(provider, instanceDescription, sliderFileSystem);
   }
+
 
   protected void persistInstanceDefinition(boolean overwrite,
                                          Path appconfdir,

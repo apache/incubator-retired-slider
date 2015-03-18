@@ -16,29 +16,31 @@
  */
 package org.apache.slider.providers.agent.application.metadata;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.apache.slider.common.tools.SliderUtils;
+import org.apache.slider.core.exceptions.BadCommandArgumentsException;
+import org.apache.slider.core.exceptions.SliderException;
+import org.codehaus.jackson.annotate.JsonProperty;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Application type defined in the metainfo
  */
-public class Application {
+public class Application implements Validate {
   String name;
   String comment;
   String version;
   String exportedConfigs;
-  List<Component> components;
-  List<ExportGroup> exportGroups;
-  List<OSSpecific> osSpecifics;
-  List<CommandOrder> commandOrders;
-  List<ConfigFile> configFiles;
+  List<Component> components = new ArrayList<>();
+  List<ExportGroup> exportGroups = new ArrayList<>();
+  List<OSSpecific> osSpecifics = new ArrayList<>();
+  List<CommandOrder> commandOrders = new ArrayList<>();
+  List<ConfigFile> configFiles = new ArrayList<>();
+  List<Package> packages = new ArrayList<>();
 
   public Application() {
-    exportGroups = new ArrayList<ExportGroup>();
-    components = new ArrayList<Component>();
-    osSpecifics = new ArrayList<OSSpecific>();
-    commandOrders = new ArrayList<CommandOrder>();
-    configFiles = new ArrayList<ConfigFile>();
   }
 
   public String getName() {
@@ -73,18 +75,20 @@ public class Application {
     this.exportedConfigs = exportedConfigs;
   }
 
-  public List<ConfigFile> getConfigFiles() {
-    return configFiles;
-  }
-
   public void addConfigFile(ConfigFile configFile) {
     this.configFiles.add(configFile);
+  }
+
+  @JsonProperty("configFiles")
+  public List<ConfigFile> getConfigFiles() {
+    return configFiles;
   }
 
   public void addComponent(Component component) {
     components.add(component);
   }
 
+  @JsonProperty("components")
   public List<Component> getComponents() {
     return components;
   }
@@ -93,6 +97,7 @@ public class Application {
     exportGroups.add(exportGroup);
   }
 
+  @JsonProperty("exportGroups")
   public List<ExportGroup> getExportGroups() {
     return exportGroups;
   }
@@ -101,6 +106,7 @@ public class Application {
     osSpecifics.add(osSpecific);
   }
 
+  @JsonIgnore
   public List<OSSpecific> getOSSpecifics() {
     return osSpecifics;
   }
@@ -109,8 +115,14 @@ public class Application {
     commandOrders.add(commandOrder);
   }
 
-  public List<CommandOrder> getCommandOrder() {
+  @JsonProperty("commandOrders")
+  public List<CommandOrder> getCommandOrders() {
     return commandOrders;
+  }
+
+  @JsonProperty("packages")
+  public List<Package> getPackages() {
+    return packages;
   }
 
   @Override
@@ -127,5 +139,55 @@ public class Application {
     sb.append("\n},");
     sb.append('}');
     return sb.toString();
+  }
+
+  public void validate(String version) throws SliderException {
+    if(SliderUtils.isUnset(version)) {
+      throw new BadCommandArgumentsException("schema version cannot be null");
+    }
+
+    Metainfo.checkNonNull(getName(), "name", "application");
+
+    Metainfo.checkNonNull(getVersion(), "version", "application");
+
+    if(getComponents().size() == 0) {
+      throw new SliderException("application must contain at least one component");
+    }
+
+    if(version.equals(Metainfo.VERSION_TWO_ZERO)) {
+      if(getPackages().size() > 0) {
+        throw new SliderException("packages is not supported in version " + version);
+      }
+    }
+
+    if(version.equals(Metainfo.VERSION_TWO_ONE)) {
+      if(getOSSpecifics().size() > 0) {
+        throw new SliderException("osSpecifics is not supported in version " + version);
+      }
+    }
+
+    for(CommandOrder co : getCommandOrders()) {
+      co.validate(version);
+    }
+
+    for(Component comp : getComponents()) {
+      comp.validate(version);
+    }
+
+    for(ConfigFile cf : getConfigFiles()) {
+      cf.validate(version);
+    }
+
+    for(ExportGroup eg : getExportGroups()) {
+      eg.validate(version);
+    }
+
+    for(Package pkg : getPackages()) {
+      pkg.validate(version);
+    }
+
+    for(OSSpecific os : getOSSpecifics()) {
+      os.validate(version);
+    }
   }
 }

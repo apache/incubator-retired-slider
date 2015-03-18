@@ -19,33 +19,9 @@ package org.apache.slider.providers.agent.application.metadata;
 import org.apache.slider.core.exceptions.SliderException;
 
 /**
- *
+ * Implementer provides a validate method
  */
-public class OSPackage implements Validate {
-  String type;
-  String name;
+public interface Validate {
 
-  public OSPackage() {
-  }
-
-  public String getType() {
-    return type;
-  }
-
-  public void setType(String type) {
-    this.type = type;
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public void setName(String name) {
-    this.name = name;
-  }
-
-  public void validate(String version) throws SliderException {
-    Metainfo.checkNonNull(getName(), "name", "osPackage");
-    Metainfo.checkNonNull(getType(), "type", "osPackage");
-  }
+  public void validate(String version) throws SliderException;
 }

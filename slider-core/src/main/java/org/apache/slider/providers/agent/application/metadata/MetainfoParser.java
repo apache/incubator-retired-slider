@@ -16,18 +16,78 @@
  */
 package org.apache.slider.providers.agent.application.metadata;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.apache.commons.digester.Digester;
+import org.apache.commons.io.IOUtils;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
 
 /**
  *
  */
 public class MetainfoParser {
+  private final GsonBuilder gsonBuilder = new GsonBuilder();
+  private final Gson gson;
 
-  public Metainfo parse(InputStream metainfoStream) throws IOException {
+  public MetainfoParser() {
+    gson = gsonBuilder.create();
+  }
+
+  /**
+   * Convert to a JSON string
+   *
+   * @return a JSON string description
+   *
+   * @throws IOException Problems mapping/writing the object
+   */
+  public String toJsonString(Metainfo metaInfo) throws IOException {
+    return gson.toJson(metaInfo);
+  }
+
+  /**
+   * Convert from JSON
+   *
+   * @param json input
+   *
+   * @return the parsed JSON
+   *
+   * @throws IOException IO
+   */
+  public Metainfo fromJsonString(String json)
+      throws IOException {
+    return gson.fromJson(json, Metainfo.class);
+  }
+
+  /**
+   * Parse metainfo from an IOStream
+   *
+   * @param is
+   *
+   * @return
+   *
+   * @throws IOException
+   */
+  public Metainfo fromJsonStream(InputStream is) throws IOException {
+    StringWriter writer = new StringWriter();
+    IOUtils.copy(is, writer);
+    return fromJsonString(writer.toString());
+  }
+
+
+  /**
+   * Parse metainfo from an XML formatted IOStream
+   *
+   * @param metainfoStream
+   *
+   * @return
+   *
+   * @throws IOException
+   */
+  public Metainfo fromXmlStream(InputStream metainfoStream) throws IOException {
     Digester digester = new Digester();
     digester.setValidating(false);
 
