@@ -1,0 +1,16 @@
+{
+    "schemaVersion": "2.1",
+    "application": {
+        "name": "SLEEPER",
+        "components": [
+            {
+                "name": "SLEEP_100",
+                "commands": [
+                    {
+                        "exec": "sleep 180"
+                    }
+                ]
+             }
+        ]
+    }
+}

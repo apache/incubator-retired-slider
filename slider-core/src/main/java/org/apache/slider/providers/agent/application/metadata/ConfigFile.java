@@ -16,10 +16,12 @@
  */
 package org.apache.slider.providers.agent.application.metadata;
 
+import org.apache.slider.core.exceptions.SliderException;
+
 /**
  *
  */
-public class ConfigFile {
+public class ConfigFile implements Validate {
   String type;
   String fileName;
   String dictionaryName;
@@ -49,5 +51,9 @@ public class ConfigFile {
 
   public void setDictionaryName(String dictionaryName) {
     this.dictionaryName = dictionaryName;
+  }
+
+  public void validate(String version) throws SliderException {
+
   }
 }

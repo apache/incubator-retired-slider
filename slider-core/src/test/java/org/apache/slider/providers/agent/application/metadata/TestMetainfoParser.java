@@ -45,7 +45,7 @@ public class TestMetainfoParser {
     InputStream resStream = this.getClass().getResourceAsStream(
         METAINFO_XML);
     MetainfoParser parser = new MetainfoParser();
-    Metainfo metainfo = parser.parse(resStream);
+    Metainfo metainfo = parser.fromXmlStream(resStream);
     Assert.assertNotNull(metainfo);
     Assert.assertNotNull(metainfo.getApplication());
     Application application = metainfo.getApplication();
@@ -66,5 +66,101 @@ public class TestMetainfoParser {
     }
     assert found;
     Assert.assertEquals(0, application.getConfigFiles().size());
+  }
+
+  @Test
+  public void testJsonParse() throws IOException {
+    String metaInfo1_json = "{\n"
+                            + "\"schemaVersion\":\"2.2\",\n"
+                            + "\"application\":{\n"
+                            +     "\"name\": \"MEMCACHED\","
+                            +     "\"exportGroups\": ["
+                            +        "{"
+                            +          "\"name\": \"Servers\","
+                            +          "\"exports\": ["
+                            +            "{"
+                            +               "\"name\": \"host_port\","
+                            +               "\"value\": \"${MEMCACHED_HOST}:${site.global.port}\""
+                            +            "}"
+                            +          "]"
+                            +        "}"
+                            +      "],"
+                            +     "\"components\": ["
+                            +        "{"
+                            +          "\"name\": \"MEMCACHED\","
+                            +          "\"compExports\": \"Servers-host_port\","
+                            +          "\"commands\": ["
+                            +            "{"
+                            +               "\"exec\": \"java -classpath /usr/myapps/memcached/*:/usr/lib/hadoop/lib/* com.thimbleware.jmemcached.Main\""
+                            +            "}"
+                            +          "]"
+                            +        "},"
+                            +        "{"
+                            +          "\"name\": \"MEMCACHED2\","
+                            +          "\"commands\": ["
+                            +            "{"
+                            +               "\"exec\": \"scripts/config.py\","
+                            +               "\"type\": \"PYTHON\","
+                            +               "\"name\": \"CONFIGURE\""
+                            +            "}"
+                            +          "],"
+                            +          "\"dockerContainers\": ["
+                            +            "{"
+                            +               "\"name\": \"redis\","
+                            +               "\"image\": \"dockerhub/redis\","
+                            +               "\"options\": \"-net=bridge\","
+                            +               "\"mounts\": ["
+                            +                 "{"
+                            +                   "\"containerMount\": \"/tmp/conf\","
+                            +                   "\"hostMount\": \"{$conf:@//site/global/app_root}/conf\""
+                            +                 "}"
+                            +               "]"
+                            +            "}"
+                            +          "]"
+                            +        "}"
+                            +      "]"
+                            +   "}"
+                            + "}";
+
+    MetainfoParser parser = new MetainfoParser();
+    Metainfo mInfo = parser.fromJsonString(metaInfo1_json);
+    Assert.assertEquals("2.2", mInfo.getSchemaVersion());
+
+    Application app = mInfo.getApplication();
+    Assert.assertNotNull(app);
+
+    Assert.assertEquals("MEMCACHED", app.getName());
+    List<ExportGroup> egs = app.getExportGroups();
+    Assert.assertEquals(1, egs.size());
+    ExportGroup eg = egs.get(0);
+    Assert.assertEquals("Servers", eg.getName());
+    List<Export> exports = eg.getExports();
+    Assert.assertEquals(1, exports.size());
+    Export export = exports.get(0);
+    Assert.assertEquals("host_port", export.getName());
+    Assert.assertEquals("${MEMCACHED_HOST}:${site.global.port}", export.getValue());
+
+    List<Component> components = app.getComponents();
+    Assert.assertEquals(2, components.size());
+
+    Component c1 = mInfo.getApplicationComponent("MEMCACHED");
+    Assert.assertNotNull(c1);
+    Assert.assertEquals("MEMCACHED", c1.getName());
+    Assert.assertEquals("Servers-host_port", c1.getCompExports());
+    Assert.assertEquals(1, c1.getCommands().size());
+    ComponentCommand cmd = c1.getCommands().get(0);
+    Assert.assertEquals("START", cmd.getName());
+    Assert.assertEquals("SHELL", cmd.getType());
+    Assert.assertEquals("java -classpath /usr/myapps/memcached/*:/usr/lib/hadoop/lib/* com.thimbleware.jmemcached.Main",
+                        cmd.getExec());
+
+    Component c2 = mInfo.getApplicationComponent("MEMCACHED2");
+    Assert.assertNotNull(c2);
+    Assert.assertEquals("MEMCACHED2", c2.getName());
+    Assert.assertEquals(1, c2.getCommands().size());
+    cmd = c2.getCommands().get(0);
+    Assert.assertEquals("CONFIGURE", cmd.getName());
+    Assert.assertEquals("PYTHON", cmd.getType());
+    Assert.assertEquals("scripts/config.py", cmd.getExec());
   }
 }

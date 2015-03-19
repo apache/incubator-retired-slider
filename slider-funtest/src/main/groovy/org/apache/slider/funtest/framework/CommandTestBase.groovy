@@ -19,6 +19,7 @@
 package org.apache.slider.funtest.framework
 
 import groovy.transform.CompileStatic
+import org.apache.commons.lang.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
@@ -619,6 +620,85 @@ abstract class CommandTestBase extends SliderTestUtils {
         extraArgs,
         blockUntilRunning,
         clusterOps)
+  }
+
+  /**
+   * Create a slider app using the alternate packaging capability
+   * <p>
+   * If the extraArgs list does not contain a --wait parm then a wait
+   * duration of THAW_WAIT_TIME will be added to the launch args.
+   * @param name name
+   * @param metaInfo application metaInfo
+   * @param appTemplate application template
+   * @param resourceTemplate resource template
+   * @param extraArgs list of extra arguments to the command
+   * @param launchReportFile optional file to save the AM launch report to
+   * @return the shell
+   */
+  public SliderShell createSliderApplicationMinPkg(
+      String name,
+      String metaInfo,
+      String resourceTemplate,
+      String appTemplate,
+      List<String> extraArgs = [],
+      File launchReportFile = null) {
+
+    if (!launchReportFile) {
+      launchReportFile = createTempJsonFile()
+    }
+    // delete any previous copy of the file
+    launchReportFile.delete();
+
+    List<String> commands = [
+        ACTION_CREATE, name,
+        ARG_METAINFO, metaInfo,
+        ARG_OUTPUT, launchReportFile.absolutePath
+    ]
+
+    if (StringUtils.isNotBlank(appTemplate)) {
+      commands << ARG_TEMPLATE << appTemplate
+    }
+    if (StringUtils.isNotBlank(resourceTemplate)) {
+      commands << ARG_RESOURCES << resourceTemplate
+    }
+    if (!extraArgs.contains(ARG_WAIT)) {
+      commands << ARG_WAIT << Integer.toString(THAW_WAIT_TIME)
+    }
+
+    maybeAddCommandOption(commands,
+        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME],
+        SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME));
+    maybeAddCommandOption(commands,
+        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_HDFS_KEYTAB_DIR],
+        SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_HDFS_KEYTAB_DIR));
+    maybeAddCommandOption(commands,
+        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH],
+        SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_AM_KEYTAB_LOCAL_PATH));
+    maybeAddCommandOption(commands,
+        [ARG_COMP_OPT, SliderKeys.COMPONENT_AM, SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL],
+        SLIDER_CONFIG.getTrimmed(SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL));
+    commands.addAll(extraArgs)
+    SliderShell shell = new SliderShell(commands)
+    if (0 != shell.execute()) {
+      // app has failed.
+
+      // grab the app report of the last known instance of this app
+      // which may not be there if it was a config failure; may be out of date
+      // from a previous run
+      log.error("Launch failed with exit code ${shell.ret}")
+      shell.dumpOutput()
+
+      // now grab that app report if it is there
+      def appReport = maybeLookupFromLaunchReport(launchReportFile)
+      String extraText = ""
+      if (appReport) {
+        log.error("Application report:\n$appReport")
+        extraText = appReport.diagnostics
+      }
+
+      fail("Application Launch Failure, exit code  ${shell.ret}\n${extraText}")
+    }
+    return shell
   }
 
   /**

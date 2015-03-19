@@ -1,0 +1,17 @@
+{
+  "schema" : "http://example.org/specification/v2.0.0",
+  "metadata" : {
+  },
+  "global" : {
+  },
+  "components": {
+    "slider-appmaster": {
+      "yarn.memory": "256"
+    },
+    "SLEEP_100": {
+      "yarn.role.priority": "1",
+      "yarn.component.instances": "1",
+      "yarn.memory": "256"
+    }
+  }
+}

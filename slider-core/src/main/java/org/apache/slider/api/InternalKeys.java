@@ -69,6 +69,14 @@ public interface InternalKeys {
    */
   String INTERNAL_DATA_DIR_PATH = "internal.data.dir.path";
   /**
+   * where the app def is stored
+   */
+  String INTERNAL_APPDEF_DIR_PATH = "internal.appdef.dir.path";
+  /**
+   * where addons for the app are stored
+   */
+  String INTERNAL_ADDONS_DIR_PATH = "internal.addons.dir.path";
+  /**
    * Time in milliseconds to wait after forking any in-AM 
    * process before attempting to start up the containers: {@value}
    *

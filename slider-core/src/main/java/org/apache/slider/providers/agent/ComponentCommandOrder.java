@@ -49,13 +49,13 @@ public class ComponentCommandOrder {
         if (requiredStates.size() > 0) {
           Map<String, List<ComponentState>> compDep = dependencies.get(componentCmd.command);
           if (compDep == null) {
-            compDep = new HashMap<String, List<ComponentState>>();
+            compDep = new HashMap<>();
             dependencies.put(componentCmd.command, compDep);
           }
 
           List<ComponentState> requirements = compDep.get(componentCmd.componentName);
           if (requirements == null) {
-            requirements = new ArrayList<ComponentState>();
+            requirements = new ArrayList<>();
             compDep.put(componentCmd.componentName, requirements);
           }
 

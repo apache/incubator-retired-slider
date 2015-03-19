@@ -16,11 +16,11 @@
  */
 package org.apache.slider.server.appmaster.web.rest.agent;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,7 +31,8 @@ import java.util.Map;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 public class ExecutionCommand {
-  private static Log LOG = LogFactory.getLog(ExecutionCommand.class);
+  protected static final Logger log =
+      LoggerFactory.getLogger(ExecutionCommand.class);
   private AgentCommandType commandType = AgentCommandType.EXECUTION_COMMAND;
   private String clusterName;
   private long taskId;
@@ -47,6 +48,7 @@ public class ExecutionCommand {
   private Map<String, String> commandParams;
   private String serviceName;
   private String componentName;
+  private String componentType;
 
   public ExecutionCommand(AgentCommandType commandType) {
     this.commandType = commandType;
@@ -120,6 +122,16 @@ public class ExecutionCommand {
   @JsonProperty("clusterName")
   public void setClusterName(String clusterName) {
     this.clusterName = clusterName;
+  }
+
+  @JsonProperty("componentType")
+  public String getComponentType() {
+    return componentType;
+  }
+
+  @JsonProperty("componentType")
+  public void setComponentType(String componentType) {
+    this.componentType = componentType;
   }
 
   @JsonProperty("hostname")

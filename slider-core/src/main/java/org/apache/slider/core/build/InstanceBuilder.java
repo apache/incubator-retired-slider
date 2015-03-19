@@ -49,6 +49,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Map;
 
+import static org.apache.slider.api.InternalKeys.INTERNAL_ADDONS_DIR_PATH;
+import static org.apache.slider.api.InternalKeys.INTERNAL_APPDEF_DIR_PATH;
 import static org.apache.slider.api.InternalKeys.INTERNAL_QUEUE;
 import static org.apache.slider.api.OptionKeys.INTERNAL_AM_TMP_DIR;
 import static org.apache.slider.api.OptionKeys.INTERNAL_TMP_DIR;
@@ -142,6 +144,10 @@ public class InstanceBuilder {
                     instancePaths.generatedConfPath.toUri());
     internalOps.set(INTERNAL_DATA_DIR_PATH,
                     instancePaths.dataPath.toUri());
+    internalOps.set(INTERNAL_APPDEF_DIR_PATH,
+                    instancePaths.appDefPath.toUri());
+    internalOps.set(INTERNAL_ADDONS_DIR_PATH,
+                    instancePaths.addonsPath.toUri());
 
 
     internalOps.set(InternalKeys.INTERNAL_PROVIDER_NAME, provider);

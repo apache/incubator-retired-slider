@@ -16,13 +16,15 @@
  */
 package org.apache.slider.providers.agent.application.metadata;
 
+import org.apache.slider.core.exceptions.SliderException;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  *
  */
-public class ExportGroup {
+public class ExportGroup implements Validate {
   String name;
   List<Export> exports;
 
@@ -58,5 +60,12 @@ public class ExportGroup {
     sb.append("\n},");
     sb.append('}');
     return sb.toString();
+  }
+
+  public void validate(String version) throws SliderException {
+    Metainfo.checkNonNull(getName(), "name", "exportGroup");
+    for(Export exp : getExports()) {
+      exp.validate(version);
+    }
   }
 }
