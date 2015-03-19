@@ -168,7 +168,7 @@ class TestMockAppStateDynamicRoles extends BaseMockAppStateTest
     assert instances.size() == 1
 
     def instanceA = instances.find { RoleInstance instance ->
-      instance.roleId = ID4
+      instance.roleId == ID4
     }
     assert instanceA
     def hostname = RoleHistoryUtils.hostnameOf(instanceA.container)
@@ -193,7 +193,6 @@ class TestMockAppStateDynamicRoles extends BaseMockAppStateTest
     def actions = appState.reviewRequestAndReleaseNodes()
     assert actions.size() == 1
 
-    assertRelaxLocalityFlag(ID4, "", true, actions)
     ContainerRequestOperation cro = (ContainerRequestOperation) actions[0]
     def nodes = cro.request.nodes
     assert nodes.size() == 1

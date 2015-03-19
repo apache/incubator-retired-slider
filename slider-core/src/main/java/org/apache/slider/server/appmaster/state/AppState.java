@@ -766,7 +766,7 @@ public class AppState {
 
     // Add all the existing roles
     for (RoleStatus roleStatus : getRoleStatusMap().values()) {
-      if (roleStatus.getExcludeFromFlexing()) {
+      if (roleStatus.isExcludeFromFlexing()) {
         // skip inflexible roles, e.g AM itself
         continue;
       }
@@ -1792,7 +1792,7 @@ public class AppState {
     log.debug("in reviewRequestAndReleaseNodes()");
     List<AbstractRMOperation> allOperations = new ArrayList<AbstractRMOperation>();
     for (RoleStatus roleStatus : getRoleStatusMap().values()) {
-      if (!roleStatus.getExcludeFromFlexing()) {
+      if (!roleStatus.isExcludeFromFlexing()) {
         List<AbstractRMOperation> operations = reviewOneRole(roleStatus);
         allOperations.addAll(operations);
       }

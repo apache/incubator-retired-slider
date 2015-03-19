@@ -87,24 +87,24 @@ public final class RoleStatus implements Cloneable {
     return providerRole.nodeFailureThreshold;
   }
 
-  public boolean getExcludeFromFlexing() {
-    return 0 != (getPlacementPolicy() & PlacementPolicy.EXCLUDE_FROM_FLEXING);
+  public boolean isExcludeFromFlexing() {
+    return hasPlacementPolicy(PlacementPolicy.EXCLUDE_FROM_FLEXING);
   }
-  
-  public boolean getNoDataLocality() {
-    return 0 != (getPlacementPolicy() & PlacementPolicy.NO_DATA_LOCALITY);
-  }
-  
+
   public boolean isStrictPlacement() {
-    return 0 != (getPlacementPolicy() & PlacementPolicy.STRICT);
+    return hasPlacementPolicy(PlacementPolicy.STRICT);
   }
 
   public boolean isAntiAffinePlacement() {
-    return 0 != (getPlacementPolicy() & PlacementPolicy.ANTI_AFFINITY_REQUIRED);
+    return hasPlacementPolicy(PlacementPolicy.ANTI_AFFINITY_REQUIRED);
   }
 
-  public boolean isStrictOrAntiAffinePlacement() {
-    return isStrictPlacement() || isAntiAffinePlacement();
+  public boolean hasPlacementPolicy(int policy) {
+    return 0 != (getPlacementPolicy() & policy);
+  }
+
+  public boolean isPlacementDesired() {
+    return !hasPlacementPolicy(PlacementPolicy.NO_DATA_LOCALITY);
   }
 
   public synchronized int getDesired() {

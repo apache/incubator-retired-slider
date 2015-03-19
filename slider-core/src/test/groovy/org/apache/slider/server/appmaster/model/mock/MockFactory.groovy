@@ -40,18 +40,23 @@ class MockFactory implements MockRoles {
 
   public static final ProviderRole PROVIDER_ROLE0 = new ProviderRole(
       MockRoles.ROLE0,
-      0)
+      0,
+      PlacementPolicy.DEFAULT,
+      2,
+      1)
+  // role 1 is strict. timeout should be irrelevant; same as failures
   public static final ProviderRole PROVIDER_ROLE1 = new ProviderRole(
       MockRoles.ROLE1,
       1,
       PlacementPolicy.STRICT,
-      3,
+      2,
       1)
+  // role 2: longer delay
   public static final ProviderRole PROVIDER_ROLE2 = new ProviderRole(
       MockRoles.ROLE2,
       2,
       PlacementPolicy.ANTI_AFFINITY_REQUIRED,
-      4,
+      2,
       2)
   int appIdCount;
   int attemptIdCount;
@@ -180,8 +185,6 @@ class MockFactory implements MockRoles {
   def roleMap(int count) {
     return [
         (ResourceKeys.COMPONENT_INSTANCES):count.toString(),
-        (ResourceKeys.COMPONENT_PLACEMENT_POLICY):"${PlacementPolicy.STRICT}".toString()
-
     ]
   }
 

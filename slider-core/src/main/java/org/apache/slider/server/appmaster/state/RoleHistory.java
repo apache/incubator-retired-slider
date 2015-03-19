@@ -481,7 +481,8 @@ public class RoleHistory {
    */
   @VisibleForTesting
   public synchronized NodeInstance findNodeForNewInstance(RoleStatus role) {
-    if (role.getNoDataLocality()) {
+    if (!role.isPlacementDesired()) {
+      // no data locality policy
       return null;
     }
     int roleKey = role.getKey();

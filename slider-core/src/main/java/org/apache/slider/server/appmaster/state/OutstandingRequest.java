@@ -64,27 +64,32 @@ public final class OutstandingRequest {
    * <p>
    * Only valid after {@link #buildContainerRequest(Resource, RoleStatus, long, String)}
    */
-  public AMRMClient.ContainerRequest issuedRequest;
+  private AMRMClient.ContainerRequest issuedRequest;
   
   /**
    * Requested time in millis.
    * <p>
    * Only valid after {@link #buildContainerRequest(Resource, RoleStatus, long, String)}
    */
-  public long requestedTimeMillis;
+  private long requestedTimeMillis;
 
   /**
    * Time in millis after which escalation should be triggered..
    * <p>
    * Only valid after {@link #buildContainerRequest(Resource, RoleStatus, long, String)}
    */
-  public long escalationTimeoutMillis;
+  private long escalationTimeoutMillis;
 
   /**
    * Has the placement request been escalated?
    */
-  public boolean escalated;
-  
+  private boolean escalated;
+
+  /**
+   * Flag to indicate that escalation is allowed
+   */
+  private boolean mayEscalate;
+
   /**
    * Create a request
    * @param roleId role
@@ -98,7 +103,7 @@ public final class OutstandingRequest {
   }
 
   /**
-   * Create an outsanding request with the given role and hostname
+   * Create an outstanding request with the given role and hostname
    * Important: this is useful only for map lookups -the other constructor
    * with the NodeInstance parameter is needed to generate node-specific
    * container requests
@@ -113,14 +118,40 @@ public final class OutstandingRequest {
 
   /**
    * Is the request located in the cluster, that is: does it have a node.
-   * @return
+   * @return true if a node instance was supplied in the constructor
    */
   public boolean isLocated() {
     return node != null;
   }
-  
+
+  public long getRequestedTimeMillis() {
+    return requestedTimeMillis;
+  }
+
+  public long getEscalationTimeoutMillis() {
+    return escalationTimeoutMillis;
+  }
+
+  public boolean isEscalated() {
+    return escalated;
+  }
+
+  public boolean mayEscalate() {
+    return mayEscalate;
+  }
+
+  public AMRMClient.ContainerRequest getIssuedRequest() {
+    return issuedRequest;
+  }
+
   /**
    * Build a container request.
+   * <p>
+   *  The value of {@link #node} is used to direct a lot of policy. If null,
+   *  placement is relaxed.
+   *  If not null, the choice of whether to use the suggested node
+   *  is based on the placement policy and failure history.
+   * <p>
    * If the request has an address, it is set in the container request
    * (with a flag to enable relaxed priorities).
    * <p>
@@ -134,37 +165,54 @@ public final class OutstandingRequest {
    */
   public synchronized AMRMClient.ContainerRequest buildContainerRequest(
       Resource resource, RoleStatus role, long time, String labelExpression) {
-    String[] hosts;
-    boolean relaxLocality;
+    Preconditions.checkArgument(resource != null, "null `resource` arg");
+    Preconditions.checkArgument(role != null, "null `role` arg");
+
     requestedTimeMillis = time;
     escalationTimeoutMillis = time + role.getPlacementTimeoutSeconds() * 1000;
-    boolean usePlacementHistory = role.isStrictOrAntiAffinePlacement();
-    if (!usePlacementHistory) {
-      // If strict placement does not mandate using placement then check
-      // that the recent failures on this node is not higher than threshold
-      if (node != null) {
-        int numFailuresOnLastHost = node.get(role.getKey()).getFailedRecently();
-        usePlacementHistory = numFailuresOnLastHost <= role.getNodeFailureThreshold();
-        if(!usePlacementHistory) {
-          log.info("Recent node failures {} is higher than threshold {}. Dropping host {} from preference.",
-                   numFailuresOnLastHost, role.getNodeFailureThreshold(), node.hostname);
-        }
+    String[] hosts;
+    boolean relaxLocality;
+    boolean strictPlacement = role.isStrictPlacement();
+    NodeInstance target = this.node;
+    if (target != null) {
+      // there is a host specified; get its details
+
+      // tell the node it is in play
+      NodeEntry entry = target.getOrCreate(roleId);
+      // failure count
+      int numFailuresOnLastHost = entry != null ? entry.getFailedRecently() : 0;
+
+      // which on non-strict placement may have some effect
+      if (!strictPlacement && numFailuresOnLastHost > role.getNodeFailureThreshold()) {
+        // too many failures for this node
+        log.info("Recent node failures {} is higher than threshold {}. Not requesting host {}",
+            numFailuresOnLastHost, role.getNodeFailureThreshold(), target.hostname);
+        // reset the target node so this request is downgraded
+        target = null;
       }
     }
 
-    if (node != null && usePlacementHistory) {
+    if (target != null) {
+      // placed request. Hostname is used in request
       hosts = new String[1];
-      hosts[0] = node.hostname;
-      relaxLocality = !role.isStrictOrAntiAffinePlacement();
-      // tell the node it is in play
-      node.getOrCreate(roleId);
+      hosts[0] = target.hostname;
+      // and locality flag is set to false; Slider will decide when
+      // to relax things
+      relaxLocality = false;
+
       log.info("Submitting request for container on {}", hosts[0]);
+      // enable escalation for all but strict placements.
+      mayEscalate = !strictPlacement;
       escalated = false;
     } else {
-      // the placement is implicitly escalated.
-      escalated = true;
+      // no hosts
       hosts = null;
+      // relax locality is mandatory on an unconstrained placement
       relaxLocality = true;
+      // declare that the the placement is implicitly escalated.
+      escalated = true;
+      // and forbid it happening
+      mayEscalate = false;
     }
     Priority pri = ContainerPriority.createPriority(roleId, !relaxLocality);
     issuedRequest = new AMRMClient.ContainerRequest(resource,
@@ -197,7 +245,6 @@ public final class OutstandingRequest {
       nodes = null;
     }
 
-
     AMRMClient.ContainerRequest newRequest =
         new AMRMClient.ContainerRequest(issuedRequest.getCapability(),
             nodes,
@@ -218,14 +265,17 @@ public final class OutstandingRequest {
   }
 
   /**
-   * Query to see if the request is ready to be escalated
+   * Query to see if the request is available and ready to be escalated
    * @param time time to check against
    * @return true if escalation should begin
    */
   public synchronized boolean shouldEscalate(long time) {
-    return issuedRequest != null && !escalated && escalationTimeoutMillis < time;
+    return mayEscalate
+           && !escalated
+           && issuedRequest != null
+           && escalationTimeoutMillis < time;
   }
-  
+
   /**
    * Equality is on hostname and role
    * @param o other
@@ -265,14 +315,16 @@ public final class OutstandingRequest {
   }
 
   @Override
-  public synchronized String toString() {
+  public String toString() {
     final StringBuilder sb = new StringBuilder("OutstandingRequest{");
     sb.append("roleId=").append(roleId);
     sb.append(", node=").append(node);
     sb.append(", hostname='").append(hostname).append('\'');
+    sb.append(", issuedRequest=").append(issuedRequest);
     sb.append(", requestedTimeMillis=").append(requestedTimeMillis);
-    sb.append(", escalationTimeoutMillis=").append(escalationTimeoutMillis);
+    sb.append(", mayEscalate=").append(mayEscalate);
     sb.append(", escalated=").append(escalated);
+    sb.append(", escalationTimeoutMillis=").append(escalationTimeoutMillis);
     sb.append('}');
     return sb.toString();
   }

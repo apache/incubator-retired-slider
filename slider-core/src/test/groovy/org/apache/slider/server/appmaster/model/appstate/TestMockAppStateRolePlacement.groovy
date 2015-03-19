@@ -101,7 +101,7 @@ class TestMockAppStateRolePlacement extends BaseMockAppStateTest
     AMRMClient.ContainerRequest request2 = operation.request
     assert request2 != null
     assert request2.nodes[0] == containerHostname
-    assert request2.relaxLocality
+    assert !request2.relaxLocality
     engine.execute(ops)
 
   }
