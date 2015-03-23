@@ -28,12 +28,11 @@
 
     "site.proxy.port": "${ACCUMULO_PROXY.ALLOCATED_PORT}{PER_CONTAINER}",
 
-    "site.global.accumulo_root_password": "NOT_USED",
+    "site.global.accumulo_root_principal": "${USER_NAME}@EXAMPLE.COM",
     "site.global.monitor_protocol": "http",
 
     "site.accumulo-site.instance.volumes": "${DEFAULT_DATA_DIR}/data",
     "site.accumulo-site.instance.zookeeper.host": "${ZK_HOST}",
-    "site.accumulo-site.instance.security.authenticator": "org.apache.slider.accumulo.CustomAuthenticator",
 
     "site.accumulo-site.general.security.credential.provider.paths": "jceks://hdfs/user/${USER}/accumulo-${CLUSTER_NAME}.jceks",
     "site.accumulo-site.instance.rpc.ssl.enabled": "false",
@@ -41,14 +40,23 @@
     "site.accumulo-site.general.kerberos.keytab": "${AGENT_WORK_ROOT}/keytabs/${USER_NAME}.ACCUMULO.service.keytab",
     "site.accumulo-site.general.kerberos.principal": "${USER_NAME}/_HOST@EXAMPLE.COM",
 
+    "site.accumulo-site.instance.rpc.sasl.enabled": "true",
+    "site.accumulo-site.instance.security.authenticator": "org.apache.accumulo.server.security.handler.KerberosAuthenticator",
+    "site.accumulo-site.instance.security.authorizor": "org.apache.accumulo.server.security.handler.KerberosAuthorizor",
+    "site.accumulo-site.instance.security.permissionHandler": "org.apache.accumulo.server.security.handler.KerberosPermissionHandler",
+    "site.accumulo-site.general.delegation.token.lifetime": "7d",
+    "site.accumulo-site.general.delegation.token.update.interval": "1d",
+
+    "site.accumulo-site.trace.user": "${USER_NAME}@EXAMPLE.COM",
+    "site.accumulo-site.trace.token.property.keytab": "${AGENT_WORK_ROOT}/keytabs/${USER_NAME}.ACCUMULO.headless.keytab",
+    "site.accumulo-site.trace.token.type": "org.apache.accumulo.core.client.security.tokens.KerberosToken",
+
     "site.accumulo-site.tserver.memory.maps.native.enabled": "false",
     "site.accumulo-site.tserver.memory.maps.max": "80M",
     "site.accumulo-site.tserver.cache.data.size": "7M",
     "site.accumulo-site.tserver.cache.index.size": "20M",
     "site.accumulo-site.tserver.sort.buffer.size": "50M",
     "site.accumulo-site.tserver.walog.max.size": "40M",
-
-    "site.accumulo-site.trace.user": "root",
 
     "site.accumulo-site.master.port.client": "0",
     "site.accumulo-site.trace.port.client": "0",
@@ -62,7 +70,7 @@
     "site.accumulo-site.general.classpaths": "$ACCUMULO_HOME/lib/accumulo-server.jar,\n$ACCUMULO_HOME/lib/accumulo-core.jar,\n$ACCUMULO_HOME/lib/accumulo-start.jar,\n$ACCUMULO_HOME/lib/accumulo-fate.jar,\n$ACCUMULO_HOME/lib/accumulo-proxy.jar,\n$ACCUMULO_HOME/lib/[^.].*.jar,\n$ZOOKEEPER_HOME/zookeeper[^.].*.jar,\n$HADOOP_CONF_DIR,\n${@//site/accumulo-env/hadoop_conf_dir},\n$HADOOP_PREFIX/[^.].*.jar,\n$HADOOP_PREFIX/lib/[^.].*.jar,\n$HADOOP_PREFIX/share/hadoop/common/.*.jar,\n$HADOOP_PREFIX/share/hadoop/common/lib/.*.jar,\n$HADOOP_PREFIX/share/hadoop/hdfs/.*.jar,\n$HADOOP_PREFIX/share/hadoop/mapreduce/.*.jar,\n$HADOOP_PREFIX/share/hadoop/yarn/.*.jar,\n${hadoop.dir}/.*.jar,\n${hadoop.dir}/lib/.*.jar,\n${hdfs.dir}/.*.jar,\n${mapred.dir}/.*.jar,\n${yarn.dir}/.*.jar,"
   },
   "credentials": {
-    "jceks://hdfs/user/${USER}/accumulo-${CLUSTER_NAME}.jceks": ["root.initial.password", "instance.secret", "trace.token.property.password"]
+    "jceks://hdfs/user/${USER}/accumulo-${CLUSTER_NAME}.jceks": ["instance.secret"]
   },
   "components": {
     "slider-appmaster": {

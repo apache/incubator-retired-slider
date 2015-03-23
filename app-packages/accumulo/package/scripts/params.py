@@ -51,13 +51,15 @@ log_dir = config['configurations']['global']['app_log_dir']
 daemon_script = format("{accumulo_root}/bin/accumulo")
 proxy_conf = format("{conf_dir}/proxy.properties")
 
-# accumulo clientauth
-clientauth_enabled = False
-if 'instance.rpc.ssl.clientAuth' in config['configurations']['accumulo-site']:
-  clientauth_enabled = config['configurations']['accumulo-site']['instance.rpc.ssl.clientAuth']
+# accumulo kerberos user auth
+kerberos_auth_enabled = False
+if 'instance.security.authenticator' in config['configurations']['accumulo-site']\
+    and "org.apache.accumulo.server.security.handler.KerberosAuthenticator" == config['configurations']['accumulo-site']['instance.security.authenticator']:
+  kerberos_auth_enabled = True
 
 # accumulo initialization parameters
 accumulo_instance_name = config['configurations']['client']['instance.name']
+accumulo_root_principal = config['configurations']['global']['accumulo_root_principal']
 accumulo_root_password = config['configurations']['global']['accumulo_root_password']
 accumulo_hdfs_root_dir = config['configurations']['accumulo-site']['instance.volumes'].split(",")[0]
 

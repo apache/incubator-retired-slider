@@ -38,41 +38,28 @@ def setup_conf_dir(name=None): # 'master' or 'tserver' or 'monitor' or 'gc' or '
        content=StaticFile(jarname)
   )
 
-  if name != "client":
-    # create pid dir
-    Directory( params.pid_dir,
-      owner = params.accumulo_user,
-      group = params.user_group,
-      recursive = True
-    )
+  # create pid dir
+  Directory( params.pid_dir,
+    owner = params.accumulo_user,
+    group = params.user_group,
+    recursive = True
+  )
 
-    # create log dir
-    Directory (params.log_dir,
-      owner = params.accumulo_user,
-      group = params.user_group,
-      recursive = True
-    )
+  # create log dir
+  Directory (params.log_dir,
+    owner = params.accumulo_user,
+    group = params.user_group,
+    recursive = True
+  )
 
-    # create a site file for server processes
-    XmlConfig( "accumulo-site.xml",
-            conf_dir = params.conf_dir,
-            configurations = params.config['configurations']['accumulo-site'],
-            owner = params.accumulo_user,
-            group = params.user_group,
-            mode=0600
-    )
-  else:
-    # create a minimal site file for client processes
-    client_configurations = {}
-    client_configurations['instance.zookeeper.host'] = params.config['configurations']['accumulo-site']['instance.zookeeper.host']
-    client_configurations['instance.volumes'] = params.config['configurations']['accumulo-site']['instance.volumes']
-    client_configurations['general.classpaths'] = params.config['configurations']['accumulo-site']['general.classpaths']
-    XmlConfig( "accumulo-site.xml",
-            conf_dir = params.conf_dir,
-            configurations = client_configurations,
-            owner = params.accumulo_user,
-            group = params.user_group
-    )
+  # create a site file for server processes
+  XmlConfig( "accumulo-site.xml",
+          conf_dir = params.conf_dir,
+          configurations = params.config['configurations']['accumulo-site'],
+          owner = params.accumulo_user,
+          group = params.user_group,
+          mode=0600
+  )
 
   # create env file
   File(format("{params.conf_dir}/accumulo-env.sh"),
@@ -80,20 +67,6 @@ def setup_conf_dir(name=None): # 'master' or 'tserver' or 'monitor' or 'gc' or '
        group=params.user_group,
        owner=params.accumulo_user,
        content=InlineTemplate(params.env_sh_template)
-  )
-
-  # create client.conf file
-  configs = {}
-  configs.update(params.config['configurations']['client'])
-  update_site_config(configs, 'general.security.credential.provider.paths')
-  update_site_config(configs, 'rpc.javax.net.ssl.trustStore')
-  update_site_config(configs, 'rpc.javax.net.ssl.trustStoreType')
-  update_site_config(configs, 'rpc.javax.net.ssl.keyStore')
-  update_site_config(configs, 'rpc.javax.net.ssl.keyStoreType')
-  PropertiesFile(format("{params.conf_dir}/client.conf"),
-       properties = configs,
-       owner = params.accumulo_user,
-       group = params.user_group
   )
 
   # create metrics2 properties file
