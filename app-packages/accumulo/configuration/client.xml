@@ -41,4 +41,9 @@
     <value>${@//site/accumulo-site/instance.rpc.ssl.clientAuth}</value>
     <description>SSL client auth enabled.</description>
   </property>
+  <property>
+    <name>instance.rpc.sasl.enabled</name>
+    <value>${@//site/accumulo-site/instance.rpc.sasl.enabled}</value>
+    <description>SASL enabled.</description>
+  </property>
 </configuration>
