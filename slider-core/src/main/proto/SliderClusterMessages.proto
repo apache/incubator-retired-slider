@@ -244,6 +244,7 @@ message ContainerInformationProto {
   repeated string output = 9;
   optional string host = 10;
   optional string hostURL = 11;
+  optional string placement = 12;
 }
 
 

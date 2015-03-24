@@ -636,20 +636,21 @@ public class RoleHistory {
    * @param container container
    * @param desiredCount desired #of instances
    * @param actualCount current count of instances
-   * @return true if an entry was found and dropped
+   * @return The allocation outcome
    */
-  public synchronized boolean onContainerAllocated(Container container, int desiredCount, int actualCount) {
+  public synchronized ContainerAllocationOutcome onContainerAllocated(Container container,
+      int desiredCount,
+      int actualCount) {
     int role = ContainerPriority.extractRole(container);
     String hostname = RoleHistoryUtils.hostnameOf(container);
     LinkedList<NodeInstance> nodeInstances =
         getOrCreateNodesForRoleId(role);
-    boolean requestFound =
-      outstandingRequests.onContainerAllocated(role, hostname);
+    ContainerAllocationOutcome outcome = outstandingRequests.onContainerAllocated(role, hostname);
     if (desiredCount <= actualCount) {
       // all outstanding requests have been satisfied
       // tag nodes as available
       List<NodeInstance>
-        hosts = outstandingRequests.resetOutstandingRequests(role);
+          hosts = outstandingRequests.resetOutstandingRequests(role);
       if (!hosts.isEmpty()) {
         //add the list
         log.info("Adding {} hosts for role {}", hosts.size(), role);
@@ -657,7 +658,7 @@ public class RoleHistory {
         sortAvailableNodeList(role);
       }
     }
-    return requestFound;
+    return outcome;
   }
 
   /**

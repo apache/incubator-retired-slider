@@ -157,7 +157,10 @@ public class RestTypeMarshalling {
     info.startTime = wire.getStartTime();
     info.output = wire.getOutputList().toArray(
         new String[wire.getOutputCount()]
-    );
+        );
+    if (wire.hasPlacement()) {
+      info.placement = wire.getPlacement();
+    }
     return info;
   }
 
@@ -198,6 +201,9 @@ public class RestTypeMarshalling {
     }
     if (info.released != null) {
       builder.setReleased(info.released);
+    }
+    if (info.placement != null) {
+      builder.setPlacement(info.placement);
     }
     builder.setStartTime(info.startTime);
     builder.setState(info.state);

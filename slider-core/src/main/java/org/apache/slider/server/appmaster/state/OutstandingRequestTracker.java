@@ -103,18 +103,22 @@ public class OutstandingRequestTracker {
    * from the {@link #placedRequests} structure.
    * @param role role index
    * @param hostname hostname
-   * @return true if an entry was found and removed
+   * @return the allocation outcome
    */
-  public synchronized boolean onContainerAllocated(int role, String hostname) {
+  public synchronized ContainerAllocationOutcome onContainerAllocated(int role, String hostname) {
     OutstandingRequest request =
       placedRequests.remove(new OutstandingRequest(role, hostname));
     if (request == null) {
-      return false;
+      // not in the list; this is an open placement
+      return ContainerAllocationOutcome.Open;
     } else {
       //satisfied request
       request.completed();
+      // derive outcome from status of tracked request
+      return request.isEscalated()
+           ? ContainerAllocationOutcome.Escalated
+           : ContainerAllocationOutcome.Placed;
     }
-    return true;
   }
   
   /**

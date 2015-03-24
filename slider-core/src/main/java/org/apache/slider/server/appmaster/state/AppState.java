@@ -655,8 +655,8 @@ public class AppState {
                                                  ResourceKeys.COMPONENT_PLACEMENT_POLICY,
         placementOpt, 0, 0, -1);
     int placementTimeout =
-        component.getOptionInt(ResourceKeys.PLACEMENT_RELAX_DELAY,
-            ResourceKeys.DEFAULT_PLACEMENT_RELAX_DELAY_SECONDS);
+        component.getOptionInt(ResourceKeys.PLACEMENT_ESCALATE_DELAY,
+            ResourceKeys.DEFAULT_PLACEMENT_ESCALATE_DELAY_SECONDS);
     ProviderRole newRole = new ProviderRole(name,
         priority,
         placement,
@@ -1135,7 +1135,7 @@ public class AppState {
    * @return the map of Role name to list of Cluster Nodes
    */
   public synchronized Map<String, Map<String, ClusterNode>> createRoleToClusterNodeMap() {
-    Map<String, Map<String, ClusterNode>> map = new HashMap<String, Map<String, ClusterNode>>();
+    Map<String, Map<String, ClusterNode>> map = new HashMap<>();
     for (RoleInstance node : getLiveNodes().values()) {
       
       Map<String, ClusterNode> containers = map.get(node.role);
@@ -2090,7 +2090,7 @@ public class AppState {
   /**
    * Event handler for allocated containers: builds up the lists
    * of assignment actions (what to run where), and possibly
-   * a list of release operations
+   * a list of operations to perform
    * @param allocatedContainers the containers allocated
    * @param assignments the assignments of roles to containers
    * @param releaseOperations any release operations
@@ -2121,7 +2121,9 @@ public class AppState {
       //look for (race condition) where we get more back than we asked
       desired = role.getDesired();
 
-      roleHistory.onContainerAllocated( container, desired, allocated );
+      ContainerAllocationOutcome outcome = roleHistory.onContainerAllocated(container,
+        desired,
+        allocated);
 
       if (allocated > desired) {
         log.info("Discarding surplus container {} on {}", cid,
@@ -2146,7 +2148,7 @@ public class AppState {
                  container.getNodeId().getPort()
                 );
 
-        assignments.add(new ContainerAssignment(container, role));
+        assignments.add(new ContainerAssignment(container, role, outcome));
         //add to the history
         roleHistory.onContainerAssigned(container);
       }

@@ -38,7 +38,7 @@ public final class ProviderRole {
         id,
         PlacementPolicy.DEFAULT,
         ResourceKeys.DEFAULT_NODE_FAILURE_THRESHOLD,
-        ResourceKeys.DEFAULT_PLACEMENT_RELAX_DELAY_SECONDS);
+        ResourceKeys.DEFAULT_PLACEMENT_ESCALATE_DELAY_SECONDS);
   }
 
   /**

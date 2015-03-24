@@ -27,7 +27,7 @@ import org.apache.slider.server.appmaster.model.mock.MockResource
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
 import org.apache.slider.server.appmaster.operations.CancelSingleRequest
 import org.apache.slider.server.appmaster.operations.ContainerRequestOperation
-import org.apache.slider.server.appmaster.state.NodeEntry
+import org.apache.slider.server.appmaster.state.ContainerAllocationOutcome
 import org.apache.slider.server.appmaster.state.NodeInstance
 import org.apache.slider.server.appmaster.state.OutstandingRequest
 import org.apache.slider.server.appmaster.state.OutstandingRequestTracker
@@ -59,7 +59,7 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest {
     tracker.newRequest(host1, 0)
     tracker.newRequest(host2, 0)
     tracker.newRequest(host1, 1)
-    assert tracker.onContainerAllocated(1, "host1")
+    assert tracker.onContainerAllocated(1, "host1") == ContainerAllocationOutcome.Placed
     assert !tracker.lookup(1, "host1")
     assert tracker.lookup(0, "host1")
   }

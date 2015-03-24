@@ -142,10 +142,10 @@ public interface ResourceKeys {
 
 
   /**
-   * Time in seconds to relax placement delay
+   * Time in seconds to escalate placement delay
    */
-  String PLACEMENT_RELAX_DELAY = 
-      "yarn.placement.relax.seconds";
+  String PLACEMENT_ESCALATE_DELAY =
+      "yarn.placement.escalate.seconds";
 
   /**
    * Time to have a strict placement policy outstanding before 
@@ -156,7 +156,7 @@ public interface ResourceKeys {
    * </ol>
    * 
    */
-  int DEFAULT_PLACEMENT_RELAX_DELAY_SECONDS = 30;
+  int DEFAULT_PLACEMENT_ESCALATE_DELAY_SECONDS = 30;
 
   /**
    * Log aggregation include, exclude patterns

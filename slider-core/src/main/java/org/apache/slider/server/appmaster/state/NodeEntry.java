@@ -21,7 +21,7 @@ package org.apache.slider.server.appmaster.state;
 /**
  * Information about the state of a role on a specific node instance.
  * No fields are synchronized; sync on the instance to work with it
- *
+ <p>
  The two fields `releasing` and `requested` are used to track the ongoing
  state of YARN requests; they do not need to be persisted across stop/start
  cycles. They may be relevant across AM restart, but without other data
@@ -29,10 +29,11 @@ package org.apache.slider.server.appmaster.state;
  it was restarted. The strategy will be to ignore unexpected allocation
  responses (which may come from pre-restart) requests, while treating
  unexpected container release responses as failures.
-
+ <p>
  The `active` counter is only decremented after a container release response
  has been received.
- 
+ <p>
+
  Accesses are synchronized.
  */
 public class NodeEntry {

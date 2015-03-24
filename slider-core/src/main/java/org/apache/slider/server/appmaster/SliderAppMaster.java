@@ -1567,17 +1567,15 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   @Override //AMRMClientAsync
   public void onContainersAllocated(List<Container> allocatedContainers) {
     LOG_YARN.info("onContainersAllocated({})", allocatedContainers.size());
-    List<ContainerAssignment> assignments = new ArrayList<ContainerAssignment>();
-    List<AbstractRMOperation> operations = new ArrayList<AbstractRMOperation>();
+    List<ContainerAssignment> assignments = new ArrayList<>();
+    List<AbstractRMOperation> operations = new ArrayList<>();
     
     //app state makes all the decisions
     appState.onContainersAllocated(allocatedContainers, assignments, operations);
 
     //for each assignment: instantiate that role
     for (ContainerAssignment assignment : assignments) {
-      RoleStatus role = assignment.role;
-      Container container = assignment.container;
-      launchService.launchRole(container, role, getInstanceDefinition());
+      launchService.launchRole(assignment, getInstanceDefinition());
     }
     
     //for all the operations, exec them

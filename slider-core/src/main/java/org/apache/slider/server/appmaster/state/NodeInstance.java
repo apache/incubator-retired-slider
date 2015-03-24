@@ -26,7 +26,7 @@ import java.util.ListIterator;
 
 /**
  * A node instance -stores information about a node in the cluster.
- * 
+ * <p>
  * Operations on the array/set of roles are synchronized.
  */
 public class NodeInstance {
