@@ -23,8 +23,6 @@ import org.apache.hadoop.yarn.client.api.AMRMClient
 import org.apache.slider.providers.PlacementPolicy
 import org.apache.slider.providers.ProviderRole
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
-import org.apache.slider.server.appmaster.model.mock.MockContainer
-import org.apache.slider.server.appmaster.model.mock.MockNodeId
 import org.apache.slider.server.appmaster.model.mock.MockPriority
 import org.apache.slider.server.appmaster.model.mock.MockResource
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
@@ -63,7 +61,7 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest {
     tracker.newRequest(host1, 0)
     tracker.newRequest(host2, 0)
     tracker.newRequest(host1, 1)
-    assert tracker.onContainerAllocated(1, "host1", null) == ContainerAllocationOutcome.Placed
+    assert tracker.onContainerAllocated(1, "host1", null).outcome == ContainerAllocationOutcome.Placed
     assert !tracker.lookupPlacedRequest(1, "host1")
     assert tracker.lookupPlacedRequest(0, "host1")
   }
@@ -91,7 +89,7 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest {
     resource.virtualCores=1
     resource.memory = 48;
     c1.setResource(resource)
-    ContainerAllocationOutcome outcome = tracker.onContainerAllocated(0, "host1", c1)
+    ContainerAllocationOutcome outcome = tracker.onContainerAllocated(0, "host1", c1).outcome
     assert outcome == ContainerAllocationOutcome.Unallocated
     assert tracker.listOpenRequests().size() == 1
   }
@@ -120,9 +118,11 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest {
     assert issued.capability == resource
     assert issued.priority.priority == c1.getPriority().getPriority()
     assert req1.resourceRequirementsMatch(resource)
-    ContainerAllocationOutcome outcome = tracker.onContainerAllocated(0, nodeId.host, c1)
+
+    def allocation = tracker.onContainerAllocated(0, nodeId.host, c1)
     assert tracker.listOpenRequests().size() == 0
-    assert outcome == ContainerAllocationOutcome.Open
+    assert allocation.outcome == ContainerAllocationOutcome.Open
+    assert allocation.origin.is(req1)
   }
 
   @Test

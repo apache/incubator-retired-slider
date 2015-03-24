@@ -22,8 +22,23 @@ package org.apache.slider.server.appmaster.state;
  * Outcome of the assignment
  */
 public enum ContainerAllocationOutcome {
+  /**
+   * There wasn't a request for this
+   */
   Unallocated,
+
+  /**
+   * Open placement
+   */
   Open,
+
+  /**
+   * Allocated explicitly  where requested
+   */
   Placed,
+
+  /**
+   * This was an escalated placement
+   */
   Escalated
 }

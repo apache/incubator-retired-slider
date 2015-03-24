@@ -31,7 +31,6 @@ import org.apache.hadoop.yarn.api.records.ContainerStatus;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.hadoop.yarn.api.records.NodeReport;
-import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.api.records.impl.pb.ContainerPBImpl;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
@@ -68,7 +67,6 @@ import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
 import org.apache.slider.server.appmaster.management.MetricsConstants;
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
-import org.apache.slider.server.appmaster.operations.CancelRequestOperation;
 import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation;
 import org.apache.slider.server.appmaster.operations.ContainerRequestOperation;
 import org.slf4j.Logger;
@@ -1941,25 +1939,33 @@ public class AppState {
       if (outstandingRequests > 0) {
         // outstanding requests.
         int toCancel = Math.min(outstandingRequests, excess);
-        Priority p1 =
-            ContainerPriority.createPriority(role.getPriority(), true);
-        Priority p2 =
-            ContainerPriority.createPriority(role.getPriority(), false);
-        // TODO Delegate to Role History
-        operations.add(new CancelRequestOperation(p1, p2, toCancel));
+
+        // Delegate to Role History
+
+        List<AbstractRMOperation> cancellations = roleHistory.cancelRequestsForRole(role, toCancel);
+        log.info("Found {} outstanding requests to cancel", cancellations.size());
+        operations.addAll(cancellations);
+        if (toCancel != cancellations.size()) {
+          log.error("Tracking of outstanding requests is not in sync with the summary statistics:" +
+              " expected to be able to cancel {} requests, but got {}",
+              toCancel, cancellations.size());
+        }
+
         role.cancel(toCancel);
         excess -= toCancel;
         assert excess >= 0 : "Attempted to cancel too many requests";
         log.info("Submitted {} cancellations, leaving {} to release",
             toCancel, excess);
         if (excess == 0) {
-          log.info("After cancelling requests, application is at desired size");
+          log.info("After cancelling requests, application is now at desired size");
         }
       }
 
 
       // after the cancellation there may be no excess
       if (excess > 0) {
+
+        // there's an excess, so more to cancel
         // get the nodes to release
         int roleId = role.getKey();
 
@@ -1978,7 +1984,7 @@ public class AppState {
           }
         }
 
-        // warn if the desired state can't be reaced
+        // warn if the desired state can't be reached
         int numberAvailableForRelease = containersToRelease.size();
         if (numberAvailableForRelease < excess) {
           log.warn("Not enough containers to release, have {} and need {} more",
@@ -2001,7 +2007,7 @@ public class AppState {
 
         // then build up a release operation, logging each container as released
         for (RoleInstance possible : finalCandidates) {
-          log.debug("Targeting for release: {}", possible);
+          log.info("Targeting for release: {}", possible);
           containerReleaseSubmitted(possible.container);
           operations.add(new ContainerReleaseOperation(possible.getId()));
         }
@@ -2009,6 +2015,7 @@ public class AppState {
 
     }
 
+    // list of operations to execute
     return operations;
   }
 
@@ -2111,18 +2118,27 @@ public class AppState {
       //dec requested count
       decrementRequestCount(role);
 
-      // cancel an allocation request which granted this, so as to avoid repeated
-      // requests
-      releaseOperations.add(new CancelRequestOperation(container.getPriority(), null, 1));
-
       //inc allocated count -this may need to be dropped in a moment,
       // but us needed to update the logic below
       final int allocated = role.incActual();
       final int desired = role.getDesired();
 
       final String roleName = role.getName();
-      final ContainerAllocationOutcome outcome =
+      final ContainerAllocation allocation =
           roleHistory.onContainerAllocated(container, desired, allocated);
+      final ContainerAllocationOutcome outcome = allocation.outcome;
+
+      // cancel an allocation request which granted this, so as to avoid repeated
+      // requests
+      if (allocation.origin != null && allocation.origin.getIssuedRequest() != null) {
+        releaseOperations.add(allocation.origin.createCancelOperation());
+      } else {
+        // there's a request, but no idea what to cancel.
+        // rather than try to recover from it inelegantly, (and cause more confusion),
+        // log the event, but otherwise continue
+        log.warn("Unexpected allocation of container "
+            + SliderUtils.containerToString(container));
+      }
 
       //look for condition where we get more back than we asked
       if (allocated > desired) {

@@ -143,11 +143,11 @@ class TestRoleHistoryRequestTracking extends BaseMockAppStateTest {
   }
 
   public void assertOnContainerAllocated(Container c1, int p1, int p2) {
-    assert ContainerAllocationOutcome.Open != roleHistory.onContainerAllocated(c1, p1, p2)
+    assert ContainerAllocationOutcome.Open != roleHistory.onContainerAllocated(c1, p1, p2).outcome
   }
 
   public void assertOnContainerAllocationOpen(Container c1, int p1, int p2) {
-    assert ContainerAllocationOutcome.Open == roleHistory.onContainerAllocated(c1, p1, p2)
+    assert ContainerAllocationOutcome.Open == roleHistory.onContainerAllocated(c1, p1, p2).outcome
   }
 
   def assertNoOutstandingPlacedRequests() {
@@ -190,7 +190,8 @@ class TestRoleHistoryRequestTracking extends BaseMockAppStateTest {
     // the final allocation will trigger a cleanup
     container = factory.newContainer(req2, "four")
     // no node dropped
-    assert ContainerAllocationOutcome.Unallocated == roleHistory.onContainerAllocated(container, 3, 3)
+    assert ContainerAllocationOutcome.Unallocated ==
+           roleHistory.onContainerAllocated(container, 3, 3).outcome
     // yet the list is now empty
     assertNoOutstandingPlacedRequests()
     roleHistory.listOpenRequests().empty
@@ -198,7 +199,6 @@ class TestRoleHistoryRequestTracking extends BaseMockAppStateTest {
     // and the remainder goes onto the available list
     List<NodeInstance> a2 = roleHistory.cloneAvailableList(0)
     assertListEquals([age2Active0], a2)
-
   }
 
   @Test

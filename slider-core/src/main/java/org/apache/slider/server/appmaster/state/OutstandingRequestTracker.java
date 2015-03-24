@@ -119,38 +119,44 @@ public class OutstandingRequestTracker {
    * from the {@link #placedRequests} structure.
    * @param role role index
    * @param hostname hostname
-   * @param resource
    * @return the allocation outcome
    */
-  public synchronized ContainerAllocationOutcome onContainerAllocated(int role,
+  public synchronized ContainerAllocation onContainerAllocated(int role,
       String hostname,
       Container container) {
+    final String containerDetails = SliderUtils.containerToString(container);
+    log.debug("Processing allocation for role {}  on {}", role,
+        containerDetails);
+    ContainerAllocation allocation = new ContainerAllocation();
     ContainerAllocationOutcome outcome;
     OutstandingRequest request =
-      placedRequests.remove(new OutstandingRequest(role, hostname));
+        placedRequests.remove(new OutstandingRequest(role, hostname));
     if (request != null) {
       //satisfied request
-      log.info("Found placed request for container: {}", request);
+      log.debug("Found placed request for container: {}", request);
       request.completed();
       // derive outcome from status of tracked request
       outcome = request.isEscalated()
-           ? ContainerAllocationOutcome.Escalated
-           : ContainerAllocationOutcome.Placed;
+          ? ContainerAllocationOutcome.Escalated
+          : ContainerAllocationOutcome.Placed;
     } else {
       // not in the list; this is an open placement
       // scan through all containers in the open request list
       request = removeOpenRequest(container);
       if (request != null) {
-        log.info("Found open request for container: {}", request);
+        log.debug("Found open request for container: {}", request);
         request.completed();
         outcome = ContainerAllocationOutcome.Open;
       } else {
-        log.warn("Container allocation was not expected :"
-          + SliderUtils.containerToString(container));
+        log.warn("No open request found for container {}, outstanding queue has {} entries ",
+            containerDetails,
+            openRequests.size());
         outcome = ContainerAllocationOutcome.Unallocated;
       }
     }
-    return outcome;
+    allocation.origin = request;
+    allocation.outcome = outcome;
+    return allocation;
   }
 
   /**
@@ -167,11 +173,15 @@ public class OutstandingRequestTracker {
     ListIterator<OutstandingRequest> openlist = openRequests.listIterator();
     while (openlist.hasNext() && request == null) {
       OutstandingRequest r = openlist.next();
-      if (r.getPriority() == pri
-          && r.resourceRequirementsMatch(resource)) {
-        // match of priority and resources
-        request = r;
-        openlist.remove();
+      if (r.getPriority() == pri) {
+        // matching resource
+        if (r.resourceRequirementsMatch(resource)) {
+          // match of priority and resources
+          request = r;
+          openlist.remove();
+        } else {
+          log.debug("Matched priorities but resources different");
+        }
       }
     }
     return request;
@@ -314,6 +324,7 @@ public class OutstandingRequestTracker {
    * Escalate operation as triggered by external timer.
    * @return a (usually empty) list of cancel/request operations.
    */
+  @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
   public synchronized List<AbstractRMOperation> escalateOutstandingRequests(long now) {
     if (placedRequests.isEmpty()) {
       return NO_REQUESTS;
@@ -327,7 +338,7 @@ public class OutstandingRequestTracker {
         if (outstandingRequest.shouldEscalate(now)) {
 
           // time to escalate
-          CancelSingleRequest cancel = new CancelSingleRequest(outstandingRequest.getIssuedRequest());
+          CancelSingleRequest cancel = outstandingRequest.createCancelOperation();
           operations.add(cancel);
           AMRMClient.ContainerRequest escalated =
               outstandingRequest.escalate();
@@ -338,4 +349,48 @@ public class OutstandingRequestTracker {
     }
     return operations;
   }
+
+  /**
+   * Extract a specific number of open requests for a role
+   * @param roleId role Id
+   * @param count count to extract
+   * @return a list of requests which are no longer in the open request list
+   */
+  public synchronized List<OutstandingRequest> extractOpenRequestsForRole(int roleId, int count) {
+    List<OutstandingRequest> results = new ArrayList<>();
+    ListIterator<OutstandingRequest> openlist = openRequests.listIterator();
+    while (openlist.hasNext() && count > 0) {
+      OutstandingRequest openRequest = openlist.next();
+      if (openRequest.roleId == roleId) {
+        results.add(openRequest);
+        openlist.remove();
+        count--;
+      }
+    }
+    return results;
+  }
+  /**
+   * Extract a specific number of placed requests for a role
+   * @param roleId role Id
+   * @param count count to extract
+   * @return a list of requests which are no longer in the placed request data structure
+   */
+  public synchronized List<OutstandingRequest> extractPlacedRequestsForRole(int roleId, int count) {
+    List<OutstandingRequest> results = new ArrayList<>();
+    Iterator<OutstandingRequest> iterator = placedRequests.keySet().iterator();
+    while (iterator.hasNext() && count > 0) {
+      OutstandingRequest request = iterator.next();
+      if (request.roleId == roleId) {
+        results.add(request);
+        count--;
+      }
+    }
+    // now cull them from the map
+    for (OutstandingRequest result : results) {
+      placedRequests.remove(result);
+    }
+
+    return results;
+  }
+
 }

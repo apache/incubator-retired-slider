@@ -20,6 +20,7 @@ package org.apache.slider.server.appmaster.model.appstate
 
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.Container
+import org.apache.hadoop.yarn.api.records.ContainerId
 import org.apache.hadoop.yarn.client.api.AMRMClient
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockFactory
@@ -27,10 +28,11 @@ import org.apache.slider.server.appmaster.model.mock.MockRMOperationHandler
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.model.mock.MockYarnEngine
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
-import org.apache.slider.server.appmaster.operations.CancelRequestOperation
+import org.apache.slider.server.appmaster.operations.CancelSingleRequest
 import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation
 import org.apache.slider.server.appmaster.operations.ContainerRequestOperation
 import org.apache.slider.server.appmaster.operations.RMOperationHandler
+import org.apache.slider.server.appmaster.state.AppState
 import org.apache.slider.server.appmaster.state.ContainerAssignment
 import org.apache.slider.server.appmaster.state.RoleInstance
 import org.junit.Test
@@ -95,10 +97,17 @@ class TestMockAppStateRMOperations extends BaseMockAppStateTest implements MockR
     assertListLength(ops, 5)
     // now 5 outstanding requests.
     assert role0.requested == 5
-    
+
     // allocate one
-    role0.incActual()
-    role0.decRequested()
+    List<AbstractRMOperation> processed = [ops[0]]
+    List<ContainerId> released = []
+    List<AppState.NodeCompletionResult> completionResults = []
+    submitOperations(processed, released)
+    List<RoleInstance> instances = createAndSubmitNodes(released)
+    processSubmissionOperations(instances, completionResults, released)
+
+
+    // four outstanding
     assert role0.requested == 4
 
 
@@ -106,9 +115,10 @@ class TestMockAppStateRMOperations extends BaseMockAppStateTest implements MockR
     role0.desired = 3
     ops = appState.reviewRequestAndReleaseNodes()
 
-    // expect a cancel operation from review
-    assertListLength(ops, 1)
-    assert ops[0] instanceof CancelRequestOperation
+    // expect two cancel operation from review
+    assertListLength(ops, 2)
+    ops.each { assert it instanceof CancelSingleRequest }
+
     RMOperationHandler handler = new MockRMOperationHandler()
     handler.availableToCancel = 4;
     handler.execute(ops)
@@ -119,11 +129,10 @@ class TestMockAppStateRMOperations extends BaseMockAppStateTest implements MockR
     role0.desired = 2
     ops = appState.reviewRequestAndReleaseNodes()
     assertListLength(ops, 1)
-    assert ops[0] instanceof CancelRequestOperation
+    ops.each { assert it instanceof CancelSingleRequest }
     handler.execute(ops)
     assert handler.availableToCancel == 1
     assert role0.requested == 1
-
   }
 
   @Test
@@ -136,9 +145,8 @@ class TestMockAppStateRMOperations extends BaseMockAppStateTest implements MockR
     assert role0.requested == 5
     role0.desired = 0
     ops = appState.reviewRequestAndReleaseNodes()
-    assertListLength(ops, 1)
-    CancelRequestOperation cancel = ops[0] as CancelRequestOperation
-    assert cancel.count == 5
+    assertListLength(ops, 5)
+
   }
 
 
@@ -160,7 +168,9 @@ class TestMockAppStateRMOperations extends BaseMockAppStateTest implements MockR
     role0.desired = 1;
     assert role0.delta == -3
     ops = appState.reviewRequestAndReleaseNodes()
-    assertListLength(ops, 2)
+    assertListLength(ops, 3)
+    assert 2 == (ops.findAll {it instanceof CancelSingleRequest}).size()
+    assert 1 == (ops.findAll {it instanceof ContainerReleaseOperation}).size()
     assert role0.requested == 0
     assert role0.releasing == 1
   }
@@ -171,31 +181,31 @@ class TestMockAppStateRMOperations extends BaseMockAppStateTest implements MockR
     // role: desired = 2, requested = 1, actual=1 
     def role0 = role0Status
     role0.desired = 2
-    role0.incRequested()
-    role0.incRequested()
     List<AbstractRMOperation> ops
-    
-    // there are now two outstanding, two actual 
+    ops = appState.reviewRequestAndReleaseNodes()
+    assert 2 == (ops.findAll { it instanceof ContainerRequestOperation }).size()
+
+    // there are now two outstanding, two actual
     // Release 3 and verify that the two
     // cancellations were combined with a release
     role0.desired = 0;
     ops = appState.reviewRequestAndReleaseNodes()
-    assertListLength(ops, 1)
-    CancelRequestOperation cancel = ops[0] as CancelRequestOperation
-    assert cancel.getCount() == 2
+    assert ops.size() == 2
+    assert 2 == (ops.findAll { it instanceof CancelSingleRequest }).size()
   }
 
   
   @Test
   public void testFlexUpOutstandingRequests() throws Throwable {
-    
-    // role: desired = 2, requested = 1, actual=1 
+
+    List<AbstractRMOperation> ops
+    // role: desired = 2, requested = 1, actual=1
     def role0 = role0Status
     role0.desired = 2
     role0.incActual();
     role0.incRequested()
-    
-    List<AbstractRMOperation> ops
+
+
 
     // flex up 2 nodes, yet expect only one node to be requested,
     // as the  outstanding request is taken into account
@@ -283,7 +293,9 @@ class TestMockAppStateRMOperations extends BaseMockAppStateTest implements MockR
     List<ContainerAssignment> assignments = [];
     List<AbstractRMOperation> releases = []
     appState.onContainersAllocated(allocations, assignments, releases)
-    assertListLength(releases, 0)
+    // we expect four release requests here for all the allocated containers
+    assertListLength(releases, 4)
+    releases.each { assert it instanceof CancelSingleRequest }
     assertListLength(assignments, 4)
     assignments.each { ContainerAssignment assigned ->
       Container target = assigned.container

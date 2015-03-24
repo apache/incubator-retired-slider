@@ -114,6 +114,7 @@ class Allocator {
     container.nodeId = node.nodeId
     container.nodeHttpAddress = node.httpAddress()
     container.priority = request.priority
+    container.resource = request.capability
     return container;
   }
 

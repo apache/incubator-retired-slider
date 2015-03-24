@@ -638,13 +638,13 @@ public class RoleHistory {
    * @param actualCount current count of instances
    * @return The allocation outcome
    */
-  public synchronized ContainerAllocationOutcome onContainerAllocated(Container container,
+  public synchronized ContainerAllocation onContainerAllocated(Container container,
       int desiredCount,
       int actualCount) {
     int role = ContainerPriority.extractRole(container);
     String hostname = RoleHistoryUtils.hostnameOf(container);
     List<NodeInstance> nodeInstances = getOrCreateNodesForRoleId(role);
-    ContainerAllocationOutcome outcome =
+    ContainerAllocation outcome =
         outstandingRequests.onContainerAllocated(role, hostname, container);
     if (desiredCount <= actualCount) {
       // all outstanding requests have been satisfied
@@ -874,4 +874,30 @@ public class RoleHistory {
     long now = now();
     return outstandingRequests.escalateOutstandingRequests(now);
   }
+
+  /**
+   * Build the list of requests to cancel from the outstanding list.
+   * @param role
+   * @param toCancel
+   * @return a list of cancellable operations.
+   */
+  public synchronized List<AbstractRMOperation> cancelRequestsForRole(RoleStatus role, int toCancel) {
+    List<AbstractRMOperation> results = new ArrayList<>(toCancel);
+    // first scan through the unplaced request list to find all of a role
+    int roleId = role.getKey();
+    List<OutstandingRequest> requests =
+        outstandingRequests.extractOpenRequestsForRole(roleId, toCancel);
+
+    // are there any left?
+    int remaining = toCancel - requests.size();
+    // ask for some placed nodes
+    requests.addAll(outstandingRequests.extractPlacedRequestsForRole(roleId, remaining));
+
+    // build cancellations
+    for (OutstandingRequest request : requests) {
+      results.add(request.createCancelOperation());
+    }
+    return results;
+  }
+
 }

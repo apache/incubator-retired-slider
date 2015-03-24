@@ -23,6 +23,7 @@ import com.google.common.base.Preconditions;
 import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
+import org.apache.slider.server.appmaster.operations.CancelSingleRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -244,7 +245,7 @@ public final class OutstandingRequest {
    * so as to place it into the relaxed list.
    */
   public synchronized AMRMClient.ContainerRequest escalate() {
-    Preconditions.checkNotNull(issuedRequest, "cannot escalate if request not issued "+ this);
+    Preconditions.checkNotNull(issuedRequest, "cannot escalate if request not issued " + this);
     escalated = true;
 
     // this is now the priority
@@ -351,5 +352,14 @@ public final class OutstandingRequest {
     sb.append(", escalationTimeoutMillis=").append(escalationTimeoutMillis);
     sb.append('}');
     return sb.toString();
+  }
+
+  /**
+   * Create a cancel operation
+   * @return an operation that can be used to cancel the request
+   */
+  public CancelSingleRequest createCancelOperation() {
+    Preconditions.checkState(issuedRequest!=null, "No issued request to cancel");
+    return new CancelSingleRequest(issuedRequest);
   }
 }
