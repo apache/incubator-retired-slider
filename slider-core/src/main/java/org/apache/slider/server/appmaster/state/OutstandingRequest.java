@@ -91,6 +91,11 @@ public final class OutstandingRequest {
   private boolean mayEscalate;
 
   /**
+   * Priority of request; only valid after the request is built up
+   */
+  private int priority = -1;
+
+  /**
    * Create a request
    * @param roleId role
    * @param node node -can be null
@@ -142,6 +147,10 @@ public final class OutstandingRequest {
 
   public AMRMClient.ContainerRequest getIssuedRequest() {
     return issuedRequest;
+  }
+
+  public int getPriority() {
+    return priority;
   }
 
   /**
@@ -215,6 +224,7 @@ public final class OutstandingRequest {
       mayEscalate = false;
     }
     Priority pri = ContainerPriority.createPriority(roleId, !relaxLocality);
+    priority = pri.getPriority();
     issuedRequest = new AMRMClient.ContainerRequest(resource,
                                       hosts,
                                       null,
@@ -236,6 +246,8 @@ public final class OutstandingRequest {
   public synchronized AMRMClient.ContainerRequest escalate() {
     Preconditions.checkNotNull(issuedRequest, "cannot escalate if request not issued "+ this);
     escalated = true;
+
+    // this is now the priority
     Priority pri = ContainerPriority.createPriority(roleId, true);
     String[] nodes;
     List<String> issuedRequestNodes = issuedRequest.getNodes();
@@ -258,10 +270,13 @@ public final class OutstandingRequest {
       
   /**
    * Mark the request as completed (or canceled).
+   * <p>
+   *   Current action: if a node is defined, its request count is decremented
    */
   public void completed() {
-    assert node != null : "null node";
-    node.getOrCreate(roleId).requestCompleted();
+    if (node != null) {
+      node.getOrCreate(roleId).requestCompleted();
+    }
   }
 
   /**
@@ -274,6 +289,15 @@ public final class OutstandingRequest {
            && !escalated
            && issuedRequest != null
            && escalationTimeoutMillis < time;
+  }
+
+  /**
+   * Query for the resource requirements matching; always false before a request is issued
+   * @param resource
+   * @return
+   */
+  public synchronized boolean resourceRequirementsMatch(Resource resource) {
+    return issuedRequest != null && issuedRequest.getCapability().equals(resource);
   }
 
   /**

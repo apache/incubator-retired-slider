@@ -23,11 +23,15 @@ import org.apache.hadoop.yarn.client.api.AMRMClient
 import org.apache.slider.providers.PlacementPolicy
 import org.apache.slider.providers.ProviderRole
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
+import org.apache.slider.server.appmaster.model.mock.MockContainer
+import org.apache.slider.server.appmaster.model.mock.MockNodeId
+import org.apache.slider.server.appmaster.model.mock.MockPriority
 import org.apache.slider.server.appmaster.model.mock.MockResource
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
 import org.apache.slider.server.appmaster.operations.CancelSingleRequest
 import org.apache.slider.server.appmaster.operations.ContainerRequestOperation
 import org.apache.slider.server.appmaster.state.ContainerAllocationOutcome
+import org.apache.slider.server.appmaster.state.ContainerPriority
 import org.apache.slider.server.appmaster.state.NodeInstance
 import org.apache.slider.server.appmaster.state.OutstandingRequest
 import org.apache.slider.server.appmaster.state.OutstandingRequestTracker
@@ -49,9 +53,9 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest {
   @Test
   public void testAddRetrieveEntry() throws Throwable {
     OutstandingRequest request = tracker.newRequest(host1, 0)
-    assert tracker.lookup(0, "host1").equals(request)
-    assert tracker.remove(request).equals(request)
-    assert !tracker.lookup(0, "host1")
+    assert tracker.lookupPlacedRequest(0, "host1").equals(request)
+    assert tracker.removePlacedRequest(request).equals(request)
+    assert !tracker.lookupPlacedRequest(0, "host1")
   }
 
   @Test
@@ -59,11 +63,68 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest {
     tracker.newRequest(host1, 0)
     tracker.newRequest(host2, 0)
     tracker.newRequest(host1, 1)
-    assert tracker.onContainerAllocated(1, "host1") == ContainerAllocationOutcome.Placed
-    assert !tracker.lookup(1, "host1")
-    assert tracker.lookup(0, "host1")
+    assert tracker.onContainerAllocated(1, "host1", null) == ContainerAllocationOutcome.Placed
+    assert !tracker.lookupPlacedRequest(1, "host1")
+    assert tracker.lookupPlacedRequest(0, "host1")
   }
-  
+
+  @Test
+  public void testResetOpenRequests() throws Throwable {
+    def req1 = tracker.newRequest(null, 0)
+    assert !req1.located
+    tracker.newRequest(host1, 0)
+    def openRequests = tracker.listOpenRequests()
+    assert openRequests.size() == 1
+    tracker.resetOutstandingRequests(0)
+    assert tracker.listOpenRequests().empty
+    assert tracker.listPlacedRequests().empty
+  }
+
+  @Test
+  public void testRemoveOpenRequestUnissued() throws Throwable {
+    def req1 = tracker.newRequest(null, 0)
+    assert tracker.listOpenRequests().size() == 1
+    def c1 = factory.newContainer()
+    c1.setPriority(new MockPriority(0))
+
+    def resource = factory.newResource()
+    resource.virtualCores=1
+    resource.memory = 48;
+    c1.setResource(resource)
+    ContainerAllocationOutcome outcome = tracker.onContainerAllocated(0, "host1", c1)
+    assert outcome == ContainerAllocationOutcome.Unallocated
+    assert tracker.listOpenRequests().size() == 1
+  }
+
+  @Test
+  public void testIssuedOpenRequest() throws Throwable {
+    def req1 = tracker.newRequest(null, 0)
+    def resource = factory.newResource()
+    resource.virtualCores = 1
+    resource.memory = 48;
+    def yarnRequest = req1.buildContainerRequest(resource, role0Status, 0, "")
+    assert tracker.listOpenRequests().size() == 1
+    def c1 = factory.newContainer()
+
+    def nodeId = factory.newNodeId()
+    c1.nodeId = nodeId
+    nodeId.host ="hostname-1"
+
+    def pri = ContainerPriority.buildPriority(0, false)
+    assert pri > 0
+    c1.setPriority(new MockPriority(pri))
+
+    c1.setResource(resource)
+
+    def issued = req1.issuedRequest
+    assert issued.capability == resource
+    assert issued.priority.priority == c1.getPriority().getPriority()
+    assert req1.resourceRequirementsMatch(resource)
+    ContainerAllocationOutcome outcome = tracker.onContainerAllocated(0, nodeId.host, c1)
+    assert tracker.listOpenRequests().size() == 0
+    assert outcome == ContainerAllocationOutcome.Open
+  }
+
   @Test
   public void testResetEntries() throws Throwable {
     tracker.newRequest(host1, 0)
@@ -73,13 +134,12 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest {
     assert canceled.size() == 2
     assert canceled.contains(host1)
     assert canceled.contains(host2)
-    assert tracker.lookup(1, "host1")
-    assert !tracker.lookup(0, "host1")
+    assert tracker.lookupPlacedRequest(1, "host1")
+    assert !tracker.lookupPlacedRequest(0, "host1")
     canceled = tracker.resetOutstandingRequests(0)
     assert canceled.size() == 0
     assert tracker.resetOutstandingRequests(1).size() == 1
   }
-
 
   @Test
   public void testEscalation() throws Throwable {
@@ -92,7 +152,7 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest {
     assert outstanding0.located
     assert !outstanding0.escalated
     assert !initialRequest.relaxLocality
-    assert tracker.listOutstandingRequests().size() == 1
+    assert tracker.listPlacedRequests().size() == 1
 
     // second. This one doesn't get launched. This is to verify that the escalation
     // process skips entries which are in the list but have not been issued.
@@ -137,7 +197,7 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest {
     assert escalations3.size() == 2
     assert outstanding2.escalated
 
-    // finally add a strict entry to th emix
+    // finally add a strict entry to the mix
     def (res3, outstanding3) = newRequest(role1Status)
     final ProviderRole providerRole1 = role1Status.providerRole
     assert providerRole1.placementPolicy == PlacementPolicy.STRICT
@@ -156,7 +216,8 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest {
     entry.containerCompleted(false)
     entry.containerCompleted(false)
     assert entry.failedRecently == 3
-    final AMRMClient.ContainerRequest initialRequest = outstanding0.buildContainerRequest(res0, role0Status, 0, null)
+    final AMRMClient.ContainerRequest initialRequest =
+        outstanding0.buildContainerRequest(res0, role0Status, 0, null)
     assert initialRequest.relaxLocality
     assert initialRequest.nodes == null
   }
@@ -171,16 +232,16 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest {
     entry.containerCompleted(false)
     entry.containerCompleted(false)
     assert entry.failedRecently == 3
-    final AMRMClient.ContainerRequest initialRequest = outstanding0.buildContainerRequest(res0,
-        roleStatus, 0, null)
+    final AMRMClient.ContainerRequest initialRequest =
+        outstanding0.buildContainerRequest(res0, roleStatus, 0, null)
     assert !initialRequest.relaxLocality
     assert initialRequest.nodes[0] == host1.hostname
   }
 
   /**
    * Create a new request (always against host1)
-   * @param r
-   * @return
+   * @param r role status
+   * @return (resource, oustanding-request)
    */
   public def newRequest(RoleStatus r) {
     final Resource res2 = new MockResource()

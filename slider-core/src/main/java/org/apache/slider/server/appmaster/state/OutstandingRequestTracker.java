@@ -18,8 +18,12 @@
 
 package org.apache.slider.server.appmaster.state;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.yarn.api.records.Container;
+import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
+import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
 import org.apache.slider.server.appmaster.operations.CancelSingleRequest;
 import org.apache.slider.server.appmaster.operations.ContainerRequestOperation;
@@ -33,6 +37,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 
 /**
@@ -61,9 +66,15 @@ public class OutstandingRequestTracker {
     new HashMap<>();
 
   /**
-   * Create a new request for the specific role. If a
-   * location is set, the request is added to the list of requests to track.
-   * if it isn't, it is not tracked.
+   * List of open requests; no specific details on them.
+   */
+  private List<OutstandingRequest> openRequests = new ArrayList<>();
+
+  /**
+   * Create a new request for the specific role.
+   * <p>
+   * If a location is set, the request is added to {@link #placedRequests}.
+   * If not, it is added to {@link #openRequests}
    * <p>
    * This does not update the node instance's role's request count
    * @param instance node instance to manager
@@ -75,6 +86,8 @@ public class OutstandingRequestTracker {
       new OutstandingRequest(role, instance);
     if (request.isLocated()) {
       placedRequests.put(request, request);
+    } else {
+      openRequests.add(request);
     }
     return request;
   }
@@ -85,7 +98,9 @@ public class OutstandingRequestTracker {
    * @param hostname hostname
    * @return the request or null if there was no outstanding one in the {@link #placedRequests}
    */
-  public synchronized OutstandingRequest lookup(int role, String hostname) {
+  @VisibleForTesting
+  public synchronized OutstandingRequest lookupPlacedRequest(int role, String hostname) {
+    Preconditions.checkArgument(hostname != null, "null hostname");
     return placedRequests.get(new OutstandingRequest(role, hostname));
   }
 
@@ -94,7 +109,8 @@ public class OutstandingRequestTracker {
    * @param request matching request to find
    * @return the request or null for no match in the {@link #placedRequests}
    */
-  public synchronized OutstandingRequest remove(OutstandingRequest request) {
+  @VisibleForTesting
+  public synchronized OutstandingRequest removePlacedRequest(OutstandingRequest request) {
     return placedRequests.remove(request);
   }
 
@@ -103,22 +119,62 @@ public class OutstandingRequestTracker {
    * from the {@link #placedRequests} structure.
    * @param role role index
    * @param hostname hostname
+   * @param resource
    * @return the allocation outcome
    */
-  public synchronized ContainerAllocationOutcome onContainerAllocated(int role, String hostname) {
+  public synchronized ContainerAllocationOutcome onContainerAllocated(int role,
+      String hostname,
+      Container container) {
+    ContainerAllocationOutcome outcome;
     OutstandingRequest request =
       placedRequests.remove(new OutstandingRequest(role, hostname));
-    if (request == null) {
-      // not in the list; this is an open placement
-      return ContainerAllocationOutcome.Open;
-    } else {
+    if (request != null) {
       //satisfied request
+      log.info("Found placed request for container: {}", request);
       request.completed();
       // derive outcome from status of tracked request
-      return request.isEscalated()
+      outcome = request.isEscalated()
            ? ContainerAllocationOutcome.Escalated
            : ContainerAllocationOutcome.Placed;
+    } else {
+      // not in the list; this is an open placement
+      // scan through all containers in the open request list
+      request = removeOpenRequest(container);
+      if (request != null) {
+        log.info("Found open request for container: {}", request);
+        request.completed();
+        outcome = ContainerAllocationOutcome.Open;
+      } else {
+        log.warn("Container allocation was not expected :"
+          + SliderUtils.containerToString(container));
+        outcome = ContainerAllocationOutcome.Unallocated;
+      }
     }
+    return outcome;
+  }
+
+  /**
+   * Find and remove an open request. Determine it by scanning open requests
+   * for one whose priority & resource requirements match that of the container
+   * allocated.
+   * @param container container allocated
+   * @return a request which matches the allocation, or null for "no match"
+   */
+  private OutstandingRequest removeOpenRequest(Container container) {
+    int pri = container.getPriority().getPriority();
+    Resource resource = container.getResource();
+    OutstandingRequest request = null;
+    ListIterator<OutstandingRequest> openlist = openRequests.listIterator();
+    while (openlist.hasNext() && request == null) {
+      OutstandingRequest r = openlist.next();
+      if (r.getPriority() == pri
+          && r.resourceRequirementsMatch(resource)) {
+        // match of priority and resources
+        request = r;
+        openlist.remove();
+      }
+    }
+    return request;
   }
   
   /**
@@ -226,6 +282,13 @@ public class OutstandingRequestTracker {
         hosts.add(request.node);
       }
     }
+    ListIterator<OutstandingRequest> openlist = openRequests.listIterator();
+    while (openlist.hasNext()) {
+      OutstandingRequest next = openlist.next();
+      if (next.roleId == role) {
+        openlist.remove();
+      }
+    }
     return hosts;
   }
 
@@ -234,8 +297,17 @@ public class OutstandingRequestTracker {
    * are shared
    * @return a list of the current outstanding requests
    */
-  public synchronized List<OutstandingRequest> listOutstandingRequests() {
+  public synchronized List<OutstandingRequest> listPlacedRequests() {
     return new ArrayList<>(placedRequests.values());
+  }
+
+  /**
+   * Get a list of outstanding requests. The list is cloned, but the contents
+   * are shared
+   * @return a list of the current outstanding requests
+   */
+  public synchronized List<OutstandingRequest> listOpenRequests() {
+    return new ArrayList<>(openRequests);
   }
 
   /**

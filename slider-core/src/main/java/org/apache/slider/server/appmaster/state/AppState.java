@@ -1945,6 +1945,7 @@ public class AppState {
             ContainerPriority.createPriority(role.getPriority(), true);
         Priority p2 =
             ContainerPriority.createPriority(role.getPriority(), false);
+        // TODO Delegate to Role History
         operations.add(new CancelRequestOperation(p1, p2, toCancel));
         role.cancel(toCancel);
         excess -= toCancel;

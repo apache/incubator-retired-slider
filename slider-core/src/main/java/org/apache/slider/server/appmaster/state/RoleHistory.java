@@ -643,12 +643,12 @@ public class RoleHistory {
       int actualCount) {
     int role = ContainerPriority.extractRole(container);
     String hostname = RoleHistoryUtils.hostnameOf(container);
-    LinkedList<NodeInstance> nodeInstances =
-        getOrCreateNodesForRoleId(role);
-    ContainerAllocationOutcome outcome = outstandingRequests.onContainerAllocated(role, hostname);
+    List<NodeInstance> nodeInstances = getOrCreateNodesForRoleId(role);
+    ContainerAllocationOutcome outcome =
+        outstandingRequests.onContainerAllocated(role, hostname, container);
     if (desiredCount <= actualCount) {
       // all outstanding requests have been satisfied
-      // tag nodes as available
+      // clear all the lists, so returning nodes to the available set
       List<NodeInstance>
           hosts = outstandingRequests.resetOutstandingRequests(role);
       if (!hosts.isEmpty()) {
@@ -841,8 +841,18 @@ public class RoleHistory {
    * @return a list of the requests outstanding at the time of requesting
    */
   @VisibleForTesting
-  public synchronized List<OutstandingRequest> listOutstandingPlacedRequests() {
-    return outstandingRequests.listOutstandingRequests();
+  public List<OutstandingRequest> listPlacedRequests() {
+    return outstandingRequests.listPlacedRequests();
+  }
+
+
+  /**
+   * Get a snapshot of the outstanding placed request list
+   * @return a list of the requests outstanding at the time of requesting
+   */
+  @VisibleForTesting
+  public List<OutstandingRequest> listOpenRequests() {
+    return outstandingRequests.listOpenRequests();
   }
 
   /**
@@ -856,7 +866,6 @@ public class RoleHistory {
     return lst;
   }
 
-
   /**
    * Escalate operation as triggered by external timer.
    * @return a (usually empty) list of cancel/request operations.
@@ -864,6 +873,5 @@ public class RoleHistory {
   public List<AbstractRMOperation> escalateOutstandingRequests() {
     long now = now();
     return outstandingRequests.escalateOutstandingRequests(now);
-
   }
 }

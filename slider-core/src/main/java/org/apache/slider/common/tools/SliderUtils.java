@@ -995,11 +995,12 @@ public final class SliderUtils {
       return "null container";
     }
     return String.format(Locale.ENGLISH,
-        "ContainerID=%s nodeID=%s http=%s priority=%s",
+        "ContainerID=%s nodeID=%s http=%s priority=%s resource=%s",
         container.getId(),
         container.getNodeId(),
         container.getNodeHttpAddress(),
-        container.getPriority());
+        container.getPriority(),
+        container.getResource());
   }
 
   /**
