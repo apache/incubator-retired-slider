@@ -50,8 +50,10 @@ public class AsyncRMOperationHandler extends RMOperationHandler {
     // need to revoke a previously issued container request
     // so enum the sets and pick some
     int remaining = cancelSinglePriorityRequests(priority1, count);
-    remaining = cancelSinglePriorityRequests(priority2, remaining);
-    
+    if (priority2 != null) {
+      remaining = cancelSinglePriorityRequests(priority2, remaining);
+    }
+
     return remaining;
   }
 

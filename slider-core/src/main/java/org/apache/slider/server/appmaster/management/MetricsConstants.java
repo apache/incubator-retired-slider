@@ -22,6 +22,35 @@ package org.apache.slider.server.appmaster.management;
  * Constants used in slider for metrics registration and lookup
  */
 public class MetricsConstants {
-  public static final String CONTAINERS_OUTSTANDING_REQUESTS =
-      "containers.outstanding-requests";
+
+  /**
+   * {@value}
+   */
+  public static final String CONTAINERS_OUTSTANDING_REQUESTS = "containers.outstanding-requests";
+
+  /**
+   * {@value}
+   */
+  public static final String CONTAINERS_STARTED = "containers.started";
+
+  /**
+   * {@value}
+   */
+  public static final String CONTAINERS_SURPLUS = "containers.surplus";
+
+  /**
+   * {@value}
+   */
+  public static final String CONTAINERS_COMPLETED = "containers.completed";
+
+  /**
+   * {@value}
+   */
+  public static final String CONTAINERS_FAILED = "containers.failed";
+
+  /**
+   * {@value}
+   */
+  public static final String CONTAINERS_START_FAILED = "containers.start-failed";
+
 }

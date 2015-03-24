@@ -1840,7 +1840,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     rmOperationHandler.cancelSingleRequest(request);
   }
 
-  /* =================================================================== */
+/* =================================================================== */
 /* END */
 /* =================================================================== */
 

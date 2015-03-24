@@ -18,11 +18,12 @@
 
 package org.apache.slider.server.appmaster.operations;
 
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.slider.server.appmaster.state.ContainerPriority;
 
 /**
- * Cancel a container request
+ * Cancel a container request at the given priority/proirities.
  */
 public class CancelRequestOperation extends AbstractRMOperation {
 
@@ -30,7 +31,15 @@ public class CancelRequestOperation extends AbstractRMOperation {
   private final Priority priority2;
   private final int count;
 
+  /**
+   * Create an instance
+   * @param priority1 first priority, the one that is released first
+   * @param priority2 optional second priority
+   * @param count number of requests to cancel
+   */
   public CancelRequestOperation(Priority priority1, Priority priority2, int count) {
+    Preconditions.checkArgument(priority1 != null, "null priority");
+    Preconditions.checkArgument(count >= 0, "negative count");
     this.priority1 = priority1;
     this.priority2 = priority2;
     this.count = count;
@@ -45,7 +54,8 @@ public class CancelRequestOperation extends AbstractRMOperation {
   public String toString() {
     return "release " + count
            + " requests for " + ContainerPriority.toString(priority1)
-           + " and " + ContainerPriority.toString(priority2);
+           + (priority2 != null ?
+        (" and " + ContainerPriority.toString(priority2)) : "");
   }
 
   /**
