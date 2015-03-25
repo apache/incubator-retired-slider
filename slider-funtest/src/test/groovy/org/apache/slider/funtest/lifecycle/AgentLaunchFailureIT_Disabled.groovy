@@ -35,7 +35,7 @@ import org.junit.Test
 
 @CompileStatic
 @Slf4j
-public class AgentLaunchFailureIT extends AgentCommandTestBase
+public class AgentLaunchFailureIT_Disabled extends AgentCommandTestBase
     implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
 
@@ -99,9 +99,12 @@ public class AgentLaunchFailureIT extends AgentCommandTestBase
        made. If this second call succeeds as well then chaos monkey is not
        doing its job and the test should fail.
        */
-      describe("app is running is checked twice")
-      ensureYarnApplicationIsUp(appId)
-      fail("application is up")
+      describe("await for app to fail to launch app is running: enter spin state")
+      1..10.each {
+        sleep(5000)
+        ensureYarnApplicationIsUp(appId)
+      }
+      fail("application is up when it should have failed")
     } catch (AssertionError e) {
       if(!e.toString().contains(SliderAppMaster.E_TRIGGERED_LAUNCH_FAILURE)) {
         throw e;
