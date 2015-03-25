@@ -28,6 +28,7 @@ import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.ResourceKeys
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.conf.ConfTree
+import org.apache.slider.providers.PlacementPolicy
 import org.apache.slider.providers.ProviderRole
 
 /**
@@ -39,12 +40,23 @@ class MockFactory implements MockRoles {
 
   public static final ProviderRole PROVIDER_ROLE0 = new ProviderRole(
       MockRoles.ROLE0,
-      0)
+      0,
+      PlacementPolicy.DEFAULT,
+      2,
+      1)
+  // role 1 is strict. timeout should be irrelevant; same as failures
   public static final ProviderRole PROVIDER_ROLE1 = new ProviderRole(
       MockRoles.ROLE1,
+      1,
+      PlacementPolicy.STRICT,
+      2,
       1)
+  // role 2: longer delay
   public static final ProviderRole PROVIDER_ROLE2 = new ProviderRole(
       MockRoles.ROLE2,
+      2,
+      PlacementPolicy.ANTI_AFFINITY_REQUIRED,
+      2,
       2)
   int appIdCount;
   int attemptIdCount;
@@ -169,12 +181,10 @@ class MockFactory implements MockRoles {
     instance.setResources(newConfTree(r1, r2, r3))
     return instance
   }
-  
-  
-  
+
   def roleMap(int count) {
     return [
-        (ResourceKeys.COMPONENT_INSTANCES):count.toString()
+        (ResourceKeys.COMPONENT_INSTANCES):count.toString(),
     ]
   }
 

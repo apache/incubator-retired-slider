@@ -22,7 +22,6 @@ import org.apache.hadoop.registry.client.binding.JsonSerDeser;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 
-
 /**
  * Serializable version of component instance data
  */
@@ -41,6 +40,7 @@ public class ContainerInformation {
 
   public String host;
   public String hostURL;
+  public String placement;
   /**
    * What is the tail output from the executed process (or [] if not started
    * or the log cannot be picked up
@@ -50,7 +50,7 @@ public class ContainerInformation {
   @Override
   public String toString() {
     JsonSerDeser<ContainerInformation> serDeser =
-        new JsonSerDeser<ContainerInformation>(
+        new JsonSerDeser<>(
             ContainerInformation.class);
     return serDeser.toString(this);
   }

@@ -221,7 +221,7 @@ public class AppMasterLauncher extends AbstractLauncher {
 
     Token<? extends TokenIdentifier>[] tokens = null;
     boolean tokensProvided =
-        this.getConf().get("mapreduce.job.credentials.binary") != null;
+        this.getConf().get(MAPREDUCE_JOB_CREDENTIALS_BINARY) != null;
     if (!tokensProvided) {
         // For now, only getting tokens for the default file-system.
         FileSystem fs = coreFileSystem.getFileSystem();
@@ -239,8 +239,8 @@ public class AppMasterLauncher extends AbstractLauncher {
       if (!tokensProvided) {
         log.warn("No HDFS delegation tokens obtained for AM launch context");
       } else {
-        log.info("Tokens provided via mapreduce.job.credentials.binary property "
-                 + "being leveraged for AM launch");
+        log.info("Tokens provided via "+ MAPREDUCE_JOB_CREDENTIALS_BINARY +" property "
+                 + "being used for AM launch");
       }
 
     }

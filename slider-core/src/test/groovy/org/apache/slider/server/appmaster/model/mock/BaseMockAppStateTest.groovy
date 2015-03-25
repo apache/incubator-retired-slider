@@ -135,7 +135,7 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
   /**
    * Build a role instance from a container assignment
    * @param assigned
-   * @return
+   * @return the instance
    */
   RoleInstance roleInstance(ContainerAssignment assigned) {
     Container target = assigned.container

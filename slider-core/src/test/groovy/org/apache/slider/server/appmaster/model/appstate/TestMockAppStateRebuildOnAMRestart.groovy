@@ -85,9 +85,9 @@ class TestMockAppStateRebuildOnAMRestart extends BaseMockAppStateTest
         null,
         new MostRecentContainerReleaseSelector())
 
-    assert appState.getStartedCountainerCount() == clusterSize
+    assert appState.startedCountainerCount == clusterSize
 
-    appState.getRoleHistory().dump();
+    appState.roleHistory.dump();
 
     //check that the app state direct structures match
     List<RoleInstance> r0live = appState.enumLiveNodesInRole(ROLE0)

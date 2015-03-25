@@ -42,7 +42,7 @@ public class LiveContainersRefresher implements ResourceRefresher<Map<String, Co
       Exception {
     List<RoleInstance> containerList = state.cloneOwnedContainerList();
 
-    Map<String, ContainerInformation> map = new HashMap<String, ContainerInformation>();
+    Map<String, ContainerInformation> map = new HashMap<>();
     for (RoleInstance instance : containerList) {
       ContainerInformation serialized = instance.serialize();
       map.put(serialized.containerId, serialized);

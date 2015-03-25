@@ -25,6 +25,7 @@ import org.apache.slider.core.exceptions.TriggerClusterTeardownException
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
+import org.apache.slider.server.appmaster.operations.CancelSingleRequest
 import org.apache.slider.server.appmaster.state.AppState
 import org.apache.slider.server.appmaster.state.ContainerAssignment
 import org.apache.slider.server.appmaster.state.RoleInstance
@@ -163,6 +164,23 @@ class TestMockAppStateFlexing extends BaseMockAppStateTest implements MockRoles 
     }
 
   }
-  
+
+  @Test
+  public void testCancelWithRequestsOutstanding() throws Throwable {
+    // flex cluster size before the original set were allocated
+
+
+    role0Status.desired = 6
+    // build the ops
+    List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()
+    // here the data structures exist
+
+    // go down
+    role0Status.desired = 3
+    List<AbstractRMOperation> ops2 = appState.reviewRequestAndReleaseNodes()
+    assert ops2.size() == 3
+    ops2.each { assert it instanceof CancelSingleRequest}
+
+  }
   
 }

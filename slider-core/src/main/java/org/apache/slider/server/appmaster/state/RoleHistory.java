@@ -18,6 +18,22 @@
 
 package org.apache.slider.server.appmaster.state;
 
+import com.google.common.annotations.VisibleForTesting;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.yarn.api.records.Container;
+import org.apache.hadoop.yarn.api.records.NodeReport;
+import org.apache.hadoop.yarn.api.records.Resource;
+import org.apache.hadoop.yarn.client.api.AMRMClient;
+import org.apache.slider.common.tools.SliderUtils;
+import org.apache.slider.core.exceptions.BadConfigException;
+import org.apache.slider.providers.ProviderRole;
+import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
+import org.apache.slider.server.avro.RoleHistoryHeader;
+import org.apache.slider.server.avro.RoleHistoryWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,31 +45,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.yarn.api.records.Container;
-import org.apache.hadoop.yarn.api.records.NodeReport;
-import org.apache.hadoop.yarn.api.records.Resource;
-import org.apache.hadoop.yarn.client.api.AMRMClient;
-import org.apache.slider.common.tools.SliderUtils;
-import org.apache.slider.core.exceptions.BadConfigException;
-import org.apache.slider.providers.ProviderRole;
-import org.apache.slider.server.avro.RoleHistoryHeader;
-import org.apache.slider.server.avro.RoleHistoryWriter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.annotations.VisibleForTesting;
-
 /**
  * The Role History.
- * 
+ * <p>
  * Synchronization policy: all public operations are synchronized.
  * Protected methods are in place for testing -no guarantees are made.
- * 
+ * <p>
  * Inner classes have no synchronization guarantees; they should be manipulated 
  * in these classes and not externally.
- * 
+ * <p>
  * Note that as well as some methods marked visible for testing, there
  * is the option for the time generator method, {@link #now()} to
  * be overridden so that a repeatable time series can be used.
@@ -94,10 +94,8 @@ public class RoleHistory {
    * Track the failed nodes. Currently used to make wiser decision of container
    * ask with/without locality. Has other potential uses as well.
    */
-  private Set<String> failedNodes = new HashSet<String>();
-  
-  // dummy to be used in maps for faster lookup where we don't care about values
-  private final Object DUMMY_VALUE = new Object(); 
+  private Set<String> failedNodes = new HashSet<>();
+
 
   public RoleHistory(List<ProviderRole> providerRoles) throws
                                                        BadConfigException {
@@ -117,7 +115,7 @@ public class RoleHistory {
 
     outstandingRequests = new OutstandingRequestTracker();
     
-    Map<Integer, RoleStatus> roleStats = new HashMap<Integer, RoleStatus>();
+    Map<Integer, RoleStatus> roleStats = new HashMap<>();
     for (ProviderRole providerRole : providerRoles) {
       checkProviderRole(roleStats, providerRole);
     }
@@ -156,7 +154,7 @@ public class RoleHistory {
     throws BadConfigException {
     log.debug("Validating/adding new provider role to role history: {} ",
         providerRole);
-    Map<Integer, RoleStatus> roleStats = new HashMap<Integer, RoleStatus>();
+    Map<Integer, RoleStatus> roleStats = new HashMap<>();
 
     for (ProviderRole role : providerRoles) {
       roleStats.put(role.id, new RoleStatus(role));
@@ -171,7 +169,7 @@ public class RoleHistory {
    * Clear the lists of available nodes
    */
   private synchronized void resetAvailableNodeLists() {
-    availableNodes = new HashMap<Integer, LinkedList<NodeInstance>>(roleSize);
+    availableNodes = new HashMap<>(roleSize);
   }
 
   /**
@@ -279,8 +277,10 @@ public class RoleHistory {
   }
 
   /**
-   * Garbage collect the structure -this will dropp
-   * all nodes that have been inactive since the (relative) age
+   * Garbage collect the structure -this will drop
+   * all nodes that have been inactive since the (relative) age.
+   * This will drop the failure counts of the nodes too, so it will
+   * lose information that matters.
    * @param age relative age
    */
   public void gc(long age) {
@@ -423,8 +423,7 @@ public class RoleHistory {
   public synchronized void buildAvailableNodeLists() {
     resetAvailableNodeLists();
     // build the list of available nodes
-    for (Map.Entry<String, NodeInstance> entry : nodemap
-      .entrySet()) {
+    for (Map.Entry<String, NodeInstance> entry : nodemap.entrySet()) {
       NodeInstance ni = entry.getValue();
       for (int i = 0; i < roleSize; i++) {
         NodeEntry nodeEntry = ni.get(i);
@@ -458,12 +457,11 @@ public class RoleHistory {
   private LinkedList<NodeInstance> getOrCreateNodesForRoleId(int id) {
     LinkedList<NodeInstance> instances = availableNodes.get(id);
     if (instances == null) {
-      instances = new LinkedList<NodeInstance>();
+      instances = new LinkedList<>();
       availableNodes.put(id, instances);
     }
     return instances;
   }
-  
   
   /**
    * Sort an available node list
@@ -472,7 +470,7 @@ public class RoleHistory {
   private void sortAvailableNodeList(int role) {
     List<NodeInstance> nodesForRoleId = getNodesForRoleId(role);
     if (nodesForRoleId != null) {
-      Collections.sort(nodesForRoleId, new NodeInstance.newerThan(role));
+      Collections.sort(nodesForRoleId, new NodeInstance.Preferred(role));
     }
   }
 
@@ -483,24 +481,33 @@ public class RoleHistory {
    */
   @VisibleForTesting
   public synchronized NodeInstance findNodeForNewInstance(RoleStatus role) {
-    if (role.getNoDataLocality()) {
+    if (!role.isPlacementDesired()) {
+      // no data locality policy
       return null;
     }
-    int roleKey = role.getKey();
+    int roleId = role.getKey();
+    boolean strictPlacement = role.isStrictPlacement();
     NodeInstance nodeInstance = null;
     // get the list of possible targets
-    List<NodeInstance> targets = getNodesForRoleId(roleKey);
+    List<NodeInstance> targets = getNodesForRoleId(roleId);
     if (targets == null) {
       // add an empty list here for ease downstream
-      targets = new ArrayList<NodeInstance>(0);
+      targets = new ArrayList<>(0);
     }
     int cnt = targets.size();
     log.debug("There are {} node(s) to consider for {}", cnt, role.getName());
     // spin until there's a candidate
     while (!targets.isEmpty() && nodeInstance == null) {
       NodeInstance head = targets.remove(0);
-      if (head.getActiveRoleInstances(roleKey) == 0) {
-        nodeInstance = head;
+      if (head.getActiveRoleInstances(roleId) == 0) {
+        // no active instances: check failure statistics
+        if (strictPlacement || !head.exceedsFailureThreshold(role)) {
+          nodeInstance = head;
+        } else {
+          // too many failures for this node
+          log.info("Recent node failures is higher than threshold {}. Not requesting host {}",
+              role.getNodeFailureThreshold(), head.hostname);
+        }
       }
     }
     if (nodeInstance == null) {
@@ -513,9 +520,9 @@ public class RoleHistory {
    * Request an instance on a given node.
    * An outstanding request is created & tracked, with the 
    * relevant node entry for that role updated.
-   *
+   *<p>
    * The role status entries will also be tracked
-   * 
+   * <p>
    * Returns the request that is now being tracked.
    * If the node instance is not null, it's details about the role is incremented
    *
@@ -527,7 +534,7 @@ public class RoleHistory {
    */
   public synchronized AMRMClient.ContainerRequest requestInstanceOnNode(
     NodeInstance node, RoleStatus role, Resource resource, String labelExpression) {
-    OutstandingRequest outstanding = outstandingRequests.addRequest(node, role.getKey());
+    OutstandingRequest outstanding = outstandingRequests.newRequest(node, role.getKey());
     return outstanding.buildContainerRequest(resource, role, now(), labelExpression);
   }
 
@@ -573,6 +580,7 @@ public class RoleHistory {
    * Get the node entry of a container
    * @param container container to look up
    * @return the entry
+   * @throws RuntimeException if the container has no hostname
    */
   public NodeEntry getOrCreateNodeEntry(Container container) {
     NodeInstance node = getOrCreateNodeInstance(container);
@@ -583,6 +591,7 @@ public class RoleHistory {
    * Get the node instance of a container -always returns something
    * @param container container to look up
    * @return a (possibly new) node instance
+   * @throws RuntimeException if the container has no hostname
    */
   public synchronized NodeInstance getOrCreateNodeInstance(Container container) {
     String hostname = RoleHistoryUtils.hostnameOf(container);
@@ -593,9 +602,20 @@ public class RoleHistory {
    * Get the node instance of a host if defined
    * @param hostname hostname to look up
    * @return a node instance or null
+   * @throws RuntimeException if the container has no hostname
    */
   public synchronized NodeInstance getExistingNodeInstance(String hostname) {
     return nodemap.get(hostname);
+  }
+
+  /**
+   * Get the node instance of a container <i>if there's an entry in the history</i>
+   * @param container container to look up
+   * @return a node instance or null
+   * @throws RuntimeException if the container has no hostname
+   */
+  public synchronized NodeInstance getExistingNodeInstance(Container container) {
+    return nodemap.get(RoleHistoryUtils.hostnameOf(container));
   }
 
   /**
@@ -609,11 +629,11 @@ public class RoleHistory {
     
     //partition into requested and unrequested
     List<Container> requested =
-      new ArrayList<Container>(allocatedContainers.size());
+      new ArrayList<>(allocatedContainers.size());
     List<Container> unrequested =
-      new ArrayList<Container>(allocatedContainers.size());
+      new ArrayList<>(allocatedContainers.size());
     outstandingRequests.partitionRequests(this, allocatedContainers, requested, unrequested);
-    
+
     //give the unrequested ones lower priority
     requested.addAll(unrequested);
     return requested;
@@ -624,27 +644,29 @@ public class RoleHistory {
    * @param container container
    * @param desiredCount desired #of instances
    * @param actualCount current count of instances
-   * @return true if an entry was found and dropped
+   * @return The allocation outcome
    */
-  public synchronized boolean onContainerAllocated(Container container, int desiredCount, int actualCount) {
+  public synchronized ContainerAllocation onContainerAllocated(Container container,
+      int desiredCount,
+      int actualCount) {
     int role = ContainerPriority.extractRole(container);
     String hostname = RoleHistoryUtils.hostnameOf(container);
-    LinkedList<NodeInstance> nodeInstances =
-        getOrCreateNodesForRoleId(role);
-    boolean requestFound =
-      outstandingRequests.onContainerAllocated(role, hostname);
+    List<NodeInstance> nodeInstances = getOrCreateNodesForRoleId(role);
+    ContainerAllocation outcome =
+        outstandingRequests.onContainerAllocated(role, hostname, container);
     if (desiredCount <= actualCount) {
-      //cancel the nodes
+      // all outstanding requests have been satisfied
+      // clear all the lists, so returning nodes to the available set
       List<NodeInstance>
-        hosts = outstandingRequests.cancelOutstandingRequests(role);
+          hosts = outstandingRequests.resetOutstandingRequests(role);
       if (!hosts.isEmpty()) {
         //add the list
-        log.debug("Adding {} hosts for role {}", hosts.size(), role);
+        log.info("Adding {} hosts for role {}", hosts.size(), role);
         nodeInstances.addAll(hosts);
         sortAvailableNodeList(role);
       }
     }
-    return requestFound;
+    return outcome;
   }
 
   /**
@@ -670,7 +692,7 @@ public class RoleHistory {
 
   /**
    * Container start event
-   * @param container
+   * @param container container that just started
    */
   public void onContainerStarted(Container container) {
     NodeEntry nodeEntry = getOrCreateNodeEntry(container);
@@ -695,8 +717,9 @@ public class RoleHistory {
    */
   public synchronized void onNodesUpdated(List<NodeReport> updatedNodes) {
     for (NodeReport updatedNode : updatedNodes) {
-      String hostname = updatedNode.getNodeId() == null ? null : updatedNode
-          .getNodeId().getHost();
+      String hostname = updatedNode.getNodeId() == null 
+                        ? null 
+                        : updatedNode.getNodeId().getHost();
       if (hostname == null) {
         continue;
       }
@@ -722,11 +745,10 @@ public class RoleHistory {
   /**
    * App state notified of a container completed 
    * @param container completed container
-   * @param wasReleased
    * @return true if the node was queued
    */
-  public boolean onReleaseCompleted(Container container, boolean wasReleased) {
-    return markContainerFinished(container, wasReleased, false);
+  public boolean onReleaseCompleted(Container container) {
+    return markContainerFinished(container, true, false);
   }
 
   /**
@@ -819,16 +841,26 @@ public class RoleHistory {
    */
   @VisibleForTesting
   public List<NodeInstance> cloneAvailableList(int role) {
-    return new LinkedList<NodeInstance>(getOrCreateNodesForRoleId(role));
+    return new LinkedList<>(getOrCreateNodesForRoleId(role));
   }
 
   /**
-   * Get a snapshot of the outstanding request list
+   * Get a snapshot of the outstanding placed request list
    * @return a list of the requests outstanding at the time of requesting
    */
   @VisibleForTesting
-  public synchronized List<OutstandingRequest> getOutstandingRequestList() {
-    return outstandingRequests.listOutstandingRequests();
+  public List<OutstandingRequest> listPlacedRequests() {
+    return outstandingRequests.listPlacedRequests();
+  }
+
+
+  /**
+   * Get a snapshot of the outstanding placed request list
+   * @return a list of the requests outstanding at the time of requesting
+   */
+  @VisibleForTesting
+  public List<OutstandingRequest> listOpenRequests() {
+    return outstandingRequests.listOpenRequests();
   }
 
   /**
@@ -837,9 +869,43 @@ public class RoleHistory {
    * @return the list
    */
   public List<String> cloneFailedNodes() {
-    List<String> lst = new ArrayList<String>();
+    List<String> lst = new ArrayList<>();
     lst.addAll(failedNodes);
     return lst;
+  }
+
+  /**
+   * Escalate operation as triggered by external timer.
+   * @return a (usually empty) list of cancel/request operations.
+   */
+  public List<AbstractRMOperation> escalateOutstandingRequests() {
+    long now = now();
+    return outstandingRequests.escalateOutstandingRequests(now);
+  }
+
+  /**
+   * Build the list of requests to cancel from the outstanding list.
+   * @param role
+   * @param toCancel
+   * @return a list of cancellable operations.
+   */
+  public synchronized List<AbstractRMOperation> cancelRequestsForRole(RoleStatus role, int toCancel) {
+    List<AbstractRMOperation> results = new ArrayList<>(toCancel);
+    // first scan through the unplaced request list to find all of a role
+    int roleId = role.getKey();
+    List<OutstandingRequest> requests =
+        outstandingRequests.extractOpenRequestsForRole(roleId, toCancel);
+
+    // are there any left?
+    int remaining = toCancel - requests.size();
+    // ask for some placed nodes
+    requests.addAll(outstandingRequests.extractPlacedRequestsForRole(roleId, remaining));
+
+    // build cancellations
+    for (OutstandingRequest request : requests) {
+      results.add(request.createCancelOperation());
+    }
+    return results;
   }
 
 }

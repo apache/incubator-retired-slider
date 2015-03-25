@@ -1,41 +1,41 @@
 {
-    "Component": {
-        "ACCUMULO_MASTER": {
-            "MasterGoalState": {
-                "metric": "/stats/masterGoalState",
-                "pointInTime": true,
-                "temporal": false
-            },
-            "MasterState": {
-                "metric": "/stats/masterState",
-                "pointInTime": true,
-                "temporal": false
-            },
-            "DeadTabletServers": {
-                "metric": "/stats/deadTabletServers",
-                "pointInTime": true,
-                "temporal": false
-            },
-            "TotalIngestRate": {
-                "metric": "/stats/totals/ingestrate",
-                "pointInTime": true,
-                "temporal": false
-            },
-            "TotalQueryRate": {
-                "metric": "/stats/totals/queryrate",
-                "pointInTime": true,
-                "temporal": false
-            },
-            "TotalDiskRate": {
-                "metric": "/stats/totals/diskrate",
-                "pointInTime": true,
-                "temporal": false
-            },
-            "BadTabletServers": {
-                "metric": "/stats/badTabletServers",
-                "pointInTime": true,
-                "temporal": false
-            }
-        }
+  "Component": {
+    "ACCUMULO_MASTER": {
+      "MasterGoalState": {
+        "metric": "/stats/masterGoalState",
+        "pointInTime": true,
+        "temporal": false
+      },
+      "MasterState": {
+        "metric": "/stats/masterState",
+        "pointInTime": true,
+        "temporal": false
+      },
+      "DeadTabletServers": {
+        "metric": "/stats/deadTabletServers",
+        "pointInTime": true,
+        "temporal": false
+      },
+      "TotalIngestRate": {
+        "metric": "/stats/totals/ingestrate",
+        "pointInTime": true,
+        "temporal": false
+      },
+      "TotalQueryRate": {
+        "metric": "/stats/totals/queryrate",
+        "pointInTime": true,
+        "temporal": false
+      },
+      "TotalDiskRate": {
+        "metric": "/stats/totals/diskrate",
+        "pointInTime": true,
+        "temporal": false
+      },
+      "BadTabletServers": {
+        "metric": "/stats/badTabletServers",
+        "pointInTime": true,
+        "temporal": false
+      }
     }
+  }
 }

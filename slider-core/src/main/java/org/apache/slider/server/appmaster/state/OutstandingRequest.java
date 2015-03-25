@@ -19,20 +19,23 @@
 package org.apache.slider.server.appmaster.state;
 
 
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
+import org.apache.slider.server.appmaster.operations.CancelSingleRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 /**
  * Tracks an outstanding request. This is used to correlate an allocation response
- * with the
- * node and role used in the request.
- *
+ * with the node and role used in the request.
+ * <p>
  * The node identifier may be null -which indicates that a request was made without
  * a specific target node
- *
+ * <p>
  * Equality and the hash code are based <i>only</i> on the role and hostname,
  * which are fixed in the constructor. This means that a simple 
  * instance constructed with (role, hostname) can be used to look up
@@ -51,15 +54,47 @@ public final class OutstandingRequest {
    * Node the request is for -may be null
    */
   public final NodeInstance node;
+  
   /**
    * hostname -will be null if node==null
    */
   public final String hostname;
 
   /**
-   * requested time -only valid after buildContainerRequest(Resource, long)}
+   * Requested time in millis.
+   * <p>
+   * Only valid after {@link #buildContainerRequest(Resource, RoleStatus, long, String)}
    */
-  public long requestedTime;
+  private AMRMClient.ContainerRequest issuedRequest;
+  
+  /**
+   * Requested time in millis.
+   * <p>
+   * Only valid after {@link #buildContainerRequest(Resource, RoleStatus, long, String)}
+   */
+  private long requestedTimeMillis;
+
+  /**
+   * Time in millis after which escalation should be triggered..
+   * <p>
+   * Only valid after {@link #buildContainerRequest(Resource, RoleStatus, long, String)}
+   */
+  private long escalationTimeoutMillis;
+
+  /**
+   * Has the placement request been escalated?
+   */
+  private boolean escalated;
+
+  /**
+   * Flag to indicate that escalation is allowed
+   */
+  private boolean mayEscalate;
+
+  /**
+   * Priority of request; only valid after the request is built up
+   */
+  private int priority = -1;
 
   /**
    * Create a request
@@ -74,7 +109,7 @@ public final class OutstandingRequest {
   }
 
   /**
-   * Create an outsanding request with the given role and hostname
+   * Create an outstanding request with the given role and hostname
    * Important: this is useful only for map lookups -the other constructor
    * with the NodeInstance parameter is needed to generate node-specific
    * container requests
@@ -87,68 +122,166 @@ public final class OutstandingRequest {
     this.hostname = hostname;
   }
 
+  /**
+   * Is the request located in the cluster, that is: does it have a node.
+   * @return true if a node instance was supplied in the constructor
+   */
   public boolean isLocated() {
     return node != null;
   }
+
+  public long getRequestedTimeMillis() {
+    return requestedTimeMillis;
+  }
+
+  public long getEscalationTimeoutMillis() {
+    return escalationTimeoutMillis;
+  }
+
+  public boolean isEscalated() {
+    return escalated;
+  }
+
+  public boolean mayEscalate() {
+    return mayEscalate;
+  }
+
+  public AMRMClient.ContainerRequest getIssuedRequest() {
+    return issuedRequest;
+  }
+
+  public int getPriority() {
+    return priority;
+  }
+
   /**
    * Build a container request.
+   * <p>
+   *  The value of {@link #node} is used to direct a lot of policy. If null,
+   *  placement is relaxed.
+   *  If not null, the choice of whether to use the suggested node
+   *  is based on the placement policy and failure history.
+   * <p>
    * If the request has an address, it is set in the container request
-   * (with a flag to enable relaxed priorities)
+   * (with a flag to enable relaxed priorities).
+   * <p>
+   * This operation sets the requested time flag, used for tracking timeouts
+   * on outstanding requests
    * @param resource resource
    * @param role role
-   * @param time: time to record
+   * @param time time in millis to record as request time
    * @param labelExpression label to satisfy
    * @return the request to raise
    */
-  public AMRMClient.ContainerRequest buildContainerRequest(
+  public synchronized AMRMClient.ContainerRequest buildContainerRequest(
       Resource resource, RoleStatus role, long time, String labelExpression) {
+    Preconditions.checkArgument(resource != null, "null `resource` arg");
+    Preconditions.checkArgument(role != null, "null `role` arg");
+
+    requestedTimeMillis = time;
+    escalationTimeoutMillis = time + role.getPlacementTimeoutSeconds() * 1000;
     String[] hosts;
     boolean relaxLocality;
-    requestedTime = time;
-    boolean usePlacementHistory = role.isStrictPlacement();
-    if (!usePlacementHistory) {
-      // If strict placement does not mandate using placement then check
-      // that the recent failures on this node is not higher than threshold
-      if (node != null) {
-        int numFailuresOnLastHost = node.get(role.getKey()).getFailedRecently();
-        usePlacementHistory = numFailuresOnLastHost <= role.getNodeFailureThreshold();
-        if(!usePlacementHistory) {
-          log.info("Recent node failures {} is higher than threshold {}. Dropping host {} from preference.",
-                   numFailuresOnLastHost, role.getNodeFailureThreshold(), node.hostname);
-        }
-      }
-    }
+    boolean strictPlacement = role.isStrictPlacement();
+    NodeInstance target = this.node;
 
-    if (node != null && usePlacementHistory) {
+    if (target != null) {
+      // placed request. Hostname is used in request
       hosts = new String[1];
-      hosts[0] = node.hostname;
-      relaxLocality = !role.isStrictPlacement();
-      // tell the node it is in play
-      node.getOrCreate(roleId);
+      hosts[0] = target.hostname;
+      // and locality flag is set to false; Slider will decide when
+      // to relax things
+      relaxLocality = false;
+
       log.info("Submitting request for container on {}", hosts[0]);
+      // enable escalation for all but strict placements.
+      escalated = false;
+      mayEscalate = !strictPlacement;
     } else {
+      // no hosts
       hosts = null;
+      // relax locality is mandatory on an unconstrained placement
       relaxLocality = true;
+      // declare that the the placement is implicitly escalated.
+      escalated = true;
+      // and forbid it happening
+      mayEscalate = false;
     }
-    Priority pri = ContainerPriority.createPriority(roleId,
-                                                    !relaxLocality);
-    AMRMClient.ContainerRequest request =
-      new AMRMClient.ContainerRequest(resource,
+    Priority pri = ContainerPriority.createPriority(roleId, !relaxLocality);
+    priority = pri.getPriority();
+    issuedRequest = new AMRMClient.ContainerRequest(resource,
                                       hosts,
                                       null,
                                       pri,
                                       relaxLocality,
                                       labelExpression);
 
-    return request;
+    return issuedRequest;
+  }
+
+
+  /**
+   * Build an escalated container request, updating {@link #issuedRequest} with
+   * the new value.
+   * @return the new container request, which has the same resource and label requirements
+   * as the original one, and the same host, but: relaxed placement, and a changed priority
+   * so as to place it into the relaxed list.
+   */
+  public synchronized AMRMClient.ContainerRequest escalate() {
+    Preconditions.checkNotNull(issuedRequest, "cannot escalate if request not issued " + this);
+    escalated = true;
+
+    // this is now the priority
+    Priority pri = ContainerPriority.createPriority(roleId, true);
+    String[] nodes;
+    List<String> issuedRequestNodes = issuedRequest.getNodes();
+    if (issuedRequestNodes != null) {
+      nodes = issuedRequestNodes.toArray(new String[issuedRequestNodes.size()]);
+    } else {
+      nodes = null;
+    }
+
+    AMRMClient.ContainerRequest newRequest =
+        new AMRMClient.ContainerRequest(issuedRequest.getCapability(),
+            nodes,
+            null,
+            pri,
+            true,
+            issuedRequest.getNodeLabelExpression());
+    issuedRequest = newRequest;
+    return issuedRequest;
+  }
+      
+  /**
+   * Mark the request as completed (or canceled).
+   * <p>
+   *   Current action: if a node is defined, its request count is decremented
+   */
+  public void completed() {
+    if (node != null) {
+      node.getOrCreate(roleId).requestCompleted();
+    }
   }
 
   /**
-   * Mark the request as completed (or canceled).
+   * Query to see if the request is available and ready to be escalated
+   * @param time time to check against
+   * @return true if escalation should begin
    */
-  public void completed() {
-    assert node != null : "null node";
-    node.getOrCreate(roleId).requestCompleted();
+  public synchronized boolean shouldEscalate(long time) {
+    return mayEscalate
+           && !escalated
+           && issuedRequest != null
+           && escalationTimeoutMillis < time;
+  }
+
+  /**
+   * Query for the resource requirements matching; always false before a request is issued
+   * @param resource
+   * @return
+   */
+  public synchronized boolean resourceRequirementsMatch(Resource resource) {
+    return issuedRequest != null && issuedRequest.getCapability().equals(resource);
   }
 
   /**
@@ -188,15 +321,28 @@ public final class OutstandingRequest {
     result = 31 * result + (hostname != null ? hostname.hashCode() : 0);
     return result;
   }
-  
+
   @Override
   public String toString() {
-    final StringBuilder sb =
-      new StringBuilder("OutstandingRequest{");
+    final StringBuilder sb = new StringBuilder("OutstandingRequest{");
     sb.append("roleId=").append(roleId);
-    sb.append(", node='").append(node).append('\'');
-    sb.append(", requestedTime=").append(requestedTime);
+    sb.append(", node=").append(node);
+    sb.append(", hostname='").append(hostname).append('\'');
+    sb.append(", issuedRequest=").append(issuedRequest);
+    sb.append(", requestedTimeMillis=").append(requestedTimeMillis);
+    sb.append(", mayEscalate=").append(mayEscalate);
+    sb.append(", escalated=").append(escalated);
+    sb.append(", escalationTimeoutMillis=").append(escalationTimeoutMillis);
     sb.append('}');
     return sb.toString();
+  }
+
+  /**
+   * Create a cancel operation
+   * @return an operation that can be used to cancel the request
+   */
+  public CancelSingleRequest createCancelOperation() {
+    Preconditions.checkState(issuedRequest!=null, "No issued request to cancel");
+    return new CancelSingleRequest(issuedRequest);
   }
 }

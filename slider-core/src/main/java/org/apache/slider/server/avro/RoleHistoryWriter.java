@@ -52,11 +52,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
@@ -90,7 +88,7 @@ public class RoleHistoryWriter {
     throws IOException {
     try {
       DatumWriter<RoleHistoryRecord> writer =
-        new SpecificDatumWriter<RoleHistoryRecord>(RoleHistoryRecord.class);
+        new SpecificDatumWriter<>(RoleHistoryRecord.class);
 
       int roles = history.getRoleSize();
       RoleHistoryHeader header = new RoleHistoryHeader();
@@ -184,7 +182,7 @@ public class RoleHistoryWriter {
                                                        BadConfigException {
     try {
       DatumReader<RoleHistoryRecord> reader =
-        new SpecificDatumReader<RoleHistoryRecord>(RoleHistoryRecord.class);
+        new SpecificDatumReader<>(RoleHistoryRecord.class);
       Decoder decoder =
         DecoderFactory.get().jsonDecoder(RoleHistoryRecord.getClassSchema(),
                                          in);
@@ -351,16 +349,15 @@ public class RoleHistoryWriter {
   public static void sortHistoryPaths(List<Path> paths) {
     Collections.sort(paths, new NewerFilesFirst());
   }
-
-
+  
   /**
    * Iterate through the paths until one can be loaded
    * @param roleHistory role history
    * @param paths paths to load
    * @return the path of any loaded history -or null if all failed to load
    */
-  public Path attemptToReadHistory(RoleHistory roleHistory, FileSystem fileSystem,  List<Path> paths) throws
-                                                                                                      BadConfigException {
+  public Path attemptToReadHistory(RoleHistory roleHistory, FileSystem fileSystem,  List<Path> paths)
+      throws BadConfigException {
     ListIterator<Path> pathIterator = paths.listIterator();
     boolean success = false;
     Path path = null;
@@ -389,9 +386,8 @@ public class RoleHistoryWriter {
    * @throws IOException if indexing the history directory fails. 
    */
   public Path loadFromHistoryDir(FileSystem fs, Path dir,
-                                 RoleHistory roleHistory) throws
-                                                          IOException,
-                                                          BadConfigException {
+                                 RoleHistory roleHistory)
+      throws IOException, BadConfigException {
     assert fs != null: "null filesystem";
     List<Path> entries = findAllHistoryEntries(fs, dir, false);
     return attemptToReadHistory(roleHistory, fs, entries);
@@ -407,9 +403,8 @@ public class RoleHistoryWriter {
    * check to stop the entire dir being purged)
    * @throws IOException IO problems
    */
-  public int purgeOlderHistoryEntries(FileSystem fileSystem, Path keep) throws
-                                                                 IOException {
-    assert fileSystem != null : "null filesystem";
+  public int purgeOlderHistoryEntries(FileSystem fileSystem, Path keep)
+      throws IOException { assert fileSystem != null : "null filesystem";
     if (!fileSystem.exists(keep)) {
       throw new FileNotFoundException(keep.toString());
     }
@@ -429,44 +424,5 @@ public class RoleHistoryWriter {
     }
     return deleteCount;
   }
-  
-  /**
-   * Compare two filenames by name; the more recent one comes first
-   */
-  public static class NewerFilesFirst implements Comparator<Path> ,
-                                                 Serializable {
 
-    /**
-     * Takes the ordering of path names from the normal string comparison
-     * and negates it, so that names that come after other names in 
-     * the string sort come before here
-     * @param o1 leftmost 
-     * @param o2 rightmost
-     * @return positive if o1 &gt; o2 
-     */
-    @Override
-    public int compare(Path o1, Path o2) {
-      return (o2.getName().compareTo(o1.getName()));
-    }
-  }
-    /**
-   * Compare two filenames by name; the older ones comes first
-   */
-  public static class OlderFilesFirst implements Comparator<Path> ,
-                                                 Serializable {
-
-    /**
-     * Takes the ordering of path names from the normal string comparison
-     * and negates it, so that names that come after other names in 
-     * the string sort come before here
-     * @param o1 leftmost 
-     * @param o2 rightmost
-     * @return positive if o1 &gt; o2 
-     */
-    @Override
-    public int compare(Path o1, Path o2) {
-      return (o1.getName().compareTo(o2.getName()));
-    }
-  }
-  
 }

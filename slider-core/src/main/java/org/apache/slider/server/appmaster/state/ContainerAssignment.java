@@ -20,14 +20,41 @@ package org.apache.slider.server.appmaster.state;
 
 import org.apache.hadoop.yarn.api.records.Container;
 
+/**
+ * Static assignment structure
+ */
 public class ContainerAssignment {
-  
+
+  /**
+   * Container that has been allocated
+   */
   public final Container container;
+
+  /**
+   * Role to assign to it
+   */
   public final RoleStatus role;
 
+  /**
+   * Placement outcome: was this from history or not
+   */
+  public final ContainerAllocationOutcome placement;
+
   public ContainerAssignment(Container container,
-                             RoleStatus role) {
+      RoleStatus role,
+      ContainerAllocationOutcome placement) {
     this.container = container;
     this.role = role;
+    this.placement = placement;
+  }
+
+  @Override
+  public String toString() {
+    final StringBuilder sb = new StringBuilder("ContainerAssignment{");
+    sb.append("container=").append(container);
+    sb.append(", role=").append(role);
+    sb.append(", placement=").append(placement);
+    sb.append('}');
+    return sb.toString();
   }
 }

@@ -40,7 +40,7 @@ public class ServiceShutdownHook implements Runnable {
   private Runnable hook;
 
   public ServiceShutdownHook(Service service) {
-    serviceRef = new WeakReference<Service>(service);
+    serviceRef = new WeakReference<>(service);
   }
 
   public void register(int priority) {
@@ -74,7 +74,7 @@ public class ServiceShutdownHook implements Runnable {
       // Stop the  Service
       service.stop();
     } catch (Throwable t) {
-      LOG.info("Error stopping {}: {}", service.getName(), t);
+      LOG.info("Error stopping {}", service.getName(), t);
     }
   }
 }

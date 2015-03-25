@@ -31,13 +31,11 @@ import org.apache.hadoop.yarn.api.records.ContainerStatus;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.hadoop.yarn.api.records.NodeReport;
-import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.api.records.impl.pb.ContainerPBImpl;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
-import static org.apache.slider.api.StateValues.*;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterDescriptionKeys;
 import org.apache.slider.api.ClusterDescriptionOperations;
@@ -69,7 +67,6 @@ import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
 import org.apache.slider.server.appmaster.management.MetricsConstants;
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
-import org.apache.slider.server.appmaster.operations.CancelRequestOperation;
 import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation;
 import org.apache.slider.server.appmaster.operations.ContainerRequestOperation;
 import org.slf4j.Logger;
@@ -88,8 +85,20 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.apache.slider.api.ResourceKeys.*;
-import static org.apache.slider.api.RoleKeys.*;
+import static org.apache.slider.api.ResourceKeys.DEF_YARN_CORES;
+import static org.apache.slider.api.ResourceKeys.DEF_YARN_LABEL_EXPRESSION;
+import static org.apache.slider.api.ResourceKeys.DEF_YARN_MEMORY;
+import static org.apache.slider.api.ResourceKeys.YARN_CORES;
+import static org.apache.slider.api.ResourceKeys.YARN_LABEL_EXPRESSION;
+import static org.apache.slider.api.ResourceKeys.YARN_MEMORY;
+import static org.apache.slider.api.RoleKeys.ROLE_FAILED_INSTANCES;
+import static org.apache.slider.api.RoleKeys.ROLE_FAILED_STARTING_INSTANCES;
+import static org.apache.slider.api.RoleKeys.ROLE_RELEASING_INSTANCES;
+import static org.apache.slider.api.RoleKeys.ROLE_REQUESTED_INSTANCES;
+import static org.apache.slider.api.StateValues.STATE_CREATED;
+import static org.apache.slider.api.StateValues.STATE_DESTROYED;
+import static org.apache.slider.api.StateValues.STATE_LIVE;
+import static org.apache.slider.api.StateValues.STATE_SUBMITTED;
 
 
 /**
@@ -159,7 +168,7 @@ public class AppState {
    * Client properties created via the provider -static for the life
    * of the application
    */
-  private Map<String, String> clientProperties = new HashMap<String, String>();
+  private Map<String, String> clientProperties = new HashMap<>();
 
   /**
    * This is a template of the cluster status
@@ -185,7 +194,7 @@ public class AppState {
    * been allocated but are not live; it is a superset of the live list
    */
   private final ConcurrentMap<ContainerId, RoleInstance> ownedContainers =
-    new ConcurrentHashMap<ContainerId, RoleInstance>();
+    new ConcurrentHashMap<>();
 
   /**
    * Hash map of the containers we have released, but we
@@ -193,33 +202,33 @@ public class AppState {
    * containers is treated as a successful outcome
    */
   private final ConcurrentMap<ContainerId, Container> containersBeingReleased =
-    new ConcurrentHashMap<ContainerId, Container>();
+    new ConcurrentHashMap<>();
   
   /**
    * Counter for completed containers ( complete denotes successful or failed )
    */
-  private final AtomicInteger completedContainerCount = new AtomicInteger();
+  private final Counter completedContainerCount = new Counter();
 
   /**
    *   Count of failed containers
 
    */
-  private final AtomicInteger failedContainerCount = new AtomicInteger();
+  private final Counter failedContainerCount = new Counter();
 
   /**
    * # of started containers
    */
-  private final AtomicInteger startedContainers = new AtomicInteger();
+  private final Counter startedContainers = new Counter();
 
   /**
    * # of containers that failed to start 
    */
-  private final AtomicInteger startFailedContainers = new AtomicInteger();
+  private final Counter startFailedContainerCount = new Counter();
 
   /**
    * Track the number of surplus containers received and discarded
    */
-  private final AtomicInteger surplusContainers = new AtomicInteger();
+  private final Counter surplusContainers = new Counter();
 
 
   /**
@@ -233,21 +242,21 @@ public class AppState {
    * the node is promoted from here to the containerMap
    */
   private final Map<ContainerId, RoleInstance> startingNodes =
-    new ConcurrentHashMap<ContainerId, RoleInstance>();
+    new ConcurrentHashMap<>();
 
   /**
    * List of completed nodes. This isn't kept in the CD as it gets too
    * big for the RPC responses. Indeed, we should think about how deep to get this
    */
   private final Map<ContainerId, RoleInstance> completedNodes
-    = new ConcurrentHashMap<ContainerId, RoleInstance>();
+    = new ConcurrentHashMap<>();
 
   /**
    * Nodes that failed to start.
    * Again, kept out of the CD
    */
   private final Map<ContainerId, RoleInstance> failedNodes =
-    new ConcurrentHashMap<ContainerId, RoleInstance>();
+    new ConcurrentHashMap<>();
 
   /**
    * Nodes that came assigned to a role above that
@@ -256,11 +265,11 @@ public class AppState {
   private final Set<ContainerId> surplusNodes = new HashSet<ContainerId>();
 
   /**
-   * Map of containerID -> cluster nodes, for status reports.
+   * Map of containerID to cluster nodes, for status reports.
    * Access to this should be synchronized on the clusterDescription
    */
   private final Map<ContainerId, RoleInstance> liveNodes =
-    new ConcurrentHashMap<ContainerId, RoleInstance>();
+    new ConcurrentHashMap<>();
   private final AtomicInteger completionOfNodeNotInLiveListEvent =
     new AtomicInteger();
   private final AtomicInteger completionOfUnknownContainerEvent =
@@ -300,54 +309,53 @@ public class AppState {
       MetricsAndMonitoring metricsAndMonitoring) {
     this.recordFactory = recordFactory;
     this.metricsAndMonitoring = metricsAndMonitoring;
-    
+
     // register any metrics
-    MetricRegistry metrics = metricsAndMonitoring.getMetrics();
-    metrics.register(
+    register(MetricsConstants.CONTAINERS_OUTSTANDING_REQUESTS, outstandingContainerRequests);
+    register(MetricsConstants.CONTAINERS_SURPLUS, surplusContainers);
+    register(MetricsConstants.CONTAINERS_STARTED, startedContainers);
+    register(MetricsConstants.CONTAINERS_COMPLETED, completedContainerCount);
+    register(MetricsConstants.CONTAINERS_FAILED, failedContainerCount);
+    register(MetricsConstants.CONTAINERS_START_FAILED, startFailedContainerCount);
+  }
+
+  private void register(String name, Counter counter) {
+    this.metricsAndMonitoring.getMetrics().register(
         MetricRegistry.name(AppState.class,
-            MetricsConstants.CONTAINERS_OUTSTANDING_REQUESTS),
-        outstandingContainerRequests);
+            name), counter);
   }
 
-  public int getFailedCountainerCount() {
-    return failedContainerCount.get();
+  public long getFailedCountainerCount() {
+    return failedContainerCount.getCount();
+  }
+
+  /**
+   * Increment the count
+   */
+  public void incFailedCountainerCount() {
+    failedContainerCount.inc();
+  }
+
+  public long getStartFailedCountainerCount() {
+    return startFailedContainerCount.getCount();
   }
 
   /**
    * Increment the count and return the new value
-   * @return the latest failed container count
    */
-  public int incFailedCountainerCount() {
-    return failedContainerCount.incrementAndGet();
+  public void incStartedCountainerCount() {
+    startedContainers.inc();
   }
 
-  public int getStartFailedCountainerCount() {
-    return startFailedContainers.get();
+  public long getStartedCountainerCount() {
+    return startedContainers.getCount();
   }
 
   /**
    * Increment the count and return the new value
-   * @return the latest failed container count
    */
-  public int incStartedCountainerCount() {
-    return startedContainers.incrementAndGet();
-  }
-
-  public int getStartedCountainerCount() {
-    return startedContainers.get();
-  }
-
-  /**
-   * Increment the count and return the new value
-   * @return the latest failed container count
-   */
-  public int incStartFailedCountainerCount() {
-    return startFailedContainers.incrementAndGet();
-  }
-
-  
-  public AtomicInteger getStartFailedContainers() {
-    return startFailedContainers;
+  public void incStartFailedCountainerCount() {
+    startFailedContainerCount.inc();
   }
 
   public AtomicInteger getCompletionOfNodeNotInLiveListEvent() {
@@ -524,7 +532,7 @@ public class AppState {
     this.applicationInfo = applicationInfo != null ? applicationInfo
                                                    : new HashMap<String, String>();
 
-    clientProperties = new HashMap<String, String>();
+    clientProperties = new HashMap<>();
     containerReleaseSelector = releaseSelector;
 
 
@@ -630,7 +638,6 @@ public class AppState {
    * @return a new provider role
    * @throws BadConfigException bad configuration
    */
-  @VisibleForTesting
   public ProviderRole createDynamicProviderRole(String name,
                                                 MapOperations component) throws
                                                         BadConfigException {
@@ -639,13 +646,19 @@ public class AppState {
                                                 ResourceKeys.COMPONENT_PRIORITY,
         priOpt, 0, 1, -1);
     String placementOpt = component.getOption(
-      ResourceKeys.COMPONENT_PLACEMENT_POLICY,
+        ResourceKeys.COMPONENT_PLACEMENT_POLICY,
         Integer.toString(PlacementPolicy.DEFAULT));
     int placement = SliderUtils.parseAndValidate("value of " + name + " " +
-        ResourceKeys.COMPONENT_PLACEMENT_POLICY,
+                                                 ResourceKeys.COMPONENT_PLACEMENT_POLICY,
         placementOpt, 0, 0, -1);
-    ProviderRole newRole = new ProviderRole(name, priority, placement,
-                                            getNodeFailureThresholdForRole(name));
+    int placementTimeout =
+        component.getOptionInt(ResourceKeys.PLACEMENT_ESCALATE_DELAY,
+            ResourceKeys.DEFAULT_PLACEMENT_ESCALATE_DELAY_SECONDS);
+    ProviderRole newRole = new ProviderRole(name,
+        priority,
+        placement,
+        getNodeFailureThresholdForRole(name),
+        placementTimeout);
     log.info("New {} ", newRole);
     return newRole;
   }
@@ -699,7 +712,7 @@ public class AppState {
 
     clusterStatusTemplate =
       ClusterDescriptionOperations.buildFromInstanceDefinition(
-        instanceDefinition);
+          instanceDefinition);
     
 
 //     Add the -site configuration properties
@@ -740,7 +753,7 @@ public class AppState {
    */
   private List<ProviderRole> buildRoleRequirementsFromResources() throws BadConfigException {
 
-    List<ProviderRole> newRoles = new ArrayList<ProviderRole>(0);
+    List<ProviderRole> newRoles = new ArrayList<>(0);
     
     //now update every role's desired count.
     //if there are no instance values, that role count goes to zero
@@ -750,7 +763,7 @@ public class AppState {
 
     // Add all the existing roles
     for (RoleStatus roleStatus : getRoleStatusMap().values()) {
-      if (roleStatus.getExcludeFromFlexing()) {
+      if (roleStatus.isExcludeFromFlexing()) {
         // skip inflexible roles, e.g AM itself
         continue;
       }
@@ -987,7 +1000,7 @@ public class AppState {
   public synchronized List<RoleInstance> cloneLiveContainerInfoList() {
     List<RoleInstance> allRoleInstances;
     Collection<RoleInstance> values = getLiveNodes().values();
-    allRoleInstances = new ArrayList<RoleInstance>(values);
+    allRoleInstances = new ArrayList<>(values);
     return allRoleInstances;
   }
 
@@ -1119,7 +1132,7 @@ public class AppState {
    * @return the map of Role name to list of Cluster Nodes
    */
   public synchronized Map<String, Map<String, ClusterNode>> createRoleToClusterNodeMap() {
-    Map<String, Map<String, ClusterNode>> map = new HashMap<String, Map<String, ClusterNode>>();
+    Map<String, Map<String, ClusterNode>> map = new HashMap<>();
     for (RoleInstance node : getLiveNodes().values()) {
       
       Map<String, ClusterNode> containers = map.get(node.role);
@@ -1187,7 +1200,7 @@ public class AppState {
    * @param capability a resource to set up
    * @return the request for a new container
    */
-  private AMRMClient.ContainerRequest buildContainerResourceAndRequest(
+  public AMRMClient.ContainerRequest buildContainerResourceAndRequest(
         RoleStatus role,
         Resource capability) {
     buildResourceRequirements(role, capability);
@@ -1215,7 +1228,6 @@ public class AppState {
     AMRMClient.ContainerRequest request;
     request = roleHistory.requestNode(role, resource, labelExpression);
     incrementRequestCount(role);
-
     return request;
   }
 
@@ -1282,7 +1294,7 @@ public class AppState {
                                      int maxVal) {
     
     String val = resources.getComponentOpt(name, option,
-                                           Integer.toString(defVal));
+        Integer.toString(defVal));
     Integer intVal;
     if (ResourceKeys.YARN_RESOURCE_MAX.equals(val)) {
       intVal = maxVal;
@@ -1504,7 +1516,7 @@ public class AppState {
           actual,
           releasing,
           completedCount);
-      roleHistory.onReleaseCompleted(container, true);
+      roleHistory.onReleaseCompleted(container);
 
     } else if (surplusNodes.remove(containerId)) {
       //its a surplus one being purged
@@ -1729,19 +1741,19 @@ public class AppState {
    * keylist.
    */
   protected Map<String, Integer> getLiveStatistics() {
-    Map<String, Integer> sliderstats = new HashMap<String, Integer>();
-    sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_COMPLETED,
-        completedContainerCount.get());
-    sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_FAILED,
-        failedContainerCount.get());
-    sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_LIVE, 
+    Map<String, Integer> sliderstats = new HashMap<>();
+    sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_LIVE,
         liveNodes.size());
+    sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_COMPLETED,
+        (int)completedContainerCount.getCount());
+    sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_FAILED,
+        (int)failedContainerCount.getCount());
     sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_STARTED,
-        startedContainers.get());
+        (int)startedContainers.getCount());
     sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_START_FAILED,
-        startFailedContainers.get());
+        (int) startFailedContainerCount.getCount());
     sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_SURPLUS,
-        surplusContainers.get());
+        (int)surplusContainers.getCount());
     sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_UNKNOWN_COMPLETED,
         completionOfUnknownContainerEvent.get());
     return sliderstats;
@@ -1777,7 +1789,7 @@ public class AppState {
     log.debug("in reviewRequestAndReleaseNodes()");
     List<AbstractRMOperation> allOperations = new ArrayList<AbstractRMOperation>();
     for (RoleStatus roleStatus : getRoleStatusMap().values()) {
-      if (!roleStatus.getExcludeFromFlexing()) {
+      if (!roleStatus.isExcludeFromFlexing()) {
         List<AbstractRMOperation> operations = reviewOneRole(roleStatus);
         allOperations.addAll(operations);
       }
@@ -1852,11 +1864,19 @@ public class AppState {
     }
     roleHistory.resetFailedRecently();
   }
+
+  /**
+   * Escalate operation as triggered by external timer.
+   * @return a (usually empty) list of cancel/request operations.
+   */
+  public List<AbstractRMOperation> escalateOutstandingRequests() {
+    return roleHistory.escalateOutstandingRequests();
+  }
   
   /**
    * Look at the allocation status of one role, and trigger add/release
    * actions if the number of desired role instances doesn't equal 
-   * (actual+pending).
+   * (actual + pending).
    * <p>
    * MUST be executed from within a synchronized method
    * <p>
@@ -1868,9 +1888,8 @@ public class AppState {
   @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
   private List<AbstractRMOperation> reviewOneRole(RoleStatus role)
       throws SliderInternalStateException, TriggerClusterTeardownException {
-    List<AbstractRMOperation> operations = new ArrayList<AbstractRMOperation>();
+    List<AbstractRMOperation> operations = new ArrayList<>();
     int delta;
-    String details;
     int expected;
     String name = role.getName();
     synchronized (role) {
@@ -1880,7 +1899,7 @@ public class AppState {
 
     log.info("Reviewing {} : expected {}", role, expected);
     checkFailureThreshold(role);
-    
+
     if (expected < 0 ) {
       // negative value: fail
       throw new TriggerClusterTeardownException(
@@ -1889,7 +1908,7 @@ public class AppState {
           "Negative component count of %d desired for component %s",
           expected, role);
     }
-    
+
     if (delta > 0) {
       log.info("{}: Asking for {} more nodes(s) for a total of {} ", name,
                delta, expected);
@@ -1920,24 +1939,33 @@ public class AppState {
       if (outstandingRequests > 0) {
         // outstanding requests.
         int toCancel = Math.min(outstandingRequests, excess);
-        Priority p1 =
-            ContainerPriority.createPriority(role.getPriority(), true);
-        Priority p2 =
-            ContainerPriority.createPriority(role.getPriority(), false);
-        operations.add(new CancelRequestOperation(p1, p2, toCancel));
+
+        // Delegate to Role History
+
+        List<AbstractRMOperation> cancellations = roleHistory.cancelRequestsForRole(role, toCancel);
+        log.info("Found {} outstanding requests to cancel", cancellations.size());
+        operations.addAll(cancellations);
+        if (toCancel != cancellations.size()) {
+          log.error("Tracking of outstanding requests is not in sync with the summary statistics:" +
+              " expected to be able to cancel {} requests, but got {}",
+              toCancel, cancellations.size());
+        }
+
         role.cancel(toCancel);
         excess -= toCancel;
         assert excess >= 0 : "Attempted to cancel too many requests";
         log.info("Submitted {} cancellations, leaving {} to release",
             toCancel, excess);
         if (excess == 0) {
-          log.info("After cancelling requests, application is at desired size");
+          log.info("After cancelling requests, application is now at desired size");
         }
       }
 
 
       // after the cancellation there may be no excess
       if (excess > 0) {
+
+        // there's an excess, so more to cancel
         // get the nodes to release
         int roleId = role.getKey();
 
@@ -1956,7 +1984,7 @@ public class AppState {
           }
         }
 
-        // warn if the desired state can't be reaced
+        // warn if the desired state can't be reached
         int numberAvailableForRelease = containersToRelease.size();
         if (numberAvailableForRelease < excess) {
           log.warn("Not enough containers to release, have {} and need {} more",
@@ -1979,14 +2007,15 @@ public class AppState {
 
         // then build up a release operation, logging each container as released
         for (RoleInstance possible : finalCandidates) {
-          log.debug("Targeting for release: {}", possible);
+          log.info("Targeting for release: {}", possible);
           containerReleaseSubmitted(possible.container);
-          operations.add(new ContainerReleaseOperation(possible.getId()));       
+          operations.add(new ContainerReleaseOperation(possible.getId()));
         }
       }
 
     }
 
+    // list of operations to execute
     return operations;
   }
 
@@ -2010,7 +2039,6 @@ public class AppState {
     return operations;
   }
 
-
   /**
    * Find a container running on a specific host -looking
    * into the node ID to determine this.
@@ -2032,7 +2060,7 @@ public class AppState {
     }
     return null;
   }
-  
+
   /**
    * Release all containers.
    * @return a list of operations to execute
@@ -2042,7 +2070,7 @@ public class AppState {
     Collection<RoleInstance> targets = cloneOwnedContainerList();
     log.info("Releasing {} containers", targets.size());
     List<AbstractRMOperation> operations =
-      new ArrayList<AbstractRMOperation>(targets.size());
+      new ArrayList<>(targets.size());
     for (RoleInstance instance : targets) {
       if (instance.roleId == SliderKeys.ROLE_AM_PRIORITY_INDEX) {
         // don't worry about the AM
@@ -2067,7 +2095,7 @@ public class AppState {
   /**
    * Event handler for allocated containers: builds up the lists
    * of assignment actions (what to run where), and possibly
-   * a list of release operations
+   * a list of operations to perform
    * @param allocatedContainers the containers allocated
    * @param assignments the assignments of roles to containers
    * @param releaseOperations any release operations
@@ -2082,38 +2110,51 @@ public class AppState {
       String containerHostInfo = container.getNodeId().getHost()
                                  + ":" +
                                  container.getNodeId().getPort();
-      int allocated;
-      int desired;
       //get the role
-      ContainerId cid = container.getId();
-      RoleStatus role = lookupRoleStatus(container);
+      final ContainerId cid = container.getId();
+      final RoleStatus role = lookupRoleStatus(container);
       
 
       //dec requested count
       decrementRequestCount(role);
+
       //inc allocated count -this may need to be dropped in a moment,
       // but us needed to update the logic below
-      allocated = role.incActual();
+      final int allocated = role.incActual();
+      final int desired = role.getDesired();
 
-      //look for (race condition) where we get more back than we asked
-      desired = role.getDesired();
+      final String roleName = role.getName();
+      final ContainerAllocation allocation =
+          roleHistory.onContainerAllocated(container, desired, allocated);
+      final ContainerAllocationOutcome outcome = allocation.outcome;
 
-      roleHistory.onContainerAllocated( container, desired, allocated );
+      // cancel an allocation request which granted this, so as to avoid repeated
+      // requests
+      if (allocation.origin != null && allocation.origin.getIssuedRequest() != null) {
+        releaseOperations.add(allocation.origin.createCancelOperation());
+      } else {
+        // there's a request, but no idea what to cancel.
+        // rather than try to recover from it inelegantly, (and cause more confusion),
+        // log the event, but otherwise continue
+        log.warn("Unexpected allocation of container "
+            + SliderUtils.containerToString(container));
+      }
 
+      //look for condition where we get more back than we asked
       if (allocated > desired) {
-        log.info("Discarding surplus container {} on {}", cid,
-                 containerHostInfo);
+        log.info("Discarding surplus {} container {} on {}", roleName,  cid,
+            containerHostInfo);
         releaseOperations.add(new ContainerReleaseOperation(cid));
         //register as a surplus node
         surplusNodes.add(cid);
-        surplusContainers.incrementAndGet();
+        surplusContainers.inc();
         //and, as we aren't binding it to role, dec that role's actual count
         role.decActual();
       } else {
 
-        // this is valid, so decrement the number of outstanding requests
+        // Allocation being accepted -so decrement the number of outstanding requests
         decOutstandingContainerRequests();
-        String roleName = role.getName();
+
         log.info("Assigning role {} to container" +
                  " {}," +
                  " on {}:{},",
@@ -2123,7 +2164,7 @@ public class AppState {
                  container.getNodeId().getPort()
                 );
 
-        assignments.add(new ContainerAssignment(container, role));
+        assignments.add(new ContainerAssignment(container, role, outcome));
         //add to the history
         roleHistory.onContainerAssigned(container);
       }
@@ -2149,8 +2190,8 @@ public class AppState {
    * @return true if a rebuild took place (even if size 0)
    * @throws RuntimeException on problems
    */
-  private boolean rebuildModelFromRestart(List<Container> liveContainers) throws
-                                                                          BadClusterStateException {
+  private boolean rebuildModelFromRestart(List<Container> liveContainers)
+      throws BadClusterStateException {
     if (liveContainers == null) {
       return false;
     }
@@ -2168,8 +2209,8 @@ public class AppState {
    * @param container container that was running before the AM restarted
    * @throws RuntimeException on problems
    */
-  private void addRestartedContainer(Container container) throws
-                                                          BadClusterStateException {
+  private void addRestartedContainer(Container container)
+      throws BadClusterStateException {
     String containerHostInfo = container.getNodeId().getHost()
                                + ":" +
                                container.getNodeId().getPort();

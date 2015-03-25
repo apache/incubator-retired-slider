@@ -16,41 +16,30 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster.management;
+package org.apache.slider.server.appmaster.actions;
+
+import org.apache.slider.server.appmaster.SliderAppMaster;
+import org.apache.slider.server.appmaster.state.AppState;
+
+import java.util.concurrent.TimeUnit;
 
 /**
- * Constants used in slider for metrics registration and lookup
+ * Escalate outstanding requests by asking AM
  */
-public class MetricsConstants {
+public class EscalateOutstandingRequests extends AsyncAction {
 
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_OUTSTANDING_REQUESTS = "containers.outstanding-requests";
+  public EscalateOutstandingRequests() {
+    super("EscalateOutstandingRequests");
+  }
 
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_STARTED = "containers.started";
+  public EscalateOutstandingRequests(long delay,
+      TimeUnit timeUnit) {
+    super("EscalateOutstandingRequests", delay, timeUnit, ATTR_REVIEWS_APP_SIZE);
+  }
 
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_SURPLUS = "containers.surplus";
-
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_COMPLETED = "containers.completed";
-
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_FAILED = "containers.failed";
-
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_START_FAILED = "containers.start-failed";
-
+  @Override
+  public void execute(SliderAppMaster appMaster, QueueAccess queueService, AppState appState) throws
+      Exception {
+    appMaster.escalateOutstandingRequests();
+  }
 }

@@ -27,8 +27,18 @@ import java.util.List;
 public interface RMOperationHandlerActions {
   void releaseAssignedContainer(ContainerId containerId);
 
-  void addContainerRequest(AMRMClient.ContainerRequest req);
+  /**
+   * Issue a container request
+   * @param request
+   */
+  void addContainerRequest(AMRMClient.ContainerRequest request);
 
+  /**
+   * Cancel a specific request
+   * @param request request to cancel
+   */
+  void cancelSingleRequest(AMRMClient.ContainerRequest request);
+  
   /**
    * Remove a container request
    * @param priority1 priority to remove at

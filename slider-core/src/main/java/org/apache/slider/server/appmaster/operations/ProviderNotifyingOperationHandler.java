@@ -47,4 +47,9 @@ public class ProviderNotifyingOperationHandler extends RMOperationHandler {
       int count) {
     return providerService.cancelContainerRequests(priority1, priority2, count);
   }
+
+  @Override
+  public void cancelSingleRequest(AMRMClient.ContainerRequest request) {
+    providerService.cancelSingleRequest(request);
+  }
 }

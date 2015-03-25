@@ -405,6 +405,11 @@ public abstract class AbstractProviderService
   }
 
   @Override
+  public void cancelSingleRequest(AMRMClient.ContainerRequest request) {
+    // no-op
+  }
+
+  @Override
   public int cancelContainerRequests(Priority priority1,
       Priority priority2,
       int count) {

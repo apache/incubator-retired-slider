@@ -16,41 +16,31 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster.management;
+package org.apache.slider.server.appmaster.state;
 
 /**
- * Constants used in slider for metrics registration and lookup
+ * This is just a tuple of the outcome of a container allocation
  */
-public class MetricsConstants {
+public class ContainerAllocation {
 
   /**
-   * {@value}
+   * What was the outcome of this allocation: placed, escalated, ...
    */
-  public static final String CONTAINERS_OUTSTANDING_REQUESTS = "containers.outstanding-requests";
+  public ContainerAllocationOutcome outcome;
 
   /**
-   * {@value}
+   * The outstanding request which originated this.
+   * This will be null if the outcome is {@link ContainerAllocationOutcome#Unallocated}
+   * as it wasn't expected.
    */
-  public static final String CONTAINERS_STARTED = "containers.started";
+  public OutstandingRequest origin;
 
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_SURPLUS = "containers.surplus";
+  public ContainerAllocation(ContainerAllocationOutcome outcome,
+      OutstandingRequest origin) {
+    this.outcome = outcome;
+    this.origin = origin;
+  }
 
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_COMPLETED = "containers.completed";
-
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_FAILED = "containers.failed";
-
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_START_FAILED = "containers.start-failed";
-
+  public ContainerAllocation() {
+  }
 }

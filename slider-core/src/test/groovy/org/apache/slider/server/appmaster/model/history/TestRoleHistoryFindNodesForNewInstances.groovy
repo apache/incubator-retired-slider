@@ -23,6 +23,7 @@ import groovy.util.logging.Slf4j
 import org.apache.slider.providers.ProviderRole
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockFactory
+import org.apache.slider.server.appmaster.state.NodeEntry
 import org.apache.slider.server.appmaster.state.NodeInstance
 import org.apache.slider.server.appmaster.state.RoleHistory
 import org.apache.slider.server.appmaster.state.RoleStatus
@@ -94,6 +95,7 @@ class TestRoleHistoryFindNodesForNewInstances extends BaseMockAppStateTest {
     assert [age2Active0, age3Active0].contains(found2)
     assert found != found2;
   }
+
   @Test
   public void testFind3NodeR0ReturnsNull() throws Throwable {
     assert 2== findNodes(2).size()
@@ -125,4 +127,24 @@ class TestRoleHistoryFindNodesForNewInstances extends BaseMockAppStateTest {
     log.info(found ?.toFullString())
     assert found == null
   }
+  @Test
+  public void testFindNodesSkipsFailingNode() throws Throwable {
+    // mark age2 and active 0 as busy, expect a null back
+
+    def entry0 = age2Active0.get(0)
+    entry0.containerCompleted(false)
+    assert entry0.failed
+    assert entry0.failedRecently
+    entry0.containerCompleted(false)
+    assert !age2Active0.exceedsFailureThreshold(roleStat)
+    // set failure to 1
+    roleStat.providerRole.nodeFailureThreshold = 1
+    // threshold is now exceeded
+    assert age2Active0.exceedsFailureThreshold(roleStat)
+
+    // get the role & expect age3 to be picked up, even though it is older
+    NodeInstance found = roleHistory.findNodeForNewInstance(roleStat)
+    assert age3Active0.is(found)
+  }
+
 }
