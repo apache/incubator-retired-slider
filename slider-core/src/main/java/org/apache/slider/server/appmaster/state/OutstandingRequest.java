@@ -184,23 +184,6 @@ public final class OutstandingRequest {
     boolean relaxLocality;
     boolean strictPlacement = role.isStrictPlacement();
     NodeInstance target = this.node;
-    if (target != null) {
-      // there is a host specified; get its details
-
-      // tell the node it is in play
-      NodeEntry entry = target.getOrCreate(roleId);
-      // failure count
-      int numFailuresOnLastHost = entry != null ? entry.getFailedRecently() : 0;
-
-      // which on non-strict placement may have some effect
-      if (!strictPlacement && numFailuresOnLastHost > role.getNodeFailureThreshold()) {
-        // too many failures for this node
-        log.info("Recent node failures {} is higher than threshold {}. Not requesting host {}",
-            numFailuresOnLastHost, role.getNodeFailureThreshold(), target.hostname);
-        // reset the target node so this request is downgraded
-        target = null;
-      }
-    }
 
     if (target != null) {
       // placed request. Hostname is used in request
@@ -212,8 +195,8 @@ public final class OutstandingRequest {
 
       log.info("Submitting request for container on {}", hosts[0]);
       // enable escalation for all but strict placements.
-      mayEscalate = !strictPlacement;
       escalated = false;
+      mayEscalate = !strictPlacement;
     } else {
       // no hosts
       hosts = null;
