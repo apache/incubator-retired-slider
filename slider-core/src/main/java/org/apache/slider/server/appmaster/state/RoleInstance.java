@@ -19,12 +19,12 @@
 package org.apache.slider.server.appmaster.state;
 
 import com.google.common.base.Preconditions;
-import org.apache.hadoop.yarn.api.records.Container;
-import org.apache.hadoop.yarn.api.records.ContainerId;
-import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.hadoop.registry.client.binding.RegistryTypeUtils;
 import org.apache.hadoop.registry.client.types.Endpoint;
 import org.apache.hadoop.registry.client.types.ProtocolTypes;
+import org.apache.hadoop.yarn.api.records.Container;
+import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.slider.api.ClusterNode;
 import org.apache.slider.api.proto.Messages;
 import org.apache.slider.api.types.ContainerInformation;
@@ -95,14 +95,23 @@ public final class RoleInstance implements Cloneable {
   
   public String host;
   public String hostURL;
+  public ContainerAllocationOutcome placement;
 
 
   /**
    * A list of registered endpoints.
    */
   private List<Endpoint> endpoints =
-      new ArrayList<Endpoint>(2);
+      new ArrayList<>(2);
 
+  public RoleInstance(ContainerAssignment assignment) {
+    this(assignment.container);
+    placement = assignment.placement;
+  }
+  /**
+   * Create an instance to track an allocated container
+   * @param container a container which must be non null, and have a non-null Id field.
+   */
   public RoleInstance(Container container) {
     Preconditions.checkNotNull(container, "Null container");
     Preconditions.checkState(container.getId() != null, 
@@ -140,6 +149,7 @@ public final class RoleInstance implements Cloneable {
     sb.append(", host=").append(host);
     sb.append(", hostURL=").append(hostURL);
     sb.append(", state=").append(state);
+    sb.append(", placement=").append(placement);
     sb.append(", exitCode=").append(exitCode);
     sb.append(", command='").append(command).append('\'');
     sb.append(", diagnostics='").append(diagnostics).append('\'');
@@ -288,6 +298,9 @@ public final class RoleInstance implements Cloneable {
     info.host = host;
     info.hostURL = hostURL;
     info.released = released ? Boolean.TRUE : null;
+    if (placement != null) {
+      info.placement = placement.toString();
+    }
     if (output != null) {
       info.output = output;
     }

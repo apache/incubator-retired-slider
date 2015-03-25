@@ -9,7 +9,6 @@
   "components": {
     "ACCUMULO_MASTER": {
       "yarn.role.priority": "1",
-      "yarn.component.instances": "1",
       "yarn.memory": "256"
     },
     "slider-appmaster": {

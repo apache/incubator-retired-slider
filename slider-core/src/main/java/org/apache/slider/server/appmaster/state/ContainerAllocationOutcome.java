@@ -16,41 +16,29 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster.management;
+package org.apache.slider.server.appmaster.state;
 
 /**
- * Constants used in slider for metrics registration and lookup
+ * Outcome of the assignment
  */
-public class MetricsConstants {
+public enum ContainerAllocationOutcome {
+  /**
+   * There wasn't a request for this
+   */
+  Unallocated,
 
   /**
-   * {@value}
+   * Open placement
    */
-  public static final String CONTAINERS_OUTSTANDING_REQUESTS = "containers.outstanding-requests";
+  Open,
 
   /**
-   * {@value}
+   * Allocated explicitly  where requested
    */
-  public static final String CONTAINERS_STARTED = "containers.started";
+  Placed,
 
   /**
-   * {@value}
+   * This was an escalated placement
    */
-  public static final String CONTAINERS_SURPLUS = "containers.surplus";
-
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_COMPLETED = "containers.completed";
-
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_FAILED = "containers.failed";
-
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_START_FAILED = "containers.start-failed";
-
+  Escalated
 }

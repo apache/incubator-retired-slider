@@ -1,15 +1,16 @@
 {
-    "schema": "http://example.org/specification/v2.0.0",
-    "metadata": {
+  "schema": "http://example.org/specification/v2.0.0",
+  "metadata": {
+  },
+  "global": {
+  },
+  "components": {
+    "COMMAND_LOGGER": {
+      "yarn.role.priority": "1",
+      "yarn.component.instances": "1",
+      "yarn.placement.escalate.seconds": "10"
     },
-    "global": {
-    },
-    "components": {
-        "COMMAND_LOGGER": {
-            "yarn.role.priority": "1",
-            "yarn.component.instances": "1"
-        },
-        "slider-appmaster": {
-        }
+    "slider-appmaster": {
     }
+  }
 }

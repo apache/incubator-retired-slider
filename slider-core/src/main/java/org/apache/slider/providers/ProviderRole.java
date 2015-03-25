@@ -29,18 +29,38 @@ import org.apache.slider.api.ResourceKeys;
 public final class ProviderRole {
   public final String name;
   public final int id;
-  public final int placementPolicy;
-  public final int nodeFailureThreshold;
+  public int placementPolicy;
+  public int nodeFailureThreshold;
+  public final long placementTimeoutSeconds;
 
   public ProviderRole(String name, int id) {
-    this(name, id, PlacementPolicy.DEFAULT, ResourceKeys.DEFAULT_NODE_FAILURE_THRESHOLD);
+    this(name,
+        id,
+        PlacementPolicy.DEFAULT,
+        ResourceKeys.DEFAULT_NODE_FAILURE_THRESHOLD,
+        ResourceKeys.DEFAULT_PLACEMENT_ESCALATE_DELAY_SECONDS);
   }
 
-  public ProviderRole(String name, int id, int policy, int nodeFailureThreshold) {
+  /**
+   * Create a provider role
+   * @param name role/component name
+   * @param id ID. This becomes the YARN priority
+   * @param policy placement policy
+   * @param nodeFailureThreshold threshold for node failures (within a reset interval)
+   * after which a node failure is considered an app failure
+   * @param placementTimeoutSeconds for lax placement, timeout in seconds before
+   * a relaxed placement request is generated.
+   */
+  public ProviderRole(String name,
+      int id,
+      int policy,
+      int nodeFailureThreshold,
+      long placementTimeoutSeconds) {
     this.name = name;
     this.id = id;
     this.placementPolicy = policy;
     this.nodeFailureThreshold = nodeFailureThreshold;
+    this.placementTimeoutSeconds = placementTimeoutSeconds;
   }
 
   @Override

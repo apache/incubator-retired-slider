@@ -26,7 +26,7 @@ import java.util.ListIterator;
 
 /**
  * A node instance -stores information about a node in the cluster.
- * 
+ * <p>
  * Operations on the array/set of roles are synchronized.
  */
 public class NodeInstance {
@@ -41,7 +41,7 @@ public class NodeInstance {
    */
   public NodeInstance(String hostname, int roles) {
     this.hostname = hostname;
-    nodeEntries = new ArrayList<NodeEntry>(roles);
+    nodeEntries = new ArrayList<>(roles);
   }
 
   /**
@@ -96,6 +96,18 @@ public class NodeInstance {
   }
 
   /**
+   * Query for a node being considered unreliable
+   * @param role role key
+   * @param threshold threshold above which a node is considered unreliable
+   * @return true if the node is considered unreliable
+   */
+  public boolean isConsideredUnreliable(int role, int threshold) {
+    NodeEntry entry = get(role);
+
+    return entry != null && entry.getFailedRecently() > threshold;
+  }
+
+  /**
    * Get the entry for a role -and remove it if present
    * @param role the role index
    * @return the entry that WAS there
@@ -113,8 +125,10 @@ public class NodeInstance {
     nodeEntries.add(nodeEntry);
   }
 
+  
   /**
-   * run through each entry; gc'ing & removing old ones
+   * run through each entry; gc'ing & removing old ones that don't have
+   * a recent failure count (we care about those)
    * @param absoluteTime age in millis
    * @return true if there are still entries left
    */
@@ -123,7 +137,7 @@ public class NodeInstance {
     ListIterator<NodeEntry> entries = nodeEntries.listIterator();
     while (entries.hasNext()) {
       NodeEntry entry = entries.next();
-      if (entry.notUsedSince(absoluteTime)) {
+      if (entry.notUsedSince(absoluteTime) && entry.getFailedRecently() == 0) {
         entries.remove();
       } else {
         active = true;
@@ -184,48 +198,67 @@ public class NodeInstance {
     return hostname.hashCode();
   }
 
+
   /**
-   * A comparator for sorting entries where the role is newer than
-   * the other. 
-   * This sort only compares the lastUsed field, not whether the
-   * node is in use or not
+   * Predicate to query if the number of recent failures of a role
+   * on this node exceeds that role's failure threshold.
+   * If there is no record of a deployment of that role on this
+   * node, the failure count is taken as "0".
+   * @param role role to look up
+   * @return true if the failure rate is above the threshold.
    */
-  public static class newerThan implements Comparator<NodeInstance>,
+  public boolean exceedsFailureThreshold(RoleStatus role) {
+    NodeEntry entry = get(role.getKey());
+    int numFailuresOnLastHost = entry != null ? entry.getFailedRecently() : 0;
+    int failureThreshold = role.getNodeFailureThreshold();
+    return failureThreshold < 0 || numFailuresOnLastHost > failureThreshold;
+  }
+
+  /**
+   * A comparator for sorting entries where the node is preferred over another.
+   * <p>
+   * The exact algorithm may change
+   * 
+   * @return +ve int if left is preferred to right; -ve if right over left, 0 for equal
+   */
+  public static class Preferred implements Comparator<NodeInstance>,
                                            Serializable {
 
     final int role;
 
-    public newerThan(int role) {
+    public Preferred(int role) {
       this.role = role;
     }
 
     @Override
     public int compare(NodeInstance o1, NodeInstance o2) {
-      long age = o1.getOrCreate(role).getLastUsed();
-      long age2 = o2.getOrCreate(role).getLastUsed();
+      NodeEntry left = o1.get(role);
+      NodeEntry right = o2.get(role);
+      long ageL = left != null ? left.getLastUsed() : 0;
+      long ageR = right != null ? right.getLastUsed() : 0;
       
-      if (age > age2) {
+      if (ageL > ageR) {
         return -1;
-      } else if (age < age2) {
+      } else if (ageL < ageR) {
         return 1;
       }
       // equal
       return 0;
     }
   }
-  
+
   /**
    * A comparator for sorting entries where the role is newer than
    * the other. 
    * This sort only compares the lastUsed field, not whether the
    * node is in use or not
    */
-  public static class moreActiveThan implements Comparator<NodeInstance>,
+  public static class MoreActiveThan implements Comparator<NodeInstance>,
                                            Serializable {
 
     final int role;
 
-    public moreActiveThan(int role) {
+    public MoreActiveThan(int role) {
       this.role = role;
     }
 

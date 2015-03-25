@@ -19,12 +19,13 @@
 package org.apache.slider.providers;
 
 /**
- * Placement values
+ * Placement values.
+ * This is nominally a bitmask, though not all values make sense
  */
 public class PlacementPolicy {
 
   /**
-   * Default values
+   * Default value: history used, anti-affinity hinted at on rebuild/flex up
    */
   public static final int DEFAULT = 0;
 
@@ -35,11 +36,12 @@ public class PlacementPolicy {
   public static final int STRICT = 1;
 
   /**
-   * No data locality; do not bother trying to ask for any location
+   * No data locality; do not use placement history
    */
   public static final int NO_DATA_LOCALITY = 2;
+
   /**
-   * Anti-affinity is mandatory. 
+   * Anti-affinity is mandatory. This is not supported in YARN
    */
   public static final int ANTI_AFFINITY_REQUIRED = 4;
   

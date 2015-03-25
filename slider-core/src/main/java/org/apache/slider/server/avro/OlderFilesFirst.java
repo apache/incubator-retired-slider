@@ -16,41 +16,28 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster.management;
+package org.apache.slider.server.avro;
+
+import org.apache.hadoop.fs.Path;
+
+import java.io.Serializable;
+import java.util.Comparator;
 
 /**
- * Constants used in slider for metrics registration and lookup
+ * Compare two filenames by name; the older ones comes first
  */
-public class MetricsConstants {
+public class OlderFilesFirst implements Comparator<Path>, Serializable {
 
   /**
-   * {@value}
+   * Takes the ordering of path names from the normal string comparison
+   * and negates it, so that names that come after other names in 
+   * the string sort come before here
+   * @param o1 leftmost 
+   * @param o2 rightmost
+   * @return positive if o1 &gt; o2 
    */
-  public static final String CONTAINERS_OUTSTANDING_REQUESTS = "containers.outstanding-requests";
-
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_STARTED = "containers.started";
-
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_SURPLUS = "containers.surplus";
-
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_COMPLETED = "containers.completed";
-
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_FAILED = "containers.failed";
-
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_START_FAILED = "containers.start-failed";
-
+  @Override
+  public int compare(Path o1, Path o2) {
+    return (o1.getName().compareTo(o2.getName()));
+  }
 }

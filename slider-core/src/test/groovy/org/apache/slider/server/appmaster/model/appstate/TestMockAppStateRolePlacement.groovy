@@ -25,6 +25,7 @@ import org.apache.hadoop.yarn.client.api.AMRMClient
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
+import org.apache.slider.server.appmaster.operations.CancelSingleRequest
 import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation
 import org.apache.slider.server.appmaster.operations.ContainerRequestOperation
 import org.apache.slider.server.appmaster.state.ContainerAssignment
@@ -59,12 +60,19 @@ class TestMockAppStateRolePlacement extends BaseMockAppStateTest
     assert request.relaxLocality
     assert request.nodes == null
     assert request.racks == null
+    assert request.capability
 
     Container allocated = engine.allocateContainer(request)
     List<ContainerAssignment> assignments = [];
-    List<AbstractRMOperation> operations = []
-    appState.onContainersAllocated([(Container)allocated], assignments, operations)
-    assert operations.size() == 0
+    List<AbstractRMOperation> releaseOperations = []
+    appState.onContainersAllocated([(Container)allocated], assignments, releaseOperations)
+    // verify the release matches the allocation
+    assert releaseOperations.size() == 1
+    CancelSingleRequest cancelOp = releaseOperations[0] as CancelSingleRequest;
+    assert cancelOp.request
+    assert cancelOp.request.capability
+    assert cancelOp.request.capability.equals(allocated.resource)
+    // now the assignment
     assert assignments.size() == 1
     ContainerAssignment assigned = assignments[0]
     Container container = assigned.container
@@ -101,7 +109,7 @@ class TestMockAppStateRolePlacement extends BaseMockAppStateTest
     AMRMClient.ContainerRequest request2 = operation.request
     assert request2 != null
     assert request2.nodes[0] == containerHostname
-    assert request2.relaxLocality
+    assert !request2.relaxLocality
     engine.execute(ops)
 
   }

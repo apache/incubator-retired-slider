@@ -16,41 +16,28 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster.management;
+package org.apache.slider.server.appmaster.model.mock
 
-/**
- * Constants used in slider for metrics registration and lookup
- */
-public class MetricsConstants {
+import org.apache.hadoop.yarn.api.records.Priority
 
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_OUTSTANDING_REQUESTS = "containers.outstanding-requests";
+class MockPriority extends Priority {
 
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_STARTED = "containers.started";
+  private int priority;
 
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_SURPLUS = "containers.surplus";
+  MockPriority(int priority) {
+    this.priority = priority
+  }
 
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_COMPLETED = "containers.completed";
+  MockPriority() {
+  }
 
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_FAILED = "containers.failed";
+  @Override
+  int getPriority() {
+    return priority
+  }
 
-  /**
-   * {@value}
-   */
-  public static final String CONTAINERS_START_FAILED = "containers.start-failed";
+  @Override
+  void setPriority(int priority) {
 
+  }
 }

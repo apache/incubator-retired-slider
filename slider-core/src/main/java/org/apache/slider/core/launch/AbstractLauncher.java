@@ -57,6 +57,7 @@ public abstract class AbstractLauncher extends Configured {
   private static final Logger log =
     LoggerFactory.getLogger(AbstractLauncher.class);
   public static final String CLASSPATH = "CLASSPATH";
+  public static final String MAPREDUCE_JOB_CREDENTIALS_BINARY = "mapreduce.job.credentials.binary";
   /**
    * Filesystem to use for the launch
    */
@@ -64,15 +65,13 @@ public abstract class AbstractLauncher extends Configured {
   /**
    * Env vars; set up at final launch stage
    */
-  protected final Map<String, String> envVars = new HashMap<String, String>();
+  protected final Map<String, String> envVars = new HashMap<>();
   protected final MapOperations env = new MapOperations("env", envVars);
   protected final ContainerLaunchContext containerLaunchContext =
     Records.newRecord(ContainerLaunchContext.class);
-  protected final List<String> commands = new ArrayList<String>(20);
-  protected final Map<String, LocalResource> localResources =
-    new HashMap<String, LocalResource>();
-  private final Map<String, ByteBuffer> serviceData =
-    new HashMap<String, ByteBuffer>();
+  protected final List<String> commands = new ArrayList<>(20);
+  protected final Map<String, LocalResource> localResources = new HashMap<>();
+  private final Map<String, ByteBuffer> serviceData = new HashMap<>();
   // security
   protected final Credentials credentials = new Credentials();
   protected LogAggregationContext logAggregationContext;
@@ -84,7 +83,7 @@ public abstract class AbstractLauncher extends Configured {
     this.coreFileSystem = fs;
   }
 
-  public AbstractLauncher(CoreFileSystem fs) {
+  protected AbstractLauncher(CoreFileSystem fs) {
     this.coreFileSystem = fs;
   }
 
@@ -212,7 +211,7 @@ public abstract class AbstractLauncher extends Configured {
     log.debug("{} tokens", credentials.numberOfTokens());
     DataOutputBuffer dob = new DataOutputBuffer();
     String tokenFileName =
-        this.getConf().get("mapreduce.job.credentials.binary");
+        this.getConf().get(MAPREDUCE_JOB_CREDENTIALS_BINARY);
     if (tokenFileName != null) {
       // use delegation tokens, i.e. from Oozie
       Credentials creds =
@@ -285,7 +284,7 @@ public abstract class AbstractLauncher extends Configured {
       String logPatternJoinStr = "|";
       MapOperations options = new MapOperations("", map);
 
-      List<String> logIncludePatterns = new ArrayList<String>();
+      List<String> logIncludePatterns = new ArrayList<>();
       String includePatternExpression = options.getOption(
           ResourceKeys.YARN_LOG_INCLUDE_PATTERNS, "").trim();
       if (!includePatternExpression.isEmpty()) {
@@ -302,7 +301,7 @@ public abstract class AbstractLauncher extends Configured {
           logPatternJoinStr);
       log.info("Log include patterns: {}", logIncludePattern);
 
-      List<String> logExcludePatterns = new ArrayList<String>();
+      List<String> logExcludePatterns = new ArrayList<>();
       String excludePatternExpression = options.getOption(
           ResourceKeys.YARN_LOG_EXCLUDE_PATTERNS, "").trim();
       if (!excludePatternExpression.isEmpty()) {

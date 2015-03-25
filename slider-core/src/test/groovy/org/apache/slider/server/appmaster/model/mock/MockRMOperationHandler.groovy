@@ -39,7 +39,7 @@ class MockRMOperationHandler extends RMOperationHandler {
   @Override
   public void releaseAssignedContainer(ContainerId containerId) {
     operations.add(new ContainerReleaseOperation(containerId))
-    log.info("Releasing container ID " + containerId.getId())
+    log.info("Releasing container ID " + containerId.containerId)
     releases++;
   }
 
@@ -61,6 +61,15 @@ class MockRMOperationHandler extends RMOperationHandler {
     return releaseable;
   }
 
+  @Override
+  void cancelSingleRequest(AMRMClient.ContainerRequest request) {
+    // here assume that there is a copy of this request in the list
+    if (availableToCancel > 0) {
+      availableToCancel--;
+      cancelled++;
+    }
+  }
+  
 /**
  * clear the history
  */

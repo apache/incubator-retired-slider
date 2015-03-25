@@ -18,8 +18,6 @@
 
 package org.apache.slider.server.appmaster.model.history
 
-import java.util.List;
-
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.Container
@@ -164,7 +162,7 @@ class TestRoleHistoryContainerEvents extends BaseMockAppStateTest {
     assert roleEntry.active == 0
 
     // release completed
-    roleHistory.onReleaseCompleted(container, true)
+    roleHistory.onReleaseCompleted(container)
     assert roleEntry.releasing == 0
     assert roleEntry.live == 0
     assert roleEntry.active == 0

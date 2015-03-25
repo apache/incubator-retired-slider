@@ -114,8 +114,8 @@ class MockYarnEngine {
       } else {
         ContainerRequestOperation req = (ContainerRequestOperation) op
         Container container = allocateContainer(req.request)
-        log.info("allocated container $container for $req")
         if (container != null) {
+          log.info("allocated container $container for $req")
           allocation.add(container)
         } else {
           log.debug("Unsatisfied allocation $req")

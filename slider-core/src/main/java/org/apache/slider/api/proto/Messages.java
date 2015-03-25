@@ -15438,6 +15438,21 @@ public final class Messages {
      */
     com.google.protobuf.ByteString
         getHostURLBytes();
+
+    // optional string placement = 12;
+    /**
+     * <code>optional string placement = 12;</code>
+     */
+    boolean hasPlacement();
+    /**
+     * <code>optional string placement = 12;</code>
+     */
+    java.lang.String getPlacement();
+    /**
+     * <code>optional string placement = 12;</code>
+     */
+    com.google.protobuf.ByteString
+        getPlacementBytes();
   }
   /**
    * Protobuf type {@code org.apache.slider.api.ContainerInformationProto}
@@ -15551,6 +15566,11 @@ public final class Messages {
             case 90: {
               bitField0_ |= 0x00000200;
               hostURL_ = input.readBytes();
+              break;
+            }
+            case 98: {
+              bitField0_ |= 0x00000400;
+              placement_ = input.readBytes();
               break;
             }
           }
@@ -15921,6 +15941,49 @@ public final class Messages {
       }
     }
 
+    // optional string placement = 12;
+    public static final int PLACEMENT_FIELD_NUMBER = 12;
+    private java.lang.Object placement_;
+    /**
+     * <code>optional string placement = 12;</code>
+     */
+    public boolean hasPlacement() {
+      return ((bitField0_ & 0x00000400) == 0x00000400);
+    }
+    /**
+     * <code>optional string placement = 12;</code>
+     */
+    public java.lang.String getPlacement() {
+      java.lang.Object ref = placement_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          placement_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>optional string placement = 12;</code>
+     */
+    public com.google.protobuf.ByteString
+        getPlacementBytes() {
+      java.lang.Object ref = placement_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        placement_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private void initFields() {
       containerId_ = "";
       component_ = "";
@@ -15933,6 +15996,7 @@ public final class Messages {
       output_ = com.google.protobuf.LazyStringArrayList.EMPTY;
       host_ = "";
       hostURL_ = "";
+      placement_ = "";
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -15978,6 +16042,9 @@ public final class Messages {
       }
       if (((bitField0_ & 0x00000200) == 0x00000200)) {
         output.writeBytes(11, getHostURLBytes());
+      }
+      if (((bitField0_ & 0x00000400) == 0x00000400)) {
+        output.writeBytes(12, getPlacementBytes());
       }
       getUnknownFields().writeTo(output);
     }
@@ -16036,6 +16103,10 @@ public final class Messages {
       if (((bitField0_ & 0x00000200) == 0x00000200)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(11, getHostURLBytes());
+      }
+      if (((bitField0_ & 0x00000400) == 0x00000400)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(12, getPlacementBytes());
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -16112,6 +16183,11 @@ public final class Messages {
         result = result && getHostURL()
             .equals(other.getHostURL());
       }
+      result = result && (hasPlacement() == other.hasPlacement());
+      if (hasPlacement()) {
+        result = result && getPlacement()
+            .equals(other.getPlacement());
+      }
       result = result &&
           getUnknownFields().equals(other.getUnknownFields());
       return result;
@@ -16168,6 +16244,10 @@ public final class Messages {
       if (hasHostURL()) {
         hash = (37 * hash) + HOSTURL_FIELD_NUMBER;
         hash = (53 * hash) + getHostURL().hashCode();
+      }
+      if (hasPlacement()) {
+        hash = (37 * hash) + PLACEMENT_FIELD_NUMBER;
+        hash = (53 * hash) + getPlacement().hashCode();
       }
       hash = (29 * hash) + getUnknownFields().hashCode();
       memoizedHashCode = hash;
@@ -16305,6 +16385,8 @@ public final class Messages {
         bitField0_ = (bitField0_ & ~0x00000200);
         hostURL_ = "";
         bitField0_ = (bitField0_ & ~0x00000400);
+        placement_ = "";
+        bitField0_ = (bitField0_ & ~0x00000800);
         return this;
       }
 
@@ -16379,6 +16461,10 @@ public final class Messages {
           to_bitField0_ |= 0x00000200;
         }
         result.hostURL_ = hostURL_;
+        if (((from_bitField0_ & 0x00000800) == 0x00000800)) {
+          to_bitField0_ |= 0x00000400;
+        }
+        result.placement_ = placement_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -16443,6 +16529,11 @@ public final class Messages {
         if (other.hasHostURL()) {
           bitField0_ |= 0x00000400;
           hostURL_ = other.hostURL_;
+          onChanged();
+        }
+        if (other.hasPlacement()) {
+          bitField0_ |= 0x00000800;
+          placement_ = other.placement_;
           onChanged();
         }
         this.mergeUnknownFields(other.getUnknownFields());
@@ -17096,6 +17187,80 @@ public final class Messages {
   }
   bitField0_ |= 0x00000400;
         hostURL_ = value;
+        onChanged();
+        return this;
+      }
+
+      // optional string placement = 12;
+      private java.lang.Object placement_ = "";
+      /**
+       * <code>optional string placement = 12;</code>
+       */
+      public boolean hasPlacement() {
+        return ((bitField0_ & 0x00000800) == 0x00000800);
+      }
+      /**
+       * <code>optional string placement = 12;</code>
+       */
+      public java.lang.String getPlacement() {
+        java.lang.Object ref = placement_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          placement_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string placement = 12;</code>
+       */
+      public com.google.protobuf.ByteString
+          getPlacementBytes() {
+        java.lang.Object ref = placement_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          placement_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string placement = 12;</code>
+       */
+      public Builder setPlacement(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000800;
+        placement_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string placement = 12;</code>
+       */
+      public Builder clearPlacement() {
+        bitField0_ = (bitField0_ & ~0x00000800);
+        placement_ = getDefaultInstance().getPlacement();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string placement = 12;</code>
+       */
+      public Builder setPlacementBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000800;
+        placement_ = value;
         onChanged();
         return this;
       }
@@ -26869,38 +27034,38 @@ public final class Messages {
       "ed\030\t \001(\005\022\021\n\tcompleted\030\n \001(\005\022\026\n\016totalRequ" +
       "ested\030\013 \001(\005\022\026\n\016failureMessage\030\014 \001(\t\022\027\n\017p" +
       "lacementPolicy\030\r \001(\005\022\022\n\ncontainers\030\016 \003(\t" +
-      "\"\341\001\n\031ContainerInformationProto\022\023\n\013contai" +
+      "\"\364\001\n\031ContainerInformationProto\022\023\n\013contai" +
       "nerId\030\001 \001(\t\022\021\n\tcomponent\030\002 \001(\t\022\020\n\010releas" +
       "ed\030\003 \001(\010\022\r\n\005state\030\004 \001(\005\022\020\n\010exitCode\030\005 \001(" +
       "\005\022\023\n\013diagnostics\030\006 \001(\t\022\022\n\ncreateTime\030\007 \001" +
       "(\003\022\021\n\tstartTime\030\010 \001(\003\022\016\n\006output\030\t \003(\t\022\014\n" +
-      "\004host\030\n \001(\t\022\017\n\007hostURL\030\013 \001(\t\"N\n\024PingInfo" +
-      "rmationProto\022\014\n\004text\030\001 \001(\t\022\014\n\004verb\030\002 \001(\t",
-      "\022\014\n\004body\030\003 \001(\t\022\014\n\004time\030\004 \001(\003\"\026\n\024GetModel" +
-      "RequestProto\"\035\n\033GetModelDesiredRequestPr" +
-      "oto\"$\n\"GetModelDesiredAppconfRequestProt" +
-      "o\"&\n$GetModelDesiredResourcesRequestProt" +
-      "o\"%\n#GetModelResolvedAppconfRequestProto" +
-      "\"\'\n%GetModelResolvedResourcesRequestProt" +
-      "o\"#\n!GetModelLiveResourcesRequestProto\"\037" +
-      "\n\035GetLiveContainersRequestProto\"u\n\036GetLi" +
-      "veContainersResponseProto\022\r\n\005names\030\001 \003(\t" +
-      "\022D\n\ncontainers\030\002 \003(\01320.org.apache.slider",
-      ".api.ContainerInformationProto\"3\n\034GetLiv" +
-      "eContainerRequestProto\022\023\n\013containerId\030\001 " +
-      "\002(\t\"\037\n\035GetLiveComponentsRequestProto\"u\n\036" +
-      "GetLiveComponentsResponseProto\022\r\n\005names\030" +
-      "\001 \003(\t\022D\n\ncomponents\030\002 \003(\01320.org.apache.s" +
-      "lider.api.ComponentInformationProto\",\n\034G" +
-      "etLiveComponentRequestProto\022\014\n\004name\030\001 \002(" +
-      "\t\"$\n\"GetApplicationLivenessRequestProto\"" +
-      "\023\n\021EmptyPayloadProto\" \n\020WrappedJsonProto" +
-      "\022\014\n\004json\030\001 \002(\t\"h\n\037GetCertificateStoreReq",
-      "uestProto\022\020\n\010hostname\030\001 \001(\t\022\023\n\013requester" +
-      "Id\030\002 \002(\t\022\020\n\010password\030\003 \002(\t\022\014\n\004type\030\004 \002(\t" +
-      "\"1\n GetCertificateStoreResponseProto\022\r\n\005" +
-      "store\030\001 \002(\014B-\n\033org.apache.slider.api.pro" +
-      "toB\010Messages\210\001\001\240\001\001"
+      "\004host\030\n \001(\t\022\017\n\007hostURL\030\013 \001(\t\022\021\n\tplacemen" +
+      "t\030\014 \001(\t\"N\n\024PingInformationProto\022\014\n\004text\030",
+      "\001 \001(\t\022\014\n\004verb\030\002 \001(\t\022\014\n\004body\030\003 \001(\t\022\014\n\004tim" +
+      "e\030\004 \001(\003\"\026\n\024GetModelRequestProto\"\035\n\033GetMo" +
+      "delDesiredRequestProto\"$\n\"GetModelDesire" +
+      "dAppconfRequestProto\"&\n$GetModelDesiredR" +
+      "esourcesRequestProto\"%\n#GetModelResolved" +
+      "AppconfRequestProto\"\'\n%GetModelResolvedR" +
+      "esourcesRequestProto\"#\n!GetModelLiveReso" +
+      "urcesRequestProto\"\037\n\035GetLiveContainersRe" +
+      "questProto\"u\n\036GetLiveContainersResponseP" +
+      "roto\022\r\n\005names\030\001 \003(\t\022D\n\ncontainers\030\002 \003(\0132",
+      "0.org.apache.slider.api.ContainerInforma" +
+      "tionProto\"3\n\034GetLiveContainerRequestProt" +
+      "o\022\023\n\013containerId\030\001 \002(\t\"\037\n\035GetLiveCompone" +
+      "ntsRequestProto\"u\n\036GetLiveComponentsResp" +
+      "onseProto\022\r\n\005names\030\001 \003(\t\022D\n\ncomponents\030\002" +
+      " \003(\01320.org.apache.slider.api.ComponentIn" +
+      "formationProto\",\n\034GetLiveComponentReques" +
+      "tProto\022\014\n\004name\030\001 \002(\t\"$\n\"GetApplicationLi" +
+      "venessRequestProto\"\023\n\021EmptyPayloadProto\"" +
+      " \n\020WrappedJsonProto\022\014\n\004json\030\001 \002(\t\"h\n\037Get",
+      "CertificateStoreRequestProto\022\020\n\010hostname" +
+      "\030\001 \001(\t\022\023\n\013requesterId\030\002 \002(\t\022\020\n\010password\030" +
+      "\003 \002(\t\022\014\n\004type\030\004 \002(\t\"1\n GetCertificateSto" +
+      "reResponseProto\022\r\n\005store\030\001 \002(\014B-\n\033org.ap" +
+      "ache.slider.api.protoB\010Messages\210\001\001\240\001\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -27050,7 +27215,7 @@ public final class Messages {
           internal_static_org_apache_slider_api_ContainerInformationProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_ContainerInformationProto_descriptor,
-              new java.lang.String[] { "ContainerId", "Component", "Released", "State", "ExitCode", "Diagnostics", "CreateTime", "StartTime", "Output", "Host", "HostURL", });
+              new java.lang.String[] { "ContainerId", "Component", "Released", "State", "ExitCode", "Diagnostics", "CreateTime", "StartTime", "Output", "Host", "HostURL", "Placement", });
           internal_static_org_apache_slider_api_PingInformationProto_descriptor =
             getDescriptor().getMessageTypes().get(24);
           internal_static_org_apache_slider_api_PingInformationProto_fieldAccessorTable = new

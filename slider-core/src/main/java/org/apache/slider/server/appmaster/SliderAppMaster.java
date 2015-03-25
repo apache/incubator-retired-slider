@@ -113,6 +113,7 @@ import org.apache.slider.providers.agent.AgentKeys;
 import org.apache.slider.providers.slideram.SliderAMClientProvider;
 import org.apache.slider.providers.slideram.SliderAMProviderService;
 import org.apache.slider.server.appmaster.actions.ActionRegisterServiceInstance;
+import org.apache.slider.server.appmaster.actions.EscalateOutstandingRequests;
 import org.apache.slider.server.appmaster.actions.RegisterComponentInstance;
 import org.apache.slider.server.appmaster.actions.QueueExecutor;
 import org.apache.slider.server.appmaster.actions.QueueService;
@@ -141,7 +142,6 @@ import org.apache.slider.server.appmaster.state.ProviderAppState;
 import org.apache.slider.server.appmaster.operations.RMOperationHandler;
 import org.apache.slider.server.appmaster.state.RoleInstance;
 import org.apache.slider.server.appmaster.state.RoleStatus;
-import org.apache.slider.server.appmaster.state.SimpleReleaseSelector;
 import org.apache.slider.server.appmaster.web.AgentService;
 import org.apache.slider.server.appmaster.web.rest.InsecureAmFilterInitializer;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentWebApp;
@@ -863,7 +863,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       // build up environment variables that the AM wants set in every container
       // irrespective of provider and role.
-      envVars = new HashMap<String, String>();
+      envVars = new HashMap<>();
       if (hadoop_user_name != null) {
         envVars.put(HADOOP_USER_NAME, hadoop_user_name);
       }
@@ -918,7 +918,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     initCompleted.set(true);
 
     scheduleFailureWindowResets(instanceDefinition.getResources());
-
+    scheduleEscalation(instanceDefinition.getInternal());
 
     try {
 
@@ -1567,17 +1567,15 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   @Override //AMRMClientAsync
   public void onContainersAllocated(List<Container> allocatedContainers) {
     LOG_YARN.info("onContainersAllocated({})", allocatedContainers.size());
-    List<ContainerAssignment> assignments = new ArrayList<ContainerAssignment>();
-    List<AbstractRMOperation> operations = new ArrayList<AbstractRMOperation>();
+    List<ContainerAssignment> assignments = new ArrayList<>();
+    List<AbstractRMOperation> operations = new ArrayList<>();
     
     //app state makes all the decisions
     appState.onContainersAllocated(allocatedContainers, assignments, operations);
 
     //for each assignment: instantiate that role
     for (ContainerAssignment assignment : assignments) {
-      RoleStatus role = assignment.role;
-      Container container = assignment.container;
-      launchService.launchRole(container, role, getInstanceDefinition());
+      launchService.launchRole(assignment, getInstanceDefinition());
     }
     
     //for all the operations, exec them
@@ -1664,12 +1662,27 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       log.info(
           "Scheduling the failure window reset interval to every {} seconds",
           seconds);
-      RenewingAction<ResetFailureWindow> renew = new RenewingAction<ResetFailureWindow>(
+      RenewingAction<ResetFailureWindow> renew = new RenewingAction<>(
           reset, seconds, seconds, TimeUnit.SECONDS, 0);
       actionQueues.renewing("failures", renew);
     } else {
       log.info("Failure window reset interval is not set");
     }
+  }
+
+  /**
+   * Schedule the escalation action
+   * @param internal
+   * @throws BadConfigException
+   */
+  private void scheduleEscalation(ConfTree internal) throws BadConfigException {
+    EscalateOutstandingRequests escalate = new EscalateOutstandingRequests();
+    ConfTreeOperations ops = new ConfTreeOperations(internal);
+    int seconds = ops.getGlobalOptions().getOptionInt(InternalKeys.ESCALATION_CHECK_INTERVAL,
+        InternalKeys.DEFAULT_ESCALATION_CHECK_INTERVAL);
+    RenewingAction<EscalateOutstandingRequests> renew = new RenewingAction<>(
+        escalate, seconds, seconds, TimeUnit.SECONDS, 0);
+    actionQueues.renewing("escalation", renew);
   }
   
   /**
@@ -1728,13 +1741,27 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       queue(new ActionStopSlider(e));
     }
   }
-  
+
+  /**
+   * Escalate operation as triggered by external timer.
+   * <p>
+   * Get the list of new operations off the AM, then executest them.
+   */
+  public void escalateOutstandingRequests() {
+    List<AbstractRMOperation> operations = appState.escalateOutstandingRequests();
+    providerRMOperationHandler.execute(operations);
+    execute(operations);
+  }
+
+
   /**
    * Shutdown operation: release all containers
    */
   private void releaseAllContainers() {
+    List<AbstractRMOperation> operations = appState.releaseAllContainers();
+    providerRMOperationHandler.execute(operations);
     //now apply the operations
-    execute(appState.releaseAllContainers());
+    execute(operations);
   }
 
   /**
@@ -1808,7 +1835,11 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     return rmOperationHandler.cancelContainerRequests(priority1, priority2, count);
   }
 
- 
+  @Override
+  public void cancelSingleRequest(AMRMClient.ContainerRequest request) {
+    rmOperationHandler.cancelSingleRequest(request);
+  }
+
 /* =================================================================== */
 /* END */
 /* =================================================================== */
