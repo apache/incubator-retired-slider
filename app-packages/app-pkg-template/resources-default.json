@@ -3,6 +3,8 @@
   "metadata" : {
   },
   "global" : {
+    "yarn.log.include.patterns": "",
+    "yarn.log.exclude.patterns": ""
   },
   "components": {
     "slider-appmaster": {
@@ -10,7 +12,11 @@
     "MYAPP_COMPONENT": {
       "yarn.role.priority": "1",
       "yarn.component.instances": "1",
-      "yarn.memory": "256"
+      "yarn.memory": "256",
+      "yarn.vcores": "1",
+      "yarn.component.placement.policy": "0",
+      "yarn.container.failure.threshold": "5",
+      "yarn.placement.escalate.seconds": "60"
     }
   }
 }
