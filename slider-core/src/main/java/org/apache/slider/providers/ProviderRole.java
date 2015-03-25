@@ -29,8 +29,8 @@ import org.apache.slider.api.ResourceKeys;
 public final class ProviderRole {
   public final String name;
   public final int id;
-  public final int placementPolicy;
-  public final int nodeFailureThreshold;
+  public int placementPolicy;
+  public int nodeFailureThreshold;
   public final long placementTimeoutSeconds;
 
   public ProviderRole(String name, int id) {

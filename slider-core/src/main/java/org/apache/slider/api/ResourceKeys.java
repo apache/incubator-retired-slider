@@ -140,6 +140,10 @@ public interface ResourceKeys {
    */
   int DEFAULT_NODE_FAILURE_THRESHOLD = 3;
 
+  /**
+   * Failure threshold is unlimited: {@value}
+   */
+  int NODE_FAILURE_THRESHOLD_UNLIMITED = -1;
 
   /**
    * Time in seconds to escalate placement delay

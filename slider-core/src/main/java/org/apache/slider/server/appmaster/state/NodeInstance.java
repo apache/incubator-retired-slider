@@ -198,6 +198,22 @@ public class NodeInstance {
     return hostname.hashCode();
   }
 
+
+  /**
+   * Predicate to query if the number of recent failures of a role
+   * on this node exceeds that role's failure threshold.
+   * If there is no record of a deployment of that role on this
+   * node, the failure count is taken as "0".
+   * @param role role to look up
+   * @return true if the failure rate is above the threshold.
+   */
+  public boolean exceedsFailureThreshold(RoleStatus role) {
+    NodeEntry entry = get(role.getKey());
+    int numFailuresOnLastHost = entry != null ? entry.getFailedRecently() : 0;
+    int failureThreshold = role.getNodeFailureThreshold();
+    return failureThreshold < 0 || numFailuresOnLastHost > failureThreshold;
+  }
+
   /**
    * A comparator for sorting entries where the node is preferred over another.
    * <p>
@@ -218,20 +234,6 @@ public class NodeInstance {
     public int compare(NodeInstance o1, NodeInstance o2) {
       NodeEntry left = o1.get(role);
       NodeEntry right = o2.get(role);
-
-/*      
-      // sort by failure count 
-      int failL = left != null ? left.getFailedRecently() : -1;
-      int failR = right != null ? right.getFailedRecently() : -1;
-      
-      if (failL < failR) {
-        return 1;
-      }
-      if (failR > failL) {
-        return -1;
-      }
-    */  
-      // failure counts are equal: compare age
       long ageL = left != null ? left.getLastUsed() : 0;
       long ageR = right != null ? right.getLastUsed() : 0;
       
@@ -244,7 +246,7 @@ public class NodeInstance {
       return 0;
     }
   }
-  
+
   /**
    * A comparator for sorting entries where the role is newer than
    * the other. 

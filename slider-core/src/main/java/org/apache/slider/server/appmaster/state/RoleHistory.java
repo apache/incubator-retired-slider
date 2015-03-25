@@ -485,10 +485,11 @@ public class RoleHistory {
       // no data locality policy
       return null;
     }
-    int roleKey = role.getKey();
+    int roleId = role.getKey();
+    boolean strictPlacement = role.isStrictPlacement();
     NodeInstance nodeInstance = null;
     // get the list of possible targets
-    List<NodeInstance> targets = getNodesForRoleId(roleKey);
+    List<NodeInstance> targets = getNodesForRoleId(roleId);
     if (targets == null) {
       // add an empty list here for ease downstream
       targets = new ArrayList<>(0);
@@ -498,8 +499,15 @@ public class RoleHistory {
     // spin until there's a candidate
     while (!targets.isEmpty() && nodeInstance == null) {
       NodeInstance head = targets.remove(0);
-      if (head.getActiveRoleInstances(roleKey) == 0) {
-        nodeInstance = head;
+      if (head.getActiveRoleInstances(roleId) == 0) {
+        // no active instances: check failure statistics
+        if (strictPlacement || !head.exceedsFailureThreshold(role)) {
+          nodeInstance = head;
+        } else {
+          // too many failures for this node
+          log.info("Recent node failures is higher than threshold {}. Not requesting host {}",
+              role.getNodeFailureThreshold(), head.hostname);
+        }
       }
     }
     if (nodeInstance == null) {
