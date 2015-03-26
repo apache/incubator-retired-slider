@@ -204,6 +204,7 @@ import static org.apache.slider.common.params.SliderActions.*;
 public class SliderClient extends AbstractSliderLaunchedService implements RunService,
     SliderExitCodes, SliderKeys, ErrorStrings, SliderClientAPI {
   private static final Logger log = LoggerFactory.getLogger(SliderClient.class);
+  private static PrintStream clientOutputStream = System.out;
 
   // value should not be changed without updating string find in slider.py
   private static final String PASSWORD_PROMPT = "Enter password for";
@@ -1077,26 +1078,49 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   @Override
   public int actionPackage(ActionPackageArgs actionPackageInfo)
       throws YarnException, IOException {
+    initializeOutputStream(actionPackageInfo.out);
+    int exitCode = -1;
     if (actionPackageInfo.install) {
-      return actionPackageInstall(actionPackageInfo);
+      exitCode = actionPackageInstall(actionPackageInfo);
     }
     if (actionPackageInfo.delete) {
-      return actionPackageDelete(actionPackageInfo);
+      exitCode = actionPackageDelete(actionPackageInfo);
     }
     if (actionPackageInfo.list) {
-      return actionPackageList();
+      exitCode = actionPackageList();
     }
     if (actionPackageInfo.instances) {
-      return actionPackageInstances();
+      exitCode = actionPackageInstances();
+    }
+    finalizeOutputStream(actionPackageInfo.out);
+    if (exitCode != -1) {
+      return exitCode;
     }
     throw new BadCommandArgumentsException(
         "Select valid package operation option");
   }
 
+  private void initializeOutputStream(String outFile)
+      throws FileNotFoundException {
+    if (outFile != null) {
+      clientOutputStream = new PrintStream(new FileOutputStream(outFile));
+    } else {
+      clientOutputStream = System.out;
+    }
+  }
+
+  private void finalizeOutputStream(String outFile) {
+    if (outFile != null && clientOutputStream != null) {
+      clientOutputStream.flush();
+      clientOutputStream.close();
+    }
+    clientOutputStream = System.out;
+  }
+
   private int actionPackageInstances() throws YarnException, IOException {
     Map<String, Path> persistentInstances = sliderFileSystem
         .listPersistentInstances();
-    if(persistentInstances.isEmpty()) {
+    if (persistentInstances.isEmpty()) {
       log.info("No slider cluster specification available");
       return EXIT_SUCCESS;
     }
@@ -1105,26 +1129,39 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     FileSystem fs = sliderFileSystem.getFileSystem();
     Iterator<Map.Entry<String, Path>> instanceItr = persistentInstances
         .entrySet().iterator();
-    log.info("List of application with its package name and path");
+    log.info("List of applications with its package name and path");
+    println("%-25s  %15s  %s", "Cluster Name", "Package Name",
+        "Application Location");
     while(instanceItr.hasNext()) {
       Map.Entry<String, Path> entry = instanceItr.next();
       String clusterName = entry.getKey();
       Path clusterPath = entry.getValue();
       AggregateConf instanceDefinition = loadInstanceDefinitionUnresolved(
           clusterName, clusterPath);
-      Path appDefPath = new Path(instanceDefinition.getAppConfOperations()
-          .getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF));
+      Path appDefPath = null;
       try {
-        if (appDefPath.toString().contains(pkgPathValue)
+        appDefPath = new Path(instanceDefinition.getAppConfOperations()
+            .getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF));
+      } catch (BadConfigException e) {
+        // Invalid cluster state, so move on to next. No need to log anything
+        // as this is just listing of instances.
+        continue;
+      }
+      if (!appDefPath.isUriPathAbsolute()) {
+        appDefPath = new Path(fs.getHomeDirectory(), appDefPath);
+      }
+      String appDefPathStr = appDefPath.toUri().getPath();
+      try {
+        if (appDefPathStr.contains(pkgPathValue)
             && fs.isFile(appDefPath)) {
           String packageName = appDefPath.getParent().getName();
-          println("\t" + clusterName + "\t" + packageName + "\t"
-              + appDefPath.toString());
+          println("%-25s  %15s  %s", clusterName, packageName,
+              appDefPathStr);
         }
       } catch(IOException e) {
         if(log.isDebugEnabled()) {
           log.debug(clusterName + " application definition path "
-              + appDefPath.toString() + " is not found.");
+              + appDefPathStr + " is not found.");
         }
       }
     }
@@ -3836,7 +3873,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    */
   @SuppressWarnings("UseOfSystemOutOrSystemErr")
   private static void print(CharSequence src) {
-    System.out.append(src);
+    clientOutputStream.append(src);
   }
 
   /**

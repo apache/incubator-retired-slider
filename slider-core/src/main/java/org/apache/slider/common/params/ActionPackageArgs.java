@@ -58,6 +58,10 @@ public class ActionPackageArgs extends AbstractActionArgs {
   @Parameter(names = {ARG_REPLACE_PKG}, description = "Overwrite existing package")
   public boolean replacePkg = false;
 
+  @Parameter(names = {ARG_OUTPUT, ARG_OUTPUT_SHORT},
+      description = "Output file for package data")
+  public String out;
+
   /**
    * Get the min #of params expected
    * @return the min number of params in the {@link #parameters} field
