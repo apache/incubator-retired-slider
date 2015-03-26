@@ -488,30 +488,34 @@ public class RoleHistory {
     int roleId = role.getKey();
     boolean strictPlacement = role.isStrictPlacement();
     NodeInstance nodeInstance = null;
-    // get the list of possible targets
+    // Get the list of possible targets.
+    // This is a live list: changes here are preserved
     List<NodeInstance> targets = getNodesForRoleId(roleId);
     if (targets == null) {
-      // add an empty list here for ease downstream
-      targets = new ArrayList<>(0);
+      // nothing to allocate on
+      return null;
     }
+
     int cnt = targets.size();
     log.debug("There are {} node(s) to consider for {}", cnt, role.getName());
-    // spin until there's a candidate
-    while (!targets.isEmpty() && nodeInstance == null) {
-      NodeInstance head = targets.remove(0);
-      if (head.getActiveRoleInstances(roleId) == 0) {
+    for (int i = 0; i < cnt  && nodeInstance == null; i++) {
+      NodeInstance candidate = targets.get(i);
+      if (candidate.getActiveRoleInstances(roleId) == 0) {
         // no active instances: check failure statistics
-        if (strictPlacement || !head.exceedsFailureThreshold(role)) {
-          nodeInstance = head;
+        if (strictPlacement || !candidate.exceedsFailureThreshold(role)) {
+          targets.remove(i);
+          // exit criteria for loop is now met
+          nodeInstance = candidate;
         } else {
           // too many failures for this node
           log.info("Recent node failures is higher than threshold {}. Not requesting host {}",
-              role.getNodeFailureThreshold(), head.hostname);
+              role.getNodeFailureThreshold(), candidate.hostname);
         }
       }
     }
+
     if (nodeInstance == null) {
-      log.info("No historical node found for {}", role.getName());
+      log.info("No node found for {}", role.getName());
     }
     return nodeInstance;
   }
