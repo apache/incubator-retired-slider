@@ -19,7 +19,6 @@
 package org.apache.slider.server.appmaster.model.history
 
 import org.apache.hadoop.yarn.api.records.Resource
-import org.apache.hadoop.yarn.client.api.AMRMClient
 import org.apache.slider.providers.PlacementPolicy
 import org.apache.slider.providers.ProviderRole
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
@@ -206,36 +205,6 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest {
     final List<AbstractRMOperation> escalations4 = tracker.escalateOutstandingRequests(now)
     assert escalations4.empty
 
-  }
-
-  @Test
-  public void testPlacementSkipsFailures() throws Throwable {
-    final def (res0, outstanding0) = newRequest(role0Status)
-    def entry = host1.getOrCreate(role0Status.key)
-    entry.containerCompleted(false)
-    entry.containerCompleted(false)
-    entry.containerCompleted(false)
-    assert entry.failedRecently == 3
-    final AMRMClient.ContainerRequest initialRequest =
-        outstanding0.buildContainerRequest(res0, role0Status, 0, null)
-    assert initialRequest.relaxLocality
-    assert initialRequest.nodes == null
-  }
-
-  @Test
-  public void testStrictPlacementDoesntSkipFailures() throws Throwable {
-    def roleStatus = role1Status
-    assert roleStatus.strictPlacement
-    final def (res0, outstanding0) = newRequest(roleStatus)
-    def entry = host1.getOrCreate(roleStatus.key)
-    entry.containerCompleted(false)
-    entry.containerCompleted(false)
-    entry.containerCompleted(false)
-    assert entry.failedRecently == 3
-    final AMRMClient.ContainerRequest initialRequest =
-        outstanding0.buildContainerRequest(res0, roleStatus, 0, null)
-    assert !initialRequest.relaxLocality
-    assert initialRequest.nodes[0] == host1.hostname
   }
 
   /**

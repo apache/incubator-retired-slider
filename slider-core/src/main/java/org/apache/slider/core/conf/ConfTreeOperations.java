@@ -148,7 +148,7 @@ public class ConfTreeOperations {
       return operations;
     }
     //create a new instances
-    Map<String, String> map = new HashMap<String, String>();
+    Map<String, String> map = new HashMap<>();
     confTree.components.put(name, map);
     return new MapOperations(name, map);
   }

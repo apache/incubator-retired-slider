@@ -184,7 +184,7 @@ class MockFactory implements MockRoles {
 
   def roleMap(int count) {
     return [
-        (ResourceKeys.COMPONENT_INSTANCES):count.toString(),
+        (ResourceKeys.COMPONENT_INSTANCES): count.toString(),
     ]
   }
 

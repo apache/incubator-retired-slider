@@ -35,6 +35,7 @@ import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
 import org.apache.slider.server.appmaster.state.AppState
 import org.apache.slider.server.appmaster.state.ContainerAssignment
+import org.apache.slider.server.appmaster.state.NodeEntry
 import org.apache.slider.server.appmaster.state.NodeInstance
 import org.apache.slider.server.appmaster.state.RoleInstance
 import org.apache.slider.server.appmaster.state.RoleStatus
@@ -147,7 +148,7 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
 
 
   public NodeInstance nodeInstance(long age, int live0, int live1=0, int live2=0) {
-    NodeInstance ni = new NodeInstance("age${age}live[${live0},${live1},$live2]",
+    NodeInstance ni = new NodeInstance("age${age}-[${live0},${live1},$live2]",
                                        MockFactory.ROLE_COUNT)
     ni.getOrCreate(0).lastUsed = age
     ni.getOrCreate(0).live = live0;
@@ -333,4 +334,18 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
     return cids
   }
 
+  /**
+   * Record a node as failing
+   * @param node
+   * @param id
+   * @param count
+   * @return the entry
+   */
+  public NodeEntry recordAsFailed(NodeInstance node, int id, int count) {
+    def entry = node.getOrCreate(id)
+    1.upto(count) {
+      entry.containerCompleted(false)
+    }
+    entry
+  }
 }

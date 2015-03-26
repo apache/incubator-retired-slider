@@ -56,28 +56,28 @@ public final class ConfTree {
   /**
    * Metadata
    */
-  public Map<String, Object> metadata = new HashMap<String, Object >(INITAL_MAP_CAPACITY);
+  public Map<String, Object> metadata = new HashMap<>(INITAL_MAP_CAPACITY);
 
 
   /**
    * Global options
    */
   public Map<String, String> global =
-    new HashMap<String, String>(INITAL_MAP_CAPACITY);
+    new HashMap<>(INITAL_MAP_CAPACITY);
 
 
   /**
    * Credentials
    */
   public Map<String, List<String>> credentials =
-      new HashMap<String, List<String>>(INITAL_MAP_CAPACITY);
+      new HashMap<>(INITAL_MAP_CAPACITY);
 
   /**
    * Role options, 
    * role -> option -> value
    */
   public Map<String, Map<String, String>> components =
-    new HashMap<String, Map<String, String>>(INITAL_MAP_CAPACITY);
+    new HashMap<>(INITAL_MAP_CAPACITY);
 
 
   /**
