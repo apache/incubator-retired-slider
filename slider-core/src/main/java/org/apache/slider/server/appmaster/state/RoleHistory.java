@@ -166,6 +166,20 @@ public class RoleHistory {
   }
 
   /**
+   * Lookup a role by ID
+   * @param roleId role Id
+   * @return role or null if not found
+   */
+  public ProviderRole lookupRole(int roleId) {
+    for (ProviderRole role : providerRoles) {
+      if (role.id == roleId) {
+        return role;
+      }
+    }
+    return null;
+  }
+
+  /**
    * Clear the lists of available nodes
    */
   private synchronized void resetAvailableNodeLists() {

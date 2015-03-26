@@ -30,6 +30,10 @@
         "type": "int"
       },
       {
+        "name": "rolename",
+        "type": "string"
+      },
+      {
         "name": "active",
         "type": "boolean"
       },

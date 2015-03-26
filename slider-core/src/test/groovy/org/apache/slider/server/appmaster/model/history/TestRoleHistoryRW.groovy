@@ -255,4 +255,17 @@ class TestRoleHistoryRW extends BaseMockAppStateTest {
     assert fs.exists(badfile )
   }
 
+  /**
+   * Test that a v1 JSON file can be read. This is the one without any name
+   * @throws Throwable
+   */
+  @Test
+  public void testReloadDataV1() throws Throwable {
+    String source = "org/apache/slider/server/avro/history-v01-4-role.json"
+    RoleHistoryWriter writer = new RoleHistoryWriter()
+    RoleHistory roleHistory = new RoleHistory(MockFactory.ROLES)
+    assert 4 == writer.read(source, roleHistory)
+
+  }
+
 }

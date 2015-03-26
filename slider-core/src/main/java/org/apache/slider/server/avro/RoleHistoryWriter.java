@@ -39,6 +39,7 @@ import org.apache.hadoop.fs.PathFilter;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadConfigException;
+import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.server.appmaster.state.NodeEntry;
 import org.apache.slider.server.appmaster.state.NodeInstance;
 import org.apache.slider.server.appmaster.state.RoleHistory;
@@ -106,10 +107,12 @@ public class RoleHistoryWriter {
       Collection<NodeInstance> instances = history.cloneNodemap().values();
       for (NodeInstance instance : instances) {
         for (int role = 0; role < roles; role++) {
+          ProviderRole providerRole = history.lookupRole(role);
+          String rolename = providerRole != null ? providerRole.name : "";
           NodeEntry nodeEntry = instance.get(role);
 
           if (nodeEntry != null) {
-            NodeEntryRecord ner = build(nodeEntry, role, instance.hostname);
+            NodeEntryRecord ner = build(nodeEntry, role, "", instance.hostname);
             record = new RoleHistoryRecord(ner);
             writer.write(record, encoder);
             count++;
@@ -121,7 +124,6 @@ public class RoleHistoryWriter {
       footer.setCount(count);
       writer.write(new RoleHistoryRecord(footer), encoder);
       encoder.flush();
-      out.close();
       return count;
     } finally {
       out.close();
@@ -140,8 +142,12 @@ public class RoleHistoryWriter {
    * @return no of records written
    * @throws IOException IO failures
    */
-  public long write(FileSystem fs, Path path, boolean overwrite,
-                    RoleHistory history, long savetime) throws IOException {
+  public long write(FileSystem fs,
+      Path path,
+      boolean overwrite,
+      RoleHistory history,
+      long savetime)
+      throws IOException {
     FSDataOutputStream out = fs.create(path, overwrite);
     return write(out, history, savetime);
   }
@@ -159,10 +165,18 @@ public class RoleHistoryWriter {
     Path path = new Path(historyPath, filename);
     return path;
   }
-  
-  private NodeEntryRecord build(NodeEntry entry, int role, String hostname) {
+
+  /**
+   * Build a {@link NodeEntryRecord} from a node entry; include whether
+   * the node is in use and when it was last used.
+   * @param entry entry count
+   * @param role role index
+   * @param rolename
+   *@param hostname name  @return
+   */
+  private NodeEntryRecord build(NodeEntry entry, int role, String rolename, String hostname) {
     NodeEntryRecord record = new NodeEntryRecord(
-      hostname, role, entry.getLive() > 0, entry.getLastUsed()
+      hostname, role, rolename, entry.getLive() > 0, entry.getLastUsed()
     );
     return record;
   }
