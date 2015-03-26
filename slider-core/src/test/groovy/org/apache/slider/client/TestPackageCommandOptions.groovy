@@ -22,14 +22,13 @@ import java.io.File;
 import java.io.IOException;
 
 import org.apache.commons.io.FileUtils
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.fs.RawLocalFileSystem
-import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 
 import org.apache.slider.agent.AgentMiniClusterTestBase
-import org.apache.slider.common.params.ActionPackageArgs
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.ClientArgs
 import org.apache.slider.common.params.SliderActions
@@ -37,9 +36,7 @@ import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.main.ServiceLauncher
-import org.apache.slider.core.main.ServiceLauncherBaseTest;
 import org.apache.slider.providers.agent.AgentKeys
-import org.apache.slider.test.YarnZKMiniClusterTestBase
 
 import org.junit.Before;
 import org.junit.Test;
@@ -54,7 +51,7 @@ class TestPackageCommandOptions extends AgentMiniClusterTestBase {
 
   @Before
   public void setupFilesystem() {
-    org.apache.hadoop.fs.FileSystem fileSystem = new RawLocalFileSystem()
+    FileSystem fileSystem = new RawLocalFileSystem()
     YarnConfiguration configuration = SliderUtils.createConfiguration()
     fileSystem.setConf(configuration)
     testFileSystem = new SliderFileSystem(fileSystem, configuration)
