@@ -21,6 +21,7 @@
 First argument is the name of cluster instance
 """
 import os
+import subprocess
 from os.path import expanduser
 from os.path import exists
 import glob
@@ -45,17 +46,6 @@ import hashlib
 import random
 import httplib, ssl
 
-SLIDER_DIR = os.getenv('SLIDER_HOME', None)
-if SLIDER_DIR == None or (not os.path.exists(SLIDER_DIR)):
-  SLIDER_CMD = which("slider")
-  if SLIDER_DIR == None:
-    print "Unable to find SLIDER_HOME or slider command. Please configure SLIDER_HOME before running hbase-slider"
-    sys.exit(1)
-else:
-  SLIDER_CMD = os.path.join(SLIDER_DIR, 'bin', 'slider.py')
-
-HBASE_TMP_DIR=os.path.join(tempfile.gettempdir(), "hbase-temp")
-
 # find path to given command
 def which(program):
     def is_exe(fpath):
@@ -72,6 +62,20 @@ def which(program):
             if is_exe(exe_file):
                 return exe_file
     return None
+
+SLIDER_DIR = os.getenv('SLIDER_HOME', None)
+if SLIDER_DIR == None or (not os.path.exists(SLIDER_DIR)):
+  SLIDER_CMD = which("slider")
+  if SLIDER_DIR == None:
+    if os.path.exists("/usr/bin/slider"):
+      SLIDER_CMD = "/usr/bin/slider"
+    else:
+      print "Unable to find SLIDER_HOME or slider command. Please configure SLIDER_HOME before running hbase-slider"
+      sys.exit(1)
+else:
+  SLIDER_CMD = os.path.join(SLIDER_DIR, 'bin', 'slider.py')
+
+HBASE_TMP_DIR=os.path.join(tempfile.gettempdir(), "hbase-temp")
 
 # call slider command
 def call(cmd):
@@ -221,6 +225,7 @@ except getopt.GetoptError as err:
   print str(err)
   sys.exit(2)
 
+cluster_instance=args[0]
 local_conf_dir=os.path.join(home, cluster_instance, 'conf')
 hbase_conf_dir="/etc/hbase/conf"
 ttl=0
@@ -232,7 +237,6 @@ for o, a in opts:
   elif o == "--ttl":
     ttl = a
 
-cluster_instance=args[0]
 if len(args) > 1:
   if args[1] == 'quicklinks':
     quicklinks(cluster_instance)
