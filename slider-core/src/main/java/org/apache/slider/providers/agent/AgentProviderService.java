@@ -260,8 +260,8 @@ public class AgentProviderService extends AbstractProviderService implements
   // Reads the metainfo.xml in the application package and loads it
   private void buildMetainfo(AggregateConf instanceDefinition,
                              SliderFileSystem fileSystem) throws IOException, SliderException {
-    String appDef = instanceDefinition.getAppConfOperations()
-        .getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
+    String appDef = SliderUtils.getApplicationDefinitionPath(instanceDefinition
+        .getAppConfOperations());
 
     if (metaInfo == null) {
       synchronized (syncLock) {
@@ -304,8 +304,8 @@ public class AgentProviderService extends AbstractProviderService implements
       IOException,
       SliderException {
 
-    String appDef = instanceDefinition.getAppConfOperations().
-        getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
+    String appDef = SliderUtils.getApplicationDefinitionPath(instanceDefinition
+        .getAppConfOperations());
 
     initializeApplicationConfiguration(instanceDefinition, fileSystem);
 

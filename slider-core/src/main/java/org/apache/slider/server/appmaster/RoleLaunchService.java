@@ -23,6 +23,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.MapOperations;
@@ -217,6 +218,8 @@ public class RoleLaunchService
         instance.command = commandsAsString;
         instance.role = containerRole;
         instance.roleId = role.id;
+        instance.appVersion = instanceDefinition.getAppConfOperations()
+            .getGlobalOptions().get(SliderKeys.APP_VERSION);
         instance.environment = envDescription;
         int delay = appComponent.getOptionInt(
             AgentKeys.KEY_CONTAINER_LAUNCH_DELAY, 0);

@@ -9,6 +9,7 @@
     "slider.component.keystore.credential.alias.property": "rpc.javax.net.ssl.keyStorePassword",
     "slider.component.truststore.credential.alias.property": "rpc.javax.net.ssl.trustStorePassword",
 
+    "site.global.app_version": "${accumulo.version}",
     "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/accumulo-${accumulo.version}",
     "site.global.app_user": "${app.user}",
     "site.global.user_group": "${app.user.group}",

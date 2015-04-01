@@ -45,6 +45,7 @@ env_sh_template = config['configurations']['accumulo-env']['content']
 
 # accumulo local directory structure
 accumulo_root = config['configurations']['global']['app_root']
+app_version = config['configurations']['global']['app_version']
 app_name = config['clusterName']
 conf_dir = format("{accumulo_root}/conf")
 log_dir = config['configurations']['global']['app_log_dir']

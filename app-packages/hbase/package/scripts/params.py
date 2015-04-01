@@ -26,6 +26,7 @@ import status_params
 config = Script.get_config()
 
 hbase_root = config['configurations']['global']['app_root']
+app_version = config['configurations']['global']['app_version']
 app_name = config['clusterName']
 conf_dir = format("{hbase_root}/conf")
 daemon_script = format("{hbase_root}/bin/hbase-daemon.sh")

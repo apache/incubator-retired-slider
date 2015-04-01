@@ -8,6 +8,7 @@
     "create.default.zookeeper.node": "true",
 
     "site.global.app_user": "hadoop",
+    "site.global.app_version": "${storm.version}",
     "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/storm-${pkg.version}",
     "site.global.user_group": "hadoop",
 

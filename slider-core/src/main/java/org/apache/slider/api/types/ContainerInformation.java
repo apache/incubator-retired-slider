@@ -31,6 +31,7 @@ public class ContainerInformation {
   
   public String containerId;
   public String component;
+  public String appVersion;
   public Boolean released;
   public int state;
   public Integer exitCode;

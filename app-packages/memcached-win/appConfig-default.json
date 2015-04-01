@@ -6,6 +6,7 @@
     "application.def": ".slider/package/MEMCACHED/jmemcached-1.0.0.zip",
     "java_home": "C:\\java",
 
+    "site.global.app_version": "1.0.0",
     "site.global.additional_cp": "C:\\hdp\\hadoop-2.4.0.2.1.3.0-1990\\share\\hadoop\\common\\lib\\*",
     "site.global.xmx_val": "256m",
     "site.global.xms_val": "128m",

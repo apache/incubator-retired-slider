@@ -1553,7 +1553,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * Callback event when a container is allocated.
    * 
    * The app state is updated with the allocation, and builds up a list
-   * of assignments and RM opreations. The assignments are 
+   * of assignments and RM operations. The assignments are 
    * handed off into the pool of service launchers to asynchronously schedule
    * container launch operations.
    * 
