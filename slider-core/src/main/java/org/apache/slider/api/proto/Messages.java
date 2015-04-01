@@ -200,6 +200,21 @@ public final class Messages {
      */
     com.google.protobuf.ByteString
         getHostURLBytes();
+
+    // required string appVersion = 16;
+    /**
+     * <code>required string appVersion = 16;</code>
+     */
+    boolean hasAppVersion();
+    /**
+     * <code>required string appVersion = 16;</code>
+     */
+    java.lang.String getAppVersion();
+    /**
+     * <code>required string appVersion = 16;</code>
+     */
+    com.google.protobuf.ByteString
+        getAppVersionBytes();
   }
   /**
    * Protobuf type {@code org.apache.slider.api.RoleInstanceState}
@@ -326,6 +341,11 @@ public final class Messages {
             case 122: {
               bitField0_ |= 0x00000800;
               hostURL_ = input.readBytes();
+              break;
+            }
+            case 130: {
+              bitField0_ |= 0x00001000;
+              appVersion_ = input.readBytes();
               break;
             }
           }
@@ -788,6 +808,49 @@ public final class Messages {
       }
     }
 
+    // required string appVersion = 16;
+    public static final int APPVERSION_FIELD_NUMBER = 16;
+    private java.lang.Object appVersion_;
+    /**
+     * <code>required string appVersion = 16;</code>
+     */
+    public boolean hasAppVersion() {
+      return ((bitField0_ & 0x00001000) == 0x00001000);
+    }
+    /**
+     * <code>required string appVersion = 16;</code>
+     */
+    public java.lang.String getAppVersion() {
+      java.lang.Object ref = appVersion_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          appVersion_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string appVersion = 16;</code>
+     */
+    public com.google.protobuf.ByteString
+        getAppVersionBytes() {
+      java.lang.Object ref = appVersion_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        appVersion_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private void initFields() {
       name_ = "";
       role_ = "";
@@ -803,6 +866,7 @@ public final class Messages {
       startTime_ = 0L;
       host_ = "";
       hostURL_ = "";
+      appVersion_ = "";
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -842,6 +906,10 @@ public final class Messages {
         return false;
       }
       if (!hasHostURL()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasAppVersion()) {
         memoizedIsInitialized = 0;
         return false;
       }
@@ -893,6 +961,9 @@ public final class Messages {
       }
       if (((bitField0_ & 0x00000800) == 0x00000800)) {
         output.writeBytes(15, getHostURLBytes());
+      }
+      if (((bitField0_ & 0x00001000) == 0x00001000)) {
+        output.writeBytes(16, getAppVersionBytes());
       }
       getUnknownFields().writeTo(output);
     }
@@ -968,6 +1039,10 @@ public final class Messages {
       if (((bitField0_ & 0x00000800) == 0x00000800)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(15, getHostURLBytes());
+      }
+      if (((bitField0_ & 0x00001000) == 0x00001000)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(16, getAppVersionBytes());
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -1056,6 +1131,11 @@ public final class Messages {
         result = result && getHostURL()
             .equals(other.getHostURL());
       }
+      result = result && (hasAppVersion() == other.hasAppVersion());
+      if (hasAppVersion()) {
+        result = result && getAppVersion()
+            .equals(other.getAppVersion());
+      }
       result = result &&
           getUnknownFields().equals(other.getUnknownFields());
       return result;
@@ -1124,6 +1204,10 @@ public final class Messages {
       if (hasHostURL()) {
         hash = (37 * hash) + HOSTURL_FIELD_NUMBER;
         hash = (53 * hash) + getHostURL().hashCode();
+      }
+      if (hasAppVersion()) {
+        hash = (37 * hash) + APPVERSION_FIELD_NUMBER;
+        hash = (53 * hash) + getAppVersion().hashCode();
       }
       hash = (29 * hash) + getUnknownFields().hashCode();
       memoizedHashCode = hash;
@@ -1262,6 +1346,8 @@ public final class Messages {
         bitField0_ = (bitField0_ & ~0x00001000);
         hostURL_ = "";
         bitField0_ = (bitField0_ & ~0x00002000);
+        appVersion_ = "";
+        bitField0_ = (bitField0_ & ~0x00004000);
         return this;
       }
 
@@ -1350,6 +1436,10 @@ public final class Messages {
           to_bitField0_ |= 0x00000800;
         }
         result.hostURL_ = hostURL_;
+        if (((from_bitField0_ & 0x00004000) == 0x00004000)) {
+          to_bitField0_ |= 0x00001000;
+        }
+        result.appVersion_ = appVersion_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1434,6 +1524,11 @@ public final class Messages {
           hostURL_ = other.hostURL_;
           onChanged();
         }
+        if (other.hasAppVersion()) {
+          bitField0_ |= 0x00004000;
+          appVersion_ = other.appVersion_;
+          onChanged();
+        }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
@@ -1472,6 +1567,10 @@ public final class Messages {
           return false;
         }
         if (!hasHostURL()) {
+          
+          return false;
+        }
+        if (!hasAppVersion()) {
           
           return false;
         }
@@ -2321,6 +2420,80 @@ public final class Messages {
   }
   bitField0_ |= 0x00002000;
         hostURL_ = value;
+        onChanged();
+        return this;
+      }
+
+      // required string appVersion = 16;
+      private java.lang.Object appVersion_ = "";
+      /**
+       * <code>required string appVersion = 16;</code>
+       */
+      public boolean hasAppVersion() {
+        return ((bitField0_ & 0x00004000) == 0x00004000);
+      }
+      /**
+       * <code>required string appVersion = 16;</code>
+       */
+      public java.lang.String getAppVersion() {
+        java.lang.Object ref = appVersion_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          appVersion_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string appVersion = 16;</code>
+       */
+      public com.google.protobuf.ByteString
+          getAppVersionBytes() {
+        java.lang.Object ref = appVersion_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          appVersion_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string appVersion = 16;</code>
+       */
+      public Builder setAppVersion(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00004000;
+        appVersion_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string appVersion = 16;</code>
+       */
+      public Builder clearAppVersion() {
+        bitField0_ = (bitField0_ & ~0x00004000);
+        appVersion_ = getDefaultInstance().getAppVersion();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string appVersion = 16;</code>
+       */
+      public Builder setAppVersionBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00004000;
+        appVersion_ = value;
         onChanged();
         return this;
       }
@@ -3816,7 +3989,7 @@ public final class Messages {
    *
    * <pre>
    **
-   * stop the cluster
+   * flex the cluster
    * </pre>
    */
   public static final class FlexClusterResponseProto extends
@@ -4084,7 +4257,7 @@ public final class Messages {
      *
      * <pre>
      **
-     * stop the cluster
+     * flex the cluster
      * </pre>
      */
     public static final class Builder extends
@@ -15453,6 +15626,21 @@ public final class Messages {
      */
     com.google.protobuf.ByteString
         getPlacementBytes();
+
+    // optional string appVersion = 13;
+    /**
+     * <code>optional string appVersion = 13;</code>
+     */
+    boolean hasAppVersion();
+    /**
+     * <code>optional string appVersion = 13;</code>
+     */
+    java.lang.String getAppVersion();
+    /**
+     * <code>optional string appVersion = 13;</code>
+     */
+    com.google.protobuf.ByteString
+        getAppVersionBytes();
   }
   /**
    * Protobuf type {@code org.apache.slider.api.ContainerInformationProto}
@@ -15571,6 +15759,11 @@ public final class Messages {
             case 98: {
               bitField0_ |= 0x00000400;
               placement_ = input.readBytes();
+              break;
+            }
+            case 106: {
+              bitField0_ |= 0x00000800;
+              appVersion_ = input.readBytes();
               break;
             }
           }
@@ -15984,6 +16177,49 @@ public final class Messages {
       }
     }
 
+    // optional string appVersion = 13;
+    public static final int APPVERSION_FIELD_NUMBER = 13;
+    private java.lang.Object appVersion_;
+    /**
+     * <code>optional string appVersion = 13;</code>
+     */
+    public boolean hasAppVersion() {
+      return ((bitField0_ & 0x00000800) == 0x00000800);
+    }
+    /**
+     * <code>optional string appVersion = 13;</code>
+     */
+    public java.lang.String getAppVersion() {
+      java.lang.Object ref = appVersion_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          appVersion_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>optional string appVersion = 13;</code>
+     */
+    public com.google.protobuf.ByteString
+        getAppVersionBytes() {
+      java.lang.Object ref = appVersion_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        appVersion_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private void initFields() {
       containerId_ = "";
       component_ = "";
@@ -15997,6 +16233,7 @@ public final class Messages {
       host_ = "";
       hostURL_ = "";
       placement_ = "";
+      appVersion_ = "";
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -16045,6 +16282,9 @@ public final class Messages {
       }
       if (((bitField0_ & 0x00000400) == 0x00000400)) {
         output.writeBytes(12, getPlacementBytes());
+      }
+      if (((bitField0_ & 0x00000800) == 0x00000800)) {
+        output.writeBytes(13, getAppVersionBytes());
       }
       getUnknownFields().writeTo(output);
     }
@@ -16107,6 +16347,10 @@ public final class Messages {
       if (((bitField0_ & 0x00000400) == 0x00000400)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(12, getPlacementBytes());
+      }
+      if (((bitField0_ & 0x00000800) == 0x00000800)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(13, getAppVersionBytes());
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -16188,6 +16432,11 @@ public final class Messages {
         result = result && getPlacement()
             .equals(other.getPlacement());
       }
+      result = result && (hasAppVersion() == other.hasAppVersion());
+      if (hasAppVersion()) {
+        result = result && getAppVersion()
+            .equals(other.getAppVersion());
+      }
       result = result &&
           getUnknownFields().equals(other.getUnknownFields());
       return result;
@@ -16248,6 +16497,10 @@ public final class Messages {
       if (hasPlacement()) {
         hash = (37 * hash) + PLACEMENT_FIELD_NUMBER;
         hash = (53 * hash) + getPlacement().hashCode();
+      }
+      if (hasAppVersion()) {
+        hash = (37 * hash) + APPVERSION_FIELD_NUMBER;
+        hash = (53 * hash) + getAppVersion().hashCode();
       }
       hash = (29 * hash) + getUnknownFields().hashCode();
       memoizedHashCode = hash;
@@ -16387,6 +16640,8 @@ public final class Messages {
         bitField0_ = (bitField0_ & ~0x00000400);
         placement_ = "";
         bitField0_ = (bitField0_ & ~0x00000800);
+        appVersion_ = "";
+        bitField0_ = (bitField0_ & ~0x00001000);
         return this;
       }
 
@@ -16465,6 +16720,10 @@ public final class Messages {
           to_bitField0_ |= 0x00000400;
         }
         result.placement_ = placement_;
+        if (((from_bitField0_ & 0x00001000) == 0x00001000)) {
+          to_bitField0_ |= 0x00000800;
+        }
+        result.appVersion_ = appVersion_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -16534,6 +16793,11 @@ public final class Messages {
         if (other.hasPlacement()) {
           bitField0_ |= 0x00000800;
           placement_ = other.placement_;
+          onChanged();
+        }
+        if (other.hasAppVersion()) {
+          bitField0_ |= 0x00001000;
+          appVersion_ = other.appVersion_;
           onChanged();
         }
         this.mergeUnknownFields(other.getUnknownFields());
@@ -17261,6 +17525,80 @@ public final class Messages {
   }
   bitField0_ |= 0x00000800;
         placement_ = value;
+        onChanged();
+        return this;
+      }
+
+      // optional string appVersion = 13;
+      private java.lang.Object appVersion_ = "";
+      /**
+       * <code>optional string appVersion = 13;</code>
+       */
+      public boolean hasAppVersion() {
+        return ((bitField0_ & 0x00001000) == 0x00001000);
+      }
+      /**
+       * <code>optional string appVersion = 13;</code>
+       */
+      public java.lang.String getAppVersion() {
+        java.lang.Object ref = appVersion_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          appVersion_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string appVersion = 13;</code>
+       */
+      public com.google.protobuf.ByteString
+          getAppVersionBytes() {
+        java.lang.Object ref = appVersion_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          appVersion_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string appVersion = 13;</code>
+       */
+      public Builder setAppVersion(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00001000;
+        appVersion_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string appVersion = 13;</code>
+       */
+      public Builder clearAppVersion() {
+        bitField0_ = (bitField0_ & ~0x00001000);
+        appVersion_ = getDefaultInstance().getAppVersion();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string appVersion = 13;</code>
+       */
+      public Builder setAppVersionBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00001000;
+        appVersion_ = value;
         onChanged();
         return this;
       }
@@ -26992,55 +27330,56 @@ public final class Messages {
   static {
     java.lang.String[] descriptorData = {
       "\n\033SliderClusterMessages.proto\022\025org.apach" +
-      "e.slider.api\"\203\002\n\021RoleInstanceState\022\014\n\004na" +
+      "e.slider.api\"\227\002\n\021RoleInstanceState\022\014\n\004na" +
       "me\030\001 \002(\t\022\014\n\004role\030\002 \001(\t\022\r\n\005state\030\004 \002(\r\022\020\n" +
       "\010exitCode\030\005 \002(\r\022\017\n\007command\030\006 \001(\t\022\023\n\013diag" +
       "nostics\030\007 \001(\t\022\016\n\006output\030\010 \003(\t\022\023\n\013environ" +
       "ment\030\t \003(\t\022\016\n\006roleId\030\n \002(\r\022\020\n\010released\030\013" +
       " \002(\010\022\022\n\ncreateTime\030\014 \002(\003\022\021\n\tstartTime\030\r " +
-      "\002(\003\022\014\n\004host\030\016 \002(\t\022\017\n\007hostURL\030\017 \002(\t\"*\n\027St" +
-      "opClusterRequestProto\022\017\n\007message\030\001 \002(\t\"\032" +
-      "\n\030StopClusterResponseProto\".\n\027FlexCluste",
-      "rRequestProto\022\023\n\013clusterSpec\030\001 \002(\t\",\n\030Fl" +
-      "exClusterResponseProto\022\020\n\010response\030\001 \002(\010" +
-      "\"\"\n GetJSONClusterStatusRequestProto\"8\n!" +
-      "GetJSONClusterStatusResponseProto\022\023\n\013clu" +
-      "sterSpec\030\001 \002(\t\"/\n\037ListNodeUUIDsByRoleReq" +
-      "uestProto\022\014\n\004role\030\001 \002(\t\"0\n ListNodeUUIDs" +
-      "ByRoleResponseProto\022\014\n\004uuid\030\001 \003(\t\"#\n\023Get" +
-      "NodeRequestProto\022\014\n\004uuid\030\001 \002(\t\"U\n\024GetNod" +
-      "eResponseProto\022=\n\013clusterNode\030\001 \002(\0132(.or" +
-      "g.apache.slider.api.RoleInstanceState\"+\n",
-      "\033GetClusterNodesRequestProto\022\014\n\004uuid\030\001 \003" +
-      "(\t\"]\n\034GetClusterNodesResponseProto\022=\n\013cl" +
-      "usterNode\030\001 \003(\0132(.org.apache.slider.api." +
-      "RoleInstanceState\" \n\020EchoRequestProto\022\014\n" +
-      "\004text\030\001 \002(\t\"!\n\021EchoResponseProto\022\014\n\004text" +
-      "\030\001 \002(\t\"\'\n\031KillContainerRequestProto\022\n\n\002i" +
-      "d\030\001 \002(\t\"-\n\032KillContainerResponseProto\022\017\n" +
-      "\007success\030\001 \002(\010\"D\n\025AMSuicideRequestProto\022" +
-      "\014\n\004text\030\001 \002(\t\022\016\n\006signal\030\002 \002(\005\022\r\n\005delay\030\003" +
-      " \002(\005\"\030\n\026AMSuicideResponseProto\"#\n!GetIns",
-      "tanceDefinitionRequestProto\"^\n\"GetInstan" +
-      "ceDefinitionResponseProto\022\020\n\010internal\030\001 " +
-      "\002(\t\022\021\n\tresources\030\002 \002(\t\022\023\n\013application\030\003 " +
-      "\002(\t\"`\n#ApplicationLivenessInformationPro" +
-      "to\022\034\n\024allRequestsSatisfied\030\001 \001(\010\022\033\n\023requ" +
-      "estsOutstanding\030\002 \001(\005\"\250\002\n\031ComponentInfor" +
-      "mationProto\022\014\n\004name\030\001 \001(\t\022\020\n\010priority\030\002 " +
-      "\001(\005\022\017\n\007desired\030\003 \001(\005\022\016\n\006actual\030\004 \001(\005\022\021\n\t" +
-      "releasing\030\005 \001(\005\022\021\n\trequested\030\006 \001(\005\022\016\n\006fa" +
-      "iled\030\007 \001(\005\022\017\n\007started\030\010 \001(\005\022\023\n\013startFail",
-      "ed\030\t \001(\005\022\021\n\tcompleted\030\n \001(\005\022\026\n\016totalRequ" +
-      "ested\030\013 \001(\005\022\026\n\016failureMessage\030\014 \001(\t\022\027\n\017p" +
-      "lacementPolicy\030\r \001(\005\022\022\n\ncontainers\030\016 \003(\t" +
-      "\"\364\001\n\031ContainerInformationProto\022\023\n\013contai" +
-      "nerId\030\001 \001(\t\022\021\n\tcomponent\030\002 \001(\t\022\020\n\010releas" +
-      "ed\030\003 \001(\010\022\r\n\005state\030\004 \001(\005\022\020\n\010exitCode\030\005 \001(" +
-      "\005\022\023\n\013diagnostics\030\006 \001(\t\022\022\n\ncreateTime\030\007 \001" +
-      "(\003\022\021\n\tstartTime\030\010 \001(\003\022\016\n\006output\030\t \003(\t\022\014\n" +
-      "\004host\030\n \001(\t\022\017\n\007hostURL\030\013 \001(\t\022\021\n\tplacemen" +
-      "t\030\014 \001(\t\"N\n\024PingInformationProto\022\014\n\004text\030",
+      "\002(\003\022\014\n\004host\030\016 \002(\t\022\017\n\007hostURL\030\017 \002(\t\022\022\n\nap" +
+      "pVersion\030\020 \002(\t\"*\n\027StopClusterRequestProt" +
+      "o\022\017\n\007message\030\001 \002(\t\"\032\n\030StopClusterRespons",
+      "eProto\".\n\027FlexClusterRequestProto\022\023\n\013clu" +
+      "sterSpec\030\001 \002(\t\",\n\030FlexClusterResponsePro" +
+      "to\022\020\n\010response\030\001 \002(\010\"\"\n GetJSONClusterSt" +
+      "atusRequestProto\"8\n!GetJSONClusterStatus" +
+      "ResponseProto\022\023\n\013clusterSpec\030\001 \002(\t\"/\n\037Li" +
+      "stNodeUUIDsByRoleRequestProto\022\014\n\004role\030\001 " +
+      "\002(\t\"0\n ListNodeUUIDsByRoleResponseProto\022" +
+      "\014\n\004uuid\030\001 \003(\t\"#\n\023GetNodeRequestProto\022\014\n\004" +
+      "uuid\030\001 \002(\t\"U\n\024GetNodeResponseProto\022=\n\013cl" +
+      "usterNode\030\001 \002(\0132(.org.apache.slider.api.",
+      "RoleInstanceState\"+\n\033GetClusterNodesRequ" +
+      "estProto\022\014\n\004uuid\030\001 \003(\t\"]\n\034GetClusterNode" +
+      "sResponseProto\022=\n\013clusterNode\030\001 \003(\0132(.or" +
+      "g.apache.slider.api.RoleInstanceState\" \n" +
+      "\020EchoRequestProto\022\014\n\004text\030\001 \002(\t\"!\n\021EchoR" +
+      "esponseProto\022\014\n\004text\030\001 \002(\t\"\'\n\031KillContai" +
+      "nerRequestProto\022\n\n\002id\030\001 \002(\t\"-\n\032KillConta" +
+      "inerResponseProto\022\017\n\007success\030\001 \002(\010\"D\n\025AM" +
+      "SuicideRequestProto\022\014\n\004text\030\001 \002(\t\022\016\n\006sig" +
+      "nal\030\002 \002(\005\022\r\n\005delay\030\003 \002(\005\"\030\n\026AMSuicideRes",
+      "ponseProto\"#\n!GetInstanceDefinitionReque" +
+      "stProto\"^\n\"GetInstanceDefinitionResponse" +
+      "Proto\022\020\n\010internal\030\001 \002(\t\022\021\n\tresources\030\002 \002" +
+      "(\t\022\023\n\013application\030\003 \002(\t\"`\n#ApplicationLi" +
+      "venessInformationProto\022\034\n\024allRequestsSat" +
+      "isfied\030\001 \001(\010\022\033\n\023requestsOutstanding\030\002 \001(" +
+      "\005\"\250\002\n\031ComponentInformationProto\022\014\n\004name\030" +
+      "\001 \001(\t\022\020\n\010priority\030\002 \001(\005\022\017\n\007desired\030\003 \001(\005" +
+      "\022\016\n\006actual\030\004 \001(\005\022\021\n\treleasing\030\005 \001(\005\022\021\n\tr" +
+      "equested\030\006 \001(\005\022\016\n\006failed\030\007 \001(\005\022\017\n\007starte",
+      "d\030\010 \001(\005\022\023\n\013startFailed\030\t \001(\005\022\021\n\tcomplete" +
+      "d\030\n \001(\005\022\026\n\016totalRequested\030\013 \001(\005\022\026\n\016failu" +
+      "reMessage\030\014 \001(\t\022\027\n\017placementPolicy\030\r \001(\005" +
+      "\022\022\n\ncontainers\030\016 \003(\t\"\210\002\n\031ContainerInform" +
+      "ationProto\022\023\n\013containerId\030\001 \001(\t\022\021\n\tcompo" +
+      "nent\030\002 \001(\t\022\020\n\010released\030\003 \001(\010\022\r\n\005state\030\004 " +
+      "\001(\005\022\020\n\010exitCode\030\005 \001(\005\022\023\n\013diagnostics\030\006 \001" +
+      "(\t\022\022\n\ncreateTime\030\007 \001(\003\022\021\n\tstartTime\030\010 \001(" +
+      "\003\022\016\n\006output\030\t \003(\t\022\014\n\004host\030\n \001(\t\022\017\n\007hostU" +
+      "RL\030\013 \001(\t\022\021\n\tplacement\030\014 \001(\t\022\022\n\nappVersio",
+      "n\030\r \001(\t\"N\n\024PingInformationProto\022\014\n\004text\030" +
       "\001 \001(\t\022\014\n\004verb\030\002 \001(\t\022\014\n\004body\030\003 \001(\t\022\014\n\004tim" +
       "e\030\004 \001(\003\"\026\n\024GetModelRequestProto\"\035\n\033GetMo" +
       "delDesiredRequestProto\"$\n\"GetModelDesire" +
@@ -27049,8 +27388,8 @@ public final class Messages {
       "AppconfRequestProto\"\'\n%GetModelResolvedR" +
       "esourcesRequestProto\"#\n!GetModelLiveReso" +
       "urcesRequestProto\"\037\n\035GetLiveContainersRe" +
-      "questProto\"u\n\036GetLiveContainersResponseP" +
-      "roto\022\r\n\005names\030\001 \003(\t\022D\n\ncontainers\030\002 \003(\0132",
+      "questProto\"u\n\036GetLiveContainersResponseP",
+      "roto\022\r\n\005names\030\001 \003(\t\022D\n\ncontainers\030\002 \003(\0132" +
       "0.org.apache.slider.api.ContainerInforma" +
       "tionProto\"3\n\034GetLiveContainerRequestProt" +
       "o\022\023\n\013containerId\030\001 \002(\t\"\037\n\035GetLiveCompone" +
@@ -27059,8 +27398,8 @@ public final class Messages {
       " \003(\01320.org.apache.slider.api.ComponentIn" +
       "formationProto\",\n\034GetLiveComponentReques" +
       "tProto\022\014\n\004name\030\001 \002(\t\"$\n\"GetApplicationLi" +
-      "venessRequestProto\"\023\n\021EmptyPayloadProto\"" +
-      " \n\020WrappedJsonProto\022\014\n\004json\030\001 \002(\t\"h\n\037Get",
+      "venessRequestProto\"\023\n\021EmptyPayloadProto\"",
+      " \n\020WrappedJsonProto\022\014\n\004json\030\001 \002(\t\"h\n\037Get" +
       "CertificateStoreRequestProto\022\020\n\010hostname" +
       "\030\001 \001(\t\022\023\n\013requesterId\030\002 \002(\t\022\020\n\010password\030" +
       "\003 \002(\t\022\014\n\004type\030\004 \002(\t\"1\n GetCertificateSto" +
@@ -27077,7 +27416,7 @@ public final class Messages {
           internal_static_org_apache_slider_api_RoleInstanceState_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_RoleInstanceState_descriptor,
-              new java.lang.String[] { "Name", "Role", "State", "ExitCode", "Command", "Diagnostics", "Output", "Environment", "RoleId", "Released", "CreateTime", "StartTime", "Host", "HostURL", });
+              new java.lang.String[] { "Name", "Role", "State", "ExitCode", "Command", "Diagnostics", "Output", "Environment", "RoleId", "Released", "CreateTime", "StartTime", "Host", "HostURL", "AppVersion", });
           internal_static_org_apache_slider_api_StopClusterRequestProto_descriptor =
             getDescriptor().getMessageTypes().get(1);
           internal_static_org_apache_slider_api_StopClusterRequestProto_fieldAccessorTable = new
@@ -27215,7 +27554,7 @@ public final class Messages {
           internal_static_org_apache_slider_api_ContainerInformationProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_ContainerInformationProto_descriptor,
-              new java.lang.String[] { "ContainerId", "Component", "Released", "State", "ExitCode", "Diagnostics", "CreateTime", "StartTime", "Output", "Host", "HostURL", "Placement", });
+              new java.lang.String[] { "ContainerId", "Component", "Released", "State", "ExitCode", "Diagnostics", "CreateTime", "StartTime", "Output", "Host", "HostURL", "Placement", "AppVersion", });
           internal_static_org_apache_slider_api_PingInformationProto_descriptor =
             getDescriptor().getMessageTypes().get(24);
           internal_static_org_apache_slider_api_PingInformationProto_fieldAccessorTable = new

@@ -55,6 +55,9 @@ public class ActionPackageArgs extends AbstractActionArgs {
              description = "Package name")
   public String name;
 
+  @Parameter(names = {ARG_VERSION}, description = "Package version")
+  public String version;
+
   @Parameter(names = {ARG_REPLACE_PKG}, description = "Overwrite existing package")
   public boolean replacePkg = false;
 

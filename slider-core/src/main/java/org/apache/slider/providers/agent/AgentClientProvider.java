@@ -114,8 +114,8 @@ public class AgentClientProvider extends AbstractClientProvider
                                                 clusterDirPath,
                                                 generatedConfDirPath, secure);
 
-    String appDef = instanceDefinition.getAppConfOperations().
-        getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
+    String appDef = SliderUtils.getApplicationDefinitionPath(instanceDefinition
+        .getAppConfOperations());
     Path appDefPath = new Path(appDef);
     sliderFileSystem.verifyFileExists(appDefPath);
 
@@ -145,16 +145,16 @@ public class AgentClientProvider extends AbstractClientProvider
     providerUtils.validateNodeCount(instanceDefinition, ROLE_NODE,
                                     0, -1);
 
+    String appDef = null;
     try {
       // Validate the app definition
-      instanceDefinition.getAppConfOperations().
-          getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
+      // Validate the app definition
+      appDef = SliderUtils.getApplicationDefinitionPath(instanceDefinition
+          .getAppConfOperations());
     } catch (BadConfigException bce) {
       throw new BadConfigException("Application definition must be provided. " + bce.getMessage());
     }
 
-    String appDef = instanceDefinition.getAppConfOperations().
-        getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
     log.info("Validating app definition {}", appDef);
     String extension = appDef.substring(appDef.lastIndexOf(".") + 1, appDef.length());
     if (!"zip".equals(extension.toLowerCase(Locale.ENGLISH))) {

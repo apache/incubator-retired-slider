@@ -27,6 +27,7 @@ config = Script.get_config()
 
 java64_home = config['hostLevelParams']['java_home']
 hbase_root = config['configurations']['global']['app_root']
+app_version = config['configurations']['global']['app_version']
 hbase_instance_name = config['configurations']['global']['hbase_instance_name']
 hbase_user = status_params.hbase_user
 user_group = config['configurations']['global']['user_group']

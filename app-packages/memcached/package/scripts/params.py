@@ -24,6 +24,7 @@ from resource_management import *
 config = Script.get_config()
 
 app_root = config['configurations']['global']['app_root']
+app_version = config['configurations']['global']['app_version']
 java64_home = config['hostLevelParams']['java_home']
 pid_file = config['configurations']['global']['pid_file']
 

@@ -23,6 +23,7 @@ from resource_management import *
 # server configurations
 config = Script.get_config()
 
+app_version = config['configurations']['global']['app_version']
 container_id = config['hostLevelParams']['container_id']
 application_id = config['configurations']['global']['application_id']
 
