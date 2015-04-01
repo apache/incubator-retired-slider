@@ -1588,10 +1588,18 @@
     </profile>
 
     <profile>
+      <!-- hadoop branch-2.7 builds  -->
+      <id>branch-2.7</id>
+      <properties>
+        <hadoop.version>2.7.0-SNAPSHOT</hadoop.version>
+      </properties>
+    </profile>
+
+    <profile>
       <!-- hadoop branch-2 builds  -->
       <id>branch-2</id>
       <properties>
-        <hadoop.version>2.7.0-SNAPSHOT</hadoop.version>
+        <hadoop.version>2.8.0-SNAPSHOT</hadoop.version>
       </properties>
     </profile>
     
@@ -1600,14 +1608,6 @@
       <id>trunk</id>
       <properties>
         <hadoop.version>3.0.0-SNAPSHOT</hadoop.version>
-      </properties>
-    </profile>
-    
-    <profile>
-      <!-- Java 7 build -->
-      <id>java7</id>
-      <properties>
-       <project.java.src.version>7</project.java.src.version>
       </properties>
     </profile>
 

@@ -100,13 +100,14 @@ class TestBuildStandaloneAM extends AgentMiniClusterTestBase {
     waitForClusterLive(thawed)
 
     // in the same code (for speed), create an illegal cluster
+    // with a negative role count
     try {
       ServiceLauncher<SliderClient> cluster3 = createOrBuildCluster(
           SliderActions.ACTION_BUILD,
           "illegalcluster",
           ["role1": -1],
           [],
-          false,
+          true,
           false,
           agentDefOptions)
       fail("expected an exception, got $cluster3.service")
