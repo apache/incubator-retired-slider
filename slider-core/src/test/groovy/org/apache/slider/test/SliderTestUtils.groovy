@@ -891,15 +891,15 @@ class SliderTestUtils extends Assert {
       int exitCode,
       String text = "") {
     if (exitCode != ex.exitCode) {
-      log.warn(
-          "Wrong exit code, expected $exitCode but got $ex.exitCode in $ex",
-          ex)
-      assert exitCode == ex.exitCode
+      def message = "Wrong exit code, expected $exitCode but got $ex.exitCode in $ex"
+      log.warn(message, ex)
+      throw new AssertionError(message, ex)
     }
     if (text) {
       if (!(ex.toString().contains(text))) {
-        log.warn("String match for \"${text}\"failed in $ex", ex)
-        assert ex.toString().contains(text);
+        def message = "String match for \"${text}\"failed in $ex"
+        log.warn(message, ex)
+        throw new AssertionError(message, ex)
       }
     }
   }
