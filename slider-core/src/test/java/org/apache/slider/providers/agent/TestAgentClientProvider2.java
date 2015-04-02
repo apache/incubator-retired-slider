@@ -24,16 +24,19 @@ import org.apache.hadoop.registry.client.binding.RegistryUtils;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.slider.api.InternalKeys;
 import org.apache.slider.client.SliderClient;
+import org.apache.slider.common.SliderExitCodes;
 import org.apache.slider.common.params.ActionClientArgs;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
+import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.providers.ProviderUtils;
 import org.apache.slider.providers.agent.application.metadata.Application;
 import org.apache.slider.providers.agent.application.metadata.Metainfo;
 import org.apache.slider.providers.agent.application.metadata.Package;
+import org.apache.slider.test.SliderTestUtils;
 import org.codehaus.jettison.json.JSONObject;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -61,7 +64,7 @@ import static org.easymock.EasyMock.expect;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ProviderUtils.class, ProcessBuilder.class, AgentClientProvider.class, RegistryUtils.class})
-public class TestAgentClientProvider2 {
+public class TestAgentClientProvider2 extends SliderTestUtils {
   protected static final Logger log =
       LoggerFactory.getLogger(TestAgentClientProvider2.class);
   @Rule
@@ -144,9 +147,9 @@ public class TestAgentClientProvider2 {
                                                 clientInstallPath,
                                                 appName);
     JSONObject outConfigs = output.getJSONObject("configurations");
-    Assert.assertNotNull(outConfigs);
+    Assert.assertNotNull("null configurations section", outConfigs);
     JSONObject outGlobal = outConfigs.getJSONObject("global");
-    Assert.assertNotNull(outGlobal);
+    Assert.assertNotNull("null globals section", outGlobal);
     Assert.assertEquals("b", outGlobal.getString("a"));
     Assert.assertEquals("/tmp/file1/d", outGlobal.getString("d"));
     Assert.assertEquals("/tmp/file1", outGlobal.getString("app_install_dir"));
@@ -163,21 +166,21 @@ public class TestAgentClientProvider2 {
     defaultConfig.put("global", global);
 
     output = provider.getCommandJson(defaultConfig,
-                                     inputConfig,
-                                     metainfo,
-                                     clientInstallPath,
-                                     null);
+        inputConfig,
+        metainfo,
+        clientInstallPath,
+        null);
     outConfigs = output.getJSONObject("configurations");
-    Assert.assertNotNull(outConfigs);
+    Assert.assertNotNull("null configurations section", outConfigs);
     outGlobal = outConfigs.getJSONObject("global");
-    Assert.assertNotNull(outGlobal);
+    Assert.assertNotNull("null globals section", outGlobal);
     Assert.assertEquals("b", outGlobal.getString("a"));
     Assert.assertEquals("/tmp/file1/d", outGlobal.getString("d"));
     Assert.assertEquals("b2", outGlobal.getString("a1"));
     Assert.assertEquals("/tmp/file1/d", outGlobal.getString("d1"));
     Assert.assertEquals("/tmp/file1", outGlobal.getString("app_install_dir"));
     Assert.assertEquals("{app_name}", outGlobal.getString("e"));
-    Assert.assertFalse(outGlobal.has("app_name"));
+    Assert.assertFalse("no 'app_name' field", outGlobal.has("app_name"));
     Assert.assertEquals(user, outGlobal.getString("app_user"));
 
     PowerMock.verify(RegistryUtils.class);
@@ -226,8 +229,8 @@ public class TestAgentClientProvider2 {
     try {
       client.actionClient(args);
     } catch (BadCommandArgumentsException e) {
-      log.info(e.getMessage());
-      Assert.assertTrue(e.getMessage().contains("A valid install location must be provided for the client"));
+      assertExceptionDetails(e, SliderExitCodes.EXIT_COMMAND_ARGUMENT_ERROR,
+          SliderClient.E_INVALID_INSTALL_LOCATION);
     }
 
     File tmpFile = File.createTempFile("del", "");
@@ -236,16 +239,16 @@ public class TestAgentClientProvider2 {
     try {
       client.actionClient(args);
     } catch (BadCommandArgumentsException e) {
-      log.info(e.getMessage());
-      Assert.assertTrue(e.getMessage().contains("Install path does not exist at"));
+      assertExceptionDetails(e, SliderExitCodes.EXIT_COMMAND_ARGUMENT_ERROR,
+          "Install path does not exist at");
     }
 
     dest.mkdir();
     try {
       client.actionClient(args);
     } catch (BadCommandArgumentsException e) {
-      log.info(e.getMessage());
-      Assert.assertTrue(e.getMessage().contains("A valid application package location required"));
+      assertExceptionDetails(e, SliderExitCodes.EXIT_COMMAND_ARGUMENT_ERROR,
+          SliderClient.E_INVALID_APPLICATION_PACKAGE_LOCATION);
     }
 
     tmpFile = File.createTempFile("del", ".zip");
@@ -253,17 +256,17 @@ public class TestAgentClientProvider2 {
     args.clientConfig = tmpFile;
     try {
       client.actionClient(args);
-    } catch (SliderException e) {
-      log.info(e.getMessage());
-      Assert.assertTrue(e.getMessage().contains("Invalid configuration. Must be a valid json file"));
+    } catch (BadConfigException e) {
+      assertExceptionDetails(e, SliderExitCodes.EXIT_BAD_CONFIGURATION,
+          SliderClient.E_MUST_BE_A_VALID_JSON_FILE);
     }
 
     args.clientConfig = null;
     try {
       client.actionClient(args);
-    } catch (SliderException e) {
-      log.info(e.getMessage());
-      Assert.assertTrue(e.getMessage().contains("Not a valid app package. Could not read metainfo"));
+    } catch (BadConfigException e) {
+      assertExceptionDetails(e, SliderExitCodes.EXIT_BAD_CONFIGURATION,
+          AgentClientProvider.E_COULD_NOT_READ_METAINFO);
     }
   }
 }
