@@ -38,6 +38,7 @@
     "site.accumulo-site.general.security.credential.provider.paths": "jceks://hdfs/user/${USER}/accumulo-${CLUSTER_NAME}.jceks",
     "site.accumulo-site.instance.rpc.ssl.enabled": "false",
     "site.accumulo-site.instance.rpc.ssl.clientAuth": "false",
+    "site.accumulo-site.instance.rpc.sasl.enabled": "false",
     "site.accumulo-site.general.kerberos.keytab": "${accumulo.keytab}",
     "site.accumulo-site.general.kerberos.principal": "${accumulo.principal}",
 

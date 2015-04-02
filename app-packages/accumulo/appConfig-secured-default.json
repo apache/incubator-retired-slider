@@ -38,10 +38,10 @@
     "site.accumulo-site.general.security.credential.provider.paths": "jceks://hdfs/user/${USER}/accumulo-${CLUSTER_NAME}.jceks",
     "site.accumulo-site.instance.rpc.ssl.enabled": "false",
     "site.accumulo-site.instance.rpc.ssl.clientAuth": "false",
+    "site.accumulo-site.instance.rpc.sasl.enabled": "true",
     "site.accumulo-site.general.kerberos.keytab": "${AGENT_WORK_ROOT}/keytabs/${USER_NAME}.ACCUMULO.service.keytab",
     "site.accumulo-site.general.kerberos.principal": "${USER_NAME}/_HOST@EXAMPLE.COM",
 
-    "site.accumulo-site.instance.rpc.sasl.enabled": "true",
     "site.accumulo-site.instance.security.authenticator": "org.apache.accumulo.server.security.handler.KerberosAuthenticator",
     "site.accumulo-site.instance.security.authorizor": "org.apache.accumulo.server.security.handler.KerberosAuthorizor",
     "site.accumulo-site.instance.security.permissionHandler": "org.apache.accumulo.server.security.handler.KerberosPermissionHandler",

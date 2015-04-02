@@ -25,7 +25,8 @@ config = Script.get_config()
 
 client_root = config['configurations']['global']['client_root']
 bin_dir = os.path.join(client_root, 'bin')
-conf_dir = os.path.join(client_root, 'conf')
+client_conf = os.path.join(client_root, 'conf')
+conf_download_dir = os.path.join(client_conf, 'download')
 
 app_name = None
 if 'app_name' in config['configurations']['global']:
