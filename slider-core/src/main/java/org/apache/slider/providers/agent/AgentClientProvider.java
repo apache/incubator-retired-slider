@@ -82,6 +82,8 @@ public class AgentClientProvider extends AbstractClientProvider
       LoggerFactory.getLogger(AgentClientProvider.class);
   protected static final String NAME = "agent";
   private static final ProviderUtils providerUtils = new ProviderUtils(log);
+  public static final String E_COULD_NOT_READ_METAINFO
+      = "Not a valid app package. Could not read metainfo.";
 
 
   protected AgentClientProvider(Configuration conf) {
@@ -387,7 +389,7 @@ public class AgentClientProvider extends AbstractClientProvider
       }
 
       if (metaInfo == null) {
-        throw new SliderException("Not a valid app package. Could not read metainfo.");
+        throw new BadConfigException(E_COULD_NOT_READ_METAINFO);
       }
 
       expandAgentTar(agentPkgDir);
