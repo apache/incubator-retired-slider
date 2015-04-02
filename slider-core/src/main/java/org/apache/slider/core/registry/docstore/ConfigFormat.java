@@ -23,6 +23,7 @@ public enum ConfigFormat {
   JSON("json"),
   PROPERTIES("properties"),
   XML("xml"),
+  ENV("env"),
 //  YAML("yaml");
   ;
   ConfigFormat(String suffix) {

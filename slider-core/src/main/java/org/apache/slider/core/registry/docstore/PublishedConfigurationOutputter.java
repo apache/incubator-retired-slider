@@ -100,6 +100,8 @@ public abstract class PublishedConfigurationOutputter {
         return new PropertiesOutputter(owner);
       case JSON:
         return new JsonOutputter(owner);
+      case ENV:
+        return new EnvOutputter(owner);
       default:
         throw new RuntimeException("Unsupported format :" + format);
     }
@@ -169,7 +171,28 @@ public abstract class PublishedConfigurationOutputter {
       return owner.asJson();
     }
   }
-    
-  
-  
+
+
+  public static class EnvOutputter extends PublishedConfigurationOutputter {
+
+    public EnvOutputter(PublishedConfiguration owner) {
+      super(owner);
+    }
+
+    @Override
+    public void save(File dest) throws IOException {
+      FileUtils.writeStringToFile(dest, asString(), Charsets.UTF_8);
+    }
+
+    @Override
+    public String asString() throws IOException {
+      if (!owner.entries.containsKey("content")) {
+        throw new IOException("Configuration has no content field and cannot " +
+            "be retrieved as type 'env'");
+      }
+      return owner.entries.get("content");
+    }
+  }
+
+
 }
