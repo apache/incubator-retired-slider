@@ -204,6 +204,12 @@ import static org.apache.slider.common.params.SliderActions.*;
 public class SliderClient extends AbstractSliderLaunchedService implements RunService,
     SliderExitCodes, SliderKeys, ErrorStrings, SliderClientAPI {
   private static final Logger log = LoggerFactory.getLogger(SliderClient.class);
+  public static final String E_MUST_BE_A_VALID_JSON_FILE
+      = "Invalid configuration. Must be a valid json file.";
+  public static final String E_INVALID_APPLICATION_PACKAGE_LOCATION
+      = "A valid application package location required.";
+  public static final String E_INVALID_INSTALL_LOCATION
+      = "A valid install location must be provided for the client.";
   private static PrintStream clientOutputStream = System.out;
 
   // value should not be changed without updating string find in slider.py
@@ -906,7 +912,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     }
 
     if (StringUtils.isEmpty(installPkgInfo.packageURI)) {
-      throw new BadCommandArgumentsException("A valid application package location required.");
+      throw new BadCommandArgumentsException(E_INVALID_APPLICATION_PACKAGE_LOCATION);
     } else {
       File pkgFile = new File(installPkgInfo.packageURI);
       if (!pkgFile.exists() || pkgFile.isDirectory()) {
@@ -1030,7 +1036,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     if (clientInfo.installLocation == null) {
       throw new BadCommandArgumentsException(
-          "A valid install location must be provided for the client.\n"
+          E_INVALID_INSTALL_LOCATION +"\n"
           + CommonArgs.usage(serviceArgs, ACTION_CLIENT));
     } else {
       if (!clientInfo.installLocation.exists()) {
@@ -1061,7 +1067,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         config = new JSONObject(new String(encoded, Charset.defaultCharset()));
       }catch(JSONException jsonEx) {
         log.error("Unable to read supplied config", jsonEx);
-        throw new SliderException("Invalid configuration. Must be a valid json file.", jsonEx);
+        throw new BadConfigException(E_MUST_BE_A_VALID_JSON_FILE, jsonEx);
       }
     }
 
