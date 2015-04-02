@@ -39,7 +39,7 @@ message RoleInstanceState {
   required int64 startTime = 13;
   required string host = 14;
   required string hostURL = 15;
-  required string appVersion = 16;
+  optional string appVersion = 16;
 }
 
 /**

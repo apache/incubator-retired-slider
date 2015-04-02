@@ -201,17 +201,17 @@ public final class Messages {
     com.google.protobuf.ByteString
         getHostURLBytes();
 
-    // required string appVersion = 16;
+    // optional string appVersion = 16;
     /**
-     * <code>required string appVersion = 16;</code>
+     * <code>optional string appVersion = 16;</code>
      */
     boolean hasAppVersion();
     /**
-     * <code>required string appVersion = 16;</code>
+     * <code>optional string appVersion = 16;</code>
      */
     java.lang.String getAppVersion();
     /**
-     * <code>required string appVersion = 16;</code>
+     * <code>optional string appVersion = 16;</code>
      */
     com.google.protobuf.ByteString
         getAppVersionBytes();
@@ -808,17 +808,17 @@ public final class Messages {
       }
     }
 
-    // required string appVersion = 16;
+    // optional string appVersion = 16;
     public static final int APPVERSION_FIELD_NUMBER = 16;
     private java.lang.Object appVersion_;
     /**
-     * <code>required string appVersion = 16;</code>
+     * <code>optional string appVersion = 16;</code>
      */
     public boolean hasAppVersion() {
       return ((bitField0_ & 0x00001000) == 0x00001000);
     }
     /**
-     * <code>required string appVersion = 16;</code>
+     * <code>optional string appVersion = 16;</code>
      */
     public java.lang.String getAppVersion() {
       java.lang.Object ref = appVersion_;
@@ -835,7 +835,7 @@ public final class Messages {
       }
     }
     /**
-     * <code>required string appVersion = 16;</code>
+     * <code>optional string appVersion = 16;</code>
      */
     public com.google.protobuf.ByteString
         getAppVersionBytes() {
@@ -906,10 +906,6 @@ public final class Messages {
         return false;
       }
       if (!hasHostURL()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (!hasAppVersion()) {
         memoizedIsInitialized = 0;
         return false;
       }
@@ -1567,10 +1563,6 @@ public final class Messages {
           return false;
         }
         if (!hasHostURL()) {
-          
-          return false;
-        }
-        if (!hasAppVersion()) {
           
           return false;
         }
@@ -2424,16 +2416,16 @@ public final class Messages {
         return this;
       }
 
-      // required string appVersion = 16;
+      // optional string appVersion = 16;
       private java.lang.Object appVersion_ = "";
       /**
-       * <code>required string appVersion = 16;</code>
+       * <code>optional string appVersion = 16;</code>
        */
       public boolean hasAppVersion() {
         return ((bitField0_ & 0x00004000) == 0x00004000);
       }
       /**
-       * <code>required string appVersion = 16;</code>
+       * <code>optional string appVersion = 16;</code>
        */
       public java.lang.String getAppVersion() {
         java.lang.Object ref = appVersion_;
@@ -2447,7 +2439,7 @@ public final class Messages {
         }
       }
       /**
-       * <code>required string appVersion = 16;</code>
+       * <code>optional string appVersion = 16;</code>
        */
       public com.google.protobuf.ByteString
           getAppVersionBytes() {
@@ -2463,7 +2455,7 @@ public final class Messages {
         }
       }
       /**
-       * <code>required string appVersion = 16;</code>
+       * <code>optional string appVersion = 16;</code>
        */
       public Builder setAppVersion(
           java.lang.String value) {
@@ -2476,7 +2468,7 @@ public final class Messages {
         return this;
       }
       /**
-       * <code>required string appVersion = 16;</code>
+       * <code>optional string appVersion = 16;</code>
        */
       public Builder clearAppVersion() {
         bitField0_ = (bitField0_ & ~0x00004000);
@@ -2485,7 +2477,7 @@ public final class Messages {
         return this;
       }
       /**
-       * <code>required string appVersion = 16;</code>
+       * <code>optional string appVersion = 16;</code>
        */
       public Builder setAppVersionBytes(
           com.google.protobuf.ByteString value) {
@@ -27337,7 +27329,7 @@ public final class Messages {
       "ment\030\t \003(\t\022\016\n\006roleId\030\n \002(\r\022\020\n\010released\030\013" +
       " \002(\010\022\022\n\ncreateTime\030\014 \002(\003\022\021\n\tstartTime\030\r " +
       "\002(\003\022\014\n\004host\030\016 \002(\t\022\017\n\007hostURL\030\017 \002(\t\022\022\n\nap" +
-      "pVersion\030\020 \002(\t\"*\n\027StopClusterRequestProt" +
+      "pVersion\030\020 \001(\t\"*\n\027StopClusterRequestProt" +
       "o\022\017\n\007message\030\001 \002(\t\"\032\n\030StopClusterRespons",
       "eProto\".\n\027FlexClusterRequestProto\022\023\n\013clu" +
       "sterSpec\030\001 \002(\t\",\n\030FlexClusterResponsePro" +

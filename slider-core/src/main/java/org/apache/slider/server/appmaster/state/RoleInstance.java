@@ -205,7 +205,9 @@ public final class RoleInstance implements Cloneable {
     builder.setStartTime(startTime);
     builder.setHost(host);
     builder.setHostURL(hostURL);
-    builder.setAppVersion(appVersion);
+    if (appVersion != null) {
+      builder.setAppVersion(appVersion);
+    }
     return builder.build();
   }
 
