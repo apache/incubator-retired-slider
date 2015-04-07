@@ -137,6 +137,7 @@ public class RestTypeMarshalling {
     ContainerInformation info = new ContainerInformation();
     info.containerId = wire.getContainerId();
     info.component = wire.getComponent();
+    info.appVersion = wire.getAppVersion();
     info.state = wire.getState();
     if (wire.hasReleased()) {
       info.released = wire.getReleased();
@@ -185,6 +186,9 @@ public class RestTypeMarshalling {
     }
     if (info.component != null) {
       builder.setComponent(info.component);
+    }
+    if (info.appVersion != null) {
+      builder.setAppVersion(info.appVersion);
     }
     builder.setCreateTime(info.createTime);
     if (info.diagnostics != null) {

@@ -25,6 +25,7 @@ import status_params
 config = Script.get_config()
 
 app_root = config['configurations']['global']['app_root']
+app_version = config['configurations']['global']['app_version']
 conf_dir = format("{app_root}/conf")
 storm_user = config['configurations']['global']['app_user']
 log_dir = config['configurations']['global']['app_log_dir']

@@ -55,6 +55,11 @@ public interface SliderKeys extends SliderXmlConfKeys {
   String APP_TYPE = "org-apache-slider";
 
   /**
+   * Key for application version. This must be set in app_config/global {@value}
+   */
+  String APP_VERSION = "site.global.app_version";
+
+  /**
    * JVM arg to force IPv4  {@value}
    */
   String JVM_ENABLE_ASSERTIONS = "-ea";

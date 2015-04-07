@@ -58,6 +58,11 @@ public final class RoleInstance implements Cloneable {
   public String role;
 
   /**
+   * Version of the app
+   */
+  public String appVersion;
+
+  /**
    * Role Id; matches priority in resources.json
    */
   public int roleId;
@@ -200,6 +205,9 @@ public final class RoleInstance implements Cloneable {
     builder.setStartTime(startTime);
     builder.setHost(host);
     builder.setHostURL(hostURL);
+    if (appVersion != null) {
+      builder.setAppVersion(appVersion);
+    }
     return builder.build();
   }
 
@@ -291,6 +299,7 @@ public final class RoleInstance implements Cloneable {
     ContainerInformation info = new ContainerInformation();
     info.containerId = id;
     info.component = role;
+    info.appVersion = appVersion;
     info.startTime = startTime;
     info.createTime = createTime;
     info.diagnostics = diagnostics;

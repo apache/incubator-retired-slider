@@ -18,20 +18,33 @@
 
 package org.apache.slider.agent.actions
 
+import java.io.IOException;
+
 import groovy.util.logging.Slf4j
+import org.apache.hadoop.fs.FileSystem
+import org.apache.hadoop.fs.Path
+import org.apache.hadoop.fs.RawLocalFileSystem
 import org.apache.hadoop.yarn.api.records.ApplicationId
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
 import org.apache.hadoop.yarn.conf.YarnConfiguration
+
 import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.client.SliderClient
+import org.apache.slider.common.SliderKeys
 import org.apache.slider.common.params.ActionListArgs
 import org.apache.slider.common.params.ActionThawArgs
 import org.apache.slider.common.params.Arguments
+import org.apache.slider.common.params.ClientArgs
 import org.apache.slider.common.params.SliderActions
+import org.apache.slider.common.tools.SliderFileSystem;
+import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.core.exceptions.BadCommandArgumentsException
+import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
 import org.apache.slider.core.main.ServiceLauncher
+import org.apache.slider.providers.agent.AgentKeys
+
 import org.junit.Before
 import org.junit.Test
 
@@ -40,10 +53,17 @@ import org.junit.Test
  */
 @Slf4j
 class TestActionList extends AgentMiniClusterTestBase {
+  private static SliderFileSystem testFileSystem
+  private static String APP_NAME = "HBASE"
+  private static String APP_VERSION = "1.0.0"
 
   @Before
   public void setup() {
     super.setup()
+    FileSystem fileSystem = new RawLocalFileSystem()
+    YarnConfiguration configuration = SliderUtils.createConfiguration()
+    fileSystem.setConf(configuration)
+    testFileSystem = new SliderFileSystem(fileSystem, configuration)
     createMiniCluster("", configuration, 1, true)
   }
 
@@ -58,6 +78,7 @@ class TestActionList extends AgentMiniClusterTestBase {
     testListThisUserNoClusters()
     testListMissingCluster()
     testActionList()
+    testActionListWithContainers()
   }
 
   public void testActionList() {
@@ -228,7 +249,79 @@ class TestActionList extends AgentMiniClusterTestBase {
         YarnApplicationState.RUNNING, YarnApplicationState.RUNNING).size()
   }
 
+  public void testActionListWithContainers() {
+    YarnConfiguration yarnConfig = new YarnConfiguration(configuration)
+    String clustername = "testactionlistwithcontainers"
+    // get the default application.def file and install it as a package
+    String appDefPath = agentDefOptions.getAt(AgentKeys.APP_DEF)
+    File appDefFile = new File(new URI(appDefPath))
+    YarnConfiguration conf = SliderUtils.createConfiguration()
+    ServiceLauncher<SliderClient> launcher = launch(TestSliderClient,
+        conf,
+        [
+          ClientArgs.ACTION_PACKAGE,
+          ClientArgs.ARG_INSTALL,
+          ClientArgs.ARG_NAME,
+          APP_NAME,
+          ClientArgs.ARG_PACKAGE,
+          appDefFile.absolutePath,
+          ClientArgs.ARG_VERSION,
+          APP_VERSION,
+          ClientArgs.ARG_REPLACE_PKG
+        ])
+    Path installedPath = new Path(testFileSystem.buildPackageDirPath(APP_NAME,
+      APP_VERSION), appDefFile.getName())
+    File installedPackage = new File(installedPath.toUri().path)
+    assert installedPackage.exists()
+    describe("Installed app package to - " + installedPackage.toURI()
+      .toString())
+    // overwrite the application.def property with the new installed path
+    agentDefOptions.putAt(AgentKeys.APP_DEF, installedPackage.toURI()
+      .toString())
+    // add the app version
+    agentDefOptions.putAt(SliderKeys.APP_VERSION, APP_VERSION)
+    // start the app and AM
+    describe("Starting the app")
+    launcher = createStandaloneAM(clustername, true, false)
+    SliderClient sliderClient = launcher.service
+    addToTeardown(sliderClient)
+    waitForClusterLive(sliderClient)
 
+    describe("Listing all containers of cluster")
+    String outFileName = "target/actionListWithContainers.out"
+    launcher = launchClientAgainstMiniMR(
+        //config includes RM binding info
+        yarnConfig,
+        //varargs list of command line params
+        [SliderActions.ACTION_LIST,
+         clustername,
+         Arguments.ARG_CONTAINERS
+        ]
+    )
+    // reset the app def path to orig value and remove app version
+    agentDefOptions.putAt(AgentKeys.APP_DEF, appDefPath)
+    agentDefOptions.remove(SliderKeys.APP_VERSION)
+
+    assert launcher.serviceExitCode == 0
+    def client = launcher.service
+    def instances = client.enumSliderInstances(false, null, null)
+    assert instances.size() > 0
+    def enumeratedInstance = instances[clustername]
+    assert enumeratedInstance != null
+    assert enumeratedInstance.applicationReport.name ==
+           clustername
+    assert enumeratedInstance.name == clustername
+    assert enumeratedInstance.path.toString().endsWith("/" + clustername)
+    assert enumeratedInstance.applicationReport != null
+    assert enumeratedInstance.applicationReport.yarnApplicationState == 
+      YarnApplicationState.RUNNING
+    instances = sliderClient.enumSliderInstances(true,
+      YarnApplicationState.RUNNING, YarnApplicationState.RUNNING)
+    assert instances[clustername]
+
+    clusterActionFreeze(sliderClient, clustername, "stopping first cluster")
+    waitForAppToFinish(sliderClient)
+  }
 
   public void testListThisUserNoClusters() throws Throwable {
     log.info("RM address = ${RMAddr}")
@@ -243,6 +336,7 @@ class TestActionList extends AgentMiniClusterTestBase {
     )
     assert launcher.serviceExitCode == 0
   }
+
   public void testListMissingCluster() throws Throwable {
     describe("exec the list command against an unknown cluster")
 
@@ -263,4 +357,14 @@ class TestActionList extends AgentMiniClusterTestBase {
     }
   }
 
+  static class TestSliderClient extends SliderClient {
+    public TestSliderClient() {
+      super()
+    }
+
+    @Override
+    protected void initHadoopBinding() throws IOException, SliderException {
+      sliderFileSystem = testFileSystem
+    }
+  }
 }

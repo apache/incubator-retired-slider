@@ -53,6 +53,7 @@ import org.apache.slider.api.RoleKeys;
 import org.apache.slider.api.types.ContainerInformation;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.SliderXmlConfKeys;
+import org.apache.slider.core.conf.ConfTreeOperations;
 import org.apache.slider.core.conf.MapOperations;
 import org.apache.slider.core.exceptions.BadClusterStateException;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
@@ -61,6 +62,7 @@ import org.apache.slider.core.exceptions.ErrorStrings;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.launch.ClasspathConstructor;
 import org.apache.slider.core.main.LauncherExitCodes;
+import org.apache.slider.providers.agent.AgentKeys;
 import org.apache.slider.server.services.utility.PatternValidator;
 import org.apache.slider.server.services.workflow.ForkedProcessService;
 import org.apache.zookeeper.server.util.KerberosUtil;
@@ -691,7 +693,7 @@ public final class SliderUtils {
       }
       if (containers != null) {
         builder.append('\n');
-        builder.append(SliderUtils.addContainersToString(containers));
+        builder.append(SliderUtils.containersToString(containers));
       }
     }
 
@@ -699,14 +701,14 @@ public final class SliderUtils {
     return builder.toString();
   }
 
-  public static String addContainersToString(
+  public static String containersToString(
       List<ContainerInformation> containers) {
-    String containerf = "  %-40s  %40s  %-30s\n";
+    String containerf = "  %-28s  %30s  %40s  %s\n";
     StringBuilder builder = new StringBuilder(512);
     builder.append("Containers:\n");
     for (ContainerInformation container : containers) {
       builder.append(String.format(containerf, container.component,
-          container.containerId, container.host));
+          container.appVersion, container.containerId, container.host));
     }
     return builder.toString();
   }
@@ -2142,6 +2144,20 @@ public final class SliderUtils {
     File f = new File(Slider.class.getProtectionDomain().getCodeSource()
                                   .getLocation().getPath());
     return f.getAbsolutePath();
+  }
+
+  /**
+   * return the HDFS path where the application package has been uploaded
+   * manually or by using slider client (install package command)
+   * 
+   * @param conf configuration
+   * @return
+   */
+  public static String getApplicationDefinitionPath(ConfTreeOperations conf)
+      throws BadConfigException {
+    String appDefPath = conf.getGlobalOptions().getMandatoryOption(
+        AgentKeys.APP_DEF);
+    return appDefPath;
   }
 
   /**

@@ -19,6 +19,7 @@
 package org.apache.slider.core.conf;
 
 import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.core.exceptions.BadConfigException;
 import org.codehaus.jackson.annotate.JsonIgnore;
@@ -166,6 +167,18 @@ public final class AggregateConf {
     }
 
     return passphrase;
+  }
+
+  /**
+   * Is this app package versioned?
+   * 
+   * @return true if {@link SliderKeys#APP_VERSION} was set in the app config
+   *         provided during creation of this app
+   * @since 0.80.0-incubating
+   */
+  public boolean isVersioned() {
+    return StringUtils.isNotEmpty(getAppConfOperations().getGlobalOptions()
+        .get(SliderKeys.APP_VERSION));
   }
 
   /**

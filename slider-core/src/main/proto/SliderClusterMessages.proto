@@ -39,6 +39,7 @@ message RoleInstanceState {
   required int64 startTime = 13;
   required string host = 14;
   required string hostURL = 15;
+  optional string appVersion = 16;
 }
 
 /**
@@ -65,7 +66,7 @@ message FlexClusterRequestProto {
 
 
 /**
- * stop the cluster
+ * flex the cluster
  */
 message FlexClusterResponseProto {
   required bool response = 1;
@@ -245,6 +246,7 @@ message ContainerInformationProto {
   optional string host = 10;
   optional string hostURL = 11;
   optional string placement = 12;
+  optional string appVersion = 13;
 }
 
 

@@ -98,10 +98,8 @@ class AccumuloScriptIT extends AccumuloBasicIT {
 
     accumulo("version")
     accumulo("classpath")
-    accumulo("admin checkTablets")
     accumulo("admin listInstances")
     accumulo("admin ping")
-    accumulo("admin volumes")
 
     String zookeepers = SLIDER_CONFIG.get(
       RegistryConstants.KEY_REGISTRY_ZK_QUORUM,

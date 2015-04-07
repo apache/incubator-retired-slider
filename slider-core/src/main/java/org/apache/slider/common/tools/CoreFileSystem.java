@@ -19,6 +19,8 @@
 package org.apache.slider.common.tools;
 
 import com.google.common.base.Preconditions;
+
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeys;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -152,10 +154,14 @@ public class CoreFileSystem {
    *
    * @return the path for persistent app package
    */
-  public Path buildPackageDirPath(String packageName) {
+  public Path buildPackageDirPath(String packageName, String packageVersion) {
     Preconditions.checkNotNull(packageName);
     Path path = getBaseApplicationPath();
-    return new Path(path, SliderKeys.PACKAGE_DIRECTORY + "/" + packageName);
+    path = new Path(path, SliderKeys.PACKAGE_DIRECTORY + "/" + packageName);
+    if (StringUtils.isNotEmpty(packageVersion)) {
+      path = new Path(path, packageVersion);
+    }
+    return path;
   }
 
   /**

@@ -41,10 +41,11 @@ tserver_heapsize = config['configurations']['accumulo-env']['tserver_heapsize']
 monitor_heapsize = config['configurations']['accumulo-env']['monitor_heapsize']
 gc_heapsize = config['configurations']['accumulo-env']['gc_heapsize']
 other_heapsize = config['configurations']['accumulo-env']['other_heapsize']
-env_sh_template = config['configurations']['accumulo-env']['content']
+env_sh_template = config['configurations']['accumulo-env']['server_content']
 
 # accumulo local directory structure
 accumulo_root = config['configurations']['global']['app_root']
+app_version = config['configurations']['global']['app_version']
 app_name = config['clusterName']
 conf_dir = format("{accumulo_root}/conf")
 log_dir = config['configurations']['global']['app_log_dir']

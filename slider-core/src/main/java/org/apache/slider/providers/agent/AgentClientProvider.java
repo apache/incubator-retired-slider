@@ -82,6 +82,8 @@ public class AgentClientProvider extends AbstractClientProvider
       LoggerFactory.getLogger(AgentClientProvider.class);
   protected static final String NAME = "agent";
   private static final ProviderUtils providerUtils = new ProviderUtils(log);
+  public static final String E_COULD_NOT_READ_METAINFO
+      = "Not a valid app package. Could not read metainfo.";
 
 
   protected AgentClientProvider(Configuration conf) {
@@ -114,8 +116,8 @@ public class AgentClientProvider extends AbstractClientProvider
                                                 clusterDirPath,
                                                 generatedConfDirPath, secure);
 
-    String appDef = instanceDefinition.getAppConfOperations().
-        getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
+    String appDef = SliderUtils.getApplicationDefinitionPath(instanceDefinition
+        .getAppConfOperations());
     Path appDefPath = new Path(appDef);
     sliderFileSystem.verifyFileExists(appDefPath);
 
@@ -145,16 +147,16 @@ public class AgentClientProvider extends AbstractClientProvider
     providerUtils.validateNodeCount(instanceDefinition, ROLE_NODE,
                                     0, -1);
 
+    String appDef = null;
     try {
       // Validate the app definition
-      instanceDefinition.getAppConfOperations().
-          getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
+      // Validate the app definition
+      appDef = SliderUtils.getApplicationDefinitionPath(instanceDefinition
+          .getAppConfOperations());
     } catch (BadConfigException bce) {
       throw new BadConfigException("Application definition must be provided. " + bce.getMessage());
     }
 
-    String appDef = instanceDefinition.getAppConfOperations().
-        getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
     log.info("Validating app definition {}", appDef);
     String extension = appDef.substring(appDef.lastIndexOf(".") + 1, appDef.length());
     if (!"zip".equals(extension.toLowerCase(Locale.ENGLISH))) {
@@ -387,7 +389,7 @@ public class AgentClientProvider extends AbstractClientProvider
       }
 
       if (metaInfo == null) {
-        throw new SliderException("Not a valid app package. Could not read metainfo.");
+        throw new BadConfigException(E_COULD_NOT_READ_METAINFO);
       }
 
       expandAgentTar(agentPkgDir);

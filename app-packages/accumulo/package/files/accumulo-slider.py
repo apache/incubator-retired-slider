@@ -17,11 +17,7 @@
 
 import os
 import sys
-import json
-import glob
-import tempfile
 import subprocess
-import shutil
 
 SLIDER_DIR = os.getenv('SLIDER_HOME', None)
 if SLIDER_DIR == None or (not os.path.exists(SLIDER_DIR)):
@@ -88,7 +84,6 @@ def get_all_conf():
   client_file = os.path.join(confdir, 'client.conf')
   site_file = os.path.join(confdir, 'accumulo-site.xml')
   env_file = os.path.join(confdir, 'accumulo-env.sh')
-  env_json = os.path.join(confdir, 'accumulo-env.json')
 
   if os.path.exists(client_file):
     os.remove(client_file)
@@ -96,21 +91,10 @@ def get_all_conf():
     os.remove(site_file)
   if os.path.exists(env_file):
     os.remove(env_file)
-  if os.path.exists(env_json):
-    os.remove(env_json)
 
   get_conf("client", "properties", client_file)
   get_conf("accumulo-site", "xml", site_file)
-  get_conf("accumulo-env", "json", env_json)
-
-  infile = open(env_json)
-  outfile = open(env_file, 'w')
-  try:
-    content = json.load(infile)
-    outfile.write(content['content'])
-  finally:
-    outfile.close()
-    infile.close()
+  get_conf("accumulo-env", "env", env_file)
 
 def get_conf(confname, fileformat, destfile):
   if os.path.exists(destfile):

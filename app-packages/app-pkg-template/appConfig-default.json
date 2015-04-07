@@ -6,6 +6,7 @@
     "application.def": "myapp-1.0.0.zip",
     "java_home": "/usr/jdk64/jdk1.7.0_67",
 
+    "site.global.app_version": "1.0.0",
     "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/myapp-1.0.0",
 
     "site.global.listen_port": "${MYAPP_COMPONENT.ALLOCATED_PORT}"

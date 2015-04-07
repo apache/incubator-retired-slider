@@ -204,6 +204,13 @@ import static org.apache.slider.common.params.SliderActions.*;
 public class SliderClient extends AbstractSliderLaunchedService implements RunService,
     SliderExitCodes, SliderKeys, ErrorStrings, SliderClientAPI {
   private static final Logger log = LoggerFactory.getLogger(SliderClient.class);
+  public static final String E_MUST_BE_A_VALID_JSON_FILE
+      = "Invalid configuration. Must be a valid json file.";
+  public static final String E_INVALID_APPLICATION_PACKAGE_LOCATION
+      = "A valid application package location required.";
+  public static final String E_INVALID_INSTALL_LOCATION
+      = "A valid install location must be provided for the client.";
+  private static PrintStream clientOutputStream = System.out;
 
   // value should not be changed without updating string find in slider.py
   private static final String PASSWORD_PROMPT = "Enter password for";
@@ -905,7 +912,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     }
 
     if (StringUtils.isEmpty(installPkgInfo.packageURI)) {
-      throw new BadCommandArgumentsException("A valid application package location required.");
+      throw new BadCommandArgumentsException(E_INVALID_APPLICATION_PACKAGE_LOCATION);
     } else {
       File pkgFile = new File(installPkgInfo.packageURI);
       if (!pkgFile.exists() || pkgFile.isDirectory()) {
@@ -916,7 +923,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       }
     }
 
-    Path pkgPath = sliderFileSystem.buildPackageDirPath(installPkgInfo.name);
+    // Do not provide new options to install-package command as it is in
+    // deprecated mode. So version is kept null here. Use package --install.
+    Path pkgPath = sliderFileSystem.buildPackageDirPath(installPkgInfo.name,
+        null);
     sliderFileSystem.getFileSystem().mkdirs(pkgPath);
 
     Path fileInFs = new Path(pkgPath, srcFile.getName());
@@ -1026,7 +1036,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     if (clientInfo.installLocation == null) {
       throw new BadCommandArgumentsException(
-          "A valid install location must be provided for the client.\n"
+          E_INVALID_INSTALL_LOCATION +"\n"
           + CommonArgs.usage(serviceArgs, ACTION_CLIENT));
     } else {
       if (!clientInfo.installLocation.exists()) {
@@ -1057,7 +1067,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         config = new JSONObject(new String(encoded, Charset.defaultCharset()));
       }catch(JSONException jsonEx) {
         log.error("Unable to read supplied config", jsonEx);
-        throw new SliderException("Invalid configuration. Must be a valid json file.", jsonEx);
+        throw new BadConfigException(E_MUST_BE_A_VALID_JSON_FILE, jsonEx);
       }
     }
 
@@ -1077,54 +1087,96 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   @Override
   public int actionPackage(ActionPackageArgs actionPackageInfo)
       throws YarnException, IOException {
+    initializeOutputStream(actionPackageInfo.out);
+    int exitCode = -1;
     if (actionPackageInfo.install) {
-      return actionPackageInstall(actionPackageInfo);
+      exitCode = actionPackageInstall(actionPackageInfo);
     }
     if (actionPackageInfo.delete) {
-      return actionPackageDelete(actionPackageInfo);
+      exitCode = actionPackageDelete(actionPackageInfo);
     }
     if (actionPackageInfo.list) {
-      return actionPackageList();
+      exitCode = actionPackageList();
     }
     if (actionPackageInfo.instances) {
-      return actionPackageInstances();
+      exitCode = actionPackageInstances();
+    }
+    finalizeOutputStream(actionPackageInfo.out);
+    if (exitCode != -1) {
+      return exitCode;
     }
     throw new BadCommandArgumentsException(
         "Select valid package operation option");
   }
 
+  private void initializeOutputStream(String outFile)
+      throws FileNotFoundException {
+    if (outFile != null) {
+      clientOutputStream = new PrintStream(new FileOutputStream(outFile));
+    } else {
+      clientOutputStream = System.out;
+    }
+  }
+
+  private void finalizeOutputStream(String outFile) {
+    if (outFile != null && clientOutputStream != null) {
+      clientOutputStream.flush();
+      clientOutputStream.close();
+    }
+    clientOutputStream = System.out;
+  }
+
   private int actionPackageInstances() throws YarnException, IOException {
     Map<String, Path> persistentInstances = sliderFileSystem
         .listPersistentInstances();
-    if(persistentInstances.isEmpty()) {
+    if (persistentInstances.isEmpty()) {
       log.info("No slider cluster specification available");
       return EXIT_SUCCESS;
     }
     String pkgPathValue = sliderFileSystem
-        .buildPackageDirPath(StringUtils.EMPTY).toUri().getPath();
+        .buildPackageDirPath(StringUtils.EMPTY, StringUtils.EMPTY).toUri()
+        .getPath();
     FileSystem fs = sliderFileSystem.getFileSystem();
     Iterator<Map.Entry<String, Path>> instanceItr = persistentInstances
         .entrySet().iterator();
-    log.info("List of application with its package name and path");
+    log.info("List of applications with its package name and path");
+    println("%-25s  %15s  %30s  %s", "Cluster Name", "Package Name",
+        "Package Version", "Application Location");
     while(instanceItr.hasNext()) {
       Map.Entry<String, Path> entry = instanceItr.next();
       String clusterName = entry.getKey();
       Path clusterPath = entry.getValue();
       AggregateConf instanceDefinition = loadInstanceDefinitionUnresolved(
           clusterName, clusterPath);
-      Path appDefPath = new Path(instanceDefinition.getAppConfOperations()
-          .getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF));
+      Path appDefPath = null;
       try {
-        if (appDefPath.toString().contains(pkgPathValue)
-            && fs.isFile(appDefPath)) {
+        appDefPath = new Path(
+            SliderUtils.getApplicationDefinitionPath(instanceDefinition
+                .getAppConfOperations()));
+      } catch (BadConfigException e) {
+        // Invalid cluster state, so move on to next. No need to log anything
+        // as this is just listing of instances.
+        continue;
+      }
+      if (!appDefPath.isUriPathAbsolute()) {
+        appDefPath = new Path(fs.getHomeDirectory(), appDefPath);
+      }
+      String appDefPathStr = appDefPath.toUri().getPath();
+      try {
+        if (appDefPathStr.contains(pkgPathValue) && fs.isFile(appDefPath)) {
           String packageName = appDefPath.getParent().getName();
-          println("\t" + clusterName + "\t" + packageName + "\t"
-              + appDefPath.toString());
+          String packageVersion = StringUtils.EMPTY;
+          if (instanceDefinition.isVersioned()) {
+            packageVersion = packageName;
+            packageName = appDefPath.getParent().getParent().getName();
+          }
+          println("%-25s  %15s  %30s  %s", clusterName, packageName,
+              packageVersion, appDefPathStr);
         }
       } catch(IOException e) {
         if(log.isDebugEnabled()) {
           log.debug(clusterName + " application definition path "
-              + appDefPath.toString() + " is not found.");
+              + appDefPathStr + " is not found.");
         }
       }
     }
@@ -1132,7 +1184,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   }
 
   private int actionPackageList() throws IOException {
-    Path pkgPath = sliderFileSystem.buildPackageDirPath(StringUtils.EMPTY);
+    Path pkgPath = sliderFileSystem.buildPackageDirPath(StringUtils.EMPTY,
+        StringUtils.EMPTY);
     log.info("Package install path : " + pkgPath);
     if (!sliderFileSystem.getFileSystem().isDirectory(pkgPath)) {
       log.info("No package(s) installed");
@@ -1183,7 +1236,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       }
     }
 
-    Path pkgPath = sliderFileSystem.buildPackageDirPath(actionPackageArgs.name);
+    Path pkgPath = sliderFileSystem.buildPackageDirPath(actionPackageArgs.name,
+        actionPackageArgs.version);
     sliderFileSystem.getFileSystem().mkdirs(pkgPath);
 
     Path fileInFs = new Path(pkgPath, srcFile.getName());
@@ -1209,7 +1263,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
               + CommonArgs.usage(serviceArgs, ACTION_PACKAGE));
     }
 
-    Path pkgPath = sliderFileSystem.buildPackageDirPath(actionPackageArgs.name);
+    Path pkgPath = sliderFileSystem.buildPackageDirPath(actionPackageArgs.name,
+        actionPackageArgs.version);
     if (!sliderFileSystem.getFileSystem().exists(pkgPath)) {
       throw new BadCommandArgumentsException("Package does not exists at "
           + pkgPath.toUri().toString());
@@ -1631,7 +1686,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     // add the tags if available
     Set<String> applicationTags = provider.getApplicationTags(sliderFileSystem,
-        appOperations.getGlobalOptions().get(AgentKeys.APP_DEF));
+        SliderUtils.getApplicationDefinitionPath(appOperations));
     AppMasterLauncher amLauncher = new AppMasterLauncher(clustername,
         SliderKeys.APP_TYPE,
         config,
@@ -2636,7 +2691,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
               new SliderUtils.OnDemandReportStringifier(app));
     if (app.getYarnApplicationState().ordinal() >=
         YarnApplicationState.FINISHED.ordinal()) {
-      log.info("Cluster {} is a terminated state {}", clustername,
+      log.info("Cluster {} is in a terminated state {}", clustername,
                app.getYarnApplicationState());
       return EXIT_SUCCESS;
     }
@@ -3248,8 +3303,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         log.error("can not open agent package: " + e.toString());
         return;
       }
-      String pkgTarballPath = instanceDefinition.getAppConfOperations()
-          .getGlobalOptions().getMandatoryOption(AgentKeys.APP_DEF);
+      String pkgTarballPath = SliderUtils
+          .getApplicationDefinitionPath(instanceDefinition
+              .getAppConfOperations());
       try {
         SliderUtils.validateHDFSFile(sliderFileSystem, pkgTarballPath);
         log.info("Application package is properly installed");
@@ -3394,8 +3450,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     }
     String clusterDir = instanceDefinition.getAppConfOperations()
         .getGlobalOptions().get(AgentKeys.APP_ROOT);
-    String pkgTarball = instanceDefinition.getAppConfOperations()
-        .getGlobalOptions().get(AgentKeys.APP_DEF);
+    String pkgTarball = SliderUtils
+        .getApplicationDefinitionPath(instanceDefinition.getAppConfOperations());
     String runAsUser = instanceDefinition.getAppConfOperations()
         .getGlobalOptions().get(AgentKeys.RUNAS_USER);
 
@@ -3836,7 +3892,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    */
   @SuppressWarnings("UseOfSystemOutOrSystemErr")
   private static void print(CharSequence src) {
-    System.out.append(src);
+    clientOutputStream.append(src);
   }
 
   /**

@@ -34,7 +34,6 @@ import org.junit.Test
 class TestRegistryRestMarshalling {
 
   @Test
-  @Ignore("SLIDER-531")
   public void testDeser() throws Throwable {
     PathEntryMarshalling pem = new PathEntryMarshalling();
     def unmarshalled = pem.fromResource(

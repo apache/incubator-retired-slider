@@ -75,6 +75,21 @@ export HADOOP_PREFIX=${@//site/accumulo-env/hadoop_prefix}
 export HADOOP_CONF_DIR=${@//site/accumulo-env/hadoop_conf_dir}
 export JAVA_HOME=${@//site/accumulo-env/java_home}
 export ZOOKEEPER_HOME=${@//site/accumulo-env/zookeeper_home}
+export ACCUMULO_GENERAL_OPTS="-XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=75 -Djava.net.preferIPv4Stack=true"
+export ACCUMULO_OTHER_OPTS="-Xmx${@//site/accumulo-env/other_heapsize} -Xms${@//site/accumulo-env/other_heapsize}"
+# what do when the JVM runs out of heap memory
+export ACCUMULO_KILL_CMD='kill -9 %p'
+    </value>
+  </property>
+  <property>
+    <name>server_content</name>
+    <description>This is the template for a server accumulo-env.sh file</description>
+    <value>
+#! /usr/bin/env bash
+export HADOOP_PREFIX=${@//site/accumulo-env/hadoop_prefix}
+export HADOOP_CONF_DIR=${@//site/accumulo-env/hadoop_conf_dir}
+export JAVA_HOME=${@//site/accumulo-env/java_home}
+export ZOOKEEPER_HOME=${@//site/accumulo-env/zookeeper_home}
 export ACCUMULO_LOG_DIR=${@//site/global/app_log_dir}
 export ACCUMULO_TSERVER_OPTS="-Xmx${@//site/accumulo-env/tserver_heapsize} -Xms${@//site/accumulo-env/tserver_heapsize}"
 export ACCUMULO_MASTER_OPTS="-Xmx${@//site/accumulo-env/master_heapsize} -Xms${@//site/accumulo-env/master_heapsize}"

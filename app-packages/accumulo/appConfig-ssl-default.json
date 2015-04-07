@@ -9,6 +9,7 @@
     "slider.component.keystore.credential.alias.property": "rpc.javax.net.ssl.keyStorePassword",
     "slider.component.truststore.credential.alias.property": "rpc.javax.net.ssl.trustStorePassword",
 
+    "site.global.app_version": "${accumulo.version}",
     "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/accumulo-${accumulo.version}",
     "site.global.app_user": "${app.user}",
     "site.global.user_group": "${app.user.group}",
@@ -41,6 +42,7 @@
     "site.accumulo-site.general.security.credential.provider.paths": "jceks://hdfs/user/${USER}/accumulo-${CLUSTER_NAME}.jceks",
     "site.accumulo-site.instance.rpc.ssl.enabled": "true",
     "site.accumulo-site.instance.rpc.ssl.clientAuth": "true",
+    "site.accumulo-site.instance.rpc.sasl.enabled": "false",
     "site.accumulo-site.general.kerberos.keytab": "${accumulo.keytab}",
     "site.accumulo-site.general.kerberos.principal": "${accumulo.principal}",
     "site.accumulo-site.rpc.javax.net.ssl.keyStore": "${AGENT_WORK_ROOT}/secstores/keystore-${COMPONENT_NAME}.p12",

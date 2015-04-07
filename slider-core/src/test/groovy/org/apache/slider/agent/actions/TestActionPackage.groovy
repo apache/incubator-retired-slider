@@ -22,9 +22,11 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.agent.AgentMiniClusterTestBase
+import org.apache.slider.client.SliderClient
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
 import org.apache.slider.core.exceptions.BadCommandArgumentsException
+import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.core.main.ServiceLauncher
 import org.junit.Before
 import org.junit.Test
@@ -76,7 +78,8 @@ class TestActionPackage extends AgentMiniClusterTestBase {
       )
       fail("expected an exception, got a status code " + launcher.serviceExitCode)
     } catch (BadCommandArgumentsException e) {
-      assert e.message.contains("A valid application package location required")
+      assertExceptionDetails(e, LauncherExitCodes.EXIT_COMMAND_ARGUMENT_ERROR,
+          SliderClient.E_INVALID_APPLICATION_PACKAGE_LOCATION);
     }
   }
 
@@ -242,7 +245,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
       )
       fail("expected an exception, got a status code " + launcher.serviceExitCode)
     } catch (BadCommandArgumentsException e) {
-      assert e.message.contains("Package does not exists")
+      assert e.message.contains("Package does not exist")
     }
   }
 

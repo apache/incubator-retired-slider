@@ -78,6 +78,7 @@ public interface Arguments {
   String ARG_MANAGER_SHORT = "--m";
   String ARG_MESSAGE = "--message";
   String ARG_NAME = "--name";
+  String ARG_VERSION = "--version";
   String ARG_OPTION = "--option";
   String ARG_OPTION_SHORT = "-O";
   String ARG_OUTPUT = "--out";
