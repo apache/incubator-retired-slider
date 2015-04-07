@@ -43,6 +43,7 @@ import org.apache.slider.server.appmaster.actions.ActionFlexCluster;
 import org.apache.slider.server.appmaster.actions.ActionHalt;
 import org.apache.slider.server.appmaster.actions.ActionKillContainer;
 import org.apache.slider.server.appmaster.actions.ActionStopSlider;
+import org.apache.slider.server.appmaster.actions.ActionUpgradeContainers;
 import org.apache.slider.server.appmaster.actions.AsyncAction;
 import org.apache.slider.server.appmaster.actions.QueueAccess;
 import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
@@ -185,6 +186,29 @@ public class SliderIPCService extends AbstractService
     log.info("SliderAppMasterApi.stopCluster: {}", stopSlider);
     schedule(stopSlider);
     return Messages.StopClusterResponseProto.getDefaultInstance();
+  }
+
+  @Override //SliderClusterProtocol
+  public Messages.UpgradeContainersResponseProto upgradeContainers(
+      Messages.UpgradeContainersRequestProto request) throws IOException,
+      YarnException {
+    onRpcCall("upgrade");
+    String message = request.getMessage();
+    if (message == null) {
+      message = "application containers upgraded by client";
+    }
+    ActionUpgradeContainers upgradeContainers =
+        new ActionUpgradeContainers(
+            "Upgrade containers",
+            1000, TimeUnit.MILLISECONDS,
+            LauncherExitCodes.EXIT_SUCCESS,
+            FinalApplicationStatus.SUCCEEDED,
+            request.getContainerList(),
+            request.getComponentList(),
+            message);
+    log.info("SliderAppMasterApi.upgradeContainers: {}", upgradeContainers);
+    schedule(upgradeContainers);
+    return Messages.UpgradeContainersResponseProto.getDefaultInstance();
   }
 
   @Override //SliderClusterProtocol

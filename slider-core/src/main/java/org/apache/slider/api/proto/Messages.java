@@ -3436,6 +3436,1323 @@ public final class Messages {
     // @@protoc_insertion_point(class_scope:org.apache.slider.api.StopClusterResponseProto)
   }
 
+  public interface UpgradeContainersRequestProtoOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+
+    // required string message = 1;
+    /**
+     * <code>required string message = 1;</code>
+     *
+     * <pre>
+     **
+     *message to include
+     * </pre>
+     */
+    boolean hasMessage();
+    /**
+     * <code>required string message = 1;</code>
+     *
+     * <pre>
+     **
+     *message to include
+     * </pre>
+     */
+    java.lang.String getMessage();
+    /**
+     * <code>required string message = 1;</code>
+     *
+     * <pre>
+     **
+     *message to include
+     * </pre>
+     */
+    com.google.protobuf.ByteString
+        getMessageBytes();
+
+    // repeated string container = 2;
+    /**
+     * <code>repeated string container = 2;</code>
+     */
+    java.util.List<java.lang.String>
+    getContainerList();
+    /**
+     * <code>repeated string container = 2;</code>
+     */
+    int getContainerCount();
+    /**
+     * <code>repeated string container = 2;</code>
+     */
+    java.lang.String getContainer(int index);
+    /**
+     * <code>repeated string container = 2;</code>
+     */
+    com.google.protobuf.ByteString
+        getContainerBytes(int index);
+
+    // repeated string component = 3;
+    /**
+     * <code>repeated string component = 3;</code>
+     */
+    java.util.List<java.lang.String>
+    getComponentList();
+    /**
+     * <code>repeated string component = 3;</code>
+     */
+    int getComponentCount();
+    /**
+     * <code>repeated string component = 3;</code>
+     */
+    java.lang.String getComponent(int index);
+    /**
+     * <code>repeated string component = 3;</code>
+     */
+    com.google.protobuf.ByteString
+        getComponentBytes(int index);
+  }
+  /**
+   * Protobuf type {@code org.apache.slider.api.UpgradeContainersRequestProto}
+   *
+   * <pre>
+   **
+   * upgrade the containers
+   * </pre>
+   */
+  public static final class UpgradeContainersRequestProto extends
+      com.google.protobuf.GeneratedMessage
+      implements UpgradeContainersRequestProtoOrBuilder {
+    // Use UpgradeContainersRequestProto.newBuilder() to construct.
+    private UpgradeContainersRequestProto(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
+    }
+    private UpgradeContainersRequestProto(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
+    private static final UpgradeContainersRequestProto defaultInstance;
+    public static UpgradeContainersRequestProto getDefaultInstance() {
+      return defaultInstance;
+    }
+
+    public UpgradeContainersRequestProto getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private UpgradeContainersRequestProto(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 10: {
+              bitField0_ |= 0x00000001;
+              message_ = input.readBytes();
+              break;
+            }
+            case 18: {
+              if (!((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
+                container_ = new com.google.protobuf.LazyStringArrayList();
+                mutable_bitField0_ |= 0x00000002;
+              }
+              container_.add(input.readBytes());
+              break;
+            }
+            case 26: {
+              if (!((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
+                component_ = new com.google.protobuf.LazyStringArrayList();
+                mutable_bitField0_ |= 0x00000004;
+              }
+              component_.add(input.readBytes());
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        if (((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
+          container_ = new com.google.protobuf.UnmodifiableLazyStringList(container_);
+        }
+        if (((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
+          component_ = new com.google.protobuf.UnmodifiableLazyStringList(component_);
+        }
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_UpgradeContainersRequestProto_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_UpgradeContainersRequestProto_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto.class, org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto.Builder.class);
+    }
+
+    public static com.google.protobuf.Parser<UpgradeContainersRequestProto> PARSER =
+        new com.google.protobuf.AbstractParser<UpgradeContainersRequestProto>() {
+      public UpgradeContainersRequestProto parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new UpgradeContainersRequestProto(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<UpgradeContainersRequestProto> getParserForType() {
+      return PARSER;
+    }
+
+    private int bitField0_;
+    // required string message = 1;
+    public static final int MESSAGE_FIELD_NUMBER = 1;
+    private java.lang.Object message_;
+    /**
+     * <code>required string message = 1;</code>
+     *
+     * <pre>
+     **
+     *message to include
+     * </pre>
+     */
+    public boolean hasMessage() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>required string message = 1;</code>
+     *
+     * <pre>
+     **
+     *message to include
+     * </pre>
+     */
+    public java.lang.String getMessage() {
+      java.lang.Object ref = message_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          message_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string message = 1;</code>
+     *
+     * <pre>
+     **
+     *message to include
+     * </pre>
+     */
+    public com.google.protobuf.ByteString
+        getMessageBytes() {
+      java.lang.Object ref = message_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        message_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // repeated string container = 2;
+    public static final int CONTAINER_FIELD_NUMBER = 2;
+    private com.google.protobuf.LazyStringList container_;
+    /**
+     * <code>repeated string container = 2;</code>
+     */
+    public java.util.List<java.lang.String>
+        getContainerList() {
+      return container_;
+    }
+    /**
+     * <code>repeated string container = 2;</code>
+     */
+    public int getContainerCount() {
+      return container_.size();
+    }
+    /**
+     * <code>repeated string container = 2;</code>
+     */
+    public java.lang.String getContainer(int index) {
+      return container_.get(index);
+    }
+    /**
+     * <code>repeated string container = 2;</code>
+     */
+    public com.google.protobuf.ByteString
+        getContainerBytes(int index) {
+      return container_.getByteString(index);
+    }
+
+    // repeated string component = 3;
+    public static final int COMPONENT_FIELD_NUMBER = 3;
+    private com.google.protobuf.LazyStringList component_;
+    /**
+     * <code>repeated string component = 3;</code>
+     */
+    public java.util.List<java.lang.String>
+        getComponentList() {
+      return component_;
+    }
+    /**
+     * <code>repeated string component = 3;</code>
+     */
+    public int getComponentCount() {
+      return component_.size();
+    }
+    /**
+     * <code>repeated string component = 3;</code>
+     */
+    public java.lang.String getComponent(int index) {
+      return component_.get(index);
+    }
+    /**
+     * <code>repeated string component = 3;</code>
+     */
+    public com.google.protobuf.ByteString
+        getComponentBytes(int index) {
+      return component_.getByteString(index);
+    }
+
+    private void initFields() {
+      message_ = "";
+      container_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      component_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+
+      if (!hasMessage()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeBytes(1, getMessageBytes());
+      }
+      for (int i = 0; i < container_.size(); i++) {
+        output.writeBytes(2, container_.getByteString(i));
+      }
+      for (int i = 0; i < component_.size(); i++) {
+        output.writeBytes(3, component_.getByteString(i));
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(1, getMessageBytes());
+      }
+      {
+        int dataSize = 0;
+        for (int i = 0; i < container_.size(); i++) {
+          dataSize += com.google.protobuf.CodedOutputStream
+            .computeBytesSizeNoTag(container_.getByteString(i));
+        }
+        size += dataSize;
+        size += 1 * getContainerList().size();
+      }
+      {
+        int dataSize = 0;
+        for (int i = 0; i < component_.size(); i++) {
+          dataSize += com.google.protobuf.CodedOutputStream
+            .computeBytesSizeNoTag(component_.getByteString(i));
+        }
+        size += dataSize;
+        size += 1 * getComponentList().size();
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto)) {
+        return super.equals(obj);
+      }
+      org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto other = (org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto) obj;
+
+      boolean result = true;
+      result = result && (hasMessage() == other.hasMessage());
+      if (hasMessage()) {
+        result = result && getMessage()
+            .equals(other.getMessage());
+      }
+      result = result && getContainerList()
+          .equals(other.getContainerList());
+      result = result && getComponentList()
+          .equals(other.getComponentList());
+      result = result &&
+          getUnknownFields().equals(other.getUnknownFields());
+      return result;
+    }
+
+    private int memoizedHashCode = 0;
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptorForType().hashCode();
+      if (hasMessage()) {
+        hash = (37 * hash) + MESSAGE_FIELD_NUMBER;
+        hash = (53 * hash) + getMessage().hashCode();
+      }
+      if (getContainerCount() > 0) {
+        hash = (37 * hash) + CONTAINER_FIELD_NUMBER;
+        hash = (53 * hash) + getContainerList().hashCode();
+      }
+      if (getComponentCount() > 0) {
+        hash = (37 * hash) + COMPONENT_FIELD_NUMBER;
+        hash = (53 * hash) + getComponentList().hashCode();
+      }
+      hash = (29 * hash) + getUnknownFields().hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+    public static org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input);
+    }
+    public static org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+    }
+    public static org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code org.apache.slider.api.UpgradeContainersRequestProto}
+     *
+     * <pre>
+     **
+     * upgrade the containers
+     * </pre>
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.apache.slider.api.proto.Messages.UpgradeContainersRequestProtoOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_UpgradeContainersRequestProto_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_UpgradeContainersRequestProto_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto.class, org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto.Builder.class);
+      }
+
+      // Construct using org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        message_ = "";
+        bitField0_ = (bitField0_ & ~0x00000001);
+        container_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        component_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        return this;
+      }
+
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_UpgradeContainersRequestProto_descriptor;
+      }
+
+      public org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto getDefaultInstanceForType() {
+        return org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto.getDefaultInstance();
+      }
+
+      public org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto build() {
+        org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto buildPartial() {
+        org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto result = new org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        result.message_ = message_;
+        if (((bitField0_ & 0x00000002) == 0x00000002)) {
+          container_ = new com.google.protobuf.UnmodifiableLazyStringList(
+              container_);
+          bitField0_ = (bitField0_ & ~0x00000002);
+        }
+        result.container_ = container_;
+        if (((bitField0_ & 0x00000004) == 0x00000004)) {
+          component_ = new com.google.protobuf.UnmodifiableLazyStringList(
+              component_);
+          bitField0_ = (bitField0_ & ~0x00000004);
+        }
+        result.component_ = component_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto) {
+          return mergeFrom((org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto other) {
+        if (other == org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto.getDefaultInstance()) return this;
+        if (other.hasMessage()) {
+          bitField0_ |= 0x00000001;
+          message_ = other.message_;
+          onChanged();
+        }
+        if (!other.container_.isEmpty()) {
+          if (container_.isEmpty()) {
+            container_ = other.container_;
+            bitField0_ = (bitField0_ & ~0x00000002);
+          } else {
+            ensureContainerIsMutable();
+            container_.addAll(other.container_);
+          }
+          onChanged();
+        }
+        if (!other.component_.isEmpty()) {
+          if (component_.isEmpty()) {
+            component_ = other.component_;
+            bitField0_ = (bitField0_ & ~0x00000004);
+          } else {
+            ensureComponentIsMutable();
+            component_.addAll(other.component_);
+          }
+          onChanged();
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        if (!hasMessage()) {
+          
+          return false;
+        }
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+      private int bitField0_;
+
+      // required string message = 1;
+      private java.lang.Object message_ = "";
+      /**
+       * <code>required string message = 1;</code>
+       *
+       * <pre>
+       **
+       *message to include
+       * </pre>
+       */
+      public boolean hasMessage() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>required string message = 1;</code>
+       *
+       * <pre>
+       **
+       *message to include
+       * </pre>
+       */
+      public java.lang.String getMessage() {
+        java.lang.Object ref = message_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          message_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string message = 1;</code>
+       *
+       * <pre>
+       **
+       *message to include
+       * </pre>
+       */
+      public com.google.protobuf.ByteString
+          getMessageBytes() {
+        java.lang.Object ref = message_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          message_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string message = 1;</code>
+       *
+       * <pre>
+       **
+       *message to include
+       * </pre>
+       */
+      public Builder setMessage(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        message_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string message = 1;</code>
+       *
+       * <pre>
+       **
+       *message to include
+       * </pre>
+       */
+      public Builder clearMessage() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        message_ = getDefaultInstance().getMessage();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string message = 1;</code>
+       *
+       * <pre>
+       **
+       *message to include
+       * </pre>
+       */
+      public Builder setMessageBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        message_ = value;
+        onChanged();
+        return this;
+      }
+
+      // repeated string container = 2;
+      private com.google.protobuf.LazyStringList container_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      private void ensureContainerIsMutable() {
+        if (!((bitField0_ & 0x00000002) == 0x00000002)) {
+          container_ = new com.google.protobuf.LazyStringArrayList(container_);
+          bitField0_ |= 0x00000002;
+         }
+      }
+      /**
+       * <code>repeated string container = 2;</code>
+       */
+      public java.util.List<java.lang.String>
+          getContainerList() {
+        return java.util.Collections.unmodifiableList(container_);
+      }
+      /**
+       * <code>repeated string container = 2;</code>
+       */
+      public int getContainerCount() {
+        return container_.size();
+      }
+      /**
+       * <code>repeated string container = 2;</code>
+       */
+      public java.lang.String getContainer(int index) {
+        return container_.get(index);
+      }
+      /**
+       * <code>repeated string container = 2;</code>
+       */
+      public com.google.protobuf.ByteString
+          getContainerBytes(int index) {
+        return container_.getByteString(index);
+      }
+      /**
+       * <code>repeated string container = 2;</code>
+       */
+      public Builder setContainer(
+          int index, java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensureContainerIsMutable();
+        container_.set(index, value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string container = 2;</code>
+       */
+      public Builder addContainer(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensureContainerIsMutable();
+        container_.add(value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string container = 2;</code>
+       */
+      public Builder addAllContainer(
+          java.lang.Iterable<java.lang.String> values) {
+        ensureContainerIsMutable();
+        super.addAll(values, container_);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string container = 2;</code>
+       */
+      public Builder clearContainer() {
+        container_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string container = 2;</code>
+       */
+      public Builder addContainerBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensureContainerIsMutable();
+        container_.add(value);
+        onChanged();
+        return this;
+      }
+
+      // repeated string component = 3;
+      private com.google.protobuf.LazyStringList component_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      private void ensureComponentIsMutable() {
+        if (!((bitField0_ & 0x00000004) == 0x00000004)) {
+          component_ = new com.google.protobuf.LazyStringArrayList(component_);
+          bitField0_ |= 0x00000004;
+         }
+      }
+      /**
+       * <code>repeated string component = 3;</code>
+       */
+      public java.util.List<java.lang.String>
+          getComponentList() {
+        return java.util.Collections.unmodifiableList(component_);
+      }
+      /**
+       * <code>repeated string component = 3;</code>
+       */
+      public int getComponentCount() {
+        return component_.size();
+      }
+      /**
+       * <code>repeated string component = 3;</code>
+       */
+      public java.lang.String getComponent(int index) {
+        return component_.get(index);
+      }
+      /**
+       * <code>repeated string component = 3;</code>
+       */
+      public com.google.protobuf.ByteString
+          getComponentBytes(int index) {
+        return component_.getByteString(index);
+      }
+      /**
+       * <code>repeated string component = 3;</code>
+       */
+      public Builder setComponent(
+          int index, java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensureComponentIsMutable();
+        component_.set(index, value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string component = 3;</code>
+       */
+      public Builder addComponent(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensureComponentIsMutable();
+        component_.add(value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string component = 3;</code>
+       */
+      public Builder addAllComponent(
+          java.lang.Iterable<java.lang.String> values) {
+        ensureComponentIsMutable();
+        super.addAll(values, component_);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string component = 3;</code>
+       */
+      public Builder clearComponent() {
+        component_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string component = 3;</code>
+       */
+      public Builder addComponentBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensureComponentIsMutable();
+        component_.add(value);
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:org.apache.slider.api.UpgradeContainersRequestProto)
+    }
+
+    static {
+      defaultInstance = new UpgradeContainersRequestProto(true);
+      defaultInstance.initFields();
+    }
+
+    // @@protoc_insertion_point(class_scope:org.apache.slider.api.UpgradeContainersRequestProto)
+  }
+
+  public interface UpgradeContainersResponseProtoOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+  }
+  /**
+   * Protobuf type {@code org.apache.slider.api.UpgradeContainersResponseProto}
+   *
+   * <pre>
+   **
+   * upgrade the containers
+   * </pre>
+   */
+  public static final class UpgradeContainersResponseProto extends
+      com.google.protobuf.GeneratedMessage
+      implements UpgradeContainersResponseProtoOrBuilder {
+    // Use UpgradeContainersResponseProto.newBuilder() to construct.
+    private UpgradeContainersResponseProto(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
+    }
+    private UpgradeContainersResponseProto(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
+    private static final UpgradeContainersResponseProto defaultInstance;
+    public static UpgradeContainersResponseProto getDefaultInstance() {
+      return defaultInstance;
+    }
+
+    public UpgradeContainersResponseProto getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private UpgradeContainersResponseProto(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_UpgradeContainersResponseProto_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_UpgradeContainersResponseProto_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto.class, org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto.Builder.class);
+    }
+
+    public static com.google.protobuf.Parser<UpgradeContainersResponseProto> PARSER =
+        new com.google.protobuf.AbstractParser<UpgradeContainersResponseProto>() {
+      public UpgradeContainersResponseProto parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new UpgradeContainersResponseProto(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<UpgradeContainersResponseProto> getParserForType() {
+      return PARSER;
+    }
+
+    private void initFields() {
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      getUnknownFields().writeTo(output);
+    }
+
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto)) {
+        return super.equals(obj);
+      }
+      org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto other = (org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto) obj;
+
+      boolean result = true;
+      result = result &&
+          getUnknownFields().equals(other.getUnknownFields());
+      return result;
+    }
+
+    private int memoizedHashCode = 0;
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (29 * hash) + getUnknownFields().hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+    public static org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input);
+    }
+    public static org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+    }
+    public static org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code org.apache.slider.api.UpgradeContainersResponseProto}
+     *
+     * <pre>
+     **
+     * upgrade the containers
+     * </pre>
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.apache.slider.api.proto.Messages.UpgradeContainersResponseProtoOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_UpgradeContainersResponseProto_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_UpgradeContainersResponseProto_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto.class, org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto.Builder.class);
+      }
+
+      // Construct using org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        return this;
+      }
+
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_UpgradeContainersResponseProto_descriptor;
+      }
+
+      public org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto getDefaultInstanceForType() {
+        return org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto.getDefaultInstance();
+      }
+
+      public org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto build() {
+        org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto buildPartial() {
+        org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto result = new org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto(this);
+        onBuilt();
+        return result;
+      }
+
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto) {
+          return mergeFrom((org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto other) {
+        if (other == org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto.getDefaultInstance()) return this;
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:org.apache.slider.api.UpgradeContainersResponseProto)
+    }
+
+    static {
+      defaultInstance = new UpgradeContainersResponseProto(true);
+      defaultInstance.initFields();
+    }
+
+    // @@protoc_insertion_point(class_scope:org.apache.slider.api.UpgradeContainersResponseProto)
+  }
+
   public interface FlexClusterRequestProtoOrBuilder
       extends com.google.protobuf.MessageOrBuilder {
 
@@ -27113,6 +28430,16 @@ public final class Messages {
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_org_apache_slider_api_StopClusterResponseProto_fieldAccessorTable;
   private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_org_apache_slider_api_UpgradeContainersRequestProto_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_org_apache_slider_api_UpgradeContainersRequestProto_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_org_apache_slider_api_UpgradeContainersResponseProto_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_org_apache_slider_api_UpgradeContainersResponseProto_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_org_apache_slider_api_FlexClusterRequestProto_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
@@ -27331,72 +28658,75 @@ public final class Messages {
       "\002(\003\022\014\n\004host\030\016 \002(\t\022\017\n\007hostURL\030\017 \002(\t\022\022\n\nap" +
       "pVersion\030\020 \001(\t\"*\n\027StopClusterRequestProt" +
       "o\022\017\n\007message\030\001 \002(\t\"\032\n\030StopClusterRespons",
-      "eProto\".\n\027FlexClusterRequestProto\022\023\n\013clu" +
-      "sterSpec\030\001 \002(\t\",\n\030FlexClusterResponsePro" +
-      "to\022\020\n\010response\030\001 \002(\010\"\"\n GetJSONClusterSt" +
-      "atusRequestProto\"8\n!GetJSONClusterStatus" +
-      "ResponseProto\022\023\n\013clusterSpec\030\001 \002(\t\"/\n\037Li" +
-      "stNodeUUIDsByRoleRequestProto\022\014\n\004role\030\001 " +
-      "\002(\t\"0\n ListNodeUUIDsByRoleResponseProto\022" +
-      "\014\n\004uuid\030\001 \003(\t\"#\n\023GetNodeRequestProto\022\014\n\004" +
-      "uuid\030\001 \002(\t\"U\n\024GetNodeResponseProto\022=\n\013cl" +
-      "usterNode\030\001 \002(\0132(.org.apache.slider.api.",
-      "RoleInstanceState\"+\n\033GetClusterNodesRequ" +
-      "estProto\022\014\n\004uuid\030\001 \003(\t\"]\n\034GetClusterNode" +
-      "sResponseProto\022=\n\013clusterNode\030\001 \003(\0132(.or" +
-      "g.apache.slider.api.RoleInstanceState\" \n" +
-      "\020EchoRequestProto\022\014\n\004text\030\001 \002(\t\"!\n\021EchoR" +
-      "esponseProto\022\014\n\004text\030\001 \002(\t\"\'\n\031KillContai" +
-      "nerRequestProto\022\n\n\002id\030\001 \002(\t\"-\n\032KillConta" +
-      "inerResponseProto\022\017\n\007success\030\001 \002(\010\"D\n\025AM" +
-      "SuicideRequestProto\022\014\n\004text\030\001 \002(\t\022\016\n\006sig" +
-      "nal\030\002 \002(\005\022\r\n\005delay\030\003 \002(\005\"\030\n\026AMSuicideRes",
-      "ponseProto\"#\n!GetInstanceDefinitionReque" +
-      "stProto\"^\n\"GetInstanceDefinitionResponse" +
-      "Proto\022\020\n\010internal\030\001 \002(\t\022\021\n\tresources\030\002 \002" +
-      "(\t\022\023\n\013application\030\003 \002(\t\"`\n#ApplicationLi" +
-      "venessInformationProto\022\034\n\024allRequestsSat" +
-      "isfied\030\001 \001(\010\022\033\n\023requestsOutstanding\030\002 \001(" +
-      "\005\"\250\002\n\031ComponentInformationProto\022\014\n\004name\030" +
-      "\001 \001(\t\022\020\n\010priority\030\002 \001(\005\022\017\n\007desired\030\003 \001(\005" +
-      "\022\016\n\006actual\030\004 \001(\005\022\021\n\treleasing\030\005 \001(\005\022\021\n\tr" +
-      "equested\030\006 \001(\005\022\016\n\006failed\030\007 \001(\005\022\017\n\007starte",
-      "d\030\010 \001(\005\022\023\n\013startFailed\030\t \001(\005\022\021\n\tcomplete" +
-      "d\030\n \001(\005\022\026\n\016totalRequested\030\013 \001(\005\022\026\n\016failu" +
-      "reMessage\030\014 \001(\t\022\027\n\017placementPolicy\030\r \001(\005" +
-      "\022\022\n\ncontainers\030\016 \003(\t\"\210\002\n\031ContainerInform" +
-      "ationProto\022\023\n\013containerId\030\001 \001(\t\022\021\n\tcompo" +
-      "nent\030\002 \001(\t\022\020\n\010released\030\003 \001(\010\022\r\n\005state\030\004 " +
-      "\001(\005\022\020\n\010exitCode\030\005 \001(\005\022\023\n\013diagnostics\030\006 \001" +
-      "(\t\022\022\n\ncreateTime\030\007 \001(\003\022\021\n\tstartTime\030\010 \001(" +
-      "\003\022\016\n\006output\030\t \003(\t\022\014\n\004host\030\n \001(\t\022\017\n\007hostU" +
-      "RL\030\013 \001(\t\022\021\n\tplacement\030\014 \001(\t\022\022\n\nappVersio",
-      "n\030\r \001(\t\"N\n\024PingInformationProto\022\014\n\004text\030" +
-      "\001 \001(\t\022\014\n\004verb\030\002 \001(\t\022\014\n\004body\030\003 \001(\t\022\014\n\004tim" +
-      "e\030\004 \001(\003\"\026\n\024GetModelRequestProto\"\035\n\033GetMo" +
-      "delDesiredRequestProto\"$\n\"GetModelDesire" +
-      "dAppconfRequestProto\"&\n$GetModelDesiredR" +
-      "esourcesRequestProto\"%\n#GetModelResolved" +
-      "AppconfRequestProto\"\'\n%GetModelResolvedR" +
-      "esourcesRequestProto\"#\n!GetModelLiveReso" +
-      "urcesRequestProto\"\037\n\035GetLiveContainersRe" +
-      "questProto\"u\n\036GetLiveContainersResponseP",
-      "roto\022\r\n\005names\030\001 \003(\t\022D\n\ncontainers\030\002 \003(\0132" +
-      "0.org.apache.slider.api.ContainerInforma" +
-      "tionProto\"3\n\034GetLiveContainerRequestProt" +
-      "o\022\023\n\013containerId\030\001 \002(\t\"\037\n\035GetLiveCompone" +
-      "ntsRequestProto\"u\n\036GetLiveComponentsResp" +
-      "onseProto\022\r\n\005names\030\001 \003(\t\022D\n\ncomponents\030\002" +
-      " \003(\01320.org.apache.slider.api.ComponentIn" +
-      "formationProto\",\n\034GetLiveComponentReques" +
-      "tProto\022\014\n\004name\030\001 \002(\t\"$\n\"GetApplicationLi" +
-      "venessRequestProto\"\023\n\021EmptyPayloadProto\"",
-      " \n\020WrappedJsonProto\022\014\n\004json\030\001 \002(\t\"h\n\037Get" +
-      "CertificateStoreRequestProto\022\020\n\010hostname" +
-      "\030\001 \001(\t\022\023\n\013requesterId\030\002 \002(\t\022\020\n\010password\030" +
-      "\003 \002(\t\022\014\n\004type\030\004 \002(\t\"1\n GetCertificateSto" +
-      "reResponseProto\022\r\n\005store\030\001 \002(\014B-\n\033org.ap" +
-      "ache.slider.api.protoB\010Messages\210\001\001\240\001\001"
+      "eProto\"V\n\035UpgradeContainersRequestProto\022" +
+      "\017\n\007message\030\001 \002(\t\022\021\n\tcontainer\030\002 \003(\t\022\021\n\tc" +
+      "omponent\030\003 \003(\t\" \n\036UpgradeContainersRespo" +
+      "nseProto\".\n\027FlexClusterRequestProto\022\023\n\013c" +
+      "lusterSpec\030\001 \002(\t\",\n\030FlexClusterResponseP" +
+      "roto\022\020\n\010response\030\001 \002(\010\"\"\n GetJSONCluster" +
+      "StatusRequestProto\"8\n!GetJSONClusterStat" +
+      "usResponseProto\022\023\n\013clusterSpec\030\001 \002(\t\"/\n\037" +
+      "ListNodeUUIDsByRoleRequestProto\022\014\n\004role\030" +
+      "\001 \002(\t\"0\n ListNodeUUIDsByRoleResponseProt",
+      "o\022\014\n\004uuid\030\001 \003(\t\"#\n\023GetNodeRequestProto\022\014" +
+      "\n\004uuid\030\001 \002(\t\"U\n\024GetNodeResponseProto\022=\n\013" +
+      "clusterNode\030\001 \002(\0132(.org.apache.slider.ap" +
+      "i.RoleInstanceState\"+\n\033GetClusterNodesRe" +
+      "questProto\022\014\n\004uuid\030\001 \003(\t\"]\n\034GetClusterNo" +
+      "desResponseProto\022=\n\013clusterNode\030\001 \003(\0132(." +
+      "org.apache.slider.api.RoleInstanceState\"" +
+      " \n\020EchoRequestProto\022\014\n\004text\030\001 \002(\t\"!\n\021Ech" +
+      "oResponseProto\022\014\n\004text\030\001 \002(\t\"\'\n\031KillCont" +
+      "ainerRequestProto\022\n\n\002id\030\001 \002(\t\"-\n\032KillCon",
+      "tainerResponseProto\022\017\n\007success\030\001 \002(\010\"D\n\025" +
+      "AMSuicideRequestProto\022\014\n\004text\030\001 \002(\t\022\016\n\006s" +
+      "ignal\030\002 \002(\005\022\r\n\005delay\030\003 \002(\005\"\030\n\026AMSuicideR" +
+      "esponseProto\"#\n!GetInstanceDefinitionReq" +
+      "uestProto\"^\n\"GetInstanceDefinitionRespon" +
+      "seProto\022\020\n\010internal\030\001 \002(\t\022\021\n\tresources\030\002" +
+      " \002(\t\022\023\n\013application\030\003 \002(\t\"`\n#Application" +
+      "LivenessInformationProto\022\034\n\024allRequestsS" +
+      "atisfied\030\001 \001(\010\022\033\n\023requestsOutstanding\030\002 " +
+      "\001(\005\"\250\002\n\031ComponentInformationProto\022\014\n\004nam",
+      "e\030\001 \001(\t\022\020\n\010priority\030\002 \001(\005\022\017\n\007desired\030\003 \001" +
+      "(\005\022\016\n\006actual\030\004 \001(\005\022\021\n\treleasing\030\005 \001(\005\022\021\n" +
+      "\trequested\030\006 \001(\005\022\016\n\006failed\030\007 \001(\005\022\017\n\007star" +
+      "ted\030\010 \001(\005\022\023\n\013startFailed\030\t \001(\005\022\021\n\tcomple" +
+      "ted\030\n \001(\005\022\026\n\016totalRequested\030\013 \001(\005\022\026\n\016fai" +
+      "lureMessage\030\014 \001(\t\022\027\n\017placementPolicy\030\r \001" +
+      "(\005\022\022\n\ncontainers\030\016 \003(\t\"\210\002\n\031ContainerInfo" +
+      "rmationProto\022\023\n\013containerId\030\001 \001(\t\022\021\n\tcom" +
+      "ponent\030\002 \001(\t\022\020\n\010released\030\003 \001(\010\022\r\n\005state\030" +
+      "\004 \001(\005\022\020\n\010exitCode\030\005 \001(\005\022\023\n\013diagnostics\030\006",
+      " \001(\t\022\022\n\ncreateTime\030\007 \001(\003\022\021\n\tstartTime\030\010 " +
+      "\001(\003\022\016\n\006output\030\t \003(\t\022\014\n\004host\030\n \001(\t\022\017\n\007hos" +
+      "tURL\030\013 \001(\t\022\021\n\tplacement\030\014 \001(\t\022\022\n\nappVers" +
+      "ion\030\r \001(\t\"N\n\024PingInformationProto\022\014\n\004tex" +
+      "t\030\001 \001(\t\022\014\n\004verb\030\002 \001(\t\022\014\n\004body\030\003 \001(\t\022\014\n\004t" +
+      "ime\030\004 \001(\003\"\026\n\024GetModelRequestProto\"\035\n\033Get" +
+      "ModelDesiredRequestProto\"$\n\"GetModelDesi" +
+      "redAppconfRequestProto\"&\n$GetModelDesire" +
+      "dResourcesRequestProto\"%\n#GetModelResolv" +
+      "edAppconfRequestProto\"\'\n%GetModelResolve",
+      "dResourcesRequestProto\"#\n!GetModelLiveRe" +
+      "sourcesRequestProto\"\037\n\035GetLiveContainers" +
+      "RequestProto\"u\n\036GetLiveContainersRespons" +
+      "eProto\022\r\n\005names\030\001 \003(\t\022D\n\ncontainers\030\002 \003(" +
+      "\01320.org.apache.slider.api.ContainerInfor" +
+      "mationProto\"3\n\034GetLiveContainerRequestPr" +
+      "oto\022\023\n\013containerId\030\001 \002(\t\"\037\n\035GetLiveCompo" +
+      "nentsRequestProto\"u\n\036GetLiveComponentsRe" +
+      "sponseProto\022\r\n\005names\030\001 \003(\t\022D\n\ncomponents" +
+      "\030\002 \003(\01320.org.apache.slider.api.Component",
+      "InformationProto\",\n\034GetLiveComponentRequ" +
+      "estProto\022\014\n\004name\030\001 \002(\t\"$\n\"GetApplication" +
+      "LivenessRequestProto\"\023\n\021EmptyPayloadProt" +
+      "o\" \n\020WrappedJsonProto\022\014\n\004json\030\001 \002(\t\"h\n\037G" +
+      "etCertificateStoreRequestProto\022\020\n\010hostna" +
+      "me\030\001 \001(\t\022\023\n\013requesterId\030\002 \002(\t\022\020\n\010passwor" +
+      "d\030\003 \002(\t\022\014\n\004type\030\004 \002(\t\"1\n GetCertificateS" +
+      "toreResponseProto\022\r\n\005store\030\001 \002(\014B-\n\033org." +
+      "apache.slider.api.protoB\010Messages\210\001\001\240\001\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -27421,242 +28751,254 @@ public final class Messages {
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_StopClusterResponseProto_descriptor,
               new java.lang.String[] { });
-          internal_static_org_apache_slider_api_FlexClusterRequestProto_descriptor =
+          internal_static_org_apache_slider_api_UpgradeContainersRequestProto_descriptor =
             getDescriptor().getMessageTypes().get(3);
+          internal_static_org_apache_slider_api_UpgradeContainersRequestProto_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_org_apache_slider_api_UpgradeContainersRequestProto_descriptor,
+              new java.lang.String[] { "Message", "Container", "Component", });
+          internal_static_org_apache_slider_api_UpgradeContainersResponseProto_descriptor =
+            getDescriptor().getMessageTypes().get(4);
+          internal_static_org_apache_slider_api_UpgradeContainersResponseProto_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_org_apache_slider_api_UpgradeContainersResponseProto_descriptor,
+              new java.lang.String[] { });
+          internal_static_org_apache_slider_api_FlexClusterRequestProto_descriptor =
+            getDescriptor().getMessageTypes().get(5);
           internal_static_org_apache_slider_api_FlexClusterRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_FlexClusterRequestProto_descriptor,
               new java.lang.String[] { "ClusterSpec", });
           internal_static_org_apache_slider_api_FlexClusterResponseProto_descriptor =
-            getDescriptor().getMessageTypes().get(4);
+            getDescriptor().getMessageTypes().get(6);
           internal_static_org_apache_slider_api_FlexClusterResponseProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_FlexClusterResponseProto_descriptor,
               new java.lang.String[] { "Response", });
           internal_static_org_apache_slider_api_GetJSONClusterStatusRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(5);
+            getDescriptor().getMessageTypes().get(7);
           internal_static_org_apache_slider_api_GetJSONClusterStatusRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetJSONClusterStatusRequestProto_descriptor,
               new java.lang.String[] { });
           internal_static_org_apache_slider_api_GetJSONClusterStatusResponseProto_descriptor =
-            getDescriptor().getMessageTypes().get(6);
+            getDescriptor().getMessageTypes().get(8);
           internal_static_org_apache_slider_api_GetJSONClusterStatusResponseProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetJSONClusterStatusResponseProto_descriptor,
               new java.lang.String[] { "ClusterSpec", });
           internal_static_org_apache_slider_api_ListNodeUUIDsByRoleRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(7);
+            getDescriptor().getMessageTypes().get(9);
           internal_static_org_apache_slider_api_ListNodeUUIDsByRoleRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_ListNodeUUIDsByRoleRequestProto_descriptor,
               new java.lang.String[] { "Role", });
           internal_static_org_apache_slider_api_ListNodeUUIDsByRoleResponseProto_descriptor =
-            getDescriptor().getMessageTypes().get(8);
+            getDescriptor().getMessageTypes().get(10);
           internal_static_org_apache_slider_api_ListNodeUUIDsByRoleResponseProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_ListNodeUUIDsByRoleResponseProto_descriptor,
               new java.lang.String[] { "Uuid", });
           internal_static_org_apache_slider_api_GetNodeRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(9);
+            getDescriptor().getMessageTypes().get(11);
           internal_static_org_apache_slider_api_GetNodeRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetNodeRequestProto_descriptor,
               new java.lang.String[] { "Uuid", });
           internal_static_org_apache_slider_api_GetNodeResponseProto_descriptor =
-            getDescriptor().getMessageTypes().get(10);
+            getDescriptor().getMessageTypes().get(12);
           internal_static_org_apache_slider_api_GetNodeResponseProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetNodeResponseProto_descriptor,
               new java.lang.String[] { "ClusterNode", });
           internal_static_org_apache_slider_api_GetClusterNodesRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(11);
+            getDescriptor().getMessageTypes().get(13);
           internal_static_org_apache_slider_api_GetClusterNodesRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetClusterNodesRequestProto_descriptor,
               new java.lang.String[] { "Uuid", });
           internal_static_org_apache_slider_api_GetClusterNodesResponseProto_descriptor =
-            getDescriptor().getMessageTypes().get(12);
+            getDescriptor().getMessageTypes().get(14);
           internal_static_org_apache_slider_api_GetClusterNodesResponseProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetClusterNodesResponseProto_descriptor,
               new java.lang.String[] { "ClusterNode", });
           internal_static_org_apache_slider_api_EchoRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(13);
+            getDescriptor().getMessageTypes().get(15);
           internal_static_org_apache_slider_api_EchoRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_EchoRequestProto_descriptor,
               new java.lang.String[] { "Text", });
           internal_static_org_apache_slider_api_EchoResponseProto_descriptor =
-            getDescriptor().getMessageTypes().get(14);
+            getDescriptor().getMessageTypes().get(16);
           internal_static_org_apache_slider_api_EchoResponseProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_EchoResponseProto_descriptor,
               new java.lang.String[] { "Text", });
           internal_static_org_apache_slider_api_KillContainerRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(15);
+            getDescriptor().getMessageTypes().get(17);
           internal_static_org_apache_slider_api_KillContainerRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_KillContainerRequestProto_descriptor,
               new java.lang.String[] { "Id", });
           internal_static_org_apache_slider_api_KillContainerResponseProto_descriptor =
-            getDescriptor().getMessageTypes().get(16);
+            getDescriptor().getMessageTypes().get(18);
           internal_static_org_apache_slider_api_KillContainerResponseProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_KillContainerResponseProto_descriptor,
               new java.lang.String[] { "Success", });
           internal_static_org_apache_slider_api_AMSuicideRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(17);
+            getDescriptor().getMessageTypes().get(19);
           internal_static_org_apache_slider_api_AMSuicideRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_AMSuicideRequestProto_descriptor,
               new java.lang.String[] { "Text", "Signal", "Delay", });
           internal_static_org_apache_slider_api_AMSuicideResponseProto_descriptor =
-            getDescriptor().getMessageTypes().get(18);
+            getDescriptor().getMessageTypes().get(20);
           internal_static_org_apache_slider_api_AMSuicideResponseProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_AMSuicideResponseProto_descriptor,
               new java.lang.String[] { });
           internal_static_org_apache_slider_api_GetInstanceDefinitionRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(19);
+            getDescriptor().getMessageTypes().get(21);
           internal_static_org_apache_slider_api_GetInstanceDefinitionRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetInstanceDefinitionRequestProto_descriptor,
               new java.lang.String[] { });
           internal_static_org_apache_slider_api_GetInstanceDefinitionResponseProto_descriptor =
-            getDescriptor().getMessageTypes().get(20);
+            getDescriptor().getMessageTypes().get(22);
           internal_static_org_apache_slider_api_GetInstanceDefinitionResponseProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetInstanceDefinitionResponseProto_descriptor,
               new java.lang.String[] { "Internal", "Resources", "Application", });
           internal_static_org_apache_slider_api_ApplicationLivenessInformationProto_descriptor =
-            getDescriptor().getMessageTypes().get(21);
+            getDescriptor().getMessageTypes().get(23);
           internal_static_org_apache_slider_api_ApplicationLivenessInformationProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_ApplicationLivenessInformationProto_descriptor,
               new java.lang.String[] { "AllRequestsSatisfied", "RequestsOutstanding", });
           internal_static_org_apache_slider_api_ComponentInformationProto_descriptor =
-            getDescriptor().getMessageTypes().get(22);
+            getDescriptor().getMessageTypes().get(24);
           internal_static_org_apache_slider_api_ComponentInformationProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_ComponentInformationProto_descriptor,
               new java.lang.String[] { "Name", "Priority", "Desired", "Actual", "Releasing", "Requested", "Failed", "Started", "StartFailed", "Completed", "TotalRequested", "FailureMessage", "PlacementPolicy", "Containers", });
           internal_static_org_apache_slider_api_ContainerInformationProto_descriptor =
-            getDescriptor().getMessageTypes().get(23);
+            getDescriptor().getMessageTypes().get(25);
           internal_static_org_apache_slider_api_ContainerInformationProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_ContainerInformationProto_descriptor,
               new java.lang.String[] { "ContainerId", "Component", "Released", "State", "ExitCode", "Diagnostics", "CreateTime", "StartTime", "Output", "Host", "HostURL", "Placement", "AppVersion", });
           internal_static_org_apache_slider_api_PingInformationProto_descriptor =
-            getDescriptor().getMessageTypes().get(24);
+            getDescriptor().getMessageTypes().get(26);
           internal_static_org_apache_slider_api_PingInformationProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_PingInformationProto_descriptor,
               new java.lang.String[] { "Text", "Verb", "Body", "Time", });
           internal_static_org_apache_slider_api_GetModelRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(25);
+            getDescriptor().getMessageTypes().get(27);
           internal_static_org_apache_slider_api_GetModelRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetModelRequestProto_descriptor,
               new java.lang.String[] { });
           internal_static_org_apache_slider_api_GetModelDesiredRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(26);
+            getDescriptor().getMessageTypes().get(28);
           internal_static_org_apache_slider_api_GetModelDesiredRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetModelDesiredRequestProto_descriptor,
               new java.lang.String[] { });
           internal_static_org_apache_slider_api_GetModelDesiredAppconfRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(27);
+            getDescriptor().getMessageTypes().get(29);
           internal_static_org_apache_slider_api_GetModelDesiredAppconfRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetModelDesiredAppconfRequestProto_descriptor,
               new java.lang.String[] { });
           internal_static_org_apache_slider_api_GetModelDesiredResourcesRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(28);
+            getDescriptor().getMessageTypes().get(30);
           internal_static_org_apache_slider_api_GetModelDesiredResourcesRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetModelDesiredResourcesRequestProto_descriptor,
               new java.lang.String[] { });
           internal_static_org_apache_slider_api_GetModelResolvedAppconfRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(29);
+            getDescriptor().getMessageTypes().get(31);
           internal_static_org_apache_slider_api_GetModelResolvedAppconfRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetModelResolvedAppconfRequestProto_descriptor,
               new java.lang.String[] { });
           internal_static_org_apache_slider_api_GetModelResolvedResourcesRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(30);
+            getDescriptor().getMessageTypes().get(32);
           internal_static_org_apache_slider_api_GetModelResolvedResourcesRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetModelResolvedResourcesRequestProto_descriptor,
               new java.lang.String[] { });
           internal_static_org_apache_slider_api_GetModelLiveResourcesRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(31);
+            getDescriptor().getMessageTypes().get(33);
           internal_static_org_apache_slider_api_GetModelLiveResourcesRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetModelLiveResourcesRequestProto_descriptor,
               new java.lang.String[] { });
           internal_static_org_apache_slider_api_GetLiveContainersRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(32);
+            getDescriptor().getMessageTypes().get(34);
           internal_static_org_apache_slider_api_GetLiveContainersRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetLiveContainersRequestProto_descriptor,
               new java.lang.String[] { });
           internal_static_org_apache_slider_api_GetLiveContainersResponseProto_descriptor =
-            getDescriptor().getMessageTypes().get(33);
+            getDescriptor().getMessageTypes().get(35);
           internal_static_org_apache_slider_api_GetLiveContainersResponseProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetLiveContainersResponseProto_descriptor,
               new java.lang.String[] { "Names", "Containers", });
           internal_static_org_apache_slider_api_GetLiveContainerRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(34);
+            getDescriptor().getMessageTypes().get(36);
           internal_static_org_apache_slider_api_GetLiveContainerRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetLiveContainerRequestProto_descriptor,
               new java.lang.String[] { "ContainerId", });
           internal_static_org_apache_slider_api_GetLiveComponentsRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(35);
+            getDescriptor().getMessageTypes().get(37);
           internal_static_org_apache_slider_api_GetLiveComponentsRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetLiveComponentsRequestProto_descriptor,
               new java.lang.String[] { });
           internal_static_org_apache_slider_api_GetLiveComponentsResponseProto_descriptor =
-            getDescriptor().getMessageTypes().get(36);
+            getDescriptor().getMessageTypes().get(38);
           internal_static_org_apache_slider_api_GetLiveComponentsResponseProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetLiveComponentsResponseProto_descriptor,
               new java.lang.String[] { "Names", "Components", });
           internal_static_org_apache_slider_api_GetLiveComponentRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(37);
+            getDescriptor().getMessageTypes().get(39);
           internal_static_org_apache_slider_api_GetLiveComponentRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetLiveComponentRequestProto_descriptor,
               new java.lang.String[] { "Name", });
           internal_static_org_apache_slider_api_GetApplicationLivenessRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(38);
+            getDescriptor().getMessageTypes().get(40);
           internal_static_org_apache_slider_api_GetApplicationLivenessRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetApplicationLivenessRequestProto_descriptor,
               new java.lang.String[] { });
           internal_static_org_apache_slider_api_EmptyPayloadProto_descriptor =
-            getDescriptor().getMessageTypes().get(39);
+            getDescriptor().getMessageTypes().get(41);
           internal_static_org_apache_slider_api_EmptyPayloadProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_EmptyPayloadProto_descriptor,
               new java.lang.String[] { });
           internal_static_org_apache_slider_api_WrappedJsonProto_descriptor =
-            getDescriptor().getMessageTypes().get(40);
+            getDescriptor().getMessageTypes().get(42);
           internal_static_org_apache_slider_api_WrappedJsonProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_WrappedJsonProto_descriptor,
               new java.lang.String[] { "Json", });
           internal_static_org_apache_slider_api_GetCertificateStoreRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(41);
+            getDescriptor().getMessageTypes().get(43);
           internal_static_org_apache_slider_api_GetCertificateStoreRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetCertificateStoreRequestProto_descriptor,
               new java.lang.String[] { "Hostname", "RequesterId", "Password", "Type", });
           internal_static_org_apache_slider_api_GetCertificateStoreResponseProto_descriptor =
-            getDescriptor().getMessageTypes().get(42);
+            getDescriptor().getMessageTypes().get(44);
           internal_static_org_apache_slider_api_GetCertificateStoreResponseProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetCertificateStoreResponseProto_descriptor,

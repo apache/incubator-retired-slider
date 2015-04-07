@@ -61,6 +61,17 @@ public class SliderClusterProtocolPBImpl implements SliderClusterProtocolPB {
   }
 
   @Override
+  public Messages.UpgradeContainersResponseProto upgradeContainers(RpcController controller,
+                                                       Messages.UpgradeContainersRequestProto request) throws
+                                                                                                 ServiceException {
+    try {
+      return real.upgradeContainers(request);
+    } catch (Exception e) {
+      throw wrap(e);
+    }
+  }
+
+  @Override
   public Messages.FlexClusterResponseProto flexCluster(RpcController controller,
                                                        Messages.FlexClusterRequestProto request) throws
                                                                                                  ServiceException {

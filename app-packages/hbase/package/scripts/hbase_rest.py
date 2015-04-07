@@ -57,6 +57,23 @@ class HbaseRest(Script):
     env.set_params(status_params)
     pid_file = format("{pid_dir}/hbase-{hbase_user}-rest.pid")
     check_process_status(pid_file)
+
+  def pre_upgrade(self, env):
+    import params
+    env.set_params(params)
+
+    hbase_service( 'rest',
+      action = 'pre_upgrade'
+    )
     
+  def post_upgrade(self, env):
+    import params
+    env.set_params(params)
+
+    hbase_service( 'rest',
+      action = 'post_upgrade'
+    )
+
+
 if __name__ == "__main__":
   HbaseRest().execute()

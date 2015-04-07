@@ -100,6 +100,17 @@ public class SliderClusterProtocolProxy implements SliderClusterProtocol {
   }
 
   @Override
+  public Messages.UpgradeContainersResponseProto upgradeContainers(
+      Messages.UpgradeContainersRequestProto request) throws IOException,
+      YarnException {
+    try {
+      return endpoint.upgradeContainers(NULL_CONTROLLER, request);
+    } catch (ServiceException e) {
+      throw convert(e);
+    }
+  }
+
+  @Override
   public Messages.FlexClusterResponseProto flexCluster(Messages.FlexClusterRequestProto request)
       throws IOException {
     try {

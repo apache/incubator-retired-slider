@@ -52,6 +52,7 @@ class CustomServiceOrchestrator():
 
   def __init__(self, config, controller, agentToggleLogger):
     self.config = config
+    self.controller = controller
     self.tmp_dir = config.getResolvedPath(AgentConfig.APP_TASK_DIR)
     self.python_executor = PythonExecutor(self.tmp_dir, config, agentToggleLogger)
     self.status_commands_stdout = os.path.realpath(posixpath.join(self.tmp_dir,
@@ -82,6 +83,10 @@ class CustomServiceOrchestrator():
       script_type = command['commandParams']['script_type']
       task_id = command['taskId']
       command_name = command['roleCommand']
+      if command_name == 'UPGRADE':
+          command_name = 'PRE_UPGRADE'
+      if command_name == 'UPGRADE_STOP':
+        command_name = 'STOP'
 
       tmpstrucoutfile = os.path.realpath(posixpath.join(self.tmp_dir,
                                                         "structured-out-{0}.json".format(task_id)))

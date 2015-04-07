@@ -54,7 +54,7 @@ SLIDER_REL_PATH_REGISTER = '/register'
 SLIDER_REL_PATH_HEARTBEAT = '/heartbeat'
 
 class State:
-  INIT, INSTALLING, INSTALLED, STARTING, STARTED, FAILED = range(6)
+  INIT, INSTALLING, INSTALLED, STARTING, STARTED, FAILED, UPGRADING, UPGRADED, STOPPING, STOPPED, TERMINATING = range(11)
 
 
 class Controller(threading.Thread):
@@ -95,6 +95,8 @@ class Controller(threading.Thread):
     self.appGracefulStopQueued = False
     self.appGracefulStopTriggered = False
     self.tags = ""
+    self.appRoot = None
+    self.appVersion = None
 
 
   def __del__(self):
@@ -244,6 +246,15 @@ class Controller(threading.Thread):
       self.appGracefulStopQueued = True
       logger.info("Attempting to gracefully stop the application ...")
 
+  def storeAppRootAndVersion(self, command):
+    '''
+    Store app root and version for upgrade:
+    '''
+    if (self.appRoot is None):
+      self.appRoot = command['configurations']['global']['app_root']
+    if (self.appVersion is None):
+      self.appVersion = command['configurations']['global']['app_version']
+
   def heartbeatWithServer(self):
     self.DEBUG_HEARTBEAT_RETRIES = 0
     self.DEBUG_SUCCESSFULL_HEARTBEATS = 0
@@ -272,9 +283,8 @@ class Controller(threading.Thread):
         else:
           self.DEBUG_HEARTBEAT_RETRIES += 1
         response = self.sendRequest(self.heartbeatUrl, data)
-        response = json.loads(response)
-
         logger.debug('Got server response: ' + pprint.pformat(response))
+        response = json.loads(response)
 
         serverId = int(response['responseId'])
 
@@ -436,8 +446,10 @@ class Controller(threading.Thread):
     index = 0
     deleteIndex = 0
     delete = False
-    # break only if an INSTALL command is found, since we might get a STOP
-    # command for a START command
+    '''
+    Do not break for START command, since we might get a STOP command
+    (used during failure scenarios to gracefully attempt stop)
+    '''
     for command in commands:
       if command["roleCommand"] == "START":
         self.componentExpectedState = State.STARTED
@@ -456,8 +468,42 @@ class Controller(threading.Thread):
         self.componentExpectedState = State.INSTALLED
         self.componentActualState = State.INSTALLING
         self.failureCount = 0
+        '''
+        Store the app root of this container at this point. It will be needed
+        during upgrade (if performed).
+        '''
+        self.storeAppRootAndVersion(command)
+        logger.info("Stored appRoot = " + self.appRoot)
+        logger.info("Stored appVersion = " + self.appVersion)
         break;
+
+      if command["roleCommand"] == "UPGRADE":
+        self.componentExpectedState = State.UPGRADED
+        self.componentActualState = State.UPGRADING
+        self.failureCount = 0
+        command['configurations']['global']['app_root'] = self.appRoot
+        command['configurations']['global']['app_version'] = self.appVersion
+        break;
+
+      if command["roleCommand"] == "UPGRADE_STOP":
+        self.componentExpectedState = State.STOPPED
+        self.componentActualState = State.STOPPING
+        self.failureCount = 0
+        command['configurations']['global']['app_root'] = self.appRoot
+        command['configurations']['global']['app_version'] = self.appVersion
+        break;
+
+      if command["roleCommand"] == "TERMINATE":
+        self.componentExpectedState = State.TERMINATING
+        self.componentActualState = State.TERMINATING
+        self.failureCount = 0
+        command['configurations']['global']['app_root'] = self.appRoot
+        command['configurations']['global']['app_version'] = self.appVersion
+        break;
+
       index += 1
+    logger.debug("Current state " + str(self.componentActualState) + 
+                " expected " + str(self.componentExpectedState))
 
     # Delete the STOP command
     if delete:
@@ -486,6 +532,16 @@ class Controller(threading.Thread):
           self.logStates()
         if (commandResult["healthStatus"] == "STARTED") and (self.componentActualState != State.STARTED):
           self.componentActualState = State.STARTED
+          self.failureCount = 0
+          self.logStates()
+          pass
+        if (commandResult["healthStatus"] == "UPGRADED") and (self.componentActualState != State.UPGRADED):
+          self.componentActualState = State.UPGRADED
+          self.failureCount = 0
+          self.logStates()
+          pass
+        if (commandResult["healthStatus"] == "STOPPED") and (self.componentActualState != State.STOPPED):
+          self.componentActualState = State.STOPPED
           self.failureCount = 0
           self.logStates()
           pass

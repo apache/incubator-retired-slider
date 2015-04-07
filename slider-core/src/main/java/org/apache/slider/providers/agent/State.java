@@ -25,7 +25,13 @@ public enum State {
   INSTALLED,      // Installed (or stopped)
   STARTING,       // Starting
   STARTED,        // Started
-  INSTALL_FAILED;  // Install failed, start failure in INSTALLED
+  INSTALL_FAILED, // Install failed, start failure in INSTALLED
+  UPGRADING,      // Undergoing upgrade, perform necessary pre-upgrade steps
+  UPGRADED,       // Pre-upgrade steps completed
+  STOPPING,       // Stop has been issued
+  STOPPED,        // Agent has stopped
+  TERMINATING;    // Terminate signal to ask the agent to kill itself
+                  // No need for state TERMINATED (as the agent is dead by then)
 
   /**
    * Indicates whether or not it is a valid state to produce a command.
@@ -36,7 +42,9 @@ public enum State {
     switch (this) {
       case INSTALLING:
       case STARTING:
-      case STARTED:
+      case UPGRADING:
+      case STOPPING:
+      case TERMINATING:
         return false;
       default:
         return true;
@@ -49,12 +57,22 @@ public enum State {
    * @return command allowed in this state.
    */
   public Command getSupportedCommand() {
+    return getSupportedCommand(false);
+  }
+
+  public Command getSupportedCommand(boolean isInUpgradeMode) {
     switch (this) {
       case INIT:
       case INSTALL_FAILED:
         return Command.INSTALL;
       case INSTALLED:
         return Command.START;
+      case STARTED:
+        return isInUpgradeMode ? Command.UPGRADE : Command.NOP;
+      case UPGRADED:
+        return Command.STOP;
+      case STOPPED:
+        return Command.TERMINATE;
       default:
         return Command.NOP;
     }
@@ -68,7 +86,9 @@ public enum State {
   public State getNextState(CommandResult result) throws IllegalArgumentException {
     switch (result) {
       case IN_PROGRESS:
-        if (this == State.INSTALLING || this == State.STARTING) {
+        if (this == State.INSTALLING || this == State.STARTING
+            || this == State.UPGRADING || this == State.STOPPING
+            || this == State.TERMINATING) {
           return this;
         } else {
           throw new IllegalArgumentException(result + " is not valid for " + this);
@@ -78,6 +98,12 @@ public enum State {
           return State.INSTALLED;
         } else if (this == State.STARTING) {
           return State.STARTED;
+        } else if (this == State.UPGRADING) {
+          return State.UPGRADED;
+        } else if (this == State.STOPPING) {
+          return State.STOPPED;
+        } else if (this == State.STOPPED) {
+          return State.TERMINATING;
         } else {
           throw new IllegalArgumentException(result + " is not valid for " + this);
         }
@@ -86,6 +112,16 @@ public enum State {
           return State.INSTALL_FAILED;
         } else if (this == State.STARTING) {
           return State.INSTALLED;
+        } else if (this == State.UPGRADING) {
+          // if pre-upgrade failed, force stop now, so mark it upgraded
+          // what other options can be exposed to app owner?
+          return State.UPGRADED;
+        } else if (this == State.STOPPING) {
+          // if stop fails, force mark it stopped (and let container terminate)
+          return State.STOPPED;
+        } else if (this == State.STOPPED) {
+          // if in stopped state, force mark it as terminating
+          return State.TERMINATING;
         } else {
           throw new IllegalArgumentException(result + " is not valid for " + this);
         }
@@ -113,6 +149,24 @@ public enum State {
         } else {
           throw new IllegalArgumentException(command + " is not valid for " + this);
         }
+      case UPGRADE:
+        if (this == State.STARTED) {
+          return State.UPGRADING;
+        } else {
+          throw new IllegalArgumentException(command + " is not valid for " + this);
+        }
+      case STOP:
+        if (this == State.STARTED || this == State.UPGRADED) {
+          return State.STOPPING;
+        } else {
+          throw new IllegalArgumentException(command + " is not valid for " + this);
+        }
+      case TERMINATE:
+        if (this == State.STOPPED) {
+          return State.TERMINATING;
+        } else {
+          throw new IllegalArgumentException(command + " is not valid for " + this);
+        }
       case NOP:
         return this;
       default:
@@ -121,8 +175,13 @@ public enum State {
   }
 
   public boolean couldHaveIssued(Command command) {
-    if ((this == State.INSTALLING && command == Command.INSTALL) ||
-        (this == State.STARTING && command == Command.START)) {
+    if ((this == State.INSTALLING && command == Command.INSTALL)
+        || (this == State.STARTING && command == Command.START)
+        || (this == State.UPGRADING && command == Command.UPGRADE)
+        || (this == State.STOPPING 
+           && (command == Command.STOP || command == Command.NOP))
+        || (this == State.TERMINATING && command == Command.TERMINATE)
+       ) {
       return true;
     }
     return false;

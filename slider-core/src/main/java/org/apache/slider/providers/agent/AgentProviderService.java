@@ -165,6 +165,8 @@ public class AgentProviderService extends AbstractProviderService implements
   private Boolean canAnyMasterPublish = null;
   private AgentLaunchParameter agentLaunchParameter = null;
   private String clusterName = null;
+  private boolean isInUpgradeMode;
+  private Set<String> upgradeContainers = new HashSet<String>();
 
   private final Map<String, ComponentInstanceState> componentStatuses =
       new ConcurrentHashMap<String, ComponentInstanceState>();
@@ -714,6 +716,10 @@ public class AgentProviderService extends AbstractProviderService implements
     String label = heartBeat.getHostname();
     String roleName = getRoleName(label);
     String containerId = getContainerId(label);
+    boolean doUpgrade = false;
+    if (isInUpgradeMode && upgradeContainers.contains(containerId)) {
+      doUpgrade = true;
+    }
 
     StateAccessForProviders accessor = getAmState();
     CommandScript cmdScript = getScriptPathFromMetainfo(roleName);
@@ -748,6 +754,23 @@ public class AgentProviderService extends AbstractProviderService implements
     Boolean isMaster = isMaster(roleName);
     ComponentInstanceState componentStatus = getComponentStatuses().get(label);
     componentStatus.heartbeat(System.currentTimeMillis());
+    if (doUpgrade) {
+      switch (componentStatus.getState()) {
+      case STARTED:
+        componentStatus.setTargetState(State.UPGRADED);
+        break;
+      case UPGRADED:
+        componentStatus.setTargetState(State.STOPPED);
+        break;
+      case STOPPED:
+        componentStatus.setTargetState(State.TERMINATING);
+        break;
+      default:
+        break;
+      }
+      log.info("Current state = {} target state {}",
+          componentStatus.getState(), componentStatus.getTargetState());
+    }
 
     publishConfigAndExportGroups(heartBeat, componentStatus, roleName);
 
@@ -761,8 +784,9 @@ public class AgentProviderService extends AbstractProviderService implements
       CommandResult result = CommandResult.getCommandResult(report.getStatus());
       Command command = Command.getCommand(report.getRoleCommand());
       componentStatus.applyCommandResult(result, command);
-      log.info("Component operation. Status: {}; new container state: {}",
-          result, componentStatus.getContainerState());
+      log.info("Component operation. Status: {}; new container state: {};"
+          + " new component state: {}", result,
+          componentStatus.getContainerState(), componentStatus.getState());
 
       if (command == Command.INSTALL && SliderUtils.isNotEmpty(report.getFolders())) {
         publishFolderPaths(report.getFolders(), containerId, roleName, heartBeat.getFqdn());
@@ -778,7 +802,7 @@ public class AgentProviderService extends AbstractProviderService implements
       return response;
     }
 
-    Command command = componentStatus.getNextCommand();
+    Command command = componentStatus.getNextCommand(doUpgrade);
     try {
       if (Command.NOP != command) {
         if (command == Command.INSTALL) {
@@ -830,6 +854,18 @@ public class AgentProviderService extends AbstractProviderService implements
           } else {
             log.info("Start of {} on {} delayed as dependencies have not started.", roleName, containerId);
           }
+        } else if (command == Command.UPGRADE) {
+          addUpgradeCommand(roleName, containerId, response, scriptPath,
+              timeout);
+          componentStatus.commandIssued(command, true);
+        } else if (command == Command.STOP) {
+          addStopCommand(roleName, containerId, response, scriptPath, timeout,
+              doUpgrade);
+          componentStatus.commandIssued(command);
+        } else if (command == Command.TERMINATE) {
+          log.info("A formal terminate command is being sent to container {}"
+              + " in state {}", label, componentStatus.getState());
+          response.setTerminateAgent(true);
         }
       }
 
@@ -1069,6 +1105,14 @@ public class AgentProviderService extends AbstractProviderService implements
   @VisibleForTesting
   protected void setHeartbeatMonitorInterval(int heartbeatMonitorInterval) {
     this.heartbeatMonitorInterval = heartbeatMonitorInterval;
+  }
+
+  public void setInUpgradeMode(boolean inUpgradeMode) {
+    this.isInUpgradeMode = inUpgradeMode;
+  }
+
+  public void addUpgradeContainers(List<String> upgradeContainers) {
+    this.upgradeContainers.addAll(upgradeContainers);
   }
 
   /**
@@ -1922,6 +1966,72 @@ public class AgentProviderService extends AbstractProviderService implements
       configurations.get("global").put("exec_cmd", startCommand.getExec());
     }
 
+
+    Map<String, Map<String, String>> configurationsStop = buildCommandConfigurations(
+        appConf, containerId, componentName);
+    cmdStop.setConfigurations(configurationsStop);
+    response.addExecutionCommand(cmdStop);
+  }
+
+  @VisibleForTesting
+  protected void addUpgradeCommand(String componentName, String containerId,
+      HeartBeatResponse response, String scriptPath, long timeout)
+      throws SliderException {
+    assert getAmState().isApplicationLive();
+    ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
+    ConfTreeOperations internalsConf = getAmState().getInternalsSnapshot();
+
+    ExecutionCommand cmd = new ExecutionCommand(
+        AgentCommandType.EXECUTION_COMMAND);
+    prepareExecutionCommand(cmd);
+    String clusterName = internalsConf.get(OptionKeys.APPLICATION_NAME);
+    String hostName = getClusterInfoPropertyValue(StatusKeys.INFO_AM_HOSTNAME);
+    cmd.setHostname(hostName);
+    cmd.setClusterName(clusterName);
+    cmd.setRoleCommand(Command.UPGRADE.toString());
+    cmd.setServiceName(clusterName);
+    cmd.setComponentName(componentName);
+    cmd.setRole(componentName);
+    Map<String, String> hostLevelParams = new TreeMap<String, String>();
+    hostLevelParams.put(JAVA_HOME, appConf.getGlobalOptions()
+        .getMandatoryOption(JAVA_HOME));
+    hostLevelParams.put(CONTAINER_ID, containerId);
+    cmd.setHostLevelParams(hostLevelParams);
+    cmd.setCommandParams(commandParametersSet(scriptPath, timeout, true));
+
+    Map<String, Map<String, String>> configurations = buildCommandConfigurations(
+        appConf, containerId, componentName);
+    cmd.setConfigurations(configurations);
+    response.addExecutionCommand(cmd);
+  }
+    
+  protected void addStopCommand(String componentName, String containerId,
+      HeartBeatResponse response, String scriptPath, long timeout,
+      boolean isInUpgradeMode) throws SliderException {
+    assert getAmState().isApplicationLive();
+    ConfTreeOperations appConf = getAmState().getAppConfSnapshot();
+    ConfTreeOperations internalsConf = getAmState().getInternalsSnapshot();
+
+    ExecutionCommand cmdStop = new ExecutionCommand(
+        AgentCommandType.EXECUTION_COMMAND);
+    cmdStop.setTaskId(taskId.get());
+    cmdStop.setCommandId(cmdStop.getTaskId() + "-1");
+    String clusterName = internalsConf.get(OptionKeys.APPLICATION_NAME);
+    String hostName = getClusterInfoPropertyValue(StatusKeys.INFO_AM_HOSTNAME);
+    cmdStop.setHostname(hostName);
+    cmdStop.setClusterName(clusterName);
+    // Upgrade stop is differentiated by passing a transformed role command -
+    // UPGRADE_STOP
+    cmdStop.setRoleCommand(Command.transform(Command.STOP, isInUpgradeMode));
+    cmdStop.setServiceName(clusterName);
+    cmdStop.setComponentName(componentName);
+    cmdStop.setRole(componentName);
+    Map<String, String> hostLevelParamsStop = new TreeMap<String, String>();
+    hostLevelParamsStop.put(JAVA_HOME, appConf.getGlobalOptions()
+        .getMandatoryOption(JAVA_HOME));
+    hostLevelParamsStop.put(CONTAINER_ID, containerId);
+    cmdStop.setHostLevelParams(hostLevelParamsStop);
+    cmdStop.setCommandParams(commandParametersSet(scriptPath, timeout, true));
 
     Map<String, Map<String, String>> configurationsStop = buildCommandConfigurations(
         appConf, containerId, componentName);
