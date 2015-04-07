@@ -250,10 +250,12 @@ class Controller(threading.Thread):
     '''
     Store app root and version for upgrade:
     '''
-    if (self.appRoot is None):
-      self.appRoot = command['configurations']['global']['app_root']
-    if (self.appVersion is None):
-      self.appVersion = command['configurations']['global']['app_version']
+    if self.appRoot is None:
+      if 'app_root' in command['configurations']['global']:
+        self.appRoot = command['configurations']['global']['app_root']
+    if self.appVersion is None:
+      if 'app_version' in command['configurations']['global']:
+        self.appVersion = command['configurations']['global']['app_version']
 
   def heartbeatWithServer(self):
     self.DEBUG_HEARTBEAT_RETRIES = 0
@@ -473,8 +475,8 @@ class Controller(threading.Thread):
         during upgrade (if performed).
         '''
         self.storeAppRootAndVersion(command)
-        logger.info("Stored appRoot = " + self.appRoot)
-        logger.info("Stored appVersion = " + self.appVersion)
+        logger.info("Stored appRoot = %s", (self.appRoot))
+        logger.info("Stored appVersion = %s", (self.appVersion))
         break;
 
       if command["roleCommand"] == "UPGRADE":
