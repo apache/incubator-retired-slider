@@ -43,6 +43,17 @@ public interface SliderClusterProtocol extends VersionedProtocol {
   Messages.StopClusterResponseProto stopCluster(Messages.StopClusterRequestProto request) throws
                                                                                           IOException, YarnException;
 
+  /**
+   * Upgrade the application containers
+   * 
+   * @param request upgrade containers request object
+   * @return upgrade containers response object
+   * @throws IOException
+   * @throws YarnException
+   */
+  Messages.UpgradeContainersResponseProto upgradeContainers(
+      Messages.UpgradeContainersRequestProto request) throws IOException,
+      YarnException;
 
   /**
    * Flex the cluster. 

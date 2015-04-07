@@ -58,6 +58,22 @@ class HbaseMaster(Script):
     pid_file = format("{pid_dir}/hbase-{hbase_user}-master.pid")
     check_process_status(pid_file)
 
+  def pre_upgrade(self, env):
+    import params
+    env.set_params(params)
+
+    hbase_service( 'master',
+      action = 'pre_upgrade'
+    )
+    
+  def post_upgrade(self, env):
+    import params
+    env.set_params(params)
+
+    hbase_service( 'master',
+      action = 'post_upgrade'
+    )
+
 
 if __name__ == "__main__":
   HbaseMaster().execute()

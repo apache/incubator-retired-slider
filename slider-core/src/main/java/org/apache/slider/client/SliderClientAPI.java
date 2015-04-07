@@ -41,6 +41,7 @@ import org.apache.slider.common.params.ActionRegistryArgs;
 import org.apache.slider.common.params.ActionResolveArgs;
 import org.apache.slider.common.params.ActionStatusArgs;
 import org.apache.slider.common.params.ActionThawArgs;
+import org.apache.slider.common.params.ActionUpgradeArgs;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.providers.AbstractClientProvider;
@@ -158,6 +159,19 @@ public interface SliderClientAPI extends Service {
   int actionUpdate(String clustername,
       AbstractClusterBuildingActionArgs buildInfo)
       throws YarnException, IOException; 
+
+  /**
+   * Upgrade the cluster with a newer version of the application
+   *
+   * @param clustername cluster name
+   * @param buildInfo the arguments needed to upgrade the cluster
+   * @throws YarnException Yarn problems
+   * @throws IOException other problems
+   */
+  int actionUpgrade(String clustername,
+      ActionUpgradeArgs buildInfo)
+      throws YarnException, IOException; 
+
   /**
    * Get the report of a this application
    * @return the app report or null if it could not be found.

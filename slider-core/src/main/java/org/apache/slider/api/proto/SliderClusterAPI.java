@@ -30,6 +30,19 @@ public final class SliderClusterAPI {
           com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.StopClusterResponseProto> done);
 
       /**
+       * <code>rpc upgradeContainers(.org.apache.slider.api.UpgradeContainersRequestProto) returns (.org.apache.slider.api.UpgradeContainersResponseProto);</code>
+       *
+       * <pre>
+       **
+       * Upgrade containers 
+       * </pre>
+       */
+      public abstract void upgradeContainers(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto request,
+          com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto> done);
+
+      /**
        * <code>rpc flexCluster(.org.apache.slider.api.FlexClusterRequestProto) returns (.org.apache.slider.api.FlexClusterResponseProto);</code>
        *
        * <pre>
@@ -295,6 +308,14 @@ public final class SliderClusterAPI {
         }
 
         @java.lang.Override
+        public  void upgradeContainers(
+            com.google.protobuf.RpcController controller,
+            org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto request,
+            com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto> done) {
+          impl.upgradeContainers(controller, request, done);
+        }
+
+        @java.lang.Override
         public  void flexCluster(
             com.google.protobuf.RpcController controller,
             org.apache.slider.api.proto.Messages.FlexClusterRequestProto request,
@@ -495,48 +516,50 @@ public final class SliderClusterAPI {
             case 0:
               return impl.stopCluster(controller, (org.apache.slider.api.proto.Messages.StopClusterRequestProto)request);
             case 1:
-              return impl.flexCluster(controller, (org.apache.slider.api.proto.Messages.FlexClusterRequestProto)request);
+              return impl.upgradeContainers(controller, (org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto)request);
             case 2:
-              return impl.getJSONClusterStatus(controller, (org.apache.slider.api.proto.Messages.GetJSONClusterStatusRequestProto)request);
+              return impl.flexCluster(controller, (org.apache.slider.api.proto.Messages.FlexClusterRequestProto)request);
             case 3:
-              return impl.getInstanceDefinition(controller, (org.apache.slider.api.proto.Messages.GetInstanceDefinitionRequestProto)request);
+              return impl.getJSONClusterStatus(controller, (org.apache.slider.api.proto.Messages.GetJSONClusterStatusRequestProto)request);
             case 4:
-              return impl.listNodeUUIDsByRole(controller, (org.apache.slider.api.proto.Messages.ListNodeUUIDsByRoleRequestProto)request);
+              return impl.getInstanceDefinition(controller, (org.apache.slider.api.proto.Messages.GetInstanceDefinitionRequestProto)request);
             case 5:
-              return impl.getNode(controller, (org.apache.slider.api.proto.Messages.GetNodeRequestProto)request);
+              return impl.listNodeUUIDsByRole(controller, (org.apache.slider.api.proto.Messages.ListNodeUUIDsByRoleRequestProto)request);
             case 6:
-              return impl.getClusterNodes(controller, (org.apache.slider.api.proto.Messages.GetClusterNodesRequestProto)request);
+              return impl.getNode(controller, (org.apache.slider.api.proto.Messages.GetNodeRequestProto)request);
             case 7:
-              return impl.echo(controller, (org.apache.slider.api.proto.Messages.EchoRequestProto)request);
+              return impl.getClusterNodes(controller, (org.apache.slider.api.proto.Messages.GetClusterNodesRequestProto)request);
             case 8:
-              return impl.killContainer(controller, (org.apache.slider.api.proto.Messages.KillContainerRequestProto)request);
+              return impl.echo(controller, (org.apache.slider.api.proto.Messages.EchoRequestProto)request);
             case 9:
-              return impl.amSuicide(controller, (org.apache.slider.api.proto.Messages.AMSuicideRequestProto)request);
+              return impl.killContainer(controller, (org.apache.slider.api.proto.Messages.KillContainerRequestProto)request);
             case 10:
-              return impl.getLivenessInformation(controller, (org.apache.slider.api.proto.Messages.GetApplicationLivenessRequestProto)request);
+              return impl.amSuicide(controller, (org.apache.slider.api.proto.Messages.AMSuicideRequestProto)request);
             case 11:
-              return impl.getLiveContainers(controller, (org.apache.slider.api.proto.Messages.GetLiveContainersRequestProto)request);
+              return impl.getLivenessInformation(controller, (org.apache.slider.api.proto.Messages.GetApplicationLivenessRequestProto)request);
             case 12:
-              return impl.getLiveContainer(controller, (org.apache.slider.api.proto.Messages.GetLiveContainerRequestProto)request);
+              return impl.getLiveContainers(controller, (org.apache.slider.api.proto.Messages.GetLiveContainersRequestProto)request);
             case 13:
-              return impl.getLiveComponents(controller, (org.apache.slider.api.proto.Messages.GetLiveComponentsRequestProto)request);
+              return impl.getLiveContainer(controller, (org.apache.slider.api.proto.Messages.GetLiveContainerRequestProto)request);
             case 14:
-              return impl.getLiveComponent(controller, (org.apache.slider.api.proto.Messages.GetLiveComponentRequestProto)request);
+              return impl.getLiveComponents(controller, (org.apache.slider.api.proto.Messages.GetLiveComponentsRequestProto)request);
             case 15:
-              return impl.getModelDesired(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request);
+              return impl.getLiveComponent(controller, (org.apache.slider.api.proto.Messages.GetLiveComponentRequestProto)request);
             case 16:
-              return impl.getModelDesiredAppconf(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request);
+              return impl.getModelDesired(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request);
             case 17:
-              return impl.getModelDesiredResources(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request);
+              return impl.getModelDesiredAppconf(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request);
             case 18:
-              return impl.getModelResolved(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request);
+              return impl.getModelDesiredResources(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request);
             case 19:
-              return impl.getModelResolvedAppconf(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request);
+              return impl.getModelResolved(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request);
             case 20:
-              return impl.getModelResolvedResources(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request);
+              return impl.getModelResolvedAppconf(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request);
             case 21:
-              return impl.getLiveResources(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request);
+              return impl.getModelResolvedResources(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request);
             case 22:
+              return impl.getLiveResources(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request);
+            case 23:
               return impl.getClientCertificateStore(controller, (org.apache.slider.api.proto.Messages.GetCertificateStoreRequestProto)request);
             default:
               throw new java.lang.AssertionError("Can't get here.");
@@ -555,35 +578,35 @@ public final class SliderClusterAPI {
             case 0:
               return org.apache.slider.api.proto.Messages.StopClusterRequestProto.getDefaultInstance();
             case 1:
-              return org.apache.slider.api.proto.Messages.FlexClusterRequestProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto.getDefaultInstance();
             case 2:
-              return org.apache.slider.api.proto.Messages.GetJSONClusterStatusRequestProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.FlexClusterRequestProto.getDefaultInstance();
             case 3:
-              return org.apache.slider.api.proto.Messages.GetInstanceDefinitionRequestProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.GetJSONClusterStatusRequestProto.getDefaultInstance();
             case 4:
-              return org.apache.slider.api.proto.Messages.ListNodeUUIDsByRoleRequestProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.GetInstanceDefinitionRequestProto.getDefaultInstance();
             case 5:
-              return org.apache.slider.api.proto.Messages.GetNodeRequestProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.ListNodeUUIDsByRoleRequestProto.getDefaultInstance();
             case 6:
-              return org.apache.slider.api.proto.Messages.GetClusterNodesRequestProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.GetNodeRequestProto.getDefaultInstance();
             case 7:
-              return org.apache.slider.api.proto.Messages.EchoRequestProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.GetClusterNodesRequestProto.getDefaultInstance();
             case 8:
-              return org.apache.slider.api.proto.Messages.KillContainerRequestProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.EchoRequestProto.getDefaultInstance();
             case 9:
-              return org.apache.slider.api.proto.Messages.AMSuicideRequestProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.KillContainerRequestProto.getDefaultInstance();
             case 10:
-              return org.apache.slider.api.proto.Messages.GetApplicationLivenessRequestProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.AMSuicideRequestProto.getDefaultInstance();
             case 11:
-              return org.apache.slider.api.proto.Messages.GetLiveContainersRequestProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.GetApplicationLivenessRequestProto.getDefaultInstance();
             case 12:
-              return org.apache.slider.api.proto.Messages.GetLiveContainerRequestProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.GetLiveContainersRequestProto.getDefaultInstance();
             case 13:
-              return org.apache.slider.api.proto.Messages.GetLiveComponentsRequestProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.GetLiveContainerRequestProto.getDefaultInstance();
             case 14:
-              return org.apache.slider.api.proto.Messages.GetLiveComponentRequestProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.GetLiveComponentsRequestProto.getDefaultInstance();
             case 15:
-              return org.apache.slider.api.proto.Messages.EmptyPayloadProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.GetLiveComponentRequestProto.getDefaultInstance();
             case 16:
               return org.apache.slider.api.proto.Messages.EmptyPayloadProto.getDefaultInstance();
             case 17:
@@ -597,6 +620,8 @@ public final class SliderClusterAPI {
             case 21:
               return org.apache.slider.api.proto.Messages.EmptyPayloadProto.getDefaultInstance();
             case 22:
+              return org.apache.slider.api.proto.Messages.EmptyPayloadProto.getDefaultInstance();
+            case 23:
               return org.apache.slider.api.proto.Messages.GetCertificateStoreRequestProto.getDefaultInstance();
             default:
               throw new java.lang.AssertionError("Can't get here.");
@@ -615,35 +640,35 @@ public final class SliderClusterAPI {
             case 0:
               return org.apache.slider.api.proto.Messages.StopClusterResponseProto.getDefaultInstance();
             case 1:
-              return org.apache.slider.api.proto.Messages.FlexClusterResponseProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto.getDefaultInstance();
             case 2:
-              return org.apache.slider.api.proto.Messages.GetJSONClusterStatusResponseProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.FlexClusterResponseProto.getDefaultInstance();
             case 3:
-              return org.apache.slider.api.proto.Messages.GetInstanceDefinitionResponseProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.GetJSONClusterStatusResponseProto.getDefaultInstance();
             case 4:
-              return org.apache.slider.api.proto.Messages.ListNodeUUIDsByRoleResponseProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.GetInstanceDefinitionResponseProto.getDefaultInstance();
             case 5:
-              return org.apache.slider.api.proto.Messages.GetNodeResponseProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.ListNodeUUIDsByRoleResponseProto.getDefaultInstance();
             case 6:
-              return org.apache.slider.api.proto.Messages.GetClusterNodesResponseProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.GetNodeResponseProto.getDefaultInstance();
             case 7:
-              return org.apache.slider.api.proto.Messages.EchoResponseProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.GetClusterNodesResponseProto.getDefaultInstance();
             case 8:
-              return org.apache.slider.api.proto.Messages.KillContainerResponseProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.EchoResponseProto.getDefaultInstance();
             case 9:
-              return org.apache.slider.api.proto.Messages.AMSuicideResponseProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.KillContainerResponseProto.getDefaultInstance();
             case 10:
-              return org.apache.slider.api.proto.Messages.ApplicationLivenessInformationProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.AMSuicideResponseProto.getDefaultInstance();
             case 11:
-              return org.apache.slider.api.proto.Messages.GetLiveContainersResponseProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.ApplicationLivenessInformationProto.getDefaultInstance();
             case 12:
-              return org.apache.slider.api.proto.Messages.ContainerInformationProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.GetLiveContainersResponseProto.getDefaultInstance();
             case 13:
-              return org.apache.slider.api.proto.Messages.GetLiveComponentsResponseProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.ContainerInformationProto.getDefaultInstance();
             case 14:
-              return org.apache.slider.api.proto.Messages.ComponentInformationProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.GetLiveComponentsResponseProto.getDefaultInstance();
             case 15:
-              return org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance();
+              return org.apache.slider.api.proto.Messages.ComponentInformationProto.getDefaultInstance();
             case 16:
               return org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance();
             case 17:
@@ -657,6 +682,8 @@ public final class SliderClusterAPI {
             case 21:
               return org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance();
             case 22:
+              return org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance();
+            case 23:
               return org.apache.slider.api.proto.Messages.GetCertificateStoreResponseProto.getDefaultInstance();
             default:
               throw new java.lang.AssertionError("Can't get here.");
@@ -673,6 +700,19 @@ public final class SliderClusterAPI {
         com.google.protobuf.RpcController controller,
         org.apache.slider.api.proto.Messages.StopClusterRequestProto request,
         com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.StopClusterResponseProto> done);
+
+    /**
+     * <code>rpc upgradeContainers(.org.apache.slider.api.UpgradeContainersRequestProto) returns (.org.apache.slider.api.UpgradeContainersResponseProto);</code>
+     *
+     * <pre>
+     **
+     * Upgrade containers 
+     * </pre>
+     */
+    public abstract void upgradeContainers(
+        com.google.protobuf.RpcController controller,
+        org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto request,
+        com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto> done);
 
     /**
      * <code>rpc flexCluster(.org.apache.slider.api.FlexClusterRequestProto) returns (.org.apache.slider.api.FlexClusterResponseProto);</code>
@@ -954,111 +994,116 @@ public final class SliderClusterAPI {
               done));
           return;
         case 1:
+          this.upgradeContainers(controller, (org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto)request,
+            com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto>specializeCallback(
+              done));
+          return;
+        case 2:
           this.flexCluster(controller, (org.apache.slider.api.proto.Messages.FlexClusterRequestProto)request,
             com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.FlexClusterResponseProto>specializeCallback(
               done));
           return;
-        case 2:
+        case 3:
           this.getJSONClusterStatus(controller, (org.apache.slider.api.proto.Messages.GetJSONClusterStatusRequestProto)request,
             com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.GetJSONClusterStatusResponseProto>specializeCallback(
               done));
           return;
-        case 3:
+        case 4:
           this.getInstanceDefinition(controller, (org.apache.slider.api.proto.Messages.GetInstanceDefinitionRequestProto)request,
             com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.GetInstanceDefinitionResponseProto>specializeCallback(
               done));
           return;
-        case 4:
+        case 5:
           this.listNodeUUIDsByRole(controller, (org.apache.slider.api.proto.Messages.ListNodeUUIDsByRoleRequestProto)request,
             com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.ListNodeUUIDsByRoleResponseProto>specializeCallback(
               done));
           return;
-        case 5:
+        case 6:
           this.getNode(controller, (org.apache.slider.api.proto.Messages.GetNodeRequestProto)request,
             com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.GetNodeResponseProto>specializeCallback(
               done));
           return;
-        case 6:
+        case 7:
           this.getClusterNodes(controller, (org.apache.slider.api.proto.Messages.GetClusterNodesRequestProto)request,
             com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.GetClusterNodesResponseProto>specializeCallback(
               done));
           return;
-        case 7:
+        case 8:
           this.echo(controller, (org.apache.slider.api.proto.Messages.EchoRequestProto)request,
             com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.EchoResponseProto>specializeCallback(
               done));
           return;
-        case 8:
+        case 9:
           this.killContainer(controller, (org.apache.slider.api.proto.Messages.KillContainerRequestProto)request,
             com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.KillContainerResponseProto>specializeCallback(
               done));
           return;
-        case 9:
+        case 10:
           this.amSuicide(controller, (org.apache.slider.api.proto.Messages.AMSuicideRequestProto)request,
             com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.AMSuicideResponseProto>specializeCallback(
               done));
           return;
-        case 10:
+        case 11:
           this.getLivenessInformation(controller, (org.apache.slider.api.proto.Messages.GetApplicationLivenessRequestProto)request,
             com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.ApplicationLivenessInformationProto>specializeCallback(
               done));
           return;
-        case 11:
+        case 12:
           this.getLiveContainers(controller, (org.apache.slider.api.proto.Messages.GetLiveContainersRequestProto)request,
             com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.GetLiveContainersResponseProto>specializeCallback(
               done));
           return;
-        case 12:
+        case 13:
           this.getLiveContainer(controller, (org.apache.slider.api.proto.Messages.GetLiveContainerRequestProto)request,
             com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.ContainerInformationProto>specializeCallback(
               done));
           return;
-        case 13:
+        case 14:
           this.getLiveComponents(controller, (org.apache.slider.api.proto.Messages.GetLiveComponentsRequestProto)request,
             com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.GetLiveComponentsResponseProto>specializeCallback(
               done));
           return;
-        case 14:
+        case 15:
           this.getLiveComponent(controller, (org.apache.slider.api.proto.Messages.GetLiveComponentRequestProto)request,
             com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.ComponentInformationProto>specializeCallback(
               done));
           return;
-        case 15:
+        case 16:
           this.getModelDesired(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request,
             com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.WrappedJsonProto>specializeCallback(
               done));
           return;
-        case 16:
+        case 17:
           this.getModelDesiredAppconf(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request,
             com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.WrappedJsonProto>specializeCallback(
               done));
           return;
-        case 17:
+        case 18:
           this.getModelDesiredResources(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request,
             com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.WrappedJsonProto>specializeCallback(
               done));
           return;
-        case 18:
+        case 19:
           this.getModelResolved(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request,
             com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.WrappedJsonProto>specializeCallback(
               done));
           return;
-        case 19:
+        case 20:
           this.getModelResolvedAppconf(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request,
             com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.WrappedJsonProto>specializeCallback(
               done));
           return;
-        case 20:
+        case 21:
           this.getModelResolvedResources(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request,
             com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.WrappedJsonProto>specializeCallback(
               done));
           return;
-        case 21:
+        case 22:
           this.getLiveResources(controller, (org.apache.slider.api.proto.Messages.EmptyPayloadProto)request,
             com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.WrappedJsonProto>specializeCallback(
               done));
           return;
-        case 22:
+        case 23:
           this.getClientCertificateStore(controller, (org.apache.slider.api.proto.Messages.GetCertificateStoreRequestProto)request,
             com.google.protobuf.RpcUtil.<org.apache.slider.api.proto.Messages.GetCertificateStoreResponseProto>specializeCallback(
               done));
@@ -1080,35 +1125,35 @@ public final class SliderClusterAPI {
         case 0:
           return org.apache.slider.api.proto.Messages.StopClusterRequestProto.getDefaultInstance();
         case 1:
-          return org.apache.slider.api.proto.Messages.FlexClusterRequestProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto.getDefaultInstance();
         case 2:
-          return org.apache.slider.api.proto.Messages.GetJSONClusterStatusRequestProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.FlexClusterRequestProto.getDefaultInstance();
         case 3:
-          return org.apache.slider.api.proto.Messages.GetInstanceDefinitionRequestProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.GetJSONClusterStatusRequestProto.getDefaultInstance();
         case 4:
-          return org.apache.slider.api.proto.Messages.ListNodeUUIDsByRoleRequestProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.GetInstanceDefinitionRequestProto.getDefaultInstance();
         case 5:
-          return org.apache.slider.api.proto.Messages.GetNodeRequestProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.ListNodeUUIDsByRoleRequestProto.getDefaultInstance();
         case 6:
-          return org.apache.slider.api.proto.Messages.GetClusterNodesRequestProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.GetNodeRequestProto.getDefaultInstance();
         case 7:
-          return org.apache.slider.api.proto.Messages.EchoRequestProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.GetClusterNodesRequestProto.getDefaultInstance();
         case 8:
-          return org.apache.slider.api.proto.Messages.KillContainerRequestProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.EchoRequestProto.getDefaultInstance();
         case 9:
-          return org.apache.slider.api.proto.Messages.AMSuicideRequestProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.KillContainerRequestProto.getDefaultInstance();
         case 10:
-          return org.apache.slider.api.proto.Messages.GetApplicationLivenessRequestProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.AMSuicideRequestProto.getDefaultInstance();
         case 11:
-          return org.apache.slider.api.proto.Messages.GetLiveContainersRequestProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.GetApplicationLivenessRequestProto.getDefaultInstance();
         case 12:
-          return org.apache.slider.api.proto.Messages.GetLiveContainerRequestProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.GetLiveContainersRequestProto.getDefaultInstance();
         case 13:
-          return org.apache.slider.api.proto.Messages.GetLiveComponentsRequestProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.GetLiveContainerRequestProto.getDefaultInstance();
         case 14:
-          return org.apache.slider.api.proto.Messages.GetLiveComponentRequestProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.GetLiveComponentsRequestProto.getDefaultInstance();
         case 15:
-          return org.apache.slider.api.proto.Messages.EmptyPayloadProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.GetLiveComponentRequestProto.getDefaultInstance();
         case 16:
           return org.apache.slider.api.proto.Messages.EmptyPayloadProto.getDefaultInstance();
         case 17:
@@ -1122,6 +1167,8 @@ public final class SliderClusterAPI {
         case 21:
           return org.apache.slider.api.proto.Messages.EmptyPayloadProto.getDefaultInstance();
         case 22:
+          return org.apache.slider.api.proto.Messages.EmptyPayloadProto.getDefaultInstance();
+        case 23:
           return org.apache.slider.api.proto.Messages.GetCertificateStoreRequestProto.getDefaultInstance();
         default:
           throw new java.lang.AssertionError("Can't get here.");
@@ -1140,35 +1187,35 @@ public final class SliderClusterAPI {
         case 0:
           return org.apache.slider.api.proto.Messages.StopClusterResponseProto.getDefaultInstance();
         case 1:
-          return org.apache.slider.api.proto.Messages.FlexClusterResponseProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto.getDefaultInstance();
         case 2:
-          return org.apache.slider.api.proto.Messages.GetJSONClusterStatusResponseProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.FlexClusterResponseProto.getDefaultInstance();
         case 3:
-          return org.apache.slider.api.proto.Messages.GetInstanceDefinitionResponseProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.GetJSONClusterStatusResponseProto.getDefaultInstance();
         case 4:
-          return org.apache.slider.api.proto.Messages.ListNodeUUIDsByRoleResponseProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.GetInstanceDefinitionResponseProto.getDefaultInstance();
         case 5:
-          return org.apache.slider.api.proto.Messages.GetNodeResponseProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.ListNodeUUIDsByRoleResponseProto.getDefaultInstance();
         case 6:
-          return org.apache.slider.api.proto.Messages.GetClusterNodesResponseProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.GetNodeResponseProto.getDefaultInstance();
         case 7:
-          return org.apache.slider.api.proto.Messages.EchoResponseProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.GetClusterNodesResponseProto.getDefaultInstance();
         case 8:
-          return org.apache.slider.api.proto.Messages.KillContainerResponseProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.EchoResponseProto.getDefaultInstance();
         case 9:
-          return org.apache.slider.api.proto.Messages.AMSuicideResponseProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.KillContainerResponseProto.getDefaultInstance();
         case 10:
-          return org.apache.slider.api.proto.Messages.ApplicationLivenessInformationProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.AMSuicideResponseProto.getDefaultInstance();
         case 11:
-          return org.apache.slider.api.proto.Messages.GetLiveContainersResponseProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.ApplicationLivenessInformationProto.getDefaultInstance();
         case 12:
-          return org.apache.slider.api.proto.Messages.ContainerInformationProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.GetLiveContainersResponseProto.getDefaultInstance();
         case 13:
-          return org.apache.slider.api.proto.Messages.GetLiveComponentsResponseProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.ContainerInformationProto.getDefaultInstance();
         case 14:
-          return org.apache.slider.api.proto.Messages.ComponentInformationProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.GetLiveComponentsResponseProto.getDefaultInstance();
         case 15:
-          return org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance();
+          return org.apache.slider.api.proto.Messages.ComponentInformationProto.getDefaultInstance();
         case 16:
           return org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance();
         case 17:
@@ -1182,6 +1229,8 @@ public final class SliderClusterAPI {
         case 21:
           return org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance();
         case 22:
+          return org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance();
+        case 23:
           return org.apache.slider.api.proto.Messages.GetCertificateStoreResponseProto.getDefaultInstance();
         default:
           throw new java.lang.AssertionError("Can't get here.");
@@ -1219,12 +1268,27 @@ public final class SliderClusterAPI {
             org.apache.slider.api.proto.Messages.StopClusterResponseProto.getDefaultInstance()));
       }
 
+      public  void upgradeContainers(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto request,
+          com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto> done) {
+        channel.callMethod(
+          getDescriptor().getMethods().get(1),
+          controller,
+          request,
+          org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto.getDefaultInstance(),
+          com.google.protobuf.RpcUtil.generalizeCallback(
+            done,
+            org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto.class,
+            org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto.getDefaultInstance()));
+      }
+
       public  void flexCluster(
           com.google.protobuf.RpcController controller,
           org.apache.slider.api.proto.Messages.FlexClusterRequestProto request,
           com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.FlexClusterResponseProto> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(1),
+          getDescriptor().getMethods().get(2),
           controller,
           request,
           org.apache.slider.api.proto.Messages.FlexClusterResponseProto.getDefaultInstance(),
@@ -1239,7 +1303,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.GetJSONClusterStatusRequestProto request,
           com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.GetJSONClusterStatusResponseProto> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(2),
+          getDescriptor().getMethods().get(3),
           controller,
           request,
           org.apache.slider.api.proto.Messages.GetJSONClusterStatusResponseProto.getDefaultInstance(),
@@ -1254,7 +1318,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.GetInstanceDefinitionRequestProto request,
           com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.GetInstanceDefinitionResponseProto> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(3),
+          getDescriptor().getMethods().get(4),
           controller,
           request,
           org.apache.slider.api.proto.Messages.GetInstanceDefinitionResponseProto.getDefaultInstance(),
@@ -1269,7 +1333,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.ListNodeUUIDsByRoleRequestProto request,
           com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.ListNodeUUIDsByRoleResponseProto> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(4),
+          getDescriptor().getMethods().get(5),
           controller,
           request,
           org.apache.slider.api.proto.Messages.ListNodeUUIDsByRoleResponseProto.getDefaultInstance(),
@@ -1284,7 +1348,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.GetNodeRequestProto request,
           com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.GetNodeResponseProto> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(5),
+          getDescriptor().getMethods().get(6),
           controller,
           request,
           org.apache.slider.api.proto.Messages.GetNodeResponseProto.getDefaultInstance(),
@@ -1299,7 +1363,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.GetClusterNodesRequestProto request,
           com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.GetClusterNodesResponseProto> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(6),
+          getDescriptor().getMethods().get(7),
           controller,
           request,
           org.apache.slider.api.proto.Messages.GetClusterNodesResponseProto.getDefaultInstance(),
@@ -1314,7 +1378,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.EchoRequestProto request,
           com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.EchoResponseProto> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(7),
+          getDescriptor().getMethods().get(8),
           controller,
           request,
           org.apache.slider.api.proto.Messages.EchoResponseProto.getDefaultInstance(),
@@ -1329,7 +1393,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.KillContainerRequestProto request,
           com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.KillContainerResponseProto> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(8),
+          getDescriptor().getMethods().get(9),
           controller,
           request,
           org.apache.slider.api.proto.Messages.KillContainerResponseProto.getDefaultInstance(),
@@ -1344,7 +1408,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.AMSuicideRequestProto request,
           com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.AMSuicideResponseProto> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(9),
+          getDescriptor().getMethods().get(10),
           controller,
           request,
           org.apache.slider.api.proto.Messages.AMSuicideResponseProto.getDefaultInstance(),
@@ -1359,7 +1423,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.GetApplicationLivenessRequestProto request,
           com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.ApplicationLivenessInformationProto> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(10),
+          getDescriptor().getMethods().get(11),
           controller,
           request,
           org.apache.slider.api.proto.Messages.ApplicationLivenessInformationProto.getDefaultInstance(),
@@ -1374,7 +1438,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.GetLiveContainersRequestProto request,
           com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.GetLiveContainersResponseProto> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(11),
+          getDescriptor().getMethods().get(12),
           controller,
           request,
           org.apache.slider.api.proto.Messages.GetLiveContainersResponseProto.getDefaultInstance(),
@@ -1389,7 +1453,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.GetLiveContainerRequestProto request,
           com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.ContainerInformationProto> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(12),
+          getDescriptor().getMethods().get(13),
           controller,
           request,
           org.apache.slider.api.proto.Messages.ContainerInformationProto.getDefaultInstance(),
@@ -1404,7 +1468,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.GetLiveComponentsRequestProto request,
           com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.GetLiveComponentsResponseProto> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(13),
+          getDescriptor().getMethods().get(14),
           controller,
           request,
           org.apache.slider.api.proto.Messages.GetLiveComponentsResponseProto.getDefaultInstance(),
@@ -1419,7 +1483,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.GetLiveComponentRequestProto request,
           com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.ComponentInformationProto> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(14),
+          getDescriptor().getMethods().get(15),
           controller,
           request,
           org.apache.slider.api.proto.Messages.ComponentInformationProto.getDefaultInstance(),
@@ -1434,7 +1498,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
           com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(15),
+          getDescriptor().getMethods().get(16),
           controller,
           request,
           org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance(),
@@ -1449,7 +1513,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
           com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(16),
+          getDescriptor().getMethods().get(17),
           controller,
           request,
           org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance(),
@@ -1464,7 +1528,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
           com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(17),
+          getDescriptor().getMethods().get(18),
           controller,
           request,
           org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance(),
@@ -1479,7 +1543,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
           com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(18),
+          getDescriptor().getMethods().get(19),
           controller,
           request,
           org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance(),
@@ -1494,7 +1558,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
           com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(19),
+          getDescriptor().getMethods().get(20),
           controller,
           request,
           org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance(),
@@ -1509,7 +1573,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
           com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(20),
+          getDescriptor().getMethods().get(21),
           controller,
           request,
           org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance(),
@@ -1524,7 +1588,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.EmptyPayloadProto request,
           com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.WrappedJsonProto> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(21),
+          getDescriptor().getMethods().get(22),
           controller,
           request,
           org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance(),
@@ -1539,7 +1603,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.GetCertificateStoreRequestProto request,
           com.google.protobuf.RpcCallback<org.apache.slider.api.proto.Messages.GetCertificateStoreResponseProto> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(22),
+          getDescriptor().getMethods().get(23),
           controller,
           request,
           org.apache.slider.api.proto.Messages.GetCertificateStoreResponseProto.getDefaultInstance(),
@@ -1559,6 +1623,11 @@ public final class SliderClusterAPI {
       public org.apache.slider.api.proto.Messages.StopClusterResponseProto stopCluster(
           com.google.protobuf.RpcController controller,
           org.apache.slider.api.proto.Messages.StopClusterRequestProto request)
+          throws com.google.protobuf.ServiceException;
+
+      public org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto upgradeContainers(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto request)
           throws com.google.protobuf.ServiceException;
 
       public org.apache.slider.api.proto.Messages.FlexClusterResponseProto flexCluster(
@@ -1691,12 +1760,24 @@ public final class SliderClusterAPI {
       }
 
 
+      public org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto upgradeContainers(
+          com.google.protobuf.RpcController controller,
+          org.apache.slider.api.proto.Messages.UpgradeContainersRequestProto request)
+          throws com.google.protobuf.ServiceException {
+        return (org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto) channel.callBlockingMethod(
+          getDescriptor().getMethods().get(1),
+          controller,
+          request,
+          org.apache.slider.api.proto.Messages.UpgradeContainersResponseProto.getDefaultInstance());
+      }
+
+
       public org.apache.slider.api.proto.Messages.FlexClusterResponseProto flexCluster(
           com.google.protobuf.RpcController controller,
           org.apache.slider.api.proto.Messages.FlexClusterRequestProto request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.slider.api.proto.Messages.FlexClusterResponseProto) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(1),
+          getDescriptor().getMethods().get(2),
           controller,
           request,
           org.apache.slider.api.proto.Messages.FlexClusterResponseProto.getDefaultInstance());
@@ -1708,7 +1789,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.GetJSONClusterStatusRequestProto request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.slider.api.proto.Messages.GetJSONClusterStatusResponseProto) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(2),
+          getDescriptor().getMethods().get(3),
           controller,
           request,
           org.apache.slider.api.proto.Messages.GetJSONClusterStatusResponseProto.getDefaultInstance());
@@ -1720,7 +1801,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.GetInstanceDefinitionRequestProto request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.slider.api.proto.Messages.GetInstanceDefinitionResponseProto) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(3),
+          getDescriptor().getMethods().get(4),
           controller,
           request,
           org.apache.slider.api.proto.Messages.GetInstanceDefinitionResponseProto.getDefaultInstance());
@@ -1732,7 +1813,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.ListNodeUUIDsByRoleRequestProto request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.slider.api.proto.Messages.ListNodeUUIDsByRoleResponseProto) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(4),
+          getDescriptor().getMethods().get(5),
           controller,
           request,
           org.apache.slider.api.proto.Messages.ListNodeUUIDsByRoleResponseProto.getDefaultInstance());
@@ -1744,7 +1825,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.GetNodeRequestProto request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.slider.api.proto.Messages.GetNodeResponseProto) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(5),
+          getDescriptor().getMethods().get(6),
           controller,
           request,
           org.apache.slider.api.proto.Messages.GetNodeResponseProto.getDefaultInstance());
@@ -1756,7 +1837,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.GetClusterNodesRequestProto request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.slider.api.proto.Messages.GetClusterNodesResponseProto) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(6),
+          getDescriptor().getMethods().get(7),
           controller,
           request,
           org.apache.slider.api.proto.Messages.GetClusterNodesResponseProto.getDefaultInstance());
@@ -1768,7 +1849,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.EchoRequestProto request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.slider.api.proto.Messages.EchoResponseProto) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(7),
+          getDescriptor().getMethods().get(8),
           controller,
           request,
           org.apache.slider.api.proto.Messages.EchoResponseProto.getDefaultInstance());
@@ -1780,7 +1861,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.KillContainerRequestProto request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.slider.api.proto.Messages.KillContainerResponseProto) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(8),
+          getDescriptor().getMethods().get(9),
           controller,
           request,
           org.apache.slider.api.proto.Messages.KillContainerResponseProto.getDefaultInstance());
@@ -1792,7 +1873,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.AMSuicideRequestProto request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.slider.api.proto.Messages.AMSuicideResponseProto) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(9),
+          getDescriptor().getMethods().get(10),
           controller,
           request,
           org.apache.slider.api.proto.Messages.AMSuicideResponseProto.getDefaultInstance());
@@ -1804,7 +1885,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.GetApplicationLivenessRequestProto request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.slider.api.proto.Messages.ApplicationLivenessInformationProto) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(10),
+          getDescriptor().getMethods().get(11),
           controller,
           request,
           org.apache.slider.api.proto.Messages.ApplicationLivenessInformationProto.getDefaultInstance());
@@ -1816,7 +1897,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.GetLiveContainersRequestProto request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.slider.api.proto.Messages.GetLiveContainersResponseProto) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(11),
+          getDescriptor().getMethods().get(12),
           controller,
           request,
           org.apache.slider.api.proto.Messages.GetLiveContainersResponseProto.getDefaultInstance());
@@ -1828,7 +1909,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.GetLiveContainerRequestProto request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.slider.api.proto.Messages.ContainerInformationProto) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(12),
+          getDescriptor().getMethods().get(13),
           controller,
           request,
           org.apache.slider.api.proto.Messages.ContainerInformationProto.getDefaultInstance());
@@ -1840,7 +1921,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.GetLiveComponentsRequestProto request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.slider.api.proto.Messages.GetLiveComponentsResponseProto) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(13),
+          getDescriptor().getMethods().get(14),
           controller,
           request,
           org.apache.slider.api.proto.Messages.GetLiveComponentsResponseProto.getDefaultInstance());
@@ -1852,7 +1933,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.GetLiveComponentRequestProto request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.slider.api.proto.Messages.ComponentInformationProto) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(14),
+          getDescriptor().getMethods().get(15),
           controller,
           request,
           org.apache.slider.api.proto.Messages.ComponentInformationProto.getDefaultInstance());
@@ -1864,7 +1945,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.EmptyPayloadProto request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.slider.api.proto.Messages.WrappedJsonProto) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(15),
+          getDescriptor().getMethods().get(16),
           controller,
           request,
           org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance());
@@ -1876,7 +1957,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.EmptyPayloadProto request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.slider.api.proto.Messages.WrappedJsonProto) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(16),
+          getDescriptor().getMethods().get(17),
           controller,
           request,
           org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance());
@@ -1888,7 +1969,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.EmptyPayloadProto request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.slider.api.proto.Messages.WrappedJsonProto) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(17),
+          getDescriptor().getMethods().get(18),
           controller,
           request,
           org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance());
@@ -1900,7 +1981,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.EmptyPayloadProto request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.slider.api.proto.Messages.WrappedJsonProto) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(18),
+          getDescriptor().getMethods().get(19),
           controller,
           request,
           org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance());
@@ -1912,7 +1993,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.EmptyPayloadProto request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.slider.api.proto.Messages.WrappedJsonProto) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(19),
+          getDescriptor().getMethods().get(20),
           controller,
           request,
           org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance());
@@ -1924,7 +2005,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.EmptyPayloadProto request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.slider.api.proto.Messages.WrappedJsonProto) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(20),
+          getDescriptor().getMethods().get(21),
           controller,
           request,
           org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance());
@@ -1936,7 +2017,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.EmptyPayloadProto request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.slider.api.proto.Messages.WrappedJsonProto) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(21),
+          getDescriptor().getMethods().get(22),
           controller,
           request,
           org.apache.slider.api.proto.Messages.WrappedJsonProto.getDefaultInstance());
@@ -1948,7 +2029,7 @@ public final class SliderClusterAPI {
           org.apache.slider.api.proto.Messages.GetCertificateStoreRequestProto request)
           throws com.google.protobuf.ServiceException {
         return (org.apache.slider.api.proto.Messages.GetCertificateStoreResponseProto) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(22),
+          getDescriptor().getMethods().get(23),
           controller,
           request,
           org.apache.slider.api.proto.Messages.GetCertificateStoreResponseProto.getDefaultInstance());
@@ -1970,77 +2051,80 @@ public final class SliderClusterAPI {
     java.lang.String[] descriptorData = {
       "\n\033SliderClusterProtocol.proto\022\025org.apach" +
       "e.slider.api\032\033SliderClusterMessages.prot" +
-      "o2\303\025\n\027SliderClusterProtocolPB\022n\n\013stopClu" +
+      "o2\306\026\n\027SliderClusterProtocolPB\022n\n\013stopClu" +
       "ster\022..org.apache.slider.api.StopCluster" +
       "RequestProto\032/.org.apache.slider.api.Sto" +
-      "pClusterResponseProto\022n\n\013flexCluster\022..o" +
-      "rg.apache.slider.api.FlexClusterRequestP" +
-      "roto\032/.org.apache.slider.api.FlexCluster" +
-      "ResponseProto\022\211\001\n\024getJSONClusterStatus\0227" +
-      ".org.apache.slider.api.GetJSONClusterSta",
-      "tusRequestProto\0328.org.apache.slider.api." +
-      "GetJSONClusterStatusResponseProto\022\214\001\n\025ge" +
-      "tInstanceDefinition\0228.org.apache.slider." +
-      "api.GetInstanceDefinitionRequestProto\0329." +
-      "org.apache.slider.api.GetInstanceDefinit" +
-      "ionResponseProto\022\206\001\n\023listNodeUUIDsByRole" +
-      "\0226.org.apache.slider.api.ListNodeUUIDsBy" +
-      "RoleRequestProto\0327.org.apache.slider.api" +
-      ".ListNodeUUIDsByRoleResponseProto\022b\n\007get" +
-      "Node\022*.org.apache.slider.api.GetNodeRequ",
-      "estProto\032+.org.apache.slider.api.GetNode" +
-      "ResponseProto\022z\n\017getClusterNodes\0222.org.a" +
-      "pache.slider.api.GetClusterNodesRequestP" +
-      "roto\0323.org.apache.slider.api.GetClusterN" +
-      "odesResponseProto\022Y\n\004echo\022\'.org.apache.s" +
-      "lider.api.EchoRequestProto\032(.org.apache." +
-      "slider.api.EchoResponseProto\022t\n\rkillCont" +
-      "ainer\0220.org.apache.slider.api.KillContai" +
-      "nerRequestProto\0321.org.apache.slider.api." +
-      "KillContainerResponseProto\022h\n\tamSuicide\022",
-      ",.org.apache.slider.api.AMSuicideRequest" +
-      "Proto\032-.org.apache.slider.api.AMSuicideR" +
-      "esponseProto\022\217\001\n\026getLivenessInformation\022" +
-      "9.org.apache.slider.api.GetApplicationLi" +
-      "venessRequestProto\032:.org.apache.slider.a" +
-      "pi.ApplicationLivenessInformationProto\022\200" +
-      "\001\n\021getLiveContainers\0224.org.apache.slider" +
-      ".api.GetLiveContainersRequestProto\0325.org" +
-      ".apache.slider.api.GetLiveContainersResp" +
-      "onseProto\022y\n\020getLiveContainer\0223.org.apac",
-      "he.slider.api.GetLiveContainerRequestPro" +
-      "to\0320.org.apache.slider.api.ContainerInfo" +
-      "rmationProto\022\200\001\n\021getLiveComponents\0224.org" +
-      ".apache.slider.api.GetLiveComponentsRequ" +
-      "estProto\0325.org.apache.slider.api.GetLive" +
-      "ComponentsResponseProto\022y\n\020getLiveCompon" +
-      "ent\0223.org.apache.slider.api.GetLiveCompo" +
-      "nentRequestProto\0320.org.apache.slider.api" +
-      ".ComponentInformationProto\022d\n\017getModelDe" +
-      "sired\022(.org.apache.slider.api.EmptyPaylo",
+      "pClusterResponseProto\022\200\001\n\021upgradeContain" +
+      "ers\0224.org.apache.slider.api.UpgradeConta" +
+      "inersRequestProto\0325.org.apache.slider.ap" +
+      "i.UpgradeContainersResponseProto\022n\n\013flex" +
+      "Cluster\022..org.apache.slider.api.FlexClus",
+      "terRequestProto\032/.org.apache.slider.api." +
+      "FlexClusterResponseProto\022\211\001\n\024getJSONClus" +
+      "terStatus\0227.org.apache.slider.api.GetJSO" +
+      "NClusterStatusRequestProto\0328.org.apache." +
+      "slider.api.GetJSONClusterStatusResponseP" +
+      "roto\022\214\001\n\025getInstanceDefinition\0228.org.apa" +
+      "che.slider.api.GetInstanceDefinitionRequ" +
+      "estProto\0329.org.apache.slider.api.GetInst" +
+      "anceDefinitionResponseProto\022\206\001\n\023listNode" +
+      "UUIDsByRole\0226.org.apache.slider.api.List",
+      "NodeUUIDsByRoleRequestProto\0327.org.apache" +
+      ".slider.api.ListNodeUUIDsByRoleResponseP" +
+      "roto\022b\n\007getNode\022*.org.apache.slider.api." +
+      "GetNodeRequestProto\032+.org.apache.slider." +
+      "api.GetNodeResponseProto\022z\n\017getClusterNo" +
+      "des\0222.org.apache.slider.api.GetClusterNo" +
+      "desRequestProto\0323.org.apache.slider.api." +
+      "GetClusterNodesResponseProto\022Y\n\004echo\022\'.o" +
+      "rg.apache.slider.api.EchoRequestProto\032(." +
+      "org.apache.slider.api.EchoResponseProto\022",
+      "t\n\rkillContainer\0220.org.apache.slider.api" +
+      ".KillContainerRequestProto\0321.org.apache." +
+      "slider.api.KillContainerResponseProto\022h\n" +
+      "\tamSuicide\022,.org.apache.slider.api.AMSui" +
+      "cideRequestProto\032-.org.apache.slider.api" +
+      ".AMSuicideResponseProto\022\217\001\n\026getLivenessI" +
+      "nformation\0229.org.apache.slider.api.GetAp" +
+      "plicationLivenessRequestProto\032:.org.apac" +
+      "he.slider.api.ApplicationLivenessInforma" +
+      "tionProto\022\200\001\n\021getLiveContainers\0224.org.ap",
+      "ache.slider.api.GetLiveContainersRequest" +
+      "Proto\0325.org.apache.slider.api.GetLiveCon" +
+      "tainersResponseProto\022y\n\020getLiveContainer" +
+      "\0223.org.apache.slider.api.GetLiveContaine" +
+      "rRequestProto\0320.org.apache.slider.api.Co" +
+      "ntainerInformationProto\022\200\001\n\021getLiveCompo" +
+      "nents\0224.org.apache.slider.api.GetLiveCom" +
+      "ponentsRequestProto\0325.org.apache.slider." +
+      "api.GetLiveComponentsResponseProto\022y\n\020ge" +
+      "tLiveComponent\0223.org.apache.slider.api.G",
+      "etLiveComponentRequestProto\0320.org.apache" +
+      ".slider.api.ComponentInformationProto\022d\n" +
+      "\017getModelDesired\022(.org.apache.slider.api" +
+      ".EmptyPayloadProto\032\'.org.apache.slider.a" +
+      "pi.WrappedJsonProto\022k\n\026getModelDesiredAp" +
+      "pconf\022(.org.apache.slider.api.EmptyPaylo" +
       "adProto\032\'.org.apache.slider.api.WrappedJ" +
-      "sonProto\022k\n\026getModelDesiredAppconf\022(.org" +
-      ".apache.slider.api.EmptyPayloadProto\032\'.o" +
-      "rg.apache.slider.api.WrappedJsonProto\022m\n" +
-      "\030getModelDesiredResources\022(.org.apache.s" +
-      "lider.api.EmptyPayloadProto\032\'.org.apache" +
-      ".slider.api.WrappedJsonProto\022e\n\020getModel" +
-      "Resolved\022(.org.apache.slider.api.EmptyPa" +
-      "yloadProto\032\'.org.apache.slider.api.Wrapp" +
-      "edJsonProto\022l\n\027getModelResolvedAppconf\022(",
-      ".org.apache.slider.api.EmptyPayloadProto" +
-      "\032\'.org.apache.slider.api.WrappedJsonProt" +
-      "o\022n\n\031getModelResolvedResources\022(.org.apa" +
-      "che.slider.api.EmptyPayloadProto\032\'.org.a" +
-      "pache.slider.api.WrappedJsonProto\022e\n\020get" +
-      "LiveResources\022(.org.apache.slider.api.Em" +
-      "ptyPayloadProto\032\'.org.apache.slider.api." +
-      "WrappedJsonProto\022\214\001\n\031getClientCertificat" +
-      "eStore\0226.org.apache.slider.api.GetCertif" +
-      "icateStoreRequestProto\0327.org.apache.slid",
-      "er.api.GetCertificateStoreResponseProtoB" +
-      "5\n\033org.apache.slider.api.protoB\020SliderCl" +
-      "usterAPI\210\001\001\240\001\001"
+      "sonProto\022m\n\030getModelDesiredResources\022(.o" +
+      "rg.apache.slider.api.EmptyPayloadProto\032\'" +
+      ".org.apache.slider.api.WrappedJsonProto\022",
+      "e\n\020getModelResolved\022(.org.apache.slider." +
+      "api.EmptyPayloadProto\032\'.org.apache.slide" +
+      "r.api.WrappedJsonProto\022l\n\027getModelResolv" +
+      "edAppconf\022(.org.apache.slider.api.EmptyP" +
+      "ayloadProto\032\'.org.apache.slider.api.Wrap" +
+      "pedJsonProto\022n\n\031getModelResolvedResource" +
+      "s\022(.org.apache.slider.api.EmptyPayloadPr" +
+      "oto\032\'.org.apache.slider.api.WrappedJsonP" +
+      "roto\022e\n\020getLiveResources\022(.org.apache.sl" +
+      "ider.api.EmptyPayloadProto\032\'.org.apache.",
+      "slider.api.WrappedJsonProto\022\214\001\n\031getClien" +
+      "tCertificateStore\0226.org.apache.slider.ap" +
+      "i.GetCertificateStoreRequestProto\0327.org." +
+      "apache.slider.api.GetCertificateStoreRes" +
+      "ponseProtoB5\n\033org.apache.slider.api.prot" +
+      "oB\020SliderClusterAPI\210\001\001\240\001\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {

@@ -22,6 +22,8 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.BlockingService;
+
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.fs.Path;
@@ -110,6 +112,7 @@ import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.providers.ProviderService;
 import org.apache.slider.providers.SliderProviderFactory;
 import org.apache.slider.providers.agent.AgentKeys;
+import org.apache.slider.providers.agent.AgentProviderService;
 import org.apache.slider.providers.slideram.SliderAMClientProvider;
 import org.apache.slider.providers.slideram.SliderAMProviderService;
 import org.apache.slider.server.appmaster.actions.ActionRegisterServiceInstance;
@@ -118,6 +121,7 @@ import org.apache.slider.server.appmaster.actions.RegisterComponentInstance;
 import org.apache.slider.server.appmaster.actions.QueueExecutor;
 import org.apache.slider.server.appmaster.actions.QueueService;
 import org.apache.slider.server.appmaster.actions.ActionStopSlider;
+import org.apache.slider.server.appmaster.actions.ActionUpgradeContainers;
 import org.apache.slider.server.appmaster.actions.AsyncAction;
 import org.apache.slider.server.appmaster.actions.RenewingAction;
 import org.apache.slider.server.appmaster.actions.ResetFailureWindow;
@@ -141,7 +145,6 @@ import org.apache.slider.server.appmaster.state.ContainerAssignment;
 import org.apache.slider.server.appmaster.state.ProviderAppState;
 import org.apache.slider.server.appmaster.operations.RMOperationHandler;
 import org.apache.slider.server.appmaster.state.RoleInstance;
-import org.apache.slider.server.appmaster.state.RoleStatus;
 import org.apache.slider.server.appmaster.web.AgentService;
 import org.apache.slider.server.appmaster.web.rest.InsecureAmFilterInitializer;
 import org.apache.slider.server.appmaster.web.rest.agent.AgentWebApp;
@@ -161,7 +164,9 @@ import org.apache.slider.server.services.yarnregistry.YarnRegistryViewForProvide
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -1614,6 +1619,58 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
 
     reviewRequestAndReleaseNodes("onContainersCompleted");
+  }
+
+  /**
+   * Signal that containers are being upgraded
+   * 
+   * @param upgradeContainersRequest
+   *          request containing upgrade details
+   */
+  public synchronized void onUpgradeContainers(
+      ActionUpgradeContainers upgradeContainersRequest) throws IOException,
+      SliderException {
+    LOG_YARN.info("onUpgradeContainers([{}]",
+        upgradeContainersRequest.getMessage());
+    List<String> containers = upgradeContainersRequest.getContainers();
+    if (CollectionUtils.isEmpty(containers)) {
+      // components will not be null here, since it is pre-checked
+      List<String> components = upgradeContainersRequest.getComponents();
+      Map<ContainerId, RoleInstance> liveContainers = appState.getLiveNodes();
+      containers = new ArrayList<String>();
+      Map<String, List<String>> roleContainerMap = prepareRoleContainerMap(liveContainers);
+      for (String component : components) {
+        List<String> roleContainers = roleContainerMap.get(component);
+        if (roleContainers != null) {
+          containers.addAll(roleContainers);
+        }
+      }
+    }
+    LOG_YARN.info("Containers to be upgraded (total {}) : {}", containers.size(),
+        containers);
+    if (providerService instanceof AgentProviderService) {
+      AgentProviderService agentProviderService = (AgentProviderService) providerService;
+      agentProviderService.setInUpgradeMode(true);
+      agentProviderService.addUpgradeContainers(containers);
+    }
+  }
+
+  // create a reverse map of roles -> list of all live containers
+  private Map<String, List<String>> prepareRoleContainerMap(
+      Map<ContainerId, RoleInstance> liveContainers) {
+    Map<String, List<String>> roleContainerMap = new HashMap<String, List<String>>();
+    for (Map.Entry<ContainerId, RoleInstance> liveContainer : liveContainers
+        .entrySet()) {
+      RoleInstance role = liveContainer.getValue();
+      if (roleContainerMap.containsKey(role.role)) {
+        roleContainerMap.get(role.role).add(liveContainer.getKey().toString());
+      } else {
+        List<String> containers = new ArrayList<String>();
+        containers.add(liveContainer.getKey().toString());
+        roleContainerMap.put(role.role, containers);
+      }
+    }
+    return roleContainerMap;
   }
 
   /**

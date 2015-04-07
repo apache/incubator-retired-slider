@@ -28,6 +28,7 @@ public interface SliderActions {
   String ACTION_BUILD = "build";
   String ACTION_CREATE = "create";
   String ACTION_UPDATE = "update";
+  String ACTION_UPGRADE = "upgrade";
   String ACTION_DESTROY = "destroy";
   String ACTION_ECHO = "echo";
   String ACTION_EXISTS = "exists";
@@ -58,6 +59,8 @@ public interface SliderActions {
       "Create a live Slider application";
   String DESCRIBE_ACTION_UPDATE =
       "Update template for a Slider application";
+  String DESCRIBE_ACTION_UPGRADE =
+      "Rolling upgrade/downgrade the application to a newer/previous version";
   String DESCRIBE_ACTION_DESTROY =
         "Destroy a frozen Slider application)";
   String DESCRIBE_ACTION_EXISTS =

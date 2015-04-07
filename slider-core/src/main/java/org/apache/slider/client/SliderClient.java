@@ -22,6 +22,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.io.Files;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -100,10 +101,12 @@ import org.apache.slider.common.params.ActionRegistryArgs;
 import org.apache.slider.common.params.ActionResolveArgs;
 import org.apache.slider.common.params.ActionStatusArgs;
 import org.apache.slider.common.params.ActionThawArgs;
+import org.apache.slider.common.params.ActionUpgradeArgs;
 import org.apache.slider.common.params.Arguments;
 import org.apache.slider.common.params.ClientArgs;
 import org.apache.slider.common.params.CommonArgs;
 import org.apache.slider.common.params.LaunchArgsAccessor;
+import org.apache.slider.common.params.SliderActions;
 import org.apache.slider.common.tools.ConfigHelper;
 import org.apache.slider.common.tools.Duration;
 import org.apache.slider.common.tools.SliderFileSystem;
@@ -125,6 +128,7 @@ import org.apache.slider.core.exceptions.NoSuchNodeException;
 import org.apache.slider.core.exceptions.NotFoundException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.exceptions.UnknownApplicationInstanceException;
+import org.apache.slider.core.exceptions.UsageException;
 import org.apache.slider.core.exceptions.WaitTimeoutException;
 import org.apache.slider.core.launch.AppMasterLauncher;
 import org.apache.slider.core.launch.ClasspathConstructor;
@@ -309,6 +313,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         break;
       case ACTION_UPDATE:
         exitCode = actionUpdate(clusterName, serviceArgs.getActionUpdateArgs());
+        break;
+      case ACTION_UPGRADE:
+        exitCode = actionUpgrade(clusterName, serviceArgs.getActionUpgradeArgs());
         break;
       case ACTION_CREATE:
         exitCode = actionCreate(clusterName, serviceArgs.getActionCreateArgs());
@@ -495,6 +502,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         exitCode = actionUpdate(clusterName, serviceArgs.getActionUpdateArgs());
         break;
       
+      case ACTION_UPGRADE:
+        exitCode = actionUpgrade(clusterName, serviceArgs.getActionUpgradeArgs());
+        break;
+
       case ACTION_VERSION:
         exitCode = actionVersion();
         break;
@@ -703,6 +714,111 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       throw e;
     }
     return startCluster(clustername, createArgs);
+  }
+
+  @Override
+  public int actionUpgrade(String clustername, ActionUpgradeArgs upgradeArgs)
+      throws YarnException, IOException {
+    File template = upgradeArgs.template;
+    File resources = upgradeArgs.resources;
+    List<String> containers = upgradeArgs.containers;
+    List<String> components = upgradeArgs.components;
+
+    // For upgrade spec, only --template and --resources should be specified
+    if (template != null || resources != null) {
+      if (CollectionUtils.isNotEmpty(containers)) {
+        throw new BadCommandArgumentsException(
+            "Option %s cannot be specified with %s or %s",
+            Arguments.ARG_CONTAINERS, Arguments.ARG_TEMPLATE,
+            Arguments.ARG_RESOURCES);
+      }
+      if (CollectionUtils.isNotEmpty(components)) {
+        throw new BadCommandArgumentsException(
+            "Option %s cannot be specified with %s or %s",
+            Arguments.ARG_COMPONENTS, Arguments.ARG_TEMPLATE,
+            Arguments.ARG_RESOURCES);
+      }
+      buildInstanceDefinition(clustername, upgradeArgs, true, true);
+      SliderClusterOperations clusterOperations = createClusterOperations(clustername);
+      clusterOperations.amSuicide("Application upgrade", 1, 1000);
+      // upgradeYarnApplicationSubmissionContext(clustername, upgradeArgs);
+      return EXIT_SUCCESS;
+    }
+
+    if (CollectionUtils.isNotEmpty(containers)
+        && CollectionUtils.isNotEmpty(components)) {
+      throw new BadCommandArgumentsException(
+          "Only one of option %s or %s can be specified",
+          Arguments.ARG_CONTAINERS, Arguments.ARG_COMPONENTS);
+    }
+    if (CollectionUtils.isNotEmpty(containers)) {
+      log.info("Going to stop containers (total {}) : {}", containers.size(),
+          containers);
+    }
+    if (CollectionUtils.isNotEmpty(components)) {
+      log.info("Going to stop all containers of components (total {}) : {}",
+          components.size(), components);
+    }
+    return actionUpgradeContainers(clustername, upgradeArgs);
+  }
+
+  private int actionUpgradeContainers(String clustername,
+      ActionUpgradeArgs upgradeArgs) throws YarnException, IOException {
+    verifyBindingsDefined();
+    SliderUtils.validateClusterName(clustername);
+    int waittime = upgradeArgs.getWaittime(); // ignored for now
+    String text = "Upgrade containers";
+    log.debug("actionUpgradeContainers({}, reason={}, wait={})", clustername,
+        text, waittime);
+
+    // is this actually a known cluster?
+    sliderFileSystem.locateInstanceDefinition(clustername);
+    ApplicationReport app = findInstance(clustername);
+    if (app == null) {
+      // exit early
+      log.info("Cluster {} not running", clustername);
+      // not an error to try to upgrade a stopped cluster
+      return EXIT_SUCCESS;
+    }
+    log.debug("App to upgrade was found: {}:\n{}", clustername,
+        new SliderUtils.OnDemandReportStringifier(app));
+    if (app.getYarnApplicationState().ordinal() >= YarnApplicationState.FINISHED
+        .ordinal()) {
+      log.info("Cluster {} is in a terminated state {}", clustername,
+          app.getYarnApplicationState());
+      return EXIT_SUCCESS;
+    }
+
+    // IPC request to upgrade containers is possible if the app is running.
+    if (app.getYarnApplicationState().ordinal() < YarnApplicationState.RUNNING
+        .ordinal()) {
+      log.info("Cluster {} is in a pre-running state {}. It needs to be "
+          + "RUNNING to upgrade.", clustername, app.getYarnApplicationState());
+      return EXIT_SUCCESS;
+    }
+
+    try {
+      SliderClusterProtocol appMaster = connect(app);
+      Messages.UpgradeContainersRequestProto r =
+        Messages.UpgradeContainersRequestProto
+                .newBuilder()
+                .setMessage(text)
+                .addAllContainer(upgradeArgs.containers)
+                .addAllComponent(upgradeArgs.components)
+                .build();
+      appMaster.upgradeContainers(r);
+      log.debug("Cluster upgrade containers issued");
+    } catch (YarnException e) {
+      log.warn("Exception while trying to upgrade containers {}", clustername,
+          e);
+      return EXIT_FALSE;
+    } catch (IOException e) {
+      log.warn("Exception while trying to upgrade containers {}", clustername,
+          e);
+      return EXIT_FALSE;
+    }
+
+    return EXIT_SUCCESS;
   }
 
   private static void checkForCredentials(Configuration conf,

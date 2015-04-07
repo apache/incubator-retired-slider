@@ -85,7 +85,12 @@ def hbase_service(
         daemon_cmd = format("{daemon_cmd} -p {thrift2_port}" + compact + framed + infoport + nonblocking)
       no_op_test = format("ls {pid_file} >/dev/null 2>&1 && ps `cat {pid_file}` >/dev/null 2>&1")
     elif action == 'stop':
+      print format("Stop called for {role}")
       daemon_cmd = format("env HBASE_IDENT_STRING={hbase_user} {cmd} stop {role} && rm -f {pid_file}")
+    elif action == 'pre_upgrade':
+      print format("Pre upgrade {role} - do something short and useful here")
+    elif action == 'post_upgrade':
+      print format("Post upgrade {role} - currently not plugged in")
 
     if daemon_cmd is not None:
       Execute ( daemon_cmd,

@@ -654,7 +654,15 @@ class TestController(unittest.TestCase):
   @patch.object(Controller.Controller, "createStatusCommand")
   def test_updateStateBasedOnResult(self, mock_createStatusCommand):
     commands = []
-    commands.append({u'roleCommand': u'INSTALL'})
+    commands.append({
+      u'roleCommand': u'INSTALL',
+      "configurations": {
+        "global": {
+          "app_root": "/dummy/app/root",
+          "app_version": "1.0.0"
+        }
+      }
+    })
     self.controller.updateStateBasedOnCommand(commands)
 
     commandResult = {"commandStatus": "COMPLETED"}
@@ -697,7 +705,15 @@ class TestController(unittest.TestCase):
     self.assertEqual(State.INIT, self.controller.componentActualState)
     self.assertEqual(State.INIT, self.controller.componentExpectedState)
 
-    commands.append({u'roleCommand': u'INSTALL'})
+    commands.append({
+      u'roleCommand': u'INSTALL',
+      "configurations": {
+        "global": {
+          "app_root": "/dummy/app/root",
+          "app_version": "1.0.0"
+        }
+      }
+    })
     self.controller.updateStateBasedOnCommand(commands)
     self.assertEqual(State.INSTALLING, self.controller.componentActualState)
     self.assertEqual(State.INSTALLED, self.controller.componentExpectedState)

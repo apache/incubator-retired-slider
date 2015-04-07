@@ -51,10 +51,29 @@ message StopClusterRequestProto {
   */
   required string message = 1;
 }
+
 /**
  * stop the cluster
  */
 message StopClusterResponseProto {
+}
+
+/**
+ * upgrade the containers
+ */
+message UpgradeContainersRequestProto {
+  /**
+  message to include
+  */
+  required string message = 1;
+  repeated string container = 2;
+  repeated string component = 3;
+}
+
+/**
+ * upgrade the containers
+ */
+message UpgradeContainersResponseProto {
 }
 
 /**

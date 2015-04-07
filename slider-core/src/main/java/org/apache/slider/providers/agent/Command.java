@@ -23,7 +23,9 @@ public enum Command {
   NOP,      // do nothing
   INSTALL,  // Install the component
   START,    // Start the component
-  STOP;     // Stop the component
+  STOP,     // Stop the component
+  UPGRADE,  // The component will undergo upgrade
+  TERMINATE;// Send terminate signal to agent
 
   public static Command getCommand(String commandVal) {
     if (commandVal.equals(Command.START.toString())) {
@@ -35,7 +37,22 @@ public enum Command {
     if (commandVal.equals(Command.STOP.toString())) {
       return Command.STOP;
     }
+    if (commandVal.equals(Command.UPGRADE.toString())) {
+      return Command.UPGRADE;
+    }
+    if (commandVal.equals(Command.TERMINATE.toString())) {
+      return Command.TERMINATE;
+    }
 
     return Command.NOP;
+  }
+
+  public static String transform(Command command, boolean isUpgrade) {
+    switch (command) {
+    case STOP:
+      return isUpgrade ? "UPGRADE_STOP" : command.name();
+    default:
+      return command.name();
+    }
   }
 }

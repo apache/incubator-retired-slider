@@ -98,7 +98,11 @@ public class ComponentInstanceState {
   }
 
   public void commandIssued(Command command) {
-    Command expected = getNextCommand();
+    commandIssued(command, false);
+  }
+
+  public void commandIssued(Command command, boolean isInUpgradeMode) {
+    Command expected = getNextCommand(isInUpgradeMode);
     if (expected != command) {
       throw new IllegalArgumentException("Command " + command + " is not allowed in state " + state);
     }
@@ -139,11 +143,15 @@ public class ComponentInstanceState {
   }
 
   public Command getNextCommand() {
+    return getNextCommand(false);
+  }
+
+  public Command getNextCommand(boolean isInUpgradeMode) {
     if (!hasPendingCommand()) {
       return Command.NOP;
     }
 
-    return this.state.getSupportedCommand();
+    return this.state.getSupportedCommand(isInUpgradeMode);
   }
 
   public State getState() {
@@ -153,6 +161,14 @@ public class ComponentInstanceState {
   @VisibleForTesting
   protected void setState(State state) {
     this.state = state;
+  }
+
+  public State getTargetState() {
+    return targetState;
+  }
+
+  public void setTargetState(State targetState) {
+    this.targetState = targetState;
   }
 
   @Override

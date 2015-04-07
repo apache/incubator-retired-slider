@@ -150,7 +150,6 @@ public class AgentClientProvider extends AbstractClientProvider
     String appDef = null;
     try {
       // Validate the app definition
-      // Validate the app definition
       appDef = SliderUtils.getApplicationDefinitionPath(instanceDefinition
           .getAppConfOperations());
     } catch (BadConfigException bce) {

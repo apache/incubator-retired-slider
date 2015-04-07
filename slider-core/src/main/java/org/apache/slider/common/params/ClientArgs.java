@@ -71,7 +71,7 @@ public class ClientArgs extends CommonArgs {
   private final ActionThawArgs actionThawArgs = new ActionThawArgs();
   private final ActionUpdateArgs actionUpdateArgs = new ActionUpdateArgs();
   private final ActionVersionArgs actionVersionArgs = new ActionVersionArgs();
-
+  private final ActionUpgradeArgs actionUpgradeArgs = new ActionUpgradeArgs();
 
   public ClientArgs(String[] args) {
     super(args);
@@ -89,6 +89,7 @@ public class ClientArgs extends CommonArgs {
         actionBuildArgs,
         actionCreateArgs,
         actionUpdateArgs,
+        actionUpgradeArgs,
         actionDestroyArgs,
         actionDiagnosticArgs,
         actionExistsArgs,
@@ -155,6 +156,10 @@ public class ClientArgs extends CommonArgs {
 
   public ActionUpdateArgs getActionUpdateArgs() {
     return actionUpdateArgs;
+  }
+
+  public ActionUpgradeArgs getActionUpgradeArgs() {
+    return actionUpgradeArgs;
   }
 
   public ActionCreateArgs getActionCreateArgs() {
@@ -283,6 +288,9 @@ public class ClientArgs extends CommonArgs {
 
     } else if (SliderActions.ACTION_UPDATE.equals(action)) {
       bindCoreAction(actionUpdateArgs);
+
+    } else if (SliderActions.ACTION_UPGRADE.equals(action)) {
+      bindCoreAction(actionUpgradeArgs);
 
     } else if (SliderActions.ACTION_VERSION.equals(action)) {
       bindCoreAction(actionVersionArgs);

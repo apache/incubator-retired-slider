@@ -81,7 +81,7 @@ class PythonExecutor:
     except OSError:
       pass # no error
 
-    script_params += [tmpstructedoutfile, logger_level]
+    script_params += [tmpstructedoutfile, logger_level, self.config.getWorkRootPath()]
     pythonCommand = self.python_command(script, script_params)
     self.agentToggleLogger.log("Running command " + pprint.pformat(pythonCommand))
     process = self.launch_python_subprocess(pythonCommand, tmpout, tmperr,
