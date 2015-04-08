@@ -85,30 +85,30 @@ public class ClientArgs extends CommonArgs {
   protected void addActionArguments() {
 
     addActions(
-        actionAMSuicideArgs,
+        actionPackageArgs,
+        actionKeytabArgs,
         actionBuildArgs,
         actionCreateArgs,
+        actionListArgs,
+        actionStatusArgs,
+        actionRegistryArgs,
+        actionClientArgs,
+        actionFlexArgs,
+        actionDiagnosticArgs,
+        actionFreezeArgs,
+        actionThawArgs,
         actionUpdateArgs,
         actionUpgradeArgs,
         actionDestroyArgs,
-        actionDiagnosticArgs,
         actionExistsArgs,
-        actionFlexArgs,
-        actionFreezeArgs,
-        actionHelpArgs,
-        actionInstallPackageArgs,
-        actionPackageArgs,
-        actionClientArgs,
-        actionInstallKeytabArgs,
-        actionKeytabArgs,
-        actionKillContainerArgs,
-        actionListArgs,
         actionLookupArgs,
-        actionRegistryArgs,
         actionResolveArgs,
-        actionStatusArgs,
-        actionThawArgs,
-        actionVersionArgs
+        actionKillContainerArgs,
+        actionAMSuicideArgs,
+        actionInstallPackageArgs,
+        actionInstallKeytabArgs,
+        actionVersionArgs,
+        actionHelpArgs
     );
   }
 
