@@ -1359,11 +1359,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     Path pkgPath = sliderFileSystem.buildPackageDirPath(actionPackageArgs.name,
         actionPackageArgs.version);
-    sliderFileSystem.getFileSystem().mkdirs(pkgPath);
+    if (!sliderFileSystem.getFileSystem().exists(pkgPath)) {
+      sliderFileSystem.getFileSystem().mkdirs(pkgPath);
+    }
 
     Path fileInFs = new Path(pkgPath, srcFile.getName());
-    log.info("Installing package {} at {} and overwrite is {}.", srcFile,
-        fileInFs, actionPackageArgs.replacePkg);
     if (sliderFileSystem.getFileSystem().exists(fileInFs)
         && !actionPackageArgs.replacePkg) {
       throw new BadCommandArgumentsException("Pkg exists at " +
@@ -1371,8 +1371,20 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
                                              ". Use --replacepkg to overwrite.");
     }
 
+    log.info("Installing package {} to {} (overwrite set to {})", srcFile,
+        fileInFs, actionPackageArgs.replacePkg);
     sliderFileSystem.getFileSystem().copyFromLocalFile(false,
         actionPackageArgs.replacePkg, srcFile, fileInFs);
+
+    String destPathWithHomeDir = Path
+        .getPathWithoutSchemeAndAuthority(fileInFs).toString();
+    String destHomeDir = Path.getPathWithoutSchemeAndAuthority(
+        sliderFileSystem.getFileSystem().getHomeDirectory()).toString();
+    String destPathWithoutHomeDir = destPathWithHomeDir.replaceFirst(
+        destHomeDir + File.separatorChar, StringUtils.EMPTY);
+    println("\nSet " + AgentKeys.APP_DEF + " in your app config JSON to = %s\n",
+        destPathWithoutHomeDir);
+
     return EXIT_SUCCESS;
   }
 
