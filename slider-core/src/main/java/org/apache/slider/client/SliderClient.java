@@ -501,7 +501,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       case ACTION_UPDATE:
         exitCode = actionUpdate(clusterName, serviceArgs.getActionUpdateArgs());
         break;
-      
+
       case ACTION_UPGRADE:
         exitCode = actionUpgrade(clusterName, serviceArgs.getActionUpgradeArgs());
         break;
@@ -1019,7 +1019,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   public int actionInstallPkg(ActionInstallPackageArgs installPkgInfo) throws
       YarnException,
       IOException {
-
+    log.warn("The " + SliderActions.ACTION_INSTALL_PACKAGE
+        + " option has been deprecated. Please use '"
+        + SliderActions.ACTION_PACKAGE + " " + ClientArgs.ARG_INSTALL + "'.");
     Path srcFile = null;
     if (StringUtils.isEmpty(installPkgInfo.name)) {
       throw new BadCommandArgumentsException(
@@ -1205,6 +1207,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       throws YarnException, IOException {
     initializeOutputStream(actionPackageInfo.out);
     int exitCode = -1;
+    if (actionPackageInfo.help) {
+      exitCode = actionHelp(ACTION_PACKAGE);
+    }
     if (actionPackageInfo.install) {
       exitCode = actionPackageInstall(actionPackageInfo);
     }
@@ -2413,6 +2418,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   @Override
   public int actionList(String clustername, ActionListArgs args)
       throws IOException, YarnException {
+    if (args.help) {
+      return actionHelp(ACTION_LIST);
+    }
     verifyBindingsDefined();
 
     boolean live = args.live;
@@ -4058,6 +4066,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       throw new NotFoundException(notFound, notFound.toString());
     }
     return EXIT_SUCCESS;
+  }
+
+  private int actionHelp(String actionName) throws YarnException, IOException {
+    throw new UsageException(CommonArgs.usage(serviceArgs, actionName));
   }
 }
 

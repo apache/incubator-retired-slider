@@ -32,7 +32,7 @@ public class ActionPackageArgs extends AbstractActionArgs {
   }
 
   @Parameter(names = {ARG_INSTALL},
-      description = "Install package operation")
+      description = "Install package in the sub-folder 'package' of the user's Slider base directory")
   public boolean install;
 
   @Parameter(names = {ARG_PKGDELETE},

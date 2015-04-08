@@ -54,7 +54,7 @@ public interface SliderActions {
   String DESCRIBE_ACTION_AM_SUICIDE =
     "Tell the Slider Application Master to simulate a process failure by terminating itself";
   String DESCRIBE_ACTION_BUILD =
-    "Build a Slider cluster specification -but do not start it";
+    "Build a Slider cluster specification, but do not start it";
   String DESCRIBE_ACTION_CREATE =
       "Create a live Slider application";
   String DESCRIBE_ACTION_UPDATE =
@@ -89,10 +89,12 @@ public interface SliderActions {
                         "Start a stopped application";
   String DESCRIBE_ACTION_VERSION =
                         "Print the Slider version information";
-  String DESCRIBE_ACTION_INSTALL_PACKAGE = "Install the application package in the home directory under sub-folder packages";
-  String DESCRIBE_ACTION_PACKAGE = "Install/list/delete application packages and list app instances that use this package";
+  String DESCRIBE_ACTION_INSTALL_PACKAGE = "Install application package." +
+  		" Deprecated, use '" + ACTION_PACKAGE + " " + ClientArgs.ARG_INSTALL + "'.";
+  String DESCRIBE_ACTION_PACKAGE = "Install/list/delete application packages and list app instances that use the packages";
   String DESCRIBE_ACTION_CLIENT = "Install the application client in the specified directory or obtain a client keystore or truststore";
-  String DESCRIBE_ACTION_INSTALL_KEYTAB = "Install the Kerberos keytab file in the sub-folder 'keytabs' of the user's Slider base directory";
+  String DESCRIBE_ACTION_INSTALL_KEYTAB = "Install the Kerberos keytab." +
+  		" Deprecated, use '" + ACTION_KEYTAB + " " + ClientArgs.ARG_INSTALL + "'.";
   String DESCRIBE_ACTION_KEYTAB = "Manage a Kerberos keytab file (install, delete, list) in the sub-folder 'keytabs' of the user's Slider base directory";
   String DESCRIBE_ACTION_DIAGNOSTIC = "Diagnose the configuration of the running slider application and slider client";
 

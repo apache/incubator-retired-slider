@@ -96,6 +96,8 @@ public abstract class AbstractActionArgs extends ArgOps implements Arguments {
   @Parameter(names = ARG_DEBUG, description = "Debug mode")
   public boolean debug = false;
 
+  @Parameter(names = {ARG_HELP}, description = "Help", help = true)
+  public boolean help = false;
 
   /**
    * Get the min #of params expected
