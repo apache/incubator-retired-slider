@@ -83,6 +83,7 @@ class CustomServiceOrchestrator():
       script_type = command['commandParams']['script_type']
       task_id = command['taskId']
       command_name = command['roleCommand']
+      # transform upgrade specific command names
       if command_name == 'UPGRADE':
           command_name = 'PRE_UPGRADE'
       if command_name == 'UPGRADE_STOP':

@@ -120,7 +120,7 @@ public abstract class CommonArgs extends ArgOps implements SliderActions,
             serviceArgs.commander.getCommandDescription(jcommand) + "\n"));
       }
       helperMessage
-          .append("Most commands print help when invoked without parameters");
+          .append("Most commands print help when invoked without parameters or with --help");
       result = helperMessage.toString();
     } else {
       helperMessage.append("\nUsage: slider " + commandOfInterest);

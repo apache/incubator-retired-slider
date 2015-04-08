@@ -102,8 +102,6 @@ public enum State {
           return State.UPGRADED;
         } else if (this == State.STOPPING) {
           return State.STOPPED;
-        } else if (this == State.STOPPED) {
-          return State.TERMINATING;
         } else {
           throw new IllegalArgumentException(result + " is not valid for " + this);
         }
