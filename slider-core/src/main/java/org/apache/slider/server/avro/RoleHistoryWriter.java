@@ -47,8 +47,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.EOFException;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -61,7 +59,7 @@ import java.util.ListIterator;
 import java.util.Locale;
 
 /**
- * Write out the role history to an output stream
+ * Write out the role history to an output stream.
  */
 public class RoleHistoryWriter {
   protected static final Logger log =
@@ -107,12 +105,10 @@ public class RoleHistoryWriter {
       Collection<NodeInstance> instances = history.cloneNodemap().values();
       for (NodeInstance instance : instances) {
         for (int role = 0; role < roles; role++) {
-          ProviderRole providerRole = history.lookupRole(role);
-          String rolename = providerRole != null ? providerRole.name : "";
           NodeEntry nodeEntry = instance.get(role);
 
           if (nodeEntry != null) {
-            NodeEntryRecord ner = build(nodeEntry, role, "", instance.hostname);
+            NodeEntryRecord ner = build(nodeEntry, role, instance.hostname);
             record = new RoleHistoryRecord(ner);
             writer.write(record, encoder);
             count++;
@@ -174,9 +170,9 @@ public class RoleHistoryWriter {
    * @param rolename
    *@param hostname name  @return
    */
-  private NodeEntryRecord build(NodeEntry entry, int role, String rolename, String hostname) {
+  private NodeEntryRecord build(NodeEntry entry, int role, String hostname) {
     NodeEntryRecord record = new NodeEntryRecord(
-      hostname, role, rolename, entry.getLive() > 0, entry.getLastUsed()
+      hostname, role, entry.getLive() > 0, entry.getLastUsed()
     );
     return record;
   }
@@ -185,16 +181,14 @@ public class RoleHistoryWriter {
    * Read a history, returning one that is ready to have its onThaw() 
    * method called
    * @param in input source
-   * @param history a history set up with the expected roles; 
-   * this will be built up with a node map configured with the node instances
-   * and entries loaded from the source
    * @return no. of entries read
    * @throws IOException problems
    */
-  public int read(InputStream in, RoleHistory history) throws
+  public LoadedRoleHistory read(InputStream in) throws
                                                        IOException,
                                                        BadConfigException {
     try {
+      LoadedRoleHistory loadedRoleHistory = new LoadedRoleHistory();
       DatumReader<RoleHistoryRecord> reader =
         new SpecificDatumReader<>(RoleHistoryRecord.class);
       Decoder decoder =
@@ -215,7 +209,7 @@ public class RoleHistoryWriter {
           header.getVersion(),
           ROLE_HISTORY_VERSION));
       }
-      history.prepareForReading(header);
+      loadedRoleHistory.setHeader(header);
       RoleHistoryFooter footer;
       int records = 0;
       //go through reading data
@@ -234,18 +228,7 @@ public class RoleHistoryWriter {
           }
           records++;
           NodeEntryRecord nodeEntryRecord = (NodeEntryRecord) entry;
-          Integer roleId = nodeEntryRecord.getRole();
-          NodeEntry nodeEntry = new NodeEntry(roleId);
-          nodeEntry.setLastUsed(nodeEntryRecord.getLastUsed());
-          if (nodeEntryRecord.getActive()) {
-            //if active at the time of save, make the last used time the save time
-            nodeEntry.setLastUsed(saved);
-          }
-
-          String hostname =
-            SliderUtils.sequenceToString(nodeEntryRecord.getHost());
-          NodeInstance instance = history.getOrCreateNodeInstance(hostname);
-          instance.set(roleId, nodeEntry);
+          loadedRoleHistory.add(nodeEntryRecord);
         }
       } catch (EOFException e) {
         EOFException ex = new EOFException(
@@ -264,7 +247,7 @@ public class RoleHistoryWriter {
         log.warn("mismatch between no of records saved {} and number read {}",
                  footer.getCount(), records);
       }
-      return records;
+      return loadedRoleHistory;
     } finally {
       in.close();
     }
@@ -275,45 +258,27 @@ public class RoleHistoryWriter {
    * Read a role history from a path in a filesystem
    * @param fs filesystem
    * @param path path to the file
-   * @param roleHistory history to build
-   * @return the number of records read
+   * @return the records read
    * @throws IOException any problem
    */
-  public int read(FileSystem fs, Path path, RoleHistory roleHistory) throws
-                                                                     IOException,
-                                                                     BadConfigException {
+  public LoadedRoleHistory read(FileSystem fs, Path path)
+      throws IOException, BadConfigException {
     FSDataInputStream instream = fs.open(path);
-    return read(instream, roleHistory);
-  }
-
-  /**
-   * Read a role history from local file
-   * @param file path to the file
-   * @param roleHistory history to build
-   * @return the number of records read
-   * @throws IOException any problem
-   */
-  public int read(File file, RoleHistory roleHistory) throws
-                                                      IOException,
-                                                      BadConfigException {
-
-
-    return read(new FileInputStream(file), roleHistory);
+    return read(instream);
   }
 
   /**
    * Read from a resource in the classpath -used for testing
    * @param resource resource
    * @param roleHistory history to build
-   * @return the number of records read
+   * @return the records read
    * @throws IOException any problem
    */
-  public int read(String resource, RoleHistory roleHistory) throws
+  public LoadedRoleHistory read(String resource) throws
                                                             IOException,
                                                             BadConfigException {
 
-    return read(this.getClass().getClassLoader().getResourceAsStream(resource),
-                roleHistory);
+    return read(this.getClass().getClassLoader().getResourceAsStream(resource));
   }
 
 
@@ -366,28 +331,30 @@ public class RoleHistoryWriter {
   
   /**
    * Iterate through the paths until one can be loaded
-   * @param roleHistory role history
    * @param paths paths to load
-   * @return the path of any loaded history -or null if all failed to load
+   * @return the loaded history including the path -or null if all failed to load
    */
-  public Path attemptToReadHistory(RoleHistory roleHistory, FileSystem fileSystem,  List<Path> paths)
+  public LoadedRoleHistory attemptToReadHistory(FileSystem fileSystem,
+      List<Path> paths)
       throws BadConfigException {
     ListIterator<Path> pathIterator = paths.listIterator();
     boolean success = false;
     Path path = null;
+    LoadedRoleHistory history = null;
     while (!success && pathIterator.hasNext()) {
       path = pathIterator.next();
       try {
-        read(fileSystem, path, roleHistory);
+        history = read(fileSystem, path);
         //success
         success = true;
+        history.setPath(path);
       } catch (IOException e) {
         log.info("Failed to read {}", path, e);
       } catch (AvroTypeException e) {
         log.warn("Failed to parse {}", path, e);
       }
     }
-    return success ? path : null;
+    return history;
   }
 
   /**
@@ -395,16 +362,14 @@ public class RoleHistoryWriter {
    * file is downgraded to a log and the next older path attempted instead
    * @param fs filesystem
    * @param dir dir to load from
-   * @param roleHistory role history to build up
-   * @return the path loaded
+   * @return the history loaded, including the path
    * @throws IOException if indexing the history directory fails. 
    */
-  public Path loadFromHistoryDir(FileSystem fs, Path dir,
-                                 RoleHistory roleHistory)
+  public LoadedRoleHistory loadFromHistoryDir(FileSystem fs, Path dir)
       throws IOException, BadConfigException {
     assert fs != null: "null filesystem";
     List<Path> entries = findAllHistoryEntries(fs, dir, false);
-    return attemptToReadHistory(roleHistory, fs, entries);
+    return attemptToReadHistory(fs, entries);
   }
 
   /**
