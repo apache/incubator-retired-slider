@@ -69,25 +69,23 @@ if not metric_collector_lib:
   has_metric_collector = 0
 
 rest_port = config['configurations']['global']['hbase_rest_port']
-rest_infoport = config['configurations']['global']['hbase_rest_infoport']
-rest_readonly = config['configurations']['global']['hbase_rest_readonly']
+rest_infoport = default('/configurations/global/hbase_rest_infoport', '')
+rest_readonly = default('/configurations/global/hbase_rest_readonly', '')
 
-thrift_port = config['configurations']['global']['hbase_thrift_port']
-thrift_keepalive_sec = config['configurations']['global']['hbase_thrift_keepalive_sec']
-thrift_infoport = config['configurations']['global']['hbase_thrift_infoport']
-thrift_nonblocking = config['configurations']['global']['hbase_thrift_nonblocking']
-thrift_minWorkers = config['configurations']['global']['hbase_thrift_minWorkers']
-thrift_queue = config['configurations']['global']['hbase_thrift_queue']
-if is_empty(thrift_queue):
-  thrift_queue = ""
-thrift_workers = config['configurations']['global']['hbase_thrift_workers']
-thrift_compact = config['configurations']['global']['hbase_thrift_compact']
-thrift_framed = config['configurations']['global']['hbase_thrift_framed']
-thrift2_port = config['configurations']['global']['hbase_thrift2_port']
-thrift2_compact = config['configurations']['global']['hbase_thrift2_compact']
-thrift2_framed = config['configurations']['global']['hbase_thrift2_framed']
-thrift2_infoport = config['configurations']['global']['hbase_thrift2_infoport']
-thrift2_nonblocking = config['configurations']['global']['hbase_thrift2_nonblocking']
+thrift_port = default('/configurations/global/hbase_thrift_port', '')
+thrift_keepalive_sec = default('/configurations/global/hbase_thrift_keepalive_sec', '')
+thrift_infoport = default('/configurations/global/hbase_thrift_infoport', '')
+thrift_nonblocking = default('/configurations/global/hbase_thrift_nonblocking', '')
+thrift_minWorkers = default('/configurations/global/hbase_thrift_minWorkers', '')
+thrift_queue = default('/configurations/global/hbase_thrift_queue', '')
+thrift_workers = default('/configurations/global/hbase_thrift_workers', '')
+thrift_compact = default('/configurations/global/hbase_thrift_compact', '')
+thrift_framed = default('/configurations/global/hbase_thrift_framed', '')
+thrift2_port = default('/configurations/global/hbase_thrift2_port', '')
+thrift2_compact = default('/configurations/global/hbase_thrift2_compact', '')
+thrift2_framed = default('/configurations/global/hbase_thrift2_framed', '')
+thrift2_infoport = default('/configurations/global/hbase_thrift2_infoport', '')
+thrift2_nonblocking = default('/configurations/global/hbase_thrift2_nonblocking', '')
 
 if security_enabled:
   _hostname_lowercase = config['hostname'].lower()
