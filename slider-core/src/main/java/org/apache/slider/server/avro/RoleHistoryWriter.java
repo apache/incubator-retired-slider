@@ -139,9 +139,9 @@ public class RoleHistoryWriter {
   }
 
   /**
-   * Create the role record
+   * Create the rolemap record
    * @param history history
-   * @return a record to place at the head of the file
+   * @return a record to insert into the file
    */
   private RoleHistoryRecord createRolemapRecord(RoleHistory history) {
     RoleHistoryMapping entry = new RoleHistoryMapping();
@@ -151,8 +151,7 @@ public class RoleHistoryWriter {
   }
 
   /**
-   * Write write the file
-   *
+   * Write the history information to a file
    *
    * @param fs filesystem
    * @param path path
@@ -191,8 +190,8 @@ public class RoleHistoryWriter {
    * the node is in use and when it was last used.
    * @param entry entry count
    * @param role role index
-   * @param rolename
-   *@param hostname name  @return
+   * @param hostname name
+   * @return the record
    */
   private NodeEntryRecord build(NodeEntry entry, int role, String hostname) {
     NodeEntryRecord record = new NodeEntryRecord(
@@ -217,7 +216,7 @@ public class RoleHistoryWriter {
         new SpecificDatumReader<>(RoleHistoryRecord.class);
       Decoder decoder =
         DecoderFactory.get().jsonDecoder(RoleHistoryRecord.getClassSchema(),
-                                         in);
+            in);
 
       //read header : no entry -> EOF
       RoleHistoryRecord record = reader.read(null, decoder);
@@ -226,7 +225,6 @@ public class RoleHistoryWriter {
         throw new IOException("Role History Header not found at start of file");
       }
       RoleHistoryHeader header = (RoleHistoryHeader) entry;
-      Long saved = header.getSaved();
       if (header.getVersion() != ROLE_HISTORY_VERSION) {
         throw new IOException(
           String.format("Can't read role file version %04x -need %04x",
@@ -308,13 +306,11 @@ public class RoleHistoryWriter {
   /**
    * Read from a resource in the classpath -used for testing
    * @param resource resource
-   * @param roleHistory history to build
    * @return the records read
    * @throws IOException any problem
    */
-  public LoadedRoleHistory read(String resource) throws
-                                                            IOException,
-                                                            BadConfigException {
+  public LoadedRoleHistory read(String resource)
+      throws IOException, BadConfigException {
 
     return read(this.getClass().getClassLoader().getResourceAsStream(resource));
   }
@@ -377,10 +373,9 @@ public class RoleHistoryWriter {
       throws BadConfigException {
     ListIterator<Path> pathIterator = paths.listIterator();
     boolean success = false;
-    Path path = null;
     LoadedRoleHistory history = null;
     while (!success && pathIterator.hasNext()) {
-      path = pathIterator.next();
+      Path path = pathIterator.next();
       try {
         history = read(fileSystem, path);
         //success
