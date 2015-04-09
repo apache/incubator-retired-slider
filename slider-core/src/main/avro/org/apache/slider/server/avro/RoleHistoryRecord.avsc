@@ -70,6 +70,20 @@
   },
   {
     "type": "record",
+    "name": "RoleHistoryMapping",
+    "namespace": "org.apache.slider.server.avro",
+    "fields": [
+      {
+        "name": "rolemap",
+        "type": {
+          "type": "map",
+          "values": "int"
+         }
+      }
+    ]
+  },
+  {
+    "type": "record",
     "name": "RoleHistoryFooter",
     "namespace": "org.apache.slider.server.avro",
     "fields": [
@@ -90,7 +104,8 @@
         "type": [
           "org.apache.slider.server.avro.NodeEntryRecord",
           "org.apache.slider.server.avro.RoleHistoryHeader",
-          "org.apache.slider.server.avro.RoleHistoryFooter"
+          "org.apache.slider.server.avro.RoleHistoryFooter",
+          "org.apache.slider.server.avro.RoleHistoryMapping"
         ]
       }
     ]

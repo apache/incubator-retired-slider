@@ -46,8 +46,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.EOFException;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -58,9 +56,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
+import java.util.Map;
 
 /**
- * Write out the role history to an output stream
+ * Write out the role history to an output stream.
  */
 public class RoleHistoryWriter {
   protected static final Logger log =
@@ -90,17 +89,13 @@ public class RoleHistoryWriter {
       DatumWriter<RoleHistoryRecord> writer =
         new SpecificDatumWriter<>(RoleHistoryRecord.class);
 
+      RoleHistoryRecord record = createHeaderRecord(savetime, history);
       int roles = history.getRoleSize();
-      RoleHistoryHeader header = new RoleHistoryHeader();
-      header.setVersion(ROLE_HISTORY_VERSION);
-      header.setSaved(savetime);
-      header.setSavedx(Long.toHexString(savetime));
-      header.setSavedate(SliderUtils.toGMTString(savetime));
-      header.setRoles(roles);
-      RoleHistoryRecord record = new RoleHistoryRecord(header);
       Schema schema = record.getSchema();
       Encoder encoder = EncoderFactory.get().jsonEncoder(schema, out);
       writer.write(record, encoder);
+      // now write the rolemap record
+      writer.write(createRolemapRecord(history), encoder);
       long count = 0;
       //now for every role history entry, write out its record
       Collection<NodeInstance> instances = history.cloneNodemap().values();
@@ -121,7 +116,6 @@ public class RoleHistoryWriter {
       footer.setCount(count);
       writer.write(new RoleHistoryRecord(footer), encoder);
       encoder.flush();
-      out.close();
       return count;
     } finally {
       out.close();
@@ -129,8 +123,35 @@ public class RoleHistoryWriter {
   }
 
   /**
-   * Write write the file
-   *
+   * Create the header record
+   * @param savetime time of save
+   * @param history history
+   * @return a record to place at the head of the file
+   */
+  private RoleHistoryRecord createHeaderRecord(long savetime, RoleHistory history) {
+    RoleHistoryHeader header = new RoleHistoryHeader();
+    header.setVersion(ROLE_HISTORY_VERSION);
+    header.setSaved(savetime);
+    header.setSavedx(Long.toHexString(savetime));
+    header.setSavedate(SliderUtils.toGMTString(savetime));
+    header.setRoles(history.getRoleSize());
+    return new RoleHistoryRecord(header);
+  }
+
+  /**
+   * Create the rolemap record
+   * @param history history
+   * @return a record to insert into the file
+   */
+  private RoleHistoryRecord createRolemapRecord(RoleHistory history) {
+    RoleHistoryMapping entry = new RoleHistoryMapping();
+    Map<CharSequence, Integer> mapping = history.buildMappingForHistoryFile();
+    entry.setRolemap(mapping);
+    return new RoleHistoryRecord(entry);
+  }
+
+  /**
+   * Write the history information to a file
    *
    * @param fs filesystem
    * @param path path
@@ -140,8 +161,12 @@ public class RoleHistoryWriter {
    * @return no of records written
    * @throws IOException IO failures
    */
-  public long write(FileSystem fs, Path path, boolean overwrite,
-                    RoleHistory history, long savetime) throws IOException {
+  public long write(FileSystem fs,
+      Path path,
+      boolean overwrite,
+      RoleHistory history,
+      long savetime)
+      throws IOException {
     FSDataOutputStream out = fs.create(path, overwrite);
     return write(out, history, savetime);
   }
@@ -159,7 +184,15 @@ public class RoleHistoryWriter {
     Path path = new Path(historyPath, filename);
     return path;
   }
-  
+
+  /**
+   * Build a {@link NodeEntryRecord} from a node entry; include whether
+   * the node is in use and when it was last used.
+   * @param entry entry count
+   * @param role role index
+   * @param hostname name
+   * @return the record
+   */
   private NodeEntryRecord build(NodeEntry entry, int role, String hostname) {
     NodeEntryRecord record = new NodeEntryRecord(
       hostname, role, entry.getLive() > 0, entry.getLastUsed()
@@ -171,21 +204,19 @@ public class RoleHistoryWriter {
    * Read a history, returning one that is ready to have its onThaw() 
    * method called
    * @param in input source
-   * @param history a history set up with the expected roles; 
-   * this will be built up with a node map configured with the node instances
-   * and entries loaded from the source
    * @return no. of entries read
    * @throws IOException problems
    */
-  public int read(InputStream in, RoleHistory history) throws
+  public LoadedRoleHistory read(InputStream in) throws
                                                        IOException,
                                                        BadConfigException {
     try {
+      LoadedRoleHistory loadedRoleHistory = new LoadedRoleHistory();
       DatumReader<RoleHistoryRecord> reader =
         new SpecificDatumReader<>(RoleHistoryRecord.class);
       Decoder decoder =
         DecoderFactory.get().jsonDecoder(RoleHistoryRecord.getClassSchema(),
-                                         in);
+            in);
 
       //read header : no entry -> EOF
       RoleHistoryRecord record = reader.read(null, decoder);
@@ -194,44 +225,45 @@ public class RoleHistoryWriter {
         throw new IOException("Role History Header not found at start of file");
       }
       RoleHistoryHeader header = (RoleHistoryHeader) entry;
-      Long saved = header.getSaved();
       if (header.getVersion() != ROLE_HISTORY_VERSION) {
         throw new IOException(
           String.format("Can't read role file version %04x -need %04x",
           header.getVersion(),
           ROLE_HISTORY_VERSION));
       }
-      history.prepareForReading(header);
-      RoleHistoryFooter footer;
+      loadedRoleHistory.setHeader(header);
+      RoleHistoryFooter footer = null;
       int records = 0;
       //go through reading data
       try {
-        while (true) {
+        while (footer == null) {
           record = reader.read(null, decoder);
           entry = record.getEntry();
 
           if (entry instanceof RoleHistoryHeader) {
             throw new IOException("Duplicate Role History Header found");
-          }
-          if (entry instanceof RoleHistoryFooter) {
+          } else if (entry instanceof RoleHistoryMapping) {
+            // role history mapping entry
+            if (!loadedRoleHistory.roleMap.isEmpty()) {
+              // duplicate role maps are viewed as something to warn over, rather than fail
+              log.warn("Duplicate role map; ignoring");
+            } else {
+              RoleHistoryMapping historyMapping = (RoleHistoryMapping) entry;
+              loadedRoleHistory.buildMapping(historyMapping.getRolemap());
+            }
+          } else if (entry instanceof NodeEntryRecord) {
+            // normal record
+            records++;
+            NodeEntryRecord nodeEntryRecord = (NodeEntryRecord) entry;
+            loadedRoleHistory.add(nodeEntryRecord);
+          } else if (entry instanceof RoleHistoryFooter) {
             //tail end of the file
             footer = (RoleHistoryFooter) entry;
-            break;
+          } else {
+            // this is to handle future versions, such as when rolling back
+            // from a later version of slider
+            log.warn("Discarding unknown record {}", entry);
           }
-          records++;
-          NodeEntryRecord nodeEntryRecord = (NodeEntryRecord) entry;
-          Integer roleId = nodeEntryRecord.getRole();
-          NodeEntry nodeEntry = new NodeEntry(roleId);
-          nodeEntry.setLastUsed(nodeEntryRecord.getLastUsed());
-          if (nodeEntryRecord.getActive()) {
-            //if active at the time of save, make the last used time the save time
-            nodeEntry.setLastUsed(saved);
-          }
-
-          String hostname =
-            SliderUtils.sequenceToString(nodeEntryRecord.getHost());
-          NodeInstance instance = history.getOrCreateNodeInstance(hostname);
-          instance.set(roleId, nodeEntry);
         }
       } catch (EOFException e) {
         EOFException ex = new EOFException(
@@ -239,7 +271,8 @@ public class RoleHistoryWriter {
         ex.initCause(e);
         throw ex;
       }
-      //at this point there should be no data left. 
+      // at this point there should be no data left.
+      // check by reading and expecting a -1
       if (in.read() > 0) {
         // footer is in stream before the last record
         throw new EOFException(
@@ -250,7 +283,7 @@ public class RoleHistoryWriter {
         log.warn("mismatch between no of records saved {} and number read {}",
                  footer.getCount(), records);
       }
-      return records;
+      return loadedRoleHistory;
     } finally {
       in.close();
     }
@@ -261,45 +294,25 @@ public class RoleHistoryWriter {
    * Read a role history from a path in a filesystem
    * @param fs filesystem
    * @param path path to the file
-   * @param roleHistory history to build
-   * @return the number of records read
+   * @return the records read
    * @throws IOException any problem
    */
-  public int read(FileSystem fs, Path path, RoleHistory roleHistory) throws
-                                                                     IOException,
-                                                                     BadConfigException {
+  public LoadedRoleHistory read(FileSystem fs, Path path)
+      throws IOException, BadConfigException {
     FSDataInputStream instream = fs.open(path);
-    return read(instream, roleHistory);
-  }
-
-  /**
-   * Read a role history from local file
-   * @param file path to the file
-   * @param roleHistory history to build
-   * @return the number of records read
-   * @throws IOException any problem
-   */
-  public int read(File file, RoleHistory roleHistory) throws
-                                                      IOException,
-                                                      BadConfigException {
-
-
-    return read(new FileInputStream(file), roleHistory);
+    return read(instream);
   }
 
   /**
    * Read from a resource in the classpath -used for testing
    * @param resource resource
-   * @param roleHistory history to build
-   * @return the number of records read
+   * @return the records read
    * @throws IOException any problem
    */
-  public int read(String resource, RoleHistory roleHistory) throws
-                                                            IOException,
-                                                            BadConfigException {
+  public LoadedRoleHistory read(String resource)
+      throws IOException, BadConfigException {
 
-    return read(this.getClass().getClassLoader().getResourceAsStream(resource),
-                roleHistory);
+    return read(this.getClass().getClassLoader().getResourceAsStream(resource));
   }
 
 
@@ -352,28 +365,32 @@ public class RoleHistoryWriter {
   
   /**
    * Iterate through the paths until one can be loaded
-   * @param roleHistory role history
    * @param paths paths to load
-   * @return the path of any loaded history -or null if all failed to load
+   * @return the loaded history including the path -or null if all failed to load
    */
-  public Path attemptToReadHistory(RoleHistory roleHistory, FileSystem fileSystem,  List<Path> paths)
+  public LoadedRoleHistory attemptToReadHistory(FileSystem fileSystem,
+      List<Path> paths)
       throws BadConfigException {
     ListIterator<Path> pathIterator = paths.listIterator();
     boolean success = false;
-    Path path = null;
+    LoadedRoleHistory history = null;
     while (!success && pathIterator.hasNext()) {
-      path = pathIterator.next();
+      Path path = pathIterator.next();
       try {
-        read(fileSystem, path, roleHistory);
+        history = read(fileSystem, path);
         //success
         success = true;
+        history.setPath(path);
       } catch (IOException e) {
         log.info("Failed to read {}", path, e);
       } catch (AvroTypeException e) {
         log.warn("Failed to parse {}", path, e);
+      } catch (Exception e) {
+        // low level event logged @ warn level
+        log.warn("Exception while reading {}", path, e);
       }
     }
-    return success ? path : null;
+    return history;
   }
 
   /**
@@ -381,16 +398,14 @@ public class RoleHistoryWriter {
    * file is downgraded to a log and the next older path attempted instead
    * @param fs filesystem
    * @param dir dir to load from
-   * @param roleHistory role history to build up
-   * @return the path loaded
+   * @return the history loaded, including the path
    * @throws IOException if indexing the history directory fails. 
    */
-  public Path loadFromHistoryDir(FileSystem fs, Path dir,
-                                 RoleHistory roleHistory)
+  public LoadedRoleHistory loadFromHistoryDir(FileSystem fs, Path dir)
       throws IOException, BadConfigException {
     assert fs != null: "null filesystem";
     List<Path> entries = findAllHistoryEntries(fs, dir, false);
-    return attemptToReadHistory(roleHistory, fs, entries);
+    return attemptToReadHistory(fs, entries);
   }
 
   /**

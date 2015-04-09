@@ -22,20 +22,34 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.FSDataOutputStream
 import org.apache.hadoop.fs.Path
+import org.apache.slider.providers.PlacementPolicy
+import org.apache.slider.providers.ProviderRole
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockFactory
+import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.state.NodeEntry
 import org.apache.slider.server.appmaster.state.NodeInstance
 import org.apache.slider.server.appmaster.state.RoleHistory
+import org.apache.slider.server.avro.LoadedRoleHistory
 import org.apache.slider.server.avro.RoleHistoryWriter
 import org.junit.Test
 
 @Slf4j
-//@CompileStatic
+@CompileStatic
 class TestRoleHistoryRW extends BaseMockAppStateTest {
 
   static long time = System.currentTimeMillis();
-  
+  public static final String HISTORY_V1_6_ROLE = "org/apache/slider/server/avro/history-v01-6-role.json"
+  public static final String HISTORY_V1_3_ROLE = "org/apache/slider/server/avro/history-v01-3-role.json"
+
+
+  static final ProviderRole PROVIDER_ROLE3 = new ProviderRole(
+      "role3",
+      3,
+      PlacementPolicy.STRICT,
+      3,
+      3)
+
   @Override
   String getTestName() {
     return "TestHistoryRW"
@@ -48,7 +62,7 @@ class TestRoleHistoryRW extends BaseMockAppStateTest {
     Path history = roleHistory.saveHistory(time++)
     assert fs.isFile(history)
     RoleHistoryWriter historyWriter = new RoleHistoryWriter();
-    historyWriter.read(fs, history, roleHistory)
+    historyWriter.read(fs, history)
   }
   
   @Test
@@ -65,7 +79,10 @@ class TestRoleHistoryRW extends BaseMockAppStateTest {
     RoleHistoryWriter historyWriter = new RoleHistoryWriter();
     RoleHistory rh2 = new RoleHistory(MockFactory.ROLES)
 
-    assert 0 < historyWriter.read(fs, history, rh2)
+
+    def loadedRoleHistory = historyWriter.read(fs, history)
+    assert 0 < loadedRoleHistory.size()
+    rh2.rebuild(loadedRoleHistory)
     NodeInstance ni2 = rh2.getExistingNodeInstance(addr)
     assert ni2 != null
     NodeEntry ne2 = ni2.get(0)
@@ -101,8 +118,9 @@ class TestRoleHistoryRW extends BaseMockAppStateTest {
     log.info("testWriteReadActiveData in $history")
     RoleHistoryWriter historyWriter = new RoleHistoryWriter();
     RoleHistory rh2 = new RoleHistory(MockFactory.ROLES)
-
-    assert 3 == historyWriter.read(fs, history, rh2)
+    def loadedRoleHistory = historyWriter.read(fs, history)
+    assert 3 == loadedRoleHistory.size()
+    rh2.rebuild(loadedRoleHistory)
     rh2.dump()
 
     assert rh2.clusterSize == 2;
@@ -253,6 +271,55 @@ class TestRoleHistoryRW extends BaseMockAppStateTest {
     assert !fs.exists(oldhistory)
     assert fs.exists(goodhistory)
     assert fs.exists(badfile )
+  }
+
+  /**
+   * Test that a v1 JSON file can be read. Here the number of roles
+   * matches the current state.
+   * @throws Throwable
+   */
+  @Test
+  public void testReloadDataV1_3_role() throws Throwable {
+    String source = HISTORY_V1_3_ROLE
+    RoleHistoryWriter writer = new RoleHistoryWriter()
+
+    def loadedRoleHistory = writer.read(source)
+    assert 4 == loadedRoleHistory.size()
+    RoleHistory roleHistory = new RoleHistory(MockFactory.ROLES)
+    assert 0 == roleHistory.rebuild(loadedRoleHistory)
+  }
+
+  /**
+   * Test that a v1 JSON file can be read. Here more roles than expected
+   * @throws Throwable
+   */
+  @Test
+  public void testReloadDataV1_6_role() throws Throwable {
+    String source = HISTORY_V1_6_ROLE
+    RoleHistoryWriter writer = new RoleHistoryWriter()
+
+    def loadedRoleHistory = writer.read(source)
+    assert 6 == loadedRoleHistory.size()
+    RoleHistory roleHistory = new RoleHistory(MockFactory.ROLES)
+    assert 3 == roleHistory.rebuild(loadedRoleHistory)
+  }
+
+  /**
+   * Test that a v1 JSON file can be read. Here the number of roles
+   * is less than the current state.
+   * @throws Throwable
+   */
+  @Test
+  public void testReload_less_roles() throws Throwable {
+    String source = HISTORY_V1_3_ROLE
+    RoleHistoryWriter writer = new RoleHistoryWriter()
+
+    def loadedRoleHistory = writer.read(source)
+    assert 4 == loadedRoleHistory.size()
+    def expandedRoles = new ArrayList(MockFactory.ROLES)
+    expandedRoles << PROVIDER_ROLE3
+    RoleHistory roleHistory = new RoleHistory(expandedRoles)
+    assert 0 == roleHistory.rebuild(loadedRoleHistory)
   }
 
 }
