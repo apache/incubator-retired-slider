@@ -895,6 +895,18 @@ public class RoleHistory {
   }
 
   /**
+   * Build the mapping entry for persisting to the role history
+   * @return a mapping object
+   */
+  public synchronized Map<CharSequence, Integer> buildMappingForHistoryFile() {
+    Map<CharSequence, Integer> mapping = new HashMap<>(getRoleSize());
+    for (ProviderRole role : providerRoles) {
+      mapping.put(role.name, role.id);
+    }
+    return mapping;
+  }
+
+  /**
    * Get a clone of the available list
    * @param role role index
    * @return a clone of the list

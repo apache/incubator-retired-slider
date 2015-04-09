@@ -39,7 +39,6 @@ import org.apache.hadoop.fs.PathFilter;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadConfigException;
-import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.server.appmaster.state.NodeEntry;
 import org.apache.slider.server.appmaster.state.NodeInstance;
 import org.apache.slider.server.appmaster.state.RoleHistory;
@@ -57,6 +56,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Write out the role history to an output stream.
@@ -89,17 +89,13 @@ public class RoleHistoryWriter {
       DatumWriter<RoleHistoryRecord> writer =
         new SpecificDatumWriter<>(RoleHistoryRecord.class);
 
+      RoleHistoryRecord record = createHeaderRecord(savetime, history);
       int roles = history.getRoleSize();
-      RoleHistoryHeader header = new RoleHistoryHeader();
-      header.setVersion(ROLE_HISTORY_VERSION);
-      header.setSaved(savetime);
-      header.setSavedx(Long.toHexString(savetime));
-      header.setSavedate(SliderUtils.toGMTString(savetime));
-      header.setRoles(roles);
-      RoleHistoryRecord record = new RoleHistoryRecord(header);
       Schema schema = record.getSchema();
       Encoder encoder = EncoderFactory.get().jsonEncoder(schema, out);
       writer.write(record, encoder);
+      // now write the rolemap record
+      writer.write(createRolemapRecord(history), encoder);
       long count = 0;
       //now for every role history entry, write out its record
       Collection<NodeInstance> instances = history.cloneNodemap().values();
@@ -124,6 +120,34 @@ public class RoleHistoryWriter {
     } finally {
       out.close();
     }
+  }
+
+  /**
+   * Create the header record
+   * @param savetime time of save
+   * @param history history
+   * @return a record to place at the head of the file
+   */
+  private RoleHistoryRecord createHeaderRecord(long savetime, RoleHistory history) {
+    RoleHistoryHeader header = new RoleHistoryHeader();
+    header.setVersion(ROLE_HISTORY_VERSION);
+    header.setSaved(savetime);
+    header.setSavedx(Long.toHexString(savetime));
+    header.setSavedate(SliderUtils.toGMTString(savetime));
+    header.setRoles(history.getRoleSize());
+    return new RoleHistoryRecord(header);
+  }
+
+  /**
+   * Create the role record
+   * @param history history
+   * @return a record to place at the head of the file
+   */
+  private RoleHistoryRecord createRolemapRecord(RoleHistory history) {
+    RoleHistoryMapping entry = new RoleHistoryMapping();
+    Map<CharSequence, Integer> mapping = history.buildMappingForHistoryFile();
+    entry.setRolemap(mapping);
+    return new RoleHistoryRecord(entry);
   }
 
   /**
@@ -210,25 +234,38 @@ public class RoleHistoryWriter {
           ROLE_HISTORY_VERSION));
       }
       loadedRoleHistory.setHeader(header);
-      RoleHistoryFooter footer;
+      RoleHistoryFooter footer = null;
       int records = 0;
       //go through reading data
       try {
-        while (true) {
+        while (footer == null) {
           record = reader.read(null, decoder);
           entry = record.getEntry();
 
           if (entry instanceof RoleHistoryHeader) {
             throw new IOException("Duplicate Role History Header found");
-          }
-          if (entry instanceof RoleHistoryFooter) {
+          } else if (entry instanceof RoleHistoryMapping) {
+            // role history mapping entry
+            if (!loadedRoleHistory.roleMap.isEmpty()) {
+              // duplicate role maps are viewed as something to warn over, rather than fail
+              log.warn("Duplicate role map; ignoring");
+            } else {
+              RoleHistoryMapping historyMapping = (RoleHistoryMapping) entry;
+              loadedRoleHistory.buildMapping(historyMapping.getRolemap());
+            }
+          } else if (entry instanceof NodeEntryRecord) {
+            // normal record
+            records++;
+            NodeEntryRecord nodeEntryRecord = (NodeEntryRecord) entry;
+            loadedRoleHistory.add(nodeEntryRecord);
+          } else if (entry instanceof RoleHistoryFooter) {
             //tail end of the file
             footer = (RoleHistoryFooter) entry;
-            break;
+          } else {
+            // this is to handle future versions, such as when rolling back
+            // from a later version of slider
+            log.warn("Discarding unknown record {}", entry);
           }
-          records++;
-          NodeEntryRecord nodeEntryRecord = (NodeEntryRecord) entry;
-          loadedRoleHistory.add(nodeEntryRecord);
         }
       } catch (EOFException e) {
         EOFException ex = new EOFException(
@@ -236,7 +273,8 @@ public class RoleHistoryWriter {
         ex.initCause(e);
         throw ex;
       }
-      //at this point there should be no data left. 
+      // at this point there should be no data left.
+      // check by reading and expecting a -1
       if (in.read() > 0) {
         // footer is in stream before the last record
         throw new EOFException(

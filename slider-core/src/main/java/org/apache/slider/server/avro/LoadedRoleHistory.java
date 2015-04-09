@@ -19,6 +19,7 @@
 package org.apache.slider.server.avro;
 
 import org.apache.hadoop.fs.Path;
+import org.apache.slider.common.tools.SliderUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,10 +39,18 @@ public class LoadedRoleHistory {
 
   public final List<NodeEntryRecord> records = new ArrayList<>();
 
+  /**
+   * Add a record
+   * @param record
+   */
   public void add(NodeEntryRecord record) {
     records.add(record);
   }
 
+  /**
+   * Number of loaded records
+   * @return
+   */
   public int size() {
     return records.size();
   }
@@ -60,4 +69,13 @@ public class LoadedRoleHistory {
   public void setPath(Path path) {
     this.path = path;
   }
+
+  public void buildMapping(Map<CharSequence, Integer> source) {
+    roleMap.clear();
+    for (Map.Entry<CharSequence, Integer> entry : source.entrySet()) {
+      roleMap.put(SliderUtils.sequenceToString(entry.getKey()),
+          entry.getValue());
+    }
+  }
+
 }

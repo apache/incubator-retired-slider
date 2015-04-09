@@ -77,8 +77,8 @@
         "name": "rolemap",
         "type": {
           "type": "map",
-            "values": "long"
-          }
+          "values": "int"
+         }
       }
     ]
   },
