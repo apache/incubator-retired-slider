@@ -29,6 +29,8 @@ import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
+import org.apache.slider.server.avro.LoadedRoleHistory;
+import org.apache.slider.server.avro.NodeEntryRecord;
 import org.apache.slider.server.avro.RoleHistoryHeader;
 import org.apache.slider.server.avro.RoleHistoryWriter;
 import org.slf4j.Logger;
@@ -166,6 +168,20 @@ public class RoleHistory {
   }
 
   /**
+   * Lookup a role by ID
+   * @param roleId role Id
+   * @return role or null if not found
+   */
+  public ProviderRole lookupRole(int roleId) {
+    for (ProviderRole role : providerRoles) {
+      if (role.id == roleId) {
+        return role;
+      }
+    }
+    return null;
+  }
+
+  /**
    * Clear the lists of available nodes
    */
   private synchronized void resetAvailableNodeLists() {
@@ -175,23 +191,61 @@ public class RoleHistory {
   /**
    * Reset the variables -this does not adjust the fixed attributes
    * of the history.
+   * <p>
    * This intended for use by the RoleWriter logic.
+   * @throws BadConfigException if there is a problem rebuilding the state
    */
-  public synchronized void prepareForReading(RoleHistoryHeader header) throws
-                                                                       IOException,
-                                                                       BadConfigException {
+  private void prepareForReading(RoleHistoryHeader header)
+      throws BadConfigException {
     reset();
 
     int roleCountInSource = header.getRoles();
     if (roleCountInSource != roleSize) {
-      throw new IOException("Number of roles in source " + roleCountInSource
-                                + " does not match the expected number of " +
-                                roleSize);
+      log.warn("Number of roles in source {}"
+              +" does not match the expected number of {}",
+          roleCountInSource,
+          roleSize);
     }
     //record when the data was loaded
     setThawedDataTime(header.getSaved());
   }
-  
+
+  /**
+   * rebuild the placement history from the loaded role history
+   * @param loadedRoleHistory loaded history
+   * @return the number of entries discarded
+   * @throws BadConfigException if there is a problem rebuilding the state
+   */
+  @VisibleForTesting
+  public synchronized int rebuild(LoadedRoleHistory loadedRoleHistory) throws BadConfigException {
+    RoleHistoryHeader header = loadedRoleHistory.getHeader();
+    prepareForReading(header);
+    int discarded = 0;
+    Long saved = header.getSaved();
+    for (NodeEntryRecord nodeEntryRecord : loadedRoleHistory.records) {
+      Integer roleId = nodeEntryRecord.getRole();
+      NodeEntry nodeEntry = new NodeEntry(roleId);
+      nodeEntry.setLastUsed(nodeEntryRecord.getLastUsed());
+      if (nodeEntryRecord.getActive()) {
+        //if active at the time of save, make the last used time the save time
+        nodeEntry.setLastUsed(saved);
+      }
+      String hostname = SliderUtils.sequenceToString(nodeEntryRecord.getHost());
+      ProviderRole providerRole = lookupRole(roleId);
+      if (providerRole == null) {
+        // discarding entry
+        log.info("Discarding history entry with unknown role: {} on host {}",
+            roleId, hostname);
+        discarded ++;
+      } else {
+        NodeInstance instance = getOrCreateNodeInstance(hostname);
+        instance.set(roleId, nodeEntry);
+      }
+    }
+    return discarded;
+  }
+
+
   public synchronized long getStartTime() {
     return startTime;
   }
@@ -382,24 +436,26 @@ public class RoleHistory {
    * Handle the start process <i>after the history has been rebuilt</i>,
    * and after any gc/purge
    */
-  @VisibleForTesting
   public synchronized boolean onThaw() throws BadConfigException {
     assert filesystem != null;
     assert historyPath != null;
     boolean thawSuccessful = false;
     //load in files from data dir
-    Path loaded = null;
+
+    LoadedRoleHistory loadedRoleHistory = null;
     try {
-      loaded = historyWriter.loadFromHistoryDir(filesystem, historyPath, this);
+      loadedRoleHistory = historyWriter.loadFromHistoryDir(filesystem, historyPath);
     } catch (IOException e) {
       log.warn("Exception trying to load history from {}", historyPath, e);
     }
-    if (loaded != null) {
+    if (loadedRoleHistory != null) {
+      rebuild(loadedRoleHistory);
       thawSuccessful = true;
-      log.debug("loaded history from {}", loaded);
+      Path loadPath = loadedRoleHistory.getPath();;
+      log.debug("loaded history from {}", loadPath);
       // delete any old entries
       try {
-        int count = historyWriter.purgeOlderHistoryEntries(filesystem, loaded);
+        int count = historyWriter.purgeOlderHistoryEntries(filesystem, loadPath);
         log.debug("Deleted {} old history entries", count);
       } catch (IOException e) {
         log.info("Ignoring exception raised while trying to delete old entries",
@@ -836,6 +892,18 @@ public class RoleHistory {
 
     log.info("Failed nodes: {}",
         SliderUtils.joinWithInnerSeparator(" ", failedNodes));
+  }
+
+  /**
+   * Build the mapping entry for persisting to the role history
+   * @return a mapping object
+   */
+  public synchronized Map<CharSequence, Integer> buildMappingForHistoryFile() {
+    Map<CharSequence, Integer> mapping = new HashMap<>(getRoleSize());
+    for (ProviderRole role : providerRoles) {
+      mapping.put(role.name, role.id);
+    }
+    return mapping;
   }
 
   /**
