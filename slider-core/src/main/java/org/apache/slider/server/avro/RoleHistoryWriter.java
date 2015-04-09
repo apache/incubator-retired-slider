@@ -390,6 +390,9 @@ public class RoleHistoryWriter {
         log.info("Failed to read {}", path, e);
       } catch (AvroTypeException e) {
         log.warn("Failed to parse {}", path, e);
+      } catch (Exception e) {
+        // low level event logged @ warn level
+        log.warn("Exception while reading {}", path, e);
       }
     }
     return history;
