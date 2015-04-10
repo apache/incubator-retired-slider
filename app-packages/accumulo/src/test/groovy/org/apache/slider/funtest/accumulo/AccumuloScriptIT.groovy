@@ -52,6 +52,10 @@ class AccumuloScriptIT extends AccumuloBasicIT {
   public static void setShell() {
     AccumuloSliderShell.setEnv("SLIDER_HOME", SLIDER_TAR_DIR)
     AccumuloSliderShell.setEnv("SLIDER_CONF_DIR", SLIDER_CONF_DIR)
+    File dir = new File(CLIENT_INSTALL_DIR)
+    if (!dir.exists()) {
+      dir.mkdir()
+    }
   }
 
   public static AccumuloSliderShell accumulo_slider(String cmd) {
