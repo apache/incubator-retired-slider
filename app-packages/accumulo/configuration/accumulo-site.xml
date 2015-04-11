@@ -58,6 +58,30 @@
   </property>
 
   <property>
+    <name>instance.rpc.ssl.enabled</name>
+    <value>false</value>
+    <description>SSL enabled.</description>
+  </property>
+
+  <property>
+    <name>instance.rpc.ssl.clientAuth</name>
+    <value>false</value>
+    <description>SSL client auth enabled.</description>
+  </property>
+
+  <property>
+    <name>instance.rpc.sasl.enabled</name>
+    <value>false</value>
+    <description>SASL enabled.</description>
+  </property>
+
+  <property>
+    <name>trace.zookeeper.path</name>
+    <value>/tracers</value>
+    <description>ZooKeeper path where Accumulo tracers register.</description>
+  </property>
+
+  <property>
     <name>general.classpaths</name>
     <!--
        Add the following for hadoop-2.0

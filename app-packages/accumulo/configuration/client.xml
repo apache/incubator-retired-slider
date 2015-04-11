@@ -46,4 +46,9 @@
     <value>${@//site/accumulo-site/instance.rpc.sasl.enabled}</value>
     <description>SASL enabled.</description>
   </property>
+  <property>
+    <name>trace.zookeeper.path</name>
+    <value>${@//site/accumulo-site/trace.zookeeper.path}</value>
+    <description>ZooKeeper path where Accumulo tracers register.</description>
+  </property>
 </configuration>
