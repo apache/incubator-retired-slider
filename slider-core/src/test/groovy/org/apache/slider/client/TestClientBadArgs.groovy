@@ -78,7 +78,7 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
                              [SliderActions.ACTION_HELP,
                              "hello, world"])
   }
-  
+
   @Test
   public void testBadImageArg() throws Throwable {
     launchExpectingException(SliderClient,
@@ -87,7 +87,7 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
                             [SliderActions.ACTION_HELP,
                              Arguments.ARG_IMAGE])
   }
-  
+
   @Test
   public void testRegistryUsage() throws Throwable {
     def exception = launchExpectingException(SliderClient,
@@ -139,4 +139,85 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
     assert exception instanceof UsageException
     log.info(exception.toString())
   }
+
+  @Test
+  public void testUpgradeUsage() throws Throwable {
+    def exception = launchExpectingException(SliderClient,
+        new Configuration(),
+        "org.apache.slider.core.exceptions.BadCommandArgumentsException: Not enough arguments for action: upgrade Expected minimum 1 but got 0",
+        [SliderActions.ACTION_UPGRADE])
+    assert exception instanceof BadCommandArgumentsException
+    log.info(exception.toString())
+  }
+
+  @Test
+  public void testUpgradeWithTemplateOptionOnly() throws Throwable {
+    String appName = "test_hbase"
+    def exception = launchExpectingException(SliderClient,
+        new Configuration(),
+        "BadCommandArgumentsException: Option --resources must be specified with option --template",
+        [SliderActions.ACTION_UPGRADE,
+            appName,
+            Arguments.ARG_TEMPLATE,
+            "/tmp/appConfig.json",
+        ])
+    assert exception instanceof BadCommandArgumentsException
+    log.info(exception.toString())
+  }
+
+  @Test
+  public void testUpgradeWithResourcesOptionOnly() throws Throwable {
+    String appName = "test_hbase"
+    def exception = launchExpectingException(SliderClient,
+        new Configuration(),
+        "BadCommandArgumentsException: Option --template must be specified with option --resources",
+        [SliderActions.ACTION_UPGRADE,
+            appName,
+            Arguments.ARG_RESOURCES,
+            "/tmp/resources.json",
+        ])
+    assert exception instanceof BadCommandArgumentsException
+    log.info(exception.toString())
+  }
+
+  @Test
+  public void testUpgradeWithTemplateResourcesAndContainersOption() throws Throwable {
+    String appName = "test_hbase"
+    def exception = launchExpectingException(SliderClient,
+        new Configuration(),
+        "BadCommandArgumentsException: Option --containers cannot be "
+        + "specified with --template or --resources",
+        [SliderActions.ACTION_UPGRADE,
+            appName,
+            Arguments.ARG_TEMPLATE,
+            "/tmp/appConfig.json",
+            Arguments.ARG_RESOURCES,
+            "/tmp/resources.json",
+            Arguments.ARG_CONTAINERS,
+            "container_1"
+        ])
+    assert exception instanceof BadCommandArgumentsException
+    log.info(exception.toString())
+  }
+
+  @Test
+  public void testUpgradeWithTemplateResourcesAndComponentsOption() throws Throwable {
+    String appName = "test_hbase"
+    def exception = launchExpectingException(SliderClient,
+        new Configuration(),
+        "BadCommandArgumentsException: Option --components cannot be "
+        + "specified with --template or --resources",
+        [SliderActions.ACTION_UPGRADE,
+            appName,
+            Arguments.ARG_TEMPLATE,
+            "/tmp/appConfig.json",
+            Arguments.ARG_RESOURCES,
+            "/tmp/resources.json",
+            Arguments.ARG_COMPONENTS,
+            "HBASE_MASTER"
+        ])
+    assert exception instanceof BadCommandArgumentsException
+    log.info(exception.toString())
+  }
+
 }

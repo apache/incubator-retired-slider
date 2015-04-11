@@ -18,7 +18,9 @@
 
 package org.apache.slider.server.appmaster.actions;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -30,8 +32,8 @@ public class ActionUpgradeContainers extends AsyncAction {
   private int exitCode;
   private FinalApplicationStatus finalApplicationStatus;
   private String message;
-  private List<String> containers;
-  private List<String> components;
+  private Set<String> containers = new HashSet<>();
+  private Set<String> components = new HashSet<>();
 
   public ActionUpgradeContainers(String name,
       long delay,
@@ -44,8 +46,8 @@ public class ActionUpgradeContainers extends AsyncAction {
     super(name, delay, timeUnit);
     this.exitCode = exitCode;
     this.finalApplicationStatus = finalApplicationStatus;
-    this.containers = containers;
-    this.components = components;
+    this.containers.addAll(containers);
+    this.components.addAll(components);
     this.message = message;
   }
 
@@ -85,19 +87,19 @@ public class ActionUpgradeContainers extends AsyncAction {
     this.message = message;
   }
 
-  public List<String> getContainers() {
+  public Set<String> getContainers() {
     return containers;
   }
 
-  public void setContainers(List<String> containers) {
+  public void setContainers(Set<String> containers) {
     this.containers = containers;
   }
 
-  public List<String> getComponents() {
+  public Set<String> getComponents() {
     return components;
   }
 
-  public void setComponents(List<String> components) {
+  public void setComponents(Set<String> components) {
     this.components = components;
   }
 

@@ -176,9 +176,11 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -1622,7 +1624,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   }
 
   /**
-   * Signal that containers are being upgraded
+   * Signal that containers are being upgraded. Containers specified with
+   * --containers option and all containers of all roles specified with
+   * --components option are merged and upgraded.
    * 
    * @param upgradeContainersRequest
    *          request containing upgrade details
@@ -1630,24 +1634,32 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   public synchronized void onUpgradeContainers(
       ActionUpgradeContainers upgradeContainersRequest) throws IOException,
       SliderException {
-    LOG_YARN.info("onUpgradeContainers([{}]",
+    LOG_YARN.info("onUpgradeContainers({})",
         upgradeContainersRequest.getMessage());
-    List<String> containers = upgradeContainersRequest.getContainers();
-    if (CollectionUtils.isEmpty(containers)) {
-      // components will not be null here, since it is pre-checked
-      List<String> components = upgradeContainersRequest.getComponents();
+    Set<String> containers = upgradeContainersRequest.getContainers() == null ? new HashSet<String>()
+        : upgradeContainersRequest.getContainers();
+    LOG_YARN.info("  Container list provided (total {}) : {}",
+        containers.size(), containers);
+    Set<String> components = upgradeContainersRequest.getComponents() == null ? new HashSet<String>()
+        : upgradeContainersRequest.getComponents();
+    LOG_YARN.info("  Component list provided (total {}) : {}",
+        components.size(), components);
+    // If components are specified as well, then grab all the containers of
+    // each of the components (roles)
+    if (CollectionUtils.isNotEmpty(components)) {
       Map<ContainerId, RoleInstance> liveContainers = appState.getLiveNodes();
-      containers = new ArrayList<String>();
-      Map<String, List<String>> roleContainerMap = prepareRoleContainerMap(liveContainers);
-      for (String component : components) {
-        List<String> roleContainers = roleContainerMap.get(component);
-        if (roleContainers != null) {
-          containers.addAll(roleContainers);
+      if (CollectionUtils.isNotEmpty(liveContainers.keySet())) {
+        Map<String, Set<String>> roleContainerMap = prepareRoleContainerMap(liveContainers);
+        for (String component : components) {
+          Set<String> roleContainers = roleContainerMap.get(component);
+          if (roleContainers != null) {
+            containers.addAll(roleContainers);
+          }
         }
       }
     }
-    LOG_YARN.info("Containers to be upgraded (total {}) : {}", containers.size(),
-        containers);
+    LOG_YARN.info("Final list of containers to be upgraded (total {}) : {}",
+        containers.size(), containers);
     if (providerService instanceof AgentProviderService) {
       AgentProviderService agentProviderService = (AgentProviderService) providerService;
       agentProviderService.setInUpgradeMode(true);
@@ -1655,17 +1667,18 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     }
   }
 
-  // create a reverse map of roles -> list of all live containers
-  private Map<String, List<String>> prepareRoleContainerMap(
+  // create a reverse map of roles -> set of all live containers
+  private Map<String, Set<String>> prepareRoleContainerMap(
       Map<ContainerId, RoleInstance> liveContainers) {
-    Map<String, List<String>> roleContainerMap = new HashMap<String, List<String>>();
+    // liveContainers is ensured to be not empty
+    Map<String, Set<String>> roleContainerMap = new HashMap<>();
     for (Map.Entry<ContainerId, RoleInstance> liveContainer : liveContainers
         .entrySet()) {
       RoleInstance role = liveContainer.getValue();
       if (roleContainerMap.containsKey(role.role)) {
         roleContainerMap.get(role.role).add(liveContainer.getKey().toString());
       } else {
-        List<String> containers = new ArrayList<String>();
+        Set<String> containers = new HashSet<String>();
         containers.add(liveContainer.getKey().toString());
         roleContainerMap.put(role.role, containers);
       }

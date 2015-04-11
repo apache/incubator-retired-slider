@@ -67,4 +67,7 @@ public class ActionUpgradeArgs extends AbstractClusterBuildingActionArgs
       description = "stop all containers of specific components")
   public List<String> components = new ArrayList<String>(0);
 
+  @Parameter(names = {ARG_FORCE},
+      description = "force spec upgrade operation")
+  public boolean force;
 }
