@@ -1111,7 +1111,7 @@ public class AgentProviderService extends AbstractProviderService implements
     this.isInUpgradeMode = inUpgradeMode;
   }
 
-  public void addUpgradeContainers(List<String> upgradeContainers) {
+  public void addUpgradeContainers(Set<String> upgradeContainers) {
     this.upgradeContainers.addAll(upgradeContainers);
   }
 

@@ -724,8 +724,25 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     List<String> containers = upgradeArgs.containers;
     List<String> components = upgradeArgs.components;
 
-    // For upgrade spec, only --template and --resources should be specified
-    if (template != null || resources != null) {
+    // For upgrade spec, let's be little more strict with validation. If either
+    // --template or --resources is specified, then both needs to be specified.
+    // Otherwise the internal app config and resources states of the app will be
+    // unwantedly modified and the change will take effect to the running app
+    // immediately.
+    if (template != null && resources == null) {
+      throw new BadCommandArgumentsException(
+          "Option %s must be specified with option %s",
+          Arguments.ARG_RESOURCES, Arguments.ARG_TEMPLATE);
+    }
+    if (resources != null && template == null) {
+      throw new BadCommandArgumentsException(
+          "Option %s must be specified with option %s",
+          Arguments.ARG_TEMPLATE, Arguments.ARG_RESOURCES);
+    }
+
+    // For upgrade spec, both --template and --resources should be specified
+    // and neither of --containers or --components should be used
+    if (template != null && resources != null) {
       if (CollectionUtils.isNotEmpty(containers)) {
         throw new BadCommandArgumentsException(
             "Option %s cannot be specified with %s or %s",
@@ -738,27 +755,25 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
             Arguments.ARG_COMPONENTS, Arguments.ARG_TEMPLATE,
             Arguments.ARG_RESOURCES);
       }
-      buildInstanceDefinition(clustername, upgradeArgs, true, true);
+      
+      // not an error to try to upgrade a stopped cluster, just return success
+      // code, appropriate log messages have already been dumped
+      if (!isAppInRunningState(clustername)) {
+        return EXIT_SUCCESS;
+      }
+
+      // Now initiate the upgrade spec flow
+      buildInstanceDefinition(clustername, upgradeArgs, true, true, true);
       SliderClusterOperations clusterOperations = createClusterOperations(clustername);
-      clusterOperations.amSuicide("Application upgrade", 1, 1000);
-      // upgradeYarnApplicationSubmissionContext(clustername, upgradeArgs);
+      clusterOperations.amSuicide("AM restarted for application upgrade", 1, 1000);
       return EXIT_SUCCESS;
     }
 
-    if (CollectionUtils.isNotEmpty(containers)
-        && CollectionUtils.isNotEmpty(components)) {
-      throw new BadCommandArgumentsException(
-          "Only one of option %s or %s can be specified",
-          Arguments.ARG_CONTAINERS, Arguments.ARG_COMPONENTS);
-    }
-    if (CollectionUtils.isNotEmpty(containers)) {
-      log.info("Going to stop containers (total {}) : {}", containers.size(),
-          containers);
-    }
-    if (CollectionUtils.isNotEmpty(components)) {
-      log.info("Going to stop all containers of components (total {}) : {}",
-          components.size(), components);
-    }
+    // Since neither --template or --resources were specified, it is upgrade
+    // containers flow. Here any one or both of --containers and --components
+    // can be specified. If a container is specified with --containers option
+    // and also belongs to a component type specified with --components, it will
+    // be upgraded only once.
     return actionUpgradeContainers(clustername, upgradeArgs);
   }
 
@@ -771,54 +786,117 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     log.debug("actionUpgradeContainers({}, reason={}, wait={})", clustername,
         text, waittime);
 
+    // not an error to try to upgrade a stopped cluster, just return success
+    // code, appropriate log messages have already been dumped
+    if (!isAppInRunningState(clustername)) {
+      return EXIT_SUCCESS;
+    }
+
+    // Create sets of containers and components to get rid of duplicates and
+    // for quick lookup during checks below
+    Set<String> containers = new HashSet<>();
+    if (upgradeArgs.containers != null) {
+      containers.addAll(new ArrayList<>(upgradeArgs.containers));
+    }
+    Set<String> components = new HashSet<>();
+    if (upgradeArgs.components != null) {
+      components.addAll(new ArrayList<>(upgradeArgs.components));
+    }
+
+    // check validity of component names and running containers here
+    List<ContainerInformation> liveContainers = getContainers(clustername);
+    Set<String> validContainers = new HashSet<>();
+    Set<String> validComponents = new HashSet<>();
+    for (ContainerInformation liveContainer : liveContainers) {
+      boolean allContainersAndComponentsAccountedFor = true;
+      if (CollectionUtils.isNotEmpty(containers)) {
+        if (containers.contains(liveContainer.containerId)) {
+          containers.remove(liveContainer.containerId);
+          validContainers.add(liveContainer.containerId);
+        }
+        allContainersAndComponentsAccountedFor = false;
+      }
+      if (CollectionUtils.isNotEmpty(components)) {
+        if (components.contains(liveContainer.component)) {
+          components.remove(liveContainer.component);
+          validComponents.add(liveContainer.component);
+        }
+        allContainersAndComponentsAccountedFor = false;
+      }
+      if (allContainersAndComponentsAccountedFor) {
+        break;
+      }
+    }
+
+    // If any item remains in containers or components then they are invalid.
+    // Log warning for them and proceed.
+    if (CollectionUtils.isNotEmpty(containers)) {
+      log.warn("Invalid set of containers provided {}", containers);
+    }
+    if (CollectionUtils.isNotEmpty(components)) {
+      log.warn("Invalid set of components provided {}", components);
+    }
+
+    // If not a single valid container or component is specified do not proceed
+    if (CollectionUtils.isEmpty(validContainers)
+        && CollectionUtils.isEmpty(validComponents)) {
+      log.error("Not a single valid container or component specified. Nothing to do.");
+      return EXIT_FALSE;
+    }
+
+    SliderClusterProtocol appMaster = connect(findInstance(clustername));
+    Messages.UpgradeContainersRequestProto r =
+      Messages.UpgradeContainersRequestProto
+              .newBuilder()
+              .setMessage(text)
+              .addAllContainer(validContainers)
+              .addAllComponent(validComponents)
+              .build();
+    appMaster.upgradeContainers(r);
+    log.info("Cluster upgrade issued for -");
+    if (CollectionUtils.isNotEmpty(validContainers)) {
+      log.info(" Containers (total {}): {}", validContainers.size(),
+          validContainers);
+    }
+    if (CollectionUtils.isNotEmpty(validComponents)) {
+      log.info(" Components (total {}): {}", validComponents.size(),
+          validComponents);
+    }
+
+    return EXIT_SUCCESS;
+  }
+
+  // returns true if and only if app is in RUNNING state
+  private boolean isAppInRunningState(String clustername) throws YarnException,
+      IOException {
     // is this actually a known cluster?
     sliderFileSystem.locateInstanceDefinition(clustername);
     ApplicationReport app = findInstance(clustername);
     if (app == null) {
       // exit early
       log.info("Cluster {} not running", clustername);
-      // not an error to try to upgrade a stopped cluster
-      return EXIT_SUCCESS;
+      return false;
     }
     log.debug("App to upgrade was found: {}:\n{}", clustername,
         new SliderUtils.OnDemandReportStringifier(app));
     if (app.getYarnApplicationState().ordinal() >= YarnApplicationState.FINISHED
         .ordinal()) {
-      log.info("Cluster {} is in a terminated state {}", clustername,
-          app.getYarnApplicationState());
-      return EXIT_SUCCESS;
+      log.info(
+          "Cluster {} is in a terminated state {}. Use command '{}' instead.",
+          clustername, app.getYarnApplicationState(),
+          SliderActions.ACTION_UPDATE);
+      return false;
     }
 
     // IPC request to upgrade containers is possible if the app is running.
     if (app.getYarnApplicationState().ordinal() < YarnApplicationState.RUNNING
         .ordinal()) {
-      log.info("Cluster {} is in a pre-running state {}. It needs to be "
-          + "RUNNING to upgrade.", clustername, app.getYarnApplicationState());
-      return EXIT_SUCCESS;
+      log.info("Cluster {} is in a pre-running state {}. To upgrade it needs "
+          + "to be RUNNING.", clustername, app.getYarnApplicationState());
+      return false;
     }
 
-    try {
-      SliderClusterProtocol appMaster = connect(app);
-      Messages.UpgradeContainersRequestProto r =
-        Messages.UpgradeContainersRequestProto
-                .newBuilder()
-                .setMessage(text)
-                .addAllContainer(upgradeArgs.containers)
-                .addAllComponent(upgradeArgs.components)
-                .build();
-      appMaster.upgradeContainers(r);
-      log.debug("Cluster upgrade containers issued");
-    } catch (YarnException e) {
-      log.warn("Exception while trying to upgrade containers {}", clustername,
-          e);
-      return EXIT_FALSE;
-    } catch (IOException e) {
-      log.warn("Exception while trying to upgrade containers {}", clustername,
-          e);
-      return EXIT_FALSE;
-    }
-
-    return EXIT_SUCCESS;
+    return true;
   }
 
   private static void checkForCredentials(Configuration conf,
@@ -1431,10 +1509,18 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @throws YarnException
    * @throws IOException
    */
-  
+
   public void buildInstanceDefinition(String clustername,
-      AbstractClusterBuildingActionArgs buildInfo, boolean overwrite, boolean liveClusterAllowed)
-        throws YarnException, IOException {
+      AbstractClusterBuildingActionArgs buildInfo, boolean overwrite,
+      boolean liveClusterAllowed) throws YarnException, IOException {
+    buildInstanceDefinition(clustername, buildInfo, overwrite,
+        liveClusterAllowed, false);
+  }
+
+  public void buildInstanceDefinition(String clustername,
+      AbstractClusterBuildingActionArgs buildInfo, boolean overwrite,
+      boolean liveClusterAllowed, boolean isUpgradeFlow) throws YarnException,
+      IOException {
     // verify that a live cluster isn't there
     SliderUtils.validateClusterName(clustername);
     verifyBindingsDefined();
@@ -1493,6 +1579,13 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       }
     }
 
+    if (isUpgradeFlow) {
+      ActionUpgradeArgs upgradeInfo = (ActionUpgradeArgs) buildInfo;
+      if (!upgradeInfo.force) {
+        validateClientAndClusterResource(clustername, resources);
+      }
+    }
+    
     AppDefinitionPersister appDefinitionPersister = new AppDefinitionPersister(sliderFileSystem);
     appDefinitionPersister.processSuppliedDefinitions(clustername, buildInfo, appConf);
 
@@ -1507,7 +1600,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     for (Map.Entry<String, String> roleEntry : argsRoleMap.entrySet()) {
       String count = roleEntry.getValue();
       String key = roleEntry.getKey();
-      log.debug("{} => {}", key, count);
+      log.info("{} => {}", key, count);
       resources.getOrAddComponent(key)
                  .put(ResourceKeys.COMPONENT_INSTANCES, count);
     }
@@ -1605,6 +1698,85 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     validateInstanceDefinition(provider, instanceDescription, sliderFileSystem);
   }
 
+  private void validateClientAndClusterResource(String clustername,
+      ConfTreeOperations clientResources) throws BadClusterStateException,
+      SliderException, IOException {
+    log.info("Validating client resource with cluster resource definition (components and instance count)");
+    Map<String, Integer> clientComponentNameInstanceMap = new HashMap<>();
+    for (String componentName : clientResources.getComponentNames()) {
+      if (!SliderKeys.COMPONENT_AM.equals(componentName)) {
+        clientComponentNameInstanceMap.put(componentName, clientResources
+            .getComponentOptInt(componentName,
+                ResourceKeys.COMPONENT_INSTANCES, -1));
+      }
+    }
+
+    AggregateConf clusterConf = null;
+    try {
+      clusterConf = loadPersistedClusterDescription(clustername);
+    } catch (LockAcquireFailedException e) {
+      log.warn("Failed to get a Lock on cluster resource : {}", e);
+      throw new BadClusterStateException(
+          "Failed to validate client resource definition " + clustername + ": "
+              + e);
+    }
+    Map<String, Integer> clusterComponentNameInstanceMap = new HashMap<>();
+    for (Map.Entry<String, Map<String, String>> component : clusterConf
+        .getResources().components.entrySet()) {
+      if (!SliderKeys.COMPONENT_AM.equals(component.getKey())) {
+        clusterComponentNameInstanceMap.put(
+            component.getKey(),
+            Integer.decode(component.getValue().get(
+                ResourceKeys.COMPONENT_INSTANCES)));
+      }
+    }
+
+    // client and cluster should be an exact match
+    Iterator<Map.Entry<String, Integer>> clientComponentNameInstanceIterator = clientComponentNameInstanceMap
+        .entrySet().iterator();
+    while (clientComponentNameInstanceIterator.hasNext()) {
+      Map.Entry<String, Integer> clientComponentNameInstanceEntry = clientComponentNameInstanceIterator
+          .next();
+      if (clusterComponentNameInstanceMap
+          .containsKey(clientComponentNameInstanceEntry.getKey())) {
+        // compare instance count now and remove from both maps if they match
+        if (clusterComponentNameInstanceMap
+            .get(clientComponentNameInstanceEntry.getKey()) == clientComponentNameInstanceEntry
+            .getValue()) {
+          clusterComponentNameInstanceMap
+              .remove(clientComponentNameInstanceEntry.getKey());
+          clientComponentNameInstanceIterator.remove();
+        }
+      }
+    }
+
+    if (!clientComponentNameInstanceMap.isEmpty()
+        || !clusterComponentNameInstanceMap.isEmpty()) {
+      log.error("Mismatch found in client and cluster resource specification");
+      if (!clientComponentNameInstanceMap.isEmpty()) {
+        log.info("  Following are the client resources that do not match");
+        for (Map.Entry<String, Integer> clientComponentNameInstanceEntry : clientComponentNameInstanceMap
+            .entrySet()) {
+          log.info("    Component Name: {}, Instance count: {}",
+              clientComponentNameInstanceEntry.getKey(),
+              clientComponentNameInstanceEntry.getValue());
+        }
+      }
+      if (!clusterComponentNameInstanceMap.isEmpty()) {
+        log.info("  Following are the cluster resources that do not match");
+        for (Map.Entry<String, Integer> clusterComponentNameInstanceEntry : clusterComponentNameInstanceMap
+            .entrySet()) {
+          log.info("    Component Name: {}, Instance count: {}",
+              clusterComponentNameInstanceEntry.getKey(),
+              clusterComponentNameInstanceEntry.getValue());
+        }
+      }
+      throw new BadConfigException("\n\nResource definition provided for "
+          + "upgrade does not match with that of the currently running "
+          + "cluster.\nIf you are aware of what you are doing, rerun the "
+          + "command with " + Arguments.ARG_FORCE + " option.\n");
+    }
+  }
 
   protected void persistInstanceDefinition(boolean overwrite,
                                          Path appconfdir,
