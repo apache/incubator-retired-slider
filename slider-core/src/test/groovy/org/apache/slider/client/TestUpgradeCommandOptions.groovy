@@ -50,7 +50,7 @@ import org.junit.Before
 import org.junit.Test
 
 /**
- * Test the package commands options
+ * Test the upgrade commands options
  */
 class TestUpgradeCommandOptions extends AgentMiniClusterTestBase {
   final shouldFail = new GroovyTestCase().&shouldFail
