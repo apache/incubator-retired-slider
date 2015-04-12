@@ -45,11 +45,12 @@ class Heartbeat:
 
     nodeStatus = {"status": "HEALTHY",
                   "cause": "NONE"}
-
+    logger.info("package to heartbeat: " + self.actionQueue.componentPackage)
     heartbeat = {'responseId': int(id),
                  'timestamp': timestamp,
                  'hostname': self.config.getLabel(),
                  'nodeStatus': nodeStatus,
+                 'package': self.actionQueue.componentPackage,
                  'fqdn': hostname.public_hostname()
     }
 

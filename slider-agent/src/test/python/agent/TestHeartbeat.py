@@ -153,7 +153,7 @@ class TestHeartbeat(TestCase):
     hb['hostname'] = 'hostname'
     hb['timestamp'] = 'timestamp'
     hb['fqdn'] = 'fqdn'
-    expected = {'nodeStatus':
+    expected = {'package': '', 'nodeStatus':
                   {'status': 'HEALTHY',
                    'cause': 'NONE'},
                 'timestamp': 'timestamp', 'hostname': 'hostname', 'fqdn': 'fqdn',
@@ -208,7 +208,7 @@ class TestHeartbeat(TestCase):
     hb['hostname'] = 'hostname'
     hb['timestamp'] = 'timestamp'
     hb['fqdn'] = 'fqdn'
-    expected = {'nodeStatus':
+    expected = {'package': '', 'nodeStatus':
                   {'status': 'HEALTHY',
                    'cause': 'NONE'},
                 'timestamp': 'timestamp', 'hostname': 'hostname', 'fqdn': 'fqdn',
@@ -245,7 +245,7 @@ class TestHeartbeat(TestCase):
     hb['hostname'] = 'hostname'
     hb['timestamp'] = 'timestamp'
     hb['fqdn'] = 'fqdn'
-    expected = {'nodeStatus':
+    expected = {'package': '', 'nodeStatus':
                   {'status': 'HEALTHY',
                    'cause': 'NONE'},
                 'timestamp': 'timestamp', 'hostname': 'hostname', 'fqdn': 'fqdn',

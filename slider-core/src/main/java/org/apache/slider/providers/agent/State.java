@@ -141,6 +141,12 @@ public enum State {
         } else {
           throw new IllegalArgumentException(command + " is not valid for " + this);
         }
+      case INSTALL_ADDON:
+          if (this == State.INIT || this == State.INSTALL_FAILED) {
+            return State.INSTALLING;
+          } else {
+            throw new IllegalArgumentException(command + " is not valid for " + this);
+          }
       case START:
         if (this == State.INSTALLED) {
           return State.STARTING;
@@ -184,4 +190,5 @@ public enum State {
     }
     return false;
   }
+  
 }

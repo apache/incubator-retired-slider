@@ -63,10 +63,11 @@ class ActionQueue(threading.Thread):
     self.controller = controller
     self._stop = threading.Event()
     self.tmpdir = config.getResolvedPath(AgentConfig.APP_TASK_DIR)
+    self.componentPackage = ''
     self.customServiceOrchestrator = CustomServiceOrchestrator(config,
                                                                controller,
                                                                self.queueOutAgentToggleLogger)
-
+    
 
   def stop(self):
     self._stop.set()
@@ -121,6 +122,12 @@ class ActionQueue(threading.Thread):
     '''
     clusterName = command['clusterName']
     commandId = command['commandId']
+    if 'package' in command:
+        self.componentPackage = command['package']
+    else:
+        self.componentPackage = ''
+    
+    logger.info("package received: " + self.componentPackage + ";")
 
     message = "Executing command with id = {commandId} for role = {role} of " \
               "cluster {cluster}".format(
@@ -155,7 +162,9 @@ class ActionQueue(threading.Thread):
 
     if store_command:
       logger.info("Component has indicated auto-restart. Saving details from START command.")
-
+    
+    logger.info("will run: " + str(command))
+    
     # running command
     commandresult = self.customServiceOrchestrator.runCommand(command,
                                                               in_progress_status[

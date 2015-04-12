@@ -21,6 +21,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadConfigException;
+import org.apache.slider.providers.agent.application.metadata.AbstractMetainfoParser;
+import org.apache.slider.providers.agent.application.metadata.AddoPackageMetainfoParser;
 import org.apache.slider.providers.agent.application.metadata.DefaultConfig;
 import org.apache.slider.providers.agent.application.metadata.DefaultConfigParser;
 import org.apache.slider.providers.agent.application.metadata.Metainfo;
@@ -39,13 +41,18 @@ public class AgentUtils {
   private static final Logger log = LoggerFactory.getLogger(AgentUtils.class);
 
   public static Metainfo getApplicationMetainfo(SliderFileSystem fileSystem,
-                                                String appDef) throws IOException, BadConfigException {
-    log.info("Reading metainfo at {}", appDef);
+                                                String metainfoPath, boolean metainfoForAddon) throws IOException, BadConfigException {
+    log.info("Reading metainfo at {}", metainfoPath);
     FileSystem fs = fileSystem.getFileSystem();
-    Path appPath = new Path(appDef);
+    Path appPath = new Path(metainfoPath);
 
     Metainfo metainfo = null;
-    MetainfoParser metainfoParser = new MetainfoParser();
+    AbstractMetainfoParser metainfoParser = null;
+    if(metainfoForAddon){
+      metainfoParser = new AddoPackageMetainfoParser();
+    } else {
+      metainfoParser = new MetainfoParser();
+    }
     InputStream metainfoJsonStream = SliderUtils.getApplicationResourceInputStream(
         fs, appPath, "metainfo.json");
     if (metainfoJsonStream == null) {
@@ -59,7 +66,7 @@ public class AgentUtils {
     }
 
     if (metainfo == null) {
-      log.error("metainfo is unavailable at {}.", appDef);
+      log.error("metainfo is unavailable at {}.", metainfoPath);
       throw new FileNotFoundException("metainfo.xml/json is required in app package. " +
                                       appPath);
     }

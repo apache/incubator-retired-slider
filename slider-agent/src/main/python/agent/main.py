@@ -113,6 +113,7 @@ def update_config_from_file(agentConfig):
   try:
     configFile = posixpath.join(agentConfig.getWorkRootPath(), configFileRelPath)
     if os.path.exists(configFile):
+      logger.info("config file is: " + configFile)
       agentConfig.setConfig(configFile)
     else:
       logger.warn("No config found, using default")
@@ -212,7 +213,7 @@ def main():
   # Check for configuration file.
   agentConfig = AgentConfig(options.root_folder, options.log_folder, options.label)
   update_config_from_file(agentConfig)
-
+  
   # update configurations if needed
   if options.zk_quorum:
       agentConfig.set(AgentConfig.SERVER_SECTION, Constants.ZK_QUORUM, options.zk_quorum)

@@ -103,6 +103,31 @@ extends YarnZKMiniClusterTestBase {
       log.warn("Temp folder deletion failed: $e")
     }
   }
+  
+  public static String createAddOnPackageFiles() {
+
+    File destDir = new File("target/agent_minicluster_testbase_addon")
+    destDir.mkdirs()
+    File addonAgentConf = new File(destDir, "addon1.zip")
+    addonAgentConf.createNewFile()
+    
+    // dynamically create the app package for the test
+    TemporaryFolder addonTempFolder = new TemporaryFolder();
+    addonTempFolder.create()
+    def pkgPath = addonTempFolder.newFolder("testpkg")
+    File imagePath = new File(pkgPath, "appdef_1.zip").canonicalFile
+    File metainfo = new File(new File(".").absoluteFile, "src/test/python/metainfo.xml");
+    ZipArchiveOutputStream zipFile = new ZipArchiveOutputStream(new FileOutputStream(imagePath));
+    try {
+      zipFile.putArchiveEntry(new ZipArchiveEntry(metainfo.name));
+      IOUtils.copy(new FileInputStream(metainfo), zipFile);
+      zipFile.closeArchiveEntry();
+    }
+    finally {
+      zipFile.close();
+    }
+    return addonAgentConf.toURI().toString()
+  }
 
   @Override
   public String getTestConfigurationPath() {

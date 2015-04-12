@@ -44,6 +44,9 @@ public class RegistrationResponse {
   /** tags - tags associated with the container */
   @JsonProperty("tags")
   private String tags;
+  
+  @JsonProperty("package")
+  private String pkg;
 
   //Response id to start with, usually zero.
   @JsonProperty("responseId")
@@ -102,5 +105,13 @@ public class RegistrationResponse {
            ", responseId=" + responseId +
            ", statusCommands=" + statusCommands +
            '}';
+  }
+
+  public String getPkg() {
+    return pkg;
+  }
+
+  public void setPkg(String pkg) {
+    this.pkg = pkg;
   }
 }

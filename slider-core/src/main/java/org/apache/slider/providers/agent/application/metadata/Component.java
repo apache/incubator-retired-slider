@@ -23,19 +23,16 @@ import org.codehaus.jackson.annotate.JsonProperty;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
- *
+ *  Component defined in master package metainfo.json
  */
-public class Component implements Validate {
+public class Component extends AbstractComponent {
 
-  public static String TYPE_STANDARD = "STANDARD";
-  public static String TYPE_DOCKER = "DOCKER";
-  public static String CATEGORY_MASTER = "MASTER";
-  public static String CATEGORY_SLAVE = "SLAVE";
-  public static String CATEGORY_CLIENT = "CLIENT";
-
-  String name;
   String category = CATEGORY_MASTER;
   String publishConfig = Boolean.FALSE.toString();
   String minInstanceCount = "0";
@@ -43,11 +40,9 @@ public class Component implements Validate {
   String autoStartOnFailure = Boolean.FALSE.toString();
   String appExports;
   String compExports;
-  CommandScript commandScript;
   String type = TYPE_STANDARD;
   List<ComponentExport> componentExports = new ArrayList<>();
-  List<ComponentCommand> commands = new ArrayList<>();
-
+  
   public Component() {
   }
 

@@ -40,6 +40,7 @@ public class ExecutionCommand {
   //TODO Remove hostname from being set in the command
   private String hostname;
   private String role;
+  private String pkg;
   private Map<String, String> hostLevelParams = new HashMap<String, String>();
   private Map<String, String> roleParams = null;
   private String roleCommand;
@@ -217,5 +218,15 @@ public class ExecutionCommand {
         .append(", serviceName=").append(serviceName)
         .append(", componentName=").append(componentName).append("]");
     return builder.toString();
+  }
+
+  @JsonProperty("package")
+  public String getPkg() {
+    return pkg;
+  }
+
+  @JsonProperty("package")
+  public void setPkg(String pkg) {
+    this.pkg = pkg;
   }
 }

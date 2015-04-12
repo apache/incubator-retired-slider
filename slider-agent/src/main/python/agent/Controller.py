@@ -448,11 +448,18 @@ class Controller(threading.Thread):
     index = 0
     deleteIndex = 0
     delete = False
+
     '''
     Do not break for START command, since we might get a STOP command
     (used during failure scenarios to gracefully attempt stop)
     '''
+
     for command in commands:
+        
+      if "package" in command and command["package"] != "MASTER":
+        # we do not update component state upon add on package command
+        continue
+        
       if command["roleCommand"] == "START":
         self.componentExpectedState = State.STARTED
         self.componentActualState = State.STARTING

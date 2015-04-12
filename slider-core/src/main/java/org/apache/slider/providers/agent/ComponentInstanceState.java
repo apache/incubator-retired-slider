@@ -18,8 +18,12 @@
 
 package org.apache.slider.providers.agent;
 
+import java.util.TreeMap;
+
 import com.google.common.annotations.VisibleForTesting;
+
 import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.slider.providers.agent.application.metadata.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +46,9 @@ public class ComponentInstanceState {
   private long lastHeartbeat = 0;
   private ContainerState containerState;
 
+  private TreeMap<String, State> pkgStatuses = new TreeMap<String, State>();
+  private String nextPkgToInstall;
+
   public ComponentInstanceState(String componentName,
       ContainerId containerId,
       String applicationId) {
@@ -53,6 +60,18 @@ public class ComponentInstanceState {
     this.lastHeartbeat = System.currentTimeMillis();
   }
 
+  public ComponentInstanceState(String componentName,
+      ContainerId containerId,
+      String applicationId, TreeMap<String, State> pkgStatuses) {
+    this.componentName = componentName;
+    this.containerId = containerId;
+    this.containerIdAsString = containerId.toString();
+    this.applicationId = applicationId;
+    this.containerState = ContainerState.INIT;
+    this.lastHeartbeat = System.currentTimeMillis();
+    this.pkgStatuses = pkgStatuses;
+  }
+  
   public String getComponentName() {
     return componentName;
   }
@@ -106,30 +125,74 @@ public class ComponentInstanceState {
     if (expected != command) {
       throw new IllegalArgumentException("Command " + command + " is not allowed in state " + state);
     }
-    state = state.getNextState(command);
+    if (expected == Command.INSTALL_ADDON){
+      //for add on packages. the pkg must be nextPkgToInstall
+      State currentState = pkgStatuses.get(nextPkgToInstall);
+      log.debug("commandissued: component: {} is in {}", componentName, currentState);
+      State nextState = currentState.getNextState(command);
+      pkgStatuses.put(nextPkgToInstall, nextState);
+      log.debug("commandissued: component: {} is now in {}", componentName, nextState);
+    } else {
+      //for master package
+      state = state.getNextState(command);
+    }
+  }
+
+  public void applyCommandResult(CommandResult result, Command command, String pkg) {
+    // if the heartbeat is for a package 
+    // update that package's state in the component status
+    // and don't bother with the master pkg
+    if (pkg != null && !pkg.isEmpty()
+        && !pkg.equals(Component.MASTER_PACKAGE_NAME)) {
+      log.debug("this result is for component: {} pkg: {}", componentName, pkg);
+      State previousPkgState = pkgStatuses.get(pkg);
+      log.debug("currently component: {} pkg: {} is in state: {}", componentName, pkg, previousPkgState.toString());
+      State nextPkgState = previousPkgState.getNextState(result);
+      pkgStatuses.put(pkg, nextPkgState);
+      log.debug("component: {} pkg: {} next state: {}", componentName, pkg, nextPkgState);
+    } else {
+      log.debug("this result is for component: {} master package", componentName);
+      if (!this.state.couldHaveIssued(command)) {
+        throw new IllegalStateException("Invalid command " + command + " for state " + this.state);
+      }
+
+      try {
+        if (result == CommandResult.FAILED) {
+          failuresSeen++;
+        } else if (result == CommandResult.COMPLETED) {
+          failuresSeen = 0;
+        }
+        state = state.getNextState(result);
+      } catch (IllegalArgumentException e) {
+        String message = String.format(INVALID_TRANSITION_ERROR,
+            result.toString(), command.toString(), componentName,
+            state.toString());
+        log.warn(message);
+        throw new IllegalStateException(message);
+      }
+    }
   }
 
   public void applyCommandResult(CommandResult result, Command command) {
-    if (!this.state.couldHaveIssued(command)) {
-      throw new IllegalStateException("Invalid command " + command + " for state " + this.state);
-    }
-
-    try {
-      if (result == CommandResult.FAILED) {
-        failuresSeen++;
-      } else if (result == CommandResult.COMPLETED) {
-        failuresSeen = 0;
+   
+      if (!this.state.couldHaveIssued(command)) {
+        throw new IllegalStateException("Invalid command " + command + " for state " + this.state);
       }
-      state = state.getNextState(result);
-    } catch (IllegalArgumentException e) {
-      String message = String.format(INVALID_TRANSITION_ERROR,
-                                     result.toString(),
-                                     command.toString(),
-                                     componentName,
-                                     state.toString());
-      log.warn(message);
-      throw new IllegalStateException(message);
-    }
+
+      try {
+        if (result == CommandResult.FAILED) {
+          failuresSeen++;
+        } else if (result == CommandResult.COMPLETED) {
+          failuresSeen = 0;
+        }
+        state = state.getNextState(result);
+      } catch (IllegalArgumentException e) {
+        String message = String.format(INVALID_TRANSITION_ERROR,
+            result.toString(), command.toString(), componentName,
+            state.toString());
+        log.warn(message);
+        throw new IllegalStateException(message);
+      }
   }
 
   public boolean hasPendingCommand() {
@@ -148,9 +211,36 @@ public class ComponentInstanceState {
 
   public Command getNextCommand(boolean isInUpgradeMode) {
     if (!hasPendingCommand()) {
+      nextPkgToInstall = null;
       return Command.NOP;
     }
 
+    log.debug("start checking for component: {} ", componentName);
+    // if the master pkg is just installed, check if any add on pkg need to be
+    // installed
+    if (state == State.INSTALLED) {
+      // first check if any pkg is install in progress, if so, wait
+      for (String pkg : pkgStatuses.keySet()) {
+        State pkgState = pkgStatuses.get(pkg);
+        log.debug("in getNextCommand, pkg: {} is in {}", pkg, pkgState);
+        if (pkgState == State.INSTALLING) {
+          log.debug("in getNextCommand, pkg: {} we are issuing NOP", pkg);
+          nextPkgToInstall = pkg;
+          return Command.NOP;
+        }
+      }
+      // then check if any pkg is in init, if so, install it
+      for (String pkg : pkgStatuses.keySet()) {
+        State pkgState = pkgStatuses.get(pkg);
+        log.debug("in getNextCommand, pkg: {} is in {}", pkg, pkgState);
+        if (pkgState == State.INIT) {
+          log.debug("in getNextCommand, pkg: {} we are issuing install addon", pkg);
+          nextPkgToInstall = pkg;
+          return Command.INSTALL_ADDON;
+        }
+      }
+    }
+    nextPkgToInstall = null;
     return this.state.getSupportedCommand(isInUpgradeMode);
   }
 
@@ -219,5 +309,9 @@ public class ComponentInstanceState {
     sb.append(", componentName='").append(componentName).append('\'');
     sb.append('}');
     return sb.toString();
+  }
+
+  public String getNextPkgToInstall() {
+    return nextPkgToInstall;
   }
 }
