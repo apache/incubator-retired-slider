@@ -97,7 +97,7 @@ class TestWindowsSupport extends YarnMiniClusterTestBase {
     assumeWindows()
     SliderFileSystem sfs = new SliderFileSystem(new Configuration())
     try {
-      def metainfo = AgentUtils.getApplicationMetainfo(sfs, windowsFile)
+      def metainfo = AgentUtils.getApplicationMetainfo(sfs, windowsFile, false)
     } catch (FileNotFoundException fnfe) {
       // expected
     }

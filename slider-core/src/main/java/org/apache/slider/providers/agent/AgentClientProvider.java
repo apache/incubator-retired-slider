@@ -169,7 +169,7 @@ public class AgentClientProvider extends AbstractClientProvider
     Metainfo metaInfo = null;
     if (fs != null) {
       try {
-        metaInfo = AgentUtils.getApplicationMetainfo(fs, appDef);
+        metaInfo = AgentUtils.getApplicationMetainfo(fs, appDef, false);
       } catch (IOException ioe) {
         // Ignore missing metainfo file for now
         log.info("Missing metainfo {}", ioe.getMessage());
@@ -281,7 +281,7 @@ public class AgentClientProvider extends AbstractClientProvider
     Set<String> tags;
     Metainfo metainfo;
     try {
-      metainfo = AgentUtils.getApplicationMetainfo(fileSystem, appDef);
+      metainfo = AgentUtils.getApplicationMetainfo(fileSystem, appDef, false);
     } catch (IOException e) {
       log.error("Error retrieving metainfo from {}", appDef, e);
       throw new SliderException("Error retrieving metainfo", e);

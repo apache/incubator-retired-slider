@@ -28,17 +28,13 @@ import java.util.List;
 /**
  * Application type defined in the metainfo
  */
-public class Application implements Validate {
-  String name;
-  String comment;
-  String version;
+public class Application extends AbstractMetainfoSchema{
   String exportedConfigs;
-  List<Component> components = new ArrayList<>();
   List<ExportGroup> exportGroups = new ArrayList<>();
   List<OSSpecific> osSpecifics = new ArrayList<>();
   List<CommandOrder> commandOrders = new ArrayList<>();
-  List<ConfigFile> configFiles = new ArrayList<>();
   List<Package> packages = new ArrayList<>();
+  private List<Component> components = new ArrayList<>();
 
   public Application() {
   }
@@ -90,7 +86,7 @@ public class Application implements Validate {
 
   @JsonProperty("components")
   public List<Component> getComponents() {
-    return components;
+    return components ;
   }
 
   public void addExportGroup(ExportGroup exportGroup) {

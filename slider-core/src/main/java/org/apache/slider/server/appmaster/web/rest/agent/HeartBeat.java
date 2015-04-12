@@ -39,6 +39,7 @@ public class HeartBeat {
   private long responseId = -1;
   private long timestamp;
   private String hostname;
+  private String pkg;
   List<CommandReport> reports = new ArrayList<CommandReport>();
   List<ComponentStatus> componentStatus = new ArrayList<ComponentStatus>();
   private List<DiskInfo> mounts = new ArrayList<DiskInfo>();
@@ -132,7 +133,18 @@ public class HeartBeat {
            ", hostname='" + hostname + '\'' +
            ", reports=" + reports +
            ", componentStatus=" + componentStatus +
+           ", package=" + pkg +
            ", nodeStatus=" + nodeStatus +
            '}';
+  }
+
+  @JsonProperty("package")
+  public String getPkg() {
+    return pkg;
+  }
+
+  @JsonProperty("package")
+  public void setPkg(String pkg) {
+    this.pkg = pkg;
   }
 }

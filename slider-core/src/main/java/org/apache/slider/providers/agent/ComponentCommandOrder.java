@@ -120,6 +120,8 @@ public class ComponentCommandOrder {
     return new ComponentState(compStr, state);
   }
 
+  //dependency is still on component level, but not package level
+  //so use component name to check dependency, not component-package
   public boolean canExecute(String component, Command command, Collection<ComponentInstanceState> currentStates) {
     boolean canExecute = true;
     if (dependencies.containsKey(command) && dependencies.get(command).containsKey(component)) {

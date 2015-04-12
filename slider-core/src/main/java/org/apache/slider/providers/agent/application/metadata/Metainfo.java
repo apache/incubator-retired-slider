@@ -31,6 +31,7 @@ public class Metainfo {
   public static String VERSION_TWO_ONE = "2.1";
 
   String schemaVersion;
+  ApplicationPackage applicationPackage;
   Application application;
 
   public String getSchemaVersion() {
@@ -39,6 +40,14 @@ public class Metainfo {
 
   public void setSchemaVersion(String schemaVersion) {
     this.schemaVersion = schemaVersion;
+  }
+
+  public ApplicationPackage getApplicationPackage() {
+    return applicationPackage;
+  }
+
+  public void setApplicationPackage(ApplicationPackage pkg) {
+    this.applicationPackage = pkg;
   }
 
   public Application getApplication() {
@@ -69,11 +78,29 @@ public class Metainfo {
     }
 
     application.validate(schemaVersion);
+    if(applicationPackage != null){
+      applicationPackage.validate(schemaVersion);
+    }
   }
 
   public static void checkNonNull(String value, String field, String type) throws SliderException {
     if (SliderUtils.isUnset(value)) {
       throw new SliderException(type + "." + field + " cannot be null");
     }
+  }
+
+  @Override
+  public String toString() {
+
+    String result =  "Metainfo [schemaVersion=" + schemaVersion;
+    if(applicationPackage != null){
+      result += ", pkg=" + applicationPackage.toString();
+    }
+    if(application != null){
+      result += ", application=" + application.toString();
+    }
+    return result;
+    //return "Metainfo [schemaVersion=" + schemaVersion + ", pkg=" + pkg==null? "" : pkg.toString()
+     //   + ", application=" + application==null? "" : application.toString() + "]";
   }
 }

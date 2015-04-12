@@ -98,6 +98,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.easymock.EasyMock.anyBoolean;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
@@ -303,7 +304,7 @@ public class TestAgentProviderService {
     doReturn(access).when(mockAps).getAmState();
     CommandScript cs = new CommandScript();
     cs.setScript("scripts/hbase_master.py");
-    doReturn(cs).when(mockAps).getScriptPathFromMetainfo(anyString());
+    doReturn(cs).when(mockAps).getScriptPathForMasterPackage(anyString());
     Metainfo metainfo = new Metainfo();
     metainfo.setApplication(new Application());
 
@@ -311,7 +312,8 @@ public class TestAgentProviderService {
     hm.setName("HBASE_MASTER");
     metainfo.getApplication().addComponent(hm);
 
-    doReturn(metainfo).when(mockAps).getApplicationMetainfo(any(SliderFileSystem.class), anyString());
+    doReturn(metainfo).when(mockAps).getApplicationMetainfo(
+        any(SliderFileSystem.class), Matchers.anyString(), Matchers.anyBoolean());
 
     Configuration conf = new Configuration();
     conf.set(RegistryConstants.KEY_REGISTRY_ZK_ROOT,
@@ -325,7 +327,8 @@ public class TestAgentProviderService {
           any(HeartBeatResponse.class),
           eq("scripts/hbase_master.py"),
           eq((ComponentCommand)null),
-          eq(600L));
+          eq(600L),
+          anyString());
       doReturn(conf).when(mockAps).getConfig();
     } catch (SliderException e) {
     }
@@ -456,7 +459,7 @@ public class TestAgentProviderService {
     CommandScript cs = new CommandScript();
     cs.setScript("scripts/hbase_master.py");
     doReturn(cs).when(mockAps)
-        .getScriptPathFromMetainfo(anyString());
+        .getScriptPathForMasterPackage(anyString());
     Metainfo metainfo = new Metainfo();
     Application application = new Application();
     metainfo.setApplication(application);
@@ -471,7 +474,7 @@ public class TestAgentProviderService {
       doNothing().when(mockAps).addInstallCommand(eq("HBASE_MASTER"),
           eq("mockcontainer_1"), any(HeartBeatResponse.class),
           eq("scripts/hbase_master.py"), eq((ComponentCommand)null),
-          eq(600L));
+          eq(600L), anyString());
       doReturn(conf).when(mockAps).getConfig();
     } catch (SliderException e) {
     }
@@ -562,7 +565,8 @@ public class TestAgentProviderService {
           any(HeartBeatResponse.class),
           anyString(),
           eq((ComponentCommand)null),
-          Mockito.anyLong());
+          Mockito.anyLong(),
+          anyString());
       doReturn(conf).when(mockAps).getConfig();
     } catch (SliderException e) {
     }
@@ -631,7 +635,8 @@ public class TestAgentProviderService {
                                                                   any(HeartBeatResponse.class),
                                                                   anyString(),
                                                                   eq((ComponentCommand)null),
-                                                                  Mockito.anyLong());
+                                                                  Mockito.anyLong(),
+                                                                  null);
     } catch (SliderException he) {
       log.warn(he.getMessage());
     } catch (IOException he) {
@@ -651,6 +656,8 @@ public class TestAgentProviderService {
     application.addComponent(hbaseMaster);
     metainfo.setApplication(application);
     doReturn(metainfo).when(mockAps).getMetaInfo();
+    doReturn(metainfo).when(mockAps).getApplicationMetainfo(
+        any(SliderFileSystem.class), Matchers.anyString(), Matchers.anyBoolean());
 
     Register reg = new Register();
     reg.setResponseId(0);
@@ -717,7 +724,7 @@ public class TestAgentProviderService {
     application.addComponent(hbaseMaster);
     metainfo.setApplication(application);
     doReturn(metainfo).when(mockAps).getApplicationMetainfo(
-        any(SliderFileSystem.class), anyString());
+        any(SliderFileSystem.class), Matchers.anyString(), Matchers.anyBoolean());
     doReturn(metainfo).when(mockAps).getMetaInfo();
     doNothing().when(mockAps).addRoleRelatedTokens(anyMap());
 
@@ -732,7 +739,7 @@ public class TestAgentProviderService {
     reg.setActualState(State.INSTALLED);
 
     mockAps.initializeApplicationConfiguration(instanceDefinition,
-        null);
+                                               null);
 
     RegistrationResponse resp = mockAps.handleRegistration(reg);
     Assert.assertEquals(0, resp.getResponseId());
@@ -1130,7 +1137,7 @@ public class TestAgentProviderService {
     AgentProviderService aps = createAgentProviderService(new Configuration());
     AgentProviderService mockAps = Mockito.spy(aps);
     doReturn(metainfo).when(mockAps).getMetaInfo();
-    CommandScript script = mockAps.getScriptPathFromMetainfo("HBASE_MASTER");
+    CommandScript script = mockAps.getScriptPathForMasterPackage("HBASE_MASTER");
     Assert.assertEquals(script.getScript(), "scripts/hbase_master.py");
 
     String metainfo_1_str_bad = "<metainfo>\n"
@@ -1222,7 +1229,8 @@ public class TestAgentProviderService {
 
     AgentProviderService mockAps = Mockito.spy(aps);
     doReturn(access).when(mockAps).getAmState();
-    doReturn(metainfo).when(mockAps).getApplicationMetainfo(any(SliderFileSystem.class), anyString());
+    doReturn(metainfo).when(mockAps).getApplicationMetainfo(any(
+        SliderFileSystem.class), Matchers.anyString(), Matchers.anyBoolean());
     doReturn(new HashMap<String, DefaultConfig>()).when(mockAps).
         initializeDefaultConfigs(any(SliderFileSystem.class), anyString(), any(Metainfo.class));
 
@@ -1235,7 +1243,8 @@ public class TestAgentProviderService {
           any(HeartBeatResponse.class),
           anyString(),
           eq((ComponentCommand)null),
-          Mockito.anyLong());
+          Mockito.anyLong(),
+          anyString());
       doNothing().when(mockAps).addStartCommand(
           anyString(),
           anyString(),
@@ -1324,7 +1333,8 @@ public class TestAgentProviderService {
                                                                   any(HeartBeatResponse.class),
                                                                   anyString(),
                                                                   eq((ComponentCommand)null),
-                                                                  Mockito.anyLong());
+                                                                  Mockito.anyLong(),
+                                                                  anyString());
 
       hb = new HeartBeat();
       hb.setResponseId(1);
@@ -1336,7 +1346,8 @@ public class TestAgentProviderService {
                                                                   any(HeartBeatResponse.class),
                                                                   anyString(),
                                                                   eq((ComponentCommand)null),
-                                                                  Mockito.anyLong());
+                                                                  Mockito.anyLong(),
+                                                                  anyString());
       // RS succeeds install but does not start
       hb = new HeartBeat();
       hb.setResponseId(2);
@@ -1603,7 +1614,7 @@ public class TestAgentProviderService {
 
     replay(access);
 
-    mockAps.addInstallCommand("HBASE_MASTER", "cid1", hbr, "", null, 0);
+    mockAps.addInstallCommand("HBASE_MASTER", "cid1", hbr, "", null, 0, null);
     ExecutionCommand cmd = hbr.getExecutionCommands().get(0);
     String pkgs = cmd.getHostLevelParams().get(AgentKeys.PACKAGE_LIST);
     Assert.assertEquals("[{\"type\":\"tarball\",\"name\":\"files/hbase-0.96.1-hadoop2-bin.tar.gz\"}]", pkgs);

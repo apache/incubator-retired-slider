@@ -94,7 +94,17 @@ class CustomServiceOrchestrator():
       if script_type.upper() == self.SCRIPT_TYPE_PYTHON:
         script = command['commandParams']['script']
         timeout = int(command['commandParams']['command_timeout'])
-        script_path = self.resolve_script_path(self.base_dir, script, script_type)
+        script_path = ''
+        if 'package' in command:
+            add_on_dir_str = self.config.getWorkRootPath() + "/" + AgentConfig.ADDON_PKG_ROOT_DIR + "/application.addon." + command['package']
+            add_on_base_dir = os.path.realpath(posixpath.join(add_on_dir_str, "package"))
+            logger.info("add on: " + command['package'] + " add on base dir is: " + str(add_on_base_dir))
+            script_path = self.resolve_script_path(add_on_base_dir, script, script_type)
+            
+        else:
+            self.base_dir = os.path.realpath(posixpath.join(self.config.getResolvedPath(AgentConfig.APP_PACKAGE_DIR), "package"))
+            logger.info("base dir is: " + str(self.base_dir))
+            script_path = self.resolve_script_path(self.base_dir, script, script_type)
         script_tuple = (script_path, self.base_dir)
         py_file_list = [script_tuple]
 

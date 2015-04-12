@@ -30,6 +30,7 @@ public class Register {
   private int responseId = -1;
   private long timestamp;
   private String label;
+  private String pkg;
   private int currentPingPort;
   private HostInfo hardwareProfile;
   private String publicHostname;
@@ -168,5 +169,13 @@ public class Register {
       ret = ret + "hardwareprofile=" + this.hardwareProfile.toString();
     }
     return ret;
+  }
+
+  public String getPkg() {
+    return pkg;
+  }
+
+  public void setPkg(String pkg) {
+    this.pkg = pkg;
   }
 }

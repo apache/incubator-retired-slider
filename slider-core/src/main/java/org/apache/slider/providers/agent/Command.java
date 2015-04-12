@@ -22,6 +22,7 @@ package org.apache.slider.providers.agent;
 public enum Command {
   NOP,      // do nothing
   INSTALL,  // Install the component
+  INSTALL_ADDON, //Install add on packages if any
   START,    // Start the component
   STOP,     // Stop the component
   UPGRADE,  // The component will undergo upgrade
