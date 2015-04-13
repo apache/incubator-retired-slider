@@ -72,12 +72,13 @@ public class Metainfo {
   }
 
   public void validate() throws SliderException {
-    if (!VERSION_TWO_ONE.equals(schemaVersion) ||
+    if (!VERSION_TWO_ONE.equals(schemaVersion) &&
         !VERSION_TWO_ZERO.equals(schemaVersion)) {
       throw new SliderException("Unsupported version " + getSchemaVersion());
     }
-
-    application.validate(schemaVersion);
+    if(application != null){
+      application.validate(schemaVersion);
+    }
     if(applicationPackage != null){
       applicationPackage.validate(schemaVersion);
     }

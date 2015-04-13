@@ -303,11 +303,10 @@ public class AgentProviderService extends AbstractProviderService implements
               Metainfo addonMetaInfo = getApplicationMetainfo(fileSystem,
                   addonAppDefPath, true);
               addonMetaInfo.validate();
-              log.debug("this addon pkg metainfo: {}", addonMetaInfo.toString());
               packageMetainfo.put(addonMetaInfo.getApplicationPackage()
                   .getName(), addonMetaInfo);
             }
-            log.debug("metainfo map for master and addon is: {}",
+            log.info("metainfo map for master and addon is: {}",
                 packageMetainfo.toString());
           }
         }
@@ -873,7 +872,9 @@ public class AgentProviderService extends AbstractProviderService implements
     }
     
     Command command = componentStatus.getNextCommand(doUpgrade);
-    log.debug("for comp " + roleName + " pkg " + componentStatus.getNextPkgToInstall() + " issuing " + command.toString());
+    log.info("for comp " + roleName + " pkg "
+        + componentStatus.getNextPkgToInstall() + " issuing "
+        + command.toString());
 
     try {
       if (Command.NOP != command) {
@@ -1200,13 +1201,14 @@ public class AgentProviderService extends AbstractProviderService implements
 
   @VisibleForTesting
   protected Metainfo getApplicationMetainfo(SliderFileSystem fileSystem,
-                                            String appDef, boolean addonPackage) throws IOException, BadConfigException {
+      String appDef, boolean addonPackage) throws IOException,
+      BadConfigException {
     return AgentUtils.getApplicationMetainfo(fileSystem, appDef, addonPackage);
   }
 
   @VisibleForTesting
   protected Metainfo getApplicationMetainfo(SliderFileSystem fileSystem,
-                                            String appDef) throws IOException, BadConfigException {
+      String appDef) throws IOException, BadConfigException {
     return AgentUtils.getApplicationMetainfo(fileSystem, appDef, false);
   }
 
@@ -1819,7 +1821,10 @@ public class AgentProviderService extends AbstractProviderService implements
    * @param containerId
    * @param response
    * @param scriptPath
-   * @param pkg TODO
+   * @param pkg
+   *          - when this field is null, it indicates the command is for the
+   *          master package; while not null, for the package named by this
+   *          field
    * @throws SliderException
    */
   @VisibleForTesting

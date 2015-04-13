@@ -22,7 +22,7 @@ import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.providers.agent.application.metadata.AbstractMetainfoParser;
-import org.apache.slider.providers.agent.application.metadata.AddoPackageMetainfoParser;
+import org.apache.slider.providers.agent.application.metadata.AddonPackageMetainfoParser;
 import org.apache.slider.providers.agent.application.metadata.DefaultConfig;
 import org.apache.slider.providers.agent.application.metadata.DefaultConfigParser;
 import org.apache.slider.providers.agent.application.metadata.Metainfo;
@@ -49,7 +49,7 @@ public class AgentUtils {
     Metainfo metainfo = null;
     AbstractMetainfoParser metainfoParser = null;
     if(metainfoForAddon){
-      metainfoParser = new AddoPackageMetainfoParser();
+      metainfoParser = new AddonPackageMetainfoParser();
     } else {
       metainfoParser = new MetainfoParser();
     }

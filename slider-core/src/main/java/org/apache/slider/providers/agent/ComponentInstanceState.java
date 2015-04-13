@@ -128,10 +128,10 @@ public class ComponentInstanceState {
     if (expected == Command.INSTALL_ADDON){
       //for add on packages. the pkg must be nextPkgToInstall
       State currentState = pkgStatuses.get(nextPkgToInstall);
-      log.debug("commandissued: component: {} is in {}", componentName, currentState);
+      log.debug("command issued: component: {} is in {}", componentName, currentState);
       State nextState = currentState.getNextState(command);
       pkgStatuses.put(nextPkgToInstall, nextState);
-      log.debug("commandissued: component: {} is now in {}", componentName, nextState);
+      log.debug("command issued: component: {} is now in {}", componentName, nextState);
     } else {
       //for master package
       state = state.getNextState(command);
@@ -142,8 +142,7 @@ public class ComponentInstanceState {
     // if the heartbeat is for a package 
     // update that package's state in the component status
     // and don't bother with the master pkg
-    if (pkg != null && !pkg.isEmpty()
-        && !pkg.equals(Component.MASTER_PACKAGE_NAME)) {
+    if (pkg != null && !pkg.isEmpty() && !pkg.equals(Component.MASTER_PACKAGE_NAME)) {
       log.debug("this result is for component: {} pkg: {}", componentName, pkg);
       State previousPkgState = pkgStatuses.get(pkg);
       log.debug("currently component: {} pkg: {} is in state: {}", componentName, pkg, previousPkgState.toString());
@@ -152,24 +151,7 @@ public class ComponentInstanceState {
       log.debug("component: {} pkg: {} next state: {}", componentName, pkg, nextPkgState);
     } else {
       log.debug("this result is for component: {} master package", componentName);
-      if (!this.state.couldHaveIssued(command)) {
-        throw new IllegalStateException("Invalid command " + command + " for state " + this.state);
-      }
-
-      try {
-        if (result == CommandResult.FAILED) {
-          failuresSeen++;
-        } else if (result == CommandResult.COMPLETED) {
-          failuresSeen = 0;
-        }
-        state = state.getNextState(result);
-      } catch (IllegalArgumentException e) {
-        String message = String.format(INVALID_TRANSITION_ERROR,
-            result.toString(), command.toString(), componentName,
-            state.toString());
-        log.warn(message);
-        throw new IllegalStateException(message);
-      }
+      applyCommandResult(result, command);
     }
   }
 
@@ -215,29 +197,34 @@ public class ComponentInstanceState {
       return Command.NOP;
     }
 
-    log.debug("start checking for component: {} ", componentName);
+    log.debug("in getNextCommand, checking for component: {} ", componentName);
     // if the master pkg is just installed, check if any add on pkg need to be
     // installed
+    nextPkgToInstall = null;
     if (state == State.INSTALLED) {
-      // first check if any pkg is install in progress, if so, wait
       for (String pkg : pkgStatuses.keySet()) {
         State pkgState = pkgStatuses.get(pkg);
         log.debug("in getNextCommand, pkg: {} is in {}", pkg, pkgState);
         if (pkgState == State.INSTALLING) {
+          // first check if any pkg is install in progress, if so, wait
+          // so we don't need to do anything, just return NOP
           log.debug("in getNextCommand, pkg: {} we are issuing NOP", pkg);
           nextPkgToInstall = pkg;
           return Command.NOP;
+        } else if (pkgState == State.INIT) {
+          //temporarily storing pkg here
+          //in case no pkg in 'installing' state
+          //will return the package to install
+          nextPkgToInstall = pkg;
         }
       }
-      // then check if any pkg is in init, if so, install it
-      for (String pkg : pkgStatuses.keySet()) {
-        State pkgState = pkgStatuses.get(pkg);
-        log.debug("in getNextCommand, pkg: {} is in {}", pkg, pkgState);
-        if (pkgState == State.INIT) {
-          log.debug("in getNextCommand, pkg: {} we are issuing install addon", pkg);
-          nextPkgToInstall = pkg;
-          return Command.INSTALL_ADDON;
-        }
+      // when we reach here, no pkg is in 'installing' state
+      if (nextPkgToInstall != null) {
+        // nextPkgToInstall != null means some pkg is in INIT state 
+        // issue 'install' to the pkg we have stored in nextPkgToInstall
+        log.debug("in getNextCommand, pkg: {} we are issuing install addon",
+            nextPkgToInstall);
+        return Command.INSTALL_ADDON;
       }
     }
     nextPkgToInstall = null;
