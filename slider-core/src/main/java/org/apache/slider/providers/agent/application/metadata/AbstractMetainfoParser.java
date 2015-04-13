@@ -31,7 +31,8 @@ import java.io.InputStream;
 import java.io.StringWriter;
 
 /**
- *
+ * This abstract class provide common functionality to parse metainfo.json for
+ * either master package or add on packages.
  */
 public abstract class AbstractMetainfoParser {
   protected final GsonBuilder gsonBuilder = new GsonBuilder();
@@ -112,6 +113,15 @@ public abstract class AbstractMetainfoParser {
 
     return null;
   }
-  
+
+  /**
+   * Compose the schema for the metainfo
+   *
+   * @param Digester - The Digester object we passed in to compose the schema
+   *
+   * @return
+   *
+   * @throws IOException
+   */
   abstract protected void composeSchema(Digester digester);
 }
