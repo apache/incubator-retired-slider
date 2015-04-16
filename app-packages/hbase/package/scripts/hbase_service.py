@@ -37,50 +37,50 @@ def hbase_service(
       daemon_cmd = format("env HBASE_IDENT_STRING={hbase_user} {cmd} start {role}")
       if name == 'rest':
         infoport = ""
-        if not rest_infoport == "":
-          infoport = " --infoport {rest_infoport}"
+        if not params.rest_infoport == "":
+          infoport = " --infoport {params.rest_infoport}"
         readonly = ""
-        if not rest_readonly == "":
+        if not params.rest_readonly == "":
           readonly = " --readonly"
         daemon_cmd = format("{daemon_cmd} -p {rest_port}" + infoport + readonly)
       elif name == 'thrift':
         queue = ""
-        if not thrift_queue == "":
-          queue = " -q {thrift_queue}"
+        if not params.thrift_queue == "":
+          queue = " -q {params.thrift_queue}"
         workers = ""
-        if not thrift_workers == "":
-          workers = " -w {thrift_workers}"
+        if not params.thrift_workers == "":
+          workers = " -w {params.thrift_workers}"
         compact = ""
-        if not thrift_compact == "":
+        if not params.thrift_compact == "":
           compact = " -c"
         framed = ""
-        if not thrift_framed == "":
+        if not params.thrift_framed == "":
           framed = " -f"
         infoport = ""
-        if not thrift_infoport == "":
-          infoport = " --infoport {thrift_infoport}"
+        if not params.thrift_infoport == "":
+          infoport = " --infoport {params.thrift_infoport}"
         keepalive_sec = ""
-        if not thrift_keepalive_sec == "":
-          keepalive_sec = " --keepAliveSec {thrift_keepalive_sec}"
+        if not params.thrift_keepalive_sec == "":
+          keepalive_sec = " --keepAliveSec {params.thrift_keepalive_sec}"
         minWorkers = ""
-        if not thrift_minWorkers == "":
-          minWorkers = " --minWorkers {thrift_minWorkers}"
+        if not params.thrift_minWorkers == "":
+          minWorkers = " --minWorkers {params.thrift_minWorkers}"
         nonblocking = ""
-        if not thrift_nonblocking == "":
+        if not params.thrift_nonblocking == "":
           nonblocking = " -nonblocking"
         daemon_cmd = format("{daemon_cmd} -p {thrift_port}" + queue + workers + compact + framed + infoport + keepalive_sec + minWorkers + nonblocking)
       elif name == 'thrift2':
         compact = ""
-        if not thrift2_compact == "":
+        if not params.thrift2_compact == "":
           compact = " -c"
         framed = ""
-        if not thrift2_framed == "":
+        if not params.thrift2_framed == "":
           framed = " -f"
         infoport = ""
-        if not thrift2_infoport == "":
-          infoport = " --infoport {thrift2_infoport}"
+        if not params.thrift2_infoport == "":
+          infoport = " --infoport {params.thrift2_infoport}"
         nonblocking = ""
-        if not thrift2_nonblocking == "":
+        if not params.thrift2_nonblocking == "":
           nonblocking = " -nonblocking"
         daemon_cmd = format("{daemon_cmd} -p {thrift2_port}" + compact + framed + infoport + nonblocking)
       no_op_test = format("ls {pid_file} >/dev/null 2>&1 && ps `cat {pid_file}` >/dev/null 2>&1")
