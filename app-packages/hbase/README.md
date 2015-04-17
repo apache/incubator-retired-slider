@@ -43,7 +43,7 @@ Command:
 
 Example:
 
-    mvn clean package -Phbase-app-package -Dpkg.version=0.98.5-hadoop2
+    mvn clean package -Phbase-app-package -Dhbase.version=0.98.5-hadoop2
       -Dhbase.version=hbase-0.98.5-hadoop2.tar.gz
       -Dpkg.src=/Users/user1/Downloads/0.98.5-hadoop2
 
@@ -62,6 +62,8 @@ Note for Phoenix user:
 If you want Phoenix to be deployed, you should repackage HBase tarball such that phoenix-server.jar is contained in the lib directory of the tarball.
 e.g. for hbase-0.98.4.2.2.0.0-1799-hadoop2.tar.gz, phoenix-server.jar should be copied to:
  hbase-0.98.4.2.2.0.0-1799-hadoop2/lib
+
+For Phoenix 4.4 and above, you need to specify "org.apache.hadoop.hbase.ipc.PhoenixRpcSchedulerFactory" for "site.hbase-site.hbase.region.server.rpc.scheduler.factory.class". Also add "org.apache.hadoop.hbase.ipc.controller.ServerRpcControllerFactory" for "site.hbase-site.hbase.rpc.controllerfactory.class"
 
 The version of HBase used for the app package can be adjusted by adding a
 flag such as
