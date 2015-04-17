@@ -20,13 +20,13 @@ package org.apache.slider.providers.agent;
 
 /** The states a component instance can be. */
 public enum Command {
-  NOP,      // do nothing
-  INSTALL,  // Install the component
-  INSTALL_ADDON, //Install add on packages if any
-  START,    // Start the component
-  STOP,     // Stop the component
-  UPGRADE,  // The component will undergo upgrade
-  TERMINATE;// Send terminate signal to agent
+  NOP,           // do nothing
+  INSTALL,       // Install the component
+  INSTALL_ADDON, // Install add on packages if any
+  START,         // Start the component
+  STOP,          // Stop the component
+  UPGRADE,       // The component will undergo upgrade
+  TERMINATE;     // Send terminate signal to agent
 
   public static Command getCommand(String commandVal) {
     if (commandVal.equals(Command.START.toString())) {

@@ -20,7 +20,6 @@ package org.apache.slider.providers.agent;
 import com.google.common.annotations.VisibleForTesting;
 
 import org.apache.hadoop.yarn.api.records.ContainerId;
-import org.apache.slider.providers.agent.application.metadata.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

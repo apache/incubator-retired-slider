@@ -80,7 +80,7 @@ public class AppDefinitionPersister {
 
     File src = appDefinition.appDefPkgOrFolder;
     String targetName = appDefinition.pkgName;
-    log.debug("first targetName: " + targetName);
+    log.debug("Package name: " + targetName);
     if (appDefinition.appDefPkgOrFolder.isDirectory()) {
       log.info("Processing app package/folder {} for {}",
                appDefinition.appDefPkgOrFolder.getAbsolutePath(),
@@ -88,12 +88,9 @@ public class AppDefinitionPersister {
       File tmpDir = Files.createTempDir();
       File zipFile = new File(tmpDir.getCanonicalPath(), File.separator + appDefinition.pkgName);
       SliderUtils.zipFolder(appDefinition.appDefPkgOrFolder, zipFile);
-
       src = zipFile;
-      targetName = appDefinition.pkgName;
     }
-    log.debug("final targetName: " + targetName);
-    
+
     sliderFileSystem.getFileSystem().copyFromLocalFile(
         false,
         false,
@@ -174,13 +171,11 @@ public class AppDefinitionPersister {
 
         Path addonPath = sliderFileSystem.buildAddonDirPath(clustername, key);
         String addonPkgName = "addon_" + key + ".zip";
-        
-        log.debug("addonMap.get(key): " + addonMap.get(key)
-            + " addonPath: " + addonPath
-            + " defPath: " + defPath
-            + " addonPkgName: " + addonPkgName);
-        
-        //String addonPkgName = key + ".zip";
+
+        log.debug(
+            "addonMap.get(key): {} addonPath: {} defPath: {} addonPkgName: {}",
+            addonMap.get(key), addonPath, defPath, addonPkgName);
+
         appDefinitions.add(new AppDefinition(addonPath, defPath, addonPkgName));
         String addOnKey = AgentKeys.ADDON_PREFIX + key;
         Path addonPkgPath = new Path(addonPath, addonPkgName);

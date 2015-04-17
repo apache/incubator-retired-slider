@@ -269,7 +269,6 @@ public class AgentProviderService extends AbstractProviderService implements
     String appDef = SliderUtils.getApplicationDefinitionPath(instanceDefinition
         .getAppConfOperations());
 
-
     if (metaInfo == null) {
       synchronized (syncLock) {
         if (metaInfo == null) {
@@ -277,7 +276,7 @@ public class AgentProviderService extends AbstractProviderService implements
           initializeAgentDebugCommands(instanceDefinition);
 
           metaInfo = getApplicationMetainfo(fileSystem, appDef, false);
-          log.info("master package metainfo: {}", metaInfo.toString());
+          log.info("Master package metainfo: {}", metaInfo.toString());
           if (metaInfo == null || metaInfo.getApplication() == null) {
             log.error("metainfo.xml is unavailable or malformed at {}.", appDef);
             throw new SliderException(
@@ -287,18 +286,18 @@ public class AgentProviderService extends AbstractProviderService implements
           defaultConfigs = initializeDefaultConfigs(fileSystem, appDef, metaInfo);
           monitor = new HeartbeatMonitor(this, getHeartbeatMonitorInterval());
           monitor.start();
-          
-          //build a map from component to metainfo
+
+          // build a map from component to metainfo
           String addonAppDefString = instanceDefinition.getAppConfOperations()
               .getGlobalOptions().getOption(AgentKeys.ADDONS, null);
-          log.debug("all addon appdef are: {}", addonAppDefString);
+          log.debug("All addon appdefs: {}", addonAppDefString);
           if (addonAppDefString != null) {
             Scanner scanner = new Scanner(addonAppDefString).useDelimiter(",");
             while (scanner.hasNext()) {
               String addonAppDef = scanner.next();
               String addonAppDefPath = instanceDefinition
                   .getAppConfOperations().getGlobalOptions().get(addonAppDef);
-              log.debug("this addon package {} is stored at: {}", addonAppDef
+              log.debug("Addon package {} is stored at: {}", addonAppDef
                   + addonAppDefPath);
               Metainfo addonMetaInfo = getApplicationMetainfo(fileSystem,
                   addonAppDefPath, true);
@@ -306,7 +305,7 @@ public class AgentProviderService extends AbstractProviderService implements
               packageMetainfo.put(addonMetaInfo.getApplicationPackage()
                   .getName(), addonMetaInfo);
             }
-            log.info("metainfo map for master and addon is: {}",
+            log.info("Metainfo map for master and addon: {}",
                 packageMetainfo.toString());
           }
         }
@@ -482,47 +481,53 @@ public class AgentProviderService extends AbstractProviderService implements
 
     launcher.addCommand(operation.build());
 
-    //localize addon package
+    // localize addon package
     String addonAppDefString = instanceDefinition.getAppConfOperations()
         .getGlobalOptions().getOption(AgentKeys.ADDONS, null);
-    log.debug("all addon appdef are: {}", addonAppDefString);
+    log.debug("All addon appdefs: {}", addonAppDefString);
     if (addonAppDefString != null) {
       Scanner scanner = new Scanner(addonAppDefString).useDelimiter(",");
       while (scanner.hasNext()) {
         String addonAppDef = scanner.next();
         String addonAppDefPath = instanceDefinition
             .getAppConfOperations().getGlobalOptions().get(addonAppDef);
-        log.debug("this addon package {} is stored at: {}", addonAppDef, addonAppDefPath);
+        log.debug("Addon package {} is stored at: {}", addonAppDef, addonAppDefPath);
         LocalResource addonPkgRes = fileSystem.createAmResource(
             fileSystem.getFileSystem().resolvePath(new Path(addonAppDefPath)),
             LocalResourceType.ARCHIVE);
         launcher.addLocalResource(AgentKeys.ADDON_DEFINITION_DIR + "/" + addonAppDef, addonPkgRes);
       }
-      log.debug("metainfo map for master and addon is: {}",
+      log.debug("Metainfo map for master and addon: {}",
           packageMetainfo.toString());
     }    
 
-    //initialize addon pkg states for all componentInstanceStatus
-    TreeMap<String, State> pkgStatuses = new TreeMap<String, State>();
-    for(Metainfo appPkg : packageMetainfo.values()){
-      //check each component of that addon to see if they apply to this component 'role'
-      for(ComponentsInAddonPackage comp : appPkg.getApplicationPackage().getComponents()){
-        log.debug("current component: {} component in metainfo {}", role, comp.getName());
-        if(comp.getName().equals(role) || comp.getName().equals(AgentKeys.ADDON_FOR_ALL_COMPONENTS)){
+    // initialize addon pkg states for all componentInstanceStatus
+    Map<String, State> pkgStatuses = new TreeMap<>();
+    for (Metainfo appPkg : packageMetainfo.values()) {
+      // check each component of that addon to see if they apply to this
+      // component 'role'
+      for (ComponentsInAddonPackage comp : appPkg.getApplicationPackage()
+          .getComponents()) {
+        log.debug("Current component: {} component in metainfo: {}", role,
+            comp.getName());
+        if (comp.getName().equals(role)
+            || comp.getName().equals(AgentKeys.ADDON_FOR_ALL_COMPONENTS)) {
           pkgStatuses.put(appPkg.getApplicationPackage().getName(), State.INIT);
         }
       }
     }
-    log.debug("for component: {} pkg status map: {}", role, pkgStatuses.toString());
+    log.debug("For component: {} pkg status map: {}", role,
+        pkgStatuses.toString());
     
     // initialize the component instance state
     getComponentStatuses().put(label,
                                new ComponentInstanceState(
                                    role,
                                    container.getId(),
-                                   getClusterInfoPropertyValue(OptionKeys.APPLICATION_NAME), pkgStatuses));
+                                   getClusterInfoPropertyValue(OptionKeys.APPLICATION_NAME),
+                                   pkgStatuses));
   }
-  
+
   private void localizeContainerSecurityStores(ContainerLauncher launcher,
                                                Container container,
                                                String role,
@@ -727,8 +732,8 @@ public class AgentProviderService extends AbstractProviderService implements
     String pkg = registration.getPkg();
     State agentState = registration.getActualState();
 
-    log.info("label: " + label + " pkg: " + pkg);
-    
+    log.info("label: {} pkg: {}", label, pkg);
+
     if (getComponentStatuses().containsKey(label)) {
       response.setResponseStatus(RegistrationStatus.OK);
       ComponentInstanceState componentStatus = getComponentStatuses().get(label);
@@ -850,13 +855,12 @@ public class AgentProviderService extends AbstractProviderService implements
         processAllocatedPorts(heartBeat.getFqdn(), roleName, containerId, ports);
       }
       result = CommandResult.getCommandResult(report.getStatus());
-
       Command command = Command.getCommand(report.getRoleCommand());
-
       componentStatus.applyCommandResult(result, command, pkg);
-      log.info("Component operation. Status: {}; new container state: {}",
-                    result, componentStatus.getContainerState());
-      
+      log.info("Component operation. Status: {}; new container state: {};"
+          + " new component state: {}", result,
+          componentStatus.getContainerState(), componentStatus.getState());
+
       if (command == Command.INSTALL && SliderUtils.isNotEmpty(report.getFolders())) {
         publishFolderPaths(report.getFolders(), containerId, roleName, heartBeat.getFqdn());
       }
@@ -870,19 +874,17 @@ public class AgentProviderService extends AbstractProviderService implements
       getComponentStatuses().put(label, componentStatus);
       return response;
     }
-    
-    Command command = componentStatus.getNextCommand(doUpgrade);
-    log.info("for comp " + roleName + " pkg "
-        + componentStatus.getNextPkgToInstall() + " issuing "
-        + command.toString());
 
+    Command command = componentStatus.getNextCommand(doUpgrade);
     try {
       if (Command.NOP != command) {
-        
+        log.debug("For comp {} pkg {} issuing {}", roleName,
+            componentStatus.getNextPkgToInstall(), command.toString());
         if (command == Command.INSTALL) {
           log.info("Installing {} on {}.", roleName, containerId);
           if (scriptPath != null) {
-            addInstallCommand(roleName, containerId, response, scriptPath, null, timeout, null);
+            addInstallCommand(roleName, containerId, response, scriptPath,
+                null, timeout, null);
           } else {
             // commands
             ComponentCommand installCmd = null;
@@ -891,7 +893,8 @@ public class AgentProviderService extends AbstractProviderService implements
                 installCmd = compCmd;
               }
             }
-            addInstallCommand(roleName, containerId, response, null, installCmd, timeout, null);
+            addInstallCommand(roleName, containerId, response, null,
+                installCmd, timeout, null);
           }
           componentStatus.commandIssued(command);
         } else if (command == Command.INSTALL_ADDON) {
@@ -901,9 +904,8 @@ public class AgentProviderService extends AbstractProviderService implements
               .get(nextPkgToInstall).getApplicationPackage().getComponents()) {
             // given nextPkgToInstall and roleName is determined, the if below
             // should only execute once per heartbeat
-            log.debug("this component:" + comp.getName() + " this pkg:"
-                + nextPkgToInstall + " script: "
-                + comp.getCommandScript().getScript());
+            log.debug("Addon component: {} pkg: {} script: {}", comp.getName(),
+                nextPkgToInstall, comp.getCommandScript().getScript());
             if (comp.getName().equals(roleName)
                 || comp.getName().equals(AgentKeys.ADDON_FOR_ALL_COMPONENTS)) {
               scriptPath = comp.getCommandScript().getScript();
@@ -1209,7 +1211,7 @@ public class AgentProviderService extends AbstractProviderService implements
   @VisibleForTesting
   protected Metainfo getApplicationMetainfo(SliderFileSystem fileSystem,
       String appDef) throws IOException, BadConfigException {
-    return AgentUtils.getApplicationMetainfo(fileSystem, appDef, false);
+    return getApplicationMetainfo(fileSystem, appDef, false);
   }
 
   @VisibleForTesting
@@ -1822,7 +1824,7 @@ public class AgentProviderService extends AbstractProviderService implements
    * @param response
    * @param scriptPath
    * @param pkg
-   *          - when this field is null, it indicates the command is for the
+   *          when this field is null, it indicates the command is for the
    *          master package; while not null, for the package named by this
    *          field
    * @throws SliderException
@@ -1833,7 +1835,8 @@ public class AgentProviderService extends AbstractProviderService implements
                                    HeartBeatResponse response,
                                    String scriptPath,
                                    ComponentCommand compCmd,
-                                   long timeout, String pkg)
+                                   long timeout,
+                                   String pkg)
       throws SliderException {
     assert getAmState().isApplicationLive();
     ConfTreeOperations appConf = getAmState().getAppConfSnapshot();

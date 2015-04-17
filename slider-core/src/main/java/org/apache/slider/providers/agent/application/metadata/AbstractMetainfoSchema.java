@@ -16,9 +16,6 @@
  */
 package org.apache.slider.providers.agent.application.metadata;
 
-import org.apache.slider.common.tools.SliderUtils;
-import org.apache.slider.core.exceptions.BadCommandArgumentsException;
-import org.apache.slider.core.exceptions.SliderException;
 import org.codehaus.jackson.annotate.JsonProperty;
 
 import java.util.ArrayList;
@@ -32,7 +29,7 @@ public abstract class AbstractMetainfoSchema implements Validate {
   protected String comment;
   protected String version;
   protected List<ConfigFile> configFiles = new ArrayList<>();
-  
+
   public AbstractMetainfoSchema() {
   }
 

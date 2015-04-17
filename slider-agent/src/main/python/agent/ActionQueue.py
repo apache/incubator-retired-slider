@@ -67,7 +67,7 @@ class ActionQueue(threading.Thread):
     self.customServiceOrchestrator = CustomServiceOrchestrator(config,
                                                                controller,
                                                                self.queueOutAgentToggleLogger)
-    
+
 
   def stop(self):
     self._stop.set()
@@ -127,7 +127,7 @@ class ActionQueue(threading.Thread):
     else:
         self.componentPackage = ''
     
-    logger.info("package received: " + self.componentPackage + ";")
+    logger.info("Package received: " + self.componentPackage)
 
     message = "Executing command with id = {commandId} for role = {role} of " \
               "cluster {cluster}".format(
@@ -163,7 +163,7 @@ class ActionQueue(threading.Thread):
     if store_command:
       logger.info("Component has indicated auto-restart. Saving details from START command.")
     
-    logger.info("will run: " + str(command))
+    logger.info("Running command: " + str(command))
     
     # running command
     commandresult = self.customServiceOrchestrator.runCommand(command,

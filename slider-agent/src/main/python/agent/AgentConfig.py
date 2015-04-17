@@ -87,7 +87,6 @@ class AgentConfig:
 
   # the location of the app package
   APP_PACKAGE_DIR = "app_pkg_dir"
-  
   ADDON_PKG_ROOT_DIR = "addon/definition"
   # the location where the app component is installed
   APP_INSTALL_DIR = "app_install_dir"

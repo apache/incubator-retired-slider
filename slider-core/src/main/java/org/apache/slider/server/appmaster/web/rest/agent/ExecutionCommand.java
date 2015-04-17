@@ -40,7 +40,6 @@ public class ExecutionCommand {
   //TODO Remove hostname from being set in the command
   private String hostname;
   private String role;
-  private String pkg;
   private Map<String, String> hostLevelParams = new HashMap<String, String>();
   private Map<String, String> roleParams = null;
   private String roleCommand;
@@ -50,6 +49,7 @@ public class ExecutionCommand {
   private String serviceName;
   private String componentName;
   private String componentType;
+  private String pkg;
 
   public ExecutionCommand(AgentCommandType commandType) {
     this.commandType = commandType;
@@ -195,6 +195,16 @@ public class ExecutionCommand {
     this.componentName = componentName;
   }
 
+  @JsonProperty("package")
+  public String getPkg() {
+    return pkg;
+  }
+
+  @JsonProperty("package")
+  public void setPkg(String pkg) {
+    this.pkg = pkg;
+  }
+
   public Map<String, Map<String, String>> getComponentConfigurations() {
     return componentConfigurations;
   }
@@ -216,17 +226,9 @@ public class ExecutionCommand {
         .append(roleCommand).append(", configurations=").append(configurations)
         .append(", commandParams=").append(commandParams)
         .append(", serviceName=").append(serviceName)
-        .append(", componentName=").append(componentName).append("]");
+        .append(", componentName=").append(componentName)
+        .append(", componentType=").append(componentType).append(", pkg=")
+        .append(pkg).append("]");
     return builder.toString();
-  }
-
-  @JsonProperty("package")
-  public String getPkg() {
-    return pkg;
-  }
-
-  @JsonProperty("package")
-  public void setPkg(String pkg) {
-    this.pkg = pkg;
   }
 }

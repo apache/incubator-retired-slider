@@ -21,7 +21,6 @@ import com.google.gson.GsonBuilder;
 
 import org.apache.commons.digester.Digester;
 import org.apache.commons.io.IOUtils;
-import org.apache.slider.client.SliderClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -37,7 +36,8 @@ import java.io.StringWriter;
 public abstract class AbstractMetainfoParser {
   protected final GsonBuilder gsonBuilder = new GsonBuilder();
   protected final Gson gson;
-  private static final Logger log = LoggerFactory.getLogger(AbstractMetainfoParser.class);
+  private static final Logger log = LoggerFactory
+      .getLogger(AbstractMetainfoParser.class);
 
   public AbstractMetainfoParser() {
     gson = gsonBuilder.create();
@@ -84,7 +84,6 @@ public abstract class AbstractMetainfoParser {
     return fromJsonString(writer.toString());
   }
 
-
   /**
    * Parse metainfo from an XML formatted IOStream
    *
@@ -100,13 +99,15 @@ public abstract class AbstractMetainfoParser {
     digester.setValidating(false);
 
     composeSchema(digester);
-    
+
     try {
       return (Metainfo) digester.parse(metainfoStream);
     } catch (IOException e) {
-      log.debug("IOException in metainfoparser during fromXmlStream: " + e.getMessage());
+      log.debug("IOException in metainfoparser during fromXmlStream: "
+          + e.getMessage());
     } catch (SAXException e) {
-      log.debug("SAXException in metainfoparser during fromXmlStream: " + e.getMessage());
+      log.debug("SAXException in metainfoparser during fromXmlStream: "
+          + e.getMessage());
     } finally {
       metainfoStream.close();
     }

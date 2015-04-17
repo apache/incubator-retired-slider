@@ -190,5 +190,4 @@ public enum State {
     }
     return false;
   }
-  
 }

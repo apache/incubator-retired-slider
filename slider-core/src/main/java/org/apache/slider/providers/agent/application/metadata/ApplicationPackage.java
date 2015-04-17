@@ -28,16 +28,16 @@ public class ApplicationPackage extends AbstractMetainfoSchema{
     components.add(component);
   }
 
-  //we must override getcomponent() as well. otherwise it is pointing to the overriden components of type List<Componet>
+  // we must override getcomponent() as well. otherwise it is pointing to the
+  // overriden components of type List<Component>
   public List<ComponentsInAddonPackage> getComponents(){
     return this.components;
   }
 
   @Override
   public String toString() {
-    final StringBuilder sb =
-        new StringBuilder("{");
-    sb.append(",\n\"name\": ").append(name);
+    final StringBuilder sb = new StringBuilder("{");
+    sb.append("\n\"name\": ").append(name);
     sb.append(",\n\"comment\": ").append(comment);
     sb.append(",\n\"version\" :").append(version);
     sb.append(",\n\"components\" : {");
@@ -51,17 +51,19 @@ public class ApplicationPackage extends AbstractMetainfoSchema{
 
   @Override
   public void validate(String version) throws SliderException {
-    if(name == null || name.isEmpty()){
-      throw new SliderException("Missing name in metainfo.json for add on packages");
+    if (name == null || name.isEmpty()) {
+      throw new SliderException(
+          "Missing name in metainfo.json for add on packages");
     }
-    if(components.isEmpty()){
-      throw new SliderException("Missing components in metainfo.json for add on packages");
+    if (components.isEmpty()) {
+      throw new SliderException(
+          "Missing components in metainfo.json for add on packages");
     }
     for (ComponentsInAddonPackage component : components) {
-      if(component.name == null || component.name.isEmpty()){
-        throw new SliderException("Missing name of components in metainfo.json for add on packages");
+      if (component.name == null || component.name.isEmpty()) {
+        throw new SliderException(
+            "Missing name of components in metainfo.json for add on packages");
       }
     }
   }
-
 }

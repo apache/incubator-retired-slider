@@ -18,10 +18,12 @@
 
 package org.apache.slider.providers.agent;
 
+import java.util.Map;
 import java.util.TreeMap;
 
 import com.google.common.annotations.VisibleForTesting;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.slider.providers.agent.application.metadata.Component;
 import org.slf4j.Logger;
@@ -46,23 +48,19 @@ public class ComponentInstanceState {
   private long lastHeartbeat = 0;
   private ContainerState containerState;
 
-  private TreeMap<String, State> pkgStatuses = new TreeMap<String, State>();
+  private Map<String, State> pkgStatuses;
   private String nextPkgToInstall;
 
   public ComponentInstanceState(String componentName,
       ContainerId containerId,
       String applicationId) {
-    this.componentName = componentName;
-    this.containerId = containerId;
-    this.containerIdAsString = containerId.toString();
-    this.applicationId = applicationId;
-    this.containerState = ContainerState.INIT;
-    this.lastHeartbeat = System.currentTimeMillis();
+    this(componentName, containerId, applicationId,
+        new TreeMap<String, State>());
   }
 
   public ComponentInstanceState(String componentName,
       ContainerId containerId,
-      String applicationId, TreeMap<String, State> pkgStatuses) {
+      String applicationId, Map<String, State> pkgStatuses) {
     this.componentName = componentName;
     this.containerId = containerId;
     this.containerIdAsString = containerId.toString();
@@ -125,56 +123,64 @@ public class ComponentInstanceState {
     if (expected != command) {
       throw new IllegalArgumentException("Command " + command + " is not allowed in state " + state);
     }
-    if (expected == Command.INSTALL_ADDON){
-      //for add on packages. the pkg must be nextPkgToInstall
+    if (expected == Command.INSTALL_ADDON) {
+      // for add on packages, the pkg must be nextPkgToInstall
       State currentState = pkgStatuses.get(nextPkgToInstall);
-      log.debug("command issued: component: {} is in {}", componentName, currentState);
+      log.debug("Command issued: component: {} is in {}", componentName,
+          currentState);
       State nextState = currentState.getNextState(command);
       pkgStatuses.put(nextPkgToInstall, nextState);
-      log.debug("command issued: component: {} is now in {}", componentName, nextState);
+      log.debug("Command issued: component: {} is now in {}", componentName,
+          nextState);
     } else {
-      //for master package
+      // for master package
       state = state.getNextState(command);
     }
   }
 
-  public void applyCommandResult(CommandResult result, Command command, String pkg) {
-    // if the heartbeat is for a package 
+  public void applyCommandResult(CommandResult result, Command command,
+      String pkg) {
+    // if the heartbeat is for a package
     // update that package's state in the component status
     // and don't bother with the master pkg
-    if (pkg != null && !pkg.isEmpty() && !pkg.equals(Component.MASTER_PACKAGE_NAME)) {
-      log.debug("this result is for component: {} pkg: {}", componentName, pkg);
+    if (StringUtils.isNotEmpty(pkg)
+        && !Component.MASTER_PACKAGE_NAME.equals(pkg)) {
+      log.debug("This result is for component: {} pkg: {}", componentName, pkg);
       State previousPkgState = pkgStatuses.get(pkg);
-      log.debug("currently component: {} pkg: {} is in state: {}", componentName, pkg, previousPkgState.toString());
+      log.debug("Currently component: {} pkg: {} is in state: {}",
+          componentName, pkg, previousPkgState.toString());
       State nextPkgState = previousPkgState.getNextState(result);
       pkgStatuses.put(pkg, nextPkgState);
-      log.debug("component: {} pkg: {} next state: {}", componentName, pkg, nextPkgState);
+      log.debug("Component: {} pkg: {} next state: {}", componentName, pkg,
+          nextPkgState);
     } else {
-      log.debug("this result is for component: {} master package", componentName);
+      log.debug("This result is for component: {} master package",
+          componentName);
       applyCommandResult(result, command);
     }
   }
 
   public void applyCommandResult(CommandResult result, Command command) {
-   
-      if (!this.state.couldHaveIssued(command)) {
-        throw new IllegalStateException("Invalid command " + command + " for state " + this.state);
-      }
+    if (!this.state.couldHaveIssued(command)) {
+      throw new IllegalStateException("Invalid command " + command + " for state " + this.state);
+    }
 
-      try {
-        if (result == CommandResult.FAILED) {
-          failuresSeen++;
-        } else if (result == CommandResult.COMPLETED) {
-          failuresSeen = 0;
-        }
-        state = state.getNextState(result);
-      } catch (IllegalArgumentException e) {
-        String message = String.format(INVALID_TRANSITION_ERROR,
-            result.toString(), command.toString(), componentName,
-            state.toString());
-        log.warn(message);
-        throw new IllegalStateException(message);
+    try {
+      if (result == CommandResult.FAILED) {
+        failuresSeen++;
+      } else if (result == CommandResult.COMPLETED) {
+        failuresSeen = 0;
       }
+      state = state.getNextState(result);
+    } catch (IllegalArgumentException e) {
+      String message = String.format(INVALID_TRANSITION_ERROR,
+                                     result.toString(),
+                                     command.toString(),
+                                     componentName,
+                                     state.toString());
+      log.warn(message);
+      throw new IllegalStateException(message);
+    }
   }
 
   public boolean hasPendingCommand() {
@@ -197,24 +203,25 @@ public class ComponentInstanceState {
       return Command.NOP;
     }
 
-    log.debug("in getNextCommand, checking for component: {} ", componentName);
+    log.debug("In getNextCommand, checking for component: {} ", componentName);
     // if the master pkg is just installed, check if any add on pkg need to be
     // installed
     nextPkgToInstall = null;
     if (state == State.INSTALLED) {
-      for (String pkg : pkgStatuses.keySet()) {
-        State pkgState = pkgStatuses.get(pkg);
-        log.debug("in getNextCommand, pkg: {} is in {}", pkg, pkgState);
+      for (Map.Entry<String, State> pkgStatus : pkgStatuses.entrySet()) {
+        String pkg = pkgStatus.getKey();
+        State pkgState = pkgStatus.getValue();
+        log.debug("In getNextCommand, pkg: {} is in {}", pkg, pkgState);
         if (pkgState == State.INSTALLING) {
           // first check if any pkg is install in progress, if so, wait
           // so we don't need to do anything, just return NOP
-          log.debug("in getNextCommand, pkg: {} we are issuing NOP", pkg);
+          log.debug("In getNextCommand, pkg: {} we are issuing NOP", pkg);
           nextPkgToInstall = pkg;
           return Command.NOP;
         } else if (pkgState == State.INIT) {
-          //temporarily storing pkg here
-          //in case no pkg in 'installing' state
-          //will return the package to install
+          // temporarily storing pkg here
+          // in case no pkg in 'installing' state
+          // will return the package to install
           nextPkgToInstall = pkg;
         }
       }
@@ -222,12 +229,11 @@ public class ComponentInstanceState {
       if (nextPkgToInstall != null) {
         // nextPkgToInstall != null means some pkg is in INIT state 
         // issue 'install' to the pkg we have stored in nextPkgToInstall
-        log.debug("in getNextCommand, pkg: {} we are issuing install addon",
+        log.debug("In getNextCommand, pkg: {} we are issuing install addon",
             nextPkgToInstall);
         return Command.INSTALL_ADDON;
       }
     }
-    nextPkgToInstall = null;
     return this.state.getSupportedCommand(isInUpgradeMode);
   }
 

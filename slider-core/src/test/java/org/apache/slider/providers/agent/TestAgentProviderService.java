@@ -98,7 +98,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.easymock.EasyMock.anyBoolean;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
@@ -106,6 +105,7 @@ import static org.easymock.EasyMock.replay;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyCollection;
 import static org.mockito.Matchers.anyMap;
 import static org.mockito.Matchers.anyString;
@@ -313,7 +313,7 @@ public class TestAgentProviderService {
     metainfo.getApplication().addComponent(hm);
 
     doReturn(metainfo).when(mockAps).getApplicationMetainfo(
-        any(SliderFileSystem.class), Matchers.anyString(), Matchers.anyBoolean());
+        any(SliderFileSystem.class), anyString(), anyBoolean());
 
     Configuration conf = new Configuration();
     conf.set(RegistryConstants.KEY_REGISTRY_ZK_ROOT,
@@ -657,7 +657,7 @@ public class TestAgentProviderService {
     metainfo.setApplication(application);
     doReturn(metainfo).when(mockAps).getMetaInfo();
     doReturn(metainfo).when(mockAps).getApplicationMetainfo(
-        any(SliderFileSystem.class), Matchers.anyString(), Matchers.anyBoolean());
+        any(SliderFileSystem.class), anyString(), anyBoolean());
 
     Register reg = new Register();
     reg.setResponseId(0);
@@ -724,7 +724,7 @@ public class TestAgentProviderService {
     application.addComponent(hbaseMaster);
     metainfo.setApplication(application);
     doReturn(metainfo).when(mockAps).getApplicationMetainfo(
-        any(SliderFileSystem.class), Matchers.anyString(), Matchers.anyBoolean());
+        any(SliderFileSystem.class), anyString(), anyBoolean());
     doReturn(metainfo).when(mockAps).getMetaInfo();
     doNothing().when(mockAps).addRoleRelatedTokens(anyMap());
 
@@ -738,8 +738,7 @@ public class TestAgentProviderService {
     // Simulating agent in INSTALLED state
     reg.setActualState(State.INSTALLED);
 
-    mockAps.initializeApplicationConfiguration(instanceDefinition,
-                                               null);
+    mockAps.initializeApplicationConfiguration(instanceDefinition, null);
 
     RegistrationResponse resp = mockAps.handleRegistration(reg);
     Assert.assertEquals(0, resp.getResponseId());
@@ -1229,8 +1228,8 @@ public class TestAgentProviderService {
 
     AgentProviderService mockAps = Mockito.spy(aps);
     doReturn(access).when(mockAps).getAmState();
-    doReturn(metainfo).when(mockAps).getApplicationMetainfo(any(
-        SliderFileSystem.class), Matchers.anyString(), Matchers.anyBoolean());
+    doReturn(metainfo).when(mockAps).getApplicationMetainfo(
+        any(SliderFileSystem.class), anyString(), anyBoolean());
     doReturn(new HashMap<String, DefaultConfig>()).when(mockAps).
         initializeDefaultConfigs(any(SliderFileSystem.class), anyString(), any(Metainfo.class));
 

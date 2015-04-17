@@ -18,19 +18,18 @@ package org.apache.slider.providers.agent.application.metadata;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+
+import org.codehaus.jackson.annotate.JsonProperty;
 
 /**
  *  Component defined in master package metainfo.json
  */
 public abstract class AbstractComponent implements Validate {
-
-  public static String TYPE_STANDARD = "STANDARD";
-  public static String TYPE_DOCKER = "DOCKER";
-  public static String CATEGORY_MASTER = "MASTER";
-  public static String CATEGORY_SLAVE = "SLAVE";
-  public static String CATEGORY_CLIENT = "CLIENT";
+  public static final String TYPE_STANDARD = "STANDARD";
+  public static final String TYPE_DOCKER = "DOCKER";
+  public static final String CATEGORY_MASTER = "MASTER";
+  public static final String CATEGORY_SLAVE = "SLAVE";
+  public static final String CATEGORY_CLIENT = "CLIENT";
   public static final String MASTER_PACKAGE_NAME = "MASTER";
 
   protected String name;
@@ -39,7 +38,7 @@ public abstract class AbstractComponent implements Validate {
 
   public AbstractComponent() {
   }
-  
+
   public String getName() {
     return name;
   }
@@ -56,16 +55,7 @@ public abstract class AbstractComponent implements Validate {
     this.commandScript = commandScript;
   }
 
-  @Override
-  public String toString() {
-    final StringBuilder sb =
-        new StringBuilder("{");
-    sb.append(",\n\"name\": ").append(name);
-    sb.append(",\n\"commandScript\" :").append(commandScript);
-    sb.append('}');
-    return sb.toString();
-  }
-
+  @JsonProperty("commands")
   public List<ComponentCommand> getCommands() {
     return commands;
   }
@@ -74,4 +64,12 @@ public abstract class AbstractComponent implements Validate {
     this.commands = commands;
   }
 
+  @Override
+  public String toString() {
+    final StringBuilder sb = new StringBuilder("{");
+    sb.append("\n\"name\": ").append(name);
+    sb.append(",\n\"commandScript\" :").append(commandScript);
+    sb.append('}');
+    return sb.toString();
+  }
 }
