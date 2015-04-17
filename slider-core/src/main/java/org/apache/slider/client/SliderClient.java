@@ -841,7 +841,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     if (CollectionUtils.isEmpty(validContainers)
         && CollectionUtils.isEmpty(validComponents)) {
       log.error("Not a single valid container or component specified. Nothing to do.");
-      return EXIT_FALSE;
+      return EXIT_NOT_FOUND;
     }
 
     SliderClusterProtocol appMaster = connect(findInstance(clustername));

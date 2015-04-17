@@ -92,9 +92,9 @@ class TestUpgradeCommandOptions extends AgentMiniClusterTestBase {
           ])
       fail("Upgrade command should have failed")
     } catch (SliderException e) {
+      log.info(e.toString())
       assert e instanceof UnknownApplicationInstanceException
       assert e.getMessage().contains("Unknown application instance")
-      log.info(e.toString())
     }
   }
 
@@ -112,10 +112,16 @@ class TestUpgradeCommandOptions extends AgentMiniClusterTestBase {
     ApplicationReport report = waitForClusterLive(sliderClient)
     addToTeardown(sliderClient)
 
-    // now call all the tests
+    // Now call all the tests.
+    // These tests are written in a way where one depends on the other (like
+    // testUpgradeInvalidContainers depends on testUpgradeSpecSuccess). So it
+    // is important to run them all together and in the listed order.
     testUpgradeInvalidResourcesFile(clustername)
     testUpgradeInvalidConfigFile(clustername)
-    testUpgradeSuccess(clustername)
+    testUpgradeSpecSuccess(clustername)
+    testUpgradeInvalidContainers(clustername)
+    testUpgradeInvalidComponents(clustername)
+    testUpgradeInvalidContainersAndComponents(clustername)
   }
 
   public void testUpgradeInvalidResourcesFile(String clustername) 
@@ -140,11 +146,11 @@ class TestUpgradeCommandOptions extends AgentMiniClusterTestBase {
       )
       fail("Upgrade command should have failed")
     } catch (SliderException e) {
+      log.info(e.toString())
       assert e instanceof BadConfigException
       assert e.getMessage().contains("incorrect argument to --resources: " +
         "\"/tmp/resources.json\" : java.io.FileNotFoundException: " +
         "/tmp/resources.json (No such file or directory)")
-      log.info(e.toString())
     }
   }
 
@@ -170,23 +176,35 @@ class TestUpgradeCommandOptions extends AgentMiniClusterTestBase {
       )
       fail("Upgrade command should have failed")
     } catch (SliderException e) {
+      log.info(e.toString())
       assert e instanceof BadConfigException
       assert e.getMessage().contains("incorrect argument to --template: " +
         "\"/tmp/appConfig.json\" : java.io.FileNotFoundException: " +
         "/tmp/appConfig.json (No such file or directory)")
-      log.info(e.toString())
     }
   }
 
-  public void testUpgradeSuccess(String clustername)
+  public void testUpgradeSpecSuccess(String clustername)
     throws Throwable {
     String resourceFile = Path.getPathWithoutSchemeAndAuthority(testFileSystem
       .buildClusterDirPath(clustername)).toString() + "/resources.json"
     String appConfigFile = Path.getPathWithoutSchemeAndAuthority(testFileSystem
       .buildClusterDirPath(clustername)).toString() + "/app_config.json"
 
-    describe("Calling upgrade - testUpgradeSuccess")
+    describe("Calling upgrade - testUpgradeSpecSuccess")
     try {
+      log.info("Listing application containers before upgrade spec")
+      launcher = launchClientAgainstMiniMR(
+          //config includes RM binding info
+          yarnConfig,
+          //varargs list of command line params
+          [
+              ClientArgs.ACTION_LIST,
+              clustername,
+              ClientArgs.ARG_CONTAINERS
+          ]
+      )
+
       launcher = launchClientAgainstMiniMR(
           //config includes RM binding info
           yarnConfig,
@@ -200,8 +218,90 @@ class TestUpgradeCommandOptions extends AgentMiniClusterTestBase {
               resourceFile
           ]
       )
+
+      log.info("Listing application containers after upgrade spec")
+      launcher = launchClientAgainstMiniMR(
+          //config includes RM binding info
+          yarnConfig,
+          //varargs list of command line params
+          [
+              ClientArgs.ACTION_LIST,
+              clustername,
+              ClientArgs.ARG_CONTAINERS
+          ]
+      )
     } catch (SliderException e) {
+      log.info(e.toString())
+      fail("Upgrade command should not have failed")
+    }
+    assert launcher.serviceExitCode == 0
+  }
+
+  public void testUpgradeInvalidContainers(String clustername)
+    throws Throwable {
+    describe("Calling upgrade - testUpgradeInvalidContainers")
+    try {
+      launcher = launchClientAgainstMiniMR(
+          //config includes RM binding info
+          yarnConfig,
+          //varargs list of command line params
+          [
+              ClientArgs.ACTION_UPGRADE,
+              clustername,
+              ClientArgs.ARG_CONTAINERS,
+              "container_1_invalid"
+          ]
+      )
       fail("Upgrade command should have failed")
+    } catch (SliderException e) {
+      log.info(e.toString())
+    }
+    assert launcher.serviceExitCode == 0
+  }
+
+  public void testUpgradeInvalidComponents(String clustername)
+    throws Throwable {
+    describe("Calling upgrade - testUpgradeInvalidComponents")
+    try {
+      launcher = launchClientAgainstMiniMR(
+          //config includes RM binding info
+          yarnConfig,
+          //varargs list of command line params
+          [
+              ClientArgs.ACTION_UPGRADE,
+              clustername,
+              ClientArgs.ARG_COMPONENTS,
+              "HBASE_ROLE_INVALID"
+          ]
+      )
+      fail("Upgrade command should have failed")
+    } catch (SliderException e) {
+      log.info(e.toString())
+    }
+    assert launcher.serviceExitCode == 0
+  }
+
+  public void testUpgradeInvalidContainersAndComponents(String clustername)
+    throws Throwable {
+    describe("Calling upgrade - testUpgradeInvalidContainersAndComponents")
+    try {
+      launcher = launchClientAgainstMiniMR(
+          //config includes RM binding info
+          yarnConfig,
+          //varargs list of command line params
+          [
+              ClientArgs.ACTION_UPGRADE,
+              clustername,
+              ClientArgs.ARG_CONTAINERS,
+              "container_1_invalid",
+              "container_2_invalid",
+              ClientArgs.ARG_COMPONENTS,
+              "HBASE_MASTER_ROLE_INVALID",
+              "HBASE_RS_ROLE_INVALID"
+          ]
+      )
+      fail("Upgrade command should have failed")
+    } catch (SliderException e) {
       log.info(e.toString())
     }
     assert launcher.serviceExitCode == 0
