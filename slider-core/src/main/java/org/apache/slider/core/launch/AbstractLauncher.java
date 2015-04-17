@@ -25,7 +25,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DataOutputBuffer;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
@@ -42,6 +41,8 @@ import org.apache.slider.core.conf.MapOperations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -318,8 +319,55 @@ public abstract class AbstractLauncher extends Configured {
           logPatternJoinStr);
       log.info("Log exclude patterns: {}", logExcludePattern);
 
-      logAggregationContext = LogAggregationContext.newInstance(
-          logIncludePattern, logExcludePattern);
+      // SLIDER-810/YARN-3154 - hadoop 2.7.0 onwards a new constructor has been
+      // added for log aggregation for LRS. Existing constructor's behavior
+      // has changed and is used for log aggregation only after the application
+      // has finished. This forces Slider users to move to hadoop 2.7.0+ just
+      // for log aggregation, which is not very desirable. So we decided to use
+      // reflection here to find out if the new 2.7.0 constructor is available.
+      // If yes, then we use it, so log aggregation will work in hadoop 2.7.0+
+      // env. If no, then we fallback to the pre-2.7.0 constructor, which means
+      // log aggregation will work as expected in hadoop 2.6 as well.
+      // TODO: At some point, say 2-3 Slider releases down, when most users are
+      // running hadoop 2.7.0, we should get rid of the reflection code here.
+      try {
+        Constructor<LogAggregationContext> logAggregationContextConstructor =
+            LogAggregationContext.class.getConstructor(String.class,
+                String.class, String.class, String.class);
+        // Need to set include/exclude patterns appropriately since by default
+        // rolled log aggregation is not done for any files, so defaults are
+        // - include pattern set to ""
+        // - exclude pattern set to "*"
+        // For Slider we want all logs to be uploaded if include/exclude
+        // patterns are left empty by the app owner in resources file
+        if (StringUtils.isEmpty(logIncludePattern)
+            && StringUtils.isEmpty(logExcludePattern)) {
+          logIncludePattern = "*";
+          logExcludePattern = "";
+        }
+        if (StringUtils.isEmpty(logIncludePattern)
+            && StringUtils.isNotEmpty(logExcludePattern)) {
+          logIncludePattern = "*";
+        }
+        if (StringUtils.isNotEmpty(logIncludePattern)
+            && StringUtils.isEmpty(logExcludePattern)) {
+          logExcludePattern = "";
+        }
+        log.info("LogAggregationContext new constructor for rolled logs "
+            + "include/exclude patterns is available");
+        log.info("Modified log include patterns: {}", logIncludePattern);
+        log.info("Modified log exclude patterns: {}", logExcludePattern);
+        logAggregationContext = logAggregationContextConstructor.newInstance(
+            null, null, logIncludePattern, logExcludePattern);
+      } catch (NoSuchMethodException | SecurityException
+          | InstantiationException | IllegalAccessException
+          | IllegalArgumentException | InvocationTargetException e) {
+        log.info("LogAggregationContext new constructor for rolled logs "
+            + "include/exclude patterns is not available - fallback to old one");
+        log.debug(e.toString());
+        logAggregationContext = LogAggregationContext.newInstance(
+            logIncludePattern, logExcludePattern);
+      }
     }
   }
 
