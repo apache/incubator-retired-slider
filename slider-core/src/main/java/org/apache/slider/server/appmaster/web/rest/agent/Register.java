@@ -30,7 +30,6 @@ public class Register {
   private int responseId = -1;
   private long timestamp;
   private String label;
-  private String pkg;
   private int currentPingPort;
   private HostInfo hardwareProfile;
   private String publicHostname;
@@ -41,6 +40,7 @@ public class Register {
   private State expectedState;
   private Map<String, String> allocatedPorts;
   private Map<String, String> logFolders;
+  private String pkg;
 
   @JsonProperty("responseId")
   public int getResponseId() {
@@ -156,6 +156,14 @@ public class Register {
     this.logFolders = logFolders;
   }
 
+  public String getPkg() {
+    return pkg;
+  }
+
+  public void setPkg(String pkg) {
+    this.pkg = pkg;
+  }
+
   @Override
   public String toString() {
     String ret = "responseId=" + responseId + "\n" +
@@ -169,13 +177,5 @@ public class Register {
       ret = ret + "hardwareprofile=" + this.hardwareProfile.toString();
     }
     return ret;
-  }
-
-  public String getPkg() {
-    return pkg;
-  }
-
-  public void setPkg(String pkg) {
-    this.pkg = pkg;
   }
 }

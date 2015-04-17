@@ -41,14 +41,15 @@ public class AgentUtils {
   private static final Logger log = LoggerFactory.getLogger(AgentUtils.class);
 
   public static Metainfo getApplicationMetainfo(SliderFileSystem fileSystem,
-                                                String metainfoPath, boolean metainfoForAddon) throws IOException, BadConfigException {
+      String metainfoPath, boolean metainfoForAddon) throws IOException,
+      BadConfigException {
     log.info("Reading metainfo at {}", metainfoPath);
     FileSystem fs = fileSystem.getFileSystem();
     Path appPath = new Path(metainfoPath);
 
     Metainfo metainfo = null;
     AbstractMetainfoParser metainfoParser = null;
-    if(metainfoForAddon){
+    if (metainfoForAddon) {
       metainfoParser = new AddonPackageMetainfoParser();
     } else {
       metainfoParser = new MetainfoParser();

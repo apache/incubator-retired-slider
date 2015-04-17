@@ -22,8 +22,5 @@ public class ComponentsInAddonPackage extends AbstractComponent {
 
   @Override
   public void validate(String version) throws SliderException {
-    // TODO Auto-generated method stub
-    
   }
-
 }

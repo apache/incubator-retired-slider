@@ -28,7 +28,7 @@ import java.util.List;
 /**
  * Application type defined in the metainfo
  */
-public class Application extends AbstractMetainfoSchema{
+public class Application extends AbstractMetainfoSchema {
   String exportedConfigs;
   List<ExportGroup> exportGroups = new ArrayList<>();
   List<OSSpecific> osSpecifics = new ArrayList<>();
@@ -86,7 +86,7 @@ public class Application extends AbstractMetainfoSchema{
 
   @JsonProperty("components")
   public List<Component> getComponents() {
-    return components ;
+    return components;
   }
 
   public void addExportGroup(ExportGroup exportGroup) {

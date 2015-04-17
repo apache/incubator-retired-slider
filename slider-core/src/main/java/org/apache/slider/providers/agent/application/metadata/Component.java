@@ -19,17 +19,12 @@ package org.apache.slider.providers.agent.application.metadata;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.core.exceptions.SliderException;
-import org.codehaus.jackson.annotate.JsonProperty;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
 
 /**
- *  Component defined in master package metainfo.json
+ * Component defined in master package metainfo.json
  */
 public class Component extends AbstractComponent {
 
@@ -42,16 +37,8 @@ public class Component extends AbstractComponent {
   String compExports;
   String type = TYPE_STANDARD;
   List<ComponentExport> componentExports = new ArrayList<>();
-  
+
   public Component() {
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public void setName(String name) {
-    this.name = name;
   }
 
   public String getType() {
@@ -150,14 +137,6 @@ public class Component extends AbstractComponent {
     this.maxInstanceCount = maxInstanceCount;
   }
 
-  public CommandScript getCommandScript() {
-    return commandScript;
-  }
-
-  public void addCommandScript(CommandScript commandScript) {
-    this.commandScript = commandScript;
-  }
-
   public void addComponentExport(ComponentExport export) {
     componentExports.add(export);
   }
@@ -170,16 +149,11 @@ public class Component extends AbstractComponent {
     return Boolean.parseBoolean(this.autoStartOnFailure);
   }
 
-  @JsonProperty("commands")
-  public List<ComponentCommand> getCommands() {
-    return this.commands;
-  }
-
   @Override
   public String toString() {
     final StringBuilder sb =
         new StringBuilder("{");
-    sb.append(",\n\"name\": ").append(name);
+    sb.append("\n\"name\": ").append(name);
     sb.append(",\n\"category\": ").append(category);
     sb.append(",\n\"commandScript\" :").append(commandScript);
     sb.append('}');

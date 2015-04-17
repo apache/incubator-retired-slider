@@ -98,6 +98,14 @@ public class RegistrationResponse {
     this.log = log;
   }
 
+  public String getPkg() {
+    return pkg;
+  }
+
+  public void setPkg(String pkg) {
+    this.pkg = pkg;
+  }
+
   @Override
   public String toString() {
     return "RegistrationResponse{" +
@@ -105,13 +113,5 @@ public class RegistrationResponse {
            ", responseId=" + responseId +
            ", statusCommands=" + statusCommands +
            '}';
-  }
-
-  public String getPkg() {
-    return pkg;
-  }
-
-  public void setPkg(String pkg) {
-    this.pkg = pkg;
   }
 }

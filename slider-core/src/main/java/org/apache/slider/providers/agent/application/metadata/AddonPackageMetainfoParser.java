@@ -22,8 +22,8 @@ import org.apache.commons.digester.Digester;
  *
  */
 public class AddonPackageMetainfoParser extends AbstractMetainfoParser {
-  
-  protected void composeSchema(Digester digester){
+
+  protected void composeSchema(Digester digester) {
     digester.addObjectCreate("metainfo", Metainfo.class);
     digester.addBeanPropertySetter("metainfo/schemaVersion");
 

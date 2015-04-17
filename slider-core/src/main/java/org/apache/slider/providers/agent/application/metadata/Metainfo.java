@@ -76,10 +76,10 @@ public class Metainfo {
         !VERSION_TWO_ZERO.equals(schemaVersion)) {
       throw new SliderException("Unsupported version " + getSchemaVersion());
     }
-    if(application != null){
+    if (application != null) {
       application.validate(schemaVersion);
     }
-    if(applicationPackage != null){
+    if (applicationPackage != null) {
       applicationPackage.validate(schemaVersion);
     }
   }
@@ -92,16 +92,14 @@ public class Metainfo {
 
   @Override
   public String toString() {
-
-    String result =  "Metainfo [schemaVersion=" + schemaVersion;
-    if(applicationPackage != null){
-      result += ", pkg=" + applicationPackage.toString();
-    }
-    if(application != null){
-      result += ", application=" + application.toString();
-    }
-    return result;
-    //return "Metainfo [schemaVersion=" + schemaVersion + ", pkg=" + pkg==null? "" : pkg.toString()
-     //   + ", application=" + application==null? "" : application.toString() + "]";
+    StringBuilder builder = new StringBuilder();
+    builder.append("Metainfo [schemaVersion=");
+    builder.append(schemaVersion);
+    builder.append(", applicationPackage=");
+    builder.append(applicationPackage);
+    builder.append(", application=");
+    builder.append(application);
+    builder.append("]");
+    return builder.toString();
   }
 }
