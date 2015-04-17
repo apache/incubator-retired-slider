@@ -51,6 +51,15 @@ public class TestAppMasterLauncher {
         .andReturn(yarnClientApp).once();
   }
 
+  /**
+   * These tests will probably fail when compiled against hadoop 2.7+. Please
+   * refer to SLIDER-810. It has been purposely not modified so that it fails
+   * and that someone needs to modify the code in
+   * {@code AbstractLauncher#extractLogAggregationContext(Map)}. Comments are
+   * provided in that method as to what needs to be done.
+   * 
+   * @throws Exception
+   */
   @Test
   public void testExtractLogAggregationContext() throws Exception {
     Map<String, String> options = new HashMap<String, String>();
