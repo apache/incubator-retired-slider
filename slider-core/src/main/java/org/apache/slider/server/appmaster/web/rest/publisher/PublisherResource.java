@@ -265,7 +265,7 @@ public class PublisherResource extends AbstractSliderResource {
           propertyName, config);
       throw new NotFoundException("Property not found: " + propertyName);
     }
-    Map<String, String> rtnVal = new HashMap<String, String>();
+    Map<String, String> rtnVal = new HashMap<>();
     rtnVal.put(propertyName, propVal);
 
     return rtnVal;

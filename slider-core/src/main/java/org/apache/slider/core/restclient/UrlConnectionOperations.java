@@ -96,54 +96,6 @@ public class UrlConnectionOperations extends Configured  {
   }
 
 
-  /**
-   * Opens a url.
-   * <p>
-   *   This implementation
-   *   <ol>
-   *     <li>Handles protocol switching during redirects</li>
-   *     <li>Handles 307 responses "redirect with same verb"</li>
-   *   </ol>
-   *
-   * @param url to open
-   * @return URLConnection
-   * @throws IOException
-   * @throws AuthenticationException authentication failure
-   */
-  public HttpURLConnection openConnectionRedirecting(URL url) throws
-      IOException,
-      AuthenticationException {
-    HttpURLConnection connection = innerOpenConnection(url);
-    connection.setUseCaches(false);
-    int responseCode = connection.getResponseCode();
-    if (responseCode == HttpServletResponse.SC_MOVED_TEMPORARILY 
-        || responseCode == HttpServletResponse.SC_TEMPORARY_REDIRECT) {
-      log.debug("Redirected with response {}", responseCode);
-      // is a redirect - are we changing schemes?
-      String redirectLocation = connection.getHeaderField(HttpHeaders.LOCATION);
-      String originalScheme = url.getProtocol();
-      String redirectScheme = URI.create(redirectLocation).getScheme();
-      boolean buildNewUrl = false;
-      if (!originalScheme.equals(redirectScheme)) {
-        // need to fake it out by doing redirect ourselves
-        log.debug("Protocol change during redirect");
-        buildNewUrl = true;
-      } else if (responseCode == HttpServletResponse.SC_TEMPORARY_REDIRECT) {
-        // 307 response
-        buildNewUrl = true;
-      }
-
-      if (buildNewUrl) {
-        // perform redirect ourselves
-        log.debug("Redirecting {} to URL {}",
-            url, redirectLocation);
-        URL redirectURL = new URL(redirectLocation);
-        connection = innerOpenConnection(url);
-      }
-    }
-
-    return connection;
-  }
 
   protected HttpURLConnection innerOpenConnection(URL url) throws
       IOException,
