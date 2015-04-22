@@ -52,6 +52,7 @@ public class UgiJerseyBinding implements
     HttpURLConnectionFactory {
   private static final Logger log =
       LoggerFactory.getLogger(UgiJerseyBinding.class);
+
   private final UrlConnectionOperations operations;
   private final URLConnectionClientHandler handler;
 
