@@ -84,5 +84,15 @@ class CommandLogger(Script):
                     template_tag = None
     )
 
+  def pre_upgrade(self, env):
+    import params
+    env.set_params(params)
+    Logger.info("Pre upgrade checks.")
+
+  def post_upgrade(self, env):
+    import params
+    env.set_params(params)
+    Logger.info("Post upgrade checks.")
+
 if __name__ == "__main__":
   CommandLogger().execute()
