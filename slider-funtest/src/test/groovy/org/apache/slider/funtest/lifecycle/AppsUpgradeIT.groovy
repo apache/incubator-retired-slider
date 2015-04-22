@@ -127,9 +127,9 @@ public class AppsUpgradeIT extends AgentCommandTestBase
     expectLiveContainerCountReached(APPLICATION_NAME, COMMAND_LOGGER, 1,
       CONTAINER_LAUNCH_TIMEOUT)
 
-    describe("New AM is back up. Wait for 30 secs to let existing "
+    describe("New AM is back up. Wait for 60 secs to let existing "
       + "COMMAND_LOGGER container to heartbeat back to the new AM.")
-    sleep(1000 * 30)
+    sleep(1000 * 60)
 
     // run upgrade container commands
     describe("Call upgrade container - invalid container id")
