@@ -956,6 +956,32 @@ abstract class CommandTestBase extends SliderTestUtils {
   }
 
   /**
+   * Wait for an application to move out of a specific state. Don't fail this
+   * test if the application is never found to move of the state. State
+   * transitions sometimes happen so fast that short lived transient states
+   * might not caught during probes. Hence just exit success, after timeout.
+   * 
+   * @param application
+   * @param yarnState
+   */
+  protected void ensureApplicationNotInState(String application,
+    YarnApplicationState yarnState) {
+    repeatUntilSuccess("await application to be not in state " + yarnState,
+        this.&isApplicationNotInState,
+        10000,
+        0,
+        [
+          application: application,
+          yarnState: yarnState
+        ],
+        false,
+        "") {
+      describe "final state of app for not in state check"
+      exists(application).dumpOutput()
+    }
+  }
+
+  /**
    * Is the registry accessible for an application?
    * @param args argument map containing <code>"application"</code>
    * @return probe outcome
@@ -995,6 +1021,20 @@ abstract class CommandTestBase extends SliderTestUtils {
         applicationName,
         YarnApplicationState.RUNNING
     );
+  }
+
+  /**
+   * Probe for an application to be in a state other than the specified state;
+   * uses <code>exists</code> operation
+   * @param args argument map containing <code>"application"</code> and
+   *   <code>state</code>
+   * @return
+   */
+  protected Outcome isApplicationNotInState(Map<String, String> args) {
+    String applicationName = args['application'];
+    YarnApplicationState yarnState = YarnApplicationState
+      .valueOf(args['yarnState']);
+    return Outcome.fromBool(!isApplicationInState(applicationName, yarnState))
   }
 
   /**
@@ -1219,7 +1259,7 @@ abstract class CommandTestBase extends SliderTestUtils {
       int container_launch_timeout) {
 
     repeatUntilSuccess(
-        "await container count",
+        "await requested container count",
         this.&hasRequestedContainerCountReached,
         container_launch_timeout,
         PROBE_SLEEP_TIME,
@@ -1227,11 +1267,11 @@ abstract class CommandTestBase extends SliderTestUtils {
          role       : role,
          application: application],
         true,
-        "countainer count not reached") {
+        "requested countainer count not reached") {
       int requestedCount = queryRequestedCount(application, role)
 
-      def message = "expected count of $role = $limit not reached: $requestedCount" +
-                    " after $container_launch_timeout mS"
+      def message = "expected request count of $role = $limit not reached, " +
+                    "actual: $requestedCount after $container_launch_timeout ms"
       describe message
       ClusterDescription cd = execStatus(application);
       log.info("Parsed status \n$cd")
@@ -1288,9 +1328,66 @@ abstract class CommandTestBase extends SliderTestUtils {
          component  : component,
          application: application],
         true,
-        "countainer count not reached") {
-      describe "container count not reached"
+        "live countainer count not reached") {
+      describe "live container count not reached"
       assertContainersLive(application, component, expected)
+    }
+  }
+
+  public int queryFailedCount(String  application, String role) {
+    ClusterDescription cd = execStatus(application)
+    if (cd.statistics.size() == 0) {
+      log.debug("No statistics entries")
+    }
+    if (!cd.statistics[role]) {
+      log.debug("No stats for role $role")
+      return 0;
+    }
+    def statsForRole = cd.statistics[role]
+
+    def failed = statsForRole[StatusKeys.STATISTICS_CONTAINERS_FAILED]
+    assert null != failed
+    return failed
+  }
+
+  /**
+   * Probe: has the failed container count of a specific role been reached?
+   * @param args map with: "application", "role", "limit"
+   * @return success on a match, retry if not
+   */
+  Outcome hasFailedContainerCountReached(Map<String, String> args) {
+    String application = args['application']
+    String role = args['role']
+    int expectedCount = args['limit'].toInteger();
+
+    int failedCount = queryFailedCount(application, role)
+    log.debug("failed $role count = $failedCount; expected=$expectedCount")
+    return Outcome.fromBool(failedCount >= expectedCount)
+  }
+
+  /**
+   * Wait for the failed container count to be reached
+   * @param application application name
+   * @param component component name
+   * @param expected expected count
+   * @param container_launch_timeout launch timeout
+   */
+  void expectFailedContainerCountReached(
+      String application,
+      String component,
+      int expected,
+      int container_launch_timeout) {
+    repeatUntilSuccess(
+        "await failed container count",
+        this.&hasFailedContainerCountReached,
+        container_launch_timeout,
+        PROBE_SLEEP_TIME,
+        [limit      : Integer.toString(expected),
+         role       : component,
+         application: application],
+        true,
+        "failed countainer count not reached") {
+      describe "failed container count not reached"
     }
   }
 
