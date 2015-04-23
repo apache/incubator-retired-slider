@@ -336,6 +336,16 @@
       <artifactId>slf4j-api</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>commons-configuration</groupId>
+      <artifactId>commons-configuration</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.jettison</groupId>
+      <artifactId>jettison</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
 </project>

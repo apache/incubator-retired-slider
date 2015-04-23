@@ -32,6 +32,11 @@
     <description>Zookeeper hosts.</description>
   </property>
   <property>
+    <name>instance.zookeeper.timeout</name>
+    <value>${@//site/accumulo-site/instance.zookeeper.timeout}</value>
+    <description>Zookeeper timeout.</description>
+  </property>
+  <property>
     <name>instance.rpc.ssl.enabled</name>
     <value>${@//site/accumulo-site/instance.rpc.ssl.enabled}</value>
     <description>SSL enabled.</description>
@@ -45,6 +50,21 @@
     <name>instance.rpc.sasl.enabled</name>
     <value>${@//site/accumulo-site/instance.rpc.sasl.enabled}</value>
     <description>SASL enabled.</description>
+  </property>
+  <property>
+    <name>rpc.sasl.qop</name>
+    <value>${@//site/accumulo-site/rpc.sasl.qop}</value>
+    <description>Quality of protection used for SASL.</description>
+  </property>
+  <property>
+    <name>rpc.useJsse</name>
+    <value>${@//site/accumulo-site/rpc.useJsse}</value>
+    <description>Use JSSE system properties to configure SSL.</description>
+  </property>
+  <property>
+    <name>trace.span.receivers</name>
+    <value>${@//site/accumulo-site/trace.span.receivers}</value>
+    <description>Span receivers for Accumulo tracing.</description>
   </property>
   <property>
     <name>trace.zookeeper.path</name>

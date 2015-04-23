@@ -19,9 +19,11 @@ package org.apache.slider.funtest.accumulo
 import groovy.util.logging.Slf4j
 import org.apache.accumulo.examples.simple.helloworld.InsertWithBatchWriter
 import org.apache.accumulo.examples.simple.helloworld.ReadData
+import org.apache.commons.configuration.PropertiesConfiguration
 import org.apache.hadoop.registry.client.api.RegistryConstants
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.client.SliderClient
+import org.apache.slider.core.conf.ConfTree
 import org.apache.slider.funtest.framework.AccumuloSliderShell
 import org.apache.slider.funtest.framework.FuntestProperties
 import org.apache.slider.funtest.framework.SliderShell
@@ -37,6 +39,27 @@ class AccumuloScriptIT extends AccumuloBasicIT {
   public static final File ACCUMULO_SCRIPT = new File(CLIENT_HOME_DIR + "/bin", "accumulo").canonicalFile
   public static final File ACCUMULO_TOOL_SCRIPT = new File(CLIENT_HOME_DIR + "/bin", "tool.sh").canonicalFile
   public static final File ACCUMULO_CLIENT_CONF = new File(CLIENT_HOME_DIR + "/conf", "client.conf").canonicalFile
+
+  public static final Map<String,String> customProps = new HashMap<String,String>()
+
+  @BeforeClass
+  public static void setProps() {
+    customProps.put("instance.zookeeper.timeout", "60s")
+    customProps.put("trace.zookeeper.path", "/tracers2")
+    customProps.put("trace.span.receiver.some.property", "some.value");
+    customProps.put("trace.span.receiver.other.property", "comma,separated,value");
+  }
+
+  protected String templateName() {
+    return sysprop("test.app.resources.dir") + "/appConfig_script.json"
+  }
+
+  protected ConfTree modifyTemplate(ConfTree confTree) {
+    for (Map.Entry<String,String> p : customProps.entrySet()) {
+      confTree.global.put("site.accumulo-site." + p.getKey(), p.getValue())
+    }
+    return confTree
+  }
 
   @Override
   public String getClusterName() {
@@ -89,6 +112,15 @@ class AccumuloScriptIT extends AccumuloBasicIT {
 
     assert ACCUMULO_CLIENT_CONF.exists(), "client.conf did not exist after " +
       "client install command"
+
+    PropertiesConfiguration conf = new PropertiesConfiguration()
+    conf.setDelimiterParsingDisabled(true)
+    conf.load(ACCUMULO_CLIENT_CONF)
+
+    for (Map.Entry<String,String> p : customProps.entrySet()) {
+      assert conf.getString(p.getKey()).equals(p.getValue()), "client.conf " +
+        "did not contain expected property $p"
+    }
 
     accumulo_slider("--app $clusterName quicklinks")
 

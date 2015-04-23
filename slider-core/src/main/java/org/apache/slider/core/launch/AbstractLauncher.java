@@ -353,7 +353,7 @@ public abstract class AbstractLauncher extends Configured {
             && StringUtils.isEmpty(logExcludePattern)) {
           logExcludePattern = "";
         }
-        log.info("LogAggregationContext new constructor for rolled logs "
+        log.debug("LogAggregationContext new constructor for rolled logs "
             + "include/exclude patterns is available");
         log.info("Modified log include patterns: {}", logIncludePattern);
         log.info("Modified log exclude patterns: {}", logExcludePattern);
@@ -362,7 +362,7 @@ public abstract class AbstractLauncher extends Configured {
       } catch (NoSuchMethodException | SecurityException
           | InstantiationException | IllegalAccessException
           | IllegalArgumentException | InvocationTargetException e) {
-        log.info("LogAggregationContext new constructor for rolled logs "
+        log.debug("LogAggregationContext new constructor for rolled logs "
             + "include/exclude patterns is not available - fallback to old one");
         log.debug(e.toString());
         logAggregationContext = LogAggregationContext.newInstance(
