@@ -92,6 +92,9 @@ class AccumuloClient(Script):
           index = line.find("=")
           if index > 0:
             configs[line[0:index]] = line[index+1:].rstrip()
+      for key, value in site.iteritems():
+        if key.startswith("trace.span.receiver."):
+          configs[key] = value
       if 'instance.rpc.ssl.enabled' in configs and configs['instance.rpc.ssl.enabled']=='true':
         Logger.info("Configuring client SSL")
         self.check_provider_contains(client_params.credential_provider,
@@ -103,9 +106,6 @@ class AccumuloClient(Script):
         configs['rpc.javax.net.ssl.keyStoreType'] = client_params.store_type
         configs['rpc.javax.net.ssl.trustStore'] = client_params.truststore_path
         configs['rpc.javax.net.ssl.trustStoreType'] = client_params.store_type
-        PropertiesFile(format("{conf_download_dir}/client.conf"),
-                       properties = configs
-        )
         Execute( format("SLIDER_CONF_DIR={slider_conf_dir} "
                         "{slider_home_dir}/bin/slider client --getcertstore "
                         "--keystore {keystore_path} "
@@ -116,6 +116,8 @@ class AccumuloClient(Script):
                         "--truststore {truststore_path} "
                         "--name {app_name} --alias {truststore_alias} "
                         "--provider {credential_provider}"))
+      PropertiesFile(format("{conf_download_dir}/client.conf"),
+                     properties = configs)
       Directory(client_params.client_conf,
                 content=format("{client_conf}/templates"))
       Directory(client_params.client_conf,

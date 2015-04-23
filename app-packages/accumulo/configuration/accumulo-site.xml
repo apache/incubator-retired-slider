@@ -28,6 +28,12 @@
   </property>
 
   <property>
+    <name>instance.zookeeper.timeout</name>
+    <value>30s</value>
+    <description>Zookeeper timeout.</description>
+  </property>
+
+  <property>
     <name>tserver.memory.maps.max</name>
     <value>80M</value>
   </property>
@@ -73,6 +79,24 @@
     <name>instance.rpc.sasl.enabled</name>
     <value>false</value>
     <description>SASL enabled.</description>
+  </property>
+
+  <property>
+    <name>rpc.sasl.qop</name>
+    <value>auth</value>
+    <description>Quality of protection used for SASL.</description>
+  </property>
+
+  <property>
+    <name>rpc.useJsse</name>
+    <value>false</value>
+    <description>Use JSSE system properties to configure SSL.</description>
+  </property>
+
+  <property>
+    <name>trace.span.receivers</name>
+    <value>org.apache.accumulo.tracer.ZooTraceClient</value>
+    <description>Span receivers for Accumulo tracing.</description>
   </property>
 
   <property>
