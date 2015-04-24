@@ -1701,11 +1701,12 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   private void validateClientAndClusterResource(String clustername,
       ConfTreeOperations clientResources) throws BadClusterStateException,
       SliderException, IOException {
-    log.info("Validating client resource with cluster resource definition (components and instance count)");
-    Map<String, Integer> clientComponentNameInstanceMap = new HashMap<>();
+    log.info("Validating upgrade resource definition with current cluster "
+        + "state (components and instance count)");
+    Map<String, Integer> clientComponentInstances = new HashMap<>();
     for (String componentName : clientResources.getComponentNames()) {
       if (!SliderKeys.COMPONENT_AM.equals(componentName)) {
-        clientComponentNameInstanceMap.put(componentName, clientResources
+        clientComponentInstances.put(componentName, clientResources
             .getComponentOptInt(componentName,
                 ResourceKeys.COMPONENT_INSTANCES, -1));
       }
@@ -1720,11 +1721,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
           "Failed to validate client resource definition " + clustername + ": "
               + e);
     }
-    Map<String, Integer> clusterComponentNameInstanceMap = new HashMap<>();
+    Map<String, Integer> clusterComponentInstances = new HashMap<>();
     for (Map.Entry<String, Map<String, String>> component : clusterConf
         .getResources().components.entrySet()) {
       if (!SliderKeys.COMPONENT_AM.equals(component.getKey())) {
-        clusterComponentNameInstanceMap.put(
+        clusterComponentInstances.put(
             component.getKey(),
             Integer.decode(component.getValue().get(
                 ResourceKeys.COMPONENT_INSTANCES)));
@@ -1732,43 +1733,45 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     }
 
     // client and cluster should be an exact match
-    Iterator<Map.Entry<String, Integer>> clientComponentNameInstanceIterator = clientComponentNameInstanceMap
+    Iterator<Map.Entry<String, Integer>> clientComponentInstanceIt = clientComponentInstances
         .entrySet().iterator();
-    while (clientComponentNameInstanceIterator.hasNext()) {
-      Map.Entry<String, Integer> clientComponentNameInstanceEntry = clientComponentNameInstanceIterator
+    while (clientComponentInstanceIt.hasNext()) {
+      Map.Entry<String, Integer> clientComponentInstanceEntry = clientComponentInstanceIt
           .next();
-      if (clusterComponentNameInstanceMap
-          .containsKey(clientComponentNameInstanceEntry.getKey())) {
+      if (clusterComponentInstances
+          .containsKey(clientComponentInstanceEntry.getKey())) {
         // compare instance count now and remove from both maps if they match
-        if (clusterComponentNameInstanceMap
-            .get(clientComponentNameInstanceEntry.getKey()) == clientComponentNameInstanceEntry
+        if (clusterComponentInstances
+            .get(clientComponentInstanceEntry.getKey()) == clientComponentInstanceEntry
             .getValue()) {
-          clusterComponentNameInstanceMap
-              .remove(clientComponentNameInstanceEntry.getKey());
-          clientComponentNameInstanceIterator.remove();
+          clusterComponentInstances
+              .remove(clientComponentInstanceEntry.getKey());
+          clientComponentInstanceIt.remove();
         }
       }
     }
 
-    if (!clientComponentNameInstanceMap.isEmpty()
-        || !clusterComponentNameInstanceMap.isEmpty()) {
-      log.error("Mismatch found in client and cluster resource specification");
-      if (!clientComponentNameInstanceMap.isEmpty()) {
-        log.info("  Following are the client resources that do not match");
-        for (Map.Entry<String, Integer> clientComponentNameInstanceEntry : clientComponentNameInstanceMap
+    if (!clientComponentInstances.isEmpty()
+        || !clusterComponentInstances.isEmpty()) {
+      log.error("Mismatch found in upgrade resource definition and cluster "
+          + "resource state");
+      if (!clientComponentInstances.isEmpty()) {
+        log.info("  Following are the upgrade resource definitions that do "
+            + "not match");
+        for (Map.Entry<String, Integer> clientComponentInstanceEntry : clientComponentInstances
             .entrySet()) {
           log.info("    Component Name: {}, Instance count: {}",
-              clientComponentNameInstanceEntry.getKey(),
-              clientComponentNameInstanceEntry.getValue());
+              clientComponentInstanceEntry.getKey(),
+              clientComponentInstanceEntry.getValue());
         }
       }
-      if (!clusterComponentNameInstanceMap.isEmpty()) {
+      if (!clusterComponentInstances.isEmpty()) {
         log.info("  Following are the cluster resources that do not match");
-        for (Map.Entry<String, Integer> clusterComponentNameInstanceEntry : clusterComponentNameInstanceMap
+        for (Map.Entry<String, Integer> clusterComponentInstanceEntry : clusterComponentInstances
             .entrySet()) {
           log.info("    Component Name: {}, Instance count: {}",
-              clusterComponentNameInstanceEntry.getKey(),
-              clusterComponentNameInstanceEntry.getValue());
+              clusterComponentInstanceEntry.getKey(),
+              clusterComponentInstanceEntry.getValue());
         }
       }
       throw new BadConfigException("\n\nResource definition provided for "
@@ -2611,6 +2614,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     String state = args.state;
     boolean listContainers = args.containers;
     boolean verbose = args.verbose;
+    String version = args.version;
+    Set<String> components = args.components;
 
     if (live && !state.isEmpty()) {
       throw new BadCommandArgumentsException(
@@ -2621,9 +2626,19 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
           "Should specify an application instance with "
               + Arguments.ARG_CONTAINERS);
     }
+    // specifying both --version and --components with --containers is okay
+    if (StringUtils.isNotEmpty(version) && !listContainers) {
+      throw new BadCommandArgumentsException(Arguments.ARG_VERSION
+          + " can be specified only with " + Arguments.ARG_CONTAINERS);
+    }
+    if (!components.isEmpty() && !listContainers) {
+      throw new BadCommandArgumentsException(Arguments.ARG_COMPONENTS
+          + " can be specified only with " + Arguments.ARG_CONTAINERS);
+    }
+
     // flag to indicate only services in a specific state are to be listed
     boolean listOnlyInState = live || !state.isEmpty();
-    
+
     YarnApplicationState min, max;
     if (live) {
       min = YarnApplicationState.NEW;
@@ -2643,7 +2658,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       log.debug("No application instances found");
       return EXIT_SUCCESS;
     }
-    
+
     // and those the RM knows about
     List<ApplicationReport> instances = listSliderInstances(null);
     SliderUtils.sortApplicationsByMostRecent(instances);
@@ -2682,10 +2697,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         // a report
         listed++;
         // containers will be non-null when only one instance is requested
-        String details = SliderUtils.instanceDetailsToString(name,
-            report,
-            containers,
-            verbose);
+        String details = SliderUtils.instanceDetailsToString(name, report,
+            containers, version, components, verbose);
         print(details);
       }
     }

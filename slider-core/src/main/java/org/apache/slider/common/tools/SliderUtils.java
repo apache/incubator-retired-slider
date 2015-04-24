@@ -23,6 +23,7 @@ import com.google.common.base.Preconditions;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -668,6 +669,8 @@ public final class SliderUtils {
   public static String instanceDetailsToString(String name,
       ApplicationReport report,
       List<ContainerInformation> containers,
+      String version,
+      Set<String> components,
       boolean verbose) {
     // format strings
     String staticf = "%-30s";
@@ -693,7 +696,8 @@ public final class SliderUtils {
       }
       if (containers != null) {
         builder.append('\n');
-        builder.append(SliderUtils.containersToString(containers));
+        builder.append(SliderUtils.containersToString(containers, version,
+            components));
       }
     }
 
@@ -702,15 +706,54 @@ public final class SliderUtils {
   }
 
   public static String containersToString(
-      List<ContainerInformation> containers) {
+      List<ContainerInformation> containers, String version,
+      Set<String> components) {
     String containerf = "  %-28s  %30s  %40s  %s\n";
     StringBuilder builder = new StringBuilder(512);
     builder.append("Containers:\n");
     for (ContainerInformation container : containers) {
+      if (filter(container.appVersion, version)
+          || filter(container.component, components)) {
+        continue;
+      }
       builder.append(String.format(containerf, container.component,
           container.appVersion, container.containerId, container.host));
     }
     return builder.toString();
+  }
+
+  /**
+   * Filter a string value given a single filter
+   * 
+   * @param value
+   *          the string value to check
+   * @param filter
+   *          a single string filter
+   * @return return true if value should be trapped, false if it should be let
+   *         through
+   */
+  public static boolean filter(String value, String filter) {
+    if (StringUtils.isEmpty(filter) || filter.equals(value)) {
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Filter a string value given a set of filters
+   * 
+   * @param value
+   *          the string value to check
+   * @param filters
+   *          a set of string filters
+   * @return return true if value should be trapped, false if it should be let
+   *         through
+   */
+  public static boolean filter(String value, Set<String> filters) {
+    if (filters.isEmpty() || filters.contains(value)) {
+      return false;
+    }
+    return true;
   }
 
   /**
