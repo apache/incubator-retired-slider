@@ -3,14 +3,14 @@
     "metadata": {
     },
     "global": {
-        "application.def": ".slider/package/HBASE/slider-hbase-app-package-${pkg.version}.zip",
+        "application.def": ".slider/package/HBASE/slider-hbase-app-package-${hbase.version}.zip",
         "create.default.zookeeper.node": "true",
         "java_home": "/usr/jdk64/jdk1.7.0_67",
         "system_configs": "core-site",
 
         "site.global.app_user": "yarn",
         "site.global.app_version": "${hbase.version}",
-        "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/hbase-${pkg.version}",
+        "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/hbase-${hbase.version}",
 
         "site.global.metric_collector_host": "${NN_HOST}",
         "site.global.metric_collector_port": "6188",
