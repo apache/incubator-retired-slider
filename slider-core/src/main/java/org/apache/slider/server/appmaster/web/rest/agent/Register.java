@@ -41,6 +41,7 @@ public class Register {
   private Map<String, String> allocatedPorts;
   private Map<String, String> logFolders;
   private String pkg;
+  private String appVersion;
 
   @JsonProperty("responseId")
   public int getResponseId() {
@@ -164,6 +165,16 @@ public class Register {
     this.pkg = pkg;
   }
 
+  @JsonProperty("appVersion")
+  public String getAppVersion() {
+    return appVersion;
+  }
+
+  @JsonProperty("appVersion")
+  public void setAppVersion(String appVersion) {
+    this.appVersion = appVersion;
+  }
+
   @Override
   public String toString() {
     String ret = "responseId=" + responseId + "\n" +
@@ -171,7 +182,8 @@ public class Register {
                  "label=" + label + "\n" +
                  "hostname=" + publicHostname + "\n" +
                  "expectedState=" + expectedState + "\n" +
-                 "actualState=" + actualState + "\n";
+                 "actualState=" + actualState + "\n" +
+                 "appVersion=" + appVersion + "\n";
 
     if (hardwareProfile != null) {
       ret = ret + "hardwareprofile=" + this.hardwareProfile.toString();

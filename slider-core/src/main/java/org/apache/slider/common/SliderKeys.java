@@ -58,6 +58,7 @@ public interface SliderKeys extends SliderXmlConfKeys {
    * Key for application version. This must be set in app_config/global {@value}
    */
   String APP_VERSION = "site.global.app_version";
+  String APP_VERSION_UNKNOWN = "awaiting heartbeat...";
 
   /**
    * JVM arg to force IPv4  {@value}
@@ -256,4 +257,5 @@ public interface SliderKeys extends SliderXmlConfKeys {
   String SLIDER_JVM_OPTS = "SLIDER_JVM_OPTS";
 
   String SLIDER_CLASSPATH_EXTRA = "SLIDER_CLASSPATH_EXTRA";
+  String YARN_CONTAINER_PATH = "/node/container/";
 }

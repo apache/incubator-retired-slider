@@ -731,6 +731,7 @@ public class AgentProviderService extends AbstractProviderService implements
     String label = registration.getLabel();
     String pkg = registration.getPkg();
     State agentState = registration.getActualState();
+    String appVersion = registration.getAppVersion();
 
     log.info("label: {} pkg: {}", label, pkg);
 
@@ -759,6 +760,9 @@ public class AgentProviderService extends AbstractProviderService implements
       if (folders != null && !folders.isEmpty()) {
         publishFolderPaths(folders, containerId, roleName, hostFqdn);
       }
+
+      // Set app version if empty. It gets unset during upgrade - why?
+      checkAndSetContainerAppVersion(containerId, appVersion);
     } else {
       response.setResponseStatus(RegistrationStatus.FAILED);
       response.setLog("Label not recognized.");
@@ -766,6 +770,28 @@ public class AgentProviderService extends AbstractProviderService implements
     }
     log.info("Registration response: {}", response);
     return response;
+  }
+
+  // Checks if app version is empty. Sets it to the version as reported by the
+  // container during registration phase.
+  private void checkAndSetContainerAppVersion(String containerId,
+      String appVersion) {
+    StateAccessForProviders amState = getAmState();
+    try {
+      RoleInstance role = amState.getOwnedContainer(containerId);
+      if (role != null) {
+        String currentAppVersion = role.appVersion;
+        log.debug("Container = {}, app version current = {} new = {}",
+            containerId, currentAppVersion, appVersion);
+        if (currentAppVersion == null
+            || currentAppVersion.equals(APP_VERSION_UNKNOWN)) {
+          amState.getOwnedContainer(containerId).appVersion = appVersion;
+        }
+      }
+    } catch (NoSuchNodeException e) {
+      // ignore - there is nothing to do if we don't find a container
+      log.warn("Owned container {} not found - {}", containerId, e);
+    }
   }
 
   /**

@@ -29,7 +29,8 @@ class Register:
   def __init__(self, config):
     self.config = config
 
-  def build(self, actualState, expectedState, allocated_ports, log_folders, tags="", id='-1'):
+  def build(self, actualState, expectedState, allocated_ports, log_folders,
+            appVersion, tags="", id='-1'):
     timestamp = int(time.time() * 1000)
 
     version = self.read_agent_version()
@@ -43,6 +44,7 @@ class Register:
                 'expectedState': expectedState,
                 'allocatedPorts': allocated_ports,
                 'logFolders': log_folders,
+                'appVersion': appVersion,
                 'tags': tags
     }
     return register

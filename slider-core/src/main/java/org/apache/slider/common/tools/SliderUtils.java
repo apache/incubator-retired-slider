@@ -708,16 +708,19 @@ public final class SliderUtils {
   public static String containersToString(
       List<ContainerInformation> containers, String version,
       Set<String> components) {
-    String containerf = "  %-28s  %30s  %40s  %s\n";
+    String containerf = "  %-28s  %30s  %45s  %s\n";
     StringBuilder builder = new StringBuilder(512);
     builder.append("Containers:\n");
+    builder.append(String.format("  %-28s  %30s  %45s  %s\n", "Component Name",
+        "App Version", "Container Id", "Container Info/Logs"));
     for (ContainerInformation container : containers) {
       if (filter(container.appVersion, version)
           || filter(container.component, components)) {
         continue;
       }
       builder.append(String.format(containerf, container.component,
-          container.appVersion, container.containerId, container.host));
+          container.appVersion, container.containerId, container.host
+              + SliderKeys.YARN_CONTAINER_PATH + container.containerId));
     }
     return builder.toString();
   }

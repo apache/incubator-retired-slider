@@ -133,6 +133,7 @@ class Controller(threading.Thread):
           self.componentExpectedState,
           self.actionQueue.customServiceOrchestrator.allocated_ports,
           self.actionQueue.customServiceOrchestrator.log_folders,
+          self.appVersion,
           self.tags,
           id))
         logger.info("Registering with the server at " + self.registerUrl +
