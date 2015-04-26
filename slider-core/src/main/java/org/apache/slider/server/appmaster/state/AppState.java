@@ -2240,6 +2240,7 @@ public class AppState {
     instance.container = container;
     instance.createTime = now();
     instance.state = STATE_LIVE;
+    instance.appVersion = SliderKeys.APP_VERSION_UNKNOWN;
     putOwnedContainer(cid, instance);
     //role history gets told
     roleHistory.onContainerAssigned(container);
