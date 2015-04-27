@@ -947,7 +947,9 @@ class SliderTestUtils extends Assert {
       Throwable {
     ServiceLauncher serviceLauncher =
         new ServiceLauncher(serviceClass.name);
-    log.debug("slider ${SliderUtils.join(args, " ", false)}")
+
+    def joinedArgs = SliderUtils.join(args, " ", false)
+    log.debug("slider ${joinedArgs}")
 
     serviceLauncher.launchService(conf,
         toArray(args),

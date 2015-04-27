@@ -133,6 +133,7 @@ public class TestAgentClientProvider2 extends SliderTestUtils {
     pkg.setType("tarball");
     app.getPackages().add(pkg);
 
+    // This is not a windows path, which is something we bear in mind in testisng
     File clientInstallPath = new File("/tmp/file1");
     String appName = "name";
     String user = "username";
@@ -151,8 +152,9 @@ public class TestAgentClientProvider2 extends SliderTestUtils {
     JSONObject outGlobal = outConfigs.getJSONObject("global");
     Assert.assertNotNull("null globals section", outGlobal);
     Assert.assertEquals("b", outGlobal.getString("a"));
-    Assert.assertEquals("/tmp/file1/d", outGlobal.getString("d"));
-    Assert.assertEquals("/tmp/file1", outGlobal.getString("app_install_dir"));
+    Assert.assertTrue("no file1/d in " + outGlobal.getString("d"),
+        outGlobal.getString("d").contains("file1/d"));
+    Assert.assertEquals(clientInstallPath.toString(), outGlobal.getString("app_install_dir"));
     Assert.assertEquals("name", outGlobal.getString("e"));
     Assert.assertEquals("name", outGlobal.getString("app_name"));
     Assert.assertEquals(user, outGlobal.getString("app_user"));
@@ -175,10 +177,12 @@ public class TestAgentClientProvider2 extends SliderTestUtils {
     outGlobal = outConfigs.getJSONObject("global");
     Assert.assertNotNull("null globals section", outGlobal);
     Assert.assertEquals("b", outGlobal.getString("a"));
-    Assert.assertEquals("/tmp/file1/d", outGlobal.getString("d"));
+    Assert.assertTrue("no file1/d in " + outGlobal.getString("d"),
+        outGlobal.getString("d").contains("file1/d"));
     Assert.assertEquals("b2", outGlobal.getString("a1"));
-    Assert.assertEquals("/tmp/file1/d", outGlobal.getString("d1"));
-    Assert.assertEquals("/tmp/file1", outGlobal.getString("app_install_dir"));
+    Assert.assertTrue("no file1/d in " + outGlobal.getString("d1"),
+        outGlobal.getString("d1").contains("file1/d"));
+    Assert.assertEquals(clientInstallPath.toString(), outGlobal.getString("app_install_dir"));
     Assert.assertEquals("{app_name}", outGlobal.getString("e"));
     Assert.assertFalse("no 'app_name' field", outGlobal.has("app_name"));
     Assert.assertEquals(user, outGlobal.getString("app_user"));
@@ -240,7 +244,7 @@ public class TestAgentClientProvider2 extends SliderTestUtils {
       client.actionClient(args);
     } catch (BadCommandArgumentsException e) {
       assertExceptionDetails(e, SliderExitCodes.EXIT_COMMAND_ARGUMENT_ERROR,
-          "Install path does not exist at");
+          SliderClient.E_INSTALL_PATH_DOES_NOT_EXIST);
     }
 
     dest.mkdir();

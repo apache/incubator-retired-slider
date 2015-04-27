@@ -18,34 +18,21 @@
 
 package org.apache.slider.client
 
-import java.io.File
-import java.io.IOException
-import java.io.FileNotFoundException
-
-import org.apache.commons.io.FileUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.fs.FileSystem
-import org.apache.hadoop.fs.FileUtil
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.fs.RawLocalFileSystem
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.conf.YarnConfiguration
-
 import org.apache.slider.agent.AgentMiniClusterTestBase
-import org.apache.slider.common.SliderKeys
-import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.ClientArgs
-import org.apache.slider.common.params.SliderActions
 import org.apache.slider.common.tools.SliderFileSystem
 import org.apache.slider.common.tools.SliderUtils
-import org.apache.slider.core.exceptions.BadCommandArgumentsException
 import org.apache.slider.core.exceptions.BadConfigException
 import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
 import org.apache.slider.core.main.ServiceLauncher
-import org.apache.slider.providers.agent.AgentKeys
-
 import org.junit.Before
 import org.junit.Test
 
@@ -79,16 +66,18 @@ class TestUpgradeCommandOptions extends AgentMiniClusterTestBase {
   public void testUpgradeAppNotRunning() throws Throwable {
     describe("Calling upgrade")
     YarnConfiguration conf = SliderUtils.createConfiguration()
+    File tmpDir = File.createTempFile("test",".dir")
+    tmpDir.delete()
     try {
       ServiceLauncher launcher = launch(TestSliderClient,
           conf,
           [
-            ClientArgs.ACTION_UPGRADE,
-            APP_NAME,
-            ClientArgs.ARG_TEMPLATE,
-            "/tmp/appConfig.json",
-            ClientArgs.ARG_RESOURCES,
-            "/tmp/resources.json"
+              ClientArgs.ACTION_UPGRADE,
+              APP_NAME,
+              ClientArgs.ARG_TEMPLATE,
+              new File(tmpDir, "appConfig.json").toURI(),
+              ClientArgs.ARG_RESOURCES,
+              new File(tmpDir, "resources.json").toURI()
           ])
       fail("Upgrade command should have failed")
     } catch (SliderException e) {

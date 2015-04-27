@@ -39,6 +39,12 @@ import org.junit.Test
 
 class TestActionPackage extends AgentMiniClusterTestBase {
 
+
+  public static final String E_INVALID_APP_TYPE =
+      "A valid application type name is required (e.g. HBASE)"
+
+  File packageFile = new File("src/test/resources/log4j.properties")
+
   @Before
   public void setup() {
     super.setup()
@@ -59,7 +65,9 @@ class TestActionPackage extends AgentMiniClusterTestBase {
       )
       fail("expected an exception, got a status code " + launcher.serviceExitCode)
     } catch (BadCommandArgumentsException e) {
-      assert e.message.contains("A valid application type name is required (e.g. HBASE)")
+      assertExceptionDetails(e,
+          LauncherExitCodes.EXIT_COMMAND_ARGUMENT_ERROR,
+          E_INVALID_APP_TYPE)
     }
   }
 
@@ -94,7 +102,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
               SliderActions.ACTION_PACKAGE,
               Arguments.ARG_INSTALL,
               Arguments.ARG_NAME, "hbase",
-              Arguments.ARG_PACKAGE, "src/test/resources/log4j.properties",
+              Arguments.ARG_PACKAGE, packageFile.absolutePath
           ],
       )
       launcher = launchClientAgainstMiniMR(
@@ -105,12 +113,14 @@ class TestActionPackage extends AgentMiniClusterTestBase {
               SliderActions.ACTION_PACKAGE,
               Arguments.ARG_INSTALL,
               Arguments.ARG_NAME, "hbase",
-              Arguments.ARG_PACKAGE, "src/test/resources/log4j.properties",
+              Arguments.ARG_PACKAGE, packageFile.absolutePath
           ],
       )
       fail("expected an exception, got a status code " + launcher.serviceExitCode)
     } catch (BadCommandArgumentsException e) {
-      assert e.message.contains("Use --replacepkg to overwrite")
+      assertExceptionDetails(e,
+          LauncherExitCodes.EXIT_COMMAND_ARGUMENT_ERROR,
+          SliderClient.E_USE_REPLACEPKG_TO_OVERWRITE)
     }
   }
 
@@ -130,7 +140,9 @@ class TestActionPackage extends AgentMiniClusterTestBase {
       )
       fail("expected an exception, got a status code " + launcher.serviceExitCode)
     } catch (BadCommandArgumentsException e) {
-      assert e.message.contains("Unable to access supplied pkg file at")
+      assertExceptionDetails(e,
+          LauncherExitCodes.EXIT_COMMAND_ARGUMENT_ERROR,
+          SliderClient.E_UNABLE_TO_READ_SUPPLIED_PACKAGE_FILE)
     }
   }
 
@@ -145,7 +157,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
               SliderActions.ACTION_PACKAGE,
               Arguments.ARG_INSTALL,
               Arguments.ARG_NAME, "hbase",
-              Arguments.ARG_PACKAGE, "src/test/resources/log4j.properties",
+              Arguments.ARG_PACKAGE, packageFile.absolutePath
           ],
       )
       launcher = launchClientAgainstMiniMR(
@@ -156,7 +168,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
               SliderActions.ACTION_PACKAGE,
               Arguments.ARG_INSTALL,
               Arguments.ARG_NAME, "hbase",
-              Arguments.ARG_PACKAGE, "src/test/resources/log4j.properties",
+              Arguments.ARG_PACKAGE, packageFile.absolutePath,
               Arguments.ARG_REPLACE_PKG
           ],
       )
@@ -203,7 +215,6 @@ class TestActionPackage extends AgentMiniClusterTestBase {
 
   @Test
   public void testPackageDelete() throws Throwable {
-    try {
       ServiceLauncher launcher = launchClientAgainstMiniMR(
           //config includes RM binding info
           new YarnConfiguration(miniCluster.config),
@@ -212,7 +223,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
               SliderActions.ACTION_PACKAGE,
               Arguments.ARG_INSTALL,
               Arguments.ARG_NAME, "storm",
-              Arguments.ARG_PACKAGE, "src/test/resources/log4j.properties",
+              Arguments.ARG_PACKAGE, packageFile.absolutePath,
           ],
       )
       launcher = launchClientAgainstMiniMR(
@@ -225,9 +236,6 @@ class TestActionPackage extends AgentMiniClusterTestBase {
               Arguments.ARG_NAME, "storm"
           ],
       )
-    } catch (BadCommandArgumentsException e) {
-      fail("Should not throw exception:" + e.getMessage())
-    }
   }
 
   @Test
@@ -245,7 +253,9 @@ class TestActionPackage extends AgentMiniClusterTestBase {
       )
       fail("expected an exception, got a status code " + launcher.serviceExitCode)
     } catch (BadCommandArgumentsException e) {
-      assert e.message.contains("Package does not exist")
+      assertExceptionDetails(e,
+          LauncherExitCodes.EXIT_COMMAND_ARGUMENT_ERROR,
+          SliderClient.E_PACKAGE_DOES_NOT_EXIST)
     }
   }
 
@@ -263,7 +273,9 @@ class TestActionPackage extends AgentMiniClusterTestBase {
       )
       fail("expected an exception, got a status code " + launcher.serviceExitCode)
     } catch (BadCommandArgumentsException e) {
-      assert e.message.contains("A valid application type name is required (e.g. HBASE)")
+      assertExceptionDetails(e,
+          LauncherExitCodes.EXIT_COMMAND_ARGUMENT_ERROR,
+          E_INVALID_APP_TYPE)
     }
   }
 }
