@@ -19,6 +19,15 @@
 
 Basic instructions on using the Apache Tomcat app-package.
 
+## Build
+
+Check out the appropriate branch of slider, and build the project, providing the
+necessary profile activation for the Tomcat app package. You probably also
+want to skip tests. This will place zip file in `app-packages/tomcat/target`
+that will be used later.
+
+`mvn clean package -DskipTests -Ptomcat-app-package`
+
 ## Installation
 
 The Tomcat application package is distributed as a zip archive.
