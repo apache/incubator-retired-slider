@@ -43,12 +43,14 @@ class TestActionPackage extends AgentMiniClusterTestBase {
   public static final String E_INVALID_APP_TYPE =
       "A valid application type name is required (e.g. HBASE)"
 
-  File packageFile = new File("src/test/resources/log4j.properties")
+  String s = File.separator
+  File packageFile = new File("src${s}test${s}resources${s}log4j.properties")
 
   @Before
   public void setup() {
     super.setup()
     createMiniCluster("", configuration, 1, false)
+    assert packageFile.exists()
   }
 
   @Test
@@ -92,7 +94,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
   }
 
   @Test
-  public void testPackageInstallFailsWithInvalidPackagePath() throws Throwable {
+  public void testPackageInstallFailsOverwriteRequired() throws Throwable {
     try {
       ServiceLauncher launcher = launchClientAgainstMiniMR(
           //config includes RM binding info
@@ -125,7 +127,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
   }
 
   @Test
-  public void testPackageInstallFailsWithNeedingReplaceFlag() throws Throwable {
+  public void testPackageInstallFailsUnableToReadPackageFile() throws Throwable {
     try {
       ServiceLauncher launcher = launchClientAgainstMiniMR(
           //config includes RM binding info
@@ -160,7 +162,9 @@ class TestActionPackage extends AgentMiniClusterTestBase {
               Arguments.ARG_PACKAGE, packageFile.absolutePath
           ],
       )
-      launcher = launchClientAgainstMiniMR(
+      try {
+
+        launcher = launchClientAgainstMiniMR(
           //config includes RM binding info
           new YarnConfiguration(miniCluster.config),
           //varargs list of command line params
@@ -174,6 +178,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
       )
     } catch (BadCommandArgumentsException e) {
       log.info(e.message)
+      // throw e;
     }
   }
 
@@ -192,6 +197,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
       )
     } catch (BadCommandArgumentsException e) {
       log.info(e.message)
+     // throw e;
     }
   }
 
@@ -210,6 +216,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
       )
     } catch (BadCommandArgumentsException e) {
       log.info(e.message)
+      // throw e;
     }
   }
 

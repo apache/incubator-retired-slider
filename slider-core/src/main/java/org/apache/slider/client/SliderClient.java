@@ -249,6 +249,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   public static final String E_PACKAGE_DOES_NOT_EXIST = "Package does not exist";
   public static final String E_NO_ZOOKEEPER_QUORUM = "No Zookeeper quorum defined";
   public static final String E_NO_RESOURCE_MANAGER = "No valid Resource Manager address provided";
+  public static final String E_PACKAGE_EXISTS = "Package exists";
   private static PrintStream clientOutputStream = System.out;
 
   // value should not be changed without updating string find in slider.py
@@ -1483,9 +1484,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     Path fileInFs = new Path(pkgPath, srcFile.getName());
     if (sliderFileSystem.getFileSystem().exists(fileInFs)
         && !actionPackageArgs.replacePkg) {
-      throw new BadCommandArgumentsException("Pkg exists at " +
-                                             fileInFs.toUri().toString() +
-                                             ". Use --replacepkg to overwrite.");
+      throw new BadCommandArgumentsException(E_PACKAGE_EXISTS +" at " +
+           fileInFs.toUri() + ". Use --replacepkg to overwrite.");
     }
 
     log.info("Installing package {} to {} (overwrite set to {})", srcFile,

@@ -31,7 +31,6 @@ import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.BadConfigException;
-import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.providers.ProviderUtils;
 import org.apache.slider.providers.agent.application.metadata.Application;
 import org.apache.slider.providers.agent.application.metadata.Metainfo;
@@ -148,16 +147,16 @@ public class TestAgentClientProvider2 extends SliderTestUtils {
                                                 clientInstallPath,
                                                 appName);
     JSONObject outConfigs = output.getJSONObject("configurations");
-    Assert.assertNotNull("null configurations section", outConfigs);
+    assertNotNull("null configurations section", outConfigs);
     JSONObject outGlobal = outConfigs.getJSONObject("global");
-    Assert.assertNotNull("null globals section", outGlobal);
-    Assert.assertEquals("b", outGlobal.getString("a"));
-    Assert.assertTrue("no file1/d in " + outGlobal.getString("d"),
-        outGlobal.getString("d").contains("file1/d"));
-    Assert.assertEquals(clientInstallPath.toString(), outGlobal.getString("app_install_dir"));
-    Assert.assertEquals("name", outGlobal.getString("e"));
-    Assert.assertEquals("name", outGlobal.getString("app_name"));
-    Assert.assertEquals(user, outGlobal.getString("app_user"));
+    assertNotNull("null globals section", outGlobal);
+    assertEquals("b", outGlobal.getString("a"));
+    assertContained("file1/d", outGlobal.getString("d"));
+    assertContained(clientInstallPath.getAbsolutePath(),
+        outGlobal.getString("app_install_dir"));
+    assertEquals("name", outGlobal.getString("e"));
+    assertEquals("name", outGlobal.getString("app_name"));
+    assertEquals(user, outGlobal.getString("app_user"));
 
     defaultConfig = new JSONObject();
     global = new JSONObject();
@@ -173,23 +172,30 @@ public class TestAgentClientProvider2 extends SliderTestUtils {
         clientInstallPath,
         null);
     outConfigs = output.getJSONObject("configurations");
-    Assert.assertNotNull("null configurations section", outConfigs);
+    assertNotNull("null configurations section", outConfigs);
     outGlobal = outConfigs.getJSONObject("global");
-    Assert.assertNotNull("null globals section", outGlobal);
-    Assert.assertEquals("b", outGlobal.getString("a"));
-    Assert.assertTrue("no file1/d in " + outGlobal.getString("d"),
-        outGlobal.getString("d").contains("file1/d"));
-    Assert.assertEquals("b2", outGlobal.getString("a1"));
-    Assert.assertTrue("no file1/d in " + outGlobal.getString("d1"),
-        outGlobal.getString("d1").contains("file1/d"));
-    Assert.assertEquals(clientInstallPath.toString(), outGlobal.getString("app_install_dir"));
-    Assert.assertEquals("{app_name}", outGlobal.getString("e"));
-    Assert.assertFalse("no 'app_name' field", outGlobal.has("app_name"));
-    Assert.assertEquals(user, outGlobal.getString("app_user"));
+    assertNotNull("null globals section", outGlobal);
+    assertEquals("b", outGlobal.getString("a"));
+    assertEquals("b2", outGlobal.getString("a1"));
+
+
+    assertContained("file1/d", outGlobal.getString("d"));
+    assertContained("file1/d", outGlobal.getString("d1"));
+    assertContained(clientInstallPath.getAbsolutePath(),
+        outGlobal.getString("app_install_dir"));
+    assertEquals("{app_name}", outGlobal.getString("e"));
+    assertFalse("no 'app_name' field", outGlobal.has("app_name"));
+    assertEquals(user, outGlobal.getString("app_user"));
 
     PowerMock.verify(RegistryUtils.class);
   }
 
+  public void assertContained(String expected, String actual) {
+    assertNotNull(actual);
+    assertTrue(
+        String.format("Did not find \"%s\" in \"%s\"", expected, actual),
+        actual.contains(expected));
+  }
 
   @Test
   public void testRunCommand() throws Exception {
