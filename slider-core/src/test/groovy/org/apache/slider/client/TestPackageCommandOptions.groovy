@@ -153,11 +153,11 @@ class TestPackageCommandOptions extends AgentMiniClusterTestBase {
     assert enumeratedInstance.applicationReport.name ==
            clustername
     def outText = outFile.text
-    assert outText.contains(installedPackage.absolutePath)
+    assert outText.contains(installedPackage.toURI().toString())
     assert outText.contains(APP_NAME)
     assert outText.contains(clustername)
     assert outText.matches("(?s).*" + clustername + " +" + APP_NAME + " +"
-      + installedPackage.absolutePath + ".*")
+      + installedPackage.toURI() + ".*")
   }
 
   @Test
@@ -224,11 +224,11 @@ class TestPackageCommandOptions extends AgentMiniClusterTestBase {
     assert enumeratedInstance != null
     assert enumeratedInstance.applicationReport.name == clustername
     def outText = outFile.text
-    assert outText.contains(installedPackage.absolutePath)
+    assert outText.contains(installedPackage.toURI().toString())
     assert outText.contains(APP_NAME)
     assert outText.contains(clustername)
     assert outText.matches("(?s).*" + clustername + " +" + APP_NAME + " +"
-      + APP_VERSION + " +" + installedPackage.absolutePath + ".*")
+      + APP_VERSION + " +" + installedPackage.toURI() + ".*")
   }
 
   private File getTempLocation () {

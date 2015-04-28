@@ -1400,7 +1400,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       if (!appDefPath.isUriPathAbsolute()) {
         appDefPath = new Path(fs.getHomeDirectory(), appDefPath);
       }
-      String appDefPathStr = appDefPath.toUri().getPath();
+      String appDefPathStr = appDefPath.toUri().toString();
       try {
         if (appDefPathStr.contains(pkgPathValue) && fs.isFile(appDefPath)) {
           String packageName = appDefPath.getParent().getName();
