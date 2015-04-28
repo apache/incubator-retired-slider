@@ -161,9 +161,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
               Arguments.ARG_NAME, "hbase",
               Arguments.ARG_PACKAGE, packageFile.absolutePath
           ],
-      )
-      try {
-
+        )
         launcher = launchClientAgainstMiniMR(
           //config includes RM binding info
           new YarnConfiguration(miniCluster.config),
@@ -175,7 +173,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
               Arguments.ARG_PACKAGE, packageFile.absolutePath,
               Arguments.ARG_REPLACE_PKG
           ],
-      )
+        )
     } catch (BadCommandArgumentsException e) {
       log.info(e.message)
       // throw e;
