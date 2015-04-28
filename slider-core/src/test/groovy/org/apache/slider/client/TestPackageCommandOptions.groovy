@@ -99,7 +99,8 @@ class TestPackageCommandOptions extends AgentMiniClusterTestBase {
 
     // get the default application.def file and install it as a package
     String appDefPath = agentDefOptions.getAt(AgentKeys.APP_DEF)
-    File appDefFile = new File(new URI(appDefPath))
+    File appDefFile = new File(new URI(appDefPath).path)
+    assert appDefFile.exists()
     YarnConfiguration conf = SliderUtils.createConfiguration()
     ServiceLauncher<SliderClient> launcher = launch(TestSliderClient,
         conf,
