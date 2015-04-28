@@ -247,6 +247,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       = "A valid application type name is required (e.g. HBASE).";
   public static final String E_USE_REPLACEPKG_TO_OVERWRITE = "Use --replacepkg to overwrite.";
   public static final String E_PACKAGE_DOES_NOT_EXIST = "Package does not exist";
+  public static final String E_NO_ZOOKEEPER_QUORUM = "No Zookeeper quorum defined";
+  public static final String E_NO_RESOURCE_MANAGER = "No valid Resource Manager address provided";
   private static PrintStream clientOutputStream = System.out;
 
   // value should not be changed without updating string find in slider.py
@@ -1687,7 +1689,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       quorum = registryQuorum;
     }
     if (isUnset(quorum)) {
-      throw new BadConfigException("No Zookeeper quorum defined");
+      throw new BadConfigException(E_NO_ZOOKEEPER_QUORUM);
     }
     ZKPathBuilder zkPaths = new ZKPathBuilder(getAppName(),
         getUsername(),
@@ -1699,7 +1701,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     if (isSet(zookeeperRoot)) {
       zkPaths.setAppPath(zookeeperRoot);
     } else {
-      String createDefaultZkNode = appConf.getGlobalOptions().getOption(AgentKeys.CREATE_DEF_ZK_NODE, "false");
+      String createDefaultZkNode = appConf.getGlobalOptions()
+          .getOption(AgentKeys.CREATE_DEF_ZK_NODE, "false");
       if (createDefaultZkNode.equals("true")) {
         String defaultZKPath = createZookeeperNode(clustername, false);
         log.debug("ZK node created for application instance: {}", defaultZKPath);
@@ -1764,7 +1767,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     } catch (LockAcquireFailedException e) {
       log.warn("Failed to get a Lock on cluster resource : {}", e);
       throw new BadClusterStateException(
-          "Failed to validate client resource definition " + clustername + ": "
+          "Failed to load client resource definition " + clustername + ": "
               + e);
     }
     Map<String, Integer> clusterComponentInstances = new HashMap<>();
@@ -1802,8 +1805,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       log.error("Mismatch found in upgrade resource definition and cluster "
           + "resource state");
       if (!clientComponentInstances.isEmpty()) {
-        log.info("  Following are the upgrade resource definitions that do "
-            + "not match");
+        log.info("The upgrade resource definitions that do not match are:");
         for (Map.Entry<String, Integer> clientComponentInstanceEntry : clientComponentInstances
             .entrySet()) {
           log.info("    Component Name: {}, Instance count: {}",
@@ -1812,7 +1814,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         }
       }
       if (!clusterComponentInstances.isEmpty()) {
-        log.info("  Following are the cluster resources that do not match");
+        log.info("The cluster resources that do not match are:");
         for (Map.Entry<String, Integer> clusterComponentInstanceEntry : clusterComponentInstances
             .entrySet()) {
           log.info("    Component Name: {}, Instance count: {}",
@@ -1820,10 +1822,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
               clusterComponentInstanceEntry.getValue());
         }
       }
-      throw new BadConfigException("\n\nResource definition provided for "
+      throw new BadConfigException("Resource definition provided for "
           + "upgrade does not match with that of the currently running "
           + "cluster.\nIf you are aware of what you are doing, rerun the "
-          + "command with " + Arguments.ARG_FORCE + " option.\n");
+          + "command with " + Arguments.ARG_FORCE + " option.");
     }
   }
 
@@ -1881,7 +1883,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     if (!getConfig().getBoolean(YarnConfiguration.RM_HA_ENABLED, false)
      && !SliderUtils.isAddressDefined(rmAddr)) {
       throw new BadCommandArgumentsException(
-        "No valid Resource Manager address provided in the argument "
+        E_NO_RESOURCE_MANAGER
+        + " in the argument "
         + Arguments.ARG_MANAGER
         + " or the configuration property "
         + YarnConfiguration.RM_ADDRESS 
