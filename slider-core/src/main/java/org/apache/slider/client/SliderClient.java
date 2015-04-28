@@ -1308,11 +1308,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     AbstractClientProvider
         provider = createClientProvider(SliderProviderFactory.DEFAULT_CLUSTER_TYPE);
     provider.processClientOperation(sliderFileSystem,
-                                    "INSTALL",
-                                    clientInfo.installLocation,
-                                    pkgFile,
-                                    config,
-                                    clientInfo.name);
+        "INSTALL",
+        clientInfo.installLocation,
+        pkgFile,
+        config,
+        clientInfo.name);
     return EXIT_SUCCESS;
   }
 
@@ -1495,9 +1495,18 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         .getPathWithoutSchemeAndAuthority(fileInFs).toString();
     String destHomeDir = Path.getPathWithoutSchemeAndAuthority(
         sliderFileSystem.getFileSystem().getHomeDirectory()).toString();
-    String destPathWithoutHomeDir = destPathWithHomeDir.replaceFirst(
-        destHomeDir + File.separatorChar, StringUtils.EMPTY);
-    println("\nSet " + AgentKeys.APP_DEF + " in your app config JSON to = %s\n",
+    // a somewhat contrived approach to stripping out the home directory and any trailing
+    // separator; designed to work on windows and unix
+    String destPathWithoutHomeDir;
+    if (destPathWithHomeDir.startsWith(destHomeDir)) {
+      destPathWithoutHomeDir = destPathWithHomeDir.substring(destHomeDir.length());
+      if (destPathWithoutHomeDir.startsWith("/") || destPathWithoutHomeDir.startsWith("\\")) {
+        destPathWithoutHomeDir = destPathWithoutHomeDir.substring(1);
+      }
+    } else {
+      destPathWithoutHomeDir = destPathWithHomeDir;
+    }
+    log.info("Set " + AgentKeys.APP_DEF + " in your app config JSON to {}",
         destPathWithoutHomeDir);
 
     return EXIT_SUCCESS;
