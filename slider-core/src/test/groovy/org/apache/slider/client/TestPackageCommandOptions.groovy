@@ -18,9 +18,6 @@
 
 package org.apache.slider.client
 
-import java.io.File
-import java.io.IOException
-
 import org.apache.commons.io.FileUtils
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.fs.FileUtil
@@ -121,8 +118,7 @@ class TestPackageCommandOptions extends AgentMiniClusterTestBase {
     describe("Installed app package to - " + installedPackage.toURI()
       .toString())
     // overwrite the application.def property with the new installed path
-    agentDefOptions.putAt(AgentKeys.APP_DEF, installedPackage.toURI()
-      .toString())
+    agentDefOptions.put(AgentKeys.APP_DEF, installedPackage.toURI().toString())
     // start the app and AM
     describe("Starting the app")
     launcher = createStandaloneAM(clustername, true, false)
@@ -142,7 +138,7 @@ class TestPackageCommandOptions extends AgentMiniClusterTestBase {
         ]
     )
     // reset the app def path to orig value and remove app version
-    agentDefOptions.putAt(AgentKeys.APP_DEF, appDefPath)
+    agentDefOptions.put(AgentKeys.APP_DEF, appDefPath)
     agentDefOptions.remove(SliderKeys.APP_VERSION)
 
     assert launcher.serviceExitCode == 0
@@ -191,10 +187,10 @@ class TestPackageCommandOptions extends AgentMiniClusterTestBase {
     describe("Installed app package to - " + installedPackage.toURI()
       .toString())
     // overwrite the application.def property with the new installed path
-    agentDefOptions.putAt(AgentKeys.APP_DEF, installedPackage.toURI()
+    agentDefOptions.put(AgentKeys.APP_DEF, installedPackage.toURI()
       .toString())
     // add the app version
-    agentDefOptions.putAt(SliderKeys.APP_VERSION, APP_VERSION)
+    agentDefOptions.put(SliderKeys.APP_VERSION, APP_VERSION)
     // start the app and AM
     describe("Starting the app")
     launcher = createStandaloneAM(clustername, true, false)
@@ -214,7 +210,7 @@ class TestPackageCommandOptions extends AgentMiniClusterTestBase {
         ]
     )
     // reset the app def path to orig value and remove app version
-    agentDefOptions.putAt(AgentKeys.APP_DEF, appDefPath)
+    agentDefOptions.put(AgentKeys.APP_DEF, appDefPath)
     agentDefOptions.remove(SliderKeys.APP_VERSION)
 
     assert launcher.serviceExitCode == 0
@@ -234,7 +230,10 @@ class TestPackageCommandOptions extends AgentMiniClusterTestBase {
   }
 
   private File getTempLocation () {
-    return new File(System.getProperty("user.dir") + "/target/_")
+    File tmpDir = File.createTempFile("temp", "dir")
+    tmpDir.delete()
+    tmpDir.mkdir()
+    tmpDir
   }
 
   static class TestSliderClient extends SliderClient {
