@@ -1735,7 +1735,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       appDefinitionPersister.persistPackages();
 
     } catch (LockAcquireFailedException e) {
-      log.warn("Failed to get a Lock on {} : {}", builder, e);
+      log.warn("Failed to get a Lock on {} : {}", builder, e, e);
       throw new BadClusterStateException("Failed to save " + clustername
                                          + ": " + e);
     }
@@ -1765,7 +1765,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     try {
       clusterConf = loadPersistedClusterDescription(clustername);
     } catch (LockAcquireFailedException e) {
-      log.warn("Failed to get a Lock on cluster resource : {}", e);
+      log.warn("Failed to get a Lock on cluster resource : {}", e, e);
       throw new BadClusterStateException(
           "Failed to load client resource definition " + clustername + ": "
               + e);
