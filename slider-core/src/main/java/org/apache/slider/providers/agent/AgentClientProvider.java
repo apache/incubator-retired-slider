@@ -437,13 +437,13 @@ public class AgentClientProvider extends AbstractClientProvider
       String clientScriptPath = appPkgDir.getAbsolutePath() + File.separator + "package" +
                                 File.separator + clientScript;
       List<String> command = Arrays.asList(AgentKeys.PYTHON_EXE,
-                                           "-S",
-                                           clientScriptPath,
-                                           "INSTALL",
-                                           cmdDir.getAbsolutePath() + File.separator + "command.json",
-                                           appPkgDir.getAbsolutePath() + File.separator + "package",
-                                           cmdDir.getAbsolutePath() + File.separator + "command-out.json",
-                                           "DEBUG");
+               "-S",
+               clientScriptPath,
+               "INSTALL",
+               cmdDir.getAbsolutePath() + File.separator + "command.json",
+               appPkgDir.getAbsolutePath() + File.separator + "package",
+               cmdDir.getAbsolutePath() + File.separator + "command-out.json",
+               "DEBUG");
       ProcessBuilder pb = new ProcessBuilder(command);
       log.info("Command: " + StringUtils.join(pb.command(), " "));
       pb.environment().put(SliderKeys.PYTHONPATH,

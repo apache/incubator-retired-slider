@@ -29,6 +29,7 @@ import org.apache.slider.core.exceptions.BadCommandArgumentsException
 import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.core.main.ServiceLauncher
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 
 /**
@@ -39,10 +40,18 @@ import org.junit.Test
 
 class TestActionPackage extends AgentMiniClusterTestBase {
 
+
+  public static final String E_INVALID_APP_TYPE =
+      "A valid application type name is required (e.g. HBASE)"
+
+  String s = File.separator
+  File packageFile = new File("src${s}test${s}resources${s}log4j.properties")
+
   @Before
   public void setup() {
     super.setup()
     createMiniCluster("", configuration, 1, false)
+    assert packageFile.exists()
   }
 
   @Test
@@ -59,7 +68,9 @@ class TestActionPackage extends AgentMiniClusterTestBase {
       )
       fail("expected an exception, got a status code " + launcher.serviceExitCode)
     } catch (BadCommandArgumentsException e) {
-      assert e.message.contains("A valid application type name is required (e.g. HBASE)")
+      assertExceptionDetails(e,
+          LauncherExitCodes.EXIT_COMMAND_ARGUMENT_ERROR,
+          E_INVALID_APP_TYPE)
     }
   }
 
@@ -84,7 +95,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
   }
 
   @Test
-  public void testPackageInstallFailsWithInvalidPackagePath() throws Throwable {
+  public void testPackageInstallFailsOverwriteRequired() throws Throwable {
     try {
       ServiceLauncher launcher = launchClientAgainstMiniMR(
           //config includes RM binding info
@@ -94,7 +105,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
               SliderActions.ACTION_PACKAGE,
               Arguments.ARG_INSTALL,
               Arguments.ARG_NAME, "hbase",
-              Arguments.ARG_PACKAGE, "src/test/resources/log4j.properties",
+              Arguments.ARG_PACKAGE, packageFile.absolutePath
           ],
       )
       launcher = launchClientAgainstMiniMR(
@@ -105,17 +116,19 @@ class TestActionPackage extends AgentMiniClusterTestBase {
               SliderActions.ACTION_PACKAGE,
               Arguments.ARG_INSTALL,
               Arguments.ARG_NAME, "hbase",
-              Arguments.ARG_PACKAGE, "src/test/resources/log4j.properties",
+              Arguments.ARG_PACKAGE, packageFile.absolutePath
           ],
       )
       fail("expected an exception, got a status code " + launcher.serviceExitCode)
     } catch (BadCommandArgumentsException e) {
-      assert e.message.contains("Use --replacepkg to overwrite")
+      assertExceptionDetails(e,
+          LauncherExitCodes.EXIT_COMMAND_ARGUMENT_ERROR,
+          SliderClient.E_USE_REPLACEPKG_TO_OVERWRITE)
     }
   }
 
   @Test
-  public void testPackageInstallFailsWithNeedingReplaceFlag() throws Throwable {
+  public void testPackageInstallFailsUnableToReadPackageFile() throws Throwable {
     try {
       ServiceLauncher launcher = launchClientAgainstMiniMR(
           //config includes RM binding info
@@ -130,11 +143,14 @@ class TestActionPackage extends AgentMiniClusterTestBase {
       )
       fail("expected an exception, got a status code " + launcher.serviceExitCode)
     } catch (BadCommandArgumentsException e) {
-      assert e.message.contains("Unable to access supplied pkg file at")
+      assertExceptionDetails(e,
+          LauncherExitCodes.EXIT_COMMAND_ARGUMENT_ERROR,
+          SliderClient.E_UNABLE_TO_READ_SUPPLIED_PACKAGE_FILE)
     }
   }
 
   @Test
+  @Ignore
   public void testPackageInstallWithReplace() throws Throwable {
     try {
       ServiceLauncher launcher = launchClientAgainstMiniMR(
@@ -145,10 +161,10 @@ class TestActionPackage extends AgentMiniClusterTestBase {
               SliderActions.ACTION_PACKAGE,
               Arguments.ARG_INSTALL,
               Arguments.ARG_NAME, "hbase",
-              Arguments.ARG_PACKAGE, "src/test/resources/log4j.properties",
+              Arguments.ARG_PACKAGE, packageFile.absolutePath
           ],
-      )
-      launcher = launchClientAgainstMiniMR(
+        )
+        launcher = launchClientAgainstMiniMR(
           //config includes RM binding info
           new YarnConfiguration(miniCluster.config),
           //varargs list of command line params
@@ -156,16 +172,18 @@ class TestActionPackage extends AgentMiniClusterTestBase {
               SliderActions.ACTION_PACKAGE,
               Arguments.ARG_INSTALL,
               Arguments.ARG_NAME, "hbase",
-              Arguments.ARG_PACKAGE, "src/test/resources/log4j.properties",
+              Arguments.ARG_PACKAGE, packageFile.absolutePath,
               Arguments.ARG_REPLACE_PKG
           ],
-      )
+        )
     } catch (BadCommandArgumentsException e) {
       log.info(e.message)
+      // throw e;
     }
   }
 
   @Test
+  @Ignore
   public void testPackageList() throws Throwable {
     try {
       ServiceLauncher launcher = launchClientAgainstMiniMR(
@@ -180,10 +198,12 @@ class TestActionPackage extends AgentMiniClusterTestBase {
       )
     } catch (BadCommandArgumentsException e) {
       log.info(e.message)
+     // throw e;
     }
   }
 
   @Test
+  @Ignore
   public void testPackageInstances() throws Throwable {
     try {
       ServiceLauncher launcher = launchClientAgainstMiniMR(
@@ -198,12 +218,12 @@ class TestActionPackage extends AgentMiniClusterTestBase {
       )
     } catch (BadCommandArgumentsException e) {
       log.info(e.message)
+      // throw e;
     }
   }
 
   @Test
   public void testPackageDelete() throws Throwable {
-    try {
       ServiceLauncher launcher = launchClientAgainstMiniMR(
           //config includes RM binding info
           new YarnConfiguration(miniCluster.config),
@@ -212,7 +232,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
               SliderActions.ACTION_PACKAGE,
               Arguments.ARG_INSTALL,
               Arguments.ARG_NAME, "storm",
-              Arguments.ARG_PACKAGE, "src/test/resources/log4j.properties",
+              Arguments.ARG_PACKAGE, packageFile.absolutePath,
           ],
       )
       launcher = launchClientAgainstMiniMR(
@@ -225,9 +245,6 @@ class TestActionPackage extends AgentMiniClusterTestBase {
               Arguments.ARG_NAME, "storm"
           ],
       )
-    } catch (BadCommandArgumentsException e) {
-      fail("Should not throw exception:" + e.getMessage())
-    }
   }
 
   @Test
@@ -245,7 +262,9 @@ class TestActionPackage extends AgentMiniClusterTestBase {
       )
       fail("expected an exception, got a status code " + launcher.serviceExitCode)
     } catch (BadCommandArgumentsException e) {
-      assert e.message.contains("Package does not exist")
+      assertExceptionDetails(e,
+          LauncherExitCodes.EXIT_COMMAND_ARGUMENT_ERROR,
+          SliderClient.E_PACKAGE_DOES_NOT_EXIST)
     }
   }
 
@@ -263,7 +282,9 @@ class TestActionPackage extends AgentMiniClusterTestBase {
       )
       fail("expected an exception, got a status code " + launcher.serviceExitCode)
     } catch (BadCommandArgumentsException e) {
-      assert e.message.contains("A valid application type name is required (e.g. HBASE)")
+      assertExceptionDetails(e,
+          LauncherExitCodes.EXIT_COMMAND_ARGUMENT_ERROR,
+          E_INVALID_APP_TYPE)
     }
   }
 }

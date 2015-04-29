@@ -20,7 +20,6 @@ package org.apache.slider.providers.agent;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -1933,8 +1932,8 @@ public class AgentProviderService extends AbstractProviderService implements
       }
     }
 
-    if (packages.size() > 0) {
-      return String.format(pkgListFormatString, StringUtils.join(",", packages));
+    if (!packages.isEmpty()) {
+      return "[" + SliderUtils.join(packages, ",", false) + "]";
     } else {
       return "[]";
     }

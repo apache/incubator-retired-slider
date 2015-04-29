@@ -18,9 +18,6 @@
 
 package org.apache.slider.client
 
-import java.io.File
-import java.io.IOException
-
 import org.apache.commons.io.FileUtils
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.fs.FileUtil
@@ -102,7 +99,8 @@ class TestPackageCommandOptions extends AgentMiniClusterTestBase {
 
     // get the default application.def file and install it as a package
     String appDefPath = agentDefOptions.getAt(AgentKeys.APP_DEF)
-    File appDefFile = new File(new URI(appDefPath))
+    File appDefFile = new File(new URI(appDefPath).path)
+    assert appDefFile.exists()
     YarnConfiguration conf = SliderUtils.createConfiguration()
     ServiceLauncher<SliderClient> launcher = launch(TestSliderClient,
         conf,
@@ -118,11 +116,11 @@ class TestPackageCommandOptions extends AgentMiniClusterTestBase {
       null), appDefFile.getName())
     File installedPackage = new File(installedPath.toUri().path)
     assert installedPackage.exists()
-    describe("Installed app package to - " + installedPackage.toURI()
-      .toString())
+
+    def installedPackageURI = installedPackage.toURI()
+    describe("Installed app package to - $installedPackageURI")
     // overwrite the application.def property with the new installed path
-    agentDefOptions.putAt(AgentKeys.APP_DEF, installedPackage.toURI()
-      .toString())
+    agentDefOptions.put(AgentKeys.APP_DEF, installedPackageURI.toString())
     // start the app and AM
     describe("Starting the app")
     launcher = createStandaloneAM(clustername, true, false)
@@ -130,7 +128,9 @@ class TestPackageCommandOptions extends AgentMiniClusterTestBase {
     addToTeardown(sliderClient)
 
     describe("Listing all instances of installed packages")
-    String outFileName = "target/packageInstances.out"
+    String outFileName = "target${File.separator}packageInstances.out"
+    File outFile = new File(outFileName)
+
     launcher = launchClientAgainstMiniMR(
         //config includes RM binding info
         yarnConfig,
@@ -138,11 +138,11 @@ class TestPackageCommandOptions extends AgentMiniClusterTestBase {
         [SliderActions.ACTION_PACKAGE,
          Arguments.ARG_PKGINSTANCES,
          ClientArgs.ARG_OUTPUT,
-         outFileName
+         outFile.absolutePath
         ]
     )
     // reset the app def path to orig value and remove app version
-    agentDefOptions.putAt(AgentKeys.APP_DEF, appDefPath)
+    agentDefOptions.put(AgentKeys.APP_DEF, appDefPath)
     agentDefOptions.remove(SliderKeys.APP_VERSION)
 
     assert launcher.serviceExitCode == 0
@@ -152,13 +152,12 @@ class TestPackageCommandOptions extends AgentMiniClusterTestBase {
     assert enumeratedInstance != null
     assert enumeratedInstance.applicationReport.name ==
            clustername
-    File outFile = new File(outFileName)
     def outText = outFile.text
-    assert outText.contains(installedPackage.absolutePath)
+    assert outText.contains(installedPackage.toURI().toString())
     assert outText.contains(APP_NAME)
     assert outText.contains(clustername)
     assert outText.matches("(?s).*" + clustername + " +" + APP_NAME + " +"
-      + installedPackage.absolutePath + ".*")
+      + installedPackage.toURI() + ".*")
   }
 
   @Test
@@ -170,7 +169,7 @@ class TestPackageCommandOptions extends AgentMiniClusterTestBase {
 
     // get the default application.def file and install it as a package
     String appDefPath = agentDefOptions.getAt(AgentKeys.APP_DEF)
-    File appDefFile = new File(new URI(appDefPath))
+    File appDefFile = new File(new URI(appDefPath).path)
     YarnConfiguration conf = SliderUtils.createConfiguration()
     ServiceLauncher<SliderClient> launcher = launch(TestSliderClient,
         conf,
@@ -191,10 +190,10 @@ class TestPackageCommandOptions extends AgentMiniClusterTestBase {
     describe("Installed app package to - " + installedPackage.toURI()
       .toString())
     // overwrite the application.def property with the new installed path
-    agentDefOptions.putAt(AgentKeys.APP_DEF, installedPackage.toURI()
+    agentDefOptions.put(AgentKeys.APP_DEF, installedPackage.toURI()
       .toString())
     // add the app version
-    agentDefOptions.putAt(SliderKeys.APP_VERSION, APP_VERSION)
+    agentDefOptions.put(SliderKeys.APP_VERSION, APP_VERSION)
     // start the app and AM
     describe("Starting the app")
     launcher = createStandaloneAM(clustername, true, false)
@@ -202,19 +201,20 @@ class TestPackageCommandOptions extends AgentMiniClusterTestBase {
     addToTeardown(sliderClient)
 
     describe("Listing all instances of installed packages")
-    String outFileName = "target/packageInstancesWithVersion.out"
+    File outFile = new File("target${File.separator}packageInstancesWithVersion.out")
     launcher = launchClientAgainstMiniMR(
         //config includes RM binding info
         yarnConfig,
         //varargs list of command line params
-        [SliderActions.ACTION_PACKAGE,
-         Arguments.ARG_PKGINSTANCES,
-         ClientArgs.ARG_OUTPUT,
-         outFileName
+        [
+          SliderActions.ACTION_PACKAGE,
+          Arguments.ARG_PKGINSTANCES,
+          ClientArgs.ARG_OUTPUT,
+          outFile.absolutePath
         ]
     )
     // reset the app def path to orig value and remove app version
-    agentDefOptions.putAt(AgentKeys.APP_DEF, appDefPath)
+    agentDefOptions.put(AgentKeys.APP_DEF, appDefPath)
     agentDefOptions.remove(SliderKeys.APP_VERSION)
 
     assert launcher.serviceExitCode == 0
@@ -222,19 +222,20 @@ class TestPackageCommandOptions extends AgentMiniClusterTestBase {
     def instances = client.enumSliderInstances(false, null, null)
     def enumeratedInstance = instances[clustername]
     assert enumeratedInstance != null
-    assert enumeratedInstance.applicationReport.name ==
-           clustername
-    File outFile = new File(outFileName)
+    assert enumeratedInstance.applicationReport.name == clustername
     def outText = outFile.text
-    assert outText.contains(installedPackage.absolutePath)
+    assert outText.contains(installedPackage.toURI().toString())
     assert outText.contains(APP_NAME)
     assert outText.contains(clustername)
     assert outText.matches("(?s).*" + clustername + " +" + APP_NAME + " +"
-      + APP_VERSION + " +" + installedPackage.absolutePath + ".*")
+      + APP_VERSION + " +" + installedPackage.toURI() + ".*")
   }
 
   private File getTempLocation () {
-    return new File(System.getProperty("user.dir") + "/target/_")
+    File tmpDir = File.createTempFile("temp", "dir")
+    tmpDir.delete()
+    tmpDir.mkdir()
+    tmpDir
   }
 
   static class TestSliderClient extends SliderClient {
