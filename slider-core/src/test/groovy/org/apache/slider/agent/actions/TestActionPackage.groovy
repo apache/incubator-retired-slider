@@ -29,6 +29,7 @@ import org.apache.slider.core.exceptions.BadCommandArgumentsException
 import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.core.main.ServiceLauncher
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 
 /**
@@ -149,6 +150,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
   }
 
   @Test
+  @Ignore
   public void testPackageInstallWithReplace() throws Throwable {
     try {
       ServiceLauncher launcher = launchClientAgainstMiniMR(
@@ -181,6 +183,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
   }
 
   @Test
+  @Ignore
   public void testPackageList() throws Throwable {
     try {
       ServiceLauncher launcher = launchClientAgainstMiniMR(
@@ -200,6 +203,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
   }
 
   @Test
+  @Ignore
   public void testPackageInstances() throws Throwable {
     try {
       ServiceLauncher launcher = launchClientAgainstMiniMR(
