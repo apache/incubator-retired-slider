@@ -18,34 +18,24 @@
 
 package org.apache.slider.client
 
-import java.io.File
-import java.io.IOException
-import java.io.FileNotFoundException
-
-import org.apache.commons.io.FileUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.fs.FileSystem
-import org.apache.hadoop.fs.FileUtil
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.fs.RawLocalFileSystem
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.conf.YarnConfiguration
-
 import org.apache.slider.agent.AgentMiniClusterTestBase
-import org.apache.slider.common.SliderKeys
+import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.ClientArgs
-import org.apache.slider.common.params.SliderActions
 import org.apache.slider.common.tools.SliderFileSystem
 import org.apache.slider.common.tools.SliderUtils
-import org.apache.slider.core.exceptions.BadCommandArgumentsException
 import org.apache.slider.core.exceptions.BadConfigException
 import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
+import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.core.main.ServiceLauncher
-import org.apache.slider.providers.agent.AgentKeys
-
 import org.junit.Before
 import org.junit.Test
 
@@ -79,16 +69,17 @@ class TestUpgradeCommandOptions extends AgentMiniClusterTestBase {
   public void testUpgradeAppNotRunning() throws Throwable {
     describe("Calling upgrade")
     YarnConfiguration conf = SliderUtils.createConfiguration()
+    File tmpDir = createTempDir()
     try {
       ServiceLauncher launcher = launch(TestSliderClient,
           conf,
           [
-            ClientArgs.ACTION_UPGRADE,
-            APP_NAME,
-            ClientArgs.ARG_TEMPLATE,
-            "/tmp/appConfig.json",
-            ClientArgs.ARG_RESOURCES,
-            "/tmp/resources.json"
+              ClientArgs.ACTION_UPGRADE,
+              APP_NAME,
+              ClientArgs.ARG_TEMPLATE,
+              new File(tmpDir, "appConfig.json").toURI(),
+              ClientArgs.ARG_RESOURCES,
+              new File(tmpDir, "resources.json").toURI()
           ])
       fail("Upgrade command should have failed")
     } catch (SliderException e) {
@@ -96,6 +87,12 @@ class TestUpgradeCommandOptions extends AgentMiniClusterTestBase {
       assert e instanceof UnknownApplicationInstanceException
       assert e.getMessage().contains("Unknown application instance")
     }
+  }
+
+  public File createTempDir() {
+    File tmpDir = File.createTempFile("test", ".dir")
+    tmpDir.delete()
+    return tmpDir
   }
 
   @Test
@@ -126,8 +123,9 @@ class TestUpgradeCommandOptions extends AgentMiniClusterTestBase {
 
   public void testUpgradeInvalidResourcesFile(String clustername) 
     throws Throwable {
-    String appConfigFile = Path.getPathWithoutSchemeAndAuthority(testFileSystem
-      .buildClusterDirPath(clustername)).toString() + "/app_config.json"
+    Path appConfigFile = getClusterFile(clustername, "app_config.json")
+    File tmpDir = createTempDir()
+    File resourcesJson = new File(tmpDir, "resources.json")
 
     describe("Calling upgrade - testUpgradeInvalidResourcesFile")
     try {
@@ -141,23 +139,27 @@ class TestUpgradeCommandOptions extends AgentMiniClusterTestBase {
               ClientArgs.ARG_TEMPLATE,
               appConfigFile,
               ClientArgs.ARG_RESOURCES,
-              "/tmp/resources.json"
+              resourcesJson.absolutePath
           ]
       )
       fail("Upgrade command should have failed")
-    } catch (SliderException e) {
-      log.info(e.toString())
-      assert e instanceof BadConfigException
-      assert e.getMessage().contains("incorrect argument to --resources: " +
-        "\"/tmp/resources.json\" : java.io.FileNotFoundException: " +
-        "/tmp/resources.json (No such file or directory)")
+    } catch (BadConfigException e) {
+      assertExceptionDetails(e, SliderExitCodes.EXIT_BAD_CONFIGURATION,
+          Arguments.ARG_RESOURCES)
     }
+  }
+
+  public Path getClusterFile(String clustername, String clusterfile) {
+    Path path = new Path(testFileSystem.buildClusterDirPath(clustername), clusterfile)
+    return Path.getPathWithoutSchemeAndAuthority(path)
   }
 
   public void testUpgradeInvalidConfigFile(String clustername)
     throws Throwable {
-    String resourceFile = Path.getPathWithoutSchemeAndAuthority(testFileSystem
-      .buildClusterDirPath(clustername)).toString() + "/resources.json"
+    Path resourceFile = getClusterFile(clustername, "resources.json")
+    File tmpDir = createTempDir()
+    File appconfig = new File(tmpDir, "appConfig.json")
+
 
     describe("Calling upgrade - testUpgradeInvalidConfigFile")
     try {
@@ -169,18 +171,15 @@ class TestUpgradeCommandOptions extends AgentMiniClusterTestBase {
               ClientArgs.ACTION_UPGRADE,
               clustername,
               ClientArgs.ARG_TEMPLATE,
-              "/tmp/appConfig.json",
+              appconfig.absolutePath,
               ClientArgs.ARG_RESOURCES,
               resourceFile
           ]
       )
       fail("Upgrade command should have failed")
-    } catch (SliderException e) {
-      log.info(e.toString())
-      assert e instanceof BadConfigException
-      assert e.getMessage().contains("incorrect argument to --template: " +
-        "\"/tmp/appConfig.json\" : java.io.FileNotFoundException: " +
-        "/tmp/appConfig.json (No such file or directory)")
+    } catch (BadConfigException e) {
+      assertExceptionDetails(e, SliderExitCodes.EXIT_BAD_CONFIGURATION,
+          Arguments.ARG_TEMPLATE)
     }
   }
 
@@ -192,48 +191,43 @@ class TestUpgradeCommandOptions extends AgentMiniClusterTestBase {
       .buildClusterDirPath(clustername)).toString() + "/app_config.json"
 
     describe("Calling upgrade - testUpgradeSpecSuccess")
-    try {
-      log.info("Listing application containers before upgrade spec")
-      launcher = launchClientAgainstMiniMR(
-          //config includes RM binding info
-          yarnConfig,
-          //varargs list of command line params
-          [
-              ClientArgs.ACTION_LIST,
-              clustername,
-              ClientArgs.ARG_CONTAINERS
-          ]
-      )
+    log.info("Listing application containers before upgrade spec")
+    launcher = launchClientAgainstMiniMR(
+        //config includes RM binding info
+        yarnConfig,
+        //varargs list of command line params
+        [
+            ClientArgs.ACTION_LIST,
+            clustername,
+            ClientArgs.ARG_CONTAINERS
+        ]
+    )
 
-      launcher = launchClientAgainstMiniMR(
-          //config includes RM binding info
-          yarnConfig,
-          //varargs list of command line params
-          [
-              ClientArgs.ACTION_UPGRADE,
-              clustername,
-              ClientArgs.ARG_TEMPLATE,
-              appConfigFile,
-              ClientArgs.ARG_RESOURCES,
-              resourceFile
-          ]
-      )
+    launcher = launchClientAgainstMiniMR(
+        //config includes RM binding info
+        yarnConfig,
+        //varargs list of command line params
+        [
+            ClientArgs.ACTION_UPGRADE,
+            clustername,
+            ClientArgs.ARG_TEMPLATE,
+            appConfigFile,
+            ClientArgs.ARG_RESOURCES,
+            resourceFile
+        ]
+    )
 
-      log.info("Listing application containers after upgrade spec")
-      launcher = launchClientAgainstMiniMR(
-          //config includes RM binding info
-          yarnConfig,
-          //varargs list of command line params
-          [
-              ClientArgs.ACTION_LIST,
-              clustername,
-              ClientArgs.ARG_CONTAINERS
-          ]
-      )
-    } catch (SliderException e) {
-      log.info(e.toString())
-      fail("Upgrade command should not have failed")
-    }
+    log.info("Listing application containers after upgrade spec")
+    launcher = launchClientAgainstMiniMR(
+        //config includes RM binding info
+        yarnConfig,
+        //varargs list of command line params
+        [
+            ClientArgs.ACTION_LIST,
+            clustername,
+            ClientArgs.ARG_CONTAINERS
+        ]
+    )
     assert launcher.serviceExitCode == 0
   }
 

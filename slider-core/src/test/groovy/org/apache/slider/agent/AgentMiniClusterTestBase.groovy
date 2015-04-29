@@ -61,7 +61,8 @@ extends YarnZKMiniClusterTestBase {
   @BeforeClass
   public static void createSubConfFiles() {
 
-    File destDir = new File("target/agent_minicluster_testbase")
+    String s = File.separator
+    File destDir = new File("target${s}agent_minicluster_testbase")
     destDir.mkdirs()
     agentConf = new File(destDir, "agentconf.zip")
     agentConf.createNewFile()
@@ -72,7 +73,7 @@ extends YarnZKMiniClusterTestBase {
     tempFolder.create()
     def pkgPath = tempFolder.newFolder("testpkg")
     File imagePath = new File(pkgPath, "appdef_1.zip").canonicalFile
-    File metainfo = new File(new File(".").absoluteFile, "src/test/python/metainfo.xml");
+    File metainfo = new File(new File(".").absoluteFile, "src${s}test${s}python${s}metainfo.xml");
     ZipArchiveOutputStream zipFile = new ZipArchiveOutputStream(new FileOutputStream(imagePath));
     try {
       zipFile.putArchiveEntry(new ZipArchiveEntry(metainfo.name));
@@ -105,7 +106,9 @@ extends YarnZKMiniClusterTestBase {
   }
 
   public static String createAddOnPackageFiles() {
-    File destDir = new File("target/agent_minicluster_testbase_addon")
+    String s = File.separator
+
+    File destDir = new File("target${s}agent_minicluster_testbase_addon")
     destDir.mkdirs()
     File addonAgentConf = new File(destDir, "addon1.zip")
     addonAgentConf.createNewFile()
@@ -116,7 +119,7 @@ extends YarnZKMiniClusterTestBase {
     def pkgPath = addonTempFolder.newFolder("testpkg")
     File imagePath = new File(pkgPath, "appdef_1.zip").canonicalFile
     File metainfo = new File(new File(".").absoluteFile,
-      "src/test/python/metainfo.xml");
+      "src${s}test${s}python${s}metainfo.xml");
     ZipArchiveOutputStream zipFile = new ZipArchiveOutputStream(
       new FileOutputStream(imagePath));
     try {
