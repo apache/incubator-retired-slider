@@ -125,7 +125,7 @@ class TestActionInstallPackage extends AgentMiniClusterTestBase {
       )
       fail("expected an exception, got a status code " + launcher.serviceExitCode)
     } catch (BadCommandArgumentsException e) {
-      assert e.message.contains("Unable to access supplied pkg file at")
+      assert e.message.contains(SliderClient.E_UNABLE_TO_READ_SUPPLIED_PACKAGE_FILE)
     }
   }
 
