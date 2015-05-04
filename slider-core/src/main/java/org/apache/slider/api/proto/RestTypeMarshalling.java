@@ -78,7 +78,7 @@ public class RestTypeMarshalling {
     info.started = wire.getStarted();
     info.startFailed = wire.getStartFailed();
     info.totalRequested = wire.getTotalRequested();
-    info.containers = new ArrayList<String>(wire.getContainersList());
+    info.containers = new ArrayList<>(wire.getContainersList());
     if (wire.hasFailureMessage()) {
       info.failureMessage = wire.getFailureMessage();
     }
@@ -95,6 +95,7 @@ public class RestTypeMarshalling {
     return builder.build();
   }
 
+  @SuppressWarnings("IOResourceOpenedButNotSafelyClosed")
   private static byte[] getStoreBytes(SecurityStore securityStore)
       throws IOException {
     InputStream is = new FileInputStream(securityStore.getFile());
@@ -105,8 +106,7 @@ public class RestTypeMarshalling {
     return response.getStore().toByteArray();
   }
 
-  public static Messages.ComponentInformationProto
-  marshall(ComponentInformation info) {
+  public static Messages.ComponentInformationProto marshall(ComponentInformation info) {
 
     Messages.ComponentInformationProto.Builder builder =
         Messages.ComponentInformationProto.newBuilder();
@@ -123,6 +123,9 @@ public class RestTypeMarshalling {
     builder.setStarted(info.started);
     builder.setStartFailed(info.startFailed);
     builder.setTotalRequested(info.totalRequested);
+    builder.setNodeFailed(info.nodeFailed);
+    builder.setPreempted(info.preempted);
+    builder.setFailedRecently(info.failedRecently);
     if (info.failureMessage != null) {
       builder.setFailureMessage(info.failureMessage);
     }

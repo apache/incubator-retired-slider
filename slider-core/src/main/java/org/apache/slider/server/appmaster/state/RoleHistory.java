@@ -767,7 +767,7 @@ public class RoleHistory {
    * @return true if the node was queued
    */
   public boolean onNodeManagerContainerStartFailed(Container container) {
-    return markContainerFinished(container, false, true);
+    return markContainerFinished(container, false, true, ContainerOutcome.Failed);
   }
 
   /**
@@ -808,7 +808,7 @@ public class RoleHistory {
    * @return true if the node was queued
    */
   public boolean onReleaseCompleted(Container container) {
-    return markContainerFinished(container, true, false);
+    return markContainerFinished(container, true, false, ContainerOutcome.Failed);
   }
 
   /**
@@ -817,10 +817,13 @@ public class RoleHistory {
    *
    * @param container completed container
    * @param shortLived was the container short lived?
+   * @param outcome
    * @return true if the node is considered available for work
    */
-  public boolean onFailedContainer(Container container, boolean shortLived) {
-    return markContainerFinished(container, false, shortLived);
+  public boolean onFailedContainer(Container container,
+      boolean shortLived,
+      ContainerOutcome outcome) {
+    return markContainerFinished(container, false, shortLived, outcome);
   }
 
   /**
@@ -831,11 +834,13 @@ public class RoleHistory {
    * @param container completed container
    * @param wasReleased was the container released?
    * @param shortLived was the container short lived?
+   * @param outcome
    * @return true if the node was queued
    */
   protected synchronized boolean markContainerFinished(Container container,
-                                                       boolean wasReleased,
-                                                       boolean shortLived) {
+      boolean wasReleased,
+      boolean shortLived,
+      ContainerOutcome outcome) {
     NodeEntry nodeEntry = getOrCreateNodeEntry(container);
     log.info("Finished container for node {}, released={}, shortlived={}",
         nodeEntry.rolePriority, wasReleased, shortLived);
@@ -844,7 +849,7 @@ public class RoleHistory {
       nodeEntry.onStartFailed();
       available = false;
     } else {
-      available = nodeEntry.containerCompleted(wasReleased);
+      available = nodeEntry.containerCompleted(wasReleased, outcome);
       maybeQueueNodeForWork(container, nodeEntry, available);
     }
     touch();

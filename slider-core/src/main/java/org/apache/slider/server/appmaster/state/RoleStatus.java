@@ -25,6 +25,7 @@ import org.apache.slider.providers.ProviderRole;
 import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 /**
@@ -43,7 +44,12 @@ public final class RoleStatus implements Cloneable {
   private final ProviderRole providerRole;
 
   private int desired, actual, requested, releasing;
-  private int failed, started, startFailed, completed, totalRequested;
+  private int failed, startFailed;
+  private int started,  completed, totalRequested;
+  private final AtomicLong preempted = new AtomicLong(0);
+  private final AtomicLong nodeFailed = new AtomicLong(0);
+  private final AtomicLong failedRecently = new AtomicLong(0);
+  private final AtomicLong limitsExceeded = new AtomicLong(0);
 
   private String failureMessage = "";
 
@@ -163,15 +169,20 @@ public final class RoleStatus implements Cloneable {
     return failed;
   }
 
+  public synchronized long getFailedRecently() {
+    return failedRecently.get();
+  }
+
   /**
-   * Reset the failure counts
-   * @return the total number of failures up to this point
+   * Reset the recent failure
+   * @return the number of failures in the "recent" window
    */
-  public synchronized int resetFailed() {
-    int total = failed + startFailed;
-    failed = 0;
-    startFailed = 0;
-    return total;
+  public long resetFailedRecently() {
+    return failedRecently.getAndSet(0);
+  }
+
+  public long getLimitsExceeded() {
+    return limitsExceeded.get();
   }
 
   /**
@@ -179,19 +190,37 @@ public final class RoleStatus implements Cloneable {
    * be used in any diagnostics if an exception
    * is later raised.
    * @param startupFailure flag to indicate this was a startup event
-   * @return the number of failures
    * @param text text about the failure
+   * @param outcome outcome of the container
    */
-  public synchronized int noteFailed(boolean startupFailure, String text) {
-    int current = ++failed;
+  public synchronized void noteFailed(boolean startupFailure, String text,
+      ContainerOutcome outcome) {
     if (text != null) {
       failureMessage = text;
     }
-    //have a look to see if it short lived
-    if (startupFailure) {
-      incStartFailed();
+    switch (outcome) {
+      case Preempted:
+        preempted.incrementAndGet();
+        break;
+
+      case Node_failure:
+        nodeFailed.incrementAndGet();
+        failed++;
+        break;
+
+      case Failed_limits_exceeded: // exceeded memory or CPU; app/configuration related
+        limitsExceeded.incrementAndGet();
+        // fall through
+      case Failed: // application failure, possibly node related, possibly not
+      default: // anything else (future-proofing)
+        failed++;
+        failedRecently.incrementAndGet();
+        //have a look to see if it short lived
+        if (startupFailure) {
+          incStartFailed();
+        }
+        break;
     }
-    return current;
   }
 
   public synchronized int getStartFailed() {
@@ -229,7 +258,14 @@ public final class RoleStatus implements Cloneable {
     return totalRequested;
   }
 
-  
+  public long getPreempted() {
+    return preempted.get();
+  }
+
+  public long getNodeFailed() {
+    return nodeFailed.get();
+  }
+
   /**
    * Get the number of roles we are short of.
    * nodes released are ignored.
@@ -267,6 +303,9 @@ public final class RoleStatus implements Cloneable {
            ", requested=" + requested +
            ", releasing=" + releasing +
            ", failed=" + failed +
+           ", failed recently=" + failedRecently.get() +
+           ", node failed=" + nodeFailed.get() +
+           ", pre-empted=" + preempted.get() +
            ", started=" + started +
            ", startFailed=" + startFailed +
            ", completed=" + completed +
@@ -313,6 +352,9 @@ public final class RoleStatus implements Cloneable {
     info.placementPolicy = getPlacementPolicy();
     info.failureMessage = failureMessage;
     info.totalRequested = totalRequested;
+    info.failedRecently = failedRecently.intValue();
+    info.nodeFailed = nodeFailed.intValue();
+    info.preempted = preempted.intValue();
     return info;
   }
   

@@ -45,9 +45,24 @@ public interface RoleKeys {
   String ROLE_RELEASING_INSTANCES = "role.releasing.instances";
 
   /**
-   * Status report: number currently being released: {@value} 
+   * Status report: total number that have failed: {@value}
    */
   String ROLE_FAILED_INSTANCES = "role.failed.instances";
+
+  /**
+   * Status report: number that have failed recently: {@value}
+   */
+  String ROLE_FAILED_RECENTLY_INSTANCES = "role.failed.recently.instances";
+
+  /**
+   * Status report: number that have failed for node-related issues: {@value}
+   */
+  String ROLE_NODE_FAILED_INSTANCES = "role.failed.node.instances";
+
+  /**
+   * Status report: number that been pre-empted: {@value}
+   */
+  String ROLE_PREEMPTED_INSTANCES = "role.failed.preempted.instances";
 
   /**
    * Status report: number currently being released: {@value} 

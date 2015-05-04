@@ -33,9 +33,8 @@ import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.server.appmaster.state.RoleInstance;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.WebAppApi;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -47,7 +46,6 @@ import java.util.Map.Entry;
  * 
  */
 public class ContainerStatsBlock extends HtmlBlock {
-  private static final Logger log = LoggerFactory.getLogger(ContainerStatsBlock.class);
 
   private static final String EVEN = "even", ODD = "odd", BOLD = "bold", SCHEME = "http://", PATH = "/node/container/";
 
@@ -65,7 +63,8 @@ public class ContainerStatsBlock extends HtmlBlock {
   /**
    * Sort a collection of ClusterNodes by name
    */
-  protected static class ClusterNodeNameComparator implements Comparator<ClusterNode> {
+  protected static class ClusterNodeNameComparator implements Comparator<ClusterNode>,
+      Serializable {
 
     @Override
     public int compare(ClusterNode node1, ClusterNode node2) {
@@ -73,7 +72,7 @@ public class ContainerStatsBlock extends HtmlBlock {
         return -1;
       } else if (null != node1 && null == node2) {
         return 1;
-      } else if (null == node1 && null == node2) {
+      } else if (null == node1) {
         return 0;
       }
 
@@ -82,7 +81,7 @@ public class ContainerStatsBlock extends HtmlBlock {
         return -1;
       } else if (null != name1 && null == name2) {
         return 1;
-      } else if (null == name1 && null == name2) {
+      } else if (null == name1) {
         return 0;
       }
 
@@ -154,7 +153,7 @@ public class ContainerStatsBlock extends HtmlBlock {
         tableContent = Iterables.transform(options.entrySet(), stringStringPairFunc);
       } else {
         // Or catch that we have no options and provide "empty"
-        tableContent = Collections.<Entry<TableContent,String>> emptySet();
+        tableContent = Collections.emptySet();
       }
       
       // Generate the options used by this role
@@ -186,10 +185,7 @@ public class ContainerStatsBlock extends HtmlBlock {
   /**
    * Given a div, a name for this data, and some pairs of data, generate a nice HTML table. If contents is empty (of size zero), then a mesage will be printed
    * that there were no items instead of an empty table.
-   * 
-   * @param div
-   * @param detailsName
-   * @param contents
+   *
    */
   protected <T1 extends TableContent,T2> void generateRoleDetails(DIV<Hamlet> parent, String divSelector, String detailsName, Iterable<Entry<T1,T2>> contents) {
     final DIV<DIV<Hamlet>> div = parent.div(divSelector).h3(BOLD, detailsName);

@@ -27,6 +27,9 @@ public interface StatusKeys {
   String STATISTICS_CONTAINERS_COMPLETED = "containers.completed";
   String STATISTICS_CONTAINERS_DESIRED = "containers.desired";
   String STATISTICS_CONTAINERS_FAILED = "containers.failed";
+  String STATISTICS_CONTAINERS_FAILED_RECENTLY = "containers.failed.recently";
+  String STATISTICS_CONTAINERS_FAILED_NODE = "containers.failed.node";
+  String STATISTICS_CONTAINERS_PREEMPTED = "containers.failed.preempted";
   String STATISTICS_CONTAINERS_LIVE = "containers.live";
   String STATISTICS_CONTAINERS_REQUESTED = "containers.requested";
   String STATISTICS_CONTAINERS_STARTED = "containers.start.started";
