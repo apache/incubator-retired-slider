@@ -35,6 +35,7 @@ import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
 import org.apache.slider.server.appmaster.state.AppState
 import org.apache.slider.server.appmaster.state.ContainerAssignment
+import org.apache.slider.server.appmaster.state.ContainerOutcome
 import org.apache.slider.server.appmaster.state.NodeEntry
 import org.apache.slider.server.appmaster.state.NodeInstance
 import org.apache.slider.server.appmaster.state.RoleInstance
@@ -344,7 +345,9 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
   public NodeEntry recordAsFailed(NodeInstance node, int id, int count) {
     def entry = node.getOrCreate(id)
     1.upto(count) {
-      entry.containerCompleted(false)
+      entry.containerCompleted(
+          false,
+          ContainerOutcome.Failed)
     }
     entry
   }

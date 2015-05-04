@@ -93,6 +93,9 @@ import static org.apache.slider.api.ResourceKeys.YARN_LABEL_EXPRESSION;
 import static org.apache.slider.api.ResourceKeys.YARN_MEMORY;
 import static org.apache.slider.api.RoleKeys.ROLE_FAILED_INSTANCES;
 import static org.apache.slider.api.RoleKeys.ROLE_FAILED_STARTING_INSTANCES;
+import static org.apache.slider.api.RoleKeys.ROLE_FAILED_RECENTLY_INSTANCES;
+import static org.apache.slider.api.RoleKeys.ROLE_NODE_FAILED_INSTANCES;
+import static org.apache.slider.api.RoleKeys.ROLE_PREEMPTED_INSTANCES;
 import static org.apache.slider.api.RoleKeys.ROLE_RELEASING_INSTANCES;
 import static org.apache.slider.api.RoleKeys.ROLE_REQUESTED_INSTANCES;
 import static org.apache.slider.api.StateValues.STATE_CREATED;
@@ -1430,7 +1433,7 @@ public class AppState {
         text = "container start failure";
       }
       instance.diagnostics = text;
-      roleStatus.noteFailed(true, null);
+      roleStatus.noteFailed(true, text, ContainerOutcome.Failed);
       getFailedNodes().put(containerId, instance);
       roleHistory.onNodeManagerContainerStartFailed(instance.container);
     }
@@ -1477,7 +1480,11 @@ public class AppState {
   public static class NodeCompletionResult {
     public boolean surplusNode = false;
     public RoleInstance roleInstance;
-    public boolean containerFailed;
+    // did the container fail for *any* reason?
+    public boolean containerFailed = false;
+    // detailed outcome on the container failure
+    public ContainerOutcome outcome = ContainerOutcome.Completed;
+    public int exitStatus = 0;
     public boolean unknownNode = false;
 
   
@@ -1486,7 +1493,9 @@ public class AppState {
         new StringBuilder("NodeCompletionResult{");
       sb.append("surplusNode=").append(surplusNode);
       sb.append(", roleInstance=").append(roleInstance);
+      sb.append(", exitStatus=").append(exitStatus);
       sb.append(", containerFailed=").append(containerFailed);
+      sb.append(", outcome=").append(outcome);
       sb.append(", unknownNode=").append(unknownNode);
       sb.append('}');
       return sb.toString();
@@ -1504,6 +1513,8 @@ public class AppState {
     NodeCompletionResult result = new NodeCompletionResult();
     RoleInstance roleInstance;
 
+    int exitStatus = status.getExitStatus();
+    result.exitStatus = exitStatus;
     if (containersBeingReleased.containsKey(containerId)) {
       log.info("Container was queued for release : {}", containerId);
       Container container = containersBeingReleased.remove(containerId);
@@ -1516,14 +1527,18 @@ public class AppState {
           actual,
           releasing,
           completedCount);
+      result.outcome = ContainerOutcome.Completed;
       roleHistory.onReleaseCompleted(container);
 
     } else if (surplusNodes.remove(containerId)) {
       //its a surplus one being purged
       result.surplusNode = true;
     } else {
-      //a container has failed 
+      // a container has failed or been killed
+      // use the exit code to determine the outcome
       result.containerFailed = true;
+      result.outcome = ContainerOutcome.fromExitStatus(exitStatus);
+
       roleInstance = removeOwnedContainer(containerId);
       if (roleInstance != null) {
         //it was active, move it to failed 
@@ -1544,32 +1559,34 @@ public class AppState {
           boolean shortLived = isShortLived(roleInstance);
           String message;
           Container failedContainer = roleInstance.container;
-          
+
           //build the failure message
           if (failedContainer != null) {
             String completedLogsUrl = getLogsURLForContainer(failedContainer);
-            message = String.format("Failure %s on host %s: %s",
+            message = String.format("Failure %s on host %s (%d): %s",
                 roleInstance.getContainerId().toString(),
                 failedContainer.getNodeId().getHost(),
+                exitStatus,
                 completedLogsUrl);
           } else {
-            message = String.format("Failure %s", containerId);
+            message = String.format("Failure %s (%d)", containerId, exitStatus);
           }
-          int failed = roleStatus.noteFailed(shortLived, message);
+          roleStatus.noteFailed(shortLived, message, result.outcome);
+          long failed = roleStatus.getFailed();
           log.info("Current count of failed role[{}] {} =  {}",
               roleId, rolename, failed);
           if (failedContainer != null) {
-            roleHistory.onFailedContainer(failedContainer, shortLived);
+            roleHistory.onFailedContainer(failedContainer, shortLived, result.outcome);
           }
-          
+
         } catch (YarnRuntimeException e1) {
           log.error("Failed container of unknown role {}", roleId);
         }
       } else {
         //this isn't a known container.
-        
+
         log.error("Notified of completed container {} that is not in the list" +
-                  " of active or failed containers", containerId);
+            " of active or failed containers", containerId);
         completionOfUnknownContainerEvent.incrementAndGet();
         result.unknownNode = true;
       }
@@ -1587,7 +1604,7 @@ public class AppState {
     RoleInstance node = getLiveNodes().remove(id);
     if (node != null) {
       node.state = STATE_DESTROYED;
-      node.exitCode = status.getExitStatus();
+      node.exitCode = exitStatus;
       node.diagnostics = status.getDiagnostics();
       getCompletedNodes().put(id, node);
       result.roleInstance = node;
@@ -1595,7 +1612,6 @@ public class AppState {
       // not in the list
       log.warn("Received notification of completion of unknown node {}", id);
       completionOfNodeNotInLiveListEvent.incrementAndGet();
-
     }
     
     // and the active node list if present
@@ -1709,6 +1725,9 @@ public class AppState {
       cd.setRoleOpt(rolename, ROLE_RELEASING_INSTANCES, role.getReleasing());
       cd.setRoleOpt(rolename, ROLE_FAILED_INSTANCES, role.getFailed());
       cd.setRoleOpt(rolename, ROLE_FAILED_STARTING_INSTANCES, role.getStartFailed());
+      cd.setRoleOpt(rolename, ROLE_FAILED_RECENTLY_INSTANCES, role.getFailedRecently());
+      cd.setRoleOpt(rolename, ROLE_NODE_FAILED_INSTANCES, role.getNodeFailed());
+      cd.setRoleOpt(rolename, ROLE_PREEMPTED_INSTANCES, role.getPreempted());
       Map<String, Integer> stats = role.buildStatistics();
       cd.statistics.put(rolename, stats);
     }
@@ -1798,14 +1817,14 @@ public class AppState {
   }
 
   /**
-   * Check the failure threshold for a role
+   * Check the "recent" failure threshold for a role
    * @param role role to examine
    * @throws TriggerClusterTeardownException if the role
    * has failed too many times
    */
   private void checkFailureThreshold(RoleStatus role)
       throws TriggerClusterTeardownException {
-    int failures = role.getFailed();
+    long failures = role.getFailedRecently();
     int threshold = getFailureThresholdForRole(role);
     log.debug("Failure count of component: {}: {}, threshold={}",
         role.getName(), failures, threshold);
@@ -1814,7 +1833,7 @@ public class AppState {
       throw new TriggerClusterTeardownException(
         SliderExitCodes.EXIT_DEPLOYMENT_FAILED,
           FinalApplicationStatus.FAILED, ErrorStrings.E_UNSTABLE_CLUSTER +
-        " - failed with component %s failing %d times (%d in startup);" +
+        " - failed with component %s failed 'recently' %d times (%d in startup);" +
         " threshold is %d - last failure: %s",
           role.getName(),
         role.getFailed(),
@@ -1853,11 +1872,11 @@ public class AppState {
   }
 
   /**
-   * Reset the failure counts of all roles
+   * Reset the "recent" failure counts of all roles
    */
   public void resetFailureCounts() {
     for (RoleStatus roleStatus : getRoleStatusMap().values()) {
-      int failed = roleStatus.resetFailed();
+      long failed = roleStatus.resetFailedRecently();
       log.info("Resetting failure count of {}; was {}",
                roleStatus.getName(),
           failed);

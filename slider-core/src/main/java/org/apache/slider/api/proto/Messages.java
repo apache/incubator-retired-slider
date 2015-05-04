@@ -15070,6 +15070,36 @@ public final class Messages {
      */
     com.google.protobuf.ByteString
         getContainersBytes(int index);
+
+    // optional int32 failedRecently = 15;
+    /**
+     * <code>optional int32 failedRecently = 15;</code>
+     */
+    boolean hasFailedRecently();
+    /**
+     * <code>optional int32 failedRecently = 15;</code>
+     */
+    int getFailedRecently();
+
+    // optional int32 nodeFailed = 16;
+    /**
+     * <code>optional int32 nodeFailed = 16;</code>
+     */
+    boolean hasNodeFailed();
+    /**
+     * <code>optional int32 nodeFailed = 16;</code>
+     */
+    int getNodeFailed();
+
+    // optional int32 preempted = 17;
+    /**
+     * <code>optional int32 preempted = 17;</code>
+     */
+    boolean hasPreempted();
+    /**
+     * <code>optional int32 preempted = 17;</code>
+     */
+    int getPreempted();
   }
   /**
    * Protobuf type {@code org.apache.slider.api.ComponentInformationProto}
@@ -15198,6 +15228,21 @@ public final class Messages {
                 mutable_bitField0_ |= 0x00002000;
               }
               containers_.add(input.readBytes());
+              break;
+            }
+            case 120: {
+              bitField0_ |= 0x00002000;
+              failedRecently_ = input.readInt32();
+              break;
+            }
+            case 128: {
+              bitField0_ |= 0x00004000;
+              nodeFailed_ = input.readInt32();
+              break;
+            }
+            case 136: {
+              bitField0_ |= 0x00008000;
+              preempted_ = input.readInt32();
               break;
             }
           }
@@ -15535,6 +15580,54 @@ public final class Messages {
       return containers_.getByteString(index);
     }
 
+    // optional int32 failedRecently = 15;
+    public static final int FAILEDRECENTLY_FIELD_NUMBER = 15;
+    private int failedRecently_;
+    /**
+     * <code>optional int32 failedRecently = 15;</code>
+     */
+    public boolean hasFailedRecently() {
+      return ((bitField0_ & 0x00002000) == 0x00002000);
+    }
+    /**
+     * <code>optional int32 failedRecently = 15;</code>
+     */
+    public int getFailedRecently() {
+      return failedRecently_;
+    }
+
+    // optional int32 nodeFailed = 16;
+    public static final int NODEFAILED_FIELD_NUMBER = 16;
+    private int nodeFailed_;
+    /**
+     * <code>optional int32 nodeFailed = 16;</code>
+     */
+    public boolean hasNodeFailed() {
+      return ((bitField0_ & 0x00004000) == 0x00004000);
+    }
+    /**
+     * <code>optional int32 nodeFailed = 16;</code>
+     */
+    public int getNodeFailed() {
+      return nodeFailed_;
+    }
+
+    // optional int32 preempted = 17;
+    public static final int PREEMPTED_FIELD_NUMBER = 17;
+    private int preempted_;
+    /**
+     * <code>optional int32 preempted = 17;</code>
+     */
+    public boolean hasPreempted() {
+      return ((bitField0_ & 0x00008000) == 0x00008000);
+    }
+    /**
+     * <code>optional int32 preempted = 17;</code>
+     */
+    public int getPreempted() {
+      return preempted_;
+    }
+
     private void initFields() {
       name_ = "";
       priority_ = 0;
@@ -15550,6 +15643,9 @@ public final class Messages {
       failureMessage_ = "";
       placementPolicy_ = 0;
       containers_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      failedRecently_ = 0;
+      nodeFailed_ = 0;
+      preempted_ = 0;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -15604,6 +15700,15 @@ public final class Messages {
       }
       for (int i = 0; i < containers_.size(); i++) {
         output.writeBytes(14, containers_.getByteString(i));
+      }
+      if (((bitField0_ & 0x00002000) == 0x00002000)) {
+        output.writeInt32(15, failedRecently_);
+      }
+      if (((bitField0_ & 0x00004000) == 0x00004000)) {
+        output.writeInt32(16, nodeFailed_);
+      }
+      if (((bitField0_ & 0x00008000) == 0x00008000)) {
+        output.writeInt32(17, preempted_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -15674,6 +15779,18 @@ public final class Messages {
         }
         size += dataSize;
         size += 1 * getContainersList().size();
+      }
+      if (((bitField0_ & 0x00002000) == 0x00002000)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(15, failedRecently_);
+      }
+      if (((bitField0_ & 0x00004000) == 0x00004000)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(16, nodeFailed_);
+      }
+      if (((bitField0_ & 0x00008000) == 0x00008000)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(17, preempted_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -15765,6 +15882,21 @@ public final class Messages {
       }
       result = result && getContainersList()
           .equals(other.getContainersList());
+      result = result && (hasFailedRecently() == other.hasFailedRecently());
+      if (hasFailedRecently()) {
+        result = result && (getFailedRecently()
+            == other.getFailedRecently());
+      }
+      result = result && (hasNodeFailed() == other.hasNodeFailed());
+      if (hasNodeFailed()) {
+        result = result && (getNodeFailed()
+            == other.getNodeFailed());
+      }
+      result = result && (hasPreempted() == other.hasPreempted());
+      if (hasPreempted()) {
+        result = result && (getPreempted()
+            == other.getPreempted());
+      }
       result = result &&
           getUnknownFields().equals(other.getUnknownFields());
       return result;
@@ -15833,6 +15965,18 @@ public final class Messages {
       if (getContainersCount() > 0) {
         hash = (37 * hash) + CONTAINERS_FIELD_NUMBER;
         hash = (53 * hash) + getContainersList().hashCode();
+      }
+      if (hasFailedRecently()) {
+        hash = (37 * hash) + FAILEDRECENTLY_FIELD_NUMBER;
+        hash = (53 * hash) + getFailedRecently();
+      }
+      if (hasNodeFailed()) {
+        hash = (37 * hash) + NODEFAILED_FIELD_NUMBER;
+        hash = (53 * hash) + getNodeFailed();
+      }
+      if (hasPreempted()) {
+        hash = (37 * hash) + PREEMPTED_FIELD_NUMBER;
+        hash = (53 * hash) + getPreempted();
       }
       hash = (29 * hash) + getUnknownFields().hashCode();
       memoizedHashCode = hash;
@@ -15976,6 +16120,12 @@ public final class Messages {
         bitField0_ = (bitField0_ & ~0x00001000);
         containers_ = com.google.protobuf.LazyStringArrayList.EMPTY;
         bitField0_ = (bitField0_ & ~0x00002000);
+        failedRecently_ = 0;
+        bitField0_ = (bitField0_ & ~0x00004000);
+        nodeFailed_ = 0;
+        bitField0_ = (bitField0_ & ~0x00008000);
+        preempted_ = 0;
+        bitField0_ = (bitField0_ & ~0x00010000);
         return this;
       }
 
@@ -16062,6 +16212,18 @@ public final class Messages {
           bitField0_ = (bitField0_ & ~0x00002000);
         }
         result.containers_ = containers_;
+        if (((from_bitField0_ & 0x00004000) == 0x00004000)) {
+          to_bitField0_ |= 0x00002000;
+        }
+        result.failedRecently_ = failedRecently_;
+        if (((from_bitField0_ & 0x00008000) == 0x00008000)) {
+          to_bitField0_ |= 0x00004000;
+        }
+        result.nodeFailed_ = nodeFailed_;
+        if (((from_bitField0_ & 0x00010000) == 0x00010000)) {
+          to_bitField0_ |= 0x00008000;
+        }
+        result.preempted_ = preempted_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -16130,6 +16292,15 @@ public final class Messages {
             containers_.addAll(other.containers_);
           }
           onChanged();
+        }
+        if (other.hasFailedRecently()) {
+          setFailedRecently(other.getFailedRecently());
+        }
+        if (other.hasNodeFailed()) {
+          setNodeFailed(other.getNodeFailed());
+        }
+        if (other.hasPreempted()) {
+          setPreempted(other.getPreempted());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -16758,6 +16929,105 @@ public final class Messages {
   }
   ensureContainersIsMutable();
         containers_.add(value);
+        onChanged();
+        return this;
+      }
+
+      // optional int32 failedRecently = 15;
+      private int failedRecently_ ;
+      /**
+       * <code>optional int32 failedRecently = 15;</code>
+       */
+      public boolean hasFailedRecently() {
+        return ((bitField0_ & 0x00004000) == 0x00004000);
+      }
+      /**
+       * <code>optional int32 failedRecently = 15;</code>
+       */
+      public int getFailedRecently() {
+        return failedRecently_;
+      }
+      /**
+       * <code>optional int32 failedRecently = 15;</code>
+       */
+      public Builder setFailedRecently(int value) {
+        bitField0_ |= 0x00004000;
+        failedRecently_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional int32 failedRecently = 15;</code>
+       */
+      public Builder clearFailedRecently() {
+        bitField0_ = (bitField0_ & ~0x00004000);
+        failedRecently_ = 0;
+        onChanged();
+        return this;
+      }
+
+      // optional int32 nodeFailed = 16;
+      private int nodeFailed_ ;
+      /**
+       * <code>optional int32 nodeFailed = 16;</code>
+       */
+      public boolean hasNodeFailed() {
+        return ((bitField0_ & 0x00008000) == 0x00008000);
+      }
+      /**
+       * <code>optional int32 nodeFailed = 16;</code>
+       */
+      public int getNodeFailed() {
+        return nodeFailed_;
+      }
+      /**
+       * <code>optional int32 nodeFailed = 16;</code>
+       */
+      public Builder setNodeFailed(int value) {
+        bitField0_ |= 0x00008000;
+        nodeFailed_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional int32 nodeFailed = 16;</code>
+       */
+      public Builder clearNodeFailed() {
+        bitField0_ = (bitField0_ & ~0x00008000);
+        nodeFailed_ = 0;
+        onChanged();
+        return this;
+      }
+
+      // optional int32 preempted = 17;
+      private int preempted_ ;
+      /**
+       * <code>optional int32 preempted = 17;</code>
+       */
+      public boolean hasPreempted() {
+        return ((bitField0_ & 0x00010000) == 0x00010000);
+      }
+      /**
+       * <code>optional int32 preempted = 17;</code>
+       */
+      public int getPreempted() {
+        return preempted_;
+      }
+      /**
+       * <code>optional int32 preempted = 17;</code>
+       */
+      public Builder setPreempted(int value) {
+        bitField0_ |= 0x00010000;
+        preempted_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional int32 preempted = 17;</code>
+       */
+      public Builder clearPreempted() {
+        bitField0_ = (bitField0_ & ~0x00010000);
+        preempted_ = 0;
         onChanged();
         return this;
       }
@@ -28687,46 +28957,48 @@ public final class Messages {
       " \002(\t\022\023\n\013application\030\003 \002(\t\"`\n#Application" +
       "LivenessInformationProto\022\034\n\024allRequestsS" +
       "atisfied\030\001 \001(\010\022\033\n\023requestsOutstanding\030\002 " +
-      "\001(\005\"\250\002\n\031ComponentInformationProto\022\014\n\004nam",
+      "\001(\005\"\347\002\n\031ComponentInformationProto\022\014\n\004nam",
       "e\030\001 \001(\t\022\020\n\010priority\030\002 \001(\005\022\017\n\007desired\030\003 \001" +
       "(\005\022\016\n\006actual\030\004 \001(\005\022\021\n\treleasing\030\005 \001(\005\022\021\n" +
       "\trequested\030\006 \001(\005\022\016\n\006failed\030\007 \001(\005\022\017\n\007star" +
       "ted\030\010 \001(\005\022\023\n\013startFailed\030\t \001(\005\022\021\n\tcomple" +
       "ted\030\n \001(\005\022\026\n\016totalRequested\030\013 \001(\005\022\026\n\016fai" +
       "lureMessage\030\014 \001(\t\022\027\n\017placementPolicy\030\r \001" +
-      "(\005\022\022\n\ncontainers\030\016 \003(\t\"\210\002\n\031ContainerInfo" +
-      "rmationProto\022\023\n\013containerId\030\001 \001(\t\022\021\n\tcom" +
-      "ponent\030\002 \001(\t\022\020\n\010released\030\003 \001(\010\022\r\n\005state\030" +
-      "\004 \001(\005\022\020\n\010exitCode\030\005 \001(\005\022\023\n\013diagnostics\030\006",
-      " \001(\t\022\022\n\ncreateTime\030\007 \001(\003\022\021\n\tstartTime\030\010 " +
-      "\001(\003\022\016\n\006output\030\t \003(\t\022\014\n\004host\030\n \001(\t\022\017\n\007hos" +
-      "tURL\030\013 \001(\t\022\021\n\tplacement\030\014 \001(\t\022\022\n\nappVers" +
-      "ion\030\r \001(\t\"N\n\024PingInformationProto\022\014\n\004tex" +
-      "t\030\001 \001(\t\022\014\n\004verb\030\002 \001(\t\022\014\n\004body\030\003 \001(\t\022\014\n\004t" +
-      "ime\030\004 \001(\003\"\026\n\024GetModelRequestProto\"\035\n\033Get" +
-      "ModelDesiredRequestProto\"$\n\"GetModelDesi" +
-      "redAppconfRequestProto\"&\n$GetModelDesire" +
-      "dResourcesRequestProto\"%\n#GetModelResolv" +
-      "edAppconfRequestProto\"\'\n%GetModelResolve",
-      "dResourcesRequestProto\"#\n!GetModelLiveRe" +
-      "sourcesRequestProto\"\037\n\035GetLiveContainers" +
-      "RequestProto\"u\n\036GetLiveContainersRespons" +
-      "eProto\022\r\n\005names\030\001 \003(\t\022D\n\ncontainers\030\002 \003(" +
-      "\01320.org.apache.slider.api.ContainerInfor" +
-      "mationProto\"3\n\034GetLiveContainerRequestPr" +
-      "oto\022\023\n\013containerId\030\001 \002(\t\"\037\n\035GetLiveCompo" +
-      "nentsRequestProto\"u\n\036GetLiveComponentsRe" +
-      "sponseProto\022\r\n\005names\030\001 \003(\t\022D\n\ncomponents" +
-      "\030\002 \003(\01320.org.apache.slider.api.Component",
-      "InformationProto\",\n\034GetLiveComponentRequ" +
-      "estProto\022\014\n\004name\030\001 \002(\t\"$\n\"GetApplication" +
-      "LivenessRequestProto\"\023\n\021EmptyPayloadProt" +
-      "o\" \n\020WrappedJsonProto\022\014\n\004json\030\001 \002(\t\"h\n\037G" +
-      "etCertificateStoreRequestProto\022\020\n\010hostna" +
-      "me\030\001 \001(\t\022\023\n\013requesterId\030\002 \002(\t\022\020\n\010passwor" +
-      "d\030\003 \002(\t\022\014\n\004type\030\004 \002(\t\"1\n GetCertificateS" +
-      "toreResponseProto\022\r\n\005store\030\001 \002(\014B-\n\033org." +
-      "apache.slider.api.protoB\010Messages\210\001\001\240\001\001"
+      "(\005\022\022\n\ncontainers\030\016 \003(\t\022\026\n\016failedRecently" +
+      "\030\017 \001(\005\022\022\n\nnodeFailed\030\020 \001(\005\022\021\n\tpreempted\030" +
+      "\021 \001(\005\"\210\002\n\031ContainerInformationProto\022\023\n\013c" +
+      "ontainerId\030\001 \001(\t\022\021\n\tcomponent\030\002 \001(\t\022\020\n\010r",
+      "eleased\030\003 \001(\010\022\r\n\005state\030\004 \001(\005\022\020\n\010exitCode" +
+      "\030\005 \001(\005\022\023\n\013diagnostics\030\006 \001(\t\022\022\n\ncreateTim" +
+      "e\030\007 \001(\003\022\021\n\tstartTime\030\010 \001(\003\022\016\n\006output\030\t \003" +
+      "(\t\022\014\n\004host\030\n \001(\t\022\017\n\007hostURL\030\013 \001(\t\022\021\n\tpla" +
+      "cement\030\014 \001(\t\022\022\n\nappVersion\030\r \001(\t\"N\n\024Ping" +
+      "InformationProto\022\014\n\004text\030\001 \001(\t\022\014\n\004verb\030\002" +
+      " \001(\t\022\014\n\004body\030\003 \001(\t\022\014\n\004time\030\004 \001(\003\"\026\n\024GetM" +
+      "odelRequestProto\"\035\n\033GetModelDesiredReque" +
+      "stProto\"$\n\"GetModelDesiredAppconfRequest" +
+      "Proto\"&\n$GetModelDesiredResourcesRequest",
+      "Proto\"%\n#GetModelResolvedAppconfRequestP" +
+      "roto\"\'\n%GetModelResolvedResourcesRequest" +
+      "Proto\"#\n!GetModelLiveResourcesRequestPro" +
+      "to\"\037\n\035GetLiveContainersRequestProto\"u\n\036G" +
+      "etLiveContainersResponseProto\022\r\n\005names\030\001" +
+      " \003(\t\022D\n\ncontainers\030\002 \003(\01320.org.apache.sl" +
+      "ider.api.ContainerInformationProto\"3\n\034Ge" +
+      "tLiveContainerRequestProto\022\023\n\013containerI" +
+      "d\030\001 \002(\t\"\037\n\035GetLiveComponentsRequestProto" +
+      "\"u\n\036GetLiveComponentsResponseProto\022\r\n\005na",
+      "mes\030\001 \003(\t\022D\n\ncomponents\030\002 \003(\01320.org.apac" +
+      "he.slider.api.ComponentInformationProto\"" +
+      ",\n\034GetLiveComponentRequestProto\022\014\n\004name\030" +
+      "\001 \002(\t\"$\n\"GetApplicationLivenessRequestPr" +
+      "oto\"\023\n\021EmptyPayloadProto\" \n\020WrappedJsonP" +
+      "roto\022\014\n\004json\030\001 \002(\t\"h\n\037GetCertificateStor" +
+      "eRequestProto\022\020\n\010hostname\030\001 \001(\t\022\023\n\013reque" +
+      "sterId\030\002 \002(\t\022\020\n\010password\030\003 \002(\t\022\014\n\004type\030\004" +
+      " \002(\t\"1\n GetCertificateStoreResponseProto" +
+      "\022\r\n\005store\030\001 \002(\014B-\n\033org.apache.slider.api",
+      ".protoB\010Messages\210\001\001\240\001\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -28882,7 +29154,7 @@ public final class Messages {
           internal_static_org_apache_slider_api_ComponentInformationProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_ComponentInformationProto_descriptor,
-              new java.lang.String[] { "Name", "Priority", "Desired", "Actual", "Releasing", "Requested", "Failed", "Started", "StartFailed", "Completed", "TotalRequested", "FailureMessage", "PlacementPolicy", "Containers", });
+              new java.lang.String[] { "Name", "Priority", "Desired", "Actual", "Releasing", "Requested", "Failed", "Started", "StartFailed", "Completed", "TotalRequested", "FailureMessage", "PlacementPolicy", "Containers", "FailedRecently", "NodeFailed", "Preempted", });
           internal_static_org_apache_slider_api_ContainerInformationProto_descriptor =
             getDescriptor().getMessageTypes().get(25);
           internal_static_org_apache_slider_api_ContainerInformationProto_fieldAccessorTable = new

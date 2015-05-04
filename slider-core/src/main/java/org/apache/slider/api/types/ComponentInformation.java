@@ -28,6 +28,14 @@ import java.util.Map;
 
 /**
  * Serializable version of component data.
+ * <p>
+ * This is sent in REST calls as a JSON object —but is also marshalled into
+ * a protobuf structure. Look at {@link org.apache.slider.api.proto.RestTypeMarshalling}
+ * for the specifics there.
+ * <p>
+ * This means that if any fields are added here. they must be added to
+ * <code>src/main/proto/SliderClusterMessages.proto</code> and
+ * the probuf structures rebuilt.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
@@ -40,6 +48,7 @@ public class ComponentInformation {
   public int placementPolicy;
   public int requested;
   public int failed, started, startFailed, completed, totalRequested;
+  public int nodeFailed, failedRecently, preempted;
   public String failureMessage;
   public List<String> containers;
 
@@ -48,7 +57,7 @@ public class ComponentInformation {
    * @return a map for use in statistics reports
    */
   public Map<String, Integer> buildStatistics() {
-    Map<String, Integer> stats = new HashMap<String, Integer>();
+    Map<String, Integer> stats = new HashMap<>();
     stats.put(StatusKeys.STATISTICS_CONTAINERS_ACTIVE_REQUESTS, requested);
     stats.put(StatusKeys.STATISTICS_CONTAINERS_COMPLETED, completed);
     stats.put(StatusKeys.STATISTICS_CONTAINERS_DESIRED, desired);
@@ -57,6 +66,9 @@ public class ComponentInformation {
     stats.put(StatusKeys.STATISTICS_CONTAINERS_REQUESTED, totalRequested);
     stats.put(StatusKeys.STATISTICS_CONTAINERS_STARTED, started);
     stats.put(StatusKeys.STATISTICS_CONTAINERS_START_FAILED, startFailed);
+    stats.put(StatusKeys.STATISTICS_CONTAINERS_FAILED_RECENTLY, failedRecently);
+    stats.put(StatusKeys.STATISTICS_CONTAINERS_FAILED_NODE, nodeFailed);
+    stats.put(StatusKeys.STATISTICS_CONTAINERS_PREEMPTED, preempted);
     return stats;
   }
 

@@ -19,13 +19,13 @@ package org.apache.slider.server.appmaster.web.view
 import com.google.inject.AbstractModule
 import com.google.inject.Guice
 import com.google.inject.Injector
-import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.Container
 import org.apache.hadoop.yarn.api.records.Priority
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet
 import org.apache.slider.providers.ProviderService
 import org.apache.slider.server.appmaster.model.mock.*
+import org.apache.slider.server.appmaster.state.ContainerOutcome
 import org.apache.slider.server.appmaster.state.ProviderAppState
 import org.apache.slider.server.appmaster.web.WebAppApi
 import org.apache.slider.server.appmaster.web.WebAppApiImpl
@@ -90,8 +90,8 @@ public class TestIndexBlock extends BaseMockAppStateTest {
     role1.incRequested()
     role1.incRequested()
     role1.incRequested()
-    role0.noteFailed(false, "")
-    role0.noteFailed(true, "")
+    role0.noteFailed(false, "", ContainerOutcome.Failed)
+    role0.noteFailed(true,  "", ContainerOutcome.Failed)
 
     StringWriter sw = new StringWriter(64);
     PrintWriter pw = new PrintWriter(sw);
