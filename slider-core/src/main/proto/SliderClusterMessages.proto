@@ -246,7 +246,10 @@ message ComponentInformationProto {
   optional int32 totalRequested =  11;
   optional string failureMessage = 12  ;
   optional int32 placementPolicy =  13;
-  repeated string containers =  14;   
+  repeated string containers =  14;
+  optional int32 failedRecently = 15;
+  optional int32 nodeFailed = 16;
+  optional int32 preempted = 17;
 }
 
 /*

@@ -301,7 +301,10 @@ class TestRoleHistoryContainerEvents extends BaseMockAppStateTest {
     roleHistory.onContainerStarted(container)
 
     //later, declare that it failed
-    roleHistory.onFailedContainer(container, false)
+    roleHistory.onFailedContainer(
+        container,
+        false,
+        ContainerOutcome.Failed)
     assert roleEntry.starting == 0
     assert roleEntry.available
     assert roleEntry.active == 0
@@ -330,7 +333,10 @@ class TestRoleHistoryContainerEvents extends BaseMockAppStateTest {
     NodeInstance allocated = nodemap.get(hostname)
     NodeEntry roleEntry = allocated.get(role)
     assert roleEntry.available
-    roleHistory.onFailedContainer(container, false)
+    roleHistory.onFailedContainer(
+        container,
+        false,
+        ContainerOutcome.Failed)
     assert roleEntry.starting == 0
     assert roleEntry.failed == 1
     assert roleEntry.available

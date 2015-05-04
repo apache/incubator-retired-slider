@@ -53,6 +53,7 @@ public class NodeEntry {
   private int starting;
   private int startFailed;
   private int failed;
+  private int preempted;
   /**
    * Counter of "failed recently" events. These are all failures
    * which have happened since it was last reset.
@@ -138,8 +139,7 @@ public class NodeEntry {
   public synchronized boolean onStartFailed() {
     decStarting();
     ++startFailed;
-    ++failedRecently;
-    return containerCompleted(false);
+    return containerCompleted(false, ContainerOutcome.Failed);
   }
   
   /**
@@ -183,14 +183,35 @@ public class NodeEntry {
    * planned: dec our release count
    * unplanned: dec our live count
    * @param wasReleased true if this was planned
+   * @param outcome
    * @return true if this node is now available
    */
-  public synchronized boolean containerCompleted(boolean wasReleased) {
+  public synchronized boolean containerCompleted(boolean wasReleased, ContainerOutcome outcome) {
     if (wasReleased) {
       releasing = RoleHistoryUtils.decToFloor(releasing);
     } else {
-      ++failed;
-      ++failedRecently;
+      // for the node, we use the outcome of the faiure to decide
+      // whether this is potentially "node-related"
+      switch(outcome) {
+        // general "any reason" app failure
+        case Failed:
+        // specific node failure
+        case Node_failure:
+
+          ++failed;
+          ++failedRecently;
+          break;
+
+        case Preempted:
+          preempted++;
+          break;
+
+          // failures which are node-independent
+        case Failed_limits_exceeded:
+        case Completed:
+        default:
+          break;
+      }
     }
     decLive();
     return isAvailable();
@@ -219,6 +240,10 @@ public class NodeEntry {
     return failedRecently;
   }
 
+  public synchronized int getPreempted() {
+    return preempted;
+  }
+
   /**
    * Reset the failed recently count.
    */
@@ -236,6 +261,7 @@ public class NodeEntry {
     sb.append(", releasing=").append(releasing);
     sb.append(", lastUsed=").append(lastUsed);
     sb.append(", failedRecently=").append(failedRecently);
+    sb.append(", preempted=").append(preempted);
     sb.append(", startFailed=").append(startFailed);
     sb.append('}');
     return sb.toString();

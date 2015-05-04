@@ -594,7 +594,7 @@ public class ClusterDescription implements Cloneable {
   }
 
   /**
-   * Get a role opt; use {@link Integer#decode(String)} so as to take hex
+   * Get an integer role option; use {@link Integer#decode(String)} so as to take hex
    * oct and bin values too.
    *
    * @param role role to get from
@@ -606,6 +606,21 @@ public class ClusterDescription implements Cloneable {
   public int getRoleOptInt(String role, String option, int defVal) {
     String val = getRoleOpt(role, option, Integer.toString(defVal));
     return Integer.decode(val);
+  }
+
+  /**
+   * Get an integer role option; use {@link Integer#decode(String)} so as to take hex
+   * oct and bin values too.
+   *
+   * @param role role to get from
+   * @param option option name
+   * @param defVal default value
+   * @return parsed value
+   * @throws NumberFormatException if the role could not be parsed.
+   */
+  public long getRoleOptLong(String role, String option, long defVal) {
+    String val = getRoleOpt(role, option, Long.toString(defVal));
+    return Long.decode(val);
   }
 
   /**
@@ -627,6 +642,17 @@ public class ClusterDescription implements Cloneable {
    */
   public void setRoleOpt(String role, String option, int val) {
     setRoleOpt(role, option, Integer.toString(val));
+  }
+
+  /**
+   * Set a role option of any object, using its string value.
+   * This works for (Boxed) numeric values as well as other objects
+   * @param role role name
+   * @param option option name
+   * @param val non-null value
+   */
+  public void setRoleOpt(String role, String option, Object val) {
+    setRoleOpt(role, option, val.toString());
   }
 
   /**

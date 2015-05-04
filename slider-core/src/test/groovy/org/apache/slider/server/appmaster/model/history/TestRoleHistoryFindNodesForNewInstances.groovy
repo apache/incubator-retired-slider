@@ -23,7 +23,7 @@ import groovy.util.logging.Slf4j
 import org.apache.slider.providers.ProviderRole
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockFactory
-import org.apache.slider.server.appmaster.state.NodeEntry
+import org.apache.slider.server.appmaster.state.ContainerOutcome
 import org.apache.slider.server.appmaster.state.NodeInstance
 import org.apache.slider.server.appmaster.state.RoleHistory
 import org.apache.slider.server.appmaster.state.RoleStatus
@@ -132,10 +132,14 @@ class TestRoleHistoryFindNodesForNewInstances extends BaseMockAppStateTest {
     // mark age2 and active 0 as busy, expect a null back
 
     def entry0 = age2Active0.get(0)
-    entry0.containerCompleted(false)
+    entry0.containerCompleted(
+        false,
+        ContainerOutcome.Failed)
     assert entry0.failed
     assert entry0.failedRecently
-    entry0.containerCompleted(false)
+    entry0.containerCompleted(
+        false,
+        ContainerOutcome.Failed)
     assert !age2Active0.exceedsFailureThreshold(roleStat)
     // set failure to 1
     roleStat.providerRole.nodeFailureThreshold = 1
