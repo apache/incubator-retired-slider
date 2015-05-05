@@ -75,7 +75,7 @@ abstract class CommandTestBase extends SliderTestUtils {
   public static final File SLIDER_CONF_XML = new File(SLIDER_CONF_DIRECTORY,
       CLIENT_CONFIG_FILENAME).canonicalFile
   public static final YarnConfiguration SLIDER_CONFIG
-  public static final int THAW_WAIT_TIME
+  public static int THAW_WAIT_TIME
   public static final int FREEZE_WAIT_TIME
 
   public static final int SLIDER_TEST_TIMEOUT

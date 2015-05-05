@@ -27,6 +27,7 @@ import org.apache.slider.common.params.SliderActions
 import org.apache.slider.core.exceptions.BadCommandArgumentsException
 import org.apache.slider.core.exceptions.ErrorStrings
 import org.apache.slider.core.exceptions.UsageException
+import org.apache.slider.core.exceptions.BadConfigException
 import org.apache.slider.core.main.ServiceLauncher
 import org.apache.slider.core.main.ServiceLauncherBaseTest
 import org.junit.Test
@@ -37,6 +38,9 @@ import org.junit.Test
 @CompileStatic
 @Slf4j
 class TestClientBadArgs extends ServiceLauncherBaseTest {
+  
+  static String TEST_FILES = "./src/test/resources/org/apache/slider/providers/agent/tests/"
+  
   @Test
   public void testNoAction() throws Throwable {
     launchExpectingException(SliderClient,
@@ -220,4 +224,17 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
     log.info(exception.toString())
   }
 
+  @Test
+  public void testCreateAppWithAddonPkgBadArg1() throws Throwable {
+    //add on package without specifying add on package name
+      def exception = launchExpectingException(SliderClient,
+          new Configuration(),
+          "Expected 2 values after --addon",
+          [SliderActions.ACTION_CREATE,
+              "cl1",
+              Arguments.ARG_ADDON,
+              "addon1"])
+      assert exception instanceof BadCommandArgumentsException
+      log.info(exception.toString())
+    }
 }
