@@ -19,7 +19,7 @@ package org.apache.slider.providers.agent.application.metadata;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.core.exceptions.SliderException;
-
+import org.codehaus.jackson.annotate.JsonProperty;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,7 +37,8 @@ public class Component extends AbstractComponent {
   String compExports;
   String type = TYPE_STANDARD;
   List<ComponentExport> componentExports = new ArrayList<>();
-
+  List<DockerContainer> dockerContainers = new ArrayList<>();
+  
   public Component() {
   }
 
@@ -92,7 +93,12 @@ public class Component extends AbstractComponent {
   public String getMinInstanceCount() {
     return minInstanceCount;
   }
-
+  
+  @JsonProperty("dockerContainers")
+  public List<DockerContainer> getDockerContainers() {
+     return this.dockerContainers;
+  }
+  
   public Boolean getAutoStartOnFailureBoolean() {
     if (SliderUtils.isUnset(getAutoStartOnFailure())) {
       return Boolean.FALSE;

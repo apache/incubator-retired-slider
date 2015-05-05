@@ -16,13 +16,21 @@
  */
 package org.apache.slider.server.appmaster.web.rest.agent;
 
+import org.apache.slider.providers.agent.application.metadata.Component;
+import org.apache.slider.providers.agent.application.metadata.DockerContainer;
+import org.apache.slider.providers.agent.application.metadata.DockerContainerInputFile;
+import org.apache.slider.providers.agent.application.metadata.DockerContainerMount;
+import org.apache.slider.providers.agent.application.metadata.DockerContainerPort;
+import org.apache.slider.providers.agent.application.metadata.Metainfo;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -49,6 +57,7 @@ public class ExecutionCommand {
   private String serviceName;
   private String componentName;
   private String componentType;
+  private List<DockerContainer> containers = new ArrayList<>();
   private String pkg;
 
   public ExecutionCommand(AgentCommandType commandType) {
@@ -214,6 +223,11 @@ public class ExecutionCommand {
     this.componentConfigurations = componentConfigurations;
   }
 
+  @JsonProperty("containers")
+  public List<DockerContainer> getContainers() {
+    return containers;
+  }
+  
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
@@ -230,5 +244,48 @@ public class ExecutionCommand {
         .append(", componentType=").append(componentType).append(", pkg=")
         .append(pkg).append("]");
     return builder.toString();
+  }
+  
+  public void addContainerDetails(String componentName, Metainfo metaInfo) {
+    Component component = metaInfo.getApplicationComponent(componentName);
+    this.setComponentType(component.getType());
+    log.info("Adding container details for {}", componentName, " from ",
+        metaInfo.toString());
+    for (DockerContainer metaContainer : component.getDockerContainers()) {
+      DockerContainer container = new DockerContainer();
+      container.setImage(metaContainer.getImage());
+      container.setName(metaContainer.getName());
+      container.setOptions(metaContainer.getOptions());
+      container.setAdditionalParam(metaContainer.getAdditionalParam());
+      container.setCommandPath(metaContainer.getAdditionalParam());
+      container.setStatusCommand(metaContainer.getStatusCommand());
+      if (metaContainer.getMounts().size() > 0) {
+        for (DockerContainerMount metaContMount : metaContainer.getMounts()) {
+          DockerContainerMount contMnt = new DockerContainerMount();
+          contMnt.setContainerMount(metaContMount.getContainerMount());
+          contMnt.setHostMount(metaContMount.getHostMount());
+          container.getMounts().add(contMnt);
+        }
+      }
+      if (metaContainer.getPorts().size() > 0) {
+        for (DockerContainerPort metaCntPort : metaContainer.getPorts()) {
+          DockerContainerPort cntPort = new DockerContainerPort();
+          cntPort.setContainerPort(metaCntPort.getContainerPort());
+          cntPort.setHostPort(metaCntPort.getHostPort());
+          container.getPorts().add(cntPort);
+        }
+      }
+      if (metaContainer.getInputFiles().size() > 0) {
+        for (DockerContainerInputFile metaInpFile : metaContainer
+            .getInputFiles()) {
+          DockerContainerInputFile inpFile = new DockerContainerInputFile();
+          inpFile.setContainerMount(metaInpFile.getContainerMount());
+          inpFile.setFileLocalPath(metaInpFile.getFileLocalPath());
+          container.getInputFiles().add(inpFile);
+        }
+      }
+      log.info("Docker container meta info ready: " + container.toString());
+      this.getContainers().add(container);
+    }
   }
 }

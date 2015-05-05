@@ -27,6 +27,7 @@ import org.codehaus.jackson.annotate.JsonProperty;
 public abstract class AbstractComponent implements Validate {
   public static final String TYPE_STANDARD = "STANDARD";
   public static final String TYPE_DOCKER = "DOCKER";
+  public static final String TYPE_PYTHON = "PYTHON";
   public static final String CATEGORY_MASTER = "MASTER";
   public static final String CATEGORY_SLAVE = "SLAVE";
   public static final String CATEGORY_CLIENT = "CLIENT";

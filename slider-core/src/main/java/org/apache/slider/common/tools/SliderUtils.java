@@ -145,6 +145,11 @@ public final class SliderUtils {
    */
   public static final String PYTHON = "python";
 
+  /**
+   * name of docker program
+   */
+  public static final String DOCKER = "docker";
+
   private SliderUtils() {
   }
 
