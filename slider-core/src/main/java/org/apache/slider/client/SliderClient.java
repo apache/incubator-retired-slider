@@ -1633,15 +1633,15 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         validateClientAndClusterResource(clustername, resources);
       }
     }
-    
-    AppDefinitionPersister appDefinitionPersister = new AppDefinitionPersister(sliderFileSystem);
-    appDefinitionPersister.processSuppliedDefinitions(clustername, buildInfo, appConf);
 
     //get the command line options
     ConfTree cmdLineAppOptions = buildInfo.buildAppOptionsConfTree();
     ConfTree cmdLineResourceOptions = buildInfo.buildResourceOptionsConfTree();
 
     appConf.merge(cmdLineAppOptions);
+
+    AppDefinitionPersister appDefinitionPersister = new AppDefinitionPersister(sliderFileSystem);
+    appDefinitionPersister.processSuppliedDefinitions(clustername, buildInfo, appConf);
 
     // put the role counts into the resources file
     Map<String, String> argsRoleMap = buildInfo.getComponentMap();

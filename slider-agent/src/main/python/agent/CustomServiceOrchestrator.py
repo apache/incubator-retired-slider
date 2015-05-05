@@ -102,6 +102,7 @@ class CustomServiceOrchestrator():
                               + "/application.addon."
                               + command['package']
                              )
+            command['commandParams']['addonPackageRoot'] = add_on_dir_str
             add_on_base_dir = os.path.realpath(posixpath.join(add_on_dir_str, "package"))
             logger.info("Add on package: %s, add on base dir: %s" 
                         % (command['package'], str(add_on_base_dir)))

@@ -22,6 +22,7 @@ import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.api.records.YarnApplicationState
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
@@ -148,6 +149,32 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
           byte[] buffer, int len -> zipFile.write(buffer, 0, len) }
         zipFile.closeEntry()
       }
+    }
+  }
+  
+  protected static void verifyFileExist(String filePath){
+    try{
+      Path pt = new Path(filePath);
+      def uploader = new FileUploader(SLIDER_CONFIG,
+        UserGroupInformation.currentUser)
+      FileSystem fs = uploader.getFileSystem();
+      assert fs.exists(pt);
+    }catch(IOException e){
+      log.error("IOException during verifying file exist " + e.toString());
+    }
+  }
+  
+  protected static void cleanupHdfsFile(String filePath){
+    try{
+      Path pt = new Path(filePath);
+      def uploader = new FileUploader(SLIDER_CONFIG,
+        UserGroupInformation.currentUser)
+      FileSystem fs = uploader.getFileSystem();
+      if( fs.exists(pt)){
+        fs.delete(pt, false);
+      }      
+    }catch(IOException e){
+      log.error("IOException during deleting file: " + e.toString());
     }
   }
 

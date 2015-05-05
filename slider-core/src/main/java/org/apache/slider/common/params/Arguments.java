@@ -26,9 +26,11 @@ package org.apache.slider.common.params;
  * so it is easier to see what arguments are there
  */
 public interface Arguments {
+  String ARG_ADDON = "--addon";
   String ARG_ALL = "--all";
   String ARG_ALIAS = "--alias";
   String ARG_APPLICATION = "--application";
+  String ARG_APPDEF = "--appdef";
   String ARG_APP_HOME = "--apphome";
   String ARG_BASE_PATH = "--basepath";
   String ARG_CLIENT = "--client";
@@ -38,8 +40,8 @@ public interface Arguments {
   String ARG_COMPONENTS = "--components";
   String ARG_COMP_OPT= "--compopt";
   String ARG_COMP_OPT_SHORT = "--co";
+  String ARG_CONFIG = "--config";
   String ARG_CREDENTIALS = "--credentials";
-
   String ARG_DEBUG = "--debug";
   String ARG_DEFINE = "-D";
   String ARG_DEST = "--dest";
@@ -78,8 +80,8 @@ public interface Arguments {
   String ARG_MANAGER = "--manager";
   String ARG_MANAGER_SHORT = "--m";
   String ARG_MESSAGE = "--message";
+  String ARG_METAINFO = "--metainfo";
   String ARG_NAME = "--name";
-  String ARG_VERSION = "--version";
   String ARG_OPTION = "--option";
   String ARG_OPTION_SHORT = "-O";
   String ARG_OUTPUT = "--out";
@@ -109,15 +111,16 @@ public interface Arguments {
   String ARG_TRUSTSTORE = "--truststore";
   String ARG_USER = "--user";
   String ARG_VERBOSE = "--verbose";
+  String ARG_VERSION = "--version";
   String ARG_WAIT = "--wait";
   String ARG_YARN = "--yarn";
   String ARG_ZKHOSTS = "--zkhosts";
   String ARG_ZKPATH = "--zkpath";
   String ARG_ZKPORT = "--zkport";
-  String ARG_CONFIG = "--config";
-  String ARG_METAINFO = "--metainfo";
-  String ARG_ADDON = "--addon";
-  String ARG_APPDEF = "--appdef";
+/*
+ STOP: DO NOT ADD YOUR ARGUMENTS HERE. GO BACK AND INSERT THEM IN THE
+ RIGHT PLACE IN THE LIST
+ */
 
 
   /**
@@ -139,7 +142,5 @@ public interface Arguments {
    */
   String ARG_RM_ADDR = "--rm";
 
-  String FORMAT_XML = "xml";
-  String FORMAT_PROPERTIES = "properties";
 
 }
