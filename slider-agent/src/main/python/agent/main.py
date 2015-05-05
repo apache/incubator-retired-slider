@@ -41,7 +41,7 @@ logger = logging.getLogger()
 IS_WINDOWS = platform.system() == "Windows"
 formatstr = "%(levelname)s %(asctime)s %(filename)s:%(lineno)d - %(message)s"
 agentPid = os.getpid()
-
+controller = None
 configFileRelPath = "infra/conf/agent.ini"
 logFileName = "slider-agent.log"
 
@@ -54,6 +54,8 @@ def signal_handler(signum, frame):
   if os.getpid() != agentPid:
     os._exit(0)
   logger.info('signal received, exiting.')
+  if controller is not None:
+    tmpdir = controller.actionQueue.dockerManager.stop_container()
   ProcessHelper.stopAgent()
 
 
@@ -287,6 +289,7 @@ def main():
   # Launch Controller communication
   controller = Controller(agentConfig)
   controller.start()
+  
   try:
     while controller.is_alive():
       controller.join(timeout=1.0)
