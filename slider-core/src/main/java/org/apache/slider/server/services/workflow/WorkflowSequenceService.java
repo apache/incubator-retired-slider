@@ -65,7 +65,7 @@ public class WorkflowSequenceService extends AbstractService implements
   /**
    * list of services
    */
-  private final List<Service> serviceList = new ArrayList<Service>();
+  private final List<Service> serviceList = new ArrayList<>();
 
   /**
    * The currently active service.

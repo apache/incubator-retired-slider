@@ -23,7 +23,7 @@ import org.apache.hadoop.yarn.webapp.WebApp;
 
 /**
  * Contains a webapp reference and stops it in teardown if non-null
- * 
+ * <p>
  * It does not start the application.
  * Access to the field is not synchronized across threads; it is the
  * responsibility of the caller.

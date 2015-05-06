@@ -39,13 +39,13 @@ public class WorkflowCallbackService<V> extends
     WorkflowScheduledExecutorService<ScheduledExecutorService> {
   protected static final Logger LOG =
     LoggerFactory.getLogger(WorkflowCallbackService.class);
-  private final Callable<V> callback;
-  private final int delay;
-  private final ServiceTerminatingCallable<V> command;
   /**
    * This is the callback
    */
-  private Callable<V> callable;
+  private final Callable<V> callback;
+  private final int delay;
+  private final ServiceTerminatingCallable<V> command;
+
   private ScheduledFuture<V> scheduledFuture;
 
   /**

@@ -83,7 +83,9 @@ public class ServiceThreadFactory implements ThreadFactory {
     Preconditions.checkArgument(r != null, "null runnable");
     String threadName =
         String.format(namingFormat, name, counter.getAndIncrement());
-    return new Thread(r, threadName);
+    Thread thread = new Thread(r, threadName);
+    thread.setDaemon(daemons);
+    return thread;
   }
 
   /**
