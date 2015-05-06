@@ -82,12 +82,11 @@ public class LongLivedProcess implements Runnable {
   
   private ProcessStreamReader processStreamReader;
   //list of recent lines, recorded for extraction into reports
-  private final List<String> recentLines = new LinkedList<String>();
+  private final List<String> recentLines = new LinkedList<>();
   private int recentLineLimit = RECENT_LINE_LOG_LIMIT;
   private LongLivedProcessLifecycleEvent lifecycleCallback;
   private final AtomicBoolean finalOutputProcessed = new AtomicBoolean(false);
 
-  
   /**
    * Log supplied in the constructor for the spawned process -accessible
    * to inner classes
@@ -241,8 +240,6 @@ public class LongLivedProcess implements Runnable {
     }
     return result;
   }
-  
-  
 
   /**
    * Stop the process if it is running.
@@ -373,7 +370,7 @@ public class LongLivedProcess implements Runnable {
     return new ArrayList<String>(recentLines);
   }
 
-  /*
+  /**
    * @return whether lines of recent output are empty
    */
   public synchronized boolean isRecentOutputEmpty() {

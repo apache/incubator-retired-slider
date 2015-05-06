@@ -124,7 +124,7 @@ public class ForkedProcessService
 
   @Override //AbstractService
   protected void serviceStop() throws Exception {
-    completed(0);
+    completed();
     stopForkedProcess();
   }
 
@@ -185,7 +185,7 @@ public class ForkedProcessService
       int code) {
     try {
       synchronized (this) {
-        completed(code);
+        completed();
         //note whether or not the service had already stopped
         LOG.debug("Process has exited with exit code {}", code);
         if (code != 0) {
@@ -235,12 +235,11 @@ public class ForkedProcessService
 
   /**
    * Note the process as having completed.
-   * The exit code is stored, the process marked as terminated
+   * The process marked as terminated
    * -and anything synchronized on <code>processTerminated</code>
    * is notified
-   * @param code exit code
    */
-  protected void completed(int code) {
+  protected void completed() {
     processTerminated.set(true);
     synchronized (processTerminated) {
       processTerminated.notify();
@@ -289,12 +288,12 @@ public class ForkedProcessService
    *
    * @param finalOutput flag to indicate "wait for the final output of the process"
    * @param duration the duration, in ms, 
-   * ro wait for recent output to become non-empty
+   * to wait for recent output to become non-empty
    * @return a possibly empty list
    */
   public List<String> getRecentOutput(boolean finalOutput, int duration) {
     if (process == null) {
-      return new LinkedList<String>();
+      return new LinkedList<>();
     }
     return process.getRecentOutput(finalOutput, duration);
   }

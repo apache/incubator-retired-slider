@@ -18,12 +18,10 @@
 
 package org.apache.slider.server.services.utility;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.registry.client.api.RegistryConstants;
 import org.apache.hadoop.registry.client.api.RegistryOperations;
 import org.apache.hadoop.registry.client.api.RegistryOperationsFactory;
-import org.apache.slider.common.SliderXmlConfKeys;
+import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.slider.common.tools.ConfigHelper;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
@@ -40,7 +38,7 @@ public abstract class AbstractSliderLaunchedService extends
   private static final Logger log =
     LoggerFactory.getLogger(AbstractSliderLaunchedService.class);
 
-  public AbstractSliderLaunchedService(String name) {
+  protected AbstractSliderLaunchedService(String name) {
     super(name);
     // make sure all the yarn configs get loaded
     YarnConfiguration conf = new YarnConfiguration();
