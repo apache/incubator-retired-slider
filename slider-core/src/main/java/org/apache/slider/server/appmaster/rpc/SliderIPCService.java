@@ -82,7 +82,7 @@ public class SliderIPCService extends AbstractService
     implements SliderClusterProtocol {
 
   protected static final Logger log =
-      LoggerFactory.getLogger(SliderClusterProtocol.class);
+      LoggerFactory.getLogger(SliderIPCService.class);
 
   private final QueueAccess actionQueues;
   private final StateAccessForProviders state;
