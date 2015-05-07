@@ -133,7 +133,7 @@ public class ApplicationWithAddonPackagesIT extends AgentCommandTestBase{
 
     Thread.sleep(10000)
     //application should not start as no components in metainfo.json in add on pkg
-    exists(-1, CLUSTER)
+    exists(0, CLUSTER) // the Slider AM comes up, so technically the app exists
     list(0, [CLUSTER])
   }
   
