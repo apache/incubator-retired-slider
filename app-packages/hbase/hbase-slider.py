@@ -250,6 +250,7 @@ HBaseConfFile=os.path.join(local_conf_dir, "hbase-site.xml")
 if not exists(local_conf_dir):
   shutil.copytree(hbase_conf_dir, local_conf_dir)
 else:
+  shutil.copy2(os.path.join(hbase_conf_dir, "hbase-env.sh"), local_conf_dir)
   if exists(HBaseConfFile):
     diff = os.path.getmtime(HBaseConfFile)-int(time.time())
     diff = diff / 60 / 60
