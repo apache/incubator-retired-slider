@@ -19,7 +19,7 @@
   <groupId>org.apache.slider</groupId>
   <artifactId>slider</artifactId>
   <name>Slider</name>
-  <version>0.72.0-incubating-SNAPSHOT</version>
+  <version>0.80.0-incubating</version>
   <packaging>pom</packaging>
 
   <description>
@@ -58,6 +58,7 @@
     <developerConnection>
       scm:git:http://git-wip-us.apache.org/repos/asf/incubator-slider.git
     </developerConnection>
+    <tag>slider-0.80.0-incubating</tag>
   </scm>
   
 
