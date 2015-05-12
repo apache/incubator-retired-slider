@@ -13,6 +13,7 @@
       "yarn.memory": "64"
     },
     "slider-appmaster": {
+      "yarn.memory": "128"
     },
     "ACCUMULO_TSERVER": {
       "yarn.role.priority": "2",
