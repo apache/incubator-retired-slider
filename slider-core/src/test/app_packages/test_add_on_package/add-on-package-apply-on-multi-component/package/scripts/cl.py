@@ -26,7 +26,7 @@ from resource_management import *
 class CL(Script):
   def install(self, env):
     self.install_packages(env)
-    tmp_file_path = "/tmp/test_slider"
+    tmp_file_path = "test_slider"
     tmp_file = open(tmp_file_path, 'w')
     tmp_file.write("testing...")
     cat = subprocess.Popen(["hdfs", "dfs", "-copyFromLocal", tmp_file_path, "/tmp"], stdout=subprocess.PIPE)
