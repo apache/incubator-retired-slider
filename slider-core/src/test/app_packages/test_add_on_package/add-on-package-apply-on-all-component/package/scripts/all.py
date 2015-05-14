@@ -21,16 +21,23 @@ limitations under the License.
 import sys
 import subprocess
 from resource_management import *
-
+import tempfile
          
 class ALL(Script):
   def install(self, env):
     self.install_packages(env)
-    tmp_file_path = "test_slider"
-    tmp_file = open(tmp_file_path, 'w')
-    tmp_file.write("testing...")
-    cat = subprocess.Popen(["hdfs", "dfs", "-copyFromLocal", tmp_file_path, "/tmp"], stdout=subprocess.PIPE)
-    cat.communicate()
+    f = tempfile.NamedTemporaryFile(mode='w+t')
+    TMP_LOCAL_FILE = f.name
+    try:
+      tmp_file = open(TMP_LOCAL_FILE, 'w')
+      tmp_file.write("testing...")
+      tmp_file.close()
+      print TMP_LOCAL_FILE
+      cat = subprocess.Popen(["hdfs", "dfs", "-copyFromLocal", TMP_LOCAL_FILE,
+                              "/tmp/test_slider.txt"], stdout=subprocess.PIPE)
+      cat.communicate()
+    finally:
+      f.close()
     print "running install for all components in add on pkg"
     
   def configure(self, env):

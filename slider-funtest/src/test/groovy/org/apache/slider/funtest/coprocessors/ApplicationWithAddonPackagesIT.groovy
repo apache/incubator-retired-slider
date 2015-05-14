@@ -66,7 +66,7 @@ public class ApplicationWithAddonPackagesIT extends AgentCommandTestBase{
   static String ADD_ON_PACKAGE_MULTI_COMPONENT_PKG_FILE = "target/package-tmp/add-on-package-apply-on-multi-component.zip"
   static String ADD_ON_PACKAGE_NO_COMPONENT_PKG_NAME = "add-on-package-apply-on-no-component"
   static String ADD_ON_PACKAGE_NO_COMPONENT_PKG_FILE = "target/package-tmp/add-on-package-apply-on-no-component.zip"
-  static String TARGET_FILE = "/tmp/test_slider"
+  static String TARGET_FILE = "/tmp/test_slider.txt"
   protected String APP_RESOURCE = getAppResource()
   protected String APP_TEMPLATE = getAppTemplate()
   
