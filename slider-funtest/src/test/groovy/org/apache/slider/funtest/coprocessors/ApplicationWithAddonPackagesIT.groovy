@@ -133,7 +133,7 @@ public class ApplicationWithAddonPackagesIT extends AgentCommandTestBase{
 
     Thread.sleep(10000)
     //the Slider AM will fail while checking no components in metainfo.json of addon pkg
-    exists(0, CLUSTER) // need to set YARN yarn.resourcemanager.am.max-attempts to 10
+    exists(-1, CLUSTER)
     list(0, [CLUSTER])
   }
   
