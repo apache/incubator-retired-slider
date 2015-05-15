@@ -27,7 +27,8 @@ CONF = "conf"
 IS_WINDOWS = platform.system() == "Windows"
 LIB = "lib"
 
-ENV_KEYS = ["JAVA_HOME", "HADOOP_CONF_DIR", "SLIDER_CONF_DIR", "SLIDER_JVM_OPTS", "SLIDER_CLASSPATH_EXTRA"]
+ENV_KEYS = ["JAVA_HOME", "HADOOP_CONF_DIR", "SLIDER_HOME", "SLIDER_CONF_DIR", "SLIDER_JVM_OPTS", "SLIDER_CLASSPATH_EXTRA"]
+SLIDER_HOME = "SLIDER_HOME"
 SLIDER_CONF_DIR = "SLIDER_CONF_DIR"
 SLIDER_JVM_OPTS = "SLIDER_JVM_OPTS"
 SLIDER_CLASSPATH_EXTRA = "SLIDER_CLASSPATH_EXTRA"
@@ -294,6 +295,7 @@ def main():
   """
   args = sys.argv[1:]
   slider_home = sliderDir()
+  os.environ[SLIDER_HOME] = slider_home
   libdir = dirMustExist(libDir(slider_home))
   confdir = dirMustExist(confDir(slider_home))
   executeEnvSh(confdir)

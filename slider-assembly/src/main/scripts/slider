@@ -41,7 +41,5 @@ cmd = [pyExecPath + " " + currDir + "/slider.py"]
 cmd.extend(args)
 finalCmd = " ".join(cmd)
 
-env = os.environ.copy()
-env['SLIDER_HOME'] = os.path.dirname(currDir)
-result = subprocess.call(finalCmd, env=env, shell=True)
+result = subprocess.call(finalCmd, shell=True)
 sys.exit(result)
