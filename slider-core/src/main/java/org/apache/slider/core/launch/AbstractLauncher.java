@@ -41,7 +41,7 @@ import org.apache.slider.core.conf.MapOperations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 import java.io.File;
 import java.io.IOException;
@@ -319,21 +319,22 @@ public abstract class AbstractLauncher extends Configured {
           logPatternJoinStr);
       log.info("Log exclude patterns: {}", logExcludePattern);
 
-      // SLIDER-810/YARN-3154 - hadoop 2.7.0 onwards a new constructor has been
-      // added for log aggregation for LRS. Existing constructor's behavior
-      // has changed and is used for log aggregation only after the application
-      // has finished. This forces Slider users to move to hadoop 2.7.0+ just
-      // for log aggregation, which is not very desirable. So we decided to use
-      // reflection here to find out if the new 2.7.0 constructor is available.
-      // If yes, then we use it, so log aggregation will work in hadoop 2.7.0+
-      // env. If no, then we fallback to the pre-2.7.0 constructor, which means
-      // log aggregation will work as expected in hadoop 2.6 as well.
+      // SLIDER-810/YARN-3154 - hadoop 2.7.0 onwards a new instance method has
+      // been added for log aggregation for LRS. Existing newInstance method's
+      // behavior has changed and is used for log aggregation only after the
+      // application has finished. This forces Slider users to move to hadoop
+      // 2.7.0+ just for log aggregation, which is not very desirable. So we
+      // decided to use reflection here to find out if the new 2.7.0 newInstance
+      // method is available. If yes, then we use it, so log aggregation will
+      // work in hadoop 2.7.0+ env. If no, then we fallback to the pre-2.7.0
+      // newInstance method, which means log aggregation will work as expected
+      // in hadoop 2.6 as well.
       // TODO: At some point, say 2-3 Slider releases down, when most users are
       // running hadoop 2.7.0, we should get rid of the reflection code here.
       try {
-        Constructor<LogAggregationContext> logAggregationContextConstructor =
-            LogAggregationContext.class.getConstructor(String.class,
-                String.class, String.class, String.class);
+        Method logAggregationContextMethod = LogAggregationContext.class
+            .getMethod("newInstance", String.class, String.class, String.class,
+                String.class);
         // Need to set include/exclude patterns appropriately since by default
         // rolled log aggregation is not done for any files, so defaults are
         // - include pattern set to ""
@@ -353,16 +354,16 @@ public abstract class AbstractLauncher extends Configured {
             && StringUtils.isEmpty(logExcludePattern)) {
           logExcludePattern = "";
         }
-        log.debug("LogAggregationContext new constructor for rolled logs "
+        log.debug("LogAggregationContext newInstance method for rolled logs "
             + "include/exclude patterns is available");
         log.info("Modified log include patterns: {}", logIncludePattern);
         log.info("Modified log exclude patterns: {}", logExcludePattern);
-        logAggregationContext = logAggregationContextConstructor.newInstance(
-            null, null, logIncludePattern, logExcludePattern);
+        logAggregationContext = (LogAggregationContext) logAggregationContextMethod
+            .invoke(null, null, null, logIncludePattern, logExcludePattern);
       } catch (NoSuchMethodException | SecurityException
-          | InstantiationException | IllegalAccessException
-          | IllegalArgumentException | InvocationTargetException e) {
-        log.debug("LogAggregationContext new constructor for rolled logs "
+          | IllegalAccessException | IllegalArgumentException
+          | InvocationTargetException e) {
+        log.debug("LogAggregationContext newInstance method for rolled logs "
             + "include/exclude patterns is not available - fallback to old one");
         log.debug(e.toString());
         logAggregationContext = LogAggregationContext.newInstance(
