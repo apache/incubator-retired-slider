@@ -55,9 +55,11 @@ public class AMWebClient {
     clientConfig.getFeatures().put(
         JSONConfiguration.FEATURE_POJO_MAPPING,
         Boolean.TRUE);
+/*
     clientConfig.getProperties().put(
         URLConnectionClientHandler.PROPERTY_HTTP_URL_CONNECTION_SET_METHOD_WORKAROUND,
         true);
+*/
     URLConnectionClientHandler handler = getUrlConnectionClientHandler();
     client = new Client(handler, clientConfig);
     client.setFollowRedirects(true);
