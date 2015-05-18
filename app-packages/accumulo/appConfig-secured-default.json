@@ -5,6 +5,7 @@
   "global": {
     "application.def": ".slider/package/ACCUMULO/${app.package.name}.zip",
     "java_home": "${app.java.home}",
+    "create.default.zookeeper.node": "true",
 
     "site.global.app_version": "${accumulo.version}",
     "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/accumulo-${accumulo.version}",
@@ -49,7 +50,7 @@
     "site.accumulo-site.general.delegation.token.update.interval": "1d",
 
     "site.accumulo-site.trace.user": "${USER_NAME}@EXAMPLE.COM",
-    "site.accumulo-site.trace.zookeeper.path": "${DEFAULT_ZK_PATH}-tracers",
+    "site.accumulo-site.trace.zookeeper.path": "${DEFAULT_ZK_PATH}/tracers",
     "site.accumulo-site.trace.token.property.keytab": "${AGENT_WORK_ROOT}/keytabs/${USER_NAME}.ACCUMULO.headless.keytab",
     "site.accumulo-site.trace.token.type": "org.apache.accumulo.core.client.security.tokens.KerberosToken",
 
