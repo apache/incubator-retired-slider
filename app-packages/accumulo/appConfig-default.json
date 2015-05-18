@@ -5,11 +5,13 @@
   "global": {
     "application.def": ".slider/package/ACCUMULO/${app.package.name}.zip",
     "java_home": "${app.java.home}",
+    "create.default.zookeeper.node": "true",
 
     "site.global.app_version": "${accumulo.version}",
     "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/accumulo-${accumulo.version}",
     "site.global.app_user": "${app.user}",
     "site.global.user_group": "${app.user.group}",
+
     "site.global.metric_collector_host": "${NN_HOST}",
     "site.global.metric_collector_port": "6188",
     "site.global.metric_collector_lib": "",
@@ -50,7 +52,7 @@
     "site.accumulo-site.tserver.walog.max.size": "40M",
 
     "site.accumulo-site.trace.user": "root",
-    "site.accumulo-site.trace.zookeeper.path": "${DEFAULT_ZK_PATH}-tracers",
+    "site.accumulo-site.trace.zookeeper.path": "${DEFAULT_ZK_PATH}/tracers",
 
     "site.accumulo-site.master.port.client": "0",
     "site.accumulo-site.trace.port.client": "0",

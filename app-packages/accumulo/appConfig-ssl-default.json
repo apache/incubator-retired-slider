@@ -5,6 +5,7 @@
   "global": {
     "application.def": ".slider/package/ACCUMULO/${app.package.name}.zip",
     "java_home": "${app.java.home}",
+    "create.default.zookeeper.node": "true",
 
     "slider.component.keystore.credential.alias.property": "rpc.javax.net.ssl.keyStorePassword",
     "slider.component.truststore.credential.alias.property": "rpc.javax.net.ssl.trustStorePassword",
@@ -58,7 +59,7 @@
     "site.accumulo-site.tserver.walog.max.size": "40M",
 
     "site.accumulo-site.trace.user": "root",
-    "site.accumulo-site.trace.zookeeper.path": "${DEFAULT_ZK_PATH}-tracers",
+    "site.accumulo-site.trace.zookeeper.path": "${DEFAULT_ZK_PATH}/tracers",
 
     "site.accumulo-site.master.port.client": "0",
     "site.accumulo-site.trace.port.client": "0",
