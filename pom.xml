@@ -1591,7 +1591,7 @@
       <!-- hadoop branch-2.7 builds  -->
       <id>branch-2.7</id>
       <properties>
-        <hadoop.version>2.7.0-SNAPSHOT</hadoop.version>
+        <hadoop.version>2.7.0</hadoop.version>
       </properties>
     </profile>
 
