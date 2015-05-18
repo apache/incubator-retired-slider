@@ -1615,7 +1615,7 @@
       <!-- Java 8 build -->
       <id>java8</id>
       <properties>
-       <project.java.src.version>8</project.java.src.version>
+       <project.java.src.version>1.8</project.java.src.version>
       </properties>
     </profile>
     
