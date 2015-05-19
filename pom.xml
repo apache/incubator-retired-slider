@@ -1580,7 +1580,7 @@
     </profile>
 
     <profile>
-      <!-- 2.6 snapshots -->
+      <!-- 2.6 -->
       <id>release-2.6</id>
       <properties>
         <hadoop.version>2.6.0</hadoop.version>
@@ -1588,10 +1588,18 @@
     </profile>
 
     <profile>
+      <!-- 2.7.0 -->
+      <id>release-2.7</id>
+      <properties>
+        <hadoop.version>2.7.0</hadoop.version>
+      </properties>
+    </profile>
+
+    <profile>
       <!-- hadoop branch-2.7 builds  -->
       <id>branch-2.7</id>
       <properties>
-        <hadoop.version>2.7.0</hadoop.version>
+        <hadoop.version>2.7.1-SNAPSHOT</hadoop.version>
       </properties>
     </profile>
 
@@ -1615,7 +1623,10 @@
       <!-- Java 8 build -->
       <id>java8</id>
       <properties>
-       <project.java.src.version>8</project.java.src.version>
+        <project.java.src.version>1.8</project.java.src.version>
+<!--
+        <jersey.version>1.19</jersey.version>
+-->
       </properties>
     </profile>
     
