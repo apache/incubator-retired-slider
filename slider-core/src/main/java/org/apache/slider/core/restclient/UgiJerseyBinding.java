@@ -88,8 +88,7 @@ public class UgiJerseyBinding implements
     try {
       // open a connection handling status codes and so redirections
       // but as it opens a connection, it's less useful than you think.
-//      return operations.openConnectionRedirecting(url);
-      
+
       return operations.openConnection(url);
     } catch (AuthenticationException e) {
       throw new IOException(e);

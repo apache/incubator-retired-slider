@@ -22,7 +22,6 @@ import com.google.common.base.Preconditions;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
-import org.apache.hadoop.hdfs.web.URLConnectionFactory;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.authentication.client.AuthenticationException;
@@ -31,24 +30,21 @@ import org.apache.hadoop.yarn.webapp.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.HttpHeaders;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.URI;
 import java.net.URL;
 
 /**
- * Operations on the JDK UrlConnection class. This uses WebHDFS
- * methods to set up the operations.
+ * Operations on the JDK UrlConnection class.
+ *
  */
 public class UrlConnectionOperations extends Configured  {
   private static final Logger log =
       LoggerFactory.getLogger(UrlConnectionOperations.class);
 
-  private URLConnectionFactory connectionFactory;
+  private SliderURLConnectionFactory connectionFactory;
 
   private boolean useSpnego = false;
 
@@ -59,8 +55,7 @@ public class UrlConnectionOperations extends Configured  {
    */
   public UrlConnectionOperations(Configuration conf) {
     super(conf);
-    connectionFactory = URLConnectionFactory
-        .newDefaultURLConnectionFactory(conf);
+    connectionFactory = SliderURLConnectionFactory.newInstance(conf);
     if (UserGroupInformation.isSecurityEnabled()) {
       log.debug("SPNEGO is enabled");
       setUseSpnego(true);
@@ -86,18 +81,6 @@ public class UrlConnectionOperations extends Configured  {
    * @throws AuthenticationException authentication failure
    */
   public HttpURLConnection openConnection(URL url) throws
-      IOException,
-      AuthenticationException {
-
-    HttpURLConnection conn = innerOpenConnection(url);
-    conn.setUseCaches(false);
-    conn.setInstanceFollowRedirects(true);
-    return conn;
-  }
-
-
-
-  protected HttpURLConnection innerOpenConnection(URL url) throws
       IOException,
       AuthenticationException {
     Preconditions.checkArgument(url.getPort() != 0, "no port");
