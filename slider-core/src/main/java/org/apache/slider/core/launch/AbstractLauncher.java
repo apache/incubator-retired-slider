@@ -343,14 +343,12 @@ public abstract class AbstractLauncher extends Configured {
         // patterns are left empty by the app owner in resources file
         if (StringUtils.isEmpty(logIncludePattern)
             && StringUtils.isEmpty(logExcludePattern)) {
-          logIncludePattern = "*";
+          logIncludePattern = ".*";
           logExcludePattern = "";
-        }
-        if (StringUtils.isEmpty(logIncludePattern)
+        } else if (StringUtils.isEmpty(logIncludePattern)
             && StringUtils.isNotEmpty(logExcludePattern)) {
-          logIncludePattern = "*";
-        }
-        if (StringUtils.isNotEmpty(logIncludePattern)
+          logIncludePattern = ".*";
+        } else if (StringUtils.isNotEmpty(logIncludePattern)
             && StringUtils.isEmpty(logExcludePattern)) {
           logExcludePattern = "";
         }
