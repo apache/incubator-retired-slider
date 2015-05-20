@@ -18,12 +18,14 @@
 
 package org.apache.slider.core.launch;
 
+import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.hadoop.yarn.api.records.ApplicationSubmissionContext;
+import org.apache.hadoop.yarn.api.records.LogAggregationContext;
 import org.apache.hadoop.yarn.client.api.YarnClientApplication;
 import org.apache.slider.api.ResourceKeys;
 import org.apache.slider.client.SliderYarnClientImpl;
@@ -38,6 +40,10 @@ public class TestAppMasterLauncher {
   YarnClientApplication yarnClientApp;
   ApplicationSubmissionContext appSubmissionContext;
   Set<String> tags = Collections.emptySet();
+  AppMasterLauncher appMasterLauncher = null;
+  boolean isOldApi = true;
+  Method rolledLogsIncludeMethod = null;
+  Method rolledLogsExcludeMethod = null;
 
   @Before
   public void initialize() throws Exception {
@@ -49,6 +55,18 @@ public class TestAppMasterLauncher {
         .andReturn(appSubmissionContext).once();
     EasyMock.expect(mockYarnClient.createApplication())
         .andReturn(yarnClientApp).once();
+
+    try {
+      LogAggregationContext.class.getMethod("newInstance", String.class,
+          String.class, String.class, String.class);
+      isOldApi = false;
+      rolledLogsIncludeMethod = LogAggregationContext.class
+          .getMethod("getRolledLogsIncludePattern");
+      rolledLogsExcludeMethod = LogAggregationContext.class
+          .getMethod("getRolledLogsExcludePattern");
+    } catch (Exception e) {
+      isOldApi = true;
+    }
   }
 
   /**
@@ -69,45 +87,71 @@ public class TestAppMasterLauncher {
         "command*.json|  agent.log*        |     ");
 
     EasyMock.replay(mockYarnClient, appSubmissionContext, yarnClientApp);
-    AppMasterLauncher appMasterLauncher = new AppMasterLauncher("cl1",
-        SliderKeys.APP_TYPE, null, null, mockYarnClient, false, null, options,
-        tags);
+    appMasterLauncher = new AppMasterLauncher("cl1", SliderKeys.APP_TYPE, null,
+        null, mockYarnClient, false, null, options, tags);
 
     // Verify the include/exclude patterns
     String expectedInclude = "slider*.txt|agent.out";
-    Assert.assertEquals(expectedInclude,
-        appMasterLauncher.logAggregationContext.getIncludePattern());
-
     String expectedExclude = "command*.json|agent.log*";
-    Assert.assertEquals(expectedExclude,
-        appMasterLauncher.logAggregationContext.getExcludePattern());
+    assertPatterns(expectedInclude, expectedExclude);
 
     EasyMock.verify(mockYarnClient, appSubmissionContext, yarnClientApp);
+
   }
 
   @Test
   public void testExtractLogAggregationContextEmptyIncludePattern()
-    throws Exception {
+      throws Exception {
     Map<String, String> options = new HashMap<String, String>();
     options.put(ResourceKeys.YARN_LOG_INCLUDE_PATTERNS, " ");
     options.put(ResourceKeys.YARN_LOG_EXCLUDE_PATTERNS,
         "command*.json|  agent.log*        |     ");
 
     EasyMock.replay(mockYarnClient, appSubmissionContext, yarnClientApp);
-    AppMasterLauncher appMasterLauncher = new AppMasterLauncher("cl1",
-        SliderKeys.APP_TYPE, null, null, mockYarnClient, false, null, options,
-        tags);
+    appMasterLauncher = new AppMasterLauncher("cl1", SliderKeys.APP_TYPE, null,
+        null, mockYarnClient, false, null, options, tags);
 
     // Verify the include/exclude patterns
-    String expectedInclude = "";
-    Assert.assertEquals(expectedInclude,
-        appMasterLauncher.logAggregationContext.getIncludePattern());
-
+    String expectedInclude = isOldApi ? "" : ".*";
     String expectedExclude = "command*.json|agent.log*";
-    Assert.assertEquals(expectedExclude,
-        appMasterLauncher.logAggregationContext.getExcludePattern());
+    assertPatterns(expectedInclude, expectedExclude);
 
     EasyMock.verify(mockYarnClient, appSubmissionContext, yarnClientApp);
   }
 
+  @Test
+  public void testExtractLogAggregationContextEmptyIncludeAndExcludePattern()
+      throws Exception {
+    Map<String, String> options = new HashMap<String, String>();
+    options.put(ResourceKeys.YARN_LOG_INCLUDE_PATTERNS, "");
+    options.put(ResourceKeys.YARN_LOG_EXCLUDE_PATTERNS, "  ");
+
+    EasyMock.replay(mockYarnClient, appSubmissionContext, yarnClientApp);
+    appMasterLauncher = new AppMasterLauncher("cl1", SliderKeys.APP_TYPE, null,
+        null, mockYarnClient, false, null, options, tags);
+
+    // Verify the include/exclude patterns
+    String expectedInclude = isOldApi ? "" : ".*";
+    String expectedExclude = "";
+    assertPatterns(expectedInclude, expectedExclude);
+
+    EasyMock.verify(mockYarnClient, appSubmissionContext, yarnClientApp);
+  }
+
+  private void assertPatterns(String expectedIncludePattern,
+      String expectedExcludePattern) throws Exception {
+    if (isOldApi) {
+      Assert.assertEquals(expectedIncludePattern,
+          appMasterLauncher.logAggregationContext.getIncludePattern());
+      Assert.assertEquals(expectedExcludePattern,
+          appMasterLauncher.logAggregationContext.getExcludePattern());
+    } else {
+      Assert.assertEquals(expectedIncludePattern,
+          (String) rolledLogsIncludeMethod
+              .invoke(appMasterLauncher.logAggregationContext));
+      Assert.assertEquals(expectedExcludePattern,
+          (String) rolledLogsExcludeMethod
+              .invoke(appMasterLauncher.logAggregationContext));
+    }
+  }
 }
