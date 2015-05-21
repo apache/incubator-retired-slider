@@ -119,7 +119,7 @@ public class BaseRestClient  {
    * @param u the URI of the resource.
    * @return the Web resource.
    */
-  protected WebResource resource(URI u) {
+  public WebResource resource(URI u) {
     return client.resource(u);
   }
 
@@ -130,21 +130,8 @@ public class BaseRestClient  {
    * @return the Web resource.
    */
 
-  protected WebResource resource(String url) {
-    WebResource resource = client.resource(url);
-    return resource;
+  public WebResource resource(String url) {
+    return client.resource(url);
   }
 
-  protected WebResource jsonResource(String url) {
-    WebResource resource = resource(url);
-    resource.type(MediaType.APPLICATION_JSON);
-    return resource;
-  }
-
-
-  protected WebResource jsonResource(URI u) {
-    WebResource resource = resource(u);
-    resource.type(MediaType.APPLICATION_JSON);
-    return resource;
-  }
 }

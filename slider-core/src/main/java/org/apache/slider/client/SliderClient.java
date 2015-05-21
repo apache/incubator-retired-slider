@@ -3937,7 +3937,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
     ServiceRecord instance = lookupServiceRecord(registryArgs);
 
-    RegistryRetriever retriever = new RegistryRetriever(instance);
+    RegistryRetriever retriever = new RegistryRetriever(getConfig(), instance);
     PublishedConfigSet configurations =
         retriever.getConfigurations(!registryArgs.internal);
     PrintStream out = null;
@@ -3977,7 +3977,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       throws YarnException, IOException {
     ServiceRecord instance = lookupServiceRecord(registryArgs);
 
-    RegistryRetriever retriever = new RegistryRetriever(instance);
+    RegistryRetriever retriever = new RegistryRetriever(getConfig(), instance);
     PublishedExportsSet exports =
         retriever.getExports(!registryArgs.internal);
     PrintStream out = null;
@@ -4025,7 +4025,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       throws YarnException, IOException {
     ServiceRecord instance = lookupServiceRecord(registryArgs);
 
-    RegistryRetriever retriever = new RegistryRetriever(instance);
+    RegistryRetriever retriever = new RegistryRetriever(getConfig(), instance);
     boolean external = !registryArgs.internal;
     PublishedConfigSet configurations =
         retriever.getConfigurations(external);
@@ -4050,7 +4050,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       throws YarnException, IOException {
     ServiceRecord instance = lookupServiceRecord(registryArgs);
 
-    RegistryRetriever retriever = new RegistryRetriever(instance);
+    RegistryRetriever retriever = new RegistryRetriever(getConfig(), instance);
     boolean external = !registryArgs.internal;
     PublishedExportsSet exports =
         retriever.getExports(external);

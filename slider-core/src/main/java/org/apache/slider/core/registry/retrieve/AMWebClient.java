@@ -27,6 +27,8 @@ import com.sun.jersey.client.urlconnection.HttpURLConnectionFactory;
 import com.sun.jersey.client.urlconnection.URLConnectionClientHandler;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.ssl.SSLFactory;
+import org.apache.slider.client.rest.BaseRestClient;
+import org.apache.slider.core.restclient.UgiJerseyBinding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,10 +47,14 @@ import java.net.URL;
  * the redirection and security logic properly
  */
 public class AMWebClient {
-  private static final Client client;
+
+
+  private Client client;
+  private BaseRestClient restClient;
   private static final Logger
       log = LoggerFactory.getLogger(AMWebClient.class);
 
+/*
 
   static {
     ClientConfig clientConfig = new DefaultClientConfig();
@@ -62,14 +68,16 @@ public class AMWebClient {
     client = new Client(handler, clientConfig);
     client.setFollowRedirects(true);
   }
+*/
 
-  /**
-   * Get the Jersey Client
-   * @return the client
-   */
-  public static Client getClient() {
-    return client;
+  public AMWebClient(Configuration conf) {
+    UgiJerseyBinding binding = new UgiJerseyBinding(conf);
+    client = binding.createJerseyClient();
+
+    restClient = new BaseRestClient(client);
+
   }
+
 
   private static URLConnectionClientHandler getUrlConnectionClientHandler() {
     return new URLConnectionClientHandler(new HttpURLConnectionFactory() {
@@ -107,7 +115,7 @@ public class AMWebClient {
             c.setHostnameVerifier(hv);
           } catch (Exception e) {
             log.info("Unable to configure HTTPS connection from "
-                     + "configuration.  Leveraging JDK properties.");
+                     + "configuration.  Using JDK properties.");
           }
 
         }
@@ -117,8 +125,7 @@ public class AMWebClient {
   }
 
   public WebResource resource(String url) {
-    WebResource resource = client.resource(url);
-    return resource;
+    return restClient.resource(url);
   }
 
 }

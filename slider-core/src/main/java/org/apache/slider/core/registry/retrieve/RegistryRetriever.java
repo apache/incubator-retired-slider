@@ -21,6 +21,7 @@ package org.apache.slider.core.registry.retrieve;
 import com.beust.jcommander.Strings;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.registry.client.exceptions.RegistryIOException;
 import org.apache.hadoop.registry.client.types.ServiceRecord;
 import static org.apache.slider.client.ClientRegistryBinder.*;
@@ -50,23 +51,18 @@ public class RegistryRetriever extends AMWebClient {
   private final String externalExportsURL;
   private final String internalExportsURL;
 
-  public RegistryRetriever(String externalConfigurationURL, String internalConfigurationURL,
-                           String externalExportsURL, String internalExportsURL) {
-    this.externalConfigurationURL = externalConfigurationURL;
-    this.internalConfigurationURL = internalConfigurationURL;
-    this.externalExportsURL = externalExportsURL;
-    this.internalExportsURL = internalExportsURL;
-  }
-
   /**
    * Retrieve from a service by locating the
    * exported {@link CustomRegistryConstants#PUBLISHER_CONFIGURATIONS_API}
    * and working off it.
+   *
+   * @param conf
    * @param record service record
    * @throws RegistryIOException the address type of the endpoint does
    * not match that expected (i.e. not a list of URLs), missing endpoint...
    */
-  public RegistryRetriever(ServiceRecord record) throws RegistryIOException {
+  public RegistryRetriever(Configuration conf, ServiceRecord record) throws RegistryIOException {
+    super(new Configuration());
     externalConfigurationURL = lookupRestAPI(record,
         PUBLISHER_CONFIGURATIONS_API, true);
     internalConfigurationURL = lookupRestAPI(record,
