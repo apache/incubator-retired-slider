@@ -17,6 +17,7 @@
 package org.apache.slider.server.services.security;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.security.alias.CredentialProvider;
 import org.apache.hadoop.security.alias.CredentialProviderFactory;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.core.conf.MapOperations;
@@ -49,6 +50,7 @@ public abstract class AbstractSecurityStoreGenerator implements
     if (password == null) {
       // need to leverage credential provider
       String alias = getAlias(compOps);
+      LOG.debug("Alias {} found for role {}", alias, role);
       if (alias == null) {
         throw new SliderException("No store password or credential provider "
                                   + "alias found");
@@ -57,13 +59,20 @@ public abstract class AbstractSecurityStoreGenerator implements
         LOG.info("Credentials can not be retrieved for store generation since "
                  + "no CP paths are configured");
       }
-      for (Map.Entry<String, List<String>> cred : credentials.entrySet()) {
-        String provider = cred.getKey();
-        Configuration c = new Configuration();
-        c.set(CredentialProviderFactory.CREDENTIAL_PROVIDER_PATH, provider);
-        char[] credential = c.getPassword(alias);
-        if (credential != null) {
-          return String.valueOf(credential);
+      synchronized (this) {
+        for (Map.Entry<String, List<String>> cred : credentials.entrySet()) {
+          String provider = cred.getKey();
+          Configuration c = new Configuration();
+          c.set(CredentialProviderFactory.CREDENTIAL_PROVIDER_PATH, provider);
+          LOG.debug("Configured provider {}", provider);
+          CredentialProvider cp =
+              CredentialProviderFactory.getProviders(c).get(0);
+          LOG.debug("Aliases: {}", cp.getAliases());
+          char[] credential = c.getPassword(alias);
+          if (credential != null) {
+            LOG.info("Credential found for role {}", role);
+            return String.valueOf(credential);
+          }
         }
       }
 
