@@ -19,6 +19,7 @@
 package org.apache.slider.core.registry.retrieve;
 
 import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.GenericType;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
@@ -28,6 +29,7 @@ import com.sun.jersey.client.urlconnection.URLConnectionClientHandler;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.ssl.SSLFactory;
 import org.apache.slider.client.rest.BaseRestClient;
+import org.apache.slider.core.restclient.HttpVerb;
 import org.apache.slider.core.restclient.UgiJerseyBinding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,32 +51,15 @@ import java.net.URL;
 public class AMWebClient {
 
 
-  private Client client;
-  private BaseRestClient restClient;
+  private final BaseRestClient restClient;
   private static final Logger
       log = LoggerFactory.getLogger(AMWebClient.class);
 
-/*
-
-  static {
-    ClientConfig clientConfig = new DefaultClientConfig();
-    clientConfig.getFeatures().put(
-        JSONConfiguration.FEATURE_POJO_MAPPING,
-        Boolean.TRUE);
-    clientConfig.getProperties().put(
-        URLConnectionClientHandler.PROPERTY_HTTP_URL_CONNECTION_SET_METHOD_WORKAROUND,
-        true);
-    URLConnectionClientHandler handler = getUrlConnectionClientHandler();
-    client = new Client(handler, clientConfig);
-    client.setFollowRedirects(true);
-  }
-*/
 
   public AMWebClient(Configuration conf) {
     UgiJerseyBinding binding = new UgiJerseyBinding(conf);
-    client = binding.createJerseyClient();
 
-    restClient = new BaseRestClient(client);
+    restClient = new BaseRestClient(binding.createJerseyClient());
 
   }
 
@@ -128,4 +113,46 @@ public class AMWebClient {
     return restClient.resource(url);
   }
 
+  public BaseRestClient getRestClient() {
+    return restClient;
+  }
+
+  /**
+   * Execute the operation. Failures are raised as IOException subclasses
+   * @param method method to execute
+   * @param resource resource to work against
+   * @param c class to build
+   * @param <T> type expected
+   * @return an instance of the type T
+   * @throws IOException on any failure
+   */
+  public <T> T exec(HttpVerb method, WebResource resource, Class<T> c) throws IOException {
+    return restClient.exec(method, resource, c);
+  }
+
+  /**
+   * Execute the operation. Failures are raised as IOException subclasses
+   * @param method method to execute
+   * @param resource resource to work against
+   * @param t type to work with
+   * @param <T> type expected
+   * @return an instance of the type T
+   * @throws IOException on any failure
+   */
+  public <T> T exec(HttpVerb method, WebResource resource, GenericType<T> t)
+      throws IOException {
+    return restClient.exec(method, resource, t);
+  }
+
+  /**
+   * Execute the  GET operation. Failures are raised as IOException subclasses
+   * @param resource resource to work against
+   * @param c class to build
+   * @param <T> type expected
+   * @return an instance of the type T
+   * @throws IOException on any failure
+   */
+  public <T> T get(WebResource resource, Class<T> c) throws IOException {
+    return restClient.get(resource, c);
+  }
 }

@@ -75,6 +75,7 @@ public class BaseRestClient  {
       throws IOException {
     try {
       Preconditions.checkArgument(c != null);
+      log.debug("{}} {}", method, resource.getURI());
       return resource.accept(MediaType.APPLICATION_JSON_TYPE)
               .method(method.getVerb(), c);
     } catch (ClientHandlerException ex) {
@@ -101,6 +102,7 @@ public class BaseRestClient  {
       throws IOException {
     try {
       Preconditions.checkArgument(t != null);
+      log.debug("{}} {}", method, resource.getURI());
       resource.accept(MediaType.APPLICATION_JSON_TYPE);
       return resource.method(method.getVerb(), t);
     } catch (ClientHandlerException ex) {
@@ -111,6 +113,19 @@ public class BaseRestClient  {
       throw UgiJerseyBinding.uprateFaults(method, resource.getURI().toString(),
           ex);
     }
+  }
+
+
+  /**
+   * Execute the  GET operation. Failures are raised as IOException subclasses
+   * @param resource resource to work against
+   * @param c class to build
+   * @param <T> type expected
+   * @return an instance of the type T
+   * @throws IOException on any failure
+   */
+  public <T> T get(WebResource resource, Class<T> c) throws IOException {
+    return exec(HttpVerb.GET, resource, c);
   }
 
   /**
