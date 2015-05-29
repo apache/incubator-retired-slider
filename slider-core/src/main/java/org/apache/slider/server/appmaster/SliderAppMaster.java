@@ -457,6 +457,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     log.info("AM configuration:\n{}",
         ConfigHelper.dumpConfigToString(customConf));
+    for (Map.Entry<String, String> envs : System.getenv().entrySet()) {
+      log.info("System env {}={}", envs.getKey(), envs.getValue());
+    }
 
     ConfigHelper.mergeConfigurations(conf, customConf, SLIDER_CLIENT_XML, true);
     //init security with our conf
