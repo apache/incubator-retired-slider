@@ -67,7 +67,7 @@ class TestClientBasicArgs extends ServiceLauncherBaseTest {
                                         ClientArgs.ACTION_LIST,
                                         "cluster",
                                         Arguments.ARG_MANAGER,
-                                        "unknownhost.example.org:80"])
+                                        "localhost.example.org:80"])
       fail("expected an exception, got a launcher with exit code $launcher.serviceExitCode")
     } catch (UnknownHostException expected) {
       //expected
