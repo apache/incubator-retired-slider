@@ -173,4 +173,5 @@ public interface SliderXmlConfKeys {
   public static final String IPC_CLIENT_RETRY_POLICY_SPEC_DEFAULT =
       "10000,6,60000,10"; //t1,n1,t2,n2,... 
 
+  String KEY_AM_LAUNCH_ENV = "slider.am.launch.env";
 }

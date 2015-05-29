@@ -23,6 +23,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.io.Files;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -48,6 +49,7 @@ import org.apache.hadoop.registry.client.types.yarn.YarnRegistryAttributes;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.alias.CredentialProvider;
 import org.apache.hadoop.security.alias.CredentialProviderFactory;
+import org.apache.hadoop.util.Shell;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
@@ -183,6 +185,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -192,6 +195,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.apache.hadoop.registry.client.binding.RegistryUtils.ServiceRecordMarshal;
@@ -2204,6 +2208,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     amLauncher.setEnv("LANG", "en_US.UTF-8");
     amLauncher.setEnv("LC_ALL", "en_US.UTF-8");
     amLauncher.setEnv("LANGUAGE", "en_US.UTF-8");
+    amLauncher.putEnv(getAmLaunchEnv(config));
+    
+    for (Map.Entry<String, String> envs : SliderUtils.getSystemEnv().entrySet()) {
+      log.debug("System env {}={}", envs.getKey(), envs.getValue());
+    }
     if (log.isDebugEnabled()) {
       log.debug("AM classpath={}", classpath);
       log.debug("Environment Map:\n{}",
@@ -2316,6 +2325,60 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     // submit the application
     LaunchedApplication launchedApplication = amLauncher.submitApplication();
     return launchedApplication;
+  }
+
+  protected Map<String, String> getAmLaunchEnv(Configuration config) {
+    String sliderAmLaunchEnv = config.get(SliderXmlConfKeys.KEY_AM_LAUNCH_ENV);
+    log.debug("{} = {}", SliderXmlConfKeys.KEY_AM_LAUNCH_ENV, sliderAmLaunchEnv);
+    // Multiple env variables can be specified with a comma (,) separator
+    String[] envs = StringUtils.isEmpty(sliderAmLaunchEnv) ? null
+        : sliderAmLaunchEnv.split(",");
+    if (ArrayUtils.isEmpty(envs)) {
+      return Collections.emptyMap();
+    }
+    Map<String, String> amLaunchEnv = new HashMap<String, String>();
+    for (String env : envs) {
+      if (StringUtils.isNotEmpty(env)) {
+        // Each env name/value is separated by equals sign (=)
+        String[] tokens = env.split("=");
+        if (tokens != null && tokens.length == 2) {
+          String envKey = tokens[0];
+          String envValue = tokens[1];
+          for (Map.Entry<String, String> placeholder : generatePlaceholderKeyValueMap(
+              env).entrySet()) {
+            if (StringUtils.isNotEmpty(placeholder.getValue())) {
+              envValue = envValue.replaceAll(
+                  Pattern.quote(placeholder.getKey()), placeholder.getValue());
+            }
+          }
+          if (Shell.WINDOWS) {
+            envValue = "%" + envKey + "%;" + envValue;
+          } else {
+            envValue = "$" + envKey + ":" + envValue;
+          }
+          log.info("Setting AM launch env {}={}", envKey, envValue);
+          amLaunchEnv.put(envKey, envValue);
+        }
+      }
+    }
+    return amLaunchEnv;
+  }
+
+  protected Map<String, String> generatePlaceholderKeyValueMap(String env) {
+    String PLACEHOLDER_PATTERN = "\\$\\{[^{]+\\}";
+    Pattern placeholderPattern = Pattern.compile(PLACEHOLDER_PATTERN);
+    Matcher placeholderMatcher = placeholderPattern.matcher(env);
+    Map<String, String> placeholderKeyValueMap = new HashMap<String, String>();
+    if (placeholderMatcher.find()) {
+      String placeholderKey = placeholderMatcher.group();
+      String systemKey = placeholderKey
+          .substring(2, placeholderKey.length() - 1).toUpperCase()
+          .replaceAll("\\.", "_");
+      String placeholderValue = SliderUtils.getSystemEnv(systemKey);
+      log.debug("Placeholder {}={}", placeholderKey, placeholderValue);
+      placeholderKeyValueMap.put(placeholderKey, placeholderValue);
+    }
+    return placeholderKeyValueMap;
   }
 
   private void propagatePythonExecutable(Configuration config,
@@ -3866,7 +3929,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       // verbose?
       if (diagnosticArgs.verbose) {
         // do the environment
-        Map<String, String> env = System.getenv();
+        Map<String, String> env = SliderUtils.getSystemEnv();
         Set<String> envList = ConfigHelper.sortedConfigKeys(env.entrySet());
         StringBuilder builder = new StringBuilder("Environment variables:\n");
         for (String key : envList) {
