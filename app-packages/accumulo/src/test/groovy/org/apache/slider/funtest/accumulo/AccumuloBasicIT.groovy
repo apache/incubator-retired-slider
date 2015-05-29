@@ -174,7 +174,9 @@ class AccumuloBasicIT extends AccumuloAgentCommandTestBase {
       SliderKeys.APP_TYPE,
       clusterName);
     ServiceRecord instance = sliderClient.resolve(path)
-    RegistryRetriever retriever = new RegistryRetriever(instance)
+    RegistryRetriever retriever = new RegistryRetriever(
+        sliderClient.config,
+        instance)
     PublishedConfiguration configuration = retriever.retrieveConfiguration(
       retriever.getConfigurations(true), exportName, true)
     return configuration

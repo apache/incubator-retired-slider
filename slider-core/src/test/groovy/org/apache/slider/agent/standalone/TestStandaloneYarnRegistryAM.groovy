@@ -357,7 +357,7 @@ class TestStandaloneYarnRegistryAM extends AgentMiniClusterTestBase {
     describe "Registry Retrieval Class"
     // retrieval
 
-    RegistryRetriever retriever = new RegistryRetriever(serviceRecord)
+    RegistryRetriever retriever = new RegistryRetriever(launcher.configuration, serviceRecord)
     log.info retriever.toString()
     
     assert retriever.hasConfigurations(true)
