@@ -75,6 +75,7 @@ public class BaseRestClient  {
       throws IOException {
     try {
       Preconditions.checkArgument(c != null);
+      log.debug("{}} {}", method, resource.getURI());
       return resource.accept(MediaType.APPLICATION_JSON_TYPE)
               .method(method.getVerb(), c);
     } catch (ClientHandlerException ex) {
@@ -101,6 +102,7 @@ public class BaseRestClient  {
       throws IOException {
     try {
       Preconditions.checkArgument(t != null);
+      log.debug("{}} {}", method, resource.getURI());
       resource.accept(MediaType.APPLICATION_JSON_TYPE);
       return resource.method(method.getVerb(), t);
     } catch (ClientHandlerException ex) {
@@ -113,13 +115,26 @@ public class BaseRestClient  {
     }
   }
 
+
+  /**
+   * Execute the  GET operation. Failures are raised as IOException subclasses
+   * @param resource resource to work against
+   * @param c class to build
+   * @param <T> type expected
+   * @return an instance of the type T
+   * @throws IOException on any failure
+   */
+  public <T> T get(WebResource resource, Class<T> c) throws IOException {
+    return exec(HttpVerb.GET, resource, c);
+  }
+
   /**
    * Create a Web resource from the client.
    *
    * @param u the URI of the resource.
    * @return the Web resource.
    */
-  protected WebResource resource(URI u) {
+  public WebResource resource(URI u) {
     return client.resource(u);
   }
 
@@ -130,21 +145,8 @@ public class BaseRestClient  {
    * @return the Web resource.
    */
 
-  protected WebResource resource(String url) {
-    WebResource resource = client.resource(url);
-    return resource;
+  public WebResource resource(String url) {
+    return client.resource(url);
   }
 
-  protected WebResource jsonResource(String url) {
-    WebResource resource = resource(url);
-    resource.type(MediaType.APPLICATION_JSON);
-    return resource;
-  }
-
-
-  protected WebResource jsonResource(URI u) {
-    WebResource resource = resource(u);
-    resource.type(MediaType.APPLICATION_JSON);
-    return resource;
-  }
 }

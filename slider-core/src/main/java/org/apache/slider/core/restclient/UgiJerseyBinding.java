@@ -19,23 +19,19 @@
 package org.apache.slider.core.restclient;
 
 import com.google.common.base.Preconditions;
-import com.sun.jersey.api.client.ClientResponse;
+import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.UniformInterfaceException;
+import com.sun.jersey.api.client.config.ClientConfig;
+import com.sun.jersey.api.client.config.DefaultClientConfig;
+import com.sun.jersey.api.json.JSONConfiguration;
 import com.sun.jersey.client.urlconnection.HttpURLConnectionFactory;
 import com.sun.jersey.client.urlconnection.URLConnectionClientHandler;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.PathAccessDeniedException;
-import org.apache.hadoop.fs.PathIOException;
-import org.apache.hadoop.fs.PathNotFoundException;
 import org.apache.hadoop.security.authentication.client.AuthenticationException;
-import org.apache.hadoop.yarn.webapp.ForbiddenException;
-import org.apache.hadoop.yarn.webapp.NotFoundException;
 import org.apache.slider.core.exceptions.ExceptionConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.http.HttpServletResponse;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -123,6 +119,36 @@ public class UgiJerseyBinding implements
     return ExceptionConverter.convertJerseyException(verb.getVerb(),
         url, ex);
   }
+
+  /**
+   * Create the standard Jersey client Config
+   * @return the recommended Jersey Client config
+   */
+  public ClientConfig createJerseyClientConfig() {
+    ClientConfig clientConfig = new DefaultClientConfig();
+    clientConfig.getFeatures().put(JSONConfiguration.FEATURE_POJO_MAPPING, true);
+    return clientConfig;
+  }
+
+  /**
+   * Create a jersey client bonded to this handler, using the
+   * supplied client config
+   * @param clientConfig client configuratin
+   * @return a new client instance to use
+   */
+  public Client createJerseyClient(ClientConfig clientConfig) {
+    return new Client(getHandler(), clientConfig);
+  }
+
+  /**
+   * Create a jersey client bonded to this handler, using the
+   * client config created with {@link #createJerseyClientConfig()}
+   * @return a new client instance to use
+   */
+  public Client createJerseyClient() {
+    return createJerseyClient(createJerseyClientConfig());
+  }
+
 }
 
 

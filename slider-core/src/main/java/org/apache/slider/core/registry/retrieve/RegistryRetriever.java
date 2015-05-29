@@ -21,6 +21,7 @@ package org.apache.slider.core.registry.retrieve;
 import com.beust.jcommander.Strings;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.registry.client.exceptions.RegistryIOException;
 import org.apache.hadoop.registry.client.types.ServiceRecord;
 import static org.apache.slider.client.ClientRegistryBinder.*;
@@ -50,23 +51,18 @@ public class RegistryRetriever extends AMWebClient {
   private final String externalExportsURL;
   private final String internalExportsURL;
 
-  public RegistryRetriever(String externalConfigurationURL, String internalConfigurationURL,
-                           String externalExportsURL, String internalExportsURL) {
-    this.externalConfigurationURL = externalConfigurationURL;
-    this.internalConfigurationURL = internalConfigurationURL;
-    this.externalExportsURL = externalExportsURL;
-    this.internalExportsURL = internalExportsURL;
-  }
-
   /**
    * Retrieve from a service by locating the
-   * exported {@link CustomRegistryConstants#PUBLISHER_CONFIGURATIONS_API}
+   * exported {@link CustomRegistryConstants.PUBLISHER_CONFIGURATIONS_API}
    * and working off it.
+   *
+   * @param conf configuration to work from
    * @param record service record
    * @throws RegistryIOException the address type of the endpoint does
    * not match that expected (i.e. not a list of URLs), missing endpoint...
    */
-  public RegistryRetriever(ServiceRecord record) throws RegistryIOException {
+  public RegistryRetriever(Configuration conf, ServiceRecord record) throws RegistryIOException {
+    super(conf);
     externalConfigurationURL = lookupRestAPI(record,
         PUBLISHER_CONFIGURATIONS_API, true);
     internalConfigurationURL = lookupRestAPI(record,
@@ -96,14 +92,8 @@ public class RegistryRetriever extends AMWebClient {
       FileNotFoundException, IOException {
 
     String confURL = getConfigurationURL(external);
-    try {
       WebResource webResource = resource(confURL);
-      log.debug("GET {}", confURL);
-      PublishedConfigSet configSet = webResource.get(PublishedConfigSet.class);
-      return configSet;
-    } catch (UniformInterfaceException e) {
-      throw ExceptionConverter.convertJerseyException("GET", confURL, e);
-    }
+    return get(webResource, PublishedConfigSet.class);
   }
 
   protected String getConfigurationURL(boolean external) throws FileNotFoundException {
@@ -131,14 +121,8 @@ public class RegistryRetriever extends AMWebClient {
       FileNotFoundException, IOException {
 
     String exportsUrl = getExportURL(external);
-    try {
-      WebResource webResource = resource(exportsUrl);
-      log.debug("GET {}", exportsUrl);
-      PublishedExportsSet exportSet = webResource.get(PublishedExportsSet.class);
-      return exportSet;
-    } catch (UniformInterfaceException e) {
-      throw ExceptionConverter.convertJerseyException("GET", exportsUrl, e);
-    }
+    WebResource webResource = resource(exportsUrl);
+    return get(webResource, PublishedExportsSet.class);
   }
 
 
@@ -158,14 +142,8 @@ public class RegistryRetriever extends AMWebClient {
       throw new FileNotFoundException("Unknown configuration " + name);
     }
     confURL = SliderUtils.appendToURL(confURL, name);
-    try {
-      WebResource webResource = resource(confURL);
-      PublishedConfiguration publishedConf =
-          webResource.get(PublishedConfiguration.class);
-      return publishedConf;
-    } catch (UniformInterfaceException e) {
-      throw ExceptionConverter.convertJerseyException("GET", confURL, e);
-    }
+    WebResource webResource = resource(confURL);
+    return get(webResource, PublishedConfiguration.class);
   }
 
   /**
@@ -184,15 +162,8 @@ public class RegistryRetriever extends AMWebClient {
     }
     String exportsURL = getExportURL(external);
     exportsURL = SliderUtils.appendToURL(exportsURL, name);
-    try {
-      WebResource webResource = resource(exportsURL);
-      PublishedExports publishedExports =
-          webResource.get(PublishedExports.class);
-      return publishedExports;
-    } catch (UniformInterfaceException e) {
-      throw ExceptionConverter.convertJerseyException("GET", exportsURL, e);
-    }
-  }
+    return get(resource(exportsURL), PublishedExports.class);
+ }
 
   @Override
   public String toString() {

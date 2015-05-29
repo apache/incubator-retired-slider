@@ -99,7 +99,7 @@ class TestZKIntegration extends YarnZKMiniClusterTestBase implements KeysForTest
     log.info("Ephemeral path $c2")
     List<String> clusters = zki.clusters
     assert clusters.size() == 2
-    assert (c1.endsWith(clusters[0]) && c1.endsWith(clusters[1])) ||
+    assert (c1.endsWith(clusters[0]) && c2.endsWith(clusters[1])) ||
            (c1.endsWith(clusters[1]) && c2.endsWith(clusters[0]))
   }
 
