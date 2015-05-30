@@ -1,0 +1,27 @@
+{
+  "schema": "http://example.org/specification/v2.0.0",
+  "metadata": {
+  },
+  "global": {
+    "application.def": ".slider/package/solr/solr-on-yarn.zip",
+    "java_home": "/Library/Java/JavaVirtualMachines/jdk1.7.0_67.jdk/Contents/Home",
+    "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/solr-5.2.0-SNAPSHOT",
+    "site.global.zk_host": "localhost:2181",
+    "site.global.solr_host": "${SOLR_HOST}",
+    "site.global.listen_port": "${SOLR.ALLOCATED_PORT}",
+    "site.global.xmx_val": "1g",
+    "site.global.xms_val": "1g",
+    "site.global.gc_tune": "-XX:NewRatio=3 -XX:SurvivorRatio=4 -XX:TargetSurvivorRatio=90 -XX:MaxTenuringThreshold=8 -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:ConcGCThreads=4 -XX:ParallelGCThreads=4 -XX:+CMSScavengeBeforeRemark -XX:PretenureSizeThreshold=64m -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=50 -XX:CMSMaxAbortablePrecleanTime=6000 -XX:+CMSParallelRemarkEnabled -XX:+ParallelRefProcEnabled -verbose:gc -XX:+PrintHeapAtGC -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintTenuringDistribution -XX:+PrintGCApplicationStoppedTime",
+    "site.global.zk_timeout": "15000",
+    "site.global.server_module": "--module=http",
+    "site.global.stop_key": "solrrocks",
+    "site.global.solr_opts": ""
+  },
+  "components": {
+    "slider-appmaster": {
+      "jvm.heapsize": "512M"
+    },
+    "SOLR": {
+    }
+  }
+}
