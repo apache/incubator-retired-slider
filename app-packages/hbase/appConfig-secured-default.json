@@ -42,7 +42,7 @@
         "site.hbase-site.hbase.security.authorization": "true",
         "site.hbase-site.hbase.security.access.early_out": "true",
         "site.hbase-site.hbase.coprocessor.master.classes": "org.apache.hadoop.hbase.security.access.AccessController",
-        "site.hbase-site.hbase.coprocessor.region.classes": "org.apache.hadoop.hbase.security.token.TokenProvider,org.apache.hadoop.hbase.security.access.AccessController",
+        "site.hbase-site.hbase.coprocessor.region.classes": "org.apache.hadoop.hbase.security.token.TokenProvider,org.apache.hadoop.hbase.security.access.AccessController,org.apache.hadoop.hbase.security.access.SecureBulkLoadEndpoint",
         "site.hbase-site.hbase.regionserver.kerberos.principal": "${USER_NAME}/_HOST@EXAMPLE.COM",
         "site.hbase-site.hbase.regionserver.keytab.file": "${AGENT_WORK_ROOT}/keytabs/${USER_NAME}.HBASE.service.keytab",
         "site.hbase-site.hbase.master.kerberos.principal": "${USER_NAME}/_HOST@EXAMPLE.COM",
