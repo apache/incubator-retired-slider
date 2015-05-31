@@ -51,7 +51,7 @@
 
     "site.accumulo-site.trace.user": "${USER_NAME}@EXAMPLE.COM",
     "site.accumulo-site.trace.zookeeper.path": "${DEFAULT_ZK_PATH}/tracers",
-    "site.accumulo-site.trace.token.property.keytab": "${AGENT_WORK_ROOT}/keytabs/${USER_NAME}.headless.keytab",
+    "site.accumulo-site.trace.token.property.keytab": "${AGENT_WORK_ROOT}/keytabs/${USER_NAME}.ACCUMULO.headless.keytab",
     "site.accumulo-site.trace.token.type": "org.apache.accumulo.core.client.security.tokens.KerberosToken",
 
     "site.accumulo-site.tserver.memory.maps.native.enabled": "false",
