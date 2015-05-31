@@ -34,6 +34,7 @@
         "site.hbase-site.hbase.zookeeper.quorum": "${ZK_HOST}",
         "site.hbase-site.zookeeper.znode.parent": "${DEFAULT_ZK_PATH}",
         "site.hbase-site.hbase.regionserver.info.port": "0",
+        "site.hbase-site.hbase.coprocessor.region.classes": "org.apache.hadoop.hbase.security.access.SecureBulkLoadEndpoint",
         "site.hbase-site.hbase.defaults.for.version.skip": "true",
         "site.hbase-site.hbase.region.server.rpc.scheduler.factory.class": "org.apache.hadoop.hbase.ipc.PhoenixRpcSchedulerFactory",
         "site.hbase-site.hbase.rpc.controllerfactory.class": "org.apache.hadoop.hbase.ipc.controller.ServerRpcControllerFactory",

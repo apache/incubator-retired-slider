@@ -34,6 +34,7 @@
         "site.hbase-site.hbase.zookeeper.quorum": "${ZK_HOST}",
         "site.hbase-site.zookeeper.znode.parent": "${DEFAULT_ZK_PATH}",
         "site.hbase-site.hbase.regionserver.info.port": "0",
+        "site.hbase-site.hbase.coprocessor.region.classes": "org.apache.hadoop.hbase.security.access.SecureBulkLoadEndpoint",
         "site.hbase-site.hbase.master.info.port": "${HBASE_MASTER.ALLOCATED_PORT}",
         "site.hbase-site.hbase.regionserver.port": "0",
         "site.hbase-site.hbase.master.port": "0"
