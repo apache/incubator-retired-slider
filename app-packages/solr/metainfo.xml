@@ -32,10 +32,6 @@
             <name>host_port</name>
             <value>http://${SOLR_HOST}:${site.global.listen_port}/</value>
           </export>
-          <export>
-            <name>zkhost</name>
-            <value>${site.global.zk_host}</value>
-          </export>
         </exports>
       </exportGroup>
     </exportGroups>
@@ -44,7 +40,7 @@
       <component>
         <name>SOLR</name>
         <category>SLAVE</category>
-        <compExports>Servers-host_port,Servers-zkhost</compExports>
+        <compExports>Servers-host_port</compExports>
         <commandScript>
           <script>scripts/solr_node.py</script>
           <scriptType>PYTHON</scriptType>
