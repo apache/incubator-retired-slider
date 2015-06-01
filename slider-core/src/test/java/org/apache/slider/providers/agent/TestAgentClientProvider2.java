@@ -206,8 +206,12 @@ public class TestAgentClientProvider2 extends SliderTestUtils {
     String client_script = "scripts/abc.py";
 
     List<String> commands =
-        Arrays.asList("python", "-S", "/tmp/pkg/package/scripts/abc.py", "INSTALL", "/tmp/cmd/command.json",
-                      "/tmp/pkg/package", "/tmp/cmd/command-out.json", "DEBUG");
+        Arrays.asList("python", "-S", new File("/tmp/pkg").getAbsolutePath() + File.separator + "package" +
+            File.separator + "scripts/abc.py", 
+        "INSTALL", new File("/tmp/cmd").getAbsolutePath() + File.separator + "command.json",
+                      new File("/tmp/pkg").getAbsolutePath() + File.separator + "package", 
+                      new File("/tmp/cmd").getAbsolutePath() + File.separator + "command-out.json", "DEBUG");
+    
     ProcessBuilder pbMock = PowerMock.createMock(ProcessBuilder.class);
     Process procMock = PowerMock.createMock(Process.class);
     PowerMock.expectNew(ProcessBuilder.class, commands).andReturn(pbMock);
