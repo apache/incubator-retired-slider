@@ -118,6 +118,7 @@ public class AgentWebPagesIT extends AgentCommandTestBase
     getWebPage(proxyAM)
     
     def directAM = report.origTrackingUrl;
+/*
     // now attempt direct-to-AM pings
     LowLevelRestTestDelegates direct = new LowLevelRestTestDelegates(directAM,
         directComplexVerbs)
@@ -129,6 +130,7 @@ public class AgentWebPagesIT extends AgentCommandTestBase
         proxyComplexVerbs)
     proxied.testSuiteAll()
     proxied.logCodahaleMetrics();
+*/
 
     describe "Proxy Jersey Tests"
 
