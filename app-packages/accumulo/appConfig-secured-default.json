@@ -78,7 +78,7 @@
   "components": {
     "slider-appmaster": {
       "jvm.heapsize": "256M",
-      "slider.hdfs.keytab.dir": ".slider/keytabs/${CLUSTER_NAME}",
+      "slider.hdfs.keytab.dir": ".slider/keytabs/accumulo",
       "slider.am.login.keytab.name": "${USER_NAME}.headless.keytab",
       "slider.keytab.principal.name": "${USER_NAME}"
     }
