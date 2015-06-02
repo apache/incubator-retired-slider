@@ -79,6 +79,22 @@ def setup_conf_dir(name=None): # 'master' or 'tserver' or 'monitor' or 'gc' or '
                    owner = params.accumulo_user,
                    group = params.user_group
     )
+    # create client.conf file
+    configs = {}
+    configs.update(params.config['configurations']['client'])
+    update_site_config(configs, 'general.security.credential.provider.paths')
+    update_site_config(configs, 'rpc.javax.net.ssl.trustStore')
+    update_site_config(configs, 'rpc.javax.net.ssl.trustStoreType')
+    update_site_config(configs, 'rpc.javax.net.ssl.keyStore')
+    update_site_config(configs, 'rpc.javax.net.ssl.keyStoreType')
+    for key,value in params.config['configurations']['accumulo-site'].iteritems():
+      if key.startswith("trace.span.receiver."):
+        configs[key] = value
+    PropertiesFile(format("{params.conf_dir}/client.conf"),
+                   properties = configs,
+                   owner = params.accumulo_user,
+                   group = params.user_group
+                   )
 
   # create host files
   accumulo_StaticFile( 'masters')

@@ -20,6 +20,7 @@ package org.apache.slider.funtest.accumulo
 import groovy.util.logging.Slf4j
 import org.apache.accumulo.core.cli.BatchWriterOpts
 import org.apache.accumulo.core.cli.ScannerOpts
+import org.apache.accumulo.core.client.ClientConfiguration
 import org.apache.accumulo.core.client.Connector
 import org.apache.accumulo.core.client.ZooKeeperInstance
 import org.apache.accumulo.core.client.security.tokens.PasswordToken
@@ -52,8 +53,11 @@ class AccumuloReadWriteIT extends AccumuloBasicIT {
           RegistryConstants.KEY_REGISTRY_ZK_QUORUM,
         FuntestProperties.DEFAULT_SLIDER_ZK_HOSTS)
 
-      ZooKeeperInstance instance = new ZooKeeperInstance(
-        tree.global.get("site.client.instance.name"), zookeepers)
+      ClientConfiguration configuration = new ClientConfiguration()
+      configuration.setProperty(ClientConfiguration.ClientProperty.INSTANCE_ZK_HOST, zookeepers)
+      configuration.setProperty(ClientConfiguration.ClientProperty.INSTANCE_NAME, tree.global.get("site.client.instance.name"))
+
+      ZooKeeperInstance instance = new ZooKeeperInstance(configuration)
       Connector connector = instance.getConnector(USER, new PasswordToken(PASSWORD))
 
       ingest(connector, 200000, 1, 50, 0);
