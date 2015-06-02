@@ -27,6 +27,7 @@
     "site.accumulo-env.zookeeper_home": "${zk.dir}",
 
     "site.client.instance.name": "${USER}-${CLUSTER_NAME}",
+    "site.client.kerberos.server.primary": "${USER_NAME}",
 
     "site.proxy.port": "${ACCUMULO_PROXY.ALLOCATED_PORT}{PER_CONTAINER}",
 
