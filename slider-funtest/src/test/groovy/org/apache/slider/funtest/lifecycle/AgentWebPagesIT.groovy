@@ -157,13 +157,6 @@ public class AgentWebPagesIT extends AgentCommandTestBase
     if (UserGroupInformation.securityEnabled) {
       describe "Insecure Proxy Tests against a secure cluster"
 
-      try {
-        String rootpage = fetchWebPageRaisedErrorCodes(proxyAM);
-        fail(" expected a 401, got $rootpage")
-      } catch (ForbiddenException expected) {
-        // expected
-      }
-      
       // these tests use the Jersey client without the Hadoop-specific
       // SPNEGO
       JerseyTestDelegates basicJerseyClientTests =
@@ -193,10 +186,7 @@ public class AgentWebPagesIT extends AgentCommandTestBase
     // there's some code set up to do the tokens properly
     if (!UserGroupInformation.isSecurityEnabled()) {
       describe("IPC equivalent operations")
-/*
-      def rmClient = ClientRMProxy.createRMProxy(conf,
-          ApplicationClientProtocol.class);
-*/
+
       def sliderClusterProtocol =
           RpcBinder.createProxy(conf,
               report.host,
