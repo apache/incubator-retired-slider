@@ -113,7 +113,7 @@ public class PublisherResource extends AbstractSliderResource {
     UriMap uriMap = new UriMap();
     for (String name : appState.listConfigSets()) {
       uriMap.put(name, baseURL + name);
-      log.info("Tick tack {} and {}", name, baseURL);
+      log.info("registering config set {} at {}", name, baseURL);
     }
     uriMap.put(EXPORTS_NAME, baseURL + EXPORTS_NAME);
     return uriMap;
