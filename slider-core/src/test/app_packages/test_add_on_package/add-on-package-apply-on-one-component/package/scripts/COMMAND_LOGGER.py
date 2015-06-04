@@ -26,19 +26,16 @@ import tempfile
 class COMMAND_LOGGER(Script):
   def install(self, env):
     self.install_packages(env)
-    f = tempfile.NamedTemporaryFile(mode='w+t')
-    try:  
-      TMP_LOCAL_FILE = f.name
-      tmp_file = open(TMP_LOCAL_FILE, 'w')
-      tmp_file.write("testing...")
-      tmp_file.close()
+    f = tempfile.NamedTemporaryFile(mode='w+t', delete=False)
+    TMP_LOCAL_FILE = f.name
+    try:
+      f.write("testing...")
       print TMP_LOCAL_FILE
-      cat = subprocess.Popen(["hdfs", "dfs", "-copyFromLocal", TMP_LOCAL_FILE,
-                              "/tmp/test_slider.txt"], stdout=subprocess.PIPE)
-      cat.communicate()
     finally:
       f.close()
-    print "running install for command_logger components in add on pkg"
+    cat = subprocess.Popen("hdfs dfs -copyFromLocal " + TMP_LOCAL_FILE + " /tmp/test_slider.txt", shell=True)
+    cat.communicate()
+    print "running install for all components in add on pkg"
     
   def configure(self, env):
     import params

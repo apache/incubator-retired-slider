@@ -52,8 +52,6 @@ public class ApplicationWithAddonPackagesIT extends AgentCommandTestBase{
   
   static String CLUSTER = "test-application-with-add-on"
   static String APP_RESOURCE2 = "../slider-core/src/test/app_packages/test_command_log/resources_add_on_pkg.json"
-  static String APP_META12 = "../slider-core/src/test/app_packages/test_addon_pkg/metainfo.json"
-  static String APP_TEMPLATE12 = "../slider-core/src/test/app_packages/test_addon_pkg/appConfig.json"
   static String ADD_ON_PACKAGE_ONE_COMPONENT = "../slider-core/src/test/app_packages/test_add_on_package/add-on-package-apply-on-one-component/"
   static String ADD_ON_PACKAGE_ALL_COMPONENT = "../slider-core/src/test/app_packages/test_add_on_package/add-on-package-apply-on-all-component/"
   static String ADD_ON_PACKAGE_MULTI_COMPONENT = "../slider-core/src/test/app_packages/test_add_on_package/add-on-package-apply-on-multi-component/"
