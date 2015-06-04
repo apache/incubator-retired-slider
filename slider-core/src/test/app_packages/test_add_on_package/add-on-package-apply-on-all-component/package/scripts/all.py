@@ -26,18 +26,15 @@ import tempfile
 class ALL(Script):
   def install(self, env):
     self.install_packages(env)
-    f = tempfile.NamedTemporaryFile(mode='w+t')
+    f = tempfile.NamedTemporaryFile(mode='w+t', delete=False)
     TMP_LOCAL_FILE = f.name
     try:
-      tmp_file = open(TMP_LOCAL_FILE, 'w')
-      tmp_file.write("testing...")
-      tmp_file.close()
+      f.write("testing...")
       print TMP_LOCAL_FILE
-      cat = subprocess.Popen(["hdfs", "dfs", "-copyFromLocal", TMP_LOCAL_FILE,
-                              "/tmp/test_slider.txt"], stdout=subprocess.PIPE)
-      cat.communicate()
     finally:
       f.close()
+    cat = subprocess.Popen("hdfs dfs -copyFromLocal " + TMP_LOCAL_FILE + " /tmp/test_slider.txt", shell=True)
+    cat.communicate()
     print "running install for all components in add on pkg"
     
   def configure(self, env):

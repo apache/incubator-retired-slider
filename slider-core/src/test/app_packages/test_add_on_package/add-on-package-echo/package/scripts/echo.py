@@ -26,12 +26,7 @@ from resource_management import *
 class ECHO(Script):
   def install(self, env):
     self.install_packages(env)
-    tmp_file_path = "test_slider"
-    tmp_file = open(tmp_file_path, 'w')
-    tmp_file.write("testing...")
-    cat = subprocess.Popen(["hdfs", "dfs", "-copyFromLocal", tmp_file_path, "/tmp"], stdout=subprocess.PIPE)
-    cat.communicate()
-    print "running install for command_logger components in add on pkg"
+    print "running install for add on pkg"
     
   def configure(self, env):
     import params
