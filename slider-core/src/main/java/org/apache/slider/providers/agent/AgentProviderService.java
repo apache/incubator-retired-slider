@@ -1908,7 +1908,9 @@ public class AgentProviderService extends AbstractProviderService implements
 
     Map<String, Map<String, String>> configurations = buildCommandConfigurations(appConf, containerId, componentName);
     cmd.setConfigurations(configurations);
-
+    Map<String, Map<String, String>> componentConfigurations = buildComponentConfigurations(appConf);
+    cmd.setComponentConfigurations(componentConfigurations);
+    
     if (SliderUtils.isSet(scriptPath)) {
       cmd.setCommandParams(commandParametersSet(scriptPath, timeout, false));
     } else {
@@ -1954,7 +1956,9 @@ public class AgentProviderService extends AbstractProviderService implements
     Map<String, Map<String, String>> configurations = buildCommandConfigurations(
         appConf, containerId, componentName);
     cmd.setConfigurations(configurations);
-
+    Map<String, Map<String, String>> componentConfigurations = buildComponentConfigurations(appConf);
+    cmd.setComponentConfigurations(componentConfigurations);
+    
     ComponentCommand effectiveCommand = compCmd;
     if (compCmd == null) {
       effectiveCommand = new ComponentCommand();
@@ -2264,7 +2268,9 @@ public class AgentProviderService extends AbstractProviderService implements
     
     Map<String, Map<String, String>> configurations = buildCommandConfigurations(
         appConf, containerId, componentName);
-
+    Map<String, Map<String, String>> componentConfigurations = buildComponentConfigurations(appConf);
+    cmd.setComponentConfigurations(componentConfigurations);
+    
     log.info("before resolution: " + appConf.toString());
     resolveVariablesForComponentAppConfigs(appConf, componentName, containerId);
     log.info("after resolution: " + appConf.toString());
@@ -2469,7 +2475,9 @@ public class AgentProviderService extends AbstractProviderService implements
 
     Map<String, Map<String, String>> configurations = buildCommandConfigurations(appConf, containerId, componentName);
     cmd.setConfigurations(configurations);
-
+    Map<String, Map<String, String>> componentConfigurations = buildComponentConfigurations(appConf);
+    cmd.setComponentConfigurations(componentConfigurations);
+    
     if (SliderUtils.isSet(scriptPath)) {
       cmd.setCommandParams(commandParametersSet(scriptPath, timeout, true));
     } else {

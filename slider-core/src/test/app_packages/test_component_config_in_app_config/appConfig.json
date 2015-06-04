@@ -1,0 +1,22 @@
+{
+    "schema": "http://example.org/specification/v2.0.0",
+    "metadata": {
+    },
+    "global": {
+        "application.def": ".slider/package/CMD_LOGGER/test_component_config_in_app_config.zip",
+        "java_home": "/usr/jdk64/jdk1.7.0_67",
+        "site.global.application_id": "CommandLogger",
+        "site.global.app_root": "${AGENT_WORK_ROOT}/app/install/command-logger",
+        "site.cl-site.logfile.location": "${AGENT_LOG_ROOT}/operations.log",
+        "site.cl-site.datetime.format": "%A, %d. %B %Y %I:%M%p",
+        "site.cl-site.pattern.for.test.to.verify": "verify this pattern"
+    },
+    "components": {
+        "COMMAND_LOGGER": {
+        		"file_name":"test_component_in_app_config.txt"
+        },
+        "slider-appmaster": {
+            "jvm.heapsize": "256M"
+        }
+    }
+}
