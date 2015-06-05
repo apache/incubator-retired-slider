@@ -23,8 +23,10 @@ import subprocess
 from resource_management import *
 import tempfile
          
-class ALL(Script):
+class COMMAND_LOGGER(Script):
   def install(self, env):
+    config = Script.get_config()
+    filename = config['componentConfig']['COMMAND_LOGGER']['file_name']
     self.install_packages(env)
     f = tempfile.NamedTemporaryFile(mode='w+t', delete=False)
     TMP_LOCAL_FILE = f.name
@@ -33,7 +35,7 @@ class ALL(Script):
       print TMP_LOCAL_FILE
     finally:
       f.close()
-    cat = subprocess.Popen("hdfs dfs -copyFromLocal " + TMP_LOCAL_FILE + " /tmp/test_slider.txt", shell=True)
+    cat = subprocess.Popen("hdfs dfs -copyFromLocal " + TMP_LOCAL_FILE + " /tmp/" + filename, shell=True)
     cat.communicate()
     print "running install for all components in add on pkg"
     
@@ -53,11 +55,8 @@ class ALL(Script):
 
 
   def status(self, env):
-    import status_params
-    env.set_params(status_params)
-    
-
+    pass
 
 if __name__ == "__main__":
-  ALL().execute()
+  COMMAND_LOGGER().execute()
   pass
