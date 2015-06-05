@@ -114,6 +114,20 @@ class SliderTestUtils extends Assert {
   }
 
   /**
+   * Skip a test if not running on Windows
+   */
+  public assumeWindows() {
+    assume(Shell.WINDOWS, "not windows")
+  }
+
+  /**
+   * Skip a test if running on Windows
+   */
+  public assumeNotWindows() {
+    assume(!Shell.WINDOWS, "windows")
+  }
+
+  /**
    * Equality size for a list
    * @param left
    * @param right

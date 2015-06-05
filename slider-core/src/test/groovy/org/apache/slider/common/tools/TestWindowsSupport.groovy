@@ -139,10 +139,6 @@ class TestWindowsSupport extends YarnMiniClusterTestBase {
     assert !doesAppExist(["undefined-application", "--version"])
   }
 
-  public assumeWindows() {
-    assume(Shell.WINDOWS, "not windows")
-  }
-
   @Test
   public void testEmitKillCommand() throws Throwable {
 
