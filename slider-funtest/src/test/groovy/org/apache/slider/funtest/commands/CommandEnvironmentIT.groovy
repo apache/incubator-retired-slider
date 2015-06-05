@@ -90,7 +90,7 @@ public class CommandEnvironmentIT extends CommandTestBase {
     if (python) {
       SliderShell.scriptFile = SLIDER_SCRIPT_PYTHON;
     } else {
-      assume(!SliderShell.windows, "skip bash test on windows")
+      assumeNotWindows()
       SliderShell.scriptFile = SLIDER_SCRIPT;
     }
     SliderShell shell = new SliderShell([
