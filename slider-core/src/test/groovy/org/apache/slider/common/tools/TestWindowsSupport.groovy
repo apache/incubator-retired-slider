@@ -122,7 +122,7 @@ class TestWindowsSupport extends YarnMiniClusterTestBase {
 
   @Test
   public void testExecNonexistentBinary() throws Throwable {
-    assume(Shell.WINDOWS, "not windows")
+    assumeWindows()
     def commands = ["undefined-application", "--version"]
     try {
       exec(0, commands)
