@@ -37,6 +37,7 @@
         "site.hbase-site.hbase.coprocessor.region.classes": "org.apache.hadoop.hbase.security.access.SecureBulkLoadEndpoint",
         "site.hbase-site.hbase.defaults.for.version.skip": "true",
         "site.hbase-site.hbase.region.server.rpc.scheduler.factory.class": "org.apache.hadoop.hbase.ipc.PhoenixRpcSchedulerFactory",
+        "site.hbase-site.phoenix.functions.allowUserDefinedFunctions": "true",
         "site.hbase-site.hbase.rpc.controllerfactory.class": "org.apache.hadoop.hbase.ipc.controller.ServerRpcControllerFactory",
         "site.hbase-site.hbase.regionserver.wal.codec": "org.apache.hadoop.hbase.regionserver.wal.IndexedWALEditCodec",
         "site.hbase-site.hbase.master.info.port": "${HBASE_MASTER.ALLOCATED_PORT}",
