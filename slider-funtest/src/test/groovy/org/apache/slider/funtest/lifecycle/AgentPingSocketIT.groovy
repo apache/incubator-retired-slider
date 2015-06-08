@@ -67,6 +67,7 @@ public class AgentPingSocketIT extends AgentCommandTestBase
   @Test
   public void testAgentRegistry() throws Throwable {
     describe("Create a cluster using metainfo, resources, and appConfig that calls nc to listen on a port")
+    assumeNotWindows()
     def clusterpath = buildClusterPath(CLUSTER)
     File launchReportFile = createTempJsonFile();
 
