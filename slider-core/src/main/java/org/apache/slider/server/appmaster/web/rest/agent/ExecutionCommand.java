@@ -214,10 +214,12 @@ public class ExecutionCommand {
     this.pkg = pkg;
   }
 
+  @JsonProperty("componentConfig")
   public Map<String, Map<String, String>> getComponentConfigurations() {
     return componentConfigurations;
   }
 
+  @JsonProperty("componentConfig")
   public void setComponentConfigurations(
       Map<String, Map<String, String>> componentConfigurations) {
     this.componentConfigurations = componentConfigurations;
