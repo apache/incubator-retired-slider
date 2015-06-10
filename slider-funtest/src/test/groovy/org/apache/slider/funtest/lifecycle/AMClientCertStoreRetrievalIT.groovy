@@ -46,6 +46,8 @@ import java.security.Principal
 import java.security.cert.Certificate
 import java.security.cert.CertificateException
 import java.security.cert.X509Certificate
+import com.google.common.io.Files
+import java.io.File
 
 @CompileStatic
 @Slf4j
@@ -78,6 +80,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   @Test
   public void testRetrieveCertificateStores() throws Throwable {
+    assumeNotWindows()
     cleanup(APPLICATION_NAME)
     File launchReportFile = createTempJsonFile();
 
@@ -100,8 +103,8 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     assert loggerStats["containers.requested"] == 1
     assert loggerStats["containers.live"] == 1
 
-
-    String filename = "/tmp/test.keystore"
+    File myTempDir = Files.createTempDir();
+    String filename = myTempDir.canonicalPath + File.separator + "test.keystore"
     String password = "welcome";
 
     // ensure file doesn't exist
@@ -122,7 +125,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     validateKeystore(keystore)
 
-    filename = "/tmp/test.truststore"
+    filename = myTempDir.canonicalPath + File.separator + "test.truststore"
     // ensure file doesn't exist
     new File(filename).delete();
 
@@ -142,7 +145,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
     validateTruststore(keystore, truststore);
 
     // test retrieving using credential provider to provide password
-    filename = "/tmp/test.keystore"
+    filename = myTempDir.canonicalPath + File.separator + "test.keystore"
     String alias = "alias.for.password"
     String providerString = "jceks://hdfs/user/" +
       UserGroupInformation.getCurrentUser().getShortUserName() + "/test-" +
@@ -180,7 +183,7 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
     validateKeystore(keystore)
 
-    filename = "/tmp/test.truststore"
+    filename = myTempDir.canonicalPath + File.separator + "test.truststore"
     // ensure file doesn't exist
     new File(filename).delete();
 
