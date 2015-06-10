@@ -448,7 +448,7 @@ public class AgentClientProvider extends AbstractClientProvider
       log.info("Command: " + StringUtils.join(pb.command(), " "));
       pb.environment().put(SliderKeys.PYTHONPATH,
                            agentPkgDir.getAbsolutePath()
-                           + File.separator + "slider-agent:"
+                           + File.separator + "slider-agent" + File.pathSeparator
                            + agentPkgDir.getAbsolutePath()
                            + File.separator + "slider-agent/jinja2");
       log.info("{}={}", SliderKeys.PYTHONPATH, pb.environment().get(SliderKeys.PYTHONPATH));
