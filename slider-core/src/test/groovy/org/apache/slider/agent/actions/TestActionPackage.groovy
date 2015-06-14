@@ -224,6 +224,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
 
   @Test
   public void testPackageDelete() throws Throwable {
+      def uuid = UUID.randomUUID()
       ServiceLauncher launcher = launchClientAgainstMiniMR(
           //config includes RM binding info
           new YarnConfiguration(miniCluster.config),
@@ -231,7 +232,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
           [
               SliderActions.ACTION_PACKAGE,
               Arguments.ARG_INSTALL,
-              Arguments.ARG_NAME, "storm",
+              Arguments.ARG_NAME, "storm_" + uuid,
               Arguments.ARG_PACKAGE, packageFile.absolutePath,
           ],
       )
@@ -242,7 +243,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
           [
               SliderActions.ACTION_PACKAGE,
               Arguments.ARG_PKGDELETE,
-              Arguments.ARG_NAME, "storm"
+              Arguments.ARG_NAME, "storm_" + uuid
           ],
       )
   }
