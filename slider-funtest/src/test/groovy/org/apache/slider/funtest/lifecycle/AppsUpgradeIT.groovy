@@ -115,8 +115,10 @@ public class AppsUpgradeIT extends AgentCommandTestBase
             ARG_FORCE
         ])
 
-    describe("Check Slider AM goes down and then comes back up")
-    ensureApplicationNotInState(APPLICATION_NAME, YarnApplicationState.RUNNING)
+    // This is a very time constrained check, so disabling it. Catching the
+    // app not in RUNNING state after AM restart, is like racing with RM.
+//    describe("Check Slider AM goes down and then comes back up")
+//    ensureApplicationNotInState(APPLICATION_NAME, YarnApplicationState.RUNNING)
     // Spin till the Slider AM is back up. Note: COMMAND_LOGGER
     // container count goes down to 1 here (due to spec change)
     ensureYarnApplicationIsUp(appId)
