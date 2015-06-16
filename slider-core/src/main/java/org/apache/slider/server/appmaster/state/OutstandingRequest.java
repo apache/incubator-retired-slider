@@ -23,6 +23,7 @@ import com.google.common.base.Preconditions;
 import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
+import org.apache.hadoop.yarn.client.api.InvalidContainerRequestException;
 import org.apache.slider.server.appmaster.operations.CancelSingleRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +60,12 @@ public final class OutstandingRequest {
    * hostname -will be null if node==null
    */
   public final String hostname;
+
+  /**
+   * Optional label. This is cached as the request option (explicit-location + label) is forbidden,
+   * yet the label needs to be retained for escalation.
+   */
+  public String label;
 
   /**
    * Requested time in millis.
@@ -178,12 +185,15 @@ public final class OutstandingRequest {
     Preconditions.checkArgument(resource != null, "null `resource` arg");
     Preconditions.checkArgument(role != null, "null `role` arg");
 
+    // cache label for escalation
+    label = labelExpression;
     requestedTimeMillis = time;
     escalationTimeoutMillis = time + role.getPlacementTimeoutSeconds() * 1000;
     String[] hosts;
     boolean relaxLocality;
     boolean strictPlacement = role.isStrictPlacement();
     NodeInstance target = this.node;
+    String nodeLabels;
 
     if (target != null) {
       // placed request. Hostname is used in request
@@ -197,6 +207,7 @@ public final class OutstandingRequest {
       // enable escalation for all but strict placements.
       escalated = false;
       mayEscalate = !strictPlacement;
+      nodeLabels = null;
     } else {
       // no hosts
       hosts = null;
@@ -206,6 +217,7 @@ public final class OutstandingRequest {
       escalated = true;
       // and forbid it happening
       mayEscalate = false;
+      nodeLabels = labelExpression;
     }
     Priority pri = ContainerPriority.createPriority(roleId, !relaxLocality);
     priority = pri.getPriority();
@@ -214,8 +226,9 @@ public final class OutstandingRequest {
                                       null,
                                       pri,
                                       relaxLocality,
-                                      labelExpression);
+                                      nodeLabels);
 
+    validate();
     return issuedRequest;
   }
 
@@ -235,7 +248,7 @@ public final class OutstandingRequest {
     Priority pri = ContainerPriority.createPriority(roleId, true);
     String[] nodes;
     List<String> issuedRequestNodes = issuedRequest.getNodes();
-    if (issuedRequestNodes != null) {
+    if (label == null && issuedRequestNodes != null) {
       nodes = issuedRequestNodes.toArray(new String[issuedRequestNodes.size()]);
     } else {
       nodes = null;
@@ -247,8 +260,9 @@ public final class OutstandingRequest {
             null,
             pri,
             true,
-            issuedRequest.getNodeLabelExpression());
+            label);
     issuedRequest = newRequest;
+    validate();
     return issuedRequest;
   }
       
@@ -342,7 +356,42 @@ public final class OutstandingRequest {
    * @return an operation that can be used to cancel the request
    */
   public CancelSingleRequest createCancelOperation() {
-    Preconditions.checkState(issuedRequest!=null, "No issued request to cancel");
+    Preconditions.checkState(issuedRequest != null, "No issued request to cancel");
     return new CancelSingleRequest(issuedRequest);
   }
+
+
+  /**
+   * Valid if a node label expression specified on container request is valid or
+   * not. Mimics the logic in AMRMClientImpl, so can be used for preflight checking
+   * and in mock tests
+   *
+   */
+  public  void validate() throws InvalidContainerRequestException {
+    Preconditions.checkNotNull(issuedRequest, "request has not yet been built up");
+    AMRMClient.ContainerRequest containerRequest = issuedRequest;
+    String exp = containerRequest.getNodeLabelExpression();
+
+    if (null == exp || exp.isEmpty()) {
+      return;
+    }
+
+    // Don't support specifying >= 2 node labels in a node label expression now
+    if (exp.contains("&&") || exp.contains("||")) {
+      throw new InvalidContainerRequestException(
+          "Cannot specify more than two node labels"
+              + " in a single node label expression");
+    }
+
+    // Don't allow specify node label against ANY request
+    if ((containerRequest.getRacks() != null &&
+             (!containerRequest.getRacks().isEmpty()))
+        ||
+        (containerRequest.getNodes() != null &&
+             (!containerRequest.getNodes().isEmpty()))) {
+      throw new InvalidContainerRequestException(
+          "Cannot specify node label with rack and node");
+    }
+  }
+
 }

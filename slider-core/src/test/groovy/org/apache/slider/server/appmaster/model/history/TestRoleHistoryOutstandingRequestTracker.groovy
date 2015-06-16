@@ -208,6 +208,57 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest {
   }
 
   /**
+   * If the placement does include a label, the initial request must
+   * <i>not</i> include it.
+   * The escalation request will contain the label, while
+   * leaving out the node list.
+   * retains the node list, but sets relaxLocality==true
+   * @throws Throwable
+   */
+  @Test
+  public void testRequestLabelledPlacement() throws Throwable {
+    NodeInstance ni = new NodeInstance("host1", 0)
+    def req1 = tracker.newRequest(ni, 0)
+    def resource = factory.newResource()
+    resource.virtualCores = 1
+    resource.memory = 48;
+
+    def label = "workers"
+    // initial request
+    def yarnRequest = req1.buildContainerRequest(resource, role0Status, 0, label)
+    assert (yarnRequest.nodeLabelExpression == null)
+    assert (!yarnRequest.relaxLocality)
+    def yarnRequest2 = req1.escalate()
+    assert (yarnRequest2.nodeLabelExpression == label)
+    assert (yarnRequest2.relaxLocality)
+  }
+
+  /**
+   * If the placement doesnt include a lablel, then the escalation request
+   * retains the node list, but sets relaxLocality==true
+   * @throws Throwable
+   */
+  @Test
+  public void testRequestUnlabelledPlacement() throws Throwable {
+    NodeInstance ni = new NodeInstance("host1", 0)
+    def req1 = tracker.newRequest(ni, 0)
+    def resource = factory.newResource()
+    resource.virtualCores = 1
+    resource.memory = 48;
+
+    def label = null
+    // initial request
+    def yarnRequest = req1.buildContainerRequest(resource, role0Status, 0, label)
+    assert (yarnRequest.nodes != null)
+    assert (yarnRequest.nodeLabelExpression == null)
+    assert (!yarnRequest.relaxLocality)
+    def yarnRequest2 = req1.escalate()
+    assert (yarnRequest2.nodes != null)
+    assert (yarnRequest2.relaxLocality)
+  }
+
+
+  /**
    * Create a new request (always against host1)
    * @param r role status
    * @return (resource, oustanding-request)
