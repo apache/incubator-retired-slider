@@ -199,37 +199,41 @@ public class RpcBinder {
     timeout.start();
     Exception exception = null;
     YarnApplicationState state = null;
-    while (application != null &&
-           (state = application.getYarnApplicationState()).equals(
-               YarnApplicationState.RUNNING)) {
-
-      try {
-        return getProxy(conf, application, rpcTimeout);
-      } catch (IOException e) {
-        if (connectTimeout <= 0 || timeout.getLimitExceeded()) {
-          throw e;
+    try {
+      while (application != null &&
+             (state = application.getYarnApplicationState()).equals(
+                 YarnApplicationState.RUNNING)) {
+  
+        try {
+          return getProxy(conf, application, rpcTimeout);
+        } catch (IOException e) {
+          if (connectTimeout <= 0 || timeout.getLimitExceeded()) {
+            throw e;
+          }
+          exception = e;
+        } catch (YarnException e) {
+          if (connectTimeout <= 0 || timeout.getLimitExceeded()) {
+            throw e;
+          }
+          exception = e;
         }
-        exception = e;
-      } catch (YarnException e) {
-        if (connectTimeout <= 0 || timeout.getLimitExceeded()) {
-          throw e;
-        }
-        exception = e;
+        //at this point: app failed to work
+        log.debug("Could not connect to {}. Waiting for getting the latest AM address...",
+                  appId);
+        Thread.sleep(1000);
+        //or get the app report
+        application =
+          rmClient.getApplicationReport(
+              GetApplicationReportRequest.newInstance(appId)).getApplicationReport();
       }
-      //at this point: app failed to work
-      log.debug("Could not connect to {}. Waiting for getting the latest AM address...",
-                appId);
-      Thread.sleep(1000);
-      //or get the app report
-      application =
-        rmClient.getApplicationReport(
-            GetApplicationReportRequest.newInstance(appId)).getApplicationReport();
+      //get here if the app is no longer running. Raise a specific
+      //exception but init it with the previous failure
+      throw new BadClusterStateException(
+                              exception,
+                              ErrorStrings.E_FINISHED_APPLICATION, appId, state );
+    } finally {
+      timeout.close();
     }
-    //get here if the app is no longer running. Raise a specific
-    //exception but init it with the previous failure
-    throw new BadClusterStateException(
-                            exception,
-                            ErrorStrings.E_FINISHED_APPLICATION, appId, state );
   }
 
   /**

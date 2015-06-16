@@ -282,45 +282,50 @@ public class SliderClusterOperations {
   @VisibleForTesting
   public int waitForRoleInstanceLive(String role, long timeout)
     throws WaitTimeoutException, IOException, YarnException {
-    Duration duration = new Duration(timeout).start();
+    Duration duration = new Duration(timeout);
+    duration.start();
     boolean live = false;
     int state = StateValues.STATE_CREATED;
 
     log.info("Waiting {} millis for a live node in role {}", timeout, role);
-    while (!live) {
-      // see if there is a node in that role yet
-      List<String> uuids = innerListNodeUUIDSByRole(role);
-      String[] containers = uuids.toArray(new String[uuids.size()]);
-      int roleCount = containers.length;
-      ClusterNode roleInstance = null;
-      if (roleCount != 0) {
-
-        // if there is, get the node
-        roleInstance = getNode(containers[0]);
-        if (roleInstance != null) {
-          state = roleInstance.state;
-          live = state >= StateValues.STATE_LIVE;
+    try {
+      while (!live) {
+        // see if there is a node in that role yet
+        List<String> uuids = innerListNodeUUIDSByRole(role);
+        String[] containers = uuids.toArray(new String[uuids.size()]);
+        int roleCount = containers.length;
+        ClusterNode roleInstance = null;
+        if (roleCount != 0) {
+  
+          // if there is, get the node
+          roleInstance = getNode(containers[0]);
+          if (roleInstance != null) {
+            state = roleInstance.state;
+            live = state >= StateValues.STATE_LIVE;
+          }
         }
-      }
-      if (!live) {
-        if (duration.getLimitExceeded()) {
-          throw new WaitTimeoutException(
-            String.format("Timeout after %d millis" +
-                          " waiting for a live instance of type %s; " +
-                          "instances found %d %s",
-                          timeout, role, roleCount,
-                          (roleInstance != null
-                           ? (" instance -\n" + roleInstance.toString())
-                           : "")
-                         ));
-        } else {
-          try {
-            Thread.sleep(1000);
-          } catch (InterruptedException ignored) {
-            // ignored
+        if (!live) {
+          if (duration.getLimitExceeded()) {
+            throw new WaitTimeoutException(
+              String.format("Timeout after %d millis" +
+                            " waiting for a live instance of type %s; " +
+                            "instances found %d %s",
+                            timeout, role, roleCount,
+                            (roleInstance != null
+                             ? (" instance -\n" + roleInstance.toString())
+                             : "")
+                           ));
+          } else {
+            try {
+              Thread.sleep(1000);
+            } catch (InterruptedException ignored) {
+              // ignored
+            }
           }
         }
       }
+    } finally {
+      duration.close();
     }
     return state;
   }
