@@ -80,7 +80,6 @@ implements FuntestProperties, Arguments, SliderExitCodes, SliderActions {
 
   @Test
   public void testRetrieveCertificateStores() throws Throwable {
-    assumeNotWindows()
     cleanup(APPLICATION_NAME)
     File launchReportFile = createTempJsonFile();
 
