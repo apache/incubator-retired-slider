@@ -65,7 +65,8 @@ public class CertificateManager {
       "-keyfile {0}" + File.separator + "{4} -cert {0}" + File.separator + "{5}";
   private static final String GEN_AGENT_KEY="openssl req -new -newkey " +
       "rsa:1024 -nodes -keyout {0}" + File.separator +
-      "{2}.key -subj {1} -out {0}" + File.separator + "{2}.csr";
+      "{2}.key -subj {1} -out {0}" + File.separator + "{2}.csr " +
+      "-config {3}" + File.separator + "ca.config ";
   private String passphrase;
   private String applicationName;
 
@@ -208,7 +209,7 @@ public class CertificateManager {
 
     String srvrKstrDir = SecurityUtils.getSecurityDir();
     Object[] scriptArgs = {srvrKstrDir, getSubjectDN(hostname, identifier,
-        this.applicationName), identifier};
+        this.applicationName), identifier, SecurityUtils.getSecurityDir()};
 
     try {
       String command = MessageFormat.format(GEN_AGENT_KEY, scriptArgs);
