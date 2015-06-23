@@ -1,0 +1,21 @@
+Changes only in Hortonworks github and not in slider-0.80.0-incubating.
+
+  INCOMPATIBLE CHANGES
+
+  NEW FEATURES
+
+  IMPROVEMENTS
+
+    SLIDER-812 Making component configurations in appConfig available on the SliderAgent side (Thomas Liu via gourksaha)
+    SLIDER-891 Add ability to set Slider AM launch environment during cluster create/start
+
+  BUG FIXES
+
+    SLIDER-810 YARN config changes to enable partial logs upload for long running services
+    SLIDER-877 move SLIDER_HOME assignment to slider.py
+    SLIDER-878 Slider cannot support jdk 1.8 for command slider registry --getconf hbase-site --name hb1
+    SLIDER-888 intermittent errors when accessing key store password during localization of cert stores
+    SLIDER-901 AgentClientProvider should use File.separator in paths for platform independency (Thomas Liu via gourksaha)
+    SLIDER-902 add config to client cert gen command
+    SLIDER-904 Resource leak reported by coverity scan results
+    SLIDER-905 Container request fails when Slider requests container with node label and host constraints
