@@ -23,7 +23,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.Token;
-import org.apache.hadoop.security.token.TokenIdentifier;
 import org.apache.hadoop.security.token.delegation.AbstractDelegationTokenIdentifier;
 import org.apache.hadoop.util.Time;
 import org.apache.slider.common.tools.SliderUtils;
@@ -157,7 +156,8 @@ public class FsDelegationTokenManager {
             Token token = fs.getDelegationToken(
                 remoteUser.getShortUserName());
             tokenExpiryTime = getTokenExpiryTime(token);
-            log.info("Initial delegation token obtained with expiry time of {}", getPrintableExirationTime(tokenExpiryTime));
+            log.info("Initial delegation token obtained with expiry time of {}", getPrintableExpirationTime(
+                tokenExpiryTime));
             return token;
           }
         });
@@ -196,7 +196,7 @@ public class FsDelegationTokenManager {
               public Long run() throws Exception {
                 long expires = token.renew(fs.getConf());
                 log.info("HDFS delegation token renewed.  Renewal cycle ends at {}",
-                         getPrintableExirationTime(expires));
+                         getPrintableExpirationTime(expires));
                 return expires;
               }
             });
@@ -220,7 +220,7 @@ public class FsDelegationTokenManager {
       }
     }
 
-    private String getPrintableExirationTime(long expires) {
+    private String getPrintableExpirationTime(long expires) {
       Date d = new Date(expires);
       return DateFormat.getDateTimeInstance().format(d);
     }
@@ -245,7 +245,7 @@ public class FsDelegationTokenManager {
 
         log.info("Expired HDFS delegation token replaced and added as credential"
                  + " to current user.  Token expires at {}",
-                 getPrintableExirationTime(tokenExpiryTime));
+                 getPrintableExpirationTime(tokenExpiryTime));
         updateRenewalTime(renewInterval);
       } catch (IOException ie2) {
         throw new IOException("Can't get new delegation token ", ie2);
