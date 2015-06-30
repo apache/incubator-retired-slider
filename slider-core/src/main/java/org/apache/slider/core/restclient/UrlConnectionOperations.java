@@ -30,6 +30,7 @@ import org.apache.hadoop.yarn.webapp.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -142,12 +143,14 @@ public class UrlConnectionOperations extends Configured  {
         log.debug("No body in response");
 
       }
+    } catch (SSLException e) {
+      throw e;
     } catch (IOException e) {
       throw NetUtils.wrapException(url.toString(),
           url.getPort(), "localhost", 0, e);
 
     } catch (AuthenticationException e) {
-      throw new IOException("From " + url + ": " + e, e);
+      throw new AuthenticationException("From " + url + ": " + e, e);
 
     } finally {
       if (conn != null) {

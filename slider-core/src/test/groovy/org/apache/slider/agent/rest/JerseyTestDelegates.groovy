@@ -36,7 +36,9 @@ import org.apache.slider.core.conf.ConfTreeOperations
 import org.apache.slider.core.restclient.HttpVerb
 import org.apache.slider.server.appmaster.web.rest.application.ApplicationResource
 import org.apache.slider.api.types.PingInformation
+import org.apache.slider.test.Outcome
 
+import javax.net.ssl.SSLException
 import javax.ws.rs.core.MediaType
 
 import static org.apache.slider.api.ResourceKeys.COMPONENT_INSTANCES
@@ -478,5 +480,31 @@ class JerseyTestDelegates extends AbstractRestTestDelegate {
   public void testSuiteComplexVerbs() {
     testPing();
   }
+
+  /**
+   * Probe callback for is the web service live; currently
+   * checks the "/system/health" path.
+   * Raising an SSL exception is considered a sign of liveness.
+   * @param args args: ignored
+   * @return the outcome
+   */
+  Outcome probeServiceLive(Map<String, String> args) {
+    try {
+      jerseyGet(SYSTEM_HEALTHCHECK)
+      return Outcome.Success
+    } catch (SSLException e) {
+      // SSL exception => success
+      return Outcome.Success
+    } catch (IOException e) {
+      def cause = e.getCause()
+      if (cause && cause instanceof SSLException) {
+        // nested SSL exception => success
+        return Outcome.Success
+      }
+      // any other IOE is a retry
+      return Outcome.Retry
+    }
+  }
+
 
 }
