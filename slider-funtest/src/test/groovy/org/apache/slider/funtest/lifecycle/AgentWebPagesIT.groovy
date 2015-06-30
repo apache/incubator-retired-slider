@@ -48,6 +48,8 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
+import static org.apache.slider.server.appmaster.web.rest.RestPaths.SYSTEM_HEALTHCHECK
+
 @CompileStatic
 @Slf4j
 public class AgentWebPagesIT extends AgentCommandTestBase
@@ -105,53 +107,45 @@ public class AgentWebPagesIT extends AgentCommandTestBase
 
     def appId = ensureYarnApplicationIsUp(launchReportFile)
     assert appId
-    expectRootWebPageUp(appId, instanceLaunchTime)
+    awaitApplicationURLPublished(appId, instanceLaunchTime)
     File liveReportFile = createTempJsonFile();
 
-    lookup(appId,liveReportFile)
+    lookup(appId, liveReportFile)
     def report = loadAppReport(liveReportFile)
     assert report.url
 
     def proxyAM = report.url
 
-    // get the root page, 
-    getWebPage(proxyAM)
-    
+    // here the URL has been published, but it may not be live yet, due to the time
+    // it takes the AM to build app state and boostrap the Web UI
+
     def directAM = report.origTrackingUrl;
-/*
-    // now attempt direct-to-AM pings
-    LowLevelRestTestDelegates direct = new LowLevelRestTestDelegates(directAM,
-        directComplexVerbs)
-
-    direct.testSuiteAll()
-
-    // and via the proxy
-    LowLevelRestTestDelegates proxied = new LowLevelRestTestDelegates(proxyAM,
-        proxyComplexVerbs)
-    proxied.testSuiteAll()
-    proxied.logCodahaleMetrics();
-*/
 
     describe "Proxy Jersey Tests"
 
-    Client ugiClient = createUGIJerseyClient()
+    Client jerseyClient = createUGIJerseyClient()
+
     JerseyTestDelegates proxyJerseyTests =
-        new JerseyTestDelegates(proxyAM, ugiClient, proxyComplexVerbs)
+        new JerseyTestDelegates(proxyAM, jerseyClient, proxyComplexVerbs)
+
+    // wait it coming up
+    awaitRestEndpointLive(proxyJerseyTests, instanceLaunchTime)
+
     proxyJerseyTests.testSuiteGetOperations()
 
     describe "Direct Jersey Tests"
     JerseyTestDelegates directJerseyTests =
-        new JerseyTestDelegates(directAM, ugiClient, directComplexVerbs)
+        new JerseyTestDelegates(directAM, jerseyClient, directComplexVerbs)
     directJerseyTests.testSuiteAll()
 
     describe "Proxy SliderRestClient Tests"
     RestAPIClientTestDelegates proxySliderRestAPI =
-        new RestAPIClientTestDelegates(proxyAM, ugiClient, proxyComplexVerbs)
+        new RestAPIClientTestDelegates(proxyAM, jerseyClient, proxyComplexVerbs)
     proxySliderRestAPI.testSuiteAll()
 
     describe "Direct SliderRestClient Tests"
     RestAPIClientTestDelegates directSliderRestAPI =
-        new RestAPIClientTestDelegates(directAM, ugiClient, directComplexVerbs)
+        new RestAPIClientTestDelegates(directAM, jerseyClient, directComplexVerbs)
     directSliderRestAPI.testSuiteAll()
 
     if (UserGroupInformation.securityEnabled) {
@@ -171,7 +165,7 @@ public class AgentWebPagesIT extends AgentCommandTestBase
     SliderClient sliderClient = bondToCluster(SLIDER_CONFIG, CLUSTER)
     RegistryOperations operations = sliderClient.registryOperations;
     def restClientFactory = new RestClientFactory(
-        operations, ugiClient,
+        operations, jerseyClient,
         "~", SliderKeys.APP_TYPE, CLUSTER)
     def sliderApplicationApi = restClientFactory.createSliderAppApiClient();
     sliderApplicationApi.desiredModel
@@ -209,4 +203,21 @@ public class AgentWebPagesIT extends AgentCommandTestBase
     }
   }
 
+  /**
+   * Await for the URL of an app to be listed in the application report
+   * @param applicationId app ID
+   * @param launch_timeout launch timeout
+   */
+  void awaitRestEndpointLive(JerseyTestDelegates jersey, int launch_timeout) {
+    repeatUntilSuccess(
+        "await application URL published",
+        jersey.&probeServiceLive,
+        launch_timeout,
+        PROBE_SLEEP_TIME,
+        [:],
+        false,
+        "GET of $SYSTEM_HEALTHCHECK failed") {
+      jersey.jerseyGet(SYSTEM_HEALTHCHECK)
+    }
+  }
 }

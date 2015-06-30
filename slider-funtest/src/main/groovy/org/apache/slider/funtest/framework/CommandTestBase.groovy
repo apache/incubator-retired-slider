@@ -48,6 +48,9 @@ import org.junit.Rule
 import org.junit.rules.Timeout
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+
+import javax.net.ssl.SSLException
+
 import static org.apache.slider.common.SliderExitCodes.*
 import static org.apache.slider.core.main.LauncherExitCodes.*
 import static org.apache.slider.funtest.framework.FuntestProperties.*
@@ -1463,7 +1466,8 @@ abstract class CommandTestBase extends SliderTestUtils {
   }
 
   /**
-   * Probe callback for is the the app root web page up
+   * Probe callback for is the the app root web page up.
+   * Having a securty exception is in fact legit.
    * @param args map where 'applicationId' must be set
    * @return the outcome
    */
@@ -1480,6 +1484,12 @@ abstract class CommandTestBase extends SliderTestUtils {
     try {
       getWebPage(sar.url)
       return Outcome.Success
+    } catch (SSLException e) {
+      // SSL exception -implies negotiation failure. At this point there is clearly something
+      // at the far end -we just don't have the credentials to trust it.
+      return Outcome.Success;
+    } catch (IOException e) {
+      return Outcome.Retry;
     } catch (Exception e) {
       return Outcome.Retry;
     }
@@ -1511,4 +1521,43 @@ abstract class CommandTestBase extends SliderTestUtils {
       getWebPage(sar.url)
     }
   }
+
+  /**
+   * Probe callback for the the app root web page up.
+   * Raising an SSL exception is considered a sign of liveness.
+   * @param args map where 'applicationId' must be set
+   * @return the outcome
+   */
+  protected static Outcome isApplicationURLPublished(
+      Map<String, String> args) {
+
+    assert args['applicationId'] != null
+    String applicationId = args['applicationId'];
+    def sar = lookupApplication(applicationId)
+    assert sar != null;
+    return sar.url? Outcome.Success : Outcome.Retry
+  }
+
+  /**
+   * Await for the URL of an app to be listed in the application report
+   * @param applicationId app ID
+   * @param launch_timeout launch timeout
+   */
+  void awaitApplicationURLPublished(String applicationId, int launch_timeout) {
+    repeatUntilSuccess(
+        "await application URL published",
+        this.&isApplicationURLPublished,
+        launch_timeout,
+        PROBE_SLEEP_TIME,
+        [
+            applicationId: applicationId
+        ],
+        true,
+        "application URL not published") {
+
+      def sar = lookupApplication(applicationId)
+      log.error("$applicationId => $sar")
+    }
+  }
+
 }
