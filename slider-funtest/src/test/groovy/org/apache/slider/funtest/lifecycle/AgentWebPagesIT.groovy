@@ -46,6 +46,7 @@ import org.apache.slider.funtest.framework.SliderShell
 import org.apache.slider.server.appmaster.rpc.RpcBinder
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.SYSTEM_HEALTHCHECK
@@ -71,6 +72,7 @@ public class AgentWebPagesIT extends AgentCommandTestBase
   }
 
   @Test
+  @Ignore("SLIDER-907")
   public void testAgentWeb() throws Throwable {
     describe("Web queries & REST operations against an AM")
     
