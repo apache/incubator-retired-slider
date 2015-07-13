@@ -1141,6 +1141,12 @@
       </dependency>
 
       <dependency>
+        <groupId>org.apache.curator</groupId>
+        <artifactId>curator-recipes</artifactId>
+        <version>${curator.version}</version>
+      </dependency>
+
+      <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
         <version>${guava.version}</version>
@@ -1589,17 +1595,31 @@
 
     <profile>
       <!-- 2.7.0 -->
-      <id>release-2.7</id>
+      <id>release-2.7.0</id>
       <properties>
         <hadoop.version>2.7.0</hadoop.version>
+        <curator.version>2.7.1</curator.version>
+        <zookeeper.version>3.4.6</zookeeper.version>
       </properties>
     </profile>
 
     <profile>
-      <!-- hadoop branch-2.7 builds  -->
-      <id>branch-2.7</id>
+      <!-- hadoop 2.7.1 -->
+      <id>release-2.7.1</id>
       <properties>
-        <hadoop.version>2.7.1-SNAPSHOT</hadoop.version>
+        <hadoop.version>2.7.1</hadoop.version>
+        <curator.version>2.7.1</curator.version>
+        <zookeeper.version>3.4.6</zookeeper.version>
+      </properties>
+    </profile>
+
+    <profile>
+      <!-- hadoop 2.7.1 -->
+      <id>release-2.7</id>
+      <properties>
+        <hadoop.version>2.7.1</hadoop.version>
+        <curator.version>2.7.1</curator.version>
+        <zookeeper.version>3.4.6</zookeeper.version>
       </properties>
     </profile>
 
@@ -1608,6 +1628,8 @@
       <id>branch-2</id>
       <properties>
         <hadoop.version>2.8.0-SNAPSHOT</hadoop.version>
+        <curator.version>2.7.1</curator.version>
+        <zookeeper.version>3.4.6</zookeeper.version>
       </properties>
     </profile>
     
@@ -1616,6 +1638,8 @@
       <id>trunk</id>
       <properties>
         <hadoop.version>3.0.0-SNAPSHOT</hadoop.version>
+        <curator.version>2.7.1</curator.version>
+        <zookeeper.version>3.4.6</zookeeper.version>
       </properties>
     </profile>
 

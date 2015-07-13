@@ -369,6 +369,14 @@
       <artifactId>curator-framework</artifactId>
     </dependency>
 
+    <!-- not directly needed by the registry, but inserted to
+        retain control over which version is on the classpath.
+        Otherwise, slider-core gets the version Hadoop-common depends on -->
+    <dependency>
+      <groupId>org.apache.curator</groupId>
+      <artifactId>curator-recipes</artifactId>
+    </dependency>
+
     <dependency>
       <groupId>org.apache.zookeeper</groupId>
       <artifactId>zookeeper</artifactId>
