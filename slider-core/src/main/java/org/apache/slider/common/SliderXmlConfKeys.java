@@ -149,9 +149,8 @@ public interface SliderXmlConfKeys {
 
   /**
    * Flag to indicate the insecure AM filter is enabled by default: {@value}.
-   * THIS IS CURRENTLY TRUE: NOT FOR RELEASE
    */
-  boolean X_DEV_INSECURE_DEFAULT = true;
+  boolean X_DEV_INSECURE_DEFAULT = false;
 
 
   /**
