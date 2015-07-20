@@ -27,7 +27,8 @@
         "site.hbase-env.hbase_master_heapsize": "1024m",
         "site.hbase-env.hbase_regionserver_heapsize": "1024m",
 
-        "site.hbase-site.hbase.rootdir": "${DEFAULT_DATA_DIR}",
+        "site.hbase-site.hbase.rootdir": "${DEFAULT_DATA_DIR}/data",
+        "site.hbase-site.hbase.bulkload.staging.dir": "${DEFAULT_DATA_DIR}/hbase-staging",
         "site.hbase-site.hbase.superuser": "${USER_NAME}",
         "site.hbase-site.hbase.tmp.dir": "${AGENT_WORK_ROOT}/work/app/tmp",
         "site.hbase-site.hbase.local.dir": "${hbase.tmp.dir}/local",
