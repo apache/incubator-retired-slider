@@ -643,7 +643,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     ZKIntegration client = null;
     try {
       BlockingZKWatcher watcher = new BlockingZKWatcher();
-      client = ZKIntegration.newInstance(registryQuorum, user, clusterName, true, false, watcher);
+      client = ZKIntegration.newInstance(registryQuorum, user, clusterName, true, false, watcher,
+          ZKIntegration.SESSION_TIMEOUT);
       client.init();
       watcher.waitForZKConnection(2 * 1000);
     } catch (InterruptedException e) {
