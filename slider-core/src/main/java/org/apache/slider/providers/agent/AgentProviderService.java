@@ -977,7 +977,6 @@ public class AgentProviderService extends AbstractProviderService implements
                               null,
                               timeout,
                               isMarkedAutoRestart(roleName));
-              componentStatus.commandIssued(command);
             } else {
               ComponentCommand startCmd = null;
               for (ComponentCommand compCmd : commands) {
@@ -992,8 +991,8 @@ public class AgentProviderService extends AbstractProviderService implements
                 }
               }
               addStartCommand(roleName, containerId, response, null, startCmd, stopCmd, timeout, false);
-              componentStatus.commandIssued(command);
             }
+            componentStatus.commandIssued(command);
           } else {
             log.info("Start of {} on {} delayed as dependencies have not started.", roleName, containerId);
           }
@@ -2150,7 +2149,7 @@ public class AgentProviderService extends AbstractProviderService implements
     String statusCommand = getConfigFromMetaInfoWithAppConfigOverriding(componentName, "statusCommand");
     if (statusCommand == null) {
       statusCommand = "docker top "
-            + containerId.substring(containerId.indexOf("_") + 1)
+            + containerId
             + " | grep \"\"";// default value
     }
     dockerConfig.put("docker.status_command",statusCommand);
@@ -2186,7 +2185,7 @@ public class AgentProviderService extends AbstractProviderService implements
     String statusCommand = getConfigFromMetaInfoWithAppConfigOverriding(componentName, "statusCommand");
     if (statusCommand == null) {
       statusCommand = "docker top "
-            + containerId.substring(containerId.indexOf("_") + 1)
+            + containerId
             + " | grep \"\"";// default value
     }
     dockerConfig.put("docker.status_command",statusCommand);
@@ -2271,9 +2270,9 @@ public class AgentProviderService extends AbstractProviderService implements
     Map<String, Map<String, String>> componentConfigurations = buildComponentConfigurations(appConf);
     cmd.setComponentConfigurations(componentConfigurations);
     
-    log.info("before resolution: " + appConf.toString());
+    log.debug("before resolution: " + appConf.toString());
     resolveVariablesForComponentAppConfigs(appConf, componentName, containerId);
-    log.info("after resolution: " + appConf.toString());
+    log.debug("after resolution: " + appConf.toString());
 
     Map<String, String> dockerConfig = new HashMap<String, String>();
     dockerConfig.put(
@@ -2285,7 +2284,11 @@ public class AgentProviderService extends AbstractProviderService implements
     // options should always have -d
     String options = getConfigFromMetaInfoWithAppConfigOverriding(
         componentName, "options");
-    options = options + " -d";
+    if(options != null && !options.isEmpty()){
+      options = options + " -d";
+    } else {
+      options = "-d";
+    }
     dockerConfig.put("docker.options", options);
     // options should always have -d
     dockerConfig.put(
@@ -2318,8 +2321,7 @@ public class AgentProviderService extends AbstractProviderService implements
         componentName, "statusCommand");
     if (statusCommand == null) {
       statusCommand = "docker top "
-            + containerId.substring(containerId.indexOf("_") + 1)
-            + " | grep \"\"";// default value
+          + containerId + " | grep \"\"";// default value
     }
     dockerConfig.put("docker.status_command",statusCommand);
     
@@ -2327,7 +2329,7 @@ public class AgentProviderService extends AbstractProviderService implements
    // configurations.get("global").put("exec_cmd", startCommand.getExec());
     cmd.addContainerDetails(componentName, getMetaInfo());
 
-    log.debug("Docker- command: {}", cmd.toString());
+    log.info("Docker- command: {}", cmd.toString());
 
     response.addExecutionCommand(cmd);
   }
@@ -2340,6 +2342,9 @@ public class AgentProviderService extends AbstractProviderService implements
     log.debug("docker- tokens: {}", tokens);
     
     MapOperations compConf = appConf.getComponent(componentName);
+    if (compConf == null){
+      return;
+    }
     for(Entry<String, String> element: compConf.entrySet()){
       
       log.debug("docker- key: {} value: {}", element.getKey(), element.getValue());
@@ -2358,7 +2363,7 @@ public class AgentProviderService extends AbstractProviderService implements
         // resolving container ids
         if (valueStr.contains("${CONTAINER_ID}")) {
           valueStr = valueStr.replace("${CONTAINER_ID}",
-              containerId.substring(containerId.indexOf("_") + 1));
+              containerId);
           compConf.put(element.getKey(), valueStr);
         }
       }

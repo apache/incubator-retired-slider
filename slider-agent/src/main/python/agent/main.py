@@ -54,6 +54,7 @@ def signal_handler(signum, frame):
   if os.getpid() != agentPid:
     os._exit(0)
   logger.info('signal received, exiting.')
+  global controller
   if controller is not None:
     tmpdir = controller.actionQueue.dockerManager.stop_container()
   ProcessHelper.stopAgent()
@@ -287,6 +288,7 @@ def main():
   pass
 
   # Launch Controller communication
+  global controller
   controller = Controller(agentConfig)
   controller.start()
   
