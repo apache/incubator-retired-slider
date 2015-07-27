@@ -29,6 +29,7 @@ logger = logging.getLogger()
 class DockerManager():
   stored_status_command = ''
   stored_command = ''
+  container_id = ''
 
   def __init__(self, tmpdir, workroot, customServiceOrchestrator):
     self.tmpdir = tmpdir
@@ -47,6 +48,9 @@ class DockerManager():
     if status_command_str:
       self.stored_status_command = status_command_str.split(" ")
     logger.info("status command" + str(self.stored_status_command))
+    if command['hostLevelParams']:
+        if command['hostLevelParams']['container_id']:
+            self.container_id = command['hostLevelParams']['container_id']
         
     if command['roleCommand'] == 'INSTALL':
       returncode, out, err = self.pull_image(command)
@@ -78,7 +82,12 @@ class DockerManager():
 
   # will evolve into a class hierarch, linux and windows
   def execute_command_on_linux(self, docker_command):
-    proc = subprocess.Popen(docker_command, stdout = subprocess.PIPE)
+    command_str = ''
+    for itr in docker_command:
+        command_str = command_str + ' ' + itr
+
+    logger.info("command str: " + command_str)
+    proc = subprocess.Popen(command_str, stdout = subprocess.PIPE, shell=True)
     out, err = proc.communicate()
     logger.info("docker command output: " + str(out) + " err: " + str(err))
     return proc.returncode, out, err
@@ -149,7 +158,8 @@ class DockerManager():
 
   def get_container_id(self, command):
     # will make this more resilient to changes
-    return self.tmpdir[-30:-2]
+    logger.info("container id is: " + self.container_id)
+    return self.container_id
 
   def add_resource_restriction(self, docker_command, memory_usage):
     docker_command.append("-m")
