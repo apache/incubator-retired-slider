@@ -21,8 +21,8 @@ package org.apache.slider.server.appmaster.rpc;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.BlockingService;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.retry.RetryPolicies;
 import org.apache.hadoop.io.retry.RetryPolicy;
-import org.apache.hadoop.io.retry.RetryUtils;
 import org.apache.hadoop.ipc.ProtobufRpcEngine;
 import org.apache.hadoop.ipc.ProtocolProxy;
 import org.apache.hadoop.ipc.RPC;
@@ -147,14 +147,7 @@ public class RpcBinder {
     Class<SliderClusterProtocolPB> sliderClusterAPIClass =
         registerSliderAPI(conf);
 
-    final RetryPolicy retryPolicy =
-        RetryUtils.getDefaultRetryPolicy(
-            conf,
-            KEY_IPC_CLIENT_RETRY_POLICY_ENABLED,
-            IPC_CLIENT_RETRY_POLICY_ENABLED_DEFAULT,
-            KEY_IPC_CLIENT_RETRY_POLICY_SPEC,
-            IPC_CLIENT_RETRY_POLICY_SPEC_DEFAULT,
-            ServiceNotReadyException.class);
+    final RetryPolicy retryPolicy = RetryPolicies.TRY_ONCE_THEN_FAIL;
     log.debug("Connecting to Slider AM at {}", addr);
     ProtocolProxy<SliderClusterProtocolPB> protoProxy =
         RPC.getProtocolProxy(sliderClusterAPIClass,
