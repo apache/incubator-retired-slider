@@ -16,10 +16,10 @@
  */
 package org.apache.slider.providers.agent.application.metadata;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadCommandArgumentsException;
 import org.apache.slider.core.exceptions.SliderException;
+import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 
 import java.util.ArrayList;
