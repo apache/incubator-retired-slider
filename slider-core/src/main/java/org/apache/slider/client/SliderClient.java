@@ -2718,8 +2718,47 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
   @Override
   public int actionList(String clustername, ActionListArgs args)
       throws IOException, YarnException {
+    Set<String> appInstances = getApplicationList(clustername, args);
+    // getApplicationList never returns null
+    return appInstances.size() > 0 ? EXIT_SUCCESS : EXIT_FALSE;
+  }
+
+  /**
+   * Retrieve a list of all live instances. If clustername is supplied then it
+   * returns this specific cluster, if and only if it exists and is live.
+   * 
+   * @param clustername
+   *          cluster name (if looking for a specific live cluster)
+   * @return the list of application names which satisfies the list criteria
+   * @throws IOException
+   * @throws YarnException
+   */
+  public Set<String> getApplicationList(String clustername) throws IOException,
+      YarnException {
+    ActionListArgs args = new ActionListArgs();
+    args.live = true;
+    return getApplicationList(clustername, args);
+  }
+
+  /**
+   * Retrieve a list of application instances satisfying the query criteria.
+   * 
+   * @param clustername
+   *          List out specific instance name (set null for all)
+   * @param args
+   *          Action list arguments
+   * @return the list of application names which satisfies the list criteria
+   * @throws IOException
+   * @throws YarnException
+   * @throws UnknownApplicationInstanceException
+   *           if a specific instance was named but it was not found
+   */
+  public Set<String> getApplicationList(String clustername, ActionListArgs args)
+      throws IOException, YarnException {
     if (args.help) {
-      return actionHelp(ACTION_LIST);
+      actionHelp(ACTION_LIST);
+      // the above call throws an exception so the return is not really required
+      return Collections.emptySet();
     }
     verifyBindingsDefined();
 
@@ -2769,7 +2808,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     if (persistentInstances.isEmpty() && isUnset(clustername)) {
       // an empty listing is a success if no cluster was named
       log.debug("No application instances found");
-      return EXIT_SUCCESS;
+      return Collections.emptySet();
     }
 
     // and those the RM knows about
@@ -2801,14 +2840,13 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     }
     
     // at this point there is either the entire list or a stripped down instance
-    int listed = 0;
-
+    Set<String> listedInstances = new HashSet<String>();
     for (String name : persistentInstances.keySet()) {
       ApplicationReport report = reportMap.get(name);
       if (!listOnlyInState || report != null) {
         // list the details if all were requested, or the filtering contained
         // a report
-        listed++;
+        listedInstances.add(name);
         // containers will be non-null when only one instance is requested
         String details = SliderUtils.instanceDetailsToString(name, report,
             containers, version, components, verbose);
@@ -2816,7 +2854,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       }
     }
     
-    return listed > 0 ? EXIT_SUCCESS: EXIT_FALSE;
+    return listedInstances;
   }
 
   public List<ContainerInformation> getContainers(String name)
