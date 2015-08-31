@@ -740,10 +740,7 @@ public final class SliderUtils {
    *         through
    */
   public static boolean filter(String value, String filter) {
-    if (StringUtils.isEmpty(filter) || filter.equals(value)) {
-      return false;
-    }
-    return true;
+    return !(StringUtils.isEmpty(filter) || filter.equals(value));
   }
 
   /**
@@ -757,10 +754,7 @@ public final class SliderUtils {
    *         through
    */
   public static boolean filter(String value, Set<String> filters) {
-    if (filters.isEmpty() || filters.contains(value)) {
-      return false;
-    }
-    return true;
+    return !(filters.isEmpty() || filters.contains(value));
   }
 
   /**
@@ -1341,20 +1335,13 @@ public final class SliderUtils {
                                 SliderFileSystem sliderFileSystem,
                                 Path tempPath,
                                 String libDir,
-                                String srcPath
-  )
-      throws IOException, SliderException {
+                                String srcPath) throws IOException, SliderException {
     log.info("Loading all dependencies from {}", srcPath);
     if (SliderUtils.isSet(srcPath)) {
       File srcFolder = new File(srcPath);
       FilenameFilter jarFilter = new FilenameFilter() {
         public boolean accept(File dir, String name) {
-          String lowercaseName = name.toLowerCase();
-          if (lowercaseName.endsWith(".jar")) {
-            return true;
-          } else {
-            return false;
-          }
+          return name.toLowerCase(Locale.ENGLISH).endsWith(".jar");
         }
       };
       File[] listOfJars = srcFolder.listFiles(jarFilter);
@@ -1366,8 +1353,7 @@ public final class SliderUtils {
   }
 
   public static Map<String, Map<String, String>> deepClone(Map<String, Map<String, String>> src) {
-    Map<String, Map<String, String>> dest =
-        new HashMap<String, Map<String, String>>();
+    Map<String, Map<String, String>> dest = new HashMap<>();
     for (Map.Entry<String, Map<String, String>> entry : src.entrySet()) {
       dest.put(entry.getKey(), stringMapClone(entry.getValue()));
     }
@@ -1375,7 +1361,7 @@ public final class SliderUtils {
   }
 
   public static Map<String, String> stringMapClone(Map<String, String> src) {
-    Map<String, String> dest = new HashMap<String, String>();
+    Map<String, String> dest = new HashMap<>();
     return mergeEntries(dest, src.entrySet());
   }
 
@@ -1677,7 +1663,7 @@ public final class SliderUtils {
   }
 
   public static String propertiesToString(Properties props) {
-    TreeSet<String> keys = new TreeSet<String>(props.stringPropertyNames());
+    TreeSet<String> keys = new TreeSet<>(props.stringPropertyNames());
     StringBuilder builder = new StringBuilder();
     for (String key : keys) {
       builder.append(key)
@@ -1983,11 +1969,8 @@ public final class SliderUtils {
     verifyFileSize(program, exe, 0x100);
 
     // now read two bytes and verify the header.
-
-    FileReader reader = null;
-    try {
+    try(FileReader reader = new FileReader(exe)) {
       int[] header = new int[2];
-      reader = new FileReader(exe);
       header[0] = reader.read();
       header[1] = reader.read();
       if ((header[0] != 'M' || header[1] != 'Z')) {
@@ -1995,8 +1978,6 @@ public final class SliderUtils {
                                         + " at " + exe
                                         + " is not a windows executable file");
       }
-    } finally {
-      IOUtils.closeStream(reader);
     }
   }
 

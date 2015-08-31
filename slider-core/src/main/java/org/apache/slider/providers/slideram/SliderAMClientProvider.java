@@ -175,7 +175,7 @@ public class SliderAMClientProvider extends AbstractClientProvider
     throws IOException, SliderException {
 
     Map<String, LocalResource> providerResources =
-        new HashMap<String, LocalResource>();
+        new HashMap<>();
 
     ProviderUtils.addProviderJar(providerResources,
         this,
@@ -185,14 +185,13 @@ public class SliderAMClientProvider extends AbstractClientProvider
         libdir,
         miniClusterTestRun);
 
-    String libDirProp =
-        System.getProperty(SliderKeys.PROPERTY_LIB_DIR);
-      log.info("Loading all dependencies for AM.");
-      ProviderUtils.addAllDependencyJars(providerResources,
-                                         fileSystem,
-                                         tempPath,
-                                         libdir,
-                                         libDirProp);
+    String libDirProp = System.getProperty(SliderKeys.PROPERTY_LIB_DIR);
+    log.info("Loading all dependencies for AM.");
+    ProviderUtils.addAllDependencyJars(providerResources,
+                                       fileSystem,
+                                       tempPath,
+                                       libdir,
+                                       libDirProp);
     addKeytabResourceIfNecessary(fileSystem,
                                  instanceDescription,
                                  providerResources);

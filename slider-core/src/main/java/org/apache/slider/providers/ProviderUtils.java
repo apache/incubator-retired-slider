@@ -188,10 +188,8 @@ public class ProviderUtils implements RoleKeys {
                                           SliderFileSystem sliderFileSystem,
                                           Path tempPath,
                                           String libDir,
-                                          String libLocalSrcDir
-  ) throws
-      IOException,
-      SliderException {
+                                          String libLocalSrcDir)
+      throws IOException, SliderException {
     String libSrcToUse = libLocalSrcDir;
     if (SliderUtils.isSet(libLocalSrcDir)) {
       File file = new File(libLocalSrcDir);
