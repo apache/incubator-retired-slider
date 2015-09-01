@@ -1263,20 +1263,19 @@ public final class SliderUtils {
         UserGroupInformation.AuthenticationMethod.KERBEROS, conf);*/
     UserGroupInformation.setConfiguration(conf);
     UserGroupInformation authUser = UserGroupInformation.getCurrentUser();
-    log.debug("Authenticating as " + authUser.toString());
+    log.debug("Authenticating as {}", authUser);
     log.debug("Login user is {}", UserGroupInformation.getLoginUser());
     if (!UserGroupInformation.isSecurityEnabled()) {
       throw new BadConfigException("Although secure mode is enabled," +
-                                   "the application has already set up its user as an insecure entity %s",
+         "the application has already set up its user as an insecure entity %s",
           authUser);
     }
     if (authUser.getAuthenticationMethod() ==
         UserGroupInformation.AuthenticationMethod.SIMPLE) {
       throw new BadConfigException("Auth User is not Kerberized %s" +
-                                   " -security has already been set up with the wrong authentication method. "
-                                   +
-                                   "This can occur if a file system has already been created prior to the loading of "
-                                   + "the security configuration.",
+         " -security has already been set up with the wrong authentication method. "
+         + "This can occur if a file system has already been created prior to the loading of "
+         + "the security configuration.",
           authUser);
 
     }
