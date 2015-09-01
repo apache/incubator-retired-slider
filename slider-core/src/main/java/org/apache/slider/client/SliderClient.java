@@ -148,6 +148,7 @@ import org.apache.slider.server.services.utility.AbstractSliderLaunchedService;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
+import org.apache.zookeeper.data.ACL;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
@@ -488,12 +489,15 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     if (nameOnly) {
       return zkPath;
     }
-    Configuration config = getConfig();
     ZKIntegration client = getZkClient(clusterName, user);
     if (client != null) {
       try {
-        client.createPath(zkPath, "", ZooDefs.Ids.OPEN_ACL_UNSAFE,
-                          CreateMode.PERSISTENT);
+        List<ACL> zkperms = new ArrayList<>();
+        zkperms.addAll(ZooDefs.Ids.CREATOR_ALL_ACL);
+        zkperms.addAll(ZooDefs.Ids.READ_ACL_UNSAFE);
+        client.createPath(zkPath, "",
+            zkperms,
+            CreateMode.PERSISTENT);
         return zkPath;
       } catch (InterruptedException e) {
         log.warn("Unable to create default zk node {}", zkPath, e);
