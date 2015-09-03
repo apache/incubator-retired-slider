@@ -492,7 +492,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     ZKIntegration client = getZkClient(clusterName, user);
     if (client != null) {
       try {
-        List<ACL> zkperms = new ArrayList<>();
+        List<ACL> zkperms = new ArrayList<ACL>();
         zkperms.addAll(ZooDefs.Ids.CREATOR_ALL_ACL);
         zkperms.addAll(ZooDefs.Ids.READ_ACL_UNSAFE);
         client.createPath(zkPath, "",
