@@ -108,7 +108,7 @@ class TestZKIntegration extends YarnZKMiniClusterTestBase implements KeysForTest
   public void testCreateAndDeleteDefaultZKPath() throws Throwable {
     MockSliderClient client = new MockSliderClient()
 
-    String path = client.createZookeeperNode("cl1", true)
+    String path = client.createZookeeperNodeInner("cl1", true)
     zki = client.lastZKIntegration
 
     String zkPath = ZKIntegration.mkClusterPath(USER, "cl1")
@@ -118,7 +118,7 @@ class TestZKIntegration extends YarnZKMiniClusterTestBase implements KeysForTest
     zki = createZKIntegrationInstance(getZKBinding(), "cl1", true, false, CONNECT_TIMEOUT);
     assert !zki.exists(zkPath)
 
-    path = client.createZookeeperNode("cl1", false)
+    path = client.createZookeeperNodeInner("cl1", false)
     zki = client.lastZKIntegration
     assert zki 
     assert zkPath == "/services/slider/users/" + USER + "/cl1", "zkPath must be as expected"
