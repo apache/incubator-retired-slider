@@ -2667,7 +2667,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       throws IOException, YarnException {
     Set<String> appInstances = getApplicationList(clustername, args);
     // getApplicationList never returns null
-    return appInstances.size() > 0 ? EXIT_SUCCESS : EXIT_FALSE;
+    return appInstances.size() > 0 ? EXIT_SUCCESS
+        : (appInstances.size() == 0 && isUnset(clustername)) ? EXIT_SUCCESS
+            : EXIT_FALSE;
   }
 
   /**
