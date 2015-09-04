@@ -158,6 +158,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.InterruptedIOException;
 import java.io.PrintStream;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -464,16 +466,15 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         client.deleteRecursive(zkPath);
         return true;
       }
-    } catch (InterruptedException ignored) {
-      e = ignored;
-    } catch (KeeperException ignored) {
-      e = ignored;
-    } catch (BadConfigException ignored) {
-      e = ignored;
+    } catch (InterruptedException ex) {
+      e = ex;
+    } catch (KeeperException ex) {
+      e = ex;
+    } catch (BadConfigException ex) {
+      e = ex;
     }
     if (e != null) {
-      log.debug("Unable to recursively delete zk node {}", zkPath);
-      log.debug("Reason: ", e);
+      log.warn("Unable to recursively delete zk node {}", zkPath, e);
     }
 
     return false;
@@ -484,6 +485,31 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    */
   @VisibleForTesting
   public String createZookeeperNode(String clusterName, Boolean nameOnly) throws YarnException, IOException {
+    try {
+      return createZookeeperNodeInner(clusterName, nameOnly);
+    } catch (KeeperException.NodeExistsException e) {
+      return null;
+    } catch (KeeperException e) {
+      return null;
+    } catch (InterruptedException e) {
+      throw new InterruptedIOException(e.toString());
+    }
+  }
+
+  /**
+   * Create the zookeeper node associated with the calling user and the cluster
+   * -throwing exceptions on any failure
+   * @param clusterName cluster name
+   * @param nameOnly create the path, not the node
+   * @return the path, with the node created
+   * @throws YarnException
+   * @throws IOException
+   * @throws KeeperException
+   * @throws InterruptedException
+   */
+  @VisibleForTesting
+  public String createZookeeperNodeInner(String clusterName, Boolean nameOnly)
+      throws YarnException, IOException, KeeperException, InterruptedException {
     String user = getUsername();
     String zkPath = ZKIntegration.mkClusterPath(user, clusterName);
     if (nameOnly) {
@@ -491,22 +517,22 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     }
     ZKIntegration client = getZkClient(clusterName, user);
     if (client != null) {
-      try {
-        List<ACL> zkperms = new ArrayList<ACL>();
-        zkperms.addAll(ZooDefs.Ids.CREATOR_ALL_ACL);
-        zkperms.addAll(ZooDefs.Ids.READ_ACL_UNSAFE);
-        client.createPath(zkPath, "",
-            zkperms,
-            CreateMode.PERSISTENT);
-        return zkPath;
-      } catch (InterruptedException e) {
-        log.warn("Unable to create default zk node {}", zkPath, e);
-      } catch (KeeperException e) {
-        log.warn("Unable to create default zk node {}", zkPath, e);
+      // set up the permissions. This must be done differently on a secure cluster from an insecure
+      // one
+      List<ACL> zkperms = new ArrayList<ACL>();
+      if (UserGroupInformation.isSecurityEnabled()) {
+        zkperms.add(new ACL(ZooDefs.Perms.ALL, ZooDefs.Ids.AUTH_IDS));
+        zkperms.add(new ACL(ZooDefs.Perms.READ, ZooDefs.Ids.ANYONE_ID_UNSAFE));
+      } else {
+        zkperms.add(new ACL(ZooDefs.Perms.ALL, ZooDefs.Ids.ANYONE_ID_UNSAFE));
       }
+      client.createPath(zkPath, "",
+          zkperms,
+          CreateMode.PERSISTENT);
+      return zkPath;
+    } else {
+      return null;
     }
-
-    return null;
   }
 
   /**
