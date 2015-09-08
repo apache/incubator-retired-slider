@@ -1,6 +1,6 @@
-Changes only in Hortonworks github and not in Apache Slider release 0.6.0 and hence not covered by CHANGES.txt.
+Changes only in Hortonworks github and not in Apache Slider release slider-0.60.0-incubating and hence not covered by CHANGES.txt.
 
-Bug Fixes
+BUG FIXES
 
-SLIDER-931 Security permissions on set up ZK path are too lax
-BUG-43590 HBASE_THRIFT not deployed on HBase-Slider
+  SLIDER-931 Security permissions on set up ZK path are too lax
+  BUG-31679 add req parameters and reference config from req command
