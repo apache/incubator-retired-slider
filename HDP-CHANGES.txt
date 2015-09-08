@@ -6,11 +6,12 @@ Changes only in Hortonworks github and not in slider-0.80.0-incubating.
 
   IMPROVEMENTS
 
-    SLIDER-812 Making component configurations in appConfig available on the SliderAgent side (Thomas Liu via gourksaha)
+    SLIDER-812 Make component configurations in appConfig available on the SliderAgent side (Thomas Liu via gourksaha)
     SLIDER-891 Add ability to set Slider AM launch environment during cluster create/start
 
   BUG FIXES
 
+    SLIDER-481 giving registry log messages meaningful text
     SLIDER-810 YARN config changes to enable partial logs upload for long running services (default include/exclude patterns does not upload any files)
     SLIDER-877 move SLIDER_HOME assignment to slider.py
     SLIDER-878 Slider cannot support jdk 1.8 for command slider registry --getconf hbase-site --name hb1
@@ -19,3 +20,6 @@ Changes only in Hortonworks github and not in slider-0.80.0-incubating.
     SLIDER-902 add config to client cert gen command
     SLIDER-904 Resource leak reported by coverity scan results
     SLIDER-905 Container request fails when Slider requests container with node label and host constraints
+    SLIDER-912 x-insecure rest API should be off by default
+    SLIDER-923 switch to TryOnceThenFail retry policy on IPC (needed for Hadoop 2.8+)
+
