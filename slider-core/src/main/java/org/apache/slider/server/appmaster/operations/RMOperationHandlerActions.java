@@ -52,4 +52,12 @@ public interface RMOperationHandlerActions {
    * @param operations ops
    */
   void execute(List<AbstractRMOperation> operations);
+
+  /**
+   * Update Blacklist operation
+   * @param blacklistAdditions possibly null list of additions to the blacklist
+   * @param blacklistRemovals possibly null list of nodes to remove from the blacklist
+   */
+  void updateBlacklist(List<String> blacklistAdditions, List<String> blacklistRemovals);
+
 }

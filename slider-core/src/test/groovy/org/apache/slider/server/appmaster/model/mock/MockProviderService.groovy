@@ -297,4 +297,9 @@ class MockProviderService implements ProviderService {
   void rebuildContainerDetails(List<Container> liveContainers, String applicationId,
       Map<Integer, ProviderRole> roleProviderMap) {
   }
+
+  @Override
+  void updateBlacklist(List<String> blacklistAdditions, List<String> blacklistRemovals) {
+
+  }
 }

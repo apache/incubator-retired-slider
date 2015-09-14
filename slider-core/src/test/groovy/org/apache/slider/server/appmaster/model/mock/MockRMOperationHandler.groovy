@@ -78,4 +78,9 @@ class MockRMOperationHandler extends RMOperationHandler {
     releases = 0;
     requests = 0;
   }
+
+  @Override
+  void updateBlacklist(List<String> blacklistAdditions, List<String> blacklistRemovals) {
+  }
+
 }

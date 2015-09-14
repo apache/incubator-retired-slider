@@ -93,6 +93,12 @@ public class RoleHistory {
   private Map<Integer, LinkedList<NodeInstance>> availableNodes;
 
   /**
+   *    * Track nodes where requests have been submitted
+   *
+   */
+  private Map<Integer, LinkedList<String>> requestedNodes;
+
+  /**
    * Track the failed nodes. Currently used to make wiser decision of container
    * ask with/without locality. Has other potential uses as well.
    */
@@ -186,6 +192,37 @@ public class RoleHistory {
    */
   private synchronized void resetAvailableNodeLists() {
     availableNodes = new HashMap<>(roleSize);
+    resetRequestedNodes();
+  }
+
+  /**
+   * Clear the list of nodes where request has been made
+   */
+  public void resetRequestedNodes() {
+    requestedNodes = new HashMap<>(roleSize);
+  }
+
+  /**
+   * Track nodes where requests have been submitted
+   */
+  public void addRequestedNodeForRoleId(int id, String hostname) {
+    LinkedList<String> instances = requestedNodes.get(id);
+    if (instances == null) {
+      instances = new LinkedList<>();
+    }
+    instances.add(hostname);
+    requestedNodes.put(id, instances);
+  }
+
+  /**
+   * Check if node is in the requested list
+   * @param id role ID
+   * @param hostname host
+   * @return true if there is an outstanding request for a role on that host
+   */
+  public boolean nodeAlreadyRequested(int id, String hostname) {
+    LinkedList<String> instances = requestedNodes.get(id);
+    return instances != null && instances.contains(hostname);
   }
 
   /**

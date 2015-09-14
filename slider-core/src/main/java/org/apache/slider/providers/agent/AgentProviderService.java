@@ -2823,4 +2823,9 @@ public class AgentProviderService extends AbstractProviderService implements
                   "");
     }
   }
+
+  @Override
+  public void updateBlacklist(List<String> blacklistAdditions,
+                        List<String> blacklistRemovals) {
+  }
 }

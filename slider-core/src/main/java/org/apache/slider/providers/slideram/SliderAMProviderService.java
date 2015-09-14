@@ -187,4 +187,9 @@ public class SliderAMProviderService extends AbstractProviderService implements
       throw new IOException(e);
     }
   }
+
+  @Override
+  public void updateBlacklist(List<String> blacklistAdditions,
+                       List<String> blacklistRemovals) {
+  }
 }

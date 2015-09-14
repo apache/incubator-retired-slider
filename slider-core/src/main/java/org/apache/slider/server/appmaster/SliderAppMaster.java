@@ -2283,7 +2283,12 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       return false;
     }
   }
-  
+
+  @Override
+  public void updateBlacklist(List<String> blacklistAdditions,
+      List<String> blacklistRemovals) {
+  }
+
   /**
    * This is the main entry point for the service launcher.
    * @param args command line arguments.

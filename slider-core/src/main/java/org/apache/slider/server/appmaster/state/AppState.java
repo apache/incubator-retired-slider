@@ -1942,7 +1942,12 @@ public class AppState {
         if (askMemory > this.containerMaxMemory) {
           log.warn("Memory requested: {} > max of {}", askMemory, containerMaxMemory);
         }
-        operations.add(new ContainerRequestOperation(containerAsk));
+        // build a container request including placement and blacklisting data
+        operations.add(new ContainerRequestOperation(containerAsk,
+            role,
+            roleHistory.listActiveNodes(role.getKey()),
+            roleHistory.cloneFailedNodes()
+        ));
       }
     } else if (delta < 0) {
       log.info("{}: Asking for {} fewer node(s) for a total of {}", name,
@@ -2126,6 +2131,7 @@ public class AppState {
     releaseOperations.clear();
     List<Container> ordered = roleHistory.prepareAllocationList(allocatedContainers);
     log.debug("onContainersAllocated(): Total containers allocated = {}", ordered.size());
+    roleHistory.resetRequestedNodes();
     for (Container container : ordered) {
       String containerHostInfo = container.getNodeId().getHost()
                                  + ":" +
@@ -2133,8 +2139,15 @@ public class AppState {
       //get the role
       final ContainerId cid = container.getId();
       final RoleStatus role = lookupRoleStatus(container);
-      
-
+      log.debug("onContainersAllocated(): {}, {}", containerHostInfo, cid);
+      log.debug("onContainersAllocated(): {} ", role);
+      if((role.isAntiAffinePlacement()) && (
+          roleHistory.nodeAlreadyRequested(role.getKey(), container.getNodeId().getHost()))){
+          releaseOperations.add(new ContainerReleaseOperation(cid));
+          log.info("onContainersAllocated() {} is on already requested node {} releasing...",
+              cid, container.getNodeId().getHost());
+          continue;
+      }
       //dec requested count
       decrementRequestCount(role);
 
@@ -2187,6 +2200,7 @@ public class AppState {
         assignments.add(new ContainerAssignment(container, role, outcome));
         //add to the history
         roleHistory.onContainerAssigned(container);
+        roleHistory.addRequestedNodeForRoleId(role.getKey(), container.getNodeId().getHost());
       }
     }
   }

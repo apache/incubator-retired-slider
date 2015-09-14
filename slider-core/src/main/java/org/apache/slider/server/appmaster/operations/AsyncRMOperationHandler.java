@@ -105,6 +105,15 @@ public class AsyncRMOperationHandler extends RMOperationHandler {
   @Override
   @SuppressWarnings("unchecked")
   public void addContainerRequest(AMRMClient.ContainerRequest req) {
+    log.debug("addContainerRequest():  Request = {}, getCapability() = {}, getNodes() = {}",
+        req, req.getCapability(), req.getNodes());
     client.addContainerRequest(req);
   }
+
+  @Override
+  public void updateBlacklist(List<String> blacklistAdditions,
+      List<String> blacklistRemovals) {
+    client.updateBlacklist(blacklistAdditions, blacklistRemovals);
+  }
+
 }
