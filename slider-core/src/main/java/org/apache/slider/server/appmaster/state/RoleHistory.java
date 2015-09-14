@@ -717,8 +717,7 @@ public class RoleHistory {
     if (desiredCount <= actualCount) {
       // all outstanding requests have been satisfied
       // clear all the lists, so returning nodes to the available set
-      List<NodeInstance>
-          hosts = outstandingRequests.resetOutstandingRequests(role);
+      List<NodeInstance> hosts = outstandingRequests.resetOutstandingRequests(role);
       if (!hosts.isEmpty()) {
         //add the list
         log.info("Adding {} hosts for role {}", hosts.size(), role);

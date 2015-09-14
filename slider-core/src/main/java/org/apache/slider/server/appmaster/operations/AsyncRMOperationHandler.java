@@ -63,6 +63,7 @@ public class AsyncRMOperationHandler extends RMOperationHandler {
    * @param count count to cancel
    * @return number of requests cancelled
    */
+  @SuppressWarnings("unchecked")
   protected int cancelSinglePriorityRequests(Priority priority,
       int count) {
     List<Collection<AMRMClient.ContainerRequest>> requestSets =
@@ -88,6 +89,7 @@ public class AsyncRMOperationHandler extends RMOperationHandler {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public void cancelSingleRequest(AMRMClient.ContainerRequest request) {
     // a single release
     client.removeContainerRequest(request);

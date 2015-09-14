@@ -92,8 +92,8 @@ import static org.apache.slider.api.ResourceKeys.YARN_CORES;
 import static org.apache.slider.api.ResourceKeys.YARN_LABEL_EXPRESSION;
 import static org.apache.slider.api.ResourceKeys.YARN_MEMORY;
 import static org.apache.slider.api.RoleKeys.ROLE_FAILED_INSTANCES;
-import static org.apache.slider.api.RoleKeys.ROLE_FAILED_STARTING_INSTANCES;
 import static org.apache.slider.api.RoleKeys.ROLE_FAILED_RECENTLY_INSTANCES;
+import static org.apache.slider.api.RoleKeys.ROLE_FAILED_STARTING_INSTANCES;
 import static org.apache.slider.api.RoleKeys.ROLE_NODE_FAILED_INSTANCES;
 import static org.apache.slider.api.RoleKeys.ROLE_PREEMPTED_INSTANCES;
 import static org.apache.slider.api.RoleKeys.ROLE_RELEASING_INSTANCES;
@@ -1931,7 +1931,7 @@ public class AppState {
     if (delta > 0) {
       log.info("{}: Asking for {} more nodes(s) for a total of {} ", name,
                delta, expected);
-      //more workers needed than we have -ask for more
+      // more workers needed than we have -ask for more
       for (int i = 0; i < delta; i++) {
         Resource capability = recordFactory.newResource();
         AMRMClient.ContainerRequest containerAsk =
@@ -1948,9 +1948,9 @@ public class AppState {
       log.info("{}: Asking for {} fewer node(s) for a total of {}", name,
                -delta,
                expected);
-      //reduce the number expected (i.e. subtract the delta)
+      // reduce the number expected (i.e. subtract the delta)
 
-      //then pick some containers to kill
+      // then pick some containers to kill
       int excess = -delta;
 
       // how many requests are outstanding
@@ -2125,6 +2125,7 @@ public class AppState {
     assignments.clear();
     releaseOperations.clear();
     List<Container> ordered = roleHistory.prepareAllocationList(allocatedContainers);
+    log.debug("onContainersAllocated(): Total containers allocated = {}", ordered.size());
     for (Container container : ordered) {
       String containerHostInfo = container.getNodeId().getHost()
                                  + ":" +
