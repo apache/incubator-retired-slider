@@ -23,4 +23,5 @@ Changes only in Hortonworks github and not in slider-0.80.0-incubating.
     SLIDER-912 x-insecure rest API should be off by default
     SLIDER-923 switch to TryOnceThenFail retry policy on IPC (needed for Hadoop 2.8+)
     SLIDER-911 remove surplus jax rs jsr311-api JAR
+    SLIDER-931 Security permissions on set up ZK path are too lax
 
