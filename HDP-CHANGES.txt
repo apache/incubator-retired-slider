@@ -11,6 +11,7 @@ Changes only in Hortonworks github and not in slider-0.80.0-incubating.
 
   BUG FIXES
 
+    SLIDER-941 Add JAAS config templates for HBase
     SLIDER-481 giving registry log messages meaningful text
     SLIDER-810 YARN config changes to enable partial logs upload for long running services (default include/exclude patterns does not upload any files)
     SLIDER-877 move SLIDER_HOME assignment to slider.py
