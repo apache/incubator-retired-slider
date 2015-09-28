@@ -47,6 +47,7 @@ import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
+import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.slider.Slider;
 import org.apache.slider.api.InternalKeys;
@@ -2365,5 +2366,28 @@ public final class SliderUtils {
 
   public static Map<String, String> getSystemEnv() {
     return System.getenv();
+  }
+
+  public static String requestToString(AMRMClient.ContainerRequest request) {
+    StringBuffer buffer = new StringBuffer(request.toString());
+    buffer.append("; ");
+    buffer.append("relaxLocality=").append(request.getRelaxLocality()).append("; ");
+    String labels = request.getNodeLabelExpression();
+    if (labels != null) {
+      buffer.append("nodeLabels=").append(labels).append("; ");
+    }
+    List<String> nodes = request.getNodes();
+    if (nodes != null) {
+      buffer.append("Nodes = [")
+          .append(join(nodes, ", ", false))
+          .append("]; ");
+    }
+    List<String> racks = request.getRacks();
+    if (racks != null) {
+      buffer.append("racks = [")
+          .append(join(racks, ", ", false))
+          .append("]; ");
+    }
+    return buffer.toString();
   }
 }

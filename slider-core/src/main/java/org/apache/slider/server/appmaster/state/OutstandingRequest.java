@@ -24,6 +24,7 @@ import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.hadoop.yarn.client.api.InvalidContainerRequestException;
+import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.server.appmaster.operations.CancelSingleRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -248,6 +249,9 @@ public final class OutstandingRequest {
     // it is tagged as unlocated because it needs to go into a different
     // set of outstanding requests from the strict placements
     Priority pri = ContainerPriority.createPriority(roleId, false);
+    // update the field
+    priority = pri.getPriority();
+
     String[] nodes;
     List<String> issuedRequestNodes = issuedRequest.getNodes();
     if (label == null && issuedRequestNodes != null) {
@@ -338,15 +342,18 @@ public final class OutstandingRequest {
 
   @Override
   public String toString() {
+    int requestRoleId = ContainerPriority.extractRole(getPriority());
+    boolean requestHasLocation = ContainerPriority.hasLocation(getPriority());
     final StringBuilder sb = new StringBuilder("OutstandingRequest{");
-    sb.append("roleId=").append(roleId);
+    sb.append("roleId=").append(this.roleId);
     sb.append(", node=").append(node);
     sb.append(", hostname='").append(hostname).append('\'');
-    sb.append(", issuedRequest=").append(issuedRequest);
+    sb.append(", hasLocation=").append(requestHasLocation);
     sb.append(", requestedTimeMillis=").append(requestedTimeMillis);
     sb.append(", mayEscalate=").append(mayEscalate);
     sb.append(", escalated=").append(escalated);
     sb.append(", escalationTimeoutMillis=").append(escalationTimeoutMillis);
+    sb.append(", issuedRequest=").append(SliderUtils.requestToString(issuedRequest));
     sb.append('}');
     return sb.toString();
   }
