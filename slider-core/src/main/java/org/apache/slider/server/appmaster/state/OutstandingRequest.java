@@ -245,7 +245,9 @@ public final class OutstandingRequest {
     escalated = true;
 
     // this is now the priority
-    Priority pri = ContainerPriority.createPriority(roleId, true);
+    // it is tagged as unlocated because it needs to go into a different
+    // set of outstanding requests from the strict placements
+    Priority pri = ContainerPriority.createPriority(roleId, false);
     String[] nodes;
     List<String> issuedRequestNodes = issuedRequest.getNodes();
     if (label == null && issuedRequestNodes != null) {
@@ -254,14 +256,12 @@ public final class OutstandingRequest {
       nodes = null;
     }
 
-    AMRMClient.ContainerRequest newRequest =
-        new AMRMClient.ContainerRequest(issuedRequest.getCapability(),
-            nodes,
-            null,
-            pri,
-            true,
-            label);
-    issuedRequest = newRequest;
+    issuedRequest = new AMRMClient.ContainerRequest(issuedRequest.getCapability(),
+        nodes,
+        null,
+        pri,
+        true,
+        label);
     validate();
     return issuedRequest;
   }
@@ -380,7 +380,7 @@ public final class OutstandingRequest {
     if (exp.contains("&&") || exp.contains("||")) {
       throw new InvalidContainerRequestException(
           "Cannot specify more than two node labels"
-              + " in a single node label expression");
+              + " in a single node label expression: " + this);
     }
 
     // Don't allow specify node label against ANY request
@@ -390,8 +390,18 @@ public final class OutstandingRequest {
         (containerRequest.getNodes() != null &&
              (!containerRequest.getNodes().isEmpty()))) {
       throw new InvalidContainerRequestException(
-          "Cannot specify node label with rack and node");
+          "Cannot specify node label with rack and node: " + this);
+    }
+
+    // relax priority
+    boolean hasLocation = ContainerPriority.hasLocation(priority);
+    if (containerRequest.getRelaxLocality() != !hasLocation) {
+      throw new InvalidContainerRequestException(
+        "relax location flag doesn't match container priority: "
+        + this);
+
     }
   }
+
 
 }

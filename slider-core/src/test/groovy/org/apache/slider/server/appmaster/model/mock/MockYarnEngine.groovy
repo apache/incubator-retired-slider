@@ -28,6 +28,7 @@ import org.apache.hadoop.yarn.client.api.AMRMClient
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
 import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation
 import org.apache.slider.server.appmaster.operations.ContainerRequestOperation
+import org.junit.Assert
 
 /**
  * This is an evolving engine to mock YARN operations
@@ -64,13 +65,13 @@ class MockYarnEngine {
     allocator = new Allocator(cluster)
   }
 
-/**
- * Allocate a container from a request. The containerID will be
- * unique, nodeId and other fields chosen internally with
- * no such guarantees; resource and priority copied over
- * @param request request
- * @return container
- */
+  /**
+   * Allocate a container from a request. The containerID will be
+   * unique, nodeId and other fields chosen internally with
+   * no such guarantees; resource and priority copied over
+   * @param request request
+   * @return container
+   */
   Container allocateContainer(AMRMClient.ContainerRequest request) {
     MockContainer allocated = allocator.allocate(request)
     if (allocated != null) {
@@ -104,6 +105,7 @@ class MockYarnEngine {
    */
   List<Container> execute(List<AbstractRMOperation> ops,
                                List<ContainerId> released) {
+    validateRequests(ops)
     List<Container> allocation = [];
     ops.each { AbstractRMOperation op ->
       if (op instanceof ContainerReleaseOperation) {
@@ -124,6 +126,35 @@ class MockYarnEngine {
       }
     }
     return allocation
+  }
+
+  /**
+   * Try and mimic some of the logic of <code>AMRMClientImpl.checkLocalityRelaxationConflict</code>
+   * @param ops operations list
+   */
+  void validateRequests(List<AbstractRMOperation> ops) {
+    // run through the requests and verify that they are all consistent.
+    List<ContainerRequestOperation> outstandingRequests = []
+    for (AbstractRMOperation operation : ops) {
+      if (operation instanceof ContainerRequestOperation) {
+        ContainerRequestOperation containerRequest = (ContainerRequestOperation) operation
+        def amRequest = containerRequest.request
+        def priority = amRequest.priority
+        def relax = amRequest.relaxLocality
+
+        outstandingRequests.each { req ->
+
+          if (req.priority == priority && req.relaxLocality != relax) {
+            // mismatch in values
+            Assert.fail("operation $operation has incompatible request priority" +
+                        " from outsanding request")
+          }
+          outstandingRequests << containerRequest
+
+        }
+
+      }
+    }
   }
 
 }

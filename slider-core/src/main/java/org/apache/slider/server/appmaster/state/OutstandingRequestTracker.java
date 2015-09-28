@@ -340,8 +340,7 @@ public class OutstandingRequestTracker {
           // time to escalate
           CancelSingleRequest cancel = outstandingRequest.createCancelOperation();
           operations.add(cancel);
-          AMRMClient.ContainerRequest escalated =
-              outstandingRequest.escalate();
+          AMRMClient.ContainerRequest escalated = outstandingRequest.escalate();
           operations.add(new ContainerRequestOperation(escalated));
         }
       }

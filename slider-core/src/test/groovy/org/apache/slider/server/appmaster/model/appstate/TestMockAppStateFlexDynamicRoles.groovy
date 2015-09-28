@@ -23,7 +23,6 @@ import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.slider.api.ResourceKeys
-import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.core.conf.ConfTreeOperations
 import org.apache.slider.core.exceptions.BadConfigException
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
@@ -31,7 +30,6 @@ import org.apache.slider.server.appmaster.model.mock.MockAppState
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.model.mock.MockYarnEngine
 import org.apache.slider.server.appmaster.state.MostRecentContainerReleaseSelector
-import org.apache.slider.server.avro.LoadedRoleHistory
 import org.apache.slider.server.avro.RoleHistoryWriter
 import org.junit.Test
 

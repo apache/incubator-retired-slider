@@ -955,8 +955,7 @@ public class RoleHistory {
    * @return a (usually empty) list of cancel/request operations.
    */
   public List<AbstractRMOperation> escalateOutstandingRequests() {
-    long now = now();
-    return outstandingRequests.escalateOutstandingRequests(now);
+    return outstandingRequests.escalateOutstandingRequests(now());
   }
 
   /**

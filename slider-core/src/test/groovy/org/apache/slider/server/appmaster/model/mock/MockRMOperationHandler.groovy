@@ -69,10 +69,10 @@ class MockRMOperationHandler extends RMOperationHandler {
       cancelled++;
     }
   }
-  
-/**
- * clear the history
- */
+
+  /**
+   * clear the history
+   */
   public void clear() {
     operations.clear()
     releases = 0;
