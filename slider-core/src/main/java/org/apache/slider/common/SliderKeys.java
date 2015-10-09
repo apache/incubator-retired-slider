@@ -42,6 +42,21 @@ public interface SliderKeys extends SliderXmlConfKeys {
   String SLIDER_BASE_DIRECTORY = ".slider";
 
   /**
+   * The paths under which Slider AM dependency libraries are stored
+   */
+  String SLIDER_DEPENDENCY_LOCALIZED_DIR_LINK = "slider_dep";
+  String SLIDER_DEPENDENCY_HDP_PARENT_DIR = "/hdp";
+  String SLIDER_DEPENDENCY_DIR = "/apps/%s/slider";
+  String SLIDER_DEPENDENCY_TAR_GZ_FILE_NAME = "slider";
+  String SLIDER_DEPENDENCY_TAR_GZ_FILE_EXT = ".tar.gz";
+  String SLIDER_DEPENDENCY_DIR_PERMISSIONS = "755";
+
+  /**
+   * 
+   */
+  String HDP_VERSION_PROP_NAME = "HDP_VERSION";
+
+  /**
    *  name of the relative path to expaned an image into:  {@value}.
    *  The title of this path is to help people understand it when
    *  they see it in their error messages

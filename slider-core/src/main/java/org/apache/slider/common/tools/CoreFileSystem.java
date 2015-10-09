@@ -47,6 +47,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -390,6 +391,27 @@ public class CoreFileSystem {
   }
 
   /**
+   * Given a path, check if it exists and is a file
+   * 
+   * @param path
+   *          absolute path to the file to check
+   * @returns true if and only if path exists and is a file, false for all other
+   *          reasons including if file check throws IOException
+   */
+  public boolean isFile(Path path) {
+    boolean isFile = false;
+    try {
+      FileStatus status = fileSystem.getFileStatus(path);
+      if (status.isFile()) {
+        isFile = true;
+      }
+    } catch (IOException e) {
+      // ignore, isFile is already set to false
+    }
+    return isFile;
+  }
+
+  /**
    * Verify that a file exists in the zip file given by path
    * @param path path to zip file
    * @param file file expected to be in zip
@@ -462,6 +484,34 @@ public class CoreFileSystem {
            new Path(getHomeDirectory(), SliderKeys.SLIDER_BASE_DIRECTORY);
   }
 
+  /**
+   * Get slider dependency parent dir in HDFS
+   * 
+   * @return the parent dir path of slider.tar.gz in HDFS
+   */
+  public Path getDependencyPath() {
+    String parentDir = (SliderUtils.isHdp()) ? SliderKeys.SLIDER_DEPENDENCY_HDP_PARENT_DIR
+        + SliderKeys.SLIDER_DEPENDENCY_DIR
+        : SliderKeys.SLIDER_DEPENDENCY_DIR;
+    Path dependencyPath = new Path(String.format(parentDir,
+        SliderUtils.getSliderVersion()));
+    return dependencyPath;
+  }
+
+  /**
+   * Get slider.tar.gz absolute filepath in HDFS
+   * 
+   * @return the absolute path to slider.tar.gz in HDFS
+   */
+  public Path getDependencyTarGzip() {
+    Path dependencyLibAmPath = getDependencyPath();
+    Path dependencyLibTarGzip = new Path(
+        dependencyLibAmPath.toUri().toString(),
+        SliderKeys.SLIDER_DEPENDENCY_TAR_GZ_FILE_NAME
+            + SliderKeys.SLIDER_DEPENDENCY_TAR_GZ_FILE_EXT);
+    return dependencyLibTarGzip;
+  }
+
   public Path getHomeDirectory() {
     return fileSystem.getHomeDirectory();
   }
@@ -504,7 +554,8 @@ public class CoreFileSystem {
     // Setting to most private option
     amResource.setVisibility(LocalResourceVisibility.APPLICATION);
     // Set the resource to be copied over
-    amResource.setResource(ConverterUtils.getYarnUrlFromPath(destPath));
+    amResource.setResource(ConverterUtils.getYarnUrlFromPath(fileSystem
+        .resolvePath(destStatus.getPath())));
     // Set timestamp and length of file so that the framework
     // can do basic sanity checks for the local resource
     // after it has been copied over to ensure it is the same
@@ -576,6 +627,89 @@ public class CoreFileSystem {
     // archives are untarred at destination
     // we don't need the jar file to be untarred for now
     return createAmResource(destPath, LocalResourceType.FILE);
+  }
+
+  /**
+   * Submit the AM tar.gz resource referenced by the instance's cluster
+   * filesystem. Also, update the providerResources object with the new
+   * resource.
+   * 
+   * @param providerResources
+   *          the provider resource map to be updated
+   * @throws IOException
+   *           trouble copying to HDFS
+   */
+  public void submitTarGzipAndUpdate(
+      Map<String, LocalResource> providerResources) throws IOException,
+      BadClusterStateException {
+    Path dependencyLibTarGzip = getDependencyTarGzip();
+    LocalResource lc = createAmResource(dependencyLibTarGzip,
+        LocalResourceType.ARCHIVE);
+    providerResources.put(SliderKeys.SLIDER_DEPENDENCY_LOCALIZED_DIR_LINK, lc);
+  }
+
+  /**
+   * Copy local file(s) to destination HDFS directory. If {@code localPath} is a
+   * local directory then all files matching the {@code filenameFilter}
+   * (optional) are copied, otherwise {@code filenameFilter} is ignored.
+   * 
+   * @param localPath
+   *          a local file or directory path
+   * @param filenameFilter
+   *          if {@code localPath} is a directory then filenameFilter is used as
+   *          a filter (if specified)
+   * @param destDir
+   *          the destination HDFS directory where the file(s) should be copied
+   * @param fp
+   *          file permissions of all the directories and files that will be
+   *          created in this api
+   * @throws IOException
+   */
+  public void copyLocalFilesToHdfs(File localPath,
+      FilenameFilter filenameFilter, Path destDir, FsPermission fp)
+      throws IOException {
+    if (localPath == null || destDir == null) {
+      throw new IOException("Either localPath or destDir is null");
+    }
+    fileSystem.getConf().set(CommonConfigurationKeys.FS_PERMISSIONS_UMASK_KEY,
+        "000");
+    fileSystem.mkdirs(destDir, fp);
+    if (localPath.isDirectory()) {
+      // copy all local files under localPath to destDir (honoring filename
+      // filter if provided
+      File[] localFiles = localPath.listFiles(filenameFilter);
+      Path[] localFilePaths = new Path[localFiles.length];
+      int i = 0;
+      for (File localFile : localFiles) {
+        localFilePaths[i++] = new Path(localFile.getPath());
+      }
+      log.info("Copying {} files from {} to {}", i, localPath.toURI(),
+          destDir.toUri());
+      fileSystem.copyFromLocalFile(false, true, localFilePaths, destDir);
+    } else {
+      log.info("Copying file {} to {}", localPath.toURI(), destDir.toUri());
+      fileSystem.copyFromLocalFile(false, true, new Path(localPath.getPath()),
+          destDir);
+    }
+    // set permissions for all the files created in the destDir
+    fileSystem.setPermission(destDir, fp);
+  }
+
+  public void copyLocalFileToHdfs(File localPath,
+      Path destPath, FsPermission fp)
+      throws IOException {
+    if (localPath == null || destPath == null) {
+      throw new IOException("Either localPath or destPath is null");
+    }
+    fileSystem.getConf().set(CommonConfigurationKeys.FS_PERMISSIONS_UMASK_KEY,
+        "000");
+    fileSystem.mkdirs(destPath.getParent(), fp);
+    log.info("Copying file {} to {}", localPath.toURI(), destPath.toUri());
+    
+    fileSystem.copyFromLocalFile(false, true, new Path(localPath.getPath()),
+        destPath);
+    // set file permissions of the destPath
+    fileSystem.setPermission(destPath, fp);
   }
 
   /**

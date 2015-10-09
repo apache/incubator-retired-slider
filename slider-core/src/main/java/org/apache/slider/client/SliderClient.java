@@ -83,6 +83,7 @@ import org.apache.slider.common.params.AbstractClusterBuildingActionArgs;
 import org.apache.slider.common.params.ActionAMSuicideArgs;
 import org.apache.slider.common.params.ActionClientArgs;
 import org.apache.slider.common.params.ActionCreateArgs;
+import org.apache.slider.common.params.ActionDependencyArgs;
 import org.apache.slider.common.params.ActionDiagnosticArgs;
 import org.apache.slider.common.params.ActionEchoArgs;
 import org.apache.slider.common.params.ActionExistsArgs;
@@ -172,6 +173,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -211,6 +213,7 @@ import static org.apache.slider.common.params.SliderActions.ACTION_AM_SUICIDE;
 import static org.apache.slider.common.params.SliderActions.ACTION_BUILD;
 import static org.apache.slider.common.params.SliderActions.ACTION_CLIENT;
 import static org.apache.slider.common.params.SliderActions.ACTION_CREATE;
+import static org.apache.slider.common.params.SliderActions.ACTION_DEPENDENCY;
 import static org.apache.slider.common.params.SliderActions.ACTION_DESTROY;
 import static org.apache.slider.common.params.SliderActions.ACTION_DIAGNOSTICS;
 import static org.apache.slider.common.params.SliderActions.ACTION_EXISTS;
@@ -467,6 +470,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
       case ACTION_CREATE:
         exitCode = actionCreate(clusterName, serviceArgs.getActionCreateArgs());
+        break;
+
+      case ACTION_DEPENDENCY:
+        exitCode = actionDependency(serviceArgs.getActionDependencyArgs());
         break;
 
       case ACTION_DESTROY:
@@ -2233,6 +2240,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     ClasspathConstructor classpath = SliderUtils.buildClasspath(relativeConfDir,
         libdir,
         getConfig(),
+        sliderFileSystem,
         usingMiniMRCluster);
     amLauncher.setClasspath(classpath);
     //add english env
@@ -4408,8 +4416,69 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     return EXIT_SUCCESS;
   }
 
+  @Override
+  public int actionDependency(ActionDependencyArgs args) throws IOException,
+      YarnException {
+    // check to ensure if the current user is hdfs
+    String currentUser = getUsername();
+    String hdfsUser = "hdfs";
+    if (!hdfsUser.equalsIgnoreCase(currentUser)) {
+      log.error("Please run this command as user {}", hdfsUser);
+      return EXIT_FALSE;
+    }
+    
+    String version = SliderUtils.getSliderVersion();
+    Path dependencyLibTarGzip = sliderFileSystem.getDependencyTarGzip();
+    
+    // Check if dependency has already been uploaded, in which case log
+    // appropriately and exit success (unless overwrite has been requested)
+    if (sliderFileSystem.isFile(dependencyLibTarGzip) && !args.overwrite) {
+      println(String.format(
+          "Dependency libs are already uploaded to %s. Use %s "
+              + "if you want to re-upload", dependencyLibTarGzip.toUri(),
+          Arguments.ARG_OVERWRITE));
+      return EXIT_SUCCESS;
+    }
+    
+    String libDir = System.getProperty(SliderKeys.PROPERTY_LIB_DIR);
+    if (SliderUtils.isSet(libDir)) {
+      File srcFolder = new File(libDir);
+      File tempLibTarGzipFile = File.createTempFile(
+          SliderKeys.SLIDER_DEPENDENCY_TAR_GZ_FILE_NAME + "_",
+          SliderKeys.SLIDER_DEPENDENCY_TAR_GZ_FILE_EXT);
+      // copy all jars except slider-core-<version>.jar
+      FilenameFilter jarFilter = new FilenameFilter() {
+        public boolean accept(File dir, String name) {
+          String lowercaseName = name.toLowerCase();
+          if (lowercaseName.endsWith(".jar")
+              && !lowercaseName.startsWith("slider-core")) {
+            return true;
+          } else {
+            return false;
+          }
+        }
+      };
+      SliderUtils.tarGzipFolder(srcFolder, tempLibTarGzipFile, jarFilter);
+
+      log.info("Uploading dependency for AM (version {}) from {} to {}",
+          version, tempLibTarGzipFile.toURI(), dependencyLibTarGzip.toUri());
+      sliderFileSystem.copyLocalFileToHdfs(tempLibTarGzipFile,
+          dependencyLibTarGzip, new FsPermission(
+              SliderKeys.SLIDER_DEPENDENCY_DIR_PERMISSIONS));
+      return EXIT_SUCCESS;
+    } else {
+      return EXIT_FALSE;
+    }
+  }
+
   private int actionHelp(String actionName) throws YarnException, IOException {
     throw new UsageException(CommonArgs.usage(serviceArgs, actionName));
+  }
+
+  private int actionHelp(String errMsg, String actionName)
+      throws YarnException, IOException {
+    throw new UsageException("%s %s", errMsg, CommonArgs.usage(serviceArgs,
+        actionName));
   }
 }
 

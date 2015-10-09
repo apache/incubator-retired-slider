@@ -110,6 +110,7 @@ public interface Arguments {
   String ARG_TEMPLATE = "--template";
   String ARG_TRUSTSTORE = "--truststore";
   String ARG_USER = "--user";
+  String ARG_UPLOAD = "--upload";
   String ARG_VERBOSE = "--verbose";
   String ARG_VERSION = "--version";
   String ARG_WAIT = "--wait";

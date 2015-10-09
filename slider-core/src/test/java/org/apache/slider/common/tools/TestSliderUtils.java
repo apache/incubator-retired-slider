@@ -133,4 +133,18 @@ public class TestSliderUtils {
     ar.setYarnApplicationState(state);
     return ar;
   }
+
+
+  @Test
+  public void testGetHdpVersion() {
+    String hdpVersion = "2.3.2.0-2766";
+    Assert.assertEquals("Version should be empty", null,
+        SliderUtils.getHdpVersion());
+  }
+
+  @Test
+  public void testIsHdp() {
+    Assert.assertFalse("Should be false", SliderUtils.isHdp());
+  }
+
 }

@@ -20,6 +20,8 @@ package org.apache.slider.common.tools;
 
 import com.google.common.base.Preconditions;
 
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.io.output.ByteArrayOutputStream;
@@ -54,6 +56,8 @@ import org.apache.slider.api.RoleKeys;
 import org.apache.slider.api.types.ContainerInformation;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.SliderXmlConfKeys;
+import org.apache.slider.common.params.Arguments;
+import org.apache.slider.common.params.SliderActions;
 import org.apache.slider.core.conf.ConfTreeOperations;
 import org.apache.slider.core.conf.MapOperations;
 import org.apache.slider.core.exceptions.BadClusterStateException;
@@ -70,6 +74,7 @@ import org.apache.zookeeper.server.util.KerberosUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -111,6 +116,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -1366,6 +1372,22 @@ public final class SliderUtils {
     }
   }
 
+  /**
+   * Submit the AM tar.gz containing all dependencies and map it
+   * @param providerResources provider map to build up
+   * @param sliderFileSystem remote fs
+   * @throws IOException, SliderException trouble copying to HDFS
+   */
+  public static void putAmTarGzipAndUpdate(
+      Map<String, LocalResource> providerResources,
+      SliderFileSystem sliderFileSystem
+  ) throws IOException, SliderException {
+    log.info("Loading all dependencies from {}{}",
+        SliderKeys.SLIDER_DEPENDENCY_TAR_GZ_FILE_NAME,
+        SliderKeys.SLIDER_DEPENDENCY_TAR_GZ_FILE_EXT);
+    sliderFileSystem.submitTarGzipAndUpdate(providerResources);
+  }
+
   public static Map<String, Map<String, String>> deepClone(Map<String, Map<String, String>> src) {
     Map<String, Map<String, String>> dest =
         new HashMap<String, Map<String, String>>();
@@ -1481,6 +1503,7 @@ public final class SliderUtils {
   public static ClasspathConstructor buildClasspath(String sliderConfDir,
       String libdir,
       Configuration config,
+      SliderFileSystem sliderFileSystem,
       boolean usingMiniMRCluster) {
 
     ClasspathConstructor classpath = new ClasspathConstructor();
@@ -1495,6 +1518,13 @@ public final class SliderUtils {
         classpath.addClassDirectory(sliderConfDir);
       }
       classpath.addLibDir(libdir);
+      if (sliderFileSystem.isFile(sliderFileSystem.getDependencyTarGzip())) {
+        classpath.addLibDir(SliderKeys.SLIDER_DEPENDENCY_LOCALIZED_DIR_LINK);
+      } else {
+        log.info(
+            "For faster submission of apps, upload dependencies using cmd {} {}",
+            SliderActions.ACTION_DEPENDENCY, Arguments.ARG_UPLOAD);
+      }
       classpath.addRemoteClasspathEnvVar();
       classpath.append(ApplicationConstants.Environment.HADOOP_CONF_DIR.$$());
     }
@@ -1820,21 +1850,102 @@ public final class SliderUtils {
     }
   }
 
+  /**
+   * Given a source folder create a tar.gz file
+   * 
+   * @param srcFolder
+   * @param tarGzipFile
+   * 
+   * @throws IOException
+   */
+  public static void tarGzipFolder(File srcFolder, File tarGzipFile,
+      FilenameFilter filter) throws IOException {
+    log.info("Tar-gzipping folder {} to {}", srcFolder.getAbsolutePath(),
+        tarGzipFile.getAbsolutePath());
+    List<String> files = new ArrayList<>();
+    generateFileList(files, srcFolder, srcFolder, true, filter);
 
-  private static void generateFileList(List<String> fileList, File node, File rootFolder, Boolean relative) {
+    TarArchiveOutputStream taos = null;
+    try {
+      taos = new TarArchiveOutputStream(new GZIPOutputStream(
+          new BufferedOutputStream(new FileOutputStream(tarGzipFile))));
+      for (String file : files) {
+        File srcFile = new File(srcFolder, file);
+        TarArchiveEntry tarEntry = new TarArchiveEntry(
+            srcFile, file);
+        taos.putArchiveEntry(tarEntry);
+        FileInputStream in = new FileInputStream(srcFile);
+        try {
+          org.apache.commons.io.IOUtils.copy(in, taos);
+        } finally {
+          if (in != null) {
+            in.close();
+          }
+        }
+        taos.flush();
+        taos.closeArchiveEntry();
+      }
+    } finally {
+      if (taos != null) {
+        taos.close();
+      }
+    }
+  }
+
+  /**
+   * Retrieve the HDP version if it is an HDP cluster, or null otherwise
+   * 
+   * @return HDP version
+   */
+  public static String getHdpVersion() {
+    return System.getenv(SliderKeys.HDP_VERSION_PROP_NAME);
+  }
+
+  /**
+   * Query to find if it is an HDP cluster
+   * 
+   * @return true if this is invoked in an HDP cluster or false otherwise
+   */
+  public static boolean isHdp() {
+    return StringUtils.isNotEmpty(getHdpVersion()) ? true : false;
+  }
+
+  /**
+   * Retrieve the version of the current Slider install
+   * 
+   * @return the version string of the Slider release
+   */
+  public static String getSliderVersion() {
+    if (isHdp()) {
+      return getHdpVersion();
+    } else {
+      Properties props = SliderVersionInfo.loadVersionProperties();
+      return props.getProperty(SliderVersionInfo.APP_VERSION);
+    }
+  }
+
+  private static void generateFileList(List<String> fileList, File node,
+      File rootFolder, Boolean relative) {
+    generateFileList(fileList, node, rootFolder, relative, null);
+  }
+
+  private static void generateFileList(List<String> fileList, File node,
+      File rootFolder, Boolean relative, FilenameFilter filter) {
     if (node.isFile()) {
       String fileFullPath = node.toString();
       if (relative) {
-        fileList.add(fileFullPath.substring(rootFolder.toString().length() + 1, fileFullPath.length()));
+        fileList.add(fileFullPath.substring(rootFolder.toString().length() + 1,
+            fileFullPath.length()));
       } else {
         fileList.add(fileFullPath);
       }
     }
 
     if (node.isDirectory()) {
-      String[] subNode = node.list();
+      String[] subNode = node.list(filter);
       for (String filename : subNode) {
-        generateFileList(fileList, new File(node, filename), rootFolder, relative);
+        generateFileList(fileList, new File(node, filename), rootFolder,
+            relative, filter);
       }
     }
   }
