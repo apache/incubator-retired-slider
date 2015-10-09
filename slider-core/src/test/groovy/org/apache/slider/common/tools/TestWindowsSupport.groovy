@@ -163,7 +163,7 @@ class TestWindowsSupport extends YarnMiniClusterTestBase {
   @Test
   public void testExecWinutils() throws Throwable {
     assumeWindows()
-    def winUtilsPath = Shell.getWinutilsPath()
+    def winUtilsPath = Shell.winUtilsPath
     assert winUtilsPath
     File winUtils = new File(winUtilsPath)
     log.debug("Winutils is at $winUtils)")
