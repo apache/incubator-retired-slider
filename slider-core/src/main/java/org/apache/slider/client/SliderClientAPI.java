@@ -27,6 +27,7 @@ import org.apache.slider.api.types.SliderInstanceDescription;
 import org.apache.slider.common.params.AbstractClusterBuildingActionArgs;
 import org.apache.slider.common.params.ActionAMSuicideArgs;
 import org.apache.slider.common.params.ActionClientArgs;
+import org.apache.slider.common.params.ActionDependencyArgs;
 import org.apache.slider.common.params.ActionDiagnosticArgs;
 import org.apache.slider.common.params.ActionEchoArgs;
 import org.apache.slider.common.params.ActionFlexArgs;
@@ -325,4 +326,16 @@ public interface SliderClientAPI extends Service {
    */
   RegistryOperations getRegistryOperations()
       throws SliderException, IOException;
+
+  /**
+   * Upload all Slider AM and agent dependency libraries to HDFS, so that they
+   * do not need to be uploaded with every create call. This operation is
+   * Slider version specific. So it needs to be invoked for every single
+   * version of slider/slider-client.
+   * 
+   * @throws SliderException
+   * @throws IOException
+   */
+  int actionDependency(ActionDependencyArgs dependencyArgs) throws IOException,
+      YarnException;
 }

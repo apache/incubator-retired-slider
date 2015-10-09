@@ -50,6 +50,7 @@ public class ClientArgs extends CommonArgs {
   private final ActionAMSuicideArgs actionAMSuicideArgs = new ActionAMSuicideArgs();
   private final ActionBuildArgs actionBuildArgs = new ActionBuildArgs();
   private final ActionCreateArgs actionCreateArgs = new ActionCreateArgs();
+  private final ActionDependencyArgs actionDependencyArgs = new ActionDependencyArgs();
   private final ActionDestroyArgs actionDestroyArgs = new ActionDestroyArgs();
   private final ActionDiagnosticArgs actionDiagnosticArgs = new ActionDiagnosticArgs();
   private final ActionExistsArgs actionExistsArgs = new ActionExistsArgs();
@@ -88,6 +89,7 @@ public class ClientArgs extends CommonArgs {
         actionPackageArgs,
         actionKeytabArgs,
         actionBuildArgs,
+        actionDependencyArgs,
         actionCreateArgs,
         actionListArgs,
         actionStatusArgs,
@@ -166,6 +168,10 @@ public class ClientArgs extends CommonArgs {
     return actionCreateArgs;
   }
 
+  public ActionDependencyArgs getActionDependencyArgs() {
+    return actionDependencyArgs;
+  }
+
   public ActionDestroyArgs getActionDestroyArgs() {
     return actionDestroyArgs;
   }
@@ -237,6 +243,9 @@ public class ClientArgs extends CommonArgs {
 
     } else if (SliderActions.ACTION_AM_SUICIDE.equals(action)) {
       bindCoreAction(actionAMSuicideArgs);
+
+    } else if (SliderActions.ACTION_DEPENDENCY.equals(action)) {
+      bindCoreAction(actionDependencyArgs);
 
     } else if (SliderActions.ACTION_DESTROY.equals(action)) {
       bindCoreAction(actionDestroyArgs);

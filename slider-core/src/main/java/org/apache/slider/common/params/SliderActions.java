@@ -27,6 +27,7 @@ public interface SliderActions {
   String ACTION_AM_SUICIDE = "am-suicide";
   String ACTION_BUILD = "build";
   String ACTION_CREATE = "create";
+  String ACTION_DEPENDENCY = "dependency";
   String ACTION_UPDATE = "update";
   String ACTION_UPGRADE = "upgrade";
   String ACTION_DESTROY = "destroy";
@@ -57,6 +58,8 @@ public interface SliderActions {
     "Build a Slider cluster specification, but do not start it";
   String DESCRIBE_ACTION_CREATE =
       "Create a live Slider application";
+  String DESCRIBE_ACTION_DEPENDENCY =
+      "Slider AM and agent dependency (libraries) management";
   String DESCRIBE_ACTION_UPDATE =
       "Update template for a Slider application";
   String DESCRIBE_ACTION_UPGRADE =
