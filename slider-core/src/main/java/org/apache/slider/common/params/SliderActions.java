@@ -65,7 +65,7 @@ public interface SliderActions {
   String DESCRIBE_ACTION_UPGRADE =
       "Rolling upgrade/downgrade the application to a newer/previous version";
   String DESCRIBE_ACTION_DESTROY =
-        "Destroy a frozen Slider application)";
+        "Destroy a stopped Slider application";
   String DESCRIBE_ACTION_EXISTS =
             "Probe for an application running";
   String DESCRIBE_ACTION_FLEX = "Flex a Slider application";
