@@ -29,8 +29,6 @@ import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsAction;
 import org.apache.hadoop.fs.permission.FsPermission;
-import org.apache.hadoop.hdfs.DFSConfigKeys;
-import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenIdentifier;
 import org.apache.hadoop.http.HttpConfig;
 import org.apache.hadoop.io.DataOutputBuffer;
@@ -84,6 +82,7 @@ import org.apache.slider.api.StatusKeys;
 import org.apache.slider.api.proto.SliderClusterAPI;
 import org.apache.slider.common.SliderExitCodes;
 import org.apache.slider.common.SliderKeys;
+import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.common.params.AbstractActionArgs;
 import org.apache.slider.common.params.SliderAMArgs;
 import org.apache.slider.common.params.SliderAMCreateAction;
@@ -418,7 +417,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   public SliderAppMaster() {
     super(SERVICE_CLASSNAME_SHORT);
-    new HdfsConfiguration();
     new YarnConfiguration();
   }
 
@@ -469,8 +467,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       UserGroupInformation.setConfiguration(conf);
       UserGroupInformation ugi = UserGroupInformation.getCurrentUser();
       log.debug("Authenticating as {}", ugi);
-      SliderUtils.verifyPrincipalSet(conf,
-          DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY);
+      SliderUtils.verifyPrincipalSet(conf, DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY);
     } else {
       log.info("Cluster is insecure");
     }

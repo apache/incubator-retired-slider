@@ -166,11 +166,41 @@ public interface SliderXmlConfKeys {
    */
   String KEY_IPC_CLIENT_RETRY_POLICY_ENABLED =
       "slider.ipc.client.retry.enabled";
-  public static final boolean IPC_CLIENT_RETRY_POLICY_ENABLED_DEFAULT = true;
-  public static final String KEY_IPC_CLIENT_RETRY_POLICY_SPEC =
+  boolean IPC_CLIENT_RETRY_POLICY_ENABLED_DEFAULT = true;
+  String KEY_IPC_CLIENT_RETRY_POLICY_SPEC =
       "slider.ipc.client.retry.policy.spec";
-  public static final String IPC_CLIENT_RETRY_POLICY_SPEC_DEFAULT =
+  String IPC_CLIENT_RETRY_POLICY_SPEC_DEFAULT =
       "10000,6,60000,10"; //t1,n1,t2,n2,... 
 
   String KEY_AM_LAUNCH_ENV = "slider.am.launch.env";
+
+
+  /**
+   * From {@code DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY}
+   */
+  String DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY = "dfs.namenode.kerberos.principal";
+
+  String DFS_DATANODE_KERBEROS_PRINCIPAL_KEY = "dfs.datanode.kerberos.principal";
+
+
+  //Delegation token related keys
+  String DFS_NAMENODE_DELEGATION_KEY_UPDATE_INTERVAL_KEY
+      = "dfs.namenode.delegation.key.update-interval";
+  long DFS_NAMENODE_DELEGATION_KEY_UPDATE_INTERVAL_DEFAULT = 24 * 60 * 60 *
+      1000; // 1 day
+  String DFS_NAMENODE_DELEGATION_TOKEN_RENEW_INTERVAL_KEY
+      = "dfs.namenode.delegation.token.renew-interval";
+  long DFS_NAMENODE_DELEGATION_TOKEN_RENEW_INTERVAL_DEFAULT = 24 * 60 * 60 *
+      1000;  // 1 day
+  String DFS_NAMENODE_DELEGATION_TOKEN_MAX_LIFETIME_KEY
+      = "dfs.namenode.delegation.token.max-lifetime";
+  long DFS_NAMENODE_DELEGATION_TOKEN_MAX_LIFETIME_DEFAULT = 7 * 24 * 60 * 60 *
+      1000; // 7 days
+  String DFS_NAMENODE_DELEGATION_TOKEN_ALWAYS_USE_KEY
+      = "dfs.namenode.delegation.token.always-use"; // for tests
+  boolean DFS_NAMENODE_DELEGATION_TOKEN_ALWAYS_USE_DEFAULT = false;
+  String DFS_NAMENODE_KEYTAB_FILE_KEY = "dfs.namenode.keytab.file";
+  String DFS_NAMENODE_DU_RESERVED_KEY = "dfs.namenode.resource.du.reserved";
+
+
 }
