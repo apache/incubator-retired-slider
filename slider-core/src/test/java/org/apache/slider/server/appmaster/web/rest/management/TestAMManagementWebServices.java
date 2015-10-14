@@ -42,7 +42,7 @@ import org.apache.slider.core.persist.JsonSerDeser;
 import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
 import org.apache.slider.server.appmaster.model.mock.MockFactory;
 import org.apache.slider.server.appmaster.model.mock.MockProviderService;
-import org.apache.slider.server.appmaster.model.mock.MockRecordFactory;
+import org.apache.slider.server.appmaster.model.mock.MockClusterServices;
 import org.apache.slider.server.appmaster.state.AppState;
 import org.apache.slider.server.appmaster.state.ProviderAppState;
 import org.apache.slider.server.appmaster.state.SimpleReleaseSelector;
@@ -167,7 +167,7 @@ public class TestAMManagementWebServices extends JerseyTest {
               historyPath =
               new org.apache.hadoop.fs.Path(historyWorkDir.toURI());
           fs.delete(historyPath, true);
-          appState = new AppState(new MockRecordFactory(), new MetricsAndMonitoring());
+          appState = new AppState(new MockClusterServices(), new MetricsAndMonitoring());
           appState.setContainerLimits(RM_MAX_RAM, RM_MAX_CORES);
           appState.buildInstance(
               factory.newInstanceDefinition(0, 0, 0),

@@ -23,6 +23,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.NodeReport;
+import org.apache.hadoop.yarn.api.records.NodeState;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.slider.common.tools.SliderUtils;
@@ -66,14 +67,11 @@ public class RoleHistory {
     LoggerFactory.getLogger(RoleHistory.class);
   private final List<ProviderRole> providerRoles;
   private long startTime;
-  /**
-   * Time when saved
-   */
+
+  /** Time when saved */
   private long saveTime;
-  /**
-   * If the history was loaded, the time at which the history was saved
-   * 
-   */
+
+  /** If the history was loaded, the time at which the history was saved */
   private long thawedDataTime;
   
   private NodeMap nodemap;
@@ -331,18 +329,6 @@ public class RoleHistory {
   }
 
   /**
-   * Garbage collect the structure -this will drop
-   * all nodes that have been inactive since the (relative) age.
-   * This will drop the failure counts of the nodes too, so it will
-   * lose information that matters.
-   * @param age relative age
-   */
-  public void gc(long age) {
-    long absoluteTime = now() - age;
-    purgeUnusedEntries(absoluteTime);
-  }
-
-  /**
    * Mark ourselves as dirty
    */
   public void touch() {
@@ -352,15 +338,6 @@ public class RoleHistory {
     } catch (IOException e) {
       log.warn("Failed to save history file ", e);
     }
-  }
-
-  /**
-   * purge the history of
-   * all nodes that have been inactive since the absolute time
-   * @param absoluteTime time
-   */
-  public synchronized void purgeUnusedEntries(long absoluteTime) {
-    nodemap.purgeUnusedEntries(absoluteTime);
   }
 
   /**
@@ -451,7 +428,7 @@ public class RoleHistory {
     if (loadedRoleHistory != null) {
       rebuild(loadedRoleHistory);
       thawSuccessful = true;
-      Path loadPath = loadedRoleHistory.getPath();;
+      Path loadPath = loadedRoleHistory.getPath();
       log.debug("loaded history from {}", loadPath);
       // delete any old entries
       try {
@@ -627,8 +604,8 @@ public class RoleHistory {
   }
 
   /**
-   * Get the list of active nodes ... walks the node  map so 
-   * is O(nodes)
+   * Get the list of active nodes ... walks the node map so
+   * is {@code O(nodes)}
    * @param role role index
    * @return a possibly empty list of nodes with an instance of that node
    */
@@ -654,8 +631,7 @@ public class RoleHistory {
    * @throws RuntimeException if the container has no hostname
    */
   public synchronized NodeInstance getOrCreateNodeInstance(Container container) {
-    String hostname = RoleHistoryUtils.hostnameOf(container);
-    return nodemap.getOrCreate(hostname);
+    return nodemap.getOrCreate(RoleHistoryUtils.hostnameOf(container));
   }
 
   /**
@@ -738,7 +714,7 @@ public class RoleHistory {
   }
 
   /**
-   * Event: a container start has been submitter
+   * Event: a container start has been submitted
    * @param container container being started
    * @param instance instance bound to the container
    */
@@ -775,19 +751,25 @@ public class RoleHistory {
    * @param updatedNodes list of updated nodes
    */
   public synchronized void onNodesUpdated(List<NodeReport> updatedNodes) {
+    log.debug("Updating {} nodes", updatedNodes.size());
     for (NodeReport updatedNode : updatedNodes) {
-      String hostname = updatedNode.getNodeId() == null 
+      String hostname = updatedNode.getNodeId() == null
                         ? null 
                         : updatedNode.getNodeId().getHost();
-      if (hostname == null) {
+      NodeState nodeState = updatedNode.getNodeState();
+      if (hostname == null || nodeState == null) {
         continue;
       }
-      if (updatedNode.getNodeState() != null
-          && updatedNode.getNodeState().isUnusable()) {
-        failedNodes.add(hostname);
-        nodemap.remove(hostname);
-      } else {
-        failedNodes.remove(hostname);
+      // update the node; this also creates an instance if needed
+      boolean updated = nodemap.updateNode(hostname, updatedNode);
+      if (updated) {
+        log.debug("Updated host {} to state {}", hostname, nodeState);
+        if (nodeState.isUnusable()) {
+          log.info("Failed node {}", hostname);
+          failedNodes.add(hostname);
+        } else {
+          failedNodes.remove(hostname);
+        }
       }
     }
   }

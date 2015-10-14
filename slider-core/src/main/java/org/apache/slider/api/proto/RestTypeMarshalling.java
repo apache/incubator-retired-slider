@@ -82,7 +82,8 @@ public class RestTypeMarshalling {
     if (wire.hasFailureMessage()) {
       info.failureMessage = wire.getFailureMessage();
     }
-
+    info.pendingAntiAffineRequestCount = wire.getPendingAntiAffineRequestCount();
+    info.pendingAntiAffineRequest = info.pendingAntiAffineRequestCount > 0;
     return info;
   }
 
@@ -132,11 +133,11 @@ public class RestTypeMarshalling {
     if (info.containers != null) {
       builder.addAllContainers(info.containers);
     }
+    builder.setPendingAntiAffineRequestCount(info.pendingAntiAffineRequestCount);
     return builder.build();
   }
 
-  public static ContainerInformation
-  unmarshall(Messages.ContainerInformationProto wire) {
+  public static ContainerInformation unmarshall(Messages.ContainerInformationProto wire) {
     ContainerInformation info = new ContainerInformation();
     info.containerId = wire.getContainerId();
     info.component = wire.getComponent();

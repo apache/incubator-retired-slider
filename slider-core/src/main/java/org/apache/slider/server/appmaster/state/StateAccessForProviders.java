@@ -37,7 +37,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * The methods to offer state access to the providers
+ * The methods to offer state access to the providers and other parts of
+ * the system which want read-only access to the state.
  */
 public interface StateAccessForProviders {
 
@@ -280,5 +281,10 @@ public interface StateAccessForProviders {
    */
   List<RoleInstance> lookupRoleContainers(String component);
 
+  /**
+   * Get the JSON serializable information about a component
+   * @param component component to look up
+   * @return a structure describing the component.
+   */
   ComponentInformation getComponentInformation(String component);
 }

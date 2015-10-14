@@ -115,7 +115,7 @@ public class AppState {
   protected static final Logger log =
     LoggerFactory.getLogger(AppState.class);
   
-  private final AbstractRecordFactory recordFactory;
+  private final AbstractClusterServices recordFactory;
 
   private final MetricsAndMonitoring metricsAndMonitoring;
 
@@ -179,13 +179,13 @@ public class AppState {
   private ClusterDescription clusterStatusTemplate = new ClusterDescription();
 
   private final Map<Integer, RoleStatus> roleStatusMap =
-    new ConcurrentHashMap<Integer, RoleStatus>();
+    new ConcurrentHashMap<>();
 
   private final Map<String, ProviderRole> roles =
-    new ConcurrentHashMap<String, ProviderRole>();
+    new ConcurrentHashMap<>();
 
   private final Map<Integer, ProviderRole> rolePriorityMap = 
-    new ConcurrentHashMap<Integer, ProviderRole>();
+    new ConcurrentHashMap<>();
 
   /**
    * The master node.
@@ -265,7 +265,7 @@ public class AppState {
    * Nodes that came assigned to a role above that
    * which were asked for -this appears to happen
    */
-  private final Set<ContainerId> surplusNodes = new HashSet<ContainerId>();
+  private final Set<ContainerId> surplusNodes = new HashSet<>();
 
   /**
    * Map of containerID to cluster nodes, for status reports.
@@ -308,7 +308,7 @@ public class AppState {
    * @param recordFactory factory for YARN records
    * @param metricsAndMonitoring metrics and monitoring services
    */
-  public AppState(AbstractRecordFactory recordFactory,
+  public AppState(AbstractClusterServices recordFactory,
       MetricsAndMonitoring metricsAndMonitoring) {
     this.recordFactory = recordFactory;
     this.metricsAndMonitoring = metricsAndMonitoring;
@@ -1439,6 +1439,10 @@ public class AppState {
     }
   }
 
+  /**
+   * Handle node update from the RM. This syncs up the node map with the RM's view
+   * @param updatedNodes updated nodes
+   */
   public synchronized void onNodesUpdated(List<NodeReport> updatedNodes) {
     roleHistory.onNodesUpdated(updatedNodes);
   }

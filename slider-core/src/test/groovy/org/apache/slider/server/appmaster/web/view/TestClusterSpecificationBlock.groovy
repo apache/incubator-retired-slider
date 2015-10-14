@@ -19,15 +19,14 @@ package org.apache.slider.server.appmaster.web.view
 import com.google.inject.AbstractModule
 import com.google.inject.Guice
 import com.google.inject.Injector
-import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.providers.ProviderService
 import org.apache.slider.server.appmaster.model.mock.MockAppState
 import org.apache.slider.server.appmaster.model.mock.MockProviderService
-import org.apache.slider.server.appmaster.model.mock.MockRecordFactory
-import org.apache.slider.server.appmaster.state.AbstractRecordFactory
+import org.apache.slider.server.appmaster.model.mock.MockClusterServices
+import org.apache.slider.server.appmaster.state.AbstractClusterServices
 import org.apache.slider.server.appmaster.state.AppState
 import org.apache.slider.server.appmaster.state.ProviderAppState
 import org.apache.slider.server.appmaster.web.WebAppApi
@@ -43,7 +42,7 @@ public class TestClusterSpecificationBlock {
 
   @Before
   public void setup() {
-    AppState appState = new MyAppState(new MockRecordFactory());
+    AppState appState = new MyAppState(new MockClusterServices());
     ProviderAppState providerAppState = new ProviderAppState(
         "undefined",
         appState)
@@ -79,7 +78,7 @@ public class TestClusterSpecificationBlock {
   }
   
   private static class MyAppState extends MockAppState {
-    public MyAppState(AbstractRecordFactory recordFactory) {
+    public MyAppState(AbstractClusterServices recordFactory) {
       super(recordFactory);
       this.clusterStatus = new MockClusterDescription();
     }

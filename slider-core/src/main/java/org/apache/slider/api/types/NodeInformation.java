@@ -16,15 +16,29 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster.state;
+package org.apache.slider.api.types;
 
-import org.apache.hadoop.yarn.api.records.Resource;
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import org.codehaus.jackson.map.annotate.JsonSerialize;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Factory supplying records created by the App state; entry point
- * for mock code.
+ * Serialized node information. Must be kept in sync with the protobuf equivalent.
  */
-public abstract class AbstractRecordFactory {
-  
-  public abstract Resource newResource();
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
+public class NodeInformation {
+
+  public String hostname;
+  public String state;
+  public String httpAddress;
+  public String rackName;
+  public String labels;
+  public String healthReport;
+  public long lastUpdated;
+  public List<NodeEntryInformation> entries = new ArrayList<>();
+
+
 }

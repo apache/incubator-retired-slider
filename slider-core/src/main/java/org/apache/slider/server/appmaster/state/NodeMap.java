@@ -19,6 +19,7 @@
 package org.apache.slider.server.appmaster.state;
 
 import com.google.common.annotations.VisibleForTesting;
+import org.apache.hadoop.yarn.api.records.NodeReport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,9 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 
 /**
@@ -84,27 +83,6 @@ public class NodeMap extends HashMap<String, NodeInstance> {
   }
 
   /**
-   * purge the history of all nodes that have been inactive since the absolute time
-   * @param absoluteTime time
-   * @return the number purged
-   */
-  public int purgeUnusedEntries(long absoluteTime) {
-    int purged = 0;
-    Iterator<Map.Entry<String, NodeInstance>> iterator =
-      entrySet().iterator();
-    while (iterator.hasNext()) {
-      Map.Entry<String, NodeInstance> entry = iterator.next();
-      NodeInstance ni = entry.getValue();
-      if (!ni.purgeUnusedEntries(absoluteTime)) {
-        iterator.remove();
-        purged ++;
-      }
-    }
-    return purged;
-  }
-  
-  
-  /**
    * reset the failed recently counters
    */
   public void resetFailedRecently() {
@@ -112,6 +90,17 @@ public class NodeMap extends HashMap<String, NodeInstance> {
       NodeInstance ni = entry.getValue();
       ni.resetFailedRecently();
     }
+  }
+
+
+  /**
+   * Update the node state
+   * @param hostname host name
+   * @param report latest node report
+   * @return the updated node.
+   */
+  public boolean updateNode(String hostname, NodeReport report) {
+    return getOrCreate(hostname).updateNode(report);
   }
 
   /**

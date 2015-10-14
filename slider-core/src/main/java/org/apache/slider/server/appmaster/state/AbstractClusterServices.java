@@ -16,31 +16,18 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster;
+package org.apache.slider.server.appmaster.state;
 
-import org.apache.slider.common.SliderExitCodes;
-import org.apache.slider.core.main.LauncherExitCodes;
+import org.apache.hadoop.yarn.api.records.Resource;
 
-public class AMUtils {
+/**
+ * Cluster services offered by the YARN infrastructure.
+ */
+public abstract class AbstractClusterServices {
   /**
-   * Map an exit code from a process 
-   * @param exitCode
-   * @return an exit code
+   * Create a resource for requests
+   * @return a resource which can be built up.
    */
-  public static int mapProcessExitCodeToYarnExitCode(int exitCode) {
-    switch (exitCode) {
-      case LauncherExitCodes.EXIT_SUCCESS:
-        return LauncherExitCodes.EXIT_SUCCESS;
-      //remap from a planned shutdown to a failure
-      case LauncherExitCodes.EXIT_CLIENT_INITIATED_SHUTDOWN:
-        return SliderExitCodes.EXIT_SUCCESS;
-      default:
-        return exitCode;
-    }
-  }
-
-  public static boolean isMappedExitAFailure(int mappedExitCode) {
-    return mappedExitCode != 0;
-  }
+  public abstract Resource newResource();
 
 }

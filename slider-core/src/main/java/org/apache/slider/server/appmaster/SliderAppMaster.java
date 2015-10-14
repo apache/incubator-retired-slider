@@ -291,7 +291,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * live on, etc.
    */
   private final AppState appState =
-      new AppState(new ProtobufRecordFactory(), metricsAndMonitoring);
+      new AppState(new ProtobufClusterServices(), metricsAndMonitoring);
 
   /**
    * App state for external objects. This is almost entirely
@@ -300,7 +300,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   private final ProviderAppState stateForProviders =
       new ProviderAppState("undefined", appState);
-
 
   /**
    * model the state using locks and conditions
@@ -1000,7 +999,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
            .start(webApp);
 
     WebAppService<SliderAMWebApp> webAppService =
-      new WebAppService<SliderAMWebApp>("slider", webApp);
+      new WebAppService<>("slider", webApp);
 
     deployChildService(webAppService);
   }

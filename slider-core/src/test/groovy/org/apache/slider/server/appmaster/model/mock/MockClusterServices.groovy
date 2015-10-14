@@ -19,9 +19,9 @@
 package org.apache.slider.server.appmaster.model.mock
 
 import org.apache.hadoop.yarn.api.records.Resource
-import org.apache.slider.server.appmaster.state.AbstractRecordFactory
+import org.apache.slider.server.appmaster.state.AbstractClusterServices
 
-class MockRecordFactory extends AbstractRecordFactory {
+class MockClusterServices extends AbstractClusterServices {
 
   @Override
   Resource newResource() {

@@ -15100,6 +15100,16 @@ public final class Messages {
      * <code>optional int32 preempted = 17;</code>
      */
     int getPreempted();
+
+    // optional int32 pendingAntiAffineRequestCount = 18;
+    /**
+     * <code>optional int32 pendingAntiAffineRequestCount = 18;</code>
+     */
+    boolean hasPendingAntiAffineRequestCount();
+    /**
+     * <code>optional int32 pendingAntiAffineRequestCount = 18;</code>
+     */
+    int getPendingAntiAffineRequestCount();
   }
   /**
    * Protobuf type {@code org.apache.slider.api.ComponentInformationProto}
@@ -15243,6 +15253,11 @@ public final class Messages {
             case 136: {
               bitField0_ |= 0x00008000;
               preempted_ = input.readInt32();
+              break;
+            }
+            case 144: {
+              bitField0_ |= 0x00010000;
+              pendingAntiAffineRequestCount_ = input.readInt32();
               break;
             }
           }
@@ -15628,6 +15643,22 @@ public final class Messages {
       return preempted_;
     }
 
+    // optional int32 pendingAntiAffineRequestCount = 18;
+    public static final int PENDINGANTIAFFINEREQUESTCOUNT_FIELD_NUMBER = 18;
+    private int pendingAntiAffineRequestCount_;
+    /**
+     * <code>optional int32 pendingAntiAffineRequestCount = 18;</code>
+     */
+    public boolean hasPendingAntiAffineRequestCount() {
+      return ((bitField0_ & 0x00010000) == 0x00010000);
+    }
+    /**
+     * <code>optional int32 pendingAntiAffineRequestCount = 18;</code>
+     */
+    public int getPendingAntiAffineRequestCount() {
+      return pendingAntiAffineRequestCount_;
+    }
+
     private void initFields() {
       name_ = "";
       priority_ = 0;
@@ -15646,6 +15677,7 @@ public final class Messages {
       failedRecently_ = 0;
       nodeFailed_ = 0;
       preempted_ = 0;
+      pendingAntiAffineRequestCount_ = 0;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -15709,6 +15741,9 @@ public final class Messages {
       }
       if (((bitField0_ & 0x00008000) == 0x00008000)) {
         output.writeInt32(17, preempted_);
+      }
+      if (((bitField0_ & 0x00010000) == 0x00010000)) {
+        output.writeInt32(18, pendingAntiAffineRequestCount_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -15791,6 +15826,10 @@ public final class Messages {
       if (((bitField0_ & 0x00008000) == 0x00008000)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(17, preempted_);
+      }
+      if (((bitField0_ & 0x00010000) == 0x00010000)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(18, pendingAntiAffineRequestCount_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -15897,6 +15936,11 @@ public final class Messages {
         result = result && (getPreempted()
             == other.getPreempted());
       }
+      result = result && (hasPendingAntiAffineRequestCount() == other.hasPendingAntiAffineRequestCount());
+      if (hasPendingAntiAffineRequestCount()) {
+        result = result && (getPendingAntiAffineRequestCount()
+            == other.getPendingAntiAffineRequestCount());
+      }
       result = result &&
           getUnknownFields().equals(other.getUnknownFields());
       return result;
@@ -15977,6 +16021,10 @@ public final class Messages {
       if (hasPreempted()) {
         hash = (37 * hash) + PREEMPTED_FIELD_NUMBER;
         hash = (53 * hash) + getPreempted();
+      }
+      if (hasPendingAntiAffineRequestCount()) {
+        hash = (37 * hash) + PENDINGANTIAFFINEREQUESTCOUNT_FIELD_NUMBER;
+        hash = (53 * hash) + getPendingAntiAffineRequestCount();
       }
       hash = (29 * hash) + getUnknownFields().hashCode();
       memoizedHashCode = hash;
@@ -16126,6 +16174,8 @@ public final class Messages {
         bitField0_ = (bitField0_ & ~0x00008000);
         preempted_ = 0;
         bitField0_ = (bitField0_ & ~0x00010000);
+        pendingAntiAffineRequestCount_ = 0;
+        bitField0_ = (bitField0_ & ~0x00020000);
         return this;
       }
 
@@ -16224,6 +16274,10 @@ public final class Messages {
           to_bitField0_ |= 0x00008000;
         }
         result.preempted_ = preempted_;
+        if (((from_bitField0_ & 0x00020000) == 0x00020000)) {
+          to_bitField0_ |= 0x00010000;
+        }
+        result.pendingAntiAffineRequestCount_ = pendingAntiAffineRequestCount_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -16301,6 +16355,9 @@ public final class Messages {
         }
         if (other.hasPreempted()) {
           setPreempted(other.getPreempted());
+        }
+        if (other.hasPendingAntiAffineRequestCount()) {
+          setPendingAntiAffineRequestCount(other.getPendingAntiAffineRequestCount());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -17028,6 +17085,39 @@ public final class Messages {
       public Builder clearPreempted() {
         bitField0_ = (bitField0_ & ~0x00010000);
         preempted_ = 0;
+        onChanged();
+        return this;
+      }
+
+      // optional int32 pendingAntiAffineRequestCount = 18;
+      private int pendingAntiAffineRequestCount_ ;
+      /**
+       * <code>optional int32 pendingAntiAffineRequestCount = 18;</code>
+       */
+      public boolean hasPendingAntiAffineRequestCount() {
+        return ((bitField0_ & 0x00020000) == 0x00020000);
+      }
+      /**
+       * <code>optional int32 pendingAntiAffineRequestCount = 18;</code>
+       */
+      public int getPendingAntiAffineRequestCount() {
+        return pendingAntiAffineRequestCount_;
+      }
+      /**
+       * <code>optional int32 pendingAntiAffineRequestCount = 18;</code>
+       */
+      public Builder setPendingAntiAffineRequestCount(int value) {
+        bitField0_ |= 0x00020000;
+        pendingAntiAffineRequestCount_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional int32 pendingAntiAffineRequestCount = 18;</code>
+       */
+      public Builder clearPendingAntiAffineRequestCount() {
+        bitField0_ = (bitField0_ & ~0x00020000);
+        pendingAntiAffineRequestCount_ = 0;
         onChanged();
         return this;
       }
@@ -20130,6 +20220,2842 @@ public final class Messages {
     }
 
     // @@protoc_insertion_point(class_scope:org.apache.slider.api.PingInformationProto)
+  }
+
+  public interface NodeEntryInformationProtoOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+
+    // required int32 priority = 1;
+    /**
+     * <code>required int32 priority = 1;</code>
+     */
+    boolean hasPriority();
+    /**
+     * <code>required int32 priority = 1;</code>
+     */
+    int getPriority();
+
+    // required int32 requested = 2;
+    /**
+     * <code>required int32 requested = 2;</code>
+     */
+    boolean hasRequested();
+    /**
+     * <code>required int32 requested = 2;</code>
+     */
+    int getRequested();
+
+    // required int32 starting = 3;
+    /**
+     * <code>required int32 starting = 3;</code>
+     */
+    boolean hasStarting();
+    /**
+     * <code>required int32 starting = 3;</code>
+     */
+    int getStarting();
+
+    // required int32 startFailed = 4;
+    /**
+     * <code>required int32 startFailed = 4;</code>
+     */
+    boolean hasStartFailed();
+    /**
+     * <code>required int32 startFailed = 4;</code>
+     */
+    int getStartFailed();
+
+    // required int32 failed = 5;
+    /**
+     * <code>required int32 failed = 5;</code>
+     */
+    boolean hasFailed();
+    /**
+     * <code>required int32 failed = 5;</code>
+     */
+    int getFailed();
+
+    // required int32 failedRecently = 6;
+    /**
+     * <code>required int32 failedRecently = 6;</code>
+     */
+    boolean hasFailedRecently();
+    /**
+     * <code>required int32 failedRecently = 6;</code>
+     */
+    int getFailedRecently();
+
+    // required int32 preempted = 7;
+    /**
+     * <code>required int32 preempted = 7;</code>
+     */
+    boolean hasPreempted();
+    /**
+     * <code>required int32 preempted = 7;</code>
+     */
+    int getPreempted();
+
+    // required int32 live = 8;
+    /**
+     * <code>required int32 live = 8;</code>
+     */
+    boolean hasLive();
+    /**
+     * <code>required int32 live = 8;</code>
+     */
+    int getLive();
+
+    // required int32 releasing = 9;
+    /**
+     * <code>required int32 releasing = 9;</code>
+     */
+    boolean hasReleasing();
+    /**
+     * <code>required int32 releasing = 9;</code>
+     */
+    int getReleasing();
+
+    // required int64 lastUpdated = 10;
+    /**
+     * <code>required int64 lastUpdated = 10;</code>
+     */
+    boolean hasLastUpdated();
+    /**
+     * <code>required int64 lastUpdated = 10;</code>
+     */
+    long getLastUpdated();
+  }
+  /**
+   * Protobuf type {@code org.apache.slider.api.NodeEntryInformationProto}
+   */
+  public static final class NodeEntryInformationProto extends
+      com.google.protobuf.GeneratedMessage
+      implements NodeEntryInformationProtoOrBuilder {
+    // Use NodeEntryInformationProto.newBuilder() to construct.
+    private NodeEntryInformationProto(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
+    }
+    private NodeEntryInformationProto(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
+    private static final NodeEntryInformationProto defaultInstance;
+    public static NodeEntryInformationProto getDefaultInstance() {
+      return defaultInstance;
+    }
+
+    public NodeEntryInformationProto getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private NodeEntryInformationProto(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 8: {
+              bitField0_ |= 0x00000001;
+              priority_ = input.readInt32();
+              break;
+            }
+            case 16: {
+              bitField0_ |= 0x00000002;
+              requested_ = input.readInt32();
+              break;
+            }
+            case 24: {
+              bitField0_ |= 0x00000004;
+              starting_ = input.readInt32();
+              break;
+            }
+            case 32: {
+              bitField0_ |= 0x00000008;
+              startFailed_ = input.readInt32();
+              break;
+            }
+            case 40: {
+              bitField0_ |= 0x00000010;
+              failed_ = input.readInt32();
+              break;
+            }
+            case 48: {
+              bitField0_ |= 0x00000020;
+              failedRecently_ = input.readInt32();
+              break;
+            }
+            case 56: {
+              bitField0_ |= 0x00000040;
+              preempted_ = input.readInt32();
+              break;
+            }
+            case 64: {
+              bitField0_ |= 0x00000080;
+              live_ = input.readInt32();
+              break;
+            }
+            case 72: {
+              bitField0_ |= 0x00000100;
+              releasing_ = input.readInt32();
+              break;
+            }
+            case 80: {
+              bitField0_ |= 0x00000200;
+              lastUpdated_ = input.readInt64();
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_NodeEntryInformationProto_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_NodeEntryInformationProto_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.apache.slider.api.proto.Messages.NodeEntryInformationProto.class, org.apache.slider.api.proto.Messages.NodeEntryInformationProto.Builder.class);
+    }
+
+    public static com.google.protobuf.Parser<NodeEntryInformationProto> PARSER =
+        new com.google.protobuf.AbstractParser<NodeEntryInformationProto>() {
+      public NodeEntryInformationProto parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new NodeEntryInformationProto(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<NodeEntryInformationProto> getParserForType() {
+      return PARSER;
+    }
+
+    private int bitField0_;
+    // required int32 priority = 1;
+    public static final int PRIORITY_FIELD_NUMBER = 1;
+    private int priority_;
+    /**
+     * <code>required int32 priority = 1;</code>
+     */
+    public boolean hasPriority() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>required int32 priority = 1;</code>
+     */
+    public int getPriority() {
+      return priority_;
+    }
+
+    // required int32 requested = 2;
+    public static final int REQUESTED_FIELD_NUMBER = 2;
+    private int requested_;
+    /**
+     * <code>required int32 requested = 2;</code>
+     */
+    public boolean hasRequested() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <code>required int32 requested = 2;</code>
+     */
+    public int getRequested() {
+      return requested_;
+    }
+
+    // required int32 starting = 3;
+    public static final int STARTING_FIELD_NUMBER = 3;
+    private int starting_;
+    /**
+     * <code>required int32 starting = 3;</code>
+     */
+    public boolean hasStarting() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    /**
+     * <code>required int32 starting = 3;</code>
+     */
+    public int getStarting() {
+      return starting_;
+    }
+
+    // required int32 startFailed = 4;
+    public static final int STARTFAILED_FIELD_NUMBER = 4;
+    private int startFailed_;
+    /**
+     * <code>required int32 startFailed = 4;</code>
+     */
+    public boolean hasStartFailed() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    /**
+     * <code>required int32 startFailed = 4;</code>
+     */
+    public int getStartFailed() {
+      return startFailed_;
+    }
+
+    // required int32 failed = 5;
+    public static final int FAILED_FIELD_NUMBER = 5;
+    private int failed_;
+    /**
+     * <code>required int32 failed = 5;</code>
+     */
+    public boolean hasFailed() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    /**
+     * <code>required int32 failed = 5;</code>
+     */
+    public int getFailed() {
+      return failed_;
+    }
+
+    // required int32 failedRecently = 6;
+    public static final int FAILEDRECENTLY_FIELD_NUMBER = 6;
+    private int failedRecently_;
+    /**
+     * <code>required int32 failedRecently = 6;</code>
+     */
+    public boolean hasFailedRecently() {
+      return ((bitField0_ & 0x00000020) == 0x00000020);
+    }
+    /**
+     * <code>required int32 failedRecently = 6;</code>
+     */
+    public int getFailedRecently() {
+      return failedRecently_;
+    }
+
+    // required int32 preempted = 7;
+    public static final int PREEMPTED_FIELD_NUMBER = 7;
+    private int preempted_;
+    /**
+     * <code>required int32 preempted = 7;</code>
+     */
+    public boolean hasPreempted() {
+      return ((bitField0_ & 0x00000040) == 0x00000040);
+    }
+    /**
+     * <code>required int32 preempted = 7;</code>
+     */
+    public int getPreempted() {
+      return preempted_;
+    }
+
+    // required int32 live = 8;
+    public static final int LIVE_FIELD_NUMBER = 8;
+    private int live_;
+    /**
+     * <code>required int32 live = 8;</code>
+     */
+    public boolean hasLive() {
+      return ((bitField0_ & 0x00000080) == 0x00000080);
+    }
+    /**
+     * <code>required int32 live = 8;</code>
+     */
+    public int getLive() {
+      return live_;
+    }
+
+    // required int32 releasing = 9;
+    public static final int RELEASING_FIELD_NUMBER = 9;
+    private int releasing_;
+    /**
+     * <code>required int32 releasing = 9;</code>
+     */
+    public boolean hasReleasing() {
+      return ((bitField0_ & 0x00000100) == 0x00000100);
+    }
+    /**
+     * <code>required int32 releasing = 9;</code>
+     */
+    public int getReleasing() {
+      return releasing_;
+    }
+
+    // required int64 lastUpdated = 10;
+    public static final int LASTUPDATED_FIELD_NUMBER = 10;
+    private long lastUpdated_;
+    /**
+     * <code>required int64 lastUpdated = 10;</code>
+     */
+    public boolean hasLastUpdated() {
+      return ((bitField0_ & 0x00000200) == 0x00000200);
+    }
+    /**
+     * <code>required int64 lastUpdated = 10;</code>
+     */
+    public long getLastUpdated() {
+      return lastUpdated_;
+    }
+
+    private void initFields() {
+      priority_ = 0;
+      requested_ = 0;
+      starting_ = 0;
+      startFailed_ = 0;
+      failed_ = 0;
+      failedRecently_ = 0;
+      preempted_ = 0;
+      live_ = 0;
+      releasing_ = 0;
+      lastUpdated_ = 0L;
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+
+      if (!hasPriority()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasRequested()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasStarting()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasStartFailed()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasFailed()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasFailedRecently()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasPreempted()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasLive()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasReleasing()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasLastUpdated()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeInt32(1, priority_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeInt32(2, requested_);
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeInt32(3, starting_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeInt32(4, startFailed_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeInt32(5, failed_);
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        output.writeInt32(6, failedRecently_);
+      }
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        output.writeInt32(7, preempted_);
+      }
+      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+        output.writeInt32(8, live_);
+      }
+      if (((bitField0_ & 0x00000100) == 0x00000100)) {
+        output.writeInt32(9, releasing_);
+      }
+      if (((bitField0_ & 0x00000200) == 0x00000200)) {
+        output.writeInt64(10, lastUpdated_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(1, priority_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(2, requested_);
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(3, starting_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(4, startFailed_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(5, failed_);
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(6, failedRecently_);
+      }
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(7, preempted_);
+      }
+      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(8, live_);
+      }
+      if (((bitField0_ & 0x00000100) == 0x00000100)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(9, releasing_);
+      }
+      if (((bitField0_ & 0x00000200) == 0x00000200)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(10, lastUpdated_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof org.apache.slider.api.proto.Messages.NodeEntryInformationProto)) {
+        return super.equals(obj);
+      }
+      org.apache.slider.api.proto.Messages.NodeEntryInformationProto other = (org.apache.slider.api.proto.Messages.NodeEntryInformationProto) obj;
+
+      boolean result = true;
+      result = result && (hasPriority() == other.hasPriority());
+      if (hasPriority()) {
+        result = result && (getPriority()
+            == other.getPriority());
+      }
+      result = result && (hasRequested() == other.hasRequested());
+      if (hasRequested()) {
+        result = result && (getRequested()
+            == other.getRequested());
+      }
+      result = result && (hasStarting() == other.hasStarting());
+      if (hasStarting()) {
+        result = result && (getStarting()
+            == other.getStarting());
+      }
+      result = result && (hasStartFailed() == other.hasStartFailed());
+      if (hasStartFailed()) {
+        result = result && (getStartFailed()
+            == other.getStartFailed());
+      }
+      result = result && (hasFailed() == other.hasFailed());
+      if (hasFailed()) {
+        result = result && (getFailed()
+            == other.getFailed());
+      }
+      result = result && (hasFailedRecently() == other.hasFailedRecently());
+      if (hasFailedRecently()) {
+        result = result && (getFailedRecently()
+            == other.getFailedRecently());
+      }
+      result = result && (hasPreempted() == other.hasPreempted());
+      if (hasPreempted()) {
+        result = result && (getPreempted()
+            == other.getPreempted());
+      }
+      result = result && (hasLive() == other.hasLive());
+      if (hasLive()) {
+        result = result && (getLive()
+            == other.getLive());
+      }
+      result = result && (hasReleasing() == other.hasReleasing());
+      if (hasReleasing()) {
+        result = result && (getReleasing()
+            == other.getReleasing());
+      }
+      result = result && (hasLastUpdated() == other.hasLastUpdated());
+      if (hasLastUpdated()) {
+        result = result && (getLastUpdated()
+            == other.getLastUpdated());
+      }
+      result = result &&
+          getUnknownFields().equals(other.getUnknownFields());
+      return result;
+    }
+
+    private int memoizedHashCode = 0;
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptorForType().hashCode();
+      if (hasPriority()) {
+        hash = (37 * hash) + PRIORITY_FIELD_NUMBER;
+        hash = (53 * hash) + getPriority();
+      }
+      if (hasRequested()) {
+        hash = (37 * hash) + REQUESTED_FIELD_NUMBER;
+        hash = (53 * hash) + getRequested();
+      }
+      if (hasStarting()) {
+        hash = (37 * hash) + STARTING_FIELD_NUMBER;
+        hash = (53 * hash) + getStarting();
+      }
+      if (hasStartFailed()) {
+        hash = (37 * hash) + STARTFAILED_FIELD_NUMBER;
+        hash = (53 * hash) + getStartFailed();
+      }
+      if (hasFailed()) {
+        hash = (37 * hash) + FAILED_FIELD_NUMBER;
+        hash = (53 * hash) + getFailed();
+      }
+      if (hasFailedRecently()) {
+        hash = (37 * hash) + FAILEDRECENTLY_FIELD_NUMBER;
+        hash = (53 * hash) + getFailedRecently();
+      }
+      if (hasPreempted()) {
+        hash = (37 * hash) + PREEMPTED_FIELD_NUMBER;
+        hash = (53 * hash) + getPreempted();
+      }
+      if (hasLive()) {
+        hash = (37 * hash) + LIVE_FIELD_NUMBER;
+        hash = (53 * hash) + getLive();
+      }
+      if (hasReleasing()) {
+        hash = (37 * hash) + RELEASING_FIELD_NUMBER;
+        hash = (53 * hash) + getReleasing();
+      }
+      if (hasLastUpdated()) {
+        hash = (37 * hash) + LASTUPDATED_FIELD_NUMBER;
+        hash = (53 * hash) + hashLong(getLastUpdated());
+      }
+      hash = (29 * hash) + getUnknownFields().hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static org.apache.slider.api.proto.Messages.NodeEntryInformationProto parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.slider.api.proto.Messages.NodeEntryInformationProto parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.slider.api.proto.Messages.NodeEntryInformationProto parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.slider.api.proto.Messages.NodeEntryInformationProto parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.slider.api.proto.Messages.NodeEntryInformationProto parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.slider.api.proto.Messages.NodeEntryInformationProto parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+    public static org.apache.slider.api.proto.Messages.NodeEntryInformationProto parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input);
+    }
+    public static org.apache.slider.api.proto.Messages.NodeEntryInformationProto parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+    }
+    public static org.apache.slider.api.proto.Messages.NodeEntryInformationProto parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.slider.api.proto.Messages.NodeEntryInformationProto parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.apache.slider.api.proto.Messages.NodeEntryInformationProto prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code org.apache.slider.api.NodeEntryInformationProto}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.apache.slider.api.proto.Messages.NodeEntryInformationProtoOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_NodeEntryInformationProto_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_NodeEntryInformationProto_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.apache.slider.api.proto.Messages.NodeEntryInformationProto.class, org.apache.slider.api.proto.Messages.NodeEntryInformationProto.Builder.class);
+      }
+
+      // Construct using org.apache.slider.api.proto.Messages.NodeEntryInformationProto.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        priority_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        requested_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        starting_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        startFailed_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000008);
+        failed_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000010);
+        failedRecently_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000020);
+        preempted_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000040);
+        live_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000080);
+        releasing_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000100);
+        lastUpdated_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000200);
+        return this;
+      }
+
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_NodeEntryInformationProto_descriptor;
+      }
+
+      public org.apache.slider.api.proto.Messages.NodeEntryInformationProto getDefaultInstanceForType() {
+        return org.apache.slider.api.proto.Messages.NodeEntryInformationProto.getDefaultInstance();
+      }
+
+      public org.apache.slider.api.proto.Messages.NodeEntryInformationProto build() {
+        org.apache.slider.api.proto.Messages.NodeEntryInformationProto result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public org.apache.slider.api.proto.Messages.NodeEntryInformationProto buildPartial() {
+        org.apache.slider.api.proto.Messages.NodeEntryInformationProto result = new org.apache.slider.api.proto.Messages.NodeEntryInformationProto(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        result.priority_ = priority_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.requested_ = requested_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.starting_ = starting_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.startFailed_ = startFailed_;
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.failed_ = failed_;
+        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+          to_bitField0_ |= 0x00000020;
+        }
+        result.failedRecently_ = failedRecently_;
+        if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
+          to_bitField0_ |= 0x00000040;
+        }
+        result.preempted_ = preempted_;
+        if (((from_bitField0_ & 0x00000080) == 0x00000080)) {
+          to_bitField0_ |= 0x00000080;
+        }
+        result.live_ = live_;
+        if (((from_bitField0_ & 0x00000100) == 0x00000100)) {
+          to_bitField0_ |= 0x00000100;
+        }
+        result.releasing_ = releasing_;
+        if (((from_bitField0_ & 0x00000200) == 0x00000200)) {
+          to_bitField0_ |= 0x00000200;
+        }
+        result.lastUpdated_ = lastUpdated_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.apache.slider.api.proto.Messages.NodeEntryInformationProto) {
+          return mergeFrom((org.apache.slider.api.proto.Messages.NodeEntryInformationProto)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(org.apache.slider.api.proto.Messages.NodeEntryInformationProto other) {
+        if (other == org.apache.slider.api.proto.Messages.NodeEntryInformationProto.getDefaultInstance()) return this;
+        if (other.hasPriority()) {
+          setPriority(other.getPriority());
+        }
+        if (other.hasRequested()) {
+          setRequested(other.getRequested());
+        }
+        if (other.hasStarting()) {
+          setStarting(other.getStarting());
+        }
+        if (other.hasStartFailed()) {
+          setStartFailed(other.getStartFailed());
+        }
+        if (other.hasFailed()) {
+          setFailed(other.getFailed());
+        }
+        if (other.hasFailedRecently()) {
+          setFailedRecently(other.getFailedRecently());
+        }
+        if (other.hasPreempted()) {
+          setPreempted(other.getPreempted());
+        }
+        if (other.hasLive()) {
+          setLive(other.getLive());
+        }
+        if (other.hasReleasing()) {
+          setReleasing(other.getReleasing());
+        }
+        if (other.hasLastUpdated()) {
+          setLastUpdated(other.getLastUpdated());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        if (!hasPriority()) {
+          
+          return false;
+        }
+        if (!hasRequested()) {
+          
+          return false;
+        }
+        if (!hasStarting()) {
+          
+          return false;
+        }
+        if (!hasStartFailed()) {
+          
+          return false;
+        }
+        if (!hasFailed()) {
+          
+          return false;
+        }
+        if (!hasFailedRecently()) {
+          
+          return false;
+        }
+        if (!hasPreempted()) {
+          
+          return false;
+        }
+        if (!hasLive()) {
+          
+          return false;
+        }
+        if (!hasReleasing()) {
+          
+          return false;
+        }
+        if (!hasLastUpdated()) {
+          
+          return false;
+        }
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        org.apache.slider.api.proto.Messages.NodeEntryInformationProto parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.apache.slider.api.proto.Messages.NodeEntryInformationProto) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+      private int bitField0_;
+
+      // required int32 priority = 1;
+      private int priority_ ;
+      /**
+       * <code>required int32 priority = 1;</code>
+       */
+      public boolean hasPriority() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>required int32 priority = 1;</code>
+       */
+      public int getPriority() {
+        return priority_;
+      }
+      /**
+       * <code>required int32 priority = 1;</code>
+       */
+      public Builder setPriority(int value) {
+        bitField0_ |= 0x00000001;
+        priority_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required int32 priority = 1;</code>
+       */
+      public Builder clearPriority() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        priority_ = 0;
+        onChanged();
+        return this;
+      }
+
+      // required int32 requested = 2;
+      private int requested_ ;
+      /**
+       * <code>required int32 requested = 2;</code>
+       */
+      public boolean hasRequested() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>required int32 requested = 2;</code>
+       */
+      public int getRequested() {
+        return requested_;
+      }
+      /**
+       * <code>required int32 requested = 2;</code>
+       */
+      public Builder setRequested(int value) {
+        bitField0_ |= 0x00000002;
+        requested_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required int32 requested = 2;</code>
+       */
+      public Builder clearRequested() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        requested_ = 0;
+        onChanged();
+        return this;
+      }
+
+      // required int32 starting = 3;
+      private int starting_ ;
+      /**
+       * <code>required int32 starting = 3;</code>
+       */
+      public boolean hasStarting() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      /**
+       * <code>required int32 starting = 3;</code>
+       */
+      public int getStarting() {
+        return starting_;
+      }
+      /**
+       * <code>required int32 starting = 3;</code>
+       */
+      public Builder setStarting(int value) {
+        bitField0_ |= 0x00000004;
+        starting_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required int32 starting = 3;</code>
+       */
+      public Builder clearStarting() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        starting_ = 0;
+        onChanged();
+        return this;
+      }
+
+      // required int32 startFailed = 4;
+      private int startFailed_ ;
+      /**
+       * <code>required int32 startFailed = 4;</code>
+       */
+      public boolean hasStartFailed() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <code>required int32 startFailed = 4;</code>
+       */
+      public int getStartFailed() {
+        return startFailed_;
+      }
+      /**
+       * <code>required int32 startFailed = 4;</code>
+       */
+      public Builder setStartFailed(int value) {
+        bitField0_ |= 0x00000008;
+        startFailed_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required int32 startFailed = 4;</code>
+       */
+      public Builder clearStartFailed() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        startFailed_ = 0;
+        onChanged();
+        return this;
+      }
+
+      // required int32 failed = 5;
+      private int failed_ ;
+      /**
+       * <code>required int32 failed = 5;</code>
+       */
+      public boolean hasFailed() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      /**
+       * <code>required int32 failed = 5;</code>
+       */
+      public int getFailed() {
+        return failed_;
+      }
+      /**
+       * <code>required int32 failed = 5;</code>
+       */
+      public Builder setFailed(int value) {
+        bitField0_ |= 0x00000010;
+        failed_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required int32 failed = 5;</code>
+       */
+      public Builder clearFailed() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        failed_ = 0;
+        onChanged();
+        return this;
+      }
+
+      // required int32 failedRecently = 6;
+      private int failedRecently_ ;
+      /**
+       * <code>required int32 failedRecently = 6;</code>
+       */
+      public boolean hasFailedRecently() {
+        return ((bitField0_ & 0x00000020) == 0x00000020);
+      }
+      /**
+       * <code>required int32 failedRecently = 6;</code>
+       */
+      public int getFailedRecently() {
+        return failedRecently_;
+      }
+      /**
+       * <code>required int32 failedRecently = 6;</code>
+       */
+      public Builder setFailedRecently(int value) {
+        bitField0_ |= 0x00000020;
+        failedRecently_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required int32 failedRecently = 6;</code>
+       */
+      public Builder clearFailedRecently() {
+        bitField0_ = (bitField0_ & ~0x00000020);
+        failedRecently_ = 0;
+        onChanged();
+        return this;
+      }
+
+      // required int32 preempted = 7;
+      private int preempted_ ;
+      /**
+       * <code>required int32 preempted = 7;</code>
+       */
+      public boolean hasPreempted() {
+        return ((bitField0_ & 0x00000040) == 0x00000040);
+      }
+      /**
+       * <code>required int32 preempted = 7;</code>
+       */
+      public int getPreempted() {
+        return preempted_;
+      }
+      /**
+       * <code>required int32 preempted = 7;</code>
+       */
+      public Builder setPreempted(int value) {
+        bitField0_ |= 0x00000040;
+        preempted_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required int32 preempted = 7;</code>
+       */
+      public Builder clearPreempted() {
+        bitField0_ = (bitField0_ & ~0x00000040);
+        preempted_ = 0;
+        onChanged();
+        return this;
+      }
+
+      // required int32 live = 8;
+      private int live_ ;
+      /**
+       * <code>required int32 live = 8;</code>
+       */
+      public boolean hasLive() {
+        return ((bitField0_ & 0x00000080) == 0x00000080);
+      }
+      /**
+       * <code>required int32 live = 8;</code>
+       */
+      public int getLive() {
+        return live_;
+      }
+      /**
+       * <code>required int32 live = 8;</code>
+       */
+      public Builder setLive(int value) {
+        bitField0_ |= 0x00000080;
+        live_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required int32 live = 8;</code>
+       */
+      public Builder clearLive() {
+        bitField0_ = (bitField0_ & ~0x00000080);
+        live_ = 0;
+        onChanged();
+        return this;
+      }
+
+      // required int32 releasing = 9;
+      private int releasing_ ;
+      /**
+       * <code>required int32 releasing = 9;</code>
+       */
+      public boolean hasReleasing() {
+        return ((bitField0_ & 0x00000100) == 0x00000100);
+      }
+      /**
+       * <code>required int32 releasing = 9;</code>
+       */
+      public int getReleasing() {
+        return releasing_;
+      }
+      /**
+       * <code>required int32 releasing = 9;</code>
+       */
+      public Builder setReleasing(int value) {
+        bitField0_ |= 0x00000100;
+        releasing_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required int32 releasing = 9;</code>
+       */
+      public Builder clearReleasing() {
+        bitField0_ = (bitField0_ & ~0x00000100);
+        releasing_ = 0;
+        onChanged();
+        return this;
+      }
+
+      // required int64 lastUpdated = 10;
+      private long lastUpdated_ ;
+      /**
+       * <code>required int64 lastUpdated = 10;</code>
+       */
+      public boolean hasLastUpdated() {
+        return ((bitField0_ & 0x00000200) == 0x00000200);
+      }
+      /**
+       * <code>required int64 lastUpdated = 10;</code>
+       */
+      public long getLastUpdated() {
+        return lastUpdated_;
+      }
+      /**
+       * <code>required int64 lastUpdated = 10;</code>
+       */
+      public Builder setLastUpdated(long value) {
+        bitField0_ |= 0x00000200;
+        lastUpdated_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required int64 lastUpdated = 10;</code>
+       */
+      public Builder clearLastUpdated() {
+        bitField0_ = (bitField0_ & ~0x00000200);
+        lastUpdated_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:org.apache.slider.api.NodeEntryInformationProto)
+    }
+
+    static {
+      defaultInstance = new NodeEntryInformationProto(true);
+      defaultInstance.initFields();
+    }
+
+    // @@protoc_insertion_point(class_scope:org.apache.slider.api.NodeEntryInformationProto)
+  }
+
+  public interface NodeInformationProtoOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+
+    // required string hostname = 1;
+    /**
+     * <code>required string hostname = 1;</code>
+     */
+    boolean hasHostname();
+    /**
+     * <code>required string hostname = 1;</code>
+     */
+    java.lang.String getHostname();
+    /**
+     * <code>required string hostname = 1;</code>
+     */
+    com.google.protobuf.ByteString
+        getHostnameBytes();
+
+    // required string state = 2;
+    /**
+     * <code>required string state = 2;</code>
+     */
+    boolean hasState();
+    /**
+     * <code>required string state = 2;</code>
+     */
+    java.lang.String getState();
+    /**
+     * <code>required string state = 2;</code>
+     */
+    com.google.protobuf.ByteString
+        getStateBytes();
+
+    // required string httpAddress = 3;
+    /**
+     * <code>required string httpAddress = 3;</code>
+     */
+    boolean hasHttpAddress();
+    /**
+     * <code>required string httpAddress = 3;</code>
+     */
+    java.lang.String getHttpAddress();
+    /**
+     * <code>required string httpAddress = 3;</code>
+     */
+    com.google.protobuf.ByteString
+        getHttpAddressBytes();
+
+    // required string rackName = 4;
+    /**
+     * <code>required string rackName = 4;</code>
+     */
+    boolean hasRackName();
+    /**
+     * <code>required string rackName = 4;</code>
+     */
+    java.lang.String getRackName();
+    /**
+     * <code>required string rackName = 4;</code>
+     */
+    com.google.protobuf.ByteString
+        getRackNameBytes();
+
+    // required string labels = 5;
+    /**
+     * <code>required string labels = 5;</code>
+     */
+    boolean hasLabels();
+    /**
+     * <code>required string labels = 5;</code>
+     */
+    java.lang.String getLabels();
+    /**
+     * <code>required string labels = 5;</code>
+     */
+    com.google.protobuf.ByteString
+        getLabelsBytes();
+
+    // required string healthReport = 6;
+    /**
+     * <code>required string healthReport = 6;</code>
+     */
+    boolean hasHealthReport();
+    /**
+     * <code>required string healthReport = 6;</code>
+     */
+    java.lang.String getHealthReport();
+    /**
+     * <code>required string healthReport = 6;</code>
+     */
+    com.google.protobuf.ByteString
+        getHealthReportBytes();
+
+    // required int64 lastUpdated = 7;
+    /**
+     * <code>required int64 lastUpdated = 7;</code>
+     *
+     * <pre>
+     *  repeating NodeEntryProto entries = 8;
+     * </pre>
+     */
+    boolean hasLastUpdated();
+    /**
+     * <code>required int64 lastUpdated = 7;</code>
+     *
+     * <pre>
+     *  repeating NodeEntryProto entries = 8;
+     * </pre>
+     */
+    long getLastUpdated();
+  }
+  /**
+   * Protobuf type {@code org.apache.slider.api.NodeInformationProto}
+   */
+  public static final class NodeInformationProto extends
+      com.google.protobuf.GeneratedMessage
+      implements NodeInformationProtoOrBuilder {
+    // Use NodeInformationProto.newBuilder() to construct.
+    private NodeInformationProto(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
+    }
+    private NodeInformationProto(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
+    private static final NodeInformationProto defaultInstance;
+    public static NodeInformationProto getDefaultInstance() {
+      return defaultInstance;
+    }
+
+    public NodeInformationProto getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private NodeInformationProto(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 10: {
+              bitField0_ |= 0x00000001;
+              hostname_ = input.readBytes();
+              break;
+            }
+            case 18: {
+              bitField0_ |= 0x00000002;
+              state_ = input.readBytes();
+              break;
+            }
+            case 26: {
+              bitField0_ |= 0x00000004;
+              httpAddress_ = input.readBytes();
+              break;
+            }
+            case 34: {
+              bitField0_ |= 0x00000008;
+              rackName_ = input.readBytes();
+              break;
+            }
+            case 42: {
+              bitField0_ |= 0x00000010;
+              labels_ = input.readBytes();
+              break;
+            }
+            case 50: {
+              bitField0_ |= 0x00000020;
+              healthReport_ = input.readBytes();
+              break;
+            }
+            case 56: {
+              bitField0_ |= 0x00000040;
+              lastUpdated_ = input.readInt64();
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_NodeInformationProto_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_NodeInformationProto_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.apache.slider.api.proto.Messages.NodeInformationProto.class, org.apache.slider.api.proto.Messages.NodeInformationProto.Builder.class);
+    }
+
+    public static com.google.protobuf.Parser<NodeInformationProto> PARSER =
+        new com.google.protobuf.AbstractParser<NodeInformationProto>() {
+      public NodeInformationProto parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new NodeInformationProto(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<NodeInformationProto> getParserForType() {
+      return PARSER;
+    }
+
+    private int bitField0_;
+    // required string hostname = 1;
+    public static final int HOSTNAME_FIELD_NUMBER = 1;
+    private java.lang.Object hostname_;
+    /**
+     * <code>required string hostname = 1;</code>
+     */
+    public boolean hasHostname() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>required string hostname = 1;</code>
+     */
+    public java.lang.String getHostname() {
+      java.lang.Object ref = hostname_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          hostname_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string hostname = 1;</code>
+     */
+    public com.google.protobuf.ByteString
+        getHostnameBytes() {
+      java.lang.Object ref = hostname_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        hostname_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // required string state = 2;
+    public static final int STATE_FIELD_NUMBER = 2;
+    private java.lang.Object state_;
+    /**
+     * <code>required string state = 2;</code>
+     */
+    public boolean hasState() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <code>required string state = 2;</code>
+     */
+    public java.lang.String getState() {
+      java.lang.Object ref = state_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          state_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string state = 2;</code>
+     */
+    public com.google.protobuf.ByteString
+        getStateBytes() {
+      java.lang.Object ref = state_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        state_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // required string httpAddress = 3;
+    public static final int HTTPADDRESS_FIELD_NUMBER = 3;
+    private java.lang.Object httpAddress_;
+    /**
+     * <code>required string httpAddress = 3;</code>
+     */
+    public boolean hasHttpAddress() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    /**
+     * <code>required string httpAddress = 3;</code>
+     */
+    public java.lang.String getHttpAddress() {
+      java.lang.Object ref = httpAddress_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          httpAddress_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string httpAddress = 3;</code>
+     */
+    public com.google.protobuf.ByteString
+        getHttpAddressBytes() {
+      java.lang.Object ref = httpAddress_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        httpAddress_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // required string rackName = 4;
+    public static final int RACKNAME_FIELD_NUMBER = 4;
+    private java.lang.Object rackName_;
+    /**
+     * <code>required string rackName = 4;</code>
+     */
+    public boolean hasRackName() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    /**
+     * <code>required string rackName = 4;</code>
+     */
+    public java.lang.String getRackName() {
+      java.lang.Object ref = rackName_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          rackName_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string rackName = 4;</code>
+     */
+    public com.google.protobuf.ByteString
+        getRackNameBytes() {
+      java.lang.Object ref = rackName_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        rackName_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // required string labels = 5;
+    public static final int LABELS_FIELD_NUMBER = 5;
+    private java.lang.Object labels_;
+    /**
+     * <code>required string labels = 5;</code>
+     */
+    public boolean hasLabels() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    /**
+     * <code>required string labels = 5;</code>
+     */
+    public java.lang.String getLabels() {
+      java.lang.Object ref = labels_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          labels_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string labels = 5;</code>
+     */
+    public com.google.protobuf.ByteString
+        getLabelsBytes() {
+      java.lang.Object ref = labels_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        labels_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // required string healthReport = 6;
+    public static final int HEALTHREPORT_FIELD_NUMBER = 6;
+    private java.lang.Object healthReport_;
+    /**
+     * <code>required string healthReport = 6;</code>
+     */
+    public boolean hasHealthReport() {
+      return ((bitField0_ & 0x00000020) == 0x00000020);
+    }
+    /**
+     * <code>required string healthReport = 6;</code>
+     */
+    public java.lang.String getHealthReport() {
+      java.lang.Object ref = healthReport_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          healthReport_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string healthReport = 6;</code>
+     */
+    public com.google.protobuf.ByteString
+        getHealthReportBytes() {
+      java.lang.Object ref = healthReport_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        healthReport_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // required int64 lastUpdated = 7;
+    public static final int LASTUPDATED_FIELD_NUMBER = 7;
+    private long lastUpdated_;
+    /**
+     * <code>required int64 lastUpdated = 7;</code>
+     *
+     * <pre>
+     *  repeating NodeEntryProto entries = 8;
+     * </pre>
+     */
+    public boolean hasLastUpdated() {
+      return ((bitField0_ & 0x00000040) == 0x00000040);
+    }
+    /**
+     * <code>required int64 lastUpdated = 7;</code>
+     *
+     * <pre>
+     *  repeating NodeEntryProto entries = 8;
+     * </pre>
+     */
+    public long getLastUpdated() {
+      return lastUpdated_;
+    }
+
+    private void initFields() {
+      hostname_ = "";
+      state_ = "";
+      httpAddress_ = "";
+      rackName_ = "";
+      labels_ = "";
+      healthReport_ = "";
+      lastUpdated_ = 0L;
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+
+      if (!hasHostname()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasState()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasHttpAddress()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasRackName()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasLabels()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasHealthReport()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasLastUpdated()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeBytes(1, getHostnameBytes());
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getStateBytes());
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeBytes(3, getHttpAddressBytes());
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeBytes(4, getRackNameBytes());
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeBytes(5, getLabelsBytes());
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        output.writeBytes(6, getHealthReportBytes());
+      }
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        output.writeInt64(7, lastUpdated_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(1, getHostnameBytes());
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(2, getStateBytes());
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(3, getHttpAddressBytes());
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(4, getRackNameBytes());
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(5, getLabelsBytes());
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(6, getHealthReportBytes());
+      }
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(7, lastUpdated_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof org.apache.slider.api.proto.Messages.NodeInformationProto)) {
+        return super.equals(obj);
+      }
+      org.apache.slider.api.proto.Messages.NodeInformationProto other = (org.apache.slider.api.proto.Messages.NodeInformationProto) obj;
+
+      boolean result = true;
+      result = result && (hasHostname() == other.hasHostname());
+      if (hasHostname()) {
+        result = result && getHostname()
+            .equals(other.getHostname());
+      }
+      result = result && (hasState() == other.hasState());
+      if (hasState()) {
+        result = result && getState()
+            .equals(other.getState());
+      }
+      result = result && (hasHttpAddress() == other.hasHttpAddress());
+      if (hasHttpAddress()) {
+        result = result && getHttpAddress()
+            .equals(other.getHttpAddress());
+      }
+      result = result && (hasRackName() == other.hasRackName());
+      if (hasRackName()) {
+        result = result && getRackName()
+            .equals(other.getRackName());
+      }
+      result = result && (hasLabels() == other.hasLabels());
+      if (hasLabels()) {
+        result = result && getLabels()
+            .equals(other.getLabels());
+      }
+      result = result && (hasHealthReport() == other.hasHealthReport());
+      if (hasHealthReport()) {
+        result = result && getHealthReport()
+            .equals(other.getHealthReport());
+      }
+      result = result && (hasLastUpdated() == other.hasLastUpdated());
+      if (hasLastUpdated()) {
+        result = result && (getLastUpdated()
+            == other.getLastUpdated());
+      }
+      result = result &&
+          getUnknownFields().equals(other.getUnknownFields());
+      return result;
+    }
+
+    private int memoizedHashCode = 0;
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptorForType().hashCode();
+      if (hasHostname()) {
+        hash = (37 * hash) + HOSTNAME_FIELD_NUMBER;
+        hash = (53 * hash) + getHostname().hashCode();
+      }
+      if (hasState()) {
+        hash = (37 * hash) + STATE_FIELD_NUMBER;
+        hash = (53 * hash) + getState().hashCode();
+      }
+      if (hasHttpAddress()) {
+        hash = (37 * hash) + HTTPADDRESS_FIELD_NUMBER;
+        hash = (53 * hash) + getHttpAddress().hashCode();
+      }
+      if (hasRackName()) {
+        hash = (37 * hash) + RACKNAME_FIELD_NUMBER;
+        hash = (53 * hash) + getRackName().hashCode();
+      }
+      if (hasLabels()) {
+        hash = (37 * hash) + LABELS_FIELD_NUMBER;
+        hash = (53 * hash) + getLabels().hashCode();
+      }
+      if (hasHealthReport()) {
+        hash = (37 * hash) + HEALTHREPORT_FIELD_NUMBER;
+        hash = (53 * hash) + getHealthReport().hashCode();
+      }
+      if (hasLastUpdated()) {
+        hash = (37 * hash) + LASTUPDATED_FIELD_NUMBER;
+        hash = (53 * hash) + hashLong(getLastUpdated());
+      }
+      hash = (29 * hash) + getUnknownFields().hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static org.apache.slider.api.proto.Messages.NodeInformationProto parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.slider.api.proto.Messages.NodeInformationProto parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.slider.api.proto.Messages.NodeInformationProto parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.slider.api.proto.Messages.NodeInformationProto parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.slider.api.proto.Messages.NodeInformationProto parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.slider.api.proto.Messages.NodeInformationProto parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+    public static org.apache.slider.api.proto.Messages.NodeInformationProto parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input);
+    }
+    public static org.apache.slider.api.proto.Messages.NodeInformationProto parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+    }
+    public static org.apache.slider.api.proto.Messages.NodeInformationProto parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.slider.api.proto.Messages.NodeInformationProto parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.apache.slider.api.proto.Messages.NodeInformationProto prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code org.apache.slider.api.NodeInformationProto}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.apache.slider.api.proto.Messages.NodeInformationProtoOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_NodeInformationProto_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_NodeInformationProto_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.apache.slider.api.proto.Messages.NodeInformationProto.class, org.apache.slider.api.proto.Messages.NodeInformationProto.Builder.class);
+      }
+
+      // Construct using org.apache.slider.api.proto.Messages.NodeInformationProto.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        hostname_ = "";
+        bitField0_ = (bitField0_ & ~0x00000001);
+        state_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
+        httpAddress_ = "";
+        bitField0_ = (bitField0_ & ~0x00000004);
+        rackName_ = "";
+        bitField0_ = (bitField0_ & ~0x00000008);
+        labels_ = "";
+        bitField0_ = (bitField0_ & ~0x00000010);
+        healthReport_ = "";
+        bitField0_ = (bitField0_ & ~0x00000020);
+        lastUpdated_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000040);
+        return this;
+      }
+
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.apache.slider.api.proto.Messages.internal_static_org_apache_slider_api_NodeInformationProto_descriptor;
+      }
+
+      public org.apache.slider.api.proto.Messages.NodeInformationProto getDefaultInstanceForType() {
+        return org.apache.slider.api.proto.Messages.NodeInformationProto.getDefaultInstance();
+      }
+
+      public org.apache.slider.api.proto.Messages.NodeInformationProto build() {
+        org.apache.slider.api.proto.Messages.NodeInformationProto result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public org.apache.slider.api.proto.Messages.NodeInformationProto buildPartial() {
+        org.apache.slider.api.proto.Messages.NodeInformationProto result = new org.apache.slider.api.proto.Messages.NodeInformationProto(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        result.hostname_ = hostname_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.state_ = state_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.httpAddress_ = httpAddress_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.rackName_ = rackName_;
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.labels_ = labels_;
+        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+          to_bitField0_ |= 0x00000020;
+        }
+        result.healthReport_ = healthReport_;
+        if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
+          to_bitField0_ |= 0x00000040;
+        }
+        result.lastUpdated_ = lastUpdated_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.apache.slider.api.proto.Messages.NodeInformationProto) {
+          return mergeFrom((org.apache.slider.api.proto.Messages.NodeInformationProto)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(org.apache.slider.api.proto.Messages.NodeInformationProto other) {
+        if (other == org.apache.slider.api.proto.Messages.NodeInformationProto.getDefaultInstance()) return this;
+        if (other.hasHostname()) {
+          bitField0_ |= 0x00000001;
+          hostname_ = other.hostname_;
+          onChanged();
+        }
+        if (other.hasState()) {
+          bitField0_ |= 0x00000002;
+          state_ = other.state_;
+          onChanged();
+        }
+        if (other.hasHttpAddress()) {
+          bitField0_ |= 0x00000004;
+          httpAddress_ = other.httpAddress_;
+          onChanged();
+        }
+        if (other.hasRackName()) {
+          bitField0_ |= 0x00000008;
+          rackName_ = other.rackName_;
+          onChanged();
+        }
+        if (other.hasLabels()) {
+          bitField0_ |= 0x00000010;
+          labels_ = other.labels_;
+          onChanged();
+        }
+        if (other.hasHealthReport()) {
+          bitField0_ |= 0x00000020;
+          healthReport_ = other.healthReport_;
+          onChanged();
+        }
+        if (other.hasLastUpdated()) {
+          setLastUpdated(other.getLastUpdated());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        if (!hasHostname()) {
+          
+          return false;
+        }
+        if (!hasState()) {
+          
+          return false;
+        }
+        if (!hasHttpAddress()) {
+          
+          return false;
+        }
+        if (!hasRackName()) {
+          
+          return false;
+        }
+        if (!hasLabels()) {
+          
+          return false;
+        }
+        if (!hasHealthReport()) {
+          
+          return false;
+        }
+        if (!hasLastUpdated()) {
+          
+          return false;
+        }
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        org.apache.slider.api.proto.Messages.NodeInformationProto parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.apache.slider.api.proto.Messages.NodeInformationProto) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+      private int bitField0_;
+
+      // required string hostname = 1;
+      private java.lang.Object hostname_ = "";
+      /**
+       * <code>required string hostname = 1;</code>
+       */
+      public boolean hasHostname() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>required string hostname = 1;</code>
+       */
+      public java.lang.String getHostname() {
+        java.lang.Object ref = hostname_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          hostname_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string hostname = 1;</code>
+       */
+      public com.google.protobuf.ByteString
+          getHostnameBytes() {
+        java.lang.Object ref = hostname_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          hostname_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string hostname = 1;</code>
+       */
+      public Builder setHostname(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        hostname_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string hostname = 1;</code>
+       */
+      public Builder clearHostname() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        hostname_ = getDefaultInstance().getHostname();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string hostname = 1;</code>
+       */
+      public Builder setHostnameBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        hostname_ = value;
+        onChanged();
+        return this;
+      }
+
+      // required string state = 2;
+      private java.lang.Object state_ = "";
+      /**
+       * <code>required string state = 2;</code>
+       */
+      public boolean hasState() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>required string state = 2;</code>
+       */
+      public java.lang.String getState() {
+        java.lang.Object ref = state_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          state_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string state = 2;</code>
+       */
+      public com.google.protobuf.ByteString
+          getStateBytes() {
+        java.lang.Object ref = state_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          state_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string state = 2;</code>
+       */
+      public Builder setState(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        state_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string state = 2;</code>
+       */
+      public Builder clearState() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        state_ = getDefaultInstance().getState();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string state = 2;</code>
+       */
+      public Builder setStateBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        state_ = value;
+        onChanged();
+        return this;
+      }
+
+      // required string httpAddress = 3;
+      private java.lang.Object httpAddress_ = "";
+      /**
+       * <code>required string httpAddress = 3;</code>
+       */
+      public boolean hasHttpAddress() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      /**
+       * <code>required string httpAddress = 3;</code>
+       */
+      public java.lang.String getHttpAddress() {
+        java.lang.Object ref = httpAddress_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          httpAddress_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string httpAddress = 3;</code>
+       */
+      public com.google.protobuf.ByteString
+          getHttpAddressBytes() {
+        java.lang.Object ref = httpAddress_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          httpAddress_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string httpAddress = 3;</code>
+       */
+      public Builder setHttpAddress(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000004;
+        httpAddress_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string httpAddress = 3;</code>
+       */
+      public Builder clearHttpAddress() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        httpAddress_ = getDefaultInstance().getHttpAddress();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string httpAddress = 3;</code>
+       */
+      public Builder setHttpAddressBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000004;
+        httpAddress_ = value;
+        onChanged();
+        return this;
+      }
+
+      // required string rackName = 4;
+      private java.lang.Object rackName_ = "";
+      /**
+       * <code>required string rackName = 4;</code>
+       */
+      public boolean hasRackName() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <code>required string rackName = 4;</code>
+       */
+      public java.lang.String getRackName() {
+        java.lang.Object ref = rackName_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          rackName_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string rackName = 4;</code>
+       */
+      public com.google.protobuf.ByteString
+          getRackNameBytes() {
+        java.lang.Object ref = rackName_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          rackName_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string rackName = 4;</code>
+       */
+      public Builder setRackName(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000008;
+        rackName_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string rackName = 4;</code>
+       */
+      public Builder clearRackName() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        rackName_ = getDefaultInstance().getRackName();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string rackName = 4;</code>
+       */
+      public Builder setRackNameBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000008;
+        rackName_ = value;
+        onChanged();
+        return this;
+      }
+
+      // required string labels = 5;
+      private java.lang.Object labels_ = "";
+      /**
+       * <code>required string labels = 5;</code>
+       */
+      public boolean hasLabels() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      /**
+       * <code>required string labels = 5;</code>
+       */
+      public java.lang.String getLabels() {
+        java.lang.Object ref = labels_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          labels_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string labels = 5;</code>
+       */
+      public com.google.protobuf.ByteString
+          getLabelsBytes() {
+        java.lang.Object ref = labels_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          labels_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string labels = 5;</code>
+       */
+      public Builder setLabels(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000010;
+        labels_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string labels = 5;</code>
+       */
+      public Builder clearLabels() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        labels_ = getDefaultInstance().getLabels();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string labels = 5;</code>
+       */
+      public Builder setLabelsBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000010;
+        labels_ = value;
+        onChanged();
+        return this;
+      }
+
+      // required string healthReport = 6;
+      private java.lang.Object healthReport_ = "";
+      /**
+       * <code>required string healthReport = 6;</code>
+       */
+      public boolean hasHealthReport() {
+        return ((bitField0_ & 0x00000020) == 0x00000020);
+      }
+      /**
+       * <code>required string healthReport = 6;</code>
+       */
+      public java.lang.String getHealthReport() {
+        java.lang.Object ref = healthReport_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          healthReport_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string healthReport = 6;</code>
+       */
+      public com.google.protobuf.ByteString
+          getHealthReportBytes() {
+        java.lang.Object ref = healthReport_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          healthReport_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string healthReport = 6;</code>
+       */
+      public Builder setHealthReport(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000020;
+        healthReport_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string healthReport = 6;</code>
+       */
+      public Builder clearHealthReport() {
+        bitField0_ = (bitField0_ & ~0x00000020);
+        healthReport_ = getDefaultInstance().getHealthReport();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string healthReport = 6;</code>
+       */
+      public Builder setHealthReportBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000020;
+        healthReport_ = value;
+        onChanged();
+        return this;
+      }
+
+      // required int64 lastUpdated = 7;
+      private long lastUpdated_ ;
+      /**
+       * <code>required int64 lastUpdated = 7;</code>
+       *
+       * <pre>
+       *  repeating NodeEntryProto entries = 8;
+       * </pre>
+       */
+      public boolean hasLastUpdated() {
+        return ((bitField0_ & 0x00000040) == 0x00000040);
+      }
+      /**
+       * <code>required int64 lastUpdated = 7;</code>
+       *
+       * <pre>
+       *  repeating NodeEntryProto entries = 8;
+       * </pre>
+       */
+      public long getLastUpdated() {
+        return lastUpdated_;
+      }
+      /**
+       * <code>required int64 lastUpdated = 7;</code>
+       *
+       * <pre>
+       *  repeating NodeEntryProto entries = 8;
+       * </pre>
+       */
+      public Builder setLastUpdated(long value) {
+        bitField0_ |= 0x00000040;
+        lastUpdated_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required int64 lastUpdated = 7;</code>
+       *
+       * <pre>
+       *  repeating NodeEntryProto entries = 8;
+       * </pre>
+       */
+      public Builder clearLastUpdated() {
+        bitField0_ = (bitField0_ & ~0x00000040);
+        lastUpdated_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:org.apache.slider.api.NodeInformationProto)
+    }
+
+    static {
+      defaultInstance = new NodeInformationProto(true);
+      defaultInstance.initFields();
+    }
+
+    // @@protoc_insertion_point(class_scope:org.apache.slider.api.NodeInformationProto)
   }
 
   public interface GetModelRequestProtoOrBuilder
@@ -28820,6 +31746,16 @@ public final class Messages {
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_org_apache_slider_api_PingInformationProto_fieldAccessorTable;
   private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_org_apache_slider_api_NodeEntryInformationProto_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_org_apache_slider_api_NodeEntryInformationProto_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_org_apache_slider_api_NodeInformationProto_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_org_apache_slider_api_NodeInformationProto_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_org_apache_slider_api_GetModelRequestProto_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
@@ -28957,7 +31893,7 @@ public final class Messages {
       " \002(\t\022\023\n\013application\030\003 \002(\t\"`\n#Application" +
       "LivenessInformationProto\022\034\n\024allRequestsS" +
       "atisfied\030\001 \001(\010\022\033\n\023requestsOutstanding\030\002 " +
-      "\001(\005\"\347\002\n\031ComponentInformationProto\022\014\n\004nam",
+      "\001(\005\"\216\003\n\031ComponentInformationProto\022\014\n\004nam",
       "e\030\001 \001(\t\022\020\n\010priority\030\002 \001(\005\022\017\n\007desired\030\003 \001" +
       "(\005\022\016\n\006actual\030\004 \001(\005\022\021\n\treleasing\030\005 \001(\005\022\021\n" +
       "\trequested\030\006 \001(\005\022\016\n\006failed\030\007 \001(\005\022\017\n\007star" +
@@ -28966,39 +31902,49 @@ public final class Messages {
       "lureMessage\030\014 \001(\t\022\027\n\017placementPolicy\030\r \001" +
       "(\005\022\022\n\ncontainers\030\016 \003(\t\022\026\n\016failedRecently" +
       "\030\017 \001(\005\022\022\n\nnodeFailed\030\020 \001(\005\022\021\n\tpreempted\030" +
-      "\021 \001(\005\"\210\002\n\031ContainerInformationProto\022\023\n\013c" +
-      "ontainerId\030\001 \001(\t\022\021\n\tcomponent\030\002 \001(\t\022\020\n\010r",
-      "eleased\030\003 \001(\010\022\r\n\005state\030\004 \001(\005\022\020\n\010exitCode" +
-      "\030\005 \001(\005\022\023\n\013diagnostics\030\006 \001(\t\022\022\n\ncreateTim" +
-      "e\030\007 \001(\003\022\021\n\tstartTime\030\010 \001(\003\022\016\n\006output\030\t \003" +
-      "(\t\022\014\n\004host\030\n \001(\t\022\017\n\007hostURL\030\013 \001(\t\022\021\n\tpla" +
-      "cement\030\014 \001(\t\022\022\n\nappVersion\030\r \001(\t\"N\n\024Ping" +
-      "InformationProto\022\014\n\004text\030\001 \001(\t\022\014\n\004verb\030\002" +
-      " \001(\t\022\014\n\004body\030\003 \001(\t\022\014\n\004time\030\004 \001(\003\"\026\n\024GetM" +
-      "odelRequestProto\"\035\n\033GetModelDesiredReque" +
-      "stProto\"$\n\"GetModelDesiredAppconfRequest" +
-      "Proto\"&\n$GetModelDesiredResourcesRequest",
-      "Proto\"%\n#GetModelResolvedAppconfRequestP" +
-      "roto\"\'\n%GetModelResolvedResourcesRequest" +
-      "Proto\"#\n!GetModelLiveResourcesRequestPro" +
-      "to\"\037\n\035GetLiveContainersRequestProto\"u\n\036G" +
-      "etLiveContainersResponseProto\022\r\n\005names\030\001" +
-      " \003(\t\022D\n\ncontainers\030\002 \003(\01320.org.apache.sl" +
-      "ider.api.ContainerInformationProto\"3\n\034Ge" +
-      "tLiveContainerRequestProto\022\023\n\013containerI" +
-      "d\030\001 \002(\t\"\037\n\035GetLiveComponentsRequestProto" +
-      "\"u\n\036GetLiveComponentsResponseProto\022\r\n\005na",
-      "mes\030\001 \003(\t\022D\n\ncomponents\030\002 \003(\01320.org.apac" +
-      "he.slider.api.ComponentInformationProto\"" +
-      ",\n\034GetLiveComponentRequestProto\022\014\n\004name\030" +
-      "\001 \002(\t\"$\n\"GetApplicationLivenessRequestPr" +
-      "oto\"\023\n\021EmptyPayloadProto\" \n\020WrappedJsonP" +
-      "roto\022\014\n\004json\030\001 \002(\t\"h\n\037GetCertificateStor" +
-      "eRequestProto\022\020\n\010hostname\030\001 \001(\t\022\023\n\013reque" +
-      "sterId\030\002 \002(\t\022\020\n\010password\030\003 \002(\t\022\014\n\004type\030\004" +
-      " \002(\t\"1\n GetCertificateStoreResponseProto" +
-      "\022\r\n\005store\030\001 \002(\014B-\n\033org.apache.slider.api",
-      ".protoB\010Messages\210\001\001\240\001\001"
+      "\021 \001(\005\022%\n\035pendingAntiAffineRequestCount\030\022" +
+      " \001(\005\"\210\002\n\031ContainerInformationProto\022\023\n\013co",
+      "ntainerId\030\001 \001(\t\022\021\n\tcomponent\030\002 \001(\t\022\020\n\010re" +
+      "leased\030\003 \001(\010\022\r\n\005state\030\004 \001(\005\022\020\n\010exitCode\030" +
+      "\005 \001(\005\022\023\n\013diagnostics\030\006 \001(\t\022\022\n\ncreateTime" +
+      "\030\007 \001(\003\022\021\n\tstartTime\030\010 \001(\003\022\016\n\006output\030\t \003(" +
+      "\t\022\014\n\004host\030\n \001(\t\022\017\n\007hostURL\030\013 \001(\t\022\021\n\tplac" +
+      "ement\030\014 \001(\t\022\022\n\nappVersion\030\r \001(\t\"N\n\024PingI" +
+      "nformationProto\022\014\n\004text\030\001 \001(\t\022\014\n\004verb\030\002 " +
+      "\001(\t\022\014\n\004body\030\003 \001(\t\022\014\n\004time\030\004 \001(\003\"\330\001\n\031Node" +
+      "EntryInformationProto\022\020\n\010priority\030\001 \002(\005\022" +
+      "\021\n\trequested\030\002 \002(\005\022\020\n\010starting\030\003 \002(\005\022\023\n\013",
+      "startFailed\030\004 \002(\005\022\016\n\006failed\030\005 \002(\005\022\026\n\016fai" +
+      "ledRecently\030\006 \002(\005\022\021\n\tpreempted\030\007 \002(\005\022\014\n\004" +
+      "live\030\010 \002(\005\022\021\n\treleasing\030\t \002(\005\022\023\n\013lastUpd" +
+      "ated\030\n \002(\003\"\231\001\n\024NodeInformationProto\022\020\n\010h" +
+      "ostname\030\001 \002(\t\022\r\n\005state\030\002 \002(\t\022\023\n\013httpAddr" +
+      "ess\030\003 \002(\t\022\020\n\010rackName\030\004 \002(\t\022\016\n\006labels\030\005 " +
+      "\002(\t\022\024\n\014healthReport\030\006 \002(\t\022\023\n\013lastUpdated" +
+      "\030\007 \002(\003\"\026\n\024GetModelRequestProto\"\035\n\033GetMod" +
+      "elDesiredRequestProto\"$\n\"GetModelDesired" +
+      "AppconfRequestProto\"&\n$GetModelDesiredRe",
+      "sourcesRequestProto\"%\n#GetModelResolvedA" +
+      "ppconfRequestProto\"\'\n%GetModelResolvedRe" +
+      "sourcesRequestProto\"#\n!GetModelLiveResou" +
+      "rcesRequestProto\"\037\n\035GetLiveContainersReq" +
+      "uestProto\"u\n\036GetLiveContainersResponsePr" +
+      "oto\022\r\n\005names\030\001 \003(\t\022D\n\ncontainers\030\002 \003(\01320" +
+      ".org.apache.slider.api.ContainerInformat" +
+      "ionProto\"3\n\034GetLiveContainerRequestProto" +
+      "\022\023\n\013containerId\030\001 \002(\t\"\037\n\035GetLiveComponen" +
+      "tsRequestProto\"u\n\036GetLiveComponentsRespo",
+      "nseProto\022\r\n\005names\030\001 \003(\t\022D\n\ncomponents\030\002 " +
+      "\003(\01320.org.apache.slider.api.ComponentInf" +
+      "ormationProto\",\n\034GetLiveComponentRequest" +
+      "Proto\022\014\n\004name\030\001 \002(\t\"$\n\"GetApplicationLiv" +
+      "enessRequestProto\"\023\n\021EmptyPayloadProto\" " +
+      "\n\020WrappedJsonProto\022\014\n\004json\030\001 \002(\t\"h\n\037GetC" +
+      "ertificateStoreRequestProto\022\020\n\010hostname\030" +
+      "\001 \001(\t\022\023\n\013requesterId\030\002 \002(\t\022\020\n\010password\030\003" +
+      " \002(\t\022\014\n\004type\030\004 \002(\t\"1\n GetCertificateStor" +
+      "eResponseProto\022\r\n\005store\030\001 \002(\014B-\n\033org.apa",
+      "che.slider.api.protoB\010Messages\210\001\001\240\001\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -29154,7 +32100,7 @@ public final class Messages {
           internal_static_org_apache_slider_api_ComponentInformationProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_ComponentInformationProto_descriptor,
-              new java.lang.String[] { "Name", "Priority", "Desired", "Actual", "Releasing", "Requested", "Failed", "Started", "StartFailed", "Completed", "TotalRequested", "FailureMessage", "PlacementPolicy", "Containers", "FailedRecently", "NodeFailed", "Preempted", });
+              new java.lang.String[] { "Name", "Priority", "Desired", "Actual", "Releasing", "Requested", "Failed", "Started", "StartFailed", "Completed", "TotalRequested", "FailureMessage", "PlacementPolicy", "Containers", "FailedRecently", "NodeFailed", "Preempted", "PendingAntiAffineRequestCount", });
           internal_static_org_apache_slider_api_ContainerInformationProto_descriptor =
             getDescriptor().getMessageTypes().get(25);
           internal_static_org_apache_slider_api_ContainerInformationProto_fieldAccessorTable = new
@@ -29167,110 +32113,122 @@ public final class Messages {
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_PingInformationProto_descriptor,
               new java.lang.String[] { "Text", "Verb", "Body", "Time", });
-          internal_static_org_apache_slider_api_GetModelRequestProto_descriptor =
+          internal_static_org_apache_slider_api_NodeEntryInformationProto_descriptor =
             getDescriptor().getMessageTypes().get(27);
+          internal_static_org_apache_slider_api_NodeEntryInformationProto_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_org_apache_slider_api_NodeEntryInformationProto_descriptor,
+              new java.lang.String[] { "Priority", "Requested", "Starting", "StartFailed", "Failed", "FailedRecently", "Preempted", "Live", "Releasing", "LastUpdated", });
+          internal_static_org_apache_slider_api_NodeInformationProto_descriptor =
+            getDescriptor().getMessageTypes().get(28);
+          internal_static_org_apache_slider_api_NodeInformationProto_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_org_apache_slider_api_NodeInformationProto_descriptor,
+              new java.lang.String[] { "Hostname", "State", "HttpAddress", "RackName", "Labels", "HealthReport", "LastUpdated", });
+          internal_static_org_apache_slider_api_GetModelRequestProto_descriptor =
+            getDescriptor().getMessageTypes().get(29);
           internal_static_org_apache_slider_api_GetModelRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetModelRequestProto_descriptor,
               new java.lang.String[] { });
           internal_static_org_apache_slider_api_GetModelDesiredRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(28);
+            getDescriptor().getMessageTypes().get(30);
           internal_static_org_apache_slider_api_GetModelDesiredRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetModelDesiredRequestProto_descriptor,
               new java.lang.String[] { });
           internal_static_org_apache_slider_api_GetModelDesiredAppconfRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(29);
+            getDescriptor().getMessageTypes().get(31);
           internal_static_org_apache_slider_api_GetModelDesiredAppconfRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetModelDesiredAppconfRequestProto_descriptor,
               new java.lang.String[] { });
           internal_static_org_apache_slider_api_GetModelDesiredResourcesRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(30);
+            getDescriptor().getMessageTypes().get(32);
           internal_static_org_apache_slider_api_GetModelDesiredResourcesRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetModelDesiredResourcesRequestProto_descriptor,
               new java.lang.String[] { });
           internal_static_org_apache_slider_api_GetModelResolvedAppconfRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(31);
+            getDescriptor().getMessageTypes().get(33);
           internal_static_org_apache_slider_api_GetModelResolvedAppconfRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetModelResolvedAppconfRequestProto_descriptor,
               new java.lang.String[] { });
           internal_static_org_apache_slider_api_GetModelResolvedResourcesRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(32);
+            getDescriptor().getMessageTypes().get(34);
           internal_static_org_apache_slider_api_GetModelResolvedResourcesRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetModelResolvedResourcesRequestProto_descriptor,
               new java.lang.String[] { });
           internal_static_org_apache_slider_api_GetModelLiveResourcesRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(33);
+            getDescriptor().getMessageTypes().get(35);
           internal_static_org_apache_slider_api_GetModelLiveResourcesRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetModelLiveResourcesRequestProto_descriptor,
               new java.lang.String[] { });
           internal_static_org_apache_slider_api_GetLiveContainersRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(34);
+            getDescriptor().getMessageTypes().get(36);
           internal_static_org_apache_slider_api_GetLiveContainersRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetLiveContainersRequestProto_descriptor,
               new java.lang.String[] { });
           internal_static_org_apache_slider_api_GetLiveContainersResponseProto_descriptor =
-            getDescriptor().getMessageTypes().get(35);
+            getDescriptor().getMessageTypes().get(37);
           internal_static_org_apache_slider_api_GetLiveContainersResponseProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetLiveContainersResponseProto_descriptor,
               new java.lang.String[] { "Names", "Containers", });
           internal_static_org_apache_slider_api_GetLiveContainerRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(36);
+            getDescriptor().getMessageTypes().get(38);
           internal_static_org_apache_slider_api_GetLiveContainerRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetLiveContainerRequestProto_descriptor,
               new java.lang.String[] { "ContainerId", });
           internal_static_org_apache_slider_api_GetLiveComponentsRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(37);
+            getDescriptor().getMessageTypes().get(39);
           internal_static_org_apache_slider_api_GetLiveComponentsRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetLiveComponentsRequestProto_descriptor,
               new java.lang.String[] { });
           internal_static_org_apache_slider_api_GetLiveComponentsResponseProto_descriptor =
-            getDescriptor().getMessageTypes().get(38);
+            getDescriptor().getMessageTypes().get(40);
           internal_static_org_apache_slider_api_GetLiveComponentsResponseProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetLiveComponentsResponseProto_descriptor,
               new java.lang.String[] { "Names", "Components", });
           internal_static_org_apache_slider_api_GetLiveComponentRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(39);
+            getDescriptor().getMessageTypes().get(41);
           internal_static_org_apache_slider_api_GetLiveComponentRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetLiveComponentRequestProto_descriptor,
               new java.lang.String[] { "Name", });
           internal_static_org_apache_slider_api_GetApplicationLivenessRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(40);
+            getDescriptor().getMessageTypes().get(42);
           internal_static_org_apache_slider_api_GetApplicationLivenessRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetApplicationLivenessRequestProto_descriptor,
               new java.lang.String[] { });
           internal_static_org_apache_slider_api_EmptyPayloadProto_descriptor =
-            getDescriptor().getMessageTypes().get(41);
+            getDescriptor().getMessageTypes().get(43);
           internal_static_org_apache_slider_api_EmptyPayloadProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_EmptyPayloadProto_descriptor,
               new java.lang.String[] { });
           internal_static_org_apache_slider_api_WrappedJsonProto_descriptor =
-            getDescriptor().getMessageTypes().get(42);
+            getDescriptor().getMessageTypes().get(44);
           internal_static_org_apache_slider_api_WrappedJsonProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_WrappedJsonProto_descriptor,
               new java.lang.String[] { "Json", });
           internal_static_org_apache_slider_api_GetCertificateStoreRequestProto_descriptor =
-            getDescriptor().getMessageTypes().get(43);
+            getDescriptor().getMessageTypes().get(45);
           internal_static_org_apache_slider_api_GetCertificateStoreRequestProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetCertificateStoreRequestProto_descriptor,
               new java.lang.String[] { "Hostname", "RequesterId", "Password", "Type", });
           internal_static_org_apache_slider_api_GetCertificateStoreResponseProto_descriptor =
-            getDescriptor().getMessageTypes().get(44);
+            getDescriptor().getMessageTypes().get(46);
           internal_static_org_apache_slider_api_GetCertificateStoreResponseProto_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_org_apache_slider_api_GetCertificateStoreResponseProto_descriptor,
