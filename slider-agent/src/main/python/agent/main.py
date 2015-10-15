@@ -55,7 +55,7 @@ def signal_handler(signum, frame):
     os._exit(0)
   logger.info('signal received, exiting.')
   global controller
-  if controller is not None:
+  if controller is not None and hasattr(controller, 'actionQueue'):
     tmpdir = controller.actionQueue.dockerManager.stop_container()
   ProcessHelper.stopAgent()
 
