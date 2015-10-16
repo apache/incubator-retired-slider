@@ -24,6 +24,7 @@ import com.sun.jersey.api.client.config.DefaultClientConfig
 import com.sun.jersey.api.json.JSONConfiguration
 import com.sun.jersey.client.urlconnection.URLConnectionClientHandler
 import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.commons.httpclient.HttpClient
@@ -73,6 +74,7 @@ import javax.ws.rs.core.HttpHeaders
 import java.util.concurrent.TimeoutException
 
 import static Arguments.ARG_OPTION
+import static org.apache.slider.server.appmaster.web.rest.RestPaths.SYSTEM_METRICS_JSON
 
 /**
  * Static utils for tests in this package and in other test projects.
@@ -655,7 +657,6 @@ class SliderTestUtils extends Assert {
         clientConfig);
   }
 
-
   /**
    * Create a jersey client config with the settings needed for tests
    * (e.g. POJO mappings)
@@ -707,7 +708,7 @@ class SliderTestUtils extends Assert {
            HttpCacheHeaders.HTTP_HEADER_CACHE_CONTROL_NONE
   }
 
-/**
+  /**
    * Assert that a service operation succeeded
    * @param service service
    */
@@ -738,6 +739,7 @@ class SliderTestUtils extends Assert {
     int actual = instances != null ? instances.size() : 0
     return actual
   }
+
   /**
    * Exec a set of commands, wait a few seconds for it to finish.
    * @param status code
@@ -752,11 +754,12 @@ class SliderTestUtils extends Assert {
     assert status == exitCode
     return process
   }
+
   /**
-     * Exec a set of commands, wait a few seconds for it to finish.
-     * @param commands
-     * @return
-     */
+   * Exec a set of commands, wait a few seconds for it to finish.
+   * @param commands
+   * @return
+   */
   public static ForkedProcessService exec(List<String> commands) {
     ForkedProcessService process;
     process = new ForkedProcessService(
@@ -1380,4 +1383,42 @@ class SliderTestUtils extends Assert {
     assert list.size() == entries.size()
     assert entries.containsAll(list)
   }
+
+  public Map parseMetrics(String metrics) {
+    new JsonSlurper().parse(metrics.bytes) as Map
+  }
+
+  public void validateCodahaleJson(Map metricsMap) {
+    assert metricsMap["version"] == "3.0.0"
+    assert metricsMap["gauges"] instanceof Map
+    assert metricsMap["histograms"] instanceof Map
+    assert metricsMap["timers"] instanceof Map
+  }
+
+  public int getGaugeValue(Map metricsMap, String gauge, int defVal) {
+    def entry = metricsMap["gauges"][gauge]
+    if (entry != null) {
+      return entry["value"] as int
+    } else {
+      return defVal
+    }
+  }
+
+  public boolean getGaugeAsBool(Map metricsMap, String gauge, boolean defVal) {
+    return 0 !=  getGaugeValue(metricsMap, gauge, defVal ? 1 : 0)
+  }
+
+  /**
+   * Fetch and parse the JSON codahale metrics under a path
+   * @param baseUrl base path
+   * @return the fetch, parsed and partially validated JSON mapping
+   */
+  public Map getMetrics(String baseUrl) {
+    def raw = GET(baseUrl, SYSTEM_METRICS_JSON)
+    def metrics = parseMetrics(raw)
+    validateCodahaleJson(metrics)
+    return metrics;
+  }
+
+
 }

@@ -129,18 +129,24 @@ service SliderClusterProtocolPB {
 
   rpc getLivenessInformation(GetApplicationLivenessRequestProto) 
     returns(ApplicationLivenessInformationProto);
- 
+
   rpc getLiveContainers(GetLiveContainersRequestProto) 
     returns(GetLiveContainersResponseProto);
 
   rpc getLiveContainer(GetLiveContainerRequestProto) 
     returns(ContainerInformationProto);
-  
+
   rpc getLiveComponents(GetLiveComponentsRequestProto) 
     returns(GetLiveComponentsResponseProto);
-  
+
   rpc getLiveComponent(GetLiveComponentRequestProto) 
     returns(ComponentInformationProto);
+
+  rpc getLiveNodes(GetLiveNodesRequestProto)
+    returns(GetLiveNodesResponseProto);
+
+  rpc getLiveNode(GetLiveNodeRequestProto)
+    returns(NodeInformationProto);
   
 // AggregateConf getModelDesired()
   rpc getModelDesired(EmptyPayloadProto) 

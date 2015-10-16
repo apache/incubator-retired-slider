@@ -21,6 +21,7 @@ package org.apache.slider.api;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.ContainerInformation;
+import org.apache.slider.api.types.NodeInformation;
 import org.apache.slider.api.types.PingInformation;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
@@ -101,8 +102,7 @@ public interface SliderApplicationApi {
    * @return a possibly empty list of serialized containers
    * @throws IOException on any failure
    */
-  Map<String, ContainerInformation> enumContainers() throws
-      IOException;
+  Map<String, ContainerInformation> enumContainers() throws IOException;
 
   /**
    * Get a container from the container Id
@@ -110,16 +110,14 @@ public interface SliderApplicationApi {
    * @return the container information
    * @throws IOException on any failure
    */
-  ContainerInformation getContainer(String containerId) throws
-      IOException;
+  ContainerInformation getContainer(String containerId) throws IOException;
 
   /**
    * List all components into a map of [name:info]
    * @return a possibly empty map of components
    * @throws IOException on any failure
    */
-  Map<String, ComponentInformation> enumComponents() throws
-      IOException;
+  Map<String, ComponentInformation> enumComponents() throws IOException;
 
   /**
    * Get information about a component
@@ -127,8 +125,22 @@ public interface SliderApplicationApi {
    * @return the component details
    * @throws IOException on any failure
    */
-  ComponentInformation getComponent(String componentName) throws
-      IOException;
+  ComponentInformation getComponent(String componentName) throws IOException;
+  
+  /**
+   * List all nodes into a map of [name:info]
+   * @return a possibly empty map of nodes
+   * @throws IOException on any failure
+   */
+  Map<String, NodeInformation> getLiveNodes() throws IOException;
+
+  /**
+   * Get information about a node
+   * @param hostname name of the node
+   * @return the node details
+   * @throws IOException on any failure
+   */
+  NodeInformation getLiveNode(String hostname) throws IOException;
 
   /**
    * Ping as a GET

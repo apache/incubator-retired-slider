@@ -20,6 +20,9 @@ package org.apache.slider.server.appmaster;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
+import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
+import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
+import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.BlockingService;
 
@@ -221,10 +224,13 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * Deployed in {@link #serviceInit(Configuration)}
    */
   private final MetricsAndMonitoring metricsAndMonitoring = new MetricsAndMonitoring(); 
+
   /**
    * metrics registry
    */
   public MetricRegistry metrics;
+
+  /** Error string on chaos monkey launch failure action: {@value} */
   public static final String E_TRIGGERED_LAUNCH_FAILURE =
       "Chaos monkey triggered launch failure";
 
@@ -244,7 +250,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
   public NMClientAsync nmClientAsync;
 
-//  YarnConfiguration conf;
   /**
    * token blob
    */
@@ -484,16 +489,19 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
             false);
     SliderUtils.validateSliderServerEnvironment(log, dependencyChecks);
 
-    // create app state and monitoring
+    // create and register monitoring services
     addService(metricsAndMonitoring);
     metrics = metricsAndMonitoring.getMetrics();
+/*
+    metrics.registerAll(new ThreadStatesGaugeSet());
+    metrics.registerAll(new MemoryUsageGaugeSet());
+    metrics.registerAll(new GarbageCollectorMetricSet());
 
-
+*/
     contentCache = ApplicationResouceContentCacheFactory.createContentCache(
         stateForProviders);
 
-
-    executorService = new WorkflowExecutorService<ExecutorService>("AmExecutor",
+    executorService = new WorkflowExecutorService<>("AmExecutor",
         Executors.newFixedThreadPool(2,
             new ServiceThreadFactory("AmExecutor", true)));
     addService(executorService);
@@ -1647,7 +1655,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // If components are specified as well, then grab all the containers of
     // each of the components (roles)
     if (CollectionUtils.isNotEmpty(components)) {
-      Map<ContainerId, RoleInstance> liveContainers = appState.getLiveNodes();
+      Map<ContainerId, RoleInstance> liveContainers = appState.getLiveContainers();
       if (CollectionUtils.isNotEmpty(liveContainers.keySet())) {
         Map<String, Set<String>> roleContainerMap = prepareRoleContainerMap(liveContainers);
         for (String component : components) {

@@ -116,7 +116,6 @@ public class RestPaths {
    */
   public static final String SYSTEM_THREADS = SYSTEM + "/threads";
 
-
   /**
    * application subpath
    */
@@ -134,7 +133,7 @@ public class RestPaths {
   public static final String LIVE_RESOURCES = "/live/resources";
   public static final String LIVE_CONTAINERS = "/live/containers";
   public static final String LIVE_COMPONENTS = "/live/components";
-  public static final String LIVE_NODES = "/live/";
+  public static final String LIVE_NODES = "/live/nodes";
   public static final String LIVE_LIVENESS = "/live/liveness";
   public static final String LIVE_STATISTICS = "/live/statistics";
   public static final String MODEL = "/model";

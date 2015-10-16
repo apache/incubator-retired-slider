@@ -148,7 +148,7 @@ class TestMockMonkey extends BaseMockAppStateTest {
   public void testContainerKillerIgnoresAM() throws Throwable {
 
     addAppMastertoAppState()
-    assert 1 == appState.liveNodes.size()
+    assert 1 == appState.liveContainers.size()
     
     def chaos = new ChaosKillContainer(appState,
         queues,

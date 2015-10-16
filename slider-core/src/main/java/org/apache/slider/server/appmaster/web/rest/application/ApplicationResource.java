@@ -25,6 +25,7 @@ import org.apache.hadoop.yarn.webapp.NotFoundException;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.ContainerInformation;
+import org.apache.slider.api.types.NodeInformation;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.exceptions.NoSuchNodeException;
@@ -285,8 +286,7 @@ public class ApplicationResource extends AbstractSliderResource {
   public Map<String, ComponentInformation> getLiveComponents() {
     markGet(SLIDER_SUBPATH_APPLICATION, LIVE_COMPONENTS);
     try {
-      return (Map<String, ComponentInformation>) cache.lookup(
-          LIVE_COMPONENTS);
+      return (Map<String, ComponentInformation>) cache.lookup(LIVE_COMPONENTS);
     } catch (Exception e) {
       throw buildException(LIVE_COMPONENTS, e);
     }
@@ -345,6 +345,38 @@ TODO: decide what structure to return here, then implement
     }
   }
 */
+
+
+  @GET
+  @Path(LIVE_NODES)
+  @Produces({APPLICATION_JSON})
+  public Map<String, NodeInformation> getLiveNodes() {
+    markGet(SLIDER_SUBPATH_APPLICATION, LIVE_COMPONENTS);
+    try {
+      return (Map<String, NodeInformation>) cache.lookup(LIVE_NODES);
+    } catch (Exception e) {
+      throw buildException(LIVE_COMPONENTS, e);
+    }
+  }
+
+  @GET
+  @Path(LIVE_NODES + "/{node}")
+  @Produces({APPLICATION_JSON})
+  public NodeInformation getLiveNode(@PathParam("node") String node) {
+    markGet(SLIDER_SUBPATH_APPLICATION, LIVE_COMPONENTS);
+    try {
+      NodeInformation ni = state.getNodeInformation(node);
+      if (ni != null) {
+        return ni;
+      } else {
+        throw new NotFoundException("Unknown node: " + node);
+      }
+    } catch (NotFoundException e) {
+      throw e;
+    } catch (Exception e) {
+      throw buildException(LIVE_CONTAINERS + "/" + node, e);
+    }
+  }
 
   /**
    * Statistics of the application

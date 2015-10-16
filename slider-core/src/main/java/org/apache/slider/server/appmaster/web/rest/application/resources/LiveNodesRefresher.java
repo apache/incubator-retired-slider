@@ -16,27 +16,27 @@
  * limitations under the License.
  */
 
-package org.apache.slider.api.types;
+package org.apache.slider.server.appmaster.web.rest.application.resources;
 
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
-import org.codehaus.jackson.map.annotate.JsonSerialize;
+import org.apache.slider.api.types.NodeInformation;
+import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 
 /**
- * Serialized node information. Must be kept in sync with the protobuf equivalent.
+ * Update the live nodes map
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
-@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
-public class NodeInformation {
+public class LiveNodesRefresher
+    implements ResourceRefresher<Map<String, NodeInformation>> {
 
-  public String healthReport;
-  public String hostname;
-  public String httpAddress;
-  public String labels;
-  public long lastUpdated;
-  public String rackName;
-  public String state;
-  public List<NodeEntryInformation> entries = new ArrayList<>();
+  private final StateAccessForProviders state;
+
+  public LiveNodesRefresher(StateAccessForProviders state) {
+    this.state = state;
+  }
+
+  @Override
+  public Map<String, NodeInformation> refresh() {
+    return state.getNodeInformationSnapshot();
+  }
 }

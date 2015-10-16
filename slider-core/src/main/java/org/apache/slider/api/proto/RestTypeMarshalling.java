@@ -23,6 +23,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.ContainerInformation;
+import org.apache.slider.api.types.NodeEntryInformation;
+import org.apache.slider.api.types.NodeInformation;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.conf.ConfTreeOperations;
@@ -137,6 +139,79 @@ public class RestTypeMarshalling {
     return builder.build();
   }
 
+  public static Messages.NodeInformationProto marshall(NodeInformation info) {
+
+    Messages.NodeInformationProto.Builder builder =
+        Messages.NodeInformationProto.newBuilder();
+    builder.setHostname(info.hostname);
+    builder.setLastUpdated(info.lastUpdated);
+    if (info.state != null) {
+      builder.setState(info.state);
+    }
+    if (info.rackName != null) {
+      builder.setRackName(info.rackName);
+    }
+    if (info.healthReport != null) {
+      builder.setHealthReport(info.healthReport);
+    }
+    if (info.httpAddress != null) {
+      builder.setHttpAddress(info.httpAddress);
+    }
+    if (info.labels != null) {
+      builder.setLabels(info.labels);
+    }
+
+    List<NodeEntryInformation> entries = info.entries;
+    if (entries != null) {
+      for (NodeEntryInformation entry : entries) {
+        Messages.NodeEntryInformationProto.Builder node =
+            Messages.NodeEntryInformationProto.newBuilder();
+        node.setFailed(entry.failed);
+        node.setFailedRecently(entry.failedRecently);
+        node.setLive(entry.live);
+        node.setLastUsed(entry.lastUsed);
+        node.setPreempted(entry.preempted);
+        node.setPriority(entry.priority);
+        node.setRequested(entry.requested);
+        node.setReleasing(entry.releasing);
+        node.setStartFailed(entry.startFailed);
+        node.setStarting(entry.starting);
+        builder.addEntries(node.build());
+      }
+    }
+    return builder.build();
+  }
+
+  public static NodeInformation unmarshall(Messages.NodeInformationProto wire) {
+    NodeInformation info = new NodeInformation();
+    info.healthReport = wire.getHealthReport();
+    info.hostname = wire.getHostname();
+    info.httpAddress = wire.getHttpAddress();
+    info.labels = wire.getLabels();
+    info.lastUpdated = wire.getLastUpdated();
+    info.rackName = wire.getRackName();
+    info.state = wire.getState();
+    List<Messages.NodeEntryInformationProto> entriesList = wire.getEntriesList();
+    if (entriesList != null) {
+      info.entries = new ArrayList<>(entriesList.size());
+      for (Messages.NodeEntryInformationProto entry : entriesList) {
+        NodeEntryInformation nei = new NodeEntryInformation();
+        nei.failed = entry.getFailed();
+        nei.failedRecently = entry.getFailedRecently();
+        nei.lastUsed = entry.getLastUsed();
+        nei.live = entry.getLive();
+        nei.preempted = entry.getPreempted();
+        nei.priority = entry.getPriority();
+        nei.requested = entry.getRequested();
+        nei.releasing = entry.getReleasing();
+        nei.startFailed = entry.getStartFailed();
+        nei.starting = entry.getStarting();
+        info.entries.add(nei);
+      }
+    }
+    return info;
+  }
+
   public static ContainerInformation unmarshall(Messages.ContainerInformationProto wire) {
     ContainerInformation info = new ContainerInformation();
     info.containerId = wire.getContainerId();
@@ -169,19 +244,15 @@ public class RestTypeMarshalling {
     return info;
   }
 
-  public static List<ContainerInformation> unmarshall(
-      Messages.GetLiveContainersResponseProto wire) {
-    List<ContainerInformation> infoList = new ArrayList<ContainerInformation>(
-        wire.getContainersList().size());
-    for (Messages.ContainerInformationProto container : wire
-        .getContainersList()) {
+  public static List<ContainerInformation> unmarshall(Messages.GetLiveContainersResponseProto wire) {
+    List<ContainerInformation> infoList = new ArrayList<>(wire.getContainersList().size());
+    for (Messages.ContainerInformationProto container : wire.getContainersList()) {
       infoList.add(unmarshall(container));
     }
     return infoList;
   }
 
-  public static Messages.ContainerInformationProto
-     marshall(ContainerInformation info) {
+  public static Messages.ContainerInformationProto marshall(ContainerInformation info) {
 
     Messages.ContainerInformationProto.Builder builder =
         Messages.ContainerInformationProto.newBuilder();
@@ -218,8 +289,7 @@ public class RestTypeMarshalling {
     return builder.build();
   }
 
-  public static String
-    unmarshall(Messages.WrappedJsonProto wire) {
+  public static String unmarshall(Messages.WrappedJsonProto wire) {
     return wire.getJson();
   }
 

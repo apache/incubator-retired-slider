@@ -85,23 +85,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.apache.slider.api.ResourceKeys.DEF_YARN_CORES;
-import static org.apache.slider.api.ResourceKeys.DEF_YARN_LABEL_EXPRESSION;
-import static org.apache.slider.api.ResourceKeys.DEF_YARN_MEMORY;
-import static org.apache.slider.api.ResourceKeys.YARN_CORES;
-import static org.apache.slider.api.ResourceKeys.YARN_LABEL_EXPRESSION;
-import static org.apache.slider.api.ResourceKeys.YARN_MEMORY;
-import static org.apache.slider.api.RoleKeys.ROLE_FAILED_INSTANCES;
-import static org.apache.slider.api.RoleKeys.ROLE_FAILED_RECENTLY_INSTANCES;
-import static org.apache.slider.api.RoleKeys.ROLE_FAILED_STARTING_INSTANCES;
-import static org.apache.slider.api.RoleKeys.ROLE_NODE_FAILED_INSTANCES;
-import static org.apache.slider.api.RoleKeys.ROLE_PREEMPTED_INSTANCES;
-import static org.apache.slider.api.RoleKeys.ROLE_RELEASING_INSTANCES;
-import static org.apache.slider.api.RoleKeys.ROLE_REQUESTED_INSTANCES;
-import static org.apache.slider.api.StateValues.STATE_CREATED;
-import static org.apache.slider.api.StateValues.STATE_DESTROYED;
-import static org.apache.slider.api.StateValues.STATE_LIVE;
-import static org.apache.slider.api.StateValues.STATE_SUBMITTED;
+import static org.apache.slider.api.ResourceKeys.*;
+import static org.apache.slider.api.RoleKeys.*;
+import static org.apache.slider.api.StateValues.*;
 
 
 /**
@@ -214,7 +200,6 @@ public class AppState {
 
   /**
    *   Count of failed containers
-
    */
   private final Counter failedContainerCount = new Counter();
 
@@ -244,21 +229,21 @@ public class AppState {
    * resources, etc. When container started callback is received,
    * the node is promoted from here to the containerMap
    */
-  private final Map<ContainerId, RoleInstance> startingNodes =
+  private final Map<ContainerId, RoleInstance> startingContainers =
     new ConcurrentHashMap<>();
 
   /**
    * List of completed nodes. This isn't kept in the CD as it gets too
    * big for the RPC responses. Indeed, we should think about how deep to get this
    */
-  private final Map<ContainerId, RoleInstance> completedNodes
+  private final Map<ContainerId, RoleInstance> completedContainers
     = new ConcurrentHashMap<>();
 
   /**
    * Nodes that failed to start.
    * Again, kept out of the CD
    */
-  private final Map<ContainerId, RoleInstance> failedNodes =
+  private final Map<ContainerId, RoleInstance> failedContainers =
     new ConcurrentHashMap<>();
 
   /**
@@ -324,8 +309,7 @@ public class AppState {
 
   private void register(String name, Counter counter) {
     this.metricsAndMonitoring.getMetrics().register(
-        MetricRegistry.name(AppState.class,
-            name), counter);
+        MetricRegistry.name(AppState.class, name), counter);
   }
 
   public long getFailedCountainerCount() {
@@ -382,21 +366,20 @@ public class AppState {
     return rolePriorityMap;
   }
 
-  private Map<ContainerId, RoleInstance> getStartingNodes() {
-    return startingNodes;
+  private Map<ContainerId, RoleInstance> getStartingContainers() {
+    return startingContainers;
   }
 
-  private Map<ContainerId, RoleInstance> getCompletedNodes() {
-    return completedNodes;
-  }
-
-
-  public Map<ContainerId, RoleInstance> getFailedNodes() {
-    return failedNodes;
+  private Map<ContainerId, RoleInstance> getCompletedContainers() {
+    return completedContainers;
   }
 
 
-  public Map<ContainerId, RoleInstance> getLiveNodes() {
+  public Map<ContainerId, RoleInstance> getFailedContainers() {
+    return failedContainers;
+  }
+
+  public Map<ContainerId, RoleInstance> getLiveContainers() {
     return liveNodes;
   }
 
@@ -592,8 +575,9 @@ public class AppState {
     initClusterStatus();
 
 
-    // add the roles
+    // set up the role history
     roleHistory = new RoleHistory(providerRoles);
+    roleHistory.register(metricsAndMonitoring);
     roleHistory.onStart(fs, historyDir);
 
     //rebuild any live containers
@@ -871,11 +855,11 @@ public class AppState {
     RoleInstance am = new RoleInstance(container);
     am.role = SliderKeys.COMPONENT_AM;
     am.roleId = SliderKeys.ROLE_AM_PRIORITY_INDEX;
-    am.createTime = System.currentTimeMillis();
-    am.startTime = System.currentTimeMillis();
+    am.createTime =now();
+    am.startTime = am.createTime;
     appMasterNode = am;
     //it is also added to the set of live nodes
-    getLiveNodes().put(containerId, am);
+    getLiveContainers().put(containerId, am);
     putOwnedContainer(containerId, am);
     
     // patch up the role status
@@ -894,7 +878,7 @@ public class AppState {
    * and it will just cause confusion
    */
   public void noteAMLaunched() {
-    getLiveNodes().put(appMasterNode.getContainerId(), appMasterNode);
+    getLiveContainers().put(appMasterNode.getContainerId(), appMasterNode);
   }
 
   /**
@@ -1002,7 +986,7 @@ public class AppState {
    */
   public synchronized List<RoleInstance> cloneLiveContainerInfoList() {
     List<RoleInstance> allRoleInstances;
-    Collection<RoleInstance> values = getLiveNodes().values();
+    Collection<RoleInstance> values = getLiveContainers().values();
     allRoleInstances = new ArrayList<>(values);
     return allRoleInstances;
   }
@@ -1015,7 +999,7 @@ public class AppState {
    */
   public synchronized RoleInstance getLiveInstanceByContainerID(String containerId)
       throws NoSuchNodeException {
-    Collection<RoleInstance> nodes = getLiveNodes().values();
+    Collection<RoleInstance> nodes = getLiveContainers().values();
     return findNodeInCollection(containerId, nodes);
   }
 
@@ -1062,7 +1046,7 @@ public class AppState {
     //first, a hashmap of those containerIDs is built up
     Set<String> uuidSet = new HashSet<String>(containerIDs);
     List<RoleInstance> nodes = new ArrayList<RoleInstance>(uuidSet.size());
-    Collection<RoleInstance> clusterNodes = getLiveNodes().values();
+    Collection<RoleInstance> clusterNodes = getLiveContainers().values();
 
     for (RoleInstance node : clusterNodes) {
       if (uuidSet.contains(node.id)) {
@@ -1080,7 +1064,7 @@ public class AppState {
    */
   public synchronized List<RoleInstance> enumLiveNodesInRole(String role) {
     List<RoleInstance> nodes = new ArrayList<RoleInstance>();
-    Collection<RoleInstance> allRoleInstances = getLiveNodes().values();
+    Collection<RoleInstance> allRoleInstances = getLiveContainers().values();
     for (RoleInstance node : allRoleInstances) {
       if (role.isEmpty() || role.equals(node.role)) {
         nodes.add(node);
@@ -1117,7 +1101,7 @@ public class AppState {
    */
   private synchronized Map<String, List<String>> createRoleToInstanceMap() {
     Map<String, List<String>> map = new HashMap<String, List<String>>();
-    for (RoleInstance node : getLiveNodes().values()) {
+    for (RoleInstance node : getLiveContainers().values()) {
       List<String> containers = map.get(node.role);
       if (containers == null) {
         containers = new ArrayList<String>();
@@ -1136,7 +1120,7 @@ public class AppState {
    */
   public synchronized Map<String, Map<String, ClusterNode>> createRoleToClusterNodeMap() {
     Map<String, Map<String, ClusterNode>> map = new HashMap<>();
-    for (RoleInstance node : getLiveNodes().values()) {
+    for (RoleInstance node : getLiveContainers().values()) {
       
       Map<String, ClusterNode> containers = map.get(node.role);
       if (containers == null) {
@@ -1160,7 +1144,7 @@ public class AppState {
     instance.state = STATE_SUBMITTED;
     instance.container = container;
     instance.createTime = now();
-    getStartingNodes().put(container.getId(), instance);
+    getStartingContainers().put(container.getId(), instance);
     putOwnedContainer(container.getId(), instance);
     roleHistory.onContainerStartSubmitted(container, instance);
   }
@@ -1354,7 +1338,7 @@ public class AppState {
       throw new RuntimeException(
         "Unknown role for node " + node);
     }
-    getLiveNodes().put(node.getContainerId(), node);
+    getLiveContainers().put(node.getContainerId(), node);
     //tell role history
     roleHistory.onContainerStarted(container);
   }
@@ -1395,7 +1379,7 @@ public class AppState {
                                      instance);
     }
     instance.startTime = now();
-    RoleInstance starting = getStartingNodes().remove(containerId);
+    RoleInstance starting = getStartingContainers().remove(containerId);
     if (null == starting) {
       throw new YarnRuntimeException(
         "Container "+ containerId +"%s is already started");
@@ -1423,7 +1407,7 @@ public class AppState {
     removeOwnedContainer(containerId);
     incFailedCountainerCount();
     incStartFailedCountainerCount();
-    RoleInstance instance = getStartingNodes().remove(containerId);
+    RoleInstance instance = getStartingContainers().remove(containerId);
     if (null != instance) {
       RoleStatus roleStatus = lookupRoleStatus(instance.roleId);
       String text;
@@ -1434,7 +1418,7 @@ public class AppState {
       }
       instance.diagnostics = text;
       roleStatus.noteFailed(true, text, ContainerOutcome.Failed);
-      getFailedNodes().put(containerId, instance);
+      getFailedContainers().put(containerId, instance);
       roleHistory.onNodeManagerContainerStartFailed(instance.container);
     }
   }
@@ -1547,11 +1531,11 @@ public class AppState {
       if (roleInstance != null) {
         //it was active, move it to failed 
         incFailedCountainerCount();
-        failedNodes.put(containerId, roleInstance);
+        failedContainers.put(containerId, roleInstance);
       } else {
         // the container may have been noted as failed already, so look
         // it up
-        roleInstance = failedNodes.get(containerId);
+        roleInstance = failedContainers.get(containerId);
       }
       if (roleInstance != null) {
         int roleId = roleInstance.roleId;
@@ -1605,12 +1589,12 @@ public class AppState {
     //remove the node
     ContainerId id = status.getContainerId();
     log.info("Removing node ID {}", id);
-    RoleInstance node = getLiveNodes().remove(id);
+    RoleInstance node = getLiveContainers().remove(id);
     if (node != null) {
       node.state = STATE_DESTROYED;
       node.exitCode = exitStatus;
       node.diagnostics = status.getDiagnostics();
-      getCompletedNodes().put(id, node);
+      getCompletedContainers().put(id, node);
       result.roleInstance = node;
     } else {
       // not in the list
@@ -1624,7 +1608,7 @@ public class AppState {
     // finally, verify the node doesn't exist any more
     assert !containersBeingReleased.containsKey(
         containerId) : "container still in release queue";
-    assert !getLiveNodes().containsKey(
+    assert !getLiveContainers().containsKey(
         containerId) : " container still in live nodes";
     assert getOwnedContainer(containerId) ==
            null : "Container still in active container list";

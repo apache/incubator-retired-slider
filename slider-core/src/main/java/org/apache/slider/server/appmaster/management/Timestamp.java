@@ -16,27 +16,18 @@
  * limitations under the License.
  */
 
-package org.apache.slider.api.types;
-
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
-import org.codehaus.jackson.map.annotate.JsonSerialize;
-
-import java.util.ArrayList;
-import java.util.List;
+package org.apache.slider.server.appmaster.management;
 
 /**
- * Serialized node information. Must be kept in sync with the protobuf equivalent.
+ * A timestamp metric
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
-@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
-public class NodeInformation {
+public class Timestamp extends LongGauge {
 
-  public String healthReport;
-  public String hostname;
-  public String httpAddress;
-  public String labels;
-  public long lastUpdated;
-  public String rackName;
-  public String state;
-  public List<NodeEntryInformation> entries = new ArrayList<>();
+  public Timestamp(long val) {
+    super(val);
+  }
+
+  public Timestamp() {
+  }
+
 }

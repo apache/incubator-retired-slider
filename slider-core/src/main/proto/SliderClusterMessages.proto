@@ -384,3 +384,15 @@ message GetCertificateStoreRequestProto {
 message GetCertificateStoreResponseProto {
   required bytes store = 1;
 }
+
+message GetLiveNodesRequestProto {
+}
+
+message GetLiveNodesResponseProto {
+  repeated string names = 1;
+  repeated NodeInformationProto nodes = 2;
+}
+
+message GetLiveNodeRequestProto {
+  required string name = 1;
+}

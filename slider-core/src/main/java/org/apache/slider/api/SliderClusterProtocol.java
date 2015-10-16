@@ -30,8 +30,7 @@ import java.io.IOException;
  * Cluster protocol. This can currently act as a versioned IPC
  * endpoint or be relayed via protobuf
  */
-@KerberosInfo(
-  serverPrincipal = SliderXmlConfKeys.KEY_KERBEROS_PRINCIPAL)
+@KerberosInfo(serverPrincipal = SliderXmlConfKeys.KEY_KERBEROS_PRINCIPAL)
 public interface SliderClusterProtocol extends VersionedProtocol {
   long versionID = 0x01;
 
@@ -39,10 +38,8 @@ public interface SliderClusterProtocol extends VersionedProtocol {
    * Stop the cluster
    */
 
-  
   Messages.StopClusterResponseProto stopCluster(Messages.StopClusterRequestProto request) throws
                                                                                           IOException, YarnException;
-
   /**
    * Upgrade the application containers
    * 
@@ -155,20 +152,26 @@ public interface SliderClusterProtocol extends VersionedProtocol {
       Messages.GetLiveComponentRequestProto request
   ) throws IOException;
 
-  
+  Messages.GetLiveNodesResponseProto getLiveNodes(
+      Messages.GetLiveNodesRequestProto request
+  ) throws IOException;
+
+  Messages.NodeInformationProto getLiveNode(
+      Messages.GetLiveNodeRequestProto request
+  ) throws IOException;
+
   Messages.WrappedJsonProto getModelDesired(Messages.EmptyPayloadProto request) throws IOException;
 
-  
   Messages.WrappedJsonProto getModelDesiredAppconf(Messages.EmptyPayloadProto request) throws IOException;
-    
+
   Messages.WrappedJsonProto getModelDesiredResources(Messages.EmptyPayloadProto request) throws IOException;
-   
+
   Messages.WrappedJsonProto getModelResolved(Messages.EmptyPayloadProto request) throws IOException;
-  
+
   Messages.WrappedJsonProto getModelResolvedAppconf(Messages.EmptyPayloadProto request) throws IOException;
-  
+
   Messages.WrappedJsonProto getModelResolvedResources(Messages.EmptyPayloadProto request) throws IOException;
-   
+
   Messages.WrappedJsonProto getLiveResources(Messages.EmptyPayloadProto request) throws IOException;
 
   Messages.GetCertificateStoreResponseProto getClientCertificateStore(Messages.GetCertificateStoreRequestProto request)

@@ -28,41 +28,34 @@ import org.codehaus.jackson.map.annotate.JsonSerialize;
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 public class NodeEntryInformation {
 
-  public int priority;
-
-  /**
-   * instance explicitly requested on this node: it's OK if an allocation
-   * comes in that has not been (and when that happens, this count should 
-   * not drop).
-   */
-  public int requested;
-
-  /** number of starting instances */
-  public int starting;
-
-  /** incrementing counter of instances that failed to start */
-  public int startFailed;
 
   /** incrementing counter of instances that failed */
   public int failed;
 
-  /**
-   * Counter of "failed recently" events. These are all failures
-   * which have happened since it was last reset.
-   */
+  /** Counter of "failed recently" events. */
   public int failedRecently;
+
+  /** timestamp of last use */
+  public long lastUsed;
+
+  /** Number of live nodes. */
+  public int live;
 
   /** incrementing counter of instances that have been pre-empted. */
   public int preempted;
 
-  /**
-   * Number of live nodes. 
-   */
-  public int live;
+  /** Priority */
+  public int priority;
+
+  /** instance explicitly requested on this node */
+  public int requested;
 
   /** number of containers being released off this node */
   public int releasing;
 
-  /** timestamp of last use */
-  public long lastUsed;
+  /** incrementing counter of instances that failed to start */
+  public int startFailed;
+
+  /** number of starting instances */
+  public int starting;
 }

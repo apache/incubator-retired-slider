@@ -18,14 +18,13 @@
 
 package org.apache.slider.server.appmaster.management;
 
+import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.service.CompositeService;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -100,13 +99,32 @@ public class MetricsAndMonitoring extends CompositeService {
   }
 
   /**
-   * Get a specific meter and mark it
+   * Get a specific meter and mark it. This will create and register it on demand.
    * @param name name of meter/counter
    */
   public void markMeterAndCounter(String name) {
     MeterAndCounter meter = getOrCreateMeterAndCounter(name);
     meter.mark();
   }
+
+  /**
+   * Given a {@link Metric}, registers it under the given name.
+   *
+   * @param name   the name of the metric
+   * @param metric the metric
+   * @param <T>    the type of the metric
+   * @return {@code metric}
+   * @throws IllegalArgumentException if the name is already registered
+   */
+  public <T extends Metric> T register(String name, T metric) throws IllegalArgumentException {
+    return metrics.register(name, metric);
+  }
+
+  public <T extends Metric> T register(Class<?> klass, T metric, String... names)
+      throws IllegalArgumentException {
+    return register(MetricRegistry.name(klass, names), metric);
+  }
+
 
   /**
    * Add an event (synchronized)

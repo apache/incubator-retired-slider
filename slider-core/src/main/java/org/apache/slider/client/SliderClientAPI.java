@@ -99,7 +99,7 @@ public interface SliderClientAPI extends Service {
    * @throws YarnException Yarn problems
    * @throws IOException other problems
    * @throws BadCommandArgumentsException bad arguments.
-   * @deperecated use #actionKeytab
+   * @deprecated use #actionKeytab
    */
   int actionInstallKeytab(ActionInstallKeytabArgs installKeytabInfo)
       throws YarnException, IOException;
@@ -111,7 +111,7 @@ public interface SliderClientAPI extends Service {
    * @throws YarnException Yarn problems
    * @throws IOException other problems
    * @throws BadCommandArgumentsException bad arguments.
-   * @deperecated use #actionKeytab
+   * @deprecated use #actionKeytab
    */
   int actionKeytab(ActionKeytabArgs keytabInfo)
       throws YarnException, IOException;

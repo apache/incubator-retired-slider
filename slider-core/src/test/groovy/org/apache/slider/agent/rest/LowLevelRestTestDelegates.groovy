@@ -59,14 +59,14 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
     application = appendToURL(appmaster, SLIDER_PATH_APPLICATION)
   }
 
-
   public void testCodahaleOperations() throws Throwable {
     describe "Codahale operations  $this"
     getWebPage(appmaster)
     getWebPage(appmaster, SYSTEM_THREADS)
     getWebPage(appmaster, SYSTEM_HEALTHCHECK)
     getWebPage(appmaster, SYSTEM_PING)
-    getWebPage(appmaster, SYSTEM_METRICS_JSON)
+    def page = getWebPage(appmaster, SYSTEM_METRICS_JSON)
+    validateCodahaleJson(parseMetrics(page))
   }
   
   public void logCodahaleMetrics() {
@@ -78,7 +78,7 @@ class LowLevelRestTestDelegates extends AbstractRestTestDelegate {
 
   public void testMimeTypes() throws Throwable {
     describe "Mime Types  $this"
-    HttpOperationResponse response= executeGet(
+    HttpOperationResponse response = executeGet(
         appendToURL(appmaster,
         SLIDER_PATH_APPLICATION, LIVE_RESOURCES))
     response.headers.each { key, val -> log.info("$key $val")}

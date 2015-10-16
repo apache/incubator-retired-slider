@@ -263,6 +263,26 @@ public class SliderClusterProtocolProxy implements SliderClusterProtocol {
   }
 
   @Override
+  public Messages.GetLiveNodesResponseProto getLiveNodes(Messages.GetLiveNodesRequestProto request)
+      throws IOException {
+    try {
+      return endpoint.getLiveNodes(NULL_CONTROLLER, request);
+    } catch (ServiceException e) {
+      throw convert(e);
+    }
+  }
+
+  @Override
+  public Messages.NodeInformationProto getLiveNode(Messages.GetLiveNodeRequestProto request)
+      throws IOException {
+    try {
+      return endpoint.getLiveNode(NULL_CONTROLLER, request);
+    } catch (ServiceException e) {
+      throw convert(e);
+    }
+  }
+
+  @Override
   public Messages.WrappedJsonProto getModelDesired(Messages.EmptyPayloadProto request) throws IOException {
     try {
       return endpoint.getModelDesired(NULL_CONTROLLER, request);

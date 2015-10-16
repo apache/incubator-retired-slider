@@ -31,6 +31,7 @@ import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.ContainerInformation;
 import org.apache.slider.api.SliderApplicationApi;
+import org.apache.slider.api.types.NodeInformation;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
 import org.apache.slider.core.conf.ConfTreeOperations;
@@ -232,8 +233,7 @@ public class SliderApplicationApiRestClient extends BaseRestClient
   public Map<String, ComponentInformation> enumComponents() throws
       IOException {
     return getApplicationResource(LIVE_COMPONENTS,
-        new GenericType<Map<String, ComponentInformation>>() {
-        });
+        new GenericType<Map<String, ComponentInformation>>() { });
   }
 
   @Override
@@ -241,6 +241,18 @@ public class SliderApplicationApiRestClient extends BaseRestClient
       IOException {
     return getApplicationResource(LIVE_COMPONENTS + "/" + componentName,
         ComponentInformation.class);
+  }
+
+  @Override
+  public Map<String, NodeInformation> getLiveNodes() throws IOException {
+    return getApplicationResource(LIVE_NODES,
+        new GenericType<Map<String, NodeInformation>>() { });
+  }
+
+  @Override
+  public NodeInformation getLiveNode(String hostname) throws IOException {
+    return getApplicationResource(LIVE_COMPONENTS + "/" + hostname,
+        NodeInformation.class);
   }
 
   @Override
