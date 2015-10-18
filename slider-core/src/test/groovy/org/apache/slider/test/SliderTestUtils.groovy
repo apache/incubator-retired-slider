@@ -100,7 +100,12 @@ class SliderTestUtils extends Assert {
     log.info("");
   }
 
-  public static String prettyPrint(String json) {
+  /**
+   * Convert a JSON string to something readable
+   * @param json
+   * @return a string for printing
+   */
+  public static String prettyPrintJson(String json) {
     JsonOutput.prettyPrint(json)
   }
 
@@ -370,7 +375,7 @@ class SliderTestUtils extends Assert {
       if (timedOut) {
         duration.finish();
         describe("$operation: role count not met after $duration: $details")
-        log.info(prettyPrint(status.toJsonString()))
+        log.info(prettyPrintJson(status.toJsonString()))
         fail("$operation: role counts not met after $duration: " +
              details.toString() +
              " in \n$status ")
@@ -416,7 +421,7 @@ class SliderTestUtils extends Assert {
       String text,
       ClusterDescription status) {
     describe(text)
-    log.info(prettyPrint(status.toJsonString()))
+    log.info(prettyPrintJson(status.toJsonString()))
   }
 
 
@@ -1316,6 +1321,17 @@ class SliderTestUtils extends Assert {
   }
 
   /**
+   * Get a value from a map; raise an assertion if it is not there
+   * @param map map to look up
+   * @param key key
+   * @return the string value
+   */
+  String requiredMapValue(Map map, String key) {
+    assert map[key] != null
+    map[key].toString()
+  }
+
+  /**
    * Get a web page and deserialize the supplied JSON into
    * an instance of the specific class.
    * @param clazz class to deserialize to
@@ -1419,6 +1435,48 @@ class SliderTestUtils extends Assert {
     validateCodahaleJson(metrics)
     return metrics;
   }
+
+  /**
+   * Await a specific gauge being of the desired value
+   * @param target target URL
+   * @param gauge gauge name
+   * @param desiredValue desired value
+   * @param timeout timeout in millis
+   * @param sleepDur sleep in millis
+   */
+  public void awaitGaugeValue(String target, String gauge, int desiredValue,
+      int timeout,
+      int sleepDur) {
+    def text = "Probe $target for gauge $gauge == $desiredValue"
+    repeatUntilSuccess(text,
+      this.&probeMetricGaugeValue,
+      timeout, sleepDur,
+      [
+          url : target,
+          gauge: gauge,
+          desiredValue: desiredValue.toString()
+      ],
+      true, text) {
+       log.error(prettyPrintJson(GET(target)))
+    }
+  }
+
+  Outcome probeMetricGaugeValue(Map args) {
+    String url = requiredMapValue(args, "url")
+    String gauge = requiredMapValue(args, "gauge")
+    String vstr = requiredMapValue(args, "desiredValue")
+    assert vstr != null, "null desired value in $args"
+    assert vstr != "", "empty desired value in $args"
+    int desiredValue = Integer.decode(vstr)
+    try {
+      def metrics = parseMetrics(GET(url))
+      def gaugeValue = getGaugeValue(metrics, gauge, -1)
+      return gaugeValue == desiredValue ? Outcome.Success : Outcome.Retry
+    } catch (IOException e) {
+      return Outcome.Fail
+    }
+  }
+
 
 
 }

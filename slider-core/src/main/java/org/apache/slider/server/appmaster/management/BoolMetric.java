@@ -18,7 +18,6 @@
 
 package org.apache.slider.server.appmaster.management;
 
-import com.codahale.metrics.Counting;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Metric;
 
@@ -55,7 +54,7 @@ public class BoolMetric implements Metric, Gauge<Integer> {
    * @return true if the input parses to an integer other than 0. False if it doesn't parse
    * or parses to 0.
    */
-  public boolean fromString(String s) {
+  public static boolean fromString(String s) {
     try {
       return Integer.valueOf(s) != 0;
     } catch (NumberFormatException e) {

@@ -75,8 +75,8 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
     }
     
     execOperation(WEB_STARTUP_TIME) {
-      def metrics = GET(directAM, SYSTEM_METRICS)
-      log.info metrics
+      def metrics = GET(directAM, SYSTEM_METRICS_JSON)
+      log.info prettyPrintJson(metrics)
     }
 
     GET(proxyAM)
@@ -87,15 +87,12 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
     log.info GET(proxyAM, SYSTEM_METRICS_JSON)
 
     // using the metrics, await the first node status update
-    execOperation(WEB_STARTUP_TIME) {
-      def metrics = getMetrics(proxyAM)
-      if (!getGaugeAsBool(metrics,
-            "org.apache.slider.server.appmaster.state.RoleHistory.nodes-updated.flag", false)) {
-        throw new IOException("Nodes not updated in $metrics")
-      } else {
-        "true"
-      };
-    }
+    awaitGaugeValue(
+        appendToURL(proxyAM, SYSTEM_METRICS_JSON),
+        "org.apache.slider.server.appmaster.state.RoleHistory.nodes-updated.flag",
+        1,
+        WEB_STARTUP_TIME  * 2, 500)
+
     // Is the back door required? If so, don't test complex verbs via the proxy
     def proxyComplexVerbs = !SliderXmlConfKeys.X_DEV_INSECURE_REQUIRED
 
