@@ -574,11 +574,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     String action = serviceArgs.getAction();
     List<String> actionArgs = serviceArgs.getActionArgs();
     int exitCode;
-/*  JDK7
-  switch (action) {
+    switch (action) {
       case SliderActions.ACTION_HELP:
-        log.info(getName() + serviceArgs.usage());
-        exitCode = LauncherExitCodes.EXIT_USAGE;
+        log.info("{}: {}", getName(), serviceArgs.usage());
+        exitCode = SliderExitCodes.EXIT_USAGE;
         break;
       case SliderActions.ACTION_CREATE:
         exitCode = createAndRunCluster(actionArgs.get(0));
@@ -586,19 +585,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       default:
         throw new SliderException("Unimplemented: " + action);
     }
-    */
-    if (action.equals(SliderActions.ACTION_HELP)) {
-      log.info("{}: {}", getName(), serviceArgs.usage());
-      exitCode = SliderExitCodes.EXIT_USAGE;
-    } else if (action.equals(SliderActions.ACTION_CREATE)) {
-      exitCode = createAndRunCluster(actionArgs.get(0));
-    } else {
-      throw new SliderException("Unimplemented: " + action);
-    }
     log.info("Exiting AM; final exit code = {}", exitCode);
     return exitCode;
   }
-
 
   /**
    * Initialize a newly created service then add it. 
@@ -705,23 +694,22 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     Map<String, String> envVars;
     List<Container> liveContainers;
-    
-    /**
+
+    /*
      * It is critical this section is synchronized, to stop async AM events
      * arriving while registering a restarting AM.
      */
     synchronized (appState) {
       int heartbeatInterval = HEARTBEAT_INTERVAL;
 
-      //add the RM client -this brings the callbacks in
-      asyncRMClient = AMRMClientAsync.createAMRMClientAsync(heartbeatInterval,
-                                                            this);
+      // add the RM client -this brings the callbacks in
+      asyncRMClient = AMRMClientAsync.createAMRMClientAsync(heartbeatInterval, this);
       addService(asyncRMClient);
       //now bring it up
       deployChildService(asyncRMClient);
 
 
-      //nmclient relays callbacks back to this class
+      // nmclient relays callbacks back to this class
       nmClientAsync = new NMClientAsyncImpl("nmclient", this);
       deployChildService(nmClientAsync);
 
@@ -756,8 +744,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       log.info(registryOperations.toString());
 
       //build the role map
-      List<ProviderRole> providerRoles =
-        new ArrayList<ProviderRole>(providerService.getRoles());
+      List<ProviderRole> providerRoles = new ArrayList<>(providerService.getRoles());
       providerRoles.addAll(SliderAMClientProvider.ROLES);
 
       // Start up the WebApp and track the URL for it
@@ -1020,7 +1007,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // up to date token for container launches (getContainerCredentials()).
     UserGroupInformation currentUser = UserGroupInformation.getCurrentUser();
     Credentials credentials = currentUser.getCredentials();
-    List<Text> filteredTokens = new ArrayList<Text>();
+    List<Text> filteredTokens = new ArrayList<>();
     filteredTokens.add(AMRMTokenIdentifier.KIND_NAME);
 
     boolean keytabProvided = securityConfiguration.isKeytabProvided();
@@ -1942,7 +1929,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
   protected synchronized void launchProviderService(AggregateConf instanceDefinition,
                                                     File confDir)
     throws IOException, SliderException {
-    Map<String, String> env = new HashMap<String, String>();
+    Map<String, String> env = new HashMap<>();
     boolean execStarted = providerService.exec(instanceDefinition, confDir, env,
         this);
     if (execStarted) {

@@ -683,14 +683,18 @@ class SliderTestUtils extends Assert {
    *   to have been called.
    *   
    * @param path path to page
-   * @param connectionChecks optional closure to run against an open connection
    * @return body of response
    */
-  public static String getWebPage(String path, Closure connectionChecks = null) {
+  public static String getWebPage(String path) {
     HttpOperationResponse outcome = executeGet(path)
     return new String(outcome.data);
   }
 
+  /**
+   * Execute a GET operation
+   * @param path path to GET
+   * @return the response
+   */
   public static HttpOperationResponse executeGet(String path) {
     assert path
     assertHttpSupportInitialized()
@@ -1476,7 +1480,5 @@ class SliderTestUtils extends Assert {
       return Outcome.Fail
     }
   }
-
-
 
 }
