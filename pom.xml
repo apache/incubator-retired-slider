@@ -1432,6 +1432,7 @@
                 <exclude>DISCLAIMER</exclude>
                 <exclude>app-packages/hbase/target/**</exclude>
                 <exclude>target/*</exclude>
+                <exclude>DEPENDENCIES</exclude>
               </excludes>
             </configuration>
           </plugin>
