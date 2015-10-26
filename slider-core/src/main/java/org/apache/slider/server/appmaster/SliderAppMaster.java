@@ -492,7 +492,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // create and register monitoring services
     addService(metricsAndMonitoring);
     metrics = metricsAndMonitoring.getMetrics();
-/*
+/* TODO: turn these one once the metrics testing is more under control
     metrics.registerAll(new ThreadStatesGaugeSet());
     metrics.registerAll(new MemoryUsageGaugeSet());
     metrics.registerAll(new GarbageCollectorMetricSet());
@@ -678,8 +678,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
      */
     appMasterContainerID = ConverterUtils.toContainerId(
       SliderUtils.mandatoryEnvVariable(
-          ApplicationConstants.Environment.CONTAINER_ID.name())
-                                                       );
+          ApplicationConstants.Environment.CONTAINER_ID.name()));
     appAttemptID = appMasterContainerID.getApplicationAttemptId();
 
     ApplicationId appid = appAttemptID.getApplicationId();
@@ -792,8 +791,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
       // build the handler for RM request/release operations; this uses
       // the max value as part of its lookup
-      rmOperationHandler = new AsyncRMOperationHandler(asyncRMClient,
-          maxResources);
+      rmOperationHandler = new AsyncRMOperationHandler(asyncRMClient, maxResources);
 
       // set the RM-defined maximum cluster values
       appInformation.put(ResourceKeys.YARN_CORES, Integer.toString(containerMaxCores));
@@ -814,8 +812,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
           // principal.  Can do so now since AM registration with RM above required
           // tokens associated to principal
           String principal = securityConfiguration.getPrincipal();
-          File localKeytabFile =
-              securityConfiguration.getKeytabFile(instanceDefinition);
+          File localKeytabFile = securityConfiguration.getKeytabFile(instanceDefinition);
           // Now log in...
           login(principal, localKeytabFile);
           // obtain new FS reference that should be kerberos based and different
@@ -832,8 +829,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       Configuration providerConf =
         providerService.loadProviderConfigurationInformation(confDir);
 
-      providerService
-          .initializeApplicationConfiguration(instanceDefinition, fs);
+      providerService.initializeApplicationConfiguration(instanceDefinition, fs);
 
       providerService.validateApplicationConfiguration(instanceDefinition,
           confDir,
@@ -1080,6 +1076,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
   protected void login(String principal, File localKeytabFile)
       throws IOException, SliderException {
+    log.info("Logging in as {} with keytab {}", principal, localKeytabFile);
     UserGroupInformation.loginUserFromKeytab(principal,
                                              localKeytabFile.getAbsolutePath());
     validateLoginUser(UserGroupInformation.getLoginUser());

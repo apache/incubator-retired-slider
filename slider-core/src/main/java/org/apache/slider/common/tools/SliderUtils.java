@@ -1225,11 +1225,11 @@ public final class SliderUtils {
    * @param conf configuration to look at
    * @return true if the cluster is secure
    * @throws IOException cluster is secure
-   * @throws BadConfigException the configuration/process is invalid
+   * @throws SliderException the configuration/process is invalid
    */
   public static boolean maybeInitSecurity(Configuration conf) throws
       IOException,
-      BadConfigException {
+      SliderException {
     boolean clusterSecure = isHadoopClusterSecure(conf);
     if (clusterSecure) {
       log.debug("Enabling security");
@@ -1247,7 +1247,7 @@ public final class SliderUtils {
    */
   public static boolean initProcessSecurity(Configuration conf) throws
       IOException,
-      BadConfigException {
+      SliderException {
 
     if (processSecurityAlreadyInitialized.compareAndSet(true, true)) {
       //security is already inited
@@ -1273,7 +1273,8 @@ public final class SliderUtils {
     log.debug("Authenticating as {}", authUser);
     log.debug("Login user is {}", UserGroupInformation.getLoginUser());
     if (!UserGroupInformation.isSecurityEnabled()) {
-      throw new BadConfigException("Although secure mode is enabled," +
+      throw new SliderException(LauncherExitCodes.EXIT_UNAUTHORIZE,
+          "Although secure mode is enabled," +
          "the application has already set up its user as an insecure entity %s",
           authUser);
     }
