@@ -34,6 +34,7 @@ import org.apache.hadoop.fs.PathNotFoundException;
 import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.hadoop.fs.permission.FsAction;
 import org.apache.hadoop.fs.permission.FsPermission;
+import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.registry.client.api.RegistryConstants;
 import org.apache.hadoop.registry.client.api.RegistryOperations;
@@ -291,6 +292,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    */
   public SliderClient() {
     super("Slider Client");
+    new HdfsConfiguration();
     new YarnConfiguration();
   }
 
