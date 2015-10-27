@@ -4450,8 +4450,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       FilenameFilter jarFilter = new FilenameFilter() {
         public boolean accept(File dir, String name) {
           String lowercaseName = name.toLowerCase();
-          if (lowercaseName.endsWith(".jar")
-              && !lowercaseName.startsWith("slider-core")) {
+          if (lowercaseName.endsWith(".jar")) {
             return true;
           } else {
             return false;
