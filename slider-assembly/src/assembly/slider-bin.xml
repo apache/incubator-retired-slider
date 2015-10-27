@@ -86,6 +86,12 @@
     </file>
     
     <file>
+      <source>${project.build.directory}/lib/slider-dependency.tar.gz</source>
+      <outputDirectory>lib</outputDirectory>
+      <destName>slider.tar.gz</destName>
+    </file>
+    
+    <file>
       <source>${project.build.directory}/maven-shared-archive-resources/META-INF/DEPENDENCIES</source>
       <outputDirectory>/</outputDirectory>
     </file>
