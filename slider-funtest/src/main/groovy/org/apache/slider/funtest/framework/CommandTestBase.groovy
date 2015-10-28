@@ -23,7 +23,6 @@ import org.apache.commons.lang.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.hdfs.HdfsConfiguration
 import org.apache.hadoop.registry.client.api.RegistryConstants
 import org.apache.hadoop.util.ExitUtil
 import org.apache.hadoop.util.Shell
@@ -106,7 +105,6 @@ abstract class CommandTestBase extends SliderTestUtils {
   (which it may) the class will not be instantiable.
    */
   static {
-    new HdfsConfiguration()
     ConfigHelper.injectSliderXMLResource()
     ConfigHelper.registerDeprecatedConfigItems();
     SLIDER_CONFIG = ConfLoader.loadSliderConf(SLIDER_CONF_XML, true);
