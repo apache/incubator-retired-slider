@@ -21,6 +21,7 @@ package org.apache.slider.server.appmaster.model.mock
 import org.apache.hadoop.yarn.api.records.ContainerId
 import org.apache.hadoop.yarn.api.records.ContainerState
 import org.apache.hadoop.yarn.api.records.ContainerStatus
+import org.apache.hadoop.yarn.api.records.Resource
 
 class MockContainerStatus extends ContainerStatus {
 
@@ -28,4 +29,6 @@ class MockContainerStatus extends ContainerStatus {
   ContainerState state
   String diagnostics
   int exitStatus
+
+  Resource capability;
 }

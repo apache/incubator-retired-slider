@@ -34,7 +34,6 @@ import org.apache.hadoop.fs.PathNotFoundException;
 import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.hadoop.fs.permission.FsAction;
 import org.apache.hadoop.fs.permission.FsPermission;
-import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.registry.client.api.RegistryConstants;
@@ -2235,7 +2234,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       // the relevant security settings go over
       addConfOptionToCLI(commandLine,
           config,
-          DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY);
+          DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY);
     }
     // write out the path output
     commandLine.addOutAndErrFiles(STDOUT_AM, STDERR_AM);
@@ -2399,11 +2398,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    */
   private void propagatePrincipals(Configuration config,
                                    AggregateConf clusterSpec) {
-    String dfsPrincipal = config.get(
-        DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY);
+    String dfsPrincipal = config.get(DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY);
     if (dfsPrincipal != null) {
       String siteDfsPrincipal = OptionKeys.SITE_XML_PREFIX +
-                                DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY;
+                                DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY;
       clusterSpec.getAppConfOperations().getGlobalOptions().putIfUnset(
         siteDfsPrincipal,
         dfsPrincipal);
@@ -4399,8 +4397,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       FilenameFilter jarFilter = new FilenameFilter() {
         public boolean accept(File dir, String name) {
           String lowercaseName = name.toLowerCase();
-          if (lowercaseName.endsWith(".jar")
-              && !lowercaseName.startsWith("slider-core")) {
+          if (lowercaseName.endsWith(".jar")) {
             return true;
           } else {
             return false;

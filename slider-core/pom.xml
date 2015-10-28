@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.apache.slider</groupId>
     <artifactId>slider</artifactId>
-    <version>0.81.0-incubating-SNAPSHOT</version>
+    <version>0.90.0-incubating-SNAPSHOT</version>
   </parent>
 
   <build>
@@ -257,6 +257,14 @@
       <artifactId>hadoop-client</artifactId>
       <scope>compile</scope>
     </dependency>
+
+<!-- if the move to hadoop-hdfs-client JAR causes problems insert this
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-hdfs</artifactId>
+      <scope>compile</scope>
+    </dependency>
+-->
 
     <dependency>
       <groupId>org.apache.hadoop</groupId>

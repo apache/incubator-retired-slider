@@ -60,7 +60,8 @@ public class ChaosMonkeyService extends AbstractService {
   public synchronized void addTarget(String name,
       ChaosTarget target, long probability) {
     if (probability > 0) {
-      log.info("Adding {} with probability {}", name, probability / InternalKeys.PROBABILITY_PERCENT_1);
+      log.info("Adding {} with probability {}", name,
+          ((double)probability) / InternalKeys.PROBABILITY_PERCENT_1);
       chaosEntries.add(new ChaosEntry(name, target, probability, metrics));
     } else {
       log.debug("Action {} not enabled", name);

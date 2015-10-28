@@ -17,14 +17,15 @@
 package org.apache.slider.server.services.security;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.delegation.AbstractDelegationTokenIdentifier;
 import org.apache.hadoop.util.Time;
+import org.apache.slider.common.SliderXmlConfKeys;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.server.appmaster.SliderAppMaster;
 import org.apache.slider.server.appmaster.actions.AsyncAction;
@@ -63,15 +64,15 @@ public class FsDelegationTokenManager {
 
   private void createRemoteUser(Configuration configuration) throws IOException {
     Configuration loginConfig = new Configuration(configuration);
-    loginConfig.set(DFSConfigKeys.HADOOP_SECURITY_AUTHENTICATION,
+    loginConfig.set(CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHENTICATION,
                     "kerberos");
     // using HDFS principal...
     this.remoteUser = UserGroupInformation
         .loginUserFromKeytabAndReturnUGI(
             SecurityUtil.getServerPrincipal(
-                loginConfig.get(DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY),
+                loginConfig.get(SliderXmlConfKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY),
                 InetAddress.getLocalHost().getCanonicalHostName()),
-            loginConfig.get(DFSConfigKeys.DFS_NAMENODE_KEYTAB_FILE_KEY));
+            loginConfig.get(SliderXmlConfKeys.DFS_NAMENODE_KEYTAB_FILE_KEY));
     log.info("Created remote user {}.  UGI reports current user is {}",
              this.remoteUser, UserGroupInformation.getCurrentUser());
   }
@@ -84,8 +85,8 @@ public class FsDelegationTokenManager {
     if (SliderUtils.isHadoopClusterSecure(configuration) &&
         renewingAction == null) {
       renewInterval = configuration.getLong(
-          DFSConfigKeys.DFS_NAMENODE_DELEGATION_TOKEN_RENEW_INTERVAL_KEY,
-          DFSConfigKeys.DFS_NAMENODE_DELEGATION_TOKEN_RENEW_INTERVAL_DEFAULT);
+          SliderXmlConfKeys.DFS_NAMENODE_DELEGATION_TOKEN_RENEW_INTERVAL_KEY,
+          SliderXmlConfKeys.DFS_NAMENODE_DELEGATION_TOKEN_RENEW_INTERVAL_DEFAULT);
       // constructor of action will retrieve initial token.  One may already be
       // associated with user, but its lifecycle/management is not clear so let's
       // create and manage a token explicitly

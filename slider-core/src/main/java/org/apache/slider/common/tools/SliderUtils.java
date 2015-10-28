@@ -35,7 +35,6 @@ import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.GlobFilter;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
-import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.nativeio.NativeIO;
 import org.apache.hadoop.net.NetUtils;
@@ -1289,8 +1288,7 @@ public final class SliderUtils {
     }
 
     SliderUtils.verifyPrincipalSet(conf, YarnConfiguration.RM_PRINCIPAL);
-    SliderUtils.verifyPrincipalSet(conf,
-        DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY);
+    SliderUtils.verifyPrincipalSet(conf, SliderXmlConfKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY);
     return true;
   }
 

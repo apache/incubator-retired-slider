@@ -26,7 +26,6 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.FileUtil
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.hdfs.DFSConfigKeys
 import org.apache.hadoop.hdfs.MiniDFSCluster
 import org.apache.hadoop.service.ServiceOperations
 import org.apache.hadoop.util.Shell
@@ -303,7 +302,7 @@ public abstract class YarnMiniClusterTestBase extends ServiceLauncherBaseTest {
     conf.setFloat(
         YarnConfiguration.NM_MAX_PER_DISK_UTILIZATION_PERCENTAGE,
         99.0f)
-    conf.setInt(DFSConfigKeys.DFS_NAMENODE_DU_RESERVED_KEY, 2 * 1024 * 1024)
+    conf.setInt(SliderXmlConfKeys.DFS_NAMENODE_DU_RESERVED_KEY, 2 * 1024 * 1024)
   }
 
   /**

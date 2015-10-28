@@ -20,9 +20,9 @@ package org.apache.slider.server.services.security
 
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.CommonConfigurationKeysPublic
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.RawLocalFileSystem
-import org.apache.hadoop.hdfs.DFSConfigKeys
 import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenIdentifier
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.Credentials
@@ -32,6 +32,7 @@ import org.apache.hadoop.security.token.Token
 import org.apache.hadoop.security.token.delegation.AbstractDelegationTokenSecretManager
 import org.apache.hadoop.service.ServiceOperations
 import org.apache.hadoop.util.Time
+import org.apache.slider.common.SliderXmlConfKeys
 import org.apache.slider.common.tools.CoreFileSystem
 import org.apache.slider.server.appmaster.actions.ActionStopQueue
 import org.apache.slider.server.appmaster.actions.QueueExecutor
@@ -60,10 +61,10 @@ class TestFsDelegationTokenManager {
 
     conf = new Configuration()
     conf.set(
-            DFSConfigKeys.HADOOP_SECURITY_AUTHENTICATION,
+        CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHENTICATION,
             "TOKEN")
     conf.setLong(
-            DFSConfigKeys.DFS_NAMENODE_DELEGATION_TOKEN_RENEW_INTERVAL_KEY,
+            SliderXmlConfKeys.DFS_NAMENODE_DELEGATION_TOKEN_RENEW_INTERVAL_KEY,
             1000)
     queues.init(conf)
     queues.start();

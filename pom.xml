@@ -19,7 +19,7 @@
   <groupId>org.apache.slider</groupId>
   <artifactId>slider</artifactId>
   <name>Slider</name>
-  <version>0.81.0-incubating-SNAPSHOT</version>
+  <version>0.90.0-incubating-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <description>
@@ -524,13 +524,41 @@
 
       <!-- hadoop-client includes the following jars, so they do not need to be
         included separately:
-        hadoop-common, hadoop-hdfs, hadoop-mapreduce-client-app,
+        hadoop-common, hadoop-hdfs (client?), hadoop-mapreduce-client-app,
         hadoop-yarn-api, hadoop-mapreduce-client-core,
         hadoop-mapreduce-client-jobclient, and hadoop-annotations
       -->
       <dependency>
         <groupId>org.apache.hadoop</groupId>
         <artifactId>hadoop-client</artifactId>
+        <version>${hadoop.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-core-asl</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+
+      <!--
+        Hadoop HDFS is pulled in to guarantee that any split to hadoop-hdfs-client doesn't
+        break the build.
+      -->
+      <dependency>
+        <groupId>org.apache.hadoop</groupId>
+        <artifactId>hadoop-hdfs</artifactId>
         <version>${hadoop.version}</version>
         <exclusions>
           <exclusion>
@@ -1444,6 +1472,7 @@
                 <exclude>DISCLAIMER</exclude>
                 <exclude>app-packages/hbase/target/**</exclude>
                 <exclude>target/*</exclude>
+                <exclude>DEPENDENCIES</exclude>
               </excludes>
             </configuration>
           </plugin>

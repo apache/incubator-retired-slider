@@ -23,7 +23,6 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.hdfs.DFSConfigKeys
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.api.ResourceKeys
 import org.apache.slider.api.RoleKeys
@@ -132,7 +131,7 @@ class TestCommonArgParsing implements SliderActions, Arguments {
     SliderUtils.verifyPrincipalSet(conf, YarnConfiguration.RM_PRINCIPAL);
     SliderUtils.verifyPrincipalSet(
         conf,
-        DFSConfigKeys.DFS_DATANODE_USER_NAME_KEY);
+        SliderXmlConfKeys.DFS_DATANODE_KERBEROS_PRINCIPAL_KEY);
 
   }
 
@@ -150,7 +149,7 @@ class TestCommonArgParsing implements SliderActions, Arguments {
     assert ca.clusterName == CLUSTERNAME
     assert conf.get(SliderXmlConfKeys.KEY_SLIDER_BASE_PATH) == "/projects/slider/clusters"
     SliderUtils.verifyPrincipalSet(conf, YarnConfiguration.RM_PRINCIPAL);
-    SliderUtils.verifyPrincipalSet(conf, DFSConfigKeys.DFS_DATANODE_USER_NAME_KEY);
+    SliderUtils.verifyPrincipalSet(conf, SliderXmlConfKeys.DFS_DATANODE_KERBEROS_PRINCIPAL_KEY);
 
   }
 
