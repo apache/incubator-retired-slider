@@ -174,14 +174,12 @@ public interface SliderXmlConfKeys {
 
   String KEY_AM_LAUNCH_ENV = "slider.am.launch.env";
 
-
   /**
    * From {@code DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY}
    */
   String DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY = "dfs.namenode.kerberos.principal";
 
   String DFS_DATANODE_KERBEROS_PRINCIPAL_KEY = "dfs.datanode.kerberos.principal";
-
 
   //Delegation token related keys
   String DFS_NAMENODE_DELEGATION_KEY_UPDATE_INTERVAL_KEY

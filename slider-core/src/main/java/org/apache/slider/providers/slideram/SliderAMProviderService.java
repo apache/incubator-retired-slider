@@ -20,6 +20,7 @@ package org.apache.slider.providers.slideram;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.registry.client.binding.RegistryTypeUtils;
@@ -136,7 +137,7 @@ public class SliderAMProviderService extends AbstractProviderService implements
         new PublishedConfiguration(
             "HDFS site settings",
             ConfigHelper.loadFromResource("hdfs-site.xml"),
-            defaultYarnConfig) );
+            new HdfsConfiguration(true)) );
 
 
     try {
