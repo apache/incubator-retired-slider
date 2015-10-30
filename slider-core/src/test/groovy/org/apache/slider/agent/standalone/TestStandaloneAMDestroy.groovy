@@ -25,12 +25,15 @@ import org.apache.slider.agent.AgentMiniClusterTestBase
 import org.apache.slider.client.SliderClient
 import org.apache.slider.common.SliderExitCodes
 import org.apache.slider.common.params.ActionEchoArgs
+import org.apache.slider.common.params.ActionDestroyArgs
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
 import org.apache.slider.common.tools.SliderFileSystem
 import org.apache.slider.core.exceptions.ErrorStrings
 import org.apache.slider.core.exceptions.SliderException
 import org.apache.slider.core.exceptions.UnknownApplicationInstanceException
+import org.apache.slider.core.exceptions.UsageException
+import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.core.main.ServiceLauncher
 import org.junit.Test
 
@@ -113,13 +116,29 @@ class TestStandaloneAMDestroy extends AgentMiniClusterTestBase {
     describe "END EXPECTED WARNINGS"
 
     describe "destroying $clustername"
-    //now: destroy it
-    
-    int exitCode = sliderClient.actionDestroy(clustername);
+    //now: destroy it without the --force option and
+    //expect it to fail
+
+    def destroyEx = launchExpectingException(SliderClient,
+        configuration,
+        "",
+        [
+            SliderActions.ACTION_DESTROY,
+            clustername,
+            Arguments.ARG_FILESYSTEM, fsDefaultName,
+            Arguments.ARG_MANAGER, RMAddr,
+        ])
+    assert destroyEx instanceof UsageException
+
+    // destroy again but with --force option
+    describe "destroying $clustername --force"
+    ActionDestroyArgs destroyArgs = new ActionDestroyArgs()
+    destroyArgs.force = true
+    int exitCode = sliderClient.actionDestroy(clustername, destroyArgs);
     assert 0 == exitCode
     sleep(1000)
     // twice, not expecting an error the second time
-    exitCode = sliderClient.actionDestroy(clustername);
+    exitCode = sliderClient.actionDestroy(clustername, destroyArgs);
     assert 0 == exitCode
 
     describe "post destroy checks"
@@ -171,14 +190,14 @@ class TestStandaloneAMDestroy extends AgentMiniClusterTestBase {
         "Successful echo of a text document ${echoed.size()} characters long")
     //try to destroy it while live
     try {
-      int ec = cluster2.actionDestroy(clustername)
+      int ec = cluster2.actionDestroy(clustername, destroyArgs)
       fail("expected a failure from the destroy, got error code $ec")
     } catch (SliderException e) {
       assertFailureClusterInUse(e);
     }
     
     //and try to destroy a completely different cluster just for the fun of it
-    assert 0 == sliderClient.actionDestroy("no-cluster-of-this-name")
+    assert 0 == sliderClient.actionDestroy("no-cluster-of-this-name", destroyArgs)
 
     maybeStopCluster(cluster2, "", "Teardown at end of test case", false);
   }

@@ -144,7 +144,7 @@ class TestFreezeCommands extends AgentMiniClusterTestBase {
       ServiceLauncher<SliderClient> destroy1 = execSliderCommand(conf,
           [
               SliderActions.ACTION_DESTROY, clustername,
-              Arguments.ARG_FILESYSTEM, fsDefaultName
+              Arguments.ARG_FILESYSTEM, fsDefaultName, Arguments.ARG_FORCE
           ]);
       fail(
           "expected a failure from the destroy, got error code ${destroy1.serviceExitCode}");
@@ -168,7 +168,7 @@ class TestFreezeCommands extends AgentMiniClusterTestBase {
     ServiceLauncher<SliderClient> destroy2 = execSliderCommand(conf,
         [
             SliderActions.ACTION_DESTROY, clustername,
-            Arguments.ARG_FILESYSTEM, fsDefaultName,
+            Arguments.ARG_FILESYSTEM, fsDefaultName, Arguments.ARG_FORCE
         ]);
     assertSucceeded(destroy2)
 

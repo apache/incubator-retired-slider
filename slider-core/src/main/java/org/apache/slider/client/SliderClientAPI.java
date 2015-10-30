@@ -28,6 +28,7 @@ import org.apache.slider.common.params.AbstractClusterBuildingActionArgs;
 import org.apache.slider.common.params.ActionAMSuicideArgs;
 import org.apache.slider.common.params.ActionClientArgs;
 import org.apache.slider.common.params.ActionDependencyArgs;
+import org.apache.slider.common.params.ActionDestroyArgs;
 import org.apache.slider.common.params.ActionDiagnosticArgs;
 import org.apache.slider.common.params.ActionEchoArgs;
 import org.apache.slider.common.params.ActionFlexArgs;
@@ -62,6 +63,9 @@ public interface SliderClientAPI extends Service {
    * #1 the cluster is started between verifying that there are no live
    * clusters of that name.
    */
+  int actionDestroy(String clustername, ActionDestroyArgs destroyArgs)
+      throws YarnException, IOException;
+
   int actionDestroy(String clustername) throws YarnException,
       IOException;
 

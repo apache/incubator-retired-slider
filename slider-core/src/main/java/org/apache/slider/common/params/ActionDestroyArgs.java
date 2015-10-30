@@ -18,15 +18,20 @@
 
 package org.apache.slider.common.params;
 
+import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 
 @Parameters(commandNames = {SliderActions.ACTION_DESTROY},
             commandDescription = SliderActions.DESCRIBE_ACTION_DESTROY)
 
 public class ActionDestroyArgs extends AbstractActionArgs {
-  
+
   @Override
   public String getActionName() {
     return SliderActions.ACTION_DESTROY;
   }
+
+  @Parameter(names = {ARG_FORCE},
+             description = "force the operation")
+  public boolean force;
 }

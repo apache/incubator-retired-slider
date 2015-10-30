@@ -21,6 +21,7 @@ package org.apache.slider.client;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.io.Files;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ArrayUtils;
@@ -83,6 +84,7 @@ import org.apache.slider.common.params.ActionAMSuicideArgs;
 import org.apache.slider.common.params.ActionClientArgs;
 import org.apache.slider.common.params.ActionCreateArgs;
 import org.apache.slider.common.params.ActionDependencyArgs;
+import org.apache.slider.common.params.ActionDestroyArgs;
 import org.apache.slider.common.params.ActionDiagnosticArgs;
 import org.apache.slider.common.params.ActionEchoArgs;
 import org.apache.slider.common.params.ActionExistsArgs;
@@ -392,7 +394,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         break;
 
       case ACTION_DESTROY:
-        exitCode = actionDestroy(clusterName);
+        exitCode = actionDestroy(clusterName, serviceArgs.getActionDestroyArgs());
         break;
 
       case ACTION_DIAGNOSTICS:
@@ -609,14 +611,28 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     return client;
   }
 
+  /**
+   * Keep this signature for backward compatibility with
+   * force=true by default.
+   */
   @Override
   public int actionDestroy(String clustername) throws YarnException,
                                                       IOException {
+    ActionDestroyArgs destroyArgs = new ActionDestroyArgs();
+    destroyArgs.force = true;
+    return actionDestroy(clustername, destroyArgs);
+  }
+
+  @Override
+  public int actionDestroy(String clustername,
+      ActionDestroyArgs destroyArgs) throws YarnException, IOException {
     // verify that a live cluster isn't there
     SliderUtils.validateClusterName(clustername);
     //no=op, it is now mandatory. 
     verifyBindingsDefined();
     verifyNoLiveClusters(clustername, "Destroy");
+    boolean forceDestroy = destroyArgs.force;
+    log.debug("actionDestroy({}, force={})", clustername, forceDestroy);
 
     // create the directory path
     Path clusterDirectory = sliderFileSystem.buildClusterDirPath(clustername);
@@ -625,6 +641,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     boolean exists = fs.exists(clusterDirectory);
     if (exists) {
       log.debug("Application Instance {} found at {}: destroying", clustername, clusterDirectory);
+      if (!forceDestroy) {
+        // fail the command if --force is not explicitly specified
+        throw new UsageException("Destroy will permanently delete directories and registries. "
+            + "Reissue this command with the --force option if you want to proceed.");
+      }
       boolean deleted =
           fs.delete(clusterDirectory, true);
       if (!deleted) {
