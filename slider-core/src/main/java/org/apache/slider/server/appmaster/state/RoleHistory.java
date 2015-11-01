@@ -964,7 +964,6 @@ public class RoleHistory {
     return outstandingRequests.listPlacedRequests();
   }
 
-
   /**
    * Get a snapshot of the outstanding placed request list
    * @return a list of the requests outstanding at the time of requesting

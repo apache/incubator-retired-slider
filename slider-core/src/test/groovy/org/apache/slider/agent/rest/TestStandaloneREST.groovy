@@ -87,11 +87,13 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
     log.info GET(proxyAM, SYSTEM_METRICS_JSON)
 
     // using the metrics, await the first node status update
+    /* SLIDER--82: disabled
     awaitGaugeValue(
         appendToURL(proxyAM, SYSTEM_METRICS_JSON),
         "org.apache.slider.server.appmaster.state.RoleHistory.nodes-updated.flag",
         1,
         WEB_STARTUP_TIME  * 2, 500)
+     */
 
     // Is the back door required? If so, don't test complex verbs via the proxy
     def proxyComplexVerbs = !SliderXmlConfKeys.X_DEV_INSECURE_REQUIRED
@@ -103,8 +105,7 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
         SliderXmlConfKeys.X_DEV_INSECURE_DEFAULT)
 
     describe "Direct response headers from AM Web resources"
-    def liveResUrl = appendToURL(directAM,
-        SLIDER_PATH_APPLICATION, LIVE_RESOURCES);
+    def liveResUrl = appendToURL(directAM, SLIDER_PATH_APPLICATION, LIVE_RESOURCES);
     HttpOperationResponse response = executeGet(liveResUrl)
     response.headers.each { key, val -> log.info("$key $val") }
     log.info "Content type: ${response.contentType}"
