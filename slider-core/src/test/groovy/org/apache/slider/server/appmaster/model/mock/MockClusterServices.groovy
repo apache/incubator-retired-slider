@@ -16,23 +16,15 @@
  * limitations under the License.
  */
 
-package org.apache.slider.core.registry.docstore;
+package org.apache.slider.server.appmaster.model.mock
 
-import org.codehaus.jackson.annotate.JsonIgnore;
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
-import org.codehaus.jackson.map.annotate.JsonSerialize;
+import org.apache.hadoop.yarn.api.records.Resource
+import org.apache.slider.server.appmaster.state.AbstractClusterServices
 
-import java.util.HashMap;
-import java.util.Map;
+class MockClusterServices extends AbstractClusterServices {
 
-@JsonIgnoreProperties(ignoreUnknown = true)
-@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
-public class UriMap {
-
-  public Map<String, String> uris = new HashMap<>();
-  
-  @JsonIgnore
-  public void put(String key, String value) {
-    uris.put(key, value);
+  @Override
+  Resource newResource() {
+    return new MockResource()
   }
 }

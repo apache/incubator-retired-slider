@@ -17,18 +17,11 @@
 package org.apache.slider.server.appmaster.security;
 
 import com.google.common.base.Preconditions;
-import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileUtil;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.RawLocalFileSystem;
-import org.apache.hadoop.fs.permission.FsAction;
-import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.security.UserGroupInformation;
-import org.apache.slider.common.SliderExitCodes;
+import static org.apache.slider.core.main.LauncherExitCodes.EXIT_UNAUTHORIZE;
 import org.apache.slider.common.SliderKeys;
 import org.apache.slider.common.SliderXmlConfKeys;
-import org.apache.slider.common.tools.SliderFileSystem;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.exceptions.SliderException;
@@ -39,7 +32,7 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- *
+ * Class keeping code security information
  */
 public class SecurityConfiguration {
 
@@ -71,7 +64,7 @@ public class SecurityConfiguration {
         try {
           loginUser = getLoginUser();
         } catch (IOException e) {
-          throw new SliderException(SliderExitCodes.EXIT_BAD_STATE, e,
+          throw new SliderException(EXIT_UNAUTHORIZE, e,
                                     "No principal configured for the application and "
                                     + "exception raised during retrieval of login user. "
                                     + "Unable to proceed with application "
@@ -81,7 +74,7 @@ public class SecurityConfiguration {
                                     SliderXmlConfKeys.KEY_KEYTAB_PRINCIPAL);
         }
         if (loginUser == null) {
-          throw new SliderException(SliderExitCodes.EXIT_BAD_CONFIGURATION,
+          throw new SliderException(EXIT_UNAUTHORIZE,
                                     "No principal configured for the application "
                                     + "and no login user found. "
                                     + "Unable to proceed with application "
@@ -100,7 +93,7 @@ public class SecurityConfiguration {
           .getComponent(SliderKeys.COMPONENT_AM)
           .get(SliderXmlConfKeys.KEY_AM_LOGIN_KEYTAB_NAME);
       if (SliderUtils.isSet(keytabFullPath) && SliderUtils.isSet(keytabName)) {
-        throw new SliderException(SliderExitCodes.EXIT_BAD_CONFIGURATION,
+        throw new SliderException(EXIT_UNAUTHORIZE,
                                   "Both a keytab on the cluster host (%s) and a"
                                   + " keytab to be retrieved from HDFS (%s) are"
                                   + " specified.  Please configure only one keytab"
@@ -160,8 +153,7 @@ public class SecurityConfiguration {
       // download keytab to local, protected directory
       localKeytabFile = new File(SliderKeys.KEYTAB_DIR, keytabName);
     } else {
-      log.info("Leveraging host keytab file {} for login",
-               keytabFullPath);
+      log.info("Using host keytab file {} for login", keytabFullPath);
       localKeytabFile = new File(keytabFullPath);
     }
     return localKeytabFile;

@@ -16,23 +16,43 @@
  * limitations under the License.
  */
 
-package org.apache.slider.core.registry.docstore;
+package org.apache.slider.server.appmaster.management;
 
-import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.text.DateFormat;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
-public class UriMap {
+public class RecordedEvent {
+  private static final DateFormat dateFormat = DateFormat.getDateInstance();
+  public long id;
+  public String name;
+  public long timestamp;
+  public String time;
+  public String category;
+  public String host;
+  public int role;
+  public String text;
 
-  public Map<String, String> uris = new HashMap<>();
-  
-  @JsonIgnore
-  public void put(String key, String value) {
-    uris.put(key, value);
+  public RecordedEvent() {
+  }
+
+  /**
+   * Create an event. The timestamp is also converted to a time string
+   * @param id id counter
+   * @param name event name
+   * @param timestamp timestamp. If non-zero, is used to build the {@code time} text field.
+   * @param category even category
+   * @param text arbitrary text
+   */
+  public RecordedEvent(long id, String name, long timestamp, String category, String text) {
+    this.id = id;
+    this.name = name;
+    this.timestamp = timestamp;
+    this.time = timestamp > 0 ? dateFormat.format(timestamp) : "";
+    this.category = category;
+    this.text = text;
   }
 }

@@ -41,7 +41,7 @@ public class PublishedConfigSet {
       RestPaths.PUBLISHED_CONFIGURATION_REGEXP);
   
   public Map<String, PublishedConfiguration> configurations =
-      new HashMap<String, PublishedConfiguration>();
+      new HashMap<>();
 
   public PublishedConfigSet() {
   }
@@ -84,7 +84,7 @@ public class PublishedConfigSet {
   }
   
   public Set<String> keys() {
-    TreeSet<String> keys = new TreeSet<String>();
+    TreeSet<String> keys = new TreeSet<>();
     keys.addAll(configurations.keySet());
     return keys;
   }

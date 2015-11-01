@@ -16,15 +16,15 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster.state;
+package org.apache.slider.server.appmaster;
 
 import org.apache.hadoop.yarn.api.records.Resource;
+import org.apache.hadoop.yarn.util.Records;
+import org.apache.slider.server.appmaster.state.AbstractClusterServices;
 
-/**
- * Factory supplying records created by the App state; entry point
- * for mock code.
- */
-public abstract class AbstractRecordFactory {
-  
-  public abstract Resource newResource();
+public class ProtobufClusterServices extends AbstractClusterServices {
+
+  public Resource newResource() {
+    return Records.newRecord(Resource.class);
+  }
 }

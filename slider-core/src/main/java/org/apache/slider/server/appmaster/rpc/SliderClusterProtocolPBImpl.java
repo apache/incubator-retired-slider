@@ -216,6 +216,26 @@ public class SliderClusterProtocolPBImpl implements SliderClusterProtocolPB {
   }
 
   @Override
+  public Messages.GetLiveNodesResponseProto getLiveNodes(RpcController controller,
+      Messages.GetLiveNodesRequestProto request) throws ServiceException {
+    try {
+      return real.getLiveNodes(request);
+    } catch (Exception e) {
+      throw wrap(e);
+    }
+  }
+
+  @Override
+  public Messages.NodeInformationProto getLiveNode(RpcController controller,
+      Messages.GetLiveNodeRequestProto request) throws ServiceException {
+    try {
+      return real.getLiveNode(request);
+    } catch (Exception e) {
+      throw wrap(e);
+    }
+  }
+
+  @Override
   public Messages.WrappedJsonProto getModelDesired(RpcController controller,
       Messages.EmptyPayloadProto request) throws ServiceException {
     try {

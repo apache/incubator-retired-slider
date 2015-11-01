@@ -25,6 +25,7 @@ import org.apache.slider.providers.ProviderRole;
 import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 
@@ -50,6 +51,15 @@ public final class RoleStatus implements Cloneable {
   private final AtomicLong nodeFailed = new AtomicLong(0);
   private final AtomicLong failedRecently = new AtomicLong(0);
   private final AtomicLong limitsExceeded = new AtomicLong(0);
+
+  /** flag set to true if there is an outstanding anti-affine request */
+  private final AtomicBoolean pendingAARequest = new AtomicBoolean(false);
+
+  /**
+   * Number of AA requests queued. These should be reduced first on a
+   * flex down.
+   */
+  private int pendingAntiAffineRequestCount = 0;
 
   private String failureMessage = "";
 
@@ -302,6 +312,7 @@ public final class RoleStatus implements Cloneable {
            ", actual=" + actual +
            ", requested=" + requested +
            ", releasing=" + releasing +
+           ",  pendingAntiAffineRequestCount=" + pendingAntiAffineRequestCount +
            ", failed=" + failed +
            ", failed recently=" + failedRecently.get() +
            ", node failed=" + nodeFailed.get() +
@@ -355,6 +366,8 @@ public final class RoleStatus implements Cloneable {
     info.failedRecently = failedRecently.intValue();
     info.nodeFailed = nodeFailed.intValue();
     info.preempted = preempted.intValue();
+    info.pendingAntiAffineRequest = pendingAARequest.get();
+    info.pendingAntiAffineRequestCount = pendingAntiAffineRequestCount;
     return info;
   }
   

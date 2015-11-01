@@ -40,8 +40,7 @@ public class PublishedExportsSet {
   private static final PatternValidator validator = new PatternValidator(
       RestPaths.PUBLISHED_CONFIGURATION_REGEXP);
   
-  public Map<String, PublishedExports> exports =
-      new HashMap<String, PublishedExports>();
+  public Map<String, PublishedExports> exports = new HashMap<>();
 
   public PublishedExportsSet() {
   }
@@ -84,15 +83,14 @@ public class PublishedExportsSet {
   }
   
   public Set<String> keys() {
-    TreeSet<String> keys = new TreeSet<String>();
+    TreeSet<String> keys = new TreeSet<>();
     keys.addAll(exports.keySet());
     return keys;
   }
 
   public PublishedExportsSet shallowCopy() {
     PublishedExportsSet that = new PublishedExportsSet();
-    for (Map.Entry<String, PublishedExports> entry :
-        exports.entrySet()) {
+    for (Map.Entry<String, PublishedExports> entry : exports.entrySet()) {
       that.put(entry.getKey(), entry.getValue().shallowCopy());
     }
     return that;

@@ -24,8 +24,10 @@ import org.apache.slider.api.SliderApplicationApi
 import org.apache.slider.api.StateValues
 import org.apache.slider.api.types.ComponentInformation
 import org.apache.slider.api.types.ContainerInformation
+import org.apache.slider.api.types.NodeInformation
 import org.apache.slider.core.conf.ConfTreeOperations
 import org.apache.slider.test.Outcome
+import org.junit.Test
 
 import static org.apache.slider.api.ResourceKeys.*
 import static org.apache.slider.api.StatusKeys.*
@@ -203,6 +205,17 @@ public abstract class AbstractAppApiTestDelegates extends AbstractRestTestDelega
     assert !liveness.requestsOutstanding
   }
 
+
+  public void testListNodes() throws Throwable {
+    describe "Node listing via $appAPI"
+    def liveNodes = appAPI.liveNodes
+    assert liveNodes.size() > 0
+    def h = liveNodes.keySet()[0];
+    def localhost = appAPI.getLiveNode(h)
+
+
+  }
+
   /**
    * Probe that spins until the liveness query fails
    * @param args argument map
@@ -226,6 +239,7 @@ public abstract class AbstractAppApiTestDelegates extends AbstractRestTestDelega
     testLiveContainers();
     testRESTModel()
     testAppLiveness()
+//    testListNodes();
   }
 
   public void testFlexOperation() {
@@ -263,8 +277,9 @@ public abstract class AbstractAppApiTestDelegates extends AbstractRestTestDelega
     String key = args["key"]
     String val  = args["val"]
     def resolved = appAPI.getResolvedResources()
-    return Outcome.fromBool(resolved.get(key)==val)
+    return Outcome.fromBool(resolved.get(key) == val)
   }
+
 
   /**
    * Get the resolved value and push that out as the new state

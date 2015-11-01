@@ -50,7 +50,6 @@ class TestMockAppStateAppRestIntegration extends BaseMockAppStateTest implements
   public void testCachedIntDocument() throws Throwable {
     ContentCache cache = new ContentCache()
 
-
     def refresher = new IntRefresher()
     assert 0 == refresher.count
     def entry = new CachedContentManagedTimer(refresher)
@@ -103,8 +102,8 @@ class TestMockAppStateAppRestIntegration extends BaseMockAppStateTest implements
         new ApplicationResource(webAppApi)
     def containers = applicationResource.liveContainers
     assert containers.size() == instances.size()
-    
   }
+
   /**
    * Get a state accessor for the appState field
    * @return something to hand down to refreshers and resources
@@ -146,7 +145,7 @@ class TestMockAppStateAppRestIntegration extends BaseMockAppStateTest implements
 
   class CachedContentManagedTimer extends CachedContent {
     int time = 0;
-        
+
     @Override
     protected long now() {
       return time++;

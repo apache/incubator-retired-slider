@@ -16,14 +16,18 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster;
+package org.apache.slider.server.appmaster.state;
 
 import org.apache.hadoop.yarn.api.records.Resource;
-import org.apache.hadoop.yarn.util.Records;
-import org.apache.slider.server.appmaster.state.AbstractRecordFactory;
 
-public class ProtobufRecordFactory extends AbstractRecordFactory {
-  public Resource newResource() {
-    return Records.newRecord(Resource.class);
-  }
+/**
+ * Cluster services offered by the YARN infrastructure.
+ */
+public abstract class AbstractClusterServices {
+  /**
+   * Create a resource for requests
+   * @return a resource which can be built up.
+   */
+  public abstract Resource newResource();
+
 }

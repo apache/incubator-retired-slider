@@ -32,6 +32,7 @@ public interface StatusKeys {
   String STATISTICS_CONTAINERS_PREEMPTED = "containers.failed.preempted";
   String STATISTICS_CONTAINERS_LIVE = "containers.live";
   String STATISTICS_CONTAINERS_REQUESTED = "containers.requested";
+  String STATISTICS_CONTAINERS_ANTI_AFFINE_PENDING = "containers.anti-affine.pending";
   String STATISTICS_CONTAINERS_STARTED = "containers.start.started";
   String STATISTICS_CONTAINERS_START_FAILED =
       "containers.start.failed";

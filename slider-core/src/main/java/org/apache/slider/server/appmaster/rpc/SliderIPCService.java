@@ -30,9 +30,9 @@ import org.apache.slider.api.proto.Messages;
 import org.apache.slider.api.types.ApplicationLivenessInformation;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.api.types.ContainerInformation;
+import org.apache.slider.api.types.NodeInformation;
 import org.apache.slider.core.conf.AggregateConf;
 import org.apache.slider.core.conf.ConfTree;
-import org.apache.slider.core.exceptions.NoSuchNodeException;
 import org.apache.slider.core.exceptions.ServiceNotReadyException;
 import org.apache.slider.core.exceptions.SliderException;
 import org.apache.slider.core.main.LauncherExitCodes;
@@ -51,7 +51,6 @@ import org.apache.slider.server.appmaster.state.RoleInstance;
 import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 import org.apache.slider.server.appmaster.web.rest.application.resources.ContentCache;
 import org.apache.slider.server.services.security.CertificateManager;
-import org.apache.slider.server.services.security.KeystoreGenerator;
 import org.apache.slider.server.services.security.SecurityStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,6 +64,7 @@ import java.util.concurrent.TimeUnit;
 import static org.apache.slider.api.proto.RestTypeMarshalling.marshall;
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.LIVE_COMPONENTS;
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.LIVE_CONTAINERS;
+import static org.apache.slider.server.appmaster.web.rest.RestPaths.LIVE_NODES;
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.LIVE_RESOURCES;
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.MODEL_DESIRED;
 import static org.apache.slider.server.appmaster.web.rest.RestPaths.MODEL_DESIRED_APPCONF;
@@ -273,7 +273,7 @@ public class SliderIPCService extends AbstractService
     String role = request.getRole();
     Messages.ListNodeUUIDsByRoleResponseProto.Builder builder =
         Messages.ListNodeUUIDsByRoleResponseProto.newBuilder();
-    List<RoleInstance> nodes = state.enumLiveNodesInRole(role);
+    List<RoleInstance> nodes = state.enumLiveInstancesInRole(role);
     for (RoleInstance node : nodes) {
       builder.addUuid(node.id);
     }
@@ -373,13 +373,11 @@ public class SliderIPCService extends AbstractService
       Messages.GetLiveContainersRequestProto request)
       throws IOException {
     Map<String, ContainerInformation> infoMap =
-        (Map<String, ContainerInformation>) cache.lookupWithIOE(
-            LIVE_CONTAINERS);
+        (Map<String, ContainerInformation>) cache.lookupWithIOE(LIVE_CONTAINERS);
     Messages.GetLiveContainersResponseProto.Builder builder =
         Messages.GetLiveContainersResponseProto.newBuilder();
 
-    for (Map.Entry<String, ContainerInformation> entry : infoMap
-        .entrySet()) {
+    for (Map.Entry<String, ContainerInformation> entry : infoMap.entrySet()) {
       builder.addNames(entry.getKey());
       builder.addContainers(marshall(entry.getValue()));
     }
@@ -387,8 +385,8 @@ public class SliderIPCService extends AbstractService
   }
 
   @Override
-  public Messages.ContainerInformationProto getLiveContainer(Messages.GetLiveContainerRequestProto request) throws
-      IOException {
+  public Messages.ContainerInformationProto getLiveContainer(Messages.GetLiveContainerRequestProto request)
+      throws IOException {
     String containerId = request.getContainerId();
     RoleInstance id = state.getLiveInstanceByContainerID(containerId);
     ContainerInformation containerInformation = id.serialize();
@@ -396,21 +394,60 @@ public class SliderIPCService extends AbstractService
   }
 
   @Override
-  public Messages.GetLiveComponentsResponseProto getLiveComponents(Messages.GetLiveComponentsRequestProto request) throws
-      IOException {
+  public Messages.GetLiveComponentsResponseProto getLiveComponents(Messages.GetLiveComponentsRequestProto request)
+      throws IOException {
     Map<String, ComponentInformation> infoMap =
-        (Map<String, ComponentInformation>) cache.lookupWithIOE(
-            LIVE_COMPONENTS);
+        (Map<String, ComponentInformation>) cache.lookupWithIOE(LIVE_COMPONENTS);
     Messages.GetLiveComponentsResponseProto.Builder builder =
         Messages.GetLiveComponentsResponseProto.newBuilder();
 
-    for (Map.Entry<String, ComponentInformation> entry : infoMap
-        .entrySet()) {
+    for (Map.Entry<String, ComponentInformation> entry : infoMap.entrySet()) {
       builder.addNames(entry.getKey());
       builder.addComponents(marshall(entry.getValue()));
     }
     return builder.build();
   }
+
+
+  @Override
+  public Messages.ComponentInformationProto getLiveComponent(Messages.GetLiveComponentRequestProto request)
+      throws IOException {
+    String name = request.getName();
+    try {
+      return marshall(state.getComponentInformation(name));
+    } catch (YarnRuntimeException e) {
+      throw new FileNotFoundException("Unknown component: " + name);
+    }
+  }
+
+  @Override
+  public Messages.GetLiveNodesResponseProto getLiveNodes(Messages.GetLiveNodesRequestProto request)
+      throws IOException {
+    Map<String, NodeInformation> infoMap =
+        (Map<String, NodeInformation>) cache.lookupWithIOE(LIVE_NODES);
+    Messages.GetLiveNodesResponseProto.Builder builder =
+        Messages.GetLiveNodesResponseProto.newBuilder();
+
+    for (Map.Entry<String, NodeInformation> entry : infoMap.entrySet()) {
+      builder.addNames(entry.getKey());
+      builder.addNodes(marshall(entry.getValue()));
+    }
+    return builder.build();
+  }
+
+
+  @Override
+  public Messages.NodeInformationProto getLiveNode(Messages.GetLiveNodeRequestProto request)
+      throws IOException {
+    String name = request.getName();
+    NodeInformation nodeInformation = state.getNodeInformation(name);
+    if (nodeInformation != null) {
+      return marshall(nodeInformation);
+    } else {
+      throw new FileNotFoundException("Unknown host: " + name);
+    }
+  }
+
 
   @Override
   public Messages.WrappedJsonProto getModelDesired(Messages.EmptyPayloadProto request) throws IOException {
@@ -445,17 +482,6 @@ public class SliderIPCService extends AbstractService
   @Override
   public Messages.WrappedJsonProto getLiveResources(Messages.EmptyPayloadProto request) throws IOException {
     return lookupConfTree(LIVE_RESOURCES);
-  }
-
-  @Override
-  public Messages.ComponentInformationProto getLiveComponent(Messages.GetLiveComponentRequestProto request) throws
-      IOException {
-    String name = request.getName();
-    try {
-      return marshall(state.getComponentInformation(name));
-    } catch (YarnRuntimeException e) {
-      throw new FileNotFoundException("Unknown component: " + name);
-    }
   }
 
   /**

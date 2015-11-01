@@ -24,6 +24,7 @@ import com.sun.jersey.api.client.config.DefaultClientConfig
 import com.sun.jersey.api.json.JSONConfiguration
 import com.sun.jersey.client.urlconnection.URLConnectionClientHandler
 import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.commons.httpclient.HttpClient
@@ -73,6 +74,7 @@ import javax.ws.rs.core.HttpHeaders
 import java.util.concurrent.TimeoutException
 
 import static Arguments.ARG_OPTION
+import static org.apache.slider.server.appmaster.web.rest.RestPaths.SYSTEM_METRICS_JSON
 
 /**
  * Static utils for tests in this package and in other test projects.
@@ -98,7 +100,12 @@ class SliderTestUtils extends Assert {
     log.info("");
   }
 
-  public static String prettyPrint(String json) {
+  /**
+   * Convert a JSON string to something readable
+   * @param json
+   * @return a string for printing
+   */
+  public static String prettyPrintJson(String json) {
     JsonOutput.prettyPrint(json)
   }
 
@@ -368,7 +375,7 @@ class SliderTestUtils extends Assert {
       if (timedOut) {
         duration.finish();
         describe("$operation: role count not met after $duration: $details")
-        log.info(prettyPrint(status.toJsonString()))
+        log.info(prettyPrintJson(status.toJsonString()))
         fail("$operation: role counts not met after $duration: " +
              details.toString() +
              " in \n$status ")
@@ -414,7 +421,7 @@ class SliderTestUtils extends Assert {
       String text,
       ClusterDescription status) {
     describe(text)
-    log.info(prettyPrint(status.toJsonString()))
+    log.info(prettyPrintJson(status.toJsonString()))
   }
 
 
@@ -655,7 +662,6 @@ class SliderTestUtils extends Assert {
         clientConfig);
   }
 
-
   /**
    * Create a jersey client config with the settings needed for tests
    * (e.g. POJO mappings)
@@ -677,14 +683,18 @@ class SliderTestUtils extends Assert {
    *   to have been called.
    *   
    * @param path path to page
-   * @param connectionChecks optional closure to run against an open connection
    * @return body of response
    */
-  public static String getWebPage(String path, Closure connectionChecks = null) {
+  public static String getWebPage(String path) {
     HttpOperationResponse outcome = executeGet(path)
     return new String(outcome.data);
   }
 
+  /**
+   * Execute a GET operation
+   * @param path path to GET
+   * @return the response
+   */
   public static HttpOperationResponse executeGet(String path) {
     assert path
     assertHttpSupportInitialized()
@@ -707,7 +717,7 @@ class SliderTestUtils extends Assert {
            HttpCacheHeaders.HTTP_HEADER_CACHE_CONTROL_NONE
   }
 
-/**
+  /**
    * Assert that a service operation succeeded
    * @param service service
    */
@@ -738,6 +748,7 @@ class SliderTestUtils extends Assert {
     int actual = instances != null ? instances.size() : 0
     return actual
   }
+
   /**
    * Exec a set of commands, wait a few seconds for it to finish.
    * @param status code
@@ -752,11 +763,12 @@ class SliderTestUtils extends Assert {
     assert status == exitCode
     return process
   }
+
   /**
-     * Exec a set of commands, wait a few seconds for it to finish.
-     * @param commands
-     * @return
-     */
+   * Exec a set of commands, wait a few seconds for it to finish.
+   * @param commands
+   * @return
+   */
   public static ForkedProcessService exec(List<String> commands) {
     ForkedProcessService process;
     process = new ForkedProcessService(
@@ -1313,6 +1325,17 @@ class SliderTestUtils extends Assert {
   }
 
   /**
+   * Get a value from a map; raise an assertion if it is not there
+   * @param map map to look up
+   * @param key key
+   * @return the string value
+   */
+  String requiredMapValue(Map map, String key) {
+    assert map[key] != null
+    map[key].toString()
+  }
+
+  /**
    * Get a web page and deserialize the supplied JSON into
    * an instance of the specific class.
    * @param clazz class to deserialize to
@@ -1380,4 +1403,82 @@ class SliderTestUtils extends Assert {
     assert list.size() == entries.size()
     assert entries.containsAll(list)
   }
+
+  public Map parseMetrics(String metrics) {
+    new JsonSlurper().parse(metrics.bytes) as Map
+  }
+
+  public void validateCodahaleJson(Map metricsMap) {
+    assert metricsMap["version"] == "3.0.0"
+    assert metricsMap["gauges"] instanceof Map
+    assert metricsMap["histograms"] instanceof Map
+    assert metricsMap["timers"] instanceof Map
+  }
+
+  public int getGaugeValue(Map metricsMap, String gauge, int defVal) {
+    def entry = metricsMap["gauges"][gauge]
+    if (entry != null) {
+      return entry["value"] as int
+    } else {
+      return defVal
+    }
+  }
+
+  public boolean getGaugeAsBool(Map metricsMap, String gauge, boolean defVal) {
+    return 0 !=  getGaugeValue(metricsMap, gauge, defVal ? 1 : 0)
+  }
+
+  /**
+   * Fetch and parse the JSON codahale metrics under a path
+   * @param baseUrl base path
+   * @return the fetch, parsed and partially validated JSON mapping
+   */
+  public Map getMetrics(String baseUrl) {
+    def raw = GET(baseUrl, SYSTEM_METRICS_JSON)
+    def metrics = parseMetrics(raw)
+    validateCodahaleJson(metrics)
+    return metrics;
+  }
+
+  /**
+   * Await a specific gauge being of the desired value
+   * @param target target URL
+   * @param gauge gauge name
+   * @param desiredValue desired value
+   * @param timeout timeout in millis
+   * @param sleepDur sleep in millis
+   */
+  public void awaitGaugeValue(String target, String gauge, int desiredValue,
+      int timeout,
+      int sleepDur) {
+    def text = "Probe $target for gauge $gauge == $desiredValue"
+    repeatUntilSuccess(text,
+      this.&probeMetricGaugeValue,
+      timeout, sleepDur,
+      [
+          url : target,
+          gauge: gauge,
+          desiredValue: desiredValue.toString()
+      ],
+      true, text) {
+       log.error(prettyPrintJson(GET(target)))
+    }
+  }
+
+  Outcome probeMetricGaugeValue(Map args) {
+    String url = requiredMapValue(args, "url")
+    String gauge = requiredMapValue(args, "gauge")
+    String vstr = requiredMapValue(args, "desiredValue")
+    assert vstr != null, "null desired value in $args"
+    assert vstr != "", "empty desired value in $args"
+    int desiredValue = Integer.decode(vstr)
+    try {
+      def metrics = parseMetrics(GET(url))
+      def gaugeValue = getGaugeValue(metrics, gauge, -1)
+      return gaugeValue == desiredValue ? Outcome.Success : Outcome.Retry
+    } catch (IOException e) {
+      return Outcome.Fail
+    }
+  }
+
 }

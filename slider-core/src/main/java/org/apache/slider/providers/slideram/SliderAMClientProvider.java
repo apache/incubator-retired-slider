@@ -174,8 +174,7 @@ public class SliderAMClientProvider extends AbstractClientProvider
       Path tempPath, boolean miniClusterTestRun)
     throws IOException, SliderException {
 
-    Map<String, LocalResource> providerResources =
-        new HashMap<String, LocalResource>();
+    Map<String, LocalResource> providerResources = new HashMap<>();
 
     ProviderUtils.addProviderJar(providerResources,
         this,

@@ -16,15 +16,18 @@
  * limitations under the License.
  */
 
-package org.apache.slider.server.appmaster.model.mock
+package org.apache.slider.server.appmaster.management;
 
-import org.apache.hadoop.yarn.api.records.Resource
-import org.apache.slider.server.appmaster.state.AbstractRecordFactory
+/**
+ * A timestamp metric
+ */
+public class Timestamp extends LongGauge {
 
-class MockRecordFactory extends AbstractRecordFactory {
-
-  @Override
-  Resource newResource() {
-    return new MockResource()
+  public Timestamp(long val) {
+    super(val);
   }
+
+  public Timestamp() {
+  }
+
 }

@@ -23,11 +23,17 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.NodeReport;
+import org.apache.hadoop.yarn.api.records.NodeState;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
+import org.apache.slider.api.types.NodeInformation;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.providers.ProviderRole;
+import org.apache.slider.server.appmaster.management.BoolMetric;
+import org.apache.slider.server.appmaster.management.LongGauge;
+import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
+import org.apache.slider.server.appmaster.management.Timestamp;
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
 import org.apache.slider.server.avro.LoadedRoleHistory;
 import org.apache.slider.server.avro.NodeEntryRecord;
@@ -66,22 +72,26 @@ public class RoleHistory {
     LoggerFactory.getLogger(RoleHistory.class);
   private final List<ProviderRole> providerRoles;
   private long startTime;
-  /**
-   * Time when saved
-   */
-  private long saveTime;
-  /**
-   * If the history was loaded, the time at which the history was saved
-   * 
-   */
-  private long thawedDataTime;
+
+  /** Time when saved */
+  private final Timestamp saveTime = new Timestamp(0);
+
+  /** If the history was loaded, the time at which the history was saved */
+  private final Timestamp thawedDataTime = new Timestamp(0);
   
   private NodeMap nodemap;
   private int roleSize;
-  private boolean dirty;
+  private final BoolMetric dirty = new BoolMetric(false);
   private FileSystem filesystem;
   private Path historyPath;
   private RoleHistoryWriter historyWriter = new RoleHistoryWriter();
+
+  /**
+   * When were the nodes updated in a {@link #onNodesUpdated(List)} call.
+   * If zero: never
+   */
+  private final Timestamp nodesUpdatedTime = new Timestamp(0);
+  private final BoolMetric nodeUpdateReceived = new BoolMetric(false);
 
   private OutstandingRequestTracker outstandingRequests =
     new OutstandingRequestTracker();
@@ -99,8 +109,7 @@ public class RoleHistory {
   private Set<String> failedNodes = new HashSet<>();
 
 
-  public RoleHistory(List<ProviderRole> providerRoles) throws
-                                                       BadConfigException {
+  public RoleHistory(List<ProviderRole> providerRoles) throws BadConfigException {
     this.providerRoles = providerRoles;
     roleSize = providerRoles.size();
     reset();
@@ -108,19 +117,32 @@ public class RoleHistory {
 
   /**
    * Reset the variables -this does not adjust the fixed attributes
-   * of the history
+   * of the history, but the nodemap and failed node map are cleared.
    */
   protected synchronized void reset() throws BadConfigException {
 
     nodemap = new NodeMap(roleSize);
+    failedNodes = new HashSet<>();
     resetAvailableNodeLists();
 
     outstandingRequests = new OutstandingRequestTracker();
-    
+
     Map<Integer, RoleStatus> roleStats = new HashMap<>();
     for (ProviderRole providerRole : providerRoles) {
       checkProviderRole(roleStats, providerRole);
     }
+  }
+
+  /**
+   * Register all metrics with the metrics infra
+   * @param metrics metrics
+   */
+  public void register(MetricsAndMonitoring metrics) {
+    metrics.register(RoleHistory.class, dirty, "dirty");
+    metrics.register(RoleHistory.class, nodesUpdatedTime, "nodes-updated.time");
+    metrics.register(RoleHistory.class, nodeUpdateReceived, "nodes-updated.flag");
+    metrics.register(RoleHistory.class, thawedDataTime, "thawed.time");
+    metrics.register(RoleHistory.class, saveTime, "saved.time");
   }
 
   /**
@@ -146,7 +168,6 @@ public class RoleHistory {
     }
     roleStats.put(index, new RoleStatus(providerRole));
   }
-
 
   /**
    * Add a new provider role to the map
@@ -189,8 +210,7 @@ public class RoleHistory {
   }
 
   /**
-   * Reset the variables -this does not adjust the fixed attributes
-   * of the history.
+   * Prepare the history for re-reading its state.
    * <p>
    * This intended for use by the RoleWriter logic.
    * @throws BadConfigException if there is a problem rebuilding the state
@@ -245,21 +265,20 @@ public class RoleHistory {
     return discarded;
   }
 
-
   public synchronized long getStartTime() {
     return startTime;
   }
 
   public synchronized long getSaveTime() {
-    return saveTime;
+    return saveTime.get();
   }
 
   public long getThawedDataTime() {
-    return thawedDataTime;
+    return thawedDataTime.get();
   }
 
   public void setThawedDataTime(long thawedDataTime) {
-    this.thawedDataTime = thawedDataTime;
+    this.thawedDataTime.set(thawedDataTime);
   }
 
   public synchronized int getRoleSize() {
@@ -275,11 +294,11 @@ public class RoleHistory {
   }
 
   public synchronized boolean isDirty() {
-    return dirty;
+    return dirty.get();
   }
 
   public synchronized void setDirty(boolean dirty) {
-    this.dirty = dirty;
+    this.dirty.set(dirty);
   }
 
   /**
@@ -287,8 +306,8 @@ public class RoleHistory {
    * @param timestamp timestamp -updates the savetime field
    */
   public synchronized void saved(long timestamp) {
-    dirty = false;
-    saveTime = timestamp;
+    setDirty(false);
+    saveTime.set(timestamp);
   }
 
   /**
@@ -298,6 +317,29 @@ public class RoleHistory {
    */
   public synchronized NodeMap cloneNodemap() {
     return (NodeMap) nodemap.clone();
+  }
+
+  /**
+   * Get snapshot of the node map
+   * @return a snapshot of the current node state
+   */
+  public Map<String, NodeInformation> getNodeInformationSnapshot() {
+    NodeMap map = cloneNodemap();
+    Map<String, NodeInformation> result = new HashMap<>(map.size());
+    for (Map.Entry<String, NodeInstance> entry : map.entrySet()) {
+      result.put(entry.getKey(), entry.getValue().serialize());
+    }
+    return result;
+  }
+
+  /**
+   * Get the information on a node
+   * @param hostname hostname
+   * @return the information about that host, or null if there is none
+   */
+  public NodeInformation getNodeInformation(String hostname) {
+    NodeInstance nodeInstance = nodemap.get(hostname);
+    return nodeInstance != null ? nodeInstance.serialize() : null;
   }
 
   /**
@@ -331,18 +373,6 @@ public class RoleHistory {
   }
 
   /**
-   * Garbage collect the structure -this will drop
-   * all nodes that have been inactive since the (relative) age.
-   * This will drop the failure counts of the nodes too, so it will
-   * lose information that matters.
-   * @param age relative age
-   */
-  public void gc(long age) {
-    long absoluteTime = now() - age;
-    purgeUnusedEntries(absoluteTime);
-  }
-
-  /**
    * Mark ourselves as dirty
    */
   public void touch() {
@@ -352,15 +382,6 @@ public class RoleHistory {
     } catch (IOException e) {
       log.warn("Failed to save history file ", e);
     }
-  }
-
-  /**
-   * purge the history of
-   * all nodes that have been inactive since the absolute time
-   * @param absoluteTime time
-   */
-  public synchronized void purgeUnusedEntries(long absoluteTime) {
-    nodemap.purgeUnusedEntries(absoluteTime);
   }
 
   /**
@@ -402,8 +423,7 @@ public class RoleHistory {
    */
   public synchronized Path saveHistoryIfDirty() throws IOException {
     if (isDirty()) {
-      long time = now();
-      return saveHistory(time);
+      return saveHistory(now());
     } else {
       return null;
     }
@@ -426,7 +446,7 @@ public class RoleHistory {
     }
   
   /**
-   * Handler for bootstrap event
+   * Handler for bootstrap event: there was no history to thaw
    */
   public void onBootstrap() {
     log.debug("Role history bootstrapped");
@@ -451,7 +471,7 @@ public class RoleHistory {
     if (loadedRoleHistory != null) {
       rebuild(loadedRoleHistory);
       thawSuccessful = true;
-      Path loadPath = loadedRoleHistory.getPath();;
+      Path loadPath = loadedRoleHistory.getPath();
       log.debug("loaded history from {}", loadPath);
       // delete any old entries
       try {
@@ -627,8 +647,8 @@ public class RoleHistory {
   }
 
   /**
-   * Get the list of active nodes ... walks the node  map so 
-   * is O(nodes)
+   * Get the list of active nodes ... walks the node map so
+   * is {@code O(nodes)}
    * @param role role index
    * @return a possibly empty list of nodes with an instance of that node
    */
@@ -654,8 +674,7 @@ public class RoleHistory {
    * @throws RuntimeException if the container has no hostname
    */
   public synchronized NodeInstance getOrCreateNodeInstance(Container container) {
-    String hostname = RoleHistoryUtils.hostnameOf(container);
-    return nodemap.getOrCreate(hostname);
+    return nodemap.getOrCreate(RoleHistoryUtils.hostnameOf(container));
   }
 
   /**
@@ -738,7 +757,7 @@ public class RoleHistory {
   }
 
   /**
-   * Event: a container start has been submitter
+   * Event: a container start has been submitted
    * @param container container being started
    * @param instance instance bound to the container
    */
@@ -770,24 +789,40 @@ public class RoleHistory {
   }
 
   /**
+   * Get the last time the nodes were updated from YARN
+   * @return the update time or zero if never updated.
+   */
+  public long getNodesUpdatedTime() {
+    return nodesUpdatedTime.get();
+  }
+
+  /**
    * Update failedNodes and nodemap based on the node state
    * 
    * @param updatedNodes list of updated nodes
    */
   public synchronized void onNodesUpdated(List<NodeReport> updatedNodes) {
+    log.debug("Updating {} nodes", updatedNodes.size());
+    nodesUpdatedTime.set(now());
+    nodeUpdateReceived.set(true);
     for (NodeReport updatedNode : updatedNodes) {
-      String hostname = updatedNode.getNodeId() == null 
+      String hostname = updatedNode.getNodeId() == null
                         ? null 
                         : updatedNode.getNodeId().getHost();
-      if (hostname == null) {
+      NodeState nodeState = updatedNode.getNodeState();
+      if (hostname == null || nodeState == null) {
         continue;
       }
-      if (updatedNode.getNodeState() != null
-          && updatedNode.getNodeState().isUnusable()) {
-        failedNodes.add(hostname);
-        nodemap.remove(hostname);
-      } else {
-        failedNodes.remove(hostname);
+      // update the node; this also creates an instance if needed
+      boolean updated = nodemap.updateNode(hostname, updatedNode);
+      if (updated) {
+        log.debug("Updated host {} to state {}", hostname, nodeState);
+        if (nodeState.isUnusable()) {
+          log.info("Failed node {}", hostname);
+          failedNodes.add(hostname);
+        } else {
+          failedNodes.remove(hostname);
+        }
       }
     }
   }
@@ -928,7 +963,6 @@ public class RoleHistory {
   public List<OutstandingRequest> listPlacedRequests() {
     return outstandingRequests.listPlacedRequests();
   }
-
 
   /**
    * Get a snapshot of the outstanding placed request list

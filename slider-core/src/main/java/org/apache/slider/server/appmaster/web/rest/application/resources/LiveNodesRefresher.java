@@ -16,23 +16,27 @@
  * limitations under the License.
  */
 
-package org.apache.slider.core.registry.docstore;
+package org.apache.slider.server.appmaster.web.rest.application.resources;
 
-import org.codehaus.jackson.annotate.JsonIgnore;
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
-import org.codehaus.jackson.map.annotate.JsonSerialize;
+import org.apache.slider.api.types.NodeInformation;
+import org.apache.slider.server.appmaster.state.StateAccessForProviders;
 
-import java.util.HashMap;
 import java.util.Map;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
-@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
-public class UriMap {
+/**
+ * Update the live nodes map
+ */
+public class LiveNodesRefresher
+    implements ResourceRefresher<Map<String, NodeInformation>> {
 
-  public Map<String, String> uris = new HashMap<>();
-  
-  @JsonIgnore
-  public void put(String key, String value) {
-    uris.put(key, value);
+  private final StateAccessForProviders state;
+
+  public LiveNodesRefresher(StateAccessForProviders state) {
+    this.state = state;
+  }
+
+  @Override
+  public Map<String, NodeInformation> refresh() {
+    return state.getNodeInformationSnapshot();
   }
 }

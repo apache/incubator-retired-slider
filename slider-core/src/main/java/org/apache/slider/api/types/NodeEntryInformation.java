@@ -16,23 +16,46 @@
  * limitations under the License.
  */
 
-package org.apache.slider.core.registry.docstore;
+package org.apache.slider.api.types;
 
-import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 
-import java.util.HashMap;
-import java.util.Map;
-
+/**
+ * Serialized node entry information. Must be kept in sync with the protobuf equivalent.
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
-public class UriMap {
+public class NodeEntryInformation {
 
-  public Map<String, String> uris = new HashMap<>();
-  
-  @JsonIgnore
-  public void put(String key, String value) {
-    uris.put(key, value);
-  }
+
+  /** incrementing counter of instances that failed */
+  public int failed;
+
+  /** Counter of "failed recently" events. */
+  public int failedRecently;
+
+  /** timestamp of last use */
+  public long lastUsed;
+
+  /** Number of live nodes. */
+  public int live;
+
+  /** incrementing counter of instances that have been pre-empted. */
+  public int preempted;
+
+  /** Priority */
+  public int priority;
+
+  /** instance explicitly requested on this node */
+  public int requested;
+
+  /** number of containers being released off this node */
+  public int releasing;
+
+  /** incrementing counter of instances that failed to start */
+  public int startFailed;
+
+  /** number of starting instances */
+  public int starting;
 }

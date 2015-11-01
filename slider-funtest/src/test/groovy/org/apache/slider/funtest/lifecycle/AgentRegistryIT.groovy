@@ -160,7 +160,7 @@ public class AgentRegistryIT extends AgentCommandTestBase
 
 
   Outcome probeForEntryMissing(Map args) {
-    String path = args["path"]
+    String path = requiredMapValue(args, "path")
     def shell = slider([ACTION_RESOLVE, ARG_PATH, path])
     return Outcome.fromBool(shell.ret == EXIT_NOT_FOUND)
   }

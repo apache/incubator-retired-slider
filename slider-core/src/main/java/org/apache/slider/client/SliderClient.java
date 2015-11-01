@@ -424,8 +424,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
         break;
       
       case ACTION_INSTALL_KEYTAB:
-        exitCode =
-            actionInstallKeytab(serviceArgs.getActionInstallKeytabArgs());
+        exitCode = actionInstallKeytab(serviceArgs.getActionInstallKeytabArgs());
         break;
       
       case ACTION_INSTALL_PACKAGE:
@@ -503,7 +502,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     yarnAppListClient =
         new YarnAppListClient(yarnClient, getUsername(), getConfig());
     // create the filesystem
-    sliderFileSystem = new SliderFileSystem(getConfig());    
+    sliderFileSystem = new SliderFileSystem(getConfig());
   }
 
   /**
@@ -574,7 +573,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     if (client != null) {
       // set up the permissions. This must be done differently on a secure cluster from an insecure
       // one
-      List<ACL> zkperms = new ArrayList<ACL>();
+      List<ACL> zkperms = new ArrayList<>();
       if (UserGroupInformation.isSecurityEnabled()) {
         zkperms.add(new ACL(ZooDefs.Perms.ALL, ZooDefs.Ids.AUTH_IDS));
         zkperms.add(new ACL(ZooDefs.Perms.READ, ZooDefs.Ids.ANYONE_ID_UNSAFE));
@@ -1992,13 +1991,10 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     instanceDefinition.resolve();
     launchedInstanceDefinition = instanceDefinition;
 
-    ConfTreeOperations internalOperations =
-      instanceDefinition.getInternalOperations();
+    ConfTreeOperations internalOperations = instanceDefinition.getInternalOperations();
     MapOperations internalOptions = internalOperations.getGlobalOptions();
-    ConfTreeOperations resourceOperations =
-      instanceDefinition.getResourceOperations();
-    ConfTreeOperations appOperations =
-      instanceDefinition.getAppConfOperations();
+    ConfTreeOperations resourceOperations = instanceDefinition.getResourceOperations();
+    ConfTreeOperations appOperations = instanceDefinition.getAppConfOperations();
     Path generatedConfDirPath =
       createPathThatMustExist(internalOptions.getMandatoryOption(
         InternalKeys.INTERNAL_GENERATED_CONF_PATH));
@@ -2257,9 +2253,6 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     if (clusterSecure) {
       // if the cluster is secure, make sure that
       // the relevant security settings go over
-/*
-      addConfOptionToCLI(commandLine, config, KEY_SECURITY);
-*/
       addConfOptionToCLI(commandLine,
           config,
           DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY);
@@ -2312,7 +2305,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     if (ArrayUtils.isEmpty(envs)) {
       return Collections.emptyMap();
     }
-    Map<String, String> amLaunchEnv = new HashMap<String, String>();
+    Map<String, String> amLaunchEnv = new HashMap<>();
     for (String env : envs) {
       if (StringUtils.isNotEmpty(env)) {
         // Each env name/value is separated by equals sign (=)
@@ -2348,7 +2341,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     if (placeholderMatcher.find()) {
       String placeholderKey = placeholderMatcher.group();
       String systemKey = placeholderKey
-          .substring(2, placeholderKey.length() - 1).toUpperCase()
+          .substring(2, placeholderKey.length() - 1).toUpperCase(Locale.ENGLISH)
           .replaceAll("\\.", "_");
       String placeholderValue = SliderUtils.getSystemEnv(systemKey);
       log.debug("Placeholder {}={}", placeholderKey, placeholderValue);
@@ -2497,8 +2490,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * @throws FileNotFoundException if the path does not exist
    */
   public Path createPathThatMustExist(String uri) throws
-      SliderException,
-                                                  IOException {
+      SliderException, IOException {
     return sliderFileSystem.createPathThatMustExist(uri);
   }
 
@@ -2694,9 +2686,9 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       throws IOException, YarnException {
     Set<String> appInstances = getApplicationList(clustername, args);
     // getApplicationList never returns null
-    return appInstances.size() > 0 ? EXIT_SUCCESS
-        : (appInstances.size() == 0 && isUnset(clustername)) ? EXIT_SUCCESS
-            : EXIT_FALSE;
+    return !appInstances.isEmpty() ? EXIT_SUCCESS
+        : ((appInstances.isEmpty() && isUnset(clustername)) ? EXIT_SUCCESS
+               : EXIT_FALSE);
   }
 
   /**

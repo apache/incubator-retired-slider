@@ -74,6 +74,11 @@ public class MeterAndCounter {
     meter.mark();
   }
 
+  public void inc() {
+    mark();
+  }
+
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {

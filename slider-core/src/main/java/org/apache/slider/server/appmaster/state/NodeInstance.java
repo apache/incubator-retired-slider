@@ -18,6 +18,12 @@
 
 package org.apache.slider.server.appmaster.state;
 
+import org.apache.hadoop.yarn.api.records.NodeReport;
+import org.apache.hadoop.yarn.api.records.NodeState;
+import org.apache.slider.api.types.NodeEntryInformation;
+import org.apache.slider.api.types.NodeInformation;
+import org.apache.slider.common.tools.SliderUtils;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -33,6 +39,19 @@ public class NodeInstance {
 
   public final String hostname;
 
+  /**
+   * last state of node. Starts off as {@link NodeState#RUNNING},
+   * on the assumption that it is live.
+   */
+  private NodeState nodeState = NodeState.RUNNING;
+
+  private NodeReport nodeReport = null;
+
+  /**
+   * time of state update
+   */
+  private long nodeStateUpdateTime = 0;
+
   private final List<NodeEntry> nodeEntries;
 
   /**
@@ -42,6 +61,20 @@ public class NodeInstance {
   public NodeInstance(String hostname, int roles) {
     this.hostname = hostname;
     nodeEntries = new ArrayList<>(roles);
+  }
+
+
+  /**
+   * Update the node status
+   * @param report latest node report
+   * @return true if the node state changed
+   */
+  public boolean updateNode(NodeReport report) {
+    nodeReport = report;
+    NodeState oldState = nodeState;
+    nodeState = report.getNodeState();
+    nodeStateUpdateTime = report.getLastHealthReportTime();
+    return nodeState != oldState;
   }
 
   /**
@@ -215,11 +248,35 @@ public class NodeInstance {
   }
 
   /**
+   * Produced a serialized form which can be served up as JSON
+   * @return a summary of the current role status.
+   */
+  public synchronized NodeInformation serialize() {
+    NodeInformation info = new NodeInformation();
+    info.hostname = hostname;
+    // null-handling state constructor
+    info.state = "" + nodeState;
+    info.lastUpdated = nodeStateUpdateTime;
+    if (nodeReport != null) {
+      info.httpAddress = nodeReport.getHttpAddress();
+      info.rackName = nodeReport.getRackName();
+      info.labels = SliderUtils.join(nodeReport.getNodeLabels(), ", ", false);
+      info.healthReport = nodeReport.getHealthReport();
+    }
+    info.entries = new ArrayList<>(nodeEntries.size());
+    for (NodeEntry nodeEntry : nodeEntries) {
+      info.entries.add(nodeEntry.serialize());
+    }
+    return info;
+  }
+
+  /**
    * A comparator for sorting entries where the node is preferred over another.
    * <p>
    * The exact algorithm may change
    * 
-   * @return +ve int if left is preferred to right; -ve if right over left, 0 for equal
+   * the comparision is a positive int if left is preferred to right;
+   * negative if right over left, 0 for equal
    */
   public static class Preferred implements Comparator<NodeInstance>,
                                            Serializable {
