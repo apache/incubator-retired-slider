@@ -21,7 +21,6 @@ package org.apache.slider.server.appmaster.state;
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -265,15 +264,17 @@ public class AppState {
 
 
   /**
-   * Record of the max no. of cores allowed in this cluster
+   * limits of container core numbers in this queue
    */
   private int containerMaxCores;
+  private int containerMinCores;
 
   /**
-   * limit container memory
+   * limits of container memory in this queue
    */
   private int containerMaxMemory;
-  
+  private int containerMinMemory;
+
   private RoleHistory roleHistory;
   private Configuration publishedProviderConf;
   private long startTimeThreshold;
@@ -447,26 +448,28 @@ public class AppState {
   }
 
   /**
-   * Set the container limits -the max that can be asked for,
-   * which are used when the "max" values are requested
+   * Set the container limits -the min and max values for
+   * resource requests. All requests must be multiples of the min
+   * values.
+   * @param minMemory min memory MB
    * @param maxMemory maximum memory
+   * @param minCores min v core count
    * @param maxCores maximum cores
    */
-  public void setContainerLimits(int maxMemory, int maxCores) {
+  public void setContainerLimits(int minMemory,int maxMemory, int minCores, int maxCores) {
+    containerMinCores = minCores;
     containerMaxCores = maxCores;
+    containerMinMemory = minMemory;
     containerMaxMemory = maxMemory;
   }
-
 
   public ConfTreeOperations getResourcesSnapshot() {
     return resourcesSnapshot;
   }
 
-
   public ConfTreeOperations getAppConfSnapshot() {
     return appConfSnapshot;
   }
-
 
   public ConfTreeOperations getInternalsSnapshot() {
     return internalsSnapshot;
@@ -488,38 +491,17 @@ public class AppState {
     return unresolvedInstanceDefinition;
   }
 
-  /**
-   * Build up the application state
-   * @param instanceDefinition definition of the applicatin instance
-   * @param appmasterConfig
-   * @param publishedProviderConf any configuration info to be published by a provider
-   * @param providerRoles roles offered by a provider
-   * @param fs filesystem
-   * @param historyDir directory containing history files
-   * @param liveContainers list of live containers supplied on an AM restart
-   * @param applicationInfo app info to retain for web views
-   * @param releaseSelector selector of containers to release
-   */
-  public synchronized void buildInstance(AggregateConf instanceDefinition,
-      Configuration appmasterConfig,
-      Configuration publishedProviderConf,
-      List<ProviderRole> providerRoles,
-      FileSystem fs,
-      Path historyDir,
-      List<Container> liveContainers,
-      Map<String, String> applicationInfo,
-      ContainerReleaseSelector releaseSelector)
-      throws  BadClusterStateException, BadConfigException, IOException {
-    Preconditions.checkArgument(instanceDefinition != null);
-    Preconditions.checkArgument(releaseSelector != null);
+  public synchronized void buildInstance(AppStateBindingInfo binding)
+      throws BadClusterStateException, BadConfigException, IOException {
+    binding.validate();
 
     log.debug("Building application state");
-    this.publishedProviderConf = publishedProviderConf;
-    this.applicationInfo = applicationInfo != null ? applicationInfo
-                                                   : new HashMap<String, String>();
+    publishedProviderConf = binding.publishedProviderConf;
+    applicationInfo = binding.applicationInfo != null ? binding.applicationInfo
+                        : new HashMap<String, String>();
 
     clientProperties = new HashMap<>();
-    containerReleaseSelector = releaseSelector;
+    containerReleaseSelector = binding.releaseSelector;
 
 
     Set<String> confKeys = ConfigHelper.sortedConfigKeys(publishedProviderConf);
@@ -532,15 +514,15 @@ public class AppState {
 
     // set the cluster specification (once its dependency the client properties
     // is out the way
-    setInitialInstanceDefinition(instanceDefinition);
+    setInitialInstanceDefinition(binding.instanceDefinition);
 
     //build the initial role list
-    for (ProviderRole providerRole : providerRoles) {
+    List<ProviderRole> roleList = new ArrayList<>(binding.roles);
+    for (ProviderRole providerRole : roleList) {
       buildRole(providerRole);
     }
 
-    ConfTreeOperations resources =
-        instanceDefinition.getResourceOperations();
+    ConfTreeOperations resources = instanceDefinition.getResourceOperations();
 
     Set<String> roleNames = resources.getComponentNames();
     for (String name : roleNames) {
@@ -551,16 +533,14 @@ public class AppState {
         ProviderRole dynamicRole =
             createDynamicProviderRole(name, resComponent);
         buildRole(dynamicRole);
-        providerRoles.add(dynamicRole);
+        roleList.add(dynamicRole);
       }
     }
     //then pick up the requirements
     buildRoleRequirementsFromResources();
 
-
     //set the livespan
-    MapOperations globalResOpts =
-        instanceDefinition.getResourceOperations().getGlobalOptions();
+    MapOperations globalResOpts = instanceDefinition.getResourceOperations().getGlobalOptions();
     
     startTimeThreshold = globalResOpts.getOptionInt(
         InternalKeys.INTERNAL_CONTAINER_FAILURE_SHORTLIFE,
@@ -576,16 +556,15 @@ public class AppState {
 
 
     // set up the role history
-    roleHistory = new RoleHistory(providerRoles);
+    roleHistory = new RoleHistory(roleList);
     roleHistory.register(metricsAndMonitoring);
-    roleHistory.onStart(fs, historyDir);
+    roleHistory.onStart(binding.fs, binding.historyPath);
 
     //rebuild any live containers
-    rebuildModelFromRestart(liveContainers);
+    rebuildModelFromRestart(binding.liveContainers);
 
     // any am config options to pick up
-    logServerURL = appmasterConfig.get(YarnConfiguration.YARN_LOG_SERVER_URL, "");
-    
+    logServerURL = binding.serviceConfig.get(YarnConfiguration.YARN_LOG_SERVER_URL, "");
     //mark as live
     applicationLive = true;
   }

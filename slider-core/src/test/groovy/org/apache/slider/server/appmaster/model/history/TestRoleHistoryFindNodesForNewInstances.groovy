@@ -63,7 +63,7 @@ class TestRoleHistoryFindNodesForNewInstances extends BaseMockAppStateTest {
   @Before
   public void setupNodeMap() {
     roleHistory.insert(nodes)
-    roleHistory.buildAvailableNodeLists();
+    roleHistory.buildRecentNodeLists();
   }
 
 

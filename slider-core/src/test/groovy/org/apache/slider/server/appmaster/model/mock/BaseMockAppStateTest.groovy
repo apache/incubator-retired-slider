@@ -20,7 +20,6 @@ package org.apache.slider.server.appmaster.model.mock
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem as HadoopFS
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.yarn.api.records.Container
@@ -34,21 +33,19 @@ import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
 import org.apache.slider.server.appmaster.state.AppState
+import org.apache.slider.server.appmaster.state.AppStateBindingInfo
 import org.apache.slider.server.appmaster.state.ContainerAssignment
 import org.apache.slider.server.appmaster.state.ContainerOutcome
 import org.apache.slider.server.appmaster.state.NodeEntry
 import org.apache.slider.server.appmaster.state.NodeInstance
 import org.apache.slider.server.appmaster.state.RoleInstance
 import org.apache.slider.server.appmaster.state.RoleStatus
-import org.apache.slider.server.appmaster.state.SimpleReleaseSelector
 import org.apache.slider.test.SliderTestBase
 import org.junit.Before
 
 @CompileStatic
 @Slf4j
 abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles {
-  public static final int RM_MAX_RAM = 4096
-  public static final int RM_MAX_CORES = 64
   MockFactory factory = new MockFactory()
   MockAppState appState
   MockYarnEngine engine
@@ -77,12 +74,14 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
     return new MockYarnEngine(64, 1)
   }
 
+  /**
+   * Initialize the application.
+   * This uses the binding information supplied by {@link #buildBindingInfo()}.
+   */
   @Before
   void initApp(){
 
     String historyDirName = testName;
-
-
     YarnConfiguration conf = SliderUtils.createConfiguration()
     applicationId = new MockApplicationId(id: 1, clusterTimestamp: 0)
     applicationAttemptId = new MockApplicationAttemptId(
@@ -94,21 +93,27 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
     historyPath = new Path(historyWorkDir.toURI())
     fs.delete(historyPath, true)
     appState = new MockAppState()
-    appState.setContainerLimits(RM_MAX_RAM, RM_MAX_CORES)
-    appState.buildInstance(
-        buildInstanceDefinition(),
-        new Configuration(),
-        new Configuration(false),
-        factory.ROLES,
-        fs,
-        historyPath,
-        null, null,
-        new SimpleReleaseSelector())
+    appState.buildInstance(buildBindingInfo())
+  }
+
+  /**
+   * Build the binding info from the default constructor values,
+   * the roles from {@link #factory}, and an instance definition
+   * from {@link #buildInstanceDefinition()}
+   * @return
+   */
+  AppStateBindingInfo buildBindingInfo() {
+    AppStateBindingInfo binding = new AppStateBindingInfo()
+    binding.instanceDefinition = buildInstanceDefinition();
+    binding.roles = factory.ROLES
+    binding.fs = fs
+    binding.historyPath = historyPath
+    binding
   }
 
   /**
    * Override point, define the instance definition
-   * @return
+   * @return the instance definition
    */
   public AggregateConf buildInstanceDefinition() {
     factory.newInstanceDefinition(0, 0, 0)
@@ -116,7 +121,7 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
 
   /**
    * Get the test name ... defaults to method name
-   * @return
+   * @return the method name
    */
   String getTestName() {
     methodName.methodName;

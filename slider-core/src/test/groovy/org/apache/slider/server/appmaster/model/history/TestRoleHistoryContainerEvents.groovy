@@ -68,7 +68,7 @@ class TestRoleHistoryContainerEvents extends BaseMockAppStateTest {
   public void setupRH() {
     roleHistory.onStart(fs, historyPath)
     roleHistory.insert(nodes)
-    roleHistory.buildAvailableNodeLists();
+    roleHistory.buildRecentNodeLists();
     resource = Resource.newInstance(ResourceKeys.DEF_YARN_CORES,
                                     ResourceKeys.DEF_YARN_MEMORY);
   }

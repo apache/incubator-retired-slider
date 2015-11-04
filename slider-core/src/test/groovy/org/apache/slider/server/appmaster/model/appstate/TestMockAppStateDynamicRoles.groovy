@@ -23,6 +23,7 @@ import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.yarn.api.records.ContainerId
 import org.apache.slider.api.ResourceKeys
+import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.providers.PlacementPolicy
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockAppState
@@ -31,6 +32,7 @@ import org.apache.slider.server.appmaster.model.mock.MockYarnEngine
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
 import org.apache.slider.server.appmaster.operations.ContainerRequestOperation
 import org.apache.slider.server.appmaster.state.AppState
+import org.apache.slider.server.appmaster.state.AppStateBindingInfo
 import org.apache.slider.server.appmaster.state.ContainerPriority
 import org.apache.slider.server.appmaster.state.RoleHistoryUtils
 import org.apache.slider.server.appmaster.state.RoleInstance
@@ -65,40 +67,27 @@ class TestMockAppStateDynamicRoles extends BaseMockAppStateTest
   }
 
   @Override
-  void initApp() {
-    super.initApp()
-    appState = new MockAppState()
-    appState.setContainerLimits(RM_MAX_RAM, RM_MAX_CORES)
-    def instance = factory.newInstanceDefinition(0,0,0)
-
+  AggregateConf buildInstanceDefinition() {
+    def instance = factory.newInstanceDefinition(0, 0, 0)
     def opts = [
-        (ResourceKeys.COMPONENT_PRIORITY): ROLE4,
+        (ResourceKeys.COMPONENT_PRIORITY) : ROLE4,
         (ResourceKeys.COMPONENT_INSTANCES): "1",
     ]
 
 
-    instance.resourceOperations.components[ROLE4]= opts
+    instance.resourceOperations.components[ROLE4] = opts
 
     def opts5 = [
-        (ResourceKeys.COMPONENT_PRIORITY) : ROLE5,
-        (ResourceKeys.COMPONENT_INSTANCES): "1",
+        (ResourceKeys.COMPONENT_PRIORITY)        : ROLE5,
+        (ResourceKeys.COMPONENT_INSTANCES)       : "1",
         (ResourceKeys.COMPONENT_PLACEMENT_POLICY):
             Integer.toString(PlacementPolicy.STRICT),
-        (ResourceKeys.NODE_FAILURE_THRESHOLD):
+        (ResourceKeys.NODE_FAILURE_THRESHOLD)    :
             Integer.toString(2),
     ]
 
-    instance.resourceOperations.components[ROLE5]= opts5
-
-    appState.buildInstance(
-        instance,
-        new Configuration(),
-        new Configuration(false),
-        factory.ROLES,
-        fs,
-        historyPath,
-        null,
-        null, new SimpleReleaseSelector())
+    instance.resourceOperations.components[ROLE5] = opts5
+    instance
   }
 
   @Test

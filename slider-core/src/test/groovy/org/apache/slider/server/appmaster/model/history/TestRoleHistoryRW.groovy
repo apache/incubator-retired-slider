@@ -26,11 +26,9 @@ import org.apache.slider.providers.PlacementPolicy
 import org.apache.slider.providers.ProviderRole
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockFactory
-import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.state.NodeEntry
 import org.apache.slider.server.appmaster.state.NodeInstance
 import org.apache.slider.server.appmaster.state.RoleHistory
-import org.apache.slider.server.avro.LoadedRoleHistory
 import org.apache.slider.server.avro.RoleHistoryWriter
 import org.junit.Test
 
@@ -136,7 +134,7 @@ class TestRoleHistoryRW extends BaseMockAppStateTest {
     assert rh2.thawedDataTime == savetime
 
     // now start it
-    rh2.buildAvailableNodeLists();
+    rh2.buildRecentNodeLists();
     describe("starting")
     rh2.dump();
     List<NodeInstance> available0 = rh2.cloneAvailableList(0)

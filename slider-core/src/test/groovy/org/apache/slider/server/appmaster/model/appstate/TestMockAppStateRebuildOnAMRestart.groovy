@@ -20,14 +20,11 @@ package org.apache.slider.server.appmaster.model.appstate
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.yarn.api.records.Container
 import org.apache.slider.api.StatusKeys
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockAppState
 import org.apache.slider.server.appmaster.model.mock.MockRoles
-import org.apache.slider.server.appmaster.operations.AbstractRMOperation
-import org.apache.slider.server.appmaster.state.MostRecentContainerReleaseSelector
 import org.apache.slider.server.appmaster.state.NodeEntry
 import org.apache.slider.server.appmaster.state.NodeInstance
 import org.apache.slider.server.appmaster.state.NodeMap
@@ -35,7 +32,7 @@ import org.apache.slider.server.appmaster.state.RoleInstance
 import org.junit.Test
 
 /**
- * Test that if you have >1 role, the right roles are chosen for release.
+ * Test that app state is rebuilt on a restart
  */
 @CompileStatic
 @Slf4j
@@ -74,16 +71,11 @@ class TestMockAppStateRebuildOnAMRestart extends BaseMockAppStateTest
     appState = new MockAppState()
 
     //and rebuild
-    appState.buildInstance(
-        factory.newInstanceDefinition(r0, r1, r2),
-        new Configuration(),
-        new Configuration(false),
-        factory.ROLES,
-        fs,
-        historyPath,
-        containers,
-        null,
-        new MostRecentContainerReleaseSelector())
+
+    def bindingInfo = buildBindingInfo()
+    bindingInfo.instanceDefinition = factory.newInstanceDefinition(r0, r1, r2)
+    bindingInfo.liveContainers = containers
+    appState.buildInstance(bindingInfo)
 
     assert appState.startedCountainerCount == clusterSize
 
@@ -107,22 +99,18 @@ class TestMockAppStateRebuildOnAMRestart extends BaseMockAppStateTest
       assertNotNull("Null entry in original nodemap for " + hostname, orig)
 
       for (int i = 0; i < ROLE_COUNT; i++) {
-        
-        assert (nodeInstance.getActiveRoleInstances(i) ==
-                orig.getActiveRoleInstances(i))
+        assert (nodeInstance.getActiveRoleInstances(i) == orig.getActiveRoleInstances(i))
         NodeEntry origRE = orig.getOrCreate(i)
         NodeEntry newRE = nodeInstance.getOrCreate(i)
         assert origRE.live == newRE.live
-        assert newRE.starting == 0
+        assert 0 == newRE.starting
       }
     }
-    List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()
-    assert ops.size() == 0
+    assert 0 == appState.reviewRequestAndReleaseNodes().size()
 
     def status = appState.getClusterStatus()
     // verify the AM restart container count was set
-    String restarted = status.getInfo(
-        StatusKeys.INFO_CONTAINERS_AM_RESTART)
+    String restarted = status.getInfo(StatusKeys.INFO_CONTAINERS_AM_RESTART)
     assert restarted != null;
     //and that the count == 1 master + the region servers
     assert Integer.parseInt(restarted) == containers.size()

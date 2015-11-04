@@ -31,7 +31,6 @@ import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadConfigException;
 import org.apache.slider.providers.ProviderRole;
 import org.apache.slider.server.appmaster.management.BoolMetric;
-import org.apache.slider.server.appmaster.management.LongGauge;
 import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
 import org.apache.slider.server.appmaster.management.Timestamp;
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
@@ -52,6 +51,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The Role History.
@@ -87,8 +87,8 @@ public class RoleHistory {
   private RoleHistoryWriter historyWriter = new RoleHistoryWriter();
 
   /**
-   * When were the nodes updated in a {@link #onNodesUpdated(List)} call.
-   * If zero: never
+   * When were the nodes updated in a {@link #onNodesUpdated(List)} call?
+   * If zero: never.
    */
   private final Timestamp nodesUpdatedTime = new Timestamp(0);
   private final BoolMetric nodeUpdateReceived = new BoolMetric(false);
@@ -98,9 +98,10 @@ public class RoleHistory {
 
   /**
    * For each role, lists nodes that are available for data-local allocation,
-   ordered by more recently released - To accelerate node selection
+   * ordered by more recently released - to accelerate node selection.
+   * That is, they are "recently used nodes"
    */
-  private Map<Integer, LinkedList<NodeInstance>> availableNodes;
+  private Map<Integer, LinkedList<NodeInstance>> recentNodes;
 
   /**
    * Track the failed nodes. Currently used to make wiser decision of container
@@ -158,8 +159,7 @@ public class RoleHistory {
     throws BadConfigException {
     int index = providerRole.id;
     if (index < 0) {
-      throw new BadConfigException("Provider " + providerRole
-                                               + " id is out of range");
+      throw new BadConfigException("Provider " + providerRole + " id is out of range");
     }
     if (roleStats.get(index) != null) {
       throw new BadConfigException(
@@ -206,7 +206,7 @@ public class RoleHistory {
    * Clear the lists of available nodes
    */
   private synchronized void resetAvailableNodeLists() {
-    availableNodes = new HashMap<>(roleSize);
+    recentNodes = new ConcurrentHashMap<>(roleSize);
   }
 
   /**
@@ -363,7 +363,7 @@ public class RoleHistory {
   public synchronized void insert(Collection<NodeInstance> nodes) {
     nodemap.insert(nodes);
   }
-  
+
   /**
    * Get current time. overrideable for test subclasses
    * @return current time in millis
@@ -435,8 +435,7 @@ public class RoleHistory {
    * @param historyDir path in FS for history
    * @return true if the history was thawed
    */
-  public boolean onStart(FileSystem fs, Path historyDir) throws
-                                                         BadConfigException {
+  public boolean onStart(FileSystem fs, Path historyDir) throws BadConfigException {
     assert filesystem == null;
     filesystem = fs;
     historyPath = historyDir;
@@ -483,7 +482,7 @@ public class RoleHistory {
       }
 
       //start is then completed
-      buildAvailableNodeLists();
+      buildRecentNodeLists();
     } else {
       //fallback to bootstrap procedure
       onBootstrap();
@@ -496,7 +495,7 @@ public class RoleHistory {
    * (After the start), rebuild the availability data structures
    */
   @VisibleForTesting
-  public synchronized void buildAvailableNodeLists() {
+  public synchronized void buildRecentNodeLists() {
     resetAvailableNodeLists();
     // build the list of available nodes
     for (Map.Entry<String, NodeInstance> entry : nodemap.entrySet()) {
@@ -505,13 +504,13 @@ public class RoleHistory {
         NodeEntry nodeEntry = ni.get(i);
         if (nodeEntry != null && nodeEntry.isAvailable()) {
           log.debug("Adding {} for role {}", ni, i);
-          getOrCreateNodesForRoleId(i).add(ni);
+          listRecentNodesForRoleId(i).add(ni);
         }
       }
     }
     // sort the resulting arrays
     for (int i = 0; i < roleSize; i++) {
-      sortAvailableNodeList(i);
+      sortRecentNodeList(i);
     }
   }
 
@@ -521,30 +520,35 @@ public class RoleHistory {
    * @return potentially null list
    */
   @VisibleForTesting
-  public List<NodeInstance> getNodesForRoleId(int id) {
-    return availableNodes.get(id);
+  public List<NodeInstance> getRecentNodesForRoleId(int id) {
+    return recentNodes.get(id);
   }
-  
+
   /**
-   * Get the nodes for an ID -may be null
+   * Get a possibly emtpy list of suggested nodes for a role.
    * @param id role ID
    * @return list
    */
-  private LinkedList<NodeInstance> getOrCreateNodesForRoleId(int id) {
-    LinkedList<NodeInstance> instances = availableNodes.get(id);
+  private LinkedList<NodeInstance> listRecentNodesForRoleId(int id) {
+    LinkedList<NodeInstance> instances = recentNodes.get(id);
     if (instances == null) {
-      instances = new LinkedList<>();
-      availableNodes.put(id, instances);
+      synchronized (this) {
+        // recheck in the synchronized block and recreate
+        if (recentNodes.get(id) == null) {
+          recentNodes.put(id, new LinkedList<NodeInstance>());
+        }
+        instances = recentNodes.get(id);
+      }
     }
     return instances;
   }
-  
+
   /**
-   * Sort an available node list
+   * Sort a the recent node list for a single role
    * @param role role to sort
    */
-  private void sortAvailableNodeList(int role) {
-    List<NodeInstance> nodesForRoleId = getNodesForRoleId(role);
+  private void sortRecentNodeList(int role) {
+    List<NodeInstance> nodesForRoleId = getRecentNodesForRoleId(role);
     if (nodesForRoleId != null) {
       Collections.sort(nodesForRoleId, new NodeInstance.Preferred(role));
     }
@@ -566,7 +570,7 @@ public class RoleHistory {
     NodeInstance nodeInstance = null;
     // Get the list of possible targets.
     // This is a live list: changes here are preserved
-    List<NodeInstance> targets = getNodesForRoleId(roleId);
+    List<NodeInstance> targets = getRecentNodesForRoleId(roleId);
     if (targets == null) {
       // nothing to allocate on
       return null;
@@ -655,7 +659,7 @@ public class RoleHistory {
   public synchronized List<NodeInstance> listActiveNodes(int role) {
     return nodemap.listActiveNodes(role);
   }
-  
+
   /**
    * Get the node entry of a container
    * @param container container to look up
@@ -705,7 +709,7 @@ public class RoleHistory {
    * @return list of containers potentially reordered
    */
   public synchronized List<Container> prepareAllocationList(List<Container> allocatedContainers) {
-    
+
     //partition into requested and unrequested
     List<Container> requested =
       new ArrayList<>(allocatedContainers.size());
@@ -717,7 +721,7 @@ public class RoleHistory {
     requested.addAll(unrequested);
     return requested;
   }
-  
+
   /**
    * A container has been allocated on a node -update the data structures
    * @param container container
@@ -730,7 +734,7 @@ public class RoleHistory {
       int actualCount) {
     int role = ContainerPriority.extractRole(container);
     String hostname = RoleHistoryUtils.hostnameOf(container);
-    List<NodeInstance> nodeInstances = getOrCreateNodesForRoleId(role);
+    List<NodeInstance> nodeInstances = listRecentNodesForRoleId(role);
     ContainerAllocation outcome =
         outstandingRequests.onContainerAllocated(role, hostname, container);
     if (desiredCount <= actualCount) {
@@ -741,7 +745,7 @@ public class RoleHistory {
         //add the list
         log.info("Adding {} hosts for role {}", hosts.size(), role);
         nodeInstances.addAll(hosts);
-        sortAvailableNodeList(role);
+        sortRecentNodeList(role);
       }
     }
     return outcome;
@@ -892,7 +896,7 @@ public class RoleHistory {
 
   /**
    * If the node is marked as available; queue it for assignments.
-   * Unsynced: expects caller to be in a sync block.
+   * Unsynced: requires caller to be in a sync block.
    * @param container completed container
    * @param nodeEntry node
    * @param available available flag
@@ -907,7 +911,7 @@ public class RoleHistory {
       NodeInstance ni = getOrCreateNodeInstance(container);
       int roleId = ContainerPriority.extractRole(container);
       log.debug("Node {} is now available for role id {}", ni, roleId);
-      getOrCreateNodesForRoleId(roleId).addFirst(ni);
+      listRecentNodesForRoleId(roleId).addFirst(ni);
     }
     return available;
   }
@@ -918,8 +922,7 @@ public class RoleHistory {
   public synchronized void dump() {
     for (ProviderRole role : providerRoles) {
       log.info(role.toString());
-      List<NodeInstance> instances =
-        getOrCreateNodesForRoleId(role.id);
+      List<NodeInstance> instances = listRecentNodesForRoleId(role.id);
       log.info("  available: " + instances.size()
                + " " + SliderUtils.joinWithInnerSeparator(" ", instances));
     }
@@ -952,7 +955,7 @@ public class RoleHistory {
    */
   @VisibleForTesting
   public List<NodeInstance> cloneAvailableList(int role) {
-    return new LinkedList<>(getOrCreateNodesForRoleId(role));
+    return new LinkedList<>(listRecentNodesForRoleId(role));
   }
 
   /**
