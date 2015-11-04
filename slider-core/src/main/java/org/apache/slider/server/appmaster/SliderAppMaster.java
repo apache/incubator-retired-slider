@@ -502,15 +502,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     addService(executorService);
 
     addService(actionQueues);
-    // set up the YARN client. This may require patching in the RM client-API address if it
-    // is (somehow) unset server-side.
-    String clientRMaddr = conf.get(YarnConfiguration.RM_ADDRESS);
-    if (clientRMaddr.startsWith("0.0.0.0")) {
-      // address isn't known; fail fast
-      throw new BindException("Invalid " + YarnConfiguration.RM_ADDRESS + " value:" + addr
-          + " - see https://wiki.apache.org/hadoop/UnsetHostnameOrPort");
-    }
-    addService(yarnClient = new SliderYarnClientImpl());
 
     //init all child services
     super.serviceInit(conf);
@@ -542,8 +533,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    * @param args argument list
    */
   @Override // RunService
-  public Configuration bindArgs(Configuration config, String... args) throws
-                                                                      Exception {
+  public Configuration bindArgs(Configuration config, String... args) throws Exception {
     // let the superclass process it
     Configuration superConf = super.bindArgs(config, args);
     // add the slider XML config
@@ -667,9 +657,20 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     sliderAMProvider = new SliderAMProviderService();
     initAndAddService(sliderAMProvider);
     
-    InetSocketAddress address = SliderUtils.getRmSchedulerAddress(serviceConf);
-    log.info("RM is at {}", address);
+    InetSocketAddress rmSchedulerAddress = SliderUtils.getRmSchedulerAddress(serviceConf);
+    log.info("RM is at {}", rmSchedulerAddress);
     yarnRPC = YarnRPC.create(serviceConf);
+
+    // set up the YARN client. This may require patching in the RM client-API address if it
+    // is (somehow) unset server-side.    String clientRMaddr = serviceConf.get(YarnConfiguration.RM_ADDRESS);
+    InetSocketAddress clientRpcAddress = SliderUtils.getRmAddress(serviceConf);
+    if (!SliderUtils.isAddressDefined(clientRpcAddress)) {
+      // client addr is being unset. We can lift it from the other RM APIs
+      serviceConf.set(YarnConfiguration.RM_ADDRESS,
+          String.format("%s:%d", rmSchedulerAddress.getHostString(), clientRpcAddress.getPort() ));
+    }
+    initAndAddService(yarnClient = new SliderYarnClientImpl());
+    yarnClient.start();
 
     /*
      * Extract the container ID. This is then

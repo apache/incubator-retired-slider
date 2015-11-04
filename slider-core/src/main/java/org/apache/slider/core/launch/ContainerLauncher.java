@@ -55,17 +55,13 @@ public class ContainerLauncher extends AbstractLauncher {
   public UserGroupInformation setupUGI() {
     UserGroupInformation user =
       UserGroupInformation.createRemoteUser(container.getId().toString());
-    String cmIpPortStr =
-      container.getNodeId().getHost() + ":" + container.getNodeId().getPort();
-    final InetSocketAddress cmAddress =
-      NetUtils.createSocketAddr(cmIpPortStr);
+    String cmIpPortStr = container.getNodeId().getHost() + ":" + container.getNodeId().getPort();
+    final InetSocketAddress cmAddress = NetUtils.createSocketAddr(cmIpPortStr);
 
-    org.apache.hadoop.yarn.api.records.Token containerToken =
-      container.getContainerToken();
+    org.apache.hadoop.yarn.api.records.Token containerToken = container.getContainerToken();
     if (containerToken != null) {
       Token<ContainerTokenIdentifier> token =
-        ConverterUtils.convertFromYarn(containerToken,
-                                       cmAddress);
+        ConverterUtils.convertFromYarn(containerToken, cmAddress);
       user.addToken(token);
     }
     return user;
