@@ -55,8 +55,7 @@ import java.util.Set;
  * from the slider entry point service
  */
 public class SliderYarnClientImpl extends YarnClientImpl {
-  protected static final Logger
-    log = LoggerFactory.getLogger(SliderYarnClientImpl.class);
+  protected static final Logger log = LoggerFactory.getLogger(SliderYarnClientImpl.class);
 
   /**
    * Keyword to use in the {@link #emergencyForceKill(String)}
@@ -96,10 +95,10 @@ public class SliderYarnClientImpl extends YarnClientImpl {
   public List<ApplicationReport> listDeployedInstances(String user)
     throws YarnException, IOException {
     Preconditions.checkArgument(user != null, "Null User");
-    Set<String> types = new HashSet<String>(1);
+    Set<String> types = new HashSet<>(1);
     types.add(SliderKeys.APP_TYPE);
     List<ApplicationReport> allApps = getApplications(types);
-    List<ApplicationReport> results = new ArrayList<ApplicationReport>();
+    List<ApplicationReport> results = new ArrayList<>();
     for (ApplicationReport report : allApps) {
       if (StringUtils.isEmpty(user) || user.equals(report.getUser())) {
         results.add(report);
@@ -330,8 +329,6 @@ public class SliderYarnClientImpl extends YarnClientImpl {
     Preconditions.checkArgument(StringUtils.isNotEmpty(appname),
         "Null/empty application name");
     Preconditions.checkArgument(desiredState != null, "Null desiredState");
-    ApplicationReport found = null;
-    ApplicationReport foundAndLive = null;
     log.debug("Searching {} records for instance name {} in state '{}'",
         instances.size(), appname, desiredState);
     for (ApplicationReport app : instances) {

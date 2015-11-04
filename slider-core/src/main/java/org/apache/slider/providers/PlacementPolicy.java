@@ -27,7 +27,12 @@ public class PlacementPolicy {
   /**
    * Default value: history used, anti-affinity hinted at on rebuild/flex up
    */
-  public static final int DEFAULT = 0;
+  public static final int NONE = 0;
+
+  /**
+   * Default value: history used, anti-affinity hinted at on rebuild/flex up
+   */
+  public static final int DEFAULT = NONE;
 
   /**
    * Strict placement: when asking for an instance for which there is

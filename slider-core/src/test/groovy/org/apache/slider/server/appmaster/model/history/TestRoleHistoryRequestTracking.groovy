@@ -67,7 +67,7 @@ class TestRoleHistoryRequestTracking extends BaseMockAppStateTest {
   @Before
   public void setupNodeMap() {
     roleHistory.insert(nodes)
-    roleHistory.buildAvailableNodeLists();
+    roleHistory.buildRecentNodeLists();
   }
 
   @Test
@@ -141,7 +141,7 @@ class TestRoleHistoryRequestTracking extends BaseMockAppStateTest {
     recordAsFailed(age4Active1, key, 4)
 
     // trigger a list rebuild
-    roleHistory.buildAvailableNodeLists();
+    roleHistory.buildRecentNodeLists();
 
     assert !roleHistory.cloneAvailableList(key).isEmpty()
 
