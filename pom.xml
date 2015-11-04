@@ -113,7 +113,7 @@
     -->
     <project.java.src.version>1.7</project.java.src.version>
     <enforced.java.version>${project.java.src.version}</enforced.java.version>
-    <groovy.version>2.4.0</groovy.version>
+    <groovy.version>2.4.5</groovy.version>
     
     <!-- 
     test options
@@ -599,12 +599,6 @@
             <artifactId>jets3t</artifactId>
           </exclusion>
         </exclusions>
-      </dependency>
-
-      <dependency>
-        <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-hdfs</artifactId>
-        <version>${hadoop.version}</version>
       </dependency>
 
       <dependency>
