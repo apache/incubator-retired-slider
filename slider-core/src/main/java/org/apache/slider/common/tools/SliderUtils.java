@@ -1034,7 +1034,7 @@ public final class SliderUtils {
    * something other than 0.0.0.0
    */
   public static boolean isAddressDefined(InetSocketAddress address) {
-    return !(address.getHostName().equals("0.0.0.0"));
+    return !(address.getHostString().equals("0.0.0.0"));
   }
 
   public static void setRmAddress(Configuration conf, String rmAddr) {
@@ -1352,22 +1352,25 @@ public final class SliderUtils {
     log.info("Loading all dependencies from {}", srcPath);
     if (SliderUtils.isSet(srcPath)) {
       File srcFolder = new File(srcPath);
-      FilenameFilter jarFilter = new FilenameFilter() {
-        public boolean accept(File dir, String name) {
-          String lowercaseName = name.toLowerCase();
-          if (lowercaseName.endsWith(".jar")) {
-            return true;
-          } else {
-            return false;
-          }
-        }
-      };
+      FilenameFilter jarFilter = createJarFilter();
       File[] listOfJars = srcFolder.listFiles(jarFilter);
       for (File jarFile : listOfJars) {
         LocalResource res = sliderFileSystem.submitFile(jarFile, tempPath, libDir, jarFile.getName());
         providerResources.put(libDir + "/" + jarFile.getName(), res);
       }
     }
+  }
+
+  /**
+   * Accept all filenames ending with {@code .jar}
+   * @return a filename filter
+   */
+  public static FilenameFilter createJarFilter() {
+    return new FilenameFilter() {
+      public boolean accept(File dir, String name) {
+        return name.toLowerCase(Locale.ENGLISH).endsWith(".jar");
+      }
+    };
   }
 
   /**

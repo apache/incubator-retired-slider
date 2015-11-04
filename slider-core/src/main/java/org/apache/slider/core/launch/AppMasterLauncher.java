@@ -220,8 +220,7 @@ public class AppMasterLauncher extends AbstractLauncher {
     }
 
     Token<? extends TokenIdentifier>[] tokens = null;
-    boolean tokensProvided =
-        this.getConf().get(MAPREDUCE_JOB_CREDENTIALS_BINARY) != null;
+    boolean tokensProvided = getConf().get(MAPREDUCE_JOB_CREDENTIALS_BINARY) != null;
     if (!tokensProvided) {
         // For now, only getting tokens for the default file-system.
         FileSystem fs = coreFileSystem.getFileSystem();
@@ -232,7 +231,7 @@ public class AppMasterLauncher extends AbstractLauncher {
     if (tokens != null && tokens.length > 0) {
       AbstractDelegationTokenIdentifier id =
         (AbstractDelegationTokenIdentifier)tokens[0].decodeIdentifier();
-      Date d = new Date(id.getIssueDate() + 24*60*60*1000);
+      Date d = new Date(id.getIssueDate() + 24 * 60 * 60 * 1000);
       log.info("HDFS delegation tokens for AM launch context require renewal by {}",
                DateFormat.getDateTimeInstance().format(d));
     } else {

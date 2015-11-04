@@ -41,8 +41,7 @@ import org.junit.Test
 class TestActionPackage extends AgentMiniClusterTestBase {
 
 
-  public static final String E_INVALID_APP_TYPE =
-      "A valid application type name is required (e.g. HBASE)"
+  public static final String E_NO_NAME = "Required argument --name missing"
 
   String s = File.separator
   File packageFile = new File("src${s}test${s}resources${s}log4j.properties")
@@ -70,7 +69,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
     } catch (BadCommandArgumentsException e) {
       assertExceptionDetails(e,
           LauncherExitCodes.EXIT_COMMAND_ARGUMENT_ERROR,
-          E_INVALID_APP_TYPE)
+          E_NO_NAME)
     }
   }
 
@@ -285,7 +284,7 @@ class TestActionPackage extends AgentMiniClusterTestBase {
     } catch (BadCommandArgumentsException e) {
       assertExceptionDetails(e,
           LauncherExitCodes.EXIT_COMMAND_ARGUMENT_ERROR,
-          E_INVALID_APP_TYPE)
+          E_NO_NAME)
     }
   }
 }
