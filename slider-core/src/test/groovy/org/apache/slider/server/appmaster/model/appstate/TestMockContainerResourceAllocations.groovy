@@ -38,11 +38,6 @@ import org.junit.Test
 @Slf4j
 class TestMockContainerResourceAllocations extends BaseMockAppStateTest {
 
-  @Override
-  String getTestName() {
-    "TestMockContainerResourceAllocations"
-  }
-
   @Test
   public void testNormalAllocations() throws Throwable {
     ConfTree clusterSpec = factory.newConfTree(1, 0, 0)

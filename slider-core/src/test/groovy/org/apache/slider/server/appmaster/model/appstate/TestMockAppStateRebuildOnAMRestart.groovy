@@ -36,8 +36,7 @@ import org.junit.Test
  */
 @CompileStatic
 @Slf4j
-class TestMockAppStateRebuildOnAMRestart extends BaseMockAppStateTest
-    implements MockRoles {
+class TestMockAppStateRebuildOnAMRestart extends BaseMockAppStateTest implements MockRoles {
 
   @Override
   String getTestName() {

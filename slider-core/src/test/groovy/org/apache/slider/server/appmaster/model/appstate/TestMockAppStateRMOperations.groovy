@@ -110,7 +110,6 @@ class TestMockAppStateRMOperations extends BaseMockAppStateTest implements MockR
     // four outstanding
     assert role0.requested == 4
 
-
     // flex cluster to 3
     role0.desired = 3
     ops = appState.reviewRequestAndReleaseNodes()
@@ -226,8 +225,7 @@ class TestMockAppStateRMOperations extends BaseMockAppStateTest implements MockR
   public void testFlexUpNoSpace() throws Throwable {
     // engine only has two nodes, so > 2 will be outstanding
     engine = new MockYarnEngine(1, 2)
-    List<AbstractRMOperation> ops
-    // role: desired = 2, requested = 1, actual=1 
+    // role: desired = 2, requested = 1, actual=1
     def role0 = role0Status
     role0.desired = 4
     createAndSubmitNodes()
