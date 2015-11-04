@@ -45,6 +45,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.BindException;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -69,10 +70,11 @@ public class SliderYarnClientImpl extends YarnClientImpl {
 
   @Override
   protected void serviceInit(Configuration conf) throws Exception {
-    String addr = conf.get(YarnConfiguration.RM_ADDRESS);
-    if (addr.startsWith("0.0.0.0")) {
+    InetSocketAddress clientRpcAddress = SliderUtils.getRmAddress(conf);
+    if (!SliderUtils.isAddressDefined(clientRpcAddress)) {
       // address isn't known; fail fast
-      throw new BindException("Invalid " + YarnConfiguration.RM_ADDRESS + " value:" + addr
+      throw new BindException("Invalid " + YarnConfiguration.RM_ADDRESS
+          + " value:" + conf.get(YarnConfiguration.RM_ADDRESS)
           + " - see https://wiki.apache.org/hadoop/UnsetHostnameOrPort");
     }
     super.serviceInit(conf);
