@@ -147,14 +147,15 @@ public class MockYarnCluster {
   
 /**
  * Model cluster nodes on the simpler "slot" model than the YARN-era
- * resource allocation model. Why? Makes it easier to implement.
+ * resource allocation model. Why? Easier to implement scheduling.
+ * Of course, if someone does want to implement the full process...
  *
- * When a cluster is offline, 
  */
   public static class MockYarnClusterNode {
 
     public final int nodeIndex
     public final String hostname;
+    public List<String> labels = []
     public final MockNodeId nodeId;
     public final MockYarnClusterContainer[] containers;
     private boolean offline;
@@ -230,8 +231,6 @@ public class MockYarnCluster {
       }
       return result
     }
-    
-    
 
     /**
      * Release a container
@@ -291,8 +290,8 @@ public class MockYarnCluster {
     return (hostIndex << 8) | containerIndex & 0xff;
   }
 
-  public static final int extractHost(int cid) {
-    return (cid >>> 8);
+  public static final int extractHost(long cid) {
+    return (cid >>> 8) & 0xffff;
   }
 
   public static final int extractContainer(int cid) {

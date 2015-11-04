@@ -41,7 +41,6 @@ import static org.apache.slider.server.appmaster.web.rest.RestPaths.*
 @Slf4j
 class TestStandaloneREST extends AgentMiniClusterTestBase {
 
-
   @Test
   public void testStandaloneREST() throws Throwable {
 
@@ -65,8 +64,7 @@ class TestStandaloneREST extends AgentMiniClusterTestBase {
     ApplicationReport report = waitForClusterLive(client)
     def proxyAM = report.trackingUrl
     def directAM = report.originalTrackingUrl
-    
-    
+
     // set up url config to match
     initHttpTestSupport(launcher.configuration)
 
