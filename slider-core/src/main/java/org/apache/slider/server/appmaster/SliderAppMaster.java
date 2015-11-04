@@ -57,9 +57,9 @@ import org.apache.hadoop.yarn.api.records.ContainerState;
 import org.apache.hadoop.yarn.api.records.ContainerStatus;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.hadoop.yarn.api.records.NodeReport;
+import org.apache.hadoop.yarn.api.records.NodeState;
 import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.Resource;
-import org.apache.hadoop.yarn.api.records.impl.pb.ResourcePBImpl;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.hadoop.yarn.client.api.async.AMRMClientAsync;
 import org.apache.hadoop.yarn.client.api.async.NMClientAsync;
@@ -68,7 +68,6 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import static org.apache.hadoop.yarn.conf.YarnConfiguration.*;
 import org.apache.hadoop.yarn.exceptions.InvalidApplicationMasterRequestException;
 import org.apache.hadoop.yarn.exceptions.YarnException;
-import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
 import org.apache.hadoop.yarn.ipc.YarnRPC;
 import org.apache.hadoop.registry.client.api.RegistryOperations;
 import org.apache.hadoop.registry.client.binding.RegistryPathUtils;
@@ -173,6 +172,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URL;
@@ -215,8 +215,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   protected static final Logger LOG_YARN = log;
 
-  public static final String SERVICE_CLASSNAME_SHORT =
-      "SliderAppMaster";
+  public static final String SERVICE_CLASSNAME_SHORT = "SliderAppMaster";
   public static final String SERVICE_CLASSNAME =
       "org.apache.slider.server.appmaster." + SERVICE_CLASSNAME_SHORT;
 
@@ -495,8 +494,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     metrics.registerAll(new GarbageCollectorMetricSet());
 
 */
-    contentCache = ApplicationResouceContentCacheFactory.createContentCache(
-        stateForProviders);
+    contentCache = ApplicationResouceContentCacheFactory.createContentCache(stateForProviders);
 
     executorService = new WorkflowExecutorService<>("AmExecutor",
         Executors.newFixedThreadPool(2,
@@ -504,6 +502,14 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     addService(executorService);
 
     addService(actionQueues);
+    // set up the YARN client. This may require patching in the RM client-API address if it
+    // is (somehow) unset server-side.
+    String clientRMaddr = conf.get(YarnConfiguration.RM_ADDRESS);
+    if (clientRMaddr.startsWith("0.0.0.0")) {
+      // address isn't known; fail fast
+      throw new BindException("Invalid " + YarnConfiguration.RM_ADDRESS + " value:" + addr
+          + " - see https://wiki.apache.org/hadoop/UnsetHostnameOrPort");
+    }
     addService(yarnClient = new SliderYarnClientImpl());
 
     //init all child services
@@ -564,8 +570,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     //dump the system properties if in debug mode
     if (log.isDebugEnabled()) {
-      log.debug("System properties:\n" +
-                SliderUtils.propertiesToString(System.getProperties()));
+      log.debug("System properties:\n" + SliderUtils.propertiesToString(System.getProperties()));
     }
 
     //choose the action
@@ -634,8 +639,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     // obtain security state
     securityEnabled = securityConfiguration.isSecurityEnabled();
     // set the global security flag for the instance definition
-    instanceDefinition.getAppConfOperations().set(
-        KEY_SECURITY_ENABLED, securityEnabled);
+    instanceDefinition.getAppConfOperations().set(KEY_SECURITY_ENABLED, securityEnabled);
 
     // triggers resolution and snapshotting for agent
     appState.setInitialInstanceDefinition(instanceDefinition);
@@ -653,8 +657,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       InternalKeys.INTERNAL_PROVIDER_NAME);
     log.info("Cluster provider type is {}", providerType);
     SliderProviderFactory factory =
-      SliderProviderFactory.createSliderProviderFactory(
-          providerType);
+      SliderProviderFactory.createSliderProviderFactory(providerType);
     providerService = factory.createServerProvider();
     // init the provider BUT DO NOT START IT YET
     initAndAddService(providerService);
@@ -673,8 +676,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
      * turned into an (incompete) container
      */
     appMasterContainerID = ConverterUtils.toContainerId(
-      SliderUtils.mandatoryEnvVariable(
-          ApplicationConstants.Environment.CONTAINER_ID.name()));
+      SliderUtils.mandatoryEnvVariable(ApplicationConstants.Environment.CONTAINER_ID.name()));
     appAttemptID = appMasterContainerID.getApplicationAttemptId();
 
     ApplicationId appid = appAttemptID.getApplicationId();
@@ -686,6 +688,9 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
 
     Map<String, String> envVars;
     List<Container> liveContainers;
+
+    List<NodeReport> nodeReports = yarnClient.getNodeReports(NodeState.RUNNING);
+    log.info("Yarn node report count: {}", nodeReports.size());
 
     /*
      * It is critical this section is synchronized, to stop async AM events
@@ -844,6 +849,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
       binding.liveContainers = liveContainers;
       binding.applicationInfo = appInformation;
       binding.releaseSelector = providerService.createContainerReleaseSelector();
+      binding.nodeReports = nodeReports;
       appState.buildInstance(binding);
 
       providerService.rebuildContainerDetails(liveContainers,

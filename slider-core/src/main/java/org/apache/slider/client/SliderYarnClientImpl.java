@@ -20,6 +20,7 @@ package org.apache.slider.client;
 
 import com.google.common.base.Preconditions;
 import org.apache.commons.lang.StringUtils;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.ApplicationClientProtocol;
@@ -29,6 +30,7 @@ import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.client.api.impl.YarnClientImpl;
+import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
@@ -42,6 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.BindException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -63,6 +66,17 @@ public class SliderYarnClientImpl extends YarnClientImpl {
    * to a specific user
    */
   public static final String KILL_ALL = "all";
+
+  @Override
+  protected void serviceInit(Configuration conf) throws Exception {
+    String addr = conf.get(YarnConfiguration.RM_ADDRESS);
+    if (addr.startsWith("0.0.0.0")) {
+      // address isn't known; fail fast
+      throw new BindException("Invalid " + YarnConfiguration.RM_ADDRESS + " value:" + addr
+          + " - see https://wiki.apache.org/hadoop/UnsetHostnameOrPort");
+    }
+    super.serviceInit(conf);
+  }
 
   /**
    * Get the RM Client RPC interface
@@ -107,7 +121,6 @@ public class SliderYarnClientImpl extends YarnClientImpl {
     return results;
   }
 
-
   /**
    * find all instances of a specific app -if there is more than one in the
    * YARN cluster,
@@ -141,8 +154,7 @@ public class SliderYarnClientImpl extends YarnClientImpl {
   public boolean isApplicationLive(ApplicationReport app) {
     Preconditions.checkArgument(app != null, "Null app report");
 
-    return app.getYarnApplicationState().ordinal() <=
-           YarnApplicationState.RUNNING.ordinal();
+    return app.getYarnApplicationState().ordinal() <= YarnApplicationState.RUNNING.ordinal();
   }
 
 
