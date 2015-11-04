@@ -41,11 +41,6 @@ import org.junit.Test
 @Slf4j
 class TestMockAppStateAppRestIntegration extends BaseMockAppStateTest implements MockRoles {
 
-  @Override
-  String getTestName() {
-    return "TestMockAppStateAppRestIntegration"
-  }
-
   @Test
   public void testCachedIntDocument() throws Throwable {
     ContentCache cache = new ContentCache()
