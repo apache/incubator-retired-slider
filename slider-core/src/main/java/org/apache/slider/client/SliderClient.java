@@ -1161,11 +1161,11 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
     require(clientInfo.installLocation.exists(),
         E_INSTALL_PATH_DOES_NOT_EXIST + ": " + clientInfo.installLocation.getAbsolutePath());
 
-    require(clientInfo.installLocation.isFile(),
+    require(clientInfo.installLocation.isDirectory(),
         E_INVALID_INSTALL_PATH + ": " + clientInfo.installLocation.getAbsolutePath());
 
     File pkgFile;
-    requireArgumentSet(Arguments.ARG_PACKAGE, clientInfo.packageURI);
+    require(isSet(clientInfo.packageURI), E_INVALID_APPLICATION_PACKAGE_LOCATION);
     pkgFile = new File(clientInfo.packageURI);
     require(pkgFile.isFile(),
         E_UNABLE_TO_READ_SUPPLIED_PACKAGE_FILE + " at %s", pkgFile.getAbsolutePath());
