@@ -18,6 +18,7 @@
 
 package org.apache.slider.server.appmaster.model.history
 
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.Container
 import org.apache.hadoop.yarn.api.records.Resource
@@ -41,6 +42,7 @@ import org.junit.Test
  * get removed and added 
  */
 @Slf4j
+@CompileStatic
 class TestRoleHistoryRequestTracking extends BaseMockAppStateTest {
 
   String roleName = "test"
@@ -54,6 +56,7 @@ class TestRoleHistoryRequestTracking extends BaseMockAppStateTest {
 
   List<NodeInstance> nodes = [age2Active2, age2Active0, age4Active1, age1Active4, age3Active0]
   RoleHistory roleHistory = new RoleHistory(MockFactory.ROLES)
+  /** 1MB, 1 vcore*/
   Resource resource = Resource.newInstance(1, 1)
 
   ProviderRole provRole = new ProviderRole(roleName, 0)
@@ -72,27 +75,25 @@ class TestRoleHistoryRequestTracking extends BaseMockAppStateTest {
 
   @Test
   public void testAvailableListBuiltForRoles() throws Throwable {
-    List<NodeInstance> available0 = roleHistory.cloneAvailableList(0)
+    List<NodeInstance> available0 = roleHistory.cloneRecentNodeList(0)
     assertListEquals([age3Active0, age2Active0], available0)
   }
 
   @Test
   public void testRequestedNodeOffList() throws Throwable {
-    List<NodeInstance> available0 = roleHistory.cloneAvailableList(0)
     NodeInstance ni = roleHistory.findNodeForNewInstance(roleStatus)
     assert age3Active0 == ni
-    AMRMClient.ContainerRequest req = roleHistory.requestInstanceOnNode(ni,
+    assertListEquals([age2Active0], roleHistory.cloneRecentNodeList(0))
+    roleHistory.requestInstanceOnNode(ni,
         roleStatus,
         resource,
         "")
-    List<NodeInstance> a2 = roleHistory.cloneAvailableList(0)
-    assertListEquals([age2Active0], a2)
   }
 
   @Test
   public void testRequestedNodeOffListWithFailures() throws Throwable {
     assert 0 == roleStatus.key
-    assert !roleHistory.cloneAvailableList(0).isEmpty()
+    assert !roleHistory.cloneRecentNodeList(0).empty
 
     NodeEntry age3role0 = recordAsFailed(age3Active0, 0, 4)
     assert age3Active0.isConsideredUnreliable(0, roleStatus.nodeFailureThreshold)
@@ -115,51 +116,55 @@ class TestRoleHistoryRequestTracking extends BaseMockAppStateTest {
     roleHistory.dump()
     assert 0 == age3role0.failedRecently
     assert !age3Active0.isConsideredUnreliable(0, roleStatus.nodeFailureThreshold)
-    assert !roleHistory.cloneAvailableList(0).isEmpty()
+    assert !roleHistory.cloneRecentNodeList(0).empty
     // looking for a node should now find one
     ni = roleHistory.findNodeForNewInstance(roleStatus)
     assert ni == age3Active0
-    req = roleHistory.requestInstanceOnNode(ni,
-        roleStatus,
-        resource,
-        "")
+    req = roleHistory.requestInstanceOnNode(ni, roleStatus, resource, "")
     assert 1 == req.nodes.size()
   }
 
+  /**
+   * verify that strict placement policies generate requests for nodes irrespective
+   * of their failed status
+   * @throws Throwable
+   */
   @Test
   public void testStrictPlacementIgnoresFailures() throws Throwable {
 
     def targetRole = role1Status
     final ProviderRole providerRole1 = targetRole.providerRole
     assert providerRole1.placementPolicy == PlacementPolicy.STRICT
-    int key = targetRole.key
+    int key1 = targetRole.key
+    def key0 = role0Status.key
 
-    recordAsFailed(age1Active4, key, 4)
-    recordAsFailed(age2Active0, key, 4)
-    recordAsFailed(age2Active2, key, 4)
-    recordAsFailed(age3Active0, key, 4)
-    recordAsFailed(age4Active1, key, 4)
+    def nodes = [age1Active4, age2Active0, age2Active2, age3Active0, age4Active1]
+    recordAllFailed(key0, 4, nodes)
+    recordAllFailed(key1, 4, nodes)
 
     // trigger a list rebuild
     roleHistory.buildRecentNodeLists();
+    def recentRole0 = roleHistory.cloneRecentNodeList(key0)
+    assert recentRole0.indexOf(age3Active0) < recentRole0.indexOf(age2Active0)
 
-    assert !roleHistory.cloneAvailableList(key).isEmpty()
+    // the non-strict role has no suitable nodes
+    assert null == roleHistory.findNodeForNewInstance(role0Status)
 
 
-    NodeInstance ni = roleHistory.findNodeForNewInstance(targetRole)
-    assert ni == age4Active1!= null
-    // next lookup returns next node
-    ni = roleHistory.findNodeForNewInstance(roleStatus)
-    assert ni == age3Active0
+    def ni = roleHistory.findNodeForNewInstance(targetRole)
+    assert ni
+
+    def ni2 = roleHistory.findNodeForNewInstance(targetRole)
+    assert ni2
+    assert ni != ni2
   }
-
 
   @Test
   public void testFindAndRequestNode() throws Throwable {
     AMRMClient.ContainerRequest req = roleHistory.requestNode(roleStatus, resource)
 
     assert age3Active0.hostname == req.nodes[0]
-    List<NodeInstance> a2 = roleHistory.cloneAvailableList(0)
+    List<NodeInstance> a2 = roleHistory.cloneRecentNodeList(0)
     assertListEquals([age2Active0], a2)
   }
 
@@ -239,7 +244,7 @@ class TestRoleHistoryRequestTracking extends BaseMockAppStateTest {
     roleHistory.listOpenRequests().empty
 
     // and the remainder goes onto the available list
-    List<NodeInstance> a2 = roleHistory.cloneAvailableList(0)
+    List<NodeInstance> a2 = roleHistory.cloneRecentNodeList(0)
     assertListEquals([age2Active0], a2)
   }
 

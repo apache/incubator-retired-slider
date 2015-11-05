@@ -356,4 +356,8 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
     }
     entry
   }
+
+  def recordAllFailed(int id, int count, List<NodeInstance> nodes) {
+    nodes.each { NodeInstance node -> recordAsFailed(node, id, count)}
+  }
 }

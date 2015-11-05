@@ -137,13 +137,13 @@ class TestRoleHistoryRW extends BaseMockAppStateTest {
     rh2.buildRecentNodeLists();
     describe("starting")
     rh2.dump();
-    List<NodeInstance> available0 = rh2.cloneAvailableList(0)
+    List<NodeInstance> available0 = rh2.cloneRecentNodeList(0)
     assert available0.size() == 1
 
     NodeInstance entry = available0.get(0)
     assert entry.hostname == "localhost"
     assert entry == localhost
-    List<NodeInstance> available1 = rh2.cloneAvailableList(1)
+    List<NodeInstance> available1 = rh2.cloneRecentNodeList(1)
     assert available1.size() == 2
     //and verify that even if last used was set, the save time is picked up
     assert entry.get(1).lastUsed == roleHistory.saveTime

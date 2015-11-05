@@ -22,6 +22,7 @@ import org.apache.hadoop.yarn.api.records.NodeReport;
 import org.apache.hadoop.yarn.api.records.NodeState;
 import org.apache.slider.api.types.NodeEntryInformation;
 import org.apache.slider.api.types.NodeInformation;
+import org.apache.slider.common.tools.Comparators;
 import org.apache.slider.common.tools.SliderUtils;
 
 import java.io.Serializable;
@@ -69,7 +70,7 @@ public class NodeInstance {
    * @param report latest node report
    * @return true if the node state changed
    */
-  public boolean updateNode(NodeReport report) {
+  public synchronized boolean updateNode(NodeReport report) {
     nodeReport = report;
     NodeState oldState = nodeState;
     nodeState = report.getNodeState();
@@ -272,16 +273,18 @@ public class NodeInstance {
 
   /**
    * A comparator for sorting entries where the node is preferred over another.
-   * <p>
-   * The exact algorithm may change
-   * 
+   *
+   * The exact algorithm may change: current policy is "most recent first", so sorted
+   * on the lastUsed
+   *
    * the comparision is a positive int if left is preferred to right;
    * negative if right over left, 0 for equal
    */
-  public static class Preferred implements Comparator<NodeInstance>,
-                                           Serializable {
+  public static class Preferred implements Comparator<NodeInstance>, Serializable {
 
-    final int role;
+    private static final Comparators.InvertedLongComparator comparator =
+        new Comparators.InvertedLongComparator();
+    private final int role;
 
     public Preferred(int role) {
       this.role = role;
@@ -291,16 +294,9 @@ public class NodeInstance {
     public int compare(NodeInstance o1, NodeInstance o2) {
       NodeEntry left = o1.get(role);
       NodeEntry right = o2.get(role);
-      long ageL = left != null ? left.getLastUsed() : 0;
-      long ageR = right != null ? right.getLastUsed() : 0;
-      
-      if (ageL > ageR) {
-        return -1;
-      } else if (ageL < ageR) {
-        return 1;
-      }
-      // equal
-      return 0;
+      long ageL = left != null ? left.getLastUsed() : -1;
+      long ageR = right != null ? right.getLastUsed() : -1;
+      return comparator.compare(ageL, ageR);
     }
   }
 
@@ -313,7 +309,7 @@ public class NodeInstance {
   public static class MoreActiveThan implements Comparator<NodeInstance>,
                                            Serializable {
 
-    final int role;
+    private final int role;
 
     public MoreActiveThan(int role) {
       this.role = role;

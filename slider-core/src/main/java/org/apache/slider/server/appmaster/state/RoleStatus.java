@@ -61,6 +61,9 @@ public final class RoleStatus implements Cloneable {
    */
   private int pendingAntiAffineRequestCount = 0;
 
+  /** any pending AA request */
+  public OutstandingRequest outstandingAArequest = null;
+
   private String failureMessage = "";
 
   public RoleStatus(ProviderRole providerRole) {

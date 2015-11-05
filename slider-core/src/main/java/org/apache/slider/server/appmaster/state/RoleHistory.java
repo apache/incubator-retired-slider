@@ -955,7 +955,7 @@ public class RoleHistory {
    * @return a clone of the list
    */
   @VisibleForTesting
-  public List<NodeInstance> cloneAvailableList(int role) {
+  public List<NodeInstance> cloneRecentNodeList(int role) {
     return new LinkedList<>(listRecentNodesForRoleId(role));
   }
 

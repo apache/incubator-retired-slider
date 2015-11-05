@@ -353,7 +353,8 @@ public final class OutstandingRequest {
     sb.append(", mayEscalate=").append(mayEscalate);
     sb.append(", escalated=").append(escalated);
     sb.append(", escalationTimeoutMillis=").append(escalationTimeoutMillis);
-    sb.append(", issuedRequest=").append(SliderUtils.requestToString(issuedRequest));
+    sb.append(", issuedRequest=").append(
+        issuedRequest != null ? SliderUtils.requestToString(issuedRequest) : "(null)");
     sb.append('}');
     return sb.toString();
   }

@@ -18,6 +18,7 @@
 
 package org.apache.slider.server.appmaster.state;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.slider.api.types.NodeEntryInformation;
 
 /**
@@ -256,9 +257,15 @@ public class NodeEntry {
     return failedRecently;
   }
 
+  @VisibleForTesting
+  public synchronized void setFailedRecently(int failedRecently) {
+    this.failedRecently = failedRecently;
+  }
+
   public synchronized int getPreempted() {
     return preempted;
   }
+
 
   /**
    * Reset the failed recently count.

@@ -18,6 +18,7 @@
 
 package org.apache.slider.server.appmaster.model.history
 
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.Path
 import org.apache.slider.common.SliderKeys
@@ -34,9 +35,10 @@ import java.util.regex.Matcher
 import java.util.regex.Pattern
 
 @Slf4j
+@CompileStatic
 class TestRoleHistoryRWOrdering extends BaseMockAppStateTest {
 
-  def paths = pathlist(
+  List<Path> paths = pathlist(
       [
           "hdfs://localhost/history-0406c.json",
           "hdfs://localhost/history-5fffa.json",
@@ -60,7 +62,6 @@ class TestRoleHistoryRWOrdering extends BaseMockAppStateTest {
     return "TestHistoryRWOrdering"
   }
 
-    
   /**
    * This tests regexp pattern matching. It uses the current time so isn't
    * repeatable -but it does test a wider range of values in the process
@@ -78,7 +79,6 @@ class TestRoleHistoryRWOrdering extends BaseMockAppStateTest {
       throw new Exception("No match for pattern $matchpattern in $name")
     }
   }
-
 
   @Test
   public void testWriteSequenceReadData() throws Throwable {
@@ -116,7 +116,7 @@ class TestRoleHistoryRWOrdering extends BaseMockAppStateTest {
   public void testPathStructure() throws Throwable {
     assert h_5fffa.getName() == "history-5fffa.json"
   }
-  
+
   @Test
   public void testPathnameComparator() throws Throwable {
 

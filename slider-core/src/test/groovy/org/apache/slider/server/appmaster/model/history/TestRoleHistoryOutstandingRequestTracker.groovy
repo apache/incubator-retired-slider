@@ -35,17 +35,12 @@ import org.apache.slider.server.appmaster.state.OutstandingRequestTracker
 import org.apache.slider.server.appmaster.state.RoleStatus
 import org.junit.Test
 
-class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest {
+class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest  {
 
   NodeInstance host1 = new NodeInstance("host1", 3)
   NodeInstance host2 = new NodeInstance("host2", 3)
 
   OutstandingRequestTracker tracker = new OutstandingRequestTracker()
-  
-  @Override
-  String getTestName() {
-    return "TestOutstandingRequestTracker"
-  }
 
   @Test
   public void testAddRetrieveEntry() throws Throwable {

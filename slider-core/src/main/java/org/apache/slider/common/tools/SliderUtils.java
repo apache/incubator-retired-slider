@@ -2482,6 +2482,7 @@ public final class SliderUtils {
   }
 
   public static String requestToString(AMRMClient.ContainerRequest request) {
+    Preconditions.checkArgument(request != null, "Null request");
     StringBuffer buffer = new StringBuffer(request.toString());
     buffer.append("; ");
     buffer.append("relaxLocality=").append(request.getRelaxLocality()).append("; ");
