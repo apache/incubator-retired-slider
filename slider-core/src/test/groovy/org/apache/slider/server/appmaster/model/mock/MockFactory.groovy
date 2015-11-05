@@ -107,8 +107,8 @@ class MockFactory implements MockRoles {
     return id;
   }
 
-  MockNodeId newNodeId() {
-    new MockNodeId()
+  MockNodeId newNodeId(String host = null) {
+    new MockNodeId(host: host)
   }
 
   MockContainer newContainer(ContainerId cid) {
@@ -202,8 +202,8 @@ class MockFactory implements MockRoles {
     ]
   }
 
-  MockResource newResource() {
-    return new MockResource()
+  MockResource newResource(int memory = 0, int vcores = 0) {
+    return new MockResource(memory, vcores)
   }
 
   MockContainerStatus newContainerStatus() {

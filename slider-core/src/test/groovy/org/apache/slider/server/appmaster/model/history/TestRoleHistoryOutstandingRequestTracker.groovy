@@ -39,6 +39,7 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest  {
 
   NodeInstance host1 = new NodeInstance("host1", 3)
   NodeInstance host2 = new NodeInstance("host2", 3)
+  def resource = factory.newResource(48, 1)
 
   OutstandingRequestTracker tracker = new OutstandingRequestTracker()
 
@@ -52,9 +53,11 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest  {
 
   @Test
   public void testAddCompleteEntry() throws Throwable {
-    tracker.newRequest(host1, 0)
-    tracker.newRequest(host2, 0)
-    tracker.newRequest(host1, 1)
+    def req1 = tracker.newRequest(host1, 0)
+    req1.buildContainerRequest(resource, role0Status, 0, "")
+
+    tracker.newRequest(host2, 0).buildContainerRequest(resource, role0Status, 0, "")
+    tracker.newRequest(host1, 1).buildContainerRequest(resource, role0Status, 0, "")
 
     def allocation = tracker.onContainerAllocated(1, "host1", null)
     assert allocation.outcome == ContainerAllocationOutcome.Placed
@@ -79,14 +82,10 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest  {
   @Test
   public void testRemoveOpenRequestUnissued() throws Throwable {
     def req1 = tracker.newRequest(null, 0)
+    req1.buildContainerRequest(resource, role0Status, 0, "")
     assert tracker.listOpenRequests().size() == 1
-    def c1 = factory.newContainer()
-    c1.setPriority(new MockPriority(0))
-
-    def resource = factory.newResource()
-    resource.virtualCores=1
-    resource.memory = 48;
-    c1.setResource(resource)
+    def c1 = factory.newContainer(null, new MockPriority(0))
+    c1.resource = resource
 
     def allocation = tracker.onContainerAllocated(0, "host1", c1)
     ContainerAllocationOutcome outcome = allocation.outcome
@@ -98,26 +97,19 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest  {
   @Test
   public void testIssuedOpenRequest() throws Throwable {
     def req1 = tracker.newRequest(null, 0)
-    def resource = factory.newResource()
-    resource.virtualCores = 1
-    resource.memory = 48;
-    def yarnRequest = req1.buildContainerRequest(resource, role0Status, 0, "")
+    req1.buildContainerRequest(resource, role0Status, 0, "")
     assert tracker.listOpenRequests().size() == 1
-    def c1 = factory.newContainer()
-
-    def nodeId = factory.newNodeId()
-    c1.nodeId = nodeId
-    nodeId.host ="hostname-1"
 
     def pri = ContainerPriority.buildPriority(0, false)
     assert pri > 0
-    c1.setPriority(new MockPriority(pri))
+    def nodeId = factory.newNodeId("hostname-1")
+    def c1 = factory.newContainer(nodeId, new MockPriority(pri))
 
-    c1.setResource(resource)
+    c1.resource = resource
 
     def issued = req1.issuedRequest
     assert issued.capability == resource
-    assert issued.priority.priority == c1.getPriority().getPriority()
+    assert issued.priority.priority == c1.priority.priority
     assert req1.resourceRequirementsMatch(resource)
 
     def allocation = tracker.onContainerAllocated(0, nodeId.host, c1)
