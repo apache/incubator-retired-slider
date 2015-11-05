@@ -289,13 +289,13 @@ abstract class CommandTestBase extends SliderTestUtils {
 
   static SliderShell destroy(String name) {
     slider([
-        ACTION_DESTROY, name
+        ACTION_DESTROY, name, ARG_FORCE
     ])
   }
 
   static SliderShell destroy(int result, String name) {
     slider(result, [
-        ACTION_DESTROY, name
+        ACTION_DESTROY, name, ARG_FORCE
     ])
   }
 
