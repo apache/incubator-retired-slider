@@ -26,7 +26,7 @@ import org.apache.hadoop.yarn.api.records.Resource
 import org.apache.hadoop.yarn.api.records.Token
 
 class MockContainer extends Container {
-  
+
   ContainerId id;
   NodeId nodeId
   String nodeHttpAddress;

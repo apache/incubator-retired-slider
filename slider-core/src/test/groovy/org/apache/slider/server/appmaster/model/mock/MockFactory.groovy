@@ -23,6 +23,8 @@ import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId
 import org.apache.hadoop.yarn.api.records.ApplicationId
 import org.apache.hadoop.yarn.api.records.ContainerId
+import org.apache.hadoop.yarn.api.records.NodeId
+import org.apache.hadoop.yarn.api.records.Priority
 import org.apache.hadoop.yarn.client.api.AMRMClient
 import org.apache.slider.api.ClusterDescription
 import org.apache.slider.api.ResourceKeys
@@ -37,6 +39,10 @@ import org.apache.slider.providers.ProviderRole
 //@CompileStatic
 @Slf4j
 class MockFactory implements MockRoles {
+
+  /*
+  Ignore any IDE hints about needless references to the ROLE values; groovyc fails without them.
+   */
 
   public static final ProviderRole PROVIDER_ROLE0 = new ProviderRole(
       MockRoles.ROLE0,
@@ -58,6 +64,7 @@ class MockFactory implements MockRoles {
       PlacementPolicy.ANTI_AFFINITY_REQUIRED,
       2,
       2)
+
   int appIdCount;
   int attemptIdCount;
   int containerIdCount;
@@ -101,9 +108,9 @@ class MockFactory implements MockRoles {
   }
 
   MockNodeId newNodeId() {
-    MockNodeId nodeId = new MockNodeId()
+    new MockNodeId()
   }
-  
+
   MockContainer newContainer(ContainerId cid) {
     MockContainer c = new MockContainer()
     c.id = cid
@@ -112,6 +119,13 @@ class MockFactory implements MockRoles {
 
   MockContainer newContainer() {
     newContainer(newContainerId())
+  }
+
+  MockContainer newContainer(NodeId nodeId, Priority priority) {
+    def container = newContainer(newContainerId())
+    container.nodeId = nodeId
+    container.priority = priority
+    container
   }
 
   /**
