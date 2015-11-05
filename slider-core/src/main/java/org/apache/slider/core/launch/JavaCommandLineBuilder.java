@@ -25,6 +25,8 @@ import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadConfigException;
 
+import java.util.Map;
+
 /**
  * Command line builder purely for the Java CLI.
  * Some of the <code>define</code> methods are designed to work with Hadoop tool and
@@ -86,8 +88,18 @@ public class JavaCommandLineBuilder extends CommandLineBuilder {
   }
 
   public boolean addConfOption(Configuration conf, String key) {
-    String val = conf.get(key);
-    return defineIfSet(key, val);
+    return defineIfSet(key, conf.get(key));
+  }
+
+  /**
+   * Add a varargs list of configuration parameters —if they are present
+   * @param conf configuration source
+   * @param keys keys
+   */
+  public void addConfOptions(Configuration conf, String...keys) {
+    for (String key : keys) {
+      addConfOption(conf, key);
+    }
   }
 
   public String addConfOptionToCLI(Configuration conf,
@@ -137,4 +149,5 @@ public class JavaCommandLineBuilder extends CommandLineBuilder {
       throw new BadConfigException("Missing configuration option: " + key);
     }
   }
+
 }

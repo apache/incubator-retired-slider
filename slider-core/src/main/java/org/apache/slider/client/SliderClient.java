@@ -2103,9 +2103,7 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       commandLine.add(Arguments.ARG_FILESYSTEM, serviceArgs.getFilesystemBinding());
     }
 
-    /**
-     * pass the registry binding
-     */
+    // pass the registry binding
     commandLine.addConfOptionToCLI(config, RegistryConstants.KEY_REGISTRY_ZK_ROOT,
         RegistryConstants.DEFAULT_ZK_REGISTRY_ROOT);
     commandLine.addMandatoryConfOption(config, RegistryConstants.KEY_REGISTRY_ZK_QUORUM);
@@ -2115,6 +2113,15 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
       // the relevant security settings go over
       commandLine.addConfOption(config, DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY);
     }
+
+    // copy over any/all YARN RM client values, in case the server-side XML conf file
+    // has the 0.0.0.0 address
+    commandLine.addConfOptions(config,
+        YarnConfiguration.RM_ADDRESS,
+        YarnConfiguration.RM_CLUSTER_ID,
+        YarnConfiguration.RM_HOSTNAME,
+        YarnConfiguration.RM_PRINCIPAL);
+
     // write out the path output
     commandLine.addOutAndErrFiles(STDOUT_AM, STDERR_AM);
 
@@ -2129,12 +2136,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
 
     // Set the priority for the application master
-
-    int amPriority = config.getInt(KEY_YARN_QUEUE_PRIORITY,
-                                   DEFAULT_YARN_QUEUE_PRIORITY);
-
-
-    amLauncher.setPriority(amPriority);
+    amLauncher.setPriority(config.getInt(KEY_YARN_QUEUE_PRIORITY,
+                                   DEFAULT_YARN_QUEUE_PRIORITY));
 
     // Set the queue to which this application is to be submitted in the RM
     // Queue for App master

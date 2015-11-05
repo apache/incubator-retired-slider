@@ -76,7 +76,8 @@ public class RoleHistory {
   /** Time when saved */
   private final Timestamp saveTime = new Timestamp(0);
 
-  /** If the history was loaded, the time at which the history was saved */
+  /** If the history was loaded, the time at which the history was saved.
+   * That is: the time the data was valid */
   private final Timestamp thawedDataTime = new Timestamp(0);
   
   private NodeMap nodemap;
@@ -817,12 +818,12 @@ public class RoleHistory {
       if (hostname == null || nodeState == null) {
         continue;
       }
+      log.debug("host {} is in state {}", hostname, nodeState);
       // update the node; this also creates an instance if needed
       boolean updated = nodemap.updateNode(hostname, updatedNode);
       if (updated) {
-        log.debug("Updated host {} to state {}", hostname, nodeState);
         if (nodeState.isUnusable()) {
-          log.info("Failed node {}", hostname);
+          log.info("Failed node {} state {}", hostname, nodeState);
           failedNodes.add(hostname);
         } else {
           failedNodes.remove(hostname);

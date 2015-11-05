@@ -666,6 +666,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     InetSocketAddress clientRpcAddress = SliderUtils.getRmAddress(serviceConf);
     if (!SliderUtils.isAddressDefined(clientRpcAddress)) {
       // client addr is being unset. We can lift it from the other RM APIs
+      log.warn("Yarn RM address was unbound; attempting to fix up");
       serviceConf.set(YarnConfiguration.RM_ADDRESS,
           String.format("%s:%d", rmSchedulerAddress.getHostString(), clientRpcAddress.getPort() ));
     }

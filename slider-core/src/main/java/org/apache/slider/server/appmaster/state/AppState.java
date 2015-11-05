@@ -541,7 +541,7 @@ public class AppState {
 
     //set the livespan
     MapOperations globalResOpts = instanceDefinition.getResourceOperations().getGlobalOptions();
-    
+
     startTimeThreshold = globalResOpts.getOptionInt(
         InternalKeys.INTERNAL_CONTAINER_FAILURE_SHORTLIFE,
         InternalKeys.DEFAULT_INTERNAL_CONTAINER_FAILURE_SHORTLIFE);
@@ -559,6 +559,9 @@ public class AppState {
     roleHistory = new RoleHistory(roleList);
     roleHistory.register(metricsAndMonitoring);
     roleHistory.onStart(binding.fs, binding.historyPath);
+    // trigger first node update
+    roleHistory.onNodesUpdated(binding.nodeReports);
+
 
     //rebuild any live containers
     rebuildModelFromRestart(binding.liveContainers);

@@ -58,5 +58,6 @@ public class AppStateBindingInfo {
     Preconditions.checkArgument(roles != null, "null providerRoles");
     Preconditions.checkArgument(fs != null, "null fs");
     Preconditions.checkArgument(historyPath != null, "null historyDir");
+    Preconditions.checkArgument(nodeReports != null, "null nodeReports");
   }
 }
