@@ -55,7 +55,11 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest  {
     tracker.newRequest(host1, 0)
     tracker.newRequest(host2, 0)
     tracker.newRequest(host1, 1)
-    assert tracker.onContainerAllocated(1, "host1", null).outcome == ContainerAllocationOutcome.Placed
+
+    def allocation = tracker.onContainerAllocated(1, "host1", null)
+    assert allocation.outcome == ContainerAllocationOutcome.Placed
+    assert allocation.operations[0] instanceof CancelSingleRequest
+
     assert !tracker.lookupPlacedRequest(1, "host1")
     assert tracker.lookupPlacedRequest(0, "host1")
   }
@@ -83,8 +87,11 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest  {
     resource.virtualCores=1
     resource.memory = 48;
     c1.setResource(resource)
-    ContainerAllocationOutcome outcome = tracker.onContainerAllocated(0, "host1", c1).outcome
+
+    def allocation = tracker.onContainerAllocated(0, "host1", c1)
+    ContainerAllocationOutcome outcome = allocation.outcome
     assert outcome == ContainerAllocationOutcome.Unallocated
+    assert allocation.operations.empty
     assert tracker.listOpenRequests().size() == 1
   }
 
@@ -115,6 +122,8 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest  {
 
     def allocation = tracker.onContainerAllocated(0, nodeId.host, c1)
     assert tracker.listOpenRequests().size() == 0
+    assert allocation.operations[0] instanceof CancelSingleRequest
+
     assert allocation.outcome == ContainerAllocationOutcome.Open
     assert allocation.origin.is(req1)
   }

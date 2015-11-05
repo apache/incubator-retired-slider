@@ -2087,13 +2087,13 @@ public class AppState {
    * a list of operations to perform
    * @param allocatedContainers the containers allocated
    * @param assignments the assignments of roles to containers
-   * @param releaseOperations any release operations
+   * @param operations any allocation or release operations
    */
   public synchronized void onContainersAllocated(List<Container> allocatedContainers,
                                     List<ContainerAssignment> assignments,
-                                    List<AbstractRMOperation> releaseOperations) {
+                                    List<AbstractRMOperation> operations) {
     assignments.clear();
-    releaseOperations.clear();
+    operations.clear();
     List<Container> ordered = roleHistory.prepareAllocationList(allocatedContainers);
     log.debug("onContainersAllocated(): Total containers allocated = {}", ordered.size());
     for (Container container : ordered) {
@@ -2118,23 +2118,14 @@ public class AppState {
           roleHistory.onContainerAllocated(container, desired, allocated);
       final ContainerAllocationOutcome outcome = allocation.outcome;
 
-      // cancel an allocation request which granted this, so as to avoid repeated
-      // requests
-      if (allocation.origin != null && allocation.origin.getIssuedRequest() != null) {
-        releaseOperations.add(allocation.origin.createCancelOperation());
-      } else {
-        // there's a request, but no idea what to cancel.
-        // rather than try to recover from it inelegantly, (and cause more confusion),
-        // log the event, but otherwise continue
-        log.warn("Unexpected allocation of container "
-            + SliderUtils.containerToString(container));
-      }
+      // add all requests to the operations list
+      operations.addAll(allocation.operations);
 
       //look for condition where we get more back than we asked
       if (allocated > desired) {
         log.info("Discarding surplus {} container {} on {}", roleName,  cid,
             containerHostInfo);
-        releaseOperations.add(new ContainerReleaseOperation(cid));
+        operations.add(new ContainerReleaseOperation(cid));
         //register as a surplus node
         surplusNodes.add(cid);
         surplusContainers.inc();
@@ -2156,7 +2147,10 @@ public class AppState {
 
         assignments.add(new ContainerAssignment(container, role, outcome));
         //add to the history
-        roleHistory.onContainerAssigned(container);
+        AbstractRMOperation request = roleHistory.onContainerAssigned(container);
+        if (request != null) {
+          operations.add(request);
+        }
       }
     }
   }

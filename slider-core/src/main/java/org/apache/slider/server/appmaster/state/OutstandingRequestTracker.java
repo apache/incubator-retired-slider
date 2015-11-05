@@ -115,8 +115,14 @@ public class OutstandingRequestTracker {
   }
 
   /**
-   * Notification that a container has been allocated -drop it
-   * from the {@link #placedRequests} structure.
+   * Notification that a container has been allocated
+   *
+   * <ol>
+   *   <li>drop it from the {@link #placedRequests} structure.</li>
+   *   <li>generate the cancellation request</li>
+   *   <li>for AA placement, any actions needed</li>
+   * </ol>
+   *
    * @param role role index
    * @param hostname hostname
    * @return the allocation outcome
@@ -129,8 +135,7 @@ public class OutstandingRequestTracker {
         containerDetails);
     ContainerAllocation allocation = new ContainerAllocation();
     ContainerAllocationOutcome outcome;
-    OutstandingRequest request =
-        placedRequests.remove(new OutstandingRequest(role, hostname));
+    OutstandingRequest request = placedRequests.remove(new OutstandingRequest(role, hostname));
     if (request != null) {
       //satisfied request
       log.debug("Found placed request for container: {}", request);
@@ -154,6 +159,15 @@ public class OutstandingRequestTracker {
         outcome = ContainerAllocationOutcome.Unallocated;
       }
     }
+    if (request != null && request.getIssuedRequest() != null) {
+      allocation.operations.add(request.createCancelOperation());
+    } else {
+      // there's a request, but no idea what to cancel.
+      // rather than try to recover from it inelegantly, (and cause more confusion),
+      // log the event, but otherwise continue
+      log.warn("Unexpected allocation of container " + SliderUtils.containerToString(container));
+    }
+
     allocation.origin = request;
     allocation.outcome = outcome;
     return allocation;

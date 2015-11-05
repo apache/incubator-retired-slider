@@ -749,6 +749,8 @@ public class RoleHistory {
         sortRecentNodeList(role);
       }
     }
+    // AA placement: now request a new node
+
     return outcome;
   }
 
@@ -756,9 +758,10 @@ public class RoleHistory {
    * A container has been assigned to a role instance on a node -update the data structures
    * @param container container
    */
-  public void onContainerAssigned(Container container) {
+  public AbstractRMOperation onContainerAssigned(Container container) {
     NodeEntry nodeEntry = getOrCreateNodeEntry(container);
     nodeEntry.onStarting();
+    return null;
   }
 
   /**

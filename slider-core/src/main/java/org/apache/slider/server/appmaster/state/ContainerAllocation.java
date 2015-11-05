@@ -18,6 +18,11 @@
 
 package org.apache.slider.server.appmaster.state;
 
+import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
+
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * This is just a tuple of the outcome of a container allocation
  */
@@ -35,11 +40,10 @@ public class ContainerAllocation {
    */
   public OutstandingRequest origin;
 
-  public ContainerAllocation(ContainerAllocationOutcome outcome,
-      OutstandingRequest origin) {
-    this.outcome = outcome;
-    this.origin = origin;
-  }
+  /**
+   * A possibly empty list of requests to add to the follow-up actions
+   */
+  public List<AbstractRMOperation> operations = new ArrayList<>(0);
 
   public ContainerAllocation() {
   }

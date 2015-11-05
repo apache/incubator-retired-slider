@@ -375,7 +375,7 @@ public final class OutstandingRequest {
    * and in mock tests
    *
    */
-  public  void validate() throws InvalidContainerRequestException {
+  public void validate() throws InvalidContainerRequestException {
     Preconditions.checkNotNull(issuedRequest, "request has not yet been built up");
     AMRMClient.ContainerRequest containerRequest = issuedRequest;
     String exp = containerRequest.getNodeLabelExpression();

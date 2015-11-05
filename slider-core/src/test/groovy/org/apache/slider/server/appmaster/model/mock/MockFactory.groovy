@@ -57,7 +57,7 @@ class MockFactory implements MockRoles {
       PlacementPolicy.STRICT,
       2,
       1)
-  // role 2: longer delay
+  // role 2: longer delay and anti-affinity
   public static final ProviderRole PROVIDER_ROLE2 = new ProviderRole(
       MockRoles.ROLE2,
       2,

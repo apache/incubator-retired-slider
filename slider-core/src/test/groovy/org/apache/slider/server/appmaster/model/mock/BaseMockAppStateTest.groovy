@@ -152,7 +152,6 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
     return ri
   }
 
-
   public NodeInstance nodeInstance(long age, int live0, int live1=0, int live2=0) {
     NodeInstance ni = new NodeInstance("age${age}-[${live0},${live1},$live2]",
                                        MockFactory.ROLE_COUNT)
@@ -204,7 +203,6 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
   protected List<RoleInstance> createAndStartNodes() {
     return createStartAndStopNodes([])
   }
-
 
   /**
    * Create, Start and stop nodes
