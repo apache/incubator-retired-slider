@@ -23,11 +23,6 @@
 <configuration>
 
   <property>
-    <name>HADOOP_CONF_DIR</name>
-    <value>/Users/jmaron/dev/workspaces/slider-asf/incubator-slider/src/test/clusters/remote/conf</value>
-  </property>
-<!--
-  <property>
     <name>yarn.application.classpath</name>
     <value>
       /etc/hadoop/conf,/usr/lib/hadoop/*,/usr/lib/hadoop/lib/*,/usr/lib/hadoop-hdfs/*,/usr/lib/hadoop-hdfs/lib/*,/usr/lib/hadoop-yarn/*,/usr/lib/hadoop-yarn/lib/*,/usr/lib/hadoop-mapreduce/*,/usr/lib/hadoop-mapreduce/lib/*
@@ -81,5 +76,5 @@
     <name>slider.test.agent.tar</name>
     <value>hdfs://c6401.ambari.apache.org:8020/slider/agent/slider-agent.tar.gz</value>
   </property>
--->
+
 </configuration>
