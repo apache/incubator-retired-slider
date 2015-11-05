@@ -44,6 +44,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.powermock.api.easymock.PowerMock;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
@@ -62,6 +63,7 @@ import static org.easymock.EasyMock.expect;
  *
  */
 @RunWith(PowerMockRunner.class)
+@PowerMockIgnore("org.apache.log4j.*")
 @PrepareForTest({ProviderUtils.class, ProcessBuilder.class, AgentClientProvider.class, RegistryUtils.class})
 public class TestAgentClientProvider2 extends SliderTestUtils {
   protected static final Logger log =
@@ -235,6 +237,8 @@ public class TestAgentClientProvider2 extends SliderTestUtils {
 
   @Test
   public void testSliderClientForInstallFailures() throws Exception {
+    describe(" IGNORE ANY STACK TRACES BELOW ");
+
     SliderClient client = new SliderClient();
     client.bindArgs(new Configuration(), "client", "--dest", "a_random_path/none", "--package", "a_random_pkg.zip");
     ActionClientArgs args = new ActionClientArgs();
@@ -274,6 +278,7 @@ public class TestAgentClientProvider2 extends SliderTestUtils {
       assertExceptionDetails(e, SliderExitCodes.EXIT_BAD_CONFIGURATION,
           SliderClient.E_MUST_BE_A_VALID_JSON_FILE);
     }
+    describe(" END IGNORE ");
 
     args.clientConfig = null;
     try {
