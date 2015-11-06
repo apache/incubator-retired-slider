@@ -157,4 +157,11 @@ class MockYarnEngine {
     }
   }
 
+  /**
+   * Get the list of node reports. These are not cloned; updates will persist in the nodemap
+   * @return current node report list
+   */
+  List<MockNodeReport> getNodeReports() {
+    cluster.nodeReports
+  }
 }

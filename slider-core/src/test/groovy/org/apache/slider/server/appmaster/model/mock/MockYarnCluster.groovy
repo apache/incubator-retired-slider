@@ -22,6 +22,7 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.ContainerId
 import org.apache.hadoop.yarn.api.records.NodeId
+import org.apache.hadoop.yarn.api.records.NodeState
 
 /**
  * Models the cluster itself: a set of mock cluster nodes.
@@ -143,7 +144,14 @@ public class MockYarnCluster {
     }
     return total;
   }
-  
+
+  /**
+   * Get the list of node reports. These are not cloned; updates will persist in the nodemap
+   * @return current node report list
+   */
+  List<MockNodeReport> getNodeReports() {
+    nodes.collect { MockYarnClusterNode n -> n.nodeReport }
+  }
   
 /**
  * Model cluster nodes on the simpler "slot" model than the YARN-era
@@ -159,6 +167,7 @@ public class MockYarnCluster {
     public final MockNodeId nodeId;
     public final MockYarnClusterContainer[] containers;
     private boolean offline;
+    public MockNodeReport nodeReport
 
     public MockYarnClusterNode(int index, int size) {
       nodeIndex = index;
@@ -171,6 +180,10 @@ public class MockYarnCluster {
         MockContainerId mci = new MockContainerId(containerId: cid)
         containers[i] = new MockYarnClusterContainer(mci)
       }
+
+      nodeReport = new MockNodeReport()
+      nodeReport.nodeId = nodeId
+      nodeReport.nodeState = NodeState.RUNNING
     }
 
     /**

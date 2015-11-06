@@ -529,8 +529,7 @@ public class AppState {
         // this is a new value
         log.info("Adding role {}", name);
         MapOperations resComponent = resources.getComponent(name);
-        ProviderRole dynamicRole =
-            createDynamicProviderRole(name, resComponent);
+        ProviderRole dynamicRole = createDynamicProviderRole(name, resComponent);
         buildRole(dynamicRole);
         roleList.add(dynamicRole);
       }
@@ -546,11 +545,11 @@ public class AppState {
         InternalKeys.DEFAULT_INTERNAL_CONTAINER_FAILURE_SHORTLIFE);
 
     failureThreshold = globalResOpts.getOptionInt(
-        ResourceKeys.CONTAINER_FAILURE_THRESHOLD,
-        ResourceKeys.DEFAULT_CONTAINER_FAILURE_THRESHOLD);
+        CONTAINER_FAILURE_THRESHOLD,
+        DEFAULT_CONTAINER_FAILURE_THRESHOLD);
     nodeFailureThreshold = globalResOpts.getOptionInt(
-        ResourceKeys.NODE_FAILURE_THRESHOLD,
-        ResourceKeys.DEFAULT_NODE_FAILURE_THRESHOLD);
+        NODE_FAILURE_THRESHOLD,
+        DEFAULT_NODE_FAILURE_THRESHOLD);
     initClusterStatus();
 
 
@@ -606,22 +605,21 @@ public class AppState {
    * @return a new provider role
    * @throws BadConfigException bad configuration
    */
-  public ProviderRole createDynamicProviderRole(String name,
-                                                MapOperations component) throws
-                                                        BadConfigException {
-    String priOpt = component.getMandatoryOption(ResourceKeys.COMPONENT_PRIORITY);
-    int priority = SliderUtils.parseAndValidate("value of " + name + " " +
-                                                ResourceKeys.COMPONENT_PRIORITY,
-        priOpt, 0, 1, -1);
-    String placementOpt = component.getOption(
-        ResourceKeys.COMPONENT_PLACEMENT_POLICY,
+  public ProviderRole createDynamicProviderRole(String name, MapOperations component)
+      throws BadConfigException {
+    String priOpt = component.getMandatoryOption(COMPONENT_PRIORITY);
+    int priority = SliderUtils.parseAndValidate(
+        "value of " + name + " " + COMPONENT_PRIORITY, priOpt, 0, 1, -1);
+
+    String placementOpt = component.getOption(COMPONENT_PLACEMENT_POLICY,
         Integer.toString(PlacementPolicy.DEFAULT));
-    int placement = SliderUtils.parseAndValidate("value of " + name + " " +
-        ResourceKeys.COMPONENT_PLACEMENT_POLICY,
-        placementOpt, 0, 0, -1);
-    int placementTimeout =
-        component.getOptionInt(ResourceKeys.PLACEMENT_ESCALATE_DELAY,
-            ResourceKeys.DEFAULT_PLACEMENT_ESCALATE_DELAY_SECONDS);
+
+    int placement = SliderUtils.parseAndValidate(
+        "value of " + name + " " + COMPONENT_PLACEMENT_POLICY, placementOpt, 0, 0, -1);
+
+    int placementTimeout = component.getOptionInt(PLACEMENT_ESCALATE_DELAY,
+            DEFAULT_PLACEMENT_ESCALATE_DELAY_SECONDS);
+
     ProviderRole newRole = new ProviderRole(name,
         priority,
         placement,
@@ -662,7 +660,7 @@ public class AppState {
         instanceDefinition.getResourceOperations();
     if (resources.getComponent(SliderKeys.COMPONENT_AM) != null) {
       resources.setComponentOpt(
-          SliderKeys.COMPONENT_AM, ResourceKeys.COMPONENT_INSTANCES, "1");
+          SliderKeys.COMPONENT_AM, COMPONENT_INSTANCES, "1");
     }
 
 
@@ -780,7 +778,7 @@ public class AppState {
   private int getDesiredInstanceCount(ConfTreeOperations resources,
       String role) throws BadConfigException {
     int desiredInstanceCount =
-      resources.getComponentOptInt(role, ResourceKeys.COMPONENT_INSTANCES, 0);
+      resources.getComponentOptInt(role, COMPONENT_INSTANCES, 0);
 
     if (desiredInstanceCount < 0) {
       log.error("Role {} has negative desired instances : {}", role,
@@ -1271,7 +1269,7 @@ public class AppState {
     String val = resources.getComponentOpt(name, option,
         Integer.toString(defVal));
     Integer intVal;
-    if (ResourceKeys.YARN_RESOURCE_MAX.equals(val)) {
+    if (YARN_RESOURCE_MAX.equals(val)) {
       intVal = maxVal;
     } else {
       intVal = Integer.decode(val);
@@ -1679,7 +1677,7 @@ public class AppState {
       String rolename = role.getName();
       List<String> instances = instanceMap.get(rolename);
       int nodeCount = instances != null ? instances.size(): 0;
-      cd.setRoleOpt(rolename, ResourceKeys.COMPONENT_INSTANCES,
+      cd.setRoleOpt(rolename, COMPONENT_INSTANCES,
                     role.getDesired());
       cd.setRoleOpt(rolename, RoleKeys.ROLE_ACTUAL_INSTANCES, nodeCount);
       cd.setRoleOpt(rolename, ROLE_REQUESTED_INSTANCES, role.getRequested());
@@ -1813,7 +1811,7 @@ public class AppState {
     ConfTreeOperations resources =
         instanceDefinition.getResourceOperations();
     return resources.getComponentOptInt(roleStatus.getName(),
-        ResourceKeys.CONTAINER_FAILURE_THRESHOLD,
+        CONTAINER_FAILURE_THRESHOLD,
         failureThreshold);
   }
 
@@ -1827,7 +1825,7 @@ public class AppState {
     ConfTreeOperations resources =
         instanceDefinition.getResourceOperations();
     return resources.getComponentOptInt(roleName,
-                                        ResourceKeys.NODE_FAILURE_THRESHOLD,
+                                        NODE_FAILURE_THRESHOLD,
                                         nodeFailureThreshold);
   }
 

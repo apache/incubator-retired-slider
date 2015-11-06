@@ -26,6 +26,7 @@ import org.apache.hadoop.yarn.api.records.Container
 import org.apache.hadoop.yarn.api.records.ContainerId
 import org.apache.hadoop.yarn.api.records.ContainerState
 import org.apache.hadoop.yarn.api.records.ContainerStatus
+import org.apache.hadoop.yarn.api.records.NodeReport
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.common.tools.SliderFileSystem
 import org.apache.slider.common.tools.SliderUtils
@@ -88,7 +89,6 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
         applicationId: applicationId,
         attemptId: 1)
 
-    fs = HadoopFS.get(new URI("file:///"), conf)
     historyWorkDir = new File("target/history", historyDirName)
     historyPath = new Path(historyWorkDir.toURI())
     fs.delete(historyPath, true)
@@ -108,6 +108,7 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
     binding.roles = factory.ROLES
     binding.fs = fs
     binding.historyPath = historyPath
+    binding.nodeReports = engine.nodeReports as List<NodeReport>
     binding
   }
 
