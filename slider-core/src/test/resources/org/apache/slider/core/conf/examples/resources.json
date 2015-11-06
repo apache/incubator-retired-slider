@@ -2,7 +2,7 @@
   "schema": "http://example.org/specification/v2.0.0",
 
   "metadata": {
-    "description": "example of a resources file"
+    "description": "example of a resources file: org/apache/slider/core/conf/examples/resources.json"
   },
   
   "global": {

@@ -66,6 +66,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class TestAMManagementWebServices extends JerseyTest {
   protected static final Logger log =
@@ -215,9 +216,19 @@ public class TestAMManagementWebServices extends JerseyTest {
     assertEquals("wrong href",
                  "http://localhost:9998/slideram/ws/v1/slider/mgmt/app/configurations/internal",
                  json.getHref());
-    assertEquals("wrong description",
-        "Internal configuration DO NOT EDIT",
-        json.getMetadata().get("description"));
+
+    assertDescriptionContains("org/apache/slider/core/conf/examples/internal.json", json);
+  }
+
+  private void assertDescriptionContains(String expected, ConfTreeResource json) {
+
+    Map<String, Object> metadata = json.getMetadata();
+    assertNotNull("No metadata", metadata);
+    Object actual = metadata.get("description");
+    assertNotNull("No description", actual);
+
+    assertTrue(String.format("Did not find \"%s\" in \"%s\"", expected, actual),
+        actual.toString().contains(expected));
   }
 
   @Test
@@ -239,6 +250,7 @@ public class TestAMManagementWebServices extends JerseyTest {
     assertNotNull("no components", components);
     assertEquals("incorrect number of components", 2, components.size());
     assertNotNull("wrong component", components.get("worker"));
+    assertDescriptionContains("org/apache/slider/core/conf/examples/resources.json", json);
   }
 
   @Test
@@ -259,5 +271,7 @@ public class TestAMManagementWebServices extends JerseyTest {
     assertNotNull("no components", components);
     assertEquals("incorrect number of components", 2, components.size());
     assertNotNull("wrong component", components.get("worker"));
+    assertDescriptionContains("org/apache/slider/core/conf/examples/app_configuration.json", json);
+
   }
 }

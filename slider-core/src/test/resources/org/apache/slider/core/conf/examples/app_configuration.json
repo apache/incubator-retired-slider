@@ -1,6 +1,8 @@
 {
   "schema": "http://example.org/specification/v2.0.0",
-
+  "metadata": {
+    "description": "org/apache/slider/core/conf/examples/app_configuration.json"
+  },
   "global": {
 
     "zookeeper.port": "2181",
