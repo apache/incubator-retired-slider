@@ -114,9 +114,10 @@ public class TestAMManagementWebServices extends JerseyTest {
       try {
         JsonSerDeser<ConfTree> confTreeJsonSerDeser = new JsonSerDeser<>(ConfTree.class);
         AggregateConf aggregateConf = new AggregateConf(
-            confTreeJsonSerDeser.fromResource(EXAMPLES + "internal.json"),
+            confTreeJsonSerDeser.fromResource(EXAMPLES + "resources.json"),
             confTreeJsonSerDeser.fromResource(EXAMPLES + "app_configuration.json"),
-            confTreeJsonSerDeser.fromResource(EXAMPLES + "resources.json"));
+            confTreeJsonSerDeser.fromResource(EXAMPLES + "internal.json")
+            );
         aggregateConf.setName("test");
         return aggregateConf;
       } catch (IOException e) {
