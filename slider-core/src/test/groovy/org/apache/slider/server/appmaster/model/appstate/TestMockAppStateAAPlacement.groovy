@@ -154,14 +154,60 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
     assert 2 == ops2.size()
     assert aaRole.pendingAntiAffineRequests == 1
 
-
     assert 0 == appState.reviewRequestAndReleaseNodes().size()
-
     // now trigger the next execution cycle
     List<AbstractRMOperation> ops3 = []
     assert 1  == submitOperations(ops2, [], ops3).size()
     assert 2 == ops3.size()
     assert aaRole.pendingAntiAffineRequests == 0
   }
+
+  @Test
+  public void testAllocateFlexDown() throws Throwable {
+    // want multiple instances, so there will be iterations
+    aaRole.desired = 2
+    List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()
+    getSingleRequest(ops)
+    assert aaRole.pendingAntiAffineRequests == 1
+
+    // flex down so that the next request should be cancelled
+    aaRole.desired = 1
+
+    // expect: no new reqests, pending count --
+    List<AbstractRMOperation> ops2 = appState.reviewRequestAndReleaseNodes()
+    assert ops2.empty
+    assert aaRole.pendingAntiAffineRequests == 0
+
+    // next iter
+    submitOperations(ops, [], ops2).size()
+    assert 1 == ops2.size()
+  }
+
+  /**
+   * Here flex down while there is only one outstanding request.
+   * The outstanding flex should be cancelled
+   * @throws Throwable
+   */
+  @Test
+  public void testAllocateFlexDownForcesCancel() throws Throwable {
+    // want multiple instances, so there will be iterations
+    aaRole.desired = 1
+    List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()
+    getSingleRequest(ops)
+    assert aaRole.pendingAntiAffineRequests == 0
+
+    // flex down so that the next request should be cancelled
+    aaRole.desired = 0
+    // expect: no new reqests, pending count --
+    List<AbstractRMOperation> ops2 = appState.reviewRequestAndReleaseNodes()
+    assert aaRole.pendingAntiAffineRequests == 0
+    assert ops2.size() == 1
+    getSingleCancel(ops2)
+
+    // next iter
+    submitOperations(ops, [], ops2).size()
+    assert 1 == ops2.size()
+  }
+
 
 }

@@ -26,5 +26,5 @@ public abstract class AbstractRMOperation {
    * @param handler handler to perform the execution
    */
   public abstract void execute(RMOperationHandlerActions handler);
-  
+
 }

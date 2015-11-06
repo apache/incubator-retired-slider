@@ -84,9 +84,33 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.apache.slider.api.ResourceKeys.*;
-import static org.apache.slider.api.RoleKeys.*;
-import static org.apache.slider.api.StateValues.*;
+import static org.apache.slider.api.ResourceKeys.COMPONENT_INSTANCES;
+import static org.apache.slider.api.ResourceKeys.COMPONENT_PLACEMENT_POLICY;
+import static org.apache.slider.api.ResourceKeys.COMPONENT_PRIORITY;
+import static org.apache.slider.api.ResourceKeys.CONTAINER_FAILURE_THRESHOLD;
+import static org.apache.slider.api.ResourceKeys.DEFAULT_CONTAINER_FAILURE_THRESHOLD;
+import static org.apache.slider.api.ResourceKeys.DEFAULT_NODE_FAILURE_THRESHOLD;
+import static org.apache.slider.api.ResourceKeys.DEFAULT_PLACEMENT_ESCALATE_DELAY_SECONDS;
+import static org.apache.slider.api.ResourceKeys.DEF_YARN_CORES;
+import static org.apache.slider.api.ResourceKeys.DEF_YARN_LABEL_EXPRESSION;
+import static org.apache.slider.api.ResourceKeys.DEF_YARN_MEMORY;
+import static org.apache.slider.api.ResourceKeys.NODE_FAILURE_THRESHOLD;
+import static org.apache.slider.api.ResourceKeys.PLACEMENT_ESCALATE_DELAY;
+import static org.apache.slider.api.ResourceKeys.YARN_CORES;
+import static org.apache.slider.api.ResourceKeys.YARN_LABEL_EXPRESSION;
+import static org.apache.slider.api.ResourceKeys.YARN_MEMORY;
+import static org.apache.slider.api.ResourceKeys.YARN_RESOURCE_MAX;
+import static org.apache.slider.api.RoleKeys.ROLE_FAILED_INSTANCES;
+import static org.apache.slider.api.RoleKeys.ROLE_FAILED_RECENTLY_INSTANCES;
+import static org.apache.slider.api.RoleKeys.ROLE_FAILED_STARTING_INSTANCES;
+import static org.apache.slider.api.RoleKeys.ROLE_NODE_FAILED_INSTANCES;
+import static org.apache.slider.api.RoleKeys.ROLE_PREEMPTED_INSTANCES;
+import static org.apache.slider.api.RoleKeys.ROLE_RELEASING_INSTANCES;
+import static org.apache.slider.api.RoleKeys.ROLE_REQUESTED_INSTANCES;
+import static org.apache.slider.api.StateValues.STATE_CREATED;
+import static org.apache.slider.api.StateValues.STATE_DESTROYED;
+import static org.apache.slider.api.StateValues.STATE_LIVE;
+import static org.apache.slider.api.StateValues.STATE_SUBMITTED;
 
 
 /**
@@ -1909,6 +1933,21 @@ public class AppState {
       // reduce the number expected (i.e. subtract the delta)
       long excess = -delta;
 
+      if (isAA) {
+        // there may be pending requests which can be cancelled here
+        long pending = role.getPendingAntiAffineRequests();
+        if (excess <= pending) {
+          long outstanding = pending - excess;
+          log.info("Cancelling {} pending AA allocations, leaving {}", excess, outstanding);
+          role.setPendingAntiAffineRequests(outstanding);
+          excess = 0;
+        } else {
+          // not enough
+          log.info("Cancelling all pending AA allocations");
+          role.setPendingAntiAffineRequests(0);
+          excess -= pending;
+        }
+      }
       // how many requests are outstanding?
       long outstandingRequests = role.getRequested();
       if (outstandingRequests > 0) {
