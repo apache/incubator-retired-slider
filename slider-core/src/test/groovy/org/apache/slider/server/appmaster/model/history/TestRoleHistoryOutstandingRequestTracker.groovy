@@ -170,7 +170,6 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest  {
     // process skips entries which are in the list but have not been issued.
     // ...which can be a race condition between request issuance & escalation.
     // (not one observed outside test authoring, but retained for completeness)
-    assert role2Status.placementPolicy == PlacementPolicy.ANTI_AFFINITY_REQUIRED
     def (res2, outstanding2) = newRequest(role2Status)
 
     // simulate some time escalation of role 1 MUST now be triggered
