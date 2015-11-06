@@ -55,41 +55,6 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
   }*/
 
   /**
-   * Get the container request of an indexed entry. Includes some assertions for better diagnostics
-   * @param ops operation list
-   * @param index index in the list
-   * @return the request.
-   */
-  AMRMClient.ContainerRequest getRequest(List<AbstractRMOperation> ops, int index) {
-    assert index < ops.size()
-    def op = ops[index]
-    assert op instanceof ContainerRequestOperation
-    ((ContainerRequestOperation) op).request
-  }
-
-  /**
-   * Get the cancel request of an indexed entry. Includes some assertions for better diagnostics
-   * @param ops operation list
-   * @param index index in the list
-   * @return the request.
-   */
-  AMRMClient.ContainerRequest getCancel(List<AbstractRMOperation> ops, int index) {
-    assert index < ops.size()
-    def op = ops[index]
-    assert op instanceof CancelSingleRequest
-    ((CancelSingleRequest) op).request
-  }
-
-  /**
-   * Get the single request of a list of operations; includes the check for the size
-   * @param ops operations list of size 1
-   * @return the request within the first ContainerRequestOperation
-   */
-  public AMRMClient.ContainerRequest getSingleRequest(List<AbstractRMOperation> ops) {
-    assert 1 == ops.size()
-    getRequest(ops, 0)
-  }
-  /**
    * Get the single request of a list of operations; includes the check for the size
    * @param ops operations list of size 1
    * @return the request within the first operation
@@ -123,10 +88,6 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
 
     Container allocated = engine.allocateContainer(request)
 
-    // node is allocated wherever
-
-    def firstAllocation = allocated.nodeId
-
     // notify the container ane expect
     List<ContainerAssignment> assignments = [];
     List<AbstractRMOperation> operations = []
@@ -142,9 +103,10 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
     // we also expect a new allocation request to have been issued
 
     def req2 = getRequest(operations, 1)
-    // now the nodes should be a list
     Container allocated2 = engine.allocateContainer(req2)
 
+    // placement must be on a different host
+    assert allocated2.nodeId != allocated.nodeId
 
     ContainerAssignment assigned = assignments[0]
     Container container = assigned.container

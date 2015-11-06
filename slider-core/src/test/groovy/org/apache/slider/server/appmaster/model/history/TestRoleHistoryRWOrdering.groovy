@@ -24,6 +24,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.slider.common.SliderKeys
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockFactory
+import org.apache.slider.server.appmaster.model.mock.MockRoleHistory
 import org.apache.slider.server.appmaster.state.NodeEntry
 import org.apache.slider.server.appmaster.state.NodeInstance
 import org.apache.slider.server.appmaster.state.RoleHistory
@@ -40,10 +41,10 @@ class TestRoleHistoryRWOrdering extends BaseMockAppStateTest {
 
   List<Path> paths = pathlist(
       [
-          "hdfs://localhost/history-0406c.json",
-          "hdfs://localhost/history-5fffa.json",
-          "hdfs://localhost/history-0001a.json",
-          "hdfs://localhost/history-0001f.json",
+        "hdfs://localhost/history-0406c.json",
+        "hdfs://localhost/history-5fffa.json",
+        "hdfs://localhost/history-0001a.json",
+        "hdfs://localhost/history-0001f.json",
       ]
   )
   Path h_0406c = paths[0]
@@ -52,9 +53,7 @@ class TestRoleHistoryRWOrdering extends BaseMockAppStateTest {
 
 
   List<Path> pathlist(List<String> pathnames) {
-    def result = []
-    pathnames.each { result << new Path(new URI(it as String)) }
-    result
+    pathnames.collect{ new Path(new URI(it as String)) }
   }
 
   @Override
@@ -85,7 +84,7 @@ class TestRoleHistoryRWOrdering extends BaseMockAppStateTest {
     describe "test that if multiple entries are written, the newest is picked up"
     long time = System.currentTimeMillis();
 
-    RoleHistory roleHistory = new RoleHistory(MockFactory.ROLES)
+    RoleHistory roleHistory = new MockRoleHistory(MockFactory.ROLES)
     assert !roleHistory.onStart(fs, historyPath)
     String addr = "localhost"
     NodeInstance instance = roleHistory.getOrCreateNodeInstance(addr)
@@ -94,7 +93,7 @@ class TestRoleHistoryRWOrdering extends BaseMockAppStateTest {
 
     Path history1 = roleHistory.saveHistory(time++)
     Path history2 = roleHistory.saveHistory(time++)
-    Path history3 = roleHistory.saveHistory(time++)
+    Path history3 = roleHistory.saveHistory(time)
     
     //inject a later file with a different name
     sliderFileSystem.cat(new Path(historyPath, "file.json"), true, "hello, world")
@@ -137,10 +136,10 @@ class TestRoleHistoryRWOrdering extends BaseMockAppStateTest {
     RoleHistoryWriter.sortHistoryPaths(paths2)
     assertListEquals(paths2,
                      [
-                         paths[1],
-                         paths[0],
-                         paths[3],
-                         paths[2]
+                       paths[1],
+                       paths[0],
+                       paths[3],
+                       paths[2]
                      ])
   }
 }

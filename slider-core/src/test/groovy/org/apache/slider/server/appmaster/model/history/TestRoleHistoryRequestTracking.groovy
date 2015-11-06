@@ -28,6 +28,7 @@ import org.apache.slider.providers.ProviderRole
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockContainer
 import org.apache.slider.server.appmaster.model.mock.MockFactory
+import org.apache.slider.server.appmaster.model.mock.MockRoleHistory
 import org.apache.slider.server.appmaster.state.ContainerAllocationOutcome
 import org.apache.slider.server.appmaster.state.NodeEntry
 import org.apache.slider.server.appmaster.state.NodeInstance
@@ -55,7 +56,7 @@ class TestRoleHistoryRequestTracking extends BaseMockAppStateTest {
   NodeInstance empty = new NodeInstance("empty", MockFactory.ROLE_COUNT)
 
   List<NodeInstance> nodes = [age2Active2, age2Active0, age4Active1, age1Active4, age3Active0]
-  RoleHistory roleHistory = new RoleHistory(MockFactory.ROLES)
+  RoleHistory roleHistory = new MockRoleHistory(MockFactory.ROLES)
   /** 1MB, 1 vcore*/
   Resource resource = Resource.newInstance(1, 1)
 

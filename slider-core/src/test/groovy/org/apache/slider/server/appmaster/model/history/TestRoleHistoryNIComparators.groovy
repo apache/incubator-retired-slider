@@ -40,6 +40,7 @@ class TestRoleHistoryNIComparators extends BaseMockAppStateTest  {
   NodeInstance age1failing = nodeInstance(1001, 0, 0, 0)
 
   List<NodeInstance> nodes = [age2Active2, age4Active1, age1Active4, age3Active0]
+  List<NodeInstance> nodesPlusEmpty = [age2Active2, age4Active1, age1Active4, age3Active0, empty]
   List<NodeInstance> allnodes = [age6failing, age2Active2, age4Active1, age1Active4, age3Active0, age1failing]
 
   @Before
@@ -80,9 +81,8 @@ class TestRoleHistoryNIComparators extends BaseMockAppStateTest  {
 
   @Test
   public void testNewerThanNoRole() throws Throwable {
-    nodes << empty
-    Collections.sort(nodes, new NodeInstance.Preferred(0))
-    assertListEquals(nodes, [age4Active1, age3Active0, age2Active2, age1Active4, empty])
+    Collections.sort(nodesPlusEmpty, new NodeInstance.Preferred(0))
+    assertListEquals(nodesPlusEmpty, [age4Active1, age3Active0, age2Active2, age1Active4, empty])
   }
 
   @Test
@@ -94,9 +94,9 @@ class TestRoleHistoryNIComparators extends BaseMockAppStateTest  {
 
   @Test
   public void testMoreActiveThanEmpty() throws Throwable {
-    nodes << empty
-    Collections.sort(nodes, new NodeInstance.MoreActiveThan(0))
-    assertListEquals(nodes, [age1Active4, age2Active2, age4Active1, age3Active0, empty])
+
+    Collections.sort(nodesPlusEmpty, new NodeInstance.MoreActiveThan(0))
+    assertListEquals(nodesPlusEmpty, [age1Active4, age2Active2, age4Active1, age3Active0, empty])
   }
 
 }

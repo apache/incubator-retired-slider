@@ -21,17 +21,20 @@ package org.apache.slider.server.appmaster.state;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.providers.PlacementPolicy;
 import org.apache.slider.providers.ProviderRole;
+import org.apache.slider.server.appmaster.management.LongGauge;
 
 import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
-
 
 /**
- * Models the ongoing status of all nodes in  
- * Nothing here is synchronized: grab the whole instance to update.
+ * Models the ongoing status of all nodes in an application.
+ *
+ * These structures are shared across the {@link AppState} and {@link RoleHistory} structures,
+ * and must be designed for synchronous access. Atomic counters are preferred to anything which
+ * requires synchronization. Where synchronized access is good is that it allows for
+ * the whole instance to be locked, for updating multiple entries.
  */
 public final class RoleStatus implements Cloneable {
 
@@ -43,13 +46,19 @@ public final class RoleStatus implements Cloneable {
   private final int key;
   private final ProviderRole providerRole;
 
-  private int desired, actual, requested, releasing;
-  private int failed, startFailed;
-  private int started,  completed, totalRequested;
-  private final AtomicLong preempted = new AtomicLong(0);
-  private final AtomicLong nodeFailed = new AtomicLong(0);
-  private final AtomicLong failedRecently = new AtomicLong(0);
-  private final AtomicLong limitsExceeded = new AtomicLong(0);
+  private final LongGauge desired = new LongGauge();
+  private final LongGauge actual = new LongGauge();
+  private final LongGauge requested = new LongGauge();
+  private final LongGauge releasing = new LongGauge();
+  private final LongGauge failed = new LongGauge();
+  private final LongGauge startFailed = new LongGauge();
+  private final LongGauge started= new LongGauge();
+  private final LongGauge completed = new LongGauge();
+  private final LongGauge totalRequested = new LongGauge();
+  private final LongGauge preempted = new LongGauge(0);
+  private final LongGauge nodeFailed = new LongGauge(0);
+  private final LongGauge failedRecently = new LongGauge(0);
+  private final LongGauge limitsExceeded = new LongGauge(0);
 
   /** flag set to true if there is an outstanding anti-affine request */
   private final AtomicBoolean pendingAARequest = new AtomicBoolean(false);
@@ -125,63 +134,61 @@ public final class RoleStatus implements Cloneable {
     return !hasPlacementPolicy(PlacementPolicy.NO_DATA_LOCALITY);
   }
 
-  public synchronized int getDesired() {
-    return desired;
+  public long getDesired() {
+    return desired.get();
   }
 
-  public synchronized void setDesired(int desired) {
-    this.desired = desired;
+  public void setDesired(long desired) {
+    this.desired.set(desired);
   }
 
-  public synchronized int getActual() {
-    return actual;
+  public long getActual() {
+    return actual.get();
   }
 
-  public synchronized int incActual() {
-    return ++actual;
+  public long incActual() {
+    return actual.incrementAndGet();
   }
 
-  public synchronized int decActual() {
-    actual = Math.max(0, actual - 1);
-    return actual;
+  public long decActual() {
+    return actual.decToFloor(1);
   }
 
-  public synchronized int getRequested() {
-    return requested;
+  public long getRequested() {
+    return requested.get();
   }
 
-  public synchronized int incRequested() {
-    totalRequested++;
-    return ++requested;
+  public long incRequested() {
+    totalRequested.incrementAndGet();
+    return requested.incrementAndGet();
   }
 
-  public synchronized int cancel(int count) {
-    requested = Math.max(0, requested - count);
-    return requested;
+  
+  public long cancel(long count) {
+    return requested.decToFloor(count);
   }
   
-  public synchronized int decRequested() {
-    return cancel(1);
+  public void decRequested() {
+    cancel(1);
   }
 
-  public synchronized int getReleasing() {
-    return releasing;
+  public long getReleasing() {
+    return releasing.get();
   }
 
-  public synchronized int incReleasing() {
-    return ++releasing;
+  public long incReleasing() {
+    return releasing.incrementAndGet();
   }
 
-  public synchronized int decReleasing() {
-    releasing = Math.max(0, releasing - 1);
-    return releasing;
+  public long decReleasing() {
+    return releasing.decToFloor(1);
   }
 
-  public synchronized int getFailed() {
-    return failed;
+  public long getFailed() {
+    return failed.get();
   }
 
-  public synchronized long getFailedRecently() {
+  public long getFailedRecently() {
     return failedRecently.get();
   }
 
@@ -217,7 +224,7 @@ public final class RoleStatus implements Cloneable {
 
       case Node_failure:
         nodeFailed.incrementAndGet();
-        failed++;
+        failed.incrementAndGet();
         break;
 
       case Failed_limits_exceeded: // exceeded memory or CPU; app/configuration related
@@ -225,7 +232,7 @@ public final class RoleStatus implements Cloneable {
         // fall through
       case Failed: // application failure, possibly node related, possibly not
       default: // anything else (future-proofing)
-        failed++;
+        failed.incrementAndGet();
         failedRecently.incrementAndGet();
         //have a look to see if it short lived
         if (startupFailure) {
@@ -235,39 +242,39 @@ public final class RoleStatus implements Cloneable {
     }
   }
 
-  public synchronized int getStartFailed() {
-    return startFailed;
+  public long getStartFailed() {
+    return startFailed.get();
   }
 
   public synchronized void incStartFailed() {
-    startFailed++;
+    startFailed.getAndIncrement();
   }
 
   public synchronized String getFailureMessage() {
     return failureMessage;
   }
 
-  public synchronized int getCompleted() {
-    return completed;
+  public long getCompleted() {
+    return completed.get();
   }
 
   public synchronized void setCompleted(int completed) {
-    this.completed = completed;
+    this.completed.set(completed);
   }
 
-  public synchronized int incCompleted() {
-    return completed ++;
+  public long incCompleted() {
+    return completed.incrementAndGet();
   }
-  public synchronized int getStarted() {
-    return started;
+  public long getStarted() {
+    return started.get();
   }
 
   public synchronized void incStarted() {
-    started++;
+    started.incrementAndGet();
   }
 
-  public synchronized int getTotalRequested() {
-    return totalRequested;
+  public long getTotalRequested() {
+    return totalRequested.get();
   }
 
   public long getPreempted() {
@@ -284,13 +291,13 @@ public final class RoleStatus implements Cloneable {
    * @return the positive or negative number of roles to add/release.
    * 0 means "do nothing".
    */
-  public synchronized int getDelta() {
-    int inuse = getActualAndRequested();
+  public long getDelta() {
+    long inuse = getActualAndRequested();
     //don't know how to view these. Are they in-use or not?
-    int delta = desired - inuse;
+    long delta = desired.get() - inuse;
     if (delta < 0) {
       //if we are releasing, remove the number that are already released.
-      delta += releasing;
+      delta += releasing.get();
       //but never switch to a positive
       delta = Math.min(delta, 0);
     }
@@ -301,8 +308,8 @@ public final class RoleStatus implements Cloneable {
    * Get count of actual and requested containers
    * @return the size of the application when outstanding requests are included
    */
-  public synchronized int getActualAndRequested() {
-    return actual + requested;
+  public long getActualAndRequested() {
+    return actual.get() + requested.get();
   }
 
   @Override
@@ -357,15 +364,15 @@ public final class RoleStatus implements Cloneable {
     ComponentInformation info = new ComponentInformation();
     info.name = name;
     info.priority = getPriority();
-    info.desired = desired;
-    info.actual = actual;
-    info.requested = requested;
-    info.releasing = releasing;
-    info.failed = failed;
-    info.startFailed = startFailed;
+    info.desired = desired.intValue();
+    info.actual = actual.intValue();
+    info.requested = requested.intValue();
+    info.releasing = releasing.intValue();
+    info.failed = failed.intValue();
+    info.startFailed = startFailed.intValue();
     info.placementPolicy = getPlacementPolicy();
     info.failureMessage = failureMessage;
-    info.totalRequested = totalRequested;
+    info.totalRequested = totalRequested.intValue();
     info.failedRecently = failedRecently.intValue();
     info.nodeFailed = nodeFailed.intValue();
     info.preempted = preempted.intValue();

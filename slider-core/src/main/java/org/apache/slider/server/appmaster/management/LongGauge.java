@@ -24,69 +24,43 @@ import com.codahale.metrics.Metric;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * This is a long which acts as a gauge
+ * This is a {@link AtomicLong} which acts as a metrics gauge: its state can be exposed as
+ * a management value.
+ *
  */
-public class LongGauge implements Metric, Gauge<Long> {
-
-  private final AtomicLong value;
+public class LongGauge extends AtomicLong implements Metric, Gauge<Long> {
 
   /**
    * Instantiate
    * @param val current value
    */
   public LongGauge(long val) {
-    this.value = new AtomicLong(val);
+    super(val);
   }
 
+  /**
+   * Instantiate with value 0
+   */
   public LongGauge() {
     this(0);
   }
 
-  /**
-   * Set to a new value.
-   * @param val value
-   */
-  public synchronized void set(long val) {
-    value.set(val);
-  }
-
-  public void inc() {
-    inc(1);
-  }
-
-  public void dec() {
-    dec(1);
-  }
-
-  public synchronized void inc(int delta) {
-    set(value.get() + delta);
-  }
-
-  public synchronized void dec(int delta) {
-    set(value.get() - delta);
-  }
-
-  public long get() {
-    return value.get();
-  }
 
   @Override
   public Long getValue() {
     return get();
   }
 
-  @Override
-  public String toString() {
-   return value.toString();
-  }
-
-  @Override
-  public int hashCode() {
-    return value.hashCode();
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    return value.equals(obj);
+  /**
+   * Decrement to the floor of 0.
+   * There's checks to stop more than one thread being in this method at the time, but
+   * that doesn't stop other operations on the value
+   * @param delta delta
+   * @return the current value
+   */
+  public synchronized long decToFloor(long delta) {
+    long newval = Math.max(0L, get() - delta);
+    set(newval);
+    return get();
   }
 }

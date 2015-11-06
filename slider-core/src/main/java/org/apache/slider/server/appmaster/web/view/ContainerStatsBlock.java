@@ -51,6 +51,7 @@ public class ContainerStatsBlock extends HtmlBlock {
 
   // Some functions that help transform the data into an object we can use to abstract presentation specifics
   protected static final Function<Entry<String,Integer>,Entry<TableContent,Integer>> stringIntPairFunc = toTableContentFunction();
+  protected static final Function<Entry<String,Long>,Entry<TableContent,Long>> stringLongPairFunc = toTableContentFunction();
   protected static final Function<Entry<String,String>,Entry<TableContent,String>> stringStringPairFunc = toTableContentFunction();
 
   private WebAppApi slider;
@@ -108,7 +109,7 @@ public class ContainerStatsBlock extends HtmlBlock {
       DIV<Hamlet> div = html.div("role-info ui-widget-content ui-corner-all");
 
       List<ClusterNode> nodesInRole =
-          new ArrayList<ClusterNode>(clusterNodesInRole.values());
+          new ArrayList<>(clusterNodesInRole.values());
 
       div.h2(BOLD, StringUtils.capitalize(name));
 

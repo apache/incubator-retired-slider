@@ -26,7 +26,7 @@ import java.util.List;
 /**
  * This is just a tuple of the outcome of a container allocation
  */
-public class ContainerAllocation {
+public class ContainerAllocationResults {
 
   /**
    * What was the outcome of this allocation: placed, escalated, ...
@@ -45,6 +45,6 @@ public class ContainerAllocation {
    */
   public List<AbstractRMOperation> operations = new ArrayList<>(0);
 
-  public ContainerAllocation() {
+  public ContainerAllocationResults() {
   }
 }

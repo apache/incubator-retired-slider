@@ -98,21 +98,16 @@ class TestMockAppStateDynamicRoles extends BaseMockAppStateTest
    * @param actions source list
    * @return found list
    */
-  List<ContainerRequestOperation> findAllocationsForRole(int role, 
+  Collection<ContainerRequestOperation> findAllocationsForRole(int role,
       List<AbstractRMOperation> actions) {
-    List <ContainerRequestOperation > results = []
-    actions.each { AbstractRMOperation  operation ->
-      if (operation instanceof ContainerRequestOperation) {
-        def req = (ContainerRequestOperation) operation;
-        def reqrole = ContainerPriority.extractRole(req.request.priority)
-        if (role == reqrole) {
-          results << req
-        }
-      }
+    def requests = actions.findAll {
+      it instanceof ContainerRequestOperation}.collect {it as ContainerRequestOperation}
+
+    requests.findAll {
+        role == ContainerPriority.extractRole(it.request.priority)
     }
-    return results
-  } 
-  
+  }
+
   @Test
   public void testStrictPlacementInitialRequest() throws Throwable {
     log.info("Initial engine state = $engine")
@@ -123,7 +118,6 @@ class TestMockAppStateDynamicRoles extends BaseMockAppStateTest
     assertRelaxLocalityFlag(ID4, null, true, actions)
     assertRelaxLocalityFlag(ID5, null, true, actions)
   }
-
 
   @Test
   public void testPolicyPropagation() throws Throwable {
@@ -136,7 +130,6 @@ class TestMockAppStateDynamicRoles extends BaseMockAppStateTest
   public void testNodeFailureThresholdPropagation() throws Throwable {
     assert (appState.lookupRoleStatus(ROLE4).nodeFailureThreshold == 3)
     assert (appState.lookupRoleStatus(ROLE5).nodeFailureThreshold == 2)
-
   }
 
   @Test
@@ -156,7 +149,6 @@ class TestMockAppStateDynamicRoles extends BaseMockAppStateTest
     assert instanceA
     def hostname = RoleHistoryUtils.hostnameOf(instanceA.container)
 
-
     log.info("Allocated engine state = $engine")
     assert engine.containerCount() == 1
 
@@ -166,8 +158,7 @@ class TestMockAppStateDynamicRoles extends BaseMockAppStateTest
     role4.desired = 0
     appState.lookupRoleStatus(ROLE4).desired = 0
     def completionResults = []
-    def containersToRelease = []
-    instances = createStartAndStopNodes(completionResults)
+    createStartAndStopNodes(completionResults)
     assert engine.containerCount() == 0
     assert completionResults.size() == 1
 
@@ -198,19 +189,16 @@ class TestMockAppStateDynamicRoles extends BaseMockAppStateTest
     }
     assert instanceA
     def hostname = RoleHistoryUtils.hostnameOf(instanceA.container)
-    
-
 
     log.info("Allocated engine state = $engine")
     assert engine.containerCount() == 1
 
     assert role5.actual == 1
-    // shrinking cluster
 
+    // shrinking cluster
     role5.desired = 0
     def completionResults = []
-    def containersToRelease = []
-    instances = createStartAndStopNodes(completionResults)
+    createStartAndStopNodes(completionResults)
     assert engine.containerCount() == 0
     assert completionResults.size() == 1
     assert role5.actual == 0
@@ -223,16 +211,15 @@ class TestMockAppStateDynamicRoles extends BaseMockAppStateTest
     def nodes = cro.request.nodes
     assert nodes.size() == 1
     assert hostname == nodes[0]
-    
   }
 
   public void assertRelaxLocalityFlag(
-      int id,
+      int role,
       String expectedHost,
       boolean expectedRelaxFlag,
       List<AbstractRMOperation> actions) {
     def requests
-    requests = findAllocationsForRole(id, actions)
+    requests = findAllocationsForRole(role, actions)
     assert requests.size() == 1
     def req = requests[0]
     assert expectedRelaxFlag == req.request.relaxLocality

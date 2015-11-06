@@ -33,6 +33,7 @@ import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockContainer
 import org.apache.slider.server.appmaster.model.mock.MockFactory
 import org.apache.slider.server.appmaster.model.mock.MockNodeId
+import org.apache.slider.server.appmaster.model.mock.MockRoleHistory
 import org.apache.slider.server.appmaster.state.*
 import org.junit.Before
 import org.junit.Test
@@ -60,7 +61,7 @@ class TestRoleHistoryContainerEvents extends BaseMockAppStateTest {
   String roleName = "test"
 
   List<NodeInstance> nodes = [age2Active2, age2Active0, age4Active1, age1Active4, age3Active0]
-  RoleHistory roleHistory = new RoleHistory(MockFactory.ROLES)
+  RoleHistory roleHistory = new MockRoleHistory(MockFactory.ROLES)
 
   Resource resource
 

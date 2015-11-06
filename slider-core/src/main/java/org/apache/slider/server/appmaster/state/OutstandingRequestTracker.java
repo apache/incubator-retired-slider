@@ -127,13 +127,13 @@ public class OutstandingRequestTracker {
    * @param hostname hostname
    * @return the allocation outcome
    */
-  public synchronized ContainerAllocation onContainerAllocated(int role,
+  public synchronized ContainerAllocationResults onContainerAllocated(int role,
       String hostname,
       Container container) {
     final String containerDetails = SliderUtils.containerToString(container);
     log.debug("Processing allocation for role {}  on {}", role,
         containerDetails);
-    ContainerAllocation allocation = new ContainerAllocation();
+    ContainerAllocationResults allocation = new ContainerAllocationResults();
     ContainerAllocationOutcome outcome;
     OutstandingRequest request = placedRequests.remove(new OutstandingRequest(role, hostname));
     if (request != null) {

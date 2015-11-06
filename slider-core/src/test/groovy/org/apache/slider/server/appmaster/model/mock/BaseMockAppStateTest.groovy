@@ -27,12 +27,15 @@ import org.apache.hadoop.yarn.api.records.ContainerId
 import org.apache.hadoop.yarn.api.records.ContainerState
 import org.apache.hadoop.yarn.api.records.ContainerStatus
 import org.apache.hadoop.yarn.api.records.NodeReport
+import org.apache.hadoop.yarn.client.api.AMRMClient
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.common.tools.SliderFileSystem
 import org.apache.slider.common.tools.SliderUtils
 import org.apache.slider.core.conf.AggregateConf
 import org.apache.slider.core.main.LauncherExitCodes
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
+import org.apache.slider.server.appmaster.operations.CancelSingleRequest
+import org.apache.slider.server.appmaster.operations.ContainerRequestOperation
 import org.apache.slider.server.appmaster.state.AppState
 import org.apache.slider.server.appmaster.state.AppStateBindingInfo
 import org.apache.slider.server.appmaster.state.ContainerAssignment
@@ -57,15 +60,6 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
   protected MockApplicationId applicationId;
   protected MockApplicationAttemptId applicationAttemptId;
 
-  @Override
-  void setup() {
-    super.setup()
-    YarnConfiguration conf = SliderUtils.createConfiguration()
-    fs = HadoopFS.get(new URI("file:///"), conf)
-    sliderFileSystem = new SliderFileSystem(fs, conf)
-    engine = createYarnEngine()
-  }
-
   /**
    * Override point: called in setup() to create the YARN engine; can
    * be changed for different sizes and options
@@ -75,13 +69,22 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
     return new MockYarnEngine(64, 1)
   }
 
+
+  @Override
+  void setup() {
+    super.setup()
+    YarnConfiguration conf = SliderUtils.createConfiguration()
+    fs = HadoopFS.get(new URI("file:///"), conf)
+    sliderFileSystem = new SliderFileSystem(fs, conf)
+    engine = createYarnEngine()
+    initApp()
+  }
+
   /**
    * Initialize the application.
    * This uses the binding information supplied by {@link #buildBindingInfo()}.
    */
-  @Before
   void initApp(){
-
     String historyDirName = testName;
     YarnConfiguration conf = SliderUtils.createConfiguration()
     applicationId = new MockApplicationId(id: 1, clusterTimestamp: 0)
@@ -291,27 +294,27 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
   /**
    * Process the RM operations and send <code>onContainersAllocated</code>
    * events to the app state
-   * @param ops
-   * @param released
-   * @return
+   * @param operationsIn list of incoming ops
+   * @param released released containers
+   * @return list of outbound operations
    */
   public List<RoleInstance> submitOperations(
-      List<AbstractRMOperation> ops,
-      List<ContainerId> released) {
-    List<Container> allocatedContainers = engine.execute(ops, released)
+      List<AbstractRMOperation> operationsIn,
+      List<ContainerId> released,
+      List<AbstractRMOperation> operationsOut = []) {
+    List<Container> allocatedContainers = engine.execute(operationsIn, released)
     List<ContainerAssignment> assignments = [];
-    List<AbstractRMOperation> operations = []
-    appState.onContainersAllocated(allocatedContainers, assignments, operations)
-    List<RoleInstance> instances = []
-    for (ContainerAssignment assigned : assignments) {
+    appState.onContainersAllocated(allocatedContainers, assignments, operationsOut)
+
+    assignments.collect {
+      ContainerAssignment assigned ->
       Container container = assigned.container
       RoleInstance ri = roleInstance(assigned)
-      instances << ri
       //tell the app it arrived
       log.debug("Start submitted ${ri.role} on ${container.id} ")
       appState.containerStartSubmitted(container, ri);
+      ri
     }
-    return instances
   }
 
   /**
@@ -334,13 +337,7 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
   List<ContainerId> extractContainerIds(
       List<RoleInstance> instances,
       int role) {
-    List<ContainerId> cids = []
-    instances.each { RoleInstance instance ->
-      if (instance.roleId == role) {
-        cids << instance.id
-      }
-    }
-    return cids
+    instances.findAll { it.roleId == role }.collect { RoleInstance instance -> instance.id }
   }
 
   /**
@@ -362,5 +359,41 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
 
   def recordAllFailed(int id, int count, List<NodeInstance> nodes) {
     nodes.each { NodeInstance node -> recordAsFailed(node, id, count)}
+  }
+
+  /**
+   * Get the container request of an indexed entry. Includes some assertions for better diagnostics
+   * @param ops operation list
+   * @param index index in the list
+   * @return the request.
+   */
+  AMRMClient.ContainerRequest getRequest(List<AbstractRMOperation> ops, int index) {
+    assert index < ops.size()
+    def op = ops[index]
+    assert op instanceof ContainerRequestOperation
+    ((ContainerRequestOperation) op).request
+  }
+
+  /**
+   * Get the cancel request of an indexed entry. Includes some assertions for better diagnostics
+   * @param ops operation list
+   * @param index index in the list
+   * @return the request.
+   */
+  AMRMClient.ContainerRequest getCancel(List<AbstractRMOperation> ops, int index) {
+    assert index < ops.size()
+    def op = ops[index]
+    assert op instanceof CancelSingleRequest
+    ((CancelSingleRequest) op).request
+  }
+
+  /**
+   * Get the single request of a list of operations; includes the check for the size
+   * @param ops operations list of size 1
+   * @return the request within the first ContainerRequestOperation
+   */
+  public AMRMClient.ContainerRequest getSingleRequest(List<AbstractRMOperation> ops) {
+    assert 1 == ops.size()
+    getRequest(ops, 0)
   }
 }

@@ -71,6 +71,8 @@ public class RoleHistory {
   protected static final Logger log =
     LoggerFactory.getLogger(RoleHistory.class);
   private final List<ProviderRole> providerRoles;
+  /** the roles in here are shared with App State */
+  private final Map<Integer, RoleStatus> roleStatusMap = new HashMap<>();
   private long startTime;
 
   /** Time when saved */
@@ -110,10 +112,17 @@ public class RoleHistory {
    */
   private Set<String> failedNodes = new HashSet<>();
 
-
-  public RoleHistory(List<ProviderRole> providerRoles) throws BadConfigException {
-    this.providerRoles = providerRoles;
-    roleSize = providerRoles.size();
+  /**
+   * Instantiate
+   * @param roles initial role list
+   * @throws BadConfigException
+   */
+  public RoleHistory(Collection<RoleStatus> roles) throws BadConfigException {
+    roleSize = roles.size();
+    providerRoles = new ArrayList<>(roleSize);
+    for (RoleStatus role : roles) {
+      addNewRole(role);
+    }
     reset();
   }
 
@@ -126,13 +135,7 @@ public class RoleHistory {
     nodemap = new NodeMap(roleSize);
     failedNodes = new HashSet<>();
     resetAvailableNodeLists();
-
     outstandingRequests = new OutstandingRequestTracker();
-
-    Map<Integer, RoleStatus> roleStats = new HashMap<>();
-    for (ProviderRole providerRole : providerRoles) {
-      checkProviderRole(roleStats, providerRole);
-    }
   }
 
   /**
@@ -148,45 +151,33 @@ public class RoleHistory {
   }
 
   /**
-   * safety check: make sure the provider role is unique amongst
+   * safety check: make sure the role is unique amongst
    * the role stats...which is extended with the new role
-   * @param roleStats role stats
-   * @param providerRole role
+   * @param roleStatus role
    * @throws ArrayIndexOutOfBoundsException
    * @throws BadConfigException
    */
-  protected void checkProviderRole(Map<Integer, RoleStatus> roleStats,
-      ProviderRole providerRole)
-    throws BadConfigException {
-    int index = providerRole.id;
+  protected void putRole(RoleStatus roleStatus) throws BadConfigException {
+    int index = roleStatus.getKey();
     if (index < 0) {
-      throw new BadConfigException("Provider " + providerRole + " id is out of range");
+      throw new BadConfigException("Provider " + roleStatus + " id is out of range");
     }
-    if (roleStats.get(index) != null) {
+    if (roleStatusMap.get(index) != null) {
       throw new BadConfigException(
-        providerRole.toString() + " id duplicates that of " +
-        roleStats.get(index));
+        roleStatus.toString() + " id duplicates that of " +
+            roleStatusMap.get(index));
     }
-    roleStats.put(index, new RoleStatus(providerRole));
+    roleStatusMap.put(index, roleStatus);
   }
 
   /**
-   * Add a new provider role to the map
-   * @param providerRole new provider role
+   * Add a new role
+   * @param roleStatus new role
    */
-  public void addNewProviderRole(ProviderRole providerRole)
-    throws BadConfigException {
-    log.debug("Validating/adding new provider role to role history: {} ",
-        providerRole);
-    Map<Integer, RoleStatus> roleStats = new HashMap<>();
-
-    for (ProviderRole role : providerRoles) {
-      roleStats.put(role.id, new RoleStatus(role));
-    }
-
-    checkProviderRole(roleStats, providerRole);
-    log.debug("Check successful; adding role");
-    this.providerRoles.add(providerRole);
+  public void addNewRole(RoleStatus roleStatus) throws BadConfigException {
+    log.debug("Validating/adding new role to role history: {} ", roleStatus);
+    putRole(roleStatus);
+    this.providerRoles.add(roleStatus.getProviderRole());
   }
 
   /**
@@ -713,13 +704,14 @@ public class RoleHistory {
    * @param actualCount current count of instances
    * @return The allocation outcome
    */
-  public synchronized ContainerAllocation onContainerAllocated(Container container,
-      int desiredCount,
-      int actualCount) {
+  public synchronized ContainerAllocationResults onContainerAllocated(Container container,
+      long desiredCount,
+      long actualCount) {
     int role = ContainerPriority.extractRole(container);
+
     String hostname = RoleHistoryUtils.hostnameOf(container);
     List<NodeInstance> nodeInstances = listRecentNodesForRoleId(role);
-    ContainerAllocation outcome =
+    ContainerAllocationResults outcome =
         outstandingRequests.onContainerAllocated(role, hostname, container);
     if (desiredCount <= actualCount) {
       // all outstanding requests have been satisfied
@@ -732,7 +724,7 @@ public class RoleHistory {
         sortRecentNodeList(role);
       }
     }
-    // AA placement: now request a new node
+    // TODO: AA placement: now request a new node
 
     return outcome;
   }

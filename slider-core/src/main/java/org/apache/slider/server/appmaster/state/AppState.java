@@ -554,7 +554,7 @@ public class AppState {
 
 
     // set up the role history
-    roleHistory = new RoleHistory(roleList);
+    roleHistory = new RoleHistory(roleStatusMap.values());
     roleHistory.register(metricsAndMonitoring);
     roleHistory.onStart(binding.fs, binding.historyPath);
     // trigger first node update
@@ -665,12 +665,9 @@ public class AppState {
 
 
     //snapshot all three sectons
-    resourcesSnapshot =
-      ConfTreeOperations.fromInstance(instanceDefinition.getResources());
-    appConfSnapshot =
-      ConfTreeOperations.fromInstance(instanceDefinition.getAppConf());
-    internalsSnapshot =
-      ConfTreeOperations.fromInstance(instanceDefinition.getInternal());
+    resourcesSnapshot = ConfTreeOperations.fromInstance(instanceDefinition.getResources());
+    appConfSnapshot = ConfTreeOperations.fromInstance(instanceDefinition.getAppConf());
+    internalsSnapshot = ConfTreeOperations.fromInstance(instanceDefinition.getInternal());
     //build a new aggregate from the snapshots
     instanceDefinitionSnapshot = new AggregateConf(resourcesSnapshot.confTree,
                                                    appConfSnapshot.confTree,
@@ -681,7 +678,7 @@ public class AppState {
       ClusterDescriptionOperations.buildFromInstanceDefinition(
           instanceDefinition);
 
-//     Add the -site configuration properties
+    // Add the -site configuration properties
     for (Map.Entry<String, String> prop : clientProperties.entrySet()) {
       clusterStatusTemplate.clientProperties.put(prop.getKey(), prop.getValue());
     }
@@ -694,6 +691,7 @@ public class AppState {
    * @return a list of any dynamically added provider roles
    * (purely for testing purposes)
    */
+  @VisibleForTesting
   public synchronized List<ProviderRole> updateResourceDefinitions(ConfTree resources)
       throws BadConfigException, IOException {
     log.debug("Updating resources to {}", resources);
@@ -733,10 +731,8 @@ public class AppState {
         // skip inflexible roles, e.g AM itself
         continue;
       }
-      int currentDesired = roleStatus.getDesired();
+      long currentDesired = roleStatus.getDesired();
       String role = roleStatus.getName();
-      MapOperations comp =
-          resources.getComponent(role);
       int desiredInstanceCount = getDesiredInstanceCount(resources, role);
       if (desiredInstanceCount == 0) {
         log.info("Role {} has 0 instances specified", role);
@@ -756,12 +752,11 @@ public class AppState {
         // this is a new value
         log.info("Adding new role {}", name);
         MapOperations component = resources.getComponent(name);
-        ProviderRole dynamicRole = createDynamicProviderRole(name,
-            component);
+        ProviderRole dynamicRole = createDynamicProviderRole(name, component);
         RoleStatus roleStatus = buildRole(dynamicRole);
         roleStatus.setDesired(getDesiredInstanceCount(resources, name));
         log.info("New role {}", roleStatus);
-        roleHistory.addNewProviderRole(dynamicRole);
+        roleHistory.addNewRole(roleStatus);
         newRoles.add(dynamicRole);
       }
     }
@@ -842,8 +837,7 @@ public class AppState {
     putOwnedContainer(containerId, am);
 
     // patch up the role status
-    RoleStatus roleStatus = roleStatusMap.get(
-        (SliderKeys.ROLE_AM_PRIORITY_INDEX));
+    RoleStatus roleStatus = roleStatusMap.get(SliderKeys.ROLE_AM_PRIORITY_INDEX);
     roleStatus.setDesired(1);
     roleStatus.incActual();
     roleStatus.incStarted();
@@ -905,7 +899,7 @@ public class AppState {
    */
   public List<RoleStatus> cloneRoleStatusList() {
     Collection<RoleStatus> statuses = roleStatusMap.values();
-    List<RoleStatus> statusList = new ArrayList<RoleStatus>(statuses.size());
+    List<RoleStatus> statusList = new ArrayList<>(statuses.size());
     try {
       for (RoleStatus status : statuses) {
         statusList.add((RoleStatus)(status.clone()));
@@ -1481,9 +1475,9 @@ public class AppState {
       log.info("Container was queued for release : {}", containerId);
       Container container = containersBeingReleased.remove(containerId);
       RoleStatus roleStatus = lookupRoleStatus(container);
-      int releasing = roleStatus.decReleasing();
-      int actual = roleStatus.decActual();
-      int completedCount = roleStatus.incCompleted();
+      long releasing = roleStatus.decReleasing();
+      long actual = roleStatus.decActual();
+      long completedCount = roleStatus.incCompleted();
       log.info("decrementing role count for role {} to {}; releasing={}, completed={}",
           roleStatus.getName(),
           actual,
@@ -1620,7 +1614,7 @@ public class AppState {
    */
   public synchronized float getApplicationProgressPercentage() {
     float percentage;
-    int desired = 0;
+    long desired = 0;
     float actual = 0;
     for (RoleStatus role : getRoleStatusMap().values()) {
       desired += role.getDesired();
@@ -1866,8 +1860,8 @@ public class AppState {
   private List<AbstractRMOperation> reviewOneRole(RoleStatus role)
       throws SliderInternalStateException, TriggerClusterTeardownException {
     List<AbstractRMOperation> operations = new ArrayList<>();
-    int delta;
-    int expected;
+    long delta;
+    long expected;
     String name = role.getName();
     synchronized (role) {
       delta = role.getDelta();
@@ -1909,13 +1903,13 @@ public class AppState {
       // reduce the number expected (i.e. subtract the delta)
 
       // then pick some containers to kill
-      int excess = -delta;
+      long excess = -delta;
 
       // how many requests are outstanding
-      int outstandingRequests = role.getRequested();
+      long outstandingRequests = role.getRequested();
       if (outstandingRequests > 0) {
         // outstanding requests.
-        int toCancel = Math.min(outstandingRequests, excess);
+        int toCancel = (int)Math.min(outstandingRequests, excess);
 
         // Delegate to Role History
 
@@ -1972,13 +1966,12 @@ public class AppState {
         // ask the release selector to sort the targets
         containersToRelease =  containerReleaseSelector.sortCandidates(
             roleId,
-            containersToRelease,
-            excess);
+            containersToRelease);
 
         //crop to the excess
 
         List<RoleInstance> finalCandidates = (excess < numberAvailableForRelease) 
-            ? containersToRelease.subList(0, excess)
+            ? containersToRelease.subList(0, (int)excess)
             : containersToRelease;
 
 
@@ -2085,9 +2078,8 @@ public class AppState {
     List<Container> ordered = roleHistory.prepareAllocationList(allocatedContainers);
     log.debug("onContainersAllocated(): Total containers allocated = {}", ordered.size());
     for (Container container : ordered) {
-      String containerHostInfo = container.getNodeId().getHost()
-                                 + ":" +
-                                 container.getNodeId().getPort();
+      final NodeId nodeId = container.getNodeId();
+      String containerHostInfo = nodeId.getHost() + ":" + nodeId.getPort();
       //get the role
       final ContainerId cid = container.getId();
       final RoleStatus role = lookupRoleStatus(container);
@@ -2097,11 +2089,11 @@ public class AppState {
 
       //inc allocated count -this may need to be dropped in a moment,
       // but us needed to update the logic below
-      final int allocated = role.incActual();
-      final int desired = role.getDesired();
+      final long allocated = role.incActual();
+      final long desired = role.getDesired();
 
       final String roleName = role.getName();
-      final ContainerAllocation allocation =
+      final ContainerAllocationResults allocation =
           roleHistory.onContainerAllocated(container, desired, allocated);
       final ContainerAllocationOutcome outcome = allocation.outcome;
 
@@ -2128,8 +2120,8 @@ public class AppState {
                  " on {}:{},",
                  roleName,
                  cid,
-                 container.getNodeId().getHost(),
-                 container.getNodeId().getPort()
+                 nodeId.getHost(),
+                 nodeId.getPort()
                 );
 
         assignments.add(new ContainerAssignment(container, role, outcome));
