@@ -746,10 +746,7 @@ public final class SliderUtils {
    *         through
    */
   public static boolean filter(String value, String filter) {
-    if (StringUtils.isEmpty(filter) || filter.equals(value)) {
-      return false;
-    }
-    return true;
+    return !(StringUtils.isEmpty(filter) || filter.equals(value));
   }
 
   /**
@@ -2028,10 +2025,10 @@ public final class SliderUtils {
       errorText.append("No native IO library. ");
     }
     try {
-      String path = Shell.getQualifiedBinPath("winutils.exe");
+      String path = Shell.getQualifiedBinPath(WINUTILS);
       log.debug("winutils is at {}", path);
     } catch (IOException e) {
-      errorText.append("No WINUTILS.EXE. ");
+      errorText.append("No " + WINUTILS);
       log.warn("No winutils: {}", e, e);
     }
     try {
@@ -2334,6 +2331,7 @@ public final class SliderUtils {
   public static String getClientConfigPath() {
     URL path = ConfigHelper.class.getClassLoader().getResource(
         SliderKeys.SLIDER_CLIENT_XML);
+    Preconditions.checkNotNull(path, "Failed to locate resource " + SliderKeys.SLIDER_CLIENT_XML);
     return path.toString();
   }
 
@@ -2483,7 +2481,7 @@ public final class SliderUtils {
 
   public static String requestToString(AMRMClient.ContainerRequest request) {
     Preconditions.checkArgument(request != null, "Null request");
-    StringBuffer buffer = new StringBuffer(request.toString());
+    StringBuilder buffer = new StringBuilder(request.toString());
     buffer.append("; ");
     buffer.append("relaxLocality=").append(request.getRelaxLocality()).append("; ");
     String labels = request.getNodeLabelExpression();
