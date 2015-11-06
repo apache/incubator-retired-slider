@@ -22,6 +22,7 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.fs.FSDataOutputStream
 import org.apache.hadoop.fs.Path
+import org.apache.slider.api.ResourceKeys
 import org.apache.slider.providers.PlacementPolicy
 import org.apache.slider.providers.ProviderRole
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
@@ -46,7 +47,8 @@ class TestRoleHistoryRW extends BaseMockAppStateTest {
       3,
       PlacementPolicy.STRICT,
       3,
-      3)
+      3,
+      ResourceKeys.DEF_YARN_LABEL_EXPRESSION)
 
   @Override
   String getTestName() {

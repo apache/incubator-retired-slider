@@ -22,7 +22,6 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
@@ -141,7 +140,7 @@ public class AppState {
   private ConfTreeOperations resourcesSnapshot;
   private ConfTreeOperations appConfSnapshot;
   private ConfTreeOperations internalsSnapshot;
-  
+
   /**
    * This is the status, the live model
    */
@@ -151,7 +150,7 @@ public class AppState {
    * Metadata provided by the AM for use in filling in status requests
    */
   private Map<String, String> applicationInfo;
-  
+
   /**
    * Client properties created via the provider -static for the life
    * of the application
@@ -278,10 +277,10 @@ public class AppState {
   private RoleHistory roleHistory;
   private Configuration publishedProviderConf;
   private long startTimeThreshold;
-  
+
   private int failureThreshold = 10;
   private int nodeFailureThreshold = 3;
-  
+
   private String logServerURL = "";
 
   /**
@@ -618,7 +617,7 @@ public class AppState {
         ResourceKeys.COMPONENT_PLACEMENT_POLICY,
         Integer.toString(PlacementPolicy.DEFAULT));
     int placement = SliderUtils.parseAndValidate("value of " + name + " " +
-                                                 ResourceKeys.COMPONENT_PLACEMENT_POLICY,
+        ResourceKeys.COMPONENT_PLACEMENT_POLICY,
         placementOpt, 0, 0, -1);
     int placementTimeout =
         component.getOptionInt(ResourceKeys.PLACEMENT_ESCALATE_DELAY,
@@ -627,7 +626,8 @@ public class AppState {
         priority,
         placement,
         getNodeFailureThresholdForRole(name),
-        placementTimeout);
+        placementTimeout,
+        component.getOption(YARN_LABEL_EXPRESSION, DEF_YARN_LABEL_EXPRESSION));
     log.info("New {} ", newRole);
     return newRole;
   }
@@ -653,7 +653,7 @@ public class AppState {
     log.debug("Instance definition updated");
     //note the time 
     snapshotTime = now();
-    
+
     // resolve references if not already done
     instanceDefinition.resolve();
 
@@ -682,15 +682,14 @@ public class AppState {
     clusterStatusTemplate =
       ClusterDescriptionOperations.buildFromInstanceDefinition(
           instanceDefinition);
-    
 
 //     Add the -site configuration properties
     for (Map.Entry<String, String> prop : clientProperties.entrySet()) {
       clusterStatusTemplate.clientProperties.put(prop.getKey(), prop.getValue());
     }
-    
+
   }
-  
+
   /**
    * The resource configuration is updated -review and update state.
    * @param resources updated resources specification
@@ -723,9 +722,9 @@ public class AppState {
   private List<ProviderRole> buildRoleRequirementsFromResources() throws BadConfigException {
 
     List<ProviderRole> newRoles = new ArrayList<>(0);
-    
-    //now update every role's desired count.
-    //if there are no instance values, that role count goes to zero
+
+    // now update every role's desired count.
+    // if there are no instance values, that role count goes to zero
 
     ConfTreeOperations resources =
         instanceDefinition.getResourceOperations();
@@ -751,8 +750,8 @@ public class AppState {
       }
     }
 
-    //now the dynamic ones. Iterate through the the cluster spec and
-    //add any role status entries not in the role status
+    // now the dynamic ones. Iterate through the the cluster spec and
+    // add any role status entries not in the role status
     Set<String> roleNames = resources.getComponentNames();
     for (String name : roleNames) {
       if (!roles.containsKey(name)) {
@@ -803,7 +802,7 @@ public class AppState {
    * @throws BadConfigException if a role of that priority already exists
    */
   public RoleStatus buildRole(ProviderRole providerRole) throws BadConfigException {
-    //build role status map
+    // build role status map
     int priority = providerRole.id;
     if (roleStatusMap.containsKey(priority)) {
       throw new BadConfigException("Duplicate Provider Key: %s and %s",
@@ -843,7 +842,7 @@ public class AppState {
     //it is also added to the set of live nodes
     getLiveContainers().put(containerId, am);
     putOwnedContainer(containerId, am);
-    
+
     // patch up the role status
     RoleStatus roleStatus = roleStatusMap.get(
         (SliderKeys.ROLE_AM_PRIORITY_INDEX));
@@ -876,7 +875,12 @@ public class AppState {
     return appMasterNode;
   }
 
-
+  /**
+   * Look up the status entry of a role or raise an exception
+   * @param key role ID
+   * @return the status entry
+   * @throws RuntimeException if the role cannot be found
+   */
   public RoleStatus lookupRoleStatus(int key) {
     RoleStatus rs = getRoleStatusMap().get(key);
     if (rs == null) {
@@ -884,8 +888,15 @@ public class AppState {
     }
     return rs;
   }
-  
-  public RoleStatus lookupRoleStatus(Container c) throws YarnRuntimeException {
+
+  /**
+   * Look up the status entry of a container or raise an exception
+   *
+   * @param c container
+   * @return the status entry
+   * @throws RuntimeException if the role cannot be found
+   */
+  public RoleStatus lookupRoleStatus(Container c) {
     return lookupRoleStatus(ContainerPriority.extractRole(c));
   }
 
@@ -1093,8 +1104,7 @@ public class AppState {
     }
     return map;
   }
-  
-  
+
   /**
    * Build a map of role->nodename->node-info
    * 
@@ -1173,10 +1183,10 @@ public class AppState {
         RoleStatus role,
         Resource capability) {
     buildResourceRequirements(role, capability);
-    String labelExpression = getLabelExpression(role);
+    String labelExpression = role.getLabelExpression();
     //get the role history to select a suitable node, if available
     AMRMClient.ContainerRequest containerRequest =
-      createContainerRequest(role, capability, labelExpression);
+      createContainerRequest(role, capability);
     return  containerRequest;
   }
 
@@ -1184,18 +1194,15 @@ public class AppState {
    * Create a container request.
    * Update internal state, such as the role request count
    * This is where role history information will be used for placement decisions -
+   * @param labelExpression label expression to satisfy
    * @param role role
    * @param resource requirements
-   * @param labelExpression label expression to satisfy
    * @return the container request to submit
    */
   private AMRMClient.ContainerRequest createContainerRequest(RoleStatus role,
-                                                            Resource resource,
-                                                            String labelExpression) {
-    
-    
+      Resource resource) {
     AMRMClient.ContainerRequest request;
-    request = roleHistory.requestNode(role, resource, labelExpression);
+    request = roleHistory.requestNode(role, resource);
     incrementRequestCount(role);
     return request;
   }
@@ -1210,7 +1217,6 @@ public class AppState {
     role.incRequested();
     incOutstandingContainerRequests();
   }
-
 
   /**
    * dec requested count of a role
@@ -1261,7 +1267,7 @@ public class AppState {
                                      String option,
                                      int defVal,
                                      int maxVal) {
-    
+
     String val = resources.getComponentOpt(name, option,
         Integer.toString(defVal));
     Integer intVal;
@@ -1273,7 +1279,6 @@ public class AppState {
     return intVal;
   }
 
-  
   /**
    * Build up the resource requirements for this role from the
    * cluster specification, including substituing max allowed values
@@ -1296,17 +1301,6 @@ public class AppState {
                                      DEF_YARN_MEMORY,
                                      containerMaxMemory);
     capability.setMemory(ram);
-  }
-
-  /**
-   * Extract the label expression for this role.
-   * @param role role
-   */
-  public String getLabelExpression(RoleStatus role) {
-    // Set up resource requirements from role values
-    String name = role.getName();
-    ConfTreeOperations resources = getResourcesSnapshot();
-    return resources.getComponentOpt(name, YARN_LABEL_EXPRESSION, DEF_YARN_LABEL_EXPRESSION);
   }
 
   /**
@@ -1471,10 +1465,10 @@ public class AppState {
       return sb.toString();
     }
   }
-  
+
   /**
    * handle completed node in the CD -move something from the live
-   * server list to the completed server list
+   * server list to the completed server list.
    * @param status the node that has just completed
    * @return NodeCompletionResult
    */
@@ -1534,7 +1528,7 @@ public class AppState {
           if (failedContainer != null) {
             String completedLogsUrl = getLogsURLForContainer(failedContainer);
             message = String.format("Failure %s on host %s (%d): %s",
-                roleInstance.getContainerId().toString(),
+                roleInstance.getContainerId(),
                 failedContainer.getNodeId().getHost(),
                 exitStatus,
                 completedLogsUrl);
@@ -1583,10 +1577,10 @@ public class AppState {
       log.warn("Received notification of completion of unknown node {}", id);
       completionOfNodeNotInLiveListEvent.incrementAndGet();
     }
-    
+
     // and the active node list if present
     removeOwnedContainer(containerId);
-    
+
     // finally, verify the node doesn't exist any more
     assert !containersBeingReleased.containsKey(
         containerId) : "container still in release queue";
@@ -1621,9 +1615,6 @@ public class AppState {
     return completedLogsUrl;
   }
 
-
-  
-  
   /**
    * Return the percentage done that Slider is to have YARN display in its
    * Web UI
@@ -1652,7 +1643,7 @@ public class AppState {
   public ClusterDescription refreshClusterStatus() {
     return refreshClusterStatus(null);
   }
-  
+
   /**
    * Update the cluster description with the current application state
    * @param providerStatus status from the provider for the cluster info section
@@ -1702,13 +1693,12 @@ public class AppState {
       cd.statistics.put(rolename, stats);
     }
 
-    
     Map<String, Integer> sliderstats = getLiveStatistics();
     cd.statistics.put(SliderKeys.COMPONENT_AM, sliderstats);
-    
+
     // liveness
     cd.liveness = getApplicationLivenessInformation();
-    
+
     return cd;
   }
 
@@ -1723,7 +1713,7 @@ public class AppState {
     li.allRequestsSatisfied = outstanding <= 0;
     return li;
   }
-  
+
   /**
    * Get the live statistics map
    * @return a map of statistics values, defined in the {@link StatusKeys}
@@ -1861,7 +1851,7 @@ public class AppState {
   public List<AbstractRMOperation> escalateOutstandingRequests() {
     return roleHistory.escalateOutstandingRequests();
   }
-  
+
   /**
    * Look at the allocation status of one role, and trigger add/release
    * actions if the number of desired role instances doesn't equal 
@@ -2103,7 +2093,6 @@ public class AppState {
       //get the role
       final ContainerId cid = container.getId();
       final RoleStatus role = lookupRoleStatus(container);
-      
 
       //dec requested count
       decrementRequestCount(role);
@@ -2213,7 +2202,7 @@ public class AppState {
              cid,
              roleName,
              containerHostInfo);
-    
+
     //update app state internal structures and maps
 
     RoleInstance instance = new RoleInstance(container);

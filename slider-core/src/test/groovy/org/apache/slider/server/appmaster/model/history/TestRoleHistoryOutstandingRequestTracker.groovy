@@ -27,6 +27,7 @@ import org.apache.slider.server.appmaster.model.mock.MockResource
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
 import org.apache.slider.server.appmaster.operations.CancelSingleRequest
 import org.apache.slider.server.appmaster.operations.ContainerRequestOperation
+import org.apache.slider.server.appmaster.state.AppStateBindingInfo
 import org.apache.slider.server.appmaster.state.ContainerAllocationOutcome
 import org.apache.slider.server.appmaster.state.ContainerPriority
 import org.apache.slider.server.appmaster.state.NodeInstance
@@ -37,11 +38,27 @@ import org.junit.Test
 
 class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest  {
 
+  public static final String WORKERS_LABEL = "workers"
   NodeInstance host1 = new NodeInstance("host1", 3)
   NodeInstance host2 = new NodeInstance("host2", 3)
   def resource = factory.newResource(48, 1)
 
   OutstandingRequestTracker tracker = new OutstandingRequestTracker()
+
+  public static final ProviderRole WORKER = new ProviderRole(
+      "worker",
+      5,
+      PlacementPolicy.NONE,
+      2,
+      1,
+      WORKERS_LABEL)
+
+  @Override
+  AppStateBindingInfo buildBindingInfo() {
+    def bindingInfo = super.buildBindingInfo()
+    bindingInfo.roles = [ WORKER ] + bindingInfo.roles
+    bindingInfo
+  }
 
   @Test
   public void testAddRetrieveEntry() throws Throwable {
@@ -54,10 +71,10 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest  {
   @Test
   public void testAddCompleteEntry() throws Throwable {
     def req1 = tracker.newRequest(host1, 0)
-    req1.buildContainerRequest(resource, role0Status, 0, "")
+    req1.buildContainerRequest(resource, role0Status, 0)
 
-    tracker.newRequest(host2, 0).buildContainerRequest(resource, role0Status, 0, "")
-    tracker.newRequest(host1, 1).buildContainerRequest(resource, role0Status, 0, "")
+    tracker.newRequest(host2, 0).buildContainerRequest(resource, role0Status, 0)
+    tracker.newRequest(host1, 1).buildContainerRequest(resource, role0Status, 0)
 
     def allocation = tracker.onContainerAllocated(1, "host1", null)
     assert allocation.outcome == ContainerAllocationOutcome.Placed
@@ -82,7 +99,7 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest  {
   @Test
   public void testRemoveOpenRequestUnissued() throws Throwable {
     def req1 = tracker.newRequest(null, 0)
-    req1.buildContainerRequest(resource, role0Status, 0, "")
+    req1.buildContainerRequest(resource, role0Status, 0)
     assert tracker.listOpenRequests().size() == 1
     def c1 = factory.newContainer(null, new MockPriority(0))
     c1.resource = resource
@@ -97,7 +114,7 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest  {
   @Test
   public void testIssuedOpenRequest() throws Throwable {
     def req1 = tracker.newRequest(null, 0)
-    req1.buildContainerRequest(resource, role0Status, 0, "")
+    req1.buildContainerRequest(resource, role0Status, 0)
     assert tracker.listOpenRequests().size() == 1
 
     def pri = ContainerPriority.buildPriority(0, false)
@@ -142,7 +159,7 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest  {
     // first request: default placement
     assert role0Status.placementPolicy == PlacementPolicy.DEFAULT;
     final def (res0, outstanding0) = newRequest(role0Status)
-    final def initialRequest = outstanding0.buildContainerRequest(res0, role0Status, 0, null)
+    final def initialRequest = outstanding0.buildContainerRequest(res0, role0Status, 0)
     assert outstanding0.issuedRequest != null;
     assert outstanding0.located
     assert !outstanding0.escalated
@@ -178,7 +195,7 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest  {
     // build that second request from an anti-affine entry
     // these get placed as well
     now += interval
-    final def containerReq2 = outstanding2.buildContainerRequest(res2, role2Status, now, null)
+    final def containerReq2 = outstanding2.buildContainerRequest(res2, role2Status, now)
     // escalate a little bit more
     final List<AbstractRMOperation> escalations2 = tracker.escalateOutstandingRequests(now)
     // and expect no new entries
@@ -219,18 +236,18 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest  {
     resource.virtualCores = 1
     resource.memory = 48;
 
-    def label = "workers"
+    def workerRole = lookupRole(WORKER.name)
     // initial request
-    def yarnRequest = req1.buildContainerRequest(resource, role0Status, 0, label)
+    def yarnRequest = req1.buildContainerRequest(resource, workerRole, 0)
     assert (yarnRequest.nodeLabelExpression == null)
     assert (!yarnRequest.relaxLocality)
     def yarnRequest2 = req1.escalate()
-    assert (yarnRequest2.nodeLabelExpression == label)
+    assert (yarnRequest2.nodeLabelExpression == WORKERS_LABEL)
     assert (yarnRequest2.relaxLocality)
   }
 
   /**
-   * If the placement doesnt include a lablel, then the escalation request
+   * If the placement doesnt include a label, then the escalation request
    * retains the node list, but sets relaxLocality==true
    * @throws Throwable
    */
@@ -244,13 +261,13 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest  {
 
     def label = null
     // initial request
-    def yarnRequest = req1.buildContainerRequest(resource, role0Status, 0, label)
-    assert (yarnRequest.nodes != null)
-    assert (yarnRequest.nodeLabelExpression == null)
-    assert (!yarnRequest.relaxLocality)
+    def yarnRequest = req1.buildContainerRequest(resource, role0Status, 0)
+    assert yarnRequest.nodes != null
+    assert !yarnRequest.nodeLabelExpression
+    assert !yarnRequest.relaxLocality
     def yarnRequest2 = req1.escalate()
-    assert (yarnRequest2.nodes != null)
-    assert (yarnRequest2.relaxLocality)
+    assert yarnRequest2.nodes != null
+    assert yarnRequest2.relaxLocality
   }
 
 

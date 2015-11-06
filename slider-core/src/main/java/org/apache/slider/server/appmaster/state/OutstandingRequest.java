@@ -71,21 +71,21 @@ public final class OutstandingRequest {
   /**
    * Requested time in millis.
    * <p>
-   * Only valid after {@link #buildContainerRequest(Resource, RoleStatus, long, String)}
+   * Only valid after {@link #buildContainerRequest(Resource, RoleStatus, long)}
    */
   private AMRMClient.ContainerRequest issuedRequest;
   
   /**
    * Requested time in millis.
    * <p>
-   * Only valid after {@link #buildContainerRequest(Resource, RoleStatus, long, String)}
+   * Only valid after {@link #buildContainerRequest(Resource, RoleStatus, long)}
    */
   private long requestedTimeMillis;
 
   /**
    * Time in millis after which escalation should be triggered..
    * <p>
-   * Only valid after {@link #buildContainerRequest(Resource, RoleStatus, long, String)}
+   * Only valid after {@link #buildContainerRequest(Resource, RoleStatus, long)}
    */
   private long escalationTimeoutMillis;
 
@@ -178,16 +178,15 @@ public final class OutstandingRequest {
    * @param resource resource
    * @param role role
    * @param time time in millis to record as request time
-   * @param labelExpression label to satisfy
    * @return the request to raise
    */
   public synchronized AMRMClient.ContainerRequest buildContainerRequest(
-      Resource resource, RoleStatus role, long time, String labelExpression) {
+      Resource resource, RoleStatus role, long time) {
     Preconditions.checkArgument(resource != null, "null `resource` arg");
     Preconditions.checkArgument(role != null, "null `role` arg");
 
     // cache label for escalation
-    label = labelExpression;
+    label = role.getLabelExpression();
     requestedTimeMillis = time;
     escalationTimeoutMillis = time + role.getPlacementTimeoutSeconds() * 1000;
     String[] hosts;
@@ -218,7 +217,7 @@ public final class OutstandingRequest {
       escalated = true;
       // and forbid it happening
       mayEscalate = false;
-      nodeLabels = labelExpression;
+      nodeLabels = label;
     }
     Priority pri = ContainerPriority.createPriority(roleId, !relaxLocality);
     priority = pri.getPriority();
@@ -254,7 +253,7 @@ public final class OutstandingRequest {
 
     String[] nodes;
     List<String> issuedRequestNodes = issuedRequest.getNodes();
-    if (label == null && issuedRequestNodes != null) {
+    if (SliderUtils.isUnset(label) && issuedRequestNodes != null) {
       nodes = issuedRequestNodes.toArray(new String[issuedRequestNodes.size()]);
     } else {
       nodes = null;

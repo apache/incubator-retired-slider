@@ -90,7 +90,7 @@ public class SliderAMClientProvider extends AbstractClientProvider
       new ProviderRole(COMPONENT_AM, KEY_AM,
           PlacementPolicy.EXCLUDE_FROM_FLEXING,
           ResourceKeys.DEFAULT_NODE_FAILURE_THRESHOLD, 
-          0);
+          0, "");
 
   /**
    * Initialize role list

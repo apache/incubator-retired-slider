@@ -41,7 +41,6 @@ public final class RoleStatus implements Cloneable {
    * Role priority
    */
   private final int key;
-
   private final ProviderRole providerRole;
 
   private int desired, actual, requested, releasing;
@@ -315,7 +314,7 @@ public final class RoleStatus implements Cloneable {
            ", actual=" + actual +
            ", requested=" + requested +
            ", releasing=" + releasing +
-           ",  pendingAntiAffineRequestCount=" + pendingAntiAffineRequestCount +
+           ", pendingAntiAffineRequestCount=" + pendingAntiAffineRequestCount +
            ", failed=" + failed +
            ", failed recently=" + failedRecently.get() +
            ", node failed=" + nodeFailed.get() +
@@ -324,6 +323,7 @@ public final class RoleStatus implements Cloneable {
            ", startFailed=" + startFailed +
            ", completed=" + completed +
            ", failureMessage='" + failureMessage + '\'' +
+           ", providerRole=" + providerRole +
            '}';
   }
 
@@ -373,7 +373,15 @@ public final class RoleStatus implements Cloneable {
     info.pendingAntiAffineRequestCount = pendingAntiAffineRequestCount;
     return info;
   }
-  
+
+  /**
+   * Get the (possibly null) label expression for this role
+   * @return a string or null
+   */
+  public String getLabelExpression() {
+    return providerRole.labelExpression;
+  }
+
   /**
    * Compare two role status entries by name
    */

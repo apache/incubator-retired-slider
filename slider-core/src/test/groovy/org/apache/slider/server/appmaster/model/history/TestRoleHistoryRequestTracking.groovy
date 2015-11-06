@@ -86,8 +86,8 @@ class TestRoleHistoryRequestTracking extends BaseMockAppStateTest {
     assertListEquals([age2Active0], roleHistory.cloneRecentNodeList(0))
     roleHistory.requestInstanceOnNode(ni,
         roleStatus,
-        resource,
-        "")
+        resource
+    )
   }
 
   @Test
@@ -106,8 +106,8 @@ class TestRoleHistoryRequestTracking extends BaseMockAppStateTest {
     // which is translated to a no-location request
     AMRMClient.ContainerRequest req = roleHistory.requestInstanceOnNode(ni,
         roleStatus,
-        resource,
-        "")
+        resource
+    )
 
     assertNull(req.nodes)
 
@@ -120,7 +120,7 @@ class TestRoleHistoryRequestTracking extends BaseMockAppStateTest {
     // looking for a node should now find one
     ni = roleHistory.findNodeForNewInstance(roleStatus)
     assert ni == age3Active0
-    req = roleHistory.requestInstanceOnNode(ni, roleStatus, resource, "")
+    req = roleHistory.requestInstanceOnNode(ni, roleStatus, resource)
     assert 1 == req.nodes.size()
   }
 

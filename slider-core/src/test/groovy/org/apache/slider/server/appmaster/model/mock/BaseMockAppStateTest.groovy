@@ -128,15 +128,19 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
   }
 
   public RoleStatus getRole0Status() {
-    return appState.lookupRoleStatus(ROLE0)
+    lookupRole(ROLE0)
+  }
+
+  public RoleStatus lookupRole(String role) {
+    appState.lookupRoleStatus(role)
   }
 
   public RoleStatus getRole1Status() {
-    return appState.lookupRoleStatus(ROLE1)
+    lookupRole(ROLE1)
   }
 
   public RoleStatus getRole2Status() {
-    return appState.lookupRoleStatus(ROLE2)
+    lookupRole(ROLE2)
   }
 
   /**

@@ -44,7 +44,7 @@ import static org.apache.slider.server.appmaster.state.ContainerPriority.extract
 class TestMockAppStateAAPlacement extends BaseMockAppStateTest
     implements MockRoles {
 
-  @Test
+//  @Test
   public void testAllocateAA() throws Throwable {
 
     def aaRole = role2Status

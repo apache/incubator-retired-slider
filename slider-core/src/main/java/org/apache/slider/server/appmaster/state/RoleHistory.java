@@ -611,31 +611,14 @@ public class RoleHistory {
    * Returns the request that is now being tracked.
    * If the node instance is not null, it's details about the role is incremented
    *
-   *
    * @param node node to target or null for "any"
    * @param role role to request
-   * @param labelExpression label to satisfy
    * @return the container priority
    */
   public synchronized AMRMClient.ContainerRequest requestInstanceOnNode(
-    NodeInstance node, RoleStatus role, Resource resource, String labelExpression) {
+      NodeInstance node, RoleStatus role, Resource resource) {
     OutstandingRequest outstanding = outstandingRequests.newRequest(node, role.getKey());
-    return outstanding.buildContainerRequest(resource, role, now(), labelExpression);
-  }
-
-  /**
-   * Find a node for a role and request an instance on that (or a location-less
-   * instance) with a label expression
-   * @param role role status
-   * @param resource resource capabilities
-   * @param labelExpression label to satisfy
-   * @return a request ready to go
-   */
-  public synchronized AMRMClient.ContainerRequest requestNode(RoleStatus role,
-                                                              Resource resource,
-                                                              String labelExpression) {
-    NodeInstance node = findNodeForNewInstance(role);
-    return requestInstanceOnNode(node, role, resource, labelExpression);
+    return outstanding.buildContainerRequest(resource, role, now());
   }
 
   /**
@@ -648,7 +631,7 @@ public class RoleHistory {
   public synchronized AMRMClient.ContainerRequest requestNode(RoleStatus role,
                                                               Resource resource) {
     NodeInstance node = findNodeForNewInstance(role);
-    return requestInstanceOnNode(node, role, resource, null);
+    return requestInstanceOnNode(node, role, resource);
   }
 
   /**
