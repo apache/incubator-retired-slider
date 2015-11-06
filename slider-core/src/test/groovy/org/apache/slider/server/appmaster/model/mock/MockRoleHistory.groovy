@@ -35,7 +35,8 @@ class MockRoleHistory extends RoleHistory {
    * @throws BadConfigException configuration problem with the role list
    */
   MockRoleHistory(List<ProviderRole> providerRoles) throws BadConfigException {
-    super(providerRoles.collect { new RoleStatus(it) })
+    super(providerRoles.collect { new RoleStatus(it) },
+      new MockClusterServices())
   }
 
 }

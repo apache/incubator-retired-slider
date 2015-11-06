@@ -19,6 +19,7 @@
 package org.apache.slider.server.appmaster.state;
 
 import org.apache.hadoop.yarn.api.records.Resource;
+import org.apache.hadoop.yarn.util.resource.DefaultResourceCalculator;
 
 /**
  * Cluster services offered by the YARN infrastructure.
@@ -30,4 +31,9 @@ public abstract class AbstractClusterServices {
    */
   public abstract Resource newResource();
 
+  public abstract Resource newResource(int memory, int cores);
+
+  public Resource normalize(Resource resource, Resource minR, Resource maxR) {
+    return new DefaultResourceCalculator().normalize(resource, minR, maxR);
+  }
 }

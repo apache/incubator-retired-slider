@@ -73,6 +73,8 @@ public class RoleHistory {
   private final List<ProviderRole> providerRoles;
   /** the roles in here are shared with App State */
   private final Map<Integer, RoleStatus> roleStatusMap = new HashMap<>();
+  private final AbstractClusterServices recordFactory;
+
   private long startTime;
 
   /** Time when saved */
@@ -115,9 +117,11 @@ public class RoleHistory {
   /**
    * Instantiate
    * @param roles initial role list
+   * @param recordFactory yarn record factory
    * @throws BadConfigException
    */
-  public RoleHistory(Collection<RoleStatus> roles) throws BadConfigException {
+  public RoleHistory(Collection<RoleStatus> roles, AbstractClusterServices recordFactory) throws BadConfigException {
+    this.recordFactory = recordFactory;
     roleSize = roles.size();
     providerRoles = new ArrayList<>(roleSize);
     for (RoleStatus role : roles) {
@@ -604,24 +608,27 @@ public class RoleHistory {
    *
    * @param node node to target or null for "any"
    * @param role role to request
-   * @return the container priority
+   * @return the request
    */
-  public synchronized AMRMClient.ContainerRequest requestInstanceOnNode(
+  public synchronized OutstandingRequest requestInstanceOnNode(
       NodeInstance node, RoleStatus role, Resource resource) {
     OutstandingRequest outstanding = outstandingRequests.newRequest(node, role.getKey());
-    return outstanding.buildContainerRequest(resource, role, now());
+    outstanding.buildContainerRequest(resource, role, now());
+    return outstanding;
   }
 
   /**
    * Find a node for a role and request an instance on that (or a location-less
    * instance)
    * @param role role status
-   * @param resource resource capabilities
    * @return a request ready to go
    */
-  public synchronized AMRMClient.ContainerRequest requestNode(RoleStatus role,
-                                                              Resource resource) {
+  public synchronized OutstandingRequest requestContainerForRole(RoleStatus role) {
+
+    Resource resource = recordFactory.newResource();
+    role.copyResourceRequirements(resource);
     NodeInstance node = findNodeForNewInstance(role);
+    // TODO AA -what if there are no suitable nodes?
     return requestInstanceOnNode(node, role, resource);
   }
 
@@ -991,6 +998,8 @@ public class RoleHistory {
     int remaining = toCancel - requests.size();
     // ask for some placed nodes
     requests.addAll(outstandingRequests.extractPlacedRequestsForRole(roleId, remaining));
+
+    // TODO AA: clear anything here?
 
     // build cancellations
     for (OutstandingRequest request : requests) {

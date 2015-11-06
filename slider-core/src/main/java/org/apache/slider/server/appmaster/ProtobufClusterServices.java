@@ -20,11 +20,17 @@ package org.apache.slider.server.appmaster;
 
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.util.Records;
+import org.apache.hadoop.yarn.util.resource.Resources;
 import org.apache.slider.server.appmaster.state.AbstractClusterServices;
 
 public class ProtobufClusterServices extends AbstractClusterServices {
 
   public Resource newResource() {
     return Records.newRecord(Resource.class);
+  }
+
+  @Override
+  public Resource newResource(int memory, int cores) {
+    return Resources.createResource(memory, cores);
   }
 }

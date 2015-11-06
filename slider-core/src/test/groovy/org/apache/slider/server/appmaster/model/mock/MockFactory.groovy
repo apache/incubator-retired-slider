@@ -59,11 +59,11 @@ class MockFactory implements MockRoles {
       2,
       1,
       ResourceKeys.DEF_YARN_LABEL_EXPRESSION)
-  // role 2: longer delay and anti-affinity
+  // role 2: longer delay
   public static final ProviderRole PROVIDER_ROLE2 = new ProviderRole(
       MockRoles.ROLE2,
       2,
-      PlacementPolicy.ANTI_AFFINITY_REQUIRED,
+      PlacementPolicy.NO_DATA_LOCALITY,
       2,
       2,
       ResourceKeys.DEF_YARN_LABEL_EXPRESSION)

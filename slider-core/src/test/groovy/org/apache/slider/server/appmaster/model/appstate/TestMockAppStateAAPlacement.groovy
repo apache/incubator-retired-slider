@@ -22,6 +22,8 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.Container
 import org.apache.hadoop.yarn.client.api.AMRMClient
+import org.apache.slider.api.ResourceKeys
+import org.apache.slider.providers.PlacementPolicy
 import org.apache.slider.providers.ProviderRole
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockFactory
@@ -43,16 +45,29 @@ import org.junit.Test
 class TestMockAppStateAAPlacement extends BaseMockAppStateTest
     implements MockRoles {
 
-  static private final ProviderRole aaRole = MockFactory.PROVIDER_ROLE2
-  private static final int roleId = aaRole.id
-/*
+  /**
+   * Patch up a "role2" role to have anti-affinity set
+   */
+  public static final ProviderRole AAROLE = new ProviderRole(
+      MockRoles.ROLE2,
+      2,
+      PlacementPolicy.ANTI_AFFINITY_REQUIRED,
+      2,
+      2,
+      null)
+
   @Override
   AppStateBindingInfo buildBindingInfo() {
     def bindingInfo = super.buildBindingInfo()
-    // only have the AA role, to avoid complications/confusion
-    bindingInfo.roles = [aaRole]
+    bindingInfo.roles = [
+        MockFactory.PROVIDER_ROLE0,
+        MockFactory.PROVIDER_ROLE1,
+        AAROLE,
+    ]
     bindingInfo
-  }*/
+  }
+
+  private static final int roleId = AAROLE.id
 
   /**
    * Get the single request of a list of operations; includes the check for the size
@@ -74,7 +89,7 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
   @Test
   public void testAllocateAANoLabel() throws Throwable {
 
-    def aaRole = lookupRole(aaRole.name)
+    def aaRole = lookupRole(AAROLE.name)
 
     // want two instances, so there will be two iterations
     aaRole.desired = 2

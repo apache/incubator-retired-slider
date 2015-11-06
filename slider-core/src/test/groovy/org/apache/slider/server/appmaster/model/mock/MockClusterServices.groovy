@@ -27,4 +27,9 @@ class MockClusterServices extends AbstractClusterServices {
   Resource newResource() {
     return new MockResource()
   }
+
+  @Override
+  Resource newResource(int memory, int cores) {
+    return new MockResource(memory, cores)
+  }
 }

@@ -289,6 +289,8 @@ public class AppState {
    * Selector of containers to release; application wide.
    */
   private ContainerReleaseSelector containerReleaseSelector;
+  private Resource minResource;
+  private Resource maxResource;
 
   /**
    * Create an instance
@@ -309,7 +311,7 @@ public class AppState {
     register(MetricsConstants.CONTAINERS_START_FAILED, startFailedContainerCount);
   }
 
-  private void register(String name, Counter counter) {
+  private void register(String name, Metric counter) {
     this.metricsAndMonitoring.getMetrics().register(
         MetricRegistry.name(AppState.class, name), counter);
   }
@@ -462,6 +464,8 @@ public class AppState {
     containerMaxCores = maxCores;
     containerMinMemory = minMemory;
     containerMaxMemory = maxMemory;
+    minResource = recordFactory.newResource(containerMinMemory, containerMinCores);
+    maxResource = recordFactory.newResource(containerMaxMemory, containerMaxCores);
   }
 
   public ConfTreeOperations getResourcesSnapshot() {
@@ -556,7 +560,7 @@ public class AppState {
 
 
     // set up the role history
-    roleHistory = new RoleHistory(roleStatusMap.values());
+    roleHistory = new RoleHistory(roleStatusMap.values(), recordFactory);
     roleHistory.register(metricsAndMonitoring);
     roleHistory.onStart(binding.fs, binding.historyPath);
     // trigger first node update
@@ -762,6 +766,9 @@ public class AppState {
         newRoles.add(dynamicRole);
       }
     }
+    // and fill in all those roles with their requirements
+    buildRoleResourceRequirements();
+
     return newRoles;
   }
 
@@ -809,6 +816,17 @@ public class AppState {
     roles.put(providerRole.name, providerRole);
     rolePriorityMap.put(priority, providerRole);
     return roleStatus;
+  }
+
+  /**
+   * Build up the requirements of every resource
+   */
+  private void buildRoleResourceRequirements() {
+    roleStatusMap.values();
+    for (RoleStatus role : roleStatusMap.values()) {
+      role.setResourceRequirements(
+          buildResourceRequirements(role, recordFactory.newResource()));
+    }
   }
 
   /**
@@ -913,6 +931,12 @@ public class AppState {
   }
 
 
+  /**
+   * Look up a role in the map
+   * @param name role name
+   * @return the instance
+   * @throws YarnRuntimeException if not found
+   */
   public RoleStatus lookupRoleStatus(String name) throws YarnRuntimeException {
     ProviderRole providerRole = roles.get(name);
     if (providerRole == null) {
@@ -928,7 +952,7 @@ public class AppState {
    */
   public synchronized List<RoleInstance> cloneOwnedContainerList() {
     Collection<RoleInstance> values = ownedContainers.values();
-    return new ArrayList<RoleInstance>(values);
+    return new ArrayList<>(values);
   }
 
   /**
@@ -1027,7 +1051,6 @@ public class AppState {
     }
   }
 
-
   public synchronized List<RoleInstance> getLiveInstancesByContainerIDs(
     Collection<String> containerIDs) {
     //first, a hashmap of those containerIDs is built up
@@ -1080,7 +1103,6 @@ public class AppState {
     }
     return nodes;
   }
-
 
   /**
    * Build an instance map.
@@ -1167,38 +1189,18 @@ public class AppState {
 
 
   /**
-   * Set up the resource requirements with all that this role needs, 
-   * then create the container request itself.
-   * @param role role to ask an instance of
-   * @param capability a resource to set up
-   * @return the request for a new container
-   */
-  public AMRMClient.ContainerRequest buildContainerResourceAndRequest(
-        RoleStatus role,
-        Resource capability) {
-    buildResourceRequirements(role, capability);
-    String labelExpression = role.getLabelExpression();
-    //get the role history to select a suitable node, if available
-    AMRMClient.ContainerRequest containerRequest =
-      createContainerRequest(role, capability);
-    return  containerRequest;
-  }
-
-  /**
    * Create a container request.
-   * Update internal state, such as the role request count
-   * This is where role history information will be used for placement decisions -
-   * @param labelExpression label expression to satisfy
+   * Update internal state, such as the role request count. 
+   * Anti-Affine: the {@link RoleStatus#outstandingAArequest} is set here.
+   * This is where role history information will be used for placement decisions.
    * @param role role
-   * @param resource requirements
    * @return the container request to submit
    */
-  private AMRMClient.ContainerRequest createContainerRequest(RoleStatus role,
-      Resource resource) {
-    AMRMClient.ContainerRequest request;
-    request = roleHistory.requestNode(role, resource);
+  private AMRMClient.ContainerRequest createContainerRequest(RoleStatus role) {
     incrementRequestCount(role);
-    return request;
+    OutstandingRequest request = roleHistory.requestContainerForRole(role);
+    role.setOutstandingAArequest(request);
+    return request.getIssuedRequest();
   }
 
   /**
@@ -1266,9 +1268,10 @@ public class AppState {
    * cluster specification, including substituing max allowed values
    * if the specification asked for it.
    * @param role role
-   * @param capability capability to set up
+   * @param capability capability to set up. A new one may be created
+   * during normalization
    */
-  public void buildResourceRequirements(RoleStatus role, Resource capability) {
+  public Resource buildResourceRequirements(RoleStatus role, Resource capability) {
     // Set up resource requirements from role values
     String name = role.getName();
     ConfTreeOperations resources = getResourcesSnapshot();
@@ -1283,6 +1286,7 @@ public class AppState {
                                      DEF_YARN_MEMORY,
                                      containerMaxMemory);
     capability.setMemory(ram);
+    return recordFactory.normalize(capability,minResource, maxResource);
   }
 
   /**
@@ -1748,7 +1752,7 @@ public class AppState {
   public synchronized List<AbstractRMOperation> reviewRequestAndReleaseNodes()
       throws SliderInternalStateException, TriggerClusterTeardownException {
     log.debug("in reviewRequestAndReleaseNodes()");
-    List<AbstractRMOperation> allOperations = new ArrayList<AbstractRMOperation>();
+    List<AbstractRMOperation> allOperations = new ArrayList<>();
     for (RoleStatus roleStatus : getRoleStatusMap().values()) {
       if (!roleStatus.isExcludeFromFlexing()) {
         List<AbstractRMOperation> operations = reviewOneRole(roleStatus);
@@ -1853,6 +1857,7 @@ public class AppState {
     long delta;
     long expected;
     String name = role.getName();
+    boolean isAA = role.isAntiAffinePlacement();
     synchronized (role) {
       delta = role.getDelta();
       expected = role.getDesired();
@@ -1871,38 +1876,43 @@ public class AppState {
     }
 
     if (delta > 0) {
-      log.info("{}: Asking for {} more nodes(s) for a total of {} ", name,
-               delta, expected);
       // more workers needed than we have -ask for more
-      for (int i = 0; i < delta; i++) {
-        Resource capability = recordFactory.newResource();
-        AMRMClient.ContainerRequest containerAsk =
-          buildContainerResourceAndRequest(role, capability);
-        log.info("Container ask is {} and label = {}", containerAsk,
-            containerAsk.getNodeLabelExpression());
-        int askMemory = containerAsk.getCapability().getMemory();
-        if (askMemory > this.containerMaxMemory) {
-          log.warn("Memory requested: {} > max of {}", askMemory, containerMaxMemory);
+      log.info("{}: Asking for {} more nodes(s) for a total of {} ", name,
+          delta, expected);
+
+      // TODO: AA RH to help here by only allowing one request for an AA
+
+      if (isAA) {
+        // build one only if there is none outstanding
+        if (role.getPendingAntiAffineRequests() == 0) {
+          log.info("Starting an anti-affine request sequence");
+          role.incPendingAntiAffineRequests(delta);
+          addContainerRequest(operations, createContainerRequest(role));
+        } else {
+          log.info("Adding {} more anti-affine requests", delta);
+          role.incPendingAntiAffineRequests(delta);
         }
-        operations.add(new ContainerRequestOperation(containerAsk));
+      } else {
+
+        for (int i = 0; i < delta; i++) {
+          //get the role history to select a suitable node, if available
+          addContainerRequest(operations, createContainerRequest(role));
+        }
       }
     } else if (delta < 0) {
       log.info("{}: Asking for {} fewer node(s) for a total of {}", name,
                -delta,
                expected);
       // reduce the number expected (i.e. subtract the delta)
-
-      // then pick some containers to kill
       long excess = -delta;
 
-      // how many requests are outstanding
+      // how many requests are outstanding?
       long outstandingRequests = role.getRequested();
       if (outstandingRequests > 0) {
         // outstanding requests.
         int toCancel = (int)Math.min(outstandingRequests, excess);
 
         // Delegate to Role History
-
         List<AbstractRMOperation> cancellations = roleHistory.cancelRequestsForRole(role, toCancel);
         log.info("Found {} outstanding requests to cancel", cancellations.size());
         operations.addAll(cancellations);
@@ -1922,7 +1932,6 @@ public class AppState {
         }
       }
 
-
       // after the cancellation there may be no excess
       if (excess > 0) {
 
@@ -1936,7 +1945,7 @@ public class AppState {
           log.info("No containers for component {}", roleId);
         }
 
-        // cut all release-in-progress nodes
+        // filter out all release-in-progress nodes
         ListIterator<RoleInstance> li = containersToRelease.listIterator();
         while (li.hasNext()) {
           RoleInstance next = li.next();
@@ -1977,6 +1986,17 @@ public class AppState {
 
     // list of operations to execute
     return operations;
+  }
+
+  private void addContainerRequest(List<AbstractRMOperation> operations,
+      AMRMClient.ContainerRequest containerAsk) {
+    log.info("Container ask is {} and label = {}", containerAsk,
+        containerAsk.getNodeLabelExpression());
+    int askMemory = containerAsk.getCapability().getMemory();
+    if (askMemory > this.containerMaxMemory) {
+      log.warn("Memory requested: {} > max of {}", askMemory, containerMaxMemory);
+    }
+    operations.add(new ContainerRequestOperation(containerAsk));
   }
 
   /**
