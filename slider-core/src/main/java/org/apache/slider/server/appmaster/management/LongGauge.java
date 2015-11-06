@@ -25,7 +25,9 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * This is a {@link AtomicLong} which acts as a metrics gauge: its state can be exposed as
- * a management value.
+ * a metrics.
+ * It also exposes some of the same method names as the Codahale Counter class, so that
+ * it's easy to swap in.
  *
  */
 public class LongGauge extends AtomicLong implements Metric, Gauge<Long> {
@@ -45,22 +47,46 @@ public class LongGauge extends AtomicLong implements Metric, Gauge<Long> {
     this(0);
   }
 
-
+  /**
+   * Get the value as a metric
+   * @return current value
+   */
   @Override
   public Long getValue() {
     return get();
   }
 
+  public Long getCount() {
+    return get();
+  }
+
   /**
-   * Decrement to the floor of 0.
-   * There's checks to stop more than one thread being in this method at the time, but
-   * that doesn't stop other operations on the value
+   * {@code ++}
+   */
+  public void inc() {
+    incrementAndGet();
+  }
+  /**
+   * {@code --}
+   */
+  public void dec() {
+    decrementAndGet();
+  }
+
+  /**
+   * Decrement to the floor of 0. Operations in parallel may cause confusion here,
+   * but it will still never go below zero
    * @param delta delta
    * @return the current value
    */
-  public synchronized long decToFloor(long delta) {
-    long newval = Math.max(0L, get() - delta);
-    set(newval);
+  public long decToFloor(long delta) {
+    long l = get();
+    long r = l - delta;
+    if (r < 0) {
+      r = 0;
+    }
+    // if this fails, the decrement has been lost
+    compareAndSet(l, r);
     return get();
   }
 }

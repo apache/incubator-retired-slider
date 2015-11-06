@@ -18,6 +18,8 @@
 
 package org.apache.slider.server.appmaster.state;
 
+import com.google.common.base.Preconditions;
+import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.slider.api.types.ComponentInformation;
 import org.apache.slider.providers.PlacementPolicy;
 import org.apache.slider.providers.ProviderRole;
@@ -60,17 +62,17 @@ public final class RoleStatus implements Cloneable {
   private final LongGauge failedRecently = new LongGauge(0);
   private final LongGauge limitsExceeded = new LongGauge(0);
 
-  /** flag set to true if there is an outstanding anti-affine request */
-  private final AtomicBoolean pendingAARequest = new AtomicBoolean(false);
+  /** resource requirements */
+  private Resource resourceRequirements;
 
   /**
    * Number of AA requests queued. These should be reduced first on a
    * flex down.
    */
-  private int pendingAntiAffineRequestCount = 0;
+  private final LongGauge pendingAntiAffineRequests = new LongGauge(0);
 
   /** any pending AA request */
-  public OutstandingRequest outstandingAArequest = null;
+  private OutstandingRequest outstandingAArequest = null;
 
   private String failureMessage = "";
 
@@ -163,9 +165,8 @@ public final class RoleStatus implements Cloneable {
     return requested.incrementAndGet();
   }
 
-  
-  public long cancel(long count) {
-    return requested.decToFloor(count);
+  public void cancel(long count) {
+    requested.decToFloor(count);
   }
   
   public void decRequested() {
@@ -202,6 +203,10 @@ public final class RoleStatus implements Cloneable {
 
   public long getLimitsExceeded() {
     return limitsExceeded.get();
+  }
+
+  public long incPendingAntiAffineRequests(long v) {
+    return pendingAntiAffineRequests.addAndGet(v);
   }
 
   /**
@@ -285,6 +290,22 @@ public final class RoleStatus implements Cloneable {
     return nodeFailed.get();
   }
 
+  public long getPendingAntiAffineRequests() {
+    return pendingAntiAffineRequests.get();
+  }
+
+  public void setPendingAntiAffineRequests(long pendingAntiAffineRequests) {
+    this.pendingAntiAffineRequests.set(pendingAntiAffineRequests);
+  }
+
+  public OutstandingRequest getOutstandingAArequest() {
+    return outstandingAArequest;
+  }
+
+  public void setOutstandingAArequest(OutstandingRequest outstandingAArequest) {
+    this.outstandingAArequest = outstandingAArequest;
+  }
+
   /**
    * Get the number of roles we are short of.
    * nodes released are ignored.
@@ -321,7 +342,7 @@ public final class RoleStatus implements Cloneable {
            ", actual=" + actual +
            ", requested=" + requested +
            ", releasing=" + releasing +
-           ", pendingAntiAffineRequestCount=" + pendingAntiAffineRequestCount +
+           ", pendingAntiAffineRequestCount=" + pendingAntiAffineRequests +
            ", failed=" + failed +
            ", failed recently=" + failedRecently.get() +
            ", node failed=" + nodeFailed.get() +
@@ -376,8 +397,7 @@ public final class RoleStatus implements Cloneable {
     info.failedRecently = failedRecently.intValue();
     info.nodeFailed = nodeFailed.intValue();
     info.preempted = preempted.intValue();
-    info.pendingAntiAffineRequest = pendingAARequest.get();
-    info.pendingAntiAffineRequestCount = pendingAntiAffineRequestCount;
+    info.pendingAntiAffineRequestCount = pendingAntiAffineRequests.intValue();
     return info;
   }
 
@@ -387,6 +407,14 @@ public final class RoleStatus implements Cloneable {
    */
   public String getLabelExpression() {
     return providerRole.labelExpression;
+  }
+
+  public Resource getResourceRequirements() {
+    return resourceRequirements;
+  }
+
+  public void setResourceRequirements(Resource resourceRequirements) {
+    this.resourceRequirements = resourceRequirements;
   }
 
   /**
@@ -410,5 +438,17 @@ public final class RoleStatus implements Cloneable {
       return (o1.getKey() < o2.getKey() ? -1 : (o1.getKey() == o2.getKey() ? 0 : 1));
     }
   }
-  
+
+  /**
+   * Given a resource, set its requirements to those this role needs
+   * @param resource resource to configure
+   * @return the resource
+   */
+  public Resource copyResourceRequirements(Resource resource) {
+    Preconditions.checkNotNull(resourceRequirements,
+        "Role resource requirements have not been set");
+    resource.setMemory(resourceRequirements.getMemory());
+    resource.setVirtualCores(resourceRequirements.getVirtualCores());
+    return resource;
+  }
 }

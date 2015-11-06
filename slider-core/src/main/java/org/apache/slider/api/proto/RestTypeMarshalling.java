@@ -85,7 +85,6 @@ public class RestTypeMarshalling {
       info.failureMessage = wire.getFailureMessage();
     }
     info.pendingAntiAffineRequestCount = wire.getPendingAntiAffineRequestCount();
-    info.pendingAntiAffineRequest = info.pendingAntiAffineRequestCount > 0;
     return info;
   }
 

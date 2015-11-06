@@ -19,6 +19,7 @@
 package org.apache.slider.server.appmaster.state;
 
 import com.codahale.metrics.Counter;
+import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.hadoop.conf.Configuration;
@@ -62,6 +63,7 @@ import org.apache.slider.core.persist.AggregateConfSerDeser;
 import org.apache.slider.core.persist.ConfTreeSerDeser;
 import org.apache.slider.providers.PlacementPolicy;
 import org.apache.slider.providers.ProviderRole;
+import org.apache.slider.server.appmaster.management.LongGauge;
 import org.apache.slider.server.appmaster.management.MetricsAndMonitoring;
 import org.apache.slider.server.appmaster.management.MetricsConstants;
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation;
@@ -194,33 +196,33 @@ public class AppState {
   /**
    * Counter for completed containers ( complete denotes successful or failed )
    */
-  private final Counter completedContainerCount = new Counter();
+  private final LongGauge completedContainerCount = new LongGauge();
 
   /**
    *   Count of failed containers
    */
-  private final Counter failedContainerCount = new Counter();
+  private final LongGauge failedContainerCount = new LongGauge();
 
   /**
    * # of started containers
    */
-  private final Counter startedContainers = new Counter();
+  private final LongGauge startedContainers = new LongGauge();
 
   /**
    * # of containers that failed to start 
    */
-  private final Counter startFailedContainerCount = new Counter();
+  private final LongGauge startFailedContainerCount = new LongGauge();
 
   /**
    * Track the number of surplus containers received and discarded
    */
-  private final Counter surplusContainers = new Counter();
+  private final LongGauge surplusContainers = new LongGauge();
 
 
   /**
    * Track the number of requested Containers
    */
-  private final Counter outstandingContainerRequests = new Counter();
+  private final LongGauge outstandingContainerRequests = new LongGauge();
 
   /**
    * Map of requested nodes. This records the command used to start it,
@@ -1211,22 +1213,10 @@ public class AppState {
   }
 
   /**
-   * dec requested count of a role
-   * <p>
-   *   Also updates application state counters.
-   * @param role role to decrement
-   */
-  protected synchronized void decrementRequestCount(RoleStatus role) {
-    role.decRequested();
-  }
-
-  /**
    * Inc #of outstanding requests.
    */
   private void incOutstandingContainerRequests() {
-    synchronized (outstandingContainerRequests) {
-      outstandingContainerRequests.inc();
-    }
+     outstandingContainerRequests.inc();
   }
 
   /**
@@ -1700,7 +1690,7 @@ public class AppState {
    */  
   public ApplicationLivenessInformation getApplicationLivenessInformation() {
     ApplicationLivenessInformation li = new ApplicationLivenessInformation();
-    int outstanding = (int) outstandingContainerRequests.getCount();
+    int outstanding = outstandingContainerRequests.intValue();
     li.requestsOutstanding = outstanding;
     li.allRequestsSatisfied = outstanding <= 0;
     return li;
@@ -1716,15 +1706,15 @@ public class AppState {
     sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_LIVE,
         liveNodes.size());
     sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_COMPLETED,
-        (int)completedContainerCount.getCount());
+        completedContainerCount.intValue());
     sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_FAILED,
-        (int)failedContainerCount.getCount());
+        failedContainerCount.intValue());
     sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_STARTED,
-        (int)startedContainers.getCount());
+        startedContainers.intValue());
     sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_START_FAILED,
-        (int) startFailedContainerCount.getCount());
+         startFailedContainerCount.intValue());
     sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_SURPLUS,
-        (int)surplusContainers.getCount());
+        surplusContainers.intValue());
     sliderstats.put(StatusKeys.STATISTICS_CONTAINERS_UNKNOWN_COMPLETED,
         completionOfUnknownContainerEvent.get());
     return sliderstats;
@@ -2085,7 +2075,7 @@ public class AppState {
       final RoleStatus role = lookupRoleStatus(container);
 
       //dec requested count
-      decrementRequestCount(role);
+      role.decRequested();
 
       //inc allocated count -this may need to be dropped in a moment,
       // but us needed to update the logic below

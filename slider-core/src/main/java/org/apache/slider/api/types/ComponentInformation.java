@@ -52,7 +52,6 @@ public class ComponentInformation {
   public int requested;
   public int failed, started, startFailed, completed, totalRequested;
   public int nodeFailed, failedRecently, preempted;
-  public boolean pendingAntiAffineRequest;
   public int pendingAntiAffineRequestCount;
 
   public String failureMessage;
