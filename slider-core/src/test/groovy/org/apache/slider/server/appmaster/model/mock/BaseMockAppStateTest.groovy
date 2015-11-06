@@ -286,9 +286,9 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
    * @return a list of roles allocated
    */
   public List<RoleInstance> createAndSubmitNodes(
-      List<ContainerId> released) {
+      List<ContainerId> containerIds) {
     List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()
-    return submitOperations(ops, released)
+    return submitOperations(ops, containerIds)
   }
 
   /**

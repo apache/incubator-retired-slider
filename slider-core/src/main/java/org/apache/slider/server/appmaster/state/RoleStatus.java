@@ -28,7 +28,6 @@ import org.apache.slider.server.appmaster.management.LongGauge;
 import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Models the ongoing status of all nodes in an application.
@@ -298,12 +297,25 @@ public final class RoleStatus implements Cloneable {
     this.pendingAntiAffineRequests.set(pendingAntiAffineRequests);
   }
 
+  public long decPendingAntiAffineRequests() {
+    return pendingAntiAffineRequests.decToFloor(1);
+  }
+
   public OutstandingRequest getOutstandingAArequest() {
     return outstandingAArequest;
   }
 
   public void setOutstandingAArequest(OutstandingRequest outstandingAArequest) {
     this.outstandingAArequest = outstandingAArequest;
+  }
+
+  /**
+   * Complete the outstanding AA request (there's no check for one in progress, caller
+   * expected to have done that).
+   * @return the number of outstanding requests
+   */
+  public void completeOutstandingAARequest() {
+    setOutstandingAArequest(null);
   }
 
   /**
@@ -326,11 +338,11 @@ public final class RoleStatus implements Cloneable {
   }
 
   /**
-   * Get count of actual and requested containers
-   * @return the size of the application when outstanding requests are included
+   * Get count of actual and requested containers. This includes pending ones
+   * @return the size of the application when outstanding requests are included.
    */
   public long getActualAndRequested() {
-    return actual.get() + requested.get();
+    return actual.get() + requested.get() + pendingAntiAffineRequests.get();
   }
 
   @Override
@@ -342,7 +354,7 @@ public final class RoleStatus implements Cloneable {
            ", actual=" + actual +
            ", requested=" + requested +
            ", releasing=" + releasing +
-           ", pendingAntiAffineRequestCount=" + pendingAntiAffineRequests +
+           ", pendingAntiAffineRequests=" + pendingAntiAffineRequests +
            ", failed=" + failed +
            ", failed recently=" + failedRecently.get() +
            ", node failed=" + nodeFailed.get() +

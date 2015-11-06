@@ -26,6 +26,7 @@ import org.apache.hadoop.yarn.api.records.Container
 import org.apache.hadoop.yarn.api.records.ContainerId
 import org.apache.hadoop.yarn.client.api.AMRMClient
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
+import org.apache.slider.server.appmaster.operations.CancelSingleRequest
 import org.apache.slider.server.appmaster.operations.ContainerReleaseOperation
 import org.apache.slider.server.appmaster.operations.ContainerRequestOperation
 import org.junit.Assert
@@ -113,7 +114,9 @@ class MockYarnEngine {
         ContainerId cid = cro.containerId
         assert releaseContainer(cid);
         released.add(cid)
-      } else {
+      } else if (op instanceof CancelSingleRequest) {
+        // no-op
+      } else if (op instanceof ContainerRequestOperation) {
         ContainerRequestOperation req = (ContainerRequestOperation) op
         Container container = allocateContainer(req.request)
         if (container != null) {
@@ -123,6 +126,8 @@ class MockYarnEngine {
           log.debug("Unsatisfied allocation $req")
           pending.add(req)
         }
+      } else {
+        log.warn("Unsupported operation $op")
       }
     }
     return allocation

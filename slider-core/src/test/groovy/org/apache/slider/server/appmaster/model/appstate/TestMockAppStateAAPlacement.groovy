@@ -22,19 +22,16 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.Container
 import org.apache.hadoop.yarn.client.api.AMRMClient
-import org.apache.slider.api.ResourceKeys
 import org.apache.slider.providers.PlacementPolicy
 import org.apache.slider.providers.ProviderRole
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockFactory
 import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
-import org.apache.slider.server.appmaster.operations.CancelSingleRequest
-import org.apache.slider.server.appmaster.operations.ContainerRequestOperation
 import org.apache.slider.server.appmaster.state.AppStateBindingInfo
 import org.apache.slider.server.appmaster.state.ContainerAssignment
-import org.apache.slider.server.appmaster.state.NodeMap
 import org.apache.slider.server.appmaster.state.RoleInstance
+import org.apache.slider.server.appmaster.state.RoleStatus
 import org.junit.Test
 
 /**
@@ -56,6 +53,8 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
       2,
       null)
 
+  RoleStatus aaRole
+
   @Override
   AppStateBindingInfo buildBindingInfo() {
     def bindingInfo = super.buildBindingInfo()
@@ -67,7 +66,11 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
     bindingInfo
   }
 
-  private static final int roleId = AAROLE.id
+  @Override
+  void setup() {
+    super.setup()
+    aaRole = lookupRole(AAROLE.name)
+  }
 
   /**
    * Get the single request of a list of operations; includes the check for the size
@@ -80,18 +83,12 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
   }
 
   @Test
-  public void testVerifyNodeMap() throws Throwable {
-
+  public void testAllocateAANoLabel() throws Throwable {
     def nodemap = appState.roleHistory.cloneNodemap()
     assert nodemap.size() > 0
-  }
 
-  @Test
-  public void testAllocateAANoLabel() throws Throwable {
 
-    def aaRole = lookupRole(AAROLE.name)
-
-    // want two instances, so there will be two iterations
+    // want multiple instances, so there will be iterations
     aaRole.desired = 2
 
     List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()
@@ -118,6 +115,9 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
     // we also expect a new allocation request to have been issued
 
     def req2 = getRequest(operations, 1)
+
+    // verify the pending couner is down
+    assert 0L == aaRole.pendingAntiAffineRequests
     Container allocated2 = engine.allocateContainer(req2)
 
     // placement must be on a different host
@@ -131,7 +131,37 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
     assert appState.onNodeManagerContainerStarted(container.id)
     ops = appState.reviewRequestAndReleaseNodes()
     assert ops.size() == 0
+  }
 
+  @Test
+  public void testAllocateFlexUp() throws Throwable {
+    // want multiple instances, so there will be iterations
+    aaRole.desired = 2
+    List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()
+    getSingleRequest(ops)
+    assert aaRole.pendingAntiAffineRequests == 1
+
+    // now trigger that flex up
+    aaRole.desired = 3
+
+    // expect: no new reqests, pending count ++
+    List<AbstractRMOperation> ops2 = appState.reviewRequestAndReleaseNodes()
+    assert ops2.empty
+    assert aaRole.pendingAntiAffineRequests == 2
+
+    // next iter
+    assert 1 == submitOperations(ops, [], ops2).size()
+    assert 2 == ops2.size()
+    assert aaRole.pendingAntiAffineRequests == 1
+
+
+    assert 0 == appState.reviewRequestAndReleaseNodes().size()
+
+    // now trigger the next execution cycle
+    List<AbstractRMOperation> ops3 = []
+    assert 1  == submitOperations(ops2, [], ops3).size()
+    assert 2 == ops3.size()
+    assert aaRole.pendingAntiAffineRequests == 0
   }
 
 }

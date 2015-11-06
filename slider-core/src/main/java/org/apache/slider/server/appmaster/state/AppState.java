@@ -18,7 +18,6 @@
 
 package org.apache.slider.server.appmaster.state;
 
-import com.codahale.metrics.Counter;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.annotations.VisibleForTesting;
@@ -1187,7 +1186,6 @@ public class AppState {
     roleHistory.onContainerReleaseSubmitted(container);
   }
 
-
   /**
    * Create a container request.
    * Update internal state, such as the role request count. 
@@ -1199,7 +1197,9 @@ public class AppState {
   private AMRMClient.ContainerRequest createContainerRequest(RoleStatus role) {
     incrementRequestCount(role);
     OutstandingRequest request = roleHistory.requestContainerForRole(role);
-    role.setOutstandingAArequest(request);
+    if (role.isAntiAffinePlacement()) {
+      role.setOutstandingAArequest(request);
+    }
     return request.getIssuedRequest();
   }
 
@@ -1772,8 +1772,10 @@ public class AppState {
       throws TriggerClusterTeardownException {
     long failures = role.getFailedRecently();
     int threshold = getFailureThresholdForRole(role);
-    log.debug("Failure count of component: {}: {}, threshold={}",
-        role.getName(), failures, threshold);
+    if (log.isDebugEnabled() && failures > 0) {
+      log.debug("Failure count of component: {}: {}, threshold={}",
+          role.getName(), failures, threshold);
+    }
 
     if (failures > threshold) {
       throw new TriggerClusterTeardownException(
@@ -1885,8 +1887,9 @@ public class AppState {
       if (isAA) {
         // build one only if there is none outstanding
         if (role.getPendingAntiAffineRequests() == 0) {
-          log.info("Starting an anti-affine request sequence");
-          role.incPendingAntiAffineRequests(delta);
+          log.info("Starting an anti-affine request sequence for {} nodes", delta);
+          // log the number outstanding
+          role.incPendingAntiAffineRequests(delta - 1);
           addContainerRequest(operations, createContainerRequest(role));
         } else {
           log.info("Adding {} more anti-affine requests", delta);
@@ -2109,6 +2112,17 @@ public class AppState {
 
       // add all requests to the operations list
       operations.addAll(allocation.operations);
+
+      // now for AA requests, add some more
+      if (role.isAntiAffinePlacement())  {
+        role.completeOutstandingAARequest();
+        if (role.getPendingAntiAffineRequests() > 0) {
+          // still an outstanding AA request: need to issue a new one.
+          log.info("Asking for next container for AA role {}", roleName);
+          role.decPendingAntiAffineRequests();
+          addContainerRequest(operations, createContainerRequest(role));
+        }
+      }
 
       //look for condition where we get more back than we asked
       if (allocated > desired) {
