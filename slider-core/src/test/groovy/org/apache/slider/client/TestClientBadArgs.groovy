@@ -21,6 +21,7 @@ package org.apache.slider.client
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.slider.common.params.ActionRegistryArgs
 import org.apache.slider.common.params.Arguments
 import org.apache.slider.common.params.SliderActions
@@ -44,7 +45,7 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
   @Test
   public void testNoAction() throws Throwable {
     launchExpectingException(SliderClient,
-                             new Configuration(),
+                             createTestConfig(),
                              "Usage: slider COMMAND",
                              [])
 
@@ -53,7 +54,7 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
   @Test
   public void testUnknownAction() throws Throwable {
     launchExpectingException(SliderClient,
-                             new Configuration(),
+                             createTestConfig(),
                              "not-a-known-action",
                              ["not-a-known-action"])
   }
@@ -61,7 +62,7 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
   @Test
   public void testActionWithoutOptions() throws Throwable {
     launchExpectingException(SliderClient,
-                             new Configuration(),
+                             createTestConfig(),
                              "Usage: slider build <application>",
                              [SliderActions.ACTION_BUILD])
   }
@@ -69,7 +70,7 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
   @Test
   public void testActionWithoutEnoughArgs() throws Throwable {
     launchExpectingException(SliderClient,
-                             new Configuration(),
+                             createTestConfig(),
                              ErrorStrings.ERROR_NOT_ENOUGH_ARGUMENTS,
                              [SliderActions.ACTION_THAW])
   }
@@ -77,7 +78,7 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
   @Test
   public void testActionWithTooManyArgs() throws Throwable {
     launchExpectingException(SliderClient,
-                             new Configuration(),
+                             createTestConfig(),
                              ErrorStrings.ERROR_TOO_MANY_ARGUMENTS,
                              [SliderActions.ACTION_HELP,
                              "hello, world"])
@@ -86,7 +87,7 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
   @Test
   public void testBadImageArg() throws Throwable {
     launchExpectingException(SliderClient,
-                             new Configuration(),
+                             createTestConfig(),
                              "Unknown option: --image",
                             [SliderActions.ACTION_HELP,
                              Arguments.ARG_IMAGE])
@@ -95,7 +96,7 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
   @Test
   public void testRegistryUsage() throws Throwable {
     def exception = launchExpectingException(SliderClient,
-        new Configuration(),
+        createTestConfig(),
         "org.apache.slider.core.exceptions.UsageException: Argument --name missing",
         [SliderActions.ACTION_REGISTRY])
     assert exception instanceof UsageException
@@ -105,7 +106,7 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
   @Test
   public void testRegistryExportBadUsage1() throws Throwable {
     def exception = launchExpectingException(SliderClient,
-        new Configuration(),
+        createTestConfig(),
         "Expected a value after parameter --getexp",
         [SliderActions.ACTION_REGISTRY,
             Arguments.ARG_NAME,
@@ -118,7 +119,7 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
   @Test
   public void testRegistryExportBadUsage2() throws Throwable {
     def exception = launchExpectingException(SliderClient,
-        new Configuration(),
+        createTestConfig(),
         "Expected a value after parameter --getexp",
         [SliderActions.ACTION_REGISTRY,
             Arguments.ARG_NAME,
@@ -132,7 +133,7 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
   @Test
   public void testRegistryExportBadUsage3() throws Throwable {
     def exception = launchExpectingException(SliderClient,
-        new Configuration(),
+        createTestConfig(),
         "Usage: registry",
         [SliderActions.ACTION_REGISTRY,
             Arguments.ARG_NAME,
@@ -147,7 +148,7 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
   @Test
   public void testUpgradeUsage() throws Throwable {
     def exception = launchExpectingException(SliderClient,
-        new Configuration(),
+        createTestConfig(),
         "org.apache.slider.core.exceptions.BadCommandArgumentsException: Not enough arguments for action: upgrade Expected minimum 1 but got 0",
         [SliderActions.ACTION_UPGRADE])
     assert exception instanceof BadCommandArgumentsException
@@ -158,7 +159,7 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
   public void testUpgradeWithTemplateOptionOnly() throws Throwable {
     String appName = "test_hbase"
     def exception = launchExpectingException(SliderClient,
-        new Configuration(),
+        createTestConfig(),
         "BadCommandArgumentsException: Option --resources must be specified with option --template",
         [SliderActions.ACTION_UPGRADE,
             appName,
@@ -169,11 +170,17 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
     log.info(exception.toString())
   }
 
+  public Configuration createTestConfig() {
+    def configuration = new Configuration()
+    configuration.set(YarnConfiguration.RM_ADDRESS,  "127.0.0.1:8032")
+    return configuration
+  }
+
   @Test
   public void testUpgradeWithResourcesOptionOnly() throws Throwable {
     String appName = "test_hbase"
     def exception = launchExpectingException(SliderClient,
-        new Configuration(),
+        createTestConfig(),
         "BadCommandArgumentsException: Option --template must be specified with option --resources",
         [SliderActions.ACTION_UPGRADE,
             appName,
@@ -188,7 +195,7 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
   public void testUpgradeWithTemplateResourcesAndContainersOption() throws Throwable {
     String appName = "test_hbase"
     def exception = launchExpectingException(SliderClient,
-        new Configuration(),
+        createTestConfig(),
         "BadCommandArgumentsException: Option --containers cannot be "
         + "specified with --template or --resources",
         [SliderActions.ACTION_UPGRADE,
@@ -208,7 +215,7 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
   public void testUpgradeWithTemplateResourcesAndComponentsOption() throws Throwable {
     String appName = "test_hbase"
     def exception = launchExpectingException(SliderClient,
-        new Configuration(),
+        createTestConfig(),
         "BadCommandArgumentsException: Option --components cannot be "
         + "specified with --template or --resources",
         [SliderActions.ACTION_UPGRADE,
@@ -228,7 +235,7 @@ class TestClientBadArgs extends ServiceLauncherBaseTest {
   public void testCreateAppWithAddonPkgBadArg1() throws Throwable {
     //add on package without specifying add on package name
       def exception = launchExpectingException(SliderClient,
-          new Configuration(),
+          createTestConfig(),
           "Expected 2 values after --addon",
           [SliderActions.ACTION_CREATE,
               "cl1",

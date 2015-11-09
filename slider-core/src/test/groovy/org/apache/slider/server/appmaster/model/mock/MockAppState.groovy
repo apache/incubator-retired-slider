@@ -29,8 +29,10 @@ import org.apache.slider.server.appmaster.state.AppStateBindingInfo
 class MockAppState extends AppState {
   public static final int RM_MAX_RAM = 4096
   public static final int RM_MAX_CORES = 64
+
   public MockAppState(AbstractClusterServices recordFactory) {
     super(recordFactory, new MetricsAndMonitoring());
+    setContainerLimits(1, RM_MAX_RAM, 1, RM_MAX_CORES)
   }
 
   long time = 0;
@@ -39,8 +41,7 @@ class MockAppState extends AppState {
    * Instance with a mock record factory
    */
   public MockAppState() {
-    super(new MockClusterServices(), new MetricsAndMonitoring());
-    setContainerLimits(1, RM_MAX_RAM, 1, RM_MAX_CORES)
+    this(new MockClusterServices());
   }
 
   MockAppState(AppStateBindingInfo bindingInfo) {

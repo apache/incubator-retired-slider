@@ -21,6 +21,7 @@ package org.apache.slider.server.appmaster.state;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.Container;
@@ -34,6 +35,7 @@ import org.apache.hadoop.yarn.api.records.impl.pb.ContainerPBImpl;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
+import org.apache.hadoop.yarn.util.resource.Resources;
 import org.apache.slider.api.ClusterDescription;
 import org.apache.slider.api.ClusterDescriptionKeys;
 import org.apache.slider.api.ClusterDescriptionOperations;
@@ -322,6 +324,8 @@ public class AppState {
    */
   public AppState(AbstractClusterServices recordFactory,
       MetricsAndMonitoring metricsAndMonitoring) {
+    Preconditions.checkArgument(recordFactory != null, "null recordFactory");
+    Preconditions.checkArgument(metricsAndMonitoring != null, "null metricsAndMonitoring");
     this.recordFactory = recordFactory;
     this.metricsAndMonitoring = metricsAndMonitoring;
 
@@ -1310,7 +1314,16 @@ public class AppState {
                                      DEF_YARN_MEMORY,
                                      containerMaxMemory);
     capability.setMemory(ram);
-    return recordFactory.normalize(capability,minResource, maxResource);
+    log.debug("Component {} has RAM={}, vCores ={}", name, ram, cores);
+    Resource normalized = recordFactory.normalize(capability, minResource,
+        maxResource);
+    if (!Resources.equals(normalized, capability)) {
+      // resource requirements normalized to something other than asked for.
+      // LOG @ WARN so users can see why this is happening.
+      log.warn("Resource requirements of {} normalized" +
+              " from {} to {}", name, capability, normalized);
+    }
+    return normalized;
   }
 
   /**
