@@ -22,7 +22,9 @@ import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Serialized node information. Must be kept in sync with the protobuf equivalent.
@@ -38,5 +40,5 @@ public class NodeInformation {
   public long lastUpdated;
   public String rackName;
   public String state;
-  public List<NodeEntryInformation> entries = new ArrayList<>();
+  public Map<String, NodeEntryInformation> entries = new HashMap<>();
 }

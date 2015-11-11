@@ -38,6 +38,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -160,8 +162,8 @@ public class RestTypeMarshalling {
       builder.setLabels(info.labels);
     }
 
-    List<NodeEntryInformation> entries = info.entries;
-    if (entries != null) {
+    if (info.entries != null) {
+      Collection<NodeEntryInformation> entries = info.entries.values();
       for (NodeEntryInformation entry : entries) {
         Messages.NodeEntryInformationProto.Builder node =
             Messages.NodeEntryInformationProto.newBuilder();
@@ -192,7 +194,7 @@ public class RestTypeMarshalling {
     info.state = wire.getState();
     List<Messages.NodeEntryInformationProto> entriesList = wire.getEntriesList();
     if (entriesList != null) {
-      info.entries = new ArrayList<>(entriesList.size());
+      info.entries = new HashMap<>(entriesList.size());
       for (Messages.NodeEntryInformationProto entry : entriesList) {
         NodeEntryInformation nei = new NodeEntryInformation();
         nei.failed = entry.getFailed();
@@ -205,7 +207,7 @@ public class RestTypeMarshalling {
         nei.releasing = entry.getReleasing();
         nei.startFailed = entry.getStartFailed();
         nei.starting = entry.getStarting();
-        info.entries.add(nei);
+        info.entries.put(Integer.toString(nei.priority), nei);
       }
     }
     return info;

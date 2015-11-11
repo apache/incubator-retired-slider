@@ -19,13 +19,13 @@
 package org.apache.slider.server.appmaster.state;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.NodeReport;
 import org.apache.hadoop.yarn.api.records.NodeState;
 import org.apache.hadoop.yarn.api.records.Resource;
-import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.slider.api.types.NodeInformation;
 import org.apache.slider.common.tools.SliderUtils;
 import org.apache.slider.core.exceptions.BadConfigException;
@@ -46,11 +46,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -549,7 +547,7 @@ public class RoleHistory {
    * @return the instance, or null for none
    */
   @VisibleForTesting
-  public synchronized NodeInstance findNodeForNewInstance(RoleStatus role) {
+  public synchronized NodeInstance findRecentNodeForNewInstance(RoleStatus role) {
     if (!role.isPlacementDesired()) {
       // no data locality policy
       return null;
@@ -591,6 +589,18 @@ public class RoleHistory {
   }
 
   /**
+   * Find a node for use
+   * @param role role
+   * @return the instance, or null for none
+   */
+  @VisibleForTesting
+  public synchronized List<NodeInstance> findNodeForNewAAInstance(RoleStatus role) {
+    // all nodes that are live and can host the role; no attempt to exclude ones
+    // considered failing
+    return nodemap.findAllNodesForRole(role.getKey(), role.getLabelExpression());
+  }
+
+  /**
    * Request an instance on a given node.
    * An outstanding request is created & tracked, with the 
    * relevant node entry for that role updated.
@@ -615,15 +625,29 @@ public class RoleHistory {
    * Find a node for a role and request an instance on that (or a location-less
    * instance)
    * @param role role status
-   * @return a request ready to go
+   * @return a request ready to go, or null if this is an AA request and no
+   * location can be found.
    */
   public synchronized OutstandingRequest requestContainerForRole(RoleStatus role) {
 
     Resource resource = recordFactory.newResource();
     role.copyResourceRequirements(resource);
-    NodeInstance node = findNodeForNewInstance(role);
-    // TODO AA -what if there are no suitable nodes?
-    return requestInstanceOnNode(node, role, resource);
+    if (role.isAntiAffinePlacement()) {
+      // if a placement can be found, return it.
+      List<NodeInstance> nodes = findNodeForNewAAInstance(role);
+      if (!nodes.isEmpty()) {
+        OutstandingRequest outstanding
+            = outstandingRequests.newAARequest(role.getKey(), nodes);
+        outstanding.buildContainerRequest(resource, role, now());
+        return outstanding;
+      } else {
+        log.warn("No suitable location for {}", role.getName());
+        return null;
+      }
+    } else {
+      NodeInstance node = findRecentNodeForNewInstance(role);
+      return requestInstanceOnNode(node, role, resource);
+    }
   }
 
   /**
@@ -972,6 +996,26 @@ public class RoleHistory {
   public List<AbstractRMOperation> escalateOutstandingRequests() {
     return outstandingRequests.escalateOutstandingRequests(now());
   }
+  /**
+   * Escalate operation as triggered by external timer.
+   * @return a (usually empty) list of cancel/request operations.
+   */
+  public List<AbstractRMOperation> cancelOutstandingAARequests() {
+    return outstandingRequests.cancelOutstandingAARequests();
+  }
+
+  /**
+   * Cancel a number of outstanding requests for a role -that is, not
+   * actual containers, just requests for new ones.
+   * @param role role
+   * @param toCancel number to cancel
+   * @return a list of cancellable operations.
+   */
+  public List<AbstractRMOperation> cancelRequestsForRole(RoleStatus role, int toCancel) {
+    return role.isAntiAffinePlacement() ?
+        cancelRequestsForAARole(role, toCancel)
+        : cancelRequestsForSimpleRole(role, toCancel);
+  }
 
   /**
    * Build the list of requests to cancel from the outstanding list.
@@ -979,19 +1023,67 @@ public class RoleHistory {
    * @param toCancel number to cancel
    * @return a list of cancellable operations.
    */
-  public synchronized List<AbstractRMOperation> cancelRequestsForRole(RoleStatus role, int toCancel) {
+  private synchronized List<AbstractRMOperation> cancelRequestsForSimpleRole(RoleStatus role, int toCancel) {
+    Preconditions.checkArgument(toCancel > 0,
+        "trying to cancel invalid number of requests: " + toCancel);
     List<AbstractRMOperation> results = new ArrayList<>(toCancel);
     // first scan through the unplaced request list to find all of a role
     int roleId = role.getKey();
     List<OutstandingRequest> requests =
         outstandingRequests.extractOpenRequestsForRole(roleId, toCancel);
 
+    if (role.isAntiAffinePlacement()) {
+      // TODO: AA
+      // AA placement, so clear the role info
+      role.cancelOutstandingAARequest();
+    }
     // are there any left?
     int remaining = toCancel - requests.size();
     // ask for some placed nodes
     requests.addAll(outstandingRequests.extractPlacedRequestsForRole(roleId, remaining));
 
-    // TODO AA: clear anything here?
+    // build cancellations
+    for (OutstandingRequest request : requests) {
+      results.add(request.createCancelOperation());
+    }
+    return results;
+  }
+
+  /**
+   * Build the list of requests to cancel for an AA role. This reduces the number
+   * of outstanding pending requests first, then cancels any active request,
+   * before finally asking for any placed containers
+   * @param role role
+   * @param toCancel number to cancel
+   * @return a list of cancellable operations.
+   */
+  private synchronized List<AbstractRMOperation> cancelRequestsForAARole(RoleStatus role, int toCancel) {
+    List<AbstractRMOperation> results = new ArrayList<>(toCancel);
+    int roleId = role.getKey();
+    List<OutstandingRequest> requests = new ArrayList<>(toCancel);
+    // there may be pending requests which can be cancelled here
+    long pending = role.getPendingAntiAffineRequests();
+    if (pending > 0) {
+      // there are some pending ones which can be cancelled first
+      long pendingToCancel = Math.min(pending, toCancel);
+      log.info("Cancelling {} pending AA allocations, leaving {}", toCancel,
+          pendingToCancel);
+      role.setPendingAntiAffineRequests(pending - pendingToCancel);
+      toCancel -= pendingToCancel;
+    }
+    if (toCancel > 0 && role.isAARequestOutstanding()) {
+      // not enough
+      log.info("Cancelling current AA request");
+      // find the single entry which may be running
+      requests = outstandingRequests.extractOpenRequestsForRole(roleId, toCancel);
+      role.cancelOutstandingAARequest();
+      toCancel--;
+    }
+
+    // ask for some excess nodes
+    if (toCancel > 0) {
+      requests.addAll(outstandingRequests.extractPlacedRequestsForRole(roleId, toCancel));
+    }
 
     // build cancellations
     for (OutstandingRequest request : requests) {

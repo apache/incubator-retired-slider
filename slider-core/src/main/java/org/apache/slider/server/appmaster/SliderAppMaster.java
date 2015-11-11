@@ -1826,7 +1826,6 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
    */
   private void releaseAllContainers() {
     List<AbstractRMOperation> operations = appState.releaseAllContainers();
-    providerRMOperationHandler.execute(operations);
     //now apply the operations
     execute(operations);
   }
@@ -1852,7 +1851,10 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     LOG_YARN.info("onNodesUpdated({})", updatedNodes.size());
     log.info("Updated nodes {}", updatedNodes);
     // Check if any nodes are lost or revived and update state accordingly
-    appState.onNodesUpdated(updatedNodes);
+    List<AbstractRMOperation> operations = appState.onNodesUpdated(updatedNodes);
+    execute(operations);
+    // if there were any operations, trigger a review
+    reviewRequestAndReleaseNodes("nodes updated");
   }
 
   /**

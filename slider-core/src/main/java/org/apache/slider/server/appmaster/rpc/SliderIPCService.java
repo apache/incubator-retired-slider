@@ -448,7 +448,6 @@ public class SliderIPCService extends AbstractService
     }
   }
 
-
   @Override
   public Messages.WrappedJsonProto getModelDesired(Messages.EmptyPayloadProto request) throws IOException {
     return lookupAggregateConf(MODEL_DESIRED);

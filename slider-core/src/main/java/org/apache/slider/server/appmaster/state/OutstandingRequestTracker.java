@@ -93,6 +93,23 @@ public class OutstandingRequestTracker {
   }
 
   /**
+   * Create a new Anti-affine request for the specific role
+   * <p>
+   * It is added to {@link #openRequests}
+   * <p>
+   * This does not update the node instance's role's request count
+   * @param role role index
+   * @param nodes list of suitable nodes
+   * @return a new request
+   */
+  public synchronized OutstandingRequest newAARequest(int role, List<NodeInstance> nodes) {
+    Preconditions.checkArgument(!nodes.isEmpty());
+    OutstandingRequest request = new OutstandingRequest(role, nodes);
+    openRequests.add(request);
+    return request;
+  }
+
+  /**
    * Look up any oustanding request to a (role, hostname). 
    * @param role role index
    * @param hostname hostname
@@ -364,6 +381,43 @@ public class OutstandingRequestTracker {
   }
 
   /**
+   * Cancel all outstanding AA requests from the lists of requests.
+   *
+   * This does not remove them from the role status; they must be reset
+   * by the caller.
+   *
+   */
+  @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
+  public synchronized List<AbstractRMOperation> cancelOutstandingAARequests() {
+
+    List<AbstractRMOperation> operations = new ArrayList<>();
+
+    // first, all placed requests
+    for (Map.Entry<RoleHostnamePair, OutstandingRequest> entry : placedRequests.entrySet()) {
+      OutstandingRequest outstandingRequest = entry.getValue();
+      synchronized (outstandingRequest) {
+        if (outstandingRequest.isAntiAffine()) {
+          // time to escalate
+          operations.add(outstandingRequest.createCancelOperation());
+          placedRequests.remove(entry.getKey());
+        }
+      }
+    }
+    // second, all open requests
+    for (OutstandingRequest outstandingRequest : openRequests) {
+      synchronized (outstandingRequest) {
+        if (outstandingRequest.isAntiAffine()) {
+          // time to escalate
+          operations.add(outstandingRequest.createCancelOperation());
+          openRequests.remove(outstandingRequest);
+        }
+      }
+    }
+
+    return operations;
+  }
+
+  /**
    * Extract a specific number of open requests for a role
    * @param roleId role Id
    * @param count count to extract
@@ -382,6 +436,7 @@ public class OutstandingRequestTracker {
     }
     return results;
   }
+
   /**
    * Extract a specific number of placed requests for a role
    * @param roleId role Id

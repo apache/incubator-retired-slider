@@ -146,9 +146,9 @@ public class NodeMap extends HashMap<String, NodeInstance> {
    * Scan the current node map for all nodes capable of hosting an instance
    * @param role role ID
    * @param label label which must match, or "" for no label checks
-   * @return a list of node instances matching the criteria.
+   * @return a possibly empty list of node instances matching the criteria.
    */
-  public List<NodeInstance> findNodesForRole(int role, String label) {
+  public List<NodeInstance> findAllNodesForRole(int role, String label) {
     List<NodeInstance> nodes = new ArrayList<>(size());
     for (NodeInstance instance : values()) {
       if (instance.canHost(role, label)) {

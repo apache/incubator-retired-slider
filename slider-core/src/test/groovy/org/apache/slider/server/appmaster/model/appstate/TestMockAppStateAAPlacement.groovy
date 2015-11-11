@@ -93,8 +93,8 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
 
     List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()
     AMRMClient.ContainerRequest request = getSingleRequest(ops)
-    assert request.relaxLocality
-    assert request.nodes == null
+    assert !request.relaxLocality
+    assert request.nodes.size() == engine.cluster.clusterSize
     assert request.racks == null
     assert request.capability
 
@@ -131,6 +131,7 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
     assert appState.onNodeManagerContainerStarted(container.id)
     ops = appState.reviewRequestAndReleaseNodes()
     assert ops.size() == 0
+    assertAllContainersAA();
   }
 
   @Test
@@ -160,6 +161,8 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
     assert 1  == submitOperations(ops2, [], ops3).size()
     assert 2 == ops3.size()
     assert aaRole.pendingAntiAffineRequests == 0
+    assertAllContainersAA()
+
   }
 
   @Test
@@ -169,14 +172,17 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
     List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()
     getSingleRequest(ops)
     assert aaRole.pendingAntiAffineRequests == 1
+    assert aaRole.AARequestOutstanding
 
     // flex down so that the next request should be cancelled
     aaRole.desired = 1
 
-    // expect: no new reqests, pending count --
+    // expect: no new requests, pending count --
     List<AbstractRMOperation> ops2 = appState.reviewRequestAndReleaseNodes()
     assert ops2.empty
+    assert aaRole.AARequestOutstanding
     assert aaRole.pendingAntiAffineRequests == 0
+    assertAllContainersAA()
 
     // next iter
     submitOperations(ops, [], ops2).size()
@@ -195,12 +201,14 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
     List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()
     getSingleRequest(ops)
     assert aaRole.pendingAntiAffineRequests == 0
+    assert aaRole.AARequestOutstanding
 
     // flex down so that the next request should be cancelled
     aaRole.desired = 0
     // expect: no new reqests, pending count --
     List<AbstractRMOperation> ops2 = appState.reviewRequestAndReleaseNodes()
     assert aaRole.pendingAntiAffineRequests == 0
+    assert !aaRole.AARequestOutstanding
     assert ops2.size() == 1
     getSingleCancel(ops2)
 
@@ -209,5 +217,22 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
     assert 1 == ops2.size()
   }
 
+  void assertAllContainersAA() {
+    assertAllContainersAA(Integer.toString(aaRole.key))
+  }
+
+  /**
+   * Scan through all containers and assert that the assignment is AA
+   * @param index role index
+   */
+  void assertAllContainersAA(String index) {
+    def nodemap = stateAccess.nodeInformationSnapshot
+    nodemap.each { name, info ->
+      def nodeEntry = info.entries[index]
+      assert nodeEntry == null ||
+             (nodeEntry.live + nodeEntry.starting + nodeEntry.releasing)  <= 1 ,
+      "too many instances on node $name"
+    }
+  }
 
 }

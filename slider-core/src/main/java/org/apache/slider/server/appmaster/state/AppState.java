@@ -663,7 +663,6 @@ public class AppState {
     return newRole;
   }
 
-
   /**
    * Actions to perform when an instance definition is updated
    * Currently: 
@@ -678,9 +677,9 @@ public class AppState {
    *  
    * @throws BadConfigException
    */
-  private synchronized void onInstanceDefinitionUpdated() throws
-                                                          BadConfigException,
-                                                          IOException {
+  private synchronized void onInstanceDefinitionUpdated()
+      throws BadConfigException, IOException {
+
     log.debug("Instance definition updated");
     //note the time 
     snapshotTime = now();
@@ -1220,11 +1219,14 @@ public class AppState {
    * Anti-Affine: the {@link RoleStatus#outstandingAArequest} is set here.
    * This is where role history information will be used for placement decisions.
    * @param role role
-   * @return the container request to submit
+   * @return the container request to submit or null if there is none
    */
   private AMRMClient.ContainerRequest createContainerRequest(RoleStatus role) {
     incrementRequestCount(role);
     OutstandingRequest request = roleHistory.requestContainerForRole(role);
+    if (request == null) {
+      return null;
+    }
     if (role.isAntiAffinePlacement()) {
       role.setOutstandingAArequest(request);
     }
@@ -1426,12 +1428,13 @@ public class AppState {
    * Handle node update from the RM. This syncs up the node map with the RM's view
    * @param updatedNodes updated nodes
    */
-  public synchronized void onNodesUpdated(List<NodeReport> updatedNodes) {
+  public synchronized List<AbstractRMOperation> onNodesUpdated(List<NodeReport> updatedNodes) {
     boolean changed = roleHistory.onNodesUpdated(updatedNodes);
     if (changed) {
-      //TODO
       log.error("TODO: cancel AA requests and re-review");
+      return cancelOutstandingAARequests();
     }
+    return new ArrayList<>(0);
   }
 
   /**
@@ -1882,6 +1885,20 @@ public class AppState {
   }
 
   /**
+   * Escalate operation as triggered by external timer.
+   * @return a (usually empty) list of cancel/request operations.
+   */
+  public synchronized List<AbstractRMOperation> cancelOutstandingAARequests() {
+    List<AbstractRMOperation> operations = roleHistory.cancelOutstandingAARequests();
+    for (RoleStatus roleStatus : roleStatusMap.values()) {
+      if (roleStatus.isAntiAffinePlacement()) {
+        roleStatus.cancelOutstandingAARequest();
+      }
+    }
+    return operations;
+  }
+
+  /**
    * Look at the allocation status of one role, and trigger add/release
    * actions if the number of desired role instances doesn't equal 
    * (actual + pending).
@@ -1900,7 +1917,6 @@ public class AppState {
     long delta;
     long expected;
     String name = role.getName();
-    boolean isAA = role.isAntiAffinePlacement();
     synchronized (role) {
       delta = role.getDelta();
       expected = role.getDesired();
@@ -1920,19 +1936,24 @@ public class AppState {
 
     if (delta > 0) {
       // more workers needed than we have -ask for more
-      log.info("{}: Asking for {} more nodes(s) for a total of {} ", name,
-          delta, expected);
+      log.info("{}: Asking for {} more nodes(s) for a total of {} ", name, delta, expected);
 
-      // TODO: AA RH to help here by only allowing one request for an AA
-
-      if (isAA) {
-        // build one only if there is none outstanding
+      if (role.isAntiAffinePlacement()) {
+        // build one only if there is none outstanding, the role history knows
+        // enough about the cluster to ask, and there is somewhere to place
+        // the node
         if (role.getPendingAntiAffineRequests() == 0
+            && !role.isAARequestOutstanding()
             && roleHistory.canPlaceAANodes()) {
-          log.info("Starting an anti-affine request sequence for {} nodes", delta);
           // log the number outstanding
-          role.incPendingAntiAffineRequests(delta - 1);
-          addContainerRequest(operations, createContainerRequest(role));
+          AMRMClient.ContainerRequest request = createContainerRequest(role);
+          if (request != null) {
+            log.info("Starting an anti-affine request sequence for {} nodes", delta);
+            role.incPendingAntiAffineRequests(delta - 1);
+            addContainerRequest(operations, request);
+          } else {
+            log.info("No location for anti-affine request");
+          }
         } else {
           if (roleHistory.canPlaceAANodes()) {
             log.info("Adding {} more anti-affine requests", delta);
@@ -1955,22 +1976,7 @@ public class AppState {
       // reduce the number expected (i.e. subtract the delta)
       long excess = -delta;
 
-      if (isAA) {
-        // there may be pending requests which can be cancelled here
-        long pending = role.getPendingAntiAffineRequests();
-        if (excess <= pending) {
-          long outstanding = pending - excess;
-          log.info("Cancelling {} pending AA allocations, leaving {}", excess, outstanding);
-          role.setPendingAntiAffineRequests(outstanding);
-          excess = 0;
-        } else {
-          // not enough
-          log.info("Cancelling all pending AA allocations");
-          role.setPendingAntiAffineRequests(0);
-          excess -= pending;
-        }
-      }
-      // how many requests are outstanding?
+      // how many requests are outstanding? for AA roles, this includes pending
       long outstandingRequests = role.getRequested();
       if (outstandingRequests > 0) {
         // outstanding requests.
@@ -2052,15 +2058,22 @@ public class AppState {
     return operations;
   }
 
+  /**
+   * Add a container request if the request is non-null
+   * @param operations operations to add the entry to
+   * @param containerAsk what to ask for
+   */
   private void addContainerRequest(List<AbstractRMOperation> operations,
       AMRMClient.ContainerRequest containerAsk) {
-    log.info("Container ask is {} and label = {}", containerAsk,
-        containerAsk.getNodeLabelExpression());
-    int askMemory = containerAsk.getCapability().getMemory();
-    if (askMemory > this.containerMaxMemory) {
-      log.warn("Memory requested: {} > max of {}", askMemory, containerMaxMemory);
+    if (containerAsk != null) {
+      log.info("Container ask is {} and label = {}", containerAsk,
+          containerAsk.getNodeLabelExpression());
+      int askMemory = containerAsk.getCapability().getMemory();
+      if (askMemory > this.containerMaxMemory) {
+        log.warn("Memory requested: {} > max of {}", askMemory, containerMaxMemory);
+      }
+      operations.add(new ContainerRequestOperation(containerAsk));
     }
-    operations.add(new ContainerRequestOperation(containerAsk));
   }
 
   /**

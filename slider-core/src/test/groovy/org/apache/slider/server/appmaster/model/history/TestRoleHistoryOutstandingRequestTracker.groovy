@@ -240,6 +240,7 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest  {
     def yarnRequest = req1.buildContainerRequest(resource, workerRole, 0)
     assert (yarnRequest.nodeLabelExpression == null)
     assert (!yarnRequest.relaxLocality)
+    // escalation
     def yarnRequest2 = req1.escalate()
     assert (yarnRequest2.nodeLabelExpression == WORKERS_LABEL)
     assert (yarnRequest2.relaxLocality)
@@ -258,7 +259,6 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest  {
     resource.virtualCores = 1
     resource.memory = 48;
 
-    def label = null
     // initial request
     def yarnRequest = req1.buildContainerRequest(resource, role0Status, 0)
     assert yarnRequest.nodes != null
@@ -269,6 +269,34 @@ class TestRoleHistoryOutstandingRequestTracker extends BaseMockAppStateTest  {
     assert yarnRequest2.relaxLocality
   }
 
+  @Test(expected = IllegalArgumentException)
+  public void testAARequestNoNodes() throws Throwable {
+    tracker.newAARequest(role0Status.key, [])
+  }
+
+  @Test
+  public void testAARequest() throws Throwable {
+    def role0 = role0Status.key
+    OutstandingRequest request = tracker.newAARequest(role0, [host1])
+    assert host1.hostname == request.hostname
+    assert !request.located
+  }
+
+  @Test
+  public void testAARequestPair() throws Throwable {
+    def role0 = role0Status.key
+    OutstandingRequest request = tracker.newAARequest(role0, [host1, host2])
+    assert host1.hostname == request.hostname
+    assert !request.located
+    def yarnRequest = request.buildContainerRequest(
+        role0Status.copyResourceRequirements(new MockResource(0, 0)),
+        role0Status,
+        0)
+    assert !yarnRequest.relaxLocality
+    assert !request.mayEscalate()
+
+    assert yarnRequest.nodes.size() == 2
+  }
 
   /**
    * Create a new request (always against host1)

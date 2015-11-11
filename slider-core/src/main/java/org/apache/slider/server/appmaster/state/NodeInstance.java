@@ -22,10 +22,12 @@ import org.apache.hadoop.yarn.api.records.NodeReport;
 import org.apache.hadoop.yarn.api.records.NodeState;
 import org.apache.slider.api.types.NodeInformation;
 import org.apache.slider.common.tools.Comparators;
+import org.apache.slider.common.tools.SliderUtils;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
@@ -64,7 +66,8 @@ public class NodeInstance {
   private String nodeLabels = "";
 
   /**
-   * The list of node entries of specific roles
+   * An unordered list of node entries of specific roles. There's nothing
+   * indexed so as to support sparser datastructures.
    */
   private final List<NodeEntry> nodeEntries;
 
@@ -307,9 +310,9 @@ public class NodeInstance {
       info.rackName = nodeReport.getRackName();
       info.healthReport = nodeReport.getHealthReport();
     }
-    info.entries = new ArrayList<>(nodeEntries.size());
+    info.entries = new HashMap<>(nodeEntries.size());
     for (NodeEntry nodeEntry : nodeEntries) {
-      info.entries.add(nodeEntry.serialize());
+      info.entries.put(Integer.toString(nodeEntry.rolePriority), nodeEntry.serialize());
     }
     return info;
   }
@@ -323,7 +326,7 @@ public class NodeInstance {
    */
   public boolean canHost(int role, String label) {
     return isOnline()
-        && (label.isEmpty() || label.equals(nodeLabels))   // label match
+        && (SliderUtils.isUnset(label) || label.equals(nodeLabels))   // label match
         && (get(role) == null || get(role).isAvailable()); // no live role
   }
 

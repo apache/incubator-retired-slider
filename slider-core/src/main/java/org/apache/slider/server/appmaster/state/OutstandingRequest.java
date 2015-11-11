@@ -29,6 +29,7 @@ import org.apache.slider.server.appmaster.operations.CancelSingleRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -51,6 +52,13 @@ public final class OutstandingRequest extends RoleHostnamePair {
    * Node the request is for -may be null
    */
   public final NodeInstance node;
+
+  /**
+   * A list of all possible nodes to list in an AA request. For a non-AA
+   * request where {@link #node} is set, element 0 of the list is the same
+   * value.
+   */
+  public final List<NodeInstance> nodes = new ArrayList<>(1);
 
   /**
    * Optional label. This is cached as the request option (explicit-location + label) is forbidden,
@@ -95,6 +103,12 @@ public final class OutstandingRequest extends RoleHostnamePair {
   private int priority = -1;
 
   /**
+   * Is this an Anti-affine request which should be cancelled on
+   * a cluster resize?
+   */
+  private boolean antiAffine = false;
+
+  /**
    * Create a request
    * @param roleId role
    * @param node node -can be null
@@ -103,6 +117,7 @@ public final class OutstandingRequest extends RoleHostnamePair {
                             NodeInstance node) {
     super(roleId, node != null ? node.hostname : null);
     this.node = node;
+    nodes.add(node);
   }
 
   /**
@@ -116,6 +131,19 @@ public final class OutstandingRequest extends RoleHostnamePair {
   public OutstandingRequest(int roleId, String hostname) {
     super(roleId, hostname);
     this.node = null;
+  }
+
+  /**
+   * Create an Anti-affine reques, including all listed nodes (there must be one)
+   * as targets.
+   * @param roleId role
+   * @param nodes list of nodes
+   */
+  public OutstandingRequest(int roleId, List<NodeInstance> nodes) {
+    super(roleId, nodes.get(0).hostname);
+    this.node = null;
+    this.antiAffine = true;
+    this.nodes.addAll(nodes);
   }
 
   /**
@@ -148,6 +176,14 @@ public final class OutstandingRequest extends RoleHostnamePair {
 
   public int getPriority() {
     return priority;
+  }
+
+  public boolean isAntiAffine() {
+    return antiAffine;
+  }
+
+  public void setAntiAffine(boolean antiAffine) {
+    this.antiAffine = antiAffine;
   }
 
   /**
@@ -183,7 +219,19 @@ public final class OutstandingRequest extends RoleHostnamePair {
     NodeInstance target = this.node;
     String nodeLabels;
 
-    if (target != null) {
+    if (isAntiAffine()) {
+      hosts = new String[nodes.size()];
+      int c = 0;
+      for (NodeInstance nodeInstance : nodes) {
+        hosts[c] = nodeInstance.hostname;
+        c++;
+      }
+      log.info("Creating anti-affine request across {} nodes; first node = {}", c, hostname);
+      escalated = false;
+      mayEscalate = false;
+      relaxLocality = false;
+      nodeLabels = label;
+    } else if (target != null) {
       // placed request. Hostname is used in request
       hosts = new String[1];
       hosts[0] = target.hostname;
@@ -215,7 +263,6 @@ public final class OutstandingRequest extends RoleHostnamePair {
                                       pri,
                                       relaxLocality,
                                       nodeLabels);
-
     validate();
     return issuedRequest;
   }

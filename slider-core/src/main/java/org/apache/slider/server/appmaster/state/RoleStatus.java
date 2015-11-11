@@ -71,7 +71,7 @@ public final class RoleStatus implements Cloneable {
   private final LongGauge pendingAntiAffineRequests = new LongGauge(0);
 
   /** any pending AA request */
-  private OutstandingRequest outstandingAArequest = null;
+  private volatile OutstandingRequest outstandingAArequest = null;
 
   private String failureMessage = "";
 
@@ -155,8 +155,12 @@ public final class RoleStatus implements Cloneable {
     return actual.decToFloor(1);
   }
 
+  /**
+   * Get the request count. For AA roles, this includes pending ones.
+   * @return a count of requested containers
+   */
   public long getRequested() {
-    return requested.get();
+    return requested.get() + pendingAntiAffineRequests.get();
   }
 
   public long incRequested() {
@@ -206,6 +210,14 @@ public final class RoleStatus implements Cloneable {
 
   public long incPendingAntiAffineRequests(long v) {
     return pendingAntiAffineRequests.addAndGet(v);
+  }
+
+  /**
+   * Probe for an outstanding AA request being true
+   * @return true if there is an outstanding AA Request
+   */
+  public boolean isAARequestOutstanding() {
+    return outstandingAArequest != null;
   }
 
   /**
@@ -312,10 +324,18 @@ public final class RoleStatus implements Cloneable {
   /**
    * Complete the outstanding AA request (there's no check for one in progress, caller
    * expected to have done that).
-   * @return the number of outstanding requests
    */
   public void completeOutstandingAARequest() {
     setOutstandingAArequest(null);
+  }
+
+  /**
+   * Cancel any outstanding AA request. Harmless if the role is non-AA, or
+   * if there are no outstanding requests.
+   */
+  public void cancelOutstandingAARequest() {
+    setOutstandingAArequest(null);
+    setPendingAntiAffineRequests(0);
   }
 
   /**

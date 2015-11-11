@@ -21,10 +21,15 @@ package org.apache.slider.server.appmaster.model.history
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.NodeReport
 import org.apache.hadoop.yarn.api.records.NodeState
+import org.apache.hadoop.yarn.client.api.AMRMClient
+import org.apache.slider.server.appmaster.model.mock.MockFactory
 import org.apache.slider.server.appmaster.model.mock.MockNodeReport
+import org.apache.slider.server.appmaster.model.mock.MockRoleHistory
 import org.apache.slider.server.appmaster.state.NodeEntry
 import org.apache.slider.server.appmaster.state.NodeInstance
 import org.apache.slider.server.appmaster.state.NodeMap
+import org.apache.slider.server.appmaster.state.RoleHistory
+import org.apache.slider.server.appmaster.state.RoleStatus
 import org.apache.slider.test.SliderTestBase
 import org.junit.Test
 
@@ -37,44 +42,48 @@ class TestRoleHistoryAA extends SliderTestBase {
 
   List<String> hostnames = ["one", "two", "three"]
   NodeMap nodeMap, gpuNodeMap
+  RoleHistory roleHistory = new MockRoleHistory(MockFactory.ROLES)
+
+  AMRMClient.ContainerRequest requestContainer(RoleStatus roleStatus) {
+    roleHistory.requestContainerForRole(roleStatus).issuedRequest
+  }
 
   @Override
   void setup() {
     super.setup()
     nodeMap = createNodeMap(hostnames, NodeState.RUNNING)
     gpuNodeMap = createNodeMap(hostnames, NodeState.RUNNING, "GPU")
-
   }
 
   @Test
   public void testFindNodesInFullCluster() throws Throwable {
     // all three will surface at first
-    assertResultSize(3, nodeMap.findNodesForRole(1, ""))
+    assertResultSize(3, nodeMap.findAllNodesForRole(1, ""))
   }
 
   @Test
   public void testFindNodesInUnhealthyCluster() throws Throwable {
     // all three will surface at first
     nodeMap.get("one").updateNode(new MockNodeReport("one",NodeState.UNHEALTHY))
-    assertResultSize(2, nodeMap.findNodesForRole(1, ""))
+    assertResultSize(2, nodeMap.findAllNodesForRole(1, ""))
   }
 
   @Test
   public void testFindNoNodesWrongLabel() throws Throwable {
     // all three will surface at first
-    assertResultSize(0, nodeMap.findNodesForRole(1, "GPU"))
+    assertResultSize(0, nodeMap.findAllNodesForRole(1, "GPU"))
   }
 
   @Test
   public void testFindNoNodesRightLabel() throws Throwable {
     // all three will surface at first
-    assertResultSize(3, gpuNodeMap.findNodesForRole(1, "GPU"))
+    assertResultSize(3, gpuNodeMap.findAllNodesForRole(1, "GPU"))
   }
 
   @Test
   public void testFindNoNodesNoLabel() throws Throwable {
     // all three will surface at first
-    assertResultSize(3, gpuNodeMap.findNodesForRole(1, ""))
+    assertResultSize(3, gpuNodeMap.findAllNodesForRole(1, ""))
   }
 
   @Test
@@ -83,7 +92,7 @@ class TestRoleHistoryAA extends SliderTestBase {
     applyToNodeEntries(nodeMap) {
       NodeEntry it -> it.request()
     }
-    assertResultSize(0, nodeMap.findNodesForRole(1, ""))
+    assertResultSize(0, nodeMap.findAllNodesForRole(1, ""))
   }
 
   @Test
@@ -92,7 +101,7 @@ class TestRoleHistoryAA extends SliderTestBase {
     applyToNodeEntries(nodeMap) {
       NodeEntry it -> it.request()
     }
-    assertResultSize(0, nodeMap.findNodesForRole(1, ""))
+    assertResultSize(0, nodeMap.findAllNodesForRole(1, ""))
   }
 
   def assertResultSize(int size, List<NodeInstance> list) {

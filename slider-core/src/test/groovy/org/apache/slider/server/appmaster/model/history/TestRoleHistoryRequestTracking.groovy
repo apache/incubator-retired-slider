@@ -87,7 +87,7 @@ class TestRoleHistoryRequestTracking extends BaseMockAppStateTest {
 
   @Test
   public void testRequestedNodeOffList() throws Throwable {
-    NodeInstance ni = roleHistory.findNodeForNewInstance(roleStatus)
+    NodeInstance ni = roleHistory.findRecentNodeForNewInstance(roleStatus)
     assert age3Active0 == ni
     assertListEquals([age2Active0], roleHistory.cloneRecentNodeList(0))
     roleHistory.requestInstanceOnNode(ni,
@@ -106,7 +106,7 @@ class TestRoleHistoryRequestTracking extends BaseMockAppStateTest {
     recordAsFailed(age2Active0, 0, 4)
     assert age2Active0.isConsideredUnreliable(0, roleStatus.nodeFailureThreshold)
     // expect to get a null node back
-    NodeInstance ni = roleHistory.findNodeForNewInstance(roleStatus)
+    NodeInstance ni = roleHistory.findRecentNodeForNewInstance(roleStatus)
     assert !ni
 
     // which is translated to a no-location request
@@ -123,7 +123,7 @@ class TestRoleHistoryRequestTracking extends BaseMockAppStateTest {
     assert !age3Active0.isConsideredUnreliable(0, roleStatus.nodeFailureThreshold)
     assert !roleHistory.cloneRecentNodeList(0).empty
     // looking for a node should now find one
-    ni = roleHistory.findNodeForNewInstance(roleStatus)
+    ni = roleHistory.findRecentNodeForNewInstance(roleStatus)
     assert ni == age3Active0
     req = roleHistory.requestInstanceOnNode(ni, roleStatus, resource).issuedRequest
     assert 1 == req.nodes.size()
@@ -153,13 +153,13 @@ class TestRoleHistoryRequestTracking extends BaseMockAppStateTest {
     assert recentRole0.indexOf(age3Active0) < recentRole0.indexOf(age2Active0)
 
     // the non-strict role has no suitable nodes
-    assert null == roleHistory.findNodeForNewInstance(role0Status)
+    assert null == roleHistory.findRecentNodeForNewInstance(role0Status)
 
 
-    def ni = roleHistory.findNodeForNewInstance(targetRole)
+    def ni = roleHistory.findRecentNodeForNewInstance(targetRole)
     assert ni
 
-    def ni2 = roleHistory.findNodeForNewInstance(targetRole)
+    def ni2 = roleHistory.findRecentNodeForNewInstance(targetRole)
     assert ni2
     assert ni != ni2
   }

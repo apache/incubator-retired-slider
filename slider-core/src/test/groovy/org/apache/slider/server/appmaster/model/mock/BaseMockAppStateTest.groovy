@@ -42,8 +42,10 @@ import org.apache.slider.server.appmaster.state.ContainerAssignment
 import org.apache.slider.server.appmaster.state.ContainerOutcome
 import org.apache.slider.server.appmaster.state.NodeEntry
 import org.apache.slider.server.appmaster.state.NodeInstance
+import org.apache.slider.server.appmaster.state.ProviderAppState
 import org.apache.slider.server.appmaster.state.RoleInstance
 import org.apache.slider.server.appmaster.state.RoleStatus
+import org.apache.slider.server.appmaster.state.StateAccessForProviders
 import org.apache.slider.test.SliderTestBase
 import org.junit.Before
 
@@ -59,6 +61,7 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
   protected Path historyPath;
   protected MockApplicationId applicationId;
   protected MockApplicationAttemptId applicationAttemptId;
+  protected StateAccessForProviders stateAccess
 
   /**
    * Override point: called in setup() to create the YARN engine; can
@@ -97,6 +100,7 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
     fs.delete(historyPath, true)
     appState = new MockAppState()
     appState.buildInstance(buildBindingInfo())
+    stateAccess = new ProviderAppState(testName, appState)
   }
 
   /**

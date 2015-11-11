@@ -90,7 +90,7 @@ public class NodeEntry {
    * the number of instances &gt; 1.
    */
   public synchronized boolean isAvailable() {
-    return getActive() == 0 && (requested == 0) && starting == 0;
+    return getActive() == 0 && requested == 0 && starting == 0;
   }
 
   /**
