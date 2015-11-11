@@ -503,6 +503,13 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
 
   /**
    * Create the zookeeper node associated with the calling user and the cluster
+   *
+   * @param clusterName slider application name
+   * @param nameOnly should the name only be created (i.e. don't create ZK node)
+   * @return the path, using the policy implemented in
+   *   {@link ZKIntegration#mkClusterPath(String, String)}
+   * @throws YarnException
+   * @throws IOException
    */
   @VisibleForTesting
   public String createZookeeperNode(String clusterName, Boolean nameOnly) throws YarnException, IOException {
@@ -522,7 +529,8 @@ public class SliderClient extends AbstractSliderLaunchedService implements RunSe
    * -throwing exceptions on any failure
    * @param clusterName cluster name
    * @param nameOnly create the path, not the node
-   * @return the path, with the node created
+   * @return the path, using the policy implemented in
+   *   {@link ZKIntegration#mkClusterPath(String, String)}
    * @throws YarnException
    * @throws IOException
    * @throws KeeperException
