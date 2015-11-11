@@ -92,7 +92,7 @@ public class SliderAMWebApp extends WebApp {
     String regex = "(?!/ws)";
     serveRegex(regex).with(SliderDefaultWrapperServlet.class); 
 
-    Map<String, String> params = new HashMap<String, String>();
+    Map<String, String> params = new HashMap<>();
     params.put(ResourceConfig.FEATURE_IMPLICIT_VIEWABLES, "true");
     params.put(ServletContainer.FEATURE_FILTER_FORWARD_ON_404, "true");
     params.put(ResourceConfig.FEATURE_XMLROOTELEMENT_PROCESSING, "true");

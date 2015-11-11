@@ -415,7 +415,7 @@ class TestRoleHistoryContainerEvents extends BaseMockAppStateTest {
     // as even unused nodes are added to the list, we expect the map size to be >1
     assert startSize <= endSize
     assert nodemap[hostname] != null
-    assert roleHistory.cloneFailedNodes().contains(hostname)
+    assert !nodemap[hostname].online
 
     // add a failure of a node we've never head of
     def newhost = "newhost"
@@ -428,9 +428,8 @@ class TestRoleHistoryContainerEvents extends BaseMockAppStateTest {
     roleHistory.onNodesUpdated(nodesUpdated)
 
     def nodemap2 = roleHistory.cloneNodemap()
-    assert nodemap2.size() > endSize
-    assert roleHistory.cloneFailedNodes().contains(newhost)
     assert nodemap2[newhost]
+    assert !nodemap2[newhost].online
 
   }
 }

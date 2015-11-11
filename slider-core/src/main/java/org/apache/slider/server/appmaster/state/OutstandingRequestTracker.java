@@ -35,10 +35,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Tracks outstanding requests made with a specific placement option.
@@ -62,8 +64,7 @@ public class OutstandingRequestTracker {
    */
   private final List<AbstractRMOperation> NO_REQUESTS = new ArrayList<>(0);
  
-  private Map<OutstandingRequest, OutstandingRequest> placedRequests =
-    new HashMap<>();
+  private Map<RoleHostnamePair, OutstandingRequest> placedRequests = new HashMap<>();
 
   /**
    * List of open requests; no specific details on them.
@@ -82,10 +83,9 @@ public class OutstandingRequestTracker {
    * @return a new request
    */
   public synchronized OutstandingRequest newRequest(NodeInstance instance, int role) {
-    OutstandingRequest request =
-      new OutstandingRequest(role, instance);
+    OutstandingRequest request = new OutstandingRequest(role, instance);
     if (request.isLocated()) {
-      placedRequests.put(request, request);
+      placedRequests.put(request.getIndex(), request);
     } else {
       openRequests.add(request);
     }
@@ -101,7 +101,7 @@ public class OutstandingRequestTracker {
   @VisibleForTesting
   public synchronized OutstandingRequest lookupPlacedRequest(int role, String hostname) {
     Preconditions.checkArgument(hostname != null, "null hostname");
-    return placedRequests.get(new OutstandingRequest(role, hostname));
+    return placedRequests.get(new RoleHostnamePair(role, hostname));
   }
 
   /**
@@ -294,12 +294,12 @@ public class OutstandingRequestTracker {
    */
   public synchronized List<NodeInstance> resetOutstandingRequests(int role) {
     List<NodeInstance> hosts = new ArrayList<>();
-    Iterator<Map.Entry<OutstandingRequest,OutstandingRequest>> iterator =
+    Iterator<Map.Entry<RoleHostnamePair, OutstandingRequest>> iterator =
       placedRequests.entrySet().iterator();
     while (iterator.hasNext()) {
-      Map.Entry<OutstandingRequest, OutstandingRequest> next =
+      Map.Entry<RoleHostnamePair, OutstandingRequest> next =
         iterator.next();
-      OutstandingRequest request = next.getKey();
+      OutstandingRequest request = next.getValue();
       if (request.roleId == role) {
         iterator.remove();
         request.completed();
@@ -390,9 +390,10 @@ public class OutstandingRequestTracker {
    */
   public synchronized List<OutstandingRequest> extractPlacedRequestsForRole(int roleId, int count) {
     List<OutstandingRequest> results = new ArrayList<>();
-    Iterator<OutstandingRequest> iterator = placedRequests.keySet().iterator();
+    Iterator<Map.Entry<RoleHostnamePair, OutstandingRequest>>
+        iterator = placedRequests.entrySet().iterator();
     while (iterator.hasNext() && count > 0) {
-      OutstandingRequest request = iterator.next();
+      OutstandingRequest request = iterator.next().getValue();
       if (request.roleId == roleId) {
         results.add(request);
         count--;

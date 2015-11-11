@@ -92,20 +92,24 @@ public class NodeMap extends HashMap<String, NodeInstance> {
     }
   }
 
-
   /**
-   * Update the node state
+   * Update the node state. Return true if the node state changed: either by
+   * being created, or by changing its internal state as defined
+   * by {@link NodeInstance#updateNode(NodeReport)}.
+   *
    * @param hostname host name
    * @param report latest node report
-   * @return the updated node.
+   * @return true if the node state changed enough for a request evaluation.
    */
   public boolean updateNode(String hostname, NodeReport report) {
-    return getOrCreate(hostname).updateNode(report);
+    boolean nodeExisted = get(hostname) != null;
+    boolean updated = getOrCreate(hostname).updateNode(report);
+    return updated || !nodeExisted;
   }
 
   /**
    * Clone point
-   * @return
+   * @return a shallow clone
    */
   @Override
   public Object clone() {
@@ -122,5 +126,35 @@ public class NodeMap extends HashMap<String, NodeInstance> {
     for (NodeInstance node : nodes) {
       put(node.hostname, node);
     }
+  }
+
+  /**
+   * Test helper: build or update a cluster from a list of node reports
+   * @param reports the list of reports
+   * @return true if this has been considered to have changed the cluster
+   */
+  @VisibleForTesting
+  public boolean buildOrUpdate(List<NodeReport> reports) {
+    boolean updated = false;
+    for (NodeReport report : reports) {
+      updated |= getOrCreate(report.getNodeId().getHost()).updateNode(report);
+    }
+    return updated;
+  }
+
+  /**
+   * Scan the current node map for all nodes capable of hosting an instance
+   * @param role role ID
+   * @param label label which must match, or "" for no label checks
+   * @return a list of node instances matching the criteria.
+   */
+  public List<NodeInstance> findNodesForRole(int role, String label) {
+    List<NodeInstance> nodes = new ArrayList<>(size());
+    for (NodeInstance instance : values()) {
+      if (instance.canHost(role, label)) {
+        nodes.add(instance);
+      }
+    }
+    return nodes;
   }
 }

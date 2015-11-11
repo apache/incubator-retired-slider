@@ -1427,7 +1427,11 @@ public class AppState {
    * @param updatedNodes updated nodes
    */
   public synchronized void onNodesUpdated(List<NodeReport> updatedNodes) {
-    roleHistory.onNodesUpdated(updatedNodes);
+    boolean changed = roleHistory.onNodesUpdated(updatedNodes);
+    if (changed) {
+      //TODO
+      log.error("TODO: cancel AA requests and re-review");
+    }
   }
 
   /**
@@ -1923,13 +1927,18 @@ public class AppState {
 
       if (isAA) {
         // build one only if there is none outstanding
-        if (role.getPendingAntiAffineRequests() == 0) {
+        if (role.getPendingAntiAffineRequests() == 0
+            && roleHistory.canPlaceAANodes()) {
           log.info("Starting an anti-affine request sequence for {} nodes", delta);
           // log the number outstanding
           role.incPendingAntiAffineRequests(delta - 1);
           addContainerRequest(operations, createContainerRequest(role));
         } else {
-          log.info("Adding {} more anti-affine requests", delta);
+          if (roleHistory.canPlaceAANodes()) {
+            log.info("Adding {} more anti-affine requests", delta);
+          } else {
+            log.warn("Awaiting node map before generating node requests");
+          }
           role.incPendingAntiAffineRequests(delta);
         }
       } else {

@@ -109,12 +109,6 @@ public class RoleHistory {
   private Map<Integer, LinkedList<NodeInstance>> recentNodes;
 
   /**
-   * Track the failed nodes. Currently used to make wiser decision of container
-   * ask with/without locality. Has other potential uses as well.
-   */
-  private Set<String> failedNodes = new HashSet<>();
-
-  /**
    * Instantiate
    * @param roles initial role list
    * @param recordFactory yarn record factory
@@ -137,7 +131,6 @@ public class RoleHistory {
   protected synchronized void reset() throws BadConfigException {
 
     nodemap = new NodeMap(roleSize);
-    failedNodes = new HashSet<>();
     resetAvailableNodeLists();
     outstandingRequests = new OutstandingRequestTracker();
   }
@@ -578,7 +571,8 @@ public class RoleHistory {
       NodeInstance candidate = targets.get(i);
       if (candidate.getActiveRoleInstances(roleId) == 0) {
         // no active instances: check failure statistics
-        if (strictPlacement || !candidate.exceedsFailureThreshold(role)) {
+        if (strictPlacement
+            || (candidate.isOnline() && !candidate.exceedsFailureThreshold(role))) {
           targets.remove(i);
           // exit criteria for loop is now met
           nodeInstance = candidate;
@@ -779,6 +773,16 @@ public class RoleHistory {
   }
 
   /**
+   * Does the RoleHistory have enough information about the YARN cluster
+   * to start placing AA requests? That is: has it the node map and
+   * any label information needed?
+   * @return true if the caller can start requesting AA nodes
+   */
+  public boolean canPlaceAANodes() {
+    return nodeUpdateReceived.get();
+  }
+
+  /**
    * Get the last time the nodes were updated from YARN
    * @return the update time or zero if never updated.
    */
@@ -788,33 +792,35 @@ public class RoleHistory {
 
   /**
    * Update failedNodes and nodemap based on the node state
-   * 
+   *
    * @param updatedNodes list of updated nodes
+   * @return true if a review should be triggered.
    */
-  public synchronized void onNodesUpdated(List<NodeReport> updatedNodes) {
+  public synchronized boolean onNodesUpdated(List<NodeReport> updatedNodes) {
     log.debug("Updating {} nodes", updatedNodes.size());
     nodesUpdatedTime.set(now());
     nodeUpdateReceived.set(true);
+    int printed = 0;
+    boolean triggerReview = false;
     for (NodeReport updatedNode : updatedNodes) {
       String hostname = updatedNode.getNodeId() == null
-                        ? null 
-                        : updatedNode.getNodeId().getHost();
+          ? ""
+          : updatedNode.getNodeId().getHost();
       NodeState nodeState = updatedNode.getNodeState();
-      if (hostname == null || nodeState == null) {
+      if (hostname.isEmpty() || nodeState == null) {
+        log.warn("Ignoring incomplete update");
         continue;
       }
-      log.debug("host {} is in state {}", hostname, nodeState);
+      if (log.isDebugEnabled() && printed++ < 10) {
+        // log the first few, but avoid overloading the logs for a full cluster
+        // update
+        log.debug("Node \"{}\" is in state {}", hostname, nodeState);
+      }
       // update the node; this also creates an instance if needed
       boolean updated = nodemap.updateNode(hostname, updatedNode);
-      if (updated) {
-        if (nodeState.isUnusable()) {
-          log.info("Failed node {} state {}", hostname, nodeState);
-          failedNodes.add(hostname);
-        } else {
-          failedNodes.remove(hostname);
-        }
-      }
+      triggerReview |= updated;
     }
+    return triggerReview;
   }
 
   /**
@@ -852,7 +858,7 @@ public class RoleHistory {
 
   /**
    * Mark a container finished; if it was released then that is treated
-   * differently. history is touch()ed
+   * differently. history is {@code touch()}-ed
    *
    *
    * @param container completed container
@@ -917,9 +923,6 @@ public class RoleHistory {
     for (NodeInstance node : nodemap.values()) {
       log.info(node.toFullString());
     }
-
-    log.info("Failed nodes: {}",
-        SliderUtils.joinWithInnerSeparator(" ", failedNodes));
   }
 
   /**
@@ -963,17 +966,6 @@ public class RoleHistory {
   }
 
   /**
-   * Get a clone of the failedNodes
-   * 
-   * @return the list
-   */
-  public List<String> cloneFailedNodes() {
-    List<String> lst = new ArrayList<>();
-    lst.addAll(failedNodes);
-    return lst;
-  }
-
-  /**
    * Escalate operation as triggered by external timer.
    * @return a (usually empty) list of cancel/request operations.
    */
@@ -983,8 +975,8 @@ public class RoleHistory {
 
   /**
    * Build the list of requests to cancel from the outstanding list.
-   * @param role
-   * @param toCancel
+   * @param role role
+   * @param toCancel number to cancel
    * @return a list of cancellable operations.
    */
   public synchronized List<AbstractRMOperation> cancelRequestsForRole(RoleStatus role, int toCancel) {

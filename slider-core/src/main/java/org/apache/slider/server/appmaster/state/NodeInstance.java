@@ -20,16 +20,15 @@ package org.apache.slider.server.appmaster.state;
 
 import org.apache.hadoop.yarn.api.records.NodeReport;
 import org.apache.hadoop.yarn.api.records.NodeState;
-import org.apache.slider.api.types.NodeEntryInformation;
 import org.apache.slider.api.types.NodeInformation;
 import org.apache.slider.common.tools.Comparators;
-import org.apache.slider.common.tools.SliderUtils;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Set;
 
 /**
  * A node instance -stores information about a node in the cluster.
@@ -46,6 +45,9 @@ public class NodeInstance {
    */
   private NodeState nodeState = NodeState.RUNNING;
 
+  /**
+   * Last node report. If null: none
+   */
   private NodeReport nodeReport = null;
 
   /**
@@ -53,6 +55,17 @@ public class NodeInstance {
    */
   private long nodeStateUpdateTime = 0;
 
+  /**
+   * Node labels.
+   *
+   * IMPORTANT: we assume that there is one label/node, which is the policy
+   * for Hadoop as of November 2015
+   */
+  private String nodeLabels = "";
+
+  /**
+   * The list of node entries of specific roles
+   */
   private final List<NodeEntry> nodeEntries;
 
   /**
@@ -64,18 +77,41 @@ public class NodeInstance {
     nodeEntries = new ArrayList<>(roles);
   }
 
-
   /**
-   * Update the node status
+   * Update the node status.
+   * The return code is true if the node state changed enough to
+   * trigger a re-evaluation of pending requests. That is, either a node
+   * became available when it was previously not, or the label changed
+   * on an available node.
+   *
+   * Transitions of a node from live to dead aren't treated as significant,
+   * nor label changes on a dead node.
+   *
    * @param report latest node report
-   * @return true if the node state changed
+   * @return true if the node state changed enough for a request evaluation.
    */
   public synchronized boolean updateNode(NodeReport report) {
+    nodeStateUpdateTime = report.getLastHealthReportTime();
     nodeReport = report;
     NodeState oldState = nodeState;
+    boolean oldStateUnusable = oldState.isUnusable();
     nodeState = report.getNodeState();
-    nodeStateUpdateTime = report.getLastHealthReportTime();
-    return nodeState != oldState;
+    boolean newUsable = !nodeState.isUnusable();
+    boolean nodeNowAvailable = oldStateUnusable && newUsable;
+    String labels = this.nodeLabels;
+    Set<String> newlabels = report.getNodeLabels();
+    if (newlabels != null && !newlabels.isEmpty()) {
+      nodeLabels = newlabels.iterator().next().trim();
+    } else {
+      nodeLabels = "";
+    }
+    return nodeNowAvailable
+        || newUsable && !this.nodeLabels.equals(labels);
+  }
+
+
+  public String getNodeLabels() {
+    return nodeLabels;
   }
 
   /**
@@ -130,6 +166,14 @@ public class NodeInstance {
   }
 
   /**
+   * Is the node considered online
+   * @return the node
+   */
+  public boolean isOnline() {
+    return !nodeState.isUnusable();
+  }
+
+  /**
    * Query for a node being considered unreliable
    * @param role role key
    * @param threshold threshold above which a node is considered unreliable
@@ -137,7 +181,6 @@ public class NodeInstance {
    */
   public boolean isConsideredUnreliable(int role, int threshold) {
     NodeEntry entry = get(role);
-
     return entry != null && entry.getFailedRecently() > threshold;
   }
 
@@ -258,10 +301,10 @@ public class NodeInstance {
     // null-handling state constructor
     info.state = "" + nodeState;
     info.lastUpdated = nodeStateUpdateTime;
+    info.labels = nodeLabels;
     if (nodeReport != null) {
       info.httpAddress = nodeReport.getHttpAddress();
       info.rackName = nodeReport.getRackName();
-      info.labels = SliderUtils.join(nodeReport.getNodeLabels(), ", ", false);
       info.healthReport = nodeReport.getHealthReport();
     }
     info.entries = new ArrayList<>(nodeEntries.size());
@@ -269,6 +312,19 @@ public class NodeInstance {
       info.entries.add(nodeEntry.serialize());
     }
     return info;
+  }
+
+  /**
+   * Is this node instance a suitable candidate for the specific role?
+   * @param role role ID
+   * @param label label which must match, or "" for no label checks
+   * @return true if the node has space for this role, is running and the labels
+   * match.
+   */
+  public boolean canHost(int role, String label) {
+    return isOnline()
+        && (label.isEmpty() || label.equals(nodeLabels))   // label match
+        && (get(role) == null || get(role).isAvailable()); // no live role
   }
 
   /**

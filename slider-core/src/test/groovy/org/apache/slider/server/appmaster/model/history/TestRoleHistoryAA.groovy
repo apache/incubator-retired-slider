@@ -18,16 +18,106 @@
 
 package org.apache.slider.server.appmaster.model.history
 
-import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
+import groovy.util.logging.Slf4j
+import org.apache.hadoop.yarn.api.records.NodeReport
+import org.apache.hadoop.yarn.api.records.NodeState
+import org.apache.slider.server.appmaster.model.mock.MockNodeReport
+import org.apache.slider.server.appmaster.state.NodeEntry
+import org.apache.slider.server.appmaster.state.NodeInstance
+import org.apache.slider.server.appmaster.state.NodeMap
+import org.apache.slider.test.SliderTestBase
 import org.junit.Test
 
 /**
  * Test anti-affine
  */
-class TestRoleHistoryAA extends BaseMockAppStateTest {
+//@CompileStatic
+@Slf4j
+class TestRoleHistoryAA extends SliderTestBase {
+
+  List<String> hostnames = ["one", "two", "three"]
+  NodeMap nodeMap, gpuNodeMap
+
+  @Override
+  void setup() {
+    super.setup()
+    nodeMap = createNodeMap(hostnames, NodeState.RUNNING)
+    gpuNodeMap = createNodeMap(hostnames, NodeState.RUNNING, "GPU")
+
+  }
 
   @Test
-  public void test() throws Throwable {
-    
+  public void testFindNodesInFullCluster() throws Throwable {
+    // all three will surface at first
+    assertResultSize(3, nodeMap.findNodesForRole(1, ""))
+  }
+
+  @Test
+  public void testFindNodesInUnhealthyCluster() throws Throwable {
+    // all three will surface at first
+    nodeMap.get("one").updateNode(new MockNodeReport("one",NodeState.UNHEALTHY))
+    assertResultSize(2, nodeMap.findNodesForRole(1, ""))
+  }
+
+  @Test
+  public void testFindNoNodesWrongLabel() throws Throwable {
+    // all three will surface at first
+    assertResultSize(0, nodeMap.findNodesForRole(1, "GPU"))
+  }
+
+  @Test
+  public void testFindNoNodesRightLabel() throws Throwable {
+    // all three will surface at first
+    assertResultSize(3, gpuNodeMap.findNodesForRole(1, "GPU"))
+  }
+
+  @Test
+  public void testFindNoNodesNoLabel() throws Throwable {
+    // all three will surface at first
+    assertResultSize(3, gpuNodeMap.findNodesForRole(1, ""))
+  }
+
+  @Test
+  public void testFindNoNodesClusterRequested() throws Throwable {
+    // all three will surface at first
+    applyToNodeEntries(nodeMap) {
+      NodeEntry it -> it.request()
+    }
+    assertResultSize(0, nodeMap.findNodesForRole(1, ""))
+  }
+
+  @Test
+  public void testFindNoNodesClusterBusy() throws Throwable {
+    // all three will surface at first
+    applyToNodeEntries(nodeMap) {
+      NodeEntry it -> it.request()
+    }
+    assertResultSize(0, nodeMap.findNodesForRole(1, ""))
+  }
+
+  def assertResultSize(int size, List<NodeInstance> list) {
+    if (list.size() != size) {
+      list.each { log.error(it.toFullString())}
+    }
+    assert size == list.size()
+  }
+
+  def applyToNodeEntries(Collection<NodeInstance> list, Closure cl) {
+    list.each { it -> cl(it.getOrCreate(1)) }
+  }
+
+  def applyToNodeEntries(NodeMap nodeMap, Closure cl) {
+    applyToNodeEntries(nodeMap.values(), cl)
+  }
+
+  def NodeMap createNodeMap(List<NodeReport> nodeReports) {
+    NodeMap nodeMap = new NodeMap(1)
+    nodeMap.buildOrUpdate(nodeReports)
+    nodeMap
+  }
+
+  def NodeMap createNodeMap(List<String> hosts, NodeState state,
+      String label = "") {
+    createNodeMap(MockNodeReport.createInstances(hosts, state, label))
   }
 }

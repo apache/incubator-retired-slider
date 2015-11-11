@@ -43,24 +43,14 @@ import java.util.List;
  * instance constructed with (role, hostname) can be used to look up
  * a complete request instance in the {@link OutstandingRequestTracker} map
  */
-public final class OutstandingRequest {
+public final class OutstandingRequest extends RoleHostnamePair {
   protected static final Logger log =
     LoggerFactory.getLogger(OutstandingRequest.class);
-
-  /**
-   * requested role
-   */
-  public final int roleId;
 
   /**
    * Node the request is for -may be null
    */
   public final NodeInstance node;
-  
-  /**
-   * hostname -will be null if node==null
-   */
-  public final String hostname;
 
   /**
    * Optional label. This is cached as the request option (explicit-location + label) is forbidden,
@@ -111,9 +101,8 @@ public final class OutstandingRequest {
    */
   public OutstandingRequest(int roleId,
                             NodeInstance node) {
-    this.roleId = roleId;
+    super(roleId, node != null ? node.hostname : null);
     this.node = node;
-    this.hostname = node != null ? node.hostname : null;
   }
 
   /**
@@ -125,9 +114,8 @@ public final class OutstandingRequest {
    * @param hostname hostname
    */
   public OutstandingRequest(int roleId, String hostname) {
+    super(roleId, hostname);
     this.node = null;
-    this.roleId = roleId;
-    this.hostname = hostname;
   }
 
   /**
@@ -301,52 +289,13 @@ public final class OutstandingRequest {
     return issuedRequest != null && issuedRequest.getCapability().equals(resource);
   }
 
-  /**
-   * Equality is on hostname and role
-   * @param o other
-   * @return true on a match
-   */
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-
-    OutstandingRequest request = (OutstandingRequest) o;
-
-    if (roleId != request.roleId) {
-      return false;
-    }
-    if (hostname != null
-        ? !hostname.equals(request.hostname)
-        : request.hostname != null) {
-      return false;
-    }
-    return true;
-  }
-
-  /**
-   * hash on hostname and role
-   * @return hash code
-   */
-  @Override
-  public int hashCode() {
-    int result = roleId;
-    result = 31 * result + (hostname != null ? hostname.hashCode() : 0);
-    return result;
-  }
-
   @Override
   public String toString() {
     int requestRoleId = ContainerPriority.extractRole(getPriority());
     boolean requestHasLocation = ContainerPriority.hasLocation(getPriority());
     final StringBuilder sb = new StringBuilder("OutstandingRequest{");
-    sb.append("roleId=").append(this.roleId);
+    sb.append(super.toString());
     sb.append(", node=").append(node);
-    sb.append(", hostname='").append(hostname).append('\'');
     sb.append(", hasLocation=").append(requestHasLocation);
     sb.append(", requestedTimeMillis=").append(requestedTimeMillis);
     sb.append(", mayEscalate=").append(mayEscalate);
@@ -366,7 +315,6 @@ public final class OutstandingRequest {
     Preconditions.checkState(issuedRequest != null, "No issued request to cancel");
     return new CancelSingleRequest(issuedRequest);
   }
-
 
   /**
    * Valid if a node label expression specified on container request is valid or
@@ -410,5 +358,12 @@ public final class OutstandingRequest {
     }
   }
 
+  /**
+   * Create a new role/hostname pair for indexing.
+   * @return a new index.
+   */
+  public RoleHostnamePair getIndex() {
+    return new RoleHostnamePair(roleId, hostname);
+  }
 
 }
