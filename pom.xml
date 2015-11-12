@@ -234,17 +234,21 @@
     <github.site.plugin.version>0.8</github.site.plugin.version>
     <maven-site-plugin.skipDeploy>true</maven-site-plugin.skipDeploy>
     <github.downloads.plugin.version>0.6</github.downloads.plugin.version>
+    
+    <!-- override point for ASF staging/snapshot repos -->
+    <asf.staging>https://repository.apache.org/content/groups/staging/</asf.staging>
+    <asf.snapshots>https://repository.apache.org/content/repositories/snapshots/</asf.snapshots>
   </properties>
 
 
   <repositories>
     <repository>
       <id>ASF Staging</id>
-      <url>https://repository.apache.org/content/groups/staging/</url>
+      <url>${asf.staging}</url>
     </repository>
     <repository>
       <id>ASF Snapshots</id>
-      <url>https://repository.apache.org/content/repositories/snapshots/</url>
+      <url>${asf.snapshots}</url>
       <snapshots>
         <enabled>true</enabled>
       </snapshots>
