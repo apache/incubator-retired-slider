@@ -749,8 +749,6 @@ public class RoleHistory {
         sortRecentNodeList(role);
       }
     }
-    // TODO: AA placement: now request a new node
-
     return outcome;
   }
 

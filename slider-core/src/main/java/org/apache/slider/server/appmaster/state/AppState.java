@@ -2187,17 +2187,6 @@ public class AppState {
       // add all requests to the operations list
       operations.addAll(allocation.operations);
 
-      // now for AA requests, add some more
-      if (role.isAntiAffinePlacement())  {
-        role.completeOutstandingAARequest();
-        if (role.getPendingAntiAffineRequests() > 0) {
-          // still an outstanding AA request: need to issue a new one.
-          log.info("Asking for next container for AA role {}", roleName);
-          role.decPendingAntiAffineRequests();
-          addContainerRequest(operations, createContainerRequest(role));
-        }
-      }
-
       //look for condition where we get more back than we asked
       if (allocated > desired) {
         log.info("Discarding surplus {} container {} on {}", roleName,  cid,
@@ -2228,6 +2217,17 @@ public class AppState {
         if (request != null) {
           operations.add(request);
         }
+        // now for AA requests, add some more
+        if (role.isAntiAffinePlacement()) {
+          role.completeOutstandingAARequest();
+          if (role.getPendingAntiAffineRequests() > 0) {
+            // still an outstanding AA request: need to issue a new one.
+            log.info("Asking for next container for AA role {}", roleName);
+            role.decPendingAntiAffineRequests();
+            addContainerRequest(operations, createContainerRequest(role));
+          }
+        }
+
       }
     }
   }

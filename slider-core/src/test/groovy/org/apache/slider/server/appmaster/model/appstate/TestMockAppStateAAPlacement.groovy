@@ -30,7 +30,7 @@ import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
 import org.apache.slider.server.appmaster.state.AppStateBindingInfo
 import org.apache.slider.server.appmaster.state.ContainerAssignment
-import org.apache.slider.server.appmaster.state.NodeInstance
+import org.apache.slider.server.appmaster.state.NodeMap
 import org.apache.slider.server.appmaster.state.RoleInstance
 import org.apache.slider.server.appmaster.state.RoleStatus
 import org.junit.Test
@@ -85,8 +85,7 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
 
   @Test
   public void testAllocateAANoLabel() throws Throwable {
-    def nodemap = appState.roleHistory.cloneNodemap()
-    assert nodemap.size() > 0
+    assert cloneNodemap().size() > 0
 
 
     // want multiple instances, so there will be iterations
@@ -107,7 +106,7 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
     appState.onContainersAllocated([allocated], assignments, operations)
 
     def host = allocated.nodeId.host
-    def hostInstance = nodemap.get(host)
+    def hostInstance = cloneNodemap().get(host)
     assert hostInstance.get(aaRole.key).starting == 1
     assert !hostInstance.canHost(aaRole.key, "")
     assert !hostInstance.canHost(aaRole.key, null)
@@ -144,6 +143,10 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
     ops = appState.reviewRequestAndReleaseNodes()
     assert ops.size() == 0
     assertAllContainersAA();
+  }
+
+  protected NodeMap cloneNodemap() {
+    appState.roleHistory.cloneNodemap()
   }
 
   @Test
