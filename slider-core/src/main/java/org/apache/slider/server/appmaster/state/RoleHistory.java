@@ -512,7 +512,7 @@ public class RoleHistory {
   }
 
   /**
-   * Get a possibly emtpy list of suggested nodes for a role.
+   * Get a possibly empty list of suggested nodes for a role.
    * @param id role ID
    * @return list
    */

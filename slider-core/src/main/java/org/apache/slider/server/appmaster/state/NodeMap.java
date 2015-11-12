@@ -155,6 +155,7 @@ public class NodeMap extends HashMap<String, NodeInstance> {
         nodes.add(instance);
       }
     }
+    Collections.sort(nodes, new NodeInstance.CompareNames());
     return nodes;
   }
 }

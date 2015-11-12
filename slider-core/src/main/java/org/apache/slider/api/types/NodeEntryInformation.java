@@ -58,4 +58,22 @@ public class NodeEntryInformation {
 
   /** number of starting instances */
   public int starting;
+
+  @Override
+  public String toString() {
+    final StringBuilder sb = new StringBuilder(
+        "NodeEntryInformation{");
+    sb.append("priority=").append(priority);
+    sb.append(", live=").append(live);
+    sb.append(", requested=").append(requested);
+    sb.append(", releasing=").append(releasing);
+    sb.append(", starting=").append(starting);
+    sb.append(", failed=").append(failed);
+    sb.append(", failedRecently=").append(failedRecently);
+    sb.append(", startFailed=").append(startFailed);
+    sb.append(", preempted=").append(preempted);
+    sb.append(", lastUsed=").append(lastUsed);
+    sb.append('}');
+    return sb.toString();
+  }
 }

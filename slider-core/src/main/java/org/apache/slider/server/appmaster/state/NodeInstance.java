@@ -205,7 +205,6 @@ public class NodeInstance {
     nodeEntries.add(nodeEntry);
   }
 
-  
   /**
    * run through each entry; gc'ing & removing old ones that don't have
    * a recent failure count (we care about those)
@@ -381,5 +380,20 @@ public class NodeInstance {
       return activeRight - activeLeft;
     }
   }
+  /**
+   * A comparator for sorting entries alphabetically
+   */
+  public static class CompareNames implements Comparator<NodeInstance>,
+                                           Serializable {
+
+    public CompareNames() {
+    }
+
+    @Override
+    public int compare(NodeInstance left, NodeInstance right) {
+      return left.hostname.compareTo(right.hostname);
+    }
+  }
+
 
 }

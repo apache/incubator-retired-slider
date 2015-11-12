@@ -69,9 +69,8 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
    * @return
    */
   public MockYarnEngine createYarnEngine() {
-    return new MockYarnEngine(64, 1)
+    return new MockYarnEngine(8, 8)
   }
-
 
   @Override
   void setup() {
@@ -89,7 +88,6 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
    */
   void initApp(){
     String historyDirName = testName;
-    YarnConfiguration conf = SliderUtils.createConfiguration()
     applicationId = new MockApplicationId(id: 1, clusterTimestamp: 0)
     applicationAttemptId = new MockApplicationAttemptId(
         applicationId: applicationId,

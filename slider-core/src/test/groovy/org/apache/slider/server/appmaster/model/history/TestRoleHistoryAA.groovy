@@ -58,32 +58,40 @@ class TestRoleHistoryAA extends SliderTestBase {
   @Test
   public void testFindNodesInFullCluster() throws Throwable {
     // all three will surface at first
-    assertResultSize(3, nodeMap.findAllNodesForRole(1, ""))
+    verifyResultSize(3, nodeMap.findAllNodesForRole(1, ""))
   }
 
   @Test
   public void testFindNodesInUnhealthyCluster() throws Throwable {
     // all three will surface at first
-    nodeMap.get("one").updateNode(new MockNodeReport("one",NodeState.UNHEALTHY))
-    assertResultSize(2, nodeMap.findAllNodesForRole(1, ""))
+    markNodeOneUnhealthy()
+    verifyResultSize(2, nodeMap.findAllNodesForRole(1, ""))
+  }
+
+  public boolean markNodeOneUnhealthy() {
+    return setNodeState(nodeMap.get("one"), NodeState.UNHEALTHY)
+  }
+
+  protected boolean setNodeState(NodeInstance node, NodeState state) {
+    node.updateNode(new  MockNodeReport(node.hostname, state))
   }
 
   @Test
   public void testFindNoNodesWrongLabel() throws Throwable {
     // all three will surface at first
-    assertResultSize(0, nodeMap.findAllNodesForRole(1, "GPU"))
+    verifyResultSize(0, nodeMap.findAllNodesForRole(1, "GPU"))
   }
 
   @Test
   public void testFindNoNodesRightLabel() throws Throwable {
     // all three will surface at first
-    assertResultSize(3, gpuNodeMap.findAllNodesForRole(1, "GPU"))
+    verifyResultSize(3, gpuNodeMap.findAllNodesForRole(1, "GPU"))
   }
 
   @Test
   public void testFindNoNodesNoLabel() throws Throwable {
     // all three will surface at first
-    assertResultSize(3, gpuNodeMap.findAllNodesForRole(1, ""))
+    verifyResultSize(3, gpuNodeMap.findAllNodesForRole(1, ""))
   }
 
   @Test
@@ -92,7 +100,7 @@ class TestRoleHistoryAA extends SliderTestBase {
     applyToNodeEntries(nodeMap) {
       NodeEntry it -> it.request()
     }
-    assertResultSize(0, nodeMap.findAllNodesForRole(1, ""))
+    assertNoAvailableNodes(1)
   }
 
   @Test
@@ -101,14 +109,67 @@ class TestRoleHistoryAA extends SliderTestBase {
     applyToNodeEntries(nodeMap) {
       NodeEntry it -> it.request()
     }
-    assertResultSize(0, nodeMap.findAllNodesForRole(1, ""))
+    assertNoAvailableNodes(1)
   }
 
-  def assertResultSize(int size, List<NodeInstance> list) {
+  /**
+   * Tag all nodes as starting, then walk one through a bit
+   * more of its lifecycle
+   */
+  @Test
+  public void testFindNoNodesLifecycle() throws Throwable {
+    // all three will surface at first
+    applyToNodeEntries(nodeMap) {
+      NodeEntry it -> it.onStarting()
+    }
+    assertNoAvailableNodes(1)
+
+    // walk one of the nodes through the lifecycle
+    def node1 = nodeMap.get("one")
+    assert !node1.canHost(1,"")
+    node1.get(1).onStartCompleted()
+    assert !node1.canHost(1,"")
+    assertNoAvailableNodes()
+    node1.get(1).release()
+    assert node1.canHost(1,"")
+    def list2 = verifyResultSize(1, nodeMap.findAllNodesForRole(1, ""))
+    assert list2[0].hostname == "one"
+
+    // now tag that node as unhealthy and expect it to go away
+    markNodeOneUnhealthy()
+    assertNoAvailableNodes()
+  }
+
+  @Test
+  public void testRolesIndependent() throws Throwable {
+    def node1 = nodeMap.get("one")
+    def role1 = node1.getOrCreate(1)
+    def role2 = node1.getOrCreate(2)
+    nodeMap.values().each {
+      it.updateNode(new MockNodeReport("", NodeState.UNHEALTHY))
+    }
+    assertNoAvailableNodes(1)
+    assertNoAvailableNodes(2)
+    assert setNodeState(node1, NodeState.RUNNING)
+    // tag role 1 as busy
+    role1.onStarting()
+    assertNoAvailableNodes(1)
+
+    verifyResultSize(1, nodeMap.findAllNodesForRole(2, ""))
+    assert node1.canHost(2,"")
+  }
+
+
+  public List<NodeInstance> assertNoAvailableNodes(int role = 1, String label = "") {
+    return verifyResultSize(0, nodeMap.findAllNodesForRole(role, label))
+  }
+
+  List<NodeInstance> verifyResultSize(int size, List<NodeInstance> list) {
     if (list.size() != size) {
-      list.each { log.error(it.toFullString())}
+      list.each { log.error(it.toFullString()) }
     }
     assert size == list.size()
+    list
   }
 
   def applyToNodeEntries(Collection<NodeInstance> list, Closure cl) {

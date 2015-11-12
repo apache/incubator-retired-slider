@@ -30,6 +30,7 @@ import org.apache.slider.server.appmaster.model.mock.MockRoles
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
 import org.apache.slider.server.appmaster.state.AppStateBindingInfo
 import org.apache.slider.server.appmaster.state.ContainerAssignment
+import org.apache.slider.server.appmaster.state.NodeInstance
 import org.apache.slider.server.appmaster.state.RoleInstance
 import org.apache.slider.server.appmaster.state.RoleStatus
 import org.junit.Test
@@ -105,6 +106,13 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
     List<AbstractRMOperation> operations = []
     appState.onContainersAllocated([allocated], assignments, operations)
 
+    def host = allocated.nodeId.host
+    def hostInstance = nodemap.get(host)
+    assert hostInstance.get(aaRole.key).starting == 1
+    assert !hostInstance.canHost(aaRole.key, "")
+    assert !hostInstance.canHost(aaRole.key, null)
+
+
     // assignment
     assert assignments.size() == 1
 
@@ -115,6 +123,10 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
     // we also expect a new allocation request to have been issued
 
     def req2 = getRequest(operations, 1)
+    assert req2.nodes.size() == engine.cluster.clusterSize - 1
+
+    assert !req2.nodes.contains(host)
+    assert !request.relaxLocality
 
     // verify the pending couner is down
     assert 0L == aaRole.pendingAntiAffineRequests
@@ -149,11 +161,13 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
     List<AbstractRMOperation> ops2 = appState.reviewRequestAndReleaseNodes()
     assert ops2.empty
     assert aaRole.pendingAntiAffineRequests == 2
+    assertAllContainersAA()
 
     // next iter
     assert 1 == submitOperations(ops, [], ops2).size()
     assert 2 == ops2.size()
     assert aaRole.pendingAntiAffineRequests == 1
+    assertAllContainersAA()
 
     assert 0 == appState.reviewRequestAndReleaseNodes().size()
     // now trigger the next execution cycle
@@ -187,6 +201,8 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
     // next iter
     submitOperations(ops, [], ops2).size()
     assert 1 == ops2.size()
+    assertAllContainersAA()
+
   }
 
   /**
@@ -230,7 +246,7 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
     nodemap.each { name, info ->
       def nodeEntry = info.entries[index]
       assert nodeEntry == null ||
-             (nodeEntry.live + nodeEntry.starting + nodeEntry.releasing)  <= 1 ,
+             (nodeEntry.live -nodeEntry.releasing + nodeEntry.starting)  <= 1 ,
       "too many instances on node $name"
     }
   }

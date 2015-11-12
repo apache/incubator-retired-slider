@@ -58,7 +58,7 @@ class TestMockAppStateContainerFailure extends BaseMockAppStateTest
    */
   @Override
   MockYarnEngine createYarnEngine() {
-    return new MockYarnEngine(8000, 4)
+    return new MockYarnEngine(4, 8000)
   }
 
   @Override
