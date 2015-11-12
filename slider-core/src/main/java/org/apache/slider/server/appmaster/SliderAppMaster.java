@@ -2206,7 +2206,7 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
         internals.getOptionBool(InternalKeys.CHAOS_MONKEY_ENABLED,
             InternalKeys.DEFAULT_CHAOS_MONKEY_ENABLED);
     if (!enabled) {
-      log.info("Chaos monkey disabled");
+      log.debug("Chaos monkey disabled");
       return false;
     }
     
