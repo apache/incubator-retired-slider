@@ -76,6 +76,12 @@ public interface SliderKeys extends SliderXmlConfKeys {
   String APP_VERSION_UNKNOWN = "awaiting heartbeat...";
 
   /**
+   * Keys for application container specific properties, like release timeout
+   */
+  String APP_CONTAINER_RELEASE_TIMEOUT = "site.global.app_container.release_timeout_secs";
+  int APP_CONTAINER_HEARTBEAT_INTERVAL_SEC = 10; // look for HEARTBEAT_IDDLE_INTERVAL_SEC
+
+  /**
    * JVM arg to force IPv4  {@value}
    */
   String JVM_ENABLE_ASSERTIONS = "-ea";

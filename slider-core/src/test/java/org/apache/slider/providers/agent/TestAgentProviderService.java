@@ -1718,6 +1718,93 @@ public class TestAgentProviderService {
   }
 
   @Test
+  public void testAddStopCommand() throws Exception {
+    AgentProviderService aps = createAgentProviderService(new Configuration());
+    HeartBeatResponse hbr = new HeartBeatResponse();
+
+    StateAccessForProviders access = createNiceMock(StateAccessForProviders.class);
+    AgentProviderService mockAps = Mockito.spy(aps);
+    doReturn(access).when(mockAps).getAmState();
+
+    AggregateConf aggConf = new AggregateConf();
+    ConfTreeOperations treeOps = aggConf.getAppConfOperations();
+    treeOps.getGlobalOptions().put(AgentKeys.JAVA_HOME, "java_home");
+    treeOps.set(OptionKeys.APPLICATION_NAME, "HBASE");
+    treeOps.set("site.fs.defaultFS", "hdfs://HOST1:8020/");
+    treeOps.set("internal.data.dir.path", "hdfs://HOST1:8020/database");
+    treeOps.set(OptionKeys.ZOOKEEPER_HOSTS, "HOST1");
+    treeOps.getGlobalOptions().put("site.hbase-site.a.port", "${HBASE_MASTER.ALLOCATED_PORT}");
+    treeOps.getGlobalOptions().put("site.hbase-site.b.port", "${HBASE_MASTER.ALLOCATED_PORT}");
+    treeOps.getGlobalOptions().put("site.hbase-site.random.port", "${HBASE_MASTER.ALLOCATED_PORT}{PER_CONTAINER}");
+    treeOps.getGlobalOptions().put("site.hbase-site.random2.port", "${HBASE_MASTER.ALLOCATED_PORT}");
+
+    Map<String, DefaultConfig> defaultConfigMap = new HashMap<String, DefaultConfig>();
+    DefaultConfig defaultConfig = new DefaultConfig();
+    PropertyInfo propertyInfo1 = new PropertyInfo();
+    propertyInfo1.setName("defaultA");
+    propertyInfo1.setValue("Avalue");
+    defaultConfig.addPropertyInfo(propertyInfo1);
+    propertyInfo1 = new PropertyInfo();
+    propertyInfo1.setName("defaultB");
+    propertyInfo1.setValue("");
+    defaultConfig.addPropertyInfo(propertyInfo1);
+    defaultConfigMap.put("hbase-site", defaultConfig);
+
+    expect(access.getAppConfSnapshot()).andReturn(treeOps).anyTimes();
+    expect(access.getInternalsSnapshot()).andReturn(treeOps).anyTimes();
+    expect(access.isApplicationLive()).andReturn(true).anyTimes();
+
+    doReturn("HOST1").when(mockAps).getClusterInfoPropertyValue(anyString());
+    doReturn(defaultConfigMap).when(mockAps).getDefaultConfigs();
+    List<String> configurations = new ArrayList<String>();
+    configurations.add("hbase-site");
+    configurations.add("global");
+    List<String> sysConfigurations = new ArrayList<String>();
+    configurations.add("core-site");
+    doReturn(configurations).when(mockAps).getApplicationConfigurationTypes();
+    doReturn(sysConfigurations).when(mockAps).getSystemConfigurationsRequested(any(ConfTreeOperations.class));
+
+    Map<String, Map<String, ClusterNode>> roleClusterNodeMap = new HashMap<String, Map<String, ClusterNode>>();
+    Map<String, ClusterNode> container = new HashMap<String, ClusterNode>();
+    ClusterNode cn1 = new ClusterNode(new MockContainerId(1));
+    cn1.host = "HOST1";
+    container.put("cid1", cn1);
+    roleClusterNodeMap.put("HBASE_MASTER", container);
+    doReturn(roleClusterNodeMap).when(mockAps).getRoleClusterNodeMapping();
+    Map<String, String> allocatedPorts = new HashMap<String, String>();
+    allocatedPorts.put("hbase-site.a.port", "10023");
+    allocatedPorts.put("hbase-site.b.port", "10024");
+    doReturn(allocatedPorts).when(mockAps).getAllocatedPorts();
+    Map<String, String> allocatedPorts2 = new HashMap<String, String>();
+    allocatedPorts2.put("hbase-site.random.port", "10025");
+    doReturn(allocatedPorts2).when(mockAps).getAllocatedPorts(anyString());
+
+    replay(access);
+
+    mockAps.addStopCommand("HBASE_MASTER", "cid1", hbr, "/tmp/stop_cmd.sh", 10, false);
+
+    Assert.assertTrue(hbr.getExecutionCommands().get(0).getConfigurations().containsKey("hbase-site"));
+    Assert.assertTrue(hbr.getExecutionCommands().get(0).getConfigurations().containsKey("core-site"));
+    Map<String, String> hbaseSiteConf = hbr.getExecutionCommands().get(0).getConfigurations().get("hbase-site");
+    Assert.assertTrue(hbaseSiteConf.containsKey("a.port"));
+    Assert.assertEquals("10023", hbaseSiteConf.get("a.port"));
+    Assert.assertEquals("10024", hbaseSiteConf.get("b.port"));
+    Assert.assertEquals("10025", hbaseSiteConf.get("random.port"));
+    assertEquals("${HBASE_MASTER.ALLOCATED_PORT}",
+                 hbaseSiteConf.get("random2.port"));
+    ExecutionCommand cmd = hbr.getExecutionCommands().get(0);
+    Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("app_log_dir"));
+    Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("app_pid_dir"));
+    Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("app_install_dir"));
+    Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("app_input_conf_dir"));
+    Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("app_container_id"));
+    Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("pid_file"));
+    Assert.assertTrue(cmd.getConfigurations().get("global").containsKey("app_root"));
+    Assert.assertTrue(cmd.getConfigurations().get("hbase-site").containsKey("defaultA"));
+    Assert.assertFalse(cmd.getConfigurations().get("hbase-site").containsKey("defaultB"));
+  }
+
+  @Test
   public void testParameterParsing() throws IOException {
     AgentProviderService aps = createAgentProviderService(new Configuration());
     AggregateConf aggConf = new AggregateConf();
