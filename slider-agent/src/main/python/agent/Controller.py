@@ -214,6 +214,9 @@ class Controller(threading.Thread):
     if (self.componentActualState == State.FAILED) \
       and (self.componentExpectedState == State.STARTED) \
       and (self.failureCount >= Controller.MAX_FAILURE_COUNT_TO_STOP):
+      logger.info("Component instance has failed, stopping the agent ...")
+      shouldStopAgent = True
+    if (self.componentActualState == State.STOPPED):
       logger.info("Component instance has stopped, stopping the agent ...")
       shouldStopAgent = True
     if self.terminateAgent:
@@ -272,6 +275,8 @@ class Controller(threading.Thread):
       try:
         if self.appGracefulStopQueued and not self.isAppGracefullyStopped():
           # Continue to wait until app is stopped
+          logger.info("Graceful stop in progress..")
+          time.sleep(1)
           continue
         if self.shouldStopAgent():
           ProcessHelper.stopAgent()
@@ -467,9 +472,18 @@ class Controller(threading.Thread):
 
       # The STOP command index is stored to be deleted
       if command["roleCommand"] == "STOP":
+        logger.info("Got stop command = %s", (command))
         self.stopCommand = command
+        '''
+        If app is already running then stopApp() will initiate graceful stop
+        '''
+        self.stopApp()
         delete = True
         deleteIndex = index
+        if self.componentActualState == State.STARTED:
+          self.componentExpectedState = State.STOPPED
+          self.componentActualState = State.STOPPING
+          self.failureCount = 0
 
       if command["roleCommand"] == "INSTALL":
         self.componentExpectedState = State.INSTALLED
