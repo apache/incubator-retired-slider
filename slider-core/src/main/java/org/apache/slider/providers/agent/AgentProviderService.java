@@ -173,6 +173,7 @@ public class AgentProviderService extends AbstractProviderService implements
   private String clusterName = null;
   private boolean isInUpgradeMode;
   private Set<String> upgradeContainers = new HashSet<String>();
+  private boolean appStopInitiated;
 
   private final Map<String, ComponentInstanceState> componentStatuses =
       new ConcurrentHashMap<String, ComponentInstanceState>();
@@ -879,6 +880,12 @@ public class AgentProviderService extends AbstractProviderService implements
           componentStatus.getState(), componentStatus.getTargetState());
     }
 
+    if (appStopInitiated && !componentStatus.isStopInitiated()) {
+      log.info("Stop initiated for label {}", label);
+      componentStatus.setTargetState(State.STOPPED);
+      componentStatus.setStopInitiated(true);
+    }
+
     publishConfigAndExportGroups(heartBeat, componentStatus, roleName);
     CommandResult result = null;
     List<CommandReport> reports = heartBeat.getReports();
@@ -1001,6 +1008,8 @@ public class AgentProviderService extends AbstractProviderService implements
               timeout);
           componentStatus.commandIssued(command, true);
         } else if (command == Command.STOP) {
+          log.info("Stop command being sent to container with id {}",
+              containerId);
           addStopCommand(roleName, containerId, response, scriptPath, timeout,
               doUpgrade);
           componentStatus.commandIssued(command);
@@ -1274,6 +1283,10 @@ public class AgentProviderService extends AbstractProviderService implements
 
   public void addUpgradeContainers(Set<String> upgradeContainers) {
     this.upgradeContainers.addAll(upgradeContainers);
+  }
+
+  public void setAppStopInitiated(boolean appStopInitiated) {
+    this.appStopInitiated = appStopInitiated;
   }
 
   /**

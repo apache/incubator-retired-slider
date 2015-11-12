@@ -51,6 +51,8 @@ public class ComponentInstanceState {
   private Map<String, State> pkgStatuses;
   private String nextPkgToInstall;
 
+  private boolean stopInitiated;
+
   public ComponentInstanceState(String componentName,
       ContainerId containerId,
       String applicationId) {
@@ -234,7 +236,7 @@ public class ComponentInstanceState {
         return Command.INSTALL_ADDON;
       }
     }
-    return this.state.getSupportedCommand(isInUpgradeMode);
+    return this.state.getSupportedCommand(isInUpgradeMode, stopInitiated);
   }
 
   public State getState() {
@@ -252,6 +254,18 @@ public class ComponentInstanceState {
 
   public void setTargetState(State targetState) {
     this.targetState = targetState;
+  }
+
+  public String getNextPkgToInstall() {
+    return nextPkgToInstall;
+  }
+
+  public boolean isStopInitiated() {
+    return stopInitiated;
+  }
+
+  public void setStopInitiated(boolean stopInitiated) {
+    this.stopInitiated = stopInitiated;
   }
 
   @Override
@@ -302,9 +316,5 @@ public class ComponentInstanceState {
     sb.append(", componentName='").append(componentName).append('\'');
     sb.append('}');
     return sb.toString();
-  }
-
-  public String getNextPkgToInstall() {
-    return nextPkgToInstall;
   }
 }
