@@ -8,6 +8,7 @@ Changes only in Hortonworks github and not in slider-0.80.0-incubating.
 
     SLIDER-812 Make component configurations in appConfig available on the SliderAgent side (Thomas Liu via gourksaha)
     SLIDER-891 Add ability to set Slider AM launch environment during cluster create/start
+    SLIDER-128 Support graceful stop of component instances
 
   BUG FIXES
 
