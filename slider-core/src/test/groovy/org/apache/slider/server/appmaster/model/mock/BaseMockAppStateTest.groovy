@@ -279,7 +279,7 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
    * @return a list of roles
    */
   public List<RoleInstance> createAndSubmitNodes() {
-    return createAndSubmitNodes([])
+    return createAndSubmitNodes([], [])
   }
 
   /**
@@ -288,9 +288,10 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
    * @return a list of roles allocated
    */
   public List<RoleInstance> createAndSubmitNodes(
-      List<ContainerId> containerIds) {
+      List<ContainerId> containerIds,
+      List<AbstractRMOperation> operationsOut = []) {
     List<AbstractRMOperation> ops = appState.reviewRequestAndReleaseNodes()
-    return submitOperations(ops, containerIds)
+    return submitOperations(ops, containerIds, operationsOut)
   }
 
   /**
@@ -397,5 +398,19 @@ abstract class BaseMockAppStateTest extends SliderTestBase implements MockRoles 
   public AMRMClient.ContainerRequest getSingleRequest(List<AbstractRMOperation> ops) {
     assert 1 == ops.size()
     getRequest(ops, 0)
+  }
+
+  /**
+   * Scan through all containers and assert that the assignment is AA
+   * @param index role index
+   */
+  void assertAllContainersAA(String index) {
+    def nodemap = stateAccess.nodeInformationSnapshot
+    nodemap.each { name, info ->
+      def nodeEntry = info.entries[index]
+      assert nodeEntry == null ||
+             (nodeEntry.live - nodeEntry.releasing + nodeEntry.starting) <= 1,
+          "too many instances on node $name"
+    }
   }
 }

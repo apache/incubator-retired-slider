@@ -44,9 +44,6 @@ class TestRoleHistoryAA extends SliderTestBase {
   NodeMap nodeMap, gpuNodeMap
   RoleHistory roleHistory = new MockRoleHistory(MockFactory.ROLES)
 
-  AMRMClient.ContainerRequest requestContainer(RoleStatus roleStatus) {
-    roleHistory.requestContainerForRole(roleStatus).issuedRequest
-  }
 
   @Override
   void setup() {
@@ -158,7 +155,6 @@ class TestRoleHistoryAA extends SliderTestBase {
     verifyResultSize(1, nodeMap.findAllNodesForRole(2, ""))
     assert node1.canHost(2,"")
   }
-
 
   public List<NodeInstance> assertNoAvailableNodes(int role = 1, String label = "") {
     return verifyResultSize(0, nodeMap.findAllNodesForRole(role, label))

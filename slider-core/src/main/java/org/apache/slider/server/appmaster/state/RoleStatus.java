@@ -171,7 +171,7 @@ public final class RoleStatus implements Cloneable {
   public void cancel(long count) {
     requested.decToFloor(count);
   }
-  
+
   public void decRequested() {
     cancel(1);
   }
@@ -334,8 +334,11 @@ public final class RoleStatus implements Cloneable {
    * if there are no outstanding requests.
    */
   public void cancelOutstandingAARequest() {
-    setOutstandingAArequest(null);
-    setPendingAntiAffineRequests(0);
+    if (outstandingAArequest != null) {
+      setOutstandingAArequest(null);
+      setPendingAntiAffineRequests(0);
+      decRequested();
+    }
   }
 
   /**
@@ -366,25 +369,33 @@ public final class RoleStatus implements Cloneable {
   }
 
   @Override
-  public synchronized String toString() {
-    return "RoleStatus{" +
-           "name='" + name + '\'' +
-           ", key=" + key +
-           ", desired=" + desired +
-           ", actual=" + actual +
-           ", requested=" + requested +
-           ", releasing=" + releasing +
-           ", pendingAntiAffineRequests=" + pendingAntiAffineRequests +
-           ", failed=" + failed +
-           ", failed recently=" + failedRecently.get() +
-           ", node failed=" + nodeFailed.get() +
-           ", pre-empted=" + preempted.get() +
-           ", started=" + started +
-           ", startFailed=" + startFailed +
-           ", completed=" + completed +
-           ", failureMessage='" + failureMessage + '\'' +
-           ", providerRole=" + providerRole +
-           '}';
+  public String toString() {
+    final StringBuilder sb = new StringBuilder("RoleStatus{");
+    sb.append("name='").append(name).append('\'');
+    sb.append(", key=").append(key);
+    sb.append(", desired=").append(desired);
+    sb.append(", actual=").append(actual);
+    sb.append(", requested=").append(requested);
+    sb.append(", releasing=").append(releasing);
+    sb.append(", failed=").append(failed);
+    sb.append(", startFailed=").append(startFailed);
+    sb.append(", started=").append(started);
+    sb.append(", completed=").append(completed);
+    sb.append(", totalRequested=").append(totalRequested);
+    sb.append(", preempted=").append(preempted);
+    sb.append(", nodeFailed=").append(nodeFailed);
+    sb.append(", failedRecently=").append(failedRecently);
+    sb.append(", limitsExceeded=").append(limitsExceeded);
+    sb.append(", resourceRequirements=").append(resourceRequirements);
+    sb.append(", isAntiAffinePlacement=").append(isAntiAffinePlacement());
+    if (isAntiAffinePlacement()) {
+      sb.append(", pendingAntiAffineRequests=").append(pendingAntiAffineRequests);
+      sb.append(", outstandingAArequest=").append(outstandingAArequest);
+    }
+    sb.append(", failureMessage='").append(failureMessage).append('\'');
+    sb.append(", providerRole=").append(providerRole);
+    sb.append('}');
+    return sb.toString();
   }
 
   @Override

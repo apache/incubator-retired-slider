@@ -1222,11 +1222,11 @@ public class AppState {
    * @return the container request to submit or null if there is none
    */
   private AMRMClient.ContainerRequest createContainerRequest(RoleStatus role) {
-    incrementRequestCount(role);
     OutstandingRequest request = roleHistory.requestContainerForRole(role);
     if (request == null) {
       return null;
     }
+    incrementRequestCount(role);
     if (role.isAntiAffinePlacement()) {
       role.setOutstandingAArequest(request);
     }
@@ -1428,15 +1428,30 @@ public class AppState {
    * Handle node update from the RM. This syncs up the node map with the RM's view
    * @param updatedNodes updated nodes
    */
-  public synchronized List<AbstractRMOperation> onNodesUpdated(List<NodeReport> updatedNodes) {
+  public synchronized NodeUpdatedOutcome onNodesUpdated(List<NodeReport> updatedNodes) {
     boolean changed = roleHistory.onNodesUpdated(updatedNodes);
     if (changed) {
-      log.error("TODO: cancel AA requests and re-review");
-      return cancelOutstandingAARequests();
+      log.info("YARN cluster changed —cancelling current AA requests");
+      List<AbstractRMOperation> operations = cancelOutstandingAARequests();
+      log.debug("Created {} cancel requests", operations.size());
+      return new NodeUpdatedOutcome(true, operations);
     }
-    return new ArrayList<>(0);
+    return new NodeUpdatedOutcome(false, new ArrayList<AbstractRMOperation>(0));
   }
 
+  /**
+   * Return value of the {@link #onNodesUpdated(List)} call.
+   */
+  public static class NodeUpdatedOutcome {
+    public final boolean clusterChanged;
+    public final List<AbstractRMOperation> operations;
+
+    public NodeUpdatedOutcome(boolean clusterChanged,
+        List<AbstractRMOperation> operations) {
+      this.clusterChanged = clusterChanged;
+      this.operations = operations;
+    }
+  }
   /**
    * Is a role short lived by the threshold set for this application
    * @param instance instance
@@ -1885,13 +1900,17 @@ public class AppState {
   }
 
   /**
-   * Escalate operation as triggered by external timer.
+   * Cancel any outstanding AA Requests, building up the list of ops to
+   * cancel, removing them from RoleHistory structures and the RoleStatus
+   * entries.
    * @return a (usually empty) list of cancel/request operations.
    */
   public synchronized List<AbstractRMOperation> cancelOutstandingAARequests() {
+    // get the list of cancel operations
     List<AbstractRMOperation> operations = roleHistory.cancelOutstandingAARequests();
     for (RoleStatus roleStatus : roleStatusMap.values()) {
-      if (roleStatus.isAntiAffinePlacement()) {
+      if (roleStatus.isAARequestOutstanding()) {
+        log.info("Cancelling outstanding AA request for {}", roleStatus);
         roleStatus.cancelOutstandingAARequest();
       }
     }
@@ -2225,6 +2244,9 @@ public class AppState {
             log.info("Asking for next container for AA role {}", roleName);
             role.decPendingAntiAffineRequests();
             addContainerRequest(operations, createContainerRequest(role));
+            log.debug("Current AA role status {}", role);
+          } else {
+            log.info("AA request sequence completed for role {}", role);
           }
         }
 
@@ -2309,5 +2331,20 @@ public class AppState {
     containerStartSubmitted(container, instance);
     // now pretend it has just started
     innerOnNodeManagerContainerStarted(cid);
+  }
+
+  @Override
+  public String toString() {
+    final StringBuilder sb = new StringBuilder("AppState{");
+    sb.append("applicationLive=").append(applicationLive);
+    sb.append(", live nodes=").append(liveNodes.size());
+    sb.append(", startedContainers=").append(startedContainers);
+    sb.append(", startFailedContainerCount=").append(startFailedContainerCount);
+    sb.append(", surplusContainers=").append(surplusContainers);
+    sb.append(", failedContainerCount=").append(failedContainerCount);
+    sb.append(", outstandingContainerRequests=")
+        .append(outstandingContainerRequests);
+    sb.append('}');
+    return sb.toString();
   }
 }

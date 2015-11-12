@@ -1030,11 +1030,6 @@ public class RoleHistory {
     List<OutstandingRequest> requests =
         outstandingRequests.extractOpenRequestsForRole(roleId, toCancel);
 
-    if (role.isAntiAffinePlacement()) {
-      // TODO: AA
-      // AA placement, so clear the role info
-      role.cancelOutstandingAARequest();
-    }
     // are there any left?
     int remaining = toCancel - requests.size();
     // ask for some placed nodes

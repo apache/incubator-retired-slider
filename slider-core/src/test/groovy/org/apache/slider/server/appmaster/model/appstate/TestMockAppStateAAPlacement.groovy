@@ -21,13 +21,18 @@ package org.apache.slider.server.appmaster.model.appstate
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.hadoop.yarn.api.records.Container
+import org.apache.hadoop.yarn.api.records.NodeReport
+import org.apache.hadoop.yarn.api.records.NodeState
 import org.apache.hadoop.yarn.client.api.AMRMClient
 import org.apache.slider.providers.PlacementPolicy
 import org.apache.slider.providers.ProviderRole
 import org.apache.slider.server.appmaster.model.mock.BaseMockAppStateTest
 import org.apache.slider.server.appmaster.model.mock.MockFactory
+import org.apache.slider.server.appmaster.model.mock.MockNodeReport
 import org.apache.slider.server.appmaster.model.mock.MockRoles
+import org.apache.slider.server.appmaster.model.mock.MockYarnEngine
 import org.apache.slider.server.appmaster.operations.AbstractRMOperation
+import org.apache.slider.server.appmaster.state.AppState
 import org.apache.slider.server.appmaster.state.AppStateBindingInfo
 import org.apache.slider.server.appmaster.state.ContainerAssignment
 import org.apache.slider.server.appmaster.state.NodeMap
@@ -55,6 +60,7 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
       null)
 
   RoleStatus aaRole
+  private int NODES = 3
 
   @Override
   AppStateBindingInfo buildBindingInfo() {
@@ -73,6 +79,11 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
     aaRole = lookupRole(AAROLE.name)
   }
 
+  @Override
+  MockYarnEngine createYarnEngine() {
+    new MockYarnEngine(NODES, 8)
+  }
+
   /**
    * Get the single request of a list of operations; includes the check for the size
    * @param ops operations list of size 1
@@ -86,7 +97,6 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
   @Test
   public void testAllocateAANoLabel() throws Throwable {
     assert cloneNodemap().size() > 0
-
 
     // want multiple instances, so there will be iterations
     aaRole.desired = 2
@@ -110,7 +120,6 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
     assert hostInstance.get(aaRole.key).starting == 1
     assert !hostInstance.canHost(aaRole.key, "")
     assert !hostInstance.canHost(aaRole.key, null)
-
 
     // assignment
     assert assignments.size() == 1
@@ -205,7 +214,6 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
     submitOperations(ops, [], ops2).size()
     assert 1 == ops2.size()
     assertAllContainersAA()
-
   }
 
   /**
@@ -241,17 +249,70 @@ class TestMockAppStateAAPlacement extends BaseMockAppStateTest
   }
 
   /**
-   * Scan through all containers and assert that the assignment is AA
-   * @param index role index
+   *
+   * @throws Throwable
    */
-  void assertAllContainersAA(String index) {
-    def nodemap = stateAccess.nodeInformationSnapshot
-    nodemap.each { name, info ->
-      def nodeEntry = info.entries[index]
-      assert nodeEntry == null ||
-             (nodeEntry.live -nodeEntry.releasing + nodeEntry.starting)  <= 1 ,
-      "too many instances on node $name"
+  @Test
+  public void testAskForTooMany() throws Throwable {
+
+    describe("Ask for 1 more than the no of available nodes;" +
+             " expect the final request to be unsatisfied until the cluster changes size")
+    //more than expected
+    aaRole.desired = NODES + 1
+    List<AbstractRMOperation > operations = appState.reviewRequestAndReleaseNodes()
+    assert aaRole.AARequestOutstanding
+    assert NODES == aaRole.pendingAntiAffineRequests
+    for (int i = 0; i < NODES; i++) {
+      def iter = "Iteration $i role = $aaRole"
+      log.info(iter)
+      List<AbstractRMOperation > operationsOut = []
+      assert 1 == submitOperations(operations, [], operationsOut).size(), iter
+      operations = operationsOut
+      if (i + 1 < NODES) {
+        assert operations.size() == 2
+      } else {
+        assert operations.size() == 1
+      }
+      assertAllContainersAA()
     }
+    // expect an outstanding AA request to be unsatisfied
+    assert aaRole.actual < aaRole.desired
+    assert !aaRole.requested
+    assert !aaRole.AARequestOutstanding
+    List<Container> allocatedContainers = engine.execute(operations, [])
+    assert 0 == allocatedContainers.size()
+    // in a review now, no more requests can be generated, as there is no space for AA placements,
+    // even though there is cluster capacity
+    assert 0 == appState.reviewRequestAndReleaseNodes().size()
+
+    // now do a node update (this doesn't touch the YARN engine; the node isn't really there)
+    def outcome = addNewNode()
+    assert cloneNodemap().size() == NODES + 1
+    assert outcome.clusterChanged
+    // no active calls to empty
+    assert outcome.operations.empty
+    assert 1 == appState.reviewRequestAndReleaseNodes().size()
   }
+
+  protected AppState.NodeUpdatedOutcome addNewNode() {
+    NodeReport report = new MockNodeReport("four", NodeState.RUNNING) as NodeReport
+    appState.onNodesUpdated([report])
+  }
+
+  @Test
+  public void testClusterSizeChangesDuringRequestSequence() throws Throwable {
+    describe("Change the cluster size where the cluster size changes during a test sequence.")
+    aaRole.desired = NODES + 1
+    List<AbstractRMOperation> operations = appState.reviewRequestAndReleaseNodes()
+    assert aaRole.AARequestOutstanding
+    assert NODES == aaRole.pendingAntiAffineRequests
+    def outcome = addNewNode()
+    assert outcome.clusterChanged
+    // one call to cancel
+    assert 1 == outcome.operations.size()
+    // and on a review, one more to rebuild
+    assert 1 == appState.reviewRequestAndReleaseNodes().size()
+  }
+
 
 }

@@ -390,6 +390,7 @@ public class OutstandingRequestTracker {
   @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
   public synchronized List<AbstractRMOperation> cancelOutstandingAARequests() {
 
+    log.debug("Looking for AA request to cancel");
     List<AbstractRMOperation> operations = new ArrayList<>();
 
     // first, all placed requests
@@ -404,15 +405,18 @@ public class OutstandingRequestTracker {
       }
     }
     // second, all open requests
-    for (OutstandingRequest outstandingRequest : openRequests) {
+    ListIterator<OutstandingRequest> orit = openRequests.listIterator();
+    while (orit.hasNext()) {
+      OutstandingRequest outstandingRequest =  orit.next();
       synchronized (outstandingRequest) {
         if (outstandingRequest.isAntiAffine()) {
           // time to escalate
           operations.add(outstandingRequest.createCancelOperation());
-          openRequests.remove(outstandingRequest);
+          orit.remove();
         }
       }
     }
+    log.info("Cancelling {} outstanding AA requests", operations.size());
 
     return operations;
   }

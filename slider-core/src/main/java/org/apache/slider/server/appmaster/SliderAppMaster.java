@@ -1851,10 +1851,15 @@ public class SliderAppMaster extends AbstractSliderLaunchedService
     LOG_YARN.info("onNodesUpdated({})", updatedNodes.size());
     log.info("Updated nodes {}", updatedNodes);
     // Check if any nodes are lost or revived and update state accordingly
-    List<AbstractRMOperation> operations = appState.onNodesUpdated(updatedNodes);
-    execute(operations);
-    // if there were any operations, trigger a review
-    reviewRequestAndReleaseNodes("nodes updated");
+
+    AppState.NodeUpdatedOutcome outcome = appState.onNodesUpdated(updatedNodes);
+    if (!outcome.operations.isEmpty()) {
+      execute(outcome.operations);
+    }
+    // rigger a review if the cluster changed
+    if (outcome.clusterChanged) {
+      reviewRequestAndReleaseNodes("nodes updated");
+    }
   }
 
   /**
